@@ -32,7 +32,24 @@ public class SkiaToolRenderContext(SKCanvas canvas, double zoom) : IToolRenderCo
             StrokeWidth = strokeWidth / (float)_zoom,
             IsAntialias = true
         };
-        _canvas.DrawRect((float)x, (float)y, (float)width, (float)height, paint);
+        
+        // For small handles (fill=true), scale inversely with zoom to maintain screen size
+        var drawWidth = (float)width;
+        var drawHeight = (float)height;
+        var drawX = (float)x;
+        var drawY = (float)y;
+        
+        if (fill && width <= 20 && height <= 20)
+        {
+            // This is likely a handle - scale to maintain screen size
+            drawWidth = (float)(width / _zoom);
+            drawHeight = (float)(height / _zoom);
+            // Adjust position to center the scaled handle
+            drawX = (float)(x - (drawWidth - width) / 2);
+            drawY = (float)(y - (drawHeight - height) / 2);
+        }
+        
+        _canvas.DrawRect(drawX, drawY, drawWidth, drawHeight, paint);
     }
 
     public void DrawEllipse(double cx, double cy, double rx, double ry, uint color, float strokeWidth = 1f, bool fill = false)

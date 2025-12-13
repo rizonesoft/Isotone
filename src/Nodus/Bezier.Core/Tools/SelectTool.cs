@@ -221,9 +221,11 @@ public class SelectTool : ToolBase
     /// <inheritdoc/>
     public override void RenderOverlay(IToolRenderContext context)
     {
-        const uint selectionColor = 0xFF6B35FF; // Orange accent
-        const uint marqueeColor = 0x406B35FF; // Semi-transparent orange
+        // Colors in ARGB format (0xAARRGGBB)
+        const uint selectionColor = 0xFFFF6B35; // Orange accent
+        const uint marqueeColor = 0x40FF6B35; // Semi-transparent orange
         const uint handleColor = 0xFFFFFFFF; // White
+        const uint handleBorderColor = 0xFFFF6B35; // Orange border
 
         // Draw selection handles for selected elements
         foreach (var element in _selectedElements)
@@ -248,28 +250,28 @@ public class SelectTool : ToolBase
             // Draw bounding box
             context.DrawRect(x, y, w, h, selectionColor, 1.5f);
 
-            // Draw corner handles
-            const double handleSize = 6;
+            // Draw corner and edge handles
+            const double handleSize = 8;
             var halfHandle = handleSize / 2;
 
-            // Top-left
-            context.DrawRect(x - halfHandle, y - halfHandle, handleSize, handleSize, handleColor, 1f, true);
-            // Top-right
-            context.DrawRect(x + w - halfHandle, y - halfHandle, handleSize, handleSize, handleColor, 1f, true);
-            // Bottom-left
-            context.DrawRect(x - halfHandle, y + h - halfHandle, handleSize, handleSize, handleColor, 1f, true);
-            // Bottom-right
-            context.DrawRect(x + w - halfHandle, y + h - halfHandle, handleSize, handleSize, handleColor, 1f, true);
+            // Helper to draw a handle (white fill with orange border)
+            void DrawHandle(double hx, double hy)
+            {
+                context.DrawRect(hx - halfHandle, hy - halfHandle, handleSize, handleSize, handleColor, 1f, true);
+                context.DrawRect(hx - halfHandle, hy - halfHandle, handleSize, handleSize, handleBorderColor, 1f, false);
+            }
 
-            // Draw edge handles
-            // Top
-            context.DrawRect(x + w / 2 - halfHandle, y - halfHandle, handleSize, handleSize, handleColor, 1f, true);
-            // Bottom
-            context.DrawRect(x + w / 2 - halfHandle, y + h - halfHandle, handleSize, handleSize, handleColor, 1f, true);
-            // Left
-            context.DrawRect(x - halfHandle, y + h / 2 - halfHandle, handleSize, handleSize, handleColor, 1f, true);
-            // Right
-            context.DrawRect(x + w - halfHandle, y + h / 2 - halfHandle, handleSize, handleSize, handleColor, 1f, true);
+            // Corner handles
+            DrawHandle(x, y);           // Top-left
+            DrawHandle(x + w, y);       // Top-right
+            DrawHandle(x, y + h);       // Bottom-left
+            DrawHandle(x + w, y + h);   // Bottom-right
+
+            // Edge handles
+            DrawHandle(x + w / 2, y);       // Top
+            DrawHandle(x + w / 2, y + h);   // Bottom
+            DrawHandle(x, y + h / 2);       // Left
+            DrawHandle(x + w, y + h / 2);   // Right
         }
 
         // Draw marquee selection box
