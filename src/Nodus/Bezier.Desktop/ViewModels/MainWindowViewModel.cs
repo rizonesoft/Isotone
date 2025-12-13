@@ -29,7 +29,8 @@ public partial class MainWindowViewModel : ObservableObject
     private void InitializeToolManager()
     {
         // Register all tools
-        _toolManager.RegisterTool(new SelectTool());
+        var selectTool = new SelectTool();
+        _toolManager.RegisterTool(selectTool);
         _toolManager.RegisterTool(new PenTool());
         _toolManager.RegisterTool(new RectangleTool());
         _toolManager.RegisterTool(new EllipseTool());
@@ -50,8 +51,43 @@ public partial class MainWindowViewModel : ObservableObject
             }
         };
 
+        // Subscribe to selection changes to update debug info
+        selectTool.SelectionChanged += OnSelectionChanged;
+
         // Subscribe to redraw requests
         _toolManager.RedrawRequested += (_, _) => OnPropertyChanged(nameof(ToolManager));
+    }
+
+    private void OnSelectionChanged(object? sender, IReadOnlyList<Core.Models.VectorElement> selection)
+    {
+        // Update DebugInfoService with selection info
+        var primary = selection.FirstOrDefault();
+        (double X, double Y, double Width, double Height)? bounds = null;
+        
+        if (selection.Count > 0)
+        {
+            double minX = double.MaxValue, minY = double.MaxValue;
+            double maxX = double.MinValue, maxY = double.MinValue;
+            
+            foreach (var element in selection)
+            {
+                var b = element.GetBoundingBox();
+                minX = Math.Min(minX, b.X);
+                minY = Math.Min(minY, b.Y);
+                maxX = Math.Max(maxX, b.X + b.Width);
+                maxY = Math.Max(maxY, b.Y + b.Height);
+            }
+            
+            bounds = (minX, minY, maxX - minX, maxY - minY);
+        }
+        
+        DebugInfoService.Instance.UpdateSelection(selection.Count, primary, bounds);
+        
+        // Update the DebugWindow tree selection
+        if (Views.DebugWindow.Instance.IsLoaded && primary is not null)
+        {
+            Views.DebugWindow.Instance.SelectElementInTree(primary);
+        }
     }
 
     /// <summary>
@@ -766,9 +802,55 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void OpenDebugWindow()
     {
+        var debugWindow = Views.DebugWindow.Instance;
+        
+        // Set the document for the Elements Inspector
+        debugWindow.SetDocument(Document);
+        
+        // Wire up element selection from tree to canvas
+        debugWindow.ElementSelectedInTree -= OnDebugWindowElementSelected;
+        debugWindow.ElementSelectedInTree += OnDebugWindowElementSelected;
+        
+        // Wire up hover highlight
+        debugWindow.ElementHovered -= OnDebugWindowElementHovered;
+        debugWindow.ElementHovered += OnDebugWindowElementHovered;
+        
+        // Wire up visibility/lock toggled (forces canvas redraw)
+        debugWindow.ElementVisibilityToggled -= OnDebugWindowElementModified;
+        debugWindow.ElementVisibilityToggled += OnDebugWindowElementModified;
+        debugWindow.ElementLockToggled -= OnDebugWindowElementModified;
+        debugWindow.ElementLockToggled += OnDebugWindowElementModified;
+        
         Views.DebugWindow.ShowInstance();
         StatusText = "Developer Tools opened";
     }
+    
+    private void OnDebugWindowElementSelected(object? sender, Core.Models.VectorElement element)
+    {
+        // Use the SelectTool to select the element
+        if (_toolManager.GetTool<Core.Tools.SelectTool>() is { } selectTool)
+        {
+            selectTool.SetSelection([element]);
+        }
+    }
+    
+    private void OnDebugWindowElementHovered(object? sender, Core.Models.VectorElement? element)
+    {
+        // The canvas can highlight the hovered element
+        HoveredElement = element;
+    }
+    
+    private void OnDebugWindowElementModified(object? sender, Core.Models.VectorElement element)
+    {
+        // Force canvas redraw when visibility/lock changes
+        OnPropertyChanged(nameof(Document));
+    }
+    
+    /// <summary>
+    /// The currently hovered element (from the Elements Inspector tree).
+    /// </summary>
+    [ObservableProperty]
+    private Core.Models.VectorElement? _hoveredElement;
     
     [RelayCommand]
     private void CheckUpdates()

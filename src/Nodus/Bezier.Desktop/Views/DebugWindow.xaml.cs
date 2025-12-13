@@ -483,6 +483,249 @@ public partial class DebugWindow : FluentWindow
     }
 
     #endregion
+
+    #region Elements Inspector Tab
+
+    private VectorDocument? _currentDocument;
+    private readonly ObservableCollection<ElementTreeItemViewModel> _elementTreeItems = [];
+    private VectorElement? _hoveredElement;
+    private bool _suppressTreeSelection;
+
+    /// <summary>
+    /// Sets the document to inspect.
+    /// </summary>
+    public void SetDocument(VectorDocument? document)
+    {
+        if (_currentDocument == document) return;
+        
+        // Unsubscribe from old document
+        if (_currentDocument is not null)
+        {
+            _currentDocument.Elements.CollectionChanged -= OnDocumentElementsChanged;
+        }
+        
+        _currentDocument = document;
+        
+        // Subscribe to new document
+        if (_currentDocument is not null)
+        {
+            _currentDocument.Elements.CollectionChanged += OnDocumentElementsChanged;
+        }
+        
+        RefreshElementTree();
+    }
+
+    private void OnDocumentElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        Dispatcher.BeginInvoke(RefreshElementTree);
+    }
+
+    private void RefreshElementTree()
+    {
+        _elementTreeItems.Clear();
+        
+        if (_currentDocument is null || _currentDocument.Elements.Count == 0)
+        {
+            ElementTreeView.ItemsSource = null;
+            NoElementsMessage.Visibility = Visibility.Visible;
+            ElementCountText.Text = "0 elements";
+            return;
+        }
+        
+        NoElementsMessage.Visibility = Visibility.Collapsed;
+        
+        var totalCount = 0;
+        foreach (var element in _currentDocument.Elements)
+        {
+            var item = CreateTreeItem(element, ref totalCount);
+            _elementTreeItems.Add(item);
+        }
+        
+        ElementTreeView.ItemsSource = _elementTreeItems;
+        ElementCountText.Text = $"{totalCount} element{(totalCount == 1 ? "" : "s")}";
+    }
+
+    private static ElementTreeItemViewModel CreateTreeItem(VectorElement element, ref int count)
+    {
+        count++;
+        var item = new ElementTreeItemViewModel(element);
+        
+        if (element is Bezier.Core.Models.Elements.SvgGroup group)
+        {
+            foreach (var child in group.Children)
+            {
+                item.Children.Add(CreateTreeItem(child, ref count));
+            }
+        }
+        
+        return item;
+    }
+
+    private void RefreshElements_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshElementTree();
+        DebugLogger.Instance.Log("DebugWindow", "Element tree refreshed");
+    }
+
+    private void ElementTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (_suppressTreeSelection) return;
+        
+        if (e.NewValue is ElementTreeItemViewModel item)
+        {
+            // Raise event to select in canvas
+            ElementSelectedInTree?.Invoke(this, item.Element);
+            DebugLogger.Instance.Log("DebugWindow", $"Selected element: {item.DisplayName}");
+        }
+    }
+
+    private void TreeItem_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (sender is System.Windows.Controls.TreeViewItem tvi && tvi.DataContext is ElementTreeItemViewModel item)
+        {
+            _hoveredElement = item.Element;
+            ElementHovered?.Invoke(this, item.Element);
+        }
+    }
+
+    private void TreeItem_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        _hoveredElement = null;
+        ElementHovered?.Invoke(this, null);
+    }
+
+    private void ToggleVisibility_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button btn && btn.Tag is ElementTreeItemViewModel item)
+        {
+            item.Element.IsVisible = !item.Element.IsVisible;
+            item.NotifyVisibilityChanged();
+            ElementVisibilityToggled?.Invoke(this, item.Element);
+            DebugLogger.Instance.Log("DebugWindow", $"{item.DisplayName} visibility: {item.Element.IsVisible}");
+        }
+    }
+
+    private void ToggleLock_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button btn && btn.Tag is ElementTreeItemViewModel item)
+        {
+            item.Element.IsLocked = !item.Element.IsLocked;
+            item.NotifyLockChanged();
+            ElementLockToggled?.Invoke(this, item.Element);
+            DebugLogger.Instance.Log("DebugWindow", $"{item.DisplayName} locked: {item.Element.IsLocked}");
+        }
+    }
+
+    private void ViewRawSvg_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentDocument is null)
+        {
+            System.Windows.MessageBox.Show("No document loaded.", "Raw SVG", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            return;
+        }
+        
+        var svgContent = GenerateSvgOutput();
+        var dialog = new RawSvgDialog(svgContent) { Owner = this };
+        dialog.ShowDialog();
+    }
+
+    private string GenerateSvgOutput()
+    {
+        if (_currentDocument is null) return string.Empty;
+        
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{_currentDocument.Width}\" height=\"{_currentDocument.Height}\" viewBox=\"{_currentDocument.ViewBox}\">");
+        
+        if (!string.IsNullOrEmpty(_currentDocument.Title))
+        {
+            sb.AppendLine($"  <title>{_currentDocument.Title}</title>");
+        }
+        
+        foreach (var element in _currentDocument.Elements)
+        {
+            var svgStr = element.ToSvgString();
+            foreach (var line in svgStr.Split('\n'))
+            {
+                sb.AppendLine($"  {line}");
+            }
+        }
+        
+        sb.AppendLine("</svg>");
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Selects an element in the tree view (called when canvas selection changes).
+    /// </summary>
+    public void SelectElementInTree(VectorElement? element)
+    {
+        if (element is null)
+        {
+            // Deselect
+            return;
+        }
+        
+        _suppressTreeSelection = true;
+        try
+        {
+            var item = FindTreeItem(_elementTreeItems, element);
+            if (item is not null)
+            {
+                // Expand parents and select
+                SelectTreeViewItem(ElementTreeView, item);
+            }
+        }
+        finally
+        {
+            _suppressTreeSelection = false;
+        }
+    }
+
+    private static ElementTreeItemViewModel? FindTreeItem(IEnumerable<ElementTreeItemViewModel> items, VectorElement element)
+    {
+        foreach (var item in items)
+        {
+            if (item.Element == element)
+                return item;
+            
+            var child = FindTreeItem(item.Children, element);
+            if (child is not null)
+                return child;
+        }
+        return null;
+    }
+
+    private static void SelectTreeViewItem(System.Windows.Controls.TreeView treeView, ElementTreeItemViewModel item)
+    {
+        // Find the TreeViewItem container and select it
+        if (treeView.ItemContainerGenerator.ContainerFromItem(item) is System.Windows.Controls.TreeViewItem container)
+        {
+            container.IsSelected = true;
+            container.BringIntoView();
+        }
+    }
+
+    /// <summary>
+    /// Event raised when an element is selected in the tree.
+    /// </summary>
+    public event EventHandler<VectorElement>? ElementSelectedInTree;
+
+    /// <summary>
+    /// Event raised when an element is hovered in the tree.
+    /// </summary>
+    public event EventHandler<VectorElement?>? ElementHovered;
+
+    /// <summary>
+    /// Event raised when element visibility is toggled.
+    /// </summary>
+    public event EventHandler<VectorElement>? ElementVisibilityToggled;
+
+    /// <summary>
+    /// Event raised when element lock state is toggled.
+    /// </summary>
+    public event EventHandler<VectorElement>? ElementLockToggled;
+
+    #endregion
 }
 
 /// <summary>
@@ -511,5 +754,57 @@ public class LogEntryViewModel
             LogLevel.Error => new SolidColorBrush(System.Windows.Media.Color.FromRgb(243, 139, 168)),  // Red
             _ => new SolidColorBrush(System.Windows.Media.Color.FromRgb(205, 214, 244)) // Text
         };
+    }
+}
+
+/// <summary>
+/// ViewModel for elements in the Elements Inspector tree.
+/// </summary>
+public class ElementTreeItemViewModel : System.ComponentModel.INotifyPropertyChanged
+{
+    public VectorElement Element { get; }
+    public ObservableCollection<ElementTreeItemViewModel> Children { get; } = [];
+    
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    public ElementTreeItemViewModel(VectorElement element)
+    {
+        Element = element;
+    }
+
+    public string TypeName => Element.GetType().Name.Replace("Svg", "");
+
+    public string TypeIcon => Element switch
+    {
+        Bezier.Core.Models.Elements.SvgRect => "▢",
+        Bezier.Core.Models.Elements.SvgEllipse => "○",
+        Bezier.Core.Models.Elements.SvgCircle => "◯",
+        Bezier.Core.Models.Elements.SvgLine => "╱",
+        Bezier.Core.Models.Elements.SvgPath => "✒",
+        Bezier.Core.Models.Elements.SvgPolygon => "⬠",
+        Bezier.Core.Models.Elements.SvgPolyline => "⌇",
+        Bezier.Core.Models.Elements.SvgText => "T",
+        Bezier.Core.Models.Elements.SvgImage => "🖼",
+        Bezier.Core.Models.Elements.SvgGroup => "📁",
+        _ => "●"
+    };
+
+    public string DisplayName => string.IsNullOrEmpty(Element.Name) 
+        ? $"{TypeName} ({Element.Id.ToString()[..8]})"
+        : Element.Name;
+
+    public string VisibilityIcon => Element.IsVisible ? "👁" : "👁‍🗨";
+    public double VisibilityOpacity => Element.IsVisible ? 1.0 : 0.4;
+    public string LockIcon => Element.IsLocked ? "🔒" : "🔓";
+
+    public void NotifyVisibilityChanged()
+    {
+        PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(VisibilityIcon)));
+        PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(VisibilityOpacity)));
+    }
+
+    public void NotifyLockChanged()
+    {
+        PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(LockIcon)));
     }
 }

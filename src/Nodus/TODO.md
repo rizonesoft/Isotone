@@ -1196,12 +1196,12 @@ After completing each task set:
 - [x] Live update toggle
 
 ### 12.4 Elements Inspector
-- [ ] Tree view of document elements
-- [ ] Select element in canvas from tree
-- [ ] Highlight element on hover
-- [ ] Show/hide visibility
-- [ ] Lock/unlock elements
-- [ ] View raw SVG output
+- [x] Tree view of document elements
+- [x] Select element in canvas from tree
+- [x] Highlight element on hover
+- [x] Show/hide visibility
+- [x] Lock/unlock elements
+- [x] View raw SVG output
 
 ### 12.5 Performance Tab
 - [ ] Frame rate display

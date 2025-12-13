@@ -657,17 +657,114 @@
                 
                 <!-- Elements Panel -->
                 <Grid x:Name="ElementsPanel" Visibility="Collapsed" Background="{StaticResource CrustBrush}">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="🎨" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                        <TextBlock Text="Elements Inspector" FontSize="14" FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Browse and inspect document elements" FontSize="12"
-                                   Foreground="{StaticResource OverlayBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
-                                Padding="12,6" Margin="0,16,0,0" HorizontalAlignment="Center">
-                            <TextBlock Text="Coming Soon" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
-                        </Border>
-                    </StackPanel>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Toolbar -->
+                    <Border Grid.Row="0" Background="{StaticResource BaseBrush}" 
+                            BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1">
+                        <Grid Margin="8,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Text="🎨 Document Elements" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                            
+                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <Button Content="📋 SVG" Click="ViewRawSvg_Click" Style="{StaticResource PillButton}" 
+                                        ToolTip="View raw SVG output" Margin="0,0,4,0"/>
+                                <Button Content="🔄" Click="RefreshElements_Click" Style="{StaticResource PillButton}" 
+                                        ToolTip="Refresh element tree"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Element Tree -->
+                    <TreeView x:Name="ElementTreeView" Grid.Row="1" 
+                              Background="Transparent" BorderThickness="0"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              SelectedItemChanged="ElementTree_SelectedItemChanged">
+                        <TreeView.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#313244"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#CDD6F4"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#313244"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#CDD6F4"/>
+                        </TreeView.Resources>
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="TreeViewItem">
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="Padding" Value="2"/>
+                                <Setter Property="IsExpanded" Value="True"/>
+                                <EventSetter Event="MouseEnter" Handler="TreeItem_MouseEnter"/>
+                                <EventSetter Event="MouseLeave" Handler="TreeItem_MouseLeave"/>
+                            </Style>
+                        </TreeView.ItemContainerStyle>
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                <Grid Height="24" Margin="0,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Element Type Icon -->
+                                    <TextBlock Text="{Binding TypeIcon}" FontSize="12" 
+                                               VerticalAlignment="Center" HorizontalAlignment="Center"
+                                               ToolTip="{Binding TypeName}"/>
+                                    
+                                    <!-- Name/ID -->
+                                    <TextBlock Grid.Column="1" Text="{Binding DisplayName}" 
+                                               VerticalAlignment="Center" Margin="4,0,0,0"
+                                               Foreground="{StaticResource TextBrush}"
+                                               FontFamily="Cascadia Code,Consolas" FontSize="11"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    
+                                    <!-- Action Buttons -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,0,0">
+                                        <!-- Visibility Toggle -->
+                                        <Button Width="22" Height="22" Padding="0" Background="Transparent" 
+                                                BorderThickness="0" Cursor="Hand"
+                                                Click="ToggleVisibility_Click" Tag="{Binding}"
+                                                ToolTip="Toggle visibility">
+                                            <TextBlock Text="{Binding VisibilityIcon}" FontSize="11" 
+                                                       Opacity="{Binding VisibilityOpacity}"/>
+                                        </Button>
+                                        
+                                        <!-- Lock Toggle -->
+                                        <Button Width="22" Height="22" Padding="0" Background="Transparent" 
+                                                BorderThickness="0" Cursor="Hand"
+                                                Click="ToggleLock_Click" Tag="{Binding}"
+                                                ToolTip="Toggle lock">
+                                            <TextBlock Text="{Binding LockIcon}" FontSize="11"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                    
+                    <!-- No Elements Message -->
+                    <TextBlock x:Name="NoElementsMessage" Grid.Row="1" 
+                               Text="No elements in document" FontSize="11" FontStyle="Italic"
+                               Foreground="{StaticResource OverlayBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="Collapsed"/>
+                    
+                    <!-- Element Count -->
+                    <Border Grid.Row="2" Background="{StaticResource MantleBrush}"
+                            BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,1,0,0">
+                        <TextBlock x:Name="ElementCountText" Text="0 elements" FontSize="10" Margin="10,4"
+                                   Foreground="{StaticResource OverlayBrush}"/>
+                    </Border>
                 </Grid>
                 
                 <!-- Performance Panel -->
