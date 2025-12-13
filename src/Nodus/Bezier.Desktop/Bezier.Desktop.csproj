@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\Icons\Bezier.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,6 +29,9 @@
     <Content Include="Resources\VsCodeDarkXml.xshd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\Icons\Bezier.ico" />
+    <Resource Include="Resources\Icons\Bezier_32.png" />
+    <Resource Include="Resources\Icons\Bezier.svg" />
   </ItemGroup>
 
   <ItemGroup>

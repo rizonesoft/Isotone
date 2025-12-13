@@ -9,7 +9,8 @@
         WindowStartupLocation="CenterScreen"
         ExtendsContentIntoTitleBar="True"
         WindowBackdropType="Mica"
-        WindowCornerPreference="Round">
+        WindowCornerPreference="Round"
+        Icon="pack://application:,,,/Resources/Icons/Bezier.ico">
     
     <ui:FluentWindow.Resources>
         <!-- Catppuccin Mocha Colors -->
