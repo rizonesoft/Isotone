@@ -506,17 +506,17 @@ After completing each task set:
 - [ ] Implement "Invert Selection"
 
 ### 3.2 Basic Shape Tools
-- [ ] `RectangleTool`: Drag to create
-  - [ ] Shift for square
-  - [ ] Alt for center origin
+- [x] `RectangleTool`: Drag to create
+  - [x] Shift for square
+  - [x] Alt for center origin
   - [ ] Corner radius handle post-creation
-  - [ ] Live dimensions tooltip
-- [ ] `EllipseTool`: Center/Corner modes
-  - [ ] Shift for circle
-  - [ ] Live dimensions tooltip
-- [ ] `LineTool`: Simple two-point lines
-  - [ ] Shift for 45° snap
-  - [ ] Live length/angle tooltip
+  - [x] Live dimensions tooltip
+- [x] `EllipseTool`: Center/Corner modes
+  - [x] Shift for circle
+  - [x] Live dimensions tooltip
+- [x] `LineTool`: Simple two-point lines
+  - [x] Shift for 45° snap
+  - [x] Live length/angle tooltip
 - [ ] `PolygonTool`: N-sided polygons
   - [ ] Options bar: number of sides (3-100)
   - [ ] Inner/outer radius for stars
@@ -524,8 +524,8 @@ After completing each task set:
   - [ ] Options bar: number of points
   - [ ] Inner/outer radius controls
 - [ ] `SpiralTool`: Spiral paths
-- [ ] Live preview during creation (ghost shapes)
-- [ ] Default fill/stroke for new shapes
+- [x] Live preview during creation (ghost shapes)
+- [x] Default fill/stroke for new shapes
 
 ### 3.3 The Pen Tool (Bezier) - *The "Inkscape Killer"*
 - [ ] Implement Node/Control Point data structure
