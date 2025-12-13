@@ -210,12 +210,12 @@ public class SymbolInstance : VectorElement
     /// </summary>
     public bool IsDetached { get; set; }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         return (X, Y, Width, Height);
     }
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         const double tolerance = 5;
         return x >= X - tolerance && x <= X + Width + tolerance &&

@@ -136,14 +136,56 @@ public abstract class VectorElement : INotifyPropertyChanged
     public abstract VectorElement Clone();
 
     /// <summary>
-    /// Tests if the given point hits this element.
+    /// Tests if the given point hits this element (in world coordinates).
     /// </summary>
-    public abstract bool HitTest(double x, double y);
+    public virtual bool HitTest(double x, double y)
+    {
+        // Transform the point to local coordinates and test against local bounds
+        if (Transform.IsIdentity)
+            return HitTestLocal(x, y);
+        
+        var localPoint = Transform.Invert().TransformPoint(x, y);
+        return HitTestLocal(localPoint.X, localPoint.Y);
+    }
 
     /// <summary>
-    /// Gets the bounding box of this element.
+    /// Tests if the given point (in local coordinates) hits this element.
+    /// Override this in derived classes for shape-specific hit testing.
     /// </summary>
-    public abstract (double X, double Y, double Width, double Height) GetBoundingBox();
+    protected abstract bool HitTestLocal(double x, double y);
+
+    /// <summary>
+    /// Gets the bounding box of this element in world coordinates (with transform applied).
+    /// </summary>
+    public virtual (double X, double Y, double Width, double Height) GetBoundingBox()
+    {
+        var localBounds = GetLocalBoundingBox();
+        
+        if (Transform.IsIdentity)
+            return localBounds;
+
+        // Transform all four corners and find the axis-aligned bounding box
+        var corners = new[]
+        {
+            Transform.TransformPoint(localBounds.X, localBounds.Y),
+            Transform.TransformPoint(localBounds.X + localBounds.Width, localBounds.Y),
+            Transform.TransformPoint(localBounds.X, localBounds.Y + localBounds.Height),
+            Transform.TransformPoint(localBounds.X + localBounds.Width, localBounds.Y + localBounds.Height)
+        };
+
+        var minX = corners.Min(c => c.X);
+        var minY = corners.Min(c => c.Y);
+        var maxX = corners.Max(c => c.X);
+        var maxY = corners.Max(c => c.Y);
+
+        return (minX, minY, maxX - minX, maxY - minY);
+    }
+
+    /// <summary>
+    /// Gets the bounding box in local coordinates (without transform).
+    /// Override this in derived classes.
+    /// </summary>
+    protected abstract (double X, double Y, double Width, double Height) GetLocalBoundingBox();
 
     /// <summary>
     /// Converts this element to an SVG string representation.

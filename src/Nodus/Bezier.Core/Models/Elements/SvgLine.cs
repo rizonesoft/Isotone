@@ -55,7 +55,7 @@ public class SvgLine : VectorElement
         Stroke = Stroke?.Clone()
     };
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         // Check if point is within tolerance of the line segment
         const double tolerance = 5.0;
@@ -74,7 +74,7 @@ public class SvgLine : VectorElement
         return Math.Sqrt((x - projX) * (x - projX) + (y - projY) * (y - projY)) <= tolerance;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         var minX = Math.Min(X1, X2);
         var minY = Math.Min(Y1, Y2);

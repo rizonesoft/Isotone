@@ -46,14 +46,14 @@ public class SvgCircle : VectorElement
         Stroke = Stroke?.Clone()
     };
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         var dx = x - Cx;
         var dy = y - Cy;
         return dx * dx + dy * dy <= R * R;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         return (Cx - R, Cy - R, R * 2, R * 2);
     }

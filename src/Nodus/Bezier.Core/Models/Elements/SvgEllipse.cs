@@ -55,7 +55,7 @@ public class SvgEllipse : VectorElement
         Stroke = Stroke?.Clone()
     };
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         if (Rx <= 0 || Ry <= 0) return false;
         var dx = (x - Cx) / Rx;
@@ -63,7 +63,7 @@ public class SvgEllipse : VectorElement
         return dx * dx + dy * dy <= 1;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         return (Cx - Rx, Cy - Ry, Rx * 2, Ry * 2);
     }

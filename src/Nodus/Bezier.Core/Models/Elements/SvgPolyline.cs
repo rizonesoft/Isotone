@@ -32,7 +32,7 @@ public class SvgPolyline : VectorElement
         return clone;
     }
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         const double tolerance = 5.0;
         
@@ -65,7 +65,7 @@ public class SvgPolyline : VectorElement
         return false;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         if (Points.Count == 0) return (0, 0, 0, 0);
         

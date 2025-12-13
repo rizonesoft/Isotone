@@ -85,12 +85,12 @@ public class SvgImage : VectorElement
         Stroke = Stroke?.Clone()
     };
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         return x >= X && x <= X + Width && y >= Y && y <= Y + Height;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         return (X, Y, Width, Height);
     }

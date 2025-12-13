@@ -32,7 +32,7 @@ public class SvgPolygon : VectorElement
         return clone;
     }
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         if (Points.Count < 3) return false;
         
@@ -51,7 +51,7 @@ public class SvgPolygon : VectorElement
         return inside;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         if (Points.Count == 0) return (0, 0, 0, 0);
         

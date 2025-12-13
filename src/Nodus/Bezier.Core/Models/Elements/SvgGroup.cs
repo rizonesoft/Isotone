@@ -57,9 +57,10 @@ public class SvgGroup : VectorElement
         return clone;
     }
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         // Hit test against children in reverse order (topmost first)
+        // Note: Group transforms are already handled by base class
         for (int i = Children.Count - 1; i >= 0; i--)
         {
             if (Children[i].IsVisible && Children[i].HitTest(x, y))
@@ -68,7 +69,7 @@ public class SvgGroup : VectorElement
         return false;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         if (Children.Count == 0) return (0, 0, 0, 0);
 

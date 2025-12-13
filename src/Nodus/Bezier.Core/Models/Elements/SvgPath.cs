@@ -36,13 +36,13 @@ public class SvgPath : VectorElement
         Stroke = Stroke?.Clone()
     };
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         // Use bounding box with stroke tolerance for hit testing
         var strokeWidth = Stroke?.Width ?? 0;
         var tolerance = Math.Max(5.0, strokeWidth / 2);
         
-        var bounds = GetBoundingBox();
+        var bounds = GetLocalBoundingBox();
         
         // Expand bounds by tolerance for easier selection
         return x >= bounds.X - tolerance && 
@@ -51,7 +51,7 @@ public class SvgPath : VectorElement
                y <= bounds.Y + bounds.Height + tolerance;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         // Use cached bounds if available
         if (_cachedBounds.HasValue)

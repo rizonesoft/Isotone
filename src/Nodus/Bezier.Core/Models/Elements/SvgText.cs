@@ -123,7 +123,7 @@ public class SvgText : VectorElement
         Stroke = Stroke?.Clone()
     };
 
-    public override bool HitTest(double x, double y)
+    protected override bool HitTestLocal(double x, double y)
     {
         // Approximate text bounding box (real measurement requires font metrics)
         var estimatedWidth = Text.Length * FontSize * 0.6;
@@ -141,7 +141,7 @@ public class SvgText : VectorElement
                y >= boxY && y <= boxY + estimatedHeight;
     }
 
-    public override (double X, double Y, double Width, double Height) GetBoundingBox()
+    protected override (double X, double Y, double Width, double Height) GetLocalBoundingBox()
     {
         var estimatedWidth = Text.Length * FontSize * 0.6;
         var estimatedHeight = FontSize * 1.2;
