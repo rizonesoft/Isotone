@@ -30,12 +30,42 @@
         <SolidColorBrush x:Key="PinkBrush" Color="#F5C2E7"/>
         <SolidColorBrush x:Key="MauveBrush" Color="#CBA6F7"/>
         
-        <!-- Compact CheckBox Style -->
-        <Style x:Key="CompactCheckBox" TargetType="CheckBox">
+        <!-- Modern CheckBox Style -->
+        <Style x:Key="ModernCheckBox" TargetType="CheckBox">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="4,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="MinHeight" Value="18"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="root" Background="Transparent" Padding="6,4" CornerRadius="3">
+                            <StackPanel Orientation="Horizontal">
+                                <Border x:Name="box" Width="14" Height="14" CornerRadius="3"
+                                        Background="{StaticResource Surface0Brush}"
+                                        BorderBrush="{StaticResource OverlayBrush}" BorderThickness="1"
+                                        VerticalAlignment="Center">
+                                    <TextBlock x:Name="check" Text="✓" FontSize="10" FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="Collapsed"/>
+                                </Border>
+                                <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="box" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="box" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="check" Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="root" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         
         <!-- Pill Button Style -->
@@ -289,14 +319,14 @@
                 <!-- Console Panel -->
                 <Grid x:Name="ConsolePanel" Background="{StaticResource CrustBrush}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="34"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
                     <!-- Filter Bar -->
                     <Border Grid.Row="0" Background="{StaticResource BaseBrush}" 
                             BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1">
-                        <Grid Margin="8,0">
+                        <Grid Margin="8,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" MaxWidth="250"/>
                                 <ColumnDefinition Width="*"/>
@@ -321,18 +351,18 @@
                             </Border>
                             
                             <!-- Level Filters -->
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center">
                                 <CheckBox x:Name="ShowDebugCheckBox" Content="Debug" IsChecked="True"
-                                          Style="{StaticResource CompactCheckBox}" Foreground="{StaticResource OverlayBrush}"
-                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,8,0"/>
+                                          Style="{StaticResource ModernCheckBox}" Foreground="{StaticResource OverlayBrush}"
+                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed"/>
                                 <CheckBox x:Name="ShowInfoCheckBox" Content="Info" IsChecked="True"
-                                          Style="{StaticResource CompactCheckBox}" Foreground="{StaticResource BlueBrush}"
-                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,8,0"/>
+                                          Style="{StaticResource ModernCheckBox}" Foreground="{StaticResource BlueBrush}"
+                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed"/>
                                 <CheckBox x:Name="ShowWarningCheckBox" Content="Warn" IsChecked="True"
-                                          Style="{StaticResource CompactCheckBox}" Foreground="{StaticResource YellowBrush}"
-                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,8,0"/>
+                                          Style="{StaticResource ModernCheckBox}" Foreground="{StaticResource YellowBrush}"
+                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed"/>
                                 <CheckBox x:Name="ShowErrorCheckBox" Content="Error" IsChecked="True"
-                                          Style="{StaticResource CompactCheckBox}" Foreground="{StaticResource RedBrush}"
+                                          Style="{StaticResource ModernCheckBox}" Foreground="{StaticResource RedBrush}"
                                           Checked="LogLevel_Changed" Unchecked="LogLevel_Changed"/>
                             </StackPanel>
                             
@@ -477,7 +507,7 @@
                 <!-- Auto-scroll Toggle -->
                 <CheckBox x:Name="AutoScrollCheckBox" Grid.Column="2"
                           Content="Auto-scroll" IsChecked="True"
-                          Style="{StaticResource CompactCheckBox}"
+                          Style="{StaticResource ModernCheckBox}"
                           Foreground="{StaticResource OverlayBrush}"/>
             </Grid>
         </Border>
