@@ -906,12 +906,12 @@ After completing each task set:
   - [x] Offer to restore
 
 ### 6.2 Import Formats
-- [ ] SVG (primary)
-- [ ] AI (Adobe Illustrator) - basic support
-- [ ] EPS (Encapsulated PostScript) - basic support
-- [ ] PDF (vector content extraction)
-- [ ] PNG/JPG (as embedded image)
-- [ ] Clipboard paste (image, SVG)
+- [x] SVG (primary)
+- [x] AI (Adobe Illustrator) - basic support
+- [x] EPS (Encapsulated PostScript) - basic support
+- [x] PDF (vector content extraction)
+- [x] PNG/JPG (as embedded image)
+- [x] Clipboard paste (image, SVG)
 
 ### 6.3 Export Formats
 - [ ] SVG (optimized, minified)
