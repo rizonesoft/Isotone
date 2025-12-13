@@ -746,13 +746,13 @@ After completing each task set:
 - [x] Artboard navigation
 
 ### 4.6 Phase 4 UI Polish
-- [ ] Collapsible sections in Properties panel with animation
-- [ ] Preset dropdown for common values (stroke widths, colors)
-- [ ] Layer thumbnail updates live
-- [ ] Smooth reorder animation in Layers panel
-- [ ] Boolean operation preview before applying
-- [ ] Color picker with smooth animations
-- [ ] Gradient editor with live preview
+- [x] Collapsible sections in Properties panel with animation
+- [x] Preset dropdown for common values (stroke widths, colors)
+- [x] Layer thumbnail updates live
+- [x] Smooth reorder animation in Layers panel
+- [x] Boolean operation preview before applying
+- [x] Color picker with smooth animations
+- [x] Gradient editor with live preview
 
 ---
 
