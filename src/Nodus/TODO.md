@@ -373,26 +373,26 @@ After completing each task set:
 ## Phase 2: Editor Architecture
 
 ### 2.1 Undo/Redo System (Command Pattern)
-- [ ] Create `IEditorCommand` interface (not WPF ICommand)
-  - [ ] `Execute()` method
-  - [ ] `Undo()` method
-  - [ ] `Description` property (for UI display)
-  - [ ] `IsUndoable` property
-- [ ] Implement `HistoryManager` class (UndoStack, RedoStack)
-  - [ ] `CanUndo`, `CanRedo` observable properties
-  - [ ] `MaxHistorySize` setting
-  - [ ] `Clear()` method
-  - [ ] `HistoryChanged` event
-- [ ] Create core commands:
-  - [ ] `MoveCommand`
-  - [ ] `RotateCommand`
-  - [ ] `ScaleCommand`
-  - [ ] `PropertyChangeCommand`
-  - [ ] `AddElementCommand`
-  - [ ] `DeleteElementCommand`
-  - [ ] `ReorderCommand`
-  - [ ] `GroupCommand`
-  - [ ] `UngroupCommand`
+- [x] Create `IEditorCommand` interface (not WPF ICommand)
+  - [x] `Execute()` method
+  - [x] `Undo()` method
+  - [x] `Description` property (for UI display)
+  - [x] `IsUndoable` property
+- [x] Implement `HistoryManager` class (UndoStack, RedoStack)
+  - [x] `CanUndo`, `CanRedo` observable properties
+  - [x] `MaxHistorySize` setting
+  - [x] `Clear()` method
+  - [x] `HistoryChanged` event
+- [x] Create core commands:
+  - [x] `MoveCommand`
+  - [x] `RotateCommand`
+  - [x] `ScaleCommand`
+  - [x] `PropertyChangeCommand`
+  - [x] `AddElementCommand`
+  - [x] `DeleteElementCommand`
+  - [x] `ReorderCommand`
+  - [x] `GroupCommand`
+  - [x] `UngroupCommand`
   - [ ] `DuplicateCommand`
 - [ ] Implement transaction/batching support (for continuous drag operations)
   - [ ] `BeginTransaction()`
