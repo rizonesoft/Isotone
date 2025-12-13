@@ -242,7 +242,7 @@ public class SkiaCanvas : SKElement
             canvas.Translate(_state.PanOffset.X, _state.PanOffset.Y);
             canvas.Scale((float)_state.Zoom);
             
-            var renderContext = new SkiaToolRenderContext(canvas, _state.Zoom);
+            var renderContext = new SkiaToolRenderContext(canvas, _state.Zoom, _renderer);
             ToolManager.RenderOverlay(renderContext);
             
             canvas.Restore();

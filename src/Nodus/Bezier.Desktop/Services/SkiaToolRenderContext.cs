@@ -1,15 +1,25 @@
 namespace Bezier.Desktop.Services;
 
 using Bezier.Core.Interfaces;
+using Bezier.Core.Models;
+using Bezier.Core.Models.Elements;
 using SkiaSharp;
 
 /// <summary>
 /// Implementation of IToolRenderContext using SkiaSharp.
 /// </summary>
-public class SkiaToolRenderContext(SKCanvas canvas, double zoom) : IToolRenderContext
+public class SkiaToolRenderContext : IToolRenderContext
 {
-    private readonly SKCanvas _canvas = canvas;
-    private readonly double _zoom = zoom;
+    private readonly SKCanvas _canvas;
+    private readonly double _zoom;
+    private readonly SkiaRenderer _renderer;
+
+    public SkiaToolRenderContext(SKCanvas canvas, double zoom, SkiaRenderer? renderer = null)
+    {
+        _canvas = canvas;
+        _zoom = zoom;
+        _renderer = renderer ?? new SkiaRenderer();
+    }
 
     public void DrawLine(double x1, double y1, double x2, double y2, uint color, float strokeWidth = 1f)
     {
@@ -88,5 +98,28 @@ public class SkiaToolRenderContext(SKCanvas canvas, double zoom) : IToolRenderCo
         };
         using var font = new SKFont(SKTypeface.Default, fontSize / (float)_zoom);
         _canvas.DrawText(text, (float)x, (float)y, font, paint);
+    }
+
+    public void DrawElementPreview(object element, double offsetX, double offsetY, double opacity = 0.5)
+    {
+        if (element is not VectorElement vectorElement) return;
+
+        _canvas.Save();
+        
+        // Apply offset translation
+        _canvas.Translate((float)offsetX, (float)offsetY);
+        
+        // Apply opacity via save layer
+        using var layerPaint = new SKPaint
+        {
+            Color = SKColors.White.WithAlpha((byte)(opacity * 255))
+        };
+        _canvas.SaveLayer(layerPaint);
+        
+        // Render the element
+        _renderer.RenderElement(_canvas, vectorElement, outlineMode: false, pixelPreview: false);
+        
+        _canvas.Restore(); // Layer
+        _canvas.Restore(); // Translation
     }
 }

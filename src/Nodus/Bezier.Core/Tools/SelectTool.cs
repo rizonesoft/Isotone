@@ -228,20 +228,30 @@ public class SelectTool : ToolBase
         const uint handleColor = 0xFFFFFFFF; // White
         const uint handleBorderColor = 0xFFFF6B35; // Orange border
 
+        // Calculate drag offset
+        var offsetX = 0.0;
+        var offsetY = 0.0;
+        var isMoving = _mode == SelectMode.Moving && IsDragging;
+        if (isMoving)
+        {
+            var delta = GetDragDelta();
+            offsetX = delta.DeltaX;
+            offsetY = delta.DeltaY;
+        }
+
+        // Draw element previews while dragging (semi-transparent at new position)
+        if (isMoving && (Math.Abs(offsetX) > 1 || Math.Abs(offsetY) > 1))
+        {
+            foreach (var element in _selectedElements)
+            {
+                context.DrawElementPreview(element, offsetX, offsetY, 0.6);
+            }
+        }
+
         // Draw selection handles for selected elements
         foreach (var element in _selectedElements)
         {
             var bounds = element.GetBoundingBox();
-            
-            // Apply current drag offset if moving
-            var offsetX = 0.0;
-            var offsetY = 0.0;
-            if (_mode == SelectMode.Moving && IsDragging)
-            {
-                var delta = GetDragDelta();
-                offsetX = delta.DeltaX;
-                offsetY = delta.DeltaY;
-            }
 
             var x = bounds.X + offsetX;
             var y = bounds.Y + offsetY;

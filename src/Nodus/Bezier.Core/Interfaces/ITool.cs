@@ -27,6 +27,15 @@ public interface IToolRenderContext
     void DrawEllipse(double cx, double cy, double rx, double ry, uint color, float strokeWidth = 1f, bool fill = false);
     void DrawPath(string pathData, uint color, float strokeWidth = 1f, bool fill = false);
     void DrawText(string text, double x, double y, uint color, float fontSize = 12f);
+    
+    /// <summary>
+    /// Renders an element preview with an offset (for drag operations).
+    /// </summary>
+    /// <param name="element">The element to render.</param>
+    /// <param name="offsetX">X offset to apply.</param>
+    /// <param name="offsetY">Y offset to apply.</param>
+    /// <param name="opacity">Opacity for the preview (0.0 to 1.0).</param>
+    void DrawElementPreview(object element, double offsetX, double offsetY, double opacity = 0.5);
 }
 
 /// <summary>
