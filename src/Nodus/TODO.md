@@ -914,20 +914,20 @@ After completing each task set:
 - [x] Clipboard paste (image, SVG)
 
 ### 6.3 Export Formats
-- [ ] SVG (optimized, minified)
-  - [ ] Standard SVG 1.1
-  - [ ] Optimized (SVGO-style)
-  - [ ] Minified (no whitespace)
-- [ ] PNG (with transparency, custom DPI)
-  - [ ] Scale options (1x, 2x, 3x, custom)
-  - [ ] Background options
-- [ ] JPG (quality slider)
-- [ ] PDF (vector)
-- [ ] XAML (WPF resource)
-- [ ] React/Vue component
-- [ ] CSS clip-path
-- [ ] ICO (multi-resolution icon)
-- [ ] WebP
+- [x] SVG (optimized, minified)
+  - [x] Standard SVG 1.1
+  - [x] Optimized (SVGO-style)
+  - [x] Minified (no whitespace)
+- [x] PNG (with transparency, custom DPI)
+  - [x] Scale options (1x, 2x, 3x, custom)
+  - [x] Background options
+- [x] JPG (quality slider)
+- [x] PDF (vector)
+- [x] XAML (WPF resource)
+- [x] React/Vue component
+- [x] CSS clip-path
+- [x] ICO (multi-resolution icon)
+- [x] WebP
 
 ### 6.4 Export Dialog
 - [ ] Format selection
