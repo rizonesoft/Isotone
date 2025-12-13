@@ -582,23 +582,23 @@ After completing each task set:
 - [x] Text outline and fill
 
 ### 3.6 Guides & Snapping
-- [ ] Draggable guides from rulers
-  - [ ] Drag from ruler to create
-  - [ ] Drag guide to move
-  - [ ] Delete key or drag off canvas to remove
+- [x] Draggable guides from rulers
+  - [x] Drag from ruler to create
+  - [x] Drag guide to move
+  - [x] Delete key or drag off canvas to remove
   - [ ] Double-click to set position numerically
-- [ ] Snap to grid
-  - [ ] Configurable grid size
-  - [ ] Grid visible toggle
-- [ ] Snap to guides
-- [ ] Snap to other objects (edges, centers)
-- [ ] Smart guides (alignment lines) when dragging
-  - [ ] Horizontal alignment
-  - [ ] Vertical alignment
+- [x] Snap to grid
+  - [x] Configurable grid size
+  - [x] Grid visible toggle
+- [x] Snap to guides
+- [x] Snap to other objects (edges, centers)
+- [x] Smart guides (alignment lines) when dragging
+  - [x] Horizontal alignment
+  - [x] Vertical alignment
   - [ ] Size matching
   - [ ] Spacing equalization
 - [ ] Distance indicators (hold Alt)
-- [ ] Snap tolerance setting
+- [x] Snap tolerance setting
 
 ### 3.7 Alignment & Distribution
 - [ ] Align left, center, right (horizontal)
