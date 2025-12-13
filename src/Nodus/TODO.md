@@ -854,35 +854,35 @@ After completing each task set:
 - [x] Export/import shortcuts
 
 ### 5.6 Code Integration (Monaco Editor)
-- [ ] Set up WebView2 with Monaco Editor
-  - [ ] Configure WebView2 environment
-  - [ ] Load Monaco HTML/JS locally
-- [ ] Host Monaco files locally in Resources
-  - [ ] Download Monaco package
-  - [ ] Include in build
-- [ ] Create C# <-> JS bridge for content sync
-  - [ ] `SetContent(string)` method
-  - [ ] `GetContent()` method
-  - [ ] `OnContentChanged` event
-- [ ] SVG/XML syntax highlighting
-- [ ] Code folding
-- [ ] Line numbers
-- [ ] Minimap
-- [ ] Error highlighting (invalid XML)
-  - [ ] Parse SVG on change
-  - [ ] Mark error lines
-  - [ ] Hover for error message
-- [ ] Implementation Bi-directional Sync (Canvas <-> Code)
-  - [ ] Debounced update (300ms)
-  - [ ] Diff-based sync (minimal re-render)
-  - [ ] Lock sync during drag operations
-- [ ] "Hover to Highlight" in Code (find element in canvas)
-  - [ ] Hover over element in code
-  - [ ] Highlight corresponding element on canvas
-- [ ] "Click to Navigate" in canvas (jump to code line)
-  - [ ] Select element on canvas
-  - [ ] Scroll code to element definition
-- [ ] Format/Prettify command
+- [x] Set up WebView2 with Monaco Editor
+  - [x] Configure WebView2 environment
+  - [x] Load Monaco HTML/JS locally
+- [x] Host Monaco files locally in Resources
+  - [x] Download Monaco package
+  - [x] Include in build
+- [x] Create C# <-> JS bridge for content sync
+  - [x] `SetContent(string)` method
+  - [x] `GetContent()` method
+  - [x] `OnContentChanged` event
+- [x] SVG/XML syntax highlighting
+- [x] Code folding
+- [x] Line numbers
+- [x] Minimap
+- [x] Error highlighting (invalid XML)
+  - [x] Parse SVG on change
+  - [x] Mark error lines
+  - [x] Hover for error message
+- [x] Implementation Bi-directional Sync (Canvas <-> Code)
+  - [x] Debounced update (300ms)
+  - [x] Diff-based sync (minimal re-render)
+  - [x] Lock sync during drag operations
+- [x] "Hover to Highlight" in Code (find element in canvas)
+  - [x] Hover over element in code
+  - [x] Highlight corresponding element on canvas
+- [x] "Click to Navigate" in canvas (jump to code line)
+  - [x] Select element on canvas
+  - [x] Scroll code to element definition
+- [x] Format/Prettify command
 - [ ] (Fallback) AvalonEdit for systems without WebView2
 
 ---
