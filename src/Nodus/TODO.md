@@ -401,36 +401,36 @@ After completing each task set:
 - [ ] Implement `MacroCommand` (group multiple commands)
 
 ### 2.2 Tool System
-- [ ] Define `ITool` interface
-  - [ ] `Name` property
-  - [ ] `Icon` property
-  - [ ] `Cursor` property
-  - [ ] `Shortcut` property
-  - [ ] `OnActivate()` method
-  - [ ] `OnDeactivate()` method
-  - [ ] `OnMouseDown(Point, Modifiers)`
-  - [ ] `OnMouseMove(Point, Modifiers)`
-  - [ ] `OnMouseUp(Point, Modifiers)`
-  - [ ] `OnKeyDown(Key, Modifiers)`
-  - [ ] `OnKeyUp(Key, Modifiers)`
-  - [ ] `RenderOverlay(Canvas)` for tool-specific guides
-- [ ] Implement `ToolManager` to handle active tool state and cursor changes
-  - [ ] `ActiveTool` property
-  - [ ] `SetTool(ITool)` method
-  - [ ] `Tools` collection
-  - [ ] Handle keyboard shortcuts for tool switching
-- [ ] Create `SelectTool` (Hit testing logic + Adorner rendering)
-  - [ ] Click to select
-  - [ ] Click empty to deselect
-  - [ ] Shift+Click to add to selection
-  - [ ] Ctrl+Click to toggle selection
-  - [ ] Drag to move selection
-  - [ ] Marquee selection
-- [ ] Create `PanTool` (Spacebar override, Middle-mouse drag)
-- [ ] Create `ZoomTool` (Ctrl+Scroll, Z key)
-  - [ ] Click to zoom in
-  - [ ] Alt+Click to zoom out
-  - [ ] Drag to zoom to area
+- [x] Define `ITool` interface
+  - [x] `Name` property
+  - [x] `Icon` property
+  - [x] `Cursor` property
+  - [x] `Shortcut` property
+  - [x] `OnActivate()` method
+  - [x] `OnDeactivate()` method
+  - [x] `OnMouseDown(Point, Modifiers)`
+  - [x] `OnMouseMove(Point, Modifiers)`
+  - [x] `OnMouseUp(Point, Modifiers)`
+  - [x] `OnKeyDown(Key, Modifiers)`
+  - [x] `OnKeyUp(Key, Modifiers)`
+  - [x] `RenderOverlay(Canvas)` for tool-specific guides
+- [x] Implement `ToolManager` to handle active tool state and cursor changes
+  - [x] `ActiveTool` property
+  - [x] `SetTool(ITool)` method
+  - [x] `Tools` collection
+  - [x] Handle keyboard shortcuts for tool switching
+- [x] Create `SelectTool` (Hit testing logic + Adorner rendering)
+  - [x] Click to select
+  - [x] Click empty to deselect
+  - [x] Shift+Click to add to selection
+  - [x] Ctrl+Click to toggle selection
+  - [x] Drag to move selection
+  - [x] Marquee selection
+- [x] Create `PanTool` (Spacebar override, Middle-mouse drag)
+- [x] Create `ZoomTool` (Ctrl+Scroll, Z key)
+  - [x] Click to zoom in
+  - [x] Alt+Click to zoom out
+  - [x] Drag to zoom to area
 
 ### 2.3 Application Layout (AvalonDock)
 - [ ] Set up `DockingManager` in MainWindow with dark theme
