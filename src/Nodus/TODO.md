@@ -1156,6 +1156,62 @@ After completing each task set:
 
 ---
 
+## Phase 12: Developer Tools
+
+### 12.1 Debug Window (Chrome DevTools-style)
+- [x] Separate debug window (opens from Help menu or F12)
+  - [x] Dockable/floating window
+  - [x] Always on top option
+  - [x] Persistent across sessions
+
+### 12.2 Console Tab
+- [ ] Real-time log output from DebugLogger
+  - [ ] Color-coded log levels (Debug, Info, Warning, Error)
+  - [ ] Timestamp display
+  - [ ] Category filtering
+- [ ] Search/filter functionality
+- [ ] Clear console button
+- [ ] Copy selected logs to clipboard
+- [ ] Copy all logs to clipboard
+- [ ] Export logs to file
+- [ ] Auto-scroll toggle
+
+### 12.3 Coordinates Tab
+- [ ] Mouse coordinates panel
+  - [ ] Screen coordinates (WPF)
+  - [ ] Document coordinates (canvas space)
+  - [ ] Artboard-relative coordinates
+- [ ] Selected element info
+  - [ ] Element type and name
+  - [ ] Position (X, Y)
+  - [ ] Size (Width, Height)
+  - [ ] Transform matrix values
+  - [ ] Bounding box coordinates
+  - [ ] Fill/Stroke properties
+- [ ] Canvas state info
+  - [ ] Current zoom level
+  - [ ] Pan offset
+  - [ ] Viewport dimensions
+- [ ] Copy all info button (formatted text)
+- [ ] Live update toggle
+
+### 12.4 Elements Inspector
+- [ ] Tree view of document elements
+- [ ] Select element in canvas from tree
+- [ ] Highlight element on hover
+- [ ] Show/hide visibility
+- [ ] Lock/unlock elements
+- [ ] View raw SVG output
+
+### 12.5 Performance Tab
+- [ ] Frame rate display
+- [ ] Render time metrics
+- [ ] Memory usage
+- [ ] Element count
+- [ ] Undo/Redo stack size
+
+---
+
 ## Priority Order
 
 ### Immediate (Week 1)

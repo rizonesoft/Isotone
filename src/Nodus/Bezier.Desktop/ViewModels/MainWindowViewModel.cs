@@ -764,6 +764,17 @@ public partial class MainWindowViewModel : ObservableObject
     }
     
     [RelayCommand]
+    private void OpenDebugWindow()
+    {
+        var debugWindow = new Views.DebugWindow
+        {
+            Owner = Application.Current.MainWindow
+        };
+        debugWindow.Show();
+        StatusText = "Developer Tools opened";
+    }
+    
+    [RelayCommand]
     private void CheckUpdates()
     {
         StatusText = "Checking for updates...";

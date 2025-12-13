@@ -296,6 +296,7 @@
         
         <!-- Help -->
         <KeyBinding Key="F1" Command="{Binding DocumentationCommand}"/>
+        <KeyBinding Key="F12" Command="{Binding OpenDebugWindowCommand}"/>
     </ui:FluentWindow.InputBindings>
 
     <Grid Background="{StaticResource MantleBrush}">
@@ -441,6 +442,8 @@
                         <MenuItem Header="_Help" Foreground="{StaticResource TextBrush}">
                             <MenuItem Header="_Documentation" InputGestureText="F1" Command="{Binding DocumentationCommand}"/>
                             <MenuItem Header="_Keyboard Shortcuts" Command="{Binding KeyboardShortcutsCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="_Developer Tools" InputGestureText="F12" Command="{Binding OpenDebugWindowCommand}"/>
                             <Separator/>
                             <MenuItem Header="_Check for Updates" Command="{Binding CheckUpdatesCommand}"/>
                             <Separator/>
