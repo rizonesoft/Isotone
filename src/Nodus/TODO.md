@@ -295,38 +295,38 @@ After completing each task set:
 - [x] Implement `StrokeConverter` (via StrokeConverter extension in Desktop)
 
 ### 1.3 SkiaSharp Rendering System
-- [ ] Create `SkiaCanvas` WPF control (inherits `SKElement`)
-  - [ ] Override `OnPaintSurface`
-  - [ ] Handle mouse events
-  - [ ] Handle keyboard events
-- [ ] Implement `RenderLoop` (InvalidateVisual on changes) with 60fps target
-  - [ ] Dirty flag optimization
-  - [ ] Render on demand
-- [ ] Create `SkiaRenderer` service translating Domain Models -> Skia Draw Calls
-  - [ ] Render VectorDocument
-  - [ ] Render each element type
-  - [ ] Apply transforms
-  - [ ] Apply fills and strokes
-- [ ] Implement infinite canvas: Pan (Translate) and Zoom (Scale) logic
-  - [ ] Store viewTransform matrix
-  - [ ] Mouse wheel zoom (center on cursor)
-  - [ ] Pan with middle mouse or spacebar+drag
+- [x] Create `SkiaCanvas` WPF control (inherits `SKElement`)
+  - [x] Override `OnPaintSurface`
+  - [x] Handle mouse events
+  - [x] Handle keyboard events
+- [x] Implement `RenderLoop` (InvalidateVisual on changes) with 60fps target
+  - [x] Dirty flag optimization
+  - [x] Render on demand
+- [x] Create `SkiaRenderer` service translating Domain Models -> Skia Draw Calls
+  - [x] Render VectorDocument
+  - [x] Render each element type
+  - [x] Apply transforms
+  - [x] Apply fills and strokes
+- [x] Implement infinite canvas: Pan (Translate) and Zoom (Scale) logic
+  - [x] Store viewTransform matrix
+  - [x] Mouse wheel zoom (center on cursor)
+  - [x] Pan with middle mouse or spacebar+drag
   - [ ] Smooth animated zoom
-- [ ] Add Grid rendering (Adaptive: dots/lines fade in/out based on zoom)
-  - [ ] Minor grid lines
-  - [ ] Major grid lines
-  - [ ] Grid origin indicator
-- [ ] Add Rulers rendering (Canvas-aligned, independent of zoom)
-  - [ ] Horizontal ruler
-  - [ ] Vertical ruler
+- [x] Add Grid rendering (Adaptive: dots/lines fade in/out based on zoom)
+  - [x] Minor grid lines
+  - [x] Major grid lines
+  - [x] Grid origin indicator
+- [x] Add Rulers rendering (Canvas-aligned, independent of zoom)
+  - [x] Horizontal ruler
+  - [x] Vertical ruler
   - [ ] Cursor position indicator on rulers
-  - [ ] Tick marks and labels
-- [ ] Implement "Pixel Preview" mode (show actual pixels at high zoom)
-- [ ] Implement "Outline Mode" (wireframe view, no fills)
-- [ ] Implement background rendering
-  - [ ] Checkerboard pattern (transparency)
-  - [ ] Solid color option
-  - [ ] Artboard background
+  - [x] Tick marks and labels
+- [x] Implement "Pixel Preview" mode (show actual pixels at high zoom)
+- [x] Implement "Outline Mode" (wireframe view, no fills)
+- [x] Implement background rendering
+  - [x] Checkerboard pattern (transparency)
+  - [x] Solid color option
+  - [x] Artboard background
 
 ### 1.4 SVG Bridge
 - [ ] Implement `SvgImporter`: Clean SVG -> `VectorDocument` (using Svg.Skia)
