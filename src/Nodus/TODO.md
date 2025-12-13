@@ -840,18 +840,18 @@ After completing each task set:
 - [x] Ruler tick marks on cursor position
 
 ### 5.5 Keyboard Shortcuts
-- [ ] Keyboard shortcut system with central registry
-- [ ] Customizable shortcut editor
-  - [ ] List all actions
-  - [ ] Filter/search
-  - [ ] Record new shortcut
-  - [ ] Reset to default
-- [ ] Preset profiles (Illustrator, Inkscape, Figma)
-- [ ] Cheat sheet overlay (hold Ctrl+/)
-  - [ ] Group by category
-  - [ ] Searchable
-- [ ] Conflict detection
-- [ ] Export/import shortcuts
+- [x] Keyboard shortcut system with central registry
+- [x] Customizable shortcut editor
+  - [x] List all actions
+  - [x] Filter/search
+  - [x] Record new shortcut
+  - [x] Reset to default
+- [x] Preset profiles (Illustrator, Inkscape, Figma)
+- [x] Cheat sheet overlay (hold Ctrl+/)
+  - [x] Group by category
+  - [x] Searchable
+- [x] Conflict detection
+- [x] Export/import shortcuts
 
 ### 5.6 Code Integration (Monaco Editor)
 - [ ] Set up WebView2 with Monaco Editor
