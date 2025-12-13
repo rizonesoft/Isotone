@@ -22,6 +22,16 @@ public class SkiaCanvas : SKElement
     private Point _lastMousePosition;
     private bool _isPanning;
     private bool _isSpaceDown;
+    private SKPoint _currentCursorDocPosition;
+    private SKPoint _currentCursorScreenPosition;
+    
+    // Animation state for smooth zoom
+    private System.Windows.Threading.DispatcherTimer? _zoomAnimationTimer;
+    private double _targetZoom;
+    private double _zoomAnimationStartValue;
+    private DateTime _zoomAnimationStartTime;
+    private SKPoint _zoomCenter;
+    private const double ZoomAnimationDurationMs = 150;
 
     /// <summary>
     /// The vector document being rendered.
@@ -207,7 +217,7 @@ public class SkiaCanvas : SKElement
         // Render rulers on top (not affected by pan/zoom transform)
         if (ShowRulers)
         {
-            _renderer.RenderRulers(canvas, info, _state, _document);
+            _renderer.RenderRulers(canvas, info, _state, _document, _currentCursorScreenPosition);
         }
     }
 
@@ -263,14 +273,55 @@ public class SkiaCanvas : SKElement
         base.OnMouseWheel(e);
         
         var position = e.GetPosition(this);
-        var skPoint = new SKPoint((float)position.X, (float)position.Y);
+        _zoomCenter = new SKPoint((float)position.X, (float)position.Y);
         
-        // Zoom centered on cursor position
-        var zoomFactor = e.Delta > 0 ? 1.1 : 0.9;
-        _state.ZoomAtPoint(zoomFactor, skPoint);
+        // Calculate target zoom with smooth animation
+        var zoomFactor = e.Delta > 0 ? 1.25 : 0.8;
+        var newTargetZoom = (_zoomAnimationTimer?.IsEnabled == true ? _targetZoom : _state.Zoom) * zoomFactor;
+        newTargetZoom = Math.Clamp(newTargetZoom, CanvasState.MinZoom, CanvasState.MaxZoom);
+        
+        StartZoomAnimation(newTargetZoom);
+        e.Handled = true;
+    }
+
+    private void StartZoomAnimation(double targetZoom)
+    {
+        _targetZoom = targetZoom;
+        _zoomAnimationStartValue = _state.Zoom;
+        _zoomAnimationStartTime = DateTime.Now;
+        
+        if (_zoomAnimationTimer is null)
+        {
+            _zoomAnimationTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16) // ~60fps
+            };
+            _zoomAnimationTimer.Tick += OnZoomAnimationTick;
+        }
+        
+        _zoomAnimationTimer.Start();
+    }
+
+    private void OnZoomAnimationTick(object? sender, EventArgs e)
+    {
+        var elapsed = (DateTime.Now - _zoomAnimationStartTime).TotalMilliseconds;
+        var progress = Math.Min(elapsed / ZoomAnimationDurationMs, 1.0);
+        
+        // Ease-out cubic for smooth deceleration
+        var easedProgress = 1 - Math.Pow(1 - progress, 3);
+        
+        var currentZoom = _zoomAnimationStartValue + (_targetZoom - _zoomAnimationStartValue) * easedProgress;
+        
+        // Calculate zoom factor relative to current zoom
+        var zoomFactor = currentZoom / _state.Zoom;
+        _state.ZoomAtPoint(zoomFactor, _zoomCenter);
         
         ZoomChanged?.Invoke(this, _state.Zoom);
-        e.Handled = true;
+        
+        if (progress >= 1.0)
+        {
+            _zoomAnimationTimer?.Stop();
+        }
     }
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -296,10 +347,17 @@ public class SkiaCanvas : SKElement
         base.OnMouseMove(e);
         
         var position = e.GetPosition(this);
+        _currentCursorScreenPosition = new SKPoint((float)position.X, (float)position.Y);
         
         // Report cursor position in document coordinates
-        var docPoint = _state.ScreenToDocument(new SKPoint((float)position.X, (float)position.Y));
-        CursorPositionChanged?.Invoke(this, docPoint);
+        _currentCursorDocPosition = _state.ScreenToDocument(_currentCursorScreenPosition);
+        CursorPositionChanged?.Invoke(this, _currentCursorDocPosition);
+        
+        // Invalidate to update cursor indicators on rulers
+        if (ShowRulers)
+        {
+            InvalidateVisual();
+        }
         
         if (_isPanning)
         {

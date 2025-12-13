@@ -637,7 +637,7 @@ public class SkiaRenderer
     /// <summary>
     /// Renders rulers along the top and left edges.
     /// </summary>
-    public void RenderRulers(SKCanvas canvas, SKImageInfo info, CanvasState state, VectorDocument? document)
+    public void RenderRulers(SKCanvas canvas, SKImageInfo info, CanvasState state, VectorDocument? document, SKPoint cursorScreenPosition = default)
     {
         // Draw ruler backgrounds
         canvas.DrawRect(0, 0, info.Width, RulerSize, _rulerPaint);
@@ -657,6 +657,59 @@ public class SkiaRenderer
         
         // Vertical ruler
         RenderVerticalRuler(canvas, info.Height, state, tickSpacing, majorInterval);
+        
+        // Draw cursor position indicators
+        if (cursorScreenPosition.X > RulerSize && cursorScreenPosition.Y > RulerSize)
+        {
+            RenderCursorIndicators(canvas, cursorScreenPosition, state);
+        }
+    }
+
+    private void RenderCursorIndicators(SKCanvas canvas, SKPoint cursorScreenPosition, CanvasState state)
+    {
+        using var indicatorPaint = new SKPaint
+        {
+            Color = new SKColor(255, 107, 53), // Orange accent color
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true
+        };
+        
+        using var linePaint = new SKPaint
+        {
+            Color = new SKColor(255, 107, 53, 100),
+            StrokeWidth = 1,
+            IsAntialias = true
+        };
+        
+        // Horizontal ruler indicator (triangle pointing down)
+        var hx = cursorScreenPosition.X;
+        if (hx > RulerSize)
+        {
+            var trianglePath = new SKPath();
+            trianglePath.MoveTo(hx - 4, RulerSize - 8);
+            trianglePath.LineTo(hx + 4, RulerSize - 8);
+            trianglePath.LineTo(hx, RulerSize - 2);
+            trianglePath.Close();
+            canvas.DrawPath(trianglePath, indicatorPaint);
+            
+            // Draw vertical guide line
+            canvas.DrawLine(hx, RulerSize, hx, cursorScreenPosition.Y, linePaint);
+        }
+        
+        // Vertical ruler indicator (triangle pointing right)
+        var vy = cursorScreenPosition.Y;
+        if (vy > RulerSize)
+        {
+            var trianglePath = new SKPath();
+            trianglePath.MoveTo(RulerSize - 8, vy - 4);
+            trianglePath.LineTo(RulerSize - 8, vy + 4);
+            trianglePath.LineTo(RulerSize - 2, vy);
+            trianglePath.Close();
+            canvas.DrawPath(trianglePath, indicatorPaint);
+            
+            // Draw horizontal guide line
+            canvas.DrawLine(RulerSize, vy, cursorScreenPosition.X, vy, linePaint);
+        }
     }
 
     private void RenderHorizontalRuler(SKCanvas canvas, int width, CanvasState state, float tickSpacing, int majorInterval)

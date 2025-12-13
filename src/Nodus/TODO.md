@@ -311,7 +311,7 @@ After completing each task set:
   - [x] Store viewTransform matrix
   - [x] Mouse wheel zoom (center on cursor)
   - [x] Pan with middle mouse or spacebar+drag
-  - [ ] Smooth animated zoom
+  - [x] Smooth animated zoom
 - [x] Add Grid rendering (Adaptive: dots/lines fade in/out based on zoom)
   - [x] Minor grid lines
   - [x] Major grid lines
@@ -319,7 +319,7 @@ After completing each task set:
 - [x] Add Rulers rendering (Canvas-aligned, independent of zoom)
   - [x] Horizontal ruler
   - [x] Vertical ruler
-  - [ ] Cursor position indicator on rulers
+  - [x] Cursor position indicator on rulers
   - [x] Tick marks and labels
 - [x] Implement "Pixel Preview" mode (show actual pixels at high zoom)
 - [x] Implement "Outline Mode" (wireframe view, no fills)
