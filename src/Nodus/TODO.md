@@ -4,12 +4,18 @@
 
 ## 🤖 Prompt Template
 ```
-Continue developing Bezier SVG Editor. Focus on: [0.3]
+Continue developing Bezier SVG Editor. Focus on: [TASK_ID]
 Reference this file for context and mark completed items with [x].
 Ensure code follows the project structure:
 - Bezier.Core: Domain models, interfaces, pure logic
 - Bezier.Desktop: WPF UI, SkiaSharp rendering, Services
 - Bezier.Tests: Unit and integration tests
+
+After completing each task set:
+1. Build: dotnet build Bezier.sln
+2. Run: dotnet run --project Bezier.Desktop
+3. Commit: git add -A && git commit -m "feat: [description]"
+4. Push: git push origin master
 ```
 
 ---
@@ -107,17 +113,17 @@ Ensure code follows the project structure:
 - [x] Create `CHANGELOG.md`
 
 ### 0.4 Core Dependencies
-- [ ] Install `SkiaSharp` & `SkiaSharp.Views.WPF` (Rendering)
-- [ ] Install `Svg.Skia` (SVG Parsing)
-- [ ] Install `Dirkster.AvalonDock` (Docking Layout)
-- [ ] Install `CommunityToolkit.Mvvm` (MVVM)
-- [ ] Install `Microsoft.Web.WebView2` (Monaco)
-- [ ] Install `XamlFlair` (Fluid Animations)
-- [ ] Install `WPF-UI` (Fluent Design / Mica)
-- [ ] Install `Serilog` (Logging)
-- [ ] Install `Serilog.Sinks.File` (Log to file)
-- [ ] Install `Newtonsoft.Json` (Settings serialization)
-- [ ] Install `Microsoft.Extensions.DependencyInjection` (DI)
+- [x] Install `SkiaSharp` & `SkiaSharp.Views.WPF` (Rendering)
+- [x] Install `Svg.Skia` (SVG Parsing)
+- [x] Install `Dirkster.AvalonDock` (Docking Layout)
+- [x] Install `CommunityToolkit.Mvvm` (MVVM)
+- [x] Install `Microsoft.Web.WebView2` (Monaco)
+- [x] ~~Install `XamlFlair`~~ → Using native WPF Storyboards + AnimationHelper.cs
+- [x] Install `WPF-UI` (Fluent Design / Mica)
+- [x] Install `Serilog` (Logging)
+- [x] Install `Serilog.Sinks.File` (Log to file)
+- [x] Install `Newtonsoft.Json` (Settings serialization)
+- [x] Install `Microsoft.Extensions.DependencyInjection` (DI)
 
 ### 0.5 Initial UI Shell (Early WOW Factor)
 - [ ] Create main window with Mica/Acrylic backdrop
