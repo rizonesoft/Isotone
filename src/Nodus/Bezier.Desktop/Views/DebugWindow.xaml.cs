@@ -16,7 +16,9 @@ public partial class DebugWindow : FluentWindow
 {
     private readonly ObservableCollection<LogEntryViewModel> _logEntries = [];
     private readonly ObservableCollection<LogEntryViewModel> _filteredEntries = [];
+    private readonly HashSet<string> _knownCategories = [];
     private string _filterText = string.Empty;
+    private string _selectedCategory = string.Empty;
     private bool _isLoaded;
     
     // Singleton instance
@@ -136,6 +138,9 @@ public partial class DebugWindow : FluentWindow
         // Load existing logs (must be done after UI is initialized)
         foreach (var entry in DebugLogger.Instance.Entries)
         {
+            // Register category
+            AddCategoryIfNew(entry.Category);
+            
             var vm = new LogEntryViewModel(entry);
             _logEntries.Add(vm);
             if (PassesFilter(vm))
@@ -161,6 +166,9 @@ public partial class DebugWindow : FluentWindow
 
     private void OnLogAdded(object? sender, LogEntry entry)
     {
+        // Register category if new
+        AddCategoryIfNew(entry.Category);
+        
         // Marshal to UI thread
         Dispatcher.BeginInvoke(() =>
         {
@@ -208,6 +216,38 @@ public partial class DebugWindow : FluentWindow
         ApplyFilter();
     }
 
+    private void CategoryFilter_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!_isLoaded) return;
+        
+        if (CategoryFilterComboBox.SelectedItem is ComboBoxItem item && item.Tag is string category)
+        {
+            _selectedCategory = category;
+            ApplyFilter();
+        }
+    }
+
+    private void AddCategoryIfNew(string category)
+    {
+        if (_knownCategories.Add(category))
+        {
+            // Add new category to the dropdown
+            Dispatcher.BeginInvoke(() =>
+            {
+                var item = new ComboBoxItem
+                {
+                    Content = category,
+                    Tag = category,
+                    Foreground = FindResource("TextBrush") as Brush,
+                    Background = FindResource("Surface0Brush") as Brush,
+                    FontSize = 11,
+                    Padding = new Thickness(8, 4, 8, 4)
+                };
+                CategoryFilterComboBox.Items.Add(item);
+            });
+        }
+    }
+
     private void ApplyFilter()
     {
         _filteredEntries.Clear();
@@ -237,6 +277,13 @@ public partial class DebugWindow : FluentWindow
         
         if (!showLevel) return false;
         
+        // Check category filter
+        if (!string.IsNullOrEmpty(_selectedCategory))
+        {
+            if (!entry.Category.Equals(_selectedCategory, StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+        
         // Check text filter
         if (!string.IsNullOrEmpty(_filterText))
         {
@@ -251,6 +298,17 @@ public partial class DebugWindow : FluentWindow
     {
         if (StatusText is null) return;
         StatusText.Text = $"{_filteredEntries.Count} of {_logEntries.Count} entries";
+        
+        // Update level counts
+        var debugCount = _logEntries.Count(e => e.Level == "Debug");
+        var infoCount = _logEntries.Count(e => e.Level == "Info");
+        var warnCount = _logEntries.Count(e => e.Level == "Warning");
+        var errorCount = _logEntries.Count(e => e.Level == "Error");
+        
+        if (DebugCountText is not null) DebugCountText.Text = $"D:{debugCount}";
+        if (InfoCountText is not null) InfoCountText.Text = $"I:{infoCount}";
+        if (WarnCountText is not null) WarnCountText.Text = $"W:{warnCount}";
+        if (ErrorCountText is not null) ErrorCountText.Text = $"E:{errorCount}";
     }
 
     private void CopySelected_Click(object sender, RoutedEventArgs e)

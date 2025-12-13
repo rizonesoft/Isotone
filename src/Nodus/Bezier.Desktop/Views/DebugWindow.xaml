@@ -328,7 +328,8 @@
                             BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1">
                         <Grid Margin="8,6">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" MaxWidth="250"/>
+                                <ColumnDefinition Width="*" MaxWidth="200"/>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
@@ -350,8 +351,28 @@
                                 </Grid>
                             </Border>
                             
+                            <!-- Category Filter -->
+                            <Border Grid.Column="1" Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                    Padding="0" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <ComboBox x:Name="CategoryFilterComboBox" 
+                                          Background="Transparent" BorderThickness="0"
+                                          Foreground="{StaticResource TextBrush}"
+                                          FontSize="11" MinWidth="100" Padding="8,4"
+                                          SelectionChanged="CategoryFilter_SelectionChanged">
+                                    <ComboBox.ItemContainerStyle>
+                                        <Style TargetType="ComboBoxItem">
+                                            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                            <Setter Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                            <Setter Property="FontSize" Value="11"/>
+                                            <Setter Property="Padding" Value="8,4"/>
+                                        </Style>
+                                    </ComboBox.ItemContainerStyle>
+                                    <ComboBoxItem Content="All Categories" IsSelected="True" Tag=""/>
+                                </ComboBox>
+                            </Border>
+                            
                             <!-- Level Filters -->
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center">
                                 <CheckBox x:Name="ShowDebugCheckBox" Content="Debug" IsChecked="True"
                                           Style="{StaticResource ModernCheckBox}" Foreground="{StaticResource OverlayBrush}"
                                           Checked="LogLevel_Changed" Unchecked="LogLevel_Changed"/>
@@ -367,7 +388,8 @@
                             </StackPanel>
                             
                             <!-- Actions -->
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="📋 Copy All" Click="CopyAll_Click" Style="{StaticResource PillButton}" Margin="0,0,4,0"/>
                                 <Button Content="🗑 Clear" Click="Clear_Click" Style="{StaticResource PillButton}"/>
                             </StackPanel>
                         </Grid>
@@ -393,6 +415,7 @@
                                                Foreground="{StaticResource OverlayBrush}"
                                                FontFamily="Cascadia Code,Consolas" FontSize="12"/>
                                     <TextBlock Grid.Column="1" Text="{Binding Level}" 
+                                               Foreground="{Binding LevelBrush}"
                                                FontFamily="Cascadia Code,Consolas" FontSize="12" FontWeight="SemiBold"/>
                                     <TextBlock Grid.Column="2" Text="{Binding Category}" 
                                                Foreground="{StaticResource AccentBrush}"
@@ -493,6 +516,7 @@
             <Grid Margin="10,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
@@ -504,8 +528,20 @@
                                Foreground="{StaticResource OverlayBrush}"/>
                 </StackPanel>
                 
+                <!-- Level Counts -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <TextBlock x:Name="DebugCountText" Text="D:0" FontSize="10" FontFamily="Cascadia Code,Consolas"
+                               Foreground="{StaticResource OverlayBrush}" Margin="0,0,8,0" ToolTip="Debug entries"/>
+                    <TextBlock x:Name="InfoCountText" Text="I:0" FontSize="10" FontFamily="Cascadia Code,Consolas"
+                               Foreground="{StaticResource BlueBrush}" Margin="0,0,8,0" ToolTip="Info entries"/>
+                    <TextBlock x:Name="WarnCountText" Text="W:0" FontSize="10" FontFamily="Cascadia Code,Consolas"
+                               Foreground="{StaticResource YellowBrush}" Margin="0,0,8,0" ToolTip="Warning entries"/>
+                    <TextBlock x:Name="ErrorCountText" Text="E:0" FontSize="10" FontFamily="Cascadia Code,Consolas"
+                               Foreground="{StaticResource RedBrush}" ToolTip="Error entries"/>
+                </StackPanel>
+                
                 <!-- Auto-scroll Toggle -->
-                <CheckBox x:Name="AutoScrollCheckBox" Grid.Column="2"
+                <CheckBox x:Name="AutoScrollCheckBox" Grid.Column="3"
                           Content="Auto-scroll" IsChecked="True"
                           Style="{StaticResource ModernCheckBox}"
                           Foreground="{StaticResource OverlayBrush}"/>
