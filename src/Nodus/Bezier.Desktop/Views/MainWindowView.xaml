@@ -119,7 +119,7 @@
                                 <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource MantleBrush}"/>
                                 <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
