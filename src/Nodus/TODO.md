@@ -134,9 +134,9 @@ After completing each task set:
   - [x] Define color resources in `Themes/Dark.xaml`
   - [x] Define brush resources
   - [x] Define control styles
-- [ ] Create app icon (multiple sizes: 16, 32, 48, 256)
+- [x] Create app icon (multiple sizes: 16, 32, 48, 256)
 - [x] Implement basic title bar
-  - [ ] App icon and name
+  - [x] App icon and name
   - [x] Minimize button
   - [x] Maximize/Restore button
   - [x] Close button
