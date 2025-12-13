@@ -1,6 +1,9 @@
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
+using Bezier.Core.Models;
+using Bezier.Core.Services;
 
 namespace Bezier.Desktop.ViewModels;
 
@@ -10,6 +13,8 @@ namespace Bezier.Desktop.ViewModels;
 /// </summary>
 public partial class MainWindowViewModel : ObservableObject
 {
+    private readonly SvgParser _svgParser = new();
+
     #region Window Properties
     
     [ObservableProperty]
@@ -23,6 +28,12 @@ public partial class MainWindowViewModel : ObservableObject
     
     [ObservableProperty]
     private string _documentSize = "800 x 600";
+
+    [ObservableProperty]
+    private VectorDocument? _document;
+
+    [ObservableProperty]
+    private string? _currentFilePath;
     
     #endregion
     
@@ -62,13 +73,48 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void New()
     {
+        Document = new VectorDocument();
+        CurrentFilePath = null;
+        UpdateDocumentInfo();
         StatusText = "New document created";
     }
     
     [RelayCommand]
     private void Open()
     {
-        StatusText = "Open document...";
+        var dialog = new OpenFileDialog
+        {
+            Title = "Open SVG File",
+            Filter = "SVG Files (*.svg)|*.svg|All Files (*.*)|*.*",
+            DefaultExt = ".svg"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                Document = _svgParser.ParseFile(dialog.FileName);
+                CurrentFilePath = dialog.FileName;
+                UpdateDocumentInfo();
+                StatusText = $"Opened: {System.IO.Path.GetFileName(dialog.FileName)} ({Document.Elements.Count} elements)";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusText = "Error opening file";
+            }
+        }
+    }
+
+    private void UpdateDocumentInfo()
+    {
+        if (Document is not null)
+        {
+            DocumentSize = $"{Document.Width:0} x {Document.Height:0}";
+            Title = string.IsNullOrEmpty(CurrentFilePath) 
+                ? "Bezier - Untitled" 
+                : $"Bezier - {System.IO.Path.GetFileName(CurrentFilePath)}";
+        }
     }
     
     [RelayCommand]

@@ -129,6 +129,15 @@
         </Style>
     </ui:FluentWindow.Resources>
 
+    <ui:FluentWindow.InputBindings>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding NewCommand}"/>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding OpenCommand}"/>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}"/>
+        <KeyBinding Key="S" Modifiers="Ctrl+Shift" Command="{Binding SaveAsCommand}"/>
+        <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding UndoCommand}"/>
+        <KeyBinding Key="Y" Modifiers="Ctrl" Command="{Binding RedoCommand}"/>
+    </ui:FluentWindow.InputBindings>
+
     <Grid Background="{StaticResource MantleBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
