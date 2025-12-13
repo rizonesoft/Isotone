@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Bezier.Core.Interfaces;
 
 namespace Bezier.Core.Models;
 
@@ -33,6 +34,9 @@ public abstract class VectorElement : INotifyPropertyChanged
     private double _opacity = 1.0;
     private BlendMode _blendMode = BlendMode.Normal;
     private VectorElement? _parent;
+    private Transform _transform = Transform.Identity;
+    private IFill? _fill;
+    private Stroke? _stroke;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -100,6 +104,33 @@ public abstract class VectorElement : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Transformation matrix for this element.
+    /// </summary>
+    public Transform Transform
+    {
+        get => _transform;
+        set { _transform = value; OnPropertyChanged(nameof(Transform)); }
+    }
+
+    /// <summary>
+    /// Fill for this element (color, gradient, pattern, or null for no fill).
+    /// </summary>
+    public IFill? Fill
+    {
+        get => _fill;
+        set { _fill = value; OnPropertyChanged(nameof(Fill)); }
+    }
+
+    /// <summary>
+    /// Stroke for this element (null for no stroke).
+    /// </summary>
+    public Stroke? Stroke
+    {
+        get => _stroke;
+        set { _stroke = value; OnPropertyChanged(nameof(Stroke)); }
+    }
+
+    /// <summary>
     /// Creates a deep copy of this element.
     /// </summary>
     public abstract VectorElement Clone();
@@ -114,8 +145,33 @@ public abstract class VectorElement : INotifyPropertyChanged
     /// </summary>
     public abstract (double X, double Y, double Width, double Height) GetBoundingBox();
 
+    /// <summary>
+    /// Converts this element to an SVG string representation.
+    /// </summary>
+    public abstract string ToSvgString();
+
     protected void OnPropertyChanged(string propertyName)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    /// <summary>
+    /// Gets common SVG attributes (id, opacity, transform, etc.) as a string.
+    /// </summary>
+    protected string GetCommonSvgAttributes()
+    {
+        var attrs = new List<string>();
+
+        if (!string.IsNullOrEmpty(Name))
+            attrs.Add($"id=\"{Name}\"");
+
+        if (Opacity < 1.0)
+            attrs.Add($"opacity=\"{Opacity:G6}\"");
+
+        if (!Transform.IsIdentity)
+            attrs.Add($"transform=\"{Transform.ToSvgString()}\"");
+
+        return attrs.Count > 0 ? " " + string.Join(" ", attrs) : string.Empty;
+    }
 }
+

@@ -222,49 +222,49 @@ After completing each task set:
 ## Phase 1: Core Engine & Rendering
 
 ### 1.1 The Data Model (Bezier.Core)
-- [ ] Define `VectorDocument` (root object)
-  - [ ] Add `Width`, `Height`, `ViewBox` properties
+- [x] Define `VectorDocument` (root object)
+  - [x] Add `Width`, `Height`, `ViewBox` properties
   - [ ] Add `Layers` collection
-  - [ ] Add `Metadata` (title, author, license, description)
+  - [x] Add `Metadata` (title, author, license, description)
   - [ ] Add `Defs` collection (gradients, patterns, symbols)
-  - [ ] Add `IsDirty` property for unsaved changes
-  - [ ] Implement `INotifyPropertyChanged`
-- [ ] Define abstract `VectorElement` base class
-  - [ ] Add `Id` (GUID)
-  - [ ] Add `Name` (user-facing label)
-  - [ ] Add `IsVisible`, `IsLocked` properties
-  - [ ] Add `Opacity` property (0-1)
-  - [ ] Add `BlendMode` property (enum)
-  - [ ] Add `Transform` property
-  - [ ] Add `Parent` reference
-  - [ ] Add `Fill` property (IFill)
-  - [ ] Add `Stroke` property
-  - [ ] Implement `INotifyPropertyChanged`
-- [ ] Implement `SvgPath` (with `PathData` string)
+  - [x] Add `IsDirty` property for unsaved changes
+  - [x] Implement `INotifyPropertyChanged`
+- [x] Define abstract `VectorElement` base class
+  - [x] Add `Id` (GUID)
+  - [x] Add `Name` (user-facing label)
+  - [x] Add `IsVisible`, `IsLocked` properties
+  - [x] Add `Opacity` property (0-1)
+  - [x] Add `BlendMode` property (enum)
+  - [x] Add `Transform` property
+  - [x] Add `Parent` reference
+  - [x] Add `Fill` property (IFill)
+  - [x] Add `Stroke` property
+  - [x] Implement `INotifyPropertyChanged`
+- [x] Implement `SvgPath` (with `PathData` string)
   - [ ] Parse path data to segments
   - [ ] Get/set individual nodes
-- [ ] Implement `SvgRect` (x, y, width, height, rx, ry)
-- [ ] Implement `SvgCircle` (cx, cy, r)
-- [ ] Implement `SvgEllipse` (cx, cy, rx, ry)
-- [ ] Implement `SvgLine` (x1, y1, x2, y2)
-- [ ] Implement `SvgPolygon` / `SvgPolyline`
-- [ ] Implement `SvgText` (with font properties)
-  - [ ] FontFamily, FontSize, FontWeight, FontStyle
-  - [ ] TextAnchor, DominantBaseline
-- [ ] Implement `SvgImage` (embedded/linked raster)
-  - [ ] Base64 embedded data
-  - [ ] External href
-- [ ] Implement `SvgGroup` (container with children)
-  - [ ] Children collection
+- [x] Implement `SvgRect` (x, y, width, height, rx, ry)
+- [x] Implement `SvgCircle` (cx, cy, r)
+- [x] Implement `SvgEllipse` (cx, cy, rx, ry)
+- [x] Implement `SvgLine` (x1, y1, x2, y2)
+- [x] Implement `SvgPolygon` / `SvgPolyline`
+- [x] Implement `SvgText` (with font properties)
+  - [x] FontFamily, FontSize, FontWeight, FontStyle
+  - [x] TextAnchor, DominantBaseline
+- [x] Implement `SvgImage` (embedded/linked raster)
+  - [x] Base64 embedded data
+  - [x] External href
+- [x] Implement `SvgGroup` (container with children)
+  - [x] Children collection
   - [ ] Recursive transform
-- [ ] Implement `Transform` struct (Matrix 3x3: translate, rotate, scale, skew)
-  - [ ] Multiply method
-  - [ ] Invert method
-  - [ ] TransformPoint method
-- [ ] Add `HitTest(Point)` virtual methods to elements
-- [ ] Implement `BoundingBox` calculation with transform support
-- [ ] Implement `Clone()` method for deep copy
-- [ ] Implement `ToSvgString()` for each element
+- [x] Implement `Transform` struct (Matrix 3x3: translate, rotate, scale, skew)
+  - [x] Multiply method
+  - [x] Invert method
+  - [x] TransformPoint method
+- [x] Add `HitTest(Point)` virtual methods to elements
+- [x] Implement `BoundingBox` calculation with transform support
+- [x] Implement `Clone()` method for deep copy
+- [x] Implement `ToSvgString()` for each element
 
 ### 1.2 Fill & Stroke System
 - [ ] Define `IFill` interface

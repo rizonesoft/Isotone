@@ -57,26 +57,48 @@ public class SvgRect : VectorElement
     public override VectorElement Clone() => new SvgRect
     {
         Id = Guid.NewGuid(),
-        Name = this.Name,
-        X = this.X,
-        Y = this.Y,
-        Width = this.Width,
-        Height = this.Height,
-        Rx = this.Rx,
-        Ry = this.Ry,
-        IsVisible = this.IsVisible,
-        IsLocked = this.IsLocked,
-        Opacity = this.Opacity,
-        BlendMode = this.BlendMode
+        Name = Name,
+        X = X,
+        Y = Y,
+        Width = Width,
+        Height = Height,
+        Rx = Rx,
+        Ry = Ry,
+        IsVisible = IsVisible,
+        IsLocked = IsLocked,
+        Opacity = Opacity,
+        BlendMode = BlendMode,
+        Transform = Transform,
+        Fill = Fill?.Clone(),
+        Stroke = Stroke?.Clone()
     };
 
     public override bool HitTest(double x, double y)
     {
+        // TODO: Apply transform inverse for proper hit testing
         return x >= X && x <= X + Width && y >= Y && y <= Y + Height;
     }
 
     public override (double X, double Y, double Width, double Height) GetBoundingBox()
     {
+        // TODO: Apply transform for accurate bounding box
         return (X, Y, Width, Height);
     }
+
+    public override string ToSvgString()
+    {
+        var attrs = new List<string>
+        {
+            $"x=\"{X:G6}\"",
+            $"y=\"{Y:G6}\"",
+            $"width=\"{Width:G6}\"",
+            $"height=\"{Height:G6}\""
+        };
+
+        if (Rx > 0) attrs.Add($"rx=\"{Rx:G6}\"");
+        if (Ry > 0) attrs.Add($"ry=\"{Ry:G6}\"");
+
+        return $"<rect {string.Join(" ", attrs)}{GetCommonSvgAttributes()}/>";
+    }
 }
+
