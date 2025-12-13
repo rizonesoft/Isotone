@@ -805,24 +805,24 @@ After completing each task set:
 - [x] Dialog appear/disappear animations
 
 ### 5.3 Command Palette (Ctrl+K)
-- [ ] Create overlay UI for global command search
-  - [ ] Centered modal
-  - [ ] Search input with focus
-  - [ ] Results list
-  - [ ] Keyboard navigation
-- [ ] Index all available commands and tools
-  - [ ] Menu items
-  - [ ] Tools
-  - [ ] Recent files
-  - [ ] Settings
-- [ ] Implement "Fuzzy Search" logic
-  - [ ] Match anywhere in string
-  - [ ] Score by match quality
-  - [ ] Highlight matched characters
-- [ ] Add "Recent Commands" history
-- [ ] Show keyboard shortcuts inline
-- [ ] Quick file open (recent files)
-- [ ] Quick action suggestions
+- [x] Create overlay UI for global command search
+  - [x] Centered modal
+  - [x] Search input with focus
+  - [x] Results list
+  - [x] Keyboard navigation
+- [x] Index all available commands and tools
+  - [x] Menu items
+  - [x] Tools
+  - [x] Recent files
+  - [x] Settings
+- [x] Implement "Fuzzy Search" logic
+  - [x] Match anywhere in string
+  - [x] Score by match quality
+  - [x] Highlight matched characters
+- [x] Add "Recent Commands" history
+- [x] Show keyboard shortcuts inline
+- [x] Quick file open (recent files)
+- [x] Quick action suggestions
 
 ### 5.4 On-Canvas "HUD"
 - [ ] Implement contextual toolbar appearing near selection (Figma style)
