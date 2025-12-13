@@ -2,6 +2,7 @@ namespace Bezier.Desktop.Controls.Canvas;
 
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using Bezier.Core.Interfaces;
 using Bezier.Core.Models;
 using Bezier.Core.Services;
@@ -34,6 +35,27 @@ public class SkiaCanvas : SKElement
     private DateTime _zoomAnimationStartTime;
     private SKPoint _zoomCenter;
     private const double ZoomAnimationDurationMs = 150;
+
+    /// <summary>
+    /// Gets the DPI scale factor for converting WPF DIPs to device pixels.
+    /// </summary>
+    private double DpiScale
+    {
+        get
+        {
+            var source = PresentationSource.FromVisual(this);
+            return source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+        }
+    }
+
+    /// <summary>
+    /// Converts a WPF Point (in DIPs) to SkiaSharp device pixels.
+    /// </summary>
+    private SKPoint ToDevicePixels(Point dipPoint)
+    {
+        var dpi = DpiScale;
+        return new SKPoint((float)(dipPoint.X * dpi), (float)(dipPoint.Y * dpi));
+    }
 
     /// <summary>
     /// The vector document being rendered.
@@ -304,7 +326,8 @@ public class SkiaCanvas : SKElement
         base.OnMouseWheel(e);
         
         var position = e.GetPosition(this);
-        _zoomCenter = new SKPoint((float)position.X, (float)position.Y);
+        var devicePos = ToDevicePixels(position);
+        _zoomCenter = devicePos;
         
         // Calculate target zoom with smooth animation
         var zoomFactor = e.Delta > 0 ? 1.25 : 0.8;
@@ -361,6 +384,7 @@ public class SkiaCanvas : SKElement
         
         Focus();
         _lastMousePosition = e.GetPosition(this);
+        var devicePos = ToDevicePixels(_lastMousePosition);
         
         // Middle mouse button or space+left click for panning
         if (e.MiddleButton == MouseButtonState.Pressed || 
@@ -376,7 +400,7 @@ public class SkiaCanvas : SKElement
         // Forward to ToolManager for tool handling
         if (e.LeftButton == MouseButtonState.Pressed && ToolManager is not null)
         {
-            var docPos = _state.ScreenToDocument(new SKPoint((float)_lastMousePosition.X, (float)_lastMousePosition.Y));
+            var docPos = _state.ScreenToDocument(devicePos);
             var modifiers = GetKeyModifiers();
             if (ToolManager.OnMouseDown(new ToolPoint(docPos.X, docPos.Y), modifiers))
             {
@@ -391,7 +415,8 @@ public class SkiaCanvas : SKElement
         base.OnMouseMove(e);
         
         var position = e.GetPosition(this);
-        _currentCursorScreenPosition = new SKPoint((float)position.X, (float)position.Y);
+        var devicePos = ToDevicePixels(position);
+        _currentCursorScreenPosition = devicePos;
         
         // Report cursor position in document coordinates
         _currentCursorDocPosition = _state.ScreenToDocument(_currentCursorScreenPosition);
@@ -406,7 +431,8 @@ public class SkiaCanvas : SKElement
         if (_isPanning)
         {
             var delta = position - _lastMousePosition;
-            _state.Pan((float)delta.X, (float)delta.Y);
+            var dpi = DpiScale;
+            _state.Pan((float)(delta.X * dpi), (float)(delta.Y * dpi));
             _lastMousePosition = position;
             e.Handled = true;
         }
@@ -439,7 +465,8 @@ public class SkiaCanvas : SKElement
         if (ToolManager is not null)
         {
             var position = e.GetPosition(this);
-            var docPos = _state.ScreenToDocument(new SKPoint((float)position.X, (float)position.Y));
+            var devicePos = ToDevicePixels(position);
+            var docPos = _state.ScreenToDocument(devicePos);
             var modifiers = GetKeyModifiers();
             ToolManager.OnMouseUp(new ToolPoint(docPos.X, docPos.Y), modifiers);
             ReleaseMouseCapture();
