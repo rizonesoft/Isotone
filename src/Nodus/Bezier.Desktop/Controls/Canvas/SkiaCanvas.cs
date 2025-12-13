@@ -528,9 +528,10 @@ public class SkiaCanvas : SKElement
     {
         if (_document is null || ActualWidth <= 0 || ActualHeight <= 0) return;
         
-        var rulerOffset = ShowRulers ? 24f : 0f;
-        var availableWidth = (float)ActualWidth - rulerOffset;
-        var availableHeight = (float)ActualHeight - rulerOffset;
+        var dpi = DpiScale;
+        var rulerOffset = (ShowRulers ? 24f : 0f) * (float)dpi;
+        var availableWidth = (float)(ActualWidth * dpi) - rulerOffset;
+        var availableHeight = (float)(ActualHeight * dpi) - rulerOffset;
         
         var scaleX = availableWidth / (float)_document.Width;
         var scaleY = availableHeight / (float)_document.Height;
@@ -557,9 +558,12 @@ public class SkiaCanvas : SKElement
         
         if (_document is not null && ActualWidth > 0 && ActualHeight > 0)
         {
-            var rulerOffset = ShowRulers ? 24f : 0f;
-            var offsetX = rulerOffset + ((float)ActualWidth - rulerOffset - (float)_document.Width) / 2;
-            var offsetY = rulerOffset + ((float)ActualHeight - rulerOffset - (float)_document.Height) / 2;
+            var dpi = DpiScale;
+            var rulerOffset = (ShowRulers ? 24f : 0f) * (float)dpi;
+            var canvasWidth = (float)(ActualWidth * dpi);
+            var canvasHeight = (float)(ActualHeight * dpi);
+            var offsetX = rulerOffset + (canvasWidth - rulerOffset - (float)_document.Width) / 2;
+            var offsetY = rulerOffset + (canvasHeight - rulerOffset - (float)_document.Height) / 2;
             _state.SetPan(offsetX, offsetY);
         }
         
