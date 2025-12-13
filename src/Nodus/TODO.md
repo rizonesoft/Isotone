@@ -433,28 +433,28 @@ After completing each task set:
   - [x] Drag to zoom to area
 
 ### 2.3 Application Layout (AvalonDock)
-- [ ] Set up `DockingManager` in MainWindow with dark theme
-  - [ ] Configure AvalonDock theme
-  - [ ] Set default layout
-- [ ] Create `DocumentPane` (The Canvas)
+- [x] Set up `DockingManager` in MainWindow with dark theme
+  - [x] Configure AvalonDock theme
+  - [x] Set default layout
+- [x] Create `DocumentPane` (The Canvas)
   - [ ] Support multiple documents (tabs)
   - [ ] Tab header with filename and close button
   - [ ] Dirty indicator (asterisk)
   - [ ] "Close", "Close All", "Close Others" context menu
   - [ ] Drag tabs to reorder
   - [ ] Drag tab out to create new window
-- [ ] Create `AnchorablePane`s:
-  - [ ] Layers Panel (left)
-  - [ ] Properties Panel (right)
-  - [ ] Toolbox Panel (left, vertical icons)
+- [x] Create `AnchorablePane`s:
+  - [x] Layers Panel (right, with element list)
+  - [x] Properties Panel (right)
+  - [x] Toolbox Panel (left, vertical icons)
   - [ ] Code Editor Panel (bottom)
-  - [ ] History Panel (Undo/Redo list)
+  - [x] History Panel (Undo/Redo list)
   - [ ] Assets Panel (symbols, templates)
 - [ ] Implement Save/Load layout state feature
   - [ ] Save to JSON on exit
   - [ ] Load on startup
-- [ ] Implement "Reset Layout" command
-- [ ] Implement "Window" menu with panel toggles
+- [x] Implement "Reset Layout" command
+- [x] Implement "Window" menu with panel toggles
 
 ### 2.4 Selection Manager
 - [ ] Maintain `SelectedElements` observable collection

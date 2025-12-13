@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -15,6 +16,30 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly SvgImporter _svgImporter = new();
     private readonly SvgExporter _svgExporter = new();
+    private readonly HistoryManager _history = new();
+
+    public MainWindowViewModel()
+    {
+        _history.HistoryChanged += OnHistoryChanged;
+    }
+
+    private void OnHistoryChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        OnPropertyChanged(nameof(UndoDescription));
+        OnPropertyChanged(nameof(RedoDescription));
+        RefreshHistoryList();
+    }
+
+    private void RefreshHistoryList()
+    {
+        UndoHistory.Clear();
+        foreach (var desc in _history.GetUndoDescriptions())
+        {
+            UndoHistory.Add(desc);
+        }
+    }
 
     #region Window Properties
     
@@ -158,7 +183,40 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _showCodePanel = false;
     
     [ObservableProperty]
+    private bool _showHistoryPanel = true;
+    
+    [ObservableProperty]
     private bool _snapEnabled = true;
+
+    /// <summary>
+    /// Gets whether undo is available.
+    /// </summary>
+    public bool CanUndo => _history.CanUndo;
+
+    /// <summary>
+    /// Gets whether redo is available.
+    /// </summary>
+    public bool CanRedo => _history.CanRedo;
+
+    /// <summary>
+    /// Gets the description of the next undo action.
+    /// </summary>
+    public string UndoDescription => _history.NextUndoDescription ?? "Undo";
+
+    /// <summary>
+    /// Gets the description of the next redo action.
+    /// </summary>
+    public string RedoDescription => _history.NextRedoDescription ?? "Redo";
+
+    /// <summary>
+    /// Gets the history manager for external access.
+    /// </summary>
+    public HistoryManager History => _history;
+
+    /// <summary>
+    /// Observable collection of undo history descriptions.
+    /// </summary>
+    public ObservableCollection<string> UndoHistory { get; } = [];
     
     #endregion
     
@@ -314,16 +372,31 @@ public partial class MainWindowViewModel : ObservableObject
     
     #region Edit Commands
     
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanUndo))]
     private void Undo()
     {
-        StatusText = "Undo";
+        if (_history.Undo())
+        {
+            StatusText = $"Undo: {_history.NextRedoDescription}";
+            UpdateDocumentInfo();
+        }
     }
     
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRedo))]
     private void Redo()
     {
-        StatusText = "Redo";
+        if (_history.Redo())
+        {
+            StatusText = $"Redo: {_history.NextUndoDescription}";
+            UpdateDocumentInfo();
+        }
+    }
+
+    [RelayCommand]
+    private void ClearHistory()
+    {
+        _history.Clear();
+        StatusText = "History cleared";
     }
     
     [RelayCommand]
@@ -415,6 +488,17 @@ public partial class MainWindowViewModel : ObservableObject
     {
         ZoomLevel = 100;
         StatusText = "Actual size (100%)";
+    }
+
+    [RelayCommand]
+    private void ResetLayout()
+    {
+        ShowToolsPanel = true;
+        ShowPropertiesPanel = true;
+        ShowLayersPanel = true;
+        ShowHistoryPanel = true;
+        ShowCodePanel = false;
+        StatusText = "Layout reset to default";
     }
     
     #endregion

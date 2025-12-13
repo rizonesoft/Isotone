@@ -252,13 +252,17 @@
                             <MenuItem Header="Show G_uides" IsCheckable="True" IsChecked="{Binding ShowGuides}"/>
                             <Separator/>
                             <MenuItem Header="_Outline Mode" IsCheckable="True" IsChecked="{Binding OutlineMode}"/>
+                        </MenuItem>
+                        
+                        <!-- Window Menu -->
+                        <MenuItem Header="_Window" Foreground="{StaticResource TextBrush}">
+                            <MenuItem Header="_Tools Panel" IsCheckable="True" IsChecked="{Binding ShowToolsPanel}"/>
+                            <MenuItem Header="_Properties Panel" IsCheckable="True" IsChecked="{Binding ShowPropertiesPanel}"/>
+                            <MenuItem Header="_Layers Panel" IsCheckable="True" IsChecked="{Binding ShowLayersPanel}"/>
+                            <MenuItem Header="_History Panel" IsCheckable="True" IsChecked="{Binding ShowHistoryPanel}"/>
+                            <MenuItem Header="_Code Editor" IsCheckable="True" IsChecked="{Binding ShowCodePanel}"/>
                             <Separator/>
-                            <MenuItem Header="_Panels">
-                                <MenuItem Header="_Tools" IsCheckable="True" IsChecked="{Binding ShowToolsPanel}"/>
-                                <MenuItem Header="_Properties" IsCheckable="True" IsChecked="{Binding ShowPropertiesPanel}"/>
-                                <MenuItem Header="_Layers" IsCheckable="True" IsChecked="{Binding ShowLayersPanel}"/>
-                                <MenuItem Header="_Code Editor" IsCheckable="True" IsChecked="{Binding ShowCodePanel}"/>
-                            </MenuItem>
+                            <MenuItem Header="_Reset Layout" Command="{Binding ResetLayoutCommand}"/>
                         </MenuItem>
                         
                         <!-- Object Menu -->
@@ -404,7 +408,8 @@
             
             <!-- Left Toolbox -->
             <Border Grid.Column="0" Background="{StaticResource CrustBrush}" 
-                    BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,1,0">
+                    BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,1,0"
+                    Visibility="{Binding ShowToolsPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel Margin="4,8">
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Select (V)">
                         <fi:FluentIcon Icon="Cursor" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
@@ -447,7 +452,8 @@
             
             <!-- Right: Properties Panel -->
             <Border Grid.Column="2" Background="{StaticResource CrustBrush}"
-                    BorderBrush="{StaticResource Surface0Brush}" BorderThickness="1,0,0,0">
+                    BorderBrush="{StaticResource Surface0Brush}" BorderThickness="1,0,0,0"
+                    Visibility="{Binding ShowPropertiesPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <!-- Properties Header -->
@@ -552,21 +558,83 @@
                         </StackPanel>
                         
                         <!-- Layers Header -->
-                        <Border Background="{StaticResource MantleBrush}" Padding="12,10" Margin="0,16,0,0">
-                            <TextBlock Text="LAYERS" 
-                                       FontSize="11" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource SubtextBrush}"/>
+                        <Border Background="{StaticResource MantleBrush}" Padding="12,10" Margin="0,16,0,0"
+                                Visibility="{Binding ShowLayersPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <TextBlock Text="LAYERS" FontSize="11" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource SubtextBrush}"/>
+                                <TextBlock Text="{Binding ElementCount}" FontSize="10" 
+                                           Foreground="{StaticResource SubtextBrush}"
+                                           HorizontalAlignment="Right"/>
+                            </Grid>
                         </Border>
                         
-                        <StackPanel Margin="8">
-                            <!-- Layer items -->
-                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
-                                    Padding="8,6" Margin="0,2">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="👁" FontSize="12" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Layer 1" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                                </StackPanel>
-                            </Border>
+                        <StackPanel Margin="8" Visibility="{Binding ShowLayersPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <!-- Layer items bound to document elements -->
+                            <ItemsControl ItemsSource="{Binding Document.Elements}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                                Padding="8,6" Margin="0,2" Cursor="Hand">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <fi:FluentIcon Icon="Eye" IconSize="Size16" FontSize="12" 
+                                                               Foreground="{StaticResource SubtextBrush}" Margin="0,0,8,0"
+                                                               Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                <TextBlock Grid.Column="1" 
+                                                           Text="{Binding Name, TargetNullValue='Element'}" 
+                                                           Foreground="{StaticResource TextBrush}" FontSize="12"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="No elements" Foreground="{StaticResource SubtextBrush}" 
+                                       FontSize="11" FontStyle="Italic" Margin="4,8"
+                                       Visibility="{Binding Document.Elements.Count, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}"/>
+                        </StackPanel>
+                        
+                        <!-- History Header -->
+                        <Border Background="{StaticResource MantleBrush}" Padding="12,10" Margin="0,16,0,0"
+                                Visibility="{Binding ShowHistoryPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <TextBlock Text="HISTORY" FontSize="11" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource SubtextBrush}"/>
+                                <Button Style="{StaticResource ToolButtonStyle}" 
+                                        Command="{Binding ClearHistoryCommand}"
+                                        ToolTip="Clear History"
+                                        HorizontalAlignment="Right" Width="20" Height="20" Margin="0,-4">
+                                    <fi:FluentIcon Icon="Delete" IconSize="Size12" FontSize="10" 
+                                                   Foreground="{StaticResource SubtextBrush}"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        
+                        <StackPanel Margin="8" Visibility="{Binding ShowHistoryPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <!-- History items -->
+                            <ItemsControl ItemsSource="{Binding UndoHistory}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                                Padding="8,6" Margin="0,2">
+                                            <StackPanel Orientation="Horizontal">
+                                                <fi:FluentIcon Icon="History" IconSize="Size16" FontSize="12" 
+                                                               Foreground="{StaticResource SubtextBrush}" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding}" 
+                                                           Foreground="{StaticResource TextBrush}" FontSize="12"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="No history" Foreground="{StaticResource SubtextBrush}" 
+                                       FontSize="11" FontStyle="Italic" Margin="4,8"
+                                       Visibility="{Binding CanUndo, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}"/>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
