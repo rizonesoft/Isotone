@@ -1,0 +1,40 @@
+# Visual Studio / .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+.vs/
+
+# Centralized build output
+artifacts/
+
+# Build outputs
+*.dll
+*.exe
+*.pdb
+
+# NuGet
+packages/
+*.nupkg
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Test results
+TestResults/
+*.trx
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
