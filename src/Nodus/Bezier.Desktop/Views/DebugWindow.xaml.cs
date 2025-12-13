@@ -40,17 +40,6 @@ public partial class DebugWindow : FluentWindow
         
         // Subscribe to debug logger
         DebugLogger.Instance.LogAdded += OnLogAdded;
-        
-        // Load existing logs
-        foreach (var entry in DebugLogger.Instance.Entries)
-        {
-            var vm = new LogEntryViewModel(entry);
-            _logEntries.Add(vm);
-            if (PassesFilter(vm))
-                _filteredEntries.Add(vm);
-        }
-        
-        UpdateStatus();
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -77,6 +66,16 @@ public partial class DebugWindow : FluentWindow
             _isInitialized = true;
         }
         
+        // Load existing logs (must be done after UI is initialized)
+        foreach (var entry in DebugLogger.Instance.Entries)
+        {
+            var vm = new LogEntryViewModel(entry);
+            _logEntries.Add(vm);
+            if (PassesFilter(vm))
+                _filteredEntries.Add(vm);
+        }
+        
+        UpdateStatus();
         DebugLogger.Instance.Info("DebugWindow", "Developer Tools opened");
     }
 
