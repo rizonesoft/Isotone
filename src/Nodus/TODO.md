@@ -626,29 +626,29 @@ After completing each task set:
 ## Phase 4: Professional Features
 
 ### 4.1 Layers & Groups
-- [ ] Implement `LayersPanel` UI (Tree view) with thumbnails
-  - [ ] Layer row with thumbnail, name, visibility, lock
-  - [ ] Expand/collapse groups
-  - [ ] Selection highlight
-  - [ ] Active layer indicator
-- [ ] Drag-and-drop reordering
-  - [ ] Drag indicator
-  - [ ] Drop target highlight
-  - [ ] Into group nesting
-- [ ] Visibility (Eye icon) and Lock toggles
-  - [ ] Click to toggle
-  - [ ] Alt+Click to solo
-- [ ] Opacity slider per layer
-- [ ] Blend mode dropdown per layer
-- [ ] Group/Ungroup commands (Ctrl+G, Ctrl+Shift+G)
-- [ ] Isolation Mode (Double click group to edit only that group)
-  - [ ] Breadcrumb navigation
-  - [ ] Dimmed elements outside group
+- [x] Implement `LayersPanel` UI (Tree view) with thumbnails
+  - [x] Layer row with thumbnail, name, visibility, lock
+  - [x] Expand/collapse groups
+  - [x] Selection highlight
+  - [x] Active layer indicator
+- [x] Drag-and-drop reordering
+  - [x] Drag indicator
+  - [x] Drop target highlight
+  - [x] Into group nesting
+- [x] Visibility (Eye icon) and Lock toggles
+  - [x] Click to toggle
+  - [x] Alt+Click to solo
+- [x] Opacity slider per layer
+- [x] Blend mode dropdown per layer
+- [x] Group/Ungroup commands (Ctrl+G, Ctrl+Shift+G)
+- [x] Isolation Mode (Double click group to edit only that group)
+  - [x] Breadcrumb navigation
+  - [x] Dimmed elements outside group
 - [ ] Layer search/filter
-- [ ] Rename layer (double-click or F2)
-- [ ] Duplicate layer
-- [ ] Delete layer with confirmation
-- [ ] Merge layers
+- [x] Rename layer (double-click or F2)
+- [x] Duplicate layer
+- [x] Delete layer with confirmation
+- [x] Merge layers
 
 ### 4.2 Property Inspector
 - [ ] Create `PropertiesPanel` View
