@@ -5,6 +5,7 @@
         xmlns:fi="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
         xmlns:avalondock="https://github.com/Dirkster99/AvalonDock"
         xmlns:avalontheme="clr-namespace:AvalonDock.Themes.VS2013;assembly=AvalonDock.Themes.VS2013"
+        xmlns:canvas="clr-namespace:Bezier.Desktop.Controls.Canvas"
         Title="Bezier" 
         Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
@@ -436,54 +437,13 @@
             </Border>
             
             <!-- Center: Canvas Area -->
-            <Border Grid.Column="1" Background="{StaticResource BaseBrush}">
-                <!-- Checkerboard pattern for transparency -->
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background">
-                            <Setter.Value>
-                                <DrawingBrush TileMode="Tile" Viewport="0,0,20,20" ViewportUnits="Absolute">
-                                    <DrawingBrush.Drawing>
-                                        <DrawingGroup>
-                                            <GeometryDrawing Brush="#1E1E2E">
-                                                <GeometryDrawing.Geometry>
-                                                    <RectangleGeometry Rect="0,0,20,20"/>
-                                                </GeometryDrawing.Geometry>
-                                            </GeometryDrawing>
-                                            <GeometryDrawing Brush="#181825">
-                                                <GeometryDrawing.Geometry>
-                                                    <GeometryGroup>
-                                                        <RectangleGeometry Rect="0,0,10,10"/>
-                                                        <RectangleGeometry Rect="10,10,10,10"/>
-                                                    </GeometryGroup>
-                                                </GeometryDrawing.Geometry>
-                                            </GeometryDrawing>
-                                        </DrawingGroup>
-                                    </DrawingBrush.Drawing>
-                                </DrawingBrush>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Border.Style>
-                
-                <Grid>
-                    <!-- Canvas placeholder -->
-                    <Border Background="{StaticResource BaseBrush}" 
-                            Width="800" Height="600"
-                            CornerRadius="2"
-                            HorizontalAlignment="Center" 
-                            VerticalAlignment="Center">
-                        <Border.Effect>
-                            <DropShadowEffect Color="Black" BlurRadius="40" ShadowDepth="0" Opacity="0.5"/>
-                        </Border.Effect>
-                        <TextBlock Text="Canvas" 
-                                   Foreground="{StaticResource SubtextBrush}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="24" FontWeight="Light"/>
-                    </Border>
-                </Grid>
-            </Border>
+            <canvas:SkiaCanvas x:Name="MainCanvas" Grid.Column="1"
+                               Document="{Binding Document}"
+                               ShowGrid="{Binding ShowGrid}"
+                               ShowRulers="{Binding ShowRulers}"
+                               OutlineMode="{Binding OutlineMode}"
+                               CursorPositionChanged="MainCanvas_CursorPositionChanged"
+                               ZoomChanged="MainCanvas_ZoomChanged"/>
             
             <!-- Right: Properties Panel -->
             <Border Grid.Column="2" Background="{StaticResource CrustBrush}"
