@@ -163,7 +163,7 @@
             
             <!-- Tab Strip -->
             <Border Grid.Row="0" Background="{StaticResource MantleBrush}">
-                <StackPanel x:Name="TabStrip" Orientation="Horizontal" Margin="8,0">
+                <StackPanel x:Name="TabStrip" Orientation="Horizontal" Margin="8,0" VerticalAlignment="Stretch">
                     <RadioButton x:Name="ConsoleTabBtn" Content="Console" IsChecked="True"
                                  GroupName="Tabs" Checked="Tab_Checked" Tag="Console">
                         <RadioButton.Style>
@@ -171,12 +171,13 @@
                                 <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
                                 <Setter Property="FontSize" Value="11"/>
                                 <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="VerticalAlignment" Value="Stretch"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="RadioButton">
-                                            <Border x:Name="border" Padding="12,8" Background="Transparent"
+                                            <Border x:Name="border" Padding="12,0" Background="Transparent"
                                                     BorderThickness="0,0,0,2" BorderBrush="Transparent">
-                                                <ContentPresenter VerticalAlignment="Center"/>
+                                                <ContentPresenter VerticalAlignment="Center" Margin="0,0,0,2"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsChecked" Value="True">
@@ -200,12 +201,13 @@
                                 <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
                                 <Setter Property="FontSize" Value="11"/>
                                 <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="VerticalAlignment" Value="Stretch"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="RadioButton">
-                                            <Border x:Name="border" Padding="12,8" Background="Transparent"
+                                            <Border x:Name="border" Padding="12,0" Background="Transparent"
                                                     BorderThickness="0,0,0,2" BorderBrush="Transparent">
-                                                <ContentPresenter VerticalAlignment="Center"/>
+                                                <ContentPresenter VerticalAlignment="Center" Margin="0,0,0,2"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsChecked" Value="True">
@@ -229,12 +231,13 @@
                                 <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
                                 <Setter Property="FontSize" Value="11"/>
                                 <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="VerticalAlignment" Value="Stretch"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="RadioButton">
-                                            <Border x:Name="border" Padding="12,8" Background="Transparent"
+                                            <Border x:Name="border" Padding="12,0" Background="Transparent"
                                                     BorderThickness="0,0,0,2" BorderBrush="Transparent">
-                                                <ContentPresenter VerticalAlignment="Center"/>
+                                                <ContentPresenter VerticalAlignment="Center" Margin="0,0,0,2"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsChecked" Value="True">
@@ -258,12 +261,13 @@
                                 <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
                                 <Setter Property="FontSize" Value="11"/>
                                 <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="VerticalAlignment" Value="Stretch"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="RadioButton">
-                                            <Border x:Name="border" Padding="12,8" Background="Transparent"
+                                            <Border x:Name="border" Padding="12,0" Background="Transparent"
                                                     BorderThickness="0,0,0,2" BorderBrush="Transparent">
-                                                <ContentPresenter VerticalAlignment="Center"/>
+                                                <ContentPresenter VerticalAlignment="Center" Margin="0,0,0,2"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsChecked" Value="True">
