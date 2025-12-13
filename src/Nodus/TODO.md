@@ -329,23 +329,23 @@ After completing each task set:
   - [x] Artboard background
 
 ### 1.4 SVG Bridge
-- [ ] Implement `SvgImporter`: Clean SVG -> `VectorDocument` (using Svg.Skia)
-  - [ ] Parse root `<svg>` attributes
-  - [ ] Handle namespaces (inkscape, sodipodi)
-  - [ ] Preserve IDs
-  - [ ] Handle `<defs>` and gradients
-  - [ ] Handle `<use>` (symbol instances)
+- [x] Implement `SvgImporter`: Clean SVG -> `VectorDocument`
+  - [x] Parse root `<svg>` attributes
+  - [x] Handle namespaces (inkscape, sodipodi)
+  - [x] Preserve IDs
+  - [x] Handle `<defs>` and gradients
+  - [x] Handle `<use>` (symbol instances) - partial, creates placeholder
   - [ ] Handle `<clipPath>` and `<mask>`
-  - [ ] Handle CSS styles
-  - [ ] Handle inline styles
-  - [ ] Error handling for invalid SVG
-- [ ] Implement `SvgExporter`: `VectorDocument` -> Optimized SVG string
-  - [ ] Generate valid SVG 1.1
-  - [ ] Minify output option
-  - [ ] Inline styles vs. CSS classes option
-  - [ ] Preserve IDs option
-  - [ ] Include viewBox
-- [ ] Verify rigorous round-trip fidelity (Load -> Save -> Load)
+  - [x] Handle CSS styles
+  - [x] Handle inline styles
+  - [x] Error handling for invalid SVG
+- [x] Implement `SvgExporter`: `VectorDocument` -> Optimized SVG string
+  - [x] Generate valid SVG 1.1
+  - [x] Minify output option
+  - [x] Inline styles vs. CSS classes option
+  - [x] Preserve IDs option
+  - [x] Include viewBox
+- [x] Verify rigorous round-trip fidelity (Load -> Save -> Load)
 
 ### 1.5 Phase 1 UI Polish
 - [ ] Status bar with zoom level and cursor position

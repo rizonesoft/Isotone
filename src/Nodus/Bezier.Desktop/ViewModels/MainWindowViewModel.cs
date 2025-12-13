@@ -13,7 +13,8 @@ namespace Bezier.Desktop.ViewModels;
 /// </summary>
 public partial class MainWindowViewModel : ObservableObject
 {
-    private readonly SvgParser _svgParser = new();
+    private readonly SvgImporter _svgImporter = new();
+    private readonly SvgExporter _svgExporter = new();
 
     #region Window Properties
     
@@ -93,7 +94,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             try
             {
-                Document = _svgParser.ParseFile(dialog.FileName);
+                Document = _svgImporter.ParseFile(dialog.FileName);
                 CurrentFilePath = dialog.FileName;
                 UpdateDocumentInfo();
                 StatusText = $"Opened: {System.IO.Path.GetFileName(dialog.FileName)} ({Document.Elements.Count} elements)";
