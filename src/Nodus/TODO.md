@@ -2,7 +2,19 @@
 
 > **Vision**: A production-ready SVG editor that rivals Inkscape, Figma, Illustrator, and CorelDRAW.
 
-## 🤖 Prompt Template
+## 🔧 Quick Fix Prompt
+```
+Bezier SVG Editor - Quick Change Request:
+[Describe the issue, change, or small feature request here]
+
+Project: r:\GitHub\Bezier
+Standards: STANDARDS.md (.NET 10 / C# 14)
+Structure: Core (logic) | Desktop (WPF/UI) | Tests
+
+After fix: Build → Test → Commit → Push
+```
+
+## 🤖 Feature Development Prompt
 ```
 Continue developing Bezier SVG Editor. Focus on: [PHASE NUMBER]
 Reference this file for context and mark completed items with [x].
