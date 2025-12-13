@@ -57,50 +57,47 @@ public partial class App : Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         e.Handled = true;
-        ShowExceptionDialog(e.Exception, "UI Thread Exception");
+        LogException(e.Exception, "UI Thread Exception");
+        
+        // Show exception window and let user decide to continue or exit
+        ExceptionWindow.Show(e.Exception, "UI Thread Exception", canContinue: true);
     }
 
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         if (e.ExceptionObject is Exception ex)
         {
-            ShowExceptionDialog(ex, "Unhandled Exception");
+            LogException(ex, "Unhandled Exception");
+            
+            // Cannot continue from AppDomain unhandled exceptions
+            ExceptionWindow.Show(ex, "Unhandled Exception (Fatal)", canContinue: false);
         }
     }
 
     private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         e.SetObserved();
-        ShowExceptionDialog(e.Exception, "Task Exception");
+        LogException(e.Exception, "Task Exception");
+        
+        // Show exception window
+        ExceptionWindow.Show(e.Exception, "Async Task Exception", canContinue: true);
     }
 
-    private static void ShowExceptionDialog(Exception ex, string title)
+    private static void LogException(Exception ex, string title)
     {
-        var message = $"""
-            {title}
-
-            Type: {ex.GetType().Name}
-            Message: {ex.Message}
-
-            Stack Trace:
-            {ex.StackTrace}
-
-            Inner Exception:
-            {ex.InnerException?.Message ?? "None"}
-            """;
-
-        // Log to debug logger if available
         try
         {
             Bezier.Core.Services.DebugLogger.Instance.Error("App", $"{title}: {ex.Message}", ex);
         }
         catch { }
+    }
 
-        // Show dialog
-        MessageBox.Show(
-            message,
-            $"Bezier - {title}",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+    /// <summary>
+    /// Shows an exception to the user. Can be called from anywhere in the app for handled exceptions.
+    /// </summary>
+    public static void ShowException(Exception ex, string title = "Exception")
+    {
+        LogException(ex, title);
+        ExceptionWindow.Show(ex, title, canContinue: true);
     }
 }

@@ -1211,15 +1211,17 @@ After completing each task set:
 - [ ] Undo/Redo stack size
 
 ### 12.6 Crash Detection & Error Handling
-- [ ] Global unhandled exception handler (App.xaml.cs)
-  - [ ] Catch DispatcherUnhandledException
-  - [ ] Catch AppDomain.UnhandledException
-  - [ ] Catch TaskScheduler.UnobservedTaskException
-- [ ] Error dialog window
-  - [ ] Show exception type and message
-  - [ ] Show stack trace (expandable)
-  - [ ] Copy to clipboard button
-  - [ ] Option to continue or exit
+- [x] Global unhandled exception handler (App.xaml.cs)
+  - [x] Catch DispatcherUnhandledException
+  - [x] Catch AppDomain.UnhandledException
+  - [x] Catch TaskScheduler.UnobservedTaskException
+- [x] Exception Window (not MessageBox)
+  - [x] Show exception type and message
+  - [x] Show stack trace (expandable)
+  - [x] Copy full exception to clipboard button
+  - [x] Option to continue or exit
+  - [x] Distinguish handled vs unhandled exceptions
+  - [x] Show inner exception details
 - [ ] Crash report logging
   - [ ] Write to crash log file
   - [ ] Include system info (OS, .NET version)
