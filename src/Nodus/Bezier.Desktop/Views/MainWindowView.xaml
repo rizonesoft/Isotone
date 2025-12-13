@@ -131,6 +131,114 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        
+        <!-- Active Tool Button Style (RadioButton as tool selector) -->
+        <Style x:Key="ActiveToolButtonStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource SubtextBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="GroupName" Value="Tools"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="5000"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="6"
+                                BorderThickness="2"
+                                BorderBrush="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface1Brush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsChecked" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface1Brush}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Collapsible Panel Header Style -->
+        <Style x:Key="CollapsibleHeaderStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="{StaticResource MantleBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource SubtextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <fi:FluentIcon x:Name="chevron" Icon="ChevronDown" IconSize="Size12" FontSize="10" 
+                                               Foreground="{StaticResource SubtextBrush}" Margin="0,0,8,0"/>
+                                <ContentPresenter Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <ContentPresenter Grid.Column="2" Content="{TemplateBinding Tag}" 
+                                                  HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="chevron" Property="Icon" Value="ChevronRight"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Enhanced Tooltip Style -->
+        <Style x:Key="ToolTooltipStyle" TargetType="ToolTip">
+            <Setter Property="Background" Value="{StaticResource Surface0Brush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Surface1Brush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="2" Opacity="0.3"/>
+                            </Border.Effect>
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </ui:FluentWindow.Resources>
 
     <ui:FluentWindow.InputBindings>
@@ -411,33 +519,122 @@
                     BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,1,0"
                     Visibility="{Binding ShowToolsPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel Margin="4,8">
-                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Select (V)">
-                        <fi:FluentIcon Icon="Cursor" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
-                    </Button>
-                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Pen Tool (P)">
-                        <fi:FluentIcon Icon="Pen" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
-                    </Button>
-                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Rectangle (R)">
-                        <fi:FluentIcon Icon="Square" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
-                    </Button>
-                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Ellipse (E)">
-                        <fi:FluentIcon Icon="Circle" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
-                    </Button>
-                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Line (L)">
-                        <fi:FluentIcon Icon="LineHorizontal1" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
-                    </Button>
-                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Text (T)">
-                        <fi:FluentIcon Icon="TextT" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
-                    </Button>
+                    <!-- Selection Tools -->
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsSelectToolActive}"
+                                 Command="{Binding SetToolCommand}" CommandParameter="Select">
+                        <RadioButton.ToolTip>
+                            <ToolTip Style="{StaticResource ToolTooltipStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Select Tool" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="V" Foreground="{StaticResource AccentBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Click to select, drag to move" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                        <fi:FluentIcon Icon="Cursor" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
+                    </RadioButton>
+                    
+                    <!-- Drawing Tools -->
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsPenToolActive}"
+                                 Command="{Binding SetToolCommand}" CommandParameter="Pen">
+                        <RadioButton.ToolTip>
+                            <ToolTip Style="{StaticResource ToolTooltipStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Pen Tool" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="P" Foreground="{StaticResource AccentBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Draw bezier curves and paths" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                        <fi:FluentIcon Icon="Pen" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
+                    </RadioButton>
+                    
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsRectangleToolActive}"
+                                 Command="{Binding SetToolCommand}" CommandParameter="Rectangle">
+                        <RadioButton.ToolTip>
+                            <ToolTip Style="{StaticResource ToolTooltipStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Rectangle Tool" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="R" Foreground="{StaticResource AccentBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Draw rectangles and squares" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                        <fi:FluentIcon Icon="Square" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
+                    </RadioButton>
+                    
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsEllipseToolActive}"
+                                 Command="{Binding SetToolCommand}" CommandParameter="Ellipse">
+                        <RadioButton.ToolTip>
+                            <ToolTip Style="{StaticResource ToolTooltipStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Ellipse Tool" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="E" Foreground="{StaticResource AccentBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Draw ellipses and circles" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                        <fi:FluentIcon Icon="Circle" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
+                    </RadioButton>
+                    
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsLineToolActive}"
+                                 Command="{Binding SetToolCommand}" CommandParameter="Line">
+                        <RadioButton.ToolTip>
+                            <ToolTip Style="{StaticResource ToolTooltipStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Line Tool" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="L" Foreground="{StaticResource AccentBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Draw straight lines" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                        <fi:FluentIcon Icon="LineHorizontal1" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
+                    </RadioButton>
+                    
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsTextToolActive}"
+                                 Command="{Binding SetToolCommand}" CommandParameter="Text">
+                        <RadioButton.ToolTip>
+                            <ToolTip Style="{StaticResource ToolTooltipStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Text Tool" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="T" Foreground="{StaticResource AccentBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Add and edit text" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                        <fi:FluentIcon Icon="TextT" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
+                    </RadioButton>
                     
                     <Separator Background="{StaticResource Surface0Brush}" Margin="8,12"/>
                     
-                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Zoom (Z)">
-                        <fi:FluentIcon Icon="ZoomIn" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
-                    </Button>
-                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Hand (H)">
-                        <fi:FluentIcon Icon="HandLeft" IconSize="Size24" FontSize="20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
-                    </Button>
+                    <!-- Navigation Tools -->
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsZoomToolActive}"
+                                 Command="{Binding SetToolCommand}" CommandParameter="Zoom">
+                        <RadioButton.ToolTip>
+                            <ToolTip Style="{StaticResource ToolTooltipStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Zoom Tool" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="Z" Foreground="{StaticResource AccentBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Click to zoom in, Alt+click to zoom out" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                        <fi:FluentIcon Icon="ZoomIn" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
+                    </RadioButton>
+                    
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsPanToolActive}"
+                                 Command="{Binding SetToolCommand}" CommandParameter="Pan">
+                        <RadioButton.ToolTip>
+                            <ToolTip Style="{StaticResource ToolTooltipStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Pan Tool" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="H" Foreground="{StaticResource AccentBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Drag to pan the canvas" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                        <fi:FluentIcon Icon="HandLeft" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
+                    </RadioButton>
                 </StackPanel>
             </Border>
             

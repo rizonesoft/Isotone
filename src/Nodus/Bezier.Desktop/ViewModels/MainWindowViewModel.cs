@@ -188,6 +188,45 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _snapEnabled = true;
 
+    #endregion
+
+    #region Tool State Properties
+
+    [ObservableProperty]
+    private string _activeTool = "Select";
+
+    public bool IsSelectToolActive => ActiveTool == "Select";
+    public bool IsPenToolActive => ActiveTool == "Pen";
+    public bool IsRectangleToolActive => ActiveTool == "Rectangle";
+    public bool IsEllipseToolActive => ActiveTool == "Ellipse";
+    public bool IsLineToolActive => ActiveTool == "Line";
+    public bool IsTextToolActive => ActiveTool == "Text";
+    public bool IsZoomToolActive => ActiveTool == "Zoom";
+    public bool IsPanToolActive => ActiveTool == "Pan";
+
+    partial void OnActiveToolChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsSelectToolActive));
+        OnPropertyChanged(nameof(IsPenToolActive));
+        OnPropertyChanged(nameof(IsRectangleToolActive));
+        OnPropertyChanged(nameof(IsEllipseToolActive));
+        OnPropertyChanged(nameof(IsLineToolActive));
+        OnPropertyChanged(nameof(IsTextToolActive));
+        OnPropertyChanged(nameof(IsZoomToolActive));
+        OnPropertyChanged(nameof(IsPanToolActive));
+        StatusText = $"Tool: {value}";
+    }
+
+    [RelayCommand]
+    private void SetTool(string toolName)
+    {
+        ActiveTool = toolName;
+    }
+
+    #endregion
+
+    #region Undo/Redo Properties
+
     /// <summary>
     /// Gets whether undo is available.
     /// </summary>

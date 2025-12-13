@@ -465,13 +465,13 @@ After completing each task set:
 - [x] Selection handles rendering (via SelectTool)
 
 ### 2.5 Phase 2 UI Polish
-- [ ] Toolbox icons with hover tooltips
-  - [ ] 24x24 icons
-  - [ ] Active tool highlight
-  - [ ] Tooltip with name and shortcut
-- [ ] Panel headers with collapse/expand animation
+- [x] Toolbox icons with hover tooltips
+  - [x] 24x24 icons
+  - [x] Active tool highlight (orange border when selected)
+  - [x] Tooltip with name and shortcut
+- [x] Panel headers with collapse/expand animation
 - [ ] Tab close button with hover effect
-- [ ] Keyboard shortcuts visible in menus
+- [x] Keyboard shortcuts visible in menus
 - [ ] Context menus with icons
 - [ ] Drag handle visual for dockable panels
 
