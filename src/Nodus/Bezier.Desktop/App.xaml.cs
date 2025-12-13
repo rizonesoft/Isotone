@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Bezier.Desktop.Views;
 
 namespace Bezier.Desktop;
 
@@ -17,14 +18,27 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Show splash screen on a separate thread
+        SplashWindow.ShowOnSeparateThread();
+        SplashWindow.SetStatusText("Initializing services...");
+
         // Configure services
         var services = new ServiceCollection();
         services.AddBezierServices();
         Services = services.BuildServiceProvider();
 
+        SplashWindow.SetStatusText("Loading editor...");
+
         // Create and show main window
-        var mainWindow = new Views.MainWindowView();
+        var mainWindow = new MainWindowView();
         mainWindow.DataContext = Services.GetRequiredService<ViewModels.MainWindowViewModel>();
+        
+        // Close splash when main window is ready
+        mainWindow.Loaded += (_, _) =>
+        {
+            SplashWindow.CloseAndDispose();
+        };
+        
         mainWindow.Show();
     }
 }

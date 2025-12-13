@@ -108,13 +108,15 @@
                      ShowMinimize="True"
                      ShowClose="True">
             <ui:TitleBar.Header>
-                <StackPanel Orientation="Horizontal" Margin="8,0">
-                    <!-- App Icon -->
-                    <Image Source="pack://application:,,,/Resources/Icons/Bezier_32.png" 
-                           Width="18" Height="18" 
-                           Margin="0,0,8,0" 
-                           VerticalAlignment="Center"
-                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                <StackPanel Orientation="Horizontal" Margin="-32,0,0,0">
+                    <!-- App Icon - pushed to far left -->
+                    <Border Width="52" Background="Transparent">
+                        <Image Source="pack://application:,,,/Resources/Icons/Bezier_32.png" 
+                               Width="20" Height="20" 
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Border>
                     <Menu Background="Transparent" Foreground="{StaticResource TextBrush}">
                         <Menu.ItemsPanel>
                             <ItemsPanelTemplate>

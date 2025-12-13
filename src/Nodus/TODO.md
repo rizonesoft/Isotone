@@ -142,10 +142,10 @@ After completing each task set:
   - [x] Close button
   - [x] Double-click to maximize
   - [x] Drag to move window
-- [ ] Add splash screen
-  - [ ] Logo animation (fade in, scale)
-  - [ ] Loading progress text
-  - [ ] Version number
+- [x] Add splash screen
+  - [x] Logo animation (fade in, scale)
+  - [x] Loading progress text
+  - [x] Version number
 - [x] Set up AvalonDock skeleton (empty panels)
 
 ### 0.6 Main Menu Bar
