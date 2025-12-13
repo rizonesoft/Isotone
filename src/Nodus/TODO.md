@@ -547,18 +547,18 @@ After completing each task set:
 - [x] Backspace to delete last point
 
 ### 3.4 Node Editing Tool
-- [ ] Select individual nodes on a path
-  - [ ] Click to select node
-  - [ ] Shift+Click to add to selection
-  - [ ] Marquee to select multiple nodes
-- [ ] Drag nodes to reshape
-- [ ] Drag control handles to adjust curvature
-- [ ] Convert node types (Corner <-> Smooth <-> Symmetric)
-  - [ ] Keyboard shortcut
+- [x] Select individual nodes on a path
+  - [x] Click to select node
+  - [x] Shift+Click to add to selection
+  - [x] Marquee to select multiple nodes
+- [x] Drag nodes to reshape
+- [x] Drag control handles to adjust curvature
+- [x] Convert node types (Corner <-> Smooth <-> Symmetric)
+  - [x] Keyboard shortcut (1, 2, 3 keys)
   - [ ] Context menu
-- [ ] Add/Remove nodes on path segment
+- [x] Add/Remove nodes on path segment
   - [ ] Double-click to add
-  - [ ] Delete key to remove
+  - [x] Delete key to remove
 - [ ] "Simplify Path" command (reduce nodes)
 - [ ] "Smooth Path" command (add curves)
 - [ ] "Break Path" at node
