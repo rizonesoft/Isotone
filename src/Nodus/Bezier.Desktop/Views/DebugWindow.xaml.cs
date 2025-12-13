@@ -17,6 +17,7 @@ public partial class DebugWindow : FluentWindow
     private readonly ObservableCollection<LogEntryViewModel> _logEntries = [];
     private readonly ObservableCollection<LogEntryViewModel> _filteredEntries = [];
     private string _filterText = string.Empty;
+    private bool _isLoaded;
     
     // Window state persistence
     private static double _savedLeft = double.NaN;
@@ -40,6 +41,8 @@ public partial class DebugWindow : FluentWindow
         
         // Subscribe to debug logger
         DebugLogger.Instance.LogAdded += OnLogAdded;
+        
+        _isLoaded = true;
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -138,12 +141,14 @@ public partial class DebugWindow : FluentWindow
 
     private void Filter_TextChanged(object sender, TextChangedEventArgs e)
     {
+        if (!_isLoaded) return;
         _filterText = FilterTextBox.Text ?? string.Empty;
         ApplyFilter();
     }
 
     private void LogLevel_Changed(object sender, RoutedEventArgs e)
     {
+        if (!_isLoaded) return;
         ApplyFilter();
     }
 
@@ -188,6 +193,7 @@ public partial class DebugWindow : FluentWindow
 
     private void UpdateStatus()
     {
+        if (StatusText is null) return;
         StatusText.Text = $"{_filteredEntries.Count} of {_logEntries.Count} entries";
     }
 
