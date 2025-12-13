@@ -759,14 +759,14 @@ After completing each task set:
 ## Phase 5: Next-Gen UI/UX ("The WOW Factor")
 
 ### 5.1 Theming & Branding
-- [ ] Dark theme (default) with Catppuccin Mocha colors
-  - [ ] Background: #1e1e2e
-  - [ ] Surface: #313244
-  - [ ] Text: #cdd6f4
-  - [ ] Accent: #89b4fa
-- [ ] Light theme option
-  - [ ] Catppuccin Latte colors
-- [ ] Accent color customization
+- [x] Dark theme (default) with Catppuccin Mocha colors
+  - [x] Background: #1e1e2e
+  - [x] Surface: #313244
+  - [x] Text: #cdd6f4
+  - [x] Accent: #89b4fa
+- [x] Light theme option
+  - [x] Catppuccin Latte colors
+- [x] Accent color customization
 - [ ] Custom icon set (Phosphor or Lucide)
   - [ ] 200+ icons for all actions
   - [ ] SVG format
