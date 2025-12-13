@@ -313,8 +313,385 @@ public partial class EditorViewModel : ObservableObject
 
 ---
 
+## Error Handling
+
+### Exception Guidelines
+```csharp
+// ✅ Use specific exception types
+throw new ArgumentOutOfRangeException(nameof(zoom), zoom, "Zoom must be between 10% and 800%");
+throw new InvalidOperationException("Cannot modify a locked layer");
+
+// ✅ Use exception filters for conditional catching
+try
+{
+    await LoadDocumentAsync(path);
+}
+catch (IOException ex) when (ex.HResult == -2147024864) // File in use
+{
+    ShowRetryDialog();
+}
+
+// ✅ Wrap and rethrow with context
+catch (XmlException ex)
+{
+    throw new SvgParseException($"Invalid SVG at line {ex.LineNumber}", ex);
+}
+
+// ❌ Never catch and swallow silently
+catch (Exception) { } // BAD!
+
+// ❌ Avoid catching Exception in most cases
+catch (Exception ex) { Log.Error(ex); } // Only at top-level handlers
+```
+
+### Result Pattern for Expected Failures
+```csharp
+// ✅ Use Result type for operations that can fail expectedly
+public record Result<T>
+{
+    public bool IsSuccess { get; init; }
+    public T? Value { get; init; }
+    public string? Error { get; init; }
+    
+    public static Result<T> Success(T value) => new() { IsSuccess = true, Value = value };
+    public static Result<T> Failure(string error) => new() { IsSuccess = false, Error = error };
+}
+
+// Usage
+public Result<VectorDocument> LoadSvg(string path)
+{
+    if (!File.Exists(path))
+        return Result<VectorDocument>.Failure("File not found");
+    
+    try
+    {
+        var doc = ParseSvg(path);
+        return Result<VectorDocument>.Success(doc);
+    }
+    catch (XmlException ex)
+    {
+        return Result<VectorDocument>.Failure($"Invalid XML: {ex.Message}");
+    }
+}
+```
+
+---
+
+## Logging with Serilog
+
+### Log Levels
+| Level | Usage |
+|-------|-------|
+| `Verbose` | Detailed debugging, inner loops |
+| `Debug` | Development diagnostics |
+| `Information` | Normal operations (file opened, saved) |
+| `Warning` | Recoverable issues, deprecated usage |
+| `Error` | Errors that affect operation but app continues |
+| `Fatal` | Application-terminating errors |
+
+### Structured Logging
+```csharp
+// ✅ Use structured logging with properties
+Log.Information("Document {FileName} loaded in {Duration}ms", 
+    fileName, stopwatch.ElapsedMilliseconds);
+
+Log.Warning("Layer {LayerId} has {ElementCount} elements, consider grouping", 
+    layer.Id, layer.Elements.Count);
+
+Log.Error(ex, "Failed to export {FileName} to {Format}", fileName, format);
+
+// ❌ Avoid string interpolation (loses structure)
+Log.Information($"Document {fileName} loaded"); // BAD - not structured
+
+// ✅ Include context in scopes
+using (Log.Logger.BeginScope("Document: {DocumentId}", doc.Id))
+{
+    // All logs in this scope include DocumentId
+    ProcessDocument(doc);
+}
+```
+
+### Logger Configuration
+```csharp
+// In App.xaml.cs
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .WriteTo.File(
+        path: "logs/bezier-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+```
+
+---
+
+## Dependency Injection
+
+### Service Lifetimes
+| Lifetime | Usage | Example |
+|----------|-------|---------|
+| `Singleton` | Shared state, expensive to create | `ILogger`, `ISettingsService` |
+| `Scoped` | Per-operation state | `IUndoService` (per document) |
+| `Transient` | Lightweight, stateless | `ISvgParser`, `IExporter` |
+
+### Registration Patterns
+```csharp
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddBezierServices(this IServiceCollection services)
+    {
+        // Core services
+        services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<IThemeService, ThemeService>();
+        
+        // Document services (transient - new instance per request)
+        services.AddTransient<ISvgParser, SvgParser>();
+        services.AddTransient<ISvgExporter, SvgExporter>();
+        
+        // ViewModels (transient for fresh instances)
+        services.AddTransient<MainWindowViewModel>();
+        services.AddTransient<PropertiesViewModel>();
+        
+        // Factory pattern for complex creation
+        services.AddSingleton<IDocumentFactory, DocumentFactory>();
+        
+        return services;
+    }
+}
+
+// ✅ Use constructor injection
+public class EditorViewModel(
+    ISettingsService settings,
+    ISvgParser parser,
+    ILogger<EditorViewModel> logger)
+{
+    // Primary constructor captures dependencies
+}
+
+// ❌ Avoid service locator pattern
+var service = App.Services.GetService<IFoo>(); // BAD in most cases
+```
+
+---
+
+## Git Commit Conventions
+
+### Conventional Commits Format
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+```
+
+### Commit Types
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `style` | Formatting, no code change |
+| `refactor` | Code change that neither fixes bug nor adds feature |
+| `perf` | Performance improvement |
+| `test` | Adding or updating tests |
+| `chore` | Build process, dependencies, tooling |
+
+### Examples
+```bash
+# Features
+feat(editor): add pen tool with bezier curve support
+feat(export): implement PNG export with transparency
+
+# Fixes
+fix(renderer): correct anti-aliasing on retina displays
+fix(layers): prevent crash when deleting active layer
+
+# Docs
+docs: update README with installation instructions
+docs(api): add XML comments to VectorElement
+
+# Refactor
+refactor(core): extract fill logic to IFill interface
+refactor: simplify undo/redo command pattern
+
+# Performance
+perf(canvas): use object pooling for shape rendering
+perf: reduce memory allocations in hot path
+```
+
+---
+
+## XML Documentation
+
+### When to Document
+- ✅ All public APIs (classes, methods, properties)
+- ✅ Complex algorithms or non-obvious logic
+- ✅ Parameters with specific constraints
+- ❌ Private implementation details (unless complex)
+- ❌ Self-explanatory code
+
+### Documentation Format
+```csharp
+/// <summary>
+/// Represents a rectangle element in an SVG document.
+/// </summary>
+/// <remarks>
+/// Supports rounded corners via <see cref="CornerRadius"/>.
+/// </remarks>
+public class SvgRect : VectorElement
+{
+    /// <summary>
+    /// Gets or sets the corner radius for rounded rectangles.
+    /// </summary>
+    /// <value>
+    /// A value of 0 creates sharp corners. Values greater than half 
+    /// the width or height are clamped.
+    /// </value>
+    public double CornerRadius { get; set; }
+    
+    /// <summary>
+    /// Transforms this rectangle by the specified matrix.
+    /// </summary>
+    /// <param name="matrix">The transformation matrix to apply.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="matrix"/> is null.
+    /// </exception>
+    /// <returns>A new transformed rectangle.</returns>
+    public SvgRect Transform(Matrix matrix)
+    {
+        ArgumentNullException.ThrowIfNull(matrix);
+        // ...
+    }
+}
+```
+
+---
+
+## Performance Guidelines
+
+### Memory Allocation
+```csharp
+// ✅ Use ArrayPool for temporary buffers
+var buffer = ArrayPool<byte>.Shared.Rent(4096);
+try
+{
+    ProcessData(buffer);
+}
+finally
+{
+    ArrayPool<byte>.Shared.Return(buffer);
+}
+
+// ✅ Use stackalloc for small, fixed-size allocations
+Span<byte> buffer = stackalloc byte[256];
+
+// ✅ Avoid LINQ in hot paths (allocates iterators)
+// Instead of: elements.Where(e => e.IsVisible).ToList()
+foreach (var element in elements)
+{
+    if (element.IsVisible)
+        ProcessElement(element);
+}
+
+// ✅ Use StringBuilder for string concatenation in loops
+var sb = new StringBuilder();
+foreach (var item in items)
+    sb.Append(item);
+
+// ❌ Avoid boxing value types
+object boxed = 42; // Allocates!
+```
+
+### Object Pooling (for hot paths like rendering)
+```csharp
+// ✅ Use ObjectPool for frequently created objects
+public class ShapeRendererPool
+{
+    private static readonly ObjectPool<ShapeRenderer> _pool = 
+        new DefaultObjectPool<ShapeRenderer>(new DefaultPooledObjectPolicy<ShapeRenderer>());
+    
+    public static ShapeRenderer Rent() => _pool.Get();
+    public static void Return(ShapeRenderer renderer) => _pool.Return(renderer);
+}
+
+// Usage in render loop
+var renderer = ShapeRendererPool.Rent();
+try
+{
+    renderer.Render(canvas, element);
+}
+finally
+{
+    ShapeRendererPool.Return(renderer);
+}
+```
+
+### Caching Strategies
+```csharp
+// ✅ Cache computed values that are expensive
+private SKPath? _cachedPath;
+private bool _pathDirty = true;
+
+public SKPath GetPath()
+{
+    if (_pathDirty || _cachedPath == null)
+    {
+        _cachedPath = ComputePath();
+        _pathDirty = false;
+    }
+    return _cachedPath;
+}
+
+// Invalidate on change
+public double X
+{
+    get => field;
+    set
+    {
+        if (field != value)
+        {
+            field = value;
+            _pathDirty = true;
+        }
+    }
+}
+```
+
+### Avoid Common Pitfalls
+```csharp
+// ❌ Creating delegates in loops
+foreach (var item in items)
+    button.Click += (s, e) => Process(item); // Allocates each iteration!
+
+// ✅ Use a method group or cached delegate
+foreach (var item in items)
+    item.Process(); // Or cache the delegate
+
+// ❌ Frequent small allocations in render loop
+void Render()
+{
+    var brush = new SolidColorBrush(color); // Allocates every frame!
+}
+
+// ✅ Cache or pool resources
+private readonly SolidColorBrush _brush = new();
+void Render()
+{
+    _brush.Color = color; // Reuse existing object
+}
+```
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | Dec 2025 | Initial .NET 10 / C# 14 standards |
+| 1.1 | Dec 2025 | Added Error Handling, Logging, DI, Git, Docs, Performance |
+
