@@ -150,57 +150,57 @@ After completing each task set:
 - [x] Set up AvalonDock skeleton (empty panels)
 
 ### 0.6 Main Menu Bar
-- [ ] File menu
-  - [ ] New (Ctrl+N)
-  - [ ] Open (Ctrl+O)
-  - [ ] Open Recent >
-  - [ ] Save (Ctrl+S)
-  - [ ] Save As (Ctrl+Shift+S)
-  - [ ] Export >
-  - [ ] Close (Ctrl+W)
-  - [ ] Exit (Alt+F4)
-- [ ] Edit menu
-  - [ ] Undo (Ctrl+Z)
-  - [ ] Redo (Ctrl+Y)
-  - [ ] Cut (Ctrl+X)
-  - [ ] Copy (Ctrl+C)
-  - [ ] Paste (Ctrl+V)
-  - [ ] Duplicate (Ctrl+D)
-  - [ ] Delete (Del)
-  - [ ] Select All (Ctrl+A)
-  - [ ] Preferences/Settings
-- [ ] View menu
-  - [ ] Zoom In (Ctrl++)
-  - [ ] Zoom Out (Ctrl+-)
-  - [ ] Fit to Window (Ctrl+0)
-  - [ ] Actual Size (Ctrl+1)
-  - [ ] Show Grid (Ctrl+')
-  - [ ] Show Rulers
-  - [ ] Show Guides
-  - [ ] Outline Mode
-  - [ ] Panels submenu (toggle each panel)
-- [ ] Object menu
-  - [ ] Group (Ctrl+G)
-  - [ ] Ungroup (Ctrl+Shift+G)
-  - [ ] Bring to Front
-  - [ ] Send to Back
-  - [ ] Bring Forward
-  - [ ] Send Backward
-  - [ ] Align >
-  - [ ] Distribute >
-  - [ ] Transform >
-- [ ] Path menu
-  - [ ] Union
-  - [ ] Subtract
-  - [ ] Intersect
-  - [ ] Exclude
-  - [ ] Simplify
-  - [ ] Stroke to Path
-  - [ ] Text to Path
-- [ ] Help menu
-  - [ ] Documentation
-  - [ ] Keyboard Shortcuts
-  - [ ] About
+- [x] File menu
+  - [x] New (Ctrl+N)
+  - [x] Open (Ctrl+O)
+  - [x] Open Recent >
+  - [x] Save (Ctrl+S)
+  - [x] Save As (Ctrl+Shift+S)
+  - [x] Export >
+  - [x] Close (Ctrl+W)
+  - [x] Exit (Alt+F4)
+- [x] Edit menu
+  - [x] Undo (Ctrl+Z)
+  - [x] Redo (Ctrl+Y)
+  - [x] Cut (Ctrl+X)
+  - [x] Copy (Ctrl+C)
+  - [x] Paste (Ctrl+V)
+  - [x] Duplicate (Ctrl+D)
+  - [x] Delete (Del)
+  - [x] Select All (Ctrl+A)
+  - [x] Preferences/Settings
+- [x] View menu
+  - [x] Zoom In (Ctrl++)
+  - [x] Zoom Out (Ctrl+-)
+  - [x] Fit to Window (Ctrl+0)
+  - [x] Actual Size (Ctrl+1)
+  - [x] Show Grid (Ctrl+')
+  - [x] Show Rulers
+  - [x] Show Guides
+  - [x] Outline Mode
+  - [x] Panels submenu (toggle each panel)
+- [x] Object menu
+  - [x] Group (Ctrl+G)
+  - [x] Ungroup (Ctrl+Shift+G)
+  - [x] Bring to Front
+  - [x] Send to Back
+  - [x] Bring Forward
+  - [x] Send Backward
+  - [x] Align >
+  - [x] Distribute >
+  - [x] Transform >
+- [x] Path menu
+  - [x] Union
+  - [x] Subtract
+  - [x] Intersect
+  - [x] Exclude
+  - [x] Simplify
+  - [x] Stroke to Path
+  - [x] Text to Path
+- [x] Help menu
+  - [x] Documentation
+  - [x] Keyboard Shortcuts
+  - [x] About
 
 ### 0.7 Main Toolbar
 - [ ] New document button

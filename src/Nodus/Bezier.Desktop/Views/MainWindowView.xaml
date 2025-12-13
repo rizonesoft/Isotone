@@ -123,30 +123,119 @@
                                 <StackPanel Orientation="Horizontal"/>
                             </ItemsPanelTemplate>
                         </Menu.ItemsPanel>
+                        
+                        <!-- File Menu -->
                         <MenuItem Header="_File" Foreground="{StaticResource TextBrush}">
-                            <MenuItem Header="_New" InputGestureText="Ctrl+N"/>
-                            <MenuItem Header="_Open" InputGestureText="Ctrl+O"/>
+                            <MenuItem Header="_New" InputGestureText="Ctrl+N" Command="{Binding NewCommand}"/>
+                            <MenuItem Header="_Open..." InputGestureText="Ctrl+O" Command="{Binding OpenCommand}"/>
+                            <MenuItem Header="Open _Recent">
+                                <MenuItem Header="(No recent files)"/>
+                            </MenuItem>
                             <Separator/>
-                            <MenuItem Header="_Save" InputGestureText="Ctrl+S"/>
-                            <MenuItem Header="Save _As..." InputGestureText="Ctrl+Shift+S"/>
+                            <MenuItem Header="_Save" InputGestureText="Ctrl+S" Command="{Binding SaveCommand}"/>
+                            <MenuItem Header="Save _As..." InputGestureText="Ctrl+Shift+S" Command="{Binding SaveAsCommand}"/>
                             <Separator/>
-                            <MenuItem Header="E_xit" InputGestureText="Alt+F4"/>
+                            <MenuItem Header="_Export">
+                                <MenuItem Header="Export as _PNG..." Command="{Binding ExportPngCommand}"/>
+                                <MenuItem Header="Export as _JPEG..." Command="{Binding ExportJpegCommand}"/>
+                                <MenuItem Header="Export as P_DF..." Command="{Binding ExportPdfCommand}"/>
+                                <MenuItem Header="Export as _XAML..." Command="{Binding ExportXamlCommand}"/>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem Header="_Close" InputGestureText="Ctrl+W" Command="{Binding CloseCommand}"/>
+                            <MenuItem Header="E_xit" InputGestureText="Alt+F4" Command="{Binding ExitCommand}"/>
                         </MenuItem>
+                        
+                        <!-- Edit Menu -->
                         <MenuItem Header="_Edit" Foreground="{StaticResource TextBrush}">
-                            <MenuItem Header="_Undo" InputGestureText="Ctrl+Z"/>
-                            <MenuItem Header="_Redo" InputGestureText="Ctrl+Y"/>
+                            <MenuItem Header="_Undo" InputGestureText="Ctrl+Z" Command="{Binding UndoCommand}"/>
+                            <MenuItem Header="_Redo" InputGestureText="Ctrl+Y" Command="{Binding RedoCommand}"/>
                             <Separator/>
-                            <MenuItem Header="Cu_t" InputGestureText="Ctrl+X"/>
-                            <MenuItem Header="_Copy" InputGestureText="Ctrl+C"/>
-                            <MenuItem Header="_Paste" InputGestureText="Ctrl+V"/>
+                            <MenuItem Header="Cu_t" InputGestureText="Ctrl+X" Command="{Binding CutCommand}"/>
+                            <MenuItem Header="_Copy" InputGestureText="Ctrl+C" Command="{Binding CopyCommand}"/>
+                            <MenuItem Header="_Paste" InputGestureText="Ctrl+V" Command="{Binding PasteCommand}"/>
+                            <MenuItem Header="_Duplicate" InputGestureText="Ctrl+D" Command="{Binding DuplicateCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="De_lete" InputGestureText="Del" Command="{Binding DeleteCommand}"/>
+                            <MenuItem Header="Select _All" InputGestureText="Ctrl+A" Command="{Binding SelectAllCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Pr_eferences..." Command="{Binding PreferencesCommand}"/>
                         </MenuItem>
+                        
+                        <!-- View Menu -->
                         <MenuItem Header="_View" Foreground="{StaticResource TextBrush}">
-                            <MenuItem Header="Zoom _In" InputGestureText="Ctrl++"/>
-                            <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-"/>
-                            <MenuItem Header="_Fit to View" InputGestureText="Ctrl+0"/>
+                            <MenuItem Header="Zoom _In" InputGestureText="Ctrl++" Command="{Binding ZoomInCommand}"/>
+                            <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-" Command="{Binding ZoomOutCommand}"/>
+                            <MenuItem Header="_Fit to Window" InputGestureText="Ctrl+0" Command="{Binding FitToWindowCommand}"/>
+                            <MenuItem Header="_Actual Size" InputGestureText="Ctrl+1" Command="{Binding ActualSizeCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Show _Grid" InputGestureText="Ctrl+'" IsCheckable="True" IsChecked="{Binding ShowGrid}"/>
+                            <MenuItem Header="Show _Rulers" IsCheckable="True" IsChecked="{Binding ShowRulers}"/>
+                            <MenuItem Header="Show G_uides" IsCheckable="True" IsChecked="{Binding ShowGuides}"/>
+                            <Separator/>
+                            <MenuItem Header="_Outline Mode" IsCheckable="True" IsChecked="{Binding OutlineMode}"/>
+                            <Separator/>
+                            <MenuItem Header="_Panels">
+                                <MenuItem Header="_Tools" IsCheckable="True" IsChecked="{Binding ShowToolsPanel}"/>
+                                <MenuItem Header="_Properties" IsCheckable="True" IsChecked="{Binding ShowPropertiesPanel}"/>
+                                <MenuItem Header="_Layers" IsCheckable="True" IsChecked="{Binding ShowLayersPanel}"/>
+                                <MenuItem Header="_Code Editor" IsCheckable="True" IsChecked="{Binding ShowCodePanel}"/>
+                            </MenuItem>
                         </MenuItem>
+                        
+                        <!-- Object Menu -->
+                        <MenuItem Header="_Object" Foreground="{StaticResource TextBrush}">
+                            <MenuItem Header="_Group" InputGestureText="Ctrl+G" Command="{Binding GroupCommand}"/>
+                            <MenuItem Header="_Ungroup" InputGestureText="Ctrl+Shift+G" Command="{Binding UngroupCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Bring to _Front" InputGestureText="Ctrl+Shift+]" Command="{Binding BringToFrontCommand}"/>
+                            <MenuItem Header="Bring For_ward" InputGestureText="Ctrl+]" Command="{Binding BringForwardCommand}"/>
+                            <MenuItem Header="Send _Backward" InputGestureText="Ctrl+[" Command="{Binding SendBackwardCommand}"/>
+                            <MenuItem Header="Send to _Back" InputGestureText="Ctrl+Shift+[" Command="{Binding SendToBackCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="_Align">
+                                <MenuItem Header="Align _Left" Command="{Binding AlignLeftCommand}"/>
+                                <MenuItem Header="Align _Center" Command="{Binding AlignCenterCommand}"/>
+                                <MenuItem Header="Align _Right" Command="{Binding AlignRightCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Align _Top" Command="{Binding AlignTopCommand}"/>
+                                <MenuItem Header="Align _Middle" Command="{Binding AlignMiddleCommand}"/>
+                                <MenuItem Header="Align _Bottom" Command="{Binding AlignBottomCommand}"/>
+                            </MenuItem>
+                            <MenuItem Header="_Distribute">
+                                <MenuItem Header="Distribute _Horizontally" Command="{Binding DistributeHorizontallyCommand}"/>
+                                <MenuItem Header="Distribute _Vertically" Command="{Binding DistributeVerticallyCommand}"/>
+                            </MenuItem>
+                            <MenuItem Header="_Transform">
+                                <MenuItem Header="_Rotate 90° CW" Command="{Binding Rotate90CwCommand}"/>
+                                <MenuItem Header="Rotate 90° CC_W" Command="{Binding Rotate90CcwCommand}"/>
+                                <MenuItem Header="Rotate _180°" Command="{Binding Rotate180Command}"/>
+                                <Separator/>
+                                <MenuItem Header="Flip _Horizontal" Command="{Binding FlipHorizontalCommand}"/>
+                                <MenuItem Header="Flip _Vertical" Command="{Binding FlipVerticalCommand}"/>
+                            </MenuItem>
+                        </MenuItem>
+                        
+                        <!-- Path Menu -->
+                        <MenuItem Header="_Path" Foreground="{StaticResource TextBrush}">
+                            <MenuItem Header="_Union" Command="{Binding UnionCommand}"/>
+                            <MenuItem Header="_Subtract" Command="{Binding SubtractCommand}"/>
+                            <MenuItem Header="_Intersect" Command="{Binding IntersectCommand}"/>
+                            <MenuItem Header="E_xclude" Command="{Binding ExcludeCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Si_mplify" Command="{Binding SimplifyCommand}"/>
+                            <MenuItem Header="Stroke to _Path" Command="{Binding StrokeToPathCommand}"/>
+                            <MenuItem Header="_Text to Path" Command="{Binding TextToPathCommand}"/>
+                        </MenuItem>
+                        
+                        <!-- Help Menu -->
                         <MenuItem Header="_Help" Foreground="{StaticResource TextBrush}">
-                            <MenuItem Header="_About Bezier"/>
+                            <MenuItem Header="_Documentation" InputGestureText="F1" Command="{Binding DocumentationCommand}"/>
+                            <MenuItem Header="_Keyboard Shortcuts" Command="{Binding KeyboardShortcutsCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="_Check for Updates" Command="{Binding CheckUpdatesCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="_About Bezier" Command="{Binding AboutCommand}"/>
                         </MenuItem>
                     </Menu>
                 </StackPanel>
