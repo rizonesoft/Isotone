@@ -825,19 +825,19 @@ After completing each task set:
 - [x] Quick action suggestions
 
 ### 5.4 On-Canvas "HUD"
-- [ ] Implement contextual toolbar appearing near selection (Figma style)
-  - [ ] Appears on selection
-  - [ ] Position relative to bounding box
-  - [ ] Auto-reposition to stay on screen
-- [ ] Quick actions: Boolean ops, Group/Ungroup, Color swatch
-- [ ] Distance indicators when holding Alt (Smart Guides)
-- [ ] Tooltip with element info on hover
-  - [ ] Element type
-  - [ ] Name
-  - [ ] Dimensions
-- [ ] Zoom level indicator (bottom right)
-- [ ] Selection info bar (count, type, dimensions)
-- [ ] Ruler tick marks on cursor position
+- [x] Implement contextual toolbar appearing near selection (Figma style)
+  - [x] Appears on selection
+  - [x] Position relative to bounding box
+  - [x] Auto-reposition to stay on screen
+- [x] Quick actions: Boolean ops, Group/Ungroup, Color swatch
+- [x] Distance indicators when holding Alt (Smart Guides)
+- [x] Tooltip with element info on hover
+  - [x] Element type
+  - [x] Name
+  - [x] Dimensions
+- [x] Zoom level indicator (bottom right)
+- [x] Selection info bar (count, type, dimensions)
+- [x] Ruler tick marks on cursor position
 
 ### 5.5 Keyboard Shortcuts
 - [ ] Keyboard shortcut system with central registry
