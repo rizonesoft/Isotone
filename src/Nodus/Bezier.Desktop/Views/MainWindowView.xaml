@@ -27,7 +27,14 @@
         <Color x:Key="Sapphire">#74C7EC</Color>
         <Color x:Key="Green">#A6E3A1</Color>
         <Color x:Key="Peach">#FAB387</Color>
+        <Color x:Key="Flamingo">#F2CDCD</Color>
+        <Color x:Key="Maroon">#EBA0AC</Color>
         <Color x:Key="Red">#F38BA8</Color>
+        
+        <!-- Modern Orange Accent -->
+        <Color x:Key="AccentOrange">#FF6B35</Color>
+        <Color x:Key="AccentOrangeLight">#FF8C5A</Color>
+        <Color x:Key="AccentOrangeDark">#E85A2A</Color>
         
         <SolidColorBrush x:Key="BaseBrush" Color="{StaticResource Base}"/>
         <SolidColorBrush x:Key="MantleBrush" Color="{StaticResource Mantle}"/>
@@ -37,8 +44,15 @@
         <SolidColorBrush x:Key="Surface2Brush" Color="{StaticResource Surface2}"/>
         <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Text}"/>
         <SolidColorBrush x:Key="SubtextBrush" Color="{StaticResource Subtext0}"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Blue}"/>
-        <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource Lavender}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentOrange}"/>
+        <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource AccentOrangeLight}"/>
+        
+        <!-- Orange Gradient Brush -->
+        <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF6B35" Offset="0"/>
+            <GradientStop Color="#FF8C5A" Offset="0.5"/>
+            <GradientStop Color="#FFAB76" Offset="1"/>
+        </LinearGradientBrush>
         
         <!-- Override AvalonDock colors -->
         <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="{StaticResource Base}"/>
