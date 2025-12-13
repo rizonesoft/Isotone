@@ -528,23 +528,23 @@ After completing each task set:
 - [x] Default fill/stroke for new shapes
 
 ### 3.3 The Pen Tool (Bezier) - *The "Inkscape Killer"*
-- [ ] Implement Node/Control Point data structure
-  - [ ] `ControlPoint { Position, InHandle, OutHandle, Type }`
-  - [ ] Type: Corner, Smooth, Symmetric
-- [ ] Create `PenTool`:
-  - [ ] Click: Corner point
-  - [ ] Click+Drag: Smooth point (Quadratic/Cubic bezier)
-  - [ ] Alt+Drag: Break tangent (Cusp)
-  - [ ] Click on first point: Close path
+- [x] Implement Node/Control Point data structure
+  - [x] `ControlPoint { Position, InHandle, OutHandle, Type }`
+  - [x] Type: Corner, Smooth, Symmetric
+- [x] Create `PenTool`:
+  - [x] Click: Corner point
+  - [x] Click+Drag: Smooth point (Quadratic/Cubic bezier)
+  - [x] Alt+Drag: Break tangent (Cusp)
+  - [x] Click on first point: Close path
   - [ ] Click on existing node: Select node
-- [ ] Implement path closing logic with magnetic snap
-  - [ ] Snap radius: 10px
-  - [ ] Visual indicator when in snap range
-- [ ] Render path preview ("rubber band") while drawing
-- [ ] Show angle/length tooltip while drawing
-- [ ] Escape to cancel current path
-- [ ] Enter to finish open path
-- [ ] Backspace to delete last point
+- [x] Implement path closing logic with magnetic snap
+  - [x] Snap radius: 10px
+  - [x] Visual indicator when in snap range
+- [x] Render path preview ("rubber band") while drawing
+- [x] Show angle/length tooltip while drawing
+- [x] Escape to cancel current path
+- [x] Enter to finish open path
+- [x] Backspace to delete last point
 
 ### 3.4 Node Editing Tool
 - [ ] Select individual nodes on a path
