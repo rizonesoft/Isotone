@@ -4,7 +4,7 @@
 
 ## 🤖 Prompt Template
 ```
-Continue developing Bezier SVG Editor. Focus on: [TASK_ID]
+Continue developing Bezier SVG Editor. Focus on: [0.5]
 Reference this file for context and mark completed items with [x].
 Ensure code follows the project structure:
 - Bezier.Core: Domain models, interfaces, pure logic
@@ -14,7 +14,7 @@ Ensure code follows the project structure:
 After completing each task set:
 1. Build: dotnet build Bezier.sln
 2. Run: dotnet run --project Bezier.Desktop
-3. Commit: git add -A && git commit -m "feat: [description]"
+3. Commit: git add -A; git commit -m "feat: [description]"
 4. Push: git push origin master
 ```
 
@@ -126,27 +126,27 @@ After completing each task set:
 - [x] Install `Microsoft.Extensions.DependencyInjection` (DI)
 
 ### 0.5 Initial UI Shell (Early WOW Factor)
-- [ ] Create main window with Mica/Acrylic backdrop
-  - [ ] Set window style to None
-  - [ ] Implement custom chrome
-  - [ ] Add resize grips
-- [ ] Set up dark theme with custom color palette (Catppuccin Mocha)
-  - [ ] Define color resources in `Themes/Dark.xaml`
-  - [ ] Define brush resources
-  - [ ] Define control styles
+- [x] Create main window with Mica/Acrylic backdrop
+  - [x] Set window style to None
+  - [x] Implement custom chrome
+  - [x] Add resize grips
+- [x] Set up dark theme with custom color palette (Catppuccin Mocha)
+  - [x] Define color resources in `Themes/Dark.xaml`
+  - [x] Define brush resources
+  - [x] Define control styles
 - [ ] Create app icon (multiple sizes: 16, 32, 48, 256)
-- [ ] Implement basic title bar
+- [x] Implement basic title bar
   - [ ] App icon and name
-  - [ ] Minimize button
-  - [ ] Maximize/Restore button
-  - [ ] Close button
-  - [ ] Double-click to maximize
-  - [ ] Drag to move window
+  - [x] Minimize button
+  - [x] Maximize/Restore button
+  - [x] Close button
+  - [x] Double-click to maximize
+  - [x] Drag to move window
 - [ ] Add splash screen
   - [ ] Logo animation (fade in, scale)
   - [ ] Loading progress text
   - [ ] Version number
-- [ ] Set up AvalonDock skeleton (empty panels)
+- [x] Set up AvalonDock skeleton (empty panels)
 
 ### 0.6 Main Menu Bar
 - [ ] File menu

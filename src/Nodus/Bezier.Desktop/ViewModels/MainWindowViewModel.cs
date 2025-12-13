@@ -3,16 +3,23 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace Bezier.Desktop.ViewModels;
 
 /// <summary>
-/// Main window view model.
+/// ViewModel for the main Bezier editor window.
 /// </summary>
 public partial class MainWindowViewModel : ObservableObject
 {
     [ObservableProperty]
-    private string _title = "Bezier SVG Editor";
-
+    private string _title = "Bezier";
+    
     [ObservableProperty]
     private string _statusText = "Ready";
-
+    
     [ObservableProperty]
-    private double _zoomLevel = 100.0;
+    private int _zoomLevel = 100;
+    
+    [ObservableProperty]
+    private string _documentSize = "0 x 0";
+    
+    public MainWindowViewModel()
+    {
+    }
 }
