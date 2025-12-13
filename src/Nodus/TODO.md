@@ -782,27 +782,27 @@ After completing each task set:
   - [ ] Links to docs, GitHub, website
 
 ### 5.2 Fluid Motion & Visuals
-- [ ] Implement `Mica` window backdrop (Windows 11 native feel)
-  - [ ] Fallback to solid color on older Windows
-- [ ] Add `XamlFlair` animations for panel transitions (Slide/Fade in)
-- [ ] Implement "Micro-interactions"
-  - [ ] Buttons scale on click (0.95 -> 1.0)
-  - [ ] Toggles animate on/off
-  - [ ] Checkboxes animate
-  - [ ] Hover effects (subtle glow)
-- [ ] Add "Glassmorphism" effect to floating panels (Blur behind)
-- [ ] Smooth zoom animation (ease in/out)
-  - [ ] Duration: 200ms
-  - [ ] Easing: CubicEaseOut
-- [ ] Canvas pan momentum (inertia)
-  - [ ] Physics-based deceleration
-- [ ] Selection bounding box animate on change
-- [ ] Toast notifications (slide in/out)
-  - [ ] Success, warning, error styles
-  - [ ] Auto-dismiss
-  - [ ] Action buttons
-- [ ] Panel open/close animations
-- [ ] Dialog appear/disappear animations
+- [x] Implement `Mica` window backdrop (Windows 11 native feel)
+  - [x] Fallback to solid color on older Windows
+- [x] Add `XamlFlair` animations for panel transitions (Slide/Fade in)
+- [x] Implement "Micro-interactions"
+  - [x] Buttons scale on click (0.95 -> 1.0)
+  - [x] Toggles animate on/off
+  - [x] Checkboxes animate
+  - [x] Hover effects (subtle glow)
+- [x] Add "Glassmorphism" effect to floating panels (Blur behind)
+- [x] Smooth zoom animation (ease in/out)
+  - [x] Duration: 200ms
+  - [x] Easing: CubicEaseOut
+- [x] Canvas pan momentum (inertia)
+  - [x] Physics-based deceleration
+- [x] Selection bounding box animate on change
+- [x] Toast notifications (slide in/out)
+  - [x] Success, warning, error styles
+  - [x] Auto-dismiss
+  - [x] Action buttons
+- [x] Panel open/close animations
+- [x] Dialog appear/disappear animations
 
 ### 5.3 Command Palette (Ctrl+K)
 - [ ] Create overlay UI for global command search
