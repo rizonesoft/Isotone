@@ -1,3 +1,5 @@
+using Bezier.Core.Utilities;
+
 namespace Bezier.Core.Models.Elements;
 
 /// <summary>
@@ -6,12 +8,18 @@ namespace Bezier.Core.Models.Elements;
 public class SvgPath : VectorElement
 {
     private string _pathData = string.Empty;
+    private (double X, double Y, double Width, double Height)? _cachedBounds;
 
     /// <summary>SVG path data string (d attribute).</summary>
     public string PathData
     {
         get => _pathData;
-        set { _pathData = value ?? string.Empty; OnPropertyChanged(nameof(PathData)); }
+        set 
+        { 
+            _pathData = value ?? string.Empty; 
+            _cachedBounds = null; // Invalidate cache
+            OnPropertyChanged(nameof(PathData)); 
+        }
     }
 
     public override VectorElement Clone() => new SvgPath
@@ -30,27 +38,48 @@ public class SvgPath : VectorElement
 
     public override bool HitTest(double x, double y)
     {
-        // TODO: Implement proper path hit testing using path parsing
-        // For now, use bounding box as approximation
-        var box = GetBoundingBox();
-        return x >= box.X && x <= box.X + box.Width && 
-               y >= box.Y && y <= box.Y + box.Height;
+        // Use bounding box with stroke tolerance for hit testing
+        var strokeWidth = Stroke?.Width ?? 0;
+        var tolerance = Math.Max(5.0, strokeWidth / 2);
+        
+        var bounds = GetBoundingBox();
+        
+        // Expand bounds by tolerance for easier selection
+        return x >= bounds.X - tolerance && 
+               x <= bounds.X + bounds.Width + tolerance &&
+               y >= bounds.Y - tolerance && 
+               y <= bounds.Y + bounds.Height + tolerance;
     }
 
     public override (double X, double Y, double Width, double Height) GetBoundingBox()
     {
-        // TODO: Parse path data and calculate accurate bounding box
-        // For now, return a placeholder
-        return (0, 0, 100, 100);
+        // Use cached bounds if available
+        if (_cachedBounds.HasValue)
+            return _cachedBounds.Value;
+
+        // Parse path data and calculate accurate bounding box
+        _cachedBounds = SvgPathParser.GetBoundingBox(_pathData);
+        return _cachedBounds.Value;
+    }
+
+    /// <summary>
+    /// Gets all points extracted from the path data for advanced operations.
+    /// </summary>
+    public List<(double X, double Y)> GetPathPoints()
+    {
+        return SvgPathParser.ExtractAllPoints(_pathData);
+    }
+
+    /// <summary>
+    /// Invalidates the cached bounding box, forcing recalculation on next access.
+    /// </summary>
+    public void InvalidateBounds()
+    {
+        _cachedBounds = null;
     }
 
     public override string ToSvgString()
     {
         return $"<path d=\"{PathData}\"{GetCommonSvgAttributes()}/>";
     }
-
-    // TODO: Add path parsing and node manipulation methods
-    // - Parse path data to segments (M, L, C, Q, A, Z)
-    // - Get/set individual nodes
-    // - Convert relative to absolute commands
 }

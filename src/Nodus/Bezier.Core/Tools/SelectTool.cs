@@ -3,6 +3,7 @@ namespace Bezier.Core.Tools;
 using Bezier.Core.Commands;
 using Bezier.Core.Interfaces;
 using Bezier.Core.Models;
+using Bezier.Core.Services;
 
 /// <summary>
 /// Selection mode for the select tool.
@@ -297,15 +298,30 @@ public class SelectTool : ToolBase
     {
         if (Document is null) return null;
 
+        var logger = DebugLogger.Instance;
+        logger.Log("Selection", $"HitTest at ({point.X:F1}, {point.Y:F1}) against {Document.Elements.Count} elements");
+
         // Test elements in reverse order (top to bottom)
         for (var i = Document.Elements.Count - 1; i >= 0; i--)
         {
             var element = Document.Elements[i];
-            if (element.HitTest(point.X, point.Y))
+            
+            // Skip invisible or locked elements
+            if (!element.IsVisible || element.IsLocked) continue;
+            
+            var bounds = element.GetBoundingBox();
+            var hit = element.HitTest(point.X, point.Y);
+            
+            logger.LogHitTest(element.GetType().Name, point.X, point.Y, bounds, hit);
+            
+            if (hit)
             {
+                logger.Info("Selection", $"Selected: {element.GetType().Name} '{element.Name}'");
                 return element;
             }
         }
+        
+        logger.Log("Selection", "No element hit");
         return null;
     }
 
