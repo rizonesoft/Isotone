@@ -651,40 +651,40 @@ After completing each task set:
 - [x] Merge layers
 
 ### 4.2 Property Inspector
-- [ ] Create `PropertiesPanel` View
-  - [ ] Collapsible sections
-  - [ ] Dynamic content based on selection
-- [ ] Implement Color Picker
-  - [ ] Color wheel
-  - [ ] Saturation/brightness square
-  - [ ] Sliders (RGB, HSL, HEX)
-  - [ ] Alpha slider
+- [x] Create `PropertiesPanel` View
+  - [x] Collapsible sections
+  - [x] Dynamic content based on selection
+- [x] Implement Color Picker
+  - [x] Color wheel
+  - [x] Saturation/brightness square
+  - [x] Sliders (RGB, HSL, HEX)
+  - [x] Alpha slider
   - [ ] Eyedropper tool
   - [ ] Saved swatches
   - [ ] Recently used colors
-- [ ] Gradient Editor
-  - [ ] Add/remove stops
-  - [ ] Drag stops to reposition
-  - [ ] Angle/position controls
-  - [ ] Linear/Radial/Conic types
+- [x] Gradient Editor
+  - [x] Add/remove stops
+  - [x] Drag stops to reposition
+  - [x] Angle/position controls
+  - [x] Linear/Radial/Conic types
   - [ ] Preset gradients
-- [ ] Stroke controls (Width, Dash Array, Cap, Join)
-  - [ ] Width input with slider
-  - [ ] Preset dash patterns
-  - [ ] Cap style icons
-  - [ ] Join style icons
-- [ ] Geometry properties (X, Y, Width, Height, Rotation)
-  - [ ] Numeric inputs
-  - [ ] Constrain proportions toggle
-  - [ ] Rotation input with dial
-- [ ] Transform Origin selection (9-point grid)
-  - [ ] Visual 9-point selector
-  - [ ] Custom origin coordinates
-- [ ] Opacity & Blending modes
-  - [ ] Opacity slider
-  - [ ] Blend mode dropdown
-- [ ] Corner radius controls
-  - [ ] Uniform radius
+- [x] Stroke controls (Width, Dash Array, Cap, Join)
+  - [x] Width input with slider
+  - [x] Preset dash patterns
+  - [x] Cap style icons
+  - [x] Join style icons
+- [x] Geometry properties (X, Y, Width, Height, Rotation)
+  - [x] Numeric inputs
+  - [x] Constrain proportions toggle
+  - [x] Rotation input with dial
+- [x] Transform Origin selection (9-point grid)
+  - [x] Visual 9-point selector
+  - [x] Custom origin coordinates
+- [x] Opacity & Blending modes
+  - [x] Opacity slider
+  - [x] Blend mode dropdown
+- [x] Corner radius controls
+  - [x] Uniform radius
   - [ ] Individual corner radii
 - [ ] Effects stack (shadows, blurs)
   - [ ] Add effect button
