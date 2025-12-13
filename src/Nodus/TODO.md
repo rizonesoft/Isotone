@@ -480,29 +480,29 @@ After completing each task set:
 ## Phase 3: Visual Editing Features
 
 ### 3.1 Selection & Transform
-- [ ] Implement Bounding Box rendering (Selection Adorner)
-  - [ ] Dashed border (2px, blue)
-  - [ ] Semi-transparent fill (10% opacity)
-- [ ] Implement Resize Handles (8 points) logic
-  - [ ] Corner handles
-  - [ ] Edge midpoint handles
-  - [ ] Proportional resize (Shift)
-  - [ ] Center resize (Alt)
-  - [ ] Cursor change on hover
-- [ ] Implement Rotate Handle logic
-  - [ ] Handle above center top
-  - [ ] 15° snap (Shift)
-  - [ ] Show angle tooltip
-  - [ ] Rotation cursor
+- [x] Implement Bounding Box rendering (Selection Adorner)
+  - [x] Dashed border (2px, blue)
+  - [x] Semi-transparent fill (10% opacity)
+- [x] Implement Resize Handles (8 points) logic
+  - [x] Corner handles
+  - [x] Edge midpoint handles
+  - [x] Proportional resize (Shift)
+  - [x] Center resize (Alt)
+  - [x] Cursor change on hover
+- [x] Implement Rotate Handle logic
+  - [x] Handle above center top
+  - [x] 15° snap (Shift)
+  - [x] Show angle tooltip
+  - [x] Rotation cursor
 - [ ] Implement Skew handles (optional Advanced mode)
-- [ ] Add Multi-select support
-  - [ ] Shift+Click to add/remove
-  - [ ] Ctrl+Click for toggle
-  - [ ] Marquee (lasso) selection
-  - [ ] Aggregate bounding box
+- [x] Add Multi-select support
+  - [x] Shift+Click to add/remove
+  - [x] Ctrl+Click for toggle
+  - [x] Marquee (lasso) selection
+  - [x] Aggregate bounding box
 - [ ] Implement "Deep Select" (Ctrl+Click to select in group)
 - [ ] Implement "Select Same" (by fill, stroke, type)
-- [ ] Implement "Select All" (Ctrl+A)
+- [x] Implement "Select All" (Ctrl+A)
 - [ ] Implement "Invert Selection"
 
 ### 3.2 Basic Shape Tools
