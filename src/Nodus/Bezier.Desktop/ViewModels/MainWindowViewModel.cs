@@ -28,14 +28,107 @@ public partial class MainWindowViewModel : ObservableObject
     private int _zoomLevel = 100;
     
     [ObservableProperty]
-    private string _documentSize = "800 x 600";
+    private string _documentSize = "800 × 600";
 
     [ObservableProperty]
     private VectorDocument? _document;
 
     [ObservableProperty]
     private string? _currentFilePath;
-    
+
+    #endregion
+
+    #region Status Bar Properties
+
+    [ObservableProperty]
+    private double _cursorX;
+
+    [ObservableProperty]
+    private double _cursorY;
+
+    [ObservableProperty]
+    private string _cursorPosition = "0, 0";
+
+    [ObservableProperty]
+    private int _elementCount;
+
+    [ObservableProperty]
+    private int _selectedCount;
+
+    [ObservableProperty]
+    private string _selectionInfo = "No selection";
+
+    [ObservableProperty]
+    private bool _isLoading;
+
+    [ObservableProperty]
+    private double _loadingProgress;
+
+    [ObservableProperty]
+    private string? _errorMessage;
+
+    [ObservableProperty]
+    private bool _showError;
+
+    /// <summary>
+    /// Available zoom levels for the dropdown.
+    /// </summary>
+    public int[] ZoomLevels { get; } = [25, 50, 75, 100, 125, 150, 200, 300, 400, 600, 800];
+
+    /// <summary>
+    /// Updates cursor position display.
+    /// </summary>
+    public void UpdateCursorPosition(double x, double y)
+    {
+        CursorX = Math.Round(x, 1);
+        CursorY = Math.Round(y, 1);
+        CursorPosition = $"{CursorX:0.#}, {CursorY:0.#}";
+    }
+
+    /// <summary>
+    /// Updates selection information display.
+    /// </summary>
+    public void UpdateSelectionInfo(int count, double? width = null, double? height = null)
+    {
+        SelectedCount = count;
+        if (count == 0)
+        {
+            SelectionInfo = "No selection";
+        }
+        else if (count == 1 && width.HasValue && height.HasValue)
+        {
+            SelectionInfo = $"1 object ({width:0.#} × {height:0.#})";
+        }
+        else
+        {
+            SelectionInfo = $"{count} objects";
+        }
+    }
+
+    /// <summary>
+    /// Shows an error toast message.
+    /// </summary>
+    public void ShowErrorToast(string message)
+    {
+        ErrorMessage = message;
+        ShowError = true;
+        
+        // Auto-dismiss after 5 seconds
+        Task.Delay(5000).ContinueWith(_ => 
+        {
+            Application.Current.Dispatcher.Invoke(() => ShowError = false);
+        });
+    }
+
+    /// <summary>
+    /// Dismisses the error toast.
+    /// </summary>
+    [RelayCommand]
+    private void DismissError()
+    {
+        ShowError = false;
+    }
+
     #endregion
     
     #region View State Properties
@@ -111,10 +204,16 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (Document is not null)
         {
-            DocumentSize = $"{Document.Width:0} x {Document.Height:0}";
+            DocumentSize = $"{Document.Width:0} × {Document.Height:0}";
+            ElementCount = Document.Elements.Count;
             Title = string.IsNullOrEmpty(CurrentFilePath) 
                 ? "Bezier - Untitled" 
                 : $"Bezier - {System.IO.Path.GetFileName(CurrentFilePath)}";
+        }
+        else
+        {
+            DocumentSize = "—";
+            ElementCount = 0;
         }
     }
     
@@ -231,9 +330,11 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ZoomIn()
     {
-        if (ZoomLevel < 800)
+        // Find next zoom level
+        var nextZoom = ZoomLevels.FirstOrDefault(z => z > ZoomLevel);
+        if (nextZoom > 0)
         {
-            ZoomLevel = Math.Min(800, ZoomLevel + 25);
+            ZoomLevel = nextZoom;
             StatusText = $"Zoom: {ZoomLevel}%";
         }
     }
@@ -241,11 +342,20 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ZoomOut()
     {
-        if (ZoomLevel > 10)
+        // Find previous zoom level
+        var prevZoom = ZoomLevels.LastOrDefault(z => z < ZoomLevel);
+        if (prevZoom > 0)
         {
-            ZoomLevel = Math.Max(10, ZoomLevel - 25);
+            ZoomLevel = prevZoom;
             StatusText = $"Zoom: {ZoomLevel}%";
         }
+    }
+
+    [RelayCommand]
+    private void SetZoom(int zoom)
+    {
+        ZoomLevel = Math.Clamp(zoom, 10, 800);
+        StatusText = $"Zoom: {ZoomLevel}%";
     }
     
     [RelayCommand]

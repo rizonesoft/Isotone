@@ -348,24 +348,25 @@ After completing each task set:
 - [x] Verify rigorous round-trip fidelity (Load -> Save -> Load)
 
 ### 1.5 Phase 1 UI Polish
-- [ ] Status bar with zoom level and cursor position
-  - [ ] Zoom percentage display
-  - [ ] X, Y cursor coordinates
-  - [ ] Selection info (count, dimensions)
-  - [ ] Document info (size, element count)
-- [ ] Zoom controls in toolbar (dropdown + fit buttons)
-  - [ ] Preset zoom levels (25%, 50%, 100%, 200%, etc.)
-  - [ ] Fit to window
+- [x] Status bar with zoom level and cursor position
+  - [x] Zoom percentage display
+  - [x] X, Y cursor coordinates
+  - [x] Selection info (count, dimensions)
+  - [x] Document info (size, element count)
+- [x] Zoom controls in toolbar (dropdown + fit buttons)
+  - [x] Preset zoom levels (25%, 50%, 100%, 200%, etc.)
+  - [x] Fit to window
   - [ ] Fit to selection
-  - [ ] Actual pixels
-- [ ] Pan/zoom with mouse wheel and drag
-- [ ] Loading indicator for large files
-  - [ ] Progress bar
+  - [x] Actual pixels
+- [x] Pan/zoom with mouse wheel and drag (implemented in SkiaCanvas)
+- [x] Loading indicator for large files
+  - [x] Progress ring
   - [ ] Cancel button
-- [ ] Error toast for invalid SVG files
+- [x] Error toast for invalid SVG files
   - [ ] Slide-in animation
-  - [ ] Auto-dismiss after 5s
-  - [ ] Dismiss button
+  - [x] Auto-dismiss after 5s
+  - [x] Dismiss button
+- [x] Keyboard shortcuts for common actions
 
 ---
 
