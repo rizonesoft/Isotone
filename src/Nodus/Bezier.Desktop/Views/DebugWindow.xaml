@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Developer Tools" 
-        Height="400" Width="600"
-        MinHeight="250" MinWidth="350"
+        Height="450" Width="700"
+        MinHeight="300" MinWidth="450"
         WindowStartupLocation="Manual"
         ExtendsContentIntoTitleBar="True"
         WindowBackdropType="Mica"
@@ -13,122 +13,331 @@
         Loaded="Window_Loaded">
     
     <ui:FluentWindow.Resources>
+        <!-- Catppuccin Mocha Theme -->
         <SolidColorBrush x:Key="BaseBrush" Color="#1E1E2E"/>
         <SolidColorBrush x:Key="MantleBrush" Color="#181825"/>
         <SolidColorBrush x:Key="CrustBrush" Color="#11111B"/>
         <SolidColorBrush x:Key="Surface0Brush" Color="#313244"/>
+        <SolidColorBrush x:Key="Surface1Brush" Color="#45475A"/>
         <SolidColorBrush x:Key="TextBrush" Color="#CDD6F4"/>
         <SolidColorBrush x:Key="SubtextBrush" Color="#A6ADC8"/>
+        <SolidColorBrush x:Key="OverlayBrush" Color="#6C7086"/>
         <SolidColorBrush x:Key="AccentBrush" Color="#FF6B35"/>
         <SolidColorBrush x:Key="BlueBrush" Color="#89B4FA"/>
+        <SolidColorBrush x:Key="GreenBrush" Color="#A6E3A1"/>
         <SolidColorBrush x:Key="YellowBrush" Color="#F9E2AF"/>
         <SolidColorBrush x:Key="RedBrush" Color="#F38BA8"/>
+        <SolidColorBrush x:Key="PinkBrush" Color="#F5C2E7"/>
+        <SolidColorBrush x:Key="MauveBrush" Color="#CBA6F7"/>
+        
+        <!-- Compact CheckBox Style -->
+        <Style x:Key="CompactCheckBox" TargetType="CheckBox">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="4,0,0,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="18"/>
+        </Style>
+        
+        <!-- Pill Button Style -->
+        <Style x:Key="PillButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource Surface0Brush}"/>
+            <Setter Property="Foreground" Value="{StaticResource SubtextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface1Brush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Icon Button Style -->
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </ui:FluentWindow.Resources>
     
     <Grid Background="{StaticResource BaseBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="32"/>
+            <RowDefinition Height="36"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="28"/>
+            <RowDefinition Height="24"/>
         </Grid.RowDefinitions>
         
         <!-- Title Bar (Draggable) -->
         <Border Grid.Row="0" Background="{StaticResource MantleBrush}" 
                 MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-            <Grid>
+            <Grid Margin="8,0">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
-                <TextBlock Text="Developer Tools" FontSize="12" FontWeight="SemiBold"
-                           Foreground="{StaticResource SubtextBrush}"
-                           VerticalAlignment="Center" Margin="10,0,0,0"/>
+                <!-- App Icon -->
+                <Border Width="20" Height="20" CornerRadius="4" Background="{StaticResource AccentBrush}"
+                        VerticalAlignment="Center" Margin="0,0,10,0">
+                    <TextBlock Text="⚡" FontSize="11" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
                 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,6,0">
-                    <CheckBox x:Name="AlwaysOnTopCheckBox" Content="Pin"
-                              Foreground="{StaticResource SubtextBrush}"
-                              Checked="AlwaysOnTop_Changed" Unchecked="AlwaysOnTop_Changed"
-                              VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <Button Content="✕" Click="Close_Click"
-                            Width="24" Height="24" Padding="0"
-                            Background="Transparent" Foreground="{StaticResource SubtextBrush}"
-                            BorderThickness="0" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Developer Tools" FontSize="12" FontWeight="Medium"
+                           Foreground="{StaticResource TextBrush}"
+                           VerticalAlignment="Center"/>
+                
+                <!-- Window Controls -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ToggleButton x:Name="AlwaysOnTopCheckBox" ToolTip="Pin on top"
+                                  Checked="AlwaysOnTop_Changed" Unchecked="AlwaysOnTop_Changed"
+                                  Width="28" Height="28" Background="Transparent" BorderThickness="0">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="border" Background="Transparent" CornerRadius="4">
+                                                <TextBlock x:Name="icon" Text="📌" FontSize="12" Opacity="0.5"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="icon" Property="Opacity" Value="1"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                    <Button Click="Close_Click" Style="{StaticResource IconButton}" ToolTip="Close">
+                        <TextBlock Text="✕" FontSize="11"/>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
         
-        <!-- TabControl -->
-        <TabControl x:Name="MainTabControl" Grid.Row="1" 
-                    Background="{StaticResource BaseBrush}"
-                    BorderThickness="0" Padding="0">
-            <TabControl.Resources>
-                <Style TargetType="TabItem">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="Foreground" Value="{StaticResource SubtextBrush}"/>
-                    <Setter Property="Padding" Value="8,4"/>
-                    <Setter Property="FontSize" Value="11"/>
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="TabItem">
-                                <Border x:Name="Border" Background="{TemplateBinding Background}" 
-                                        Padding="{TemplateBinding Padding}">
-                                    <ContentPresenter ContentSource="Header"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource Surface0Brush}"/>
-                                    </Trigger>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource Surface0Brush}"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </TabControl.Resources>
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
             
-            <!-- Console Tab -->
-            <TabItem Header="Console">
-                <Grid Background="{StaticResource CrustBrush}">
+            <!-- Tab Strip -->
+            <Border Grid.Row="0" Background="{StaticResource MantleBrush}">
+                <StackPanel x:Name="TabStrip" Orientation="Horizontal" Margin="8,0">
+                    <RadioButton x:Name="ConsoleTabBtn" Content="Console" IsChecked="True"
+                                 GroupName="Tabs" Checked="Tab_Checked" Tag="Console">
+                        <RadioButton.Style>
+                            <Style TargetType="RadioButton">
+                                <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Padding="12,8" Background="Transparent"
+                                                    BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                                                <ContentPresenter VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </RadioButton.Style>
+                    </RadioButton>
+                    <RadioButton x:Name="CoordsTabBtn" Content="Coordinates"
+                                 GroupName="Tabs" Checked="Tab_Checked" Tag="Coordinates">
+                        <RadioButton.Style>
+                            <Style TargetType="RadioButton">
+                                <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Padding="12,8" Background="Transparent"
+                                                    BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                                                <ContentPresenter VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </RadioButton.Style>
+                    </RadioButton>
+                    <RadioButton x:Name="ElementsTabBtn" Content="Elements"
+                                 GroupName="Tabs" Checked="Tab_Checked" Tag="Elements">
+                        <RadioButton.Style>
+                            <Style TargetType="RadioButton">
+                                <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Padding="12,8" Background="Transparent"
+                                                    BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                                                <ContentPresenter VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </RadioButton.Style>
+                    </RadioButton>
+                    <RadioButton x:Name="PerfTabBtn" Content="Performance"
+                                 GroupName="Tabs" Checked="Tab_Checked" Tag="Performance">
+                        <RadioButton.Style>
+                            <Style TargetType="RadioButton">
+                                <Setter Property="Foreground" Value="{StaticResource OverlayBrush}"/>
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Padding="12,8" Background="Transparent"
+                                                    BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                                                <ContentPresenter VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </RadioButton.Style>
+                    </RadioButton>
+                </StackPanel>
+            </Border>
+            
+            <!-- Tab Content -->
+            <Grid Grid.Row="1">
+                <!-- Console Panel -->
+                <Grid x:Name="ConsolePanel" Background="{StaticResource CrustBrush}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="34"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
                     <!-- Filter Bar -->
-                    <Border Grid.Row="0" Background="{StaticResource Surface0Brush}" Padding="4,3">
-                        <Grid>
+                    <Border Grid.Row="0" Background="{StaticResource BaseBrush}" 
+                            BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1">
+                        <Grid Margin="8,0">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MaxWidth="250"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             
-                            <TextBox x:Name="FilterTextBox"
-                                     Background="{StaticResource MantleBrush}"
-                                     Foreground="{StaticResource TextBrush}"
-                                     BorderThickness="0" Padding="4,2"
-                                     TextChanged="Filter_TextChanged"/>
+                            <!-- Search Box -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                    Padding="8,4" VerticalAlignment="Center">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="🔍" FontSize="11" Foreground="{StaticResource OverlayBrush}"
+                                               VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBox x:Name="FilterTextBox" Grid.Column="1"
+                                             Background="Transparent" Foreground="{StaticResource TextBrush}"
+                                             BorderThickness="0" FontSize="11" VerticalAlignment="Center"
+                                             TextChanged="Filter_TextChanged"/>
+                                </Grid>
+                            </Border>
                             
-                            <StackPanel Orientation="Horizontal" Grid.Column="1" Margin="8,0,0,0">
+                            <!-- Level Filters -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
                                 <CheckBox x:Name="ShowDebugCheckBox" Content="Debug" IsChecked="True"
-                                          Foreground="{StaticResource SubtextBrush}"
-                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,6,0"/>
-                                <CheckBox x:Name="ShowInfoCheckBox" Content="Info" IsChecked="True"
-                                          Foreground="{StaticResource BlueBrush}"
-                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,6,0"/>
-                                <CheckBox x:Name="ShowWarningCheckBox" Content="Warn" IsChecked="True"
-                                          Foreground="{StaticResource YellowBrush}"
-                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,6,0"/>
-                                <CheckBox x:Name="ShowErrorCheckBox" Content="Error" IsChecked="True"
-                                          Foreground="{StaticResource RedBrush}"
+                                          Style="{StaticResource CompactCheckBox}" Foreground="{StaticResource OverlayBrush}"
                                           Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,8,0"/>
-                                <Button Content="Clear" Click="Clear_Click"
-                                        Padding="8,2" Background="{StaticResource MantleBrush}"
-                                        Foreground="{StaticResource SubtextBrush}" BorderThickness="0"/>
+                                <CheckBox x:Name="ShowInfoCheckBox" Content="Info" IsChecked="True"
+                                          Style="{StaticResource CompactCheckBox}" Foreground="{StaticResource BlueBrush}"
+                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,8,0"/>
+                                <CheckBox x:Name="ShowWarningCheckBox" Content="Warn" IsChecked="True"
+                                          Style="{StaticResource CompactCheckBox}" Foreground="{StaticResource YellowBrush}"
+                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed" Margin="0,0,8,0"/>
+                                <CheckBox x:Name="ShowErrorCheckBox" Content="Error" IsChecked="True"
+                                          Style="{StaticResource CompactCheckBox}" Foreground="{StaticResource RedBrush}"
+                                          Checked="LogLevel_Changed" Unchecked="LogLevel_Changed"/>
+                            </StackPanel>
+                            
+                            <!-- Actions -->
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="🗑 Clear" Click="Clear_Click" Style="{StaticResource PillButton}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -142,24 +351,24 @@
                              SelectionMode="Extended">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="4,1">
+                                <Grid Margin="8,2">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="75"/>
-                                        <ColumnDefinition Width="45"/>
-                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition Width="78"/>
+                                        <ColumnDefinition Width="48"/>
+                                        <ColumnDefinition Width="95"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss.fff}'}" 
-                                               Foreground="{StaticResource SubtextBrush}"
-                                               FontFamily="Consolas" FontSize="12"/>
+                                               Foreground="{StaticResource OverlayBrush}"
+                                               FontFamily="Cascadia Code,Consolas" FontSize="12"/>
                                     <TextBlock Grid.Column="1" Text="{Binding Level}" 
-                                               FontFamily="Consolas" FontSize="12" FontWeight="SemiBold"/>
+                                               FontFamily="Cascadia Code,Consolas" FontSize="12" FontWeight="SemiBold"/>
                                     <TextBlock Grid.Column="2" Text="{Binding Category}" 
                                                Foreground="{StaticResource AccentBrush}"
-                                               FontFamily="Consolas" FontSize="12"/>
+                                               FontFamily="Cascadia Code,Consolas" FontSize="12"/>
                                     <TextBlock Grid.Column="3" Text="{Binding Message}" 
                                                Foreground="{StaticResource TextBrush}"
-                                               FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"/>
+                                               FontFamily="Cascadia Code,Consolas" FontSize="12" TextWrapping="NoWrap"/>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -169,11 +378,24 @@
                                 <Setter Property="Margin" Value="0"/>
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Setter Property="BorderThickness" Value="0"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource Surface0Brush}"/>
-                                    </Trigger>
-                                </Style.Triggers>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                    BorderThickness="0,0,0,1" BorderBrush="{StaticResource Surface0Brush}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource Surface0Brush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#1A313244"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
                             </Style>
                         </ListBox.ItemContainerStyle>
                         <ListBox.ContextMenu>
@@ -181,56 +403,81 @@
                                 <MenuItem Header="Copy Selected" Click="CopySelected_Click"/>
                                 <MenuItem Header="Copy All" Click="CopyAll_Click"/>
                                 <Separator/>
-                                <MenuItem Header="Export..." Click="ExportToFile_Click"/>
+                                <MenuItem Header="Export to File..." Click="ExportToFile_Click"/>
                             </ContextMenu>
                         </ListBox.ContextMenu>
                     </ListBox>
                 </Grid>
-            </TabItem>
-            
-            <!-- Coordinates Tab -->
-            <TabItem Header="Coords">
-                <Grid Background="{StaticResource CrustBrush}">
-                    <TextBlock Text="Coordinates - Coming soon" FontSize="10"
-                               Foreground="{StaticResource SubtextBrush}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                
+                <!-- Coordinates Panel -->
+                <Grid x:Name="CoordinatesPanel" Visibility="Collapsed" Background="{StaticResource CrustBrush}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="📍" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="Coordinates Inspector" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Real-time mouse and element coordinates" FontSize="12"
+                                   Foreground="{StaticResource OverlayBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                Padding="12,6" Margin="0,16,0,0" HorizontalAlignment="Center">
+                            <TextBlock Text="Coming Soon" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                        </Border>
+                    </StackPanel>
                 </Grid>
-            </TabItem>
-            
-            <!-- Elements Tab -->
-            <TabItem Header="Elements">
-                <Grid Background="{StaticResource CrustBrush}">
-                    <TextBlock Text="Elements - Coming soon" FontSize="10"
-                               Foreground="{StaticResource SubtextBrush}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                
+                <!-- Elements Panel -->
+                <Grid x:Name="ElementsPanel" Visibility="Collapsed" Background="{StaticResource CrustBrush}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="🎨" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="Elements Inspector" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Browse and inspect document elements" FontSize="12"
+                                   Foreground="{StaticResource OverlayBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                Padding="12,6" Margin="0,16,0,0" HorizontalAlignment="Center">
+                            <TextBlock Text="Coming Soon" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                        </Border>
+                    </StackPanel>
                 </Grid>
-            </TabItem>
-            
-            <!-- Performance Tab -->
-            <TabItem Header="Perf">
-                <Grid Background="{StaticResource CrustBrush}">
-                    <TextBlock Text="Performance - Coming soon" FontSize="10"
-                               Foreground="{StaticResource SubtextBrush}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                
+                <!-- Performance Panel -->
+                <Grid x:Name="PerformancePanel" Visibility="Collapsed" Background="{StaticResource CrustBrush}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="⚡" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="Performance Monitor" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="FPS, render times, and memory usage" FontSize="12"
+                                   Foreground="{StaticResource OverlayBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                Padding="12,6" Margin="0,16,0,0" HorizontalAlignment="Center">
+                            <TextBlock Text="Coming Soon" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                        </Border>
+                    </StackPanel>
                 </Grid>
-            </TabItem>
-        </TabControl>
+            </Grid>
+        </Grid>
         
         <!-- Status Bar -->
-        <Border Grid.Row="2" Background="{StaticResource MantleBrush}" Padding="6,4">
-            <Grid>
+        <Border Grid.Row="2" Background="{StaticResource MantleBrush}"
+                BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,1,0,0">
+            <Grid Margin="10,0">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
-                <TextBlock x:Name="StatusText" Text="Ready"
-                           Foreground="{StaticResource SubtextBrush}"
-                           VerticalAlignment="Center"/>
+                <!-- Status Indicator -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="6" Height="6" Fill="{StaticResource GreenBrush}" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="StatusText" Text="Ready" FontSize="11"
+                               Foreground="{StaticResource OverlayBrush}"/>
+                </StackPanel>
                 
-                <CheckBox x:Name="AutoScrollCheckBox" Grid.Column="1"
+                <!-- Auto-scroll Toggle -->
+                <CheckBox x:Name="AutoScrollCheckBox" Grid.Column="2"
                           Content="Auto-scroll" IsChecked="True"
-                          Foreground="{StaticResource SubtextBrush}"/>
+                          Style="{StaticResource CompactCheckBox}"
+                          Foreground="{StaticResource OverlayBrush}"/>
             </Grid>
         </Border>
     </Grid>

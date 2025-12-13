@@ -96,6 +96,19 @@ public partial class DebugWindow : FluentWindow
         Hide();
     }
 
+    private void Tab_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!_isLoaded) return;
+        
+        if (sender is RadioButton rb && rb.Tag is string tabName)
+        {
+            ConsolePanel.Visibility = tabName == "Console" ? Visibility.Visible : Visibility.Collapsed;
+            CoordinatesPanel.Visibility = tabName == "Coordinates" ? Visibility.Visible : Visibility.Collapsed;
+            ElementsPanel.Visibility = tabName == "Elements" ? Visibility.Visible : Visibility.Collapsed;
+            PerformancePanel.Visibility = tabName == "Performance" ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         // Restore window position and state
