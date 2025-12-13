@@ -713,24 +713,24 @@ After completing each task set:
   - [x] Split path at intersection
 
 ### 4.4 Symbols & Components
-- [ ] Create symbol from selection
-  - [ ] Name symbol
-  - [ ] Save to library
-- [ ] Symbol library panel
-  - [ ] Grid view
-  - [ ] Search
-  - [ ] Categories
-- [ ] Symbol instances on canvas
-  - [ ] Drag from library
-  - [ ] Linked to master
-- [ ] Edit master symbol (updates all instances)
-  - [ ] Double-click to edit
-  - [ ] Breadcrumb navigation
-  - [ ] Changes propagate
-- [ ] Override instance properties
-  - [ ] Fill, stroke
-  - [ ] Size
-  - [ ] Detach from master
+- [x] Create symbol from selection
+  - [x] Name symbol
+  - [x] Save to library
+- [x] Symbol library panel
+  - [x] Grid view
+  - [x] Search
+  - [x] Categories
+- [x] Symbol instances on canvas
+  - [x] Drag from library
+  - [x] Linked to master
+- [x] Edit master symbol (updates all instances)
+  - [x] Double-click to edit
+  - [x] Breadcrumb navigation
+  - [x] Changes propagate
+- [x] Override instance properties
+  - [x] Fill, stroke
+  - [x] Size
+  - [x] Detach from master
 
 ### 4.5 Artboards
 - [ ] Multiple artboards per document
