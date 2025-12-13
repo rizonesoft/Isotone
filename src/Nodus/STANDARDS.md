@@ -710,9 +710,21 @@ xmlns:fi="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
 ### Icon Standards
 | Property | Value | Notes |
 |----------|-------|-------|
-| IconSize | `Size20` | Standard size for toolbar/sidebar icons |
+| IconSize | `Size24` | Standard size for toolbar/sidebar icons |
 | IconVariant | `Regular` | Use Regular for most UI, Filled for active states |
 | Foreground | `SubtextBrush` | Use theme brushes for consistency |
+
+### Updating Icon Resources
+The cloned repo provides documentation and SVG assets. The NuGet package provides WPF controls.
+
+```powershell
+# Update documentation repo
+cd resources/fluentui-system-icons
+git pull
+
+# Update NuGet package
+dotnet restore
+```
 
 ### Common Icons
 | Purpose | Icon Name |
