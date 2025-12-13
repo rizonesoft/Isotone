@@ -766,11 +766,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void OpenDebugWindow()
     {
-        var debugWindow = new Views.DebugWindow
-        {
-            Owner = Application.Current.MainWindow
-        };
-        debugWindow.Show();
+        Views.DebugWindow.ShowInstance();
         StatusText = "Developer Tools opened";
     }
     

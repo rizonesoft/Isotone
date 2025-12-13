@@ -19,30 +19,81 @@ public partial class DebugWindow : FluentWindow
     private string _filterText = string.Empty;
     private bool _isLoaded;
     
+    // Singleton instance
+    private static DebugWindow? _instance;
+    private static readonly object _lock = new();
+    
     // Window state persistence
     private static double _savedLeft = double.NaN;
     private static double _savedTop = double.NaN;
-    private static double _savedWidth = 700;
-    private static double _savedHeight = 500;
+    private static double _savedWidth = 600;
+    private static double _savedHeight = 400;
     private static bool _savedAlwaysOnTop;
     private static bool _isInitialized;
 
-    public DebugWindow()
+    private DebugWindow()
     {
         InitializeComponent();
         
         LogListBox.ItemsSource = _filteredEntries;
         
-        // Wire up tab switching
-        ConsoleTab.Checked += (_, _) => SwitchTab("Console");
-        CoordinatesTab.Checked += (_, _) => SwitchTab("Coordinates");
-        ElementsTab.Checked += (_, _) => SwitchTab("Elements");
-        PerformanceTab.Checked += (_, _) => SwitchTab("Performance");
-        
         // Subscribe to debug logger
         DebugLogger.Instance.LogAdded += OnLogAdded;
         
         _isLoaded = true;
+    }
+
+    /// <summary>
+    /// Gets or creates the singleton instance of the debug window.
+    /// </summary>
+    public static DebugWindow Instance
+    {
+        get
+        {
+            lock (_lock)
+            {
+                if (_instance is null || !_instance.IsLoaded)
+                {
+                    _instance = new DebugWindow();
+                }
+                return _instance;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Shows the singleton debug window, bringing it to front if already open.
+    /// </summary>
+    public static void ShowInstance()
+    {
+        var window = Instance;
+        if (window.IsVisible)
+        {
+            window.Activate();
+            if (window.WindowState == WindowState.Minimized)
+                window.WindowState = WindowState.Normal;
+        }
+        else
+        {
+            window.Show();
+        }
+    }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        }
+        else
+        {
+            DragMove();
+        }
+    }
+
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -116,14 +167,6 @@ public partial class DebugWindow : FluentWindow
             
             UpdateStatus();
         });
-    }
-
-    private void SwitchTab(string tabName)
-    {
-        ConsolePanel.Visibility = tabName == "Console" ? Visibility.Visible : Visibility.Collapsed;
-        CoordinatesPanel.Visibility = tabName == "Coordinates" ? Visibility.Visible : Visibility.Collapsed;
-        ElementsPanel.Visibility = tabName == "Elements" ? Visibility.Visible : Visibility.Collapsed;
-        PerformancePanel.Visibility = tabName == "Performance" ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void AlwaysOnTop_Changed(object sender, RoutedEventArgs e)
