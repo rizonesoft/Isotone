@@ -693,24 +693,24 @@ After completing each task set:
   - [ ] Delete effect
 
 ### 4.3 Advanced Path Operations
-- [ ] Implement Boolean Operations via `SkiaSharp.SKPath.Op`
-  - [ ] Union (Combine shapes)
-  - [ ] Subtract (Cut out)
-  - [ ] Intersect (Common area)
-  - [ ] Exclude (XOR)
+- [x] Implement Boolean Operations via `SkiaSharp.SKPath.Op`
+  - [x] Union (Combine shapes)
+  - [x] Subtract (Cut out)
+  - [x] Intersect (Common area)
+  - [x] Exclude (XOR)
   - [ ] Preview before applying
-- [ ] Implement "Text to Path" conversion
-- [ ] Implement "Stroke to Path" (Outline)
-- [ ] Path Simplify (Decimate nodes)
-  - [ ] Tolerance slider
+- [x] Implement "Text to Path" conversion
+- [x] Implement "Stroke to Path" (Outline)
+- [x] Path Simplify (Decimate nodes)
+  - [x] Tolerance slider
   - [ ] Preview
-- [ ] Path Offset (Inset/Outset)
-  - [ ] Distance input
-  - [ ] Join type
-  - [ ] Miter limit
-- [ ] Path Division (knife tool)
-  - [ ] Draw cut line
-  - [ ] Split path at intersection
+- [x] Path Offset (Inset/Outset)
+  - [x] Distance input
+  - [x] Join type
+  - [x] Miter limit
+- [x] Path Division (knife tool)
+  - [x] Draw cut line
+  - [x] Split path at intersection
 
 ### 4.4 Symbols & Components
 - [ ] Create symbol from selection
