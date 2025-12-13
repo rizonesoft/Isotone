@@ -930,13 +930,13 @@ After completing each task set:
 - [x] WebP
 
 ### 6.4 Export Dialog
-- [ ] Format selection
-- [ ] Preview
-- [ ] Size options
-- [ ] Quality options
-- [ ] Filename template
-- [ ] Export all artboards option
-- [ ] Batch export
+- [x] Format selection
+- [x] Preview
+- [x] Size options
+- [x] Quality options
+- [x] Filename template
+- [x] Export all artboards option
+- [x] Batch export
 
 ### 6.5 Asset Management
 - [ ] Built-in icon library (browse, search, insert)
