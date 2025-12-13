@@ -134,8 +134,8 @@
         
         <!-- Active Tool Button Style (RadioButton as tool selector) -->
         <Style x:Key="ActiveToolButtonStyle" TargetType="RadioButton">
-            <Setter Property="Width" Value="40"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
             <Setter Property="Margin" Value="2"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -147,22 +147,37 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
-                                CornerRadius="6"
-                                BorderThickness="2"
-                                BorderBrush="Transparent">
-                            <ContentPresenter HorizontalAlignment="Center" 
-                                              VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid>
+                            <!-- Glow layer (behind the button) -->
+                            <Border x:Name="glowBorder" 
+                                    CornerRadius="8"
+                                    Background="{StaticResource AccentBrush}"
+                                    Opacity="0">
+                                <Border.Effect>
+                                    <BlurEffect Radius="8"/>
+                                </Border.Effect>
+                            </Border>
+                            <!-- Main button -->
+                            <Border x:Name="border" 
+                                    Background="{TemplateBinding Background}" 
+                                    CornerRadius="8"
+                                    BorderThickness="0">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="{StaticResource Surface1Brush}"/>
                                 <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface0Brush}"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <SolidColorBrush Color="#2AFF6B35"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="glowBorder" Property="Opacity" Value="0.35"/>
                                 <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
                             </Trigger>
                             <MultiTrigger>
@@ -170,7 +185,12 @@
                                     <Condition Property="IsMouseOver" Value="True"/>
                                     <Condition Property="IsChecked" Value="True"/>
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface1Brush}"/>
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <SolidColorBrush Color="#3FFF6B35"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="glowBorder" Property="Opacity" Value="0.45"/>
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
