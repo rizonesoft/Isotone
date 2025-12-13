@@ -38,3 +38,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# External resources (cloned repos)
+resources/fluentui-system-icons/

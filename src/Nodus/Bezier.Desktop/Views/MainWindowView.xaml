@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:fi="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
         xmlns:avalondock="https://github.com/Dirkster99/AvalonDock"
         xmlns:avalontheme="clr-namespace:AvalonDock.Themes.VS2013;assembly=AvalonDock.Themes.VS2013"
         Title="Bezier" 
@@ -285,15 +286,15 @@
                 <!-- File Operations -->
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="New (Ctrl+N)" 
                         Command="{Binding NewCommand}" Width="32" Height="28">
-                    <TextBlock Text="📄" FontSize="18"/>
+                    <fi:FluentIcon Icon="DocumentAdd" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                 </Button>
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Open (Ctrl+O)" 
                         Command="{Binding OpenCommand}" Width="32" Height="28">
-                    <TextBlock Text="📂" FontSize="18"/>
+                    <fi:FluentIcon Icon="FolderOpen" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                 </Button>
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Save (Ctrl+S)" 
                         Command="{Binding SaveCommand}" Width="32" Height="28">
-                    <TextBlock Text="💾" FontSize="18"/>
+                    <fi:FluentIcon Icon="Save" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                 </Button>
                 
                 <!-- Separator -->
@@ -302,11 +303,11 @@
                 <!-- Edit Operations -->
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Undo (Ctrl+Z)" 
                         Command="{Binding UndoCommand}" Width="32" Height="28">
-                    <TextBlock Text="↶" FontSize="20"/>
+                    <fi:FluentIcon Icon="ArrowUndo" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                 </Button>
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Redo (Ctrl+Y)" 
                         Command="{Binding RedoCommand}" Width="32" Height="28">
-                    <TextBlock Text="↷" FontSize="20"/>
+                    <fi:FluentIcon Icon="ArrowRedo" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                 </Button>
                 
                 <!-- Separator -->
@@ -330,7 +331,7 @@
                 </ComboBox>
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Fit to Window (Ctrl+0)" 
                         Command="{Binding FitToWindowCommand}" Width="32" Height="28">
-                    <TextBlock Text="⊡" FontSize="18"/>
+                    <fi:FluentIcon Icon="FullScreenMaximize" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                 </Button>
                 
                 <!-- Separator -->
@@ -339,15 +340,15 @@
                 <!-- View Toggles -->
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Grid (Ctrl+')" 
                               IsChecked="{Binding ShowGrid}" Width="32" Height="28">
-                    <TextBlock Text="⊞" FontSize="18"/>
+                    <fi:FluentIcon Icon="Grid" IconSize="Size20" IconVariant="Regular"/>
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Rulers" 
                               IsChecked="{Binding ShowRulers}" Width="32" Height="28">
-                    <TextBlock Text="📏" FontSize="18"/>
+                    <fi:FluentIcon Icon="TextAlignJustifyLow" IconSize="Size20" IconVariant="Regular"/>
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Snap" 
                               IsChecked="{Binding SnapEnabled}" Width="32" Height="28">
-                    <TextBlock Text="⊕" FontSize="18"/>
+                    <fi:FluentIcon Icon="Target" IconSize="Size20" IconVariant="Regular"/>
                 </ToggleButton>
             </StackPanel>
         </Border>
@@ -365,31 +366,31 @@
                     BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,1,0">
                 <StackPanel Margin="4,8">
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Select (V)">
-                        <TextBlock Text="⊙" FontSize="20"/>
+                        <fi:FluentIcon Icon="Cursor" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Pen Tool (P)">
-                        <TextBlock Text="✎" FontSize="20"/>
+                        <fi:FluentIcon Icon="Pen" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Rectangle (R)">
-                        <TextBlock Text="▢" FontSize="20"/>
+                        <fi:FluentIcon Icon="Square" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Ellipse (E)">
-                        <TextBlock Text="○" FontSize="20"/>
+                        <fi:FluentIcon Icon="Circle" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Line (L)">
-                        <TextBlock Text="╱" FontSize="20"/>
+                        <fi:FluentIcon Icon="LineHorizontal1" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Text (T)">
-                        <TextBlock Text="T" FontSize="18" FontWeight="Bold"/>
+                        <fi:FluentIcon Icon="TextT" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                     </Button>
                     
                     <Separator Background="{StaticResource Surface0Brush}" Margin="8,12"/>
                     
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Zoom (Z)">
-                        <TextBlock Text="🔍" FontSize="18"/>
+                        <fi:FluentIcon Icon="ZoomIn" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Hand (H)">
-                        <TextBlock Text="✋" FontSize="18"/>
+                        <fi:FluentIcon Icon="HandLeft" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                     </Button>
                 </StackPanel>
             </Border>

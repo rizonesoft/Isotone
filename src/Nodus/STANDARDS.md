@@ -688,10 +688,54 @@ void Render()
 
 ---
 
+## Icons - Fluent UI System Icons
+
+### IconLibrary
+Use **FluentIcons.Wpf** package with Microsoft Fluent UI System Icons.
+
+**Icon Reference Documentation:**
+- Regular icons: `resources/fluentui-system-icons/icons_regular.md`
+- Filled icons: `resources/fluentui-system-icons/icons_filled.md`
+- Full SVG assets: `resources/fluentui-system-icons/assets/`
+
+### Usage in XAML
+```xml
+<!-- Add namespace -->
+xmlns:fi="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+
+<!-- Use FluentIcon -->
+<fi:FluentIcon Icon="Save" IconSize="Size20" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
+```
+
+### Icon Standards
+| Property | Value | Notes |
+|----------|-------|-------|
+| IconSize | `Size20` | Standard size for toolbar/sidebar icons |
+| IconVariant | `Regular` | Use Regular for most UI, Filled for active states |
+| Foreground | `SubtextBrush` | Use theme brushes for consistency |
+
+### Common Icons
+| Purpose | Icon Name |
+|---------|-----------|
+| New Document | `DocumentAdd` |
+| Open | `FolderOpen` |
+| Save | `Save` |
+| Undo | `ArrowUndo` |
+| Redo | `ArrowRedo` |
+| Select/Cursor | `Cursor` |
+| Pen/Draw | `Pen` |
+| Rectangle | `Square` |
+| Ellipse | `Circle` |
+| Zoom In | `ZoomIn` |
+| Grid | `Grid` |
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | Dec 2025 | Initial .NET 10 / C# 14 standards |
 | 1.1 | Dec 2025 | Added Error Handling, Logging, DI, Git, Docs, Performance |
+| 1.2 | Dec 2025 | Added Fluent UI System Icons guidelines |
 
