@@ -601,13 +601,13 @@ After completing each task set:
 - [x] Snap tolerance setting
 
 ### 3.7 Alignment & Distribution
-- [ ] Align left, center, right (horizontal)
-- [ ] Align top, middle, bottom (vertical)
-- [ ] Distribute horizontally (spacing)
-- [ ] Distribute vertically (spacing)
-- [ ] Align to canvas
-- [ ] Align to selection bounds
-- [ ] Align to key object
+- [x] Align left, center, right (horizontal)
+- [x] Align top, middle, bottom (vertical)
+- [x] Distribute horizontally (spacing)
+- [x] Distribute vertically (spacing)
+- [x] Align to canvas
+- [x] Align to selection bounds
+- [x] Align to key object
 
 ### 3.8 Phase 3 UI Polish
 - [ ] Tool options bar (context-sensitive, below toolbar)
