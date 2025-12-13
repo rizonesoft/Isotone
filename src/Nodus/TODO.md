@@ -4,14 +4,19 @@
 
 ## 🔧 Quick Fix Prompt
 ```
-Bezier SVG Editor - Quick Change Request:
-[Describe the issue, change, or small feature request here]
+Continue developing Bezier SVG Editor and work on the following: [REQUEST]
+Reference this file for context.
+Follow coding standards in STANDARDS.md (.NET 10 / C# 14 best practices).
+Ensure code follows the project structure:
+- Bezier.Core: Domain models, interfaces, pure logic
+- Bezier.Desktop: WPF UI, SkiaSharp rendering, Services
+- Bezier.Tests: Unit and integration tests
 
-Project: r:\GitHub\Bezier
-Standards: STANDARDS.md (.NET 10 / C# 14)
-Structure: Core (logic) | Desktop (WPF/UI) | Tests
-
-After fix: Build → Test → Commit → Push
+After completing each task set:
+1. Build: dotnet build Bezier.sln
+2. Run: dotnet run --project Bezier.Desktop
+3. Commit: git add -A; git commit -m "feat: [description]"
+4. Push: git push origin master
 ```
 
 ## 🤖 Feature Development Prompt

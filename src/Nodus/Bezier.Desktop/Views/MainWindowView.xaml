@@ -147,25 +147,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Grid>
-                            <!-- Glow layer (behind the button) -->
-                            <Border x:Name="glowBorder" 
-                                    CornerRadius="8"
-                                    Background="{StaticResource AccentBrush}"
-                                    Opacity="0">
-                                <Border.Effect>
-                                    <BlurEffect Radius="8"/>
-                                </Border.Effect>
-                            </Border>
-                            <!-- Main button -->
-                            <Border x:Name="border" 
-                                    Background="{TemplateBinding Background}" 
-                                    CornerRadius="8"
-                                    BorderThickness="0">
-                                <ContentPresenter HorizontalAlignment="Center" 
-                                                  VerticalAlignment="Center"/>
-                            </Border>
-                        </Grid>
+                        <!-- Main button with border for glow effect -->
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="8"
+                                BorderThickness="1.5"
+                                BorderBrush="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="{StaticResource Surface1Brush}"/>
@@ -174,10 +164,15 @@
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="border" Property="Background">
                                     <Setter.Value>
-                                        <SolidColorBrush Color="#2AFF6B35"/>
+                                        <SolidColorBrush Color="#1AFF6B35"/>
                                     </Setter.Value>
                                 </Setter>
-                                <Setter TargetName="glowBorder" Property="Opacity" Value="0.35"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF6B35" BlurRadius="8" ShadowDepth="0" Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
                                 <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
                             </Trigger>
                             <MultiTrigger>
@@ -187,10 +182,14 @@
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="border" Property="Background">
                                     <Setter.Value>
-                                        <SolidColorBrush Color="#3FFF6B35"/>
+                                        <SolidColorBrush Color="#2AFF6B35"/>
                                     </Setter.Value>
                                 </Setter>
-                                <Setter TargetName="glowBorder" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF6B35" BlurRadius="10" ShadowDepth="0" Opacity="0.6"/>
+                                    </Setter.Value>
+                                </Setter>
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -661,6 +660,7 @@
             <!-- Center: Canvas Area -->
             <canvas:SkiaCanvas x:Name="MainCanvas" Grid.Column="1"
                                Document="{Binding Document}"
+                               ToolManager="{Binding ToolManager}"
                                ShowGrid="{Binding ShowGrid}"
                                ShowRulers="{Binding ShowRulers}"
                                OutlineMode="{Binding OutlineMode}"

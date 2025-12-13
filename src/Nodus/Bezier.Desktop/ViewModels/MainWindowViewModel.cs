@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using Bezier.Core.Models;
 using Bezier.Core.Services;
+using Bezier.Core.Tools;
 
 namespace Bezier.Desktop.ViewModels;
 
@@ -17,11 +18,46 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly SvgImporter _svgImporter = new();
     private readonly SvgExporter _svgExporter = new();
     private readonly HistoryManager _history = new();
+    private readonly ToolManager _toolManager = new();
 
     public MainWindowViewModel()
     {
         _history.HistoryChanged += OnHistoryChanged;
+        InitializeToolManager();
     }
+
+    private void InitializeToolManager()
+    {
+        // Register all tools
+        _toolManager.RegisterTool(new SelectTool());
+        _toolManager.RegisterTool(new PenTool());
+        _toolManager.RegisterTool(new RectangleTool());
+        _toolManager.RegisterTool(new EllipseTool());
+        _toolManager.RegisterTool(new LineTool());
+        _toolManager.RegisterTool(new TextTool());
+        _toolManager.RegisterTool(new ZoomTool());
+        _toolManager.RegisterTool(new PanTool());
+
+        // Set default tool
+        _toolManager.SetTool("Select");
+
+        // Listen for tool changes
+        _toolManager.ActiveToolChanged += (_, tool) =>
+        {
+            if (tool is not null)
+            {
+                ActiveTool = tool.Name;
+            }
+        };
+
+        // Subscribe to redraw requests
+        _toolManager.RedrawRequested += (_, _) => OnPropertyChanged(nameof(ToolManager));
+    }
+
+    /// <summary>
+    /// Gets the tool manager for canvas binding.
+    /// </summary>
+    public ToolManager ToolManager => _toolManager;
 
     private void OnHistoryChanged(object? sender, EventArgs e)
     {
@@ -57,6 +93,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private VectorDocument? _document;
+
+    partial void OnDocumentChanged(VectorDocument? value)
+    {
+        _toolManager.SetContext(value, _history);
+    }
 
     [ObservableProperty]
     private string? _currentFilePath;
@@ -220,7 +261,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void SetTool(string toolName)
     {
-        ActiveTool = toolName;
+        _toolManager.SetTool(toolName);
     }
 
     #endregion

@@ -2,7 +2,9 @@ namespace Bezier.Desktop.Controls.Canvas;
 
 using System.Windows;
 using System.Windows.Input;
+using Bezier.Core.Interfaces;
 using Bezier.Core.Models;
+using Bezier.Core.Services;
 using Bezier.Desktop.Services;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
@@ -94,6 +96,16 @@ public class SkiaCanvas : SKElement
             new PropertyMetadata(CanvasBackgroundType.Checkerboard, OnRenderPropertyChanged));
 
     /// <summary>
+    /// ToolManager for handling tool input.
+    /// </summary>
+    public static readonly DependencyProperty ToolManagerProperty =
+        DependencyProperty.Register(
+            nameof(ToolManager),
+            typeof(ToolManager),
+            typeof(SkiaCanvas),
+            new PropertyMetadata(null, OnToolManagerChanged));
+
+    /// <summary>
     /// Solid background color when BackgroundType is SolidColor.
     /// </summary>
     public static readonly DependencyProperty BackgroundColorProperty =
@@ -143,6 +155,12 @@ public class SkiaCanvas : SKElement
     {
         get => (SKColor)GetValue(BackgroundColorProperty);
         set => SetValue(BackgroundColorProperty, value);
+    }
+
+    public ToolManager? ToolManager
+    {
+        get => (ToolManager?)GetValue(ToolManagerProperty);
+        set => SetValue(ToolManagerProperty, value);
     }
 
     /// <summary>
@@ -213,6 +231,19 @@ public class SkiaCanvas : SKElement
         }
         
         canvas.Restore();
+        
+        // Render tool overlays (selection handles, guides, etc.) while still in document coordinates
+        if (ToolManager?.ActiveTool is not null)
+        {
+            canvas.Save();
+            canvas.Translate(_state.PanOffset.X, _state.PanOffset.Y);
+            canvas.Scale((float)_state.Zoom);
+            
+            var renderContext = new SkiaToolRenderContext(canvas, _state.Zoom);
+            ToolManager.RenderOverlay(renderContext);
+            
+            canvas.Restore();
+        }
         
         // Render rulers on top (not affected by pan/zoom transform)
         if (ShowRulers)
@@ -339,6 +370,19 @@ public class SkiaCanvas : SKElement
             CaptureMouse();
             Cursor = Cursors.Hand;
             e.Handled = true;
+            return;
+        }
+        
+        // Forward to ToolManager for tool handling
+        if (e.LeftButton == MouseButtonState.Pressed && ToolManager is not null)
+        {
+            var docPos = _state.ScreenToDocument(new SKPoint((float)_lastMousePosition.X, (float)_lastMousePosition.Y));
+            var modifiers = GetKeyModifiers();
+            if (ToolManager.OnMouseDown(new ToolPoint(docPos.X, docPos.Y), modifiers))
+            {
+                CaptureMouse();
+                e.Handled = true;
+            }
         }
     }
 
@@ -366,6 +410,12 @@ public class SkiaCanvas : SKElement
             _lastMousePosition = position;
             e.Handled = true;
         }
+        else if (e.LeftButton == MouseButtonState.Pressed && ToolManager is not null)
+        {
+            var modifiers = GetKeyModifiers();
+            ToolManager.OnMouseMove(new ToolPoint(_currentCursorDocPosition.X, _currentCursorDocPosition.Y), modifiers);
+            _lastMousePosition = position;
+        }
         else
         {
             _lastMousePosition = position;
@@ -382,6 +432,17 @@ public class SkiaCanvas : SKElement
             ReleaseMouseCapture();
             Cursor = _isSpaceDown ? Cursors.Hand : Cursors.Arrow;
             e.Handled = true;
+            return;
+        }
+        
+        // Forward to ToolManager
+        if (ToolManager is not null)
+        {
+            var position = e.GetPosition(this);
+            var docPos = _state.ScreenToDocument(new SKPoint((float)position.X, (float)position.Y));
+            var modifiers = GetKeyModifiers();
+            ToolManager.OnMouseUp(new ToolPoint(docPos.X, docPos.Y), modifiers);
+            ReleaseMouseCapture();
         }
     }
 
@@ -501,6 +562,39 @@ public class SkiaCanvas : SKElement
         {
             canvas.InvalidateVisual();
         }
+    }
+
+    private static void OnToolManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is SkiaCanvas canvas)
+        {
+            // Subscribe to redraw requests from the tool manager
+            if (e.OldValue is ToolManager oldManager)
+            {
+                oldManager.RedrawRequested -= canvas.OnToolManagerRedrawRequested;
+            }
+            if (e.NewValue is ToolManager newManager)
+            {
+                newManager.RedrawRequested += canvas.OnToolManagerRedrawRequested;
+            }
+        }
+    }
+
+    private void OnToolManagerRedrawRequested(object? sender, EventArgs e)
+    {
+        InvalidateVisual();
+    }
+
+    private static KeyModifiers GetKeyModifiers()
+    {
+        var modifiers = KeyModifiers.None;
+        if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+            modifiers |= KeyModifiers.Shift;
+        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            modifiers |= KeyModifiers.Control;
+        if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt))
+            modifiers |= KeyModifiers.Alt;
+        return modifiers;
     }
 }
 
