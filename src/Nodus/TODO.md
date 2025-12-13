@@ -610,16 +610,16 @@ After completing each task set:
 - [x] Align to key object
 
 ### 3.8 Phase 3 UI Polish
-- [ ] Tool options bar (context-sensitive, below toolbar)
-  - [ ] Shows options for active tool
-  - [ ] Number inputs, dropdowns, toggles
-- [ ] Cursor changes per tool
-  - [ ] Custom cursors for each tool
-  - [ ] Crosshair cursor for precision
-- [ ] Visual feedback on snap (line flash)
-- [ ] Tooltip on canvas showing dimensions while drawing
-- [ ] Animate selection handles on hover
-- [ ] Ghost preview of shape being created
+- [x] Tool options bar (context-sensitive, below toolbar)
+  - [x] Shows options for active tool
+  - [x] Number inputs, dropdowns, toggles
+- [x] Cursor changes per tool
+  - [x] Custom cursors for each tool
+  - [x] Crosshair cursor for precision
+- [x] Visual feedback on snap (line flash)
+- [x] Tooltip on canvas showing dimensions while drawing
+- [x] Animate selection handles on hover
+- [x] Ghost preview of shape being created
 
 ---
 
