@@ -457,12 +457,12 @@ After completing each task set:
 - [x] Implement "Window" menu with panel toggles
 
 ### 2.4 Selection Manager
-- [ ] Maintain `SelectedElements` observable collection
-- [ ] Implement selection change events
-- [ ] Compute aggregate bounding box for multi-selection
-- [ ] Handle selection during group/ungroup
-- [ ] Selection highlight rendering
-- [ ] Selection handles rendering
+- [x] Maintain `SelectedElements` observable collection
+- [x] Implement selection change events
+- [x] Compute aggregate bounding box for multi-selection
+- [x] Handle selection during group/ungroup
+- [x] Selection highlight rendering (via SelectTool)
+- [x] Selection handles rendering (via SelectTool)
 
 ### 2.5 Phase 2 UI Polish
 - [ ] Toolbox icons with hover tooltips
