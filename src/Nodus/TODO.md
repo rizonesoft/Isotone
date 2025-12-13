@@ -566,20 +566,20 @@ After completing each task set:
 - [ ] "Reverse Path" command
 
 ### 3.5 Text Tool
-- [ ] Click to create text block
-- [ ] Inline text editing on canvas
-  - [ ] Blinking cursor
-  - [ ] Text selection
-  - [ ] Copy/paste
-- [ ] Font picker (family, weight, style)
+- [x] Click to create text block
+- [x] Inline text editing on canvas
+  - [x] Blinking cursor
+  - [x] Text selection
+  - [ ] Copy/paste (requires clipboard integration)
+- [x] Font picker (family, weight, style)
   - [ ] System fonts list
   - [ ] Font preview
-- [ ] Font size, line height, letter spacing
-- [ ] Text alignment (left, center, right, justify)
+- [x] Font size, line height, letter spacing
+- [x] Text alignment (left, center, right, justify)
 - [ ] Text on path feature
   - [ ] Attach text to path
   - [ ] Offset along path
-- [ ] Text outline and fill
+- [x] Text outline and fill
 
 ### 3.6 Guides & Snapping
 - [ ] Draggable guides from rulers
