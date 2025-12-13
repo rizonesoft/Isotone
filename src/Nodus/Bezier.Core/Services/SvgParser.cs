@@ -29,10 +29,14 @@ public class SvgParser
         var doc = XDocument.Parse(svgContent);
         var svg = doc.Root ?? throw new InvalidOperationException("Invalid SVG: no root element");
 
+        var width = ParseDouble(svg.Attribute("width")?.Value, 800);
+        var height = ParseDouble(svg.Attribute("height")?.Value, 600);
+
         var document = new VectorDocument
         {
-            Width = ParseDouble(svg.Attribute("width")?.Value, 800),
-            Height = ParseDouble(svg.Attribute("height")?.Value, 600),
+            Width = width,
+            Height = height,
+            ViewBox = ParseViewBox(svg.Attribute("viewBox")?.Value, width, height),
             Title = svg.Element(SvgNs + "title")?.Value ?? "Untitled"
         };
 
@@ -48,6 +52,24 @@ public class SvgParser
 
         document.IsDirty = false;
         return document;
+    }
+
+    private static ViewBox ParseViewBox(string? value, double defaultWidth, double defaultHeight)
+    {
+        if (string.IsNullOrEmpty(value))
+            return new ViewBox(0, 0, defaultWidth, defaultHeight);
+
+        var parts = value.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 4 &&
+            double.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var minX) &&
+            double.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var minY) &&
+            double.TryParse(parts[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w) &&
+            double.TryParse(parts[3], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var h))
+        {
+            return new ViewBox(minX, minY, w, h);
+        }
+
+        return new ViewBox(0, 0, defaultWidth, defaultHeight);
     }
 
     private VectorElement? ParseElement(XElement element)
