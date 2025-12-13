@@ -4,8 +4,9 @@
 
 ## 🤖 Prompt Template
 ```
-Continue developing Bezier SVG Editor. Focus on: [0.5]
+Continue developing Bezier SVG Editor. Focus on: [PHASE NUMBER]
 Reference this file for context and mark completed items with [x].
+Follow coding standards in STANDARDS.md (.NET 10 / C# 14 best practices).
 Ensure code follows the project structure:
 - Bezier.Core: Domain models, interfaces, pure logic
 - Bezier.Desktop: WPF UI, SkiaSharp rendering, Services

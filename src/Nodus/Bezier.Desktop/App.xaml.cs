@@ -33,10 +33,16 @@ public partial class App : Application
         var mainWindow = new MainWindowView();
         mainWindow.DataContext = Services.GetRequiredService<ViewModels.MainWindowViewModel>();
         
-        // Close splash when main window is ready
+        // Close splash when main window is ready and bring to front
         mainWindow.Loaded += (_, _) =>
         {
             SplashWindow.CloseAndDispose();
+            
+            // Bring main window to front
+            mainWindow.Activate();
+            mainWindow.Topmost = true;
+            mainWindow.Topmost = false;
+            mainWindow.Focus();
         };
         
         mainWindow.Show();
