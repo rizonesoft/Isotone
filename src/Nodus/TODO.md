@@ -890,20 +890,20 @@ After completing each task set:
 ## Phase 6: Import/Export & Assets
 
 ### 6.1 File Operations
-- [ ] New document wizard (presets: icon, web, print)
-  - [ ] Preset sizes
-  - [ ] Custom size
-  - [ ] Units (px, mm, in)
-  - [ ] Color mode
-- [ ] Open recent files list
-  - [ ] Last 10 files
-  - [ ] Clear recent list
-- [ ] Auto-save drafts
-  - [ ] Save every 2 minutes
-  - [ ] Store in temp folder
-- [ ] Document recovery on crash
-  - [ ] Check for recovery files on startup
-  - [ ] Offer to restore
+- [x] New document wizard (presets: icon, web, print)
+  - [x] Preset sizes
+  - [x] Custom size
+  - [x] Units (px, mm, in)
+  - [x] Color mode
+- [x] Open recent files list
+  - [x] Last 10 files
+  - [x] Clear recent list
+- [x] Auto-save drafts
+  - [x] Save every 2 minutes
+  - [x] Store in temp folder
+- [x] Document recovery on crash
+  - [x] Check for recovery files on startup
+  - [x] Offer to restore
 
 ### 6.2 Import Formats
 - [ ] SVG (primary)
