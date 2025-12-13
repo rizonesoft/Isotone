@@ -1177,23 +1177,23 @@ After completing each task set:
 - [x] Auto-scroll toggle
 
 ### 12.3 Coordinates Tab
-- [ ] Mouse coordinates panel
-  - [ ] Screen coordinates (WPF)
-  - [ ] Document coordinates (canvas space)
-  - [ ] Artboard-relative coordinates
-- [ ] Selected element info
-  - [ ] Element type and name
-  - [ ] Position (X, Y)
-  - [ ] Size (Width, Height)
-  - [ ] Transform matrix values
-  - [ ] Bounding box coordinates
-  - [ ] Fill/Stroke properties
-- [ ] Canvas state info
-  - [ ] Current zoom level
-  - [ ] Pan offset
-  - [ ] Viewport dimensions
-- [ ] Copy all info button (formatted text)
-- [ ] Live update toggle
+- [x] Mouse coordinates panel
+  - [x] Screen coordinates (WPF)
+  - [x] Document coordinates (canvas space)
+  - [x] Artboard-relative coordinates
+- [x] Selected element info
+  - [x] Element type and name
+  - [x] Position (X, Y)
+  - [x] Size (Width, Height)
+  - [x] Transform matrix values
+  - [x] Bounding box coordinates
+  - [x] Fill/Stroke properties
+- [x] Canvas state info
+  - [x] Current zoom level
+  - [x] Pan offset
+  - [x] Viewport dimensions
+- [x] Copy all info button (formatted text)
+- [x] Live update toggle
 
 ### 12.4 Elements Inspector
 - [ ] Tree view of document elements

@@ -465,17 +465,194 @@
                 
                 <!-- Coordinates Panel -->
                 <Grid x:Name="CoordinatesPanel" Visibility="Collapsed" Background="{StaticResource CrustBrush}">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="📍" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                        <TextBlock Text="Coordinates Inspector" FontSize="14" FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Real-time mouse and element coordinates" FontSize="12"
-                                   Foreground="{StaticResource OverlayBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
-                                Padding="12,6" Margin="0,16,0,0" HorizontalAlignment="Center">
-                            <TextBlock Text="Coming Soon" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
-                        </Border>
-                    </StackPanel>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Toolbar -->
+                    <Border Grid.Row="0" Background="{StaticResource BaseBrush}" 
+                            BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1">
+                        <Grid Margin="8,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <CheckBox x:Name="LiveUpdateCheckBox" Content="Live Update" IsChecked="True"
+                                      Style="{StaticResource ModernCheckBox}" Foreground="{StaticResource GreenBrush}"
+                                      Checked="LiveUpdate_Changed" Unchecked="LiveUpdate_Changed"/>
+                            
+                            <Button Grid.Column="1" Content="📋 Copy All" Click="CopyCoordinatesInfo_Click" 
+                                    Style="{StaticResource PillButton}"/>
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Scrollable Content -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="12">
+                        <StackPanel>
+                            
+                            <!-- Mouse Coordinates Section -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="🖱️ Mouse Coordinates" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Screen (WPF)" Foreground="{StaticResource OverlayBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="ScreenCoordsText" Grid.Column="1" Text="0, 0" 
+                                                   Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11"/>
+                                        
+                                        <TextBlock Grid.Row="1" Text="Document" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="DocumentCoordsText" Grid.Row="1" Grid.Column="1" Text="0, 0" 
+                                                   Foreground="{StaticResource BlueBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="2" Text="Artboard" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ArtboardCoordsText" Grid.Row="2" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource MauveBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Canvas State Section -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="🎨 Canvas State" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Zoom Level" Foreground="{StaticResource OverlayBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="ZoomLevelText" Grid.Column="1" Text="100%" 
+                                                   Foreground="{StaticResource GreenBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11"/>
+                                        
+                                        <TextBlock Grid.Row="1" Text="Pan Offset" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="PanOffsetText" Grid.Row="1" Grid.Column="1" Text="0, 0" 
+                                                   Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="2" Text="Viewport" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ViewportText" Grid.Row="2" Grid.Column="1" Text="800 × 600" 
+                                                   Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Selected Element Section -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="✨ Selected Element" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <Grid x:Name="NoSelectionGrid">
+                                        <TextBlock Text="No selection" Foreground="{StaticResource OverlayBrush}" FontSize="11" FontStyle="Italic"/>
+                                    </Grid>
+                                    
+                                    <Grid x:Name="SelectionInfoGrid" Visibility="Collapsed">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Type" Foreground="{StaticResource OverlayBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="ElementTypeText" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource AccentBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11"/>
+                                        
+                                        <TextBlock Grid.Row="1" Text="Name" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ElementNameText" Grid.Row="1" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="2" Text="Position" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ElementPositionText" Grid.Row="2" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource BlueBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="3" Text="Size" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ElementSizeText" Grid.Row="3" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource GreenBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="4" Text="Transform" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ElementTransformText" Grid.Row="4" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource YellowBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" 
+                                                   Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                        
+                                        <TextBlock Grid.Row="5" Text="Bounds" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ElementBoundsText" Grid.Row="5" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="6" Text="Fill" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ElementFillText" Grid.Row="6" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource PinkBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="7" Text="Stroke" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="ElementStrokeText" Grid.Row="7" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource MauveBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Selection Bounds (for multi-select) -->
+                            <Border x:Name="SelectionBoundsPanel" Background="{StaticResource Surface0Brush}" 
+                                    CornerRadius="6" Padding="12" Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock Text="📐 Selection Bounds" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Count" Foreground="{StaticResource OverlayBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="SelectionCountText" Grid.Column="1" Text="0" 
+                                                   Foreground="{StaticResource AccentBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11"/>
+                                        
+                                        <TextBlock Grid.Row="1" Text="Position" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="SelectionPositionText" Grid.Row="1" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource BlueBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="2" Text="Size" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="SelectionSizeText" Grid.Row="2" Grid.Column="1" Text="—" 
+                                                   Foreground="{StaticResource GreenBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
                 
                 <!-- Elements Panel -->

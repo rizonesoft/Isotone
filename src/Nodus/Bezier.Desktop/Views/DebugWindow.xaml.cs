@@ -3,6 +3,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Bezier.Core.Models;
+using Bezier.Core.Models.Fills;
 using Bezier.Core.Services;
 using Microsoft.Win32;
 using Wpf.Ui.Controls;
@@ -20,6 +22,7 @@ public partial class DebugWindow : FluentWindow
     private string _filterText = string.Empty;
     private string _selectedCategory = string.Empty;
     private bool _isLoaded;
+    private bool _liveUpdateEnabled = true;
     
     // Singleton instance
     private static DebugWindow? _instance;
@@ -41,6 +44,9 @@ public partial class DebugWindow : FluentWindow
         
         // Subscribe to debug logger
         DebugLogger.Instance.LogAdded += OnLogAdded;
+        
+        // Subscribe to debug info service for Coordinates tab
+        DebugInfoService.Instance.InfoUpdated += OnDebugInfoUpdated;
         
         _isLoaded = true;
     }
@@ -160,8 +166,9 @@ public partial class DebugWindow : FluentWindow
         _savedHeight = Height;
         _savedAlwaysOnTop = Topmost;
         
-        // Unsubscribe from logger
+        // Unsubscribe from services
         DebugLogger.Instance.LogAdded -= OnLogAdded;
+        DebugInfoService.Instance.InfoUpdated -= OnDebugInfoUpdated;
     }
 
     private void OnLogAdded(object? sender, LogEntry entry)
@@ -355,6 +362,127 @@ public partial class DebugWindow : FluentWindow
     {
         return $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{entry.Level}] [{entry.Category}] {entry.Message}";
     }
+
+    #region Coordinates Tab
+
+    private void OnDebugInfoUpdated(object? sender, DebugInfoUpdateEventArgs e)
+    {
+        if (!_liveUpdateEnabled) return;
+        
+        // Marshal to UI thread
+        Dispatcher.BeginInvoke(() => UpdateCoordinatesDisplay(e.Snapshot));
+    }
+
+    private void UpdateCoordinatesDisplay(DebugInfoSnapshot snapshot)
+    {
+        // Mouse coordinates
+        ScreenCoordsText.Text = $"{snapshot.ScreenX:F1}, {snapshot.ScreenY:F1}";
+        DocumentCoordsText.Text = $"{snapshot.DocumentX:F1}, {snapshot.DocumentY:F1}";
+        
+        if (!string.IsNullOrEmpty(snapshot.ActiveArtboardName))
+        {
+            ArtboardCoordsText.Text = $"{snapshot.ArtboardX:F1}, {snapshot.ArtboardY:F1} [{snapshot.ActiveArtboardName}]";
+        }
+        else
+        {
+            ArtboardCoordsText.Text = "—";
+        }
+        
+        // Canvas state
+        ZoomLevelText.Text = $"{snapshot.ZoomLevel * 100:F0}%";
+        PanOffsetText.Text = $"{snapshot.PanOffsetX:F1}, {snapshot.PanOffsetY:F1}";
+        ViewportText.Text = $"{snapshot.ViewportWidth:F0} × {snapshot.ViewportHeight:F0}";
+        
+        // Selection
+        if (snapshot.SelectionCount == 0)
+        {
+            NoSelectionGrid.Visibility = Visibility.Visible;
+            SelectionInfoGrid.Visibility = Visibility.Collapsed;
+            SelectionBoundsPanel.Visibility = Visibility.Collapsed;
+        }
+        else if (snapshot.SelectionCount == 1 && snapshot.PrimarySelection is not null)
+        {
+            NoSelectionGrid.Visibility = Visibility.Collapsed;
+            SelectionInfoGrid.Visibility = Visibility.Visible;
+            SelectionBoundsPanel.Visibility = Visibility.Collapsed;
+            
+            UpdateSingleElementDisplay(snapshot.PrimarySelection);
+        }
+        else
+        {
+            // Multi-selection
+            NoSelectionGrid.Visibility = Visibility.Collapsed;
+            SelectionInfoGrid.Visibility = Visibility.Collapsed;
+            SelectionBoundsPanel.Visibility = Visibility.Visible;
+            
+            SelectionCountText.Text = snapshot.SelectionCount.ToString();
+            
+            if (snapshot.SelectionBounds is not null)
+            {
+                var b = snapshot.SelectionBounds.Value;
+                SelectionPositionText.Text = $"{b.X:F1}, {b.Y:F1}";
+                SelectionSizeText.Text = $"{b.Width:F1} × {b.Height:F1}";
+            }
+        }
+    }
+
+    private void UpdateSingleElementDisplay(VectorElement element)
+    {
+        ElementTypeText.Text = element.GetType().Name.Replace("Svg", "");
+        ElementNameText.Text = string.IsNullOrEmpty(element.Name) ? "(unnamed)" : element.Name;
+        
+        var bounds = element.GetBoundingBox();
+        ElementPositionText.Text = $"{bounds.X:F1}, {bounds.Y:F1}";
+        ElementSizeText.Text = $"{bounds.Width:F1} × {bounds.Height:F1}";
+        
+        var t = element.Transform;
+        var rotationDeg = Math.Atan2(t.SkewY, t.ScaleX) * 180.0 / Math.PI;
+        ElementTransformText.Text = $"T({t.TranslateX:F1}, {t.TranslateY:F1}) S({t.ScaleX:F2}, {t.ScaleY:F2}) R({rotationDeg:F1}°)";
+        
+        ElementBoundsText.Text = $"({bounds.X:F1}, {bounds.Y:F1}) → ({bounds.X + bounds.Width:F1}, {bounds.Y + bounds.Height:F1})";
+        
+        // Fill info
+        ElementFillText.Text = element.Fill switch
+        {
+            null => "None",
+            NoneFill => "None",
+            SolidFill solid => $"Solid #{solid.R:X2}{solid.G:X2}{solid.B:X2}",
+            LinearGradientFill => "Linear Gradient",
+            RadialGradientFill => "Radial Gradient",
+            PatternFill => "Pattern",
+            _ => element.Fill.GetType().Name
+        };
+        
+        // Stroke info
+        if (element.Stroke is not null && element.Stroke.Width > 0)
+        {
+            var stroke = element.Stroke;
+            var strokeFillText = stroke.Fill switch
+            {
+                SolidFill solid => $"#{solid.R:X2}{solid.G:X2}{solid.B:X2}",
+                _ => stroke.Fill?.GetType().Name ?? "None"
+            };
+            ElementStrokeText.Text = $"{stroke.Width}px {strokeFillText}";
+        }
+        else
+        {
+            ElementStrokeText.Text = "None";
+        }
+    }
+
+    private void LiveUpdate_Changed(object sender, RoutedEventArgs e)
+    {
+        _liveUpdateEnabled = LiveUpdateCheckBox?.IsChecked == true;
+    }
+
+    private void CopyCoordinatesInfo_Click(object sender, RoutedEventArgs e)
+    {
+        var text = DebugInfoService.Instance.FormatAllInfo();
+        Clipboard.SetText(text);
+        DebugLogger.Instance.Info("DebugWindow", "Copied coordinates info to clipboard");
+    }
+
+    #endregion
 }
 
 /// <summary>
@@ -377,11 +505,11 @@ public class LogEntryViewModel
         
         LevelBrush = entry.Level switch
         {
-            LogLevel.Debug => new SolidColorBrush(Color.FromRgb(166, 173, 200)), // Subtext
-            LogLevel.Info => new SolidColorBrush(Color.FromRgb(137, 180, 250)),  // Blue
-            LogLevel.Warning => new SolidColorBrush(Color.FromRgb(249, 226, 175)), // Yellow
-            LogLevel.Error => new SolidColorBrush(Color.FromRgb(243, 139, 168)),  // Red
-            _ => new SolidColorBrush(Color.FromRgb(205, 214, 244)) // Text
+            LogLevel.Debug => new SolidColorBrush(System.Windows.Media.Color.FromRgb(166, 173, 200)), // Subtext
+            LogLevel.Info => new SolidColorBrush(System.Windows.Media.Color.FromRgb(137, 180, 250)),  // Blue
+            LogLevel.Warning => new SolidColorBrush(System.Windows.Media.Color.FromRgb(249, 226, 175)), // Yellow
+            LogLevel.Error => new SolidColorBrush(System.Windows.Media.Color.FromRgb(243, 139, 168)),  // Red
+            _ => new SolidColorBrush(System.Windows.Media.Color.FromRgb(205, 214, 244)) // Text
         };
     }
 }
