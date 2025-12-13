@@ -733,17 +733,17 @@ After completing each task set:
   - [x] Detach from master
 
 ### 4.5 Artboards
-- [ ] Multiple artboards per document
-- [ ] Artboard tool (create/resize)
-  - [ ] Drag to create
-  - [ ] Resize handles
-- [ ] Artboard properties
-  - [ ] Name
-  - [ ] Size (presets + custom)
-  - [ ] Background color
-- [ ] Artboard list in Layers panel
-- [ ] Export individual artboards
-- [ ] Artboard navigation
+- [x] Multiple artboards per document
+- [x] Artboard tool (create/resize)
+  - [x] Drag to create
+  - [x] Resize handles
+- [x] Artboard properties
+  - [x] Name
+  - [x] Size (presets + custom)
+  - [x] Background color
+- [x] Artboard list in Layers panel
+- [x] Export individual artboards
+- [x] Artboard navigation
 
 ### 4.6 Phase 4 UI Polish
 - [ ] Collapsible sections in Properties panel with animation
