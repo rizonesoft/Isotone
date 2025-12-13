@@ -48,5 +48,61 @@ public class SolidFill : IFill
         set => Color = (Color & 0x00FFFFFF) | ((uint)value << 24);
     }
 
-    public IFill Clone() => new SolidFill { Color = this.Color };
+    /// <summary>
+    /// Gets or sets the opacity (0.0 to 1.0).
+    /// </summary>
+    public double Opacity
+    {
+        get => A / 255.0;
+        set => A = (byte)(Math.Clamp(value, 0, 1) * 255);
+    }
+
+    /// <summary>
+    /// Creates a solid fill from RGB values with optional alpha.
+    /// </summary>
+    public static SolidFill FromRgb(byte r, byte g, byte b, byte a = 255) => new()
+    {
+        Color = ((uint)a << 24) | ((uint)r << 16) | ((uint)g << 8) | b
+    };
+
+    /// <summary>
+    /// Creates a solid fill from a hex color string (#RGB, #RRGGBB, or #AARRGGBB).
+    /// </summary>
+    public static SolidFill FromHex(string hex)
+    {
+        hex = hex.TrimStart('#');
+        uint color = 0xFF000000;
+
+        if (hex.Length == 3)
+        {
+            var r = Convert.ToByte(new string(hex[0], 2), 16);
+            var g = Convert.ToByte(new string(hex[1], 2), 16);
+            var b = Convert.ToByte(new string(hex[2], 2), 16);
+            color = 0xFF000000 | ((uint)r << 16) | ((uint)g << 8) | b;
+        }
+        else if (hex.Length == 6)
+        {
+            var r = Convert.ToByte(hex[..2], 16);
+            var g = Convert.ToByte(hex[2..4], 16);
+            var b = Convert.ToByte(hex[4..6], 16);
+            color = 0xFF000000 | ((uint)r << 16) | ((uint)g << 8) | b;
+        }
+        else if (hex.Length == 8)
+        {
+            color = Convert.ToUInt32(hex, 16);
+        }
+
+        return new SolidFill { Color = color };
+    }
+
+    /// <summary>Common colors.</summary>
+    public static SolidFill Black => new() { Color = 0xFF000000 };
+    public static SolidFill White => new() { Color = 0xFFFFFFFF };
+    public static SolidFill Red => new() { Color = 0xFFFF0000 };
+    public static SolidFill Green => new() { Color = 0xFF00FF00 };
+    public static SolidFill Blue => new() { Color = 0xFF0000FF };
+    public static SolidFill Transparent => new() { Color = 0x00000000 };
+
+    public IFill Clone() => new SolidFill { Color = Color };
 }
+

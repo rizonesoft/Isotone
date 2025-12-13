@@ -267,31 +267,32 @@ After completing each task set:
 - [x] Implement `ToSvgString()` for each element
 
 ### 1.2 Fill & Stroke System
-- [ ] Define `IFill` interface
-  - [ ] `ToSkiaPaint()` method
-  - [ ] `Clone()` method
-- [ ] Implement `NoneFill` (transparent)
-- [ ] Implement `SolidFill` (color)
-  - [ ] RGBA color
-  - [ ] Opacity
-- [ ] Implement `LinearGradientFill` (stops, angle)
-  - [ ] Start/End points
-  - [ ] GradientStops collection
-  - [ ] SpreadMode (pad, reflect, repeat)
-- [ ] Implement `RadialGradientFill` (stops, center, radius)
-  - [ ] Center point
-  - [ ] Radius
-  - [ ] Focal point
-  - [ ] GradientStops collection
-- [ ] Implement `PatternFill` (tiled element reference)
-- [ ] Define `Stroke` class
-  - [ ] Width
-  - [ ] Color/Fill
-  - [ ] Dash array
-  - [ ] Dash offset
-  - [ ] Line cap (butt, round, square)
-  - [ ] Line join (miter, round, bevel)
-  - [ ] Miter limit
+- [x] Define `IFill` interface
+  - [x] `ToSkiaPaint()` method (via FillConverter extension in Desktop)
+  - [x] `Clone()` method
+- [x] Implement `NoneFill` (transparent)
+- [x] Implement `SolidFill` (color)
+  - [x] RGBA color
+  - [x] Opacity
+- [x] Implement `LinearGradientFill` (stops, angle)
+  - [x] Start/End points
+  - [x] GradientStops collection
+  - [x] SpreadMode (pad, reflect, repeat)
+- [x] Implement `RadialGradientFill` (stops, center, radius)
+  - [x] Center point
+  - [x] Radius
+  - [x] Focal point
+  - [x] GradientStops collection
+- [x] Implement `PatternFill` (tiled element reference)
+- [x] Define `Stroke` class
+  - [x] Width
+  - [x] Color/Fill
+  - [x] Dash array
+  - [x] Dash offset
+  - [x] Line cap (butt, round, square)
+  - [x] Line join (miter, round, bevel)
+  - [x] Miter limit
+- [x] Implement `StrokeConverter` (via StrokeConverter extension in Desktop)
 
 ### 1.3 SkiaSharp Rendering System
 - [ ] Create `SkiaCanvas` WPF control (inherits `SKElement`)
