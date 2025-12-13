@@ -109,11 +109,8 @@
                 </Grid.ColumnDefinitions>
                 
                 <!-- App Icon -->
-                <Border Width="20" Height="20" CornerRadius="4" Background="{StaticResource AccentBrush}"
-                        VerticalAlignment="Center" Margin="0,0,10,0">
-                    <TextBlock Text="⚡" FontSize="11" Foreground="White"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
+                <TextBlock Text="⚡" FontSize="16" Foreground="{StaticResource AccentBrush}"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
                 
                 <TextBlock Grid.Column="1" Text="Developer Tools" FontSize="12" FontWeight="Medium"
                            Foreground="{StaticResource TextBrush}"
