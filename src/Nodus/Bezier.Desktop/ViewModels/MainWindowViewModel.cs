@@ -220,13 +220,58 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void Save()
     {
-        StatusText = "Document saved";
+        if (Document is null) return;
+
+        if (string.IsNullOrEmpty(CurrentFilePath))
+        {
+            SaveAs();
+            return;
+        }
+
+        try
+        {
+            _svgExporter.ExportToFile(Document, CurrentFilePath);
+            Document.IsDirty = false;
+            StatusText = $"Saved: {System.IO.Path.GetFileName(CurrentFilePath)}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusText = "Error saving file";
+        }
     }
     
     [RelayCommand]
     private void SaveAs()
     {
-        StatusText = "Save document as...";
+        if (Document is null) return;
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "Save SVG File",
+            Filter = "SVG Files (*.svg)|*.svg|All Files (*.*)|*.*",
+            DefaultExt = ".svg",
+            FileName = string.IsNullOrEmpty(CurrentFilePath) 
+                ? "untitled.svg" 
+                : System.IO.Path.GetFileName(CurrentFilePath)
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                _svgExporter.ExportToFile(Document, dialog.FileName);
+                CurrentFilePath = dialog.FileName;
+                Document.IsDirty = false;
+                UpdateDocumentInfo();
+                StatusText = $"Saved: {System.IO.Path.GetFileName(dialog.FileName)}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusText = "Error saving file";
+            }
+        }
     }
     
     [RelayCommand]
