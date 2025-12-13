@@ -52,6 +52,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _showCodePanel = false;
     
+    [ObservableProperty]
+    private bool _snapEnabled = true;
+    
     #endregion
     
     #region File Commands

@@ -92,10 +92,45 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        
+        <!-- Toggle Tool Button Style -->
+        <Style x:Key="ToggleToolButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource SubtextBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="6"
+                                BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface1Brush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface2Brush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </ui:FluentWindow.Resources>
 
     <Grid Background="{StaticResource MantleBrush}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -242,8 +277,83 @@
             </ui:TitleBar.Header>
         </ui:TitleBar>
 
+        <!-- Main Toolbar -->
+        <Border Grid.Row="1" Background="{StaticResource CrustBrush}" 
+                BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1"
+                Padding="8,4">
+            <StackPanel Orientation="Horizontal">
+                <!-- File Operations -->
+                <Button Style="{StaticResource ToolButtonStyle}" ToolTip="New (Ctrl+N)" 
+                        Command="{Binding NewCommand}" Width="32" Height="28">
+                    <TextBlock Text="📄" FontSize="14"/>
+                </Button>
+                <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Open (Ctrl+O)" 
+                        Command="{Binding OpenCommand}" Width="32" Height="28">
+                    <TextBlock Text="📂" FontSize="14"/>
+                </Button>
+                <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Save (Ctrl+S)" 
+                        Command="{Binding SaveCommand}" Width="32" Height="28">
+                    <TextBlock Text="💾" FontSize="14"/>
+                </Button>
+                
+                <!-- Separator -->
+                <Border Width="1" Background="{StaticResource Surface0Brush}" Margin="8,4"/>
+                
+                <!-- Edit Operations -->
+                <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Undo (Ctrl+Z)" 
+                        Command="{Binding UndoCommand}" Width="32" Height="28">
+                    <TextBlock Text="↶" FontSize="16"/>
+                </Button>
+                <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Redo (Ctrl+Y)" 
+                        Command="{Binding RedoCommand}" Width="32" Height="28">
+                    <TextBlock Text="↷" FontSize="16"/>
+                </Button>
+                
+                <!-- Separator -->
+                <Border Width="1" Background="{StaticResource Surface0Brush}" Margin="8,4"/>
+                
+                <!-- Zoom Controls -->
+                <ComboBox Width="80" Height="26" VerticalContentAlignment="Center"
+                          SelectedIndex="4" Margin="0,0,4,0"
+                          Background="{StaticResource Surface0Brush}"
+                          Foreground="{StaticResource TextBrush}"
+                          BorderBrush="{StaticResource Surface1Brush}">
+                    <ComboBoxItem Content="25%"/>
+                    <ComboBoxItem Content="50%"/>
+                    <ComboBoxItem Content="75%"/>
+                    <ComboBoxItem Content="90%"/>
+                    <ComboBoxItem Content="100%"/>
+                    <ComboBoxItem Content="125%"/>
+                    <ComboBoxItem Content="150%"/>
+                    <ComboBoxItem Content="200%"/>
+                    <ComboBoxItem Content="400%"/>
+                </ComboBox>
+                <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Fit to Window (Ctrl+0)" 
+                        Command="{Binding FitToWindowCommand}" Width="32" Height="28">
+                    <TextBlock Text="⊡" FontSize="16"/>
+                </Button>
+                
+                <!-- Separator -->
+                <Border Width="1" Background="{StaticResource Surface0Brush}" Margin="8,4"/>
+                
+                <!-- View Toggles -->
+                <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Grid (Ctrl+')" 
+                              IsChecked="{Binding ShowGrid}" Width="32" Height="28">
+                    <TextBlock Text="⊞" FontSize="16"/>
+                </ToggleButton>
+                <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Rulers" 
+                              IsChecked="{Binding ShowRulers}" Width="32" Height="28">
+                    <TextBlock Text="📏" FontSize="14"/>
+                </ToggleButton>
+                <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Snap" 
+                              IsChecked="{Binding SnapEnabled}" Width="32" Height="28">
+                    <TextBlock Text="⊕" FontSize="16"/>
+                </ToggleButton>
+            </StackPanel>
+        </Border>
+
         <!-- Main Content -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="52"/>
                 <ColumnDefinition Width="*"/>
@@ -463,7 +573,7 @@
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="2" Background="{StaticResource CrustBrush}" 
+        <Border Grid.Row="3" Background="{StaticResource CrustBrush}" 
                 BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,1,0,0" 
                 Padding="12,6">
             <Grid>

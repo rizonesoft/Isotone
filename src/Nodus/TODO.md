@@ -203,19 +203,19 @@ After completing each task set:
   - [x] About
 
 ### 0.7 Main Toolbar
-- [ ] New document button
-- [ ] Open button
-- [ ] Save button
-- [ ] Separator
-- [ ] Undo button
-- [ ] Redo button
-- [ ] Separator
-- [ ] Zoom dropdown
-- [ ] Fit to window button
-- [ ] Separator
-- [ ] Toggle grid
-- [ ] Toggle rulers
-- [ ] Toggle snap
+- [x] New document button
+- [x] Open button
+- [x] Save button
+- [x] Separator
+- [x] Undo button
+- [x] Redo button
+- [x] Separator
+- [x] Zoom dropdown
+- [x] Fit to window button
+- [x] Separator
+- [x] Toggle grid
+- [x] Toggle rulers
+- [x] Toggle snap
 
 ---
 
