@@ -118,8 +118,8 @@
                                 <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface2Brush}"/>
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource CrustBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -285,15 +285,15 @@
                 <!-- File Operations -->
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="New (Ctrl+N)" 
                         Command="{Binding NewCommand}" Width="32" Height="28">
-                    <TextBlock Text="📄" FontSize="14"/>
+                    <TextBlock Text="📄" FontSize="18"/>
                 </Button>
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Open (Ctrl+O)" 
                         Command="{Binding OpenCommand}" Width="32" Height="28">
-                    <TextBlock Text="📂" FontSize="14"/>
+                    <TextBlock Text="📂" FontSize="18"/>
                 </Button>
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Save (Ctrl+S)" 
                         Command="{Binding SaveCommand}" Width="32" Height="28">
-                    <TextBlock Text="💾" FontSize="14"/>
+                    <TextBlock Text="💾" FontSize="18"/>
                 </Button>
                 
                 <!-- Separator -->
@@ -302,19 +302,19 @@
                 <!-- Edit Operations -->
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Undo (Ctrl+Z)" 
                         Command="{Binding UndoCommand}" Width="32" Height="28">
-                    <TextBlock Text="↶" FontSize="16"/>
+                    <TextBlock Text="↶" FontSize="20"/>
                 </Button>
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Redo (Ctrl+Y)" 
                         Command="{Binding RedoCommand}" Width="32" Height="28">
-                    <TextBlock Text="↷" FontSize="16"/>
+                    <TextBlock Text="↷" FontSize="20"/>
                 </Button>
                 
                 <!-- Separator -->
                 <Border Width="1" Background="{StaticResource Surface0Brush}" Margin="8,4"/>
                 
                 <!-- Zoom Controls -->
-                <ComboBox Width="80" Height="26" VerticalContentAlignment="Center"
-                          SelectedIndex="4" Margin="0,0,4,0"
+                <ComboBox Width="90" Height="26" VerticalContentAlignment="Center"
+                          SelectedIndex="4" Margin="0,0,4,0" Padding="6,0"
                           Background="{StaticResource Surface0Brush}"
                           Foreground="{StaticResource TextBrush}"
                           BorderBrush="{StaticResource Surface1Brush}">
@@ -330,7 +330,7 @@
                 </ComboBox>
                 <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Fit to Window (Ctrl+0)" 
                         Command="{Binding FitToWindowCommand}" Width="32" Height="28">
-                    <TextBlock Text="⊡" FontSize="16"/>
+                    <TextBlock Text="⊡" FontSize="18"/>
                 </Button>
                 
                 <!-- Separator -->
@@ -339,15 +339,15 @@
                 <!-- View Toggles -->
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Grid (Ctrl+')" 
                               IsChecked="{Binding ShowGrid}" Width="32" Height="28">
-                    <TextBlock Text="⊞" FontSize="16"/>
+                    <TextBlock Text="⊞" FontSize="18"/>
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Rulers" 
                               IsChecked="{Binding ShowRulers}" Width="32" Height="28">
-                    <TextBlock Text="📏" FontSize="14"/>
+                    <TextBlock Text="📏" FontSize="18"/>
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Snap" 
                               IsChecked="{Binding SnapEnabled}" Width="32" Height="28">
-                    <TextBlock Text="⊕" FontSize="16"/>
+                    <TextBlock Text="⊕" FontSize="18"/>
                 </ToggleButton>
             </StackPanel>
         </Border>
@@ -365,31 +365,31 @@
                     BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,1,0">
                 <StackPanel Margin="4,8">
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Select (V)">
-                        <TextBlock Text="⊙" FontSize="18"/>
+                        <TextBlock Text="⊙" FontSize="20"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Pen Tool (P)">
-                        <TextBlock Text="✎" FontSize="18"/>
+                        <TextBlock Text="✎" FontSize="20"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Rectangle (R)">
-                        <TextBlock Text="▢" FontSize="18"/>
+                        <TextBlock Text="▢" FontSize="20"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Ellipse (E)">
-                        <TextBlock Text="○" FontSize="18"/>
+                        <TextBlock Text="○" FontSize="20"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Line (L)">
-                        <TextBlock Text="╱" FontSize="18"/>
+                        <TextBlock Text="╱" FontSize="20"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Text (T)">
-                        <TextBlock Text="T" FontSize="16" FontWeight="Bold"/>
+                        <TextBlock Text="T" FontSize="18" FontWeight="Bold"/>
                     </Button>
                     
                     <Separator Background="{StaticResource Surface0Brush}" Margin="8,12"/>
                     
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Zoom (Z)">
-                        <TextBlock Text="🔍" FontSize="16"/>
+                        <TextBlock Text="🔍" FontSize="18"/>
                     </Button>
                     <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Hand (H)">
-                        <TextBlock Text="✋" FontSize="16"/>
+                        <TextBlock Text="✋" FontSize="18"/>
                     </Button>
                 </StackPanel>
             </Border>
