@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:avalondock="https://github.com/Dirkster99/AvalonDock"
+        xmlns:avalontheme="clr-namespace:AvalonDock.Themes.VS2013;assembly=AvalonDock.Themes.VS2013"
         Title="Bezier" 
         Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
@@ -12,40 +13,94 @@
     
     <ui:FluentWindow.Resources>
         <!-- Catppuccin Mocha Colors -->
-        <Color x:Key="CatppuccinBase">#1E1E2E</Color>
-        <Color x:Key="CatppuccinSurface0">#313244</Color>
-        <Color x:Key="CatppuccinSurface1">#45475A</Color>
-        <Color x:Key="CatppuccinText">#CDD6F4</Color>
-        <Color x:Key="CatppuccinSubtext">#A6ADC8</Color>
-        <Color x:Key="CatppuccinBlue">#89B4FA</Color>
-        <Color x:Key="CatppuccinGreen">#A6E3A1</Color>
-        <Color x:Key="CatppuccinRed">#F38BA8</Color>
+        <Color x:Key="Base">#1E1E2E</Color>
+        <Color x:Key="Mantle">#181825</Color>
+        <Color x:Key="Crust">#11111B</Color>
+        <Color x:Key="Surface0">#313244</Color>
+        <Color x:Key="Surface1">#45475A</Color>
+        <Color x:Key="Surface2">#585B70</Color>
+        <Color x:Key="Overlay0">#6C7086</Color>
+        <Color x:Key="Text">#CDD6F4</Color>
+        <Color x:Key="Subtext0">#A6ADC8</Color>
+        <Color x:Key="Blue">#89B4FA</Color>
+        <Color x:Key="Lavender">#B4BEFE</Color>
+        <Color x:Key="Sapphire">#74C7EC</Color>
+        <Color x:Key="Green">#A6E3A1</Color>
+        <Color x:Key="Peach">#FAB387</Color>
+        <Color x:Key="Red">#F38BA8</Color>
         
-        <SolidColorBrush x:Key="BaseBrush" Color="{StaticResource CatppuccinBase}"/>
-        <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource CatppuccinSurface0}"/>
-        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource CatppuccinText}"/>
-        <SolidColorBrush x:Key="SubtextBrush" Color="{StaticResource CatppuccinSubtext}"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource CatppuccinBlue}"/>
+        <SolidColorBrush x:Key="BaseBrush" Color="{StaticResource Base}"/>
+        <SolidColorBrush x:Key="MantleBrush" Color="{StaticResource Mantle}"/>
+        <SolidColorBrush x:Key="CrustBrush" Color="{StaticResource Crust}"/>
+        <SolidColorBrush x:Key="Surface0Brush" Color="{StaticResource Surface0}"/>
+        <SolidColorBrush x:Key="Surface1Brush" Color="{StaticResource Surface1}"/>
+        <SolidColorBrush x:Key="Surface2Brush" Color="{StaticResource Surface2}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Text}"/>
+        <SolidColorBrush x:Key="SubtextBrush" Color="{StaticResource Subtext0}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Blue}"/>
+        <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource Lavender}"/>
+        
+        <!-- Override AvalonDock colors -->
+        <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="{StaticResource Base}"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{StaticResource Surface0}"/>
+        
+        <!-- Tool Button Style -->
+        <Style x:Key="ToolButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource SubtextBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="6"
+                                BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Surface1Brush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource CrustBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </ui:FluentWindow.Resources>
 
-    <Grid>
+    <Grid Background="{StaticResource MantleBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Custom Title Bar -->
+        <!-- Title Bar with integrated menu -->
         <ui:TitleBar Grid.Row="0" 
                      Title="Bezier"
                      ShowMaximize="True"
                      ShowMinimize="True"
                      ShowClose="True">
             <ui:TitleBar.Header>
-                <StackPanel Orientation="Horizontal" Margin="12,0">
-                    <!-- Main Menu -->
+                <StackPanel Orientation="Horizontal" Margin="8,0">
                     <Menu Background="Transparent" Foreground="{StaticResource TextBrush}">
-                        <MenuItem Header="_File">
+                        <Menu.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </Menu.ItemsPanel>
+                        <MenuItem Header="_File" Foreground="{StaticResource TextBrush}">
                             <MenuItem Header="_New" InputGestureText="Ctrl+N"/>
                             <MenuItem Header="_Open" InputGestureText="Ctrl+O"/>
                             <Separator/>
@@ -54,7 +109,7 @@
                             <Separator/>
                             <MenuItem Header="E_xit" InputGestureText="Alt+F4"/>
                         </MenuItem>
-                        <MenuItem Header="_Edit">
+                        <MenuItem Header="_Edit" Foreground="{StaticResource TextBrush}">
                             <MenuItem Header="_Undo" InputGestureText="Ctrl+Z"/>
                             <MenuItem Header="_Redo" InputGestureText="Ctrl+Y"/>
                             <Separator/>
@@ -62,15 +117,12 @@
                             <MenuItem Header="_Copy" InputGestureText="Ctrl+C"/>
                             <MenuItem Header="_Paste" InputGestureText="Ctrl+V"/>
                         </MenuItem>
-                        <MenuItem Header="_View">
+                        <MenuItem Header="_View" Foreground="{StaticResource TextBrush}">
                             <MenuItem Header="Zoom _In" InputGestureText="Ctrl++"/>
                             <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-"/>
-                            <MenuItem Header="_Fit to Window" InputGestureText="Ctrl+0"/>
-                            <Separator/>
-                            <MenuItem Header="Show _Grid" IsCheckable="True"/>
-                            <MenuItem Header="Show _Rulers" IsCheckable="True"/>
+                            <MenuItem Header="_Fit to View" InputGestureText="Ctrl+0"/>
                         </MenuItem>
-                        <MenuItem Header="_Help">
+                        <MenuItem Header="_Help" Foreground="{StaticResource TextBrush}">
                             <MenuItem Header="_About Bezier"/>
                         </MenuItem>
                     </Menu>
@@ -78,139 +130,238 @@
             </ui:TitleBar.Header>
         </ui:TitleBar>
 
-        <!-- Main Content Area with AvalonDock -->
-        <avalondock:DockingManager Grid.Row="1" 
-                                   x:Name="DockingManager"
-                                   AllowMixedOrientation="True"
-                                   Background="{StaticResource BaseBrush}">
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="52"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="280"/>
+            </Grid.ColumnDefinitions>
             
-            <avalondock:LayoutRoot>
-                <avalondock:LayoutPanel Orientation="Horizontal">
+            <!-- Left Toolbox -->
+            <Border Grid.Column="0" Background="{StaticResource CrustBrush}" 
+                    BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,1,0">
+                <StackPanel Margin="4,8">
+                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Select (V)">
+                        <TextBlock Text="⊙" FontSize="18"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Pen Tool (P)">
+                        <TextBlock Text="✎" FontSize="18"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Rectangle (R)">
+                        <TextBlock Text="▢" FontSize="18"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Ellipse (E)">
+                        <TextBlock Text="○" FontSize="18"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Line (L)">
+                        <TextBlock Text="╱" FontSize="18"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Text (T)">
+                        <TextBlock Text="T" FontSize="16" FontWeight="Bold"/>
+                    </Button>
                     
-                    <!-- Left: Toolbox -->
-                    <avalondock:LayoutAnchorablePaneGroup DockWidth="60">
-                        <avalondock:LayoutAnchorablePane>
-                            <avalondock:LayoutAnchorable Title="Tools" CanClose="False" CanHide="False">
-                                <StackPanel Background="{StaticResource SurfaceBrush}" Margin="4">
-                                    <ui:Button Icon="{ui:SymbolIcon Cursor24}" ToolTip="Select (V)" Margin="4"/>
-                                    <ui:Button Icon="{ui:SymbolIcon PenOff20}" ToolTip="Pen Tool (P)" Margin="4"/>
-                                    <ui:Button Icon="{ui:SymbolIcon RectangleLandscape24}" ToolTip="Rectangle (R)" Margin="4"/>
-                                    <ui:Button Icon="{ui:SymbolIcon Circle24}" ToolTip="Ellipse (E)" Margin="4"/>
-                                    <ui:Button Icon="{ui:SymbolIcon Line24}" ToolTip="Line (L)" Margin="4"/>
-                                    <ui:Button Icon="{ui:SymbolIcon TextT24}" ToolTip="Text (T)" Margin="4"/>
-                                </StackPanel>
-                            </avalondock:LayoutAnchorable>
-                        </avalondock:LayoutAnchorablePane>
-                    </avalondock:LayoutAnchorablePaneGroup>
+                    <Separator Background="{StaticResource Surface0Brush}" Margin="8,12"/>
                     
-                    <!-- Center: Document/Canvas -->
-                    <avalondock:LayoutDocumentPaneGroup>
-                        <avalondock:LayoutDocumentPane>
-                            <avalondock:LayoutDocument Title="Untitled.svg" CanClose="True">
-                                <!-- Canvas Area -->
-                                <Grid Background="{StaticResource BaseBrush}">
-                                    <TextBlock Text="Canvas Area - SkiaSharp will render here"
-                                               Foreground="{StaticResource SubtextBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               FontSize="14"/>
-                                </Grid>
-                            </avalondock:LayoutDocument>
-                        </avalondock:LayoutDocumentPane>
-                    </avalondock:LayoutDocumentPaneGroup>
-                    
-                    <!-- Right: Properties -->
-                    <avalondock:LayoutAnchorablePaneGroup DockWidth="280">
-                        <avalondock:LayoutAnchorablePane>
-                            <avalondock:LayoutAnchorable Title="Properties" CanClose="False">
-                                <ScrollViewer Background="{StaticResource SurfaceBrush}">
-                                    <StackPanel Margin="12">
-                                        <TextBlock Text="APPEARANCE" FontSize="11" FontWeight="SemiBold" 
-                                                   Foreground="{StaticResource SubtextBrush}" Margin="0,0,0,8"/>
-                                        
-                                        <!-- Fill -->
-                                        <TextBlock Text="Fill" Foreground="{StaticResource TextBrush}" Margin="0,8,0,4"/>
-                                        <Border Background="#313244" CornerRadius="4" Padding="8">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Border Width="24" Height="24" CornerRadius="4" Background="#89B4FA"/>
-                                                <TextBlock Text="#89B4FA" Foreground="{StaticResource TextBrush}" 
-                                                           VerticalAlignment="Center" Margin="8,0"/>
-                                            </StackPanel>
-                                        </Border>
-                                        
-                                        <!-- Stroke -->
-                                        <TextBlock Text="Stroke" Foreground="{StaticResource TextBrush}" Margin="0,12,0,4"/>
-                                        <Border Background="#313244" CornerRadius="4" Padding="8">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Border Width="24" Height="24" CornerRadius="4" Background="Transparent"
-                                                        BorderBrush="#CDD6F4" BorderThickness="2"/>
-                                                <TextBlock Text="None" Foreground="{StaticResource SubtextBrush}" 
-                                                           VerticalAlignment="Center" Margin="8,0"/>
-                                            </StackPanel>
-                                        </Border>
-                                        
-                                        <TextBlock Text="TRANSFORM" FontSize="11" FontWeight="SemiBold" 
-                                                   Foreground="{StaticResource SubtextBrush}" Margin="0,20,0,8"/>
-                                        
-                                        <!-- Position -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Margin="0,0,4,0">
-                                                <TextBlock Text="X" Foreground="{StaticResource SubtextBrush}" FontSize="10"/>
-                                                <ui:TextBox Text="0" Margin="0,4,0,0"/>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                                <TextBlock Text="Y" Foreground="{StaticResource SubtextBrush}" FontSize="10"/>
-                                                <ui:TextBox Text="0" Margin="0,4,0,0"/>
-                                            </StackPanel>
-                                        </Grid>
-                                        
-                                        <!-- Size -->
-                                        <Grid Margin="0,8,0,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Margin="0,0,4,0">
-                                                <TextBlock Text="W" Foreground="{StaticResource SubtextBrush}" FontSize="10"/>
-                                                <ui:TextBox Text="100" Margin="0,4,0,0"/>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                                <TextBlock Text="H" Foreground="{StaticResource SubtextBrush}" FontSize="10"/>
-                                                <ui:TextBox Text="100" Margin="0,4,0,0"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </ScrollViewer>
-                            </avalondock:LayoutAnchorable>
+                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Zoom (Z)">
+                        <TextBlock Text="🔍" FontSize="16"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButtonStyle}" ToolTip="Hand (H)">
+                        <TextBlock Text="✋" FontSize="16"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+            
+            <!-- Center: Canvas Area -->
+            <Border Grid.Column="1" Background="{StaticResource BaseBrush}">
+                <!-- Checkerboard pattern for transparency -->
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background">
+                            <Setter.Value>
+                                <DrawingBrush TileMode="Tile" Viewport="0,0,20,20" ViewportUnits="Absolute">
+                                    <DrawingBrush.Drawing>
+                                        <DrawingGroup>
+                                            <GeometryDrawing Brush="#1E1E2E">
+                                                <GeometryDrawing.Geometry>
+                                                    <RectangleGeometry Rect="0,0,20,20"/>
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                            <GeometryDrawing Brush="#181825">
+                                                <GeometryDrawing.Geometry>
+                                                    <GeometryGroup>
+                                                        <RectangleGeometry Rect="0,0,10,10"/>
+                                                        <RectangleGeometry Rect="10,10,10,10"/>
+                                                    </GeometryGroup>
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                        </DrawingGroup>
+                                    </DrawingBrush.Drawing>
+                                </DrawingBrush>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Border.Style>
+                
+                <Grid>
+                    <!-- Canvas placeholder -->
+                    <Border Background="{StaticResource BaseBrush}" 
+                            Width="800" Height="600"
+                            CornerRadius="2"
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="40" ShadowDepth="0" Opacity="0.5"/>
+                        </Border.Effect>
+                        <TextBlock Text="Canvas" 
+                                   Foreground="{StaticResource SubtextBrush}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="24" FontWeight="Light"/>
+                    </Border>
+                </Grid>
+            </Border>
+            
+            <!-- Right: Properties Panel -->
+            <Border Grid.Column="2" Background="{StaticResource CrustBrush}"
+                    BorderBrush="{StaticResource Surface0Brush}" BorderThickness="1,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Properties Header -->
+                        <Border Background="{StaticResource MantleBrush}" Padding="12,10">
+                            <TextBlock Text="PROPERTIES" 
+                                       FontSize="11" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource SubtextBrush}"/>
+                        </Border>
+                        
+                        <StackPanel Margin="12,8">
+                            <!-- Appearance Section -->
+                            <TextBlock Text="APPEARANCE" FontSize="10" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource SubtextBrush}" Margin="0,8,0,8"/>
                             
-                            <avalondock:LayoutAnchorable Title="Layers" CanClose="False">
-                                <Grid Background="{StaticResource SurfaceBrush}">
-                                    <TextBlock Text="Layers panel"
-                                               Foreground="{StaticResource SubtextBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
-                                </Grid>
-                            </avalondock:LayoutAnchorable>
-                        </avalondock:LayoutAnchorablePane>
-                    </avalondock:LayoutAnchorablePaneGroup>
-                    
-                </avalondock:LayoutPanel>
-            </avalondock:LayoutRoot>
-        </avalondock:DockingManager>
+                            <!-- Fill -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Fill" Foreground="{StaticResource TextBrush}" 
+                                           VerticalAlignment="Center" FontSize="12"/>
+                                <Border Grid.Column="1" Background="{StaticResource Surface0Brush}" 
+                                        CornerRadius="4" Padding="8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="20" Height="20" CornerRadius="3">
+                                            <Border.Background>
+                                                <SolidColorBrush Color="{StaticResource Blue}"/>
+                                            </Border.Background>
+                                        </Border>
+                                        <TextBlock Text="#89B4FA" Foreground="{StaticResource TextBrush}" 
+                                                   VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"
+                                                   FontFamily="Consolas"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                            
+                            <!-- Stroke -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Stroke" Foreground="{StaticResource TextBrush}" 
+                                           VerticalAlignment="Center" FontSize="12"/>
+                                <Border Grid.Column="1" Background="{StaticResource Surface0Brush}" 
+                                        CornerRadius="4" Padding="8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="20" Height="20" CornerRadius="3" 
+                                                BorderBrush="{StaticResource TextBrush}" BorderThickness="2"/>
+                                        <TextBlock Text="None" Foreground="{StaticResource SubtextBrush}" 
+                                                   VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                            
+                            <!-- Transform Section -->
+                            <TextBlock Text="TRANSFORM" FontSize="10" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource SubtextBrush}" Margin="0,16,0,8"/>
+                            
+                            <!-- Position -->
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" Padding="8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="X" Foreground="{StaticResource SubtextBrush}" FontSize="10" Width="14"/>
+                                        <TextBlock Text="0" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Background="{StaticResource Surface0Brush}" CornerRadius="4" Padding="8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Y" Foreground="{StaticResource SubtextBrush}" FontSize="10" Width="14"/>
+                                        <TextBlock Text="0" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                            
+                            <!-- Size -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" Padding="8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="W" Foreground="{StaticResource SubtextBrush}" FontSize="10" Width="14"/>
+                                        <TextBlock Text="100" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Background="{StaticResource Surface0Brush}" CornerRadius="4" Padding="8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="H" Foreground="{StaticResource SubtextBrush}" FontSize="10" Width="14"/>
+                                        <TextBlock Text="100" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                        
+                        <!-- Layers Header -->
+                        <Border Background="{StaticResource MantleBrush}" Padding="12,10" Margin="0,16,0,0">
+                            <TextBlock Text="LAYERS" 
+                                       FontSize="11" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource SubtextBrush}"/>
+                        </Border>
+                        
+                        <StackPanel Margin="8">
+                            <!-- Layer items -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                    Padding="8,6" Margin="0,2">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="👁" FontSize="12" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Layer 1" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="12,6">
+        <Border Grid.Row="2" Background="{StaticResource CrustBrush}" 
+                BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,1,0,0" 
+                Padding="12,6">
             <Grid>
                 <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="8" Height="8" Fill="{StaticResource AccentBrush}" Margin="0,0,8,0"/>
                     <TextBlock Text="Ready" Foreground="{StaticResource TextBrush}" FontSize="11"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="100%" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,0,16,0"/>
-                    <TextBlock Text="0 x 0" Foreground="{StaticResource SubtextBrush}" FontSize="11"/>
+                    <TextBlock Text="100%" Foreground="{StaticResource SubtextBrush}" FontSize="11" Margin="0,0,20,0"/>
+                    <TextBlock Text="800 × 600" Foreground="{StaticResource SubtextBrush}" FontSize="11"/>
                 </StackPanel>
             </Grid>
         </Border>
