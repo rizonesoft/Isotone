@@ -939,19 +939,19 @@ After completing each task set:
 - [x] Batch export
 
 ### 6.5 Asset Management
-- [ ] Built-in icon library (browse, search, insert)
-  - [ ] Categories
-  - [ ] Search
-  - [ ] Preview
-  - [ ] Drag to canvas
-- [ ] Template gallery
-  - [ ] Categories
-  - [ ] Preview
-  - [ ] Create from template
-- [ ] User asset library (drag files to save)
-  - [ ] Import SVG files
-  - [ ] Organize in folders
-  - [ ] Quick access
+- [x] Built-in icon library (browse, search, insert)
+  - [x] Categories
+  - [x] Search
+  - [x] Preview
+  - [x] Drag to canvas
+- [x] Template gallery
+  - [x] Categories
+  - [x] Preview
+  - [x] Create from template
+- [x] User asset library (drag files to save)
+  - [x] Import SVG files
+  - [x] Organize in folders
+  - [x] Quick access
 
 ---
 
