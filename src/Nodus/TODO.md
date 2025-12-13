@@ -1210,6 +1210,25 @@ After completing each task set:
 - [ ] Element count
 - [ ] Undo/Redo stack size
 
+### 12.6 Crash Detection & Error Handling
+- [ ] Global unhandled exception handler (App.xaml.cs)
+  - [ ] Catch DispatcherUnhandledException
+  - [ ] Catch AppDomain.UnhandledException
+  - [ ] Catch TaskScheduler.UnobservedTaskException
+- [ ] Error dialog window
+  - [ ] Show exception type and message
+  - [ ] Show stack trace (expandable)
+  - [ ] Copy to clipboard button
+  - [ ] Option to continue or exit
+- [ ] Crash report logging
+  - [ ] Write to crash log file
+  - [ ] Include system info (OS, .NET version)
+  - [ ] Include app version
+  - [ ] Include recent DebugLogger entries
+- [ ] Recovery options
+  - [ ] Auto-save before crash
+  - [ ] Restore last session option
+
 ---
 
 ## Priority Order
