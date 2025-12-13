@@ -520,7 +520,7 @@
                     Visibility="{Binding ShowToolsPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel Margin="4,8">
                     <!-- Selection Tools -->
-                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsSelectToolActive}"
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsSelectToolActive, Mode=OneWay}"
                                  Command="{Binding SetToolCommand}" CommandParameter="Select">
                         <RadioButton.ToolTip>
                             <ToolTip Style="{StaticResource ToolTooltipStyle}">
@@ -535,7 +535,7 @@
                     </RadioButton>
                     
                     <!-- Drawing Tools -->
-                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsPenToolActive}"
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsPenToolActive, Mode=OneWay}"
                                  Command="{Binding SetToolCommand}" CommandParameter="Pen">
                         <RadioButton.ToolTip>
                             <ToolTip Style="{StaticResource ToolTooltipStyle}">
@@ -549,7 +549,7 @@
                         <fi:FluentIcon Icon="Pen" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
                     </RadioButton>
                     
-                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsRectangleToolActive}"
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsRectangleToolActive, Mode=OneWay}"
                                  Command="{Binding SetToolCommand}" CommandParameter="Rectangle">
                         <RadioButton.ToolTip>
                             <ToolTip Style="{StaticResource ToolTooltipStyle}">
@@ -563,7 +563,7 @@
                         <fi:FluentIcon Icon="Square" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
                     </RadioButton>
                     
-                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsEllipseToolActive}"
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsEllipseToolActive, Mode=OneWay}"
                                  Command="{Binding SetToolCommand}" CommandParameter="Ellipse">
                         <RadioButton.ToolTip>
                             <ToolTip Style="{StaticResource ToolTooltipStyle}">
@@ -577,7 +577,7 @@
                         <fi:FluentIcon Icon="Circle" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
                     </RadioButton>
                     
-                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsLineToolActive}"
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsLineToolActive, Mode=OneWay}"
                                  Command="{Binding SetToolCommand}" CommandParameter="Line">
                         <RadioButton.ToolTip>
                             <ToolTip Style="{StaticResource ToolTooltipStyle}">
@@ -591,7 +591,7 @@
                         <fi:FluentIcon Icon="LineHorizontal1" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
                     </RadioButton>
                     
-                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsTextToolActive}"
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsTextToolActive, Mode=OneWay}"
                                  Command="{Binding SetToolCommand}" CommandParameter="Text">
                         <RadioButton.ToolTip>
                             <ToolTip Style="{StaticResource ToolTooltipStyle}">
@@ -608,7 +608,7 @@
                     <Separator Background="{StaticResource Surface0Brush}" Margin="8,12"/>
                     
                     <!-- Navigation Tools -->
-                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsZoomToolActive}"
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsZoomToolActive, Mode=OneWay}"
                                  Command="{Binding SetToolCommand}" CommandParameter="Zoom">
                         <RadioButton.ToolTip>
                             <ToolTip Style="{StaticResource ToolTooltipStyle}">
@@ -622,7 +622,7 @@
                         <fi:FluentIcon Icon="ZoomIn" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
                     </RadioButton>
                     
-                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsPanToolActive}"
+                    <RadioButton Style="{StaticResource ActiveToolButtonStyle}" IsChecked="{Binding IsPanToolActive, Mode=OneWay}"
                                  Command="{Binding SetToolCommand}" CommandParameter="Pan">
                         <RadioButton.ToolTip>
                             <ToolTip Style="{StaticResource ToolTooltipStyle}">
