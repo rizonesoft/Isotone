@@ -18,6 +18,14 @@ public partial class MainWindowView : FluentWindow
         InitializeComponent();
         Loaded += OnLoaded;
         SizeChanged += OnSizeChanged;
+        Closed += OnClosed;
+    }
+    
+    private void OnClosed(object? sender, EventArgs e)
+    {
+        // Explicitly shutdown the application when the main window closes.
+        // This ensures all windows (including hidden ones like DebugWindow) are closed.
+        Application.Current.Shutdown();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

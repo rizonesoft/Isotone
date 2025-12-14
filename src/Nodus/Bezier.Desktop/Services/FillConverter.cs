@@ -2,6 +2,7 @@ namespace Bezier.Desktop.Services;
 
 using Bezier.Core.Interfaces;
 using Bezier.Core.Models;
+using Bezier.Core.Models.Elements;
 using Bezier.Core.Models.Fills;
 using SkiaSharp;
 
@@ -15,8 +16,14 @@ public static class FillConverter
     /// </summary>
     /// <param name="fill">The fill to convert.</param>
     /// <param name="bounds">The element bounds for gradient calculations.</param>
+    /// <param name="document">The document containing definitions (for pattern lookup).</param>
+    /// <param name="patternRenderer">Callback to render a pattern element to an SKPicture.</param>
     /// <returns>An SKPaint configured for the fill, or null for NoneFill.</returns>
-    public static SKPaint? ToSkiaPaint(this IFill? fill, SKRect bounds)
+    public static SKPaint? ToSkiaPaint(
+        this IFill? fill, 
+        SKRect bounds, 
+        VectorDocument? document = null,
+        Func<SvgPattern, SKPicture>? patternRenderer = null)
     {
         if (fill is null or NoneFill)
             return null;
@@ -26,7 +33,7 @@ public static class FillConverter
             SolidFill solid => CreateSolidPaint(solid),
             LinearGradientFill linear => CreateLinearGradientPaint(linear, bounds),
             RadialGradientFill radial => CreateRadialGradientPaint(radial, bounds),
-            PatternFill pattern => CreatePatternPaint(pattern, bounds),
+            PatternFill pattern => CreatePatternPaint(pattern, bounds, document, patternRenderer),
             _ => null
         };
     }
@@ -145,12 +152,55 @@ public static class FillConverter
     /// This method creates a placeholder paint. Full pattern support requires
     /// pattern definition lookup from the document's defs section.
     /// </remarks>
-    private static SKPaint CreatePatternPaint(PatternFill pattern, SKRect bounds)
+    private static SKPaint CreatePatternPaint(
+        PatternFill pattern, 
+        SKRect bounds, 
+        VectorDocument? document,
+        Func<SvgPattern, SKPicture>? patternRenderer)
     {
-        // Pattern fills require bitmap or picture-based shaders.
-        // For now, create a placeholder paint with a checkered pattern.
-        // Full implementation will lookup pattern definition by PatternId.
+        // Try to find the pattern definition
+        SvgPattern? patternDef = null;
+        
+        if (document is not null && !string.IsNullOrEmpty(pattern.PatternId))
+        {
+            // Look in Defs
+            patternDef = document.Defs.OfType<SvgPattern>()
+                .FirstOrDefault(p => p.Name == pattern.PatternId || p.Id.ToString() == pattern.PatternId);
+                
+            // Also look in Elements (though less common for definitions)
+            if (patternDef is null)
+            {
+                patternDef = document.Elements.OfType<SvgPattern>()
+                    .FirstOrDefault(p => p.Name == pattern.PatternId || p.Id.ToString() == pattern.PatternId);
+            }
+        }
 
+        if (patternDef is not null && patternRenderer is not null)
+        {
+            var picture = patternRenderer(patternDef);
+            
+            var tileMode = SKShaderTileMode.Repeat;
+            var matrix = SKMatrix.Identity;
+            
+            // Apply Pattern transform (x, y) if needed
+            // PatternUnits logic can be complex, simplifying for now
+            
+            var shader = SKShader.CreatePicture(
+                picture, 
+                SKShaderTileMode.Repeat, 
+                SKShaderTileMode.Repeat, 
+                matrix, 
+                SKRect.Create((float)patternDef.X, (float)patternDef.Y, (float)patternDef.Width, (float)patternDef.Height));
+                
+             return new SKPaint
+            {
+                Style = SKPaintStyle.Fill,
+                Shader = shader,
+                IsAntialias = true
+            };
+        }
+
+        // Fallback to placeholder if pattern not found or renderer not provided
         var tileWidth = (int)Math.Max(pattern.Width, 1);
         var tileHeight = (int)Math.Max(pattern.Height, 1);
 
@@ -172,7 +222,7 @@ public static class FillConverter
         tileCanvas.DrawRect(0, halfHeight, halfWidth, halfHeight, paint2);
         tileCanvas.DrawRect(halfWidth, halfHeight, halfWidth, halfHeight, paint1);
 
-        var shader = SKShader.CreateBitmap(
+        var fallbackShader = SKShader.CreateBitmap(
             tileBitmap,
             SKShaderTileMode.Repeat,
             SKShaderTileMode.Repeat);
@@ -180,14 +230,14 @@ public static class FillConverter
         // Apply offset if specified
         if (pattern.X != 0 || pattern.Y != 0)
         {
-            var matrix = SKMatrix.CreateTranslation((float)pattern.X, (float)pattern.Y);
-            shader = shader.WithLocalMatrix(matrix);
+            var fallbackMatrix = SKMatrix.CreateTranslation((float)pattern.X, (float)pattern.Y);
+            fallbackShader = fallbackShader.WithLocalMatrix(fallbackMatrix);
         }
 
         return new SKPaint
         {
             Style = SKPaintStyle.Fill,
-            Shader = shader,
+            Shader = fallbackShader,
             IsAntialias = true
         };
     }

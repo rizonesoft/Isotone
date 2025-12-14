@@ -113,6 +113,11 @@ public class VectorDocument : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Collection of definitions (gradients, patterns, symbols).
+    /// </summary>
+    public ObservableCollection<VectorElement> Defs { get; } = [];
+
+    /// <summary>
     /// Collection of all elements in the document.
     /// </summary>
     public ObservableCollection<VectorElement> Elements { get; } = [];

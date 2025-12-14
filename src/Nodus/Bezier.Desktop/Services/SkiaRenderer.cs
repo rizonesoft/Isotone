@@ -69,15 +69,32 @@ public class SkiaRenderer
         {
             if (element.IsVisible)
             {
-                RenderElement(canvas, element, outlineMode, pixelPreview);
+                RenderElement(canvas, element, outlineMode, pixelPreview, document);
             }
         }
+    }
+
+    private SKPicture RenderPatternToPicture(SvgPattern pattern, VectorDocument? document)
+    {
+        using var recorder = new SKPictureRecorder();
+        var bounds = SKRect.Create((float)pattern.Width, (float)pattern.Height);
+        using var canvas = recorder.BeginRecording(bounds);
+        
+        foreach (var child in pattern.Children)
+        {
+            if (child.IsVisible)
+            {
+                RenderElement(canvas, child, false, false, document);
+            }
+        }
+        
+        return recorder.EndRecording();
     }
 
     /// <summary>
     /// Renders a single vector element.
     /// </summary>
-    public void RenderElement(SKCanvas canvas, VectorElement element, bool outlineMode, bool pixelPreview)
+    public void RenderElement(SKCanvas canvas, VectorElement element, bool outlineMode, bool pixelPreview, VectorDocument? document = null)
     {
         canvas.Save();
         
@@ -104,31 +121,31 @@ public class SkiaRenderer
         switch (element)
         {
             case SvgRect rect:
-                RenderRect(canvas, rect, outlineMode);
+                RenderRect(canvas, rect, outlineMode, document);
                 break;
             case SvgCircle circle:
-                RenderCircle(canvas, circle, outlineMode);
+                RenderCircle(canvas, circle, outlineMode, document);
                 break;
             case SvgEllipse ellipse:
-                RenderEllipse(canvas, ellipse, outlineMode);
+                RenderEllipse(canvas, ellipse, outlineMode, document);
                 break;
             case SvgLine line:
-                RenderLine(canvas, line, outlineMode);
+                RenderLine(canvas, line, outlineMode, document);
                 break;
             case SvgPath path:
-                RenderPath(canvas, path, outlineMode);
+                RenderPath(canvas, path, outlineMode, document);
                 break;
             case SvgPolygon polygon:
-                RenderPolygon(canvas, polygon, outlineMode);
+                RenderPolygon(canvas, polygon, outlineMode, document);
                 break;
             case SvgPolyline polyline:
-                RenderPolyline(canvas, polyline, outlineMode);
+                RenderPolyline(canvas, polyline, outlineMode, document);
                 break;
             case SvgText text:
-                RenderText(canvas, text, outlineMode);
+                RenderText(canvas, text, outlineMode, document);
                 break;
             case SvgGroup group:
-                RenderGroup(canvas, group, outlineMode, pixelPreview);
+                RenderGroup(canvas, group, outlineMode, pixelPreview, document);
                 break;
         }
 
@@ -140,14 +157,14 @@ public class SkiaRenderer
         canvas.Restore();
     }
 
-    private void RenderRect(SKCanvas canvas, SvgRect rect, bool outlineMode)
+    private void RenderRect(SKCanvas canvas, SvgRect rect, bool outlineMode, VectorDocument? document)
     {
         var skRect = SKRect.Create((float)rect.X, (float)rect.Y, (float)rect.Width, (float)rect.Height);
         var bounds = skRect;
         
         if (!outlineMode && rect.Fill is not null)
         {
-            using var fillPaint = rect.Fill.ToSkiaPaint(bounds);
+            using var fillPaint = rect.Fill.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (fillPaint is not null)
             {
                 if (rect.Rx > 0 || rect.Ry > 0)
@@ -159,7 +176,7 @@ public class SkiaRenderer
         
         if (rect.Stroke is not null)
         {
-            using var strokePaint = rect.Stroke.ToSkiaPaint(bounds);
+            using var strokePaint = rect.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (strokePaint is not null)
             {
                 if (outlineMode)
@@ -189,7 +206,7 @@ public class SkiaRenderer
         }
     }
 
-    private void RenderCircle(SKCanvas canvas, SvgCircle circle, bool outlineMode)
+    private void RenderCircle(SKCanvas canvas, SvgCircle circle, bool outlineMode, VectorDocument? document)
     {
         var bounds = SKRect.Create(
             (float)(circle.Cx - circle.R),
@@ -199,7 +216,7 @@ public class SkiaRenderer
         
         if (!outlineMode && circle.Fill is not null)
         {
-            using var fillPaint = circle.Fill.ToSkiaPaint(bounds);
+            using var fillPaint = circle.Fill.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (fillPaint is not null)
             {
                 canvas.DrawCircle((float)circle.Cx, (float)circle.Cy, (float)circle.R, fillPaint);
@@ -208,7 +225,7 @@ public class SkiaRenderer
         
         if (circle.Stroke is not null)
         {
-            using var strokePaint = circle.Stroke.ToSkiaPaint(bounds);
+            using var strokePaint = circle.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (strokePaint is not null)
             {
                 if (outlineMode)
@@ -232,7 +249,7 @@ public class SkiaRenderer
         }
     }
 
-    private void RenderEllipse(SKCanvas canvas, SvgEllipse ellipse, bool outlineMode)
+    private void RenderEllipse(SKCanvas canvas, SvgEllipse ellipse, bool outlineMode, VectorDocument? document)
     {
         var bounds = SKRect.Create(
             (float)(ellipse.Cx - ellipse.Rx),
@@ -242,7 +259,7 @@ public class SkiaRenderer
         
         if (!outlineMode && ellipse.Fill is not null)
         {
-            using var fillPaint = ellipse.Fill.ToSkiaPaint(bounds);
+            using var fillPaint = ellipse.Fill.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (fillPaint is not null)
             {
                 canvas.DrawOval(bounds, fillPaint);
@@ -251,7 +268,7 @@ public class SkiaRenderer
         
         if (ellipse.Stroke is not null)
         {
-            using var strokePaint = ellipse.Stroke.ToSkiaPaint(bounds);
+            using var strokePaint = ellipse.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (strokePaint is not null)
             {
                 if (outlineMode)
@@ -275,7 +292,7 @@ public class SkiaRenderer
         }
     }
 
-    private void RenderLine(SKCanvas canvas, SvgLine line, bool outlineMode)
+    private void RenderLine(SKCanvas canvas, SvgLine line, bool outlineMode, VectorDocument? document)
     {
         var bounds = SKRect.Create(
             (float)Math.Min(line.X1, line.X2),
@@ -285,7 +302,7 @@ public class SkiaRenderer
         
         if (line.Stroke is not null)
         {
-            using var strokePaint = line.Stroke.ToSkiaPaint(bounds);
+            using var strokePaint = line.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (strokePaint is not null)
             {
                 if (outlineMode)
@@ -315,7 +332,7 @@ public class SkiaRenderer
         }
     }
 
-    private void RenderPath(SKCanvas canvas, SvgPath path, bool outlineMode)
+    private void RenderPath(SKCanvas canvas, SvgPath path, bool outlineMode, VectorDocument? document)
     {
         if (string.IsNullOrWhiteSpace(path.PathData)) return;
         
@@ -328,7 +345,7 @@ public class SkiaRenderer
             
             if (!outlineMode && path.Fill is not null)
             {
-                using var fillPaint = path.Fill.ToSkiaPaint(bounds);
+                using var fillPaint = path.Fill.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
                 if (fillPaint is not null)
                 {
                     canvas.DrawPath(skPath, fillPaint);
@@ -337,7 +354,7 @@ public class SkiaRenderer
             
             if (path.Stroke is not null)
             {
-                using var strokePaint = path.Stroke.ToSkiaPaint(bounds);
+                using var strokePaint = path.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
                 if (strokePaint is not null)
                 {
                     if (outlineMode)
@@ -368,7 +385,7 @@ public class SkiaRenderer
         }
     }
 
-    private void RenderPolygon(SKCanvas canvas, SvgPolygon polygon, bool outlineMode)
+    private void RenderPolygon(SKCanvas canvas, SvgPolygon polygon, bool outlineMode, VectorDocument? document)
     {
         if (polygon.Points.Count < 2) return;
         
@@ -385,7 +402,7 @@ public class SkiaRenderer
         
         if (!outlineMode && polygon.Fill is not null)
         {
-            using var fillPaint = polygon.Fill.ToSkiaPaint(bounds);
+            using var fillPaint = polygon.Fill.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (fillPaint is not null)
             {
                 canvas.DrawPath(skPath, fillPaint);
@@ -394,7 +411,7 @@ public class SkiaRenderer
         
         if (polygon.Stroke is not null)
         {
-            using var strokePaint = polygon.Stroke.ToSkiaPaint(bounds);
+            using var strokePaint = polygon.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (strokePaint is not null)
             {
                 if (outlineMode)
@@ -418,7 +435,7 @@ public class SkiaRenderer
         }
     }
 
-    private void RenderPolyline(SKCanvas canvas, SvgPolyline polyline, bool outlineMode)
+    private void RenderPolyline(SKCanvas canvas, SvgPolyline polyline, bool outlineMode, VectorDocument? document)
     {
         if (polyline.Points.Count < 2) return;
         
@@ -434,7 +451,7 @@ public class SkiaRenderer
         
         if (!outlineMode && polyline.Fill is not null)
         {
-            using var fillPaint = polyline.Fill.ToSkiaPaint(bounds);
+            using var fillPaint = polyline.Fill.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (fillPaint is not null)
             {
                 canvas.DrawPath(skPath, fillPaint);
@@ -443,7 +460,7 @@ public class SkiaRenderer
         
         if (polyline.Stroke is not null)
         {
-            using var strokePaint = polyline.Stroke.ToSkiaPaint(bounds);
+            using var strokePaint = polyline.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (strokePaint is not null)
             {
                 if (outlineMode)
@@ -467,7 +484,7 @@ public class SkiaRenderer
         }
     }
 
-    private void RenderText(SKCanvas canvas, SvgText text, bool outlineMode)
+    private void RenderText(SKCanvas canvas, SvgText text, bool outlineMode, VectorDocument? document)
     {
         using var paint = new SKPaint
         {
@@ -499,7 +516,7 @@ public class SkiaRenderer
         
         if (!outlineMode && text.Fill is not null)
         {
-            using var fillPaint = text.Fill.ToSkiaPaint(bounds);
+            using var fillPaint = text.Fill.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (fillPaint is not null)
             {
                 fillPaint.TextSize = paint.TextSize;
@@ -512,7 +529,7 @@ public class SkiaRenderer
         
         if (text.Stroke is not null)
         {
-            using var strokePaint = text.Stroke.ToSkiaPaint(bounds);
+            using var strokePaint = text.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (strokePaint is not null)
             {
                 strokePaint.TextSize = paint.TextSize;
@@ -541,13 +558,13 @@ public class SkiaRenderer
         }
     }
 
-    private void RenderGroup(SKCanvas canvas, SvgGroup group, bool outlineMode, bool pixelPreview)
+    private void RenderGroup(SKCanvas canvas, SvgGroup group, bool outlineMode, bool pixelPreview, VectorDocument? document)
     {
         foreach (var child in group.Children)
         {
             if (child.IsVisible)
             {
-                RenderElement(canvas, child, outlineMode, pixelPreview);
+                RenderElement(canvas, child, outlineMode, pixelPreview, document);
             }
         }
     }

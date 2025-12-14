@@ -1,6 +1,7 @@
 namespace Bezier.Desktop.Services;
 
 using Bezier.Core.Models;
+using Bezier.Core.Models.Elements;
 using SkiaSharp;
 
 /// <summary>
@@ -13,8 +14,14 @@ public static class StrokeConverter
     /// </summary>
     /// <param name="stroke">The stroke to convert.</param>
     /// <param name="bounds">The element bounds for gradient fill calculations.</param>
+    /// <param name="document">The document context.</param>
+    /// <param name="patternRenderer">The renderer for patterns.</param>
     /// <returns>An SKPaint configured for the stroke, or null if stroke is not visible.</returns>
-    public static SKPaint? ToSkiaPaint(this Stroke? stroke, SKRect bounds)
+    public static SKPaint? ToSkiaPaint(
+        this Stroke? stroke, 
+        SKRect bounds,
+        VectorDocument? document = null,
+        Func<SvgPattern, SKPicture>? patternRenderer = null)
     {
         if (stroke is null || !stroke.IsVisible)
             return null;
@@ -32,7 +39,7 @@ public static class StrokeConverter
         // Apply stroke fill (color/gradient)
         if (stroke.Fill is not null)
         {
-            var fillPaint = stroke.Fill.ToSkiaPaint(bounds);
+            var fillPaint = stroke.Fill.ToSkiaPaint(bounds, document, patternRenderer);
             if (fillPaint is not null)
             {
                 paint.Color = fillPaint.Color;
