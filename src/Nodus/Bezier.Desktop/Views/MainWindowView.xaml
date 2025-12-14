@@ -530,6 +530,7 @@
                     <Path Data="{helpers:Icon Magnet}" 
                           Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
                           StrokeThickness="1.5"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                           Stretch="Uniform" Width="18" Height="18"/>
                 </ToggleButton>
             </StackPanel>
@@ -892,7 +893,8 @@
                     <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="12,0,12,0"/>
                     <!-- Snap Status Indicator -->
                     <Path Data="{helpers:Icon Magnet}" Stretch="Uniform" Width="12" Height="12" Margin="0,0,4,0"
-                          Stroke="{StaticResource SubtextBrush}" StrokeThickness="1">
+                          Stroke="{StaticResource SubtextBrush}" StrokeThickness="1"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
                         <Path.Style>
                             <Style TargetType="Path">
                                 <Style.Triggers>
