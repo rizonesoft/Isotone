@@ -150,8 +150,8 @@
                         <!-- Main button with border for glow effect -->
                         <Border x:Name="border" 
                                 Background="{TemplateBinding Background}" 
-                                CornerRadius="8"
-                                BorderThickness="1.5"
+                                CornerRadius="5"
+                                BorderThickness="1"
                                 BorderBrush="Transparent">
                             <ContentPresenter HorizontalAlignment="Center" 
                                               VerticalAlignment="Center"/>

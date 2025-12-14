@@ -39,6 +39,9 @@ public partial class App : Application
         var mainWindow = new MainWindowView();
         mainWindow.DataContext = Services.GetRequiredService<ViewModels.MainWindowViewModel>();
         
+        // Set as main window for proper shutdown behavior
+        MainWindow = mainWindow;
+        
         // Close splash when main window is ready and bring to front
         mainWindow.Loaded += (_, _) =>
         {
