@@ -10,6 +10,7 @@
         xmlns:avalontheme="clr-namespace:AvalonDock.Themes.VS2013;assembly=AvalonDock.Themes.VS2013"
         xmlns:canvas="clr-namespace:Bezier.Desktop.Controls.Canvas"
         xmlns:controls="clr-namespace:Bezier.Desktop.Controls"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="Bezier" 
         Height="900" Width="1400"
@@ -69,6 +70,11 @@
         <!-- Override AvalonDock colors -->
         <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="{StaticResource Base}"/>
         <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{StaticResource Surface0}"/>
+
+        <!-- NumberBox compact button margins -->
+        <Thickness x:Key="NumberBoxButtonMargin">0,0,2,0</Thickness>
+        <Thickness x:Key="NumberBoxButtonPadding">0</Thickness>
+        <system:Double x:Key="NumberBoxButtonHeight">20</system:Double>
 
         <!-- Tool Button Style -->
         <Style x:Key="ToolButtonStyle" TargetType="Button">
