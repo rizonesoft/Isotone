@@ -97,10 +97,8 @@ WORKFLOW:
 - [x] Initialize with README.md
 - [x] Add .gitignore (dotnet template)
 - [x] Add .gitattributes for line endings
-- [ ] Create branch protection rules for `main`
 - [x] Set up issue templates (Bug, Feature, Task)
 - [x] Set up pull request template
-- [ ] Create project board (Kanban)
 - [x] Add LICENSE file (choose license: MIT/GPL/Commercial)
 - [x] Create CONTRIBUTING.md
 - [x] Create CODE_OF_CONDUCT.md
@@ -153,12 +151,12 @@ Imago/
 └── LICENSE
 ```
 
-- [ ] Create directory structure as shown above
-- [ ] Create `Imago.sln` solution file
-- [ ] Create `Directory.Build.props` with common settings
-- [ ] Create `Directory.Packages.props` for central package management
-- [ ] Create `global.json` pinning .NET 10 SDK version
-- [ ] Create `nuget.config` for package sources
+- [x] Create directory structure as shown above
+- [x] Create `Imago.sln` solution file
+- [x] Create `Directory.Build.props` with common settings
+- [x] Create `Directory.Packages.props` for central package management
+- [x] Create `global.json` pinning .NET 10 SDK version
+- [x] Create `nuget.config` for package sources
 
 ### 0.4 Project Files Creation
 - [ ] Create `Imago.Core` class library (.NET 10)
