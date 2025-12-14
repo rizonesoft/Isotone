@@ -63,14 +63,7 @@
         <!-- Override AvalonDock colors -->
         <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="{StaticResource Base}"/>
         <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{StaticResource Surface0}"/>
-        
-        <!-- Magnet Icon - for Snap (Lucide) -->
-        <Geometry x:Key="MagnetIconPath">M12 15l4 4 M2.352 10.648a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l6.029-6.029a1 1 0 1 1 3 3l-6.029 6.029a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l6.365-6.367A1 1 0 0 0 8.716 4.282z M5 8l4 4</Geometry>
-        <!-- Grid 3x2 Icon - for Grid (Lucide) -->
-        <Geometry x:Key="GridDotsIconPath">M15 3v18 M3 12h18 M9 3v18 M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z</Geometry>
-        <!-- Ruler Icon - diagonal ruler with tick marks (Lucide) -->
-        <Geometry x:Key="RulerIconPath">M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z M14.5 12.5l2-2 M11.5 9.5l2-2 M8.5 6.5l2-2 M17.5 15.5l2-2</Geometry>
-        
+
         <!-- Tool Button Style -->
         <Style x:Key="ToolButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="40"/>
@@ -522,18 +515,15 @@
                 <!-- View Toggles -->
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Grid (Ctrl+')" 
                               IsChecked="{Binding ShowGrid}" Width="32" Height="28">
-                    <Path Data="{StaticResource GridDotsIconPath}" Fill="{StaticResource SubtextBrush}" 
-                          Stretch="Uniform" Width="18" Height="18"/>
+                    <fi:FluentIcon Icon="GridDots" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Rulers" 
                               IsChecked="{Binding ShowRulers}" Width="32" Height="28">
-                    <Path Data="{StaticResource RulerIconPath}" Fill="{StaticResource SubtextBrush}" 
-                          Stretch="Uniform" Width="18" Height="18"/>
+                    <fi:FluentIcon Icon="Ruler" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Snap" 
                               IsChecked="{Binding SnapEnabled}" Width="32" Height="28">
-                    <Path Data="{StaticResource MagnetIconPath}" Fill="{StaticResource SubtextBrush}" 
-                          Stretch="Uniform" Width="18" Height="18"/>
+                    <fi:FluentIcon Icon="Target" IconSize="Size24" FontSize="20" IconVariant="Regular"/>
                 </ToggleButton>
             </StackPanel>
         </Border>
@@ -894,18 +884,18 @@
                                ToolTip="Color Mode (RGB/CMYK)"/>
                     <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="12,0,12,0"/>
                     <!-- Snap Status Indicator -->
-                    <Path Data="{StaticResource MagnetIconPath}" Stretch="Uniform" Width="12" Height="12" Margin="0,0,4,0">
-                        <Path.Style>
-                            <Style TargetType="Path">
-                                <Setter Property="Fill" Value="{StaticResource SubtextBrush}"/>
+                    <fi:FluentIcon Icon="Target" IconSize="Size16" FontSize="12" Margin="0,0,4,0">
+                        <fi:FluentIcon.Style>
+                            <Style TargetType="fi:FluentIcon">
+                                <Setter Property="Foreground" Value="{StaticResource SubtextBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SnapEnabled}" Value="True">
-                                        <Setter Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Path.Style>
-                    </Path>
+                        </fi:FluentIcon.Style>
+                    </fi:FluentIcon>
                     <TextBlock Foreground="{StaticResource SubtextBrush}" FontSize="11" 
                                ToolTip="Snap to Grid/Guides (Toggle in toolbar)">
                         <TextBlock.Style>
