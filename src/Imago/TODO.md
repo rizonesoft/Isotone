@@ -250,12 +250,12 @@ Imago/
 - [x] Create quick mask mode
 
 ### 1.6 Mask System
-- [ ] Create `LayerMask` class
-- [ ] Create `VectorMask` class
-- [ ] Create `ClippingMask` behavior
-- [ ] Implement mask editing tools
-- [ ] Add mask density/feather controls
-- [ ] Create mask refinement algorithms
+- [x] Create `LayerMask` class
+- [x] Create `VectorMask` class
+- [x] Create `ClippingMask` behavior
+- [x] Implement mask editing tools
+- [x] Add mask density/feather controls
+- [x] Create mask refinement algorithms
 
 ### 1.7 MVVM Infrastructure
 - [ ] Create `ViewModelBase` with INotifyPropertyChanged
