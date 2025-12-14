@@ -175,6 +175,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _showError;
 
+    [ObservableProperty]
+    private string _colorMode = "RGB";
+
     /// <summary>
     /// Available zoom levels for the dropdown.
     /// </summary>

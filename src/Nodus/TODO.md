@@ -315,7 +315,7 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Cursor X, Y coordinates
 - [x] Selection info (count, dimensions)
 - [x] Document info (size, element count)
-- [ ] Color mode indicator
+- [x] Color mode indicator
 - [ ] Snap status indicator
 - [ ] Tool hint text
 - [ ] Memory usage indicator
@@ -351,7 +351,6 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Selection handles
 - [x] Rotation handle
 - [x] Bounding box
-- [ ] Pixel grid (at high zoom)
 - [ ] Safe area guides
 - [ ] Margin guides
 - [ ] Column guides

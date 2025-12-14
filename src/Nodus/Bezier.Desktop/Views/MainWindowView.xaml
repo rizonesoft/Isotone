@@ -877,6 +877,11 @@
                     <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextBrush}" FontSize="11" Margin="0,0,20,0"/>
                     <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="0,0,12,0"/>
                     <TextBlock Text="{Binding SelectionInfo}" Foreground="{StaticResource SubtextBrush}" FontSize="11"/>
+                    <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="12,0,12,0"/>
+                    <!-- Color Mode Indicator -->
+                    <fi:FluentIcon Icon="Color" IconSize="Size16" FontSize="12" Foreground="{StaticResource SubtextBrush}" Margin="0,0,4,0"/>
+                    <TextBlock Text="{Binding ColorMode}" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
+                               ToolTip="Color Mode (RGB/CMYK)"/>
                 </StackPanel>
                 
                 <!-- Right: Cursor Position, Zoom, Document Size -->
