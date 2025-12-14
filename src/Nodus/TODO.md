@@ -36,6 +36,28 @@ After completing each task set:
 4. Push: git push origin master
 ```
 
+## ✨ Vibe Coding Prompt
+```
+Continue developing Bezier SVG Editor.
+Task: Fully Implement and Polish [FEATURE ITEM]
+Reference this file for context.
+Follow coding standards in STANDARDS.md.
+
+**Objectives:**
+1. **Analyze & Implement**: Review the codebase. Implement the feature if missing or incomplete.
+2. **Production Ready**: Ensure the code is robust, follows patterns, and handles edge cases.
+3. **Enhance**: Improve the feature with better logic, performance, or visual "juice".
+4. **Suggestions**: Briefly propose small tweaks to further elevate the feature.
+5. **UI/UX Check**: Ensure all interface elements (Buttons, Commands, Cursors, Shortcuts) are implemented and accessible.
+6. **Integration**: Verify that this feature works seamlessly with related systems.
+
+**Workflow:**
+1. Build: dotnet build Bezier.sln
+2. Run: dotnet run --project Bezier.Desktop
+3. Commit: git add -A; git commit -m "feat: [description]"
+4. Push: git push origin master
+```
+
 ---
 
 ## Technology Decisions
@@ -491,6 +513,105 @@ After completing each task set:
 - [x] Keyboard shortcuts visible in menus
 - [ ] Context menus with icons
 - [ ] Drag handle visual for dockable panels
+
+### 2.6 Advanced Panel & Toolbar System
+> Professional-grade UI organization like CorelDRAW, Illustrator, Photoshop
+
+#### 2.6.1 Tabbed Panel Groups
+- [ ] Implement tabbed panel containers (multiple panels sharing one area)
+  - [ ] Tab strip at top of panel group
+  - [ ] Drag tabs to reorder within group
+  - [ ] Drag tabs between panel groups
+  - [ ] Tab overflow menu when too many tabs
+  - [ ] Close button on tab hover
+- [ ] Default panel groupings:
+  - [ ] Right dock: Properties + Layers + History (tabbed)
+  - [ ] Left dock: Tools + Symbols/Assets (tabbed)
+  - [ ] Bottom dock: Code Editor + Output/Messages (tabbed)
+- [ ] Panel group collapse/expand (minimize to icon strip)
+- [ ] Save/restore panel group configurations
+
+#### 2.6.2 Contextual Property Bars (Options Bar)
+> Secondary toolbar that changes based on active tool/selection (like Photoshop/Illustrator)
+
+- [ ] Create `PropertyBar` control (horizontal toolbar below main toolbar)
+  - [ ] Dynamic content based on context
+  - [ ] Consistent height and styling
+  - [ ] Separator groups for related options
+- [ ] Tool-specific property bars:
+  - [ ] **Select Tool**: X, Y, W, H inputs, rotation, scale, flip buttons
+  - [ ] **Rectangle Tool**: Corner radius, width, height, from center toggle
+  - [ ] **Ellipse Tool**: Width, height, pie/arc options
+  - [ ] **Pen Tool**: Path mode (add/subtract), close path, curve options
+  - [ ] **Text Tool**: Font family, size, weight, alignment, spacing
+  - [ ] **Zoom Tool**: Zoom level dropdown, fit options
+- [ ] Selection-based property bars:
+  - [ ] **No Selection**: Document properties (size, background)
+  - [ ] **Single Element**: Element-specific properties
+  - [ ] **Multi-Selection**: Alignment, distribute, group options
+  - [ ] **Path Selected**: Node editing options, path operations
+  - [ ] **Text Selected**: Typography options
+- [ ] Quick action buttons in property bar (context-sensitive)
+
+#### 2.6.3 Contextual Panels (Docker Windows)
+> Panels that auto-show/hide based on selection or tool
+
+- [ ] Implement panel visibility rules system
+  - [ ] Rule: Show when tool X is active
+  - [ ] Rule: Show when element type Y is selected
+  - [ ] Rule: Show when selection count > N
+  - [ ] User can override (pin panel open/closed)
+- [ ] Context-aware panels:
+  - [ ] **Transform Panel**: Shows when elements selected (X, Y, W, H, rotation, skew)
+  - [ ] **Fill & Stroke Panel**: Shows for shape/path elements
+  - [ ] **Typography Panel**: Shows when text selected
+  - [ ] **Path Operations Panel**: Shows when paths selected
+  - [ ] **Align & Distribute Panel**: Shows for multi-selection
+  - [ ] **Symbol Options Panel**: Shows when symbol selected
+- [ ] Panel state indicators:
+  - [ ] Pinned icon (always visible)
+  - [ ] Auto icon (context-sensitive)
+  - [ ] Hidden icon (manually hidden)
+
+#### 2.6.4 Secondary Toolbars
+- [ ] Implement dockable secondary toolbar system
+  - [ ] Can dock top, bottom, left, right, or float
+  - [ ] Collapsible to single row
+  - [ ] Customizable button arrangement
+- [ ] Standard secondary toolbars:
+  - [ ] **Formatting Toolbar**: Fill, stroke, font options
+  - [ ] **Arrange Toolbar**: Order, align, distribute, group
+  - [ ] **View Toolbar**: Zoom controls, view modes, rulers, grid
+  - [ ] **Path Toolbar**: Path operations, boolean ops, convert
+- [ ] Tool-specific floating toolbars:
+  - [ ] Pen tool: Node type buttons, path actions
+  - [ ] Text tool: Quick formatting
+  - [ ] Shape tool: Shape variants
+- [ ] Toolbar customization dialog
+  - [ ] Add/remove buttons
+  - [ ] Reorder buttons
+  - [ ] Create custom toolbars
+  - [ ] Reset to defaults
+
+#### 2.6.5 Panel Organization Features
+- [ ] Panel quick access sidebar (icon strip when panels collapsed)
+- [ ] "Workspaces" - saved panel/toolbar configurations
+  - [ ] Built-in workspaces: Default, Minimal, Illustration, Typography
+  - [ ] User custom workspaces
+  - [ ] Quick workspace switcher (dropdown or shortcuts)
+- [ ] "Focus Mode" - hide all panels except canvas (Tab key toggle)
+- [ ] Panel search/filter (quickly find and open any panel)
+- [ ] Recently used panels list
+- [ ] Panel grouping presets (reset to specific configurations)
+
+#### 2.6.6 Responsive Layout
+- [ ] Adapt panel layout based on window size
+  - [ ] Small window: Collapse panels to icons
+  - [ ] Medium window: Single column panels
+  - [ ] Large window: Full multi-column layout
+- [ ] Minimum panel sizes with scroll
+- [ ] Panel content adapts to available width
+- [ ] Touch-friendly mode (larger buttons, spacing)
 
 ---
 
