@@ -34,4 +34,9 @@
         </Setter>
     </Style>
 
+    <!-- Import CompactNumberBox style -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/Controls/CompactNumberBox.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
 </ResourceDictionary>

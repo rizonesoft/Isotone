@@ -578,10 +578,9 @@
                     <!-- Width -->
                     <TextBlock Text="W" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <ui:TextBox Text="{Binding DocumentWidth, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
-                                Width="60" Height="24" FontSize="11" 
-                                ClearButtonEnabled="False" Padding="6,0"
-                                VerticalContentAlignment="Center"/>
+                    <controls:CompactNumberBox Value="{Binding DocumentWidth, Mode=TwoWay}" 
+                                               Minimum="1" Maximum="10000"
+                                               Width="70" Height="24" FontSize="11"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,16,0"/>
@@ -589,10 +588,9 @@
                     <!-- Height -->
                     <TextBlock Text="H" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <ui:TextBox Text="{Binding DocumentHeight, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
-                                Width="60" Height="24" FontSize="11"
-                                ClearButtonEnabled="False" Padding="6,0"
-                                VerticalContentAlignment="Center"/>
+                    <controls:CompactNumberBox Value="{Binding DocumentHeight, Mode=TwoWay}" 
+                                               Minimum="1" Maximum="10000"
+                                               Width="70" Height="24" FontSize="11"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,0,0"/>
