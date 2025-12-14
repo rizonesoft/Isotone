@@ -2,60 +2,119 @@
 
 > **Vision**: The ultimate open-source SVG editor that rivals and surpasses Inkscape, Figma, Illustrator, and CorelDRAW — with innovative features they don't have.
 
-## 🔧 Quick Fix Prompt
-```
-Continue developing Bezier SVG Editor and work on the following: [REQUEST]
-Reference this file for context.
-Follow coding standards in STANDARDS.md (.NET 10 / C# 14 best practices).
-Ensure code follows the project structure:
-- Bezier.Core: Domain models, interfaces, pure logic
-- Bezier.Desktop: WPF UI, SkiaSharp rendering, Services
-- Bezier.Tests: Unit and integration tests
+---
 
-After completing each task set:
-1. Build: dotnet build Bezier.sln
-2. Run: dotnet run --project Bezier.Desktop
-3. Commit: git add -A; git commit -m "feat: [description]"
-4. Push: git push origin master
+## 🔧 Quick Fix Prompt
+*Use for: Bug fixes, small improvements, one-off tasks*
+
 ```
+You are developing Bezier, a professional SVG editor in C# / WPF.
+
+TASK: [DESCRIBE THE FIX OR IMPROVEMENT]
+
+RULES:
+✓ Read TODO.md and STANDARDS.md first
+✓ Put logic in Bezier.Core, UI in Bezier.Desktop
+✓ Use existing patterns from the codebase
+✓ Build and test before committing
+✗ Don't add unrelated features
+✗ Don't refactor unrelated code
+
+STEPS:
+1. Understand the issue → read relevant files
+2. Implement the fix → minimal, focused changes
+3. Build: dotnet build Bezier.sln
+4. Test: dotnet run --project Bezier.Desktop
+5. Commit: git add -A && git commit -m "fix: [description]"
+6. Push: git push origin master
+```
+
+---
 
 ## 🤖 Feature Development Prompt
-```
-Continue developing Bezier SVG Editor. Focus on: [PHASE NUMBER]
-Reference this file for context and mark completed items with [x].
-Follow coding standards in STANDARDS.md (.NET 10 / C# 14 best practices).
-Ensure code follows the project structure:
-- Bezier.Core: Domain models, interfaces, pure logic
-- Bezier.Desktop: WPF UI, SkiaSharp rendering, Services
-- Bezier.Tests: Unit and integration tests
+*Use for: Implementing TODO items, building new features*
 
-After completing each task set:
-1. Build: dotnet build Bezier.sln
-2. Run: dotnet run --project Bezier.Desktop
-3. Commit: git add -A; git commit -m "feat: [description]"
-4. Push: git push origin master
 ```
+You are developing Bezier, a professional SVG editor in C# / WPF.
+
+TASK: Implement section [PHASE.SECTION] from TODO.md
+Example: "Implement section 3.2" or "Implement 4.3 Advanced Path Operations"
+
+RULES:
+✓ Check TODO.md for the exact requirements
+✓ Mark items [x] when complete
+✓ Put models/interfaces in Bezier.Core
+✓ Put UI/rendering in Bezier.Desktop
+✓ Follow STANDARDS.md (.NET 10 / C# 14)
+✓ Match existing code style
+✗ Don't skip items — implement ALL sub-items
+✗ Don't mark items [x] unless fully working
+
+WORKFLOW:
+1. Read the section in TODO.md
+2. Read related existing code
+3. Implement each item, one by one
+4. Build: dotnet build Bezier.sln
+5. Run & verify: dotnet run --project Bezier.Desktop
+6. Mark completed items with [x] in TODO.md
+7. Commit: git add -A && git commit -m "feat: [section] - [description]"
+8. Push: git push origin master
+```
+
+---
 
 ## ✨ Vibe Coding Prompt
+*Use for: Polish, enhancement, making features production-ready*
+
 ```
-Continue developing Bezier SVG Editor.
-Task: Fully Implement and Polish [FEATURE ITEM]
-Reference this file for context.
-Follow coding standards in STANDARDS.md.
+You are a senior developer polishing Bezier, a professional SVG editor.
 
-**Objectives:**
-1. **Analyze & Implement**: Review the codebase. Implement the feature if missing or incomplete.
-2. **Production Ready**: Ensure the code is robust, follows patterns, and handles edge cases.
-3. **Enhance**: Improve the feature with better logic, performance, or visual "juice".
-4. **Suggestions**: Briefly propose small tweaks to further elevate the feature.
-5. **UI/UX Check**: Ensure all interface elements (Buttons, Commands, Cursors, Shortcuts) are implemented and accessible.
-6. **Integration**: Verify that this feature works seamlessly with related systems.
+TASK: Make [FEATURE] production-ready and delightful.
 
-**Workflow:**
+YOUR MISSION:
+1. VERIFY — Does it exist? Is it complete? Test it.
+2. FIX — If broken or missing, implement it properly.
+3. POLISH — Add edge case handling, validation, error messages.
+4. ENHANCE — Better UX: animations, tooltips, keyboard shortcuts.
+5. INTEGRATE — Ensure it works with related features.
+
+QUALITY CHECKLIST:
+□ Feature works as described in TODO.md
+□ UI is accessible (keyboard, tooltips, cursors)
+□ Errors are handled gracefully
+□ Code follows existing patterns
+□ No console errors or warnings
+
+STRUCTURE:
+- Bezier.Core → Models, interfaces, business logic (no UI)
+- Bezier.Desktop → WPF views, controls, rendering
+- Bezier.Tests → Unit tests
+
+FINISH:
 1. Build: dotnet build Bezier.sln
-2. Run: dotnet run --project Bezier.Desktop
-3. Commit: git add -A; git commit -m "feat: [description]"
-4. Push: git push origin master
+2. Test manually: dotnet run --project Bezier.Desktop
+3. Update TODO.md: mark [x] for completed items
+4. Commit: git add -A && git commit -m "feat: [feature] polished"
+5. Push: git push origin master
+```
+
+---
+
+## 🎯 Precision Prompt
+*Use for: Very specific, single-item tasks*
+
+```
+CONTEXT: Bezier is a C#/WPF SVG editor. See TODO.md for roadmap.
+
+DO THIS ONE THING: [EXACT TASK]
+
+CONSTRAINTS:
+- Change only what's needed for this task
+- Follow patterns in existing code
+- Build must pass: dotnet build Bezier.sln
+- Test by running: dotnet run --project Bezier.Desktop
+
+OUTPUT: Show me the code changes, then run build + commit + push.
 ```
 
 ---
