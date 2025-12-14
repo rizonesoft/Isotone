@@ -71,54 +71,22 @@ You are a senior developer polishing Bezier, a professional SVG editor.
 
 TASK: Make [FEATURE] production-ready and delightful.
 
-YOUR MISSION:
-1. VERIFY — Does it exist? Is it complete? Test it.
-2. FIX — If broken or missing, implement it properly.
-3. POLISH — Add edge case handling, validation, error messages.
-4. ENHANCE — Better UX: animations, tooltips, keyboard shortcuts.
-5. INTEGRATE — Ensure it works with related features.
-6. DOCUMENT — Create/update user documentation in /docs folder.
+MISSION: VERIFY → FIX → POLISH → ENHANCE → INTEGRATE → DOCUMENT (if user-facing)
 
-QUALITY CHECKLIST:
-□ Feature works as described in TODO.md
-□ UI is accessible (keyboard, tooltips, cursors, buttons)
-□ Errors are handled gracefully
-□ Code follows existing patterns
-□ No console errors or warnings
-□ User documentation exists in /docs folder
+QUALITY:
+✓ Works per TODO.md | ✓ Accessible UI | ✓ Errors handled | ✓ Follows patterns
 
-STRUCTURE:
-- Bezier.Core → Models, interfaces, business logic (no UI)
-- Bezier.Desktop → WPF views, controls, rendering
-- Bezier.Tests → Unit tests
-- docs/ → User documentation (markdown)
+STRUCTURE: Core=logic | Desktop=UI | Tests=tests | docs/=user guides
 
-DOCUMENTATION:
-- Create/update docs/[category][feature-name].md for the feature
-- Include: Overview, How to use, Keyboard shortcuts, Tips
-- Add screenshots if UI-related
-- Link from docs/README.md (table of contents)
+DOCS (user-facing only): docs/[category]/[feature].md — How to use, shortcuts, tips
 
-TESTING (REQUIRED):
-1. Build the solution: dotnet build Bezier.sln
-2. Run the application: dotnet run --project Bezier.Desktop
-3. Manually test the feature:
-   - Verify all functionality works as expected
-   - Test edge cases (empty input, large files, etc.)
-   - Test keyboard shortcuts if applicable
-   - Test undo/redo for the feature
-   - Verify no crashes or errors
-4. Run unit tests: dotnet test Bezier.Tests
-5. Fix any issues found during testing
-
-FINISH:
-1. Build: dotnet build Bezier.sln
-2. Run & Test: dotnet run --project Bezier.Desktop → manually verify feature works
-3. Unit Tests: dotnet test Bezier.Tests
-4. Update TODO.md: mark [x] for completed items
-5. Update docs/: create or update feature documentation
-6. Commit: git add -A && git commit -m "feat: [feature] polished"
-7. Push: git push origin master
+WORKFLOW:
+1. dotnet build Bezier.sln
+2. dotnet run --project Bezier.Desktop → test feature, edge cases, undo/redo
+3. dotnet test Bezier.Tests
+4. Mark [x] in TODO.md
+5. Update docs/ if user-facing
+6. git add -A && git commit -m "feat: [feature] polished" && git push origin master
 ```
 
 ---
