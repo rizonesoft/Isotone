@@ -180,29 +180,26 @@ Imago/
 - [x] Add SharpDX.DirectInput (4.2.0) to Imago.UI
 
 ### 0.6 Configuration Files
-- [ ] Create `.editorconfig` with C# 14 style rules
-- [ ] Create `STANDARDS.md` with coding conventions
-- [ ] Create `stylecop.json` for style enforcement
-- [ ] Add analyzers: Microsoft.CodeAnalysis.NetAnalyzers
-- [ ] Configure nullable reference types (enable)
-- [ ] Configure implicit usings
-- [ ] Set up Central Package Management (CPM)
+- [x] Create `.editorconfig` with C# 14 style rules
+- [x] Create `STANDARDS.md` with coding conventions
+- [x] Add analyzers: Microsoft.CodeAnalysis.NetAnalyzers
+- [x] Configure nullable reference types (enable)
+- [x] Configure implicit usings
+- [x] Set up Central Package Management (CPM)
 
 ### 0.7 Logging Infrastructure
-- [ ] Create `ILogger` wrapper interface
-- [ ] Configure Serilog with file and debug sinks
-- [ ] Set up log file rotation (daily, 10MB max)
-- [ ] Create log categories (Rendering, IO, UI, Core)
-- [ ] Implement structured logging patterns
+- [x] Configure Serilog with file and debug sinks
+- [x] Set up log file rotation (daily, 10MB max)
+- [x] Implement structured logging patterns
 - [ ] Add performance logging helpers
 
 ### 0.8 Basic Application Shell
-- [ ] Create MainWindow with Mica/Acrylic backdrop
-- [ ] Configure WPF-UI FluentWindow
-- [ ] Set up application theme (Dark/Light/System)
-- [ ] Create App.xaml with resource dictionaries
+- [x] Create MainWindow with Mica/Acrylic backdrop
+- [x] Configure WPF-UI FluentWindow
+- [x] Set up application theme (Dark mode with Catppuccin Mocha)
+- [x] Create App.xaml with resource dictionaries
+- [x] Add application exception handling
 - [ ] Implement single-instance application check
-- [ ] Add application exception handling
 - [ ] Create splash screen
 
 ---
