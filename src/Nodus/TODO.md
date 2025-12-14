@@ -1,6 +1,6 @@
 # Bezier - Production Roadmap
 
-> **Vision**: A production-ready SVG editor that rivals Inkscape, Figma, Illustrator, and CorelDRAW.
+> **Vision**: The ultimate open-source SVG editor that rivals and surpasses Inkscape, Figma, Illustrator, and CorelDRAW — with innovative features they don't have.
 
 ## 🔧 Quick Fix Prompt
 ```
@@ -648,20 +648,40 @@ Follow coding standards in STANDARDS.md.
   - [x] Shift for square
   - [x] Alt for center origin
   - [ ] Corner radius handle post-creation
+  - [ ] Individual corner radius controls
   - [x] Live dimensions tooltip
 - [x] `EllipseTool`: Center/Corner modes
   - [x] Shift for circle
+  - [ ] Pie/arc mode (start angle, end angle)
   - [x] Live dimensions tooltip
 - [x] `LineTool`: Simple two-point lines
   - [x] Shift for 45° snap
   - [x] Live length/angle tooltip
+  - [ ] Arrow heads (start, end, both)
+  - [ ] Connector line mode (auto-route between objects)
 - [ ] `PolygonTool`: N-sided polygons
   - [ ] Options bar: number of sides (3-100)
-  - [ ] Inner/outer radius for stars
+  - [ ] Corner rounding
+  - [ ] Rotation angle offset
 - [ ] `StarTool`: N-pointed stars
-  - [ ] Options bar: number of points
-  - [ ] Inner/outer radius controls
+  - [ ] Options bar: number of points (3-100)
+  - [ ] Inner/outer radius ratio
+  - [ ] Corner rounding (inner/outer)
+  - [ ] Smooth points option
 - [ ] `SpiralTool`: Spiral paths
+  - [ ] Number of turns
+  - [ ] Decay/growth rate
+  - [ ] Clockwise/counter-clockwise
+- [ ] `GridTool`: Create grids of rectangles
+  - [ ] Rows and columns
+  - [ ] Gutter spacing
+  - [ ] Individual cell selection
+- [ ] `ArcTool`: Circular arcs
+  - [ ] Start/end angle
+  - [ ] Chord/pie/arc modes
+- [ ] `ArrowTool`: Pre-styled arrows
+  - [ ] Arrow head styles
+  - [ ] Curved/straight options
 - [x] Live preview during creation (ghost shapes)
 - [x] Default fill/stroke for new shapes
 
@@ -689,35 +709,107 @@ Follow coding standards in STANDARDS.md.
   - [x] Click to select node
   - [x] Shift+Click to add to selection
   - [x] Marquee to select multiple nodes
+  - [ ] Select all nodes (Ctrl+A in node mode)
+  - [ ] Select inverse nodes
 - [x] Drag nodes to reshape
 - [x] Drag control handles to adjust curvature
+  - [ ] Retract handles (double-click)
+  - [ ] Extend handles (drag from node)
 - [x] Convert node types (Corner <-> Smooth <-> Symmetric)
   - [x] Keyboard shortcut (1, 2, 3 keys)
   - [ ] Context menu
 - [x] Add/Remove nodes on path segment
   - [ ] Double-click to add
   - [x] Delete key to remove
+  - [ ] Add nodes at equal intervals
 - [ ] "Simplify Path" command (reduce nodes)
+  - [ ] Tolerance slider
+  - [ ] Preview before applying
 - [ ] "Smooth Path" command (add curves)
+  - [ ] Smoothness slider
+  - [ ] Preserve corners option
+- [ ] "Roughen Path" command (add jitter)
 - [ ] "Break Path" at node
 - [ ] "Join Paths" command
+  - [ ] Connect endpoints
+  - [ ] Average endpoints
+  - [ ] Extend and connect
 - [ ] "Reverse Path" command
+- [ ] "Close Path" command
+- [ ] "Open Path" command (break at start)
+- [ ] Fillet/Chamfer corners
+  - [ ] Radius input
+  - [ ] Apply to selected corners
+- [ ] Align nodes (horizontal, vertical)
+- [ ] Distribute nodes evenly
 
 ### 3.5 Text Tool
-- [x] Click to create text block
+- [x] Click to create text block (point text)
+- [ ] Drag to create area text (text box)
+  - [ ] Text wraps within bounds
+  - [ ] Resize to reflow
+  - [ ] Auto-size height option
 - [x] Inline text editing on canvas
   - [x] Blinking cursor
   - [x] Text selection
   - [ ] Copy/paste (requires clipboard integration)
+  - [ ] Find and replace
+  - [ ] Spell check integration
 - [x] Font picker (family, weight, style)
-  - [ ] System fonts list
-  - [ ] Font preview
+  - [ ] System fonts list with preview
+  - [ ] Recent fonts section
+  - [ ] Font search/filter
+  - [ ] Variable fonts support (weight axis, etc.)
 - [x] Font size, line height, letter spacing
+  - [ ] Character spacing (tracking)
+  - [ ] Word spacing
+  - [ ] Baseline shift
+  - [ ] Kerning (auto/manual/optical)
 - [x] Text alignment (left, center, right, justify)
+  - [ ] Vertical alignment (top, center, bottom)
+  - [ ] Last line alignment
 - [ ] Text on path feature
   - [ ] Attach text to path
   - [ ] Offset along path
+  - [ ] Flip text direction
+  - [ ] Gravity (top/bottom of path)
+- [ ] Text inside shape (area type)
+  - [ ] Flow text into shape
+  - [ ] Inset margin
+- [ ] Text columns
+  - [ ] Number of columns
+  - [ ] Column gutter
+  - [ ] Balance columns
 - [x] Text outline and fill
+  - [ ] Multiple fills/strokes
+- [ ] OpenType features panel
+  - [ ] Ligatures (standard, discretionary)
+  - [ ] Stylistic alternates
+  - [ ] Swashes
+  - [ ] Small caps
+  - [ ] Fractions
+  - [ ] Ordinals
+  - [ ] Superscript/subscript
+- [ ] Paragraph styles
+  - [ ] Create/edit styles
+  - [ ] Apply to text
+  - [ ] Update style from selection
+- [ ] Character styles
+  - [ ] Override paragraph formatting
+  - [ ] Color, weight, style
+- [ ] Bullets and numbering
+  - [ ] Custom bullet characters
+  - [ ] Numbered lists
+  - [ ] Indentation
+- [ ] Tabs and leaders
+  - [ ] Tab stops (left, center, right, decimal)
+  - [ ] Leader characters
+- [ ] Drop caps
+  - [ ] Number of lines
+  - [ ] Character count
+- [ ] Text wrap around objects
+  - [ ] Wrap modes (bounding box, shape)
+  - [ ] Offset distance
 
 ### 3.6 Guides & Snapping
 - [x] Draggable guides from rulers
@@ -797,38 +889,82 @@ Follow coding standards in STANDARDS.md.
   - [x] Saturation/brightness square
   - [x] Sliders (RGB, HSL, HEX)
   - [x] Alpha slider
-  - [ ] Eyedropper tool
+  - [ ] Eyedropper tool (pick from canvas)
+  - [ ] Pick from screen (anywhere on desktop)
   - [ ] Saved swatches
-  - [ ] Recently used colors
+  - [ ] Recently used colors (last 20)
+  - [ ] Color harmonies generator
+    - [ ] Complementary
+    - [ ] Analogous
+    - [ ] Triadic
+    - [ ] Split-complementary
+    - [ ] Tetradic
+  - [ ] Global colors (linked swatches)
+  - [ ] Spot colors (for print)
+  - [ ] Color books (Pantone, etc.)
 - [x] Gradient Editor
   - [x] Add/remove stops
   - [x] Drag stops to reposition
   - [x] Angle/position controls
   - [x] Linear/Radial/Conic types
-  - [ ] Preset gradients
+  - [ ] Preset gradients library
+  - [ ] Gradient on stroke
+  - [ ] Freeform gradient (mesh-like)
+  - [ ] Noise gradient
 - [x] Stroke controls (Width, Dash Array, Cap, Join)
   - [x] Width input with slider
   - [x] Preset dash patterns
   - [x] Cap style icons
   - [x] Join style icons
+  - [ ] Variable width stroke (pressure-like)
+  - [ ] Stroke position (center, inside, outside)
+  - [ ] Multiple strokes per object
 - [x] Geometry properties (X, Y, Width, Height, Rotation)
   - [x] Numeric inputs
   - [x] Constrain proportions toggle
   - [x] Rotation input with dial
+  - [ ] Skew X/Y controls
+  - [ ] Flip horizontal/vertical buttons
 - [x] Transform Origin selection (9-point grid)
   - [x] Visual 9-point selector
   - [x] Custom origin coordinates
 - [x] Opacity & Blending modes
   - [x] Opacity slider
   - [x] Blend mode dropdown
+  - [ ] Knockout group
+  - [ ] Isolate blending
 - [x] Corner radius controls
   - [x] Uniform radius
   - [ ] Individual corner radii
+  - [ ] Radius units (px, %)
+- [ ] Appearance panel (multiple fills/strokes)
+  - [ ] Add fill layer
+  - [ ] Add stroke layer
+  - [ ] Reorder appearance items
+  - [ ] Toggle visibility per item
+  - [ ] Opacity per item
+  - [ ] Blend mode per item
 - [ ] Effects stack (shadows, blurs)
   - [ ] Add effect button
   - [ ] Reorder effects
   - [ ] Toggle effect visibility
   - [ ] Delete effect
+  - [ ] Available effects:
+    - [ ] Drop shadow
+    - [ ] Inner shadow
+    - [ ] Outer glow
+    - [ ] Inner glow
+    - [ ] Gaussian blur
+    - [ ] Motion blur
+    - [ ] Radial blur
+    - [ ] Feather
+    - [ ] Bevel & emboss
+- [ ] Graphic styles panel
+  - [ ] Save appearance as style
+  - [ ] Apply style to selection
+  - [ ] Update style from selection
+  - [ ] Style library
+  - [ ] Break link to style
 
 ### 4.3 Advanced Path Operations
 - [x] Implement Boolean Operations via `SkiaSharp.SKPath.Op`
@@ -836,19 +972,74 @@ Follow coding standards in STANDARDS.md.
   - [x] Subtract (Cut out)
   - [x] Intersect (Common area)
   - [x] Exclude (XOR)
+  - [ ] Divide (split by intersections)
+  - [ ] Trim (cut overlapping areas)
+  - [ ] Merge (combine like paths)
+  - [ ] Crop (clip to shape)
   - [ ] Preview before applying
 - [x] Implement "Text to Path" conversion
 - [x] Implement "Stroke to Path" (Outline)
 - [x] Path Simplify (Decimate nodes)
   - [x] Tolerance slider
   - [ ] Preview
+  - [ ] Preserve corners option
 - [x] Path Offset (Inset/Outset)
   - [x] Distance input
   - [x] Join type
   - [x] Miter limit
+  - [ ] Steps (multiple offsets)
+- [ ] Contour (parallel outlines)
+  - [ ] Number of contours
+  - [ ] Spacing
+  - [ ] Color progression
 - [x] Path Division (knife tool)
   - [x] Draw cut line
   - [x] Split path at intersection
+- [ ] Scissors tool (cut path at point)
+- [ ] Eraser tool (erase portions of path)
+- [ ] Path effects (non-destructive)
+  - [ ] Zig-zag
+  - [ ] Wave/sine
+  - [ ] Roughen
+  - [ ] Tweak
+  - [ ] Jitter
+  - [ ] Round corners
+  - [ ] Dashes to path
+- [ ] Envelope distortion
+  - [ ] Preset envelopes (arc, bulge, flag, wave)
+  - [ ] Custom mesh envelope
+  - [ ] Make with warp
+  - [ ] Make with mesh
+  - [ ] Make with top object
+- [ ] Pattern along path (brush stroke)
+  - [ ] Select pattern
+  - [ ] Spacing
+  - [ ] Scale
+  - [ ] Rotation
+- [ ] Blend tool (morph between shapes)
+  - [ ] Specified steps
+  - [ ] Specified distance
+  - [ ] Smooth color transition
+  - [ ] Spine (custom path)
+  - [ ] Expand blend
+- [ ] Live Paint (isolated fills)
+  - [ ] Paint Bucket tool
+  - [ ] Live Paint groups
+  - [ ] Gap detection
+- [ ] Perspective distort
+  - [ ] One-point perspective
+  - [ ] Two-point perspective
+  - [ ] Free distort
+- [ ] 3D effects
+  - [ ] Extrude & bevel
+  - [ ] Revolve
+  - [ ] Rotate in 3D space
+  - [ ] Map artwork to surfaces
+- [ ] Mesh tool
+  - [ ] Create mesh from shape
+  - [ ] Add/remove mesh points
+  - [ ] Color mesh points
+  - [ ] Gradient mesh
 
 ### 4.4 Symbols & Components
 - [x] Create symbol from selection
@@ -1093,30 +1284,131 @@ Follow coding standards in STANDARDS.md.
 
 ---
 
-## Phase 7: AI & Generation
+## Phase 7: Brushes & Artistic Tools
 
-### 7.1 Generative Vectors
+### 7.1 Brush System
+- [ ] Brush library panel
+  - [ ] Built-in brushes
+  - [ ] Custom brush creation
+  - [ ] Brush categories
+  - [ ] Search/filter
+- [ ] Calligraphic brush
+  - [ ] Angle
+  - [ ] Roundness
+  - [ ] Pressure sensitivity (for pen tablets)
+- [ ] Scatter brush
+  - [ ] Scatter amount
+  - [ ] Rotation variation
+  - [ ] Scale variation
+  - [ ] Spacing
+- [ ] Art brush (stretch artwork along path)
+  - [ ] Create from selection
+  - [ ] Scale options
+  - [ ] Flip options
+- [ ] Pattern brush (repeat artwork along path)
+  - [ ] Start/end tiles
+  - [ ] Corner tiles
+  - [ ] Auto-generate corners
+- [ ] Bristle brush (realistic brush strokes)
+  - [ ] Brush shape
+  - [ ] Bristle length
+  - [ ] Bristle density
+  - [ ] Bristle stiffness
+- [ ] Blob brush (paint filled shapes)
+  - [ ] Merge with same color
+  - [ ] Keep selected
+  - [ ] Fidelity
+
+### 7.2 Artistic Tools
+- [ ] Pencil tool (freehand drawing)
+  - [ ] Fidelity slider
+  - [ ] Smoothness slider
+  - [ ] Keep selected
+  - [ ] Edit selected paths
+- [ ] Paintbrush tool (apply brushes)
+  - [ ] Brush picker
+  - [ ] Size
+  - [ ] Pressure sensitivity
+- [ ] Shaper tool (draw rough shapes, auto-recognize)
+  - [ ] Recognize circles, rectangles, triangles
+  - [ ] Combine touching shapes
+  - [ ] Tap to complete
+- [ ] Width tool (variable stroke width)
+  - [ ] Add width points
+  - [ ] Drag to adjust width
+  - [ ] Delete width points
+  - [ ] Width profiles
+- [ ] Smooth tool (smooth existing paths)
+- [ ] Path eraser tool (erase path segments)
+- [ ] Symbol sprayer (spray symbol instances)
+  - [ ] Instance density
+  - [ ] Symbol stainer (colorize)
+  - [ ] Symbol sizer (scale)
+  - [ ] Symbol shifter (move)
+  - [ ] Symbol spinner (rotate)
+  - [ ] Symbol screener (opacity)
+
+### 7.3 Pattern & Texture Tools
+- [ ] Pattern maker
+  - [ ] Create seamless patterns
+  - [ ] Pattern tile types (grid, brick, hex)
+  - [ ] Preview tiled
+  - [ ] Edit pattern
+- [ ] Halftone generator
+  - [ ] Dot patterns
+  - [ ] Line patterns
+  - [ ] Custom shapes
+- [ ] Texture fills
+  - [ ] Noise textures
+  - [ ] Grain effects
+  - [ ] Paper textures
+- [ ] Live trace (bitmap to vector)
+  - [ ] High fidelity photo
+  - [ ] Low fidelity photo
+  - [ ] Grayscale
+  - [ ] Black and white
+  - [ ] Sketched art
+  - [ ] Silhouettes
+  - [ ] Line art
+  - [ ] Technical drawing
+  - [ ] Custom settings
+  - [ ] Expand result
+
+---
+
+## Phase 8: AI & Generation
+
+### 8.1 Generative Vectors
 - [ ] "Text to Icon" generator (Integration with OpenAI/DALL-E 3 API)
   - [ ] Prompt input
-  - [ ] Style selection (flat, outline, 3D)
-  - [ ] Color scheme
-  - [ ] Multiple results to choose from
+  - [ ] Style selection (flat, outline, 3D, hand-drawn)
+  - [ ] Color scheme input
+  - [ ] Multiple results to choose from (4-8)
   - [ ] Refine prompt
+  - [ ] Variation generator
 - [ ] "Vectorize Bitmap" (Trace raster images to SVG paths)
   - [ ] Threshold/detail controls
   - [ ] Color simplification
   - [ ] Smoothness slider
   - [ ] Preview
   - [ ] Progress indicator
+  - [ ] Mode presets (logo, photo, line art)
+- [ ] "Generate from Reference" (upload image, generate similar style)
+  - [ ] Style extraction
+  - [ ] Color palette extraction
+  - [ ] Shape suggestion
 
-### 7.2 Smart Assist
+### 8.2 Smart Assist
 - [ ] "Auto-Name Layers" (AI analyzes shape to name layer)
 - [ ] "Generate Pattern" (Create repeating patterns from selection)
 - [ ] "Suggest Colors" (AI color palette from image or prompt)
 - [ ] "Complete Shape" (AI predicts incomplete path)
 - [ ] "Auto-Align" suggestions
+- [ ] "Similar Element Finder" (find elements with similar properties)
+- [ ] "Auto Layout" (suggest optimal arrangement)
+- [ ] "Accessibility Suggestions" (contrast, text size, etc.)
 
-### 7.3 Optimization Assistant
+### 8.3 Optimization Assistant
 - [ ] "Analyze SVG" panel
   - [ ] File size
   - [ ] Element count
@@ -1128,14 +1420,100 @@ Follow coding standards in STANDARDS.md.
   - [ ] Round coordinates
   - [ ] Remove metadata
   - [ ] Collapse groups
+  - [ ] Convert shapes to paths
+  - [ ] Remove empty groups
 - [ ] Before/after preview
 - [ ] Optimization presets (web, print, minimal)
+- [ ] Optimization history (undo optimization)
 
 ---
 
-## Phase 8: Settings & Preferences
+## Phase 9: Grids & Perspective
 
-### 8.1 Settings Dialog
+### 9.1 Advanced Grids
+- [ ] Perspective grid
+  - [ ] One-point perspective
+  - [ ] Two-point perspective
+  - [ ] Three-point perspective
+  - [ ] Custom vanishing points
+  - [ ] Draw on perspective planes
+  - [ ] Snap to perspective
+- [ ] Isometric grid
+  - [ ] 30° isometric preset
+  - [ ] Custom angles
+  - [ ] Snap to isometric
+  - [ ] Isometric transform
+- [ ] Polar grid
+  - [ ] Concentric circles
+  - [ ] Radial dividers
+  - [ ] Center point
+- [ ] Custom modular grid
+  - [ ] Column grid
+  - [ ] Row grid
+  - [ ] Gutters
+  - [ ] Margins
+  - [ ] Grid presets
+
+### 9.2 Pixel Perfect Mode
+- [ ] Pixel preview (render at 1x)
+- [ ] Pixel grid (visible at high zoom)
+- [ ] Snap to pixel
+- [ ] Align to pixel grid command
+- [ ] Half-pixel stroke adjustment
+- [ ] Crisp edges option
+
+---
+
+## Phase 10: Print & Prepress
+
+### 10.1 Print Features
+- [ ] Print preview
+  - [ ] Page setup
+  - [ ] Artboard selection
+  - [ ] Tile large artwork
+  - [ ] Scale to fit
+- [ ] Print dialog
+  - [ ] Printer selection
+  - [ ] Color management
+  - [ ] Copies
+  - [ ] Page range
+
+### 10.2 Color Management
+- [ ] Color profiles (ICC)
+  - [ ] Assign profile
+  - [ ] Convert to profile
+  - [ ] Proof colors
+- [ ] CMYK mode
+  - [ ] CMYK color picker
+  - [ ] CMYK preview
+  - [ ] Out-of-gamut warning
+- [ ] Spot colors
+  - [ ] Pantone integration
+  - [ ] Custom spot colors
+  - [ ] Mixed ink
+- [ ] Overprint preview
+- [ ] Ink coverage analysis
+
+### 10.3 Prepress Features
+- [ ] Crop marks
+- [ ] Registration marks
+- [ ] Color bars
+- [ ] Page information
+- [ ] Bleed setup
+  - [ ] Bleed guides
+  - [ ] Bleed area preview
+- [ ] Trim marks
+- [ ] Fold marks
+- [ ] Color separations preview
+- [ ] Trapping settings
+- [ ] Flatten transparency
+- [ ] PDF/X export (print-ready)
+
+---
+
+## Phase 11: Settings & Preferences
+
+### 11.1 Settings Dialog
 - [ ] General settings
   - [ ] Language
   - [ ] Auto-save interval
@@ -1163,7 +1541,7 @@ Follow coding standards in STANDARDS.md.
   - [ ] Shortcut editor
   - [ ] Import/export
 
-### 8.2 Settings Storage
+### 11.2 Settings Storage
 - [ ] JSON settings file
 - [ ] User AppData location
 - [ ] Migrate settings on update
@@ -1171,9 +1549,9 @@ Follow coding standards in STANDARDS.md.
 
 ---
 
-## Phase 9: Performance & Stability
+## Phase 12: Performance & Stability
 
-### 9.1 Performance Tuning
+### 12.1 Performance Tuning
 - [ ] Implement R-Tree spatial index for fast hit-testing (1000s of objects)
 - [ ] Render caching (cache static layers to bitmaps)
 - [ ] Memory profiling for large SVGs
@@ -1183,7 +1561,7 @@ Follow coding standards in STANDARDS.md.
 - [ ] Virtualize layer list for large documents
 - [ ] Throttle rendering during pan/zoom
 
-### 9.2 Error Handling
+### 12.2 Error Handling
 - [ ] Global exception handler
 - [ ] User-friendly error dialogs
   - [ ] Error description
@@ -1194,7 +1572,7 @@ Follow coding standards in STANDARDS.md.
   - [ ] Keep last 5 log files
   - [ ] Max size per file
 
-### 9.3 Testing
+### 12.3 Testing
 - [ ] Unit tests for Core services
   - [ ] Model tests
   - [ ] Command tests
@@ -1206,9 +1584,9 @@ Follow coding standards in STANDARDS.md.
 
 ---
 
-## Phase 10: Accessibility & Localization
+## Phase 13: Accessibility & Localization
 
-### 10.1 Accessibility
+### 13.1 Accessibility
 - [ ] Screen reader support (UI Automation)
   - [ ] All controls labeled
   - [ ] Reading order correct
@@ -1227,7 +1605,7 @@ Follow coding standards in STANDARDS.md.
   - [ ] Disable animations
   - [ ] Instant transitions
 
-### 10.2 Localization
+### 13.2 Localization
 - [ ] Externalize all strings to resources
 - [ ] English (default)
 - [ ] Spanish, French, German (community)
@@ -1237,9 +1615,9 @@ Follow coding standards in STANDARDS.md.
 
 ---
 
-## Phase 11: Distribution & Marketing
+## Phase 14: Distribution & Marketing
 
-### 11.1 Packaging
+### 14.1 Packaging
 - [ ] MSIX Installer creation
   - [ ] Configure manifest
   - [ ] Icons
@@ -1252,7 +1630,7 @@ Follow coding standards in STANDARDS.md.
   - [ ] Screenshots
   - [ ] Description
 
-### 11.2 Updates
+### 14.2 Updates
 - [ ] Auto-updater mechanism (check on startup)
   - [ ] Version check API
   - [ ] Download in background
@@ -1262,7 +1640,7 @@ Follow coding standards in STANDARDS.md.
   - [ ] Changelog link
 - [ ] Changelog.md
 
-### 11.3 Marketing
+### 14.3 Marketing
 - [ ] Landing page (bezier.app)
   - [ ] Hero section
   - [ ] Feature highlights
@@ -1277,15 +1655,15 @@ Follow coding standards in STANDARDS.md.
 
 ---
 
-## Phase 12: Developer Tools
+## Phase 15: Developer Tools
 
-### 12.1 Debug Window (Chrome DevTools-style)
+### 15.1 Debug Window (Chrome DevTools-style)
 - [x] Separate debug window (opens from Help menu or F12)
   - [x] Dockable/floating window
   - [x] Always on top option
   - [x] Persistent across sessions
 
-### 12.2 Console Tab
+### 15.2 Console Tab
 - [x] Real-time log output from DebugLogger
   - [x] Color-coded log levels (Debug, Info, Warning, Error)
   - [x] Timestamp display
@@ -1297,7 +1675,7 @@ Follow coding standards in STANDARDS.md.
 - [x] Export logs to file
 - [x] Auto-scroll toggle
 
-### 12.3 Coordinates Tab
+### 15.3 Coordinates Tab
 - [x] Mouse coordinates panel
   - [x] Screen coordinates (WPF)
   - [x] Document coordinates (canvas space)
@@ -1316,7 +1694,7 @@ Follow coding standards in STANDARDS.md.
 - [x] Copy all info button (formatted text)
 - [x] Live update toggle
 
-### 12.4 Elements Inspector
+### 15.4 Elements Inspector
 - [x] Tree view of document elements
 - [x] Select element in canvas from tree
 - [x] Highlight element on hover
@@ -1324,14 +1702,14 @@ Follow coding standards in STANDARDS.md.
 - [x] Lock/unlock elements
 - [x] View raw SVG output
 
-### 12.5 Performance Tab
+### 15.5 Performance Tab
 - [x] Frame rate display
 - [x] Render time metrics
 - [x] Memory usage
 - [x] Element count
 - [x] Undo/Redo stack size
 
-### 12.6 Crash Detection & Error Handling
+### 15.6 Crash Detection & Error Handling
 - [x] Global unhandled exception handler (App.xaml.cs)
   - [x] Catch DispatcherUnhandledException
   - [x] Catch AppDomain.UnhandledException
@@ -1354,24 +1732,283 @@ Follow coding standards in STANDARDS.md.
 
 ---
 
+## Phase 16: Workflow & Automation
+> *Features that save hours of repetitive work*
+
+### 16.1 Actions & Macros
+- [ ] Actions panel
+  - [ ] Record actions
+  - [ ] Play actions
+  - [ ] Edit action steps
+  - [ ] Save action sets
+  - [ ] Load action sets
+- [ ] Batch processing
+  - [ ] Apply actions to multiple files
+  - [ ] Progress indicator
+  - [ ] Error logging
+  - [ ] Resume on error
+- [ ] Droplets (drag files to run action)
+
+### 16.2 Scripting
+- [ ] JavaScript scripting engine
+  - [ ] Script editor panel
+  - [ ] Script console
+  - [ ] API documentation
+- [ ] Python scripting support
+  - [ ] Python environment setup
+  - [ ] Script examples
+- [ ] Script library (built-in useful scripts)
+- [ ] Script shortcuts (assign scripts to keys)
+
+### 16.3 Plugin System
+- [ ] Plugin API
+  - [ ] Tool plugins
+  - [ ] Panel plugins
+  - [ ] Filter plugins
+  - [ ] Export plugins
+- [ ] Plugin manager
+  - [ ] Browse plugins
+  - [ ] Install/uninstall
+  - [ ] Enable/disable
+  - [ ] Update plugins
+- [ ] Plugin development documentation
+- [ ] Plugin template project
+
+---
+
+## Phase 17: Collaboration & Cloud
+> *Work together, anywhere*
+
+### 17.1 Comments & Annotations
+- [ ] Comment tool
+  - [ ] Add comments to canvas
+  - [ ] Pin to elements
+  - [ ] Thread replies
+- [ ] Comment panel
+  - [ ] List all comments
+  - [ ] Filter by status
+  - [ ] Resolve comments
+- [ ] Markup tools
+  - [ ] Arrows
+  - [ ] Callouts
+  - [ ] Highlight areas
+
+### 17.2 Version Control
+- [ ] Built-in version history
+  - [ ] Auto-save versions
+  - [ ] Named versions
+  - [ ] Compare versions
+  - [ ] Restore version
+- [ ] Git integration
+  - [ ] Initialize repo
+  - [ ] Commit changes
+  - [ ] View diff
+  - [ ] Branch management
+- [ ] File comparison view
+  - [ ] Side-by-side
+  - [ ] Overlay
+  - [ ] Difference highlight
+
+### 17.3 Cloud Sync (Optional Service)
+- [ ] Cloud storage integration
+  - [ ] Save to cloud
+  - [ ] Auto-sync
+  - [ ] Conflict resolution
+- [ ] Team libraries
+  - [ ] Shared symbols
+  - [ ] Shared styles
+  - [ ] Shared colors
+- [ ] Real-time collaboration (future)
+  - [ ] See others' cursors
+  - [ ] Live edits
+  - [ ] User presence
+
+---
+
+## Phase 18: Beyond The Competition
+> *Innovative features that set Bezier apart*
+
+### 18.1 Parametric & Procedural Design
+- [ ] Parametric shapes
+  - [ ] Define parameters (width, height, segments, etc.)
+  - [ ] Slider controls
+  - [ ] Link parameters between shapes
+  - [ ] Save parametric presets
+- [ ] Repeat grids
+  - [ ] Repeat selection in grid
+  - [ ] Adjust spacing
+  - [ ] Edit one to update all
+  - [ ] Convert to individual
+- [ ] Procedural generators
+  - [ ] Generative patterns
+  - [ ] Math-based shapes
+  - [ ] Recursive shapes (fractals)
+  - [ ] L-system patterns
+
+### 18.2 Constraint-Based Design
+- [ ] Constraints panel
+  - [ ] Pin edges to parent
+  - [ ] Maintain aspect ratio
+  - [ ] Min/max sizes
+  - [ ] Spacing constraints
+- [ ] Responsive artboards
+  - [ ] Artboard size presets
+  - [ ] See how design adapts
+  - [ ] Breakpoint system
+- [ ] Smart layout
+  - [ ] Auto-layout containers
+  - [ ] Stack (horizontal/vertical)
+  - [ ] Wrap
+  - [ ] Gap spacing
+
+### 18.3 Design Tokens & Variables
+- [ ] Design tokens panel
+  - [ ] Color tokens
+  - [ ] Size tokens
+  - [ ] Spacing tokens
+  - [ ] Typography tokens
+- [ ] Token aliases (semantic naming)
+- [ ] Theme switching (swap token values)
+- [ ] Export tokens (JSON, CSS variables)
+- [ ] Import tokens (Figma, Tokens Studio)
+
+### 18.4 Animation Timeline
+- [ ] Animation panel
+  - [ ] Timeline view
+  - [ ] Keyframe editor
+  - [ ] Easing curves
+- [ ] Animate properties
+  - [ ] Position
+  - [ ] Scale
+  - [ ] Rotation
+  - [ ] Opacity
+  - [ ] Fill/Stroke
+  - [ ] Path morphing
+- [ ] Export animated SVG
+  - [ ] CSS animations
+  - [ ] SMIL animations
+  - [ ] Lottie export
+- [ ] Preview animation
+
+### 18.5 Component Variants
+- [ ] Component with variants
+  - [ ] Define variant properties (size, state, etc.)
+  - [ ] Switch variants in properties
+  - [ ] Combine variant properties
+- [ ] Interactive components
+  - [ ] Hover state
+  - [ ] Pressed state
+  - [ ] Disabled state
+  - [ ] Focused state
+- [ ] Slot overrides (nested component placeholders)
+
+### 18.6 Accessibility Checker
+- [ ] Accessibility panel
+  - [ ] Color contrast checker (WCAG AA/AAA)
+  - [ ] Touch target size checker
+  - [ ] Text size recommendations
+  - [ ] Alt text for images
+- [ ] Auto-fix suggestions
+- [ ] Export accessibility report
+
+### 18.7 Developer Handoff
+- [ ] Inspect mode
+  - [ ] Click element to see properties
+  - [ ] Copy CSS
+  - [ ] Copy dimensions
+  - [ ] Export assets
+- [ ] Design specs export
+  - [ ] HTML inspection page
+  - [ ] Shareable link
+  - [ ] Measurements overlay
+- [ ] Code generation
+  - [ ] React components
+  - [ ] Vue components
+  - [ ] SwiftUI views
+  - [ ] Flutter widgets
+  - [ ] XAML (WPF/UWP)
+
+### 18.8 Advanced Selection & Editing
+- [ ] Select by property
+  - [ ] Same fill color
+  - [ ] Same stroke color
+  - [ ] Same stroke width
+  - [ ] Same font
+  - [ ] Same size
+- [ ] Find and replace (properties)
+  - [ ] Find color, replace with color
+  - [ ] Find font, replace with font
+- [ ] Global edit mode
+  - [ ] Edit all instances at once
+  - [ ] Scope to selection/document
+
+### 18.9 Integration & Interop
+- [ ] Figma import (experimental)
+- [ ] Sketch import (experimental)
+- [ ] XD import (experimental)
+- [ ] Canva asset import
+- [ ] Noun Project integration
+- [ ] Unsplash integration
+- [ ] Google Fonts integration
+- [ ] Adobe Fonts integration (licensed)
+
+---
+
 ## Priority Order
 
 ### Immediate (Week 1)
 1. **[0.1-0.7]** Foundation, UI Shell, Menus & Toolbar
 
-### Core Development (Week 2-5)
+### Core Development (Week 2-6)
 2. **[1.1-1.5]** Core Data Model, Rendering & UI Polish
-3. **[2.1-2.5]** Editor Architecture, Layout & UI Polish
+3. **[2.1-2.6]** Editor Architecture, Layout, Advanced Panels & UI Polish
 4. **[3.1-3.8]** Visual Editing Features & UI Polish
 
-### Feature Complete (Week 6-9)
+### Feature Complete (Week 7-12)
 5. **[4.1-4.6]** Professional Features & UI Polish
 6. **[5.1-5.6]** Next-Gen UI/UX & Code Integration
 7. **[6.1-6.5]** Import/Export & Assets
+8. **[7.1-7.3]** Brushes & Artistic Tools
 
-### Polish & Release (Week 10-14)
-8. **[7.1-7.3]** AI Features
-9. **[8.1-8.2]** Settings & Preferences
-10. **[9.1-9.3]** Performance & Testing (Ongoing)
-11. **[10.1-10.2]** Accessibility & Localization (Pre-release)
-12. **[11.1-11.3]** Distribution & Marketing (Release)
+### Professional Polish (Week 13-18)
+9. **[8.1-8.3]** AI & Generation
+10. **[9.1-9.2]** Grids & Perspective
+11. **[10.1-10.3]** Print & Prepress
+12. **[11.1-11.2]** Settings & Preferences
+13. **[12.1-12.3]** Performance & Testing
+
+### Release Preparation (Week 19-24)
+14. **[13.1-13.2]** Accessibility & Localization
+15. **[14.1-14.3]** Distribution & Marketing
+16. **[15.1-15.6]** Developer Tools
+
+### Post-Launch Innovation (Ongoing)
+17. **[16.1-16.3]** Workflow & Automation
+18. **[17.1-17.3]** Collaboration & Cloud
+19. **[18.1-18.9]** Beyond The Competition (Differentiators)
+
+---
+
+## Feature Comparison Matrix
+
+| Feature | Bezier | Illustrator | CorelDRAW | Inkscape |
+|---------|--------|-------------|-----------|----------|
+| **Core Vector Editing** | ✅ | ✅ | ✅ | ✅ |
+| **SVG-First Workflow** | ✅ | ⚠️ | ⚠️ | ✅ |
+| **Live Code Sync** | ✅ | ❌ | ❌ | ⚠️ |
+| **Monaco Code Editor** | ✅ | ❌ | ❌ | ❌ |
+| **Mica/Fluent Design** | ✅ | ❌ | ❌ | ❌ |
+| **Command Palette** | ✅ | ✅ | ❌ | ❌ |
+| **Design Tokens** | ✅ | ❌ | ❌ | ❌ |
+| **Animation Timeline** | ✅ | ⚠️ | ⚠️ | ⚠️ |
+| **Parametric Shapes** | ✅ | ❌ | ❌ | ⚠️ |
+| **Component Variants** | ✅ | ⚠️ | ❌ | ❌ |
+| **Accessibility Checker** | ✅ | ❌ | ❌ | ❌ |
+| **Git Integration** | ✅ | ❌ | ❌ | ❌ |
+| **Developer Handoff** | ✅ | ⚠️ | ❌ | ❌ |
+| **AI Generation** | ✅ | ✅ | ⚠️ | ❌ |
+| **Open Source** | ✅ | ❌ | ❌ | ✅ |
+| **Cross-Platform** | 🔜 | ✅ | ❌ | ✅ |
+| **Free** | ✅ | ❌ | ❌ | ✅ |
+
+Legend: ✅ Yes | ⚠️ Limited | ❌ No | 🔜 Planned
