@@ -229,6 +229,11 @@ public partial class MainWindowViewModel : ObservableObject
     public bool HasSelection => SelectedCount > 0;
 
     /// <summary>
+    /// Whether no elements are selected (inverse of HasSelection).
+    /// </summary>
+    public bool NoSelection => SelectedCount == 0;
+
+    /// <summary>
     /// Document width for context toolbar binding.
     /// </summary>
     public double DocumentWidth
@@ -265,6 +270,7 @@ public partial class MainWindowViewModel : ObservableObject
     partial void OnSelectedCountChanged(int value)
     {
         OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(NoSelection));
     }
 
     #endregion
