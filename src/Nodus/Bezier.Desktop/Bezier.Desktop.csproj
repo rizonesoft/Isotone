@@ -30,6 +30,9 @@
     <Content Include="Resources\VsCodeDarkXml.xshd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Resources\icons.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Resource Include="Resources\Icons\Bezier.ico" />
     <Resource Include="Resources\Icons\Bezier_32.png" />
     <Resource Include="Resources\Icons\Bezier.svg" />

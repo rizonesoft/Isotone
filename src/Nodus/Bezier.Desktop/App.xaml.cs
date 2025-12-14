@@ -27,6 +27,9 @@ public partial class App : Application
         // Show splash screen on a separate thread
         SplashWindow.ShowOnSeparateThread();
         SplashWindow.SetStatusText("Initializing services...");
+        
+        // Initialize IconService
+        Bezier.Desktop.Services.IconService.Instance.Initialize();
 
         // Configure services
         var services = new ServiceCollection();
