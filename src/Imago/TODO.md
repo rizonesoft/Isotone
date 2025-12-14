@@ -258,13 +258,13 @@ Imago/
 - [x] Create mask refinement algorithms
 
 ### 1.7 MVVM Infrastructure
-- [ ] Create `ViewModelBase` with INotifyPropertyChanged
-- [ ] Create `AsyncRelayCommand` implementations
-- [ ] Set up dependency injection (Microsoft.Extensions.DI)
-- [ ] Create `IDialogService` interface
-- [ ] Create `IFileDialogService` interface
-- [ ] Create `INavigationService` interface
-- [ ] Implement messenger pattern for loose coupling
+- [x] Create `ViewModelBase` with INotifyPropertyChanged (CommunityToolkit.Mvvm ObservableObject)
+- [x] Create `AsyncRelayCommand` implementations (CommunityToolkit.Mvvm)
+- [x] Set up dependency injection (Microsoft.Extensions.DI)
+- [x] Create `IDialogService` interface
+- [x] Create `IFileDialogService` interface
+- [x] Create `INavigationService` interface
+- [x] Implement messenger pattern for loose coupling
 
 ---
 
