@@ -239,15 +239,15 @@ Imago/
 - [x] Create history persistence (recover after crash)
 
 ### 1.5 Selection System
-- [ ] Create `Selection` class (marching ants)
-- [ ] Implement rectangular selection
-- [ ] Implement elliptical selection
-- [ ] Implement freehand/lasso selection
-- [ ] Implement magic wand selection
-- [ ] Implement color range selection
-- [ ] Create selection operations (add, subtract, intersect)
-- [ ] Implement feathering/anti-aliasing
-- [ ] Create quick mask mode
+- [x] Create `Selection` class (marching ants)
+- [x] Implement rectangular selection
+- [x] Implement elliptical selection
+- [x] Implement freehand/lasso selection
+- [x] Implement magic wand selection
+- [x] Implement color range selection
+- [x] Create selection operations (add, subtract, intersect)
+- [x] Implement feathering/anti-aliasing
+- [x] Create quick mask mode
 
 ### 1.6 Mask System
 - [ ] Create `LayerMask` class
