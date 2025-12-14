@@ -89,8 +89,8 @@ WORKFLOW:
 - [x] Install .NET 10 SDK (Preview 7+) — *10.0.101 installed*
 - [x] Install Visual Studio 2022 17.12+ or VS Code with C# Dev Kit — *Using Windsurf IDE + C# Dev Kit 1.90.2*
 - [x] Install Git for Windows — *2.52.0 installed*
-- [ ] Configure global .gitignore for .NET projects
-- [ ] Install recommended VS extensions (EditorConfig, CodeMaid)
+- [x] Configure global .gitignore for .NET projects
+- [x] Install recommended VS extensions (EditorConfig)
 
 ### 0.2 GitHub Repository Setup
 - [x] Create GitHub repository `Imago`
