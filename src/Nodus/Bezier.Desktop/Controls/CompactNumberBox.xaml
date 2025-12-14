@@ -1,19 +1,19 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:controls="clr-namespace:Bezier.Desktop.Controls"
-                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+                    xmlns:controls="clr-namespace:Bezier.Desktop.Controls">
 
     <Style TargetType="{x:Type controls:CompactNumberBox}">
         <Setter Property="Background" Value="{DynamicResource TextControlBackground}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource TextControlElevationBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1,1,1,1"/>
+        <Setter Property="BorderThickness" Value="1,1,1,0"/>
         <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}"/>
         <Setter Property="FontSize" Value="11"/>
         <Setter Property="Height" Value="24"/>
-        <Setter Property="Padding" Value="6,0"/>
+        <Setter Property="Padding" Value="6,0,0,0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Focusable" Value="False"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:CompactNumberBox}">
@@ -23,15 +23,15 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4"
+                                CornerRadius="4,4,0,0"
                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
-                            <Grid VerticalAlignment="Stretch">
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 
-                                <!-- Text Input -->
+                                <!-- Text Input - Use margin to fine-tune vertical position -->
                                 <TextBox x:Name="PART_TextBox"
                                          Grid.Column="0"
                                          Background="Transparent"
@@ -39,11 +39,13 @@
                                          Foreground="{TemplateBinding Foreground}"
                                          FontSize="{TemplateBinding FontSize}"
                                          Padding="{TemplateBinding Padding}"
-                                         VerticalAlignment="Stretch"
+                                         Margin="0,-2,0,0"
+                                         VerticalAlignment="Center"
                                          VerticalContentAlignment="Center"
-                                         HorizontalContentAlignment="Left"/>
+                                         HorizontalAlignment="Stretch"
+                                         CaretBrush="{TemplateBinding Foreground}"/>
                                 
-                                <!-- Clear Button - Centered Vertically -->
+                                <!-- Clear Button - Centered Vertically, starts Collapsed -->
                                 <Button x:Name="PART_ClearButton"
                                         Grid.Column="1"
                                         Width="16" Height="16"
@@ -53,32 +55,44 @@
                                         HorizontalAlignment="Center"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        Cursor="Arrow"
+                                        Cursor="Hand"
                                         Focusable="False"
                                         Visibility="Collapsed">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}"
+                                            <Border x:Name="ClearButtonBorder" 
+                                                    Background="Transparent"
                                                     CornerRadius="8">
-                                                <Path Data="M4,4 L12,12 M12,4 L4,12"
+                                                <Path x:Name="ClearIcon"
+                                                      Data="M4,4 L12,12 M12,4 L4,12"
                                                       Stroke="{DynamicResource TextControlButtonForeground}"
                                                       StrokeThickness="1.5"
-                                                      Width="10" Height="10"
+                                                      Width="8" Height="8"
                                                       Stretch="Uniform"
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"/>
                                             </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ClearButtonBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                                                    <Setter TargetName="ClearIcon" Property="Stroke" Value="{DynamicResource TextControlForeground}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="ClearButtonBorder" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Button.Template>
                                 </Button>
                             </Grid>
                         </Border>
                         
-                        <!-- Accent Border (bottom line indicator) -->
+                        <!-- Accent Border (bottom line indicator) - uses theme accent -->
                         <Border x:Name="AccentBorder"
                                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                                 BorderThickness="0,0,0,1"
-                                CornerRadius="4"
+                                CornerRadius="0,0,4,4"
+                                VerticalAlignment="Bottom"
                                 SnapsToDevicePixels="True"/>
                     </Grid>
                     
@@ -87,7 +101,7 @@
                             <Setter Property="BorderBrush" TargetName="ContentBorder" Value="{DynamicResource TextControlBorderBrushPointerOver}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter Property="BorderBrush" TargetName="AccentBorder" Value="{DynamicResource SystemAccentColorSecondaryBrush}"/>
+                            <Setter Property="BorderBrush" TargetName="AccentBorder" Value="#FF6B35"/>
                             <Setter Property="BorderThickness" TargetName="AccentBorder" Value="0,0,0,2"/>
                         </Trigger>
                         <Trigger Property="ShowClearButton" Value="False">
