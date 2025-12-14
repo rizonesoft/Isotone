@@ -168,20 +168,16 @@ Imago/
 - [x] Create test projects with xUnit
 
 ### 0.5 NuGet Package Installation
-- [ ] Add WPF-UI (4.1.0) to Imago.UI
-- [ ] Add CommunityToolkit.Mvvm (8.4.0) to all projects
-- [ ] Add Dirkster.AvalonDock (4.72.1) to Imago.UI
-- [ ] Add Serilog (4.3.0) to all projects
-- [ ] Add Serilog.Sinks.File (7.0.0) to Imago.UI
-- [ ] Add Serilog.Sinks.Debug (3.0.0) to Imago.UI
-- [ ] Add SixLabors.ImageSharp (3.1.12) to Imago.FileFormats
-- [ ] Add SkiaSharp (3.116.1) to Imago.Rendering
-- [ ] Add SkiaSharp.Views.WPF (3.116.1) to Imago.Rendering
-- [ ] Add ComputeSharp (3.2.0) to Imago.Rendering
-- [ ] Add ReactiveUI.WPF (20.4.1) to Imago.UI
-- [ ] Add Microsoft.CodeAnalysis.CSharp (4.14.0) to Imago.Scripting
-- [ ] Add SharpDX.DirectInput (4.2.0) to Imago.UI
-- [ ] Add System.IO.MemoryMappedFiles to Imago.Core
+- [x] Add WPF-UI (4.1.0) to Imago.UI
+- [x] Add CommunityToolkit.Mvvm (8.4.0) to projects
+- [x] Add Dirkster.AvalonDock (4.72.1) to Imago.UI
+- [x] Add Serilog (4.3.0) + Sinks to Imago.UI
+- [x] Add SixLabors.ImageSharp (3.1.12) to Imago.FileFormats
+- [x] Add SkiaSharp (3.116.1) to Imago.Rendering
+- [x] Add ComputeSharp (3.2.0) to Imago.Rendering
+- [x] Add ReactiveUI.WPF (20.4.1) to Imago.UI
+- [x] Add Microsoft.CodeAnalysis.CSharp (4.14.0) to Imago.Scripting
+- [x] Add SharpDX.DirectInput (4.2.0) to Imago.UI
 
 ### 0.6 Configuration Files
 - [ ] Create `.editorconfig` with C# 14 style rules
