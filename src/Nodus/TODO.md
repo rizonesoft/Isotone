@@ -239,13 +239,13 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] `SvgText` — content, font properties, text alignment
 - [x] `SvgImage` — embedded base64 or external href
 - [x] `SvgGroup` — children collection, recursive transform
-- [ ] `SvgSymbol` — reusable definition with use instances
-- [ ] `SvgUse` — symbol instance with overrides
-- [ ] `SvgClipPath` — clipping mask definition
-- [ ] `SvgMask` — opacity mask definition
-- [ ] `SvgMarker` — arrow heads and path markers
-- [ ] `SvgPattern` — repeating pattern definition
-- [ ] `SvgGradient` — gradient definition (referenced by fills)
+- [x] `SvgSymbol` — reusable definition with use instances
+- [x] `SvgUse` — symbol instance with overrides
+- [x] `SvgClipPath` — clipping mask definition
+- [x] `SvgMask` — opacity mask definition
+- [x] `SvgMarker` — arrow heads and path markers
+- [x] `SvgPattern` — repeating pattern definition
+- [x] `SvgGradient` — gradient definition (referenced by fills)
 
 ## 1.3 Transform System
 - [x] `Transform` struct (3x3 matrix)

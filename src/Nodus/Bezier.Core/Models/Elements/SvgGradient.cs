@@ -154,7 +154,14 @@ public class SvgGradient : VectorElement
     public override string ToSvgString()
     {
         var stopsStr = string.Join("\n  ", Stops.Select(s => 
-            $"<stop offset=\"{s.Offset * 100}%\" stop-color=\"rgba({s.Color.R},{s.Color.G},{s.Color.B},{s.Color.A / 255.0})\"/>"));
+        {
+            // Extract ARGB components from uint color
+            var a = (byte)((s.Color >> 24) & 0xFF);
+            var r = (byte)((s.Color >> 16) & 0xFF);
+            var g = (byte)((s.Color >> 8) & 0xFF);
+            var b = (byte)(s.Color & 0xFF);
+            return $"<stop offset=\"{s.Offset * 100}%\" stop-color=\"rgba({r},{g},{b},{a / 255.0:F2})\"/>";
+        }));
 
         if (Type == GradientType.Linear)
         {
