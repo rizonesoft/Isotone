@@ -13,32 +13,22 @@ Follow coding standards in STANDARDS.md (.NET 10 / C# 14 / Performance).
 Ensure zero-allocation in hot paths.
 ```
 
-## ✨ Vibe Coding Prompt
-
-*Use for: Polish, enhancement, making features production-ready*
-
-```
-You are a senior developer polishing Imago, a professional image editor.
-
-TASK: Make [PASTE TODO ITEM] production-ready and delightful.
-
-MISSION: VERIFY → FIX → POLISH → ENHANCE → INTEGRATE → DOCUMENT (if user-facing)
-
-QUALITY:
-✓ Works per TODO.md | ✓ Accessible UI | ✓ Errors handled | ✓ Follows STANDARDS.md
-
-STRUCTURE: Core=domain | Rendering=GPU | UI=WPF | Tests=xUnit | docs/=guides
-
-DOCS (user-facing only): docs/[category]/[feature].md — How to use, shortcuts, tips
-
-WORKFLOW:
-1. dotnet build Imago.sln
-2. dotnet run --project src/Imago.UI → test feature, edge cases, undo/redo
-3. dotnet test
-4. Mark [x] in TODO.md
-5. Update docs/ if user-facing
-6. git add -A && git commit -m "feat: [feature] polished" && git push
-```
+# ✨ Imago Vibe Coding Protocol
+*Role: Senior .NET Architect | Focus: Polish & Delight*
+**TASK**: [PASTE TODO ITEM]
+**CONTEXT**:
+- **Core**: Domain Logic
+- **Rendering**: GPU/Shaders
+- **UI**: WPF (MVVM)
+- **Tests**: xUnit
+**MISSION**:
+`VERIFY` (Edge Cases/Undo) → `FIX` → `POLISH` (UX based on `STANDARDS.md`) → `DOCS` → `SHIP`
+**WORKFLOW**:
+1. `dotnet build Imago.sln`
+2. `dotnet run --project src/Imago.UI` *(Manual QA: UX & Resilience)*
+3. `dotnet test`
+4. Update `TODO.md` & `docs/user-guide/` (if user-facing)
+5. `git add . && git commit -m "feat: [feature] polished" && git push`
 
 ---
 
@@ -191,7 +181,7 @@ Imago/
 - [x] Configure Serilog with file and debug sinks
 - [x] Set up log file rotation (daily, 10MB max)
 - [x] Implement structured logging patterns
-- [ ] Add performance logging helpers
+- [x] Add performance logging helpers
 
 ### 0.8 Basic Application Shell
 - [x] Create MainWindow with Mica/Acrylic backdrop
