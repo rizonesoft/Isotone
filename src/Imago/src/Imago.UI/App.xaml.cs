@@ -72,6 +72,14 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Single instance check
+        if (!SingleInstanceManager.Initialize())
+        {
+            SingleInstanceManager.NotifyExistingInstance(e.Args);
+            Shutdown();
+            return;
+        }
+
         // Set up global exception handlers
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
@@ -143,6 +151,8 @@ public partial class App : Application
     private async void OnExit(object sender, ExitEventArgs e)
     {
         Log.Information("Imago shutting down...");
+
+        SingleInstanceManager.Instance?.Dispose();
 
         await s_host.StopAsync();
         s_host.Dispose();

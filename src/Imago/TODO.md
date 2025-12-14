@@ -189,7 +189,7 @@ Imago/
 - [x] Set up application theme (Dark mode with Catppuccin Mocha)
 - [x] Create App.xaml with resource dictionaries
 - [x] Add application exception handling
-- [ ] Implement single-instance application check
+- [x] Implement single-instance application check
 - [ ] Create splash screen
 
 ---
