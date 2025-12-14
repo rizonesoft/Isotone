@@ -278,7 +278,9 @@ public class SkiaCanvas : SKElement
         switch (BackgroundType)
         {
             case CanvasBackgroundType.Checkerboard:
-                _renderer.RenderCheckerboard(canvas, info);
+                // Illustrator-style: dark gray canvas, white artboard
+                paint.Color = new SKColor(45, 45, 50); // Dark gray matching Catppuccin Crust
+                canvas.DrawRect(0, 0, info.Width, info.Height, paint);
                 break;
                 
             case CanvasBackgroundType.SolidColor:
