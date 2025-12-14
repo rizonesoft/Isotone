@@ -197,18 +197,18 @@ Imago/
 ## Phase 1: Core Architecture
 
 ### 1.1 Domain Models
-- [ ] Create `ImagoDocument` class (root aggregate)
-- [ ] Create `Layer` abstract base class
-- [ ] Create `RasterLayer` class
-- [ ] Create `AdjustmentLayer` class
-- [ ] Create `GroupLayer` class
-- [ ] Create `TextLayer` class
-- [ ] Create `ShapeLayer` class
-- [ ] Create `SmartObjectLayer` class
-- [ ] Implement layer hierarchy (tree structure)
-- [ ] Create `BlendMode` enumeration (50+ modes)
-- [ ] Create `ColorSpace` enumeration (RGB, CMYK, LAB, Grayscale)
-- [ ] Create `BitDepth` enumeration (8, 16, 32-bit)
+- [x] Create `ImagoDocument` class (root aggregate)
+- [x] Create `Layer` abstract base class
+- [x] Create `RasterLayer` class
+- [x] Create `AdjustmentLayer` class
+- [x] Create `GroupLayer` class
+- [x] Create `TextLayer` class
+- [x] Create `ShapeLayer` class
+- [x] Create `SmartObjectLayer` class
+- [x] Implement layer hierarchy (tree structure)
+- [x] Create `BlendMode` enumeration (50+ modes)
+- [x] Create `ColorSpace` enumeration (RGB, CMYK, LAB, Grayscale)
+- [x] Create `BitDepth` enumeration (8, 16, 32-bit)
 
 ### 1.2 Tiled Image System
 - [ ] Create `Tile` struct (256x256 pixels)

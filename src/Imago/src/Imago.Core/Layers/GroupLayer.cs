@@ -28,13 +28,27 @@ public sealed partial class GroupLayer : Layer
     public void AddChild(Layer layer)
     {
         ArgumentNullException.ThrowIfNull(layer);
+        layer.Parent = this;
         Children.Add(layer);
     }
 
     public void RemoveChild(Layer layer)
     {
         ArgumentNullException.ThrowIfNull(layer);
-        Children.Remove(layer);
+        if (Children.Remove(layer))
+        {
+            layer.Parent = null;
+        }
+    }
+
+    public void InsertChild(int index, Layer layer)
+    {
+        ArgumentNullException.ThrowIfNull(layer);
+        ArgumentOutOfRangeException.ThrowIfNegative(index);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(index, Children.Count);
+
+        layer.Parent = this;
+        Children.Insert(index, layer);
     }
 
     public override Layer Clone()
