@@ -40,7 +40,7 @@ public class SkiaRenderer
         
         _rulerPaint = new SKPaint
         {
-            Color = new SKColor(45, 45, 50),
+            Color = new SKColor(60, 60, 68), // Lighter gray for contrast with canvas
             Style = SKPaintStyle.Fill
         };
         
