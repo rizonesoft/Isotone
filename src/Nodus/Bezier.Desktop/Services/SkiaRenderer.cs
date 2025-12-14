@@ -675,6 +675,11 @@ public class SkiaRenderer
         // Vertical ruler
         RenderVerticalRuler(canvas, info.Height, state, tickSpacing, majorInterval);
         
+        // Draw border lines between rulers and canvas
+        using var borderPaint = new SKPaint { Color = new SKColor(35, 35, 40), StrokeWidth = 1 };
+        canvas.DrawLine(RulerSize, RulerSize, info.Width, RulerSize, borderPaint); // Bottom of horizontal ruler
+        canvas.DrawLine(RulerSize, RulerSize, RulerSize, info.Height, borderPaint); // Right of vertical ruler
+        
         // Draw cursor position indicators
         if (cursorScreenPosition.X > RulerSize && cursorScreenPosition.Y > RulerSize)
         {
