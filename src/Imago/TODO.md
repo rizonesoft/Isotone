@@ -159,13 +159,13 @@ Imago/
 - [x] Create `nuget.config` for package sources
 
 ### 0.4 Project Files Creation
-- [ ] Create `Imago.Core` class library (.NET 10)
-- [ ] Create `Imago.Rendering` class library (.NET 10-windows)
-- [ ] Create `Imago.UI` WPF application (.NET 10-windows)
-- [ ] Create `Imago.Plugins.Abstractions` class library (.NET Standard 2.1)
-- [ ] Create `Imago.Scripting` class library (.NET 10)
-- [ ] Create `Imago.FileFormats` class library (.NET 10)
-- [ ] Create test projects with xUnit
+- [x] Create `Imago.Core` class library (.NET 10)
+- [x] Create `Imago.Rendering` class library (.NET 10-windows)
+- [x] Create `Imago.UI` WPF application (.NET 10-windows)
+- [x] Create `Imago.Plugins.Abstractions` class library (.NET Standard 2.1)
+- [x] Create `Imago.Scripting` class library (.NET 10)
+- [x] Create `Imago.FileFormats` class library (.NET 10)
+- [x] Create test projects with xUnit
 
 ### 0.5 NuGet Package Installation
 - [ ] Add WPF-UI (4.1.0) to Imago.UI
