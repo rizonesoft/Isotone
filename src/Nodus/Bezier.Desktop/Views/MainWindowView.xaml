@@ -64,13 +64,12 @@
         <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="{StaticResource Base}"/>
         <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{StaticResource Surface0}"/>
         
-        <!-- Custom SVG Icon Paths (Lucide/Feather-style) -->
-        <!-- Magnet Icon - for Snap (horseshoe magnet) -->
-        <Geometry x:Key="MagnetIconPath">M4 6h3v7a5 5 0 0 0 10 0V6h3v7a8 8 0 0 1-16 0V6Z M4 6V2h3v4 M17 6V2h3v4</Geometry>
-        <!-- Grid 3x3 Icon - for Grid -->
-        <Geometry x:Key="GridDotsIconPath">M3 3h7v7H3V3Z M14 3h7v7h-7V3Z M14 14h7v7h-7v-7Z M3 14h7v7H3v-7Z</Geometry>
-        <!-- Ruler Icon - horizontal ruler with tick marks -->
-        <Geometry x:Key="RulerIconPath">M3 5h18v14H3V5Z M7 5v6 M11 5v4 M15 5v6 M19 5v4</Geometry>
+        <!-- Magnet Icon - for Snap (Lucide) -->
+        <Geometry x:Key="MagnetIconPath">M12 15l4 4 M2.352 10.648a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l6.029-6.029a1 1 0 1 1 3 3l-6.029 6.029a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l6.365-6.367A1 1 0 0 0 8.716 4.282z M5 8l4 4</Geometry>
+        <!-- Grid 3x2 Icon - for Grid (Lucide) -->
+        <Geometry x:Key="GridDotsIconPath">M15 3v18 M3 12h18 M9 3v18 M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z</Geometry>
+        <!-- Ruler Icon - diagonal ruler with tick marks (Lucide) -->
+        <Geometry x:Key="RulerIconPath">M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z M14.5 12.5l2-2 M11.5 9.5l2-2 M8.5 6.5l2-2 M17.5 15.5l2-2</Geometry>
         
         <!-- Tool Button Style -->
         <Style x:Key="ToolButtonStyle" TargetType="Button">
