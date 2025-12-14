@@ -9,6 +9,7 @@ The Status Bar at the bottom of the main window provides real-time information a
 | **Status** | Current action or tool name (e.g., "Ready", "Tool: Select") |
 | **Selection** | Selected object count and dimensions |
 | **Color Mode** | Document color mode (RGB/CMYK) |
+| **Snap** | Snap to grid/guides status (highlighted when enabled) |
 
 ## Right Section
 
