@@ -46,88 +46,140 @@ public abstract class VectorElement : INotifyPropertyChanged
     public Guid Id
     {
         get => _id;
-        set { _id = value; OnPropertyChanged(nameof(Id)); }
+        set
+        {
+            if (_id == value) return;
+            _id = value;
+            OnPropertyChanged(nameof(Id));
+        }
     }
 
     /// <summary>
-    /// User-facing name/label for this element.
+    /// User-facing name/label for this element. Used as the SVG 'id' attribute.
     /// </summary>
     public string Name
     {
         get => _name;
-        set { _name = value; OnPropertyChanged(nameof(Name)); }
+        set
+        {
+            var newValue = value ?? string.Empty;
+            if (_name == newValue) return;
+            _name = newValue;
+            OnPropertyChanged(nameof(Name));
+        }
     }
 
     /// <summary>
-    /// Whether this element is visible.
+    /// Whether this element is visible. Hidden elements are not rendered but still exist in the document.
     /// </summary>
     public bool IsVisible
     {
         get => _isVisible;
-        set { _isVisible = value; OnPropertyChanged(nameof(IsVisible)); }
+        set
+        {
+            if (_isVisible == value) return;
+            _isVisible = value;
+            OnPropertyChanged(nameof(IsVisible));
+        }
     }
 
     /// <summary>
-    /// Whether this element is locked (cannot be selected/edited).
+    /// Whether this element is locked (cannot be selected or edited).
     /// </summary>
     public bool IsLocked
     {
         get => _isLocked;
-        set { _isLocked = value; OnPropertyChanged(nameof(IsLocked)); }
+        set
+        {
+            if (_isLocked == value) return;
+            _isLocked = value;
+            OnPropertyChanged(nameof(IsLocked));
+        }
     }
 
     /// <summary>
-    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
+    /// Opacity from 0.0 (fully transparent) to 1.0 (fully opaque). Values outside this range are clamped.
     /// </summary>
     public double Opacity
     {
         get => _opacity;
-        set { _opacity = Math.Clamp(value, 0.0, 1.0); OnPropertyChanged(nameof(Opacity)); }
+        set
+        {
+            var clamped = Math.Clamp(value, 0.0, 1.0);
+            if (Math.Abs(_opacity - clamped) < 0.0001) return;
+            _opacity = clamped;
+            OnPropertyChanged(nameof(Opacity));
+        }
     }
 
     /// <summary>
-    /// Blend mode for compositing.
+    /// Blend mode for compositing this element with elements below it.
     /// </summary>
     public BlendMode BlendMode
     {
         get => _blendMode;
-        set { _blendMode = value; OnPropertyChanged(nameof(BlendMode)); }
+        set
+        {
+            if (_blendMode == value) return;
+            _blendMode = value;
+            OnPropertyChanged(nameof(BlendMode));
+        }
     }
 
     /// <summary>
-    /// Parent element (group) if any.
+    /// Parent element (typically a group) if this element is nested.
     /// </summary>
     public VectorElement? Parent
     {
         get => _parent;
-        set { _parent = value; OnPropertyChanged(nameof(Parent)); }
+        set
+        {
+            if (_parent == value) return;
+            _parent = value;
+            OnPropertyChanged(nameof(Parent));
+        }
     }
 
     /// <summary>
-    /// Transformation matrix for this element.
+    /// Transformation matrix (translate, rotate, scale, skew) applied to this element.
     /// </summary>
     public Transform Transform
     {
         get => _transform;
-        set { _transform = value; OnPropertyChanged(nameof(Transform)); }
+        set
+        {
+            if (_transform.Equals(value)) return;
+            _transform = value;
+            OnPropertyChanged(nameof(Transform));
+        }
     }
 
     /// <summary>
-    /// Fill for this element (color, gradient, pattern, or null for no fill).
+    /// Fill for this element (solid color, gradient, pattern, or null for no fill).
     /// </summary>
     public IFill? Fill
     {
         get => _fill;
-        set { _fill = value; OnPropertyChanged(nameof(Fill)); }
+        set
+        {
+            if (ReferenceEquals(_fill, value)) return;
+            _fill = value;
+            OnPropertyChanged(nameof(Fill));
+        }
     }
 
     /// <summary>
-    /// Stroke for this element (null for no stroke).
+    /// Stroke (outline) for this element, or null for no stroke.
     /// </summary>
     public Stroke? Stroke
     {
         get => _stroke;
-        set { _stroke = value; OnPropertyChanged(nameof(Stroke)); }
+        set
+        {
+            if (ReferenceEquals(_stroke, value)) return;
+            _stroke = value;
+            OnPropertyChanged(nameof(Stroke));
+        }
     }
 
     /// <summary>

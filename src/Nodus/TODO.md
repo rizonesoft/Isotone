@@ -99,13 +99,26 @@ DOCUMENTATION:
 - Add screenshots if UI-related
 - Link from docs/README.md (table of contents)
 
+TESTING (REQUIRED):
+1. Build the solution: dotnet build Bezier.sln
+2. Run the application: dotnet run --project Bezier.Desktop
+3. Manually test the feature:
+   - Verify all functionality works as expected
+   - Test edge cases (empty input, large files, etc.)
+   - Test keyboard shortcuts if applicable
+   - Test undo/redo for the feature
+   - Verify no crashes or errors
+4. Run unit tests: dotnet test Bezier.Tests
+5. Fix any issues found during testing
+
 FINISH:
 1. Build: dotnet build Bezier.sln
-2. Test manually: dotnet run --project Bezier.Desktop
-3. Update TODO.md: mark [x] for completed items
-4. Update docs/: create or update feature documentation
-5. Commit: git add -A && git commit -m "feat: [feature] polished"
-6. Push: git push origin master
+2. Run & Test: dotnet run --project Bezier.Desktop → manually verify feature works
+3. Unit Tests: dotnet test Bezier.Tests
+4. Update TODO.md: mark [x] for completed items
+5. Update docs/: create or update feature documentation
+6. Commit: git add -A && git commit -m "feat: [feature] polished"
+7. Push: git push origin master
 ```
 
 ---
