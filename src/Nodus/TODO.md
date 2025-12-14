@@ -318,8 +318,8 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Color mode indicator
 - [x] Snap status indicator
 - [x] Tool hint text
-- [ ] Memory usage indicator
-- [ ] GPU acceleration status
+- [x] Memory usage indicator
+- [x] GPU acceleration status
 - [ ] Document units toggle (px/mm/in/pt)
 - [ ] Quick zoom presets (25%, 50%, 100%, 200%, 400%)
 - [ ] Artboard name indicator

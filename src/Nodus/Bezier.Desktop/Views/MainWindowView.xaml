@@ -992,6 +992,41 @@
                     <!-- Document Size -->
                     <fi:FluentIcon Icon="Document" IconSize="Size16" FontSize="12" Foreground="{StaticResource SubtextBrush}" Margin="0,0,4,0"/>
                     <TextBlock Text="{Binding DocumentSize}" Foreground="{StaticResource SubtextBrush}" FontSize="11"/>
+                    
+                    <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="12,0,12,0"/>
+                    
+                    <!-- Memory Usage -->
+                    <fi:FluentIcon Icon="BrainCircuit" IconSize="Size16" FontSize="12" Foreground="{StaticResource SubtextBrush}" Margin="0,0,4,0"/>
+                    <TextBlock Text="{Binding MemoryUsage}" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
+                               FontFamily="Consolas" ToolTip="Application memory usage"/>
+                    
+                    <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="12,0,12,0"/>
+                    
+                    <!-- GPU Status -->
+                    <fi:FluentIcon Icon="Desktop" IconSize="Size16" FontSize="12" Margin="0,0,4,0">
+                        <fi:FluentIcon.Style>
+                            <Style TargetType="fi:FluentIcon">
+                                <Setter Property="Foreground" Value="{StaticResource SubtextBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsGpuAccelerated}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource GreenBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </fi:FluentIcon.Style>
+                    </fi:FluentIcon>
+                    <TextBlock Foreground="{StaticResource SubtextBrush}" FontSize="11" ToolTip="GPU hardware acceleration status">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="CPU"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsGpuAccelerated}" Value="True">
+                                        <Setter Property="Text" Value="GPU"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
             </Grid>
         </Border>

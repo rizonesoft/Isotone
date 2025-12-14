@@ -6,6 +6,8 @@ using Microsoft.Win32;
 using Bezier.Core.Models;
 using Bezier.Core.Services;
 using Bezier.Core.Tools;
+using System.Diagnostics;
+using System.Windows.Threading;
 
 namespace Bezier.Desktop.ViewModels;
 
@@ -24,6 +26,8 @@ public partial class MainWindowViewModel : ObservableObject
     {
         _history.HistoryChanged += OnHistoryChanged;
         InitializeToolManager();
+        InitializeMemoryMonitor();
+        CheckGpuAcceleration();
     }
 
     private void InitializeToolManager()
@@ -180,6 +184,40 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _toolHintText = "Click to select, drag to move";
+
+    [ObservableProperty]
+    private string _memoryUsage = "0 MB";
+
+    [ObservableProperty]
+    private bool _isGpuAccelerated;
+
+    private DispatcherTimer? _memoryTimer;
+
+    private void InitializeMemoryMonitor()
+    {
+        _memoryTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(3)
+        };
+        _memoryTimer.Tick += (_, _) => UpdateMemoryUsage();
+        _memoryTimer.Start();
+        UpdateMemoryUsage(); // Initial update
+    }
+
+    private void UpdateMemoryUsage()
+    {
+        var process = Process.GetCurrentProcess();
+        var memoryMb = process.WorkingSet64 / (1024.0 * 1024.0);
+        MemoryUsage = memoryMb < 1024 
+            ? $"{memoryMb:0} MB" 
+            : $"{memoryMb / 1024:0.0} GB";
+    }
+
+    private void CheckGpuAcceleration()
+    {
+        // WPF uses hardware acceleration by default if available
+        IsGpuAccelerated = System.Windows.Media.RenderCapability.Tier >> 16 > 0;
+    }
 
     /// <summary>
     /// Available zoom levels for the dropdown.
