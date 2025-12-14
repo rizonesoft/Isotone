@@ -335,6 +335,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -561,8 +562,19 @@
             </StackPanel>
         </Border>
 
+        <!-- Info Bar (Tool Hints) -->
+        <Border Grid.Row="2" Background="{StaticResource MantleBrush}" 
+                BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1"
+                Padding="12,6">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <fi:FluentIcon Icon="LightbulbFilament" IconSize="Size16" FontSize="12" Foreground="{StaticResource AccentBrush}" Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding ToolHintText}" Foreground="{StaticResource TextBrush}" FontSize="11.5" 
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
         <!-- Main Content -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="52"/>
                 <ColumnDefinition Width="*"/>
@@ -895,7 +907,7 @@
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="3" Background="{StaticResource CrustBrush}" 
+        <Border Grid.Row="4" Background="{StaticResource CrustBrush}" 
                 BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,1,0,0" 
                 Padding="12,4">
             <Grid>
@@ -942,11 +954,6 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
-                    <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="12,0,12,0"/>
-                    <!-- Tool Hint Text -->
-                    <fi:FluentIcon Icon="Info" IconSize="Size16" FontSize="12" Foreground="{StaticResource SubtextBrush}" Margin="0,0,4,0"/>
-                    <TextBlock Text="{Binding ToolHintText}" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
-                               FontStyle="Italic" ToolTip="Tool usage hint" MaxWidth="400" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
                 
                 <!-- Right: Cursor Position, Zoom, Document Size -->
