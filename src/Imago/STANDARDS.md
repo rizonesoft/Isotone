@@ -321,6 +321,131 @@ _logger.Information($"Loading document {path} with {document.Layers.Count} layer
 
 ---
 
+## 🖥 GPU & Shader Standards
+
+### ComputeSharp Patterns
+
+```csharp
+// Use readonly partial struct for GPU shaders
+[ThreadGroupSize(DefaultThreadGroupSizes.X)]
+[GeneratedComputeShaderDescriptor]
+public readonly partial struct GrayscaleShader(ReadWriteTexture2D<Rgba32, float4> texture) 
+    : IComputeShader
+{
+    public void Execute()
+    {
+        float4 pixel = texture[ThreadIds.XY];
+        float gray = (pixel.R * 0.299f) + (pixel.G * 0.587f) + (pixel.B * 0.114f);
+        texture[ThreadIds.XY] = new float4(gray, gray, gray, pixel.A);
+    }
+}
+```
+
+### GPU Resource Management
+
+```csharp
+// Always dispose GPU resources
+public sealed class GpuRenderer : IDisposable
+{
+    private readonly GraphicsDevice _device;
+    private ReadWriteTexture2D<Rgba32, float4>? _texture;
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _texture?.Dispose();
+        _device.Dispose();
+        _disposed = true;
+    }
+}
+
+// Use using statements for temporary GPU buffers
+public void ProcessOnGpu(ReadOnlySpan<byte> data)
+{
+    using var buffer = _device.AllocateReadOnlyBuffer(data);
+    // Process...
+}
+```
+
+### HLSL Naming Conventions
+
+| Element | Convention | Example |
+|---------|------------|---------|
+| Constant Buffer | PascalCase | `cbPerFrame` |
+| Texture | t + PascalCase | `tDiffuseMap` |
+| Sampler | s + PascalCase | `sLinearWrap` |
+| Function | PascalCase | `CalculateLighting()` |
+| Local variable | camelCase | `worldPosition` |
+
+---
+
+## 🔄 MVVM Patterns
+
+### ViewModel Base
+
+```csharp
+// Use ReactiveUI for reactive ViewModels
+public class MainWindowViewModel : ReactiveObject
+{
+    private string _title = "Imago";
+    
+    public string Title
+    {
+        get => _title;
+        set => this.RaiseAndSetIfChanged(ref _title, value);
+    }
+    
+    // Use ReactiveCommand for commands
+    public ReactiveCommand<Unit, Unit> SaveCommand { get; }
+    
+    public MainWindowViewModel()
+    {
+        var canSave = this.WhenAnyValue(x => x.HasUnsavedChanges);
+        SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync, canSave);
+    }
+}
+```
+
+### View-ViewModel Binding
+
+```csharp
+// Use WhenActivated for lifecycle management
+public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
+{
+    public MainWindow()
+    {
+        InitializeComponent();
+        
+        this.WhenActivated(disposables =>
+        {
+            this.OneWayBind(ViewModel, vm => vm.Title, v => v.Title)
+                .DisposeWith(disposables);
+                
+            this.BindCommand(ViewModel, vm => vm.SaveCommand, v => v.SaveButton)
+                .DisposeWith(disposables);
+        });
+    }
+}
+```
+
+### Command Patterns
+
+```csharp
+// ✅ Good - Async command with cancellation
+public ReactiveCommand<Unit, Unit> LoadCommand { get; }
+
+LoadCommand = ReactiveCommand.CreateFromTask(
+    async ct => await LoadDocumentAsync(ct),
+    outputScheduler: RxApp.MainThreadScheduler);
+
+// ❌ Bad - Sync command blocking UI
+public ICommand LoadCommand => new RelayCommand(() => 
+    LoadDocument()); // Blocks UI thread!
+```
+
+---
+
 ## 🎨 XAML Standards
 
 ### Naming in XAML
@@ -474,6 +599,180 @@ private static readonly ImmutableList<Layer> s_defaultLayers = ImmutableList<Lay
 
 ---
 
+## ✨ Modern C# 14 Features
+
+### Collection Expressions (C# 12+)
+
+```csharp
+// ✅ Good - Collection expressions
+int[] numbers = [1, 2, 3, 4, 5];
+List<string> names = ["Alpha", "Beta", "Gamma"];
+Span<byte> bytes = stackalloc byte[] { 0xFF, 0x00, 0xFF };
+
+// Spread operator
+int[] combined = [..firstArray, ..secondArray, 42];
+
+// ❌ Bad - Verbose initialization
+var numbers = new int[] { 1, 2, 3, 4, 5 };
+var names = new List<string> { "Alpha", "Beta", "Gamma" };
+```
+
+### Primary Constructors (C# 12+)
+
+```csharp
+// ✅ Good - Primary constructor for simple DI
+public class DocumentService(ILogger<DocumentService> logger, IFileSystem fileSystem)
+{
+    public async Task LoadAsync(string path)
+    {
+        logger.Information("Loading {Path}", path);
+        // Use fileSystem...
+    }
+}
+
+// Use when: Simple dependency injection, data carriers
+// Avoid when: Complex initialization logic, need field validation
+```
+
+### Pattern Matching Enhancements
+
+```csharp
+// Extended property patterns
+if (layer is { Opacity: > 0.5, Visible: true, Parent.Name: "Background" })
+{
+    // Process visible layer with opacity > 50% in Background group
+}
+
+// List patterns
+if (args is [var first, .., var last])
+{
+    Console.WriteLine($"First: {first}, Last: {last}");
+}
+
+// Switch expressions with patterns
+string GetLayerIcon(Layer layer) => layer switch
+{
+    RasterLayer { HasMask: true } => "raster-masked",
+    RasterLayer => "raster",
+    VectorLayer => "vector",
+    GroupLayer { Children.Count: 0 } => "folder-empty",
+    GroupLayer => "folder",
+    _ => "unknown"
+};
+```
+
+### Required Members (C# 11+)
+
+```csharp
+// Use required for mandatory properties
+public class ExportSettings
+{
+    public required string OutputPath { get; init; }
+    public required ImageFormat Format { get; init; }
+    public int Quality { get; init; } = 90; // Optional with default
+}
+
+// Must be set at initialization
+var settings = new ExportSettings
+{
+    OutputPath = @"C:\output.png",
+    Format = ImageFormat.Png
+};
+```
+
+---
+
+## 📄 Documentation Standards
+
+### XML Documentation
+
+```csharp
+/// <summary>
+/// Renders a tile at the specified coordinates.
+/// </summary>
+/// <param name="x">The X coordinate of the tile.</param>
+/// <param name="y">The Y coordinate of the tile.</param>
+/// <param name="cancellationToken">Token to cancel the operation.</param>
+/// <returns>The rendered tile data, or <c>null</c> if the tile is empty.</returns>
+/// <exception cref="ArgumentOutOfRangeException">
+/// Thrown when coordinates are outside the document bounds.
+/// </exception>
+public async Task<TileData?> RenderTileAsync(
+    int x, 
+    int y, 
+    CancellationToken cancellationToken = default)
+{
+    // Implementation
+}
+```
+
+### Documentation Requirements
+
+| Element | Required | Notes |
+|---------|----------|-------|
+| Public types | ✅ Yes | Summary required |
+| Public methods | ✅ Yes | Summary + params + returns |
+| Public properties | ✅ Yes | Summary required |
+| Internal types | ⚠️ Recommended | For complex logic |
+| Private members | ❌ No | Only if non-obvious |
+| Test methods | ❌ No | Test name should be self-documenting |
+
+---
+
+## 🛡 Error Handling
+
+### Exception Patterns
+
+```csharp
+// Use guard clauses with modern syntax
+public void ProcessLayer(Layer layer, int index)
+{
+    ArgumentNullException.ThrowIfNull(layer);
+    ArgumentOutOfRangeException.ThrowIfNegative(index);
+    ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _layers.Count);
+    
+    // Main logic...
+}
+
+// Custom exceptions for domain errors
+public class DocumentCorruptedException : Exception
+{
+    public string FilePath { get; }
+    
+    public DocumentCorruptedException(string filePath, string message, Exception? inner = null)
+        : base(message, inner)
+    {
+        FilePath = filePath;
+    }
+}
+```
+
+### Result Pattern (for expected failures)
+
+```csharp
+// Use Result<T> for operations that can fail expectedly
+public readonly record struct Result<T>
+{
+    public T? Value { get; }
+    public string? Error { get; }
+    public bool IsSuccess => Error is null;
+    
+    public static Result<T> Success(T value) => new() { Value = value };
+    public static Result<T> Failure(string error) => new() { Error = error };
+}
+
+// Usage
+public Result<Document> TryLoadDocument(string path)
+{
+    if (!File.Exists(path))
+        return Result<Document>.Failure($"File not found: {path}");
+        
+    // Load and return success...
+}
+```
+
+---
+
 ## 📋 Code Review Checklist
 
 - [ ] No allocations in hot paths
@@ -486,6 +785,18 @@ private static readonly ImmutableList<Layer> s_defaultLayers = ImmutableList<Lay
 - [ ] No magic numbers
 - [ ] Follows naming conventions
 - [ ] No compiler warnings
+- [ ] GPU resources properly disposed
+- [ ] MVVM bindings use WhenActivated
+- [ ] Collection expressions used where applicable
+
+---
+
+## 🔗 Related Resources
+
+- [.editorconfig](/.editorconfig) - Automated style enforcement
+- [CONTRIBUTING.md](/CONTRIBUTING.md) - Contribution guidelines
+- [Microsoft C# Coding Conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
+- [Performance Best Practices](https://learn.microsoft.com/en-us/dotnet/framework/performance/)
 
 ---
 
