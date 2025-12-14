@@ -70,12 +70,6 @@
         <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="{StaticResource Base}"/>
         <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{StaticResource Surface0}"/>
 
-        <!-- Compact NumberBox Style for Context Toolbar -->
-        <Style x:Key="CompactNumberBoxStyle" TargetType="ui:NumberBox">
-            <Setter Property="Padding" Value="4,0"/>
-            <Setter Property="MinHeight" Value="22"/>
-        </Style>
-
         <!-- Tool Button Style -->
         <Style x:Key="ToolButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="40"/>
@@ -585,7 +579,7 @@
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <ui:NumberBox Value="{Binding DocumentWidth, Mode=TwoWay}" 
                                   Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
-                                  Width="80" Height="24" FontSize="11" Style="{StaticResource CompactNumberBoxStyle}"/>
+                                  Width="80" Height="26" FontSize="11"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,16,0"/>
@@ -595,7 +589,7 @@
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <ui:NumberBox Value="{Binding DocumentHeight, Mode=TwoWay}" 
                                   Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
-                                  Width="80" Height="24" FontSize="11" Style="{StaticResource CompactNumberBoxStyle}"/>
+                                  Width="80" Height="26" FontSize="11"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,0,0"/>
