@@ -219,6 +219,56 @@ public partial class MainWindowViewModel : ObservableObject
         IsGpuAccelerated = System.Windows.Media.RenderCapability.Tier >> 16 > 0;
     }
 
+    #endregion
+
+    #region Context Toolbar Properties
+
+    /// <summary>
+    /// Whether any elements are currently selected.
+    /// </summary>
+    public bool HasSelection => SelectedCount > 0;
+
+    /// <summary>
+    /// Document width for context toolbar binding.
+    /// </summary>
+    public double DocumentWidth
+    {
+        get => Document?.Width ?? 800;
+        set
+        {
+            if (Document is not null && value > 0)
+            {
+                Document.Width = value;
+                OnPropertyChanged();
+                UpdateDocumentInfo();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Document height for context toolbar binding.
+    /// </summary>
+    public double DocumentHeight
+    {
+        get => Document?.Height ?? 600;
+        set
+        {
+            if (Document is not null && value > 0)
+            {
+                Document.Height = value;
+                OnPropertyChanged();
+                UpdateDocumentInfo();
+            }
+        }
+    }
+
+    partial void OnSelectedCountChanged(int value)
+    {
+        OnPropertyChanged(nameof(HasSelection));
+    }
+
+    #endregion
+
     /// <summary>
     /// Available zoom levels for the dropdown.
     /// </summary>
@@ -278,8 +328,6 @@ public partial class MainWindowViewModel : ObservableObject
         ShowError = false;
     }
 
-    #endregion
-    
     #region View State Properties
     
     [ObservableProperty]

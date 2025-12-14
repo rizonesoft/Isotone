@@ -337,6 +337,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -563,8 +564,47 @@
             </StackPanel>
         </Border>
 
+        <!-- Context Toolbar (Document Properties when no selection) -->
+        <Border Grid.Row="2" Background="{StaticResource CrustBrush}" 
+                BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1"
+                Padding="12,4">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Document Section (shown when no selection) -->
+                <StackPanel Orientation="Horizontal" Visibility="{Binding HasSelection, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}">
+                    <TextBlock Text="Document:" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
+                               VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    
+                    <!-- Width -->
+                    <TextBlock Text="W" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
+                               VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <ui:NumberBox Value="{Binding DocumentWidth, Mode=TwoWay}" 
+                                  Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
+                                  Width="80" Height="24" FontSize="11"/>
+                    
+                    <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
+                               VerticalAlignment="Center" Margin="4,0,16,0"/>
+                    
+                    <!-- Height -->
+                    <TextBlock Text="H" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
+                               VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <ui:NumberBox Value="{Binding DocumentHeight, Mode=TwoWay}" 
+                                  Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
+                                  Width="80" Height="24" FontSize="11"/>
+                    
+                    <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
+                               VerticalAlignment="Center" Margin="4,0,0,0"/>
+                </StackPanel>
+                
+                <!-- Selection Section (shown when elements selected) -->
+                <StackPanel Orientation="Horizontal" Visibility="{Binding HasSelection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding SelectionInfo}" Foreground="{StaticResource TextBrush}" FontSize="11" 
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
         <!-- Info Bar (Tool Hints) -->
-        <Border Grid.Row="2" Background="{StaticResource MantleBrush}" 
+        <Border Grid.Row="3" Background="{StaticResource MantleBrush}" 
                 BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1"
                 Padding="12,6">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -575,7 +615,7 @@
         </Border>
 
         <!-- Main Content -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="52"/>
                 <ColumnDefinition Width="*"/>
@@ -908,7 +948,7 @@
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="4" Background="{StaticResource CrustBrush}" 
+        <Border Grid.Row="5" Background="{StaticResource CrustBrush}" 
                 BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,1,0,0" 
                 Padding="12,4">
             <Grid>
