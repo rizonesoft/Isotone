@@ -520,7 +520,7 @@ After completing each task set:
 - [ ] Implement "Deep Select" (Ctrl+Click to select in group)
 - [ ] Implement "Select Same" (by fill, stroke, type)
 - [x] Implement "Select All" (Ctrl+A)
-- [ ] Implement "Invert Selection"
+- [x] Implement "Invert Selection" (Ctrl+Shift+I)
 
 ### 3.2 Basic Shape Tools
 - [x] `RectangleTool`: Drag to create

@@ -437,11 +437,45 @@ public class SkiaCanvas : SKElement
             var modifiers = GetKeyModifiers();
             ToolManager.OnMouseMove(new ToolPoint(_currentCursorDocPosition.X, _currentCursorDocPosition.Y), modifiers);
             _lastMousePosition = position;
+            UpdateToolCursor();
         }
         else
         {
             _lastMousePosition = position;
+            // Update cursor on hover (for resize handles, etc.)
+            if (ToolManager is not null)
+            {
+                var modifiers = GetKeyModifiers();
+                ToolManager.OnMouseMove(new ToolPoint(_currentCursorDocPosition.X, _currentCursorDocPosition.Y), modifiers);
+                UpdateToolCursor();
+            }
         }
+    }
+    
+    private void UpdateToolCursor()
+    {
+        if (_isPanning || _isSpaceDown) return;
+        
+        var toolCursor = ToolManager?.ActiveTool?.Cursor ?? ToolCursor.Arrow;
+        Cursor = toolCursor switch
+        {
+            ToolCursor.Arrow => Cursors.Arrow,
+            ToolCursor.Cross => Cursors.Cross,
+            ToolCursor.Hand => Cursors.Hand,
+            ToolCursor.Move => Cursors.SizeAll,
+            ToolCursor.SizeNWSE => Cursors.SizeNWSE,
+            ToolCursor.SizeNESW => Cursors.SizeNESW,
+            ToolCursor.SizeWE => Cursors.SizeWE,
+            ToolCursor.SizeNS => Cursors.SizeNS,
+            ToolCursor.Rotate => Cursors.Hand, // WPF doesn't have rotate cursor, using hand as fallback
+            ToolCursor.Text => Cursors.IBeam,
+            ToolCursor.Pen => Cursors.Pen,
+            ToolCursor.Eyedropper => Cursors.Cross,
+            ToolCursor.ZoomIn => Cursors.Arrow,
+            ToolCursor.ZoomOut => Cursors.Arrow,
+            ToolCursor.None => Cursors.None,
+            _ => Cursors.Arrow
+        };
     }
 
     protected override void OnMouseUp(MouseButtonEventArgs e)

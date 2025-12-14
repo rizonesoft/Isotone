@@ -23,10 +23,13 @@ public readonly record struct ToolPoint(double X, double Y);
 public interface IToolRenderContext
 {
     void DrawLine(double x1, double y1, double x2, double y2, uint color, float strokeWidth = 1f);
+    void DrawDashedLine(double x1, double y1, double x2, double y2, uint color, float strokeWidth = 1f, float dashLength = 4f, float gapLength = 4f);
     void DrawRect(double x, double y, double width, double height, uint color, float strokeWidth = 1f, bool fill = false);
+    void DrawDashedRect(double x, double y, double width, double height, uint color, float strokeWidth = 1f, float dashLength = 4f, float gapLength = 4f);
     void DrawEllipse(double cx, double cy, double rx, double ry, uint color, float strokeWidth = 1f, bool fill = false);
     void DrawPath(string pathData, uint color, float strokeWidth = 1f, bool fill = false);
     void DrawText(string text, double x, double y, uint color, float fontSize = 12f);
+    void DrawRotatedRect(double cx, double cy, double width, double height, double angleDegrees, uint color, float strokeWidth = 1f, bool fill = false);
     
     /// <summary>
     /// Renders an element preview with an offset (for drag operations).
@@ -133,6 +136,7 @@ public enum ToolCursor
     SizeNESW,
     SizeWE,
     SizeNS,
+    Rotate,
     Text,
     Pen,
     Eyedropper,
