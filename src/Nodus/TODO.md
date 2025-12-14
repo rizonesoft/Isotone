@@ -94,7 +94,7 @@ STRUCTURE:
 - docs/ → User documentation (markdown)
 
 DOCUMENTATION:
-- Create/update docs/[feature-name].md for the feature
+- Create/update docs/[category][feature-name].md for the feature
 - Include: Overview, How to use, Keyboard shortcuts, Tips
 - Add screenshots if UI-related
 - Link from docs/README.md (table of contents)
@@ -236,8 +236,8 @@ OUTPUT: Show me the code changes, then run build + commit + push.
   - [x] Metadata (title, author, license, description)
   - [x] IsDirty flag
   - [ ] Layers collection
-  - [ ] Defs collection (gradients, patterns, symbols)
-  - [ ] Background color/pattern
+  - [x] Defs collection (gradients, patterns, symbols)
+  - [x] Background color/pattern
 - [x] `VectorElement` (abstract base)
   - [x] Id (GUID), Name
   - [x] IsVisible, IsLocked
@@ -2684,6 +2684,409 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 
 ---
 
+# PHASE 18: Cross-Platform & Mobile
+
+## 18.1 Cross-Platform Desktop
+- [ ] macOS port
+  - [ ] Native macOS UI elements
+  - [ ] Menu bar integration
+  - [ ] Touch Bar support
+  - [ ] Handoff/Continuity support
+  - [ ] iCloud integration
+  - [ ] Spotlight integration
+- [ ] Linux port
+  - [ ] GTK/Qt adaptation
+  - [ ] Flatpak packaging
+  - [ ] Snap packaging
+  - [ ] AppImage packaging
+  - [ ] Wayland support
+  - [ ] X11 support
+- [ ] Shared codebase strategy
+  - [ ] Avalonia UI migration option
+  - [ ] MAUI migration option
+  - [ ] Platform abstraction layer
+  - [ ] Platform-specific features
+
+## 18.2 Web Version
+- [ ] Browser-based editor
+  - [ ] WebAssembly core
+  - [ ] SkiaSharp for web
+  - [ ] Progressive Web App (PWA)
+  - [ ] Offline support
+- [ ] Web features
+  - [ ] Responsive layout
+  - [ ] Touch support
+  - [ ] Keyboard shortcuts
+  - [ ] File system access API
+  - [ ] Cloud storage integration
+- [ ] Browser compatibility
+  - [ ] Chrome/Edge
+  - [ ] Firefox
+  - [ ] Safari
+  - [ ] Mobile browsers
+
+## 18.3 Mobile Apps
+- [ ] iPad app
+  - [ ] Apple Pencil support
+  - [ ] Pressure sensitivity
+  - [ ] Tilt support
+  - [ ] Palm rejection
+  - [ ] Split View/Slide Over
+  - [ ] Stage Manager support
+- [ ] Android tablet app
+  - [ ] S Pen support
+  - [ ] Stylus pressure
+  - [ ] Multi-window support
+- [ ] Mobile-optimized UI
+  - [ ] Touch-friendly controls
+  - [ ] Gesture navigation
+  - [ ] Simplified toolbars
+  - [ ] Floating tool palette
+- [ ] Companion apps
+  - [ ] Color picker app
+  - [ ] Font browser app
+  - [ ] Asset browser app
+  - [ ] Remote control app
+
+---
+
+# PHASE 19: 3D & Advanced Graphics
+
+## 19.1 3D Integration
+- [ ] 3D object import
+  - [ ] OBJ, FBX, GLTF
+  - [ ] 3D to 2D projection
+  - [ ] Silhouette extraction
+  - [ ] Wireframe extraction
+- [ ] 3D primitives
+  - [ ] Cube, sphere, cylinder
+  - [ ] Torus, cone, pyramid
+  - [ ] Custom extrusion
+- [ ] 3D manipulation
+  - [ ] Rotate in 3D space
+  - [ ] 3D transform gizmo
+  - [ ] Camera controls
+  - [ ] Orthographic/perspective
+- [ ] 3D effects on 2D
+  - [ ] Extrude paths
+  - [ ] Revolve paths
+  - [ ] Bevel edges
+  - [ ] 3D rotation
+- [ ] Lighting
+  - [ ] Directional lights
+  - [ ] Point lights
+  - [ ] Ambient lighting
+  - [ ] Shadow casting
+
+## 19.2 Advanced Rendering
+- [ ] Ray tracing preview
+- [ ] PBR materials
+- [ ] Environment mapping
+- [ ] Reflections and refractions
+- [ ] Subsurface scattering
+- [ ] Ambient occlusion
+- [ ] Global illumination preview
+
+## 19.3 Raster Editing
+- [ ] Basic raster editing
+  - [ ] Crop, resize, rotate
+  - [ ] Brightness/contrast
+  - [ ] Hue/saturation
+  - [ ] Levels/curves
+- [ ] Raster filters
+  - [ ] Blur (Gaussian, motion, radial)
+  - [ ] Sharpen
+  - [ ] Noise add/reduce
+  - [ ] Pixelate
+  - [ ] Posterize
+- [ ] Layer blending
+  - [ ] All blend modes
+  - [ ] Opacity masks
+  - [ ] Clipping masks
+- [ ] Non-destructive editing
+  - [ ] Adjustment layers
+  - [ ] Smart filters
+  - [ ] Layer styles
+
+---
+
+# PHASE 20: Enterprise & Team Features
+
+## 20.1 Enterprise Administration
+- [ ] Admin console
+  - [ ] User management
+  - [ ] License management
+  - [ ] Usage analytics
+  - [ ] Audit logs
+- [ ] Security features
+  - [ ] SSO/SAML integration
+  - [ ] LDAP/Active Directory
+  - [ ] Role-based access control
+  - [ ] Data encryption at rest
+  - [ ] Secure file sharing
+- [ ] Compliance
+  - [ ] SOC 2 compliance
+  - [ ] GDPR compliance
+  - [ ] HIPAA compliance (healthcare)
+  - [ ] Data residency options
+  - [ ] Audit trail export
+
+## 20.2 Enterprise Deployment
+- [ ] Managed deployment
+  - [ ] MSI installer
+  - [ ] Group Policy templates
+  - [ ] SCCM/Intune support
+  - [ ] Centralized configuration
+- [ ] License management
+  - [ ] Floating licenses
+  - [ ] Named user licenses
+  - [ ] Offline activation
+  - [ ] License server
+- [ ] Enterprise features
+  - [ ] Asset lock-down
+  - [ ] Watermarking
+  - [ ] Export restrictions
+  - [ ] Brand compliance checks
+
+## 20.3 Team Workflows
+- [ ] Project management
+  - [ ] Project folders
+  - [ ] Project templates
+  - [ ] Project archiving
+  - [ ] Project search
+- [ ] Team collaboration
+  - [ ] Shared workspaces
+  - [ ] Team chat
+  - [ ] @mentions
+  - [ ] Activity notifications
+- [ ] Design handoff
+  - [ ] Developer mode
+  - [ ] Spec generation
+  - [ ] Asset export automation
+  - [ ] Integration with dev tools
+
+---
+
+# PHASE 21: Specialized Industry Tools
+
+## 21.1 Icon Design Suite
+- [ ] Icon grid system
+- [ ] Pixel-perfect preview
+- [ ] Icon size variants (16, 24, 32, 48, etc.)
+- [ ] Icon export presets
+- [ ] Icon font generation
+- [ ] Icon documentation
+- [ ] Icon search/organization
+- [ ] Icon consistency checker
+
+## 21.2 Logo Design Suite
+- [ ] Logo templates
+- [ ] Logo variations (horizontal, stacked, icon-only)
+- [ ] Logo usage guidelines generator
+- [ ] Logo file package export
+- [ ] Brand color extraction
+- [ ] Logo animation presets
+- [ ] Logo mockup previews
+- [ ] Trademark symbol tools
+
+## 21.3 UI/UX Design Suite
+- [ ] Component libraries
+- [ ] Design system starter kits
+- [ ] Responsive design tools
+- [ ] Breakpoint management
+- [ ] Auto-layout containers
+- [ ] Device frame library
+- [ ] UI pattern library
+- [ ] Accessibility checker
+
+## 21.4 Illustration Suite
+- [ ] Illustration brushes
+- [ ] Character design tools
+- [ ] Perspective drawing aids
+- [ ] Color palette generators
+- [ ] Style presets
+- [ ] Illustration templates
+- [ ] Reference image overlay
+- [ ] Symmetry drawing modes
+
+## 21.5 Technical Drawing Suite
+- [ ] CAD-style tools
+- [ ] Dimension annotations
+- [ ] Section views
+- [ ] Bill of materials
+- [ ] Revision tracking
+- [ ] Engineering symbols
+- [ ] Tolerance annotations
+- [ ] Scale management
+
+## 21.6 Cartography & Maps
+- [ ] Map projections
+- [ ] Geographic data import
+- [ ] Terrain generation
+- [ ] Route drawing
+- [ ] Legend creation
+- [ ] Scale bars
+- [ ] Compass roses
+- [ ] Map symbols library
+
+## 21.7 Infographics Suite
+- [ ] Chart tools (bar, line, pie, etc.)
+- [ ] Data visualization
+- [ ] Timeline tools
+- [ ] Process flow diagrams
+- [ ] Comparison layouts
+- [ ] Statistics display
+- [ ] Icon-based infographics
+- [ ] Data import (CSV, JSON)
+
+---
+
+# PHASE 22: Gamification & Engagement
+
+## 22.1 Learning System
+- [ ] Skill tree
+- [ ] Tool mastery tracking
+- [ ] Feature discovery prompts
+- [ ] Daily tips
+- [ ] Weekly challenges
+- [ ] Tutorial missions
+- [ ] Progress badges
+- [ ] Certification system
+
+## 22.2 Community Features
+- [ ] User profiles
+- [ ] Portfolio showcase
+- [ ] Design sharing
+- [ ] Community gallery
+- [ ] Likes and comments
+- [ ] Follow creators
+- [ ] Design remixing
+- [ ] Trending designs
+
+## 22.3 Challenges & Events
+- [ ] Design challenges
+- [ ] Weekly themes
+- [ ] Community voting
+- [ ] Winner showcases
+- [ ] Seasonal events
+- [ ] Collaborative projects
+- [ ] Mentorship matching
+- [ ] Live design sessions
+
+---
+
+# PHASE 23: Audio & Video Integration
+
+## 23.1 Audio Features
+- [ ] Audio visualization
+  - [ ] Waveform generation
+  - [ ] Spectrum analysis
+  - [ ] Beat detection
+- [ ] Audio-reactive design
+  - [ ] Animate to audio
+  - [ ] Visualizer templates
+  - [ ] Music sync tools
+- [ ] Sound design integration
+  - [ ] UI sounds preview
+  - [ ] Audio asset management
+
+## 23.2 Video Features
+- [ ] Video timeline
+  - [ ] Frame-by-frame editing
+  - [ ] Keyframe animation
+  - [ ] Video export (MP4, WebM)
+- [ ] Motion graphics
+  - [ ] Title templates
+  - [ ] Lower thirds
+  - [ ] Transitions
+  - [ ] Kinetic typography
+- [ ] Video integration
+  - [ ] Video backgrounds
+  - [ ] Video masking
+  - [ ] Video in prototype
+
+---
+
+# PHASE 24: Sustainability & Ethics
+
+## 24.1 Sustainability Features
+- [ ] Carbon footprint tracking
+  - [ ] File size impact
+  - [ ] Export optimization suggestions
+  - [ ] Green hosting recommendations
+- [ ] Sustainable design tips
+  - [ ] Efficient SVG practices
+  - [ ] Optimized animations
+  - [ ] Reduced data transfer
+- [ ] Environmental reporting
+  - [ ] Monthly sustainability report
+  - [ ] Comparison benchmarks
+
+## 24.2 Ethical Design Tools
+- [ ] Inclusive design checker
+  - [ ] Representation analysis
+  - [ ] Bias detection
+  - [ ] Cultural sensitivity
+- [ ] Dark pattern warnings
+  - [ ] Manipulative UI detection
+  - [ ] Ethical alternatives
+- [ ] Privacy-respecting design
+  - [ ] Data collection indicators
+  - [ ] Consent pattern library
+
+## 24.3 Open Source Commitment
+- [ ] Core library open source
+- [ ] Plugin API open source
+- [ ] Community contributions
+- [ ] Transparent roadmap
+- [ ] Public issue tracker
+- [ ] Community governance
+- [ ] Regular community updates
+
+---
+
+# PHASE 25: Future Technologies
+
+## 25.1 AR/VR Integration
+- [ ] VR canvas (immersive editing)
+- [ ] AR preview (view designs in space)
+- [ ] 3D spatial design tools
+- [ ] Hand tracking input
+- [ ] Holographic UI
+- [ ] Mixed reality collaboration
+
+## 25.2 AI Advancements
+- [ ] On-device AI models
+- [ ] Custom model training
+- [ ] AI design assistant (conversational)
+- [ ] Predictive design
+- [ ] Auto-design from brief
+- [ ] Style learning from examples
+- [ ] Design trend analysis
+- [ ] Competitive analysis
+
+## 25.3 Emerging Technologies
+- [ ] Blockchain integration
+  - [ ] NFT export
+  - [ ] Design provenance
+  - [ ] Licensing smart contracts
+- [ ] Quantum computing readiness
+  - [ ] Algorithm optimization
+  - [ ] Future-proof encryption
+- [ ] Neural interface exploration
+  - [ ] Brain-computer interface research
+  - [ ] Thought-to-design concepts
+
+## 25.4 Next-Gen Rendering
+- [ ] Real-time ray tracing
+- [ ] Neural rendering
+- [ ] Infinite canvas (no memory limits)
+- [ ] Streaming rendering
+- [ ] Cloud GPU rendering
+- [ ] 8K+ export support
+
+---
+
 # Priority Order
 
 ## Immediate (Weeks 1-2)
@@ -2716,6 +3119,16 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 17. **Phase 16** — Collaboration
 18. **Phase 17** — Beyond The Competition
 
+## Future Vision (Long-term)
+19. **Phase 18** — Cross-Platform & Mobile
+20. **Phase 19** — 3D & Advanced Graphics
+21. **Phase 20** — Enterprise & Team Features
+22. **Phase 21** — Specialized Industry Tools
+23. **Phase 22** — Gamification & Engagement
+24. **Phase 23** — Audio & Video Integration
+25. **Phase 24** — Sustainability & Ethics
+26. **Phase 25** — Future Technologies
+
 ---
 
 # Feature Comparison Matrix
@@ -2743,6 +3156,15 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 | **Cross-Platform** | 🔜 | ✅ | ❌ | ✅ | ✅ |
 | **Free** | ✅ | ❌ | ❌ | ✅ | ⚠️ |
 | **Offline** | ✅ | ✅ | ✅ | ✅ | ⚠️ |
+| **3D Integration** | 🔜 | ✅ | ✅ | ⚠️ | ❌ |
+| **Audio/Video** | 🔜 | ⚠️ | ⚠️ | ❌ | ❌ |
+| **AR/VR Support** | 🔜 | ❌ | ❌ | ❌ | ❌ |
+| **Sustainability Tools** | 🔜 | ❌ | ❌ | ❌ | ❌ |
+| **Gamification** | 🔜 | ❌ | ❌ | ❌ | ❌ |
+| **Industry Suites** | 🔜 | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| **Enterprise Features** | 🔜 | ✅ | ✅ | ❌ | ✅ |
+| **Mobile Apps** | 🔜 | ✅ | ❌ | ❌ | ✅ |
+| **Web Version** | 🔜 | ❌ | ❌ | ❌ | ✅ |
 
 Legend: ✅ Full | ⚠️ Limited | ❌ No | 🔜 Planned
 
@@ -2760,7 +3182,39 @@ Legend: ✅ Full | ⚠️ Limited | ❌ No | 🔜 Planned
 8. **Accessibility Built-In** — WCAG checker, screen reader support, high contrast
 9. **Lightweight** — Fast startup, low memory, no bloat
 10. **Extensible** — Plugin system, scripting, open API
+11. **Cross-Platform Vision** — Windows today, macOS/Linux/Web/Mobile planned
+12. **3D Integration** — 2D/3D hybrid workflows, import 3D models, extrude paths
+13. **Industry Suites** — Specialized tools for icons, logos, UI/UX, illustration, technical drawing
+14. **Sustainability Focus** — Carbon footprint tracking, optimization suggestions, ethical design tools
+15. **Future-Ready** — AR/VR support, neural rendering, emerging technology integration
+16. **Community-Driven** — Gamification, challenges, portfolio sharing, mentorship
+17. **Enterprise-Grade** — SSO, RBAC, audit logs, compliance, team workflows
+18. **Animation-First** — Timeline editor, physics-based animation, Lottie export
+19. **Prototyping Built-In** — Interactive prototypes, device preview, micro-interactions
+20. **Design System Native** — Token management, component documentation, versioning
 
 ---
 
-*Last Updated: 2025-01-14*
+# Roadmap Statistics
+
+| Metric | Count |
+|--------|-------|
+| **Total Phases** | 25 |
+| **Total Sections** | 100+ |
+| **Total Features** | 1500+ |
+| **Completed Items** | ~150 |
+| **Remaining Items** | ~1350 |
+| **Estimated Completion** | 3-5 years |
+
+---
+
+# Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2025-01-01 | Initial roadmap with Phases 0-17 |
+| 2.0 | 2025-01-14 | Extended with Phases 18-25, 1000+ new items |
+
+---
+
+*Last Updated: 2025-12-14*
