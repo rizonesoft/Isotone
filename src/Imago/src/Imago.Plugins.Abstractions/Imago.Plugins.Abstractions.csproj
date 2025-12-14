@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Imago.Plugins</RootNamespace>
+    <AssemblyName>Imago.Plugins.Abstractions</AssemblyName>
+    <Description>Plugin interfaces and abstractions for Imago extensibility</Description>
+    <NoWarn>$(NoWarn);CA1720</NoWarn>
+  </PropertyGroup>
+
+</Project>

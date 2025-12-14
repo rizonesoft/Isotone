@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Imago.FileFormats</RootNamespace>
+    <AssemblyName>Imago.FileFormats</AssemblyName>
+    <Description>Image file format support using ImageSharp</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" />
+    <PackageReference Include="Serilog" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Imago.Core\Imago.Core.csproj" />
+  </ItemGroup>
+
+</Project>

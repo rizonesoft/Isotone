@@ -1,0 +1,92 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# MSBuild
+*.log
+msbuild.binlog
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Test results
+TestResults/
+*.trx
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NCrunch
+*.ncrunchproject
+*.ncrunchsolution
+_NCrunch_*
+
+# Benchmark results
+BenchmarkDotNet.Artifacts/
+
+# Build outputs (centralized)
+publish/
+artifacts/
+!artifacts/.gitkeep
+!artifacts/README.md
+
+# Secrets
+*.pfx
+*.snk
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+# Local tool installs
+.dotnet/
+.store/
+
+# JetBrains
+*.sln.iml
+
+# Misc
+*.tmp
+*.temp
+*.bak
+*.cache
+.DS_Store
+
+# Project specific
+logs/
+crash-reports/
+user-settings/
+samples/
