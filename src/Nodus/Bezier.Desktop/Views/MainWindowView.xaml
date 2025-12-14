@@ -942,6 +942,11 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
+                    <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="12,0,12,0"/>
+                    <!-- Tool Hint Text -->
+                    <fi:FluentIcon Icon="Info" IconSize="Size16" FontSize="12" Foreground="{StaticResource SubtextBrush}" Margin="0,0,4,0"/>
+                    <TextBlock Text="{Binding ToolHintText}" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
+                               FontStyle="Italic" ToolTip="Tool usage hint" MaxWidth="400" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
                 
                 <!-- Right: Cursor Position, Zoom, Document Size -->

@@ -178,6 +178,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _colorMode = "RGB";
 
+    [ObservableProperty]
+    private string _toolHintText = "Click to select, drag to move";
+
     /// <summary>
     /// Available zoom levels for the dropdown.
     /// </summary>
@@ -298,6 +301,20 @@ public partial class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(IsZoomToolActive));
         OnPropertyChanged(nameof(IsPanToolActive));
         StatusText = $"Tool: {value}";
+        
+        // Update tool hint text
+        ToolHintText = value switch
+        {
+            "Select" => "Click to select, drag to move. Hold Shift to add to selection.",
+            "Pen" => "Click to add points, drag for bezier curves. Press Enter to finish.",
+            "Rectangle" => "Click and drag to draw. Hold Shift for square.",
+            "Ellipse" => "Click and drag to draw. Hold Shift for circle.",
+            "Line" => "Click and drag to draw. Hold Shift for 45° angles.",
+            "Text" => "Click to place text. Double-click to edit.",
+            "Zoom" => "Click to zoom in, Alt+click to zoom out. Scroll to adjust.",
+            "Pan" => "Click and drag to pan the canvas. Use scroll wheel to zoom.",
+            _ => "Ready"
+        };
     }
 
     [RelayCommand]

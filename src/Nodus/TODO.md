@@ -317,7 +317,7 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Document info (size, element count)
 - [x] Color mode indicator
 - [x] Snap status indicator
-- [ ] Tool hint text
+- [x] Tool hint text
 - [ ] Memory usage indicator
 - [ ] GPU acceleration status
 - [ ] Document units toggle (px/mm/in/pt)
