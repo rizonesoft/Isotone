@@ -85,8 +85,8 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-        // Initialize IconService
-        Imago.UI.Services.IconService.Instance.Initialize();
+        // Show splash screen on separate thread
+        SplashWindow.ShowOnSeparateThread();
 
         Log.Information("Imago starting up...");
         Log.Information("Version: {Version}", GetType().Assembly.GetName().Version);
@@ -94,14 +94,22 @@ public partial class App : Application
 
         try
         {
+            SplashWindow.SetStatus("Initializing services...");
             await s_host.StartAsync();
 
+            SplashWindow.SetStatus("Loading icons...");
+            Imago.UI.Services.IconService.Instance.Initialize();
+
+            SplashWindow.SetStatus("Preparing workspace...");
             var mainWindow = GetService<MainWindow>();
             MainWindow = mainWindow;
+
+            SplashWindow.CloseAndDispose();
             mainWindow.Show();
         }
         catch (Exception ex)
         {
+            SplashWindow.CloseAndDispose();
             LogException(ex, "Startup Exception");
             ExceptionWindow.Show(ex, "Startup Exception (Fatal)", canContinue: false);
         }

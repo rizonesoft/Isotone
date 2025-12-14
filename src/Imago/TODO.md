@@ -190,7 +190,7 @@ Imago/
 - [x] Create App.xaml with resource dictionaries
 - [x] Add application exception handling
 - [x] Implement single-instance application check
-- [ ] Create splash screen
+- [x] Create splash screen
 
 ---
 
