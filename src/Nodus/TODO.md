@@ -77,6 +77,7 @@ YOUR MISSION:
 3. POLISH — Add edge case handling, validation, error messages.
 4. ENHANCE — Better UX: animations, tooltips, keyboard shortcuts.
 5. INTEGRATE — Ensure it works with related features.
+6. DOCUMENT — Create/update user documentation in /docs folder.
 
 QUALITY CHECKLIST:
 □ Feature works as described in TODO.md
@@ -84,18 +85,27 @@ QUALITY CHECKLIST:
 □ Errors are handled gracefully
 □ Code follows existing patterns
 □ No console errors or warnings
+□ User documentation exists in /docs folder
 
 STRUCTURE:
 - Bezier.Core → Models, interfaces, business logic (no UI)
 - Bezier.Desktop → WPF views, controls, rendering
 - Bezier.Tests → Unit tests
+- docs/ → User documentation (markdown)
+
+DOCUMENTATION:
+- Create/update docs/[feature-name].md for the feature
+- Include: Overview, How to use, Keyboard shortcuts, Tips
+- Add screenshots if UI-related
+- Link from docs/README.md (table of contents)
 
 FINISH:
 1. Build: dotnet build Bezier.sln
 2. Test manually: dotnet run --project Bezier.Desktop
 3. Update TODO.md: mark [x] for completed items
-4. Commit: git add -A && git commit -m "feat: [feature] polished"
-5. Push: git push origin master
+4. Update docs/: create or update feature documentation
+5. Commit: git add -A && git commit -m "feat: [feature] polished"
+6. Push: git push origin master
 ```
 
 ---
@@ -327,6 +337,50 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Color mode indicator
 - [ ] Snap status indicator
 - [ ] Tool hint text
+- [ ] Memory usage indicator
+- [ ] GPU acceleration status
+- [ ] Document units toggle (px/mm/in/pt)
+- [ ] Quick zoom presets (25%, 50%, 100%, 200%, 400%)
+- [ ] Artboard name indicator
+- [ ] Layer count indicator
+- [ ] Undo/Redo count indicator
+- [ ] File save status (saved/unsaved/auto-saved)
+- [ ] Network status (for cloud features)
+- [ ] Plugin status indicators
+- [ ] Render mode indicator (GPU/CPU)
+- [ ] Selection mode indicator (object/node)
+
+## 1.8 Canvas Interactions
+- [x] Double-click to edit text
+- [x] Double-click group to enter isolation mode
+- [x] Right-click context menu
+- [ ] Touch gestures (pinch zoom, two-finger pan)
+- [ ] Stylus pressure support
+- [ ] Stylus tilt support
+- [ ] Stylus barrel button actions
+- [ ] Touch screen drawing mode
+- [ ] Multi-touch rotation gesture
+- [ ] Inertial scrolling
+- [ ] Bounce-back at canvas edges
+- [ ] Focus follows selection
+- [ ] Scroll to zoom (configurable)
+- [ ] Edge panning during drag
+
+## 1.9 Canvas Overlays
+- [x] Selection handles
+- [x] Rotation handle
+- [x] Bounding box
+- [ ] Pixel grid (at high zoom)
+- [ ] Safe area guides
+- [ ] Margin guides
+- [ ] Column guides
+- [ ] Baseline grid (for typography)
+- [ ] Artboard boundaries
+- [ ] Bleed area visualization
+- [ ] Print margins preview
+- [ ] Fold lines
+- [ ] Registration marks preview
+- [ ] Transparency checkerboard customization
 
 ---
 
@@ -352,6 +406,19 @@ OUTPUT: Show me the code changes, then run build + commit + push.
   - [ ] CommitTransaction()
   - [ ] RollbackTransaction()
 - [ ] MacroCommand (group multiple commands)
+- [ ] History branching (tree instead of linear)
+- [ ] Named snapshots (bookmark states)
+- [ ] History persistence (save with document)
+- [ ] History compression (merge similar commands)
+- [ ] Selective undo (undo specific operation)
+- [ ] History panel enhancements
+  - [ ] Thumbnail preview per state
+  - [ ] Time stamps
+  - [ ] Memory usage per state
+  - [ ] Collapse similar operations
+  - [ ] Search history by command type
+- [ ] Auto-snapshot before destructive operations
+- [ ] History export (for debugging)
 
 ## 2.2 Tool System
 - [x] `ITool` interface
@@ -367,6 +434,18 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] `SelectTool` — selection, move, resize, rotate
 - [x] `PanTool` — spacebar/middle-mouse drag
 - [x] `ZoomTool` — click/drag to zoom
+- [ ] Tool presets (save tool settings)
+- [ ] Tool favorites bar
+- [ ] Recent tools list
+- [ ] Tool search (in command palette)
+- [ ] Custom tool cursors
+- [ ] Cursor size preview for brush tools
+- [ ] Tool options persistence
+- [ ] Spring-loaded tool switching (hold key, release to return)
+- [ ] Tool grouping (flyout menus)
+- [ ] Hidden tools (advanced mode)
+- [ ] Tool tips with animated demos
+- [ ] Context-sensitive tool suggestions
 
 ## 2.3 Selection Manager
 - [x] SelectedElements observable collection
@@ -374,6 +453,20 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Aggregate bounding box for multi-selection
 - [x] Handle selection during group/ungroup
 - [x] Selection highlight/handles rendering
+- [ ] Selection history (previous selections)
+- [ ] Named selection sets (save and recall)
+- [ ] Selection by path (XPath-like queries)
+- [ ] Selection by regex (match element names)
+- [ ] Selection statistics panel
+- [ ] Lasso selection tool
+- [ ] Polygon selection tool
+- [ ] Selection feathering (soft edges for export)
+- [ ] Selection from color range
+- [ ] Selection expansion/contraction
+- [ ] Selection inversion by layer
+- [ ] Cross-artboard selection
+- [ ] Selection preview mode (dim unselected)
+- [ ] Quick selection cycling (Tab through overlapping)
 
 ## 2.4 Docking Layout (AvalonDock)
 - [x] DockingManager with dark theme
@@ -394,6 +487,19 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Save/Load layout state to JSON
 - [x] Reset Layout command
 - [x] Window menu with panel toggles
+- [ ] Floating panels (detach from dock)
+- [ ] Panel opacity when inactive
+- [ ] Auto-hide panels (slide out on hover)
+- [ ] Panel pinning (always visible)
+- [ ] Panel linking (sync scroll between panels)
+- [ ] Panel zoom (independent scaling)
+- [ ] Split views (same document, different views)
+- [ ] Reference window (secondary view)
+- [ ] Panel presets (saved configurations)
+- [ ] Quick panel toggle (single key)
+- [ ] Panel focus mode (maximize temporarily)
+- [ ] Panel breadcrumbs (navigation history)
+- [ ] Drag content between panels
 
 ## 2.5 Contextual Property Bar
 > Secondary toolbar that changes based on active tool/selection
@@ -434,6 +540,60 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Quick workspace switcher
 - [ ] Focus Mode (Tab key — hide all panels)
 - [ ] Panel search/filter
+- [ ] Workspace per document type
+- [ ] Workspace keyboard shortcuts
+- [ ] Workspace sync across devices
+- [ ] Workspace import/export
+- [ ] Workspace sharing (community)
+- [ ] Context-aware workspace switching
+- [ ] Workspace undo (revert changes)
+- [ ] Presentation workspace (minimal UI)
+- [ ] Beginner workspace (simplified)
+- [ ] Expert workspace (all panels)
+
+## 2.8 Clipboard System
+- [x] Cut, Copy, Paste elements
+- [x] Duplicate (Ctrl+D)
+- [ ] Paste in place (same position)
+- [ ] Paste in front/back
+- [ ] Paste on all artboards
+- [ ] Paste inside (clip to selection)
+- [ ] Paste special (choose format)
+- [ ] Clipboard history panel
+- [ ] Clipboard preview
+- [ ] Cross-application paste
+  - [ ] Paste from Illustrator
+  - [ ] Paste from Figma
+  - [ ] Paste from web browsers (SVG)
+  - [ ] Paste CSS (create shape from clip-path)
+- [ ] Smart paste (adapt to context)
+- [ ] Paste and match style
+- [ ] Clipboard templates (saved clips)
+
+## 2.9 Document Management
+- [x] New document dialog
+- [x] Open file dialog with preview
+- [x] Save/Save As
+- [ ] Save a Copy
+- [ ] Revert to saved
+- [ ] Document properties dialog
+  - [ ] Canvas size and units
+  - [ ] Background color/transparency
+  - [ ] Color mode (RGB/CMYK)
+  - [ ] Resolution for export
+  - [ ] Metadata (title, author, keywords)
+- [ ] Document templates
+  - [ ] Built-in templates
+  - [ ] Custom templates
+  - [ ] Template preview
+  - [ ] Template categories
+- [ ] Recent documents with thumbnails
+- [ ] Document comparison (diff view)
+- [ ] Document statistics
+  - [ ] Element count by type
+  - [ ] Color palette used
+  - [ ] Font list
+  - [ ] File size breakdown
 
 ---
 
@@ -456,6 +616,20 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Invert Selection (Ctrl+Shift+I)
 - [ ] Free Transform mode (distort corners freely)
 - [ ] Numeric transform input (property bar)
+- [ ] Transform each (apply to multiple individually)
+- [ ] Transform again (repeat last transform)
+- [ ] Reflect tool (mirror across axis)
+- [ ] Shear/skew with numeric input
+- [ ] Scale strokes and effects option
+- [ ] Transform origin presets (9 points + custom)
+- [ ] Pixel-perfect transform (snap to pixels)
+- [ ] Percentage-based scaling
+- [ ] Distribute transforms (progressive scaling/rotation)
+- [ ] Reference point locking
+- [ ] Transform preview ghost
+- [ ] Transform constraints (axis lock)
+- [ ] Copy transform to other elements
+- [ ] Reset transform to identity
 
 ## 3.2 Basic Shape Tools
 - [x] **Rectangle Tool**
@@ -497,8 +671,39 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] **Callout Shapes** (speech bubbles, labels)
 - [ ] **Flowchart Shapes** (decision, process, data)
 - [ ] **Banner Shapes** (ribbons, scrolls)
+- [ ] **Gear/Cog Tool**
+  - [ ] Number of teeth
+  - [ ] Inner/outer radius
+  - [ ] Tooth shape (square, rounded, pointed)
+- [ ] **Donut/Ring Tool**
+  - [ ] Inner/outer radius
+  - [ ] Start/end angle for partial rings
+- [ ] **Cross Tool**
+  - [ ] Arm width ratio
+  - [ ] Symmetric/asymmetric
+- [ ] **Heart Shape Tool**
+- [ ] **Cloud Shape Tool**
+- [ ] **Burst/Explosion Tool**
+  - [ ] Number of points
+  - [ ] Randomness
+- [ ] **Frame Tool** (placeholder frames)
+- [ ] **Table Tool**
+  - [ ] Rows and columns
+  - [ ] Cell sizing
+  - [ ] Merge cells
+- [ ] **Connector Tool**
+  - [ ] Straight, elbow, curved
+  - [ ] Auto-route around objects
+  - [ ] Anchor to connection points
+- [ ] **Smart Shapes** (parametric, editable after creation)
 - [x] Live preview during creation
 - [x] Default fill/stroke for new shapes
+- [ ] Shape history (recent shapes used)
+- [ ] Shape favorites
+- [ ] Custom shape library
+- [ ] Shape from selection (save as custom shape)
+- [ ] Shape editing mode (direct manipulation)
+- [ ] Randomize shape parameters
 
 ## 3.3 Pen Tool (Bezier Curves)
 - [x] Node/Control Point structure
@@ -516,6 +721,19 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Click on existing node to select
 - [ ] Continue existing open path
 - [ ] Add to existing closed path
+- [ ] Auto-smooth option (intelligent curves)
+- [ ] Curvature preview (show curve tightness)
+- [ ] Tangent angle display
+- [ ] Segment length display
+- [ ] Path complexity indicator
+- [ ] Undo single point (without full undo)
+- [ ] Convert to straight/curved while drawing
+- [ ] Precision mode (Ctrl for fine control)
+- [ ] Snap to angle increments
+- [ ] Snap to existing nodes
+- [ ] Path preview modes (filled, stroked, outline)
+- [ ] Quick close with double-click
+- [ ] Auto-connect to nearby paths
 
 ## 3.4 Node Editing Tool
 - [x] Select nodes (click, Shift+click, marquee)
@@ -538,6 +756,24 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Chamfer corners
 - [ ] Align nodes (horizontal/vertical)
 - [ ] Distribute nodes evenly
+- [ ] Node snapping (to grid, guides, other nodes)
+- [ ] Weld nodes (merge overlapping)
+- [ ] Split at node
+- [ ] Extract subpath
+- [ ] Node statistics (count, curve vs corner)
+- [ ] Curvature comb visualization
+- [ ] Handle length normalization
+- [ ] Symmetric handle editing (Alt)
+- [ ] Node isolation mode (edit single subpath)
+- [ ] Path direction indicator (arrows)
+- [ ] First node indicator
+- [ ] Node numbering display
+- [ ] Bezier to arc conversion
+- [ ] Arc to bezier conversion
+- [ ] Tangent line display
+- [ ] Perpendicular handles option
+- [ ] Copy/paste nodes between paths
+- [ ] Node transform (scale/rotate selection of nodes)
 
 ## 3.5 Text Tool
 - [x] Click to create point text
@@ -580,6 +816,36 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Text wrap around objects
 - [ ] Find and replace text
 - [ ] Spell check
+- [ ] Grammar check
+- [ ] Auto-correct
+- [ ] Text statistics (word count, character count)
+- [ ] Lorem ipsum generator
+- [ ] Text from file import
+- [ ] Vertical text
+- [ ] Text rotation per character
+- [ ] Circular text (around circle)
+- [ ] Warp text (arc, bulge, flag, wave)
+- [ ] 3D text extrusion
+- [ ] Text shadow (multiple shadows)
+- [ ] Text outline (multiple outlines)
+- [ ] Gradient text fill
+- [ ] Pattern text fill
+- [ ] Image fill for text
+- [ ] Text masking (text as clipping mask)
+- [ ] Linked text frames (overflow flow)
+- [ ] Text threading indicators
+- [ ] Optical margin alignment
+- [ ] Hyphenation settings
+- [ ] Language per text block
+- [ ] Mixed language support
+- [ ] RTL and BiDi text support
+- [ ] Emoji support with color
+- [ ] Icon fonts integration
+- [ ] Web fonts import (Google, Adobe)
+- [ ] Font subsetting for export
+- [ ] Missing font manager
+- [ ] Font favorites
+- [ ] Font tagging and categorization
 
 ## 3.6 Freehand Tools
 - [ ] **Pencil Tool**
@@ -595,6 +861,27 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] **Eraser Tool**
   - [ ] Erase path segments
   - [ ] Erase within selection
+  - [ ] Eraser size/shape
+  - [ ] Feathered eraser
+  - [ ] Erase to transparency
+- [ ] **Smooth Tool**
+  - [ ] Smooth selected paths
+  - [ ] Adjustable smoothness
+  - [ ] Preserve corners option
+- [ ] **Simplify Tool**
+  - [ ] Interactive simplification
+  - [ ] Node reduction preview
+- [ ] **Warp Tool**
+  - [ ] Push/pull vertices
+  - [ ] Brush size and strength
+- [ ] **Twirl Tool**
+  - [ ] Clockwise/counterclockwise
+  - [ ] Intensity control
+- [ ] **Pucker Tool** (contract toward center)
+- [ ] **Bloat Tool** (expand from center)
+- [ ] **Scallop Tool** (wavy edges)
+- [ ] **Crystallize Tool** (spiky edges)
+- [ ] **Wrinkle Tool** (random distortion)
 
 ## 3.7 Guides & Snapping
 - [x] Draggable guides from rulers
@@ -612,6 +899,23 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Snap to pixel (pixel-perfect mode)
 - [ ] Snap to artboard
 - [ ] Snap to key points (intersections)
+- [ ] Snap to path (along curves)
+- [ ] Snap to tangents
+- [ ] Snap to perpendiculars
+- [ ] Snap to extensions (line extensions)
+- [ ] Snap priority settings
+- [ ] Temporary snap disable (hold Ctrl)
+- [ ] Snap sound feedback (optional)
+- [ ] Visual snap indicator customization
+- [ ] Snap zones visualization
+- [ ] Object-specific snap points (custom anchors)
+- [ ] Guide locking (prevent accidental move)
+- [ ] Guide layers (organize guides)
+- [ ] Guide presets (save guide sets)
+- [ ] Import guides from template
+- [ ] Export guides
+- [ ] Magnetic guides (auto-create from objects)
+- [ ] Construction guides (temporary while drawing)
 
 ## 3.8 Measurement Tools
 - [ ] **Measure Tool**
@@ -626,6 +930,26 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Area calculation (selected shapes)
 - [ ] Perimeter calculation
 - [ ] Document scale setting (1:1, 1:10, etc.)
+- [ ] Measurement annotations (persistent on canvas)
+- [ ] Unit conversion display
+- [ ] Measurement presets (architectural, metric, imperial)
+- [ ] Cumulative path length
+- [ ] Center of mass calculation
+- [ ] Bounding box dimensions
+- [ ] Distance between objects
+- [ ] Gap measurement
+- [ ] Angle measurement tool
+- [ ] Protractor overlay
+- [ ] Scale bar for print
+- [ ] Grid measurement overlay
+- [ ] Measurement history log
+- [ ] Copy measurements to clipboard
+- [ ] Measurement comparison (before/after)
+- [ ] Technical drawing dimensions
+  - [ ] Ordinate dimensions
+  - [ ] Baseline dimensions
+  - [ ] Chain dimensions
+  - [ ] Tolerance annotations
 
 ## 3.9 Alignment & Distribution
 - [x] Align left, center, right (horizontal)
@@ -639,6 +963,24 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Align to artboard
 - [ ] Alignment panel with visual buttons
 - [ ] Keyboard shortcuts for alignment
+- [ ] Align to pixel grid
+- [ ] Align to baseline (for text)
+- [ ] Align along path
+- [ ] Circular distribution
+- [ ] Radial distribution
+- [ ] Grid distribution (rows/columns)
+- [ ] Random distribution
+- [ ] Spacing presets (8px, 16px, 24px, etc.)
+- [ ] Smart distribute (auto-detect best spacing)
+- [ ] Maintain relative positions option
+- [ ] Align and distribute with animation preview
+- [ ] Align to last selected
+- [ ] Align to first selected
+- [ ] Stack objects (vertical/horizontal)
+- [ ] Tidy up (auto-align nearby objects)
+- [ ] Match size (width, height, both)
+- [ ] Match rotation
+- [ ] Match style (copy appearance)
 
 ---
 
@@ -665,6 +1007,26 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Layer effects (non-destructive)
 - [ ] Clipping mask to layer below
 - [ ] Layer comp (save layer states)
+- [ ] Layer templates (reusable layer structures)
+- [ ] Layer linking (move together)
+- [ ] Layer styles library
+- [ ] Smart layers (linked external files)
+- [ ] Adjustment layers (non-destructive color adjustments)
+- [ ] Layer masking (vector and raster)
+- [ ] Layer organization
+  - [ ] Auto-arrange layers
+  - [ ] Sort layers (by name, type, color)
+  - [ ] Flatten selected layers
+  - [ ] Collect layers (by type)
+- [ ] Layer export settings per layer
+- [ ] Layer animation keyframes
+- [ ] Layer versioning (history per layer)
+- [ ] Layer notes/comments
+- [ ] Layer dependencies visualization
+- [ ] Layer usage statistics
+- [ ] Artboard layers (layer per artboard)
+- [ ] Master layers (appear on all artboards)
+- [ ] Layer comparison (diff between states)
 
 ## 4.2 Property Inspector
 - [x] Collapsible sections
@@ -725,6 +1087,32 @@ OUTPUT: Show me the code changes, then run build + commit + push.
   - [ ] Save appearance as style
   - [ ] Apply style to selection
   - [ ] Style library
+  - [ ] Style preview on hover
+  - [ ] Style categories/tags
+  - [ ] Style search
+  - [ ] Style import/export
+  - [ ] Style sharing (community)
+  - [ ] Break style link
+  - [ ] Update style from selection
+  - [ ] Replace style globally
+- [ ] **Swatch Panel**
+  - [ ] Color swatches
+  - [ ] Gradient swatches
+  - [ ] Pattern swatches
+  - [ ] Swatch groups/folders
+  - [ ] Global swatches (linked colors)
+  - [ ] Import swatches (ASE, ACO, GPL)
+  - [ ] Export swatches
+  - [ ] Swatch libraries (built-in palettes)
+  - [ ] Color palette generator
+  - [ ] Extract colors from image
+  - [ ] Accessibility preview (color blindness)
+- [ ] **Character/Paragraph Styles Panel**
+  - [ ] Named text styles
+  - [ ] Style inheritance (based on)
+  - [ ] Style overrides indicator
+  - [ ] Apply style with keyboard shortcut
+  - [ ] Next style setting
 
 ## 4.3 Path Operations
 - [x] Boolean operations (SKPath.Op)
@@ -772,6 +1160,35 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Mesh Tool
   - [ ] Create mesh from shape
   - [ ] Color mesh points
+  - [ ] Mesh row/column editing
+  - [ ] Mesh point interpolation
+  - [ ] Mesh from gradient
+  - [ ] Mesh complexity control
+- [ ] **Liquify Tool**
+  - [ ] Forward warp
+  - [ ] Reconstruct
+  - [ ] Smooth
+  - [ ] Twirl clockwise/counterclockwise
+  - [ ] Pucker/bloat
+  - [ ] Push left/right
+  - [ ] Freeze/thaw mask
+  - [ ] Mesh preview
+- [ ] **Puppet Warp**
+  - [ ] Add pins
+  - [ ] Move pins to deform
+  - [ ] Pin depth (overlap order)
+  - [ ] Mesh density
+  - [ ] Rotation around pins
+- [ ] **Image Trace Panel**
+  - [ ] Preset modes (logo, photo, sketch)
+  - [ ] Threshold/detail sliders
+  - [ ] Color modes (black/white, grayscale, color)
+  - [ ] Path fitting
+  - [ ] Corner angle
+  - [ ] Noise reduction
+  - [ ] Preview toggle
+  - [ ] Expand result
+  - [ ] Keep source image option
 
 ## 4.4 Clipping & Masking
 - [ ] **Clipping Paths**
@@ -815,6 +1232,18 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Artboard grid (arrange artboards)
 - [ ] Fit artboard to artwork
 - [ ] Artboard rulers
+- [ ] Artboard templates (device sizes, print sizes)
+- [ ] Artboard export presets per artboard
+- [ ] Artboard linking (sync content)
+- [ ] Artboard transitions (for prototyping)
+- [ ] Artboard variants (responsive versions)
+- [ ] Artboard annotations
+- [ ] Artboard flow diagram
+- [ ] Artboard search
+- [ ] Artboard comparison mode
+- [ ] Artboard versioning
+- [ ] Artboard thumbnail caching
+- [ ] Infinite canvas mode (no artboards)
 
 ## 4.7 Object Management
 - [ ] **Object Manager Panel**
@@ -834,6 +1263,65 @@ OUTPUT: Show me the code changes, then run build + commit + push.
   - [ ] Same type
 - [ ] Object locking (by type, layer)
 - [ ] Object hiding (by type, layer)
+- [ ] Object statistics
+  - [ ] Count by type
+  - [ ] Size distribution
+  - [ ] Color usage
+  - [ ] Font usage
+- [ ] Object naming conventions
+  - [ ] Auto-naming rules
+  - [ ] Bulk rename with pattern
+  - [ ] Name validation
+- [ ] Object dependencies
+  - [ ] Show linked objects
+  - [ ] Symbol usage
+  - [ ] Style usage
+- [ ] Object bookmarks (quick access)
+- [ ] Object timeline (creation/modification history)
+
+## 4.8 Effects & Filters
+- [ ] **SVG Filters Panel**
+  - [ ] Blur (Gaussian, motion, radial)
+  - [ ] Drop shadow
+  - [ ] Inner shadow
+  - [ ] Glow (outer, inner)
+  - [ ] Bevel and emboss
+  - [ ] Color matrix
+  - [ ] Displacement map
+  - [ ] Morphology (dilate, erode)
+  - [ ] Composite operations
+  - [ ] Turbulence/noise
+  - [ ] Lighting effects (point, spot, distant)
+  - [ ] Convolve matrix
+  - [ ] Custom filter chains
+- [ ] **Live Effects**
+  - [ ] Non-destructive effects
+  - [ ] Effect stacking order
+  - [ ] Effect visibility toggle
+  - [ ] Effect presets
+  - [ ] Copy/paste effects
+  - [ ] Effect animations
+- [ ] **Raster Effects**
+  - [ ] Resolution settings
+  - [ ] Anti-aliasing options
+  - [ ] Rasterize selection
+  - [ ] Effect bounds expansion
+
+## 4.9 Data-Driven Graphics
+- [ ] **Variables Panel**
+  - [ ] Text variables
+  - [ ] Image variables
+  - [ ] Visibility variables
+  - [ ] Color variables
+- [ ] **Data Sets**
+  - [ ] Import from CSV/JSON
+  - [ ] Create data sets
+  - [ ] Apply data set
+  - [ ] Cycle through data sets
+- [ ] **Data Merge**
+  - [ ] Batch generate variations
+  - [ ] Export all variations
+  - [ ] Variable binding UI
 
 ---
 
@@ -847,6 +1335,20 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Animated splash screen
 - [ ] About dialog (version, credits, links)
 - [ ] Custom theme creator
+- [ ] Theme marketplace (community themes)
+- [ ] Theme export/import
+- [ ] Per-monitor theme (different themes on different displays)
+- [ ] Time-based theme switching (dark at night)
+- [ ] High contrast themes
+- [ ] Colorblind-friendly themes
+- [ ] Reduced motion theme
+- [ ] Custom accent gradients
+- [ ] Icon customization (size, style)
+- [ ] Font customization (UI font family)
+- [ ] Transparency/blur settings
+- [ ] Border radius customization
+- [ ] Animation speed settings
+- [ ] Sound themes (optional UI sounds)
 
 ## 5.2 Motion & Polish
 - [x] Mica window backdrop
@@ -860,6 +1362,20 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Dialog animations
 - [ ] Skeleton loading states
 - [ ] Smooth scrolling everywhere
+- [ ] Loading progress indicators
+- [ ] Background operation indicators
+- [ ] Haptic feedback (for touch/stylus)
+- [ ] Cursor trails (optional)
+- [ ] Guide snap animations
+- [ ] Object insertion animations
+- [ ] Deletion animations (fade out)
+- [ ] Undo/redo animations
+- [ ] Zoom level transitions
+- [ ] Panel resize animations
+- [ ] Context menu animations
+- [ ] Tooltip fade animations
+- [ ] Progress bars for long operations
+- [ ] Celebration animations (milestones)
 
 ## 5.3 Command Palette (Ctrl+K)
 - [x] Overlay search for commands
@@ -871,6 +1387,20 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Actions (like VS Code: > prefix)
 - [ ] Go to line in code
 - [ ] Go to element by name
+- [ ] Go to artboard
+- [ ] Go to layer
+- [ ] Go to symbol definition
+- [ ] Math expressions in palette
+- [ ] Color input in palette
+- [ ] Unit conversion in palette
+- [ ] Recent files in palette
+- [ ] Snippet insertion
+- [ ] Palette extensions (plugins can add commands)
+- [ ] Contextual suggestions
+- [ ] Command aliases
+- [ ] Command history export
+- [ ] Voice command trigger (accessibility)
+- [ ] Natural language commands (AI-powered)
 
 ## 5.4 On-Canvas HUD
 - [x] Contextual toolbar near selection
@@ -883,6 +1413,22 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Smart dimensions while dragging
 - [ ] Color preview swatch
 - [ ] Quick property edit popups
+- [ ] Angle indicator during rotation
+- [ ] Scale percentage during resize
+- [ ] Alignment guides visualization
+- [ ] Spacing guides visualization
+- [ ] Artboard edge indicators
+- [ ] Object count badge
+- [ ] Memory/performance indicator
+- [ ] Active tool indicator
+- [ ] Modifier keys indicator
+- [ ] Constraint indicators
+- [ ] Smart object suggestions
+- [ ] AI-powered tips
+- [ ] Gesture hints
+- [ ] Mini color picker (click swatch)
+- [ ] Quick opacity slider
+- [ ] Quick layer selector
 
 ## 5.5 Keyboard Shortcuts
 - [x] Central shortcut registry
@@ -893,6 +1439,22 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Export/import shortcuts
 - [ ] Touch Bar support (if applicable)
 - [ ] Gesture shortcuts
+- [ ] Chord shortcuts (multi-key combinations)
+- [ ] Sequence shortcuts (vim-like: g then g)
+- [ ] Tool-specific shortcuts
+- [ ] Context-specific shortcuts
+- [ ] Shortcut hints in menus
+- [ ] Shortcut learning mode
+- [ ] Most-used shortcuts analytics
+- [ ] Shortcut recommendations
+- [ ] Macro shortcuts (trigger multiple actions)
+- [ ] Shortcut categories
+- [ ] Print shortcut reference
+- [ ] Shortcut search
+- [ ] Per-workspace shortcuts
+- [ ] Numpad shortcuts for tools
+- [ ] Function key assignments
+- [ ] Mouse button shortcuts
 
 ## 5.6 Code Integration (Monaco)
 - [x] WebView2 with Monaco
@@ -908,13 +1470,61 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] AvalonEdit fallback (no WebView2)
 - [ ] Autocomplete for SVG elements/attributes
 - [ ] Snippets
+- [ ] Multi-cursor editing
+- [ ] Find and replace with regex
+- [ ] Go to definition (for defs/symbols)
+- [ ] References finder (where is this used)
+- [ ] Code formatting options
+- [ ] XML validation
+- [ ] SVG optimization suggestions
+- [ ] Color preview in code
+- [ ] Gradient preview in code
+- [ ] Path preview on hover
+- [ ] Code diff view
+- [ ] Code history (local changes)
+- [ ] Split editor view
+- [ ] Editor themes (separate from app theme)
+- [ ] Font ligatures support
+- [ ] Code lens (element info inline)
+- [ ] Breadcrumbs navigation
+- [ ] Outline/structure view
+- [ ] Collaborative editing (future)
 
-## 5.7 Navigator Panel
+## 5.8 Onboarding & Help
+- [ ] First-run tutorial
+- [ ] Interactive feature tour
+- [ ] Tooltip tutorials
+- [ ] Video tutorials (embedded)
+- [ ] Sample files library
+- [ ] Template gallery
+- [ ] Contextual help (F1 on any element)
+- [ ] Search documentation in-app
+- [ ] Community forums link
+- [ ] Bug report wizard
+- [ ] Feature request form
+- [ ] What's new dialog (after updates)
+- [ ] Tips of the day
+- [ ] Skill level assessment
+- [ ] Personalized learning path
+- [ ] Achievement system (gamification)
+- [ ] Usage analytics opt-in
+
+## 5.9 Navigator Panel
 - [ ] Minimap of entire canvas
 - [ ] Viewport rectangle (draggable)
 - [ ] Quick zoom controls
 - [ ] Zoom to selection
 - [ ] Zoom history
+- [ ] Zoom presets (25%, 50%, 100%, 200%, 400%, 800%)
+- [ ] Fit to width/height
+- [ ] Zoom to artboard
+- [ ] Zoom to all artboards
+- [ ] Navigator rotation
+- [ ] Split view from navigator
+- [ ] Bird's eye view (hold key)
+- [ ] Thumbnail quality settings
+- [ ] Navigator position (corner overlay vs panel)
+- [ ] Layer visibility in navigator
 
 ---
 
@@ -954,12 +1564,59 @@ OUTPUT: Show me the code changes, then run build + commit + push.
   - [ ] Seamless patterns
   - [ ] Tile types (grid, brick, hex)
   - [ ] Preview tiled
+  - [ ] Pattern origin control
+  - [ ] Pattern scale and rotation
+  - [ ] Pattern from selection
+  - [ ] Pattern library
+  - [ ] Pattern search
 - [ ] Halftone generator (dots, lines)
+  - [ ] Dot shape options
+  - [ ] Frequency control
+  - [ ] Angle control
+  - [ ] Color halftones
 - [ ] Texture fills (noise, grain, paper)
+  - [ ] Perlin noise
+  - [ ] Simplex noise
+  - [ ] Voronoi patterns
+  - [ ] Stipple effects
+  - [ ] Crosshatch patterns
 - [ ] Live Trace (bitmap to vector)
   - [ ] Presets: photo, logo, line art
   - [ ] Custom settings
   - [ ] Preview, expand result
+  - [ ] Color palette extraction
+  - [ ] Posterization levels
+  - [ ] Edge detection sensitivity
+  - [ ] Smoothing options
+  - [ ] Corner detection
+- [ ] Procedural textures
+  - [ ] Wood grain
+  - [ ] Marble
+  - [ ] Stone
+  - [ ] Fabric
+  - [ ] Metal
+  - [ ] Custom texture scripts
+
+## 6.4 Color Tools
+- [ ] **Color Guide Panel**
+  - [ ] Harmony rules (complementary, analogous, triadic, etc.)
+  - [ ] Tints and shades
+  - [ ] Color temperature variations
+  - [ ] Saturation variations
+- [ ] **Recolor Artwork**
+  - [ ] Color group editing
+  - [ ] Global recolor
+  - [ ] Random recolor
+  - [ ] Reduce colors
+  - [ ] Preserve black/white option
+- [ ] **Color Blending**
+  - [ ] Blend between two colors
+  - [ ] Gradient maps
+  - [ ] Color transfer from image
+- [ ] **Color Accessibility**
+  - [ ] Color blindness simulation
+  - [ ] Contrast checker
+  - [ ] WCAG compliance indicators
 
 ---
 
@@ -977,6 +1634,31 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Generate from Reference (style transfer)
   - [ ] Color palette extraction
   - [ ] Style extraction
+- [ ] AI Background Removal
+- [ ] AI Object Segmentation
+- [ ] AI Upscaling for raster images
+- [ ] AI Color Enhancement
+- [ ] AI Sketch to Vector
+- [ ] AI Logo Generator
+  - [ ] Text input
+  - [ ] Style presets
+  - [ ] Industry categories
+  - [ ] Color scheme selection
+- [ ] AI Illustration Generator
+  - [ ] Scene description
+  - [ ] Style transfer
+  - [ ] Character generation
+- [ ] AI Pattern Generator
+  - [ ] Seamless patterns
+  - [ ] Style control
+  - [ ] Color palette input
+- [ ] AI Font Matching
+  - [ ] Upload image of text
+  - [ ] Find similar fonts
+- [ ] AI Image to SVG
+  - [ ] Photo to vector art
+  - [ ] Preserve details
+  - [ ] Style options
 
 ## 7.2 Smart Assist
 - [ ] Auto-Name Layers (AI analysis)
@@ -987,6 +1669,21 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Similar Element Finder
 - [ ] Auto Layout suggestions
 - [ ] Accessibility Suggestions
+- [ ] Smart object snapping suggestions
+- [ ] Design consistency checker
+- [ ] Duplicate detection
+- [ ] Unused element detection
+- [ ] Style consolidation suggestions
+- [ ] Font pairing suggestions
+- [ ] Icon suggestions based on context
+- [ ] Layout template suggestions
+- [ ] Auto-spacing normalization
+- [ ] Smart grouping suggestions
+- [ ] Naming convention suggestions
+- [ ] Export optimization suggestions
+- [ ] Performance improvement suggestions
+- [ ] Best practices tips
+- [ ] Design critique (AI feedback)
 
 ## 7.3 Optimization
 - [ ] Analyze SVG panel
@@ -1017,6 +1714,28 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Plugin System
   - [ ] Plugin API (tools, panels, filters, export)
   - [ ] Plugin manager
+  - [ ] Plugin marketplace
+  - [ ] Plugin auto-update
+  - [ ] Plugin sandboxing (security)
+  - [ ] Plugin settings per plugin
+  - [ ] Plugin keyboard shortcuts
+  - [ ] Plugin dependencies
+  - [ ] Plugin versioning
+  - [ ] Plugin debugging tools
+  - [ ] Plugin templates
+  - [ ] Plugin documentation generator
+- [ ] **Scripting Console**
+  - [ ] Interactive REPL
+  - [ ] Script history
+  - [ ] Variable inspector
+  - [ ] Breakpoints
+  - [ ] Step-through execution
+- [ ] **Automation Presets**
+  - [ ] Export for web preset
+  - [ ] Export for print preset
+  - [ ] Prepare for handoff preset
+  - [ ] Clean up document preset
+  - [ ] Optimize for performance preset
 
 ---
 
@@ -1045,6 +1764,28 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Align to pixel grid command
 - [ ] Half-pixel stroke adjustment
 - [ ] Crisp edges option
+- [ ] Pixel-perfect export preview
+- [ ] Subpixel anti-aliasing options
+- [ ] Pixel density presets (1x, 2x, 3x)
+- [ ] Icon design mode (fixed grid)
+- [ ] Favicon preview
+- [ ] App icon preview (iOS, Android)
+- [ ] Pixel hinting for strokes
+- [ ] Auto-adjust to pixel boundaries
+
+## 8.3 Construction Geometry
+- [ ] Construction lines (infinite)
+- [ ] Construction circles
+- [ ] Intersection points detection
+- [ ] Tangent line tools
+- [ ] Perpendicular line tools
+- [ ] Bisector tools
+- [ ] Golden ratio guides
+- [ ] Rule of thirds overlay
+- [ ] Custom ratio guides
+- [ ] Dynamic geometry constraints
+- [ ] Parametric construction
+- [ ] Hide/show construction layer
 
 ---
 
@@ -1083,6 +1824,30 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Trapping settings
 - [ ] Flatten transparency
 - [ ] PDF/X export
+- [ ] PDF/A export (archival)
+- [ ] Press-ready PDF export
+- [ ] Preflight panel
+  - [ ] Issue detection
+  - [ ] Auto-fix options
+  - [ ] Custom preflight profiles
+  - [ ] Preflight report export
+- [ ] Imposition
+  - [ ] N-up layouts
+  - [ ] Booklet printing
+  - [ ] Step and repeat
+- [ ] Die line tools
+  - [ ] Die line layer
+  - [ ] Registration color
+  - [ ] Knockout/overprint settings
+
+## 9.4 Large Format
+- [ ] Tiling for large prints
+- [ ] Banner templates
+- [ ] Signage presets
+- [ ] Vehicle wrap templates
+- [ ] Scale for production
+- [ ] Grommet/eyelet markers
+- [ ] Hem and pocket allowances
 
 ---
 
@@ -1110,6 +1875,17 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] DXF/DWG (CAD)
 - [ ] WMF/EMF (Windows Metafile)
 - [ ] CorelDRAW CDR (experimental)
+- [ ] Affinity Designer import
+- [ ] Gravit Designer import
+- [ ] Canva export import
+- [ ] PSD (Photoshop) - vector layers
+- [ ] INDD (InDesign) - basic
+- [ ] Font files (TTF, OTF) - glyph extraction
+- [ ] 3D model import (OBJ, STL) - outline extraction
+- [ ] CAD formats (STEP, IGES) - 2D projection
+- [ ] Gerber files (PCB)
+- [ ] HPGL (plotter)
+- [ ] CGM (Computer Graphics Metafile)
 
 ## 10.3 Export Formats
 - [x] SVG (optimized, minified)
@@ -1129,6 +1905,32 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Lottie JSON (animated)
 - [ ] Android Vector Drawable
 - [ ] iOS Asset Catalog
+- [ ] macOS Asset Catalog
+- [ ] Windows App Icons
+- [ ] Favicon package (all sizes)
+- [ ] Social media image pack
+- [ ] Sprite sheet (for games)
+- [ ] Font creation (SVG font, TTF)
+- [ ] Embroidery formats (DST, PES)
+- [ ] Laser cutting formats (DXF, PLT)
+- [ ] Vinyl cutting formats (FCM)
+- [ ] 3D printing path (SVG to GCODE)
+- [ ] Canvas/Fabric.js JSON
+- [ ] D3.js data format
+- [ ] Snap.svg format
+- [ ] Paper.js format
+- [ ] Two.js format
+- [ ] Anime.js keyframes
+- [ ] GSAP timeline
+- [ ] Framer Motion config
+- [ ] Rive format
+- [ ] Bodymovin/Lottie
+- [ ] SMIL animation
+- [ ] CSS animation keyframes
+- [ ] SVG sprite (symbol defs)
+- [ ] Icon font (woff, woff2)
+- [ ] Data URI (inline SVG)
+- [ ] Base64 encoded
 
 ## 10.4 Export Dialog
 - [x] Format selection
@@ -1149,6 +1951,22 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Stock integrations (Unsplash, Noun Project)
 - [ ] Google Fonts integration
 - [ ] Asset tagging and search
+- [ ] Asset favorites
+- [ ] Asset collections
+- [ ] Asset usage tracking
+- [ ] Asset version history
+- [ ] Asset metadata editor
+- [ ] Bulk asset import
+- [ ] Asset preview modes (grid, list, details)
+- [ ] Asset sorting options
+- [ ] Smart asset suggestions
+- [ ] Asset license tracking
+- [ ] Asset cloud sync
+- [ ] Team asset libraries (shared)
+- [ ] Asset drag-and-drop from external sources
+- [ ] Asset file watching (auto-update linked assets)
+- [ ] Asset optimization on import
+- [ ] Asset format conversion
 
 ---
 
@@ -1186,6 +2004,45 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] **Keyboard Shortcuts**
   - [ ] Shortcut editor
   - [ ] Import/export
+- [ ] **File Handling**
+  - [ ] Default save format
+  - [ ] Backup file creation
+  - [ ] Temporary file location
+  - [ ] Maximum backup count
+  - [ ] File association settings
+- [ ] **Clipboard**
+  - [ ] Clipboard format preferences
+  - [ ] Include hidden elements
+  - [ ] Clipboard history size
+- [ ] **Selection**
+  - [ ] Selection highlight color
+  - [ ] Handle size
+  - [ ] Rotation handle distance
+  - [ ] Multi-select behavior
+- [ ] **Guides & Grid**
+  - [ ] Grid type (dots, lines, crosses)
+  - [ ] Grid color and opacity
+  - [ ] Guide color
+  - [ ] Smart guide sensitivity
+- [ ] **Cursors**
+  - [ ] Cursor size
+  - [ ] Precise cursors option
+  - [ ] Brush preview
+- [ ] **Plugins**
+  - [ ] Enabled plugins list
+  - [ ] Plugin update frequency
+  - [ ] Plugin permissions
+- [ ] **Privacy**
+  - [ ] Usage analytics opt-in
+  - [ ] Crash reporting
+  - [ ] Clear recent files
+  - [ ] Clear cache
+- [ ] **Advanced**
+  - [ ] WebView2 settings
+  - [ ] Debug mode
+  - [ ] Experimental features toggle
+  - [ ] Hardware acceleration
+  - [ ] Render quality vs performance
 
 ## 11.2 Settings Storage
 - [ ] JSON settings file
@@ -1193,6 +2050,28 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Migrate settings on update
 - [ ] Reset to defaults
 - [ ] Export/import settings
+- [ ] Settings sync (cloud)
+- [ ] Settings profiles (work, personal)
+- [ ] Per-project settings override
+- [ ] Settings search
+- [ ] Settings changelog (track changes)
+- [ ] Settings validation
+- [ ] Settings backup on update
+- [ ] Portable settings mode
+- [ ] Command-line settings override
+- [ ] Environment variable support
+
+## 11.3 Document Defaults
+- [ ] Default canvas size presets
+- [ ] Default color mode (RGB/CMYK)
+- [ ] Default units per document type
+- [ ] Default grid settings
+- [ ] Default guide presets
+- [ ] Default layer structure
+- [ ] Default artboard layout
+- [ ] Default styles (fill, stroke, text)
+- [ ] Default export settings
+- [ ] Default metadata fields
 
 ---
 
@@ -1207,6 +2086,24 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Startup optimization
 - [ ] Virtualized lists (layers, assets)
 - [ ] Throttled rendering during pan/zoom
+- [ ] Progressive rendering (low-res first, then high-res)
+- [ ] GPU texture atlasing
+- [ ] Path simplification for preview
+- [ ] Culling (don't render off-screen elements)
+- [ ] Level-of-detail rendering
+- [ ] Incremental updates (only re-render changed areas)
+- [ ] Object pooling (reuse render objects)
+- [ ] Batch rendering (group similar operations)
+- [ ] Async file operations
+- [ ] Lazy loading for large documents
+- [ ] Memory-mapped files for huge documents
+- [ ] Render priority queue (visible first)
+- [ ] Background optimization
+- [ ] Idle-time processing
+- [ ] Preemptive caching
+- [ ] Multi-GPU support
+- [ ] SIMD optimizations for path operations
+- [ ] Compiled path caching
 
 ## 12.2 Error Handling
 - [x] Global exception handler
@@ -1222,6 +2119,49 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] UI automation tests
 - [ ] Performance benchmarks
 - [ ] Regression test suite
+- [ ] Visual regression testing (screenshot comparison)
+- [ ] Fuzz testing for file parsers
+- [ ] Stress testing (large documents)
+- [ ] Memory leak detection
+- [ ] Cross-version compatibility tests
+- [ ] Accessibility testing automation
+- [ ] Localization testing
+- [ ] API contract testing
+- [ ] End-to-end workflow tests
+- [ ] Chaos testing (random user actions)
+- [ ] Load testing (many open documents)
+- [ ] Coverage reporting and tracking
+- [ ] Test environment management
+- [ ] Continuous integration testing
+- [ ] Pre-release testing checklist
+
+## 12.4 Monitoring & Diagnostics
+- [ ] Application performance monitoring
+- [ ] Real-time metrics dashboard
+- [ ] Memory usage tracking
+- [ ] CPU profiling
+- [ ] GPU utilization monitoring
+- [ ] Frame rate monitoring
+- [ ] Operation timing logs
+- [ ] User action analytics (opt-in)
+- [ ] Feature usage statistics
+- [ ] Error rate tracking
+- [ ] Slow operation detection
+- [ ] Resource leak detection
+- [ ] Network request monitoring
+- [ ] Plugin performance isolation
+
+## 12.5 Reliability
+- [ ] Automatic crash recovery
+- [ ] Document integrity checks
+- [ ] Corrupted file repair
+- [ ] Safe mode (minimal features)
+- [ ] Diagnostic mode
+- [ ] Health check on startup
+- [ ] Graceful degradation (feature fallbacks)
+- [ ] Watchdog for hung operations
+- [ ] Automatic memory cleanup
+- [ ] Session state persistence
 
 ---
 
@@ -1240,6 +2180,24 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Reduced motion option
 - [ ] Font size scaling
 - [ ] Color blind friendly themes
+- [ ] Dyslexia-friendly font option
+- [ ] Audio feedback option
+- [ ] Voice commands
+- [ ] Eye tracking support
+- [ ] Switch control support
+- [ ] Sticky keys support
+- [ ] Filter keys support
+- [ ] Mouse keys support
+- [ ] Touch accessibility gestures
+- [ ] Zoom accessibility (magnifier integration)
+- [ ] Caption/subtitle support for tutorials
+- [ ] Braille display support
+- [ ] Motor impairment accommodations
+- [ ] Cognitive load reduction mode
+- [ ] Simplified UI mode
+- [ ] Accessibility preferences sync
+- [ ] VPAT documentation
+- [ ] Accessibility audit report generation
 
 ## 13.2 Localization
 - [ ] Externalize all strings to resources
@@ -1248,6 +2206,28 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] RTL layout support
 - [ ] Date/number formatting
 - [ ] Community translation system
+- [ ] Japanese, Chinese (Simplified/Traditional), Korean
+- [ ] Portuguese, Italian, Dutch, Polish, Russian
+- [ ] Arabic, Hebrew (full RTL support)
+- [ ] Hindi, Thai, Vietnamese
+- [ ] Turkish, Greek, Czech, Hungarian
+- [ ] Swedish, Norwegian, Danish, Finnish
+- [ ] Ukrainian, Romanian, Bulgarian
+- [ ] Indonesian, Malay, Filipino
+- [ ] Plural form handling
+- [ ] Gender-neutral translations
+- [ ] Context-aware translations
+- [ ] Translation memory
+- [ ] Machine translation suggestions
+- [ ] Translation validation (length, placeholders)
+- [ ] In-app translation editor
+- [ ] Translation progress tracking
+- [ ] Locale-specific features (paper sizes, etc.)
+- [ ] Currency formatting
+- [ ] Measurement unit localization
+- [ ] Keyboard layout detection
+- [ ] IME support (input method editors)
+- [ ] Font fallback for non-Latin scripts
 
 ---
 
@@ -1259,12 +2239,46 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Microsoft Store submission
 - [ ] Chocolatey package
 - [ ] WinGet package
+- [ ] Scoop package
+- [ ] Self-contained deployment (no runtime needed)
+- [ ] Framework-dependent deployment (smaller size)
+- [ ] ARM64 build
+- [ ] x86 build (legacy support)
+- [ ] Silent installer option
+- [ ] Per-user and per-machine install options
+- [ ] Custom install location
+- [ ] Component selection during install
+- [ ] Offline installer
+- [ ] Delta updates (patch only changes)
+- [ ] Side-by-side installation (multiple versions)
+- [ ] Uninstall cleanup (remove settings option)
+- [ ] File association registration
+- [ ] Shell integration (context menu)
+- [ ] Startup shortcut option
+- [ ] Desktop shortcut option
+- [ ] Installation verification
+- [ ] Rollback on failed install
 
 ## 14.2 Updates
 - [ ] Auto-updater (check on startup)
 - [ ] Download in background
 - [ ] Release notes dialog
 - [ ] Changelog in-app
+- [ ] Update channels (stable, beta, nightly)
+- [ ] Scheduled update checks
+- [ ] Bandwidth throttling for downloads
+- [ ] Pause/resume update downloads
+- [ ] Pre-download updates (install later)
+- [ ] Rollback to previous version
+- [ ] Skip version option
+- [ ] Enterprise update management
+- [ ] Update notification preferences
+- [ ] Offline update package
+- [ ] Update integrity verification
+- [ ] Post-update migration scripts
+- [ ] Update size estimation
+- [ ] Required vs optional updates
+- [ ] Security update prioritization
 
 ## 14.3 Marketing
 - [ ] Landing page (bezier.app)
@@ -1272,6 +2286,49 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Product Hunt launch
 - [ ] GitHub Awesome lists
 - [ ] Social media presence
+- [ ] Blog with tutorials
+- [ ] YouTube channel
+- [ ] Newsletter
+- [ ] Press kit
+- [ ] Case studies
+- [ ] User testimonials
+- [ ] Comparison pages (vs Illustrator, Inkscape, Figma)
+- [ ] Feature highlight videos
+- [ ] Getting started guide
+- [ ] Webinars
+- [ ] Conference presentations
+- [ ] Open source community engagement
+- [ ] Reddit presence (r/design, r/opensource)
+- [ ] Discord server
+- [ ] Twitter/X account
+- [ ] LinkedIn page
+- [ ] Hacker News submissions
+- [ ] Design community outreach (Dribbble, Behance)
+- [ ] Influencer partnerships
+- [ ] Educational institution outreach
+- [ ] Localized marketing materials
+
+## 14.4 Documentation
+- [ ] User manual (comprehensive)
+- [ ] Quick start guide
+- [ ] Video tutorials library
+- [ ] API documentation
+- [ ] Plugin development guide
+- [ ] Keyboard shortcuts reference
+- [ ] FAQ section
+- [ ] Troubleshooting guide
+- [ ] Migration guides (from other apps)
+- [ ] Best practices guide
+- [ ] Performance optimization guide
+- [ ] Accessibility guide
+- [ ] Print production guide
+- [ ] Web export guide
+- [ ] Search functionality
+- [ ] Version-specific docs
+- [ ] Community wiki
+- [ ] Code examples repository
+- [ ] Sample files library
+- [ ] Interactive tutorials
 
 ---
 
@@ -1316,6 +2373,51 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] Copy exception, continue or exit
 - [ ] Crash log file
 - [ ] Recovery options
+- [ ] Crash dump generation
+- [ ] Automatic bug report submission
+- [ ] Crash analytics
+- [ ] Symbol server for stack traces
+- [ ] Crash grouping (similar crashes)
+- [ ] Crash frequency tracking
+- [ ] User feedback on crash
+- [ ] Session replay for debugging
+- [ ] Environment info collection
+- [ ] Plugin isolation (crash one, not all)
+
+## 15.7 API & Extensibility
+- [ ] Public API documentation
+- [ ] REST API for remote control
+- [ ] WebSocket API for real-time
+- [ ] CLI interface
+- [ ] Headless mode (no UI)
+- [ ] COM automation support
+- [ ] PowerShell cmdlets
+- [ ] Python bindings
+- [ ] Node.js bindings
+- [ ] C# SDK for plugins
+- [ ] TypeScript SDK for web plugins
+- [ ] API versioning
+- [ ] Deprecation policy
+- [ ] Breaking change notifications
+- [ ] API playground/tester
+
+## 15.8 Build & Development
+- [ ] Development setup documentation
+- [ ] Build scripts (PowerShell, bash)
+- [ ] Debug vs Release configurations
+- [ ] Code signing setup
+- [ ] Continuous integration pipeline
+- [ ] Automated testing in CI
+- [ ] Code coverage reporting
+- [ ] Static code analysis
+- [ ] Dependency vulnerability scanning
+- [ ] License compliance checking
+- [ ] Changelog generation
+- [ ] Version bumping automation
+- [ ] Release notes generation
+- [ ] Asset pipeline (icon generation, etc.)
+- [ ] Localization extraction
+- [ ] Documentation generation
 
 ---
 
@@ -1325,6 +2427,22 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Comment tool (pin to elements)
 - [ ] Comment panel (list, filter, resolve)
 - [ ] Markup tools (arrows, callouts, highlights)
+- [ ] Comment threading (replies)
+- [ ] @mentions in comments
+- [ ] Comment reactions (emoji)
+- [ ] Comment attachments (images, files)
+- [ ] Comment status (open, resolved, wont-fix)
+- [ ] Comment assignment
+- [ ] Comment due dates
+- [ ] Comment notifications
+- [ ] Comment search
+- [ ] Comment export (PDF report)
+- [ ] Comment import from Figma
+- [ ] Voice comments (audio notes)
+- [ ] Video comments (screen recordings)
+- [ ] Comment templates
+- [ ] Comment categories/tags
+- [ ] Comment visibility (public, private, team)
 
 ## 16.2 Version Control
 - [ ] Built-in version history
@@ -1341,6 +2459,56 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Team libraries (symbols, styles, colors)
 - [ ] Real-time collaboration (future)
   - [ ] Cursors, live edits, presence
+- [ ] User accounts
+  - [ ] Email/password login
+  - [ ] OAuth (Google, GitHub, Microsoft)
+  - [ ] SSO for enterprise
+  - [ ] Two-factor authentication
+- [ ] Team management
+  - [ ] Invite team members
+  - [ ] Role-based permissions (viewer, editor, admin)
+  - [ ] Team projects
+  - [ ] Activity feed
+- [ ] Project sharing
+  - [ ] Share link generation
+  - [ ] Permission levels (view, comment, edit)
+  - [ ] Password protection
+  - [ ] Expiration dates
+- [ ] Cloud features
+  - [ ] Cross-device sync
+  - [ ] Offline mode with sync
+  - [ ] Conflict resolution
+  - [ ] Version history in cloud
+  - [ ] Storage quota management
+  - [ ] Backup and restore
+- [ ] Collaboration features
+  - [ ] Real-time cursors
+  - [ ] Live selection visibility
+  - [ ] User presence indicators
+  - [ ] Follow mode (view what others see)
+  - [ ] Audio/video chat integration
+  - [ ] Screen sharing
+  - [ ] Collaborative editing locks
+  - [ ] Edit session recording
+
+## 16.4 Review & Approval
+- [ ] Review workflow
+  - [ ] Submit for review
+  - [ ] Approve/reject/request changes
+  - [ ] Review rounds tracking
+- [ ] Stakeholder sharing
+  - [ ] Client review links
+  - [ ] Password-protected previews
+  - [ ] Feedback collection
+- [ ] Approval workflow
+  - [ ] Multi-stage approvals
+  - [ ] Approval notifications
+  - [ ] Approval history
+- [ ] Presentation mode
+  - [ ] Full-screen presentation
+  - [ ] Artboard slideshow
+  - [ ] Prototype playback
+  - [ ] Presenter notes
 
 ---
 
@@ -1404,6 +2572,115 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [ ] Noun Project integration
 - [ ] Unsplash integration
 - [ ] Google Fonts integration
+- [ ] Adobe Creative Cloud integration
+- [ ] Dropbox integration
+- [ ] Google Drive integration
+- [ ] OneDrive integration
+- [ ] iCloud integration
+- [ ] Slack integration (share designs)
+- [ ] Microsoft Teams integration
+- [ ] Notion integration
+- [ ] Jira integration (design tasks)
+- [ ] Trello integration
+- [ ] Asana integration
+- [ ] Linear integration
+- [ ] GitHub integration (commit designs)
+- [ ] GitLab integration
+- [ ] Bitbucket integration
+- [ ] Zapier integration
+- [ ] IFTTT integration
+- [ ] Webflow export
+- [ ] Framer export
+- [ ] WordPress plugin
+- [ ] Shopify integration
+- [ ] Wix integration
+- [ ] Squarespace integration
+
+## 17.10 Prototyping
+- [ ] Interactive prototypes
+  - [ ] Click/tap interactions
+  - [ ] Hover states
+  - [ ] Scroll interactions
+  - [ ] Drag interactions
+- [ ] Transitions
+  - [ ] Slide, fade, push, dissolve
+  - [ ] Custom easing curves
+  - [ ] Duration control
+  - [ ] Spring physics
+- [ ] Prototype flows
+  - [ ] Flow diagrams
+  - [ ] Multiple flows per document
+  - [ ] Flow documentation
+- [ ] Device preview
+  - [ ] iPhone, Android device frames
+  - [ ] Mirror to device app
+  - [ ] Touch gesture simulation
+- [ ] Micro-interactions
+  - [ ] Button states
+  - [ ] Loading animations
+  - [ ] Success/error states
+- [ ] Prototype sharing
+  - [ ] Share link
+  - [ ] Embed code
+  - [ ] Password protection
+  - [ ] Analytics (views, clicks)
+
+## 17.11 Design System Management
+- [ ] Design system panel
+  - [ ] Tokens overview
+  - [ ] Component library
+  - [ ] Documentation
+- [ ] Token management
+  - [ ] Color tokens
+  - [ ] Typography tokens
+  - [ ] Spacing tokens
+  - [ ] Shadow tokens
+  - [ ] Border radius tokens
+- [ ] Component documentation
+  - [ ] Usage guidelines
+  - [ ] Do's and don'ts
+  - [ ] Code snippets
+  - [ ] Accessibility notes
+- [ ] Design system versioning
+  - [ ] Version history
+  - [ ] Change tracking
+  - [ ] Migration guides
+- [ ] Design system publishing
+  - [ ] NPM package generation
+  - [ ] Storybook export
+  - [ ] Documentation site generation
+
+## 17.12 Advanced Animation
+- [ ] Timeline editor
+  - [ ] Keyframe animation
+  - [ ] Multiple property tracks
+  - [ ] Easing curves editor
+  - [ ] Onion skinning
+- [ ] Motion paths
+  - [ ] Animate along path
+  - [ ] Path timing control
+  - [ ] Orient to path
+- [ ] Physics-based animation
+  - [ ] Spring animations
+  - [ ] Gravity simulation
+  - [ ] Collision detection
+- [ ] Particle systems
+  - [ ] Emitter configuration
+  - [ ] Particle behaviors
+  - [ ] Force fields
+- [ ] Morphing
+  - [ ] Shape morphing
+  - [ ] Path interpolation
+  - [ ] Color interpolation
+- [ ] Animation presets
+  - [ ] Bounce, elastic, ease
+  - [ ] Attention seekers (shake, pulse)
+  - [ ] Entrances/exits
+- [ ] Animation export
+  - [ ] Lottie/Bodymovin
+  - [ ] CSS animations
+  - [ ] SMIL
+  - [ ] GIF/video
 
 ---
 
