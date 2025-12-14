@@ -80,7 +80,7 @@ YOUR MISSION:
 
 QUALITY CHECKLIST:
 □ Feature works as described in TODO.md
-□ UI is accessible (keyboard, tooltips, cursors)
+□ UI is accessible (keyboard, tooltips, cursors, buttons)
 □ Errors are handled gracefully
 □ Code follows existing patterns
 □ No console errors or warnings
@@ -119,1403 +119,928 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 
 ---
 
-## Technology Decisions
+## Technology Stack
 
-### Code Editor: AvalonEdit vs Monaco
-
-| Feature | AvalonEdit | Monaco (WebView2) |
-|---------|------------|-------------------|
-| **Integration** | Native WPF, simple | WebView2 interop required |
-| **Performance** | Excellent, native | Good, but WebView overhead |
-| **Syntax Highlighting** | Good (custom XSHD) | Excellent (built-in SVG/XML) |
-| **IntelliSense/Autocomplete** | Manual implementation | Built-in, extensible |
-| **Minimap** | No | Yes |
-| **Multi-cursor** | Limited | Yes |
-| **Code Folding** | Yes | Yes |
-| **Find & Replace** | Basic | Advanced (regex, in selection) |
-| **Theming** | Manual styling | VS Code themes supported |
-| **Memory Footprint** | Small (~5MB) | Larger (~50MB) |
-| **Startup Time** | Instant | 1-2 seconds |
-
-**Decision**: Use **Monaco Editor** for production quality. The WebView2 overhead is acceptable for the significantly better feature set. AvalonEdit can be kept as a fallback for systems without WebView2 runtime.
-
-### WebView2 Deployment Strategy
-- **Fixed Version** runtime bundled with application (~150MB)
-- Self-contained: No internet required, works offline
-- Download: [WebView2 Fixed Version Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
-- Set `browserExecutableFolder` in code to bundled runtime path
-
-### Rendering: SkiaSharp + Svg.Skia
-- SkiaSharp provides GPU-accelerated 2D rendering
-- Svg.Skia handles accurate SVG parsing with full spec compliance
-- WriteableBitmap integration for WPF display
-
-### UI Framework: WPF + WPF-UI + AvalonDock
-- WPF-UI for Fluent Design / Mica effects
-- AvalonDock (dirkster99 fork) for dockable panels
-- XamlFlair for fluid animations
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Framework** | .NET 10 / C# 14 | Core platform |
+| **UI** | WPF + WPF-UI | Native Windows with Fluent Design |
+| **Rendering** | SkiaSharp + Svg.Skia | GPU-accelerated 2D graphics |
+| **Layout** | AvalonDock | Dockable panels |
+| **Code Editor** | Monaco (WebView2) | SVG/XML editing with IntelliSense |
+| **MVVM** | CommunityToolkit.Mvvm | Data binding & commands |
+| **Logging** | Serilog | Structured logging |
+| **Settings** | Newtonsoft.Json | Configuration storage |
+| **DI** | Microsoft.Extensions.DependencyInjection | Service container |
 
 ---
 
-## Phase 0: Foundation & Setup
+# PHASE 0: Foundation & Setup
 
-### 0.1 Solution Architecture
+## 0.1 Solution Architecture
 - [x] Create `Bezier.sln` with proper separation of concerns
-- [x] Project: `Bezier.Core` (.NET 9 Class Library) - *The "Brain"*
-  - [x] Create project with `dotnet new classlib`
-  - [x] Models (VectorElement, VectorDocument)
-  - [x] Interfaces (IFill, IEditorCommand)
-- [x] Project: `Bezier.Desktop` (.NET 10 WPF) - *The "Face"*
-  - [x] Create project with `dotnet new wpf`
-  - [x] MVVM structure (ViewModels, Views)
-  - [x] Custom Controls
-- [x] Project: `Bezier.Tests` (xUnit)
-  - [x] Create project with `dotnet new xunit`
-  - [x] Add reference to Bezier.Core
-- [x] Set up Dependency Injection (Microsoft.Extensions.DependencyInjection)
-  - [x] Create `ServiceCollectionExtensions.cs`
-  - [x] Register all services in `App.xaml.cs`
+- [x] **Bezier.Core** (.NET 10 Class Library)
+  - [x] Models (VectorElement, VectorDocument, Transform)
+  - [x] Interfaces (IFill, IEditorCommand, ITool)
+  - [x] Services (SelectionManager, HistoryManager, ToolManager)
+  - [x] Commands (Move, Rotate, Scale, Add, Delete)
+- [x] **Bezier.Desktop** (.NET 10 WPF)
+  - [x] MVVM structure (ViewModels, Views, Commands)
+  - [x] Custom Controls (SkiaCanvas, ColorPicker)
+  - [x] Services (SkiaRenderer, FileService, ClipboardService)
+- [x] **Bezier.Tests** (xUnit)
+  - [x] Unit tests for Core services
+  - [x] Integration tests for import/export
+- [x] Set up Dependency Injection
 
-### 0.2 Folder Structure
-- [x] `Bezier.Core/Models/` - Domain entities
-- [x] `Bezier.Core/Models/Elements/` - VectorElement subclasses
-- [x] `Bezier.Core/Models/Fills/` - Fill types
-- [x] `Bezier.Core/Interfaces/` - Contracts
-- [x] `Bezier.Core/Services/` - Business logic
-- [x] `Bezier.Core/Commands/` - Editor commands
-- [x] `Bezier.Desktop/Views/` - XAML views
-- [x] `Bezier.Desktop/Views/Panels/` - Dockable panels
-- [x] `Bezier.Desktop/Views/Dialogs/` - Modal dialogs
-- [x] `Bezier.Desktop/ViewModels/` - VM classes
-- [x] `Bezier.Desktop/Controls/` - Custom WPF controls
-- [x] `Bezier.Desktop/Controls/Canvas/` - SkiaCanvas control
-- [x] `Bezier.Desktop/Controls/ColorPicker/` - Color picker control
-- [x] `Bezier.Desktop/Resources/` - Icons, styles, themes
-- [x] `Bezier.Desktop/Resources/Icons/` - SVG/XAML icons
-- [x] `Bezier.Desktop/Resources/Themes/` - Light/Dark themes
-- [x] `Bezier.Desktop/Assets/` - Fonts, images
-- [x] `Bezier.Desktop/Assets/Fonts/` - Custom fonts
-- [x] `Bezier.Desktop/Services/` - Desktop-specific services
+## 0.2 Project Structure
+- [x] `Bezier.Core/Models/` — Domain entities
+- [x] `Bezier.Core/Models/Elements/` — VectorElement subclasses
+- [x] `Bezier.Core/Models/Fills/` — Fill types (Solid, Gradient, Pattern)
+- [x] `Bezier.Core/Interfaces/` — Contracts
+- [x] `Bezier.Core/Services/` — Business logic
+- [x] `Bezier.Core/Commands/` — Editor commands
+- [x] `Bezier.Core/Tools/` — Tool implementations
+- [x] `Bezier.Desktop/Views/` — XAML views
+- [x] `Bezier.Desktop/Views/Panels/` — Dockable panels
+- [x] `Bezier.Desktop/Views/Dialogs/` — Modal dialogs
+- [x] `Bezier.Desktop/ViewModels/` — ViewModel classes
+- [x] `Bezier.Desktop/Controls/` — Custom WPF controls
+- [x] `Bezier.Desktop/Resources/` — Icons, styles, themes
+- [x] `Bezier.Desktop/Assets/` — Fonts, images
+- [x] `Bezier.Desktop/Services/` — Platform-specific services
 
-### 0.3 Version Control & CI
-- [x] Initialize Git repository with `.gitignore` (Visual Studio template)
-- [x] Create `README.md` with project overview and screenshots
-- [x] Create `CONTRIBUTING.md` with code style guidelines
-- [x] Create `LICENSE` file (MIT or similar)
-- [x] Create `.editorconfig` for code formatting
-- [x] Create `.github/workflows/build.yml` for automated CI builds
-  - [x] Build on push/PR
-  - [x] Run tests
-  - [x] Create artifacts
-- [x] Set up `dependabot.yml` for NuGet updates
-- [ ] Configure branch protection rules
-- [x] Create `CHANGELOG.md`
+## 0.3 Core Dependencies
+- [x] SkiaSharp & SkiaSharp.Views.WPF
+- [x] Svg.Skia
+- [x] Dirkster.AvalonDock
+- [x] CommunityToolkit.Mvvm
+- [x] Microsoft.Web.WebView2
+- [x] WPF-UI (Fluent Design)
+- [x] Serilog + Serilog.Sinks.File
+- [x] Newtonsoft.Json
+- [x] Microsoft.Extensions.DependencyInjection
 
-### 0.4 Core Dependencies
-- [x] Install `SkiaSharp` & `SkiaSharp.Views.WPF` (Rendering)
-- [x] Install `Svg.Skia` (SVG Parsing)
-- [x] Install `Dirkster.AvalonDock` (Docking Layout)
-- [x] Install `CommunityToolkit.Mvvm` (MVVM)
-- [x] Install `Microsoft.Web.WebView2` (Monaco)
-- [x] ~~Install `XamlFlair`~~ → Using native WPF Storyboards + AnimationHelper.cs
-- [x] Install `WPF-UI` (Fluent Design / Mica)
-- [x] Install `Serilog` (Logging)
-- [x] Install `Serilog.Sinks.File` (Log to file)
-- [x] Install `Newtonsoft.Json` (Settings serialization)
-- [x] Install `Microsoft.Extensions.DependencyInjection` (DI)
+## 0.4 Version Control & CI
+- [x] Initialize Git with .gitignore
+- [x] README.md with project overview
+- [x] CONTRIBUTING.md with code style guidelines
+- [x] LICENSE file (MIT)
+- [x] .editorconfig for formatting
+- [x] .github/workflows/build.yml for CI
+- [x] dependabot.yml for NuGet updates
+- [x] CHANGELOG.md
+- [ ] Branch protection rules
 
-### 0.5 Initial UI Shell (Early WOW Factor)
-- [x] Create main window with Mica/Acrylic backdrop
-  - [x] Set window style to None
-  - [x] Implement custom chrome
-  - [x] Add resize grips
-- [x] Set up dark theme with custom color palette (Catppuccin Mocha)
-  - [x] Define color resources in `Themes/Dark.xaml`
-  - [x] Define brush resources
-  - [x] Define control styles
-- [x] Create app icon (multiple sizes: 16, 32, 48, 256)
-- [x] Implement basic title bar
-  - [x] App icon and name
-  - [x] Minimize button
-  - [x] Maximize/Restore button
-  - [x] Close button
-  - [x] Double-click to maximize
-  - [x] Drag to move window
-- [x] Add splash screen
-  - [x] Logo animation (fade in, scale)
-  - [x] Loading progress text
-  - [x] Version number
-- [x] Set up AvalonDock skeleton (empty panels)
+## 0.5 Initial UI Shell
+- [x] Main window with Mica/Acrylic backdrop
+  - [x] Custom chrome with resize grips
+  - [x] Title bar (icon, name, min/max/close)
+- [x] Dark theme (Catppuccin Mocha)
+  - [x] Light theme option (Catppuccin Latte)
+- [x] App icon (16, 32, 48, 256px)
+- [x] Splash screen with logo animation
+- [x] AvalonDock skeleton
 
-### 0.6 Main Menu Bar
-- [x] File menu
-  - [x] New (Ctrl+N)
-  - [x] Open (Ctrl+O)
-  - [x] Open Recent >
-  - [x] Save (Ctrl+S)
-  - [x] Save As (Ctrl+Shift+S)
-  - [x] Export >
-  - [x] Close (Ctrl+W)
-  - [x] Exit (Alt+F4)
-- [x] Edit menu
-  - [x] Undo (Ctrl+Z)
-  - [x] Redo (Ctrl+Y)
-  - [x] Cut (Ctrl+X)
-  - [x] Copy (Ctrl+C)
-  - [x] Paste (Ctrl+V)
-  - [x] Duplicate (Ctrl+D)
-  - [x] Delete (Del)
-  - [x] Select All (Ctrl+A)
-  - [x] Preferences/Settings
-- [x] View menu
-  - [x] Zoom In (Ctrl++)
-  - [x] Zoom Out (Ctrl+-)
-  - [x] Fit to Window (Ctrl+0)
-  - [x] Actual Size (Ctrl+1)
-  - [x] Show Grid (Ctrl+')
-  - [x] Show Rulers
-  - [x] Show Guides
-  - [x] Outline Mode
-  - [x] Panels submenu (toggle each panel)
-- [x] Object menu
-  - [x] Group (Ctrl+G)
-  - [x] Ungroup (Ctrl+Shift+G)
-  - [x] Bring to Front
-  - [x] Send to Back
-  - [x] Bring Forward
-  - [x] Send Backward
-  - [x] Align >
-  - [x] Distribute >
-  - [x] Transform >
-- [x] Path menu
-  - [x] Union
-  - [x] Subtract
-  - [x] Intersect
-  - [x] Exclude
-  - [x] Simplify
-  - [x] Stroke to Path
-  - [x] Text to Path
-- [x] Help menu
-  - [x] Documentation
-  - [x] Keyboard Shortcuts
-  - [x] About
+## 0.6 Main Menu Bar
+- [x] **File**: New, Open, Open Recent, Save, Save As, Export, Close, Exit
+- [x] **Edit**: Undo, Redo, Cut, Copy, Paste, Duplicate, Delete, Select All, Preferences
+- [x] **View**: Zoom In/Out, Fit, 100%, Grid, Rulers, Guides, Outline Mode, Panels
+- [x] **Object**: Group, Ungroup, Order (Front/Back/Forward/Backward), Align, Distribute, Transform
+- [x] **Path**: Union, Subtract, Intersect, Exclude, Simplify, Stroke to Path, Text to Path
+- [x] **Help**: Documentation, Keyboard Shortcuts, About
 
-### 0.7 Main Toolbar
-- [x] New document button
-- [x] Open button
-- [x] Save button
-- [x] Separator
-- [x] Undo button
-- [x] Redo button
-- [x] Separator
-- [x] Zoom dropdown
-- [x] Fit to window button
-- [x] Separator
-- [x] Toggle grid
-- [x] Toggle rulers
-- [x] Toggle snap
+## 0.7 Main Toolbar
+- [x] New, Open, Save
+- [x] Undo, Redo
+- [x] Zoom dropdown, Fit to window
+- [x] Toggle grid, rulers, snap
 
 ---
 
-## Phase 1: Core Engine & Rendering
+# PHASE 1: Core Rendering Engine
 
-### 1.1 The Data Model (Bezier.Core)
-- [x] Define `VectorDocument` (root object)
-  - [x] Add `Width`, `Height`, `ViewBox` properties
-  - [ ] Add `Layers` collection
-  - [x] Add `Metadata` (title, author, license, description)
-  - [ ] Add `Defs` collection (gradients, patterns, symbols)
-  - [x] Add `IsDirty` property for unsaved changes
-  - [x] Implement `INotifyPropertyChanged`
-- [x] Define abstract `VectorElement` base class
-  - [x] Add `Id` (GUID)
-  - [x] Add `Name` (user-facing label)
-  - [x] Add `IsVisible`, `IsLocked` properties
-  - [x] Add `Opacity` property (0-1)
-  - [x] Add `BlendMode` property (enum)
-  - [x] Add `Transform` property
-  - [x] Add `Parent` reference
-  - [x] Add `Fill` property (IFill)
-  - [x] Add `Stroke` property
-  - [x] Implement `INotifyPropertyChanged`
-- [x] Implement `SvgPath` (with `PathData` string)
-  - [ ] Parse path data to segments
-  - [ ] Get/set individual nodes
-- [x] Implement `SvgRect` (x, y, width, height, rx, ry)
-- [x] Implement `SvgCircle` (cx, cy, r)
-- [x] Implement `SvgEllipse` (cx, cy, rx, ry)
-- [x] Implement `SvgLine` (x1, y1, x2, y2)
-- [x] Implement `SvgPolygon` / `SvgPolyline`
-- [x] Implement `SvgText` (with font properties)
-  - [x] FontFamily, FontSize, FontWeight, FontStyle
-  - [x] TextAnchor, DominantBaseline
-- [x] Implement `SvgImage` (embedded/linked raster)
-  - [x] Base64 embedded data
-  - [x] External href
-- [x] Implement `SvgGroup` (container with children)
-  - [x] Children collection
-  - [ ] Recursive transform
-- [x] Implement `Transform` struct (Matrix 3x3: translate, rotate, scale, skew)
-  - [x] Multiply method
-  - [x] Invert method
-  - [x] TransformPoint method
-- [x] Add `HitTest(Point)` virtual methods to elements
-- [x] Implement `BoundingBox` calculation with transform support
-- [x] Implement `Clone()` method for deep copy
-- [x] Implement `ToSvgString()` for each element
+## 1.1 Document Model
+- [x] `VectorDocument` (root)
+  - [x] Width, Height, ViewBox
+  - [x] Metadata (title, author, license, description)
+  - [x] IsDirty flag
+  - [ ] Layers collection
+  - [ ] Defs collection (gradients, patterns, symbols)
+  - [ ] Background color/pattern
+- [x] `VectorElement` (abstract base)
+  - [x] Id (GUID), Name
+  - [x] IsVisible, IsLocked
+  - [x] Opacity (0-1)
+  - [x] BlendMode
+  - [x] Transform
+  - [x] Parent reference
+  - [x] Fill, Stroke
+  - [x] INotifyPropertyChanged
 
-### 1.2 Fill & Stroke System
-- [x] Define `IFill` interface
-  - [x] `ToSkiaPaint()` method (via FillConverter extension in Desktop)
-  - [x] `Clone()` method
-- [x] Implement `NoneFill` (transparent)
-- [x] Implement `SolidFill` (color)
-  - [x] RGBA color
-  - [x] Opacity
-- [x] Implement `LinearGradientFill` (stops, angle)
-  - [x] Start/End points
-  - [x] GradientStops collection
-  - [x] SpreadMode (pad, reflect, repeat)
-- [x] Implement `RadialGradientFill` (stops, center, radius)
-  - [x] Center point
-  - [x] Radius
-  - [x] Focal point
-  - [x] GradientStops collection
-- [x] Implement `PatternFill` (tiled element reference)
-- [x] Define `Stroke` class
-  - [x] Width
-  - [x] Color/Fill
-  - [x] Dash array
-  - [x] Dash offset
+## 1.2 Element Types
+- [x] `SvgPath` — PathData string, nodes collection
+- [x] `SvgRect` — x, y, width, height, rx, ry
+- [x] `SvgCircle` — cx, cy, r
+- [x] `SvgEllipse` — cx, cy, rx, ry
+- [x] `SvgLine` — x1, y1, x2, y2
+- [x] `SvgPolygon` / `SvgPolyline` — points array
+- [x] `SvgText` — content, font properties, text alignment
+- [x] `SvgImage` — embedded base64 or external href
+- [x] `SvgGroup` — children collection, recursive transform
+- [ ] `SvgSymbol` — reusable definition with use instances
+- [ ] `SvgUse` — symbol instance with overrides
+- [ ] `SvgClipPath` — clipping mask definition
+- [ ] `SvgMask` — opacity mask definition
+- [ ] `SvgMarker` — arrow heads and path markers
+- [ ] `SvgPattern` — repeating pattern definition
+- [ ] `SvgGradient` — gradient definition (referenced by fills)
+
+## 1.3 Transform System
+- [x] `Transform` struct (3x3 matrix)
+  - [x] Translate, Rotate, Scale, Skew methods
+  - [x] Multiply, Invert, TransformPoint
+  - [x] Identity static property
+- [x] HitTest(Point) for each element
+- [x] BoundingBox calculation with transform
+- [x] Clone() for deep copy
+- [x] ToSvgString() serialization
+
+## 1.4 Fill & Stroke System
+- [x] `IFill` interface with ToSkiaPaint(), Clone()
+- [x] `NoneFill` — transparent
+- [x] `SolidFill` — RGBA color, opacity
+- [x] `LinearGradientFill` — start/end points, stops, spread mode
+- [x] `RadialGradientFill` — center, radius, focal point, stops
+- [x] `PatternFill` — tiled element reference
+- [ ] `ConicGradientFill` — angle-based gradient
+- [ ] `MeshGradientFill` — freeform gradient mesh
+- [x] `Stroke` class
+  - [x] Width, Color/Fill
+  - [x] Dash array, Dash offset
   - [x] Line cap (butt, round, square)
-  - [x] Line join (miter, round, bevel)
-  - [x] Miter limit
-- [x] Implement `StrokeConverter` (via StrokeConverter extension in Desktop)
+  - [x] Line join (miter, round, bevel), Miter limit
+  - [ ] Variable width (pressure)
+  - [ ] Position (center, inside, outside)
+  - [ ] Multiple strokes per element
 
-### 1.3 SkiaSharp Rendering System
-- [x] Create `SkiaCanvas` WPF control (inherits `SKElement`)
-  - [x] Override `OnPaintSurface`
-  - [x] Handle mouse events
-  - [x] Handle keyboard events
-- [x] Implement `RenderLoop` (InvalidateVisual on changes) with 60fps target
+## 1.5 SkiaSharp Rendering
+- [x] `SkiaCanvas` WPF control (inherits SKElement)
+  - [x] OnPaintSurface override
+  - [x] Mouse & keyboard event handling
+- [x] Render loop with 60fps target
   - [x] Dirty flag optimization
   - [x] Render on demand
-- [x] Create `SkiaRenderer` service translating Domain Models -> Skia Draw Calls
+- [x] `SkiaRenderer` service
   - [x] Render VectorDocument
-  - [x] Render each element type
-  - [x] Apply transforms
-  - [x] Apply fills and strokes
-- [x] Implement infinite canvas: Pan (Translate) and Zoom (Scale) logic
-  - [x] Store viewTransform matrix
+  - [x] Apply transforms, fills, strokes
+- [x] Infinite canvas (pan/zoom)
+  - [x] View transform matrix
   - [x] Mouse wheel zoom (center on cursor)
-  - [x] Pan with middle mouse or spacebar+drag
+  - [x] Pan with middle mouse / spacebar
   - [x] Smooth animated zoom
-- [x] Add Grid rendering (Adaptive: dots/lines fade in/out based on zoom)
-  - [x] Minor grid lines
-  - [x] Major grid lines
-  - [x] Grid origin indicator
-- [x] Add Rulers rendering (Canvas-aligned, independent of zoom)
-  - [x] Horizontal ruler
-  - [x] Vertical ruler
-  - [x] Cursor position indicator on rulers
-  - [x] Tick marks and labels
-- [x] Implement "Pixel Preview" mode (show actual pixels at high zoom)
-- [x] Implement "Outline Mode" (wireframe view, no fills)
-- [x] Implement background rendering
-  - [x] Checkerboard pattern (transparency)
-  - [x] Solid color option
-  - [x] Artboard background
+- [x] Grid rendering (adaptive dots/lines)
+- [x] Ruler rendering (cursor indicators, tick marks)
+- [x] Pixel Preview mode
+- [x] Outline Mode (wireframe)
+- [x] Background (checkerboard, solid color)
 
-### 1.4 SVG Bridge
-- [x] Implement `SvgImporter`: Clean SVG -> `VectorDocument`
-  - [x] Parse root `<svg>` attributes
-  - [x] Handle namespaces (inkscape, sodipodi)
-  - [x] Preserve IDs
-  - [x] Handle `<defs>` and gradients
-  - [x] Handle `<use>` (symbol instances) - partial, creates placeholder
-  - [ ] Handle `<clipPath>` and `<mask>`
-  - [x] Handle CSS styles
-  - [x] Handle inline styles
+## 1.6 SVG Import/Export
+- [x] `SvgImporter`
+  - [x] Parse SVG attributes and namespaces
+  - [x] Handle defs, gradients, CSS styles
   - [x] Error handling for invalid SVG
-- [x] Implement `SvgExporter`: `VectorDocument` -> Optimized SVG string
+  - [ ] Handle clipPath and mask
+  - [ ] Handle markers (arrows)
+- [x] `SvgExporter`
   - [x] Generate valid SVG 1.1
-  - [x] Minify output option
-  - [x] Inline styles vs. CSS classes option
+  - [x] Minify option
+  - [x] Inline vs CSS styles
   - [x] Preserve IDs option
-  - [x] Include viewBox
-- [x] Verify rigorous round-trip fidelity (Load -> Save -> Load)
+- [x] Round-trip fidelity verification
 
-### 1.5 Phase 1 UI Polish
-- [x] Status bar with zoom level and cursor position
-  - [x] Zoom percentage display
-  - [x] X, Y cursor coordinates
-  - [x] Selection info (count, dimensions)
-  - [x] Document info (size, element count)
-- [x] Zoom controls in toolbar (dropdown + fit buttons)
-  - [x] Preset zoom levels (25%, 50%, 100%, 200%, etc.)
-  - [x] Fit to window
-  - [ ] Fit to selection
-  - [x] Actual pixels
-- [x] Pan/zoom with mouse wheel and drag (implemented in SkiaCanvas)
-- [x] Loading indicator for large files
-  - [x] Progress ring
-  - [ ] Cancel button
-- [x] Error toast for invalid SVG files
-  - [ ] Slide-in animation
-  - [x] Auto-dismiss after 5s
-  - [x] Dismiss button
-- [x] Keyboard shortcuts for common actions
+## 1.7 Status Bar
+- [x] Zoom percentage
+- [x] Cursor X, Y coordinates
+- [x] Selection info (count, dimensions)
+- [x] Document info (size, element count)
+- [ ] Color mode indicator
+- [ ] Snap status indicator
+- [ ] Tool hint text
 
 ---
 
-## Phase 2: Editor Architecture
+# PHASE 2: Editor Architecture
 
-### 2.1 Undo/Redo System (Command Pattern)
-- [x] Create `IEditorCommand` interface (not WPF ICommand)
-  - [x] `Execute()` method
-  - [x] `Undo()` method
-  - [x] `Description` property (for UI display)
-  - [x] `IsUndoable` property
-- [x] Implement `HistoryManager` class (UndoStack, RedoStack)
-  - [x] `CanUndo`, `CanRedo` observable properties
-  - [x] `MaxHistorySize` setting
-  - [x] `Clear()` method
-  - [x] `HistoryChanged` event
-- [x] Create core commands:
-  - [x] `MoveCommand`
-  - [x] `RotateCommand`
-  - [x] `ScaleCommand`
-  - [x] `PropertyChangeCommand`
-  - [x] `AddElementCommand`
-  - [x] `DeleteElementCommand`
-  - [x] `ReorderCommand`
-  - [x] `GroupCommand`
-  - [x] `UngroupCommand`
-  - [ ] `DuplicateCommand`
-- [ ] Implement transaction/batching support (for continuous drag operations)
-  - [ ] `BeginTransaction()`
-  - [ ] `CommitTransaction()`
-  - [ ] `RollbackTransaction()`
-- [ ] Implement `MacroCommand` (group multiple commands)
+## 2.1 Undo/Redo System
+- [x] `IEditorCommand` interface
+  - [x] Execute(), Undo()
+  - [x] Description, IsUndoable
+- [x] `HistoryManager` (undo/redo stacks)
+  - [x] CanUndo, CanRedo observables
+  - [x] MaxHistorySize setting
+  - [x] Clear(), HistoryChanged event
+- [x] Core commands
+  - [x] MoveCommand, RotateCommand, ScaleCommand
+  - [x] PropertyChangeCommand
+  - [x] AddElementCommand, DeleteElementCommand
+  - [x] ReorderCommand
+  - [x] GroupCommand, UngroupCommand
+  - [ ] DuplicateCommand
+- [ ] Transaction/batching support
+  - [ ] BeginTransaction()
+  - [ ] CommitTransaction()
+  - [ ] RollbackTransaction()
+- [ ] MacroCommand (group multiple commands)
 
-### 2.2 Tool System
-- [x] Define `ITool` interface
-  - [x] `Name` property
-  - [x] `Icon` property
-  - [x] `Cursor` property
-  - [x] `Shortcut` property
-  - [x] `OnActivate()` method
-  - [x] `OnDeactivate()` method
-  - [x] `OnMouseDown(Point, Modifiers)`
-  - [x] `OnMouseMove(Point, Modifiers)`
-  - [x] `OnMouseUp(Point, Modifiers)`
-  - [x] `OnKeyDown(Key, Modifiers)`
-  - [x] `OnKeyUp(Key, Modifiers)`
-  - [x] `RenderOverlay(Canvas)` for tool-specific guides
-- [x] Implement `ToolManager` to handle active tool state and cursor changes
-  - [x] `ActiveTool` property
-  - [x] `SetTool(ITool)` method
-  - [x] `Tools` collection
-  - [x] Handle keyboard shortcuts for tool switching
-- [x] Create `SelectTool` (Hit testing logic + Adorner rendering)
-  - [x] Click to select
-  - [x] Click empty to deselect
-  - [x] Shift+Click to add to selection
-  - [x] Ctrl+Click to toggle selection
-  - [x] Drag to move selection
-  - [x] Marquee selection
-- [x] Create `PanTool` (Spacebar override, Middle-mouse drag)
-- [x] Create `ZoomTool` (Ctrl+Scroll, Z key)
-  - [x] Click to zoom in
-  - [x] Alt+Click to zoom out
-  - [x] Drag to zoom to area
+## 2.2 Tool System
+- [x] `ITool` interface
+  - [x] Name, Icon, Cursor, Shortcut
+  - [x] OnActivate(), OnDeactivate()
+  - [x] OnMouseDown/Move/Up(Point, Modifiers)
+  - [x] OnKeyDown/Up(Key, Modifiers)
+  - [x] RenderOverlay(Canvas)
+- [x] `ToolManager`
+  - [x] ActiveTool property
+  - [x] Tools collection
+  - [x] Keyboard shortcut handling
+- [x] `SelectTool` — selection, move, resize, rotate
+- [x] `PanTool` — spacebar/middle-mouse drag
+- [x] `ZoomTool` — click/drag to zoom
 
-### 2.3 Application Layout (AvalonDock)
-- [x] Set up `DockingManager` in MainWindow with dark theme
-  - [x] Configure AvalonDock theme
-  - [x] Set default layout
-- [x] Create `DocumentPane` (The Canvas)
-  - [ ] Support multiple documents (tabs)
-  - [ ] Tab header with filename and close button
-  - [ ] Dirty indicator (asterisk)
-  - [ ] "Close", "Close All", "Close Others" context menu
-  - [ ] Drag tabs to reorder
-  - [ ] Drag tab out to create new window
-- [x] Create `AnchorablePane`s:
-  - [x] Layers Panel (right, with element list)
-  - [x] Properties Panel (right)
-  - [x] Toolbox Panel (left, vertical icons)
-  - [ ] Code Editor Panel (bottom)
-  - [x] History Panel (Undo/Redo list)
-  - [ ] Assets Panel (symbols, templates)
-- [ ] Implement Save/Load layout state feature
-  - [ ] Save to JSON on exit
-  - [ ] Load on startup
-- [x] Implement "Reset Layout" command
-- [x] Implement "Window" menu with panel toggles
-
-### 2.4 Selection Manager
-- [x] Maintain `SelectedElements` observable collection
-- [x] Implement selection change events
-- [x] Compute aggregate bounding box for multi-selection
+## 2.3 Selection Manager
+- [x] SelectedElements observable collection
+- [x] SelectionChanged event
+- [x] Aggregate bounding box for multi-selection
 - [x] Handle selection during group/ungroup
-- [x] Selection highlight rendering (via SelectTool)
-- [x] Selection handles rendering (via SelectTool)
+- [x] Selection highlight/handles rendering
 
-### 2.5 Phase 2 UI Polish
-- [x] Toolbox icons with hover tooltips
-  - [x] 24x24 icons
-  - [x] Active tool highlight (orange border when selected)
-  - [x] Tooltip with name and shortcut
-- [x] Panel headers with collapse/expand animation
-- [ ] Tab close button with hover effect
-- [x] Keyboard shortcuts visible in menus
-- [ ] Context menus with icons
-- [ ] Drag handle visual for dockable panels
+## 2.4 Docking Layout (AvalonDock)
+- [x] DockingManager with dark theme
+- [x] Document pane (canvas)
+  - [ ] Multiple document tabs
+  - [ ] Tab header with dirty indicator
+  - [ ] Close/Close All/Close Others context menu
+- [x] Anchorable panes
+  - [x] Layers Panel
+  - [x] Properties Panel
+  - [x] Toolbox Panel
+  - [x] History Panel
+  - [ ] Code Editor Panel
+  - [ ] Assets Panel
+  - [ ] Symbols Panel
+  - [ ] Navigator Panel (minimap)
+  - [ ] Info Panel (coordinates, measurements)
+- [ ] Save/Load layout state to JSON
+- [x] Reset Layout command
+- [x] Window menu with panel toggles
 
-### 2.6 Advanced Panel & Toolbar System
-> Professional-grade UI organization like CorelDRAW, Illustrator, Photoshop
+## 2.5 Contextual Property Bar
+> Secondary toolbar that changes based on active tool/selection
 
-#### 2.6.1 Tabbed Panel Groups
-- [ ] Implement tabbed panel containers (multiple panels sharing one area)
-  - [ ] Tab strip at top of panel group
-  - [ ] Drag tabs to reorder within group
-  - [ ] Drag tabs between panel groups
-  - [ ] Tab overflow menu when too many tabs
-  - [ ] Close button on tab hover
-- [ ] Default panel groupings:
-  - [ ] Right dock: Properties + Layers + History (tabbed)
-  - [ ] Left dock: Tools + Symbols/Assets (tabbed)
-  - [ ] Bottom dock: Code Editor + Output/Messages (tabbed)
-- [ ] Panel group collapse/expand (minimize to icon strip)
-- [ ] Save/restore panel group configurations
-
-#### 2.6.2 Contextual Property Bars (Options Bar)
-> Secondary toolbar that changes based on active tool/selection (like Photoshop/Illustrator)
-
-- [ ] Create `PropertyBar` control (horizontal toolbar below main toolbar)
+- [ ] PropertyBar control (below main toolbar)
   - [ ] Dynamic content based on context
   - [ ] Consistent height and styling
-  - [ ] Separator groups for related options
-- [ ] Tool-specific property bars:
-  - [ ] **Select Tool**: X, Y, W, H inputs, rotation, scale, flip buttons
-  - [ ] **Rectangle Tool**: Corner radius, width, height, from center toggle
-  - [ ] **Ellipse Tool**: Width, height, pie/arc options
-  - [ ] **Pen Tool**: Path mode (add/subtract), close path, curve options
-  - [ ] **Text Tool**: Font family, size, weight, alignment, spacing
-  - [ ] **Zoom Tool**: Zoom level dropdown, fit options
-- [ ] Selection-based property bars:
-  - [ ] **No Selection**: Document properties (size, background)
-  - [ ] **Single Element**: Element-specific properties
-  - [ ] **Multi-Selection**: Alignment, distribute, group options
-  - [ ] **Path Selected**: Node editing options, path operations
-  - [ ] **Text Selected**: Typography options
-- [ ] Quick action buttons in property bar (context-sensitive)
+- [ ] Tool-specific bars:
+  - [ ] **Select Tool**: X, Y, W, H, rotation, flip buttons
+  - [ ] **Rectangle Tool**: Corner radius, dimensions, from center
+  - [ ] **Ellipse Tool**: Dimensions, pie/arc options
+  - [ ] **Pen Tool**: Path mode, close path, curve options
+  - [ ] **Text Tool**: Font, size, weight, alignment
+  - [ ] **Zoom Tool**: Level dropdown, fit options
+- [ ] Selection-specific bars:
+  - [ ] No Selection: Document properties
+  - [ ] Single Element: Element properties
+  - [ ] Multi-Selection: Align, distribute, group
+  - [ ] Path Selected: Node editing options
+  - [ ] Text Selected: Typography options
 
-#### 2.6.3 Contextual Panels (Docker Windows)
-> Panels that auto-show/hide based on selection or tool
+## 2.6 Tabbed Panel Groups
+- [ ] Tabbed panel containers
+  - [ ] Tab strip at top
+  - [ ] Drag tabs to reorder
+  - [ ] Tab overflow menu
+- [ ] Default groupings:
+  - [ ] Right: Properties + Layers + History
+  - [ ] Left: Tools + Symbols
+  - [ ] Bottom: Code Editor + Messages
+- [ ] Panel collapse to icon strip
+- [ ] Save/restore configurations
 
-- [ ] Implement panel visibility rules system
-  - [ ] Rule: Show when tool X is active
-  - [ ] Rule: Show when element type Y is selected
-  - [ ] Rule: Show when selection count > N
-  - [ ] User can override (pin panel open/closed)
-- [ ] Context-aware panels:
-  - [ ] **Transform Panel**: Shows when elements selected (X, Y, W, H, rotation, skew)
-  - [ ] **Fill & Stroke Panel**: Shows for shape/path elements
-  - [ ] **Typography Panel**: Shows when text selected
-  - [ ] **Path Operations Panel**: Shows when paths selected
-  - [ ] **Align & Distribute Panel**: Shows for multi-selection
-  - [ ] **Symbol Options Panel**: Shows when symbol selected
-- [ ] Panel state indicators:
-  - [ ] Pinned icon (always visible)
-  - [ ] Auto icon (context-sensitive)
-  - [ ] Hidden icon (manually hidden)
-
-#### 2.6.4 Secondary Toolbars
-- [ ] Implement dockable secondary toolbar system
-  - [ ] Can dock top, bottom, left, right, or float
-  - [ ] Collapsible to single row
-  - [ ] Customizable button arrangement
-- [ ] Standard secondary toolbars:
-  - [ ] **Formatting Toolbar**: Fill, stroke, font options
-  - [ ] **Arrange Toolbar**: Order, align, distribute, group
-  - [ ] **View Toolbar**: Zoom controls, view modes, rulers, grid
-  - [ ] **Path Toolbar**: Path operations, boolean ops, convert
-- [ ] Tool-specific floating toolbars:
-  - [ ] Pen tool: Node type buttons, path actions
-  - [ ] Text tool: Quick formatting
-  - [ ] Shape tool: Shape variants
-- [ ] Toolbar customization dialog
-  - [ ] Add/remove buttons
-  - [ ] Reorder buttons
-  - [ ] Create custom toolbars
-  - [ ] Reset to defaults
-
-#### 2.6.5 Panel Organization Features
-- [ ] Panel quick access sidebar (icon strip when panels collapsed)
-- [ ] "Workspaces" - saved panel/toolbar configurations
-  - [ ] Built-in workspaces: Default, Minimal, Illustration, Typography
+## 2.7 Workspaces
+- [ ] Saved panel/toolbar configurations
+  - [ ] Built-in: Default, Minimal, Illustration, Typography
   - [ ] User custom workspaces
-  - [ ] Quick workspace switcher (dropdown or shortcuts)
-- [ ] "Focus Mode" - hide all panels except canvas (Tab key toggle)
-- [ ] Panel search/filter (quickly find and open any panel)
-- [ ] Recently used panels list
-- [ ] Panel grouping presets (reset to specific configurations)
-
-#### 2.6.6 Responsive Layout
-- [ ] Adapt panel layout based on window size
-  - [ ] Small window: Collapse panels to icons
-  - [ ] Medium window: Single column panels
-  - [ ] Large window: Full multi-column layout
-- [ ] Minimum panel sizes with scroll
-- [ ] Panel content adapts to available width
-- [ ] Touch-friendly mode (larger buttons, spacing)
+- [ ] Quick workspace switcher
+- [ ] Focus Mode (Tab key — hide all panels)
+- [ ] Panel search/filter
 
 ---
 
-## Phase 3: Visual Editing Features
+# PHASE 3: Drawing & Editing Tools
 
-### 3.1 Selection & Transform
-- [x] Implement Bounding Box rendering (Selection Adorner)
-  - [x] Dashed border (2px, blue)
-  - [x] Semi-transparent fill (10% opacity)
-- [x] Implement Resize Handles (8 points) logic
-  - [x] Corner handles
-  - [x] Edge midpoint handles
+## 3.1 Selection & Transform
+- [x] Bounding box rendering (dashed border, semi-transparent fill)
+- [x] Resize handles (8 points — corners + edges)
   - [x] Proportional resize (Shift)
   - [x] Center resize (Alt)
   - [x] Cursor change on hover
-- [x] Implement Rotate Handle logic
-  - [x] Handle above center top
+- [x] Rotate handle (above center)
   - [x] 15° snap (Shift)
-  - [x] Show angle tooltip
-  - [x] Rotation cursor
-- [ ] Implement Skew handles (optional Advanced mode)
-- [x] Add Multi-select support
-  - [x] Shift+Click to add/remove
-  - [x] Ctrl+Click for toggle
-  - [x] Marquee (lasso) selection
-  - [x] Aggregate bounding box
-- [ ] Implement "Deep Select" (Ctrl+Click to select in group)
-- [ ] Implement "Select Same" (by fill, stroke, type)
-- [x] Implement "Select All" (Ctrl+A)
-- [x] Implement "Invert Selection" (Ctrl+Shift+I)
+  - [x] Angle tooltip
+- [ ] Skew handles (edge midpoints with Alt)
+- [x] Multi-select (Shift+Click, Ctrl+Click, Marquee)
+- [ ] Deep Select (Ctrl+Click into group)
+- [ ] Select Same (by fill, stroke, type)
+- [x] Select All (Ctrl+A)
+- [x] Invert Selection (Ctrl+Shift+I)
+- [ ] Free Transform mode (distort corners freely)
+- [ ] Numeric transform input (property bar)
 
-### 3.2 Basic Shape Tools
-- [x] `RectangleTool`: Drag to create
+## 3.2 Basic Shape Tools
+- [x] **Rectangle Tool**
+  - [x] Drag to create
   - [x] Shift for square
   - [x] Alt for center origin
-  - [ ] Corner radius handle post-creation
+  - [x] Live dimensions tooltip
+  - [ ] Corner radius handles (post-creation)
   - [ ] Individual corner radius controls
-  - [x] Live dimensions tooltip
-- [x] `EllipseTool`: Center/Corner modes
+- [x] **Ellipse Tool**
   - [x] Shift for circle
-  - [ ] Pie/arc mode (start angle, end angle)
   - [x] Live dimensions tooltip
-- [x] `LineTool`: Simple two-point lines
+  - [ ] Pie mode (start/end angle)
+  - [ ] Arc mode (open arc)
+- [x] **Line Tool**
   - [x] Shift for 45° snap
   - [x] Live length/angle tooltip
   - [ ] Arrow heads (start, end, both)
-  - [ ] Connector line mode (auto-route between objects)
-- [ ] `PolygonTool`: N-sided polygons
-  - [ ] Options bar: number of sides (3-100)
+  - [ ] Connector mode (auto-route between objects)
+- [ ] **Polygon Tool**
+  - [ ] Sides: 3-100 (property bar)
   - [ ] Corner rounding
-  - [ ] Rotation angle offset
-- [ ] `StarTool`: N-pointed stars
-  - [ ] Options bar: number of points (3-100)
+  - [ ] Star mode (inner radius)
+- [ ] **Star Tool**
+  - [ ] Points: 3-100
   - [ ] Inner/outer radius ratio
-  - [ ] Corner rounding (inner/outer)
   - [ ] Smooth points option
-- [ ] `SpiralTool`: Spiral paths
+- [ ] **Spiral Tool**
   - [ ] Number of turns
-  - [ ] Decay/growth rate
-  - [ ] Clockwise/counter-clockwise
-- [ ] `GridTool`: Create grids of rectangles
-  - [ ] Rows and columns
-  - [ ] Gutter spacing
-  - [ ] Individual cell selection
-- [ ] `ArcTool`: Circular arcs
+  - [ ] Decay rate
+  - [ ] Direction (CW/CCW)
+- [ ] **Arc Tool**
   - [ ] Start/end angle
   - [ ] Chord/pie/arc modes
-- [ ] `ArrowTool`: Pre-styled arrows
-  - [ ] Arrow head styles
-  - [ ] Curved/straight options
-- [x] Live preview during creation (ghost shapes)
+- [ ] **Grid Tool**
+  - [ ] Rows and columns
+  - [ ] Gutter spacing
+- [ ] **Arrow Tool** (preset arrow shapes)
+- [ ] **Callout Shapes** (speech bubbles, labels)
+- [ ] **Flowchart Shapes** (decision, process, data)
+- [ ] **Banner Shapes** (ribbons, scrolls)
+- [x] Live preview during creation
 - [x] Default fill/stroke for new shapes
 
-### 3.3 The Pen Tool (Bezier) - *The "Inkscape Killer"*
-- [x] Implement Node/Control Point data structure
-  - [x] `ControlPoint { Position, InHandle, OutHandle, Type }`
+## 3.3 Pen Tool (Bezier Curves)
+- [x] Node/Control Point structure
+  - [x] Position, InHandle, OutHandle
   - [x] Type: Corner, Smooth, Symmetric
-- [x] Create `PenTool`:
-  - [x] Click: Corner point
-  - [x] Click+Drag: Smooth point (Quadratic/Cubic bezier)
-  - [x] Alt+Drag: Break tangent (Cusp)
-  - [x] Click on first point: Close path
-  - [ ] Click on existing node: Select node
-- [x] Implement path closing logic with magnetic snap
-  - [x] Snap radius: 10px
-  - [x] Visual indicator when in snap range
-- [x] Render path preview ("rubber band") while drawing
-- [x] Show angle/length tooltip while drawing
-- [x] Escape to cancel current path
-- [x] Enter to finish open path
+- [x] Click for corner point
+- [x] Click+Drag for smooth curve
+- [x] Alt+Drag to break tangent (cusp)
+- [x] Click on first point to close
+- [x] Magnetic snap to close (10px radius)
+- [x] Rubber band preview
+- [x] Angle/length tooltip
+- [x] Escape to cancel, Enter to finish
 - [x] Backspace to delete last point
+- [ ] Click on existing node to select
+- [ ] Continue existing open path
+- [ ] Add to existing closed path
 
-### 3.4 Node Editing Tool
-- [x] Select individual nodes on a path
-  - [x] Click to select node
-  - [x] Shift+Click to add to selection
-  - [x] Marquee to select multiple nodes
-  - [ ] Select all nodes (Ctrl+A in node mode)
-  - [ ] Select inverse nodes
+## 3.4 Node Editing Tool
+- [x] Select nodes (click, Shift+click, marquee)
 - [x] Drag nodes to reshape
-- [x] Drag control handles to adjust curvature
-  - [ ] Retract handles (double-click)
-  - [ ] Extend handles (drag from node)
-- [x] Convert node types (Corner <-> Smooth <-> Symmetric)
-  - [x] Keyboard shortcut (1, 2, 3 keys)
-  - [ ] Context menu
-- [x] Add/Remove nodes on path segment
-  - [ ] Double-click to add
-  - [x] Delete key to remove
-  - [ ] Add nodes at equal intervals
-- [ ] "Simplify Path" command (reduce nodes)
-  - [ ] Tolerance slider
-  - [ ] Preview before applying
-- [ ] "Smooth Path" command (add curves)
-  - [ ] Smoothness slider
-  - [ ] Preserve corners option
-- [ ] "Roughen Path" command (add jitter)
-- [ ] "Break Path" at node
-- [ ] "Join Paths" command
-  - [ ] Connect endpoints
-  - [ ] Average endpoints
-  - [ ] Extend and connect
-- [ ] "Reverse Path" command
-- [ ] "Close Path" command
-- [ ] "Open Path" command (break at start)
-- [ ] Fillet/Chamfer corners
-  - [ ] Radius input
-  - [ ] Apply to selected corners
-- [ ] Align nodes (horizontal, vertical)
+- [x] Drag control handles for curvature
+- [x] Convert node types (1, 2, 3 keys)
+- [x] Add/Remove nodes (double-click/Delete)
+- [ ] Select all nodes (Ctrl+A in node mode)
+- [ ] Retract handles (double-click on handle)
+- [ ] Extend handles (drag from node)
+- [ ] Add nodes at equal intervals
+- [ ] Simplify path (reduce nodes with tolerance)
+- [ ] Smooth path (add curves with smoothness)
+- [ ] Roughen path (add jitter)
+- [ ] Break path at node
+- [ ] Join paths (connect/average endpoints)
+- [ ] Reverse path direction
+- [ ] Close/Open path
+- [ ] Fillet corners (radius)
+- [ ] Chamfer corners
+- [ ] Align nodes (horizontal/vertical)
 - [ ] Distribute nodes evenly
 
-### 3.5 Text Tool
-- [x] Click to create text block (point text)
+## 3.5 Text Tool
+- [x] Click to create point text
+- [x] Inline editing on canvas (cursor, selection)
+- [x] Font picker (family, weight, style)
+- [x] Font size, line height, letter spacing
+- [x] Text alignment (left, center, right, justify)
+- [x] Fill and stroke
 - [ ] Drag to create area text (text box)
   - [ ] Text wraps within bounds
-  - [ ] Resize to reflow
   - [ ] Auto-size height option
-- [x] Inline text editing on canvas
-  - [x] Blinking cursor
-  - [x] Text selection
-  - [ ] Copy/paste (requires clipboard integration)
-  - [ ] Find and replace
-  - [ ] Spell check integration
-- [x] Font picker (family, weight, style)
+- [ ] Font features:
   - [ ] System fonts list with preview
-  - [ ] Recent fonts section
-  - [ ] Font search/filter
-  - [ ] Variable fonts support (weight axis, etc.)
-- [x] Font size, line height, letter spacing
+  - [ ] Recent fonts
+  - [ ] Search/filter
+  - [ ] Variable fonts (weight axis)
+- [ ] Advanced typography:
   - [ ] Character spacing (tracking)
   - [ ] Word spacing
   - [ ] Baseline shift
-  - [ ] Kerning (auto/manual/optical)
-- [x] Text alignment (left, center, right, justify)
-  - [ ] Vertical alignment (top, center, bottom)
-  - [ ] Last line alignment
-- [ ] Text on path feature
+  - [ ] Kerning (auto/optical/metrics)
+  - [ ] Leading (line spacing)
+- [ ] Text on path
   - [ ] Attach text to path
   - [ ] Offset along path
-  - [ ] Flip text direction
-  - [ ] Gravity (top/bottom of path)
+  - [ ] Flip direction
 - [ ] Text inside shape (area type)
-  - [ ] Flow text into shape
-  - [ ] Inset margin
 - [ ] Text columns
-  - [ ] Number of columns
-  - [ ] Column gutter
-  - [ ] Balance columns
-- [x] Text outline and fill
-  - [ ] Multiple fills/strokes
 - [ ] OpenType features panel
-  - [ ] Ligatures (standard, discretionary)
+  - [ ] Ligatures
   - [ ] Stylistic alternates
-  - [ ] Swashes
   - [ ] Small caps
-  - [ ] Fractions
-  - [ ] Ordinals
+  - [ ] Fractions, ordinals
   - [ ] Superscript/subscript
 - [ ] Paragraph styles
-  - [ ] Create/edit styles
-  - [ ] Apply to text
-  - [ ] Update style from selection
 - [ ] Character styles
-  - [ ] Override paragraph formatting
-  - [ ] Color, weight, style
 - [ ] Bullets and numbering
-  - [ ] Custom bullet characters
-  - [ ] Numbered lists
-  - [ ] Indentation
 - [ ] Tabs and leaders
-  - [ ] Tab stops (left, center, right, decimal)
-  - [ ] Leader characters
 - [ ] Drop caps
-  - [ ] Number of lines
-  - [ ] Character count
 - [ ] Text wrap around objects
-  - [ ] Wrap modes (bounding box, shape)
-  - [ ] Offset distance
+- [ ] Find and replace text
+- [ ] Spell check
 
-### 3.6 Guides & Snapping
+## 3.6 Freehand Tools
+- [ ] **Pencil Tool**
+  - [ ] Fidelity slider
+  - [ ] Smoothness slider
+  - [ ] Edit selected paths
+- [ ] **Brush Tool**
+  - [ ] Brush picker
+  - [ ] Size, pressure sensitivity
+- [ ] **Blob Brush** (paint filled shapes)
+  - [ ] Merge with same color
+  - [ ] Fidelity
+- [ ] **Eraser Tool**
+  - [ ] Erase path segments
+  - [ ] Erase within selection
+
+## 3.7 Guides & Snapping
 - [x] Draggable guides from rulers
-  - [x] Drag from ruler to create
-  - [x] Drag guide to move
-  - [x] Delete key or drag off canvas to remove
-  - [ ] Double-click to set position numerically
 - [x] Snap to grid
-  - [x] Configurable grid size
-  - [x] Grid visible toggle
 - [x] Snap to guides
-- [x] Snap to other objects (edges, centers)
-- [x] Smart guides (alignment lines) when dragging
-  - [x] Horizontal alignment
-  - [x] Vertical alignment
-  - [ ] Size matching
-  - [ ] Spacing equalization
-- [ ] Distance indicators (hold Alt)
+- [x] Snap to objects (edges, centers)
+- [x] Smart guides (alignment lines)
 - [x] Snap tolerance setting
+- [ ] Double-click guide to set position numerically
+- [ ] Rotated guides (angled)
+- [ ] Guide colors
+- [ ] Size matching guides
+- [ ] Spacing equalization guides
+- [ ] Distance indicators (hold Alt)
+- [ ] Snap to pixel (pixel-perfect mode)
+- [ ] Snap to artboard
+- [ ] Snap to key points (intersections)
 
-### 3.7 Alignment & Distribution
+## 3.8 Measurement Tools
+- [ ] **Measure Tool**
+  - [ ] Click-drag to measure distance
+  - [ ] Show angle
+  - [ ] Show dx, dy
+- [ ] **Dimension Lines**
+  - [ ] Linear dimensions
+  - [ ] Angular dimensions
+  - [ ] Radius/diameter
+- [ ] Automatic dimension labels
+- [ ] Area calculation (selected shapes)
+- [ ] Perimeter calculation
+- [ ] Document scale setting (1:1, 1:10, etc.)
+
+## 3.9 Alignment & Distribution
 - [x] Align left, center, right (horizontal)
 - [x] Align top, middle, bottom (vertical)
-- [x] Distribute horizontally (spacing)
-- [x] Distribute vertically (spacing)
+- [x] Distribute horizontally
+- [x] Distribute vertically
 - [x] Align to canvas
 - [x] Align to selection bounds
 - [x] Align to key object
-
-### 3.8 Phase 3 UI Polish
-- [x] Tool options bar (context-sensitive, below toolbar)
-  - [x] Shows options for active tool
-  - [x] Number inputs, dropdowns, toggles
-- [x] Cursor changes per tool
-  - [x] Custom cursors for each tool
-  - [x] Crosshair cursor for precision
-- [x] Visual feedback on snap (line flash)
-- [x] Tooltip on canvas showing dimensions while drawing
-- [x] Animate selection handles on hover
-- [x] Ghost preview of shape being created
+- [ ] Distribute spacing (equal gaps)
+- [ ] Align to artboard
+- [ ] Alignment panel with visual buttons
+- [ ] Keyboard shortcuts for alignment
 
 ---
 
-## Phase 4: Professional Features
+# PHASE 4: Professional Features
 
-### 4.1 Layers & Groups
-- [x] Implement `LayersPanel` UI (Tree view) with thumbnails
-  - [x] Layer row with thumbnail, name, visibility, lock
+## 4.1 Layers System
+- [x] Layers Panel (tree view with thumbnails)
+  - [x] Layer row: thumbnail, name, visibility, lock
   - [x] Expand/collapse groups
-  - [x] Selection highlight
   - [x] Active layer indicator
 - [x] Drag-and-drop reordering
-  - [x] Drag indicator
-  - [x] Drop target highlight
-  - [x] Into group nesting
-- [x] Visibility (Eye icon) and Lock toggles
-  - [x] Click to toggle
-  - [x] Alt+Click to solo
+- [x] Visibility toggle (Eye icon)
+- [x] Lock toggle
 - [x] Opacity slider per layer
-- [x] Blend mode dropdown per layer
-- [x] Group/Ungroup commands (Ctrl+G, Ctrl+Shift+G)
-- [x] Isolation Mode (Double click group to edit only that group)
-  - [x] Breadcrumb navigation
-  - [x] Dimmed elements outside group
-- [ ] Layer search/filter
-- [x] Rename layer (double-click or F2)
+- [x] Blend mode per layer
+- [x] Group/Ungroup (Ctrl+G, Ctrl+Shift+G)
+- [x] Isolation Mode (double-click to edit)
+- [x] Rename (double-click or F2)
 - [x] Duplicate layer
-- [x] Delete layer with confirmation
+- [x] Delete with confirmation
 - [x] Merge layers
+- [ ] Layer search/filter
+- [ ] Color labels for layers
+- [ ] Layer effects (non-destructive)
+- [ ] Clipping mask to layer below
+- [ ] Layer comp (save layer states)
 
-### 4.2 Property Inspector
-- [x] Create `PropertiesPanel` View
-  - [x] Collapsible sections
-  - [x] Dynamic content based on selection
-- [x] Implement Color Picker
+## 4.2 Property Inspector
+- [x] Collapsible sections
+- [x] Dynamic content based on selection
+- [x] **Color Picker**
   - [x] Color wheel
   - [x] Saturation/brightness square
-  - [x] Sliders (RGB, HSL, HEX)
+  - [x] RGB, HSL, HEX sliders
   - [x] Alpha slider
-  - [ ] Eyedropper tool (pick from canvas)
-  - [ ] Pick from screen (anywhere on desktop)
+  - [ ] Eyedropper (pick from canvas)
+  - [ ] Pick from screen (anywhere)
   - [ ] Saved swatches
-  - [ ] Recently used colors (last 20)
-  - [ ] Color harmonies generator
-    - [ ] Complementary
-    - [ ] Analogous
-    - [ ] Triadic
-    - [ ] Split-complementary
-    - [ ] Tetradic
+  - [ ] Recent colors (last 20)
+  - [ ] Color harmonies (complementary, analogous, triadic)
   - [ ] Global colors (linked swatches)
-  - [ ] Spot colors (for print)
-  - [ ] Color books (Pantone, etc.)
-- [x] Gradient Editor
-  - [x] Add/remove stops
-  - [x] Drag stops to reposition
+  - [ ] Spot colors (print)
+  - [ ] Color books (Pantone)
+- [x] **Gradient Editor**
+  - [x] Add/remove/drag stops
   - [x] Angle/position controls
   - [x] Linear/Radial/Conic types
   - [ ] Preset gradients library
   - [ ] Gradient on stroke
   - [ ] Freeform gradient (mesh-like)
   - [ ] Noise gradient
-- [x] Stroke controls (Width, Dash Array, Cap, Join)
-  - [x] Width input with slider
+- [x] **Stroke Controls**
+  - [x] Width with slider
   - [x] Preset dash patterns
-  - [x] Cap style icons
-  - [x] Join style icons
-  - [ ] Variable width stroke (pressure-like)
-  - [ ] Stroke position (center, inside, outside)
+  - [x] Cap and join style icons
+  - [ ] Variable width stroke
+  - [ ] Stroke position (center/inside/outside)
   - [ ] Multiple strokes per object
-- [x] Geometry properties (X, Y, Width, Height, Rotation)
-  - [x] Numeric inputs
+- [x] **Geometry Properties**
+  - [x] X, Y, Width, Height inputs
   - [x] Constrain proportions toggle
   - [x] Rotation input with dial
   - [ ] Skew X/Y controls
-  - [ ] Flip horizontal/vertical buttons
-- [x] Transform Origin selection (9-point grid)
-  - [x] Visual 9-point selector
-  - [x] Custom origin coordinates
-- [x] Opacity & Blending modes
-  - [x] Opacity slider
-  - [x] Blend mode dropdown
-  - [ ] Knockout group
-  - [ ] Isolate blending
-- [x] Corner radius controls
+  - [ ] Flip H/V buttons
+- [x] **Transform Origin** (9-point grid)
+- [x] **Opacity & Blend Mode**
+- [x] **Corner Radius**
   - [x] Uniform radius
-  - [ ] Individual corner radii
-  - [ ] Radius units (px, %)
-- [ ] Appearance panel (multiple fills/strokes)
-  - [ ] Add fill layer
-  - [ ] Add stroke layer
+  - [ ] Individual corners
+- [ ] **Appearance Panel** (multiple fills/strokes)
+  - [ ] Add fill/stroke layers
   - [ ] Reorder appearance items
   - [ ] Toggle visibility per item
-  - [ ] Opacity per item
-  - [ ] Blend mode per item
-- [ ] Effects stack (shadows, blurs)
-  - [ ] Add effect button
-  - [ ] Reorder effects
-  - [ ] Toggle effect visibility
-  - [ ] Delete effect
-  - [ ] Available effects:
-    - [ ] Drop shadow
-    - [ ] Inner shadow
-    - [ ] Outer glow
-    - [ ] Inner glow
-    - [ ] Gaussian blur
-    - [ ] Motion blur
-    - [ ] Radial blur
-    - [ ] Feather
-    - [ ] Bevel & emboss
-- [ ] Graphic styles panel
+  - [ ] Opacity/blend per item
+- [ ] **Effects Stack**
+  - [ ] Drop shadow
+  - [ ] Inner shadow
+  - [ ] Outer/inner glow
+  - [ ] Gaussian blur
+  - [ ] Motion blur
+  - [ ] Feather
+  - [ ] Bevel & emboss
+- [ ] **Graphic Styles Panel**
   - [ ] Save appearance as style
   - [ ] Apply style to selection
-  - [ ] Update style from selection
   - [ ] Style library
-  - [ ] Break link to style
 
-### 4.3 Advanced Path Operations
-- [x] Implement Boolean Operations via `SkiaSharp.SKPath.Op`
-  - [x] Union (Combine shapes)
-  - [x] Subtract (Cut out)
-  - [x] Intersect (Common area)
-  - [x] Exclude (XOR)
+## 4.3 Path Operations
+- [x] Boolean operations (SKPath.Op)
+  - [x] Union, Subtract, Intersect, Exclude
   - [ ] Divide (split by intersections)
-  - [ ] Trim (cut overlapping areas)
+  - [ ] Trim (cut overlaps)
   - [ ] Merge (combine like paths)
   - [ ] Crop (clip to shape)
   - [ ] Preview before applying
-- [x] Implement "Text to Path" conversion
-- [x] Implement "Stroke to Path" (Outline)
-- [x] Path Simplify (Decimate nodes)
-  - [x] Tolerance slider
-  - [ ] Preview
-  - [ ] Preserve corners option
-- [x] Path Offset (Inset/Outset)
-  - [x] Distance input
-  - [x] Join type
-  - [x] Miter limit
-  - [ ] Steps (multiple offsets)
+- [x] Text to Path
+- [x] Stroke to Path (outline)
+- [x] Path Simplify (decimate nodes)
+- [x] Path Offset (inset/outset)
+- [x] Path Division (knife tool)
 - [ ] Contour (parallel outlines)
   - [ ] Number of contours
-  - [ ] Spacing
-  - [ ] Color progression
-- [x] Path Division (knife tool)
-  - [x] Draw cut line
-  - [x] Split path at intersection
-- [ ] Scissors tool (cut path at point)
-- [ ] Eraser tool (erase portions of path)
-- [ ] Path effects (non-destructive)
+  - [ ] Spacing and color progression
+- [ ] Scissors Tool (cut at point)
+- [ ] Path Effects (non-destructive)
   - [ ] Zig-zag
   - [ ] Wave/sine
   - [ ] Roughen
-  - [ ] Tweak
-  - [ ] Jitter
   - [ ] Round corners
   - [ ] Dashes to path
-- [ ] Envelope distortion
+- [ ] Envelope Distort
   - [ ] Preset envelopes (arc, bulge, flag, wave)
-  - [ ] Custom mesh envelope
-  - [ ] Make with warp
-  - [ ] Make with mesh
-  - [ ] Make with top object
-- [ ] Pattern along path (brush stroke)
-  - [ ] Select pattern
-  - [ ] Spacing
-  - [ ] Scale
-  - [ ] Rotation
-- [ ] Blend tool (morph between shapes)
-  - [ ] Specified steps
-  - [ ] Specified distance
+  - [ ] Custom mesh
+  - [ ] Make with warp/mesh/top object
+- [ ] Pattern Along Path
+- [ ] Blend Tool (morph between shapes)
+  - [ ] Specified steps/distance
   - [ ] Smooth color transition
-  - [ ] Spine (custom path)
-  - [ ] Expand blend
+  - [ ] Custom spine
 - [ ] Live Paint (isolated fills)
   - [ ] Paint Bucket tool
-  - [ ] Live Paint groups
   - [ ] Gap detection
-- [ ] Perspective distort
-  - [ ] One-point perspective
-  - [ ] Two-point perspective
+- [ ] Perspective Distort
+  - [ ] 1-point, 2-point perspective
   - [ ] Free distort
-- [ ] 3D effects
+- [ ] 3D Effects
   - [ ] Extrude & bevel
   - [ ] Revolve
-  - [ ] Rotate in 3D space
+  - [ ] Rotate in 3D
   - [ ] Map artwork to surfaces
-- [ ] Mesh tool
+- [ ] Mesh Tool
   - [ ] Create mesh from shape
-  - [ ] Add/remove mesh points
   - [ ] Color mesh points
-  - [ ] Gradient mesh
 
-### 4.4 Symbols & Components
+## 4.4 Clipping & Masking
+- [ ] **Clipping Paths**
+  - [ ] Set as clipping mask
+  - [ ] Release clipping mask
+  - [ ] Edit clip path
+  - [ ] Nested clipping
+- [ ] **Opacity Masks**
+  - [ ] Grayscale mask
+  - [ ] Alpha mask
+  - [ ] Invert mask
+  - [ ] Edit mask mode
+- [ ] **Compound Paths**
+  - [ ] Make compound path
+  - [ ] Release compound
+  - [ ] Winding rule (even-odd/non-zero)
+
+## 4.5 Symbols & Components
 - [x] Create symbol from selection
-  - [x] Name symbol
-  - [x] Save to library
-- [x] Symbol library panel
-  - [x] Grid view
-  - [x] Search
-  - [x] Categories
+- [x] Symbol library panel (grid, search, categories)
 - [x] Symbol instances on canvas
-  - [x] Drag from library
-  - [x] Linked to master
-- [x] Edit master symbol (updates all instances)
-  - [x] Double-click to edit
-  - [x] Breadcrumb navigation
-  - [x] Changes propagate
+- [x] Edit master symbol (updates all)
 - [x] Override instance properties
-  - [x] Fill, stroke
-  - [x] Size
-  - [x] Detach from master
+- [ ] Symbol sets (organize related symbols)
+- [ ] 9-slice scaling for symbols
+- [ ] Symbol sprayer tool
+  - [ ] Density, size variation
+  - [ ] Symbol stainer, sizer, shifter
+- [ ] Dynamic symbols (parameter overrides)
 
-### 4.5 Artboards
+## 4.6 Artboards
 - [x] Multiple artboards per document
 - [x] Artboard tool (create/resize)
-  - [x] Drag to create
-  - [x] Resize handles
-- [x] Artboard properties
-  - [x] Name
-  - [x] Size (presets + custom)
-  - [x] Background color
+- [x] Artboard properties (name, size, background)
 - [x] Artboard list in Layers panel
 - [x] Export individual artboards
 - [x] Artboard navigation
+- [ ] Artboard presets (device sizes)
+- [ ] Copy artboards with contents
+- [ ] Duplicate artboard
+- [ ] Artboard grid (arrange artboards)
+- [ ] Fit artboard to artwork
+- [ ] Artboard rulers
 
-### 4.6 Phase 4 UI Polish
-- [x] Collapsible sections in Properties panel with animation
-- [x] Preset dropdown for common values (stroke widths, colors)
-- [x] Layer thumbnail updates live
-- [x] Smooth reorder animation in Layers panel
-- [x] Boolean operation preview before applying
-- [x] Color picker with smooth animations
-- [x] Gradient editor with live preview
+## 4.7 Object Management
+- [ ] **Object Manager Panel**
+  - [ ] Full object list (not just layers)
+  - [ ] Search/filter objects
+  - [ ] Batch select by type
+  - [ ] Batch property edit
+- [ ] **Find & Replace Objects**
+  - [ ] Find by color
+  - [ ] Find by stroke
+  - [ ] Find by font
+  - [ ] Replace properties
+- [ ] **Select Same**
+  - [ ] Same fill
+  - [ ] Same stroke
+  - [ ] Same opacity
+  - [ ] Same type
+- [ ] Object locking (by type, layer)
+- [ ] Object hiding (by type, layer)
 
 ---
 
-## Phase 5: Next-Gen UI/UX ("The WOW Factor")
+# PHASE 5: Advanced UI/UX
 
-### 5.1 Theming & Branding
-- [x] Dark theme (default) with Catppuccin Mocha colors
-  - [x] Background: #1e1e2e
-  - [x] Surface: #313244
-  - [x] Text: #cdd6f4
-  - [x] Accent: #89b4fa
-- [x] Light theme option
-  - [x] Catppuccin Latte colors
+## 5.1 Theming & Branding
+- [x] Dark theme (Catppuccin Mocha)
+- [x] Light theme (Catppuccin Latte)
 - [x] Accent color customization
-- [ ] Custom icon set (Phosphor or Lucide)
-  - [ ] 200+ icons for all actions
-  - [ ] SVG format
-  - [ ] Theme-aware colors
-- [ ] Splash screen with animated logo
-  - [ ] Fade in
-  - [ ] Logo animation
-  - [ ] Loading progress
-- [ ] About dialog with version, credits, links
-  - [ ] Logo
-  - [ ] Version number
-  - [ ] Copyright
-  - [ ] Links to docs, GitHub, website
+- [ ] Custom icon set (Phosphor/Lucide, 200+)
+- [ ] Animated splash screen
+- [ ] About dialog (version, credits, links)
+- [ ] Custom theme creator
 
-### 5.2 Fluid Motion & Visuals
-- [x] Implement `Mica` window backdrop (Windows 11 native feel)
-  - [x] Fallback to solid color on older Windows
-- [x] Add `XamlFlair` animations for panel transitions (Slide/Fade in)
-- [x] Implement "Micro-interactions"
-  - [x] Buttons scale on click (0.95 -> 1.0)
-  - [x] Toggles animate on/off
-  - [x] Checkboxes animate
-  - [x] Hover effects (subtle glow)
-- [x] Add "Glassmorphism" effect to floating panels (Blur behind)
-- [x] Smooth zoom animation (ease in/out)
-  - [x] Duration: 200ms
-  - [x] Easing: CubicEaseOut
-- [x] Canvas pan momentum (inertia)
-  - [x] Physics-based deceleration
-- [x] Selection bounding box animate on change
-- [x] Toast notifications (slide in/out)
-  - [x] Success, warning, error styles
-  - [x] Auto-dismiss
-  - [x] Action buttons
-- [x] Panel open/close animations
-- [x] Dialog appear/disappear animations
+## 5.2 Motion & Polish
+- [x] Mica window backdrop
+- [x] Panel slide/fade animations
+- [x] Micro-interactions (button scale, hover effects)
+- [x] Glassmorphism for floating panels
+- [x] Smooth zoom animation
+- [x] Pan momentum/inertia
+- [x] Selection box animation
+- [x] Toast notifications
+- [x] Dialog animations
+- [ ] Skeleton loading states
+- [ ] Smooth scrolling everywhere
 
-### 5.3 Command Palette (Ctrl+K)
-- [x] Create overlay UI for global command search
-  - [x] Centered modal
-  - [x] Search input with focus
-  - [x] Results list
-  - [x] Keyboard navigation
-- [x] Index all available commands and tools
-  - [x] Menu items
-  - [x] Tools
-  - [x] Recent files
-  - [x] Settings
-- [x] Implement "Fuzzy Search" logic
-  - [x] Match anywhere in string
-  - [x] Score by match quality
-  - [x] Highlight matched characters
-- [x] Add "Recent Commands" history
-- [x] Show keyboard shortcuts inline
-- [x] Quick file open (recent files)
-- [x] Quick action suggestions
+## 5.3 Command Palette (Ctrl+K)
+- [x] Overlay search for commands
+- [x] Fuzzy search with highlighting
+- [x] Index all commands, tools, settings
+- [x] Recent commands history
+- [x] Keyboard shortcuts inline
+- [x] Quick file open
+- [ ] Actions (like VS Code: > prefix)
+- [ ] Go to line in code
+- [ ] Go to element by name
 
-### 5.4 On-Canvas "HUD"
-- [x] Implement contextual toolbar appearing near selection (Figma style)
-  - [x] Appears on selection
-  - [x] Position relative to bounding box
-  - [x] Auto-reposition to stay on screen
-- [x] Quick actions: Boolean ops, Group/Ungroup, Color swatch
-- [x] Distance indicators when holding Alt (Smart Guides)
+## 5.4 On-Canvas HUD
+- [x] Contextual toolbar near selection
+- [x] Quick actions (Boolean, Group, Color)
+- [x] Distance indicators (Alt key)
 - [x] Tooltip with element info on hover
-  - [x] Element type
-  - [x] Name
-  - [x] Dimensions
-- [x] Zoom level indicator (bottom right)
-- [x] Selection info bar (count, type, dimensions)
-- [x] Ruler tick marks on cursor position
+- [x] Zoom level indicator
+- [x] Selection info bar
+- [x] Ruler tick marks at cursor
+- [ ] Smart dimensions while dragging
+- [ ] Color preview swatch
+- [ ] Quick property edit popups
 
-### 5.5 Keyboard Shortcuts
-- [x] Keyboard shortcut system with central registry
+## 5.5 Keyboard Shortcuts
+- [x] Central shortcut registry
 - [x] Customizable shortcut editor
-  - [x] List all actions
-  - [x] Filter/search
-  - [x] Record new shortcut
-  - [x] Reset to default
 - [x] Preset profiles (Illustrator, Inkscape, Figma)
-- [x] Cheat sheet overlay (hold Ctrl+/)
-  - [x] Group by category
-  - [x] Searchable
+- [x] Cheat sheet overlay (Ctrl+/)
 - [x] Conflict detection
 - [x] Export/import shortcuts
+- [ ] Touch Bar support (if applicable)
+- [ ] Gesture shortcuts
 
-### 5.6 Code Integration (Monaco Editor)
-- [x] Set up WebView2 with Monaco Editor
-  - [x] Configure WebView2 environment
-  - [x] Load Monaco HTML/JS locally
-- [x] Host Monaco files locally in Resources
-  - [x] Download Monaco package
-  - [x] Include in build
-- [x] Create C# <-> JS bridge for content sync
-  - [x] `SetContent(string)` method
-  - [x] `GetContent()` method
-  - [x] `OnContentChanged` event
+## 5.6 Code Integration (Monaco)
+- [x] WebView2 with Monaco
+- [x] Monaco files hosted locally
+- [x] C# ↔ JS bridge (SetContent, GetContent, OnChange)
 - [x] SVG/XML syntax highlighting
-- [x] Code folding
-- [x] Line numbers
-- [x] Minimap
+- [x] Code folding, line numbers, minimap
 - [x] Error highlighting (invalid XML)
-  - [x] Parse SVG on change
-  - [x] Mark error lines
-  - [x] Hover for error message
-- [x] Implementation Bi-directional Sync (Canvas <-> Code)
-  - [x] Debounced update (300ms)
-  - [x] Diff-based sync (minimal re-render)
-  - [x] Lock sync during drag operations
-- [x] "Hover to Highlight" in Code (find element in canvas)
-  - [x] Hover over element in code
-  - [x] Highlight corresponding element on canvas
-- [x] "Click to Navigate" in canvas (jump to code line)
-  - [x] Select element on canvas
-  - [x] Scroll code to element definition
-- [x] Format/Prettify command
-- [ ] (Fallback) AvalonEdit for systems without WebView2
+- [x] Bi-directional sync (Canvas ↔ Code)
+- [x] Hover to highlight (code → canvas)
+- [x] Click to navigate (canvas → code)
+- [x] Format/Prettify
+- [ ] AvalonEdit fallback (no WebView2)
+- [ ] Autocomplete for SVG elements/attributes
+- [ ] Snippets
+
+## 5.7 Navigator Panel
+- [ ] Minimap of entire canvas
+- [ ] Viewport rectangle (draggable)
+- [ ] Quick zoom controls
+- [ ] Zoom to selection
+- [ ] Zoom history
 
 ---
 
-## Phase 6: Import/Export & Assets
+# PHASE 6: Brushes & Artistic Tools
 
-### 6.1 File Operations
-- [x] New document wizard (presets: icon, web, print)
-  - [x] Preset sizes
-  - [x] Custom size
-  - [x] Units (px, mm, in)
-  - [x] Color mode
-- [x] Open recent files list
-  - [x] Last 10 files
-  - [x] Clear recent list
-- [x] Auto-save drafts
-  - [x] Save every 2 minutes
-  - [x] Store in temp folder
-- [x] Document recovery on crash
-  - [x] Check for recovery files on startup
-  - [x] Offer to restore
-
-### 6.2 Import Formats
-- [x] SVG (primary)
-- [x] AI (Adobe Illustrator) - basic support
-- [x] EPS (Encapsulated PostScript) - basic support
-- [x] PDF (vector content extraction)
-- [x] PNG/JPG (as embedded image)
-- [x] Clipboard paste (image, SVG)
-
-### 6.3 Export Formats
-- [x] SVG (optimized, minified)
-  - [x] Standard SVG 1.1
-  - [x] Optimized (SVGO-style)
-  - [x] Minified (no whitespace)
-- [x] PNG (with transparency, custom DPI)
-  - [x] Scale options (1x, 2x, 3x, custom)
-  - [x] Background options
-- [x] JPG (quality slider)
-- [x] PDF (vector)
-- [x] XAML (WPF resource)
-- [x] React/Vue component
-- [x] CSS clip-path
-- [x] ICO (multi-resolution icon)
-- [x] WebP
-
-### 6.4 Export Dialog
-- [x] Format selection
-- [x] Preview
-- [x] Size options
-- [x] Quality options
-- [x] Filename template
-- [x] Export all artboards option
-- [x] Batch export
-
-### 6.5 Asset Management
-- [x] Built-in icon library (browse, search, insert)
-  - [x] Categories
-  - [x] Search
-  - [x] Preview
-  - [x] Drag to canvas
-- [x] Template gallery
-  - [x] Categories
-  - [x] Preview
-  - [x] Create from template
-- [x] User asset library (drag files to save)
-  - [x] Import SVG files
-  - [x] Organize in folders
-  - [x] Quick access
-
----
-
-## Phase 7: Brushes & Artistic Tools
-
-### 7.1 Brush System
+## 6.1 Brush System
 - [ ] Brush library panel
   - [ ] Built-in brushes
   - [ ] Custom brush creation
-  - [ ] Brush categories
-  - [ ] Search/filter
-- [ ] Calligraphic brush
-  - [ ] Angle
-  - [ ] Roundness
-  - [ ] Pressure sensitivity (for pen tablets)
-- [ ] Scatter brush
-  - [ ] Scatter amount
-  - [ ] Rotation variation
-  - [ ] Scale variation
-  - [ ] Spacing
-- [ ] Art brush (stretch artwork along path)
-  - [ ] Create from selection
-  - [ ] Scale options
-  - [ ] Flip options
-- [ ] Pattern brush (repeat artwork along path)
-  - [ ] Start/end tiles
-  - [ ] Corner tiles
-  - [ ] Auto-generate corners
-- [ ] Bristle brush (realistic brush strokes)
-  - [ ] Brush shape
-  - [ ] Bristle length
-  - [ ] Bristle density
-  - [ ] Bristle stiffness
-- [ ] Blob brush (paint filled shapes)
-  - [ ] Merge with same color
-  - [ ] Keep selected
-  - [ ] Fidelity
-
-### 7.2 Artistic Tools
-- [ ] Pencil tool (freehand drawing)
-  - [ ] Fidelity slider
-  - [ ] Smoothness slider
-  - [ ] Keep selected
-  - [ ] Edit selected paths
-- [ ] Paintbrush tool (apply brushes)
-  - [ ] Brush picker
-  - [ ] Size
+  - [ ] Categories, search
+- [ ] **Calligraphic Brush**
+  - [ ] Angle, roundness
   - [ ] Pressure sensitivity
-- [ ] Shaper tool (draw rough shapes, auto-recognize)
-  - [ ] Recognize circles, rectangles, triangles
-  - [ ] Combine touching shapes
-  - [ ] Tap to complete
-- [ ] Width tool (variable stroke width)
-  - [ ] Add width points
-  - [ ] Drag to adjust width
-  - [ ] Delete width points
-  - [ ] Width profiles
-- [ ] Smooth tool (smooth existing paths)
-- [ ] Path eraser tool (erase path segments)
-- [ ] Symbol sprayer (spray symbol instances)
-  - [ ] Instance density
-  - [ ] Symbol stainer (colorize)
-  - [ ] Symbol sizer (scale)
-  - [ ] Symbol shifter (move)
-  - [ ] Symbol spinner (rotate)
-  - [ ] Symbol screener (opacity)
+- [ ] **Scatter Brush**
+  - [ ] Scatter amount
+  - [ ] Rotation/scale variation
+  - [ ] Spacing
+- [ ] **Art Brush** (stretch along path)
+- [ ] **Pattern Brush** (repeat along path)
+  - [ ] Start/end/corner tiles
+- [ ] **Bristle Brush**
+  - [ ] Shape, length, density, stiffness
+- [ ] **Blob Brush** (paint filled shapes)
 
-### 7.3 Pattern & Texture Tools
+## 6.2 Artistic Effects
+- [ ] Pencil Tool (freehand with smoothing)
+- [ ] Paintbrush Tool
+- [ ] Shaper Tool (auto-recognize shapes)
+- [ ] Width Tool (variable stroke width)
+- [ ] Smooth Tool
+- [ ] Path Eraser Tool
+- [ ] Symbol Sprayer
+  - [ ] Stainer, sizer, shifter, spinner
+
+## 6.3 Patterns & Textures
 - [ ] Pattern maker
-  - [ ] Create seamless patterns
-  - [ ] Pattern tile types (grid, brick, hex)
+  - [ ] Seamless patterns
+  - [ ] Tile types (grid, brick, hex)
   - [ ] Preview tiled
-  - [ ] Edit pattern
-- [ ] Halftone generator
-  - [ ] Dot patterns
-  - [ ] Line patterns
-  - [ ] Custom shapes
-- [ ] Texture fills
-  - [ ] Noise textures
-  - [ ] Grain effects
-  - [ ] Paper textures
-- [ ] Live trace (bitmap to vector)
-  - [ ] High fidelity photo
-  - [ ] Low fidelity photo
-  - [ ] Grayscale
-  - [ ] Black and white
-  - [ ] Sketched art
-  - [ ] Silhouettes
-  - [ ] Line art
-  - [ ] Technical drawing
+- [ ] Halftone generator (dots, lines)
+- [ ] Texture fills (noise, grain, paper)
+- [ ] Live Trace (bitmap to vector)
+  - [ ] Presets: photo, logo, line art
   - [ ] Custom settings
-  - [ ] Expand result
+  - [ ] Preview, expand result
 
 ---
 
-## Phase 8: AI & Generation
+# PHASE 7: AI & Automation
 
-### 8.1 Generative Vectors
-- [ ] "Text to Icon" generator (Integration with OpenAI/DALL-E 3 API)
-  - [ ] Prompt input
-  - [ ] Style selection (flat, outline, 3D, hand-drawn)
-  - [ ] Color scheme input
-  - [ ] Multiple results to choose from (4-8)
-  - [ ] Refine prompt
+## 7.1 Generative AI
+- [ ] Text to Icon generator (DALL-E 3 / local model)
+  - [ ] Style selection (flat, outline, 3D)
+  - [ ] Multiple results
   - [ ] Variation generator
-- [ ] "Vectorize Bitmap" (Trace raster images to SVG paths)
+- [ ] Vectorize Bitmap (image trace)
   - [ ] Threshold/detail controls
   - [ ] Color simplification
-  - [ ] Smoothness slider
-  - [ ] Preview
-  - [ ] Progress indicator
-  - [ ] Mode presets (logo, photo, line art)
-- [ ] "Generate from Reference" (upload image, generate similar style)
-  - [ ] Style extraction
+  - [ ] Mode presets
+- [ ] Generate from Reference (style transfer)
   - [ ] Color palette extraction
-  - [ ] Shape suggestion
+  - [ ] Style extraction
 
-### 8.2 Smart Assist
-- [ ] "Auto-Name Layers" (AI analyzes shape to name layer)
-- [ ] "Generate Pattern" (Create repeating patterns from selection)
-- [ ] "Suggest Colors" (AI color palette from image or prompt)
-- [ ] "Complete Shape" (AI predicts incomplete path)
-- [ ] "Auto-Align" suggestions
-- [ ] "Similar Element Finder" (find elements with similar properties)
-- [ ] "Auto Layout" (suggest optimal arrangement)
-- [ ] "Accessibility Suggestions" (contrast, text size, etc.)
+## 7.2 Smart Assist
+- [ ] Auto-Name Layers (AI analysis)
+- [ ] Generate Pattern from selection
+- [ ] Suggest Colors (AI palette)
+- [ ] Complete Shape (AI prediction)
+- [ ] Auto-Align suggestions
+- [ ] Similar Element Finder
+- [ ] Auto Layout suggestions
+- [ ] Accessibility Suggestions
 
-### 8.3 Optimization Assistant
-- [ ] "Analyze SVG" panel
-  - [ ] File size
-  - [ ] Element count
+## 7.3 Optimization
+- [ ] Analyze SVG panel
+  - [ ] File size, element count
   - [ ] Complexity score
   - [ ] Issues list
-- [ ] "Optimize" button (run SVGO-like optimizations)
+- [ ] Optimize button (SVGO-like)
   - [ ] Remove hidden elements
   - [ ] Merge paths
   - [ ] Round coordinates
   - [ ] Remove metadata
-  - [ ] Collapse groups
-  - [ ] Convert shapes to paths
-  - [ ] Remove empty groups
 - [ ] Before/after preview
-- [ ] Optimization presets (web, print, minimal)
-- [ ] Optimization history (undo optimization)
+- [ ] Optimization presets
+
+## 7.4 Automation
+- [ ] Actions Panel
+  - [ ] Record actions
+  - [ ] Play actions
+  - [ ] Edit steps
+  - [ ] Save/load action sets
+- [ ] Batch Processing
+  - [ ] Apply to multiple files
+  - [ ] Progress indicator
+- [ ] Scripting (JavaScript)
+  - [ ] Script editor panel
+  - [ ] API documentation
+  - [ ] Script library
+- [ ] Plugin System
+  - [ ] Plugin API (tools, panels, filters, export)
+  - [ ] Plugin manager
 
 ---
 
-## Phase 9: Grids & Perspective
+# PHASE 8: Grids & Perspective
 
-### 9.1 Advanced Grids
-- [ ] Perspective grid
-  - [ ] One-point perspective
-  - [ ] Two-point perspective
-  - [ ] Three-point perspective
+## 8.1 Advanced Grids
+- [ ] Perspective Grid
+  - [ ] 1-point, 2-point, 3-point
   - [ ] Custom vanishing points
   - [ ] Draw on perspective planes
   - [ ] Snap to perspective
-- [ ] Isometric grid
-  - [ ] 30° isometric preset
+- [ ] Isometric Grid
+  - [ ] 30° preset
   - [ ] Custom angles
   - [ ] Snap to isometric
-  - [ ] Isometric transform
-- [ ] Polar grid
-  - [ ] Concentric circles
-  - [ ] Radial dividers
-  - [ ] Center point
-- [ ] Custom modular grid
-  - [ ] Column grid
-  - [ ] Row grid
-  - [ ] Gutters
+- [ ] Polar Grid (concentric circles + radials)
+- [ ] Modular Grid
+  - [ ] Columns, rows, gutters
   - [ ] Margins
   - [ ] Grid presets
 
-### 9.2 Pixel Perfect Mode
-- [ ] Pixel preview (render at 1x)
-- [ ] Pixel grid (visible at high zoom)
+## 8.2 Pixel Perfect Mode
+- [ ] Pixel preview (1x render)
+- [ ] Pixel grid at high zoom
 - [ ] Snap to pixel
 - [ ] Align to pixel grid command
 - [ ] Half-pixel stroke adjustment
@@ -1523,551 +1048,442 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 
 ---
 
-## Phase 10: Print & Prepress
+# PHASE 9: Print & Prepress
 
-### 10.1 Print Features
+## 9.1 Print Features
 - [ ] Print preview
   - [ ] Page setup
-  - [ ] Artboard selection
   - [ ] Tile large artwork
   - [ ] Scale to fit
 - [ ] Print dialog
   - [ ] Printer selection
   - [ ] Color management
-  - [ ] Copies
-  - [ ] Page range
+  - [ ] Copies, page range
 
-### 10.2 Color Management
-- [ ] Color profiles (ICC)
+## 9.2 Color Management
+- [ ] ICC color profiles
   - [ ] Assign profile
   - [ ] Convert to profile
   - [ ] Proof colors
 - [ ] CMYK mode
   - [ ] CMYK color picker
-  - [ ] CMYK preview
   - [ ] Out-of-gamut warning
-- [ ] Spot colors
-  - [ ] Pantone integration
-  - [ ] Custom spot colors
-  - [ ] Mixed ink
+- [ ] Spot colors (Pantone)
 - [ ] Overprint preview
 - [ ] Ink coverage analysis
 
-### 10.3 Prepress Features
+## 9.3 Prepress
 - [ ] Crop marks
 - [ ] Registration marks
 - [ ] Color bars
 - [ ] Page information
 - [ ] Bleed setup
-  - [ ] Bleed guides
-  - [ ] Bleed area preview
-- [ ] Trim marks
-- [ ] Fold marks
+- [ ] Trim marks, fold marks
 - [ ] Color separations preview
 - [ ] Trapping settings
 - [ ] Flatten transparency
-- [ ] PDF/X export (print-ready)
+- [ ] PDF/X export
 
 ---
 
-## Phase 11: Settings & Preferences
+# PHASE 10: Import/Export
 
-### 11.1 Settings Dialog
-- [ ] General settings
+## 10.1 File Operations
+- [x] New document wizard (presets, custom, units)
+- [x] Open recent files (last 10, clear)
+- [x] Auto-save drafts (every 2 min)
+- [x] Document recovery on crash
+- [ ] Templates (create, save, browse)
+- [ ] Place linked files
+- [ ] Update links
+
+## 10.2 Import Formats
+- [x] SVG (primary)
+- [x] AI (Adobe Illustrator) — basic
+- [x] EPS — basic
+- [x] PDF (vector extraction)
+- [x] PNG/JPG (embedded image)
+- [x] Clipboard paste (image, SVG)
+- [ ] Figma import (experimental)
+- [ ] Sketch import (experimental)
+- [ ] XD import (experimental)
+- [ ] DXF/DWG (CAD)
+- [ ] WMF/EMF (Windows Metafile)
+- [ ] CorelDRAW CDR (experimental)
+
+## 10.3 Export Formats
+- [x] SVG (optimized, minified)
+- [x] PNG (transparency, DPI, scale)
+- [x] JPG (quality slider)
+- [x] PDF (vector)
+- [x] XAML (WPF resource)
+- [x] React/Vue component
+- [x] CSS clip-path
+- [x] ICO (multi-resolution)
+- [x] WebP
+- [ ] GIF (animated SVG)
+- [ ] TIFF
+- [ ] BMP
+- [ ] EMF/WMF
+- [ ] EPS
+- [ ] Lottie JSON (animated)
+- [ ] Android Vector Drawable
+- [ ] iOS Asset Catalog
+
+## 10.4 Export Dialog
+- [x] Format selection
+- [x] Preview
+- [x] Size options
+- [x] Quality options
+- [x] Filename template
+- [x] Export all artboards
+- [x] Batch export
+- [ ] Export presets (save settings)
+- [ ] Slice tool (define export areas)
+- [ ] Asset export (like Figma)
+
+## 10.5 Asset Management
+- [x] Built-in icon library
+- [x] Template gallery
+- [x] User asset library
+- [ ] Stock integrations (Unsplash, Noun Project)
+- [ ] Google Fonts integration
+- [ ] Asset tagging and search
+
+---
+
+# PHASE 11: Settings & Preferences
+
+## 11.1 Settings Dialog
+- [ ] **General**
   - [ ] Language
   - [ ] Auto-save interval
   - [ ] Recent files count
-  - [ ] Default units
-- [ ] Appearance settings
-  - [ ] Theme (dark/light)
+  - [ ] Default units (px, mm, in, pt)
+  - [ ] Startup behavior
+- [ ] **Appearance**
+  - [ ] Theme (dark/light/system)
   - [ ] Accent color
   - [ ] Interface scale
   - [ ] Font size
-- [ ] Canvas settings
+- [ ] **Canvas**
   - [ ] Default canvas size
   - [ ] Background color
-  - [ ] Grid size
+  - [ ] Grid size and color
   - [ ] Snap tolerance
-- [ ] Tool settings
+- [ ] **Tools**
   - [ ] Default fill color
-  - [ ] Default stroke color
-  - [ ] Default stroke width
-- [ ] Export settings
+  - [ ] Default stroke color/width
+  - [ ] Pen tool behavior
+- [ ] **Export**
   - [ ] Default format
   - [ ] Default quality
   - [ ] Default location
-- [ ] Keyboard shortcuts
+- [ ] **Performance**
+  - [ ] GPU acceleration
+  - [ ] Memory limit
+  - [ ] Cache size
+- [ ] **Keyboard Shortcuts**
   - [ ] Shortcut editor
   - [ ] Import/export
 
-### 11.2 Settings Storage
+## 11.2 Settings Storage
 - [ ] JSON settings file
 - [ ] User AppData location
 - [ ] Migrate settings on update
 - [ ] Reset to defaults
+- [ ] Export/import settings
 
 ---
 
-## Phase 12: Performance & Stability
+# PHASE 12: Performance & Stability
 
-### 12.1 Performance Tuning
-- [ ] Implement R-Tree spatial index for fast hit-testing (1000s of objects)
-- [ ] Render caching (cache static layers to bitmaps)
-- [ ] Memory profiling for large SVGs
-- [ ] Lazy rendering (only render visible area)
-- [ ] Worker thread for expensive operations (boolean ops)
-- [ ] Profile startup time, optimize
-- [ ] Virtualize layer list for large documents
-- [ ] Throttle rendering during pan/zoom
+## 12.1 Performance
+- [ ] R-Tree spatial index (fast hit-testing)
+- [ ] Render caching (static layers to bitmaps)
+- [ ] Lazy rendering (visible area only)
+- [ ] Worker threads for expensive ops
+- [ ] Memory profiling
+- [ ] Startup optimization
+- [ ] Virtualized lists (layers, assets)
+- [ ] Throttled rendering during pan/zoom
 
-### 12.2 Error Handling
-- [ ] Global exception handler
-- [ ] User-friendly error dialogs
-  - [ ] Error description
-  - [ ] Stack trace (hidden, copyable)
-  - [ ] Report issue link
+## 12.2 Error Handling
+- [x] Global exception handler
+- [x] User-friendly error dialogs
+- [x] Stack trace (hidden, copyable)
 - [ ] Crash reporter (optional telemetry)
-- [ ] Log file rotation
-  - [ ] Keep last 5 log files
-  - [ ] Max size per file
+- [ ] Log file rotation (last 5, max size)
+- [ ] Error recovery (auto-save before crash)
 
-### 12.3 Testing
-- [ ] Unit tests for Core services
-  - [ ] Model tests
-  - [ ] Command tests
-  - [ ] SVG bridge tests
-- [ ] Integration tests for SVG import/export
-- [ ] UI automation tests (basic flows)
+## 12.3 Testing
+- [ ] Unit tests for Core services (80% coverage)
+- [ ] Integration tests for import/export
+- [ ] UI automation tests
 - [ ] Performance benchmarks
-- [ ] Test coverage target: 80%
+- [ ] Regression test suite
 
 ---
 
-## Phase 13: Accessibility & Localization
+# PHASE 13: Accessibility & Localization
 
-### 13.1 Accessibility
+## 13.1 Accessibility
 - [ ] Screen reader support (UI Automation)
   - [ ] All controls labeled
-  - [ ] Reading order correct
+  - [ ] Correct reading order
   - [ ] Live regions for updates
 - [ ] High contrast mode
-  - [ ] Detect system setting
-  - [ ] High contrast theme
-- [ ] Keyboard navigation for canvas (Arrow keys to move)
+- [ ] Keyboard navigation for canvas
   - [ ] Tab through elements
   - [ ] Arrow keys to move
-  - [ ] Enter to select
 - [ ] Focus indicators
-  - [ ] Visible focus ring
-  - [ ] High contrast focus
 - [ ] Reduced motion option
-  - [ ] Disable animations
-  - [ ] Instant transitions
+- [ ] Font size scaling
+- [ ] Color blind friendly themes
 
-### 13.2 Localization
+## 13.2 Localization
 - [ ] Externalize all strings to resources
 - [ ] English (default)
-- [ ] Spanish, French, German (community)
+- [ ] Spanish, French, German
 - [ ] RTL layout support
 - [ ] Date/number formatting
-- [ ] Pluralization support
+- [ ] Community translation system
 
 ---
 
-## Phase 14: Distribution & Marketing
+# PHASE 14: Distribution
 
-### 14.1 Packaging
-- [ ] MSIX Installer creation
-  - [ ] Configure manifest
-  - [ ] Icons
-  - [ ] Capabilities
-- [ ] Portable ZIP distribution
-  - [ ] Self-contained
-  - [ ] No installation required
+## 14.1 Packaging
+- [ ] MSIX installer
+- [ ] Portable ZIP
 - [ ] Microsoft Store submission
-  - [ ] Store listing
-  - [ ] Screenshots
-  - [ ] Description
+- [ ] Chocolatey package
+- [ ] WinGet package
 
-### 14.2 Updates
-- [ ] Auto-updater mechanism (check on startup)
-  - [ ] Version check API
-  - [ ] Download in background
-  - [ ] Prompt to install
+## 14.2 Updates
+- [ ] Auto-updater (check on startup)
+- [ ] Download in background
 - [ ] Release notes dialog
-  - [ ] What's new
-  - [ ] Changelog link
-- [ ] Changelog.md
+- [ ] Changelog in-app
 
-### 14.3 Marketing
+## 14.3 Marketing
 - [ ] Landing page (bezier.app)
-  - [ ] Hero section
-  - [ ] Feature highlights
-  - [ ] Screenshots
-  - [ ] Download buttons
-- [ ] Demo video (60-90 seconds)
-  - [ ] Key features
-  - [ ] Professional editing
+- [ ] Demo video (60-90 sec)
 - [ ] Product Hunt launch
-- [ ] GitHub "Awesome" lists submission
+- [ ] GitHub Awesome lists
 - [ ] Social media presence
 
 ---
 
-## Phase 15: Developer Tools
+# PHASE 15: Developer Tools
 
-### 15.1 Debug Window (Chrome DevTools-style)
-- [x] Separate debug window (opens from Help menu or F12)
-  - [x] Dockable/floating window
-  - [x] Always on top option
-  - [x] Persistent across sessions
+## 15.1 Debug Window
+- [x] Separate window (F12)
+- [x] Always on top option
+- [x] Persistent across sessions
 
-### 15.2 Console Tab
-- [x] Real-time log output from DebugLogger
-  - [x] Color-coded log levels (Debug, Info, Warning, Error)
-  - [x] Timestamp display
-  - [x] Category filtering
-- [x] Search/filter functionality
-- [x] Clear console button
-- [x] Copy selected logs to clipboard
-- [x] Copy all logs to clipboard
-- [x] Export logs to file
+## 15.2 Console Tab
+- [x] Real-time logs (color-coded levels)
+- [x] Timestamp, category filtering
+- [x] Search/filter, clear
+- [x] Copy/export logs
 - [x] Auto-scroll toggle
 
-### 15.3 Coordinates Tab
-- [x] Mouse coordinates panel
-  - [x] Screen coordinates (WPF)
-  - [x] Document coordinates (canvas space)
-  - [x] Artboard-relative coordinates
-- [x] Selected element info
-  - [x] Element type and name
-  - [x] Position (X, Y)
-  - [x] Size (Width, Height)
-  - [x] Transform matrix values
-  - [x] Bounding box coordinates
-  - [x] Fill/Stroke properties
-- [x] Canvas state info
-  - [x] Current zoom level
-  - [x] Pan offset
-  - [x] Viewport dimensions
-- [x] Copy all info button (formatted text)
+## 15.3 Coordinates Tab
+- [x] Mouse coordinates (screen, document, artboard)
+- [x] Selected element info (position, size, transform, fill, stroke)
+- [x] Canvas state (zoom, pan, viewport)
+- [x] Copy all info
 - [x] Live update toggle
 
-### 15.4 Elements Inspector
+## 15.4 Elements Inspector
 - [x] Tree view of document elements
 - [x] Select element in canvas from tree
-- [x] Highlight element on hover
+- [x] Highlight on hover
 - [x] Show/hide visibility
-- [x] Lock/unlock elements
-- [x] View raw SVG output
+- [x] Lock/unlock
+- [x] View raw SVG
 
-### 15.5 Performance Tab
-- [x] Frame rate display
-- [x] Render time metrics
+## 15.5 Performance Tab
+- [x] Frame rate, render time
 - [x] Memory usage
 - [x] Element count
-- [x] Undo/Redo stack size
+- [x] Undo/redo stack size
 
-### 15.6 Crash Detection & Error Handling
-- [x] Global unhandled exception handler (App.xaml.cs)
-  - [x] Catch DispatcherUnhandledException
-  - [x] Catch AppDomain.UnhandledException
-  - [x] Catch TaskScheduler.UnobservedTaskException
-- [x] Exception Window (not MessageBox)
-  - [x] Show exception type and message
-  - [x] Show stack trace (expandable)
-  - [x] Copy full exception to clipboard button
-  - [x] Option to continue or exit
-  - [x] Distinguish handled vs unhandled exceptions
-  - [x] Show inner exception details
-- [ ] Crash report logging
-  - [ ] Write to crash log file
-  - [ ] Include system info (OS, .NET version)
-  - [ ] Include app version
-  - [ ] Include recent DebugLogger entries
+## 15.6 Crash Handling
+- [x] Global unhandled exception handler
+- [x] Exception dialog (type, message, stack trace)
+- [x] Copy exception, continue or exit
+- [ ] Crash log file
 - [ ] Recovery options
-  - [ ] Auto-save before crash
-  - [ ] Restore last session option
 
 ---
 
-## Phase 16: Workflow & Automation
-> *Features that save hours of repetitive work*
+# PHASE 16: Collaboration
 
-### 16.1 Actions & Macros
-- [ ] Actions panel
-  - [ ] Record actions
-  - [ ] Play actions
-  - [ ] Edit action steps
-  - [ ] Save action sets
-  - [ ] Load action sets
-- [ ] Batch processing
-  - [ ] Apply actions to multiple files
-  - [ ] Progress indicator
-  - [ ] Error logging
-  - [ ] Resume on error
-- [ ] Droplets (drag files to run action)
+## 16.1 Comments & Annotations
+- [ ] Comment tool (pin to elements)
+- [ ] Comment panel (list, filter, resolve)
+- [ ] Markup tools (arrows, callouts, highlights)
 
-### 16.2 Scripting
-- [ ] JavaScript scripting engine
-  - [ ] Script editor panel
-  - [ ] Script console
-  - [ ] API documentation
-- [ ] Python scripting support
-  - [ ] Python environment setup
-  - [ ] Script examples
-- [ ] Script library (built-in useful scripts)
-- [ ] Script shortcuts (assign scripts to keys)
-
-### 16.3 Plugin System
-- [ ] Plugin API
-  - [ ] Tool plugins
-  - [ ] Panel plugins
-  - [ ] Filter plugins
-  - [ ] Export plugins
-- [ ] Plugin manager
-  - [ ] Browse plugins
-  - [ ] Install/uninstall
-  - [ ] Enable/disable
-  - [ ] Update plugins
-- [ ] Plugin development documentation
-- [ ] Plugin template project
-
----
-
-## Phase 17: Collaboration & Cloud
-> *Work together, anywhere*
-
-### 17.1 Comments & Annotations
-- [ ] Comment tool
-  - [ ] Add comments to canvas
-  - [ ] Pin to elements
-  - [ ] Thread replies
-- [ ] Comment panel
-  - [ ] List all comments
-  - [ ] Filter by status
-  - [ ] Resolve comments
-- [ ] Markup tools
-  - [ ] Arrows
-  - [ ] Callouts
-  - [ ] Highlight areas
-
-### 17.2 Version Control
+## 16.2 Version Control
 - [ ] Built-in version history
   - [ ] Auto-save versions
   - [ ] Named versions
-  - [ ] Compare versions
-  - [ ] Restore version
+  - [ ] Compare, restore
 - [ ] Git integration
-  - [ ] Initialize repo
-  - [ ] Commit changes
-  - [ ] View diff
+  - [ ] Initialize, commit, diff
   - [ ] Branch management
 - [ ] File comparison view
-  - [ ] Side-by-side
-  - [ ] Overlay
-  - [ ] Difference highlight
 
-### 17.3 Cloud Sync (Optional Service)
-- [ ] Cloud storage integration
-  - [ ] Save to cloud
-  - [ ] Auto-sync
-  - [ ] Conflict resolution
-- [ ] Team libraries
-  - [ ] Shared symbols
-  - [ ] Shared styles
-  - [ ] Shared colors
+## 16.3 Cloud (Optional)
+- [ ] Cloud storage (save, auto-sync)
+- [ ] Team libraries (symbols, styles, colors)
 - [ ] Real-time collaboration (future)
-  - [ ] See others' cursors
-  - [ ] Live edits
-  - [ ] User presence
+  - [ ] Cursors, live edits, presence
 
 ---
 
-## Phase 18: Beyond The Competition
+# PHASE 17: Beyond The Competition
 > *Innovative features that set Bezier apart*
 
-### 18.1 Parametric & Procedural Design
-- [ ] Parametric shapes
-  - [ ] Define parameters (width, height, segments, etc.)
-  - [ ] Slider controls
-  - [ ] Link parameters between shapes
-  - [ ] Save parametric presets
-- [ ] Repeat grids
-  - [ ] Repeat selection in grid
-  - [ ] Adjust spacing
-  - [ ] Edit one to update all
-  - [ ] Convert to individual
+## 17.1 Parametric Design
+- [ ] Parametric shapes (define parameters, sliders)
+- [ ] Repeat grids (edit one to update all)
 - [ ] Procedural generators
   - [ ] Generative patterns
   - [ ] Math-based shapes
-  - [ ] Recursive shapes (fractals)
-  - [ ] L-system patterns
+  - [ ] Fractals, L-systems
 
-### 18.2 Constraint-Based Design
-- [ ] Constraints panel
-  - [ ] Pin edges to parent
-  - [ ] Maintain aspect ratio
-  - [ ] Min/max sizes
-  - [ ] Spacing constraints
-- [ ] Responsive artboards
-  - [ ] Artboard size presets
-  - [ ] See how design adapts
-  - [ ] Breakpoint system
-- [ ] Smart layout
-  - [ ] Auto-layout containers
-  - [ ] Stack (horizontal/vertical)
-  - [ ] Wrap
-  - [ ] Gap spacing
+## 17.2 Constraint-Based Design
+- [ ] Constraints panel (pin edges, aspect ratio, min/max)
+- [ ] Responsive artboards (breakpoints)
+- [ ] Smart layout (auto-layout containers, stack, wrap)
 
-### 18.3 Design Tokens & Variables
-- [ ] Design tokens panel
-  - [ ] Color tokens
-  - [ ] Size tokens
-  - [ ] Spacing tokens
-  - [ ] Typography tokens
+## 17.3 Design Tokens
+- [ ] Design tokens panel (colors, sizes, spacing, typography)
 - [ ] Token aliases (semantic naming)
 - [ ] Theme switching (swap token values)
 - [ ] Export tokens (JSON, CSS variables)
 - [ ] Import tokens (Figma, Tokens Studio)
 
-### 18.4 Animation Timeline
-- [ ] Animation panel
-  - [ ] Timeline view
-  - [ ] Keyframe editor
-  - [ ] Easing curves
-- [ ] Animate properties
-  - [ ] Position
-  - [ ] Scale
-  - [ ] Rotation
-  - [ ] Opacity
-  - [ ] Fill/Stroke
-  - [ ] Path morphing
-- [ ] Export animated SVG
-  - [ ] CSS animations
-  - [ ] SMIL animations
-  - [ ] Lottie export
+## 17.4 Animation Timeline
+- [ ] Animation panel (timeline, keyframes, easing)
+- [ ] Animate properties (position, scale, rotation, opacity, fill, path morph)
+- [ ] Export animated SVG (CSS, SMIL, Lottie)
 - [ ] Preview animation
 
-### 18.5 Component Variants
-- [ ] Component with variants
-  - [ ] Define variant properties (size, state, etc.)
-  - [ ] Switch variants in properties
-  - [ ] Combine variant properties
-- [ ] Interactive components
-  - [ ] Hover state
-  - [ ] Pressed state
-  - [ ] Disabled state
-  - [ ] Focused state
-- [ ] Slot overrides (nested component placeholders)
+## 17.5 Component Variants
+- [ ] Components with variants (size, state)
+- [ ] Interactive components (hover, pressed, disabled, focused)
+- [ ] Slot overrides (nested placeholders)
 
-### 18.6 Accessibility Checker
-- [ ] Accessibility panel
-  - [ ] Color contrast checker (WCAG AA/AAA)
-  - [ ] Touch target size checker
-  - [ ] Text size recommendations
-  - [ ] Alt text for images
+## 17.6 Accessibility Checker
+- [ ] Color contrast checker (WCAG AA/AAA)
+- [ ] Touch target size checker
+- [ ] Text size recommendations
+- [ ] Alt text for images
 - [ ] Auto-fix suggestions
 - [ ] Export accessibility report
 
-### 18.7 Developer Handoff
-- [ ] Inspect mode
-  - [ ] Click element to see properties
-  - [ ] Copy CSS
-  - [ ] Copy dimensions
-  - [ ] Export assets
-- [ ] Design specs export
-  - [ ] HTML inspection page
-  - [ ] Shareable link
-  - [ ] Measurements overlay
-- [ ] Code generation
-  - [ ] React components
-  - [ ] Vue components
-  - [ ] SwiftUI views
-  - [ ] Flutter widgets
-  - [ ] XAML (WPF/UWP)
+## 17.7 Developer Handoff
+- [ ] Inspect mode (click to see properties)
+- [ ] Copy CSS, dimensions, assets
+- [ ] Design specs export (HTML inspection page)
+- [ ] Code generation (React, Vue, SwiftUI, Flutter, XAML)
 
-### 18.8 Advanced Selection & Editing
-- [ ] Select by property
-  - [ ] Same fill color
-  - [ ] Same stroke color
-  - [ ] Same stroke width
-  - [ ] Same font
-  - [ ] Same size
-- [ ] Find and replace (properties)
-  - [ ] Find color, replace with color
-  - [ ] Find font, replace with font
-- [ ] Global edit mode
-  - [ ] Edit all instances at once
-  - [ ] Scope to selection/document
+## 17.8 Advanced Selection
+- [ ] Select by property (fill, stroke, font, size)
+- [ ] Find and replace properties
+- [ ] Global edit mode (edit all instances at once)
 
-### 18.9 Integration & Interop
+## 17.9 Integrations
 - [ ] Figma import (experimental)
 - [ ] Sketch import (experimental)
-- [ ] XD import (experimental)
 - [ ] Canva asset import
 - [ ] Noun Project integration
 - [ ] Unsplash integration
 - [ ] Google Fonts integration
-- [ ] Adobe Fonts integration (licensed)
 
 ---
 
-## Priority Order
+# Priority Order
 
-### Immediate (Week 1)
-1. **[0.1-0.7]** Foundation, UI Shell, Menus & Toolbar
+## Immediate (Weeks 1-2)
+1. **Phase 0** — Foundation, UI Shell, Menus, Toolbar
 
-### Core Development (Week 2-6)
-2. **[1.1-1.5]** Core Data Model, Rendering & UI Polish
-3. **[2.1-2.6]** Editor Architecture, Layout, Advanced Panels & UI Polish
-4. **[3.1-3.8]** Visual Editing Features & UI Polish
+## Core Development (Weeks 3-8)
+2. **Phase 1** — Core Rendering Engine
+3. **Phase 2** — Editor Architecture
+4. **Phase 3** — Drawing & Editing Tools
 
-### Feature Complete (Week 7-12)
-5. **[4.1-4.6]** Professional Features & UI Polish
-6. **[5.1-5.6]** Next-Gen UI/UX & Code Integration
-7. **[6.1-6.5]** Import/Export & Assets
-8. **[7.1-7.3]** Brushes & Artistic Tools
+## Feature Complete (Weeks 9-14)
+5. **Phase 4** — Professional Features
+6. **Phase 5** — Advanced UI/UX
+7. **Phase 6** — Brushes & Artistic Tools
 
-### Professional Polish (Week 13-18)
-9. **[8.1-8.3]** AI & Generation
-10. **[9.1-9.2]** Grids & Perspective
-11. **[10.1-10.3]** Print & Prepress
-12. **[11.1-11.2]** Settings & Preferences
-13. **[12.1-12.3]** Performance & Testing
+## Professional Polish (Weeks 15-20)
+8. **Phase 7** — AI & Automation
+9. **Phase 8** — Grids & Perspective
+10. **Phase 9** — Print & Prepress
+11. **Phase 10** — Import/Export
+12. **Phase 11** — Settings & Preferences
 
-### Release Preparation (Week 19-24)
-14. **[13.1-13.2]** Accessibility & Localization
-15. **[14.1-14.3]** Distribution & Marketing
-16. **[15.1-15.6]** Developer Tools
+## Release Preparation (Weeks 21-24)
+13. **Phase 12** — Performance & Stability
+14. **Phase 13** — Accessibility & Localization
+15. **Phase 14** — Distribution
+16. **Phase 15** — Developer Tools
 
-### Post-Launch Innovation (Ongoing)
-17. **[16.1-16.3]** Workflow & Automation
-18. **[17.1-17.3]** Collaboration & Cloud
-19. **[18.1-18.9]** Beyond The Competition (Differentiators)
+## Post-Launch (Ongoing)
+17. **Phase 16** — Collaboration
+18. **Phase 17** — Beyond The Competition
 
 ---
 
-## Feature Comparison Matrix
+# Feature Comparison Matrix
 
-| Feature | Bezier | Illustrator | CorelDRAW | Inkscape |
-|---------|--------|-------------|-----------|----------|
-| **Core Vector Editing** | ✅ | ✅ | ✅ | ✅ |
-| **SVG-First Workflow** | ✅ | ⚠️ | ⚠️ | ✅ |
-| **Live Code Sync** | ✅ | ❌ | ❌ | ⚠️ |
-| **Monaco Code Editor** | ✅ | ❌ | ❌ | ❌ |
-| **Mica/Fluent Design** | ✅ | ❌ | ❌ | ❌ |
-| **Command Palette** | ✅ | ✅ | ❌ | ❌ |
-| **Design Tokens** | ✅ | ❌ | ❌ | ❌ |
-| **Animation Timeline** | ✅ | ⚠️ | ⚠️ | ⚠️ |
-| **Parametric Shapes** | ✅ | ❌ | ❌ | ⚠️ |
-| **Component Variants** | ✅ | ⚠️ | ❌ | ❌ |
-| **Accessibility Checker** | ✅ | ❌ | ❌ | ❌ |
-| **Git Integration** | ✅ | ❌ | ❌ | ❌ |
-| **Developer Handoff** | ✅ | ⚠️ | ❌ | ❌ |
-| **AI Generation** | ✅ | ✅ | ⚠️ | ❌ |
-| **Open Source** | ✅ | ❌ | ❌ | ✅ |
-| **Cross-Platform** | 🔜 | ✅ | ❌ | ✅ |
-| **Free** | ✅ | ❌ | ❌ | ✅ |
+| Feature | Bezier | Illustrator | CorelDRAW | Inkscape | Figma |
+|---------|--------|-------------|-----------|----------|-------|
+| **Core Vector Editing** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **SVG-First Workflow** | ✅ | ⚠️ | ⚠️ | ✅ | ⚠️ |
+| **Live Code Sync** | ✅ | ❌ | ❌ | ⚠️ | ❌ |
+| **Monaco Code Editor** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Mica/Fluent Design** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Command Palette** | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **Design Tokens** | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **Animation Timeline** | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| **Parametric Shapes** | ✅ | ❌ | ❌ | ⚠️ | ❌ |
+| **Component Variants** | ✅ | ⚠️ | ❌ | ❌ | ✅ |
+| **Accessibility Checker** | ✅ | ❌ | ❌ | ❌ | ⚠️ |
+| **Git Integration** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Developer Handoff** | ✅ | ⚠️ | ❌ | ❌ | ✅ |
+| **AI Generation** | ✅ | ✅ | ⚠️ | ❌ | ✅ |
+| **CMYK/Print** | ✅ | ✅ | ✅ | ⚠️ | ❌ |
+| **Scripting/Plugins** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Real-time Collab** | 🔜 | ❌ | ❌ | ❌ | ✅ |
+| **Open Source** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **Cross-Platform** | 🔜 | ✅ | ❌ | ✅ | ✅ |
+| **Free** | ✅ | ❌ | ❌ | ✅ | ⚠️ |
+| **Offline** | ✅ | ✅ | ✅ | ✅ | ⚠️ |
 
-Legend: ✅ Yes | ⚠️ Limited | ❌ No | 🔜 Planned
+Legend: ✅ Full | ⚠️ Limited | ❌ No | 🔜 Planned
+
+---
+
+# Unique Selling Points (Bezier Differentiators)
+
+1. **SVG-Native** — Built from ground up for SVG, not adapted from proprietary formats
+2. **Live Code Sync** — Monaco editor with bi-directional canvas ↔ code sync
+3. **Modern Windows UX** — Mica backdrop, Fluent Design, dark-first
+4. **Open Source** — Free forever, community-driven, no vendor lock-in
+5. **Developer-Friendly** — Code export (React, Vue, XAML), design tokens, Git integration
+6. **AI-Powered** — Text-to-icon, smart trace, auto-name, color suggestions
+7. **Parametric Design** — Constraint-based, responsive artboards, repeat grids
+8. **Accessibility Built-In** — WCAG checker, screen reader support, high contrast
+9. **Lightweight** — Fast startup, low memory, no bloat
+10. **Extensible** — Plugin system, scripting, open API
+
+---
+
+*Last Updated: 2025-01-14*
