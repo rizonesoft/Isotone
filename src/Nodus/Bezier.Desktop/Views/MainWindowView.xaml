@@ -71,11 +71,6 @@
         <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="{StaticResource Base}"/>
         <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{StaticResource Surface0}"/>
 
-        <!-- NumberBox compact button margins -->
-        <Thickness x:Key="NumberBoxButtonMargin">0,0,2,0</Thickness>
-        <Thickness x:Key="NumberBoxButtonPadding">0</Thickness>
-        <system:Double x:Key="NumberBoxButtonHeight">20</system:Double>
-
         <!-- Tool Button Style -->
         <Style x:Key="ToolButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="40"/>
@@ -583,10 +578,10 @@
                     <!-- Width -->
                     <TextBlock Text="W" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <ui:NumberBox Value="{Binding DocumentWidth, Mode=TwoWay}" 
-                                  Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
-                                  Width="80" Height="28" FontSize="11" 
-                                  VerticalContentAlignment="Center" Padding="6,0"/>
+                    <ui:TextBox Text="{Binding DocumentWidth, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                                Width="60" Height="24" FontSize="11" 
+                                ClearButtonEnabled="False" Padding="6,0"
+                                VerticalContentAlignment="Center"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,16,0"/>
@@ -594,10 +589,10 @@
                     <!-- Height -->
                     <TextBlock Text="H" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <ui:NumberBox Value="{Binding DocumentHeight, Mode=TwoWay}" 
-                                  Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
-                                  Width="80" Height="28" FontSize="11"
-                                  VerticalContentAlignment="Center" Padding="6,0"/>
+                    <ui:TextBox Text="{Binding DocumentHeight, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                                Width="60" Height="24" FontSize="11"
+                                ClearButtonEnabled="False" Padding="6,0"
+                                VerticalContentAlignment="Center"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,0,0"/>
