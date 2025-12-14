@@ -93,18 +93,18 @@ WORKFLOW:
 - [ ] Install recommended VS extensions (EditorConfig, CodeMaid)
 
 ### 0.2 GitHub Repository Setup
-- [ ] Create GitHub repository `Imago`
-- [ ] Initialize with README.md
-- [ ] Add .gitignore (dotnet template)
-- [ ] Add .gitattributes for line endings
+- [x] Create GitHub repository `Imago`
+- [x] Initialize with README.md
+- [x] Add .gitignore (dotnet template)
+- [x] Add .gitattributes for line endings
 - [ ] Create branch protection rules for `main`
-- [ ] Set up issue templates (Bug, Feature, Task)
-- [ ] Set up pull request template
+- [x] Set up issue templates (Bug, Feature, Task)
+- [x] Set up pull request template
 - [ ] Create project board (Kanban)
-- [ ] Add LICENSE file (choose license: MIT/GPL/Commercial)
-- [ ] Create CONTRIBUTING.md
-- [ ] Create CODE_OF_CONDUCT.md
-- [ ] Create SECURITY.md
+- [x] Add LICENSE file (choose license: MIT/GPL/Commercial)
+- [x] Create CONTRIBUTING.md
+- [x] Create CODE_OF_CONDUCT.md
+- [x] Create SECURITY.md
 
 ### 0.3 Directory Structure
 ```
