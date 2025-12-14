@@ -102,6 +102,9 @@ public partial class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(UndoDescription));
         OnPropertyChanged(nameof(RedoDescription));
         RefreshHistoryList();
+        
+        // Update performance metrics with undo/redo stack sizes
+        PerformanceMetricsService.Instance.UpdateHistoryInfo(_history.UndoCount, _history.RedoCount);
     }
 
     private void RefreshHistoryList()

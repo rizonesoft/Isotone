@@ -48,6 +48,9 @@ public partial class DebugWindow : FluentWindow
         // Subscribe to debug info service for Coordinates tab
         DebugInfoService.Instance.InfoUpdated += OnDebugInfoUpdated;
         
+        // Subscribe to performance metrics for Performance tab
+        PerformanceMetricsService.Instance.MetricsUpdated += OnPerformanceMetricsUpdated;
+        
         _isLoaded = true;
     }
 
@@ -169,6 +172,7 @@ public partial class DebugWindow : FluentWindow
         // Unsubscribe from services
         DebugLogger.Instance.LogAdded -= OnLogAdded;
         DebugInfoService.Instance.InfoUpdated -= OnDebugInfoUpdated;
+        PerformanceMetricsService.Instance.MetricsUpdated -= OnPerformanceMetricsUpdated;
     }
 
     private void OnLogAdded(object? sender, LogEntry entry)
@@ -724,6 +728,62 @@ public partial class DebugWindow : FluentWindow
     /// Event raised when element lock state is toggled.
     /// </summary>
     public event EventHandler<VectorElement>? ElementLockToggled;
+
+    #endregion
+
+    #region Performance Tab
+
+    private void OnPerformanceMetricsUpdated(object? sender, PerformanceSnapshot snapshot)
+    {
+        // Marshal to UI thread
+        Dispatcher.BeginInvoke(() => UpdatePerformanceDisplay(snapshot));
+    }
+
+    private void UpdatePerformanceDisplay(PerformanceSnapshot s)
+    {
+        // Frame rate
+        CurrentFpsText.Text = $"{s.Fps:F1}";
+        AverageFpsText.Text = $"{s.AverageFps:F1}";
+        MinFpsText.Text = $"{s.MinFps:F1}";
+        MaxFpsText.Text = $"{s.MaxFps:F1}";
+        TotalFramesText.Text = $"{s.TotalFrames:N0}";
+        
+        // Update FPS badge color based on performance
+        FpsBadgeText.Text = $"{s.Fps:F0} FPS";
+        FpsIndicator.Background = s.Fps switch
+        {
+            >= 55 => FindResource("GreenBrush") as Brush ?? Brushes.Green,
+            >= 30 => FindResource("YellowBrush") as Brush ?? Brushes.Yellow,
+            _ => FindResource("RedBrush") as Brush ?? Brushes.Red
+        };
+        
+        // Render time
+        LastRenderTimeText.Text = $"{s.LastRenderTimeMs:F2} ms";
+        AverageRenderTimeText.Text = $"{s.AverageRenderTimeMs:F2} ms";
+        MaxRenderTimeText.Text = $"{s.MaxRenderTimeMs:F2} ms";
+        
+        // Memory
+        ProcessMemoryText.Text = PerformanceMetricsService.FormatBytes(s.MemoryUsedBytes);
+        GcMemoryText.Text = PerformanceMetricsService.FormatBytes(s.GcMemoryBytes);
+        
+        // Document stats
+        PerfElementCountText.Text = s.ElementCount.ToString();
+        UndoStackText.Text = s.UndoStackSize.ToString();
+        RedoStackText.Text = s.RedoStackSize.ToString();
+    }
+
+    private void ResetPerformance_Click(object sender, RoutedEventArgs e)
+    {
+        PerformanceMetricsService.Instance.Reset();
+        DebugLogger.Instance.Info("DebugWindow", "Performance metrics reset");
+    }
+
+    private void CopyPerformanceInfo_Click(object sender, RoutedEventArgs e)
+    {
+        var text = PerformanceMetricsService.Instance.FormatAllInfo();
+        Clipboard.SetText(text);
+        DebugLogger.Instance.Info("DebugWindow", "Copied performance info to clipboard");
+    }
 
     #endregion
 }

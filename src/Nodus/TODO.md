@@ -1204,11 +1204,11 @@ After completing each task set:
 - [x] View raw SVG output
 
 ### 12.5 Performance Tab
-- [ ] Frame rate display
-- [ ] Render time metrics
-- [ ] Memory usage
-- [ ] Element count
-- [ ] Undo/Redo stack size
+- [x] Frame rate display
+- [x] Render time metrics
+- [x] Memory usage
+- [x] Element count
+- [x] Undo/Redo stack size
 
 ### 12.6 Crash Detection & Error Handling
 - [x] Global unhandled exception handler (App.xaml.cs)

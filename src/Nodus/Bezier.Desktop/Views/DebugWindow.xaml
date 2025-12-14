@@ -769,17 +769,179 @@
                 
                 <!-- Performance Panel -->
                 <Grid x:Name="PerformancePanel" Visibility="Collapsed" Background="{StaticResource CrustBrush}">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="⚡" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                        <TextBlock Text="Performance Monitor" FontSize="14" FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="FPS, render times, and memory usage" FontSize="12"
-                                   Foreground="{StaticResource OverlayBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
-                                Padding="12,6" Margin="0,16,0,0" HorizontalAlignment="Center">
-                            <TextBlock Text="Coming Soon" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
-                        </Border>
-                    </StackPanel>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Toolbar -->
+                    <Border Grid.Row="0" Background="{StaticResource BaseBrush}" 
+                            BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1">
+                        <Grid Margin="8,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚡ Performance Monitor" FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                                <Border x:Name="FpsIndicator" Background="{StaticResource GreenBrush}" 
+                                        CornerRadius="8" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="FpsBadgeText" Text="-- FPS" FontSize="10" FontWeight="Bold"
+                                               Foreground="#1E1E2E"/>
+                                </Border>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <Button Content="🔄 Reset" Click="ResetPerformance_Click" Style="{StaticResource PillButton}" 
+                                        ToolTip="Reset performance metrics" Margin="0,0,4,0"/>
+                                <Button Content="📋 Copy" Click="CopyPerformanceInfo_Click" Style="{StaticResource PillButton}" 
+                                        ToolTip="Copy all metrics to clipboard"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Metrics Content -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="12">
+                        <StackPanel>
+                            
+                            <!-- Frame Rate Section -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="📊 Frame Rate" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Current FPS" Foreground="{StaticResource OverlayBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="CurrentFpsText" Grid.Column="1" Text="--" 
+                                                   Foreground="{StaticResource GreenBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11"/>
+                                        
+                                        <TextBlock Grid.Row="1" Text="Average FPS" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="AverageFpsText" Grid.Row="1" Grid.Column="1" Text="--" 
+                                                   Foreground="{StaticResource BlueBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="2" Text="Min FPS" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="MinFpsText" Grid.Row="2" Grid.Column="1" Text="--" 
+                                                   Foreground="{StaticResource YellowBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="3" Text="Max FPS" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="MaxFpsText" Grid.Row="3" Grid.Column="1" Text="--" 
+                                                   Foreground="{StaticResource GreenBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="4" Text="Total Frames" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="TotalFramesText" Grid.Row="4" Grid.Column="1" Text="0" 
+                                                   Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Render Time Section -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="⏱️ Render Time" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Last Frame" Foreground="{StaticResource OverlayBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="LastRenderTimeText" Grid.Column="1" Text="-- ms" 
+                                                   Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11"/>
+                                        
+                                        <TextBlock Grid.Row="1" Text="Average" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="AverageRenderTimeText" Grid.Row="1" Grid.Column="1" Text="-- ms" 
+                                                   Foreground="{StaticResource BlueBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="2" Text="Max" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="MaxRenderTimeText" Grid.Row="2" Grid.Column="1" Text="-- ms" 
+                                                   Foreground="{StaticResource RedBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Memory Section -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="🧠 Memory Usage" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Process" Foreground="{StaticResource OverlayBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="ProcessMemoryText" Grid.Column="1" Text="--" 
+                                                   Foreground="{StaticResource MauveBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11"/>
+                                        
+                                        <TextBlock Grid.Row="1" Text="GC Managed" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="GcMemoryText" Grid.Row="1" Grid.Column="1" Text="--" 
+                                                   Foreground="{StaticResource PinkBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Document Stats Section -->
+                            <Border Background="{StaticResource Surface0Brush}" CornerRadius="6" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="📄 Document Stats" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Elements" Foreground="{StaticResource OverlayBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="PerfElementCountText" Grid.Column="1" Text="0" 
+                                                   Foreground="{StaticResource AccentBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11"/>
+                                        
+                                        <TextBlock Grid.Row="1" Text="Undo Stack" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="UndoStackText" Grid.Row="1" Grid.Column="1" Text="0" 
+                                                   Foreground="{StaticResource BlueBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                        
+                                        <TextBlock Grid.Row="2" Text="Redo Stack" Foreground="{StaticResource OverlayBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="RedoStackText" Grid.Row="2" Grid.Column="1" Text="0" 
+                                                   Foreground="{StaticResource GreenBrush}" FontFamily="Cascadia Code,Consolas" FontSize="11" Margin="0,4,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
         </Grid>

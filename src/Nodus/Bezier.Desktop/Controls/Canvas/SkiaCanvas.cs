@@ -1,5 +1,6 @@
 namespace Bezier.Desktop.Controls.Canvas;
 
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using Bezier.Core.Interfaces;
@@ -34,6 +35,9 @@ public class SkiaCanvas : SKElement
     private DateTime _zoomAnimationStartTime;
     private SKPoint _zoomCenter;
     private const double ZoomAnimationDurationMs = 150;
+    
+    // Performance tracking
+    private readonly Stopwatch _renderStopwatch = new();
 
     /// <summary>
     /// The vector document being rendered.
@@ -200,6 +204,8 @@ public class SkiaCanvas : SKElement
 
     protected override void OnPaintSurface(SKPaintSurfaceEventArgs e)
     {
+        _renderStopwatch.Restart();
+        
         base.OnPaintSurface(e);
         
         var canvas = e.Surface.Canvas;
@@ -252,6 +258,16 @@ public class SkiaCanvas : SKElement
         if (ShowRulers)
         {
             _renderer.RenderRulers(canvas, info, _state, _document, _currentCursorScreenPosition);
+        }
+        
+        // Record render time for performance monitoring
+        _renderStopwatch.Stop();
+        PerformanceMetricsService.Instance.RecordRenderTime(_renderStopwatch.Elapsed.TotalMilliseconds);
+        
+        // Update element count
+        if (_document is not null)
+        {
+            PerformanceMetricsService.Instance.UpdateElementCount(_document.Elements.Count);
         }
     }
 
