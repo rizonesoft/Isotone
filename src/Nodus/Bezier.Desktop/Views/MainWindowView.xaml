@@ -579,7 +579,7 @@
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <ui:NumberBox Value="{Binding DocumentWidth, Mode=TwoWay}" 
                                   Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
-                                  Width="80" Height="24" FontSize="11"/>
+                                  Width="85" Height="28" FontSize="11" VerticalContentAlignment="Center"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,16,0"/>
@@ -589,7 +589,7 @@
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <ui:NumberBox Value="{Binding DocumentHeight, Mode=TwoWay}" 
                                   Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
-                                  Width="80" Height="24" FontSize="11"/>
+                                  Width="85" Height="28" FontSize="11" VerticalContentAlignment="Center"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,0,0"/>
