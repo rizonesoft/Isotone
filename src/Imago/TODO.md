@@ -221,13 +221,13 @@ Imago/
 - [ ] Implement viewport-based tile priority
 
 ### 1.3 Color Management
-- [ ] Create `ColorProfile` class (ICC wrapper)
-- [ ] Create `ColorConverter` service
-- [ ] Implement sRGB/AdobeRGB/ProPhoto conversions
-- [ ] Create CMYK color handling
-- [ ] Implement soft-proofing logic
-- [ ] Create color picker models (HSV, HSL, LAB)
-- [ ] Add gamut warning indicators
+- [x] Create `ColorProfile` class (ICC wrapper)
+- [x] Create `ColorConverter` service
+- [x] Implement sRGB/AdobeRGB/ProPhoto conversions
+- [x] Create CMYK color handling
+- [x] Implement soft-proofing logic
+- [x] Create color picker models (HSV, HSL, LAB)
+- [x] Add gamut warning indicators
 
 ### 1.4 History System (Undo/Redo)
 - [ ] Create `ICommand` interface for commands
