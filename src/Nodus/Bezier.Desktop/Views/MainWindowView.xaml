@@ -567,7 +567,7 @@
         <!-- Context Toolbar (Document Properties when no selection) -->
         <Border Grid.Row="2" Background="{StaticResource CrustBrush}" 
                 BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1"
-                Padding="12,4">
+                Padding="12,2">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- Document Section (shown when no selection) -->
                 <StackPanel Orientation="Horizontal" Visibility="{Binding NoSelection, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -579,7 +579,7 @@
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <ui:NumberBox Value="{Binding DocumentWidth, Mode=TwoWay}" 
                                   Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
-                                  Width="85" Height="28" FontSize="11" VerticalContentAlignment="Center"/>
+                                  Width="80" Height="24" FontSize="11"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,16,0"/>
@@ -589,7 +589,7 @@
                                VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <ui:NumberBox Value="{Binding DocumentHeight, Mode=TwoWay}" 
                                   Minimum="1" Maximum="10000" SpinButtonPlacementMode="Compact"
-                                  Width="85" Height="28" FontSize="11" VerticalContentAlignment="Center"/>
+                                  Width="80" Height="24" FontSize="11"/>
                     
                     <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
                                VerticalAlignment="Center" Margin="4,0,0,0"/>
