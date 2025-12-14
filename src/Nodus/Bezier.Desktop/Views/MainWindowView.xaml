@@ -64,13 +64,13 @@
         <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="{StaticResource Base}"/>
         <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{StaticResource Surface0}"/>
         
-        <!-- Custom SVG Icon Paths (Material Design Icons) -->
-        <!-- Magnet Icon - for Snap -->
-        <Geometry x:Key="MagnetIconPath">M3,7V13A9,9 0 0,0 12,22A9,9 0 0,0 21,13V7H17V13A5,5 0 0,1 12,18A5,5 0 0,1 7,13V7H3M5,2H9V5H5V2M15,2H19V5H15V2</Geometry>
-        <!-- Grid Dots Icon - for Grid -->
-        <Geometry x:Key="GridDotsIconPath">M12,2A2,2 0 0,1 14,4A2,2 0 0,1 12,6A2,2 0 0,1 10,4A2,2 0 0,1 12,2M4,2A2,2 0 0,1 6,4A2,2 0 0,1 4,6A2,2 0 0,1 2,4A2,2 0 0,1 4,2M20,2A2,2 0 0,1 22,4A2,2 0 0,1 20,6A2,2 0 0,1 18,4A2,2 0 0,1 20,2M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M4,10A2,2 0 0,1 6,12A2,2 0 0,1 4,14A2,2 0 0,1 2,12A2,2 0 0,1 4,10M20,10A2,2 0 0,1 22,12A2,2 0 0,1 20,14A2,2 0 0,1 18,12A2,2 0 0,1 20,10M12,18A2,2 0 0,1 14,20A2,2 0 0,1 12,22A2,2 0 0,1 10,20A2,2 0 0,1 12,18M4,18A2,2 0 0,1 6,20A2,2 0 0,1 4,22A2,2 0 0,1 2,20A2,2 0 0,1 4,18M20,18A2,2 0 0,1 22,20A2,2 0 0,1 20,22A2,2 0 0,1 18,20A2,2 0 0,1 20,18</Geometry>
-        <!-- Ruler Icon - for Rulers -->
-        <Geometry x:Key="RulerIconPath">M1,3V21H23V3H1M21,5V11H19V9H17V11H15V7H13V11H11V9H9V11H7V7H5V11H3V5H21M3,19V13H21V19H3</Geometry>
+        <!-- Custom SVG Icon Paths (Lucide/Feather-style) -->
+        <!-- Magnet Icon - for Snap (horseshoe magnet) -->
+        <Geometry x:Key="MagnetIconPath">M4 6h3v7a5 5 0 0 0 10 0V6h3v7a8 8 0 0 1-16 0V6Z M4 6V2h3v4 M17 6V2h3v4</Geometry>
+        <!-- Grid 3x3 Icon - for Grid -->
+        <Geometry x:Key="GridDotsIconPath">M3 3h7v7H3V3Z M14 3h7v7h-7V3Z M14 14h7v7h-7v-7Z M3 14h7v7H3v-7Z</Geometry>
+        <!-- Ruler Icon - horizontal ruler with tick marks -->
+        <Geometry x:Key="RulerIconPath">M3 5h18v14H3V5Z M7 5v6 M11 5v4 M15 5v6 M19 5v4</Geometry>
         
         <!-- Tool Button Style -->
         <Style x:Key="ToolButtonStyle" TargetType="Button">
