@@ -230,13 +230,13 @@ Imago/
 - [x] Add gamut warning indicators
 
 ### 1.4 History System (Undo/Redo)
-- [ ] Create `ICommand` interface for commands
-- [ ] Create `CommandHistory` class
-- [ ] Implement command coalescing (group similar edits)
-- [ ] Create history snapshot system
+- [x] Create `ICommand` interface for commands
+- [x] Create `CommandHistory` class
+- [x] Implement command coalescing (group similar edits)
+- [x] Create history snapshot system
 - [ ] Implement branching history (optional)
-- [ ] Add history memory limits
-- [ ] Create history persistence (recover after crash)
+- [x] Add history memory limits
+- [x] Create history persistence (recover after crash)
 
 ### 1.5 Selection System
 - [ ] Create `Selection` class (marching ants)
