@@ -527,7 +527,8 @@
                 </ToggleButton>
                 <ToggleButton Style="{StaticResource ToggleToolButtonStyle}" ToolTip="Toggle Snap" 
                               IsChecked="{Binding SnapEnabled}" Width="32" Height="28">
-                    <Path Data="{helpers:Icon Magnet}" Fill="{StaticResource SubtextBrush}" 
+                    <Path Data="{helpers:Icon Magnet}" 
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" 
                           Stretch="Uniform" Width="18" Height="18"/>
                 </ToggleButton>
             </StackPanel>
