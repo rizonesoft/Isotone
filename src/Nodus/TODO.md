@@ -181,7 +181,6 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] .github/workflows/build.yml for CI
 - [x] dependabot.yml for NuGet updates
 - [x] CHANGELOG.md
-- [ ] Branch protection rules
 
 ## 0.5 Initial UI Shell
 - [x] Main window with Mica/Acrylic backdrop
@@ -322,7 +321,7 @@ OUTPUT: Show me the code changes, then run build + commit + push.
 - [x] GPU acceleration status
 - [ ] Document units toggle (px/mm/in/pt)
 - [ ] Quick zoom presets (25%, 50%, 100%, 200%, 400%)
-- [ ] Artboard name indicator
+- [x] Artboard name indicator
 - [ ] Layer count indicator
 - [ ] Undo/Redo count indicator
 - [ ] File save status (saved/unsaved/auto-saved)

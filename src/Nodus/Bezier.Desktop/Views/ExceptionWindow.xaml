@@ -36,7 +36,7 @@
                 </Grid.ColumnDefinitions>
                 
                 <!-- Icon -->
-                <Border Width="40" Height="40" CornerRadius="20" Margin="0,0,12,0">
+                <Border Width="40" Height="40" CornerRadius="2" Margin="0,0,12,0">
                     <Border.Background>
                         <SolidColorBrush x:Name="IconBackground" Color="#F38BA8"/>
                     </Border.Background>
@@ -80,7 +80,7 @@
                        Margin="0,0,0,6"/>
             
             <Border Grid.Row="1" Background="{StaticResource MantleBrush}" 
-                    CornerRadius="4" Padding="8">
+                    CornerRadius="2" Padding="8">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
                               HorizontalScrollBarVisibility="Auto">
                     <TextBox x:Name="StackTraceText"

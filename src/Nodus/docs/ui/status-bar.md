@@ -10,6 +10,7 @@ The Status Bar at the bottom of the main window provides real-time information a
 | **Selection** | Selected object count and dimensions |
 | **Color Mode** | Document color mode (RGB/CMYK) |
 | **Snap** | Snap to grid/guides status (highlighted when enabled) |
+| **Artboard** | Name of the active artboard (only shown when an artboard is active) |
 
 ## Right Section
 

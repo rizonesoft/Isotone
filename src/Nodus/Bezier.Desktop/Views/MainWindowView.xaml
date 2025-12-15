@@ -23,6 +23,7 @@
     <ui:FluentWindow.Resources>
         <!-- Converters -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <controls:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
         
         <!-- Catppuccin Mocha Colors -->
         <Color x:Key="Base">#1E1E2E</Color>
@@ -85,7 +86,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" 
                                 Background="{TemplateBinding Background}" 
-                                CornerRadius="3"
+                                CornerRadius="2"
                                 BorderThickness="0">
                             <ContentPresenter HorizontalAlignment="Center" 
                                               VerticalAlignment="Center"/>
@@ -119,7 +120,7 @@
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="border" 
                                 Background="{TemplateBinding Background}" 
-                                CornerRadius="3"
+                                CornerRadius="2"
                                 BorderThickness="1"
                                 BorderBrush="Transparent">
                             <ContentPresenter HorizontalAlignment="Center" 
@@ -184,7 +185,7 @@
                         <!-- Main button with border for glow effect -->
                         <Border x:Name="border" 
                                 Background="{TemplateBinding Background}" 
-                                CornerRadius="3"
+                                CornerRadius="2"
                                 BorderThickness="1"
                                 BorderBrush="Transparent">
                             <ContentPresenter HorizontalAlignment="Center" 
@@ -282,7 +283,7 @@
                         <Border Background="{TemplateBinding Background}" 
                                 BorderBrush="{TemplateBinding BorderBrush}" 
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                CornerRadius="2" Padding="{TemplateBinding Padding}">
                             <Border.Effect>
                                 <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="2" Opacity="0.3"/>
                             </Border.Effect>
@@ -530,7 +531,7 @@
                         Command="{Binding ZoomOutCommand}" Width="28" Height="28">
                     <fi:FluentIcon Icon="Subtract" IconSize="Size20" FontSize="16" IconVariant="Regular" Foreground="{StaticResource SubtextBrush}"/>
                 </Button>
-                <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                <Border Background="{StaticResource Surface0Brush}" CornerRadius="2" 
                         Padding="8,4" Margin="2,0" MinWidth="55">
                     <TextBlock Text="{Binding ZoomLevel, StringFormat={}{0}%}" 
                                Foreground="{StaticResource TextBrush}" FontSize="11"
@@ -568,7 +569,7 @@
         <!-- Context Toolbar (Document Properties when no selection) -->
         <Border Grid.Row="2" Background="{StaticResource CrustBrush}" 
                 BorderBrush="{StaticResource Surface0Brush}" BorderThickness="0,0,0,1"
-                Padding="12,2">
+                Padding="12,4">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- Document Section (shown when no selection) -->
                 <StackPanel Orientation="Horizontal" Visibility="{Binding NoSelection, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -576,24 +577,17 @@
                                VerticalAlignment="Center" Margin="0,0,12,0"/>
                     
                     <!-- Width -->
-                    <TextBlock Text="W" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
-                               VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <controls:CompactNumberBox Value="{Binding DocumentWidth, Mode=TwoWay}" 
                                                Minimum="1" Maximum="10000"
-                                               Width="70" Height="24" FontSize="11"/>
-                    
-                    <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
-                               VerticalAlignment="Center" Margin="4,0,16,0"/>
+                                               Prefix="W" Suffix="px"
+                                               AutoWidth="True" Height="24" FontSize="11"
+                                               Margin="0,0,12,0"/>
                     
                     <!-- Height -->
-                    <TextBlock Text="H" Foreground="{StaticResource SubtextBrush}" FontSize="11" 
-                               VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <controls:CompactNumberBox Value="{Binding DocumentHeight, Mode=TwoWay}" 
                                                Minimum="1" Maximum="10000"
-                                               Width="70" Height="24" FontSize="11"/>
-                    
-                    <TextBlock Text="px" Foreground="{StaticResource SubtextBrush}" FontSize="10" 
-                               VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                               Prefix="H" Suffix="px"
+                                               AutoWidth="True" Height="24" FontSize="11"/>
                 </StackPanel>
                 
                 <!-- Selection Section (shown when elements selected) -->
@@ -784,9 +778,9 @@
                                 <TextBlock Text="Fill" Foreground="{StaticResource TextBrush}" 
                                            VerticalAlignment="Center" FontSize="12"/>
                                 <Border Grid.Column="1" Background="{StaticResource Surface0Brush}" 
-                                        CornerRadius="4" Padding="8,6">
+                                        CornerRadius="2" Padding="8,6">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="20" Height="20" CornerRadius="3">
+                                        <Border Width="20" Height="20" CornerRadius="2">
                                             <Border.Background>
                                                 <SolidColorBrush Color="{StaticResource Blue}"/>
                                             </Border.Background>
@@ -807,9 +801,9 @@
                                 <TextBlock Text="Stroke" Foreground="{StaticResource TextBrush}" 
                                            VerticalAlignment="Center" FontSize="12"/>
                                 <Border Grid.Column="1" Background="{StaticResource Surface0Brush}" 
-                                        CornerRadius="4" Padding="8,6">
+                                        CornerRadius="2" Padding="8,6">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="20" Height="20" CornerRadius="3" 
+                                        <Border Width="20" Height="20" CornerRadius="2" 
                                                 BorderBrush="{StaticResource TextBrush}" BorderThickness="2"/>
                                         <TextBlock Text="None" Foreground="{StaticResource SubtextBrush}" 
                                                    VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
@@ -828,13 +822,13 @@
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" Padding="8,6">
+                                <Border Background="{StaticResource Surface0Brush}" CornerRadius="2" Padding="8,6">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="X" Foreground="{StaticResource SubtextBrush}" FontSize="10" Width="14"/>
                                         <TextBlock Text="0" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                                     </StackPanel>
                                 </Border>
-                                <Border Grid.Column="2" Background="{StaticResource Surface0Brush}" CornerRadius="4" Padding="8,6">
+                                <Border Grid.Column="2" Background="{StaticResource Surface0Brush}" CornerRadius="2" Padding="8,6">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="Y" Foreground="{StaticResource SubtextBrush}" FontSize="10" Width="14"/>
                                         <TextBlock Text="0" Foreground="{StaticResource TextBrush}" FontSize="12"/>
@@ -849,13 +843,13 @@
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" Padding="8,6">
+                                <Border Background="{StaticResource Surface0Brush}" CornerRadius="2" Padding="8,6">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="W" Foreground="{StaticResource SubtextBrush}" FontSize="10" Width="14"/>
                                         <TextBlock Text="100" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                                     </StackPanel>
                                 </Border>
-                                <Border Grid.Column="2" Background="{StaticResource Surface0Brush}" CornerRadius="4" Padding="8,6">
+                                <Border Grid.Column="2" Background="{StaticResource Surface0Brush}" CornerRadius="2" Padding="8,6">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="H" Foreground="{StaticResource SubtextBrush}" FontSize="10" Width="14"/>
                                         <TextBlock Text="100" Foreground="{StaticResource TextBrush}" FontSize="12"/>
@@ -881,7 +875,7 @@
                             <ItemsControl ItemsSource="{Binding Document.Elements}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="2" 
                                                 Padding="8,6" Margin="0,2" Cursor="Hand">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -926,7 +920,7 @@
                             <ItemsControl ItemsSource="{Binding UndoHistory}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="4" 
+                                        <Border Background="{StaticResource Surface0Brush}" CornerRadius="2" 
                                                 Padding="8,6" Margin="0,2">
                                             <StackPanel Orientation="Horizontal">
                                                 <fi:FluentIcon Icon="History" IconSize="Size16" FontSize="12" 
@@ -991,6 +985,23 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SnapEnabled}" Value="True">
                                         <Setter Property="Text" Value="Snap On"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <!-- Artboard Name Indicator -->
+                    <Border Width="1" Height="12" Background="{StaticResource Surface1Brush}" Margin="12,0,12,0"/>
+                    <fi:FluentIcon Icon="Document" IconSize="Size16" FontSize="12" Foreground="{StaticResource SubtextBrush}" Margin="0,0,4,0"/>
+                    <TextBlock Foreground="{StaticResource SubtextBrush}" FontSize="11" 
+                               ToolTip="Active Artboard Name">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="{Binding ArtboardName}"/>
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ArtboardName, Converter={StaticResource StringNotEmptyConverter}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

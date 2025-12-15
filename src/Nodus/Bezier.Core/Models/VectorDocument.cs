@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using Bezier.Core.Interfaces;
+using Bezier.Core.Services;
 
 namespace Bezier.Core.Models;
 
@@ -42,6 +43,8 @@ public class VectorDocument : INotifyPropertyChanged
     private IFill? _background;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private readonly ArtboardManager _artboardManager = new();
 
     /// <summary>
     /// Initializes a new instance of the VectorDocument class.
@@ -201,6 +204,11 @@ public class VectorDocument : INotifyPropertyChanged
     /// Collection of all elements in the document.
     /// </summary>
     public ObservableCollection<VectorElement> Elements { get; } = [];
+
+    /// <summary>
+    /// Gets the artboard manager for this document.
+    /// </summary>
+    public ArtboardManager Artboards => _artboardManager;
 
     /// <summary>
     /// Marks the document as saved (IsDirty = false).

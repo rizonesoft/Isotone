@@ -15,10 +15,10 @@
     
     <Grid>
         <!-- Main content area - Catppuccin Mocha Base -->
-        <Border Background="#1E1E2E" CornerRadius="12" Margin="8"/>
+        <Border Background="#1E1E2E" CornerRadius="2" Margin="8"/>
         
         <!-- Base border - subtle gray -->
-        <Border CornerRadius="12" Margin="8" BorderBrush="#45475A" BorderThickness="1" 
+        <Border CornerRadius="2" Margin="8" BorderBrush="#45475A" BorderThickness="1" 
                 SnapsToDevicePixels="True" UseLayoutRounding="True"/>
         
         <!-- Orange Glow that follows border - implemented via OpacityMask -->
@@ -49,7 +49,7 @@
         </Rectangle>
         
         <!-- Inner content -->
-        <Border CornerRadius="10" Margin="10">
+        <Border CornerRadius="2" Margin="10">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>

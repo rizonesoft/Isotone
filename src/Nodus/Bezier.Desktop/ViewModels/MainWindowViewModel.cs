@@ -21,6 +21,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly SvgExporter _svgExporter = new();
     private readonly HistoryManager _history = new();
     private readonly ToolManager _toolManager = new();
+    private Artboard? _subscribedArtboard;
 
     public MainWindowViewModel()
     {
@@ -140,6 +141,68 @@ public partial class MainWindowViewModel : ObservableObject
     partial void OnDocumentChanged(VectorDocument? value)
     {
         _toolManager.SetContext(value, _history);
+        
+        // Unsubscribe from previous document's artboard changes
+        if (_document != null)
+        {
+            _document.Artboards.ActiveArtboardChanged -= OnActiveArtboardChanged;
+            if (_subscribedArtboard != null)
+            {
+                _subscribedArtboard.PropertyChanged -= OnActiveArtboardPropertyChanged;
+                _subscribedArtboard = null;
+            }
+        }
+        
+        // Subscribe to new document's artboard changes
+        if (value != null)
+        {
+            value.Artboards.ActiveArtboardChanged += OnActiveArtboardChanged;
+            if (value.Artboards.ActiveArtboard != null)
+            {
+                _subscribedArtboard = value.Artboards.ActiveArtboard;
+                _subscribedArtboard.PropertyChanged += OnActiveArtboardPropertyChanged;
+            }
+            UpdateArtboardName(value.Artboards.ActiveArtboard);
+        }
+        else
+        {
+            ArtboardName = string.Empty;
+        }
+    }
+
+    private void OnActiveArtboardChanged(object? sender, EventArgs e)
+    {
+        // Unsubscribe from previous artboard
+        if (_subscribedArtboard != null)
+        {
+            _subscribedArtboard.PropertyChanged -= OnActiveArtboardPropertyChanged;
+            _subscribedArtboard = null;
+        }
+        
+        // Subscribe to new artboard
+        if (Document?.Artboards.ActiveArtboard != null)
+        {
+            _subscribedArtboard = Document.Artboards.ActiveArtboard;
+            _subscribedArtboard.PropertyChanged += OnActiveArtboardPropertyChanged;
+            UpdateArtboardName(_subscribedArtboard);
+        }
+        else
+        {
+            ArtboardName = string.Empty;
+        }
+    }
+
+    private void OnActiveArtboardPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Artboard.Name) && sender is Artboard artboard)
+        {
+            UpdateArtboardName(artboard);
+        }
+    }
+
+    private void UpdateArtboardName(Artboard? artboard)
+    {
+        ArtboardName = artboard?.Name ?? string.Empty;
     }
 
     [ObservableProperty]
@@ -184,6 +247,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _toolHintText = "Click to select, drag to move";
+
+    [ObservableProperty]
+    private string _artboardName = string.Empty;
 
     [ObservableProperty]
     private string _memoryUsage = "0 MB";

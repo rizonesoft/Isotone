@@ -609,9 +609,31 @@ public class SkiaCanvas : SKElement
     {
         if (d is SkiaCanvas canvas)
         {
+            // Unsubscribe from old document
+            if (e.OldValue is VectorDocument oldDoc)
+            {
+                oldDoc.PropertyChanged -= canvas.OnDocumentPropertyChanged;
+            }
+            
             canvas._document = e.NewValue as VectorDocument;
+            
+            // Subscribe to new document for size changes
+            if (e.NewValue is VectorDocument newDoc)
+            {
+                newDoc.PropertyChanged += canvas.OnDocumentPropertyChanged;
+            }
+            
             canvas.FitToWindow();
             canvas.InvalidateVisual();
+        }
+    }
+
+    private void OnDocumentPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        // Only invalidate for properties that affect rendering
+        if (e.PropertyName is "Width" or "Height" or "Background")
+        {
+            InvalidateVisual();
         }
     }
 

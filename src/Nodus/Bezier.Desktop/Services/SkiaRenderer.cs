@@ -599,6 +599,14 @@ public class SkiaRenderer
         var endX = (float)document.Width;
         var endY = (float)document.Height;
         
+        // Skip grid if there would be too many lines (performance optimization)
+        var estimatedLines = (endX / spacing) + (endY / spacing);
+        if (estimatedLines > 500)
+        {
+            // Only draw major grid lines when there are too many minor lines
+            spacing = majorSpacing;
+        }
+        
         // Fade grid lines based on zoom
         var minorAlpha = (byte)Math.Clamp((zoom - 0.3) * 100, 0, 80);
         var majorAlpha = (byte)Math.Clamp((zoom - 0.2) * 150, 0, 120);
