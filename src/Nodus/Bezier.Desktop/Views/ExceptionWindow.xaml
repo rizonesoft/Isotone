@@ -6,17 +6,17 @@
         MinHeight="300" MinWidth="500"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip"
-        Background="#1E1E2E">
+        Background="#1A1A1A">
     
     <Window.Resources>
-        <SolidColorBrush x:Key="BaseBrush" Color="#1E1E2E"/>
-        <SolidColorBrush x:Key="MantleBrush" Color="#181825"/>
-        <SolidColorBrush x:Key="Surface0Brush" Color="#313244"/>
-        <SolidColorBrush x:Key="TextBrush" Color="#CDD6F4"/>
-        <SolidColorBrush x:Key="SubtextBrush" Color="#A6ADC8"/>
-        <SolidColorBrush x:Key="RedBrush" Color="#F38BA8"/>
-        <SolidColorBrush x:Key="YellowBrush" Color="#F9E2AF"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#FF6B35"/>
+        <SolidColorBrush x:Key="BaseBrush" Color="#1A1A1A"/>
+        <SolidColorBrush x:Key="MantleBrush" Color="#202020"/>
+        <SolidColorBrush x:Key="Surface0Brush" Color="#2A2A2A"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="SubtextBrush" Color="#B0B0B0"/>
+        <SolidColorBrush x:Key="RedBrush" Color="#909090"/>
+        <SolidColorBrush x:Key="YellowBrush" Color="#909090"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#808080"/>
     </Window.Resources>
     
     <Grid>
@@ -38,10 +38,10 @@
                 <!-- Icon -->
                 <Border Width="40" Height="40" CornerRadius="2" Margin="0,0,12,0">
                     <Border.Background>
-                        <SolidColorBrush x:Name="IconBackground" Color="#F38BA8"/>
+                        <SolidColorBrush x:Name="IconBackground" Color="#909090"/>
                     </Border.Background>
                     <TextBlock Text="!" FontSize="24" FontWeight="Bold" 
-                               Foreground="#1E1E2E" 
+                               Foreground="#1A1A1A" 
                                HorizontalAlignment="Center" 
                                VerticalAlignment="Center"/>
                 </Border>
@@ -131,7 +131,7 @@
                         Click="Exit_Click"
                         Padding="16,8"
                         Background="{StaticResource RedBrush}"
-                        Foreground="#1E1E2E"
+                        Foreground="#1A1A1A"
                         BorderThickness="0"
                         Cursor="Hand"/>
             </Grid>

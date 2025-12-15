@@ -10,21 +10,21 @@
     
     <Window.Resources>
         <!-- Catppuccin Mocha Theme -->
-        <SolidColorBrush x:Key="BaseBrush" Color="#1E1E2E"/>
-        <SolidColorBrush x:Key="MantleBrush" Color="#181825"/>
-        <SolidColorBrush x:Key="CrustBrush" Color="#11111B"/>
-        <SolidColorBrush x:Key="Surface0Brush" Color="#313244"/>
-        <SolidColorBrush x:Key="Surface1Brush" Color="#45475A"/>
-        <SolidColorBrush x:Key="TextBrush" Color="#CDD6F4"/>
-        <SolidColorBrush x:Key="SubtextBrush" Color="#A6ADC8"/>
-        <SolidColorBrush x:Key="OverlayBrush" Color="#6C7086"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#FF6B35"/>
-        <SolidColorBrush x:Key="BlueBrush" Color="#89B4FA"/>
-        <SolidColorBrush x:Key="GreenBrush" Color="#A6E3A1"/>
-        <SolidColorBrush x:Key="YellowBrush" Color="#F9E2AF"/>
-        <SolidColorBrush x:Key="RedBrush" Color="#F38BA8"/>
-        <SolidColorBrush x:Key="PinkBrush" Color="#F5C2E7"/>
-        <SolidColorBrush x:Key="MauveBrush" Color="#CBA6F7"/>
+        <SolidColorBrush x:Key="BaseBrush" Color="#1A1A1A"/>
+        <SolidColorBrush x:Key="MantleBrush" Color="#202020"/>
+        <SolidColorBrush x:Key="CrustBrush" Color="#151515"/>
+        <SolidColorBrush x:Key="Surface0Brush" Color="#2A2A2A"/>
+        <SolidColorBrush x:Key="Surface1Brush" Color="#353535"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="SubtextBrush" Color="#B0B0B0"/>
+        <SolidColorBrush x:Key="OverlayBrush" Color="#505050"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#808080"/>
+        <SolidColorBrush x:Key="BlueBrush" Color="#808080"/>
+        <SolidColorBrush x:Key="GreenBrush" Color="#808080"/>
+        <SolidColorBrush x:Key="YellowBrush" Color="#909090"/>
+        <SolidColorBrush x:Key="RedBrush" Color="#909090"/>
+        <SolidColorBrush x:Key="PinkBrush" Color="#909090"/>
+        <SolidColorBrush x:Key="MauveBrush" Color="#909090"/>
         
         <!-- Modern CheckBox Style -->
         <Style x:Key="ModernCheckBox" TargetType="CheckBox">
@@ -688,10 +688,10 @@
                               VirtualizingPanel.VirtualizationMode="Recycling"
                               SelectedItemChanged="ElementTree_SelectedItemChanged">
                         <TreeView.Resources>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#313244"/>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#CDD6F4"/>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#313244"/>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#CDD6F4"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#2A2A2A"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#E0E0E0"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#2A2A2A"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#E0E0E0"/>
                         </TreeView.Resources>
                         <TreeView.ItemContainerStyle>
                             <Style TargetType="TreeViewItem">
@@ -786,7 +786,7 @@
                                 <Border x:Name="FpsIndicator" Background="{StaticResource GreenBrush}" 
                                         CornerRadius="2" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
                                     <TextBlock x:Name="FpsBadgeText" Text="-- FPS" FontSize="10" FontWeight="Bold"
-                                               Foreground="#1E1E2E"/>
+                                               Foreground="#1A1A1A"/>
                                 </Border>
                             </StackPanel>
                             

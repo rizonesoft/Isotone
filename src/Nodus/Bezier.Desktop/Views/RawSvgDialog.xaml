@@ -7,15 +7,15 @@
         WindowStartupLocation="CenterOwner">
     
     <Window.Resources>
-        <SolidColorBrush x:Key="BaseBrush" Color="#1E1E2E"/>
-        <SolidColorBrush x:Key="MantleBrush" Color="#181825"/>
-        <SolidColorBrush x:Key="CrustBrush" Color="#11111B"/>
-        <SolidColorBrush x:Key="Surface0Brush" Color="#313244"/>
-        <SolidColorBrush x:Key="TextBrush" Color="#CDD6F4"/>
-        <SolidColorBrush x:Key="SubtextBrush" Color="#A6ADC8"/>
-        <SolidColorBrush x:Key="OverlayBrush" Color="#6C7086"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#FF6B35"/>
-        <SolidColorBrush x:Key="GreenBrush" Color="#A6E3A1"/>
+        <SolidColorBrush x:Key="BaseBrush" Color="#1A1A1A"/>
+        <SolidColorBrush x:Key="MantleBrush" Color="#202020"/>
+        <SolidColorBrush x:Key="CrustBrush" Color="#151515"/>
+        <SolidColorBrush x:Key="Surface0Brush" Color="#2A2A2A"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="SubtextBrush" Color="#B0B0B0"/>
+        <SolidColorBrush x:Key="OverlayBrush" Color="#505050"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#808080"/>
+        <SolidColorBrush x:Key="GreenBrush" Color="#808080"/>
         
         <Style x:Key="PillButton" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource Surface0Brush}"/>
@@ -33,7 +33,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#45475A"/>
+                                <Setter TargetName="border" Property="Background" Value="#353535"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

@@ -14,11 +14,11 @@
         Opacity="0.9">
     
     <Grid>
-        <!-- Main content area - Catppuccin Mocha Base -->
-        <Border Background="#1E1E2E" CornerRadius="2" Margin="8"/>
+        <!-- Main content area - Pure Grey Base -->
+        <Border Background="#1A1A1A" CornerRadius="2" Margin="8"/>
         
         <!-- Base border - subtle gray -->
-        <Border CornerRadius="2" Margin="8" BorderBrush="#45475A" BorderThickness="1" 
+        <Border CornerRadius="2" Margin="8" BorderBrush="#353535" BorderThickness="1" 
                 SnapsToDevicePixels="True" UseLayoutRounding="True"/>
         
         <!-- Orange Glow that follows border - implemented via OpacityMask -->
@@ -28,13 +28,13 @@
                    StrokeDashCap="Round">
             <Rectangle.Stroke>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FF6B35" Offset="0"/>
-                    <GradientStop Color="#FF8C5A" Offset="0.5"/>
-                    <GradientStop Color="#FFAB76" Offset="1"/>
+                    <GradientStop Color="#707070" Offset="0"/>
+                    <GradientStop Color="#808080" Offset="0.5"/>
+                    <GradientStop Color="#909090" Offset="1"/>
                 </LinearGradientBrush>
             </Rectangle.Stroke>
             <Rectangle.Effect>
-                <DropShadowEffect Color="#FF6B35" BlurRadius="10" ShadowDepth="0" Opacity="1"/>
+                <DropShadowEffect Color="#808080" BlurRadius="10" ShadowDepth="0" Opacity="1"/>
             </Rectangle.Effect>
             <Rectangle.OpacityMask>
                 <RadialGradientBrush x:Name="GlowMask" 
@@ -101,7 +101,7 @@
                            Text="Version 1.0.0"
                            FontFamily="Segoe UI Variable Text, Segoe UI, Arial"
                            FontSize="10"
-                           Foreground="#45475A"
+                           Foreground="#353535"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Bottom"
                            Margin="0,0,0,8"/>
