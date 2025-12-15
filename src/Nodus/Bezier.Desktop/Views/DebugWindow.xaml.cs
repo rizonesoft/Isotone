@@ -7,14 +7,12 @@ using Bezier.Core.Models;
 using Bezier.Core.Models.Fills;
 using Bezier.Core.Services;
 using Microsoft.Win32;
-using Wpf.Ui.Controls;
-
 namespace Bezier.Desktop.Views;
 
 /// <summary>
 /// Developer Tools window for debugging and inspection.
 /// </summary>
-public partial class DebugWindow : FluentWindow
+public partial class DebugWindow : Window
 {
     private readonly ObservableCollection<LogEntryViewModel> _logEntries = [];
     private readonly ObservableCollection<LogEntryViewModel> _filteredEntries = [];

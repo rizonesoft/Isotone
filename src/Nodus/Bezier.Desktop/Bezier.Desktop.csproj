@@ -23,7 +23,6 @@
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.1" />
     <PackageReference Include="Svg.Skia" Version="3.2.1" />
-    <PackageReference Include="WPF-UI" Version="4.1.0" />
   </ItemGroup>
 
   <ItemGroup>

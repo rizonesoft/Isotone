@@ -2,14 +2,13 @@ using System.IO;
 using System.Windows;
 using Bezier.Core.Services;
 using Microsoft.Win32;
-using Wpf.Ui.Controls;
 
 namespace Bezier.Desktop.Views;
 
 /// <summary>
 /// Dialog for viewing and exporting raw SVG output.
 /// </summary>
-public partial class RawSvgDialog : FluentWindow
+public partial class RawSvgDialog : Window
 {
     private readonly string _svgContent;
 

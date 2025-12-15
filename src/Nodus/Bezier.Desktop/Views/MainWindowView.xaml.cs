@@ -2,14 +2,13 @@ using System.Windows;
 using Bezier.Core.Services;
 using Bezier.Desktop.ViewModels;
 using SkiaSharp;
-using Wpf.Ui.Controls;
 
 namespace Bezier.Desktop.Views;
 
 /// <summary>
-/// Main application window with Mica backdrop and docking layout.
+/// Main application window with docking layout.
 /// </summary>
-public partial class MainWindowView : FluentWindow
+public partial class MainWindowView : Window
 {
     private SKPoint _lastScreenPosition;
     
@@ -96,5 +95,20 @@ public partial class MainWindowView : FluentWindow
         base.OnPreviewMouseMove(e);
         var pos = e.GetPosition(this);
         _lastScreenPosition = new SKPoint((float)pos.X, (float)pos.Y);
+    }
+    
+    private void Minimize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+    
+    private void Maximize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+    
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
 }

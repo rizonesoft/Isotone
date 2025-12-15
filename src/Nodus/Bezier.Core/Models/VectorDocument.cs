@@ -54,6 +54,9 @@ public class VectorDocument : INotifyPropertyChanged
         // Subscribe to collection changes for IsDirty tracking
         Elements.CollectionChanged += OnCollectionChanged;
         Defs.CollectionChanged += OnCollectionChanged;
+        
+        // Create a default artboard matching the document size
+        _artboardManager.CreateArtboard(0, 0, _width, _height);
     }
 
     /// <summary>
