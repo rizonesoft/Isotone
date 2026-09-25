@@ -1,40 +1,39 @@
 namespace Imago.UI.Views;
 
 using System.Windows;
-using Wpf.Ui;
-using Wpf.Ui.Appearance;
-using Wpf.Ui.Controls;
+using Imago.UI.Controls;
 using Imago.UI.ViewModels;
 
-public partial class MainWindow : FluentWindow
+public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
-    private readonly ISnackbarService _snackbarService;
-    private readonly IContentDialogService _contentDialogService;
 
-    public MainWindow(
-        MainWindowViewModel viewModel,
-        ISnackbarService snackbarService,
-        IContentDialogService contentDialogService)
+    public MainWindow(MainWindowViewModel viewModel)
     {
         _viewModel = viewModel;
-        _snackbarService = snackbarService;
-        _contentDialogService = contentDialogService;
-
         DataContext = _viewModel;
 
         InitializeComponent();
 
-        _snackbarService.SetSnackbarPresenter(SnackbarPresenter);
-        _contentDialogService.SetDialogHost(RootContentDialog);
-
-        Loaded += OnLoaded;
+        // Wire up canvas events
+        _viewModel.ImageLoadRequested += OnImageLoadRequested;
+        CanvasContainer.CanvasMouseMove += OnCanvasMouseMove;
+        CanvasContainer.ImageCanvas.ViewportChanged += OnViewportChanged;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnImageLoadRequested(object? sender, string filePath)
     {
-        SystemThemeWatcher.Watch(this);
+        CanvasContainer.LoadImage(filePath);
+        CanvasContainer.ZoomToFit();
+    }
 
-        ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+    private void OnCanvasMouseMove(object? sender, CanvasMouseEventArgs e)
+    {
+        _viewModel.UpdateCursorPosition((int)e.DocumentX, (int)e.DocumentY);
+    }
+
+    private void OnViewportChanged(object? sender, EventArgs e)
+    {
+        _viewModel.ZoomLevel = CanvasContainer.ImageCanvas.Zoom;
     }
 }

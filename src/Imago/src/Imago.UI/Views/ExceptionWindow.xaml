@@ -6,14 +6,14 @@
         MinHeight="300" MinWidth="500"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip"
-        Background="#1E1E2E">
+        Background="#1E1E1E">
     
     <Window.Resources>
-        <SolidColorBrush x:Key="BaseBrush" Color="#1E1E2E"/>
-        <SolidColorBrush x:Key="MantleBrush" Color="#181825"/>
-        <SolidColorBrush x:Key="Surface0Brush" Color="#313244"/>
-        <SolidColorBrush x:Key="TextBrush" Color="#CDD6F4"/>
-        <SolidColorBrush x:Key="SubtextBrush" Color="#A6ADC8"/>
+        <SolidColorBrush x:Key="BaseBrush" Color="#1E1E1E"/>
+        <SolidColorBrush x:Key="MantleBrush" Color="#181818"/>
+        <SolidColorBrush x:Key="Surface0Brush" Color="#2D2D2D"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="SubtextBrush" Color="#A0A0A0"/>
         <SolidColorBrush x:Key="RedBrush" Color="#F38BA8"/>
         <SolidColorBrush x:Key="YellowBrush" Color="#F9E2AF"/>
         <SolidColorBrush x:Key="AccentBrush" Color="#FF6B35"/>
@@ -41,7 +41,7 @@
                         <SolidColorBrush x:Name="IconBackground" Color="#F38BA8"/>
                     </Border.Background>
                     <TextBlock Text="!" FontSize="24" FontWeight="Bold" 
-                               Foreground="#1E1E2E" 
+                               Foreground="#1E1E1E" 
                                HorizontalAlignment="Center" 
                                VerticalAlignment="Center"/>
                 </Border>
@@ -131,7 +131,7 @@
                         Click="Exit_Click"
                         Padding="16,8"
                         Background="{StaticResource RedBrush}"
-                        Foreground="#1E1E2E"
+                        Foreground="#1E1E1E"
                         BorderThickness="0"
                         Cursor="Hand"/>
             </Grid>

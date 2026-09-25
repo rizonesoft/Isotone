@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
-using Wpf.Ui;
 using Imago.UI.Services;
 using Imago.UI.ViewModels;
 using Imago.UI.Views;
@@ -50,11 +49,6 @@ public partial class App : Application
             })
             .ConfigureServices((context, services) =>
             {
-                // WPF-UI Services
-                services.AddSingleton<IThemeService, ThemeService>();
-                services.AddSingleton<ISnackbarService, SnackbarService>();
-                services.AddSingleton<IContentDialogService, ContentDialogService>();
-
                 // Application Services
                 services.AddSingleton<Services.INavigationService, Services.NavigationService>();
                 services.AddSingleton<IDocumentService, DocumentService>();
@@ -97,6 +91,9 @@ public partial class App : Application
             SplashWindow.SetStatus("Initializing services...");
             await s_host.StartAsync();
 
+            // Apply custom theme overrides (must be after theme is loaded)
+            ApplyCustomTheme();
+
             SplashWindow.SetStatus("Loading icons...");
             Imago.UI.Services.IconService.Instance.Initialize();
 
@@ -112,6 +109,28 @@ public partial class App : Application
             SplashWindow.CloseAndDispose();
             LogException(ex, "Startup Exception");
             ExceptionWindow.Show(ex, "Startup Exception (Fatal)", canContinue: false);
+        }
+    }
+
+    /// <summary>
+    /// Applies custom theme overrides by adding our ResourceDictionary after WPF UI's theme.
+    /// Resources added later to MergedDictionaries take precedence.
+    /// </summary>
+    private void ApplyCustomTheme()
+    {
+        try
+        {
+            var themeOverride = new ResourceDictionary
+            {
+                Source = new Uri("pack://application:,,,/Imago.UI;component/Themes/WpfUiOverrides.xaml", UriKind.Absolute)
+            };
+            
+            Application.Current.Resources.MergedDictionaries.Add(themeOverride);
+            Log.Information("Custom theme overrides applied successfully");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to apply custom theme overrides");
         }
     }
 

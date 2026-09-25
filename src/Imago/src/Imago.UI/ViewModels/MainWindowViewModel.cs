@@ -13,6 +13,8 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ILogger _logger = Log.ForContext<MainWindowViewModel>();
     private readonly Stopwatch _memoryUpdateTimer = Stopwatch.StartNew();
 
+    public event EventHandler<string>? ImageLoadRequested;
+
     [ObservableProperty]
     private string _documentTitle = "Untitled";
 
@@ -77,6 +79,11 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    public void UpdateCursorPosition(int x, int y)
+    {
+        CursorPosition = $"X: {x}, Y: {y}";
+    }
+
     [RelayCommand]
     private void NewDocument()
     {
@@ -92,9 +99,54 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task OpenDocumentAsync()
     {
         _logger.Information("Opening document dialog");
-        StatusMessage = "Opening document...";
-        await Task.Delay(100);
-        StatusMessage = "Ready";
+
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Open Image",
+            Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff;*.tif;*.webp|All Files|*.*",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            StatusMessage = "Loading image...";
+            var filePath = dialog.FileName;
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    // Validate file exists
+                    if (!System.IO.File.Exists(filePath))
+                        throw new System.IO.FileNotFoundException("File not found", filePath);
+                });
+
+                DocumentTitle = System.IO.Path.GetFileName(filePath);
+                HasDocument = true;
+
+                // Get image dimensions
+                using var stream = System.IO.File.OpenRead(filePath);
+                using var bitmap = SkiaSharp.SKBitmap.Decode(stream);
+                if (bitmap != null)
+                {
+                    DocumentSize = $"{bitmap.Width} x {bitmap.Height} px";
+                }
+
+                ImageLoadRequested?.Invoke(this, filePath);
+                StatusMessage = $"Loaded: {DocumentTitle}";
+                _logger.Information("Opened document: {FilePath}", filePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to open document: {FilePath}", filePath);
+                StatusMessage = $"Error: {ex.Message}";
+                HasDocument = false;
+            }
+        }
+        else
+        {
+            StatusMessage = "Ready";
+        }
     }
 
     [RelayCommand]

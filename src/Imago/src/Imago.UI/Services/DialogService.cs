@@ -1,85 +1,57 @@
 namespace Imago.UI.Services;
 
 using System.Windows;
-using Wpf.Ui;
-using Wpf.Ui.Controls;
 
 /// <summary>
-/// WPF-UI based dialog service implementation.
+/// Simple dialog service implementation using standard WPF MessageBox.
 /// </summary>
 public sealed class DialogService : IDialogService
 {
-    private readonly IContentDialogService _contentDialogService;
-
-    public DialogService(IContentDialogService contentDialogService)
+    public Task ShowInfoAsync(string title, string message)
     {
-        _contentDialogService = contentDialogService;
+        MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+        return Task.CompletedTask;
     }
 
-    public async Task ShowInfoAsync(string title, string message)
+    public Task ShowWarningAsync(string title, string message)
     {
-        await ShowMessageAsync(title, message, "OK", null, null);
+        MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        return Task.CompletedTask;
     }
 
-    public async Task ShowWarningAsync(string title, string message)
+    public Task ShowErrorAsync(string title, string message)
     {
-        await ShowMessageAsync(title, message, "OK", null, null);
+        MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+        return Task.CompletedTask;
     }
 
-    public async Task ShowErrorAsync(string title, string message)
+    public Task<bool> ShowConfirmAsync(string title, string message)
     {
-        await ShowMessageAsync(title, message, "OK", null, null);
+        var result = MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question);
+        return Task.FromResult(result == MessageBoxResult.Yes);
     }
 
-    public async Task<bool> ShowConfirmAsync(string title, string message)
+    public Task<bool?> ShowConfirmWithCancelAsync(string title, string message)
     {
-        var result = await ShowMessageAsync(title, message, "Yes", "No", null);
-        return result == ContentDialogResult.Primary;
-    }
-
-    public async Task<bool?> ShowConfirmWithCancelAsync(string title, string message)
-    {
-        var result = await ShowMessageAsync(title, message, "Yes", "No", "Cancel");
-        return result switch
+        var result = MessageBox.Show(message, title, MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+        return Task.FromResult<bool?>(result switch
         {
-            ContentDialogResult.Primary => true,
-            ContentDialogResult.Secondary => false,
+            MessageBoxResult.Yes => true,
+            MessageBoxResult.No => false,
             _ => null
-        };
+        });
     }
 
-    public async Task<string?> ShowInputAsync(string title, string message, string defaultValue = "")
+    public Task<string?> ShowInputAsync(string title, string message, string defaultValue = "")
     {
-        // For now, use a simple message box approach
-        // In a full implementation, this would show a custom input dialog
-        var result = await ShowConfirmAsync(title, message);
-        return result ? defaultValue : null;
+        // Simple implementation - returns default or null based on confirmation
+        var result = MessageBox.Show(message, title, MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        return Task.FromResult<string?>(result == MessageBoxResult.OK ? defaultValue : null);
     }
 
     public Task<TResult?> ShowDialogAsync<TResult>(object viewModel) where TResult : class
     {
         // Custom dialog implementation would go here
-        // This is a placeholder for the pattern
         return Task.FromResult<TResult?>(null);
-    }
-
-    private async Task<ContentDialogResult> ShowMessageAsync(
-        string title,
-        string message,
-        string primaryButton,
-        string? secondaryButton,
-        string? closeButton)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = title,
-            Content = message,
-            PrimaryButtonText = primaryButton,
-            SecondaryButtonText = secondaryButton ?? string.Empty,
-            CloseButtonText = closeButton ?? string.Empty,
-            DefaultButton = ContentDialogButton.Primary
-        };
-
-        return await _contentDialogService.ShowAsync(dialog, CancellationToken.None);
     }
 }

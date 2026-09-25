@@ -13,11 +13,11 @@
         Opacity="0.9">
 
     <Grid>
-        <!-- Main content area - Catppuccin Mocha Base -->
-        <Border Background="#1E1E2E" CornerRadius="2" Margin="8"/>
+        <!-- Main content area - Pure Grey Base -->
+        <Border Background="#1E1E1E" CornerRadius="2" Margin="8"/>
 
         <!-- Base border - subtle gray -->
-        <Border CornerRadius="2" Margin="8" BorderBrush="#45475A" BorderThickness="1"
+        <Border CornerRadius="2" Margin="8" BorderBrush="#3D3D3D" BorderThickness="1"
                 SnapsToDevicePixels="True" UseLayoutRounding="True"/>
 
         <!-- Orange Glow that follows border - implemented via OpacityMask -->
@@ -75,7 +75,7 @@
                            FontFamily="Segoe UI Variable Display, Segoe UI, Arial"
                            FontSize="28"
                            FontWeight="Light"
-                           Foreground="#CDD6F4"
+                           Foreground="#E0E0E0"
                            HorizontalAlignment="Center"
                            Margin="0,16,0,0"/>
 
@@ -84,7 +84,7 @@
                            Text="Professional Image Editor"
                            FontFamily="Segoe UI Variable Text, Segoe UI, Arial"
                            FontSize="14"
-                           Foreground="#A6ADC8"
+                           Foreground="#A0A0A0"
                            HorizontalAlignment="Center"
                            Margin="0,4,0,0"/>
 
@@ -94,7 +94,7 @@
                            Text="Loading..."
                            FontFamily="Segoe UI Variable Text, Segoe UI, Arial"
                            FontSize="12"
-                           Foreground="#6C7086"
+                           Foreground="#6D6D6D"
                            HorizontalAlignment="Center"
                            Margin="0,16,0,16"/>
 
@@ -104,7 +104,7 @@
                            Text="Version 0.1.0"
                            FontFamily="Segoe UI Variable Text, Segoe UI, Arial"
                            FontSize="10"
-                           Foreground="#45475A"
+                           Foreground="#3D3D3D"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Bottom"
                            Margin="0,0,0,8"/>
@@ -112,3 +112,4 @@
         </Border>
     </Grid>
 </Window>
+
