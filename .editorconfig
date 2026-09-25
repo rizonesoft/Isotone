@@ -1,30 +1,52 @@
-# EditorConfig - Imago Project
+# EditorConfig: Rizonesoft Graphics Suite (Photon)
 # https://editorconfig.org
-# C# 14 / .NET 10 / High-Performance Graphics Application
-# Last Updated: December 2024
+# One file for the whole repository. Merges the canonical ScratchPad layout rules
+# with Imago's detailed C# style and analyzer rules. Legacy overlays in
+# src/*/Directory.Build.props decide whether style is enforced in build.
 
 root = true
 
 # All files
 [*]
+charset = utf-8
+end_of_line = lf
 indent_style = space
 indent_size = 4
-end_of_line = crlf
-charset = utf-8
-trim_trailing_whitespace = true
 insert_final_newline = true
+trim_trailing_whitespace = true
 
-# XML, XAML, config files
-[*.{xml,xaml,config,props,targets,csproj,sln}]
+# Windows-native sources keep CRLF (matches .gitattributes)
+[*.{cs,xaml,csproj,props,targets,slnx,slnf,sln,iss,resx,manifest}]
+end_of_line = crlf
+
+# XML, XAML, project files
+[*.{xml,xaml,config,props,targets,csproj,slnx,slnf,sln,resx,manifest}]
 indent_size = 2
 
-# JSON files
-[*.json]
+# JSON and YAML
+[*.{json,yml,yaml}]
 indent_size = 2
 
-# Markdown files
+# Scripts
+[*.{ps1,psm1,psd1,py,sh}]
+indent_size = 4
+
+[*.sh]
+indent_size = 2
+
+# Markdown: trailing double-space is a hard line break
 [*.md]
 trim_trailing_whitespace = false
+
+# Generated output
+[**/obj/**]
+generated_code = true
+
+[**/bin/**]
+generated_code = true
+
+[**/artifacts/**]
+generated_code = true
 
 # C# files
 [*.cs]
@@ -409,7 +431,7 @@ dotnet_diagnostic.IDE0305.severity = suggestion  # Use collection expression for
 # Test Project Specific Rules
 # ============================================================================
 
-[*Tests/**/*.cs]
+[**Tests/**.cs]
 # Relax some rules for test projects
 dotnet_diagnostic.CA1707.severity = none        # Remove underscores from member names (test naming)
 dotnet_diagnostic.CA1812.severity = none        # Internal class never instantiated (test fixtures)

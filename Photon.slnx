@@ -1,0 +1,30 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="nuget.config" />
+    <File Path="tests/Photon.runsettings" />
+  </Folder>
+  <Folder Name="/Imago/">
+    <Project Path="src/Imago/src/Imago.Core/Imago.Core.csproj" />
+    <Project Path="src/Imago/src/Imago.FileFormats/Imago.FileFormats.csproj" />
+    <Project Path="src/Imago/src/Imago.Plugins.Abstractions/Imago.Plugins.Abstractions.csproj" />
+    <Project Path="src/Imago/src/Imago.Rendering/Imago.Rendering.csproj" />
+    <Project Path="src/Imago/src/Imago.Scripting/Imago.Scripting.csproj" />
+    <Project Path="src/Imago/src/Imago.UI/Imago.UI.csproj" />
+  </Folder>
+  <Folder Name="/Imago/tests/">
+    <Project Path="src/Imago/tests/Imago.Core.Tests/Imago.Core.Tests.csproj" />
+    <Project Path="src/Imago/tests/Imago.Rendering.Tests/Imago.Rendering.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Nodus/">
+    <Project Path="src/Nodus/Bezier.Core/Bezier.Core.csproj" />
+    <Project Path="src/Nodus/Bezier.Desktop/Bezier.Desktop.csproj" />
+  </Folder>
+  <Folder Name="/Nodus/tests/">
+    <Project Path="src/Nodus/Bezier.Tests/Bezier.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,61 @@
+name: build
+
+# Builds and tests the whole suite (Photon.slnx) on every push and pull request
+# to main. The SDK comes from global.json (exact pin, rollForward disable).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  build-windows:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history: MinVer derives the version from tags and commit height.
+          fetch-depth: 0
+      - name: Set up .NET (global.json)
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: nuget-v1-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+          restore-keys: nuget-v1-${{ runner.os }}-
+      - name: Restore
+        run: dotnet restore Photon.slnx
+      - name: Build (Release)
+        run: dotnet build Photon.slnx -c Release --no-restore
+      - name: Test (Release)
+        run: >-
+          dotnet test Photon.slnx -c Release --no-build
+          --logger "trx"
+          --results-directory "${{ github.workspace }}/artifacts/TestResults"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results
+          path: artifacts/TestResults/
+          if-no-files-found: warn
+          retention-days: 14
