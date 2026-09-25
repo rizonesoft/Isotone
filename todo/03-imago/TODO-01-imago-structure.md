@@ -1,0 +1,146 @@
+---
+schema_version: 1
+id: imago-structure
+domain: 03-imago
+status: draft
+title: "TODO-01 -- Imago Layout, Names, the Snapshot Port, and WPF-UI Removal"
+depends_on: []
+track: I1
+---
+
+# TODO-01 -- Imago Layout, Names, the Snapshot Port, and WPF-UI Removal
+
+> **Goal:** Imago lives in the suite layout under `Photon.Imago.*` names, carries its own icon, has the canvas, ruler, and container work from the December 2025 snapshot branch ported onto `main` (and the branch deleted), contains no WPF-UI anywhere, and starts through one composition root on the suite's logging and settings services.
+
+> [!IMPORTANT]
+> **Current state (verified 2026-09-26):** Imago is six projects under `src/Imago/src/` (`Imago.Core`, `Imago.FileFormats`, `Imago.Plugins.Abstractions` on `netstandard2.1`, `Imago.Rendering`, `Imago.Scripting`, `Imago.UI` with `AssemblyName` Imago) and two test projects under `src/Imago/tests/`. WPF-UI is referenced by `Imago.UI.csproj` and used by `App.xaml` (`ThemesDictionary`, `ControlsDictionary`), `App.xaml.cs` (`IThemeService`, `ISnackbarService`, `IContentDialogService` registrations), `Services/DialogService.cs`, and `Views/MainWindow.xaml`, a 644-line `wpfui:FluentWindow` with 172 `wpfui:` elements (title bar, menus, `SymbolIcon`s). The local branch `imago/photon-snapshot-2025-12` (tip `d0aa708`, "snapshot: Photon previous-dev copy (Dec 2025) - canvas, ruler, canvas container; diverges from main's Phase 1.7 dialog service") adds `Controls/ImageCanvas.cs` (374 lines), `Controls/Ruler.cs` (256), `Controls/CanvasContainer.xaml(.cs)` (34 and 106), and a `MainWindow.xaml` with no WPF-UI, and removes the WPF-UI package, but rewrites `DialogService` as a plain `MessageBox` wrapper that drops main's Phase 1.7 dialog work; it is not on `origin`. `src/Imago/src/Imago.UI/Assets/imago-icon.png` is a 0-byte file, `ApplicationIcon` is commented out, and `installer/Imago.iss` points at `resources/icons/imago/imago.ico`, which does not exist.
+<!-- claim: exists src/Imago/src/Imago.UI/Imago.UI.csproj -->
+<!-- claim: count "wpfui:" src/Imago/src/Imago.UI/Views/MainWindow.xaml = 172 -->
+<!-- claim: count "using Wpf\.Ui" src/Imago/src/Imago.UI/Services/DialogService.cs = 2 -->
+<!-- claim: count "Include=\"WPF-UI\"" src/Imago/src/Imago.UI/Imago.UI.csproj = 1 -->
+<!-- claim: lines src/Imago/src/Imago.UI/Views/MainWindow.xaml = 644 -->
+<!-- claim: absent resources/icons/imago/imago.ico -->
+<!-- claim: absent src/Imago/src/Imago.UI/Controls/ImageCanvas.cs -->
+
+## Inputs
+
+- [`docs/dev/architecture.md`](../../docs/dev/architecture.md) -- the target layout and names
+- [`standards/imago.md`](../../standards/imago.md), [`standards/shared.md`](../../standards/shared.md) -- project roles, no WPF-UI, CommunityToolkit.Mvvm only
+- `git show imago/photon-snapshot-2025-12:<path>` -- the snapshot files §2 ports
+- [`resources/icons/art-and-design.png`](../../resources/icons/art-and-design.png) -- the candidate source art for §4 (512 by 512; license to confirm, `D99 T01 §4`)
+- [`installer/Imago.iss`](../../installer/Imago.iss), [`scripts/apps.psd1`](../../scripts/apps.psd1), [`Photon.slnx`](../../Photon.slnx) -- the files that name Imago's projects and icon
+- -> XREF: D00 T02 §4 -- removes ReactiveUI, SharpDX, and ImageSharp before §1 renames the projects
+- -> XREF: D01 T01 §4 -- the shared dialogs whose Imago consumer is `D03 T06 §1`, after §3 removes WPF-UI
+- -> XREF: D03 T02 §2 -- the tiled viewport that builds on the canvas §2 ports
+
+## Outcome
+
+- `src/Imago/Photon.Imago.Core`, `.Rendering`, `.FileFormats`, `.Plugins.Abstractions`, `.Scripting`, `.Desktop` and `tests/Photon.Imago.Core.Tests`, `tests/Photon.Imago.Rendering.Tests` build with `Photon.Imago.*` namespaces; the executable is still `Imago.exe`.
+- `Imago.exe`, the installer, and the Start menu show the Imago icon from `resources/icons/imago/`.
+- `ImageCanvas`, `Ruler`, and `CanvasContainer` are on `main` in `Photon.Imago.Desktop/Controls/`, and the branch `imago/photon-snapshot-2025-12` no longer exists.
+- `grep -rn "Wpf.Ui\|wpfui\|WPF-UI" src Directory.Packages.props` prints nothing, and the main window is a standard `Window` with the suite theme.
+- `App.xaml.cs` builds the host with `UsePhotonLogging("Imago")` and the `Photon.Core` settings store.
+
+**Adjacency:** list=not-applicable (no records added here); document=not-applicable (no printed output); settings=applicable @ D03 T01 §5; reporting=not-applicable (no summaries); notifications=applicable; permissions=not-applicable (nothing written to user files); audit=applicable @ D03 T01 §5; exchange=not-applicable (formats are TODO-04's); reverse=not-applicable (no edits introduced)
+
+**Adjacency rationale:** WPF-UI's snackbar is Imago's current notification surface, so §3 must replace it with the status strip rather than drop it; §5 moves settings and logging onto the shared services.
+
+## Implementation Order
+
+| Order | Section | Deliverable                                            | Depends On              | Status |
+| :---: | :-----: | ------------------------------------------------------ | ----------------------- | :----: |
+|   1   |   §1    | Restructure and rename Imago to Photon.Imago           | D00 T02 §2, D00 T02 §4  |  [ ]   |
+|   2   |   §2    | Port the snapshot canvas, ruler, and container         | §1                      |  [ ]   |
+|   3   |   §3    | WPF-UI out of Imago                                    | §2                      |  [ ]   |
+|   4   |   §4    | The Imago icon                                         | §1                      |  [ ]   |
+|   5   |   §5    | Composition root on Photon.Core                        | §3, D01 T02 §2          |  [ ]   |
+
+---
+
+## 1. Restructure and Rename Imago to Photon.Imago
+
+Imago's projects sit one level deeper than every other app (`src/Imago/src/`, `src/Imago/tests/`) and use bare `Imago.*` names. Renaming first means every later Imago section is written once against final paths. Names only: no behavior changes, and `git mv` keeps history.
+
+- [ ] `git mv` each project from `src/Imago/src/Imago.X` to `src/Imago/Photon.Imago.X` (and `Imago.UI` to `Photon.Imago.Desktop`), renaming each `.csproj`; keep `<AssemblyName>Imago</AssemblyName>` on the Desktop project and set `RootNamespace` to the new names. Done when: `src/Imago/src/` no longer exists and the Debug build produces `artifacts/bin/Photon.Imago.Desktop/debug/Imago.exe`.
+- [ ] `git mv src/Imago/tests/Imago.Core.Tests tests/Photon.Imago.Core.Tests` and the Rendering tests likewise, fixing `ProjectReference` paths. Done when: `dotnet test Photon.slnx` discovers the same Imago test count as before.
+- [ ] Rewrite `namespace Imago` and `using Imago` to `Photon.Imago` in every `.cs` file, and `x:Class`/`clr-namespace` values in every XAML file. Done when: `grep -rn "namespace Imago\|using Imago\|clr-namespace:Imago\|x:Class=\"Imago" src/Imago tests` prints nothing.
+- [ ] Move `Imago.Plugins.Abstractions` from `netstandard2.1` to `net10.0` unless a recorded reason keeps it (none is known; plugins load in-process on .NET 10), and delete `Polyfills.cs` if the move makes it unnecessary. Done when: the project targets `net10.0` and builds.
+- [ ] Update `Photon.slnx`, `scripts/apps.psd1` (`Project`), `docs/dev/build.md`, `standards/imago.md` (drop the "today" notes), `AGENTS.md`'s path table, and every `src/Imago/src/` or `src/Imago/tests/` path in `todo/` claims and prose. Done when: `python scripts/todo-claims.py` exits 0 and `grep -rn "src/Imago/src/\|src/Imago/tests/" --include=*.md --include=*.psd1 --include=*.slnx . | grep -v "^./docs/legacy/"` prints nothing.
+- [ ] Commit: `"imago: restructure into the suite layout as Photon.Imago"`
+
+**Test checkpoint:** `dotnet build Photon.slnx -c Release` exits 0; `dotnet test Photon.slnx` exits 0 with the same Imago test count as before; `pwsh scripts/publish.ps1 -App Imago` produces `Imago.exe`; `git log --follow --oneline src/Imago/Photon.Imago.Core/Tiles/TileCache.cs` shows more than one commit. Cheaper substitute that fails: renaming folders without namespaces.
+
+## 2. Port the Snapshot Canvas, Ruler, and Container
+
+The December 2025 snapshot branch carries the canvas work Imago's main line lacks: `ImageCanvas` (pan, zoom, pixel grid), `Ruler`, `CanvasContainer`, and a main window rebuilt without WPF-UI. It diverged from main after main's Phase 1.7 (dialog, file, and messenger services), so it cannot be merged: its files are ported onto `main` by content, keeping main's services wherever the two disagree.
+
+**Fidelity:** Imago main window with the canvas -- docs/captures/imago/main-window/ (baseline from `D00 T03 §2`); the snapshot's own layout is the target, captured from the branch before porting to docs/captures/imago/snapshot/.
+**Job:** a user can see an image on a canvas with rulers, pan and zoom it, and see the pixel grid at high zoom. Consumer: the document view; the viewport work in `D03 T02 §2` builds on it.
+**Treatment:** port `ImageCanvas.cs`, `Ruler.cs`, and `CanvasContainer.xaml(.cs)` unchanged apart from namespaces into `Photon.Imago.Desktop/Controls/`; take the snapshot's `MainWindow.xaml` layout (menus, tool rail, canvas container, panels) as the new main window while keeping main's view-model bindings and main's `DialogService`, `FileDialogService`, and `Messenger`. Cheaper substitute that fails the checkpoint: checking out the branch's files wholesale, which reverts main's Phase 1.7 services.
+**Chrome:** consume main's services and the existing theme dictionaries. Do not restyle in this section; the suite theme is `D01 T01 §3`.
+
+**Requires:** display-session -- the before-and-after captures and the canvas drive need an interactive desktop
+
+- [ ] Build and run the branch once (`git worktree add build/imago-snapshot imago/photon-snapshot-2025-12`, then build its `Imago.UI`) and capture its main window to `docs/captures/imago/snapshot/empty-100.png`. Done when: the capture is committed and the worktree is removed.
+- [ ] Port the four control files with `git show imago/photon-snapshot-2025-12:src/Imago/src/Imago.UI/Controls/<file>` into `src/Imago/Photon.Imago.Desktop/Controls/`, fixing namespaces. Done when: the project builds with them.
+- [ ] Port the snapshot's `MainWindow.xaml` layout and the matching parts of its `MainWindow.xaml.cs`, `App.xaml(.cs)`, `MainWindowViewModel.cs`, `Themes/Colors.xaml`, `SplashWindow.xaml`, and `ExceptionWindow.xaml` changes, reviewing each hunk of `git diff main imago/photon-snapshot-2025-12 -- src/Imago/src/Imago.UI` and recording in the commit body which side each file kept. Done when: every hunk is accounted for in the commit body.
+- [ ] Keep main's `DialogService` (the Phase 1.7 version) wherever the snapshot's `MessageBox` wrapper disagrees; its WPF-UI parts are removed in §3. Done when: main's dialog tests still pass.
+- [ ] Add `ImageCanvasTests` for the zoom and pan math the control exposes (screen to image coordinates at 100, 200, and 50 percent). Done when: the tests pass.
+- [ ] Delete the branch: `git branch -D imago/photon-snapshot-2025-12` (it is local only; confirm with `git ls-remote --heads origin` that no remote copy exists). Done when: `git branch --list 'imago/*'` prints nothing.
+- [ ] Commit: `"imago: port the snapshot canvas, ruler, and container onto main"`
+
+**Test checkpoint:** `dotnet build Photon.slnx -c Release` exits 0; `dotnet test Photon.slnx` exits 0 with `ImageCanvasTests` reporting; launching Imago shows the canvas with rulers (capture `docs/captures/imago/main-window/canvas-100.png` compared with the snapshot capture); `git branch --list 'imago/*'` prints nothing. Cheaper substitute that fails: `git checkout imago/photon-snapshot-2025-12 -- src/Imago`, which the dialog tests catch.
+
+## 3. WPF-UI out of Imago
+
+The suite forbids WPF-UI; Imago is the last user. What remains after §2 is the theme and controls dictionaries in `App.xaml`, the theme, snackbar, and content-dialog services in the composition root, the WPF-UI parts of `DialogService`, and any `wpfui:` element the snapshot layout did not already replace. Each is replaced by a standard WPF equivalent, and the snackbar's job moves to the status strip.
+
+**Fidelity:** Imago main window -- docs/captures/imago/main-window/canvas-100.png (from §2). Layout unchanged; controls restyled only as far as the WPF-UI styles disappear, with the existing `Themes/*.xaml` standing in until `D01 T01 §3`.
+**Job:** a user sees Imago's window, menus, and dialogs exactly as before, with no dependency on WPF-UI. Consumer: every Imago surface.
+**Treatment:** a standard `Window` with the system title bar (a custom chrome is a later design decision, not a WPF-UI replacement); standard `Menu` and `MenuItem` with the shared icon catalog's `VectorIcon` in place of `SymbolIcon`; `DialogService` on standard WPF windows; snackbar messages shown in the status strip with a timeout. Cheaper substitute that fails the checkpoint: keeping WPF-UI's dictionaries "for now".
+**Chrome:** consume Imago's existing theme dictionaries and `VectorIcon` (moving to `Photon.UI` in `D01 T01 §1`). Do not build a second window chrome.
+
+**Requires:** display-session -- the launch smoke and captures of every Imago surface need an interactive desktop
+
+- [ ] Replace every remaining `wpfui:` element in `MainWindow.xaml` and code-behind with a standard control. Done when: `grep -c "wpfui" src/Imago/Photon.Imago.Desktop/Views/MainWindow.xaml` prints 0.
+- [ ] Remove `ThemesDictionary` and `ControlsDictionary` from `App.xaml`, and give every control Imago uses an implicit style in `Themes/Styles.xaml` where the WPF-UI style supplied one (buttons, menus, scroll bars, text boxes, sliders). Done when: every surface in a driven pass looks styled (captures of main window, a dialog, and a menu committed).
+- [ ] Remove `IThemeService`, `ISnackbarService`, and `IContentDialogService` registrations; route snackbar messages through a `StatusMessageService` that shows text in the status strip for 4 seconds. Done when: `grep -rn "Snackbar\|ContentDialog\|IThemeService" src/Imago` prints nothing.
+- [ ] Rewrite `DialogService` on standard WPF (`MessageBox` for simple prompts, a small themed `Window` for input), keeping its interface. Done when: its tests pass and `grep -n "Wpf.Ui" src/Imago/Photon.Imago.Desktop/Services/DialogService.cs` prints nothing.
+- [ ] Remove the `WPF-UI` package from `Photon.Imago.Desktop.csproj` and `Directory.Packages.props`, and the "Imago still depends on WPF-UI" bullet from `docs/dev/build.md`. Done when: `grep -rn "WPF-UI\|Wpf.Ui\|wpfui" src Directory.Packages.props docs/dev/build.md` prints nothing.
+- [ ] Commit: `"imago: remove WPF-UI and replace it with standard WPF"`
+
+**Test checkpoint:** `dotnet build Photon.slnx -c Release` exits 0; `dotnet test Photon.slnx` exits 0; the grep above prints nothing; the published Imago folder contains no `Wpf.Ui*.dll`; a driven pass of every menu and the open-file dialog logs 0 `[ERR]` lines and 0 `Cannot find resource` lines (quoted); captures committed. Cheaper substitute that fails: leaving the package referenced but unused, which the published-folder check catches.
+
+## 4. The Imago Icon
+
+Imago has no icon: the asset is an empty file, the executable uses the default, and the installer falls back to the Setup icon. The repository holds a 512 by 512 brush illustration (`resources/icons/art-and-design.png`) that matches Imago's role; it becomes the icon unless the operator supplies other art, and its license is confirmed by the operator (`D99 T01 §4`) before a release ships it.
+
+- [ ] Create `resources/icons/imago/` with `imago.svg` or the source PNG, `PNG/imago_{16,24,32,48,64,72,128,256,512}.png`, and a multi-resolution `imago.ico` (16, 24, 32, 48, 64, 256), mirroring `resources/icons/nodus/`; record the source file, tool, and command used in `resources/icons/imago/README.md`. Done when: `imago.ico` opens with all six sizes (`Get-Item` plus a size listing from a small PowerShell ICO header read, quoted).
+- [ ] Delete `src/Imago/Photon.Imago.Desktop/Assets/imago-icon.png`, set `ApplicationIcon` to the new `.ico` (linked from `resources/icons/imago/`), and use the 32 px PNG for the window icon. Done when: `Imago.exe` shows the icon in Explorer and the title bar.
+- [ ] Remove the placeholder comment in `installer/Imago.iss` and the icon bullet from `docs/dev/build.md`. Done when: `pwsh scripts/package.ps1 -App Imago` produces a Setup exe with the Imago icon.
+- [ ] Record the icon art's source and license status in `resources/icons/README.md` (one row per app icon, Nodus included), marking Imago's "pending operator confirmation" until `D99 T01 §4` lands. Done when: the table exists.
+- [ ] Commit: `"imago: give Imago its icon"`
+
+**Requires:** display-session -- confirming the icon in Explorer and the title bar needs an interactive desktop
+
+**Test checkpoint:** `dotnet build Photon.slnx -c Release` exits 0; `(Get-Item src/Imago/Photon.Imago.Desktop/Assets/imago-icon.png -ErrorAction SilentlyContinue)` is `$null`; the packaged Setup exe and the installed `Imago.exe` both show the icon (captures under `docs/captures/imago/icon/`). Cheaper substitute that fails: a 32 px PNG renamed `.ico`, which the size listing catches.
+
+## 5. Composition Root on Photon.Core
+
+Imago already uses the Generic Host; after `D01 T02 §1` and `§2` it logs and stores settings through `Photon.Core`. This section finishes the job: every service is registered once, view models receive what they use, and nothing reaches for a static.
+
+- [ ] Audit `App.xaml.cs` registrations against every constructor in `Photon.Imago.Desktop`; register what is missing and remove what nothing resolves. Done when: `ImagoServiceRegistrationTests` resolves every view model and service from a built provider.
+- [ ] Replace static access to `IconService.Instance` and any other singleton accessor with injection (the catalog comes from `Photon.UI` once `D01 T01 §1` lands; until then Imago's own). Done when: `grep -rn "\.Instance\b" src/Imago/Photon.Imago.Desktop` prints only documented XAML-parse-time exceptions.
+- [ ] `appsettings.json` keeps only values that are not user settings (tile size defaults, performance knobs); user-facing values move to the settings store with defaults. Done when: the file has no `Theme` or `AutoSave` keys and the settings wrapper test asserts their defaults.
+- [ ] Commit: `"imago: one composition root on the suite's logging and settings"`
+
+**Requires:** display-session -- the launch proving the startup log line needs an interactive desktop
+**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with `ImagoServiceRegistrationTests` reporting; a launch writes `%LOCALAPPDATA%\Rizonesoft\Imago\logs\imago-<date>.log` with a startup line and 0 `[ERR]` lines (quoted). Cheaper substitute that fails: a registration list nobody tests.
+
+## Verification
+
+- [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
+- [ ] No WPF-UI reference anywhere in the repository outside `docs/legacy/`
+- [ ] The snapshot branch is gone and its work is on `main`
+- [ ] `Imago.exe` and its installer carry the Imago icon
+- [ ] `python scripts/todo-graph.py validate` clean

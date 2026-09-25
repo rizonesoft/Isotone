@@ -1,0 +1,86 @@
+---
+schema_version: 1
+id: dev-docs
+domain: 06-docs
+status: draft
+title: "TODO-02 -- Developer Documentation and the Project Site"
+depends_on: []
+track: D2
+---
+
+# TODO-02 -- Developer Documentation and the Project Site
+
+> **Goal:** A contributor can understand the suite from the developer docs alone, and they stay true: the architecture page matches the tree after each restructure, the README shows the real apps, and the user guides are published as a browsable site.
+
+> [!IMPORTANT]
+> **Current state (verified 2026-09-26):** `docs/dev/architecture.md` was written on 2026-09-26 from the old `Description.md` (removed the same day) and describes the target layout, not the current one: `src/Photon.Core/`, `src/Photon.UI/`, and `src/Lumen/` do not exist yet. `docs/dev/` also holds `build.md`, `versioning.md`, and `README.md`. The README's screenshots come from `resources/screens/web/`, which are concept renders rather than captures of the built apps. There is no published site; the guides render only on GitHub.
+<!-- claim: exists docs/dev/architecture.md -->
+<!-- claim: absent src/Photon.UI -->
+<!-- claim: exists resources/screens/web/nodus.jpg -->
+
+## Inputs
+
+- [`docs/dev/architecture.md`](../../docs/dev/architecture.md), [`docs/dev/README.md`](../../docs/dev/README.md) -- what §1 keeps true
+- [`README.md`](../../README.md) -- the screenshots §2 replaces (the repository face's owner reviews the change)
+- -> XREF: D01 T01 §2 -- the Photon.UI work whose landing §1 documents
+
+## Outcome
+
+- `docs/dev/architecture.md` describes the tree as it is, with a project dependency diagram generated from the `.csproj` files so it cannot drift.
+- The README's app images are captures of the released apps.
+- The user guides are published as a site (GitHub Pages) built from `docs/user/` by a workflow, with the apps' Help, Documentation links pointing at it.
+
+**Adjacency:** all=not-applicable (developer documentation and a static site: no runtime records, settings, or reversible actions)
+
+**Adjacency rationale:** Nothing here runs in an app; the Help links the site changes are one-line edits in each app's Help section.
+
+## Implementation Order
+
+| Order | Section | Deliverable                                        | Depends On                              | Status |
+| :---: | :-----: | -------------------------------------------------- | --------------------------------------- | :----: |
+|   1   |   §1    | The architecture page matches the tree             | D01 T01 §2, D01 T02 §3                  |  [ ]   |
+|   2   |   §2    | README images from real captures                   | D02 T05 §4, D03 T06 §3, D04 T02 §8      |  [ ]   |
+|   3   |   §3    | The user guides as a published site                | D06 T01 §4                              |  [ ]   |
+
+---
+
+## 1. The Architecture Page Matches the Tree
+
+Once Nodus is restructured and the two shared libraries exist, the architecture page's "target layout" becomes the actual layout. A hand-drawn dependency picture drifts; one generated from the project files does not.
+
+- [ ] Add `scripts/project-graph.ps1` that reads every `.csproj` in `Photon.slnx` and emits a Mermaid graph of project references into `docs/dev/architecture.md` between marker comments. Done when: running it twice produces no diff.
+- [ ] Rewrite the layout section as current fact, keeping planned parts (Lumen before `D04 T01 §2`) marked planned. Done when: every path in the page exists or is marked planned.
+- [ ] Add a check to `scripts/check-all.ps1` that fails when the generated graph is stale. Done when: adding a project reference without regenerating fails the check.
+- [ ] Commit: `"docs: an architecture page generated from the project files"`
+
+**Test checkpoint:** `pwsh scripts/project-graph.ps1` followed by `git diff --exit-code docs/dev/architecture.md` exits 0; after adding a dummy reference in a scratch branch, `pwsh scripts/check-all.ps1` fails on the stale graph. Cheaper substitute that fails: a hand-drawn diagram.
+
+## 2. README Images from Real Captures
+
+The README shows concept renders. Once the apps are released, the images should show the real apps. The README belongs to the repository-face owner; this section supplies the images and a one-line change per image.
+
+- [ ] Produce web-sized captures (1,600 px wide, JPEG quality 85) of each released app's main window with a sample document, from `docs/captures/<app>/`, into `resources/screens/web/`. Done when: three new images exist, each under 400 KB.
+- [ ] Replace the README's image references with them and credit nothing that is not in the repository. Done when: the README renders the new images on GitHub (checked on the pushed branch).
+- [ ] Commit: `"docs: show the released apps in the README"`
+
+**Requires:** display-session -- taking the web captures of each released app needs an interactive desktop
+**Test checkpoint:** each README image path exists and is a capture of the built app (its capture record under `docs/captures/<app>/` names the commit); `Get-Item` sizes are under 400 KB (quoted). Cheaper substitute that fails: keeping the concept renders.
+
+## 3. The User Guides as a Published Site
+
+Help, Documentation links to GitHub's Markdown view today. A small static site built from `docs/user/` reads better and can be searched.
+
+- [ ] Choose the site generator by recorded decision (a static generator run in CI with a license compatible with the repository, for example MkDocs with the Material theme, or plain GitHub Pages Jekyll) in `docs/dev/decisions.md`. Done when: the entry exists.
+- [ ] Add a `docs.yml` workflow that builds the site from `docs/user/` and deploys to GitHub Pages on changes to `docs/user/`. Done when: a push produces a green run and a live site (URL quoted).
+- [ ] Point each app's Help, Documentation at its section of the site. Done when: each app opens the site URL (driven, log line quoted).
+- [ ] Commit: `"docs: publish the user guides as a site"`
+
+**Requires:** display-session -- confirming each app's Help link opens the site needs an interactive desktop
+
+**Test checkpoint:** the `docs.yml` run is `success` and the site URL returns 200 for each app's guide (quoted `Invoke-WebRequest` status codes). Cheaper substitute that fails: linking to raw Markdown.
+
+## Verification
+
+- [ ] The architecture graph check passes in `pwsh scripts/check-all.ps1`
+- [ ] The site is live and each app links to it
+- [ ] `python scripts/todo-graph.py validate` clean

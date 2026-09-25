@@ -1,0 +1,48 @@
+# Photon -- TODO Index
+
+The live execution plan for Photon, the Rizonesoft Graphics Suite. Format spec: [README.md](./README.md). Ordered plan: [implementation-plan.md](./implementation-plan.md).
+
+## How to use this tree
+
+- **This file** carries domain order and the active TODOs. Keep it at that altitude: no checklists.
+- **Each domain's `INDEX.md`** owns its own backlog and is the place to look for scope within a domain.
+- Give every topic **one canonical home**. Cross-link with XREFs instead of duplicating scope.
+- Numbering is local to a domain (`TODO-01`, `TODO-02`) and never reused.
+- When work graduates to documentation, move it to the domain's Completed section rather than leaving a stale checklist here.
+
+## What this plan is
+
+Photon is a .NET 10 WPF monorepo holding three standalone creative applications: **Nodus** (vector, imported from Bezier under `src/Nodus/`), **Imago** (raster, imported under `src/Imago/`), and **Lumen** (darkroom and asset manager, planned). They are developed together and distributed separately. Shared code lives in `Photon.Core` (non-UI) and `Photon.UI` (WPF), and only once a second app needs it. The imported apps' legacy roadmaps were mined into this tree on 2026-09-26 and are kept for reference in [`../docs/legacy/`](../docs/legacy/README.md).
+
+## Domain order
+
+Domains are numbered in **allocation order**. `DNN TNN §N` cross-references encode the domain number, so a remap rewrites every reference in the same commit. A new domain appends after the last one.
+
+**Execution order lives in the dependency graph**, not in this column. Ask the graph: `python scripts/todo-graph.py query ready`. The **Phase** column below is the coarse sequencing.
+
+| No. | Domain | Phase | Purpose |
+| :-: | ------ | :---: | ------- |
+| 00 | [Workspace](./00-workspace/INDEX.md) | 0, 2 | Toolchain, solution, gates, CI, the TODO system, import debt, and visual baselines. |
+| 01 | [Core](./01-core/INDEX.md) | 2, 3, 5 | `Photon.Core` (non-UI services) and `Photon.UI` (the WPF house style), each filled only when two apps need it. |
+| 02 | [Nodus](./02-nodus/INDEX.md) | 1, 2, 3, 9 | The vector editor: rename, foundation, 0.1.0, then the legacy roadmap. |
+| 03 | [Imago](./03-imago/INDEX.md) | 1, 4, 5, 10 | The raster editor: rename, WPF-UI removal, rendering, 0.1.0, then the legacy roadmap. |
+| 04 | [Lumen](./04-lumen/INDEX.md) | 6, 7, 11 | The darkroom and photo library: planned from nothing, 0.1.0, then its roadmap. |
+| 05 | [Release](./05-release/INDEX.md) | 3, 8 | Clean-machine proof, signing, arm64, the update check, winget, and the suite bundle. |
+| 06 | [Docs](./06-docs/INDEX.md) | 3, 5, 7, 8 | User guides, developer docs that stay true to the tree, and the documentation site. |
+| 99 | [Manual](./99-manual/INDEX.md) | 99 | Operator-only steps: repository settings, the signing certificate, icon licenses, accent colors. |
+
+`99-manual` is numbered apart from the allocation sequence on purpose, as ScratchPad's is: it is the operator's phase, not a build area, and a new build domain still appends after `06`.
+
+The Phase column is the coarse domain grouping, not an executable schedule. Current dependency-safe sequencing and live counts come only from [`implementation-plan.md`](./implementation-plan.md) plus `python scripts/todo-graph.py query stats`. Do not infer readiness from a domain number or repeat fixed totals here.
+
+## Active TODOs
+
+| TODO | Domain | Title |
+| ---- | ------ | ----- |
+| [TODO-01](./00-workspace/TODO-01-dev-automation.md) | 00-workspace | Dev-Automation Wiring |
+| [TODO-02](./00-workspace/TODO-02-build-and-test-debt.md) | 00-workspace | Build and Test Debt from the Import |
+| [TODO-03](./00-workspace/TODO-03-repo-layout.md) | 00-workspace | Repository Layout and Visual Baselines |
+| [TODO-01](./02-nodus/TODO-01-nodus-structure.md) | 02-nodus | Nodus Layout, Names, and Composition Root |
+| [TODO-01](./03-imago/TODO-01-imago-structure.md) | 03-imago | Imago Layout, Names, the Snapshot Port, and WPF-UI Removal |
+
+Every other TODO is listed in its domain's `INDEX.md`; the files above hold the rows that are ready first (Phases 0 and 1).
