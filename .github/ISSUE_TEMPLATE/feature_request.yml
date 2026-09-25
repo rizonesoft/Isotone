@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest a new capability or an improvement for one of the apps.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Please search [existing issues](https://github.com/rizonesoft/Photon/issues) and the [roadmap](https://github.com/rizonesoft/Photon/blob/main/todo/implementation-plan.md) first; it may already be planned.
+        Open-ended ideas and questions fit better in [Discussions](https://github.com/rizonesoft/Photon/discussions).
+  - type: dropdown
+    id: app
+    attributes:
+      label: App
+      options:
+        - Nodus (vector editor)
+        - Imago (raster editor)
+        - Lumen (darkroom and library)
+        - Installer or portable ZIP
+        - Whole suite or Photon.Core
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+      placeholder: "I often need to ... but currently I have to ..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you like it to work? Mention how other tools handle it if that helps.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds or other approaches you thought about.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, sample files, links, or screenshots.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to help implement this.

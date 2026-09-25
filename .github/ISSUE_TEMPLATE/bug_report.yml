@@ -1,0 +1,99 @@
+name: Bug report
+description: Something in Nodus, Imago, Lumen, or an installer does not work as expected.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please search [existing issues](https://github.com/rizonesoft/Photon/issues) first.
+        **Security problems** must not be reported here; follow [SECURITY.md](https://github.com/rizonesoft/Photon/blob/main/SECURITY.md) instead.
+  - type: dropdown
+    id: app
+    attributes:
+      label: App
+      description: Which part of the suite is affected?
+      options:
+        - Nodus (vector editor)
+        - Imago (raster editor)
+        - Lumen (darkroom and library)
+        - Installer or portable ZIP
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: From Help > About, the installer file name, or the commit hash if you built from source.
+      placeholder: "e.g. nodus-v0.1.0, or commit 2e87a3d"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - Installer, per-user
+        - Installer, all users
+        - Portable ZIP
+        - Suite installer
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: Press Win+R, type `winver`, and copy the version and build.
+      placeholder: "e.g. Windows 11 24H2 (build 26100.2605)"
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: GPU and display scaling (optional)
+      description: Useful for rendering and canvas problems.
+      placeholder: "e.g. NVIDIA RTX 4070, 150% scaling, two monitors"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps that shows the problem. Attach a sample file if it helps (drag it into this box).
+      placeholder: |
+        1. Open the attached file
+        2. Select the pen tool
+        3. Click on the canvas
+        4. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Screenshots or a short recording help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Paste relevant log output or crash details. Logs live under `%LOCALAPPDATA%\<App>\logs` (for example `%LOCALAPPDATA%\Imago\logs`). Nodus also shows logs in its debug window.
+        Remove anything personal before pasting.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
