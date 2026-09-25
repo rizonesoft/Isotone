@@ -1,0 +1,294 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:Bezier.Desktop.Controls">
+
+    <!-- Converters -->
+    <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+    <Style TargetType="{x:Type controls:CompactNumberBox}">
+        <Setter Property="Background" Value="{DynamicResource TextControlBackground}"/>
+        <Setter Property="BorderBrush" Value="#333340"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Height" Value="24"/>
+        <Setter Property="Padding" Value="6,0,0,0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:CompactNumberBox}">
+                    <Grid>
+                        <!-- Progress Bar Background (optional) -->
+                        <Border x:Name="ProgressBorder"
+                                Background="{DynamicResource TextControlBackground}"
+                                CornerRadius="2"
+                                Visibility="Collapsed"
+                                ClipToBounds="True">
+                            <Grid>
+                                <Border x:Name="ProgressFill"
+                                        Background="#1AFF6B35"
+                                        CornerRadius="2"
+                                        HorizontalAlignment="Left">
+                                    <Border.Width>
+                                        <MultiBinding Converter="{x:Static controls:PercentToWidthConverter.Instance}">
+                                            <Binding Path="ProgressPercentage" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                            <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Border}"/>
+                                        </MultiBinding>
+                                    </Border.Width>
+                                </Border>
+                            </Grid>
+                        </Border>
+                        
+                        <!-- Main Border -->
+                        <Border x:Name="ContentBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="2"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Scrub Zone: Drag here to scrub value (like Figma) -->
+                                <!-- Shows prefix text if set, otherwise a drag handle indicator -->
+                                <Border x:Name="PART_ScrubZone"
+                                        Grid.Column="0"
+                                        Background="Transparent"
+                                        Cursor="SizeWE"
+                                        MinWidth="16"
+                                        Margin="0"
+                                        ToolTip="Drag left/right to adjust value">
+                                    <StackPanel Orientation="Horizontal" 
+                                                VerticalAlignment="Center"
+                                                Margin="4,0,2,0">
+                                        <!-- Drag handle icon (shown when no prefix) -->
+                                        <Path x:Name="DragHandleIcon"
+                                              Data="M4,0 L4,12 M8,0 L8,12"
+                                              Stroke="{DynamicResource TextControlPlaceholderForeground}"
+                                              StrokeThickness="1"
+                                              Width="6" Height="10"
+                                              Stretch="Uniform"
+                                              VerticalAlignment="Center"
+                                              Opacity="0.5"
+                                              Visibility="Visible"/>
+                                        <!-- Prefix Label (shown when prefix is set) -->
+                                        <TextBlock x:Name="PART_Prefix"
+                                                   Text="{TemplateBinding Prefix}"
+                                                   Foreground="{DynamicResource TextControlPlaceholderForeground}"
+                                                   FontSize="{TemplateBinding FontSize}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,0,0"
+                                                   Visibility="Collapsed"/>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- Text Input -->
+                                <TextBox x:Name="PART_TextBox"
+                                         Grid.Column="1"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         BorderBrush="Transparent"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         FontSize="{TemplateBinding FontSize}"
+                                         Padding="{TemplateBinding Padding}"
+                                         Margin="0,-2,0,0"
+                                         VerticalAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         HorizontalAlignment="Stretch"
+                                         CaretBrush="{TemplateBinding Foreground}"
+                                         FocusVisualStyle="{x:Null}"
+                                         Cursor="IBeam">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="TextBox">
+                                                        <ScrollViewer x:Name="PART_ContentHost" 
+                                                                      Background="Transparent"
+                                                                      Focusable="False"
+                                                                      HorizontalScrollBarVisibility="Hidden"
+                                                                      VerticalScrollBarVisibility="Hidden"/>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                
+                                <!-- Suffix Label -->
+                                <TextBlock x:Name="PART_Suffix"
+                                           Grid.Column="2"
+                                           Text="{TemplateBinding Suffix}"
+                                           Foreground="{DynamicResource TextControlPlaceholderForeground}"
+                                           FontSize="10"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,0"
+                                           Visibility="Collapsed"/>
+                                
+                                <!-- Clear Button -->
+                                <Button x:Name="PART_ClearButton"
+                                        Grid.Column="3"
+                                        Width="16" Height="16"
+                                        Margin="0,0,2,0"
+                                        Padding="0"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        Focusable="False"
+                                        Visibility="Collapsed">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="ClearButtonBorder" 
+                                                    Background="Transparent"
+                                                    CornerRadius="8">
+                                                <Path x:Name="ClearIcon"
+                                                      Data="M4,4 L12,12 M12,4 L4,12"
+                                                      Stroke="{DynamicResource TextControlButtonForeground}"
+                                                      StrokeThickness="1.5"
+                                                      Width="8" Height="8"
+                                                      Stretch="Uniform"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ClearButtonBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                                                    <Setter TargetName="ClearIcon" Property="Stroke" Value="{DynamicResource TextControlForeground}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="ClearButtonBorder" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                                
+                                <!-- Spin Buttons -->
+                                <StackPanel x:Name="SpinButtonPanel"
+                                            Grid.Column="4"
+                                            Orientation="Vertical"
+                                            Margin="0,1,1,1"
+                                            Visibility="Collapsed">
+                                    <RepeatButton x:Name="PART_IncrementButton"
+                                                  Width="14" Height="10"
+                                                  Padding="0"
+                                                  BorderThickness="0"
+                                                  Background="Transparent"
+                                                  Focusable="False"
+                                                  Cursor="Hand">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border x:Name="SpinBorder" Background="Transparent" CornerRadius="2">
+                                                    <Path Data="M0,4 L4,0 L8,4" 
+                                                          Stroke="{DynamicResource TextControlButtonForeground}"
+                                                          StrokeThickness="1"
+                                                          Width="6" Height="4"
+                                                          Stretch="Uniform"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="SpinBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="SpinBorder" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                    <RepeatButton x:Name="PART_DecrementButton"
+                                                  Width="14" Height="10"
+                                                  Padding="0"
+                                                  BorderThickness="0"
+                                                  Background="Transparent"
+                                                  Focusable="False"
+                                                  Cursor="Hand">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border x:Name="SpinBorder" Background="Transparent" CornerRadius="2">
+                                                    <Path Data="M0,0 L4,4 L8,0" 
+                                                          Stroke="{DynamicResource TextControlButtonForeground}"
+                                                          StrokeThickness="1"
+                                                          Width="6" Height="4"
+                                                          Stretch="Uniform"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="SpinBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="SpinBorder" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                    
+                    <ControlTemplate.Triggers>
+                        <!-- Hover state -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="BorderBrush" TargetName="ContentBorder" Value="{DynamicResource TextControlBorderBrushPointerOver}"/>
+                        </Trigger>
+                        
+                        <!-- Focused state: accent border -->
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter Property="BorderBrush" TargetName="ContentBorder" Value="#FF6B35"/>
+                        </Trigger>
+                        
+                        <!-- Out of range: red border -->
+                        <Trigger Property="IsOutOfRange" Value="True">
+                            <Setter Property="BorderBrush" TargetName="ContentBorder" Value="#E06C75"/>
+                        </Trigger>
+                        
+                        <!-- Show prefix when not empty, hide drag handle -->
+                        <DataTrigger Binding="{Binding Prefix, RelativeSource={RelativeSource Self}, Converter={x:Static controls:StringNotEmptyConverter.Instance}}" Value="True">
+                            <Setter TargetName="PART_Prefix" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="DragHandleIcon" Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                        
+                        <!-- Hide scrub zone when drag-to-scrub is disabled -->
+                        <Trigger Property="EnableDragToScrub" Value="False">
+                            <Setter TargetName="PART_ScrubZone" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        
+                        <!-- Show suffix when not empty -->
+                        <DataTrigger Binding="{Binding Suffix, RelativeSource={RelativeSource Self}, Converter={x:Static controls:StringNotEmptyConverter.Instance}}" Value="True">
+                            <Setter TargetName="PART_Suffix" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        
+                        <!-- Show spin buttons -->
+                        <Trigger Property="ShowSpinButtons" Value="True">
+                            <Setter TargetName="SpinButtonPanel" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        
+                        <!-- Show progress bar -->
+                        <Trigger Property="ShowProgressBar" Value="True">
+                            <Setter TargetName="ProgressBorder" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="ContentBorder" Property="Background" Value="Transparent"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+</ResourceDictionary>

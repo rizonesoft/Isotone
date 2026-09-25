@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <!-- Centralize all build output to artifacts folder -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+    
+    <!-- Common settings for all projects -->
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    
+    <!-- Assembly info -->
+    <Company>Bezier</Company>
+    <Product>Bezier SVG Editor</Product>
+    <Copyright>Copyright © 2024 Bezier Contributors</Copyright>
+  </PropertyGroup>
+</Project>

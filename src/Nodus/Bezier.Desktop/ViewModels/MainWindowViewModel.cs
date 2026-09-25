@@ -1,0 +1,1050 @@
+using System.Collections.ObjectModel;
+using System.Windows;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
+using Bezier.Core.Models;
+using Bezier.Core.Services;
+using Bezier.Core.Tools;
+using System.Diagnostics;
+using System.Windows.Threading;
+
+namespace Bezier.Desktop.ViewModels;
+
+/// <summary>
+/// ViewModel for the main Bezier editor window.
+/// Contains all menu commands and view state properties.
+/// </summary>
+public partial class MainWindowViewModel : ObservableObject
+{
+    private readonly SvgImporter _svgImporter = new();
+    private readonly SvgExporter _svgExporter = new();
+    private readonly HistoryManager _history = new();
+    private readonly ToolManager _toolManager = new();
+    private Artboard? _subscribedArtboard;
+
+    public MainWindowViewModel()
+    {
+        _history.HistoryChanged += OnHistoryChanged;
+        InitializeToolManager();
+        InitializeMemoryMonitor();
+        CheckGpuAcceleration();
+    }
+
+    private void InitializeToolManager()
+    {
+        // Register all tools
+        var selectTool = new SelectTool();
+        _toolManager.RegisterTool(selectTool);
+        _toolManager.RegisterTool(new PenTool());
+        _toolManager.RegisterTool(new RectangleTool());
+        _toolManager.RegisterTool(new EllipseTool());
+        _toolManager.RegisterTool(new LineTool());
+        _toolManager.RegisterTool(new TextTool());
+        _toolManager.RegisterTool(new ZoomTool());
+        _toolManager.RegisterTool(new PanTool());
+
+        // Set default tool
+        _toolManager.SetTool("Select");
+
+        // Listen for tool changes
+        _toolManager.ActiveToolChanged += (_, tool) =>
+        {
+            if (tool is not null)
+            {
+                ActiveTool = tool.Name;
+            }
+        };
+
+        // Subscribe to selection changes to update debug info
+        selectTool.SelectionChanged += OnSelectionChanged;
+
+        // Subscribe to redraw requests
+        _toolManager.RedrawRequested += (_, _) => OnPropertyChanged(nameof(ToolManager));
+    }
+
+    private void OnSelectionChanged(object? sender, IReadOnlyList<Core.Models.VectorElement> selection)
+    {
+        // Update DebugInfoService with selection info
+        var primary = selection.FirstOrDefault();
+        (double X, double Y, double Width, double Height)? bounds = null;
+        
+        if (selection.Count > 0)
+        {
+            double minX = double.MaxValue, minY = double.MaxValue;
+            double maxX = double.MinValue, maxY = double.MinValue;
+            
+            foreach (var element in selection)
+            {
+                var b = element.GetBoundingBox();
+                minX = Math.Min(minX, b.X);
+                minY = Math.Min(minY, b.Y);
+                maxX = Math.Max(maxX, b.X + b.Width);
+                maxY = Math.Max(maxY, b.Y + b.Height);
+            }
+            
+            bounds = (minX, minY, maxX - minX, maxY - minY);
+        }
+        
+        DebugInfoService.Instance.UpdateSelection(selection.Count, primary, bounds);
+        
+        // Update the DebugWindow tree selection
+        if (Views.DebugWindow.Instance.IsLoaded && primary is not null)
+        {
+            Views.DebugWindow.Instance.SelectElementInTree(primary);
+        }
+    }
+
+    /// <summary>
+    /// Gets the tool manager for canvas binding.
+    /// </summary>
+    public ToolManager ToolManager => _toolManager;
+
+    private void OnHistoryChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        OnPropertyChanged(nameof(UndoDescription));
+        OnPropertyChanged(nameof(RedoDescription));
+        RefreshHistoryList();
+        
+        // Update performance metrics with undo/redo stack sizes
+        PerformanceMetricsService.Instance.UpdateHistoryInfo(_history.UndoCount, _history.RedoCount);
+    }
+
+    private void RefreshHistoryList()
+    {
+        UndoHistory.Clear();
+        foreach (var desc in _history.GetUndoDescriptions())
+        {
+            UndoHistory.Add(desc);
+        }
+    }
+
+    #region Window Properties
+    
+    [ObservableProperty]
+    private string _title = "Bezier";
+    
+    [ObservableProperty]
+    private string _statusText = "Ready";
+    
+    [ObservableProperty]
+    private int _zoomLevel = 100;
+    
+    [ObservableProperty]
+    private string _documentSize = "800 × 600";
+
+    [ObservableProperty]
+    private VectorDocument? _document;
+
+    partial void OnDocumentChanged(VectorDocument? value)
+    {
+        _toolManager.SetContext(value, _history);
+        
+        // Unsubscribe from previous document's artboard changes
+        if (_document != null)
+        {
+            _document.Artboards.ActiveArtboardChanged -= OnActiveArtboardChanged;
+            if (_subscribedArtboard != null)
+            {
+                _subscribedArtboard.PropertyChanged -= OnActiveArtboardPropertyChanged;
+                _subscribedArtboard = null;
+            }
+        }
+        
+        // Subscribe to new document's artboard changes
+        if (value != null)
+        {
+            value.Artboards.ActiveArtboardChanged += OnActiveArtboardChanged;
+            if (value.Artboards.ActiveArtboard != null)
+            {
+                _subscribedArtboard = value.Artboards.ActiveArtboard;
+                _subscribedArtboard.PropertyChanged += OnActiveArtboardPropertyChanged;
+            }
+            UpdateArtboardName(value.Artboards.ActiveArtboard);
+        }
+        else
+        {
+            ArtboardName = string.Empty;
+        }
+    }
+
+    private void OnActiveArtboardChanged(object? sender, EventArgs e)
+    {
+        // Unsubscribe from previous artboard
+        if (_subscribedArtboard != null)
+        {
+            _subscribedArtboard.PropertyChanged -= OnActiveArtboardPropertyChanged;
+            _subscribedArtboard = null;
+        }
+        
+        // Subscribe to new artboard
+        if (Document?.Artboards.ActiveArtboard != null)
+        {
+            _subscribedArtboard = Document.Artboards.ActiveArtboard;
+            _subscribedArtboard.PropertyChanged += OnActiveArtboardPropertyChanged;
+            UpdateArtboardName(_subscribedArtboard);
+        }
+        else
+        {
+            ArtboardName = string.Empty;
+        }
+    }
+
+    private void OnActiveArtboardPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Artboard.Name) && sender is Artboard artboard)
+        {
+            UpdateArtboardName(artboard);
+        }
+    }
+
+    private void UpdateArtboardName(Artboard? artboard)
+    {
+        ArtboardName = artboard?.Name ?? string.Empty;
+    }
+
+    [ObservableProperty]
+    private string? _currentFilePath;
+
+    #endregion
+
+    #region Status Bar Properties
+
+    [ObservableProperty]
+    private double _cursorX;
+
+    [ObservableProperty]
+    private double _cursorY;
+
+    [ObservableProperty]
+    private string _cursorPosition = "0, 0";
+
+    [ObservableProperty]
+    private int _elementCount;
+
+    [ObservableProperty]
+    private int _selectedCount;
+
+    [ObservableProperty]
+    private string _selectionInfo = "No selection";
+
+    [ObservableProperty]
+    private bool _isLoading;
+
+    [ObservableProperty]
+    private double _loadingProgress;
+
+    [ObservableProperty]
+    private string? _errorMessage;
+
+    [ObservableProperty]
+    private bool _showError;
+
+    [ObservableProperty]
+    private string _colorMode = "RGB";
+
+    [ObservableProperty]
+    private string _toolHintText = "Click to select, drag to move";
+
+    [ObservableProperty]
+    private string _artboardName = string.Empty;
+
+    [ObservableProperty]
+    private string _memoryUsage = "0 MB";
+
+    [ObservableProperty]
+    private bool _isGpuAccelerated;
+
+    private DispatcherTimer? _memoryTimer;
+
+    private void InitializeMemoryMonitor()
+    {
+        _memoryTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(3)
+        };
+        _memoryTimer.Tick += (_, _) => UpdateMemoryUsage();
+        _memoryTimer.Start();
+        UpdateMemoryUsage(); // Initial update
+    }
+
+    private void UpdateMemoryUsage()
+    {
+        var process = Process.GetCurrentProcess();
+        var memoryMb = process.WorkingSet64 / (1024.0 * 1024.0);
+        MemoryUsage = memoryMb < 1024 
+            ? $"{memoryMb:0} MB" 
+            : $"{memoryMb / 1024:0.0} GB";
+    }
+
+    private void CheckGpuAcceleration()
+    {
+        // WPF uses hardware acceleration by default if available
+        IsGpuAccelerated = System.Windows.Media.RenderCapability.Tier >> 16 > 0;
+    }
+
+    #endregion
+
+    #region Context Toolbar Properties
+
+    /// <summary>
+    /// Whether any elements are currently selected.
+    /// </summary>
+    public bool HasSelection => SelectedCount > 0;
+
+    /// <summary>
+    /// Whether no elements are selected (inverse of HasSelection).
+    /// </summary>
+    public bool NoSelection => SelectedCount == 0;
+
+    /// <summary>
+    /// Document width for context toolbar binding.
+    /// </summary>
+    public double DocumentWidth
+    {
+        get => Document?.Width ?? 800;
+        set
+        {
+            if (Document is not null && value > 0)
+            {
+                Document.Width = value;
+                OnPropertyChanged();
+                UpdateDocumentInfo();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Document height for context toolbar binding.
+    /// </summary>
+    public double DocumentHeight
+    {
+        get => Document?.Height ?? 600;
+        set
+        {
+            if (Document is not null && value > 0)
+            {
+                Document.Height = value;
+                OnPropertyChanged();
+                UpdateDocumentInfo();
+            }
+        }
+    }
+
+    partial void OnSelectedCountChanged(int value)
+    {
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(NoSelection));
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Available zoom levels for the dropdown.
+    /// </summary>
+    public int[] ZoomLevels { get; } = [25, 50, 75, 100, 125, 150, 200, 300, 400, 600, 800];
+
+    /// <summary>
+    /// Updates cursor position display.
+    /// </summary>
+    public void UpdateCursorPosition(double x, double y)
+    {
+        CursorX = Math.Round(x, 1);
+        CursorY = Math.Round(y, 1);
+        CursorPosition = $"{CursorX:0.#}, {CursorY:0.#}";
+    }
+
+    /// <summary>
+    /// Updates selection information display.
+    /// </summary>
+    public void UpdateSelectionInfo(int count, double? width = null, double? height = null)
+    {
+        SelectedCount = count;
+        if (count == 0)
+        {
+            SelectionInfo = "No selection";
+        }
+        else if (count == 1 && width.HasValue && height.HasValue)
+        {
+            SelectionInfo = $"1 object ({width:0.#} × {height:0.#})";
+        }
+        else
+        {
+            SelectionInfo = $"{count} objects";
+        }
+    }
+
+    /// <summary>
+    /// Shows an error toast message.
+    /// </summary>
+    public void ShowErrorToast(string message)
+    {
+        ErrorMessage = message;
+        ShowError = true;
+        
+        // Auto-dismiss after 5 seconds
+        Task.Delay(5000).ContinueWith(_ => 
+        {
+            Application.Current.Dispatcher.Invoke(() => ShowError = false);
+        });
+    }
+
+    /// <summary>
+    /// Dismisses the error toast.
+    /// </summary>
+    [RelayCommand]
+    private void DismissError()
+    {
+        ShowError = false;
+    }
+
+    #region View State Properties
+    
+    [ObservableProperty]
+    private bool _showGrid = true;
+    
+    [ObservableProperty]
+    private bool _showRulers = true;
+    
+    [ObservableProperty]
+    private bool _showGuides = true;
+    
+    [ObservableProperty]
+    private bool _outlineMode = false;
+    
+    [ObservableProperty]
+    private bool _showToolsPanel = true;
+    
+    [ObservableProperty]
+    private bool _showPropertiesPanel = true;
+    
+    [ObservableProperty]
+    private bool _showLayersPanel = true;
+    
+    [ObservableProperty]
+    private bool _showCodePanel = false;
+    
+    [ObservableProperty]
+    private bool _showHistoryPanel = true;
+    
+    [ObservableProperty]
+    private bool _snapEnabled = true;
+
+    #endregion
+
+    #region Tool State Properties
+
+    [ObservableProperty]
+    private string _activeTool = "Select";
+
+    public bool IsSelectToolActive => ActiveTool == "Select";
+    public bool IsPenToolActive => ActiveTool == "Pen";
+    public bool IsRectangleToolActive => ActiveTool == "Rectangle";
+    public bool IsEllipseToolActive => ActiveTool == "Ellipse";
+    public bool IsLineToolActive => ActiveTool == "Line";
+    public bool IsTextToolActive => ActiveTool == "Text";
+    public bool IsZoomToolActive => ActiveTool == "Zoom";
+    public bool IsPanToolActive => ActiveTool == "Pan";
+
+    partial void OnActiveToolChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsSelectToolActive));
+        OnPropertyChanged(nameof(IsPenToolActive));
+        OnPropertyChanged(nameof(IsRectangleToolActive));
+        OnPropertyChanged(nameof(IsEllipseToolActive));
+        OnPropertyChanged(nameof(IsLineToolActive));
+        OnPropertyChanged(nameof(IsTextToolActive));
+        OnPropertyChanged(nameof(IsZoomToolActive));
+        OnPropertyChanged(nameof(IsPanToolActive));
+        StatusText = $"Tool: {value}";
+        
+        // Update tool hint text
+        ToolHintText = value switch
+        {
+            "Select" => "Click to select, drag to move. Hold Shift to add to selection.",
+            "Pen" => "Click to add points, drag for bezier curves. Press Enter to finish.",
+            "Rectangle" => "Click and drag to draw. Hold Shift for square.",
+            "Ellipse" => "Click and drag to draw. Hold Shift for circle.",
+            "Line" => "Click and drag to draw. Hold Shift for 45° angles.",
+            "Text" => "Click to place text. Double-click to edit.",
+            "Zoom" => "Click to zoom in, Alt+click to zoom out. Scroll to adjust.",
+            "Pan" => "Click and drag to pan the canvas. Use scroll wheel to zoom.",
+            _ => "Ready"
+        };
+    }
+
+    [RelayCommand]
+    private void SetTool(string toolName)
+    {
+        _toolManager.SetTool(toolName);
+    }
+
+    #endregion
+
+    #region Undo/Redo Properties
+
+    /// <summary>
+    /// Gets whether undo is available.
+    /// </summary>
+    public bool CanUndo => _history.CanUndo;
+
+    /// <summary>
+    /// Gets whether redo is available.
+    /// </summary>
+    public bool CanRedo => _history.CanRedo;
+
+    /// <summary>
+    /// Gets the description of the next undo action.
+    /// </summary>
+    public string UndoDescription => _history.NextUndoDescription ?? "Undo";
+
+    /// <summary>
+    /// Gets the description of the next redo action.
+    /// </summary>
+    public string RedoDescription => _history.NextRedoDescription ?? "Redo";
+
+    /// <summary>
+    /// Gets the history manager for external access.
+    /// </summary>
+    public HistoryManager History => _history;
+
+    /// <summary>
+    /// Observable collection of undo history descriptions.
+    /// </summary>
+    public ObservableCollection<string> UndoHistory { get; } = [];
+    
+    #endregion
+    
+    #region File Commands
+    
+    [RelayCommand]
+    private void New()
+    {
+        Document = new VectorDocument();
+        CurrentFilePath = null;
+        UpdateDocumentInfo();
+        StatusText = "New document created";
+    }
+    
+    [RelayCommand]
+    private void Open()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Open SVG File",
+            Filter = "SVG Files (*.svg)|*.svg|All Files (*.*)|*.*",
+            DefaultExt = ".svg"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                Document = _svgImporter.ParseFile(dialog.FileName);
+                CurrentFilePath = dialog.FileName;
+                UpdateDocumentInfo();
+                StatusText = $"Opened: {System.IO.Path.GetFileName(dialog.FileName)} ({Document.Elements.Count} elements)";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusText = "Error opening file";
+            }
+        }
+    }
+
+    private void UpdateDocumentInfo()
+    {
+        if (Document is not null)
+        {
+            DocumentSize = $"{Document.Width:0} × {Document.Height:0}";
+            ElementCount = Document.Elements.Count;
+            Title = string.IsNullOrEmpty(CurrentFilePath) 
+                ? "Bezier - Untitled" 
+                : $"Bezier - {System.IO.Path.GetFileName(CurrentFilePath)}";
+        }
+        else
+        {
+            DocumentSize = "—";
+            ElementCount = 0;
+        }
+    }
+    
+    [RelayCommand]
+    private void Save()
+    {
+        if (Document is null) return;
+
+        if (string.IsNullOrEmpty(CurrentFilePath))
+        {
+            SaveAs();
+            return;
+        }
+
+        try
+        {
+            _svgExporter.ExportToFile(Document, CurrentFilePath);
+            Document.IsDirty = false;
+            StatusText = $"Saved: {System.IO.Path.GetFileName(CurrentFilePath)}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusText = "Error saving file";
+        }
+    }
+    
+    [RelayCommand]
+    private void SaveAs()
+    {
+        if (Document is null) return;
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "Save SVG File",
+            Filter = "SVG Files (*.svg)|*.svg|All Files (*.*)|*.*",
+            DefaultExt = ".svg",
+            FileName = string.IsNullOrEmpty(CurrentFilePath) 
+                ? "untitled.svg" 
+                : System.IO.Path.GetFileName(CurrentFilePath)
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                _svgExporter.ExportToFile(Document, dialog.FileName);
+                CurrentFilePath = dialog.FileName;
+                Document.IsDirty = false;
+                UpdateDocumentInfo();
+                StatusText = $"Saved: {System.IO.Path.GetFileName(dialog.FileName)}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusText = "Error saving file";
+            }
+        }
+    }
+    
+    [RelayCommand]
+    private void ExportPng()
+    {
+        StatusText = "Export as PNG...";
+    }
+    
+    [RelayCommand]
+    private void ExportJpeg()
+    {
+        StatusText = "Export as JPEG...";
+    }
+    
+    [RelayCommand]
+    private void ExportPdf()
+    {
+        StatusText = "Export as PDF...";
+    }
+    
+    [RelayCommand]
+    private void ExportXaml()
+    {
+        StatusText = "Export as XAML...";
+    }
+    
+    [RelayCommand]
+    private void Close()
+    {
+        StatusText = "Document closed";
+    }
+    
+    [RelayCommand]
+    private void Exit()
+    {
+        Application.Current.Shutdown();
+    }
+    
+    #endregion
+    
+    #region Edit Commands
+    
+    [RelayCommand(CanExecute = nameof(CanUndo))]
+    private void Undo()
+    {
+        if (_history.Undo())
+        {
+            StatusText = $"Undo: {_history.NextRedoDescription}";
+            UpdateDocumentInfo();
+        }
+    }
+    
+    [RelayCommand(CanExecute = nameof(CanRedo))]
+    private void Redo()
+    {
+        if (_history.Redo())
+        {
+            StatusText = $"Redo: {_history.NextUndoDescription}";
+            UpdateDocumentInfo();
+        }
+    }
+
+    [RelayCommand]
+    private void ClearHistory()
+    {
+        _history.Clear();
+        StatusText = "History cleared";
+    }
+    
+    [RelayCommand]
+    private void Cut()
+    {
+        StatusText = "Cut";
+    }
+    
+    [RelayCommand]
+    private void Copy()
+    {
+        StatusText = "Copy";
+    }
+    
+    [RelayCommand]
+    private void Paste()
+    {
+        StatusText = "Paste";
+    }
+    
+    [RelayCommand]
+    private void Duplicate()
+    {
+        StatusText = "Duplicate";
+    }
+    
+    [RelayCommand]
+    private void Delete()
+    {
+        StatusText = "Delete";
+    }
+    
+    [RelayCommand]
+    private void SelectAll()
+    {
+        StatusText = "Select All";
+    }
+    
+    [RelayCommand]
+    private void Preferences()
+    {
+        StatusText = "Opening preferences...";
+    }
+    
+    #endregion
+    
+    #region View Commands
+    
+    [RelayCommand]
+    private void ZoomIn()
+    {
+        // Find next zoom level
+        var nextZoom = ZoomLevels.FirstOrDefault(z => z > ZoomLevel);
+        if (nextZoom > 0)
+        {
+            ZoomLevel = nextZoom;
+            StatusText = $"Zoom: {ZoomLevel}%";
+        }
+    }
+    
+    [RelayCommand]
+    private void ZoomOut()
+    {
+        // Find previous zoom level
+        var prevZoom = ZoomLevels.LastOrDefault(z => z < ZoomLevel);
+        if (prevZoom > 0)
+        {
+            ZoomLevel = prevZoom;
+            StatusText = $"Zoom: {ZoomLevel}%";
+        }
+    }
+
+    [RelayCommand]
+    private void SetZoom(int zoom)
+    {
+        ZoomLevel = Math.Clamp(zoom, 10, 800);
+        StatusText = $"Zoom: {ZoomLevel}%";
+    }
+    
+    [RelayCommand]
+    private void FitToWindow()
+    {
+        ZoomLevel = 100;
+        StatusText = "Fit to window";
+    }
+    
+    [RelayCommand]
+    private void ActualSize()
+    {
+        ZoomLevel = 100;
+        StatusText = "Actual size (100%)";
+    }
+
+    [RelayCommand]
+    private void ResetLayout()
+    {
+        ShowToolsPanel = true;
+        ShowPropertiesPanel = true;
+        ShowLayersPanel = true;
+        ShowHistoryPanel = true;
+        ShowCodePanel = false;
+        StatusText = "Layout reset to default";
+    }
+    
+    #endregion
+    
+    #region Object Commands
+    
+    [RelayCommand]
+    private void Group()
+    {
+        StatusText = "Group objects";
+    }
+    
+    [RelayCommand]
+    private void Ungroup()
+    {
+        StatusText = "Ungroup objects";
+    }
+    
+    [RelayCommand]
+    private void BringToFront()
+    {
+        StatusText = "Bring to front";
+    }
+    
+    [RelayCommand]
+    private void BringForward()
+    {
+        StatusText = "Bring forward";
+    }
+    
+    [RelayCommand]
+    private void SendBackward()
+    {
+        StatusText = "Send backward";
+    }
+    
+    [RelayCommand]
+    private void SendToBack()
+    {
+        StatusText = "Send to back";
+    }
+    
+    [RelayCommand]
+    private void AlignLeft()
+    {
+        StatusText = "Align left";
+    }
+    
+    [RelayCommand]
+    private void AlignCenter()
+    {
+        StatusText = "Align center";
+    }
+    
+    [RelayCommand]
+    private void AlignRight()
+    {
+        StatusText = "Align right";
+    }
+    
+    [RelayCommand]
+    private void AlignTop()
+    {
+        StatusText = "Align top";
+    }
+    
+    [RelayCommand]
+    private void AlignMiddle()
+    {
+        StatusText = "Align middle";
+    }
+    
+    [RelayCommand]
+    private void AlignBottom()
+    {
+        StatusText = "Align bottom";
+    }
+    
+    [RelayCommand]
+    private void DistributeHorizontally()
+    {
+        StatusText = "Distribute horizontally";
+    }
+    
+    [RelayCommand]
+    private void DistributeVertically()
+    {
+        StatusText = "Distribute vertically";
+    }
+    
+    [RelayCommand]
+    private void Rotate90Cw()
+    {
+        StatusText = "Rotate 90° clockwise";
+    }
+    
+    [RelayCommand]
+    private void Rotate90Ccw()
+    {
+        StatusText = "Rotate 90° counter-clockwise";
+    }
+    
+    [RelayCommand]
+    private void Rotate180()
+    {
+        StatusText = "Rotate 180°";
+    }
+    
+    [RelayCommand]
+    private void FlipHorizontal()
+    {
+        StatusText = "Flip horizontal";
+    }
+    
+    [RelayCommand]
+    private void FlipVertical()
+    {
+        StatusText = "Flip vertical";
+    }
+    
+    #endregion
+    
+    #region Path Commands
+    
+    [RelayCommand]
+    private void Union()
+    {
+        StatusText = "Union paths";
+    }
+    
+    [RelayCommand]
+    private void Subtract()
+    {
+        StatusText = "Subtract paths";
+    }
+    
+    [RelayCommand]
+    private void Intersect()
+    {
+        StatusText = "Intersect paths";
+    }
+    
+    [RelayCommand]
+    private void Exclude()
+    {
+        StatusText = "Exclude paths";
+    }
+    
+    [RelayCommand]
+    private void Simplify()
+    {
+        StatusText = "Simplify path";
+    }
+    
+    [RelayCommand]
+    private void StrokeToPath()
+    {
+        StatusText = "Convert stroke to path";
+    }
+    
+    [RelayCommand]
+    private void TextToPath()
+    {
+        StatusText = "Convert text to path";
+    }
+    
+    #endregion
+    
+    #region Help Commands
+    
+    [RelayCommand]
+    private void Documentation()
+    {
+        StatusText = "Opening documentation...";
+        // TODO: Open docs URL in browser
+    }
+    
+    [RelayCommand]
+    private void KeyboardShortcuts()
+    {
+        StatusText = "Keyboard shortcuts";
+        // TODO: Show keyboard shortcuts dialog
+    }
+    
+    [RelayCommand]
+    private void OpenDebugWindow()
+    {
+        var debugWindow = Views.DebugWindow.Instance;
+        
+        // Set the document for the Elements Inspector
+        debugWindow.SetDocument(Document);
+        
+        // Wire up element selection from tree to canvas
+        debugWindow.ElementSelectedInTree -= OnDebugWindowElementSelected;
+        debugWindow.ElementSelectedInTree += OnDebugWindowElementSelected;
+        
+        // Wire up hover highlight
+        debugWindow.ElementHovered -= OnDebugWindowElementHovered;
+        debugWindow.ElementHovered += OnDebugWindowElementHovered;
+        
+        // Wire up visibility/lock toggled (forces canvas redraw)
+        debugWindow.ElementVisibilityToggled -= OnDebugWindowElementModified;
+        debugWindow.ElementVisibilityToggled += OnDebugWindowElementModified;
+        debugWindow.ElementLockToggled -= OnDebugWindowElementModified;
+        debugWindow.ElementLockToggled += OnDebugWindowElementModified;
+        
+        Views.DebugWindow.ShowInstance();
+        StatusText = "Developer Tools opened";
+    }
+    
+    private void OnDebugWindowElementSelected(object? sender, Core.Models.VectorElement element)
+    {
+        // Use the SelectTool to select the element
+        if (_toolManager.GetTool<Core.Tools.SelectTool>() is { } selectTool)
+        {
+            selectTool.SetSelection([element]);
+        }
+    }
+    
+    private void OnDebugWindowElementHovered(object? sender, Core.Models.VectorElement? element)
+    {
+        // The canvas can highlight the hovered element
+        HoveredElement = element;
+    }
+    
+    private void OnDebugWindowElementModified(object? sender, Core.Models.VectorElement element)
+    {
+        // Force canvas redraw when visibility/lock changes
+        OnPropertyChanged(nameof(Document));
+    }
+    
+    /// <summary>
+    /// The currently hovered element (from the Elements Inspector tree).
+    /// </summary>
+    [ObservableProperty]
+    private Core.Models.VectorElement? _hoveredElement;
+    
+    [RelayCommand]
+    private void CheckUpdates()
+    {
+        StatusText = "Checking for updates...";
+    }
+    
+    [RelayCommand]
+    private void About()
+    {
+        StatusText = "About Bezier";
+        // TODO: Show about dialog
+    }
+    
+    #endregion
+}

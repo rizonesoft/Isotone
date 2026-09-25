@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <title>Test SVG</title>
+  <desc>A test SVG file for Bezier editor</desc>
+  
+  <!-- Background rectangle -->
+  <rect id="background" x="10" y="10" width="380" height="280" fill="#f0f0f0" stroke="#cccccc" stroke-width="2"/>
+  
+  <!-- Red circle -->
+  <circle id="redCircle" cx="100" cy="100" r="40" fill="#ff6b35" stroke="#e85a2a" stroke-width="3"/>
+  
+  <!-- Blue rectangle -->
+  <rect id="blueRect" x="200" y="60" width="120" height="80" rx="10" ry="10" fill="#89b4fa" stroke="#7aa2e8" stroke-width="2"/>
+  
+  <!-- Green ellipse -->
+  <ellipse id="greenEllipse" cx="300" cy="220" rx="60" ry="35" fill="#a6e3a1" stroke="#8bc986" stroke-width="2"/>
+  
+  <!-- Purple path (star shape) -->
+  <path id="purpleStar" d="M100 200 L115 240 L80 215 L120 215 L85 240 Z" fill="#b4befe" stroke="#9ca3cf" stroke-width="1"/>
+  
+  <!-- Orange line -->
+  <line id="orangeLine" x1="180" y1="180" x2="280" y2="280" stroke="#fab387" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Text element -->
+  <text id="titleText" x="200" y="30" font-family="Arial" font-size="18" fill="#333333" text-anchor="middle">Bezier Test</text>
+  
+  <!-- Group with nested elements -->
+  <g id="shapeGroup" transform="translate(50, 150)">
+    <rect x="0" y="0" width="30" height="30" fill="#f38ba8"/>
+    <rect x="35" y="0" width="30" height="30" fill="#eba0ac"/>
+  </g>
+</svg>
