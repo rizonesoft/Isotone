@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Imago.Core</RootNamespace>
+    <AssemblyName>Imago.Core</AssemblyName>
+    <Description>Core domain logic and models for Imago image editor</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Serilog" />
+  </ItemGroup>
+
+</Project>
