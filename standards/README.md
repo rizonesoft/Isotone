@@ -1,21 +1,14 @@
-## Standards Overview
+# Standards
 
-This folder centralizes all project standards for the Photon monorepo (Rizonesoft Graphics Suite: Nodus, Imago, Lumen).
+The standards every change in the Rizonesoft Graphics Suite (codename Photon) answers to. [`AGENTS.md`](../AGENTS.md) holds the binding decisions and the working rules for agents; these files hold the detail. Where a file here and `AGENTS.md` disagree, `AGENTS.md` wins and the file is corrected in the same commit.
 
-- `nodus.md` — Nodus‑specific coding, UI, and architectural standards (copied from `previous-dev/Bezier/STANDARDS.md`).
-- `imago.md` — Imago‑specific coding and performance standards (copied from `previous-dev/Imago/STANDARDS.md`).
-- `lumen.md` — Lumen‑specific standards (to be created based on shared patterns).
-- `shared.md` — Cross‑cutting standards (logging, error handling, versioning, testing, prompts).
-- `release.md` — Versioning, release process, distribution channels, installer conventions.
-- `testing.md` — Test strategy, coverage targets, regression policy.
+| File | Covers |
+| ---- | ------ |
+| [`shared.md`](shared.md) | Everything all apps share: the stack, C# style, MVVM, DI, logging, errors, documents, performance, commits, and the **design contract** every surface answers to |
+| [`nodus.md`](nodus.md) | Nodus, the vector editor: the document model, the canvas, tools, SVG, icons |
+| [`imago.md`](imago.md) | Imago, the raster editor: tiles, zero-allocation hot paths, GPU shaders, codecs |
+| [`lumen.md`](lumen.md) | Lumen, the darkroom: the original-file guard, the catalog, the develop pipeline |
+| [`testing.md`](testing.md) | Test projects, naming, fixtures, fidelity proofs, the quarantine |
+| [`release.md`](release.md) | Versions, tags, changelogs, installers, the release checklist |
 
-## Important Technical Decisions
-
-### UI Framework
-- **WPF-UI will NOT be used**. All apps use standard WPF with custom theming and controls.
-- Use `CommunityToolkit.Mvvm` for MVVM patterns (ObservableObject, RelayCommand, etc.).
-- Custom WPF controls and styling will be developed as needed.
-
-> **Rule**: Every `TODO.md` and prompt template must point to this folder so that tools and contributors read the relevant standards before making changes.
-
-
+The legacy per-app standards (`src/Nodus/STANDARDS.md`, `src/Imago/STANDARDS.md`) were merged into these files on 2026-09-26 and removed; git history keeps them.
