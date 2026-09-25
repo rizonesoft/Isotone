@@ -1,0 +1,17 @@
+---
+alwaysApply: true
+---
+
+# Photon Project Rules
+
+## UI Framework
+- **WPF-UI will NOT be used** in any Photon projects (Nodus, Imago, Lumen)
+- Use standard WPF with custom theming and controls
+- Use CommunityToolkit.Mvvm for MVVM patterns (ObservableObject, RelayCommand, etc.)
+- When importing from `previous-dev/`, remove WPF-UI dependencies and replace with standard WPF equivalents
+
+## Project Structure
+- Monorepo structure: `src/Photon.Core` (shared), `src/Nodus.UI`, `src/Imago.UI`, `src/Lumen.UI`
+- Unified solution: `ProjectPhoton.sln`
+- Standards folder: `standards/` (nodus.md, imago.md, lumen.md, shared.md)
+- Always read relevant TODO.md and standards files before making changes
