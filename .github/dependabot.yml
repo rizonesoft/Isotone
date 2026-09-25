@@ -1,0 +1,49 @@
+version: 2
+updates:
+  # NuGet: versions live in Directory.Packages.props (central package management).
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      microsoft:
+        patterns:
+          - "Microsoft.*"
+          - "System.*"
+      skiasharp:
+        patterns:
+          - "SkiaSharp*"
+          - "Svg.Skia"
+      testing:
+        patterns:
+          - "xunit*"
+          - "coverlet.*"
+          - "Moq"
+          - "FluentAssertions"
+          - "Microsoft.NET.Test.Sdk"
+      serilog:
+        patterns:
+          - "Serilog*"
+      nuget-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # ImageSharp 4 / Drawing 3 require a paid Six Labors license key at build time.
+      - dependency-name: "SixLabors.ImageSharp"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "SixLabors.ImageSharp.Drawing"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions: pinned by full SHA; Dependabot bumps the SHA and the tag comment.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      actions:
+        patterns:
+          - "*"

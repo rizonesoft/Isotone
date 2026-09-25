@@ -1,4 +1,75 @@
+# Rizonesoft Graphics Suite (Photon)
+
+# Build output (UseArtifactsOutput puts everything under artifacts/)
+artifacts/
 bin/
+[Bb]in/
 obj/
+[Oo]bj/
+publish/
+dist/
+*.binlog
+# WPF markup-compile temp projects (left behind by interrupted builds)
+*_wpftmp.csproj
+*_wpftmp/
+msbuild*.log
+
+# Claude automation scratch (tracked docs moved to docs/dev/build.md)
+/build/
+
+# Provisioned tools (pinned SDK, etc.)
+.tools/
+.dotnet/
+
+# IDE and user state
 .vs/
+.idea/
 *.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+*.code-workspace
+
+# Tests and coverage
+TestResults/
+*.trx
+coverage*.json
+coverage*.xml
+coverage*.info
+BenchmarkDotNet.Artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Agent and session state
+.remember/
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+
+# Secrets
+*.pfx
+*.snk
+
+# OS noise
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+*.bak
+logs/
+crash-reports/

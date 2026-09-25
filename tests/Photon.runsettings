@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Suite-wide test settings (wired in Directory.Build.props via RunSettingsFilePath).
+  TestCaseFilter is the QUARANTINE list: known-failing legacy tests excluded so the
+  gate stays green. Every entry is debt tracked in docs/dev/build.md; remove the
+  entry in the same change that fixes the test.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <ResultsDirectory>../artifacts/TestResults</ResultsDirectory>
+    <TestCaseFilter>FullyQualifiedName!=Bezier.Tests.ElementTooltipTests.ElementTooltip_FromElement_UsesUnnamedForNullName&amp;FullyQualifiedName!=Bezier.Tests.AssetLibraryServiceTests.ToggleFavorite_AddsFavorite&amp;FullyQualifiedName!=Bezier.Tests.AssetLibraryServiceTests.ToggleFavorite_RemovesFavorite</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

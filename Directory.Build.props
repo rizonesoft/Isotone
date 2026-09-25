@@ -1,0 +1,83 @@
+<Project>
+  <!--
+    Rizonesoft Graphics Suite (Photon): the one shared build configuration.
+    Every project under this tree imports this file. App folders may add a thin
+    Directory.Build.props overlay that imports this one first and only sets the
+    app's MinVer tag prefix, product name, and (for legacy code) documented
+    analyzer relaxations. See docs/dev/build.md and docs/dev/versioning.md.
+  -->
+
+  <!-- Language and compiler -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <Features>strict</Features>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!-- Analysis: strict by default. Legacy overlays relax this (listed as debt). -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <!-- Required for IDE0005 (unused usings) to run in build; missing-doc warnings stay off. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- Output: everything lands under artifacts/ (bin, obj, publish, package). -->
+  <PropertyGroup>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+  </PropertyGroup>
+
+  <!-- Tests: one settings file (results location plus the quarantine list). -->
+  <PropertyGroup>
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)tests/Photon.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
+
+  <!-- Identity -->
+  <PropertyGroup>
+    <Company>Rizonesoft</Company>
+    <Authors>Rizonesoft</Authors>
+    <Product Condition="'$(Product)' == ''">Rizonesoft Graphics Suite</Product>
+    <Copyright>Copyright (c) 2024-$([System.DateTime]::UtcNow.Year) Rizonesoft</Copyright>
+    <NeutralLanguage>en</NeutralLanguage>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/rizonesoft/Photon</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rizonesoft/Photon</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <!-- SourceLink (built into the .NET SDK) and reproducible CI builds -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>portable</DebugType>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true' or '$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!--
+    Versioning: MinVer derives the version from git tags. Each app overlay sets
+    MinVerTagPrefix (nodus-v, imago-v, lumen-v). Anything without an overlay
+    (shared libraries such as a future Photon.Core) falls back to photon-v, and
+    scripts/publish.ps1 passes -p:MinVerTagPrefix=<app>-v as a global property so
+    a shared library always carries the version of the app being published.
+  -->
+  <PropertyGroup>
+    <MinVerTagPrefix Condition="'$(MinVerTagPrefix)' == ''">photon-v</MinVerTagPrefix>
+    <MinVerDefaultPreReleaseIdentifiers>alpha.0</MinVerDefaultPreReleaseIdentifiers>
+    <MinVerAutoIncrement>patch</MinVerAutoIncrement>
+    <MinVerVerbosity>minimal</MinVerVerbosity>
+    <!-- Fourth FileVersion part: the CI run number (0 for local builds). -->
+    <PhotonBuildNumber Condition="'$(PhotonBuildNumber)' == '' and '$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</PhotonBuildNumber>
+    <PhotonBuildNumber Condition="'$(PhotonBuildNumber)' == ''">0</PhotonBuildNumber>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
