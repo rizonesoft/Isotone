@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
-> **Progress:** **0 of 489 sections complete (0%).** Budget: 489 of 555 sections; backlog 23 of 150. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 489 sections complete (0%).** 489 sections (0 discovered); backlog 23 of 500. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -26,7 +26,7 @@ process todo section: | [ ] | `D00 T01 §1` | Wire the TODO gate into every clon
 > python scripts/todo-graph.py plan --check    # fail if they have gone stale
 > ```
 
-**The plan is bounded.** Every phase has a ceiling on its total sections (open plus shipped) in [`budget.json`](./budget.json), the tree's total is capped at their sum, and `validate` refuses a breach. Work that fails the admission test in [`README.md`](./README.md) ("The budget and the backlog") goes to [`backlog.md`](./backlog.md), which is not in this plan, never runnable, and capped too. Only the operator raises a ceiling. The Progress line above reports the use.
+**Campaign discovery is bounded; operator planning is not.** Sections the operator asks for are never capped, per phase or in total. A section a campaign files on its own carries an `**Origin:** discovered run=<run id> <YYYY-MM-DD>` line, and one run may file at most `per_run_discovered_sections` of them (15, in [`budget.json`](./budget.json)); `validate` refuses a breach. Discovered work that fails the admission test in [`README.md`](./README.md) ("The budget and the backlog"), or that comes past the cap, goes to [`backlog.md`](./backlog.md), which is not in this plan, never runnable, and capped at `backlog_cap` (500). Only the operator raises a cap. The Progress line above reports the section count, how many were discovered, and backlog use.
 
 **How phases are authored.** A phase is a `### Phase <N> -- <Title>` heading, one paragraph on why it runs where it does, and one table. Every section in the tree sits in exactly one phase row; a new TODO file places each of its sections here in the commit that authors it. A section's phase is never earlier than the phase of anything it depends on, and within a phase rows run in dependency order. The format is specified in [`README.md`](./README.md) under "The implementation plan: phases and rows".
 

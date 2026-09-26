@@ -49,7 +49,7 @@ Walk every section and confirm each of these is owned somewhere: tooltips on eve
 
 ### 7. Author, wire, validate, commit
 
-Author the file through `create-todo` in the domain that owns the home step 1 chose (`02-nodus`, `03-imago`, `04-lumen`, or `01-core`), creating the domain with its `INDEX.md` when it does not exist yet. Packaging and release items for a new app land in `05-release`, and its user guide in `06-docs`, each as sections XREFed both ways. Wire the plan rows with Depends On edges so `Photon.Core` dependencies sequence first and distribution items sequence after the behavior they ship, and place every section in a phase of `todo/implementation-plan.md` within that phase's ceiling (`python scripts/todo-graph.py query budget`). A full plan is not a full budget: the sections that make the feature whole are planned, the competitor extras beyond that become backlog entries in `todo/backlog.md`, and a feature that does not fit the room left files what fits and tells the operator the rest, since only the operator raises a ceiling or approves a new phase (`todo/README.md`, "The budget and the backlog"). Then:
+Author the file through `create-todo` in the domain that owns the home step 1 chose (`02-nodus`, `03-imago`, `04-lumen`, or `01-core`), creating the domain with its `INDEX.md` when it does not exist yet. Packaging and release items for a new app land in `05-release`, and its user guide in `06-docs`, each as sections XREFed both ways. Wire the plan rows with Depends On edges so `Photon.Core` dependencies sequence first and distribution items sequence after the behavior they ship, and place every section in a phase of `todo/implementation-plan.md`. A feature the operator asked for is operator-directed: its sections carry no Origin line and no cap limits them, so plan the whole feature, and file as backlog entries in `todo/backlog.md` only what the operator deferred. When a campaign invokes this skill for a feature it discovered on its own, every section carries `**Origin:** discovered run=<run id> <YYYY-MM-DD>` and counts against the run's cap, and what does not fit goes to the backlog (`todo/README.md`, "The budget and the backlog"). Then:
 
 ```bash
 python scripts/todo-graph.py validate
@@ -57,7 +57,7 @@ python scripts/todo-graph.py plan --sync
 python scripts/todo-graph.py plan --check
 ```
 
-Commit as one `todo:` commit. Report the file, its sections, the competitor table with what beats each rival, the backlog entries it added, and the budget line the Progress block now shows.
+Commit as one `todo:` commit. Report the file, its sections, the competitor table with what beats each rival, the backlog entries it added, and the size line the Progress block now shows.
 
 ## Guardrails
 
