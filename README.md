@@ -23,7 +23,7 @@
 
 <br>
 
-<img src="resources/brand/photon-banner.jpg" alt="Project Photon: a paintbrush, a vector pen, and a camera aperture joined by ribbons of light" width="820">
+<img src="resources/brand/photon-banner.jpg" alt="Project Photon: a paintbrush, a vector pen nib with Bezier handles, and a camera lens joined by ribbons of light, above the tagline Create, Capture, Inspire" width="820">
 
 </div>
 
@@ -72,9 +72,9 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
     </th>
   </tr>
   <tr>
-    <td><img src="resources/screens/web/nodus.jpg" alt="Nodus brand art: a vector pen nib with Bezier handles"></td>
-    <td><img src="resources/screens/web/imago.jpg" alt="Imago brand art: a paintbrush scattering pixels"></td>
-    <td><img src="resources/screens/web/lumen.jpg" alt="Lumen brand art: a camera aperture inside a viewfinder frame"></td>
+    <td><img src="resources/screens/web/nodus.jpg" alt="Nodus brand art: a neon vector pen nib with Bezier handles above the Nodus wordmark"></td>
+    <td><img src="resources/screens/web/imago.jpg" alt="Imago brand art: a neon paintbrush scattering pixels above the Imago wordmark"></td>
+    <td><img src="resources/screens/web/lumen.jpg" alt="Lumen brand art: a neon camera aperture inside a viewfinder frame above the Lumen wordmark"></td>
   </tr>
   <tr>
     <td><strong>Vector editor.</strong> Structure and design: precision illustration, typography, logos, scalable graphics. An Illustrator alternative.</td>
