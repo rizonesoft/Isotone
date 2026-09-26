@@ -1,4 +1,4 @@
-; Rizonesoft Graphics Suite: shared Inno Setup definitions.
+; Photon Graphics Suite: shared Inno Setup definitions.
 ;
 ; Each app script (Nodus.iss, Imago.iss, Lumen.iss) defines the app identity,
 ; then includes this file. scripts/package.ps1 passes the build inputs:

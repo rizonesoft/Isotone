@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Verifies and repairs the developer toolchain for the Rizonesoft Graphics Suite.
+  Verifies and repairs the developer toolchain for the Photon Graphics Suite.
 .DESCRIPTION
   Legs:
     sdk     the .NET SDK pinned in global.json (exact version, rollForward disable).

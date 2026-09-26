@@ -1,4 +1,4 @@
-# Rizonesoft Graphics Suite (Photon): line endings and binary handling.
+# Photon Graphics Suite: line endings and binary handling.
 * text=auto
 
 # LF: scripts, docs, config read by POSIX tools, and git hooks

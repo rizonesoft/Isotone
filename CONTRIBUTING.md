@@ -1,4 +1,4 @@
-# Contributing to the Rizonesoft Graphics Suite
+# Contributing to the Photon Graphics Suite
 
 Thank you for helping build Photon. This guide covers how work is organized, how to build and test, and what a pull request needs before it can merge.
 
@@ -102,7 +102,7 @@ Do not bump version numbers; versions come from Git tags (see [docs/dev/versioni
 
 ## Licensing and sign-off
 
-The Rizonesoft Graphics Suite is licensed under the [GNU General Public License v3.0](LICENSE). By contributing, you agree that your contribution is licensed under GPL-3.0 as well.
+The Photon Graphics Suite is licensed under the [GNU General Public License v3.0](LICENSE). By contributing, you agree that your contribution is licensed under GPL-3.0 as well.
 
 We use the [Developer Certificate of Origin](https://developercertificate.org/) (DCO) instead of a contributor license agreement. The DCO is a short statement that you wrote the change, or otherwise have the right to submit it under the project's license. You certify it by adding a sign-off line to every commit:
 

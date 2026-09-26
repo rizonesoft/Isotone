@@ -4,7 +4,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 
 ## What this project is
 
-`Photon` is the codename and monorepo of the **Rizonesoft Graphics Suite**: three standalone creative applications for Windows, built on .NET 10 and WPF.
+`Photon` is the monorepo of the **Photon Graphics Suite**: three standalone creative applications for Windows, built on .NET 10 and WPF.
 
 | App | Kind | State |
 | --- | ---- | ----- |

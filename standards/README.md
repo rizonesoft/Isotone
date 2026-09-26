@@ -1,6 +1,6 @@
 # Standards
 
-The standards every change in the Rizonesoft Graphics Suite (codename Photon) answers to. [`AGENTS.md`](../AGENTS.md) holds the binding decisions and the working rules for agents; these files hold the detail. Where a file here and `AGENTS.md` disagree, `AGENTS.md` wins and the file is corrected in the same commit.
+The standards every change in the Photon Graphics Suite answers to. [`AGENTS.md`](../AGENTS.md) holds the binding decisions and the working rules for agents; these files hold the detail. Where a file here and `AGENTS.md` disagree, `AGENTS.md` wins and the file is corrected in the same commit.
 
 | File | Covers |
 | ---- | ------ |

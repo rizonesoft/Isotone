@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The Rizonesoft Graphics Suite is in pre-alpha and has no published release yet. Once releases begin, security fixes go into the latest release of each app:
+The Photon Graphics Suite is in pre-alpha and has no published release yet. Once releases begin, security fixes go into the latest release of each app:
 
 | App | Supported |
 | --- | --------- |

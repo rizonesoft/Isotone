@@ -1,6 +1,6 @@
 # User Guides
 
-Guides for people using the Rizonesoft Graphics Suite. The suite is pre-alpha and has no release yet, so most guides are planned; each one lands alongside the first preview of its app.
+Guides for people using the Photon Graphics Suite. The suite is pre-alpha and has no release yet, so most guides are planned; each one lands alongside the first preview of its app.
 
 ## Getting started
 

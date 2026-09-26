@@ -1,9 +1,9 @@
-; Rizonesoft Graphics Suite: one installer, one component per shipping app.
+; Photon Graphics Suite: one installer, one component per shipping app.
 ; Build with: pwsh scripts/package.ps1 -Suite
 ; Each app installs into its own folder under the suite directory. The suite has
 ; its own AppId and ProgIDs and never shares folders with the standalone installers.
 #define SuiteInstaller
-#define AppName "Rizonesoft Graphics Suite"
+#define AppName "Photon Graphics Suite"
 #define AppIdGuid "92E725F7-EB5D-430E-A701-49D9E896E11C"
 
 #include "common.iss"
@@ -28,8 +28,8 @@
 AppId={{{#AppIdGuid}}
 AppName={#AppName}
 AppVerName={#AppName} {#AppVersion}
-DefaultDirName={autopf}\Rizonesoft Graphics Suite
-DefaultGroupName=Rizonesoft Graphics Suite
+DefaultDirName={autopf}\Photon Graphics Suite
+DefaultGroupName=Photon Graphics Suite
 UninstallDisplayName={#AppName}
 UninstallDisplayIcon={app}\Nodus\{#NodusExe}
 VersionInfoDescription={#AppName} Setup

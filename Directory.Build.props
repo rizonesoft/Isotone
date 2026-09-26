@@ -1,6 +1,6 @@
 <Project>
   <!--
-    Rizonesoft Graphics Suite (Photon): the one shared build configuration.
+    Photon Graphics Suite: the one shared build configuration.
     Every project under this tree imports this file. App folders may add a thin
     Directory.Build.props overlay that imports this one first and only sets the
     app's MinVer tag prefix, product name, and (for legacy code) documented
@@ -43,7 +43,7 @@
   <PropertyGroup>
     <Company>Rizonesoft</Company>
     <Authors>Rizonesoft</Authors>
-    <Product Condition="'$(Product)' == ''">Rizonesoft Graphics Suite</Product>
+    <Product Condition="'$(Product)' == ''">Photon Graphics Suite</Product>
     <Copyright>Copyright (c) 2024-$([System.DateTime]::UtcNow.Year) Rizonesoft</Copyright>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>

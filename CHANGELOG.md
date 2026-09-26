@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the Rizonesoft Graphics Suite are recorded here.
+All notable changes to the Photon Graphics Suite are recorded here.
 
 The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/), and each app follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Apps are versioned and released independently, so entries are grouped by app. Release headings name the tag they came from, for example `nodus-v0.1.0`.
 
@@ -58,7 +58,7 @@ Sections: [Nodus](#nodus) · [Imago](#imago) · [Lumen](#lumen) · [Photon.Core]
 
 #### Added
 
-- Monorepo for the Rizonesoft Graphics Suite (codename Photon), with the plan, standards, prompts, and brand resources.
+- Monorepo for the Photon Graphics Suite, with the plan, standards, prompts, and brand resources.
 - GPL-3.0 `LICENSE` for the whole repository.
 - Repository face: README, contributing guide, security policy, code of conduct, issue forms, pull request template, and documentation indexes.
 - Brand assets under `resources/brand/`: Rizonesoft logos for light and dark themes, the Photon banner, and a social preview image.
