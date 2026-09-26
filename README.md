@@ -23,7 +23,7 @@
 
 <br>
 
-<img src="resources/brand/photon-banner.jpg" alt="Project Photon: a paintbrush, a vector pen nib with Bezier handles, and a camera lens joined by ribbons of light, above the tagline Create, Capture, Inspire" width="820">
+<img src="resources/brand/photon-banner.jpg" alt="Photon: a neon paintbrush, a vector pen nib with Bezier handles, and a camera aperture in a viewfinder frame, joined by ribbons of light above the Photon wordmark" width="820">
 
 </div>
 
