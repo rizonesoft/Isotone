@@ -30,7 +30,7 @@ track: N13
 - [`standards/shared.md`](../../standards/shared.md) -- atomic writes, refusals that name the file and the reason, progress and cancel over one second, one log line per change
 - [`standards/nodus.md`](../../standards/nodus.md) -- one renderer, every mutation a command, SVG native
 - [`docs/parity/section-design.md`](../../docs/parity/section-design.md) -- the blueprint for this file; [`docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md) -- the catalog rows each section owns
-- [`todo/backlog.md`](../backlog.md) -- B-011 (Print and prepress, source `legacy-nodus-9`) is promoted by §2; B-023 (Imago color management) shares the `D01 T04` engine
+- [`todo/backlog.md`](../backlog.md) -- B-011 (Print and prepress, source `legacy-nodus-9`) is promoted by §2; B-023 (Imago color management, promoted on 2026-09-26 into `D03 T18 §4`) shares the `D01 T04` engine
 - References: ISO 32000-1 (PDF 1.7), ISO 15930-1, -3, and -7 (PDF/X), ISO 19005-1 and -2 (PDF/A), ISO 14289-1 (PDF/UA), Adobe PostScript Language Reference third edition, DSC 3.0, PPD 4.3, OPI 2.0, Microsoft Learn `System.Printing` and `XpsDocumentWriter`
 - -> XREF: D01 T04 §1 -- the engine, ICC transforms, default profiles, and monitor profile lookup §1 builds on
 - -> XREF: D01 T04 §2 -- rendering intents, black point compensation, the proofing transform, and the gamut check §1 and §6 consume
@@ -57,6 +57,8 @@ track: N13
 - -> XREF: D02 T14 §17 -- more hyperlink schemes, bookmarks, and image maps built on the `Hyperlink` model §16 adds
 - -> XREF: D02 T15 §4 -- generative print bleed, which reads §4's bleed box
 - -> XREF: D02 T16 §11 -- styled QR code objects, built on the QR encoder §13 adds
+- -> XREF: D03 T17 §7 -- Imago parity formats cites §4: printer marks D03 T17 §7 moves; §10: the PostScript writer D03 T17 §7 moves for EPS; §14: the PDF writer D03 T17 §7 moves; §15: PDF presets and standards D03 T17 §7 moves; §16: PDF security D03 T17 §7 moves
+- -> XREF: D03 T18 §4 -- Imago parity export, color management, and print cites §1: Nodus's color settings, whose dialog shell D03 T18 §4 moves to `Photon.UI` and whose defaults D03 T18 §4 moves to the suite settings file; §2: the print dialog frame D03 T18 §6 moves; §3: print tiling D03 T18 §6 consumes; §4: printer marks, moved by D03 T17 §7 or by D03 T18 §6; §5: separations, halftones, and inks D03 T18 §7 moves; §9: the preflight engine D03 T18 §7 moves; §10: the PostScript writer for D03 T18 §6's PostScript printer options
 
 ## Outcome
 
@@ -95,7 +97,7 @@ track: N13
 
 ## 1. Document Color Settings: Profiles, Policies, Assign, Convert, and Embed
 
-Every print, proof, and PDF path needs to know what the document's colors mean. Today the color mode is a label with no profile behind it, so a CMYK value has no defined appearance and nothing can be proofed. This section gives the document RGB, CMYK, and gray profiles with open, import, and paste policies, adds Assign and Convert to Profile as undoable commands, embeds the profile bytes on save and export so reopen needs no system profile, and renders the canvas through the display profile. It keeps CMYK numbers safe: they are never round-tripped through RGB unless a policy says to convert. Catalog: NP-2086 to NP-2102 (17 features: the Color Settings dialog, assign profile, appearance of black, extract and keep an embedded profile, default working profiles, the primary color mode, the spot definition policy, document color settings on the status bar, embed on save and export, convert to profile, color management presets, open and import and paste policies, missing and mismatched profile warnings, the safe CMYK workflow, and the web sRGB recommendation).
+Every print, proof, and PDF path needs to know what the document's colors mean. Today the color mode is a label with no profile behind it, so a CMYK value has no defined appearance and nothing can be proofed. This section gives the document RGB, CMYK, and gray profiles with open, import, and paste policies, adds Assign and Convert to Profile as undoable commands, embeds the profile bytes on save and export so reopen needs no system profile, and renders the canvas through the display profile. It keeps CMYK numbers safe: they are never round-tripped through RGB unless a policy says to convert. Catalog: NP-2086 to NP-2102 (17 features: the Color Settings dialog, assign profile, appearance of black, extract and keep an embedded profile, default working profiles, the primary color mode, the spot definition policy, document color settings on the status bar, embed on save and export, convert to profile, color management presets, open and import and paste policies, missing and mismatched profile warnings, the safe CMYK workflow, and the web sRGB recommendation). **Imago second consumer (2026-09-26):** the color settings dialog shell moves to `Photon.UI` and its defaults to the suite settings file in `D03 T18 §4`, Nodus consuming both unchanged.
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/nodus/color-settings/`.
 **Job:** a designer can set the document's RGB, CMYK, and gray profiles and policies and convert or assign without surprise. Consumer: every render, print, and PDF path.

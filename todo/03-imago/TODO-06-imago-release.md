@@ -24,6 +24,9 @@ track: I6
 - -> XREF: D06 T01 §2 -- the Imago user guide §3 requires
 - -> XREF: D05 T01 §1 -- the clean-machine procedure §3 runs
 - -> XREF: D04 T02 §7 -- Lumen's Edit in Imago, which relies on the App Paths entry Imago's installer writes
+- -> XREF: D03 T08 §1 -- Imago parity document and view cites §3: Imago 0.1.0 ships before every section there
+- -> XREF: D03 T20 §8 -- Imago parity workspace cites §1: the Help menu, About, and shortcuts dialog D03 T20 §8 extends
+- -> XREF: D03 T21 §1 -- the Imago parity releases cites §3: the 0.1.0 release procedure every section repeats; D03 T21 §1 follows it; §2: the menu audit each release re-runs so no item is disabled without an owner
 
 ## Outcome
 

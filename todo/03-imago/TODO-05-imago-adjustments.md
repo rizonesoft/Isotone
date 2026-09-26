@@ -25,6 +25,10 @@ track: I5
 - -> XREF: D03 T03 §2 -- the tile-snapshot history every filter commits through
 - -> XREF: D01 T03 §1 -- the suite pixel engine §1's filter pipeline consumes instead of growing its own
 - -> XREF: D02 T15 §9 -- the Nodus AI cleanup hand-off that targets §1's pipeline
+- -> XREF: D03 T08 §11 -- Imago parity document and view cites §2: the histogram control D03 T08 §11 hosts
+- -> XREF: D03 T10 §10 -- Imago parity selection and channels cites §1: the filter pipeline D03 T10 §10 runs on alpha channels and the dialog frame the dialogs there use
+- -> XREF: D03 T11 §1 -- Imago parity adjustments and color cites §1: the filter pipeline and dialog frame the Properties pages grow from; §2: the Levels, Curves, and Hue/Saturation dialogs and the histogram control D03 T11 §1 to D03 T11 §3 grow into Properties pages
+- -> XREF: D03 T14 §2 -- Imago parity filters cites §1: the filter pipeline and dialog frame D03 T14 §2 extends
 
 ## Outcome
 
@@ -67,7 +71,7 @@ Every filter shares the same needs: parameters, a preview that updates as slider
 
 ## 2. Core Adjustments
 
-The adjustments every photo edit uses first. Destructive in 0.1.0 (adjustment layers wait in the backlog as B-014), each through the §1 pipeline. -> SOURCE: legacy-imago-5.1
+The adjustments every photo edit uses first. Destructive in 0.1.0 (adjustment layers arrive in Phase 18 with `D03 T11 §1`), each through the §1 pipeline. **Corrected 2026-09-26:** said adjustment layers wait in the backlog as B-014; the Imago parity plan promoted B-014 into `D03 T11 §1`. -> SOURCE: legacy-imago-5.1
 
 **Fidelity:** Adjustment dialogs -- new build, no baseline; captured to docs/captures/imago/adjustments/.
 **Job:** a user can correct brightness, contrast, levels, curves, and hue and saturation with a live histogram. Consumer: the active layer.

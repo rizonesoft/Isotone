@@ -47,6 +47,8 @@ track: N12
 - -> XREF: D02 T14 §9 -- EPS placement, which keeps placed EPS linked through §7 and reads its low-resolution proxy setting
 - -> XREF: D02 T13 §7 -- honors the `nodus:overprint-black` flag §1's Convert to Bitmap writes
 - -> XREF: D02 T13 §8 -- prints raster effects at the §2 Document Raster Effects Settings resolution
+- -> XREF: D01 T06 §1 -- the pixel engine extensions cites §2: Nodus's effect gallery lists the new effects from the registry with no Nodus change
+- -> XREF: D03 T09 §10 -- Imago parity layers cites §7: Nodus's `LinkManager`, moved to `Photon.Core` by D03 T09 §10
 
 ## Outcome
 

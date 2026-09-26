@@ -53,6 +53,8 @@ track: N8
 - -> XREF: D02 T14 §10 -- DXF dimensions from §15
 - -> XREF: D02 T16 §8 -- pen, touch, and dial input preferences over the stylus fields §3 adds
 - -> XREF: D02 T17 §2 -- Nodus 0.3.0 releases this file
+- -> XREF: D03 T09 §12 -- Imago parity layers cites §14: Nodus's align and distribute math, moved to `Photon.Core` by D03 T09 §12
+- -> XREF: D03 T16 §6 -- Imago parity type and vectors cites §1: pen math D03 T16 §6 moves; §4: live-shape generators D03 T16 §7 moves; §6: node operations D03 T16 §6 moves; §7: curve actions D03 T16 §6 moves; §10: path geometry and booleans D03 T16 §5 moves
 
 ## Outcome
 

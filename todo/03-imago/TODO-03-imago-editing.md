@@ -28,6 +28,15 @@ track: I3
 - -> XREF: D03 T04 §6 -- the recovery that restores documents into §2's history
 - -> XREF: D03 T05 §1 -- the filter pipeline that commits through §2 and respects §5's selections
 - -> XREF: D02 T09 §2 -- the Nodus color picker that moves to `Photon.UI` the day §8 needs it
+- -> XREF: D03 T08 §2 -- Imago parity document and view cites §1: the New dialog D03 T08 §2 extends and the status strip D03 T08 §11 extends; §2: the History panel and `TileSnapshotCommand` D03 T08 §6 extends; §4: the zoom and hand tools and the temporary-tool mechanism D03 T08 §3 extends; §7: Image Size, Canvas Size, and crop, which D03 T08 §1, D03 T08 §7, and D03 T08 §9 extend; §8: the eyedropper sample size D03 T08 §11's sampler shares
+- -> XREF: D03 T09 §9 -- Imago parity layers cites §1: the document tabs D03 T09 §9's Edit Contents opens; §3: the Layers panel D03 T09 §1 and D03 T09 §2 extend; §4: the Move tool D03 T09 §12 extends; §8: the gradient tool D03 T09 §8 repoints to the moved gradient model
+- -> XREF: D03 T10 §1 -- Imago parity selection and channels cites §5: the marquee, lasso, combine modes, feather, and marching ants D03 T10 §1 and D03 T10 §2 extend
+- -> XREF: D03 T11 §9 -- Imago parity adjustments and color cites §8: the color panel, picker, and eyedropper D03 T11 §9 extends
+- -> XREF: D03 T12 §8 -- Imago parity painting cites §6: the `BrushEngine`, brush tool, and eraser it extends; §8: the paint bucket and gradient tool D03 T12 §8 and D03 T12 §9 extend; §2: tile snapshots and history states the history brush reads
+- -> XREF: D03 T13 §5 -- Imago parity retouching and transform cites §2: the tile-snapshot commands every stroke commits through; §4: the tool system every tool there derives from; §7: the free transform and canvas rotate D03 T13 §5 extends
+- -> XREF: D03 T14 §1 -- Imago parity filters cites §2: the tile snapshots Fade blends against
+- -> XREF: D03 T17 §1 -- Imago parity formats cites §1: the document tabs D03 T17 §1 and D03 T17 §12 open into
+- -> XREF: D03 T20 §1 -- Imago parity workspace cites §1: document tabs D03 T20 §1 extends; §2: history, undo memory, and the tile snapshot mechanism D03 T20 §5 limits and reuses; §4: the tool system and keymap D03 T20 §2 and D03 T20 §3 customize
 
 ## Outcome
 
@@ -37,7 +46,7 @@ track: I3
 - A tool abstraction drives move, hand, zoom, rectangular and elliptical marquee, lasso, brush, eraser, transform, crop, fill, gradient, and eyedropper, each with its options bar, cursor, and shortcut.
 - A color panel holds foreground and background colors with a picker, hex entry, and swap.
 
-**Adjacency:** list=applicable @ D03 T03 §3; document=not-applicable (printing waits in the backlog as B-021); settings=applicable; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are TODO-04's); audit=applicable @ D03 T03 §2; exchange=not-applicable (formats are TODO-04's); reverse=applicable @ D03 T03 §2
+**Adjacency:** list=applicable @ D03 T03 §3; document=not-applicable (printing arrives with the Imago parity phases in D03 T18 §6); settings=applicable; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are TODO-04's); audit=applicable @ D03 T03 §2; exchange=not-applicable (formats are TODO-04's); reverse=applicable @ D03 T03 §2
 
 **Adjacency rationale:** The layers panel is the browsable list; tool options persist as settings; document info and the long-operation progress live in the status strip that §1 builds; the History panel is both audit and reverse.
 

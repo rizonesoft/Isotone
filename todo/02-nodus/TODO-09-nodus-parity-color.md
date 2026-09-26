@@ -64,6 +64,8 @@ track: N9
 - -> XREF: D02 T15 §3 -- AI patterns and fills write through §10
 - -> XREF: D02 T15 §5 -- AI recolor results apply through §6
 - -> XREF: D02 T16 §10 -- Find and Replace objects consumes §6's `ColorReplaceService` and §12's `OutlineReplaceService`
+- -> XREF: D03 T09 §8 -- Imago parity layers cites §7: Nodus's gradient model, moved to `Photon.Core` by D03 T09 §8
+- -> XREF: D03 T11 §10 -- Imago parity adjustments and color cites §4: the palette file readers D03 T11 §10 moves to `Photon.Core`; §5: the harmony engine D03 T11 §9 moves to `Photon.Core`
 
 ## Outcome
 

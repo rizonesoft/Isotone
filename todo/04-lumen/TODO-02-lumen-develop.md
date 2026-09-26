@@ -14,7 +14,7 @@ track: L2
 > **Goal:** A Lumen user develops RAW and JPEG photos non-destructively (white balance, exposure, contrast, highlights and shadows, whites and blacks, tone curve, vibrance and saturation, crop and straighten), copies settings across a batch, exports finished files with size, format, color space, and metadata choices, hands a photo to Imago when Imago is installed, and gets all of it as `lumen-v0.1.0`, with the original never written; after the release, every Lumen surface works by keyboard and screen reader and is translatable.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** Nothing exists: no develop code, no pipeline, no export. The Lumen notes removed on 2026-09-26 asked for "RAW processing and non-destructive editing", "batch adjustments and presets", and "Edit In (send to Imago)" with no technical choices. `standards/lumen.md` sets the contract this file builds to: edits are data in the catalog, the pipeline is float32 linear-light with one output transform at the end, previews and exports of the same settings agree within a stated tolerance, and "Edit in Imago" never loads Imago's assemblies.
+> **Current state (verified 2026-09-26):** Nothing exists: no develop code, no pipeline, no export. The Lumen notes removed on 2026-09-26 asked for "RAW processing and non-destructive editing", "batch adjustments and presets", and "Edit In (send to Imago)" with no technical choices. `standards/lumen.md` sets the contract this file builds to: edits are data in the catalog, the pipeline is float32 linear-light with one output transform at the end, previews and exports of the same settings agree within a stated tolerance, and "Edit in Imago" never loads Imago's assemblies. **Corrected 2026-09-26:** this file planned its own develop stages in `Photon.Lumen.Core/Develop/Pipeline/`; the Imago parity plan builds the suite develop engine in `Photon.Core/Develop/` (`D01 T07`, Phase 23) before Lumen starts, so §1 stores its `DevelopSettings`, §2 renders through its pipeline, and §5 uses its presets and clipboard, and Lumen keeps its own edit stack, panels, preview cache, and export.
 <!-- claim: count "Float32 linear-light" standards/lumen.md = 1 -->
 <!-- claim: absent src/Lumen/Photon.Lumen.Core/Develop -->
 
@@ -28,6 +28,8 @@ track: L2
 - -> XREF: D06 T01 §3 -- the Lumen user guide §8 requires
 - -> XREF: D01 T04 §1 -- the suite color engine §2's output transform consumes
 - -> XREF: D02 T15 §11 -- the `SuiteAppLocator` in `Photon.Core/Suite/` that §7 consumes for its App Paths lookup
+- -> XREF: D01 T07 §1 -- the suite develop engine cites §1: Lumen's edit stack stores D01 T07 §1's `DevelopSettings`; §2: Lumen's pipeline section, rewritten at integration to consume D01 T07 §1 to D01 T07 §3; §5: Lumen's presets, copy and paste, and sync consume D01 T07 §6
+- -> XREF: D03 T19 §13 -- Imago AI cites §7: Lumen's Edit in Imago, which D03 T19 §13 receives
 
 ## Outcome
 
@@ -48,11 +50,11 @@ track: L2
 
 | Order | Section | Deliverable                                       | Depends On                                                   | Status |
 | :---: | :-----: | ------------------------------------------------- | ------------------------------------------------------------ | :----: |
-|   1   |   §1    | The edit stack                                    | D04 T01 §5                                                   |  [ ]   |
-|   2   |   §2    | The develop pipeline                              | §1, D04 T01 §4                                               |  [ ]   |
+|   1   |   §1    | The edit stack                                    | D04 T01 §5, D01 T07 §1                                       |  [ ]   |
+|   2   |   §2    | The develop pipeline on the suite develop engine  | §1, D04 T01 §4, D01 T07 §3                                   |  [ ]   |
 |   3   |   §3    | The develop panel                                 | §2, D04 T01 §9                                               |  [ ]   |
 |   4   |   §4    | Crop and straighten                               | §3                                                           |  [ ]   |
-|   5   |   §5    | Presets, copy and paste settings, and sync        | §3                                                           |  [ ]   |
+|   5   |   §5    | Presets, copy and paste settings, and sync        | §3, D01 T07 §6                                               |  [ ]   |
 |   6   |   §6    | Export                                            | §2, D04 T01 §10                                              |  [ ]   |
 |   7   |   §7    | Edit in Imago                                     | §6, D03 T06 §3, D02 T15 §11                                  |  [ ]   |
 |   8   |   §8    | Lumen 0.1.0                                       | §4, §5, §7, D04 T01 §11, D06 T01 §3, D05 T01 §1              |  [ ]   |
@@ -66,25 +68,25 @@ Non-destructive means edits are data. Each photo has an edit stack in the catalo
 
 **Freeze check:** No develop, undo, snapshot, preset, or sync operation opens an original for writing; a test runs a full session (develop, undo, snapshot, sync to ten photos, export) over the import fixtures and asserts every original's SHA-256 and last-write time are unchanged. Fixture source: `tests/fixtures/lumen/import/`.
 
-- [ ] `DevelopSettings` (an immutable record with every parameter the pipeline reads, with defaults and a schema version) and `EditStack` (append, undo, redo, jump to step, named snapshots, reset) in `Photon.Lumen.Core/Develop/`, persisted in the catalog. Done when: `EditStackTests` cover each operation and survive a catalog reopen.
+- [ ] `EditStack` (append, undo, redo, jump to step, named snapshots, reset) in `Photon.Lumen.Core/Develop/` over the suite `DevelopSettings` record (`D01 T07 §1`, immutable, versioned, with identity defaults), persisted in the catalog through the record's JSON context. Done when: `EditStackTests` cover each operation and survive a catalog reopen. **Corrected 2026-09-26:** said Lumen defines its own `DevelopSettings`; the suite develop engine owns the record now.
 - [ ] Settings changes from sliders merge within a 1-second window into one step (as Nodus's property edits do). Done when: a scrub test yields one step.
 - [ ] One Information log line per committed step (`Develop {Photo}: {Parameter} {Old} to {New}`). Done when: a test logger asserts it.
 - [ ] Commit: `"lumen: a versioned, non-destructive edit stack per photo"`
 
 **Test checkpoint:** `dotnet test Photon.slnx` exits 0 with `EditStackTests` and the full-session unchanged-originals test reporting. Cheaper substitute that fails: storing the latest settings only, which cannot undo.
 
-## 2. The Develop Pipeline
+## 2. The Develop Pipeline on the Suite Develop Engine
 
-The pipeline turns a decoded RAW (or a JPEG converted to linear) plus `DevelopSettings` into pixels: white balance, exposure, highlights and shadows, whites and blacks, contrast, tone curve, vibrance and saturation, then the output transform. Float32 linear light throughout, CPU with SIMD, tile-parallel, cancellable. -> SOURCE: lumen-notes-develop-pipeline
+The pipeline turns a decoded RAW (or a JPEG converted to linear) plus `DevelopSettings` into pixels: white balance, exposure, highlights and shadows, whites and blacks, contrast, tone curve, vibrance and saturation, then the output transform. Float32 linear light throughout, CPU with SIMD, tile-parallel, cancellable. **Corrected 2026-09-26:** this section planned to implement those stages in `Photon.Lumen.Core/Develop/Pipeline/`; the suite develop engine (`D01 T07 §1` to `§3`, built in Phase 23 with Imago's Camera Raw filter as its first consumer) now owns the settings record, the pipeline, every stage, and the output transform through `D01 T04`, so Lumen consumes it and keeps what is Lumen's: feeding its decoder into the engine, choosing the output space, the preview cache, and the fidelity and budget proof on Lumen's corpus. -> SOURCE: lumen-notes-develop-pipeline
 
-- [ ] Implement each stage as a pure function over float32 tiles in `Photon.Lumen.Core/Develop/Pipeline/`, with a scalar reference per stage. Done when: SIMD and scalar outputs match within 1e-5 per stage.
-- [ ] White balance from the camera's as-shot values and from temperature and tint (Kelvin to camera multipliers through the decoder's matrix). Done when: a gray-card fixture renders neutral within delta E 2 at its as-shot setting.
-- [ ] Output transform to sRGB, Display P3, and Adobe RGB (matrix plus transfer function), with ICC profiles embedded on export. Done when: a test asserts known primaries map correctly.
+- [ ] Render through `DevelopPipeline` (`D01 T07 §1`) with the stages of `D01 T07 §1` to `§3`, feeding the decoder's output (`D04 T01 §4`) as a `RawDevelopSource` and JPEGs as a `LayerDevelopSource`; no develop stage is implemented in `Photon.Lumen.Core`. Done when: a grep finds no `IDevelopStage` implementation under `src/Lumen/` and `LumenDevelopTests` render a corpus file through the shared pipeline.
+- [ ] Map the decoder's as-shot white balance and camera matrix into `WhiteBalanceSettings` and `RawDevelopSource`, and temperature and tint through the engine's Kelvin conversion. Done when: a gray-card fixture renders neutral within delta E 2 at its as-shot setting.
+- [ ] Select the engine's output transform (sRGB, Display P3, Adobe RGB) for previews and exports, with ICC profiles embedded on export. Done when: a test asserts known primaries map correctly.
 - [ ] `DevelopPipelineFidelityTests` (`[Trait("Category", "Fidelity")]`): at default settings, the render of each corpus file is compared with `dcraw_emu` at matching white balance and output space within a stated tolerance; with a fixed settings set, the render of the committed DNG is compared with a committed golden. Done when: every comparison reports.
 - [ ] Preview rendering at screen resolution from a cached, downscaled demosaic, under 150 ms for a 24-megapixel file after the first decode (measured). Done when: the timing is quoted.
-- [ ] Commit: `"lumen: a float32 develop pipeline with fidelity goldens"`
+- [ ] Commit: `"lumen: develop on the suite develop engine with fidelity goldens"`
 
-**Test checkpoint:** `dotnet test Photon.slnx --filter "Category=Fidelity"` prints a result per file with its tolerance; the preview timing is quoted with the machine. Cheaper substitute that fails: developing 8-bit JPEG previews, which clips highlights the goldens keep.
+**Test checkpoint:** `dotnet test Photon.slnx --filter "Category=Fidelity"` prints a result per file with its tolerance; the preview timing is quoted with the machine; the grep for `IDevelopStage` under `src/Lumen/` finds nothing. Cheaper substitute that fails: developing 8-bit JPEG previews, which clips highlights the goldens keep, or copying an engine stage into Lumen.
 
 ## 3. The Develop Panel
 
@@ -127,12 +129,12 @@ Batch work is half of Lumen's job: apply a look to hundreds of photos, copy one 
 
 **Fidelity:** Presets panel and the Copy Settings dialog -- new build, no baseline; captured to docs/captures/lumen/presets/.
 **Job:** a photographer can apply saved or copied settings to many photos in one action and undo it. Consumer: the edit stacks of the selected photos.
-**Treatment:** a Presets panel (user presets in the app-data folder as JSON with a schema version, hover preview on the current photo); Ctrl+Shift+C opens a checklist of settings groups to copy, Ctrl+Shift+V pastes to the selection; Sync applies the active photo's chosen groups to the selection; each batch is one undo step across all photos. Cheaper substitute that fails the checkpoint: presets that overwrite every setting.
+**Treatment:** a Presets panel (user presets in the suite-wide develop presets folder shared with Imago, `D01 T07 §6`, with a hover preview on the current photo); Ctrl+Shift+C opens a checklist of settings groups to copy, Ctrl+Shift+V pastes to the selection; Sync applies the active photo's chosen groups to the selection; each batch is one undo step across all photos. Cheaper substitute that fails the checkpoint: presets that overwrite every setting.
 **Chrome:** consume the edit stack, the grid selection, and the settings store.
 
 **Requires:** display-session -- the presets panel needs an interactive desktop
 
-- [ ] Preset storage with versioning and partial application by settings group. Done when: tests apply a white-balance-only preset leaving exposure unchanged.
+- [ ] Consume `DevelopPresetStore` and `DevelopClipboard` (`D01 T07 §6`) for preset storage, versioning, and partial application by settings group, with no Lumen copy of either. Done when: tests apply a white-balance-only preset leaving exposure unchanged. **Corrected 2026-09-26:** said Lumen stores its own presets; the suite develop engine owns the preset store and clipboard, and Lumen keeps the panel, sync, and batch undo.
 - [ ] Copy, paste, and sync with batch undo. Done when: undo after syncing 50 photos restores all 50 (test).
 - [ ] Commit: `"lumen: presets, copy and paste settings, and sync"`
 

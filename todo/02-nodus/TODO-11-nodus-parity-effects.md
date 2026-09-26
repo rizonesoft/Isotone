@@ -65,6 +65,8 @@ track: N11
 - -> XREF: D02 T15 §2 -- AI turntable generation, whose help text points users to §10's 3D and Materials instead
 - -> XREF: D01 T02 §2 -- the settings store every `Nodus.*` effect key goes through
 - -> XREF: D01 T02 §4 -- the suite history every effect command records into
+- -> XREF: D01 T06 §6 -- the pixel engine extensions cites §5: `D01 T06 §6`'s mesh warp filter reads the warp math `D03 T13 §6` moves out of §5, and nothing else moves
+- -> XREF: D03 T13 §6 -- Imago parity retouching and transform cites §5: the warp-style and mesh-map math D03 T13 §6 moves to `Photon.Core/Vector/Warp/`
 
 ## Outcome
 

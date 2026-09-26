@@ -2,14 +2,14 @@
 
 Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, merged into Nodus features, each with exactly one status. The sources are [`sources/illustrator-30.8.md`](sources/illustrator-30.8.md) and [`sources/coreldraw-2026.md`](sources/coreldraw-2026.md); the status grammar and the update rules are in [`README.md`](README.md); the sections that own `plan` rows are designed in [`section-design.md`](section-design.md).
 
-**Totals (2026-09-26):** 2,802 features covering 1,294 Illustrator rows and 3,041 CorelDRAW rows (4,335 in all); every source id appears in exactly one row.
+**Totals (2026-09-26):** 2,802 features covering 1,294 Illustrator rows and 3,041 CorelDRAW rows (4,335 in all); every source id appears in exactly one row. Updated 2026-09-26 (Imago parity decision): the eleven automation rows moved from `excluded` to the suite-wide backlog entries B-041 (scripting and macros) and B-042 (batch processing), deferred to after the first release rather than excluded.
 
 | Status | Features | Source rows |
 | ------ | -------: | ----------: |
 | `plan` | 2,643 | 3,943 |
 | `shipped-scope` | 69 | 150 |
-| `backlog` | 37 | 55 |
-| `excluded` | 35 | 169 |
+| `backlog` | 48 | 119 |
+| `excluded` | 24 | 105 |
 | `other-app` | 18 | 18 |
 | **Total** | **2,802** | **4,335** |
 
@@ -741,7 +741,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-0628 | Distribute spacing preview | AI-0263 | -- | core | plan D02 T08 §14 |  |
 | NP-0629 | Align to selection, key object, or artboard | AI-0264, AI-0265 | CD-437 | core | plan D02 T08 §14 |  |
 | NP-0630 | Use preview bounds, object outline, or glyph bounds | AI-0266 | CD-449 | core | plan D02 T08 §14 |  |
-| NP-0631 | Align and distribute shortcuts | AI-0267 | -- | core | plan D02 T08 §14 | shortcuts only; action recording is excluded automation |
+| NP-0631 | Align and distribute shortcuts | AI-0267 | -- | core | plan D02 T08 §14 | shortcuts only; action recording is the suite-wide macro recorder, backlog B-041 |
 | NP-0632 | Align selected artboards | AI-0268 | -- | core | plan D02 T08 §14 |  |
 | NP-0633 | Step and Repeat: copies with offset, spacing, or no offset | -- | CD-345, CD-346, CD-347, CD-348, CD-541, CD-578 | core | plan D02 T08 §14 |  |
 | NP-0634 | Align to page edge or page center | -- | CD-438, CD-439 | core | plan D02 T08 §14 |  |
@@ -3001,17 +3001,17 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 
 | ID | Feature | Illustrator | CorelDRAW | Category | Status | Notes |
 | -- | ------- | ----------- | --------- | -------- | ------ | ----- |
-| NP-2751 | Extension panels and plug-in SDKs | AI-1210, AI-1233 | -- | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2752 | Record and play back actions or macros | AI-1218, AI-1220, AI-1221, AI-1222, AI-1223, AI-1224, AI-1225, AI-1226, AI-1241 | CD-2114, CD-2930, CD-2931, CD-2932, CD-2935, CD-2937, CD-2942, CD-2944, CD-2947, CD-2948, CD-2949, CD-2950 | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2753 | Action sets and recording project management | AI-1219, AI-1227, AI-1228 | CD-2933 | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2754 | Batch processing of files | AI-1229, AI-1230 | -- | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2755 | Scripts menu and scripts docker | AI-1231 | CD-054, CD-152, CD-2920, CD-2923, CD-2924, CD-2925, CD-2927, CD-2928, CD-2929, CD-2936, CD-2941, CD-2943, CD-2945, CD-2952 | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2756 | Scripting languages and macro runtimes (JavaScript, VBA, VSTA) | AI-1232 | CD-2913, CD-2914, CD-2915, CD-2940 | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2757 | MCP server for external AI tools | AI-1242, AI-1243 | -- | ai | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2758 | Macro projects embedded in documents | -- | CD-2912, CD-2926 | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2759 | Macro security and trusted publishers | -- | CD-2916, CD-2917, CD-2918, CD-2919, CD-2951 | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2760 | Script editor and object model reference | -- | CD-2921, CD-2922, CD-2938, CD-2939, CD-2946 | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
-| NP-2761 | Save undo history as a script | -- | CD-2934 | automation | excluded: automation (scripting, macros, recorded actions, and plug-in SDKs are out of scope, operator decision 2026-09-26) |  |
+| NP-2751 | Extension panels and plug-in SDKs | AI-1210, AI-1233 | -- | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2752 | Record and play back actions or macros | AI-1218, AI-1220, AI-1221, AI-1222, AI-1223, AI-1224, AI-1225, AI-1226, AI-1241 | CD-2114, CD-2930, CD-2931, CD-2932, CD-2935, CD-2937, CD-2942, CD-2944, CD-2947, CD-2948, CD-2949, CD-2950 | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2753 | Action sets and recording project management | AI-1219, AI-1227, AI-1228 | CD-2933 | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2754 | Batch processing of files | AI-1229, AI-1230 | -- | automation | backlog B-042 | batch processing is deferred, not excluded: the suite-wide batch entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2755 | Scripts menu and scripts docker | AI-1231 | CD-054, CD-152, CD-2920, CD-2923, CD-2924, CD-2925, CD-2927, CD-2928, CD-2929, CD-2936, CD-2941, CD-2943, CD-2945, CD-2952 | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2756 | Scripting languages and macro runtimes (JavaScript, VBA, VSTA) | AI-1232 | CD-2913, CD-2914, CD-2915, CD-2940 | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2757 | MCP server for external AI tools | AI-1242, AI-1243 | -- | ai | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2758 | Macro projects embedded in documents | -- | CD-2912, CD-2926 | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2759 | Macro security and trusted publishers | -- | CD-2916, CD-2917, CD-2918, CD-2919, CD-2951 | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2760 | Script editor and object model reference | -- | CD-2921, CD-2922, CD-2938, CD-2939, CD-2946 | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
+| NP-2761 | Save undo history as a script | -- | CD-2934 | automation | backlog B-041 | deferred, not excluded: the suite-wide scripting and macro entry, promoted after the first release (operator decision 2026-09-26) |
 
 ## Cloud and collaboration
 

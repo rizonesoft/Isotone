@@ -32,6 +32,7 @@ track: I1
 - -> XREF: D00 T02 §4 -- removes ReactiveUI, SharpDX, and ImageSharp before §1 renames the projects
 - -> XREF: D01 T01 §4 -- the shared dialogs whose Imago consumer is `D03 T06 §1`, after §3 removes WPF-UI
 - -> XREF: D03 T02 §2 -- the tiled viewport that builds on the canvas §2 ports
+- -> XREF: D03 T08 §4 -- Imago parity document and view cites §1: the rename the target paths assume; §2: the ported `Ruler` control D03 T08 §4 extends
 
 ## Outcome
 

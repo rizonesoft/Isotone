@@ -1,8 +1,8 @@
 # 03 Imago
 
-> **Phases 1, 14, 15, and 19**
+> **Phases 1, 14, 15, 16 to 27, and 31**
 
-Imago, the raster editor, imported under `src/Imago/`. Its rename runs early beside Nodus's; its foundation (the snapshot port, WPF-UI removal, tiles, and rendering) starts after Nodus ships 0.1.0, followed by editing, file I/O, filters, and `imago-v0.1.0`. After the suite release, TODO-07 ships the filter catalog, RAW import, workspaces, and accessibility the plan already names; the rest of the legacy roadmap waits in [`../backlog.md`](../backlog.md) (B-014 to B-027) and is promoted only through `add-todo`.
+Imago, the raster editor, imported under `src/Imago/`. Its rename runs early beside Nodus's; its foundation (the snapshot port, WPF-UI removal, tiles, and rendering) starts after Nodus ships 1.0.0, followed by editing, file I/O, filters, and `imago-v0.1.0`. On 2026-09-26 the operator decided Imago gets every Photoshop feature and those of two other popular raster editors (Affinity Photo and GIMP 3): the catalog in [`../../docs/parity/imago-parity.md`](../../docs/parity/imago-parity.md) routes each one to a section, and TODO-08 to TODO-21 run it in twelve parity phases (16 to 27), each ending in a release from `imago-v0.2.0` to `imago-v1.0.0`. TODO-07 keeps four legacy deferral owners at their addresses: its filter catalog runs in Phase 21, its workspaces and its accessibility audit in Phase 27, and its RAW import in Phase 31 once Lumen's decoder is shared. Ideas that are not sections wait in [`../backlog.md`](../backlog.md) and are promoted only through `add-todo`.
 
 ## TODOs
 
@@ -15,6 +15,20 @@ Imago, the raster editor, imported under `src/Imago/`. Its rename runs early bes
 | [TODO-05](./TODO-05-imago-adjustments.md) | Imago Filters and Adjustments for 0.1.0 | draft |
 | [TODO-06](./TODO-06-imago-release.md) | Imago 0.1.0 | draft |
 | [TODO-07](./TODO-07-imago-roadmap.md) | Imago after 0.1.0: Deferral Owners and Accessibility | draft |
+| [TODO-08](./TODO-08-imago-parity-document.md) | Imago Parity: Document, Canvas, View, History, and the Image Menu | draft |
+| [TODO-09](./TODO-09-imago-parity-layers.md) | Imago Parity: Layers, Masks, Blending, Styles, Smart Objects, and Artboards | draft |
+| [TODO-10](./TODO-10-imago-parity-selection.md) | Imago Parity: Selection, Refine, Channels, and Quick Mask | draft |
+| [TODO-11](./TODO-11-imago-parity-adjustments.md) | Imago Parity: Adjustment Layers, Adjustments, Image Modes, and Color | draft |
+| [TODO-12](./TODO-12-imago-parity-painting.md) | Imago Parity: the Brush Engine, Painting Tools, Fills, Gradients, and Patterns | draft |
+| [TODO-13](./TODO-13-imago-parity-retouch.md) | Imago Parity: Retouching, Content-Aware Tools, Transform, Warp, and Liquify | draft |
+| [TODO-14](./TODO-14-imago-parity-filters.md) | Imago Parity: Smart Filters, the Filter Menu, the Filter Gallery, and Interactive Filter Surfaces | draft |
+| [TODO-15](./TODO-15-imago-parity-photo.md) | Imago Parity: the Camera Raw Filter, Develop Studio, Tone Mapping, and Photo Merges | draft |
+| [TODO-16](./TODO-16-imago-parity-type-vector.md) | Imago Parity: Type, Paths, Shapes, and Vector Layers | draft |
+| [TODO-17](./TODO-17-imago-parity-formats.md) | Imago Parity: the File Menu and Every Format | draft |
+| [TODO-18](./TODO-18-imago-parity-output.md) | Imago Parity: Export, Web Output, Color Management, and Print | draft |
+| [TODO-19](./TODO-19-imago-ai.md) | Imago AI: Editable, Suite-Aware, Reproducible | draft |
+| [TODO-20](./TODO-20-imago-parity-workspace.md) | Imago Parity: Workspace, Customization, Preferences, and Help | draft |
+| [TODO-21](./TODO-21-imago-parity-releases.md) | Imago Parity Releases: 0.2.0 to 1.0.0 | draft |
 
 ## Completed
 
@@ -24,11 +38,13 @@ Imago, the raster editor, imported under `src/Imago/`. Its rename runs early bes
 ## In scope
 
 - Everything under `src/Imago/` and `tests/Photon.Imago.*`
-- Imago's surfaces, tiles, rendering, codecs, filters, and release
+- Imago's surfaces, tiles, rendering, codecs, filters, and releases
+- Parity with Photoshop 27.10, Affinity Photo (Affinity 3.3), and GIMP 3.2.6 as the catalog in `docs/parity/imago-parity.md` routes it
 
 ## Out of scope
 
 - Code a second app needs (01-core), installers and signing (05-release), the user guide's content (06-docs)
+- Scripting, macros, batch processing, video, and animation (deferred by the operator to after the first release: backlog B-041 to B-044); cloud and collaboration (excluded)
 
 ---
 
