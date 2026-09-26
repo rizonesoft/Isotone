@@ -28,7 +28,7 @@ track: I11
 
 - [`standards/imago.md`](../../standards/imago.md) -- the premultiplied RGBA working format (§7 records the planar exception), 8, 16, and 32-bit float, SIMD with a scalar reference, and no silent profile change
 - [`standards/shared.md`](../../standards/shared.md) -- settings keys, Serilog lines, refusal messages, and the theme
-- [`docs/parity/imago-parity.md`](../../docs/parity/imago-parity.md) -- the catalog rows IP-0565 to IP-0731 this file owns (per-section ranges in each context paragraph); IP-0604 and IP-0635 belong to `D01 T07 §2` and `§3`, IP-0656 to `D01 T06 §13`, IP-0669 to IP-0672 to `D03 T05 §2`
+- [`docs/parity/imago-parity.md`](../../docs/parity/imago-parity.md) -- the catalog rows IP-0565 to IP-0731 this file owns, plus IP-2370, IP-2375, and IP-2385 (added 2026-09-27 for ACDSee Edit mode, which the Lumen catalog routes here) (per-section ranges in each context paragraph); IP-0604 and IP-0635 belong to `D01 T07 §2` and `§3`, IP-0656 to `D01 T06 §13`, IP-0669 to IP-0672 to `D03 T05 §2`
 - [`docs/parity/imago-section-design.md`](../../docs/parity/imago-section-design.md) -- "What goes to Photon.Core and Photon.UI" (palette readers, the harmony engine, and the Duotone dialog move here) and "Formats and licensing" (OpenColorIO, no bundled presets or color books)
 - [`../backlog.md`](../backlog.md) -- B-014, promoted into §1
 - Adobe Photoshop File Formats Specification -- Curves `.acv`, Levels `.alv`, Hue/Saturation `.ahu`, Color Table `.act`, Swatches `.aco`, Duotone `.ado`, and the Descriptor structure
@@ -72,7 +72,7 @@ track: I11
 - -> XREF: D03 T15 §4 -- HDR display for §2's curve input range and §9's intensity slider
 - -> XREF: D03 T17 §3 -- PSD adjustment layers read
 - -> XREF: D03 T17 §13 -- PSD adjustment layers written
-- -> XREF: D03 T18 §4 -- OCIO configuration management for §4's OCIO adjustment
+- -> XREF: D03 T18 §10 -- OCIO configuration management for §4's OCIO adjustment
 - -> XREF: D03 T18 §5 -- the proof setup §9's gamut warning checks against
 - -> XREF: D03 T19 §10 -- the Imago assistant, which builds its edits as §1's adjustment layers and sits beside §2's classical auto corrections
 - -> XREF: D03 T19 §13 -- the brand kit palettes in Imago that join §10's swatch scopes
@@ -96,15 +96,17 @@ track: I11
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
 | 1 | §1 | Adjustment layers and the Adjustments and Properties panels | D03 T09 §3, D01 T03 §5 | [ ] |
-| 2 | §2 | Tonal adjustment extensions | §1, D01 T03 §4 | [ ] |
-| 3 | §3 | Color adjustments I: hue, balance, vibrance, black and white, photo filter, selective color | §1 | [ ] |
-| 4 | §4 | Color adjustments II: channel mixer, LUTs, gradient map, match and replace color, OCIO | §1, D01 T04 §1, D03 T09 §8, D03 T10 §4 | [ ] |
-| 5 | §5 | Color adjustments III: threshold, posterize, invert, desaturate, color to alpha, and GIMP color operations | §1 | [ ] |
-| 6 | §6 | Color analysis | §2 | [ ] |
-| 7 | §7 | Image modes and bit depth | D03 T08 §1, D01 T04 §3, D01 T03 §3 | [ ] |
-| 8 | §8 | Channel operations: split, merge, decompose, compose, apply image, calculations | D03 T10 §10, D03 T09 §6 | [ ] |
-| 9 | §9 | Color panels, pickers, eyedroppers, and color samplers | D03 T03 §8, D01 T04 §2, D03 T10 §3, D02 T09 §5 | [ ] |
-| 10 | §10 | Swatches, palettes, and color libraries | §9, §7, D01 T05 §5, D02 T09 §4 | [ ] |
+| 2 | §2 | Tonal adjustment extensions: brightness and contrast, light, levels, and curves | §1, D01 T03 §4 | [ ] |
+| 3 | §11 | Auto corrections, exposure, shadows and highlights, Light EQ, and GIMP tone operations | §2 | [ ] |
+| 4 | §3 | Color adjustments I: hue, balance, vibrance, black and white, photo filter, selective color | §1 | [ ] |
+| 5 | §4 | Color adjustments II: channel mixer, LUTs, gradient map, match and replace color, OCIO | §1, D01 T04 §1, D03 T09 §8, D03 T10 §4 | [ ] |
+| 6 | §5 | Color adjustments III: threshold, posterize, invert, desaturate, color to alpha, and the photo effect kind | §1 | [ ] |
+| 7 | §12 | GIMP color operations: exchange, rotate, color to gray, mono mixer, dither, extract, clip, and maps | §5 | [ ] |
+| 8 | §6 | Color analysis | §2 | [ ] |
+| 9 | §7 | Image modes and bit depth | D03 T08 §1, D01 T04 §3, D01 T03 §3 | [ ] |
+| 10 | §8 | Channel operations: split, merge, decompose, compose, apply image, calculations | D03 T10 §10, D03 T09 §6 | [ ] |
+| 11 | §9 | Color panels, pickers, eyedroppers, and color samplers | D03 T03 §8, D01 T04 §2, D03 T10 §3, D02 T09 §5 | [ ] |
+| 12 | §10 | Swatches, palettes, and color libraries | §9, §7, D01 T05 §5, D02 T09 §4 | [ ] |
 
 ---
 
@@ -150,11 +152,11 @@ An adjustment that bakes pixels on OK cannot be revisited, and every tutorial in
 
 ## 2. Tonal Adjustment Extensions
 
-The 0.1.0 Levels, Curves, and Brightness/Contrast (`D03 T05 §2`) cover the basics; the three competitors add color models, working spaces, eyedroppers, clipping display, curve modes and display options, full auto-correction options, exposure and shadows/highlights controls, and GIMP's stretch contrast, retinex, and contrast curve. This section grows each into an adjustment kind and a Properties page on `D01 T03 §4`, never a second kernel. Clarity and dehaze (IP-0604) are `D01 T07 §2`'s rows; this section registers their kinds disabled until that section enables them. Catalog: IP-0585 to IP-0603 and IP-0605 to IP-0607 (22 features).
+The 0.1.0 Levels, Curves, and Brightness/Contrast (`D03 T05 §2`) cover the basics; the three competitors add color models, working spaces, eyedroppers, clipping display, and curve modes and display options. This section grows Brightness/Contrast, Light, Levels, and Curves into adjustment kinds and Properties pages on `D01 T03 §4`, never a second kernel; the auto corrections, exposure, shadows and highlights, equalize, Light EQ, and GIMP's tone operations are §11 (split out on 2026-09-27 so each half stays reviewable in one pass). Clarity and dehaze (IP-0604) are `D01 T07 §2`'s rows; this section registers their kinds disabled until that section enables them. Catalog: IP-0585 to IP-0590 and IP-0592 to IP-0595 (10 features).
 
-**Fidelity:** new build, no baseline; captured to docs/captures/imago/tonal/ (Levels, Curves with display options, Auto Color Correction Options, Shadows/Highlights, Light).
+**Fidelity:** new build, no baseline; captured to docs/captures/imago/tonal/ (Levels, Curves with display options, Light).
 **Job:** a user can correct tone with every control a Photoshop, Affinity, or GIMP tutorial names. Consumer: the adjustment layer's parameters and the render graph.
-**Treatment:** Properties pages for each kind with channel and color-model pickers, eyedroppers, clipping display, curve tools and display options, and an Options dialog for auto corrections. Cheaper substitute that fails the checkpoint: an RGB-only Levels with no eyedroppers.
+**Treatment:** Properties pages for each kind with channel and color-model pickers, eyedroppers, clipping display, and curve tools and display options. Cheaper substitute that fails the checkpoint: an RGB-only Levels with no eyedroppers.
 **Chrome:** consume §1's Properties host, the `D03 T05 §2` histogram control and curve editor, and the `D03 T10 §3` `SampleAverager`; do not re-implement any `D01 T03 §4` kernel.
 
 **Requires:** display-session -- the adjustment pages and eyedroppers need an interactive desktop
@@ -170,23 +172,13 @@ The 0.1.0 Levels, Curves, and Brightness/Contrast (`D03 T05 §2`) cover the basi
 - [ ] Extend `D01 T03 §4` `ToneCurve` with `NodeType` (smooth or corner) and add pencil and freehand modes with smoothing (IP-0593). Done when: `CurvesExtensionTests` compare corner-node curves against the GIMP 3.2.6 golden and `grep` finds no second curve type in Imago.
 - [ ] Add curve display options: light or pigment percent, 4 by 4 or 10 by 10 grid, channel overlays, baseline, histogram, and intersection line (IP-0594). Done when: `CurvesDisplayOptionsTests` read each option's settings key.
 - [ ] Add the Curves input range min and max, enabled on 32-bit float documents (HDR display is `D03 T15 §4`) (IP-0595). Done when: `CurvesExtensionTests` map an input of 4.0 on a float document through a range of 0 to 8.
-- [ ] Add Auto Tone, Auto Contrast, Auto Color, and auto levels as commands (IP-0599) and as filters (IP-0605). Done when: `AutoCorrectionTests` apply each and compare against the `D01 T03 §4` `AutoAdjust` result.
-- [ ] Add Photoshop's Auto Color Correction Options dialog: Enhance Monochromatic Contrast, Enhance Per Channel Contrast, Find Dark and Light Colors, Enhance Brightness and Contrast, Snap Neutral Midtones, target shadow, midtone, and highlight colors, and clip percentages, added to `AutoAdjust` as algorithm parameters (IP-0591). Done when: `AutoColorOptionsTests` assert each algorithm on a color-cast fixture.
-- [ ] Add Auto White Balance as a command (IP-0600) and a filter (IP-0606) on `D01 T03 §4` `WhiteBalance` gray-world mode. Done when: `AutoCorrectionTests` neutralize a cast gray patch within 2/255.
-- [ ] Extend `D01 T03 §4` `Exposure` and `Gamma` with offset and black level (GIMP) and add eyedroppers to the Exposure page (IP-0596). Done when: `ExposureTests` compare against the GIMP 3.2.6 `gegl:exposure` golden.
-- [ ] Add `ShadowsHighlights` in `src/Photon.Core/Imaging/Adjust/`: Photoshop amount, tone, radius, color, midtone, and black and white clip, plus GIMP's white point adjustment and compress, as local luminance through the `D01 T03 §6` Gaussian then tone curves (IP-0597). Done when: `TonalExtensionGoldenTests` compare against GIMP 3.2.6 `gegl:shadows-highlights`.
-- [ ] Register Shadows/Highlights as an adjustment kind (as in Affinity Photo 2) with Affinity's default and 1.6 algorithms as two parameter presets; its live filter form is `D03 T14 §1` (IP-0607). Done when: `AdjustmentKindRegistryTests` resolve the kind and both presets.
-- [ ] Add Equalize with Equalize Selected Area Only or Entire Image Based on Selection on `D01 T03 §4` `Equalize` (IP-0598). Done when: `EqualizeSelectionTests` assert both options on a fixture with a selection.
-- [ ] Add `StretchContrast` and `StretchContrastHsv` in `src/Photon.Core/Imaging/Adjust/`, each tagged with its GEGL op id for `D01 T06 §1`'s map (IP-0601). Done when: `TonalExtensionGoldenTests` compare both against GIMP 3.2.6.
-- [ ] Add `Retinex` (uniform, low, and high levels, scale, divisions, dynamic; multiscale retinex as GIMP's plug-in) with progress and Cancel (IP-0602). Done when: `TonalExtensionGoldenTests` compare against the GIMP 3.2.6 retinex golden within its `reference.txt` tolerance.
-- [ ] Add `ContrastCurve` for grayscale images (IP-0603). Done when: `TonalExtensionGoldenTests` compare against the GIMP 3.2.6 golden.
 - [ ] Register the clarity and dehaze kinds (IP-0604, owned by `D01 T07 §2`), pages, and `imago:` elements now, listed disabled with the tooltip "Planned: D01 T07 §2" until that section enables them. Done when: `AdjustmentKindRegistryTests` assert both kinds are registered and disabled with that tooltip.
 - [ ] Set the budget: every page's slider change updates the viewport under 60 ms on 24 megapixels; log one Information line per adjustment apply. Done when: `TonalPageBudgetTests` quote the time.
-- [ ] Commit goldens against GIMP 3.2.6 in `tests/fixtures/imaging/tonal-ext/` for stretch contrast, retinex, shadows-highlights, exposure, levels in linear space, and curves with corner nodes, with tolerances in each `reference.txt`. Done when: the fixture README names each golden and the `gimp-console` command.
-- [ ] Update `docs/user/imago/adjustments.md` with every tonal adjustment and option. Done when: every control is documented.
-- [ ] Commit: `"imago: tonal adjustment extensions, auto corrections, and GIMP tone operations"`
+- [ ] Commit goldens against GIMP 3.2.6 in `tests/fixtures/imaging/tonal-ext/` for levels in linear space and curves with corner nodes, with tolerances in each `reference.txt`. Done when: the fixture README names each golden and the `gimp-console` command.
+- [ ] Update `docs/user/imago/adjustments.md` with Brightness/Contrast, Light, Levels, and Curves and every option. Done when: every control is documented.
+- [ ] Commit: `"imago: brightness and contrast, light, levels, and curves extensions"`
 
-**Test checkpoint:** Format fidelity proof and unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~TonalExtensionGoldenTests|FullyQualifiedName~ColorModelAdapterTests|FullyQualifiedName~AutoColorOptionsTests|FullyQualifiedName~CurvesExtensionTests|FullyQualifiedName~LevelsExtensionTests"` exits 0, with every GIMP 3.2.6 golden passing within its stated tolerance. Cheaper substitute that fails: Levels only in RGB, which the Lab and CMYK channel tests catch.
+**Test checkpoint:** Format fidelity proof and unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~ColorModelAdapterTests|FullyQualifiedName~CurvesExtensionTests|FullyQualifiedName~LevelsExtensionTests|FullyQualifiedName~LevelsEyedropperTests|FullyQualifiedName~LightAdjustmentTests|FullyQualifiedName~BrightnessContrastTests"` exits 0, with the levels-in-linear-space and corner-node curve GIMP 3.2.6 goldens passing within their stated tolerance. Cheaper substitute that fails: Levels only in RGB, which the Lab and CMYK channel tests catch.
 
 ## 3. Color Adjustments I: Hue, Balance, Vibrance, Black and White, Photo Filter, Selective Color
 
@@ -220,7 +212,7 @@ The daily color adjustments of all three apps, each an adjustment kind and a des
 
 ## 4. Color Adjustments II: Channel Mixer, LUTs, Gradient Map, Match and Replace Color, OCIO
 
-Grading needs lookup tables, color transfer, and gradient maps that exchange with other tools. This section adds the Channel Mixer in any color model, color lookup with LUT files, ICC abstract and device-link profiles, LUT inference, a LUT library and LUT export, Gradient Map on the suite gradient model, Match Color and color transfer, Replace Color, Sample Colorize, White Balance with pickers, the OCIO adjustment, and the Split Toning, Recolor, and Normals kinds. The Grain kind (IP-0635) is `D01 T07 §3`'s row; this section registers it disabled until that section enables it. Gradients come from the model `D03 T09 §8` moves to `src/Photon.Core/Paint/Gradients/`; this section adds no gradient code of its own. Catalog: IP-0620 to IP-0634 and IP-0636 to IP-0638 (18 features).
+Grading needs lookup tables, color transfer, and gradient maps that exchange with other tools. This section adds the Channel Mixer in any color model, color lookup with LUT files, ICC abstract and device-link profiles, LUT inference, a LUT library and LUT export, Gradient Map on the suite gradient model, Match Color and color transfer, Replace Color, Sample Colorize, White Balance with pickers, the OCIO adjustment, and the Split Toning, Recolor, and Normals kinds. The Grain kind (IP-0635) is `D01 T07 §3`'s row; this section registers it disabled until that section enables it. Gradients come from the model `D03 T09 §8` moves to `src/Photon.Core/Paint/Gradients/`; this section adds no gradient code of its own. Catalog: IP-0620 to IP-0634, IP-0636 to IP-0638, and IP-2375 (19 features).
 
 **Fidelity:** new build, no baseline; captured to docs/captures/imago/color-adjust-2/ (Color Lookup, LUT library, Gradient Map, Match Color, OCIO).
 **Job:** a user can grade with LUTs and color transfers, map tones to a gradient, and exchange grades with other tools. Consumer: the adjustment layer's parameters, the render graph, and the LUT files other tools read.
@@ -246,9 +238,10 @@ Grading needs lookup tables, color transfer, and gradient maps that exchange wit
 - [ ] Add Sample Colorize (GIMP): map a grayscale image through a sample image's luminance-to-color table (IP-0629). Done when: `SampleColorizeTests` compare against the GIMP 3.2.6 golden within 2/255.
 - [ ] Add the White Balance adjustment (Affinity) with click, drag, and marquee pickers averaging a neutral through `D01 T03 §4` `WhiteBalance` (IP-0630). Done when: `WhiteBalanceAdjustmentTests` neutralize a cast patch with each picker.
 - [ ] Build OpenColorIO 2.4 per RID with a thin C shim `photon_ocio` (OCIO exposes only C++) under `build/native/opencolorio/`, recording the SHA-256 and compiler in `SOURCE.txt` and the BSD-3-Clause license check in a `docs/dev/decisions.md` row. Done when: the native build script produces `win-x64` and `win-arm64` binaries and the decisions row exists.
-- [ ] Add the OCIO adjustment (Affinity): P/Invoke in `src/Photon.Core/Color/Ocio/`, source and destination color space pickers, and the built-in `ocio://default` config until `D03 T18 §4` adds config management (IP-0631). Done when: `OcioAdjustmentTests` match `ocioconvert` output within 1/255 on `tests/fixtures/imago/color/ocio/`.
+- [ ] Add the OCIO adjustment (Affinity): P/Invoke in `src/Photon.Core/Color/Ocio/`, source and destination color space pickers, and the built-in `ocio://default` config until `D03 T18 §10` adds config management (IP-0631). Done when: `OcioAdjustmentTests` match `ocioconvert` output within 1/255 on `tests/fixtures/imago/color/ocio/`.
 - [ ] Add the Split Toning (highlight and shadow hue and saturation, balance) (IP-0632), Recolor (hue, saturation, lightness) (IP-0633), and Normals (rotation, scale, flip X and Y, OpenGL and DirectX conversion) (IP-0634) kinds in the registry. Done when: `NewColorKindTests` assert each kind on a fixture, including a Normals OpenGL to DirectX flip of the green channel.
 - [ ] Register the Grain kind (IP-0635, owned by `D01 T07 §3`) with its page, disabled with the tooltip "Planned: D01 T07 §3" until that section enables it. Done when: `AdjustmentKindRegistryTests` assert the disabled state and tooltip.
+- [ ] Add one-click photo looks as built-in look presets (IP-2375; ACDSee Edit-mode special effects, Lumen row LP-1387): blue steel, childhood, dramatic, gloom, grunge, lomo, purple haze, seventies, and somber, each a Photon-authored `.cube` LUT plus a parameter set over existing kinds (Color Lookup, Split Toning, Curves) in `src/Photon.Core/Imaging/Luts/Looks/`, applied as one adjustment group in one undo step. Done when: `LookPresetTests` apply each look to a fixture and match its committed golden within 1/255. Cheaper substitute: shipping ACDSee's or any vendor's preset data.
 - [ ] Log one Information line per apply, LUT import, and LUT export. Done when: a driven LUT export quotes its line.
 - [ ] Update `docs/user/imago/adjustments.md` with the channel mixer, LUTs and the library, gradient map, match and replace color, white balance, OCIO, and the new kinds. Done when: every control is documented.
 - [ ] Commit: `"imago: channel mixer, color lookup and LUTs, gradient map, match and replace color, and OCIO"`
@@ -257,9 +250,9 @@ Grading needs lookup tables, color transfer, and gradient maps that exchange wit
 
 ## 5. Color Adjustments III: Threshold, Posterize, Invert, Desaturate, Color to Alpha, and GIMP Color Operations
 
-GIMP's Colors menu and Affinity's color filters hold a long tail of operations users expect to find by name. This section adds them in `src/Photon.Core/Imaging/Adjust/Color/` in the one `EffectRegistry`, each tagged with its GEGL op id for `D01 T06 §1`'s map, each golden-tested against GIMP 3.2.6, and each an adjustment kind or a destructive command with a generated page. Alien Map (IP-0656) is `D01 T06 §13`'s row; this section registers its menu entry disabled until that engine lands. Catalog: IP-0639 to IP-0655 and IP-0657 to IP-0664 (25 features).
+GIMP's Colors menu and Affinity's color filters hold a long tail of operations users expect to find by name. This section adds the everyday ones (threshold, local threshold, posterize, invert, desaturate, color to alpha, colorize, sepia, matte look, semi-flatten) and ACDSee's Photo effect kind in `src/Photon.Core/Imaging/Adjust/Color/` in the one `EffectRegistry`, each tagged with its GEGL op id for `D01 T06 §1`'s map, each golden-tested against GIMP 3.2.6, and each an adjustment kind or a destructive command with a generated page; the rest of GIMP's color operations (exchange, rotate, color to gray, mono mixer, dither, extract component, clip, hot, palette map, negative darkroom) are §12, split out on 2026-09-27 onto the golden harness this section builds. Alien Map (IP-0656) is `D01 T06 §13`'s row; this section registers its menu entry disabled until that engine lands. Catalog: IP-0639 to IP-0645, IP-0648, IP-0655, IP-0658, IP-0659, IP-0662 to IP-0664, and IP-2370 (15 features).
 
-**Fidelity:** new build, no baseline; captured to docs/captures/imago/color-adjust-3/ (Threshold with histogram, Color to Alpha, Dither, Colors, Map entries).
+**Fidelity:** new build, no baseline; captured to docs/captures/imago/color-adjust-3/ (Threshold with histogram, Color to Alpha, Photo effect, Colors, Map entries).
 **Job:** a user finds every GIMP Colors command and every Affinity color filter with the same controls. Consumer: the adjustment layer's parameters or the target layer's pixels.
 **Treatment:** generated pages from each effect's parameter schema through the `D03 T05 §1` frame, with a histogram on Threshold. Cheaper substitute that fails the checkpoint: disabled menu items with no pages.
 **Chrome:** consume §1's host and the generated parameter views; do not hand-build a dialog per operation.
@@ -273,27 +266,18 @@ GIMP's Colors menu and Affinity's color filters hold a long tail of operations u
 - [ ] Extend `D01 T03 §5` `Invert` with perceptual and linear space (IP-0642) and add `ValueInvert` (IP-0643). Done when: `ColorOpsGoldenTests` compare both against GIMP 3.2.6.
 - [ ] Add Luma and Value to `D01 T03 §5` `Desaturate` beside Luminance, Lightness, and Average (IP-0644). Done when: `ColorOpsGoldenTests` compare every mode against `gegl:desaturate`.
 - [ ] Add `ColorToAlpha` with transparency and opacity thresholds (IP-0645, IP-0664) and Affinity's Erase White Paper as its white preset (IP-0659). Done when: `ColorOpsGoldenTests` compare soft edges against `gegl:color-to-alpha`. Cheaper substitute: thresholding alpha against a key color.
-- [ ] Add `ColorExchange` with per-channel thresholds (IP-0646). Done when: `ColorOpsGoldenTests` compare against `gegl:color-exchange`.
-- [ ] Add `RotateColors` with source and destination hue ranges and gray handling (IP-0647). Done when: `ColorOpsGoldenTests` compare against `gegl:color-rotate`.
 - [ ] Add the Colorize page (hue, saturation, lightness, color) on `D01 T03 §11` `Colorize` (IP-0648). Done when: `ColorOpsGoldenTests` compare against `gegl:colorize`.
-- [ ] Add `ColorToGray` (c2g) with radius, samples, iterations, and enhance shadows, seeded, with progress and Cancel (IP-0649). Done when: `ColorOpsGoldenTests` compare against `gegl:c2g` within its stated tolerance and the same seed reproduces byte-identically.
-- [ ] Add `MonoMixer` with preserve luminosity (IP-0650). Done when: `ColorOpsGoldenTests` compare against `gegl:mono-mixer`.
-- [ ] Extend `D01 T03 §3` dithering with per-channel levels and the methods random, random covariant, arithmetic add and XOR (and covariant), blue noise and covariant, with a seed (IP-0651). Done when: `ColorOpsGoldenTests` compare each method against `gegl:dither`.
-- [ ] Add Affinity's Monochrome Dither and Web-Safe Dither as presets of the extended dither (IP-0660). Done when: `DitherPresetTests` assert web-safe output uses only the 216 web colors.
-- [ ] Add `ExtractComponent` (RGB, HSV, HSL, CMYK, YCbCr, Lab, LCh, alpha, with invert and linear output) (IP-0652). Done when: `ColorOpsGoldenTests` compare each component against `gegl:component-extract`.
-- [ ] Add `RgbClip` with low and high limits (IP-0653) and `Hot` (PAL or NTSC, reduce luminance or saturation, blacken) (IP-0654). Done when: `ColorOpsGoldenTests` compare both against GIMP 3.2.6.
 - [ ] Add the Sepia page with strength and sRGB on `D01 T03 §11` `SepiaToning` (IP-0655). Done when: `ColorOpsGoldenTests` compare against `gegl:sepia`.
-- [ ] Add `PaletteMap` recoloring by value from a palette parameter; the command offers §10's active palette once §10 registers it and a grayscale ramp until then (IP-0657). Done when: `PaletteMapTests` recolor a ramp through a three-color palette.
 - [ ] Add `MatteLook` (lifted blacks and faded contrast, Affinity) as a kind; its live filter form is `D03 T14 §1` (IP-0658). Done when: `MatteLookTests` assert the black point lifts by the set amount.
-- [ ] Add `NegativeDarkroom` with GEGL's film and paper response presets (data LGPL-3.0, attributed in THIRD-PARTY-NOTICES) (IP-0661). Done when: `ColorOpsGoldenTests` compare against `gegl:negative-darkroom`.
 - [ ] Add `SemiFlatten` against the background color (IP-0663). Done when: `ColorOpsGoldenTests` compare against `gegl:semi-flatten`.
+- [ ] Add the Photo effect adjustment kind (IP-2370; ACDSee Edit mode, Lumen row LP-1329): one kind whose parameter is a list of preset photographic looks (sepia, cross-process, bleach bypass, and similar) with a strength slider, each look a parameter set over the `D01 T03 §5` and `D01 T03 §11` kernels and §4's Color Lookup, stored in `imago:adjustment` with the look id. Done when: `PhotoEffectKindTests` render each look on a fixture within 1/255 of its committed golden and switching the look is one undo step. Cheaper substitute: one destructive Sepia command renamed Photo effect.
 - [ ] Register the Colors, Map, Alien Map entry (IP-0656, owned by `D01 T06 §13`) disabled with the tooltip "Planned: D01 T06 §13"; it becomes live through `D03 T14 §2`'s generated dialog. Done when: `AdjustmentsMenuLayoutTests` assert the disabled entry and tooltip.
-- [ ] Run the `D01 T03 §1` property suite over every new operation (transparent stays transparent, the same seed is identical, SIMD equals scalar). Done when: `ColorOpsPropertyTests` pass for each registered id.
-- [ ] Set the budget: every per-pixel operation under 150 ms on 24 megapixels, with c2g and other spatial ones reporting progress and Cancel; log one Information line per apply. Done when: `ColorOpsBudgetTests` quote each time.
-- [ ] Update `docs/user/imago/adjustments.md` with every operation of this section under its Colors menu group. Done when: every command is documented.
-- [ ] Commit: `"imago: threshold, posterize, invert, desaturate, color to alpha, dither, and the GIMP color operations"`
+- [ ] Run the `D01 T03 §1` property suite over every operation of this section (transparent stays transparent, the same seed is identical, SIMD equals scalar). Done when: `ColorOpsPropertyTests` pass for each registered id.
+- [ ] Set the budget: every per-pixel operation of this section under 150 ms on 24 megapixels; log one Information line per apply. Done when: `ColorOpsBudgetTests` quote each time.
+- [ ] Update `docs/user/imago/adjustments.md` with every operation of this section and the Photo effect looks under their Colors menu group. Done when: every command is documented.
+- [ ] Commit: `"imago: threshold, posterize, invert, desaturate, color to alpha, and the photo effect kind"`
 
-**Test checkpoint:** Format fidelity proof and unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~ColorOpsGoldenTests|FullyQualifiedName~ColorOpsPropertyTests|FullyQualifiedName~LocalThresholdTests|FullyQualifiedName~PaletteMapTests|FullyQualifiedName~DitherPresetTests"` exits 0, with every operation's GIMP 3.2.6 golden passing within the tolerance its `reference.txt` states. Cheaper substitute that fails: color to alpha by thresholding alpha against a key color, which the `gegl:color-to-alpha` golden rejects on soft edges.
+**Test checkpoint:** Format fidelity proof and unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~ColorOpsGoldenTests|FullyQualifiedName~ColorOpsPropertyTests|FullyQualifiedName~LocalThresholdTests|FullyQualifiedName~MatteLookTests|FullyQualifiedName~PhotoEffectKindTests"` exits 0, with every operation's GIMP 3.2.6 golden passing within the tolerance its `reference.txt` states. Cheaper substitute that fails: color to alpha by thresholding alpha against a key color, which the `gegl:color-to-alpha` golden rejects on soft edges.
 
 ## 6. Color Analysis
 
@@ -450,6 +434,63 @@ Users arrive with palettes from every tool they have used. This section moves No
 
 **Test checkpoint:** Format fidelity proof: `dotnet test Photon.slnx --filter "FullyQualifiedName~PaletteFormatTests|FullyQualifiedName~NodusPaletteRegressionTests|FullyQualifiedName~GlobalColorTests|FullyQualifiedName~ColormapDialogTests"` exits 0; every fixture in `tests/fixtures/core/palettes/` reads with every color, name, and group equal to the oracle's import, writable formats round-trip byte-equal, and Nodus's palette tests pass on the moved code. Cheaper substitute that fails: an Imago-local GPL parser, which a `grep` for a second palette reader outside `Photon.Core` catches.
 
+## 11. Auto Corrections, Exposure, Shadows and Highlights, Light EQ, and GIMP Tone Operations
+
+Split from §2 on 2026-09-27 so each half stays reviewable in one pass: §2 owns Brightness/Contrast, Light, Levels, and Curves, and this section owns the one-click corrections and the tone operations beside them: Auto Tone, Auto Contrast, Auto Color, and auto levels with Photoshop's Auto Color Correction Options, Auto White Balance, exposure with offset and black level, Shadows/Highlights as a command and an adjustment kind, Equalize, GIMP's stretch contrast, retinex, and contrast curve, and ACDSee's Light EQ tone equalizer. Every operation lands in `src/Photon.Core/Imaging/Adjust/` on `D01 T03 §4`, never a second kernel. Catalog: IP-0591, IP-0596 to IP-0603, IP-0605 to IP-0607, and IP-2385 (13 features).
+
+**Fidelity:** new build, no baseline; captured to docs/captures/imago/tonal-auto/ (Auto Color Correction Options, Exposure, Shadows/Highlights, Light EQ).
+**Job:** a user can correct tone in one click or with the exposure, shadow, and highlight controls a Photoshop, Affinity, GIMP, or ACDSee tutorial names. Consumer: the adjustment layer's parameters, the target layer's pixels for destructive commands, and the render graph.
+**Treatment:** commands and filters for the auto corrections, an Options dialog for Auto Color Correction, and Properties pages for Exposure, Shadows/Highlights, and Light EQ. Cheaper substitute that fails the checkpoint: a single Auto command with no options and no per-band tone control.
+**Chrome:** consume §1's Properties host, §2's eyedroppers and curve editor, the `D03 T05 §2` histogram control, and the `D03 T10 §3` `SampleAverager`; do not re-implement any `D01 T03 §4` kernel.
+
+**Requires:** display-session -- the adjustment pages, the options dialog, and on-image dragging need an interactive desktop
+
+- [ ] Add Auto Tone, Auto Contrast, Auto Color, and auto levels as commands (IP-0599) and as filters (IP-0605). Done when: `AutoCorrectionTests` apply each and compare against the `D01 T03 §4` `AutoAdjust` result.
+- [ ] Add Photoshop's Auto Color Correction Options dialog: Enhance Monochromatic Contrast, Enhance Per Channel Contrast, Find Dark and Light Colors, Enhance Brightness and Contrast, Snap Neutral Midtones, target shadow, midtone, and highlight colors, and clip percentages, added to `AutoAdjust` as algorithm parameters (IP-0591). Done when: `AutoColorOptionsTests` assert each algorithm on a color-cast fixture.
+- [ ] Add Auto White Balance as a command (IP-0600) and a filter (IP-0606) on `D01 T03 §4` `WhiteBalance` gray-world mode. Done when: `AutoCorrectionTests` neutralize a cast gray patch within 2/255.
+- [ ] Extend `D01 T03 §4` `Exposure` and `Gamma` with offset and black level (GIMP) and add eyedroppers to the Exposure page (IP-0596). Done when: `ExposureTests` compare against the GIMP 3.2.6 `gegl:exposure` golden.
+- [ ] Add `ShadowsHighlights` in `src/Photon.Core/Imaging/Adjust/`: Photoshop amount, tone, radius, color, midtone, and black and white clip, plus GIMP's white point adjustment and compress, as local luminance through the `D01 T03 §6` Gaussian then tone curves (IP-0597). Done when: `TonalExtensionGoldenTests` compare against GIMP 3.2.6 `gegl:shadows-highlights`.
+- [ ] Register Shadows/Highlights as an adjustment kind (as in Affinity Photo 2) with Affinity's default and 1.6 algorithms as two parameter presets; its live filter form is `D03 T14 §1` (IP-0607). Done when: `AdjustmentKindRegistryTests` resolve the kind and both presets.
+- [ ] Add Equalize with Equalize Selected Area Only or Entire Image Based on Selection on `D01 T03 §4` `Equalize` (IP-0598). Done when: `EqualizeSelectionTests` assert both options on a fixture with a selection.
+- [ ] Add `StretchContrast` and `StretchContrastHsv` in `src/Photon.Core/Imaging/Adjust/`, each tagged with its GEGL op id for `D01 T06 §1`'s map (IP-0601). Done when: `TonalExtensionGoldenTests` compare both against GIMP 3.2.6.
+- [ ] Add `Retinex` (uniform, low, and high levels, scale, divisions, dynamic; multiscale retinex as GIMP's plug-in) with progress and Cancel (IP-0602). Done when: `TonalExtensionGoldenTests` compare against the GIMP 3.2.6 retinex golden within its `reference.txt` tolerance.
+- [ ] Add `ContrastCurve` for grayscale images (IP-0603). Done when: `TonalExtensionGoldenTests` compare against the GIMP 3.2.6 golden.
+- [ ] Add the Light EQ adjustment kind and filter (IP-2385; ACDSee Edit mode, Lumen row LP-1497): auto, one-step, basic, and per-band brightening and darkening, advanced curves, and on-image drag that picks the band under the pointer, rendering through the tone-equalizer develop stage the Lumen authoring adds to the suite develop engine as `D01 T07 §7`; that stage does not exist yet, so until it ships the kind is registered disabled with the tooltip "Planned: D01 T07 §7", exactly as §2 registers clarity and dehaze. Done when: `AdjustmentKindRegistryTests` assert the disabled state and tooltip, and once the stage exists `LightEqTests` assert each mode moves only its bands on a gray ramp. Cheaper substitute: a Shadows/Highlights preset labeled Light EQ.
+- [ ] Set the budget: every page's slider change updates the viewport under 60 ms on 24 megapixels, with retinex reporting progress and Cancel; log one Information line per command or adjustment apply. Done when: `TonalAutoBudgetTests` quote the time.
+- [ ] Commit goldens against GIMP 3.2.6 in `tests/fixtures/imaging/tonal-ext/` for stretch contrast, retinex, shadows-highlights, and exposure, with tolerances in each `reference.txt`. Done when: the fixture README names each golden and the `gimp-console` command.
+- [ ] Update `docs/user/imago/adjustments.md` with the auto corrections and their options, Exposure, Shadows/Highlights, Equalize, the GIMP tone operations, and Light EQ. Done when: every control is documented.
+- [ ] Commit: `"imago: auto corrections, exposure, shadows and highlights, light EQ, and GIMP tone operations"`
+
+**Test checkpoint:** Format fidelity proof and unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~TonalExtensionGoldenTests|FullyQualifiedName~AutoColorOptionsTests|FullyQualifiedName~AutoCorrectionTests|FullyQualifiedName~ExposureTests|FullyQualifiedName~EqualizeSelectionTests|FullyQualifiedName~AdjustmentKindRegistryTests"` exits 0, with every GIMP 3.2.6 golden passing within its stated tolerance and Auto Color neutralizing the cast fixture. Cheaper substitute that fails: one Auto command without the options dialog, which `AutoColorOptionsTests` catch per algorithm.
+
+## 12. GIMP Color Operations: Exchange, Rotate, Color to Gray, Mono Mixer, Dither, Extract, Clip, and Maps
+
+Split from §5 on 2026-09-27 so each half stays reviewable in one pass: GIMP's Colors menu and Affinity's color filters carry a long tail of operations beyond §5's everyday set. This section adds them in `src/Photon.Core/Imaging/Adjust/Color/` in the one `EffectRegistry`, each tagged with its GEGL op id for `D01 T06 §1`'s map, each golden-tested against GIMP 3.2.6 through §5's harness, and each an adjustment kind or a destructive command with a generated page. Catalog: IP-0646, IP-0647, IP-0649 to IP-0654, IP-0657, IP-0660, and IP-0661 (11 features).
+
+**Fidelity:** new build, no baseline; captured to docs/captures/imago/color-adjust-4/ (Color Exchange, Rotate Colors, Color to Gray, Dither, Extract Component, Palette Map).
+**Job:** a user finds every remaining GIMP Colors command and Affinity color filter with the same controls. Consumer: the adjustment layer's parameters or the target layer's pixels.
+**Treatment:** generated pages from each effect's parameter schema through the `D03 T05 §1` frame. Cheaper substitute that fails the checkpoint: disabled menu items with no pages.
+**Chrome:** consume §1's host, §5's golden harness, and the generated parameter views; do not hand-build a dialog per operation.
+
+**Requires:** display-session -- the generated pages need an interactive desktop
+
+- [ ] Add `ColorExchange` with per-channel thresholds (IP-0646). Done when: `ColorOpsGoldenTests` compare against `gegl:color-exchange`.
+- [ ] Add `RotateColors` with source and destination hue ranges and gray handling (IP-0647). Done when: `ColorOpsGoldenTests` compare against `gegl:color-rotate`.
+- [ ] Add `ColorToGray` (c2g) with radius, samples, iterations, and enhance shadows, seeded, with progress and Cancel (IP-0649). Done when: `ColorOpsGoldenTests` compare against `gegl:c2g` within its stated tolerance and the same seed reproduces byte-identically.
+- [ ] Add `MonoMixer` with preserve luminosity (IP-0650). Done when: `ColorOpsGoldenTests` compare against `gegl:mono-mixer`.
+- [ ] Extend `D01 T03 §3` dithering with per-channel levels and the methods random, random covariant, arithmetic add and XOR (and covariant), blue noise and covariant, with a seed (IP-0651). Done when: `ColorOpsGoldenTests` compare each method against `gegl:dither`.
+- [ ] Add Affinity's Monochrome Dither and Web-Safe Dither as presets of the extended dither (IP-0660). Done when: `DitherPresetTests` assert web-safe output uses only the 216 web colors.
+- [ ] Add `ExtractComponent` (RGB, HSV, HSL, CMYK, YCbCr, Lab, LCh, alpha, with invert and linear output) (IP-0652). Done when: `ColorOpsGoldenTests` compare each component against `gegl:component-extract`.
+- [ ] Add `RgbClip` with low and high limits (IP-0653) and `Hot` (PAL or NTSC, reduce luminance or saturation, blacken) (IP-0654). Done when: `ColorOpsGoldenTests` compare both against GIMP 3.2.6.
+- [ ] Add `PaletteMap` recoloring by value from a palette parameter; the command offers §10's active palette once §10 registers it and a grayscale ramp until then (IP-0657). Done when: `PaletteMapTests` recolor a ramp through a three-color palette.
+- [ ] Add `NegativeDarkroom` with GEGL's film and paper response presets (data LGPL-3.0, attributed in THIRD-PARTY-NOTICES) (IP-0661). Done when: `ColorOpsGoldenTests` compare against `gegl:negative-darkroom`.
+- [ ] Run the `D01 T03 §1` property suite over every operation of this section (transparent stays transparent, the same seed is identical, SIMD equals scalar). Done when: `ColorOpsPropertyTests` pass for each id this section registers.
+- [ ] Set the budget: every per-pixel operation under 150 ms on 24 megapixels, with c2g and other spatial ones reporting progress and Cancel; log one Information line per apply. Done when: `ColorOpsBudgetTests` quote each time for this section's ids.
+- [ ] Update `docs/user/imago/adjustments.md` with every operation of this section under its Colors menu group. Done when: every command is documented.
+- [ ] Commit: `"imago: GIMP color operations: exchange, rotate, color to gray, dither, extract, clip, and maps"`
+
+**Test checkpoint:** Format fidelity proof and unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~ColorOpsGoldenTests|FullyQualifiedName~ColorOpsPropertyTests|FullyQualifiedName~PaletteMapTests|FullyQualifiedName~DitherPresetTests"` exits 0, with every operation's GIMP 3.2.6 golden passing within the tolerance its `reference.txt` states and c2g reproducing byte-identically under one seed. Cheaper substitute that fails: ordered dithering standing in for every method, which the per-method `gegl:dither` goldens reject.
+
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
@@ -458,6 +499,6 @@ Users arrive with palettes from every tool they have used. This section moves No
 - [ ] No second curve, histogram, quantizer, color conversion, LUT sampler, harmony engine, ASE reader, or palette reader exists in Imago (`grep` over `src/Imago` for each, quoted)
 - [ ] No Adobe or Affinity preset, LUT, or color book and no PANTONE data ships in the app resources (a resources README audit)
 - [ ] B-014 is gone from `todo/backlog.md`, and §1 carries its source key
-- [ ] Every catalog row IP-0565 to IP-0731 owned by this file is covered by a shipped section, and `docs/parity/imago-parity.md` statuses agree
+- [ ] Every catalog row IP-0565 to IP-0731, IP-2370, IP-2375, and IP-2385 owned by this file is covered by a shipped section, and `docs/parity/imago-parity.md` statuses agree
 - [ ] `python scripts/todo-claims.py` holds for this file
 - [ ] `python scripts/todo-graph.py validate` clean

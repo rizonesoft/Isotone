@@ -23,8 +23,8 @@ Domains are numbered in **allocation order**. `DNN TNN §N` cross-references enc
 | No. | Domain | Phase | Purpose |
 | :-: | ------ | :---: | ------- |
 | 00 | [Workspace](./00-workspace/INDEX.md) | 0, 2 | Toolchain, solution, gates, CI, the TODO system, import debt, and visual baselines. |
-| 01 | [Core](./01-core/INDEX.md) | 2, 3, 6, 9, 10, 12, 15, 21-23 | `Photon.Core` (non-UI services) and `Photon.UI` (the WPF house style), each filled only when two apps need it, plus the pixel engine, color management, and the AI core the operator placed there for the Nodus parity phases, and the pixel engine extensions and the develop engine the Imago parity phases add. |
-| 02 | [Nodus](./02-nodus/INDEX.md) | 1, 2, 3, 4-13 | The vector editor: rename, foundation, 0.1.0, then parity with Illustrator 30.8 and CorelDRAW 2026 through 1.0.0. |
+| 01 | [Core](./01-core/INDEX.md) | 2, 3, 6, 9, 10, 12, 13, 15, 21-23 | `Photon.Core` (non-UI services) and `Photon.UI` (the WPF house style), each filled only when two apps need it, plus the pixel engine, color management, and the AI core the operator placed there for the Nodus parity phases, and the pixel engine extensions and the develop engine the Imago parity phases add. |
+| 02 | [Nodus](./02-nodus/INDEX.md) | 1, 2, 3, 4-13, 31 | The vector editor: rename, foundation, 0.1.0, then parity with Illustrator 30.8 and CorelDRAW 2026 through 1.0.0. |
 | 03 | [Imago](./03-imago/INDEX.md) | 1, 14, 15, 16-27, 31 | The raster editor: rename, WPF-UI removal, rendering, 0.1.0, then parity with Photoshop 27.10, Affinity 3.3, and GIMP 3.2.6 through 1.0.0, then RAW import once Lumen's decoder is shared. |
 | 04 | [Lumen](./04-lumen/INDEX.md) | 28, 29, 32 | The darkroom and photo library: planned from nothing, 0.1.0, then accessibility. |
 | 05 | [Release](./05-release/INDEX.md) | 3, 30 | Clean-machine proof, signing, arm64, the update check, winget, and the suite bundle. |

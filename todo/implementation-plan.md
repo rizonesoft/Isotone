@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
-> **Progress:** **0 of 489 sections complete (0%).** 489 sections (0 discovered); backlog 23 of 500. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 534 sections complete (0%).** 534 sections (0 discovered); backlog 16 of 500. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -36,38 +36,38 @@ process todo section: | [ ] | `D00 T01 §1` | Wire the TODO gate into every clon
 
 The finished suite is **three standalone creative applications that behave like one product**: each built by one command from a clean checkout, checked by the same gates, installed by its own installer on a machine that has never seen .NET, versioned and released on its own tag, logging every action that changes a document or a setting, undoing every edit, saving atomically, recovering after a crash, opening and saving its formats with proven fidelity, looking and behaving like its siblings through one theme and one set of shared controls, reachable by keyboard and screen reader, and never needing another Photon app at runtime. Lumen additionally never writes an original image. The count of sections is deliberately not repeated here: read it from `query stats`.
 
-| Aim                                                                                                                                               | Owned by                                                                                                                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Every clone refuses a broken plan                                                                                                                 | `D00 T01 §1` (hook) · `D00 T01 §5` (CI read back)                                                                                                                                                                                               |
-| Operator-only work never stalls a runner                                                                                                          | `D00 T01 §2` · `D99 T01 §1`-`§5`                                                                                                                                                                                                                |
-| The review panel works before the first stamp                                                                                                     | `D00 T01 §4`                                                                                                                                                                                                                                    |
-| No quarantined test, no excused warning                                                                                                           | `D00 T02 §1` · `D00 T02 §2` · `D02 T01 §7`                                                                                                                                                                                                      |
-| No dependency without a reason and a license                                                                                                      | `D00 T02 §4` · `D00 T02 §5` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` |
-| Every surface has a baseline to review against                                                                                                    | `D00 T03 §2`                                                                                                                                                                                                                                    |
-| The apps carry their own names                                                                                                                    | `D02 T01 §1` · `D03 T01 §1` · `D03 T01 §4`                                                                                                                                                                                                      |
-| One composition root per app, logging to disk                                                                                                     | `D01 T02 §1` · `D02 T01 §2` · `D02 T01 §3` · `D03 T01 §5` · `D04 T01 §2`                                                                                                                                                                        |
-| Shared once, never copied                                                                                                                         | `D01 T01 §1`-`§4` (Photon.UI) · `D01 T02 §1`-`§5` (Photon.Core) · `D01 T03 §1` · `D01 T04 §1` · `D01 T05 §1` · `D01 T06 §1` · `D01 T07 §1` · `D03 T16 §1` · `D03 T16 §5` · `D03 T17 §2` · `D03 T18 §6`                                          |
-| Every edit has a reverse                                                                                                                          | `D02 T03 §1` · `D02 T03 §4` · `D01 T02 §4` · `D03 T03 §2` · `D04 T02 §1`                                                                                                                                                                        |
-| Saves never damage the user's file                                                                                                                | `D02 T04 §1` · `D01 T02 §5` · `D03 T04 §2`                                                                                                                                                                                                      |
-| A crash loses nothing                                                                                                                             | `D02 T04 §5` · `D03 T04 §6`                                                                                                                                                                                                                     |
-| Formats are proven, not assumed                                                                                                                   | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §12` · `D03 T17 §2` · `D03 T17 §4` · `D03 T17 §5` · `D03 T17 §6`                                                         |
-| No menu item silently does nothing                                                                                                                | `D02 T03 §5` · `D03 T06 §2`                                                                                                                                                                                                                     |
-| Originals are never written                                                                                                                       | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1`                                                                                                                                                                                                     |
-| It looks like one suite                                                                                                                           | `standards/shared.md` (design contract) · `D01 T01 §3`                                                                                                                                                                                          |
-| It works without a mouse or eyes                                                                                                                  | `D02 T06 §17` · `D03 T07 §16` · `D04 T02 §9`                                                                                                                                                                                                    |
-| Each app ships alone, proven on a clean machine                                                                                                   | `D05 T01 §1` · `D02 T05 §4` · `D03 T06 §3` · `D04 T02 §8`                                                                                                                                                                                       |
-| The suite ships together without re-versioning                                                                                                    | `D05 T01 §6`                                                                                                                                                                                                                                    |
-| Users can learn it                                                                                                                                | `D06 T01 §1`-`§4`                                                                                                                                                                                                                               |
-| Nodus covers every CorelDRAW and Illustrator capability in the parity catalog                                                                     | `D00 T01 §6` (the catalog gate) · `D02 T17 §1`-`§10` (each release reconciles its phase)                                                                                                                                                        |
-| Nodus opens and saves Illustrator and CorelDRAW files                                                                                             | `D02 T14 §3` · `D02 T14 §4` · `D02 T14 §5` · `D02 T14 §6` · `D02 T14 §7` · `D02 T14 §8`                                                                                                                                                         |
-| Print and PDF output are prepress-grade                                                                                                           | `D02 T13 §5` · `D02 T13 §7` · `D02 T13 §14` · `D02 T13 §15`                                                                                                                                                                                     |
-| AI results are editable, undoable, and reproducible                                                                                               | `D01 T05 §3` · `D02 T15 §1` · `D02 T15 §2` · `D02 T15 §6` · `D03 T19 §1` · `D03 T19 §2`                                                                                                                                                         |
-| Nothing leaves the machine without an explicit user action                                                                                        | `D01 T05 §2` · `D01 T05 §4` · `D03 T19 §1`                                                                                                                                                                                                      |
-| Imago covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog                                                           | `D00 T01 §7` (the catalog gate) · `D03 T21 §1`-`§12` (each release reconciles its phase)                                                                                                                                                        |
-| Imago round-trips Photoshop documents: PSD and PSB open and save with layers, masks, adjustments, styles, text, and smart objects live            | `D03 T17 §2` · `D03 T17 §13` · `D03 T17 §3`                                                                                                                                                                                                     |
-| Imago opens and saves GIMP's XCF                                                                                                                  | `D03 T17 §4` · `D03 T17 §14`                                                                                                                                                                                                                    |
-| Editing stays non-destructive: adjustment layers, smart and live filters, masks, and linked content never overwrite pixels until the user applies | `D03 T08 §1` · `D03 T09 §3` · `D03 T09 §9` · `D03 T11 §1` · `D03 T14 §1`                                                                                                                                                                        |
-| AI results in Imago are new layers and masks, undoable, and reproducible                                                                          | `D03 T19 §1` · `D03 T19 §2` · `D03 T19 §3` · `D03 T19 §6`                                                                                                                                                                                       |
+| Aim                                                                                                                                               | Owned by                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Every clone refuses a broken plan                                                                                                                 | `D00 T01 §1` (hook) · `D00 T01 §5` (CI read back)                                                                                                                                                                                                                                                                            |
+| Operator-only work never stalls a runner                                                                                                          | `D00 T01 §2` · `D99 T01 §1`-`§5`                                                                                                                                                                                                                                                                                             |
+| The review panel works before the first stamp                                                                                                     | `D00 T01 §4`                                                                                                                                                                                                                                                                                                                 |
+| No quarantined test, no excused warning                                                                                                           | `D00 T02 §1` · `D00 T02 §2` · `D02 T01 §7`                                                                                                                                                                                                                                                                                   |
+| No dependency without a reason and a license                                                                                                      | `D00 T02 §4` · `D00 T02 §5` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` |
+| Every surface has a baseline to review against                                                                                                    | `D00 T03 §2`                                                                                                                                                                                                                                                                                                                 |
+| The apps carry their own names                                                                                                                    | `D02 T01 §1` · `D03 T01 §1` · `D03 T01 §4`                                                                                                                                                                                                                                                                                   |
+| One composition root per app, logging to disk                                                                                                     | `D01 T02 §1` · `D02 T01 §2` · `D02 T01 §3` · `D03 T01 §5` · `D04 T01 §2`                                                                                                                                                                                                                                                     |
+| Shared once, never copied                                                                                                                         | `D01 T01 §1`-`§4` (Photon.UI) · `D01 T02 §1`-`§5` (Photon.Core) · `D01 T03 §1` · `D01 T04 §1` · `D01 T05 §1` · `D01 T06 §1` · `D01 T07 §1` · `D03 T16 §1` · `D03 T16 §5` · `D03 T17 §2` · `D03 T18 §6` · `D01 T08 §1` · `D01 T09 §1`                                                                                         |
+| Every edit has a reverse                                                                                                                          | `D02 T03 §1` · `D02 T03 §4` · `D01 T02 §4` · `D03 T03 §2` · `D04 T02 §1`                                                                                                                                                                                                                                                     |
+| Saves never damage the user's file                                                                                                                | `D02 T04 §1` · `D01 T02 §5` · `D03 T04 §2`                                                                                                                                                                                                                                                                                   |
+| A crash loses nothing                                                                                                                             | `D02 T04 §5` · `D03 T04 §6`                                                                                                                                                                                                                                                                                                  |
+| Formats are proven, not assumed                                                                                                                   | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §12` · `D03 T17 §2` · `D03 T17 §4` · `D03 T17 §5` · `D03 T17 §6` · `D01 T08 §1` · `D02 T18 §8`                                                                                                        |
+| No menu item silently does nothing                                                                                                                | `D02 T03 §5` · `D03 T06 §2`                                                                                                                                                                                                                                                                                                  |
+| Originals are never written                                                                                                                       | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1`                                                                                                                                                                                                                                                                                  |
+| It looks like one suite                                                                                                                           | `standards/shared.md` (design contract) · `D01 T01 §3`                                                                                                                                                                                                                                                                       |
+| It works without a mouse or eyes                                                                                                                  | `D02 T06 §17` · `D03 T07 §16` · `D04 T02 §9`                                                                                                                                                                                                                                                                                 |
+| Each app ships alone, proven on a clean machine                                                                                                   | `D05 T01 §1` · `D02 T05 §4` · `D03 T06 §3` · `D04 T02 §8`                                                                                                                                                                                                                                                                    |
+| The suite ships together without re-versioning                                                                                                    | `D05 T01 §6`                                                                                                                                                                                                                                                                                                                 |
+| Users can learn it                                                                                                                                | `D06 T01 §1`-`§4`                                                                                                                                                                                                                                                                                                            |
+| Nodus covers every CorelDRAW and Illustrator capability in the parity catalog                                                                     | `D00 T01 §6` (the catalog gate) · `D02 T17 §1`-`§10` (each release reconciles its phase)                                                                                                                                                                                                                                     |
+| Nodus opens and saves Illustrator and CorelDRAW files                                                                                             | `D02 T14 §3` · `D02 T14 §4` · `D02 T14 §5` · `D02 T14 §6` · `D02 T14 §7` · `D02 T14 §8`                                                                                                                                                                                                                                      |
+| Print and PDF output are prepress-grade                                                                                                           | `D02 T13 §5` · `D02 T13 §7` · `D02 T13 §14` · `D02 T13 §15`                                                                                                                                                                                                                                                                  |
+| AI results are editable, undoable, and reproducible                                                                                               | `D01 T05 §3` · `D02 T15 §1` · `D02 T15 §2` · `D02 T15 §6` · `D03 T19 §1` · `D03 T19 §2`                                                                                                                                                                                                                                      |
+| Nothing leaves the machine without an explicit user action                                                                                        | `D01 T05 §2` · `D01 T05 §4` · `D03 T19 §1`                                                                                                                                                                                                                                                                                   |
+| Imago covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog                                                           | `D00 T01 §7` (the catalog gate) · `D03 T21 §1`-`§12` (each release reconciles its phase)                                                                                                                                                                                                                                     |
+| Imago round-trips Photoshop documents: PSD and PSB open and save with layers, masks, adjustments, styles, text, and smart objects live            | `D03 T17 §2` · `D03 T17 §13` · `D03 T17 §3`                                                                                                                                                                                                                                                                                  |
+| Imago opens and saves GIMP's XCF                                                                                                                  | `D03 T17 §4` · `D03 T17 §14`                                                                                                                                                                                                                                                                                                 |
+| Editing stays non-destructive: adjustment layers, smart and live filters, masks, and linked content never overwrite pixels until the user applies | `D03 T08 §1` · `D03 T09 §3` · `D03 T09 §9` · `D03 T11 §1` · `D03 T14 §1`                                                                                                                                                                                                                                                     |
+| AI results in Imago are new layers and masks, undoable, and reproducible                                                                          | `D03 T19 §1` · `D03 T19 §2` · `D03 T19 §3` · `D03 T19 §6`                                                                                                                                                                                                                                                                    |
 
 ---
 
@@ -298,7 +298,8 @@ Type is its own discipline, so it gets its own phase: HarfBuzz shaping with bidi
 | [ ] | `D02 T06 §3`  | Text: area text, text on path, text to path                                            |   4   |
 | [ ] | `D02 T10 §1`  | The text shaping engine: HarfBuzzSharp, bidi, script runs, and font fallback           |  23   |
 | [ ] | `D02 T10 §2`  | The rich text model and text objects: point, area, path, and vertical                  |  24   |
-| [ ] | `D02 T10 §3`  | Fonts: the font list, filters, samples, and missing-font substitution                  |  28   |
+| [ ] | `D02 T10 §3`  | Fonts: the font list, filters, live preview, and the Font Sampler                      |  15   |
+| [ ] | `D02 T10 §16` | Missing fonts: substitution, Find Font, and font embedding                             |  15   |
 | [ ] | `D02 T10 §4`  | Character formatting                                                                   |  18   |
 | [ ] | `D02 T10 §5`  | OpenType features, glyphs, variable fonts, and glyph snapping                          |  26   |
 | [ ] | `D02 T10 §6`  | Paragraph formatting, composers, justification, and hyphenation                        |  19   |
@@ -342,7 +343,7 @@ Effects sit on the Appearance stack and the live-object contract, both shipped b
 
 ### Phase 9 -- Nodus parity VI: bitmaps, tracing, and the shared pixel engine
 
-Bitmaps arrive once vectors are complete. `Photon.Core` gains the pixel engine the operator placed there for the whole suite (buffers, resampling, dithering, adjustments, and every bitmap effect family), and Nodus gets bitmap objects, the non-destructive effect stack, the adjustment lab, tracing (Image Trace and PowerTRACE), photo-based artwork, the Links panel, and SVG filters. Placing images (`D02 T06 §14`) moves here first because bitmap objects need it. It ends with `nodus-v0.7.0`.
+Bitmaps arrive once vectors are complete. `Photon.Core` gains the pixel engine the operator placed there for the whole suite (buffers, resampling, dithering, adjustments, and every bitmap effect family), and Nodus gets bitmap objects, the non-destructive effect stack, the adjustment lab, tracing (Image Trace and PowerTRACE), photo-based artwork, the Links panel, and SVG filters. Placing images (`D02 T06 §14`) moves here first because bitmap objects need it. By operator decision (2026-09-27, "Group 1: plan them all"), `Photon.Core` also gains the isolated plug-in host (`D01 T09`) that runs third-party Photoshop-compatible 8BF, format, and acquire plug-ins with its plug-in manager, and Nodus hosts 8BF filters in its effect stack (`D02 T12 §10`); Imago's consumers follow in Phases 21 and 22. It ends with `nodus-v0.7.0`.
 
 |  ✔  | Section       | Deliverable                                                                                | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------ | :---: |
@@ -358,8 +359,14 @@ Bitmaps arrive once vectors are complete. `Photon.Core` gains the pixel engine t
 | [ ] | `D01 T03 §9`  | Brush-stroke and sketch effects                                                            |  13   |
 | [ ] | `D01 T03 §10` | Texture and creative effects                                                               |  15   |
 | [ ] | `D01 T03 §11` | Camera, color-transform, edge, custom, pixelate, and video effects                         |  16   |
-| [ ] | `D02 T12 §1`  | Bitmap objects: crop, resample, rasterize, convert to bitmap, color mask, and straighten   |  28   |
+| [ ] | `D02 T12 §1`  | Bitmap objects: crop, resample, rasterize, convert to bitmap, straighten, and perspective  |  21   |
+| [ ] | `D02 T12 §9`  | Bitmap color modes, monochrome coloring, and the bitmap color mask                         |  11   |
 | [ ] | `D02 T12 §2`  | The effect stack on objects: FX panel, effect gallery, preview, flatten, and effect lenses |  21   |
+| [ ] | `D01 T09 §1`  | The plug-in host decision and the isolated host process                                    |  12   |
+| [ ] | `D01 T09 §2`  | 8BF filter plug-ins: discovery, the filter record, suites, and Repeat parameters           |  13   |
+| [ ] | `D01 T09 §3`  | Format and acquire plug-ins                                                                |   8   |
+| [ ] | `D01 T09 §4`  | The plug-in manager in Photon.UI                                                           |  13   |
+| [ ] | `D02 T12 §10` | Third-party plug-in filters in Nodus                                                       |  13   |
 | [ ] | `D02 T12 §3`  | Adjustments in Nodus: the Image Adjustment Lab and adjustment presets                      |  17   |
 | [ ] | `D02 T12 §4`  | The tracing engine: outline tracing, color quantization, and stacking                      |  15   |
 | [ ] | `D02 T12 §5`  | Centerline tracing, the Image Trace panel, and PowerTRACE                                  |  19   |
@@ -370,7 +377,7 @@ Bitmaps arrive once vectors are complete. `Photon.Core` gains the pixel engine t
 
 ### Phase 10 -- Nodus parity VII: color management, print, prepress, and PDF
 
-Output comes after everything it has to print exists. Bitmap color modes finish the color engine, then Nodus gets document color settings, the print dialog, marks and bleed, separations, soft proofing, overprint and trapping, flattening, preflight and packaging, PostScript options, imposition and layout styles, print merge with variable data, and its own PDF writer with PDF/X presets and interactivity. It ends with `nodus-v0.8.0`.
+Output comes after everything it has to print exists. Bitmap color modes finish the color engine, then Nodus gets document color settings, the print dialog, marks and bleed, separations, soft proofing, overprint and trapping, flattening, preflight and packaging, PostScript options, imposition and layout styles, print merge with variable data, and its own PDF writer with PDF/X presets and interactivity, including interactive 3D models as U3D annotations (`D02 T13 §17`, operator decision 2026-09-27). It ends with `nodus-v0.8.0`.
 
 |  ✔  | Section       | Deliverable                                                                      | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------- | :---: |
@@ -390,6 +397,7 @@ Output comes after everything it has to print exists. Bitmap color modes finish 
 | [ ] | `D02 T13 §13` | Print merge and variable data                                                    |  19   |
 | [ ] | `D02 T13 §14` | The PDF writer: spot colors, layers, and exact vector output                     |  17   |
 | [ ] | `D02 T13 §15` | PDF presets and standards: PDF/X, PDF/A, compatibility, compression, and marks   |  16   |
+| [ ] | `D02 T13 §17` | Interactive 3D models in PDF: U3D annotations                                    |  15   |
 | [ ] | `D02 T13 §16` | PDF interactivity and security: bookmarks, hyperlinks, tagged PDF, and passwords |  14   |
 | [ ] | `D02 T17 §7`  | Nodus 0.8.0 (Phase 10)                                                           |  12   |
 
@@ -444,27 +452,40 @@ The AI features are Nodus's own and come after the object model, formats, and tr
 | [ ] | `D02 T15 §11` | The suite pipeline: Lumen to Imago to Nodus hand-offs and shared brand kits   |  15   |
 | [ ] | `D02 T17 §9`  | Nodus 0.10.0 (Phase 12)                                                       |  12   |
 
-### Phase 13 -- Nodus parity IX: workspace, customization, preferences, and Nodus 1.0.0
+### Phase 13 -- Nodus parity IX: legacy formats, workspace, customization, preferences, and Nodus 1.0.0
 
-The last parity phase customizes and audits the whole surface once it exists: the command palette and Preferences (`D02 T06 §12`, `§13`) move here, then workspaces, toolbars, menus and shortcut sets, the preference pages, UI appearance and diagnostics, the welcome screen and navigator, pen and touch input, hints and the project timer, object data and find and replace, QR codes and barcodes, and the accessibility and localization audit (`D02 T06 §17`) over every parity surface. It ends with `nodus-v1.0.0`, which declares the parity catalog complete.
+The last parity phase first reads and writes the legacy formats the operator asked to plan on 2026-09-27 ("Group 1: plan them all"), which need the complete formats layer of Phase 11: `Photon.Core` gains the legacy raster codecs Nodus consumes first and Imago and Lumen reuse (`D01 T08`), and Nodus imports FreeHand, Publisher, Visio, PowerPoint, the Corel and Micrografx legacy files, PICT, MET, GEM, and the other old metafiles and word-processing formats, and imports and exports the legacy rasters (`D02 T18 §1` to `§8`). It then customizes and audits the whole surface once it exists: the command palette and Preferences (`D02 T06 §12`, `§13`) move here, then workspaces, toolbars, menus and shortcut sets, the preference pages, UI appearance and diagnostics, the welcome screen and navigator, pen and touch input, hints and the project timer, object data and find and replace, QR codes and barcodes, and the accessibility and localization audit (`D02 T06 §17`) over every parity surface. It ends with `nodus-v1.0.0`, which declares the parity catalog complete.
 
-|  ✔  | Section       | Deliverable                                                        | Items |
-| :-: | ------------- | ------------------------------------------------------------------ | :---: |
-| [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD                          |   4   |
-| [ ] | `D02 T06 §13` | Preferences and shortcut remapping                                 |   4   |
-| [ ] | `D02 T16 §1`  | Workspaces: presets, save, reset, import, and export               |  16   |
-| [ ] | `D02 T16 §2`  | Toolbox, toolbars, property bar, and status bar customization      |  17   |
-| [ ] | `D02 T16 §3`  | Menus, context menus, command search, and shortcut sets            |  17   |
-| [ ] | `D02 T16 §4`  | Preferences: general, selection and nodes, display, and units      |  16   |
-| [ ] | `D02 T16 §5`  | Preferences: files, backup, performance, GPU, and warnings         |  16   |
-| [ ] | `D02 T16 §6`  | UI appearance, scaling, and diagnostics                            |  16   |
-| [ ] | `D02 T16 §7`  | The welcome screen and the navigator                               |  14   |
-| [ ] | `D02 T16 §8`  | Pen, touch, and Surface Dial input                                 |  14   |
-| [ ] | `D02 T16 §9`  | Hints, in-app learning, and the project timer                      |  14   |
-| [ ] | `D02 T16 §10` | Object data, the Object Data Manager, and find and replace objects |  16   |
-| [ ] | `D02 T16 §11` | QR codes and barcodes                                              |  13   |
-| [ ] | `D02 T06 §17` | Accessibility and localization                                     |   4   |
-| [ ] | `D02 T17 §10` | Nodus 1.0.0 (Phase 13)                                             |  14   |
+|  ✔  | Section       | Deliverable                                                                                                         | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD                                                                           |   4   |
+| [ ] | `D02 T06 §13` | Preferences and shortcut remapping                                                                                  |   4   |
+| [ ] | `D02 T16 §1`  | Workspaces: presets, save, reset, import, and export                                                                |  16   |
+| [ ] | `D02 T16 §2`  | Toolbox, toolbars, property bar, and status bar customization                                                       |  17   |
+| [ ] | `D02 T16 §3`  | Menus, context menus, command search, and shortcut sets                                                             |  17   |
+| [ ] | `D02 T16 §4`  | Preferences: general, selection and nodes, display, and units                                                       |  16   |
+| [ ] | `D02 T16 §5`  | Preferences: files, backup, performance, GPU, and warnings                                                          |  16   |
+| [ ] | `D02 T16 §6`  | UI appearance, scaling, and diagnostics                                                                             |  16   |
+| [ ] | `D02 T16 §7`  | The welcome screen and the navigator                                                                                |  14   |
+| [ ] | `D02 T16 §8`  | Pen, touch, and Surface Dial input                                                                                  |  14   |
+| [ ] | `D02 T16 §9`  | Hints, in-app learning, and the project timer                                                                       |  14   |
+| [ ] | `D02 T16 §10` | Object data, the Object Data Manager, and find and replace objects                                                  |  16   |
+| [ ] | `D02 T16 §11` | QR codes and barcodes                                                                                               |  13   |
+| [ ] | `D01 T08 §1`  | Bitonal and simple legacy codecs: MacPaint, CALS Type 1, GEM IMG, XPM, and Scitex CT                                |  14   |
+| [ ] | `D01 T08 §2`  | Kodak Photo CD and FlashPix readers                                                                                 |  13   |
+| [ ] | `D01 T08 §3`  | Windows icons, cursors, and executable icon resources                                                               |  12   |
+| [ ] | `D01 T08 §4`  | Macintosh PICT: a drawing-operation reader, a writer, and a rasterizer                                              |  12   |
+| [ ] | `D01 T08 §5`  | Corel and Painter proprietary rasters: CPT, RIF, and WI                                                             |  13   |
+| [ ] | `D02 T18 §1`  | FreeHand import, FXG save, and SWF export                                                                           |  15   |
+| [ ] | `D02 T18 §2`  | Microsoft Publisher and Visio import                                                                                |  15   |
+| [ ] | `D02 T18 §3`  | PowerPoint PPT import                                                                                               |  13   |
+| [ ] | `D02 T18 §4`  | Corel and Micrografx legacy: DESIGNER, Micrografx Designer, ArtShow, Presentations, R.A.V.E., and Picture Publisher |  12   |
+| [ ] | `D02 T18 §5`  | Macintosh PICT and OS/2 MET import and export                                                                       |  11   |
+| [ ] | `D02 T18 §6`  | GEM, Frame Vector Metafile, Lotus PIC, and NAPLPS                                                                   |  12   |
+| [ ] | `D02 T18 §7`  | WordPerfect, Quattro Pro, Lotus 1-2-3, and WordStar                                                                 |  12   |
+| [ ] | `D02 T18 §8`  | Legacy raster import and export in Nodus                                                                            |  14   |
+| [ ] | `D02 T06 §17` | Accessibility and localization                                                                                      |   4   |
+| [ ] | `D02 T17 §10` | Nodus 1.0.0 (Phase 13)                                                                                              |  14   |
 
 ### Phase 14 -- Imago foundation: snapshot port, WPF-UI out, tiles, rendering
 
@@ -516,27 +537,30 @@ Imago becomes a complete first release: the suite undo history and the atomic do
 
 Parity starts where every later feature stands. This phase fixes how live content persists in `.imago` (the `imago:` namespace beside a rendered PNG fallback, so GIMP and Krita still open every file), completes the document model (8, 16, and 32-bit float, precision, pixel aspect), new-document presets and templates, every view (zoom, rotate, flip, screen modes, windows, view modes, display filters, the navigator), rulers, guides, grids, snapping, measurement, the info and histogram panels and scopes, snapshots and non-linear history, the Image menu, paste variants, and crop, then the layer model with every layer kind, the Layers panel and Layer menu, masks, clipping and vector masks, blending options with Blend If, and every blend mode the three competitors ship. It ends with `imago-v0.2.0`.
 
-|  ✔  | Section       | Deliverable                                                          | Items |
-| :-: | ------------- | -------------------------------------------------------------------- | :---: |
-| [ ] | `D03 T08 §1`  | The document model and the native-format contract for live content   |  27   |
-| [ ] | `D03 T08 §2`  | New document, presets, and templates                                 |  22   |
-| [ ] | `D03 T08 §3`  | Zoom, rotate view, flip view, and screen modes                       |  29   |
-| [ ] | `D03 T08 §10` | Windows, arrangement, view modes, display filters, and the navigator |  17   |
-| [ ] | `D03 T08 §4`  | Rulers, units, guides, grids, and snapping                           |  28   |
-| [ ] | `D03 T08 §5`  | Measure, protractor, count, and notes                                |  19   |
-| [ ] | `D03 T08 §11` | Info, histogram, sample points, and scopes                           |  23   |
-| [ ] | `D03 T08 §6`  | History extensions: snapshots, non-linear history, and saved history |  21   |
-| [ ] | `D03 T08 §7`  | The Image menu: canvas, rotation, trim, reveal, and resampling       |  25   |
-| [ ] | `D03 T08 §8`  | Clipboard and paste variants                                         |  19   |
-| [ ] | `D03 T08 §9`  | Crop and straighten extensions                                       |  19   |
-| [ ] | `D03 T09 §1`  | Every layer kind, locks, labels, tags, and panel filtering           |  20   |
-| [ ] | `D03 T09 §2`  | Layers panel selection, linking, visibility, order, and options      |  21   |
-| [ ] | `D03 T09 §14` | Merge, stamp, rasterize with revert, matting, and boundaries         |  21   |
-| [ ] | `D03 T09 §3`  | Layer masks, mask stacks, and live masks                             |  20   |
-| [ ] | `D03 T09 §4`  | Clipping masks, child clipping, and vector masks                     |  15   |
-| [ ] | `D03 T09 §5`  | Blending options, Blend If, and blend ranges                         |  18   |
-| [ ] | `D03 T09 §6`  | GIMP, Affinity, and Porter-Duff blend modes                          |  18   |
-| [ ] | `D03 T21 §1`  | Imago 0.2.0 (Phase 16)                                               |  14   |
+|  ✔  | Section       | Deliverable                                                             | Items |
+| :-: | ------------- | ----------------------------------------------------------------------- | :---: |
+| [ ] | `D03 T08 §1`  | The document model and the native-format contract for live content      |  17   |
+| [ ] | `D03 T08 §12` | Image properties, document setup, pixel aspect, and duplicate           |  12   |
+| [ ] | `D03 T08 §2`  | New document, presets, and templates                                    |  22   |
+| [ ] | `D03 T08 §3`  | Zoom, rotate view, flip view, and screen modes                          |  18   |
+| [ ] | `D03 T08 §13` | Navigation gestures, print size, window behaviors, and view preferences |  14   |
+| [ ] | `D03 T08 §10` | Windows, arrangement, view modes, display filters, and the navigator    |  17   |
+| [ ] | `D03 T08 §4`  | Rulers, units, and guides                                               |  16   |
+| [ ] | `D03 T08 §14` | Grids, axis grids, and snapping on the shared core                      |  14   |
+| [ ] | `D03 T08 §5`  | Measure, protractor, count, and notes                                   |  19   |
+| [ ] | `D03 T08 §11` | Info, histogram, sample points, and scopes                              |  23   |
+| [ ] | `D03 T08 §6`  | History extensions: snapshots, non-linear history, and saved history    |  21   |
+| [ ] | `D03 T08 §7`  | The Image menu: canvas, rotation, trim, reveal, and resampling          |  25   |
+| [ ] | `D03 T08 §8`  | Clipboard and paste variants                                            |  19   |
+| [ ] | `D03 T08 §9`  | Crop and straighten extensions                                          |  19   |
+| [ ] | `D03 T09 §1`  | Every layer kind, locks, labels, tags, and panel filtering              |  20   |
+| [ ] | `D03 T09 §2`  | Layers panel selection, linking, visibility, order, and options         |  21   |
+| [ ] | `D03 T09 §14` | Merge, stamp, rasterize with revert, matting, and boundaries            |  21   |
+| [ ] | `D03 T09 §3`  | Layer masks, mask stacks, and live masks                                |  20   |
+| [ ] | `D03 T09 §4`  | Clipping masks, child clipping, and vector masks                        |  15   |
+| [ ] | `D03 T09 §5`  | Blending options, Blend If, and blend ranges                            |  18   |
+| [ ] | `D03 T09 §6`  | GIMP, Affinity, and Porter-Duff blend modes                             |  18   |
+| [ ] | `D03 T21 §1`  | Imago 0.2.0 (Phase 16)                                                  |  14   |
 
 ### Phase 17 -- Imago parity II: selection, channels, styles, smart objects, and artboards
 
@@ -570,10 +594,12 @@ Adjustments become non-destructive layers over the suite pixel engine: every ton
 |  ✔  | Section       | Deliverable                                                                                                | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------------------------------- | :---: |
 | [ ] | `D03 T11 §1`  | Adjustment layers and the Adjustments and Properties panels                                                |  26   |
-| [ ] | `D03 T11 §2`  | Tonal adjustment extensions                                                                                |  26   |
+| [ ] | `D03 T11 §2`  | Tonal adjustment extensions: brightness and contrast, light, levels, and curves                            |  16   |
+| [ ] | `D03 T11 §11` | Auto corrections, exposure, shadows and highlights, Light EQ, and GIMP tone operations                     |  15   |
 | [ ] | `D03 T11 §3`  | Color adjustments I: hue, balance, vibrance, black and white, photo filter, selective color                |  16   |
-| [ ] | `D03 T11 §4`  | Color adjustments II: channel mixer, LUTs, gradient map, match and replace color, OCIO                     |  23   |
-| [ ] | `D03 T11 §5`  | Color adjustments III: threshold, posterize, invert, desaturate, color to alpha, and GIMP color operations |  26   |
+| [ ] | `D03 T11 §4`  | Color adjustments II: channel mixer, LUTs, gradient map, match and replace color, OCIO                     |  24   |
+| [ ] | `D03 T11 §5`  | Color adjustments III: threshold, posterize, invert, desaturate, color to alpha, and the photo effect kind |  17   |
+| [ ] | `D03 T11 §12` | GIMP color operations: exchange, rotate, color to gray, mono mixer, dither, extract, clip, and maps        |  14   |
 | [ ] | `D03 T11 §6`  | Color analysis                                                                                             |   8   |
 | [ ] | `D03 T11 §7`  | Image modes and bit depth                                                                                  |  23   |
 | [ ] | `D03 T11 §8`  | Channel operations: split, merge, decompose, compose, apply image, calculations                            |  13   |
@@ -621,7 +647,7 @@ Retouching builds on painting: clone and the clone source panel, healing, patch,
 
 ### Phase 21 -- Imago parity VI: filters I, the filter surfaces and the engine extensions for blur, sharpen, noise, distort, and pixelate
 
-Filters come once the layer stack can host them non-destructively. The relocated filter-catalog section (`D03 T07 §3`) runs first, then `Photon.Core` gains the engine extensions contract and the blur, lens-blur, sharpen, denoise, distort, map, and pixelate families, and Imago gets smart filters and live filter layers, the Filter menu with generated dialogs for every engine effect, the Filter Gallery, the Blur Gallery surface, Lens Correction and Adaptive Wide Angle, and Vanishing Point. It ends with `imago-v0.7.0`.
+Filters come once the layer stack can host them non-destructively. The relocated filter-catalog section (`D03 T07 §3`) runs first, then `Photon.Core` gains the engine extensions contract and the blur, lens-blur, sharpen, denoise, distort, map, and pixelate families, and Imago gets smart filters and live filter layers, the Filter menu with generated dialogs for every engine effect, the Filter Gallery, the Blur Gallery surface, Lens Correction and Adaptive Wide Angle, and Vanishing Point. Third-party Photoshop-compatible filter, format, and acquire plug-ins reach Imago's Filter menu through the `D01 T09` host (`D03 T14 §11`) once the Filter menu exists. It ends with `imago-v0.7.0`.
 
 |  ✔  | Section       | Deliverable                                                                                    | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------------------- | :---: |
@@ -631,11 +657,12 @@ Filters come once the layer stack can host them non-destructively. The relocated
 | [ ] | `D01 T06 §3`  | Lens blur, bokeh, and the blur-gallery kernels                                                 |  18   |
 | [ ] | `D01 T06 §4`  | Sharpen and deconvolution                                                                      |  17   |
 | [ ] | `D01 T06 §5`  | Noise and denoise extensions                                                                   |  16   |
-| [ ] | `D01 T06 §6`  | Distort and projection extensions                                                              |  22   |
+| [ ] | `D01 T06 §6`  | Distort and projection extensions                                                              |  25   |
 | [ ] | `D01 T06 §7`  | Map extensions                                                                                 |  16   |
 | [ ] | `D01 T06 §14` | Pixelate and halftone extensions                                                               |  12   |
-| [ ] | `D03 T14 §1`  | Smart filters, live filter layers, and non-destructive layer filters                           |  24   |
+| [ ] | `D03 T14 §1`  | Smart filters, live filter layers, and non-destructive layer filters                           |  25   |
 | [ ] | `D03 T14 §2`  | The Filter menu, generated dialogs, presets, and Fade                                          |  22   |
+| [ ] | `D03 T14 §11` | Photoshop-compatible plug-in filters, formats, and acquire in Imago                            |  12   |
 | [ ] | `D03 T14 §3`  | The Filter Gallery                                                                             |   9   |
 | [ ] | `D03 T14 §4`  | The Blur Gallery surface                                                                       |  14   |
 | [ ] | `D03 T14 §6`  | Lens Correction and Adaptive Wide Angle                                                        |  22   |
@@ -644,92 +671,104 @@ Filters come once the layer stack can host them non-destructively. The relocated
 
 ### Phase 22 -- Imago parity VII: filters II, render, light, stylize, artistic, generic, and GEGL
 
-The second filter phase completes the long tail GIMP and GEGL bring: light and shadow, procedural noise, patterns and fractals, edges and stylize, the artistic set, generic and morphology filters, the lighting and flare surfaces, the GEGL operation tool and filter browser, GIMP's decor and combine effects as native commands, and Affinity's filter extras. It ends with `imago-v0.8.0`.
+The second filter phase completes the long tail GIMP and GEGL bring: light and shadow, procedural noise, patterns and fractals, edges and stylize, the artistic set, generic and morphology filters, the lighting and flare surfaces, the GEGL operation tool and filter browser, GIMP's decor and combine effects as native commands, and Affinity's filter extras, then Imago's own managed extension modules (`D03 T14 §12`) and the G'MIC filter collection running in the plug-in host (`D03 T14 §13`), both planned by operator decision on 2026-09-27. It ends with `imago-v0.8.0`.
 
 |  ✔  | Section       | Deliverable                                         | Items |
 | :-: | ------------- | --------------------------------------------------- | :---: |
-| [ ] | `D01 T06 §8`  | Light and shadow                                    |  23   |
-| [ ] | `D01 T06 §9`  | Procedural noise and nature                         |  20   |
+| [ ] | `D01 T06 §8`  | Light and shadow                                    |  24   |
+| [ ] | `D01 T06 §9`  | Procedural noise and nature                         |  21   |
 | [ ] | `D01 T06 §10` | Patterns and fractals                               |  18   |
-| [ ] | `D01 T06 §11` | Edges and stylize                                   |  16   |
-| [ ] | `D01 T06 §12` | Artistic extensions                                 |  18   |
+| [ ] | `D01 T06 §11` | Edges and stylize                                   |  17   |
+| [ ] | `D01 T06 §12` | Artistic extensions                                 |  19   |
 | [ ] | `D01 T06 §13` | Generic, morphology, and channel math               |  23   |
 | [ ] | `D03 T14 §5`  | Lighting and flare surfaces                         |  10   |
 | [ ] | `D03 T14 §8`  | The GEGL operation tool and the filter browser      |   8   |
-| [ ] | `D03 T14 §9`  | GIMP decor and combine effects as native commands   |  15   |
+| [ ] | `D03 T14 §9`  | GIMP decor and combine effects as native commands   |  16   |
 | [ ] | `D03 T14 §10` | Dedicated filter editors and Affinity filter extras |  17   |
+| [ ] | `D03 T14 §12` | Imago extension modules: managed filter plug-ins    |  10   |
+| [ ] | `D03 T14 §13` | The G'MIC filter collection                         |  13   |
 | [ ] | `D03 T21 §7`  | Imago 0.8.0 (Phase 22)                              |  14   |
 
 ### Phase 23 -- Imago parity VIII: the develop engine, Camera Raw, HDR, panorama, stacks, and astrophotography
 
 Photography gets its own phase. `Photon.Core` gains the scene-referred develop engine that Lumen will reuse, and Imago gets the Camera Raw filter and Affinity's Develop studio with local masks, 32-bit editing and HDR display, tone mapping, the alignment engine, Merge to HDR, panoramas, image stacks and auto-blend, focus merge, astrophotography stacking, and splitting scanned photos. RAW files themselves open once Lumen's decoder is shared (`D03 T07 §11`, Phase 31). It ends with `imago-v0.9.0`.
 
-|  ✔  | Section       | Deliverable                                                               | Items |
-| :-: | ------------- | ------------------------------------------------------------------------- | :---: |
-| [ ] | `D01 T07 §1`  | The develop pipeline core: white balance, exposure, tone, and curves      |  29   |
-| [ ] | `D01 T07 §2`  | Presence and color: texture, clarity, dehaze, color mixer, and grading    |  18   |
-| [ ] | `D01 T07 §3`  | Detail and optics: sharpening, noise, grain, vignette, lens, and geometry |  25   |
-| [ ] | `D01 T07 §4`  | The local masking engine                                                  |  19   |
-| [ ] | `D01 T07 §5`  | Spot removal, red eye, and pet eye                                        |  13   |
-| [ ] | `D01 T07 §6`  | Presets, snapshots, and XMP settings exchange                             |  16   |
-| [ ] | `D03 T15 §1`  | The Camera Raw filter dialog                                              |  27   |
-| [ ] | `D03 T15 §12` | The Develop studio and RAW layers                                         |  20   |
-| [ ] | `D03 T15 §2`  | Develop masking and local adjustments surface                             |  14   |
-| [ ] | `D03 T15 §4`  | 32-bit HDR editing and HDR display                                        |  19   |
-| [ ] | `D03 T15 §3`  | Tone mapping and HDR Toning                                               |  20   |
-| [ ] | `D03 T15 §5`  | The image alignment engine and auto-align layers                          |  16   |
-| [ ] | `D03 T15 §6`  | Merge to HDR                                                              |  16   |
-| [ ] | `D03 T15 §7`  | Panorama                                                                  |  18   |
-| [ ] | `D03 T15 §8`  | Image stacks and auto-blend layers                                        |  19   |
-| [ ] | `D03 T15 §9`  | Focus merge                                                               |  13   |
-| [ ] | `D03 T15 §10` | Astrophotography stacking                                                 |  27   |
-| [ ] | `D03 T15 §11` | Crop and straighten scanned photos                                        |  10   |
-| [ ] | `D03 T21 §8`  | Imago 0.9.0 (Phase 23)                                                    |  14   |
+|  ✔  | Section       | Deliverable                                                                                 | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D01 T07 §1`  | The develop pipeline core: white balance, exposure, tone, and curves                        |  29   |
+| [ ] | `D01 T07 §2`  | Presence and color: texture, clarity, dehaze, color mixer, and grading                      |  18   |
+| [ ] | `D01 T07 §3`  | Detail and optics: sharpening, noise, grain, vignette, lens, and geometry                   |  25   |
+| [ ] | `D01 T07 §4`  | The local masking engine                                                                    |  19   |
+| [ ] | `D01 T07 §5`  | Spot removal, red eye, and pet eye                                                          |  13   |
+| [ ] | `D01 T07 §6`  | Presets, snapshots, and XMP settings exchange                                               |  16   |
+| [ ] | `D03 T15 §1`  | The Camera Raw filter dialog                                                                |  15   |
+| [ ] | `D03 T15 §13` | Camera Raw reports, overlays, view tools, workflow, presets, and Render to DNG              |  14   |
+| [ ] | `D03 T15 §12` | The Develop studio and RAW layers                                                           |  20   |
+| [ ] | `D03 T15 §2`  | Develop masking and local adjustments surface                                               |  14   |
+| [ ] | `D03 T15 §4`  | 32-bit HDR editing and HDR display                                                          |  19   |
+| [ ] | `D03 T15 §3`  | Tone mapping and HDR Toning                                                                 |  20   |
+| [ ] | `D03 T15 §5`  | The image alignment engine and auto-align layers                                            |  16   |
+| [ ] | `D03 T15 §6`  | Merge to HDR                                                                                |  16   |
+| [ ] | `D03 T15 §7`  | Panorama                                                                                    |  18   |
+| [ ] | `D03 T15 §8`  | Image stacks and auto-blend layers                                                          |  19   |
+| [ ] | `D03 T15 §9`  | Focus merge                                                                                 |  13   |
+| [ ] | `D03 T15 §10` | Astrophotography stacking                                                                   |  20   |
+| [ ] | `D03 T15 §14` | Astro filters: stretches, background extraction, calibration, color mapping, and separation |  10   |
+| [ ] | `D03 T15 §11` | Crop and straighten scanned photos                                                          |  10   |
+| [ ] | `D03 T21 §8`  | Imago 0.9.0 (Phase 23)                                                                      |  14   |
 
 ### Phase 24 -- Imago parity IX: type, paths, shapes, and vectors
 
 Type and vectors come after the layer stack and styles they live in. The suite text engine moves from Nodus to `Photon.Core` as Imago becomes its second consumer, and Imago gets text layers, character and paragraph formatting, OpenType and glyphs, styles and text commands, paths with geometry shared with Nodus, every pen and shape tool, vector layers, frames, and SVG output. It ends with `imago-v0.10.0`.
 
-|  ✔  | Section      | Deliverable                                              | Items |
-| :-: | ------------ | -------------------------------------------------------- | :---: |
-| [ ] | `D03 T16 §1` | Text layers on the shared text engine                    |  27   |
-| [ ] | `D03 T16 §5` | Paths, the Paths panel, and path geometry in Photon.Core |  28   |
-| [ ] | `D03 T16 §2` | Character formatting, OpenType, glyphs, and fonts        |  26   |
-| [ ] | `D03 T16 §3` | Paragraph formatting and text frames                     |  14   |
-| [ ] | `D03 T16 §4` | Type styles and text commands                            |  20   |
-| [ ] | `D03 T16 §6` | Pen and path editing tools                               |  22   |
-| [ ] | `D03 T16 §7` | Shape layers, shape tools, and vector layers             |  30   |
-| [ ] | `D03 T16 §8` | Frames and vector output                                 |  15   |
-| [ ] | `D03 T21 §9` | Imago 0.10.0 (Phase 24)                                  |  14   |
+|  ✔  | Section       | Deliverable                                                                            | Items |
+| :-: | ------------- | -------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D03 T16 §1`  | Text layers on the shared text engine                                                  |  18   |
+| [ ] | `D03 T16 §9`  | Type tools and on-canvas text editing                                                  |  11   |
+| [ ] | `D03 T16 §5`  | Paths, the Paths panel, and path geometry in Photon.Core                               |  20   |
+| [ ] | `D03 T16 §10` | Path exchange and path commands: SVG, Illustrator, clipping paths, booleans, and align |  11   |
+| [ ] | `D03 T16 §2`  | Character formatting, OpenType, glyphs, and fonts                                      |  26   |
+| [ ] | `D03 T16 §3`  | Paragraph formatting and text frames                                                   |  14   |
+| [ ] | `D03 T16 §4`  | Type styles and text commands                                                          |  21   |
+| [ ] | `D03 T16 §6`  | Pen and path editing tools                                                             |  22   |
+| [ ] | `D03 T16 §7`  | Shape layers and shape tools                                                           |  21   |
+| [ ] | `D03 T16 §11` | Custom shapes, vector layers, and the Gfig job                                         |  11   |
+| [ ] | `D03 T16 §8`  | Frames and vector output                                                               |  15   |
+| [ ] | `D03 T21 §9`  | Imago 0.10.0 (Phase 24)                                                                |  14   |
 
 ### Phase 25 -- Imago parity X: formats, export, color management, and print
 
 Formats come after the document model they must carry is complete, so each reader and writer maps onto real Imago content and owes a fidelity proof: the File menu, screenshots and scanners, PSD and PSB write with live content and full-fidelity read, XCF read and write, modern web formats, HDR and scientific formats, PDF, EPS, SVG, and metafiles, every common and legacy raster format, format options, and metadata; then export, Save for Web and slices, color settings and soft proofing, and print with its extras. It ends with `imago-v0.11.0`.
 
-|  ✔  | Section       | Deliverable                                                              | Items |
-| :-: | ------------- | ------------------------------------------------------------------------ | :---: |
-| [ ] | `D03 T17 §1`  | File menu extensions: open, place, revert, close, and save a copy        |  27   |
-| [ ] | `D03 T17 §12` | Create from clipboard, screenshots, scanners, URLs, and archives         |  16   |
-| [ ] | `D03 T17 §2`  | PSD and PSB write: structure                                             |  18   |
-| [ ] | `D03 T17 §13` | PSD write: live content and editability options                          |  18   |
-| [ ] | `D03 T17 §3`  | PSD read fidelity: live adjustments, styles, text, and smart objects     |  13   |
-| [ ] | `D03 T17 §4`  | GIMP XCF read                                                            |  16   |
-| [ ] | `D03 T17 §14` | GIMP XCF write                                                           |  11   |
-| [ ] | `D03 T17 §5`  | Modern web formats: WebP, AVIF, HEIF, JPEG XL, JPEG 2000, QOI, JPEG XR   |  21   |
-| [ ] | `D03 T17 §6`  | HDR and scientific formats                                               |  24   |
-| [ ] | `D03 T17 §7`  | Document and vector formats: PDF, Photoshop PDF, EPS, SVG, and metafiles |  29   |
-| [ ] | `D03 T17 §8`  | Common and legacy raster formats I                                       |  24   |
-| [ ] | `D03 T17 §9`  | Legacy raster formats II and text and resource exports                   |  24   |
-| [ ] | `D03 T17 §11` | JPEG, PNG, and TIFF option extensions                                    |  18   |
-| [ ] | `D03 T17 §10` | Metadata: EXIF, IPTC, XMP, and File Info                                 |  25   |
-| [ ] | `D03 T18 §1`  | Export As, Quick Export, and asset export                                |  27   |
-| [ ] | `D03 T18 §2`  | Save for Web and the Export studio                                       |  28   |
-| [ ] | `D03 T18 §3`  | Slices                                                                   |  14   |
-| [ ] | `D03 T18 §4`  | Color settings, profiles, and display color management                   |  27   |
-| [ ] | `D03 T18 §5`  | Soft proofing and gamut warning                                          |  15   |
-| [ ] | `D03 T18 §6`  | Print                                                                    |  20   |
-| [ ] | `D03 T18 §7`  | Print output extras, contact sheets, PDF presentation, and preflight     |  14   |
-| [ ] | `D03 T21 §10` | Imago 0.11.0 (Phase 25)                                                  |  14   |
+|  ✔  | Section       | Deliverable                                                                                   | Items |
+| :-: | ------------- | --------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D03 T17 §1`  | File menu extensions: open, revert, close, and save a copy                                    |  21   |
+| [ ] | `D03 T17 §15` | Place, export and overwrite semantics, notes import, Load Files into Stack, and watermarks    |  12   |
+| [ ] | `D03 T17 §12` | Create from clipboard, screenshots, scanners, URLs, and archives                              |  16   |
+| [ ] | `D03 T17 §2`  | PSD and PSB write: structure                                                                  |  18   |
+| [ ] | `D03 T17 §13` | PSD write: live content and editability options                                               |  18   |
+| [ ] | `D03 T17 §3`  | PSD read fidelity: live adjustments, styles, text, and smart objects                          |  13   |
+| [ ] | `D03 T17 §4`  | GIMP XCF read                                                                                 |  16   |
+| [ ] | `D03 T17 §14` | GIMP XCF write                                                                                |  11   |
+| [ ] | `D03 T17 §5`  | Modern web formats: WebP, AVIF, HEIF, JPEG XL, JPEG 2000, QOI, JPEG XR                        |  21   |
+| [ ] | `D03 T17 §6`  | HDR and scientific formats                                                                    |  24   |
+| [ ] | `D03 T17 §7`  | Document formats: PDF import, Photoshop PDF, and PDF export                                   |  23   |
+| [ ] | `D03 T17 §16` | PostScript, EPS, SVG, and metafiles                                                           |  11   |
+| [ ] | `D03 T17 §8`  | Common and legacy raster formats I                                                            |  24   |
+| [ ] | `D03 T17 §9`  | Legacy raster formats II and text and resource exports                                        |  24   |
+| [ ] | `D03 T17 §11` | JPEG, PNG, and TIFF option extensions                                                         |  18   |
+| [ ] | `D03 T17 §10` | Metadata: EXIF, IPTC, XMP, and File Info                                                      |  25   |
+| [ ] | `D03 T18 §1`  | Export As and Quick Export                                                                    |  20   |
+| [ ] | `D03 T18 §8`  | Layers, artboards, and comps to files and PDF, and generated image assets                     |  12   |
+| [ ] | `D03 T18 §2`  | Save for Web, Web filters, and the Image Map editor                                           |  21   |
+| [ ] | `D03 T18 §9`  | The Export studio: slices, per-slice formats, naming tokens, continuous export, and app icons |  11   |
+| [ ] | `D03 T18 §3`  | Slices                                                                                        |  14   |
+| [ ] | `D03 T18 §4`  | Color settings, policies, custom CMYK, and assign and convert                                 |  22   |
+| [ ] | `D03 T18 §10` | Display color management per view and OpenColorIO                                             |   9   |
+| [ ] | `D03 T18 §5`  | Soft proofing and gamut warning                                                               |  15   |
+| [ ] | `D03 T18 §6`  | Print                                                                                         |  20   |
+| [ ] | `D03 T18 §7`  | Print output extras, contact sheets, PDF presentation, and preflight                          |  14   |
+| [ ] | `D03 T21 §10` | Imago 0.11.0 (Phase 25)                                                                       |  14   |
 
 ### Phase 26 -- Imago AI: editable, suite-aware, reproducible
 
@@ -743,35 +782,38 @@ The AI features are Imago's own and come after the layers, masks, selections, re
 | [ ] | `D03 T19 §4`  | Generative expand                                                    |  12   |
 | [ ] | `D03 T19 §5`  | Generate image, background, and similar                              |  15   |
 | [ ] | `D03 T19 §6`  | AI selection: subject, sky, objects, and people                      |  20   |
-| [ ] | `D03 T19 §15` | AI masks everywhere: detections, mask all objects, and develop masks |  13   |
+| [ ] | `D03 T19 §15` | AI masks everywhere: detections, mask all objects, and develop masks |  14   |
 | [ ] | `D03 T19 §7`  | Neural-filter equivalents                                            |  17   |
 | [ ] | `D03 T19 §14` | Depth, portrait blur, and relighting                                 |  15   |
 | [ ] | `D03 T19 §8`  | Upscale and enhance                                                  |  18   |
 | [ ] | `D03 T19 §9`  | Distraction and object removal                                       |  15   |
 | [ ] | `D03 T19 §10` | The Imago assistant: prompt to edit                                  |  15   |
-| [ ] | `D03 T19 §11` | AI type and faces                                                    |  12   |
+| [ ] | `D03 T19 §11` | AI type and faces                                                    |  15   |
 | [ ] | `D03 T19 §12` | Sky replacement                                                      |  12   |
 | [ ] | `D03 T19 §13` | The suite pipeline and the brand kit in Imago                        |  15   |
 | [ ] | `D03 T21 §11` | Imago 0.12.0 (Phase 26)                                              |  14   |
 
 ### Phase 27 -- Imago parity XI: workspace, customization, preferences, and Imago 1.0.0
 
-The last parity phase customizes and audits the whole surface once it exists: workspaces and Preferences (`D03 T07 §17`) move here first, then workspace presets, the toolbar and options bar, menus, shortcuts, and command search, every preference page, interface appearance and language, pen and touch input, the presets manager and resource libraries, help and diagnostics, and the accessibility and localization audit (`D03 T07 §16`) over every parity surface. It ends with `imago-v1.0.0`, which declares the parity catalog complete.
+The last parity phase customizes and audits the whole surface once it exists: workspaces and Preferences (`D03 T07 §17`) move here first, then workspace presets, the toolbar and options bar, menus, shortcuts, and command search, every preference page, interface appearance and language, pen and touch input, the presets manager and resource libraries, help and diagnostics, the measured performance work (`D03 T07 §18` to `§20`: a benchmark harness with a budget gate, memory, SIMD hot paths, and cold start, promoted from the backlog by operator decision on 2026-09-27), and the accessibility and localization audit (`D03 T07 §16`) over every parity surface. It ends with `imago-v1.0.0`, which declares the parity catalog complete.
 
-|  ✔  | Section       | Deliverable                                                           | Items |
-| :-: | ------------- | --------------------------------------------------------------------- | :---: |
-| [ ] | `D03 T07 §17` | Workspaces, panels, and preferences                                   |   3   |
-| [ ] | `D03 T20 §1`  | Workspaces, panels, the Properties panel, and the Contextual Task Bar |  26   |
-| [ ] | `D03 T20 §2`  | The toolbar and the options bar                                       |  16   |
-| [ ] | `D03 T20 §3`  | Menus, shortcuts, and command search                                  |  15   |
-| [ ] | `D03 T20 §4`  | Preferences I: general, tools, cursors, units, guides, and type       |  23   |
-| [ ] | `D03 T20 §9`  | Interface appearance, language, and accessibility display preferences |  18   |
-| [ ] | `D03 T20 §5`  | Preferences II: files, performance, memory, and resources             |  17   |
-| [ ] | `D03 T20 §6`  | Pen, touch, and input devices                                         |  16   |
-| [ ] | `D03 T20 §7`  | The presets manager and resource libraries                            |  15   |
-| [ ] | `D03 T20 §8`  | Help, learning, and diagnostics                                       |  20   |
-| [ ] | `D03 T07 §16` | Accessibility and localization                                        |   4   |
-| [ ] | `D03 T21 §12` | Imago 1.0.0 (Phase 27): the parity catalog complete                   |  17   |
+|  ✔  | Section       | Deliverable                                                                       | Items |
+| :-: | ------------- | --------------------------------------------------------------------------------- | :---: |
+| [ ] | `D03 T07 §17` | Workspaces, panels, and preferences                                               |   3   |
+| [ ] | `D03 T20 §1`  | Workspaces, panels, the Properties panel, and the Contextual Task Bar             |  26   |
+| [ ] | `D03 T20 §2`  | The toolbar and the options bar                                                   |  16   |
+| [ ] | `D03 T20 §3`  | Menus, shortcuts, and command search                                              |  15   |
+| [ ] | `D03 T20 §4`  | Preferences I: general, tools, cursors, units, guides, and type                   |  23   |
+| [ ] | `D03 T20 §9`  | Interface appearance, language, and accessibility display preferences             |  18   |
+| [ ] | `D03 T20 §5`  | Preferences II: files, performance, memory, and resources                         |  17   |
+| [ ] | `D03 T20 §6`  | Pen, touch, and input devices                                                     |  16   |
+| [ ] | `D03 T20 §7`  | The presets manager and resource libraries                                        |  15   |
+| [ ] | `D03 T20 §8`  | Help, learning, and diagnostics                                                   |  20   |
+| [ ] | `D03 T07 §18` | Performance I: the benchmark harness and the Imago performance budget             |   9   |
+| [ ] | `D03 T07 §19` | Performance II: memory: tile cache, compression, history, and large-document open |  10   |
+| [ ] | `D03 T07 §20` | Performance III: SIMD hot paths, parallel compositing, and cold start             |  10   |
+| [ ] | `D03 T07 §16` | Accessibility and localization                                                    |   4   |
+| [ ] | `D03 T21 §12` | Imago 1.0.0 (Phase 27): the parity catalog complete                               |  18   |
 
 ### Phase 28 -- Lumen foundation: spine, catalog, import, RAW, library
 
@@ -822,13 +864,16 @@ With all three apps released, distribution catches up: signing (waiting on the o
 | [ ] | `D06 T02 §2` | README images from real captures    |   3   |
 | [ ] | `D06 T02 §3` | The user guides as a published site |   4   |
 
-### Phase 31 -- Imago after 0.1.0: RAW import through the shared decoder
+### Phase 31 -- Imago and Nodus after their releases: imports through shared decoders
 
-After the suite release, Imago opens camera RAW files through the decoder Lumen shares once it moves to `Photon.Core` (`D04 T01 §4`), developing them through the suite develop engine (`D01 T07 §1`) into Imago's Develop studio; until then the Camera Raw filter of Phase 23 works on open layers. Three of this phase's former rows moved into the Imago parity phases on 2026-09-26 without changing address: the filter catalog (`D03 T07 §3`) to Phase 21, and workspaces (`D03 T07 §17`) and the accessibility and localization audit (`D03 T07 §16`) to Phase 27. The legacy Imago roadmap's other entries were promoted into the parity phases or wait in [`backlog.md`](./backlog.md).
+After the suite release, Imago opens camera RAW files through the decoder Lumen shares once it moves to `Photon.Core` (`D04 T01 §4`), developing them through the suite develop engine (`D01 T07 §1`) into Imago's Develop studio; until then the Camera Raw filter of Phase 23 works on open layers. Three of this phase's former rows moved into the Imago parity phases on 2026-09-26 without changing address: the filter catalog (`D03 T07 §3`) to Phase 21, and workspaces (`D03 T07 §17`) and the accessibility and localization audit (`D03 T07 §16`) to Phase 27. The legacy Imago roadmap's other entries were promoted into the parity phases or wait in [`backlog.md`](./backlog.md). Nodus follows on the same shared code (operator decision 2026-09-27, "Group 1: plan them all"): GIMP XCF import on the XCF core it moves out of Imago's reader (`D02 T18 §9`) and camera RAW import with the RAW Lab on the moved decoder and the develop engine (`D02 T18 §10`), released as `nodus-v1.1.0` (`D02 T17 §11`); neither can run before Nodus 1.0.0 without copying another app's code, so they wait here rather than in a new phase.
 
-|  ✔  | Section       | Deliverable                           | Items |
-| :-: | ------------- | ------------------------------------- | :---: |
-| [ ] | `D03 T07 §11` | RAW import through the shared decoder |   4   |
+|  ✔  | Section       | Deliverable                                     | Items |
+| :-: | ------------- | ----------------------------------------------- | :---: |
+| [ ] | `D03 T07 §11` | RAW import through the shared decoder           |   4   |
+| [ ] | `D02 T18 §9`  | GIMP XCF import in Nodus on the shared XCF core |   9   |
+| [ ] | `D02 T18 §10` | Camera RAW import and the RAW Lab               |  13   |
+| [ ] | `D02 T17 §11` | Nodus 1.1.0 (Phase 31)                          |  13   |
 
 ### Phase 32 -- Lumen after 0.1.0: accessibility
 

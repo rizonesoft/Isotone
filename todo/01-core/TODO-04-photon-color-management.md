@@ -36,13 +36,13 @@ track: C4
 - -> XREF: D02 T13 §1 -- document color settings, profile UI, and Load Profile surface §1
 - -> XREF: D02 T13 §6 -- soft proofing and the gamut overlay consume §2's proof transform and gamut mask
 - -> XREF: D02 T13 §14 -- PDF output intents and DeviceN duotone images read §1 profiles and §3 specs
-- -> XREF: D02 T12 §1 -- Nodus bitmap objects, whose Lab, CMYK, and duotone mode commands wait for §3
+- -> XREF: D02 T12 §9 -- Nodus bitmap color modes, whose Lab, CMYK, and duotone mode commands wait for §3
 - -> XREF: D02 T14 §2 -- PDF import maps DeviceN duotone images into §3's `DuotoneSpec` and reads ICC-based spaces through §1
 - -> XREF: D03 T04 §2 -- Imago's embedded PNG and JPEG profiles are this engine's next consumer
 - -> XREF: D04 T02 §2 -- Lumen's output transform to sRGB, Display P3, and Adobe RGB is a later consumer
 - -> XREF: D01 T06 §1 -- the pixel engine extensions cites §1: the transfer curves the linear processing space converts through; §3: Lab and CMYK sources and the halftone GCR and UCR conversion
 - -> XREF: D01 T07 §1 -- the suite develop engine cites §1: input and output transforms; §2: rendering intents and black point compensation on the output transform
-- -> XREF: D03 T08 §1 -- Imago parity document and view cites §1: profile names and conversions for D03 T08 §1's profile tab and D03 T08 §11's readouts
+- -> XREF: D03 T08 §1 -- Imago parity document and view cites §1: profile names and conversions for D03 T08 §12's profile tab and D03 T08 §11's readouts
 - -> XREF: D03 T10 §4 -- Imago parity selection and channels cites §2: the `GamutMask` behind D03 T10 §4's Out of Gamut
 - -> XREF: D03 T11 §9 -- Imago parity adjustments and color cites §1: the conversions every mode, LUT, and ink readout goes through; §2: gamut checks and device links behind D03 T11 §9's warnings; §3: mode conversions and duotone, whose dialog D03 T11 §7 moves to `Photon.UI`
 - -> XREF: D03 T15 §1 -- Imago parity photo (Camera Raw and merges) cites §2: working-space and output transforms into and out of the develop space

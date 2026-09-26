@@ -2,16 +2,16 @@
 
 Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affinity Photo), and GIMP 3.2.6 feature, merged into Imago features, each with exactly one status. The sources are [`sources/photoshop-27.10.md`](sources/photoshop-27.10.md), [`sources/affinity-3.3.md`](sources/affinity-3.3.md), and [`sources/gimp-3.2.6.md`](sources/gimp-3.2.6.md); the status grammar and the update rules are in [`README.md`](README.md); the sections that own `plan` rows are designed in [`imago-section-design.md`](imago-section-design.md).
 
-**Totals (2026-09-26):** 2,367 features covering 3,176 Photoshop rows, 2,762 Affinity rows, and 4,891 GIMP rows (10,829 in all); every source id appears in exactly one row. GIMP's inventory lists one row per documented option, so its rows fold into features far more often than the other two.
+**Totals (2026-09-26, rows added 2026-09-27):** 2,385 features covering 3,176 Photoshop rows, 2,762 Affinity rows, and 4,891 GIMP rows (10,829 in all); every source id appears in exactly one row. The 18 rows IP-2368 to IP-2385 were added on 2026-09-27 for ACDSee Edit-mode capabilities that the Lumen catalog ([`lumen-parity.md`](lumen-parity.md)) routes to Imago and no Imago row covered; they carry no Photoshop, Affinity, or GIMP id. On 2026-09-27 the operator also directed the eight rows that pointed at B-012 and B-024, and the G'MIC row, into planned sections (`D03 T14 §11` to `§13` on the `D01 T09` plug-in host). GIMP's inventory lists one row per documented option, so its rows fold into features far more often than the other two.
 
 | Status | Features | Source rows |
 | ------ | -------: | ----------: |
-| `plan` | 1,997 | 9,541 |
+| `plan` | 2,024 | 9,558 |
 | `shipped-scope` | 204 | 762 |
-| `backlog` | 100 | 377 |
+| `backlog` | 92 | 361 |
 | `excluded` | 54 | 129 |
-| `other-app` | 12 | 20 |
-| **Total** | **2,367** | **10,829** |
+| `other-app` | 11 | 19 |
+| **Total** | **2,385** | **10,829** |
 
 ## Areas
 
@@ -23,28 +23,28 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 - [Layer styles, smart objects, comps, and artboards](#layer-styles-smart-objects-comps-and-artboards) (89)
 - [Selection](#selection) (98)
 - [Channels and quick mask](#channels-and-quick-mask) (19)
-- [Adjustments](#adjustments) (108)
+- [Adjustments](#adjustments) (111)
 - [Image modes and color](#image-modes-and-color) (22)
 - [Color panels, swatches, and palettes](#color-panels-swatches-and-palettes) (42)
 - [Brushes and painting](#brushes-and-painting) (109)
 - [Fill, gradients, and patterns](#fill-gradients-and-patterns) (54)
 - [Retouching](#retouching) (37)
 - [Transform, warp, and liquify](#transform-warp-and-liquify) (60)
-- [Filter framework](#filter-framework) (38)
+- [Filter framework](#filter-framework) (39)
 - [Blur, sharpen, and noise filters](#blur-sharpen-and-noise-filters) (72)
-- [Distort, map, and pixelate filters](#distort-map-and-pixelate-filters) (84)
-- [Render, light, and shadow filters](#render-light-and-shadow-filters) (64)
-- [Artistic, stylize, edge, and generic filters](#artistic-stylize-edge-and-generic-filters) (145)
+- [Distort, map, and pixelate filters](#distort-map-and-pixelate-filters) (87)
+- [Render, light, and shadow filters](#render-light-and-shadow-filters) (66)
+- [Artistic, stylize, edge, and generic filters](#artistic-stylize-edge-and-generic-filters) (148)
 - [Develop and tone mapping](#develop-and-tone-mapping) (108)
 - [HDR, panorama, stacks, and astrophotography](#hdr-panorama-stacks-and-astrophotography) (74)
-- [Type](#type) (55)
+- [Type](#type) (56)
 - [Paths, shapes, and vectors](#paths-shapes-and-vectors) (67)
-- [File menu and formats](#file-menu-and-formats) (156)
+- [File menu and formats](#file-menu-and-formats) (157)
 - [Metadata](#metadata) (21)
 - [Export and web](#export-and-web) (50)
 - [Color management](#color-management) (38)
 - [Print](#print) (21)
-- [AI](#ai) (124)
+- [AI](#ai) (128)
 - [Workspace and UI](#workspace-and-ui) (49)
 - [Preferences](#preferences) (71)
 - [Help and learning](#help-and-learning) (16)
@@ -58,14 +58,14 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 
 | ID | Feature | Photoshop | Affinity | GIMP | Category | Status | Notes |
 | -- | ------- | --------- | -------- | ---- | -------- | ------ | ----- |
-| IP-0001 | Image properties: precision readout | -- | -- | GP-1113 | core | plan D03 T08 §1 |  |
-| IP-0002 | Transparent background at creation and as a toggle command | -- | AF-2231, AF-2232 | -- | core | plan D03 T08 §1 | extends D03 T03 §1 (new document background transparent) |
-| IP-0003 | Duplicate image, optionally merged layers only | PS-A-1200 | -- | GP-1090 | core | plan D03 T08 §1 |  |
-| IP-0004 | Document setup after creation: units, DPI, dimensions with rescale or anchor | -- | AF-2325, AF-2326, AF-2327 | -- | core | plan D03 T08 §1 | Imago Document Properties dialog |
-| IP-0005 | Image properties dialog: size, resolution, color space, file, memory, undo and element counts | -- | -- | GP-1105, GP-1106, GP-1109, GP-1111, GP-1112, GP-1114, GP-1115, GP-1116, GP-1117, GP-1118, GP-1119, GP-1120, GP-1121, GP-1122, GP-1123 | core | plan D03 T08 §1 |  |
-| IP-0006 | Pixel aspect ratio and aspect-corrected preview | PS-A-1711, PS-A-1712 | -- | -- | video | plan D03 T08 §1 |  |
-| IP-0007 | Image properties: color profile and print size tabs | -- | -- | GP-1107, GP-1110 | core | plan D03 T08 §1 | Profile readout from D03 T18 §4 |
-| IP-0008 | Pixel aspect ratio correction view | PS-B-0840 | -- | -- | video | plan D03 T08 §1 |  |
+| IP-0001 | Image properties: precision readout | -- | -- | GP-1113 | core | plan D03 T08 §12 |  |
+| IP-0002 | Transparent background at creation and as a toggle command | -- | AF-2231, AF-2232 | -- | core | plan D03 T08 §12 | extends D03 T03 §1 (new document background transparent) |
+| IP-0003 | Duplicate image, optionally merged layers only | PS-A-1200 | -- | GP-1090 | core | plan D03 T08 §12 |  |
+| IP-0004 | Document setup after creation: units, DPI, dimensions with rescale or anchor | -- | AF-2325, AF-2326, AF-2327 | -- | core | plan D03 T08 §12 | Imago Document Properties dialog |
+| IP-0005 | Image properties dialog: size, resolution, color space, file, memory, undo and element counts | -- | -- | GP-1105, GP-1106, GP-1109, GP-1111, GP-1112, GP-1114, GP-1115, GP-1116, GP-1117, GP-1118, GP-1119, GP-1120, GP-1121, GP-1122, GP-1123 | core | plan D03 T08 §12 |  |
+| IP-0006 | Pixel aspect ratio and aspect-corrected preview | PS-A-1711, PS-A-1712 | -- | -- | video | plan D03 T08 §12 |  |
+| IP-0007 | Image properties: color profile and print size tabs | -- | -- | GP-1107, GP-1110 | core | plan D03 T08 §12 | Profile readout from D03 T18 §4 |
+| IP-0008 | Pixel aspect ratio correction view | PS-B-0840 | -- | -- | video | plan D03 T08 §12 |  |
 | IP-0009 | New document presets: saved presets, categories, favorites, orientation, new from last preset | -- | AF-2311, AF-2312, AF-2321, AF-2322 | -- | core | plan D03 T08 §2 | extends D03 T03 §1 |
 | IP-0010 | New document from clipboard (paste as new image) | -- | AF-2323 | GP-0892 | core | plan D03 T08 §2 |  |
 | IP-0011 | New document bleed setting | -- | AF-2318 | -- | print | plan D03 T08 §2 | Print bleed used by D03 T18 §6 |
@@ -90,13 +90,13 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | -- | ------- | --------- | -------- | ---- | -------- | ------ | ----- |
 | IP-0026 | Zoom commands: zoom in and out, fit, fill, 100, 200 percent and preset levels | PS-A-1714, PS-A-1715, PS-A-1716, PS-A-1718, PS-A-1719, PS-A-0482, PS-A-0497 | AF-0379, AF-0380, AF-2399 | GP-0221, GP-1068, GP-1070, GP-1071, GP-1072, GP-1073, GP-1075 | core | plan D03 T08 §3 |  |
 | IP-0027 | Zoom to selection, revert zoom, typed and custom zoom factor | PS-A-1748 | -- | GP-1069, GP-1074, GP-1076 | core | plan D03 T08 §3 |  |
-| IP-0028 | Scroll wheel zoom and zoom clicked point to center | PS-A-0495, PS-A-0496 | -- | GP-0223 | core | plan D03 T08 §3 |  |
-| IP-0029 | Scrubby, animated, and temporary Z-key zoom | PS-A-0493, PS-A-0494 | AF-2397, AF-2398 | -- | core | plan D03 T08 §3 |  |
-| IP-0030 | Resize windows to fit when zooming | PS-A-0491 | -- | GP-0224 | core | plan D03 T08 §3 |  |
-| IP-0031 | Scroll, zoom, and rotate all windows together | PS-A-0481, PS-A-0492, PS-A-0488 | -- | -- | core | plan D03 T08 §3 |  |
-| IP-0032 | Birds-eye view | PS-A-0483 | -- | -- | core | plan D03 T08 §3 |  |
-| IP-0033 | Flick panning | PS-A-0484 | -- | -- | core | plan D03 T08 §3 |  |
-| IP-0034 | Print size, actual size, and dot for dot views | PS-A-1720, PS-A-1721 | AF-2320 | GP-1027 | print | plan D03 T08 §3 |  |
+| IP-0028 | Scroll wheel zoom and zoom clicked point to center | PS-A-0495, PS-A-0496 | -- | GP-0223 | core | plan D03 T08 §13 |  |
+| IP-0029 | Scrubby, animated, and temporary Z-key zoom | PS-A-0493, PS-A-0494 | AF-2397, AF-2398 | -- | core | plan D03 T08 §13 |  |
+| IP-0030 | Resize windows to fit when zooming | PS-A-0491 | -- | GP-0224 | core | plan D03 T08 §13 |  |
+| IP-0031 | Scroll, zoom, and rotate all windows together | PS-A-0481, PS-A-0492, PS-A-0488 | -- | -- | core | plan D03 T08 §13 |  |
+| IP-0032 | Birds-eye view | PS-A-0483 | -- | -- | core | plan D03 T08 §13 |  |
+| IP-0033 | Flick panning | PS-A-0484 | -- | -- | core | plan D03 T08 §13 |  |
+| IP-0034 | Print size, actual size, and dot for dot views | PS-A-1720, PS-A-1721 | AF-2320 | GP-1027 | print | plan D03 T08 §13 |  |
 | IP-0035 | Rotate view tool, rotation angle, 15 degree steps, reset, wheel rotation | PS-A-0485, PS-A-0486, PS-A-0487, PS-A-0489 | AF-2402, AF-2403, AF-2404 | GP-1028, GP-1029, GP-1031, GP-1032, GP-1033, GP-1034, GP-1035, GP-1036 | core | plan D03 T08 §3 |  |
 | IP-0036 | Flip view horizontally and vertically | PS-A-1722 | -- | GP-1030 | core | plan D03 T08 §3 |  |
 | IP-0037 | Screen modes and full screen | PS-A-1724 | -- | GP-1037 | core | plan D03 T08 §3 |  |
@@ -108,12 +108,12 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-0043 | Show layer edges and canvas boundary | PS-A-1726 | -- | GP-1051, GP-1054 | core | plan D03 T08 §3 |  |
 | IP-0044 | Pixel grid at high zoom | PS-A-1699, PS-A-1734 | AF-2382 | -- | core | plan D03 T08 §3 |  |
 | IP-0045 | Show layer edges | PS-A-0803 | -- | -- | core | plan D03 T08 §3 |  |
-| IP-0046 | Rotate document view | -- | AF-0778 | -- | core | plan D03 T08 §3 |  |
+| IP-0046 | Rotate document view | -- | AF-0778 | -- | core | plan D03 T08 §13 |  |
 | IP-0047 | Screen modes: standard, full screen with menu bar, full screen, F cycles | PS-A-0016, PS-B-1371 | -- | -- | core | plan D03 T08 §3 |  |
-| IP-0048 | Canvas navigation preferences: scroll wheel zoom, scrubby and animated zoom, drag-to-zoom speed, zoom to clicked point, space bar pan or move | PS-B-1234, PS-B-1235, PS-B-1236 | AF-2705, AF-2706 | GP-4133, GP-4134, GP-4135, GP-4136 | core | plan D03 T08 §3 |  |
-| IP-0049 | Rotate view with trackpad or modifier scroll, flick panning, overscroll | PS-B-1230, PS-B-1231, PS-B-1381 | AF-2708 | -- | core | plan D03 T08 §3 |  |
-| IP-0050 | Image window preferences: show all, dot for dot, resize window on zoom or image change, initial zoom ratio, limit initial zoom to 100 percent | PS-B-1237 | AF-2647 | GP-4185, GP-4188, GP-4190, GP-4191, GP-4193, GP-4194, GP-4195 | core | plan D03 T08 §3 |  |
-| IP-0051 | Monitor resolution for print-size view: detect, enter manually, calibrate | -- | -- | GP-4164, GP-4165, GP-4166 | core | plan D03 T08 §3 |  |
+| IP-0048 | Canvas navigation preferences: scroll wheel zoom, scrubby and animated zoom, drag-to-zoom speed, zoom to clicked point, space bar pan or move | PS-B-1234, PS-B-1235, PS-B-1236 | AF-2705, AF-2706 | GP-4133, GP-4134, GP-4135, GP-4136 | core | plan D03 T08 §13 |  |
+| IP-0049 | Rotate view with trackpad or modifier scroll, flick panning, overscroll | PS-B-1230, PS-B-1231, PS-B-1381 | AF-2708 | -- | core | plan D03 T08 §13 |  |
+| IP-0050 | Image window preferences: show all, dot for dot, resize window on zoom or image change, initial zoom ratio, limit initial zoom to 100 percent | PS-B-1237 | AF-2647 | GP-4185, GP-4188, GP-4190, GP-4191, GP-4193, GP-4194, GP-4195 | core | plan D03 T08 §13 |  |
+| IP-0051 | Monitor resolution for print-size view: detect, enter manually, calibrate | -- | -- | GP-4164, GP-4165, GP-4166 | core | plan D03 T08 §13 |  |
 | IP-0052 | New window for the same document | PS-A-1744 | AF-2389 | GP-1040 | core | plan D03 T08 §10 |  |
 | IP-0053 | Arrange windows: tile, consolidate, float, match zoom, location, rotation | PS-A-1743, PS-A-1745 | -- | -- | core | plan D03 T08 §10 |  |
 | IP-0054 | Shrink wrap and center image in window | -- | -- | GP-1048, GP-1061, GP-3918 | core | plan D03 T08 §10 |  |
@@ -142,20 +142,20 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-0077 | Lock guides | PS-A-1685 | AF-2387 | -- | core | plan D03 T08 §4 |  |
 | IP-0078 | Clear guides | PS-A-1686 | -- | GP-1266 | core | plan D03 T08 §4 |  |
 | IP-0079 | Off-canvas guides | -- | -- | GP-0022 | core | plan D03 T08 §4 |  |
-| IP-0080 | Show grid and guides toggles | PS-A-1689, PS-A-1690, PS-A-1729 | AF-2379 | GP-1052, GP-1053 | core | plan D03 T08 §4 |  |
-| IP-0081 | Grid configuration: spacing, divisions, line style, colors | -- | AF-2380 | GP-1077, GP-1078, GP-1079, GP-1080, GP-1081, GP-1082, GP-1083, GP-1084, GP-1085, GP-1086 | core | plan D03 T08 §4 |  |
-| IP-0082 | Angular and non-uniform axis grids | -- | AF-2381 | -- | core | plan D03 T08 §4 |  |
-| IP-0083 | Smart guides with alignment and distance labels | PS-A-1691, PS-A-1692, PS-A-1731 | AF-2377 | -- | core | plan D03 T08 §4 |  |
-| IP-0084 | Snapping toggle and snap to all or none | PS-A-1700, PS-A-1706 | AF-2364 | -- | core | plan D03 T08 §4 |  |
-| IP-0085 | Snap to guides, grid, layers, bounding boxes, canvas edges, margins; crop and selection snapping | PS-A-1701, PS-A-1702, PS-A-1703, PS-A-1705 | AF-2371, AF-2372, AF-2378 | GP-1062, GP-1063, GP-1065, GP-1066 | core | plan D03 T08 §4 |  |
-| IP-0086 | Snap to equidistance, gaps, and sizes | -- | AF-2373 | GP-1064 | core | plan D03 T08 §4 |  |
-| IP-0087 | Snap to paths and shape key points | -- | AF-2374 | GP-1067 | core | plan D03 T08 §4 |  |
-| IP-0088 | Force pixel alignment and move by whole pixels | PS-A-1707 | AF-2369, AF-2370 | -- | core | plan D03 T08 §4 |  |
-| IP-0089 | Snapping options: tolerance, presets, candidates, visible only, pixel selection bounds | -- | AF-2365, AF-2366, AF-2367, AF-2368, AF-2375, AF-2376 | -- | core | plan D03 T08 §4 |  |
-| IP-0090 | Smart guide distance readout | PS-A-0054 | -- | -- | core | plan D03 T08 §4 |  |
-| IP-0091 | Exclude layer from snapping | -- | AF-0934 | -- | core | plan D03 T08 §4 |  |
-| IP-0092 | Snapping toggle shortcut and force pixel alignment and snap vectors and transforms to pixel grid | PS-B-1238 | AF-0030, AF-2751 | -- | core | plan D03 T08 §4 |  |
-| IP-0093 | Default snapping behavior preferences | -- | -- | GP-4186 | core | plan D03 T08 §4 |  |
+| IP-0080 | Show grid and guides toggles | PS-A-1689, PS-A-1690, PS-A-1729 | AF-2379 | GP-1052, GP-1053 | core | plan D03 T08 §14 |  |
+| IP-0081 | Grid configuration: spacing, divisions, line style, colors | -- | AF-2380 | GP-1077, GP-1078, GP-1079, GP-1080, GP-1081, GP-1082, GP-1083, GP-1084, GP-1085, GP-1086 | core | plan D03 T08 §14 |  |
+| IP-0082 | Angular and non-uniform axis grids | -- | AF-2381 | -- | core | plan D03 T08 §14 |  |
+| IP-0083 | Smart guides with alignment and distance labels | PS-A-1691, PS-A-1692, PS-A-1731 | AF-2377 | -- | core | plan D03 T08 §14 |  |
+| IP-0084 | Snapping toggle and snap to all or none | PS-A-1700, PS-A-1706 | AF-2364 | -- | core | plan D03 T08 §14 |  |
+| IP-0085 | Snap to guides, grid, layers, bounding boxes, canvas edges, margins; crop and selection snapping | PS-A-1701, PS-A-1702, PS-A-1703, PS-A-1705 | AF-2371, AF-2372, AF-2378 | GP-1062, GP-1063, GP-1065, GP-1066 | core | plan D03 T08 §14 |  |
+| IP-0086 | Snap to equidistance, gaps, and sizes | -- | AF-2373 | GP-1064 | core | plan D03 T08 §14 |  |
+| IP-0087 | Snap to paths and shape key points | -- | AF-2374 | GP-1067 | core | plan D03 T08 §14 |  |
+| IP-0088 | Force pixel alignment and move by whole pixels | PS-A-1707 | AF-2369, AF-2370 | -- | core | plan D03 T08 §14 |  |
+| IP-0089 | Snapping options: tolerance, presets, candidates, visible only, pixel selection bounds | -- | AF-2365, AF-2366, AF-2367, AF-2368, AF-2375, AF-2376 | -- | core | plan D03 T08 §14 |  |
+| IP-0090 | Smart guide distance readout | PS-A-0054 | -- | -- | core | plan D03 T08 §14 |  |
+| IP-0091 | Exclude layer from snapping | -- | AF-0934 | -- | core | plan D03 T08 §14 |  |
+| IP-0092 | Snapping toggle shortcut and force pixel alignment and snap vectors and transforms to pixel grid | PS-B-1238 | AF-0030, AF-2751 | -- | core | plan D03 T08 §14 |  |
+| IP-0093 | Default snapping behavior preferences | -- | -- | GP-4186 | core | plan D03 T08 §14 |  |
 | IP-0094 | Protractor angle measurement (Alt-drag from ruler endpoint) | PS-A-0199 | -- | -- | core | plan D03 T08 §5 |  |
 | IP-0095 | Measure tool: distance and angle readout, modifiers, info window | PS-A-0194, PS-A-0195, PS-A-0198 | AF-0397, AF-2423 | GP-0139, GP-0140, GP-0142, GP-0143, GP-0144, GP-0145, GP-0147 | core | plan D03 T08 §5 |  |
 | IP-0096 | Area measurement of objects and selections | -- | AF-2424 | GP-0141 | core | plan D03 T08 §5 |  |
@@ -688,23 +688,23 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-0588 | Levels and Curves in any color model (RGB, gray, CMYK, Lab) and alpha channel | -- | AF-1105, AF-1164, AF-1165, AF-1199, AF-1200 | GP-1696 | core | plan D03 T11 §2 | extends D03 T05 §2 |
 | IP-0589 | Levels and Curves working space (linear, non-linear, perceptual) and linear or log histogram | -- | -- | GP-1698, GP-1699, GP-1700, GP-1701, GP-1702, GP-1722, GP-1723, GP-1724, GP-1725, GP-1726 | core | plan D03 T11 §2 | extends D03 T05 §2 |
 | IP-0590 | Black, gray, and white point eyedroppers and pick points from image in Levels and Curves | PS-A-1003, PS-A-1016, PS-A-1027 | AF-1377 | GP-1731, GP-1732 | core | plan D03 T11 §2 | extends D03 T05 §2; sample average and sample merged |
-| IP-0591 | Auto color correction options: algorithms, snap neutral midtones, target colors and clipping | PS-A-1005, PS-A-1006, PS-A-1007, PS-A-1024 | -- | -- | core | plan D03 T11 §2 | Engine D01 T03 §4 auto adjust |
+| IP-0591 | Auto color correction options: algorithms, snap neutral midtones, target colors and clipping | PS-A-1005, PS-A-1006, PS-A-1007, PS-A-1024 | -- | -- | core | plan D03 T11 §11 | Engine D01 T03 §4 auto adjust |
 | IP-0592 | Clipping display while dragging Levels and Curves endpoints | PS-A-1008, PS-A-1017 | AF-1207 | -- | core | plan D03 T11 §2 |  |
 | IP-0593 | Curves pencil and freehand modes with smoothing, smooth or corner point types | PS-A-1013, PS-A-1014 | -- | GP-1706, GP-1707, GP-1708, GP-1709 | core | plan D03 T11 §2 | extends D03 T05 §2 |
 | IP-0594 | Curve display options: light or pigment, grid size, channel overlays, baseline, intersection line | PS-A-1018, PS-A-1019, PS-A-1020, PS-A-1022, PS-A-1023 | -- | -- | core | plan D03 T11 §2 | extends D03 T05 §2 |
 | IP-0595 | Curves input range min and max for HDR values | -- | AF-1172, AF-1173 | -- | core | plan D03 T11 §2 | extends D03 T05 §2; 32-bit documents D03 T15 §4 |
-| IP-0596 | Exposure: exposure, offset, gamma, black level, eyedroppers | PS-A-1028, PS-A-1029, PS-A-1030, PS-A-1031, PS-A-1032 | AF-1175, AF-1176 | GP-1611, GP-1612, GP-1613, GP-3390 | core | plan D03 T11 §2 | Engine D01 T03 §4 |
-| IP-0597 | Shadows/Highlights: amount, tone, radius, color, midtone, clipping, white point, compress | PS-A-1101, PS-A-1102, PS-A-1103, PS-A-1104, PS-A-1105, PS-A-1106, PS-A-1107 | AF-1274, AF-1275, AF-1276 | GP-1652, GP-1653, GP-1654, GP-1655, GP-1656, GP-1657, GP-1658, GP-1659, GP-1660, GP-1661, GP-1662, GP-3466, GP-3467 | core | plan D03 T11 §2 | Includes the Affinity Photo 2 only adjustment layer |
-| IP-0598 | Equalize with selection options | PS-A-1130, PS-A-1131 | -- | GP-1672 | core | plan D03 T11 §2 | Engine D01 T03 §4 |
-| IP-0599 | Auto Tone, Auto Contrast, Auto Color, and auto levels commands | PS-A-1132, PS-A-1133, PS-A-1134 | AF-1135, AF-1136, AF-1137, AF-0027 | -- | core | plan D03 T11 §2 | Engine D01 T03 §4 auto adjust |
-| IP-0600 | Auto white balance | -- | AF-1138 | GP-1673 | core | plan D03 T11 §2 | Engine D01 T03 §4 white balance |
-| IP-0601 | Stretch contrast and stretch contrast HSV | -- | -- | GP-1668, GP-1669, GP-1670, GP-1671, GP-3479, GP-3480 | core | plan D03 T11 §2 |  |
-| IP-0602 | Retinex: uniform, low, high levels, scale, divisions, dynamic | -- | -- | GP-1775, GP-1776, GP-1777, GP-1778, GP-1779, GP-1780, GP-1781, GP-1782 | core | plan D03 T11 §2 |  |
-| IP-0603 | Contrast curve for grayscale images | -- | -- | GP-3370 | core | plan D03 T11 §2 | gegl:contrast-curve |
+| IP-0596 | Exposure: exposure, offset, gamma, black level, eyedroppers | PS-A-1028, PS-A-1029, PS-A-1030, PS-A-1031, PS-A-1032 | AF-1175, AF-1176 | GP-1611, GP-1612, GP-1613, GP-3390 | core | plan D03 T11 §11 | Engine D01 T03 §4 |
+| IP-0597 | Shadows/Highlights: amount, tone, radius, color, midtone, clipping, white point, compress | PS-A-1101, PS-A-1102, PS-A-1103, PS-A-1104, PS-A-1105, PS-A-1106, PS-A-1107 | AF-1274, AF-1275, AF-1276 | GP-1652, GP-1653, GP-1654, GP-1655, GP-1656, GP-1657, GP-1658, GP-1659, GP-1660, GP-1661, GP-1662, GP-3466, GP-3467 | core | plan D03 T11 §11 | Includes the Affinity Photo 2 only adjustment layer |
+| IP-0598 | Equalize with selection options | PS-A-1130, PS-A-1131 | -- | GP-1672 | core | plan D03 T11 §11 | Engine D01 T03 §4 |
+| IP-0599 | Auto Tone, Auto Contrast, Auto Color, and auto levels commands | PS-A-1132, PS-A-1133, PS-A-1134 | AF-1135, AF-1136, AF-1137, AF-0027 | -- | core | plan D03 T11 §11 | Engine D01 T03 §4 auto adjust |
+| IP-0600 | Auto white balance | -- | AF-1138 | GP-1673 | core | plan D03 T11 §11 | Engine D01 T03 §4 white balance |
+| IP-0601 | Stretch contrast and stretch contrast HSV | -- | -- | GP-1668, GP-1669, GP-1670, GP-1671, GP-3479, GP-3480 | core | plan D03 T11 §11 |  |
+| IP-0602 | Retinex: uniform, low, high levels, scale, divisions, dynamic | -- | -- | GP-1775, GP-1776, GP-1777, GP-1778, GP-1779, GP-1780, GP-1781, GP-1782 | core | plan D03 T11 §11 |  |
+| IP-0603 | Contrast curve for grayscale images | -- | -- | GP-3370 | core | plan D03 T11 §11 | gegl:contrast-curve |
 | IP-0604 | Clarity and dehaze adjustment layer | PS-A-1041, PS-A-1042, PS-A-1043 | -- | -- | core | plan D01 T07 §2 | exposed as an adjustment layer through the D03 T11 §1 framework |
-| IP-0605 | Auto levels, auto contrast, and auto colors filters | -- | AF-1709, AF-1710, AF-1711 | -- | core | plan D03 T11 §2 |  |
-| IP-0606 | Auto white balance filter | -- | AF-1712 | -- | core | plan D03 T11 §2 |  |
-| IP-0607 | Shadows and highlights filter with default and 1.6 algorithms | -- | AF-1827, AF-1828, AF-1829, AF-1830, AF-1831, AF-1832, AF-1833, AF-1834 | -- | core | plan D03 T11 §2 | Live filter version via D03 T14 §1 |
+| IP-0605 | Auto levels, auto contrast, and auto colors filters | -- | AF-1709, AF-1710, AF-1711 | -- | core | plan D03 T11 §11 |  |
+| IP-0606 | Auto white balance filter | -- | AF-1712 | -- | core | plan D03 T11 §11 |  |
+| IP-0607 | Shadows and highlights filter with default and 1.6 algorithms | -- | AF-1827, AF-1828, AF-1829, AF-1830, AF-1831, AF-1832, AF-1833, AF-1834 | -- | core | plan D03 T11 §11 | Live filter version via D03 T14 §1 |
 | IP-0608 | Hue/Saturation range extensions: range sliders, range eyedroppers, overlap, HSV mode, hue wheel nodes | PS-A-1054, PS-A-1055 | AF-1186, AF-1188, AF-1189 | GP-1712 | core | plan D03 T11 §3 | extends D03 T05 §2 |
 | IP-0609 | Saturation and hue curves (hue versus saturation, hue, luma) | -- | AF-1375, AF-1376 | -- | core | plan D03 T11 §3 |  |
 | IP-0610 | Color balance: shadows, midtones, highlights, preserve luminosity | PS-A-1058, PS-A-1059, PS-A-1060, PS-A-1061 | AF-1157, AF-1158, AF-1159, AF-1160, AF-1161, AF-1162 | GP-1678, GP-1679, GP-1680, GP-1681, GP-1682 | core | plan D03 T11 §3 | Engine D01 T03 §5 |
@@ -743,22 +743,22 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-0643 | Value invert | -- | -- | GP-1625, GP-3496 | core | plan D03 T11 §5 |  |
 | IP-0644 | Desaturate with modes (luminance, luma, lightness, average, value) | PS-A-1117 | -- | GP-1586, GP-1587, GP-1588, GP-1589, GP-1590, GP-1591, GP-3399 | core | plan D03 T11 §5 | Engine D01 T03 §5 desaturate |
 | IP-0645 | Color to alpha with transparency and opacity thresholds | -- | -- | GP-1578, GP-1579, GP-1580, GP-1581, GP-3367 | core | plan D03 T11 §5 |  |
-| IP-0646 | Color exchange with per-channel thresholds | -- | -- | GP-1558, GP-1559, GP-1560, GP-1561, GP-1562, GP-1563, GP-3363 | core | plan D03 T11 §5 |  |
-| IP-0647 | Rotate colors: source and destination hue ranges, gray handling | -- | -- | GP-1564, GP-1565, GP-1566, GP-1567, GP-1568, GP-1569, GP-1570, GP-1571, GP-1572, GP-1573, GP-1574, GP-3365 | core | plan D03 T11 §5 |  |
+| IP-0646 | Color exchange with per-channel thresholds | -- | -- | GP-1558, GP-1559, GP-1560, GP-1561, GP-1562, GP-1563, GP-3363 | core | plan D03 T11 §12 |  |
+| IP-0647 | Rotate colors: source and destination hue ranges, gray handling | -- | -- | GP-1564, GP-1565, GP-1566, GP-1567, GP-1568, GP-1569, GP-1570, GP-1571, GP-1572, GP-1573, GP-1574, GP-3365 | core | plan D03 T11 §12 |  |
 | IP-0648 | Colorize: hue, saturation, lightness, color | -- | -- | GP-1683, GP-1684, GP-1685, GP-1686, GP-1687 | core | plan D03 T11 §5 | Engine D01 T03 §11 colorize |
-| IP-0649 | Color to gray (c2g): radius, samples, iterations, enhance shadows | -- | -- | GP-1547, GP-1548, GP-1549, GP-1550, GP-1551, GP-3356 | core | plan D03 T11 §5 |  |
-| IP-0650 | Mono mixer with preserve luminosity | -- | -- | GP-1514, GP-1630, GP-1631, GP-1632, GP-1633, GP-1634, GP-3426 | core | plan D03 T11 §5 |  |
-| IP-0651 | Dither: per-channel levels, Floyd-Steinberg, Bayer, random, arithmetic, blue noise, seed | -- | -- | GP-1592, GP-1593, GP-1594, GP-1595, GP-1596, GP-1597, GP-1598, GP-1599, GP-1600, GP-1601, GP-1602, GP-1603, GP-1604, GP-1605, GP-1606, GP-1607, GP-1608, GP-1609, GP-1610, GP-3379 | core | plan D03 T11 §5 | Engine D01 T03 §3 dithering |
-| IP-0652 | Extract component with invert and linear output | -- | -- | GP-1582, GP-1583, GP-1584, GP-1585, GP-3369 | core | plan D03 T11 §5 |  |
-| IP-0653 | RGB clip: low and high limits | -- | -- | GP-1641, GP-1642, GP-1643, GP-1644, GP-1645, GP-3460 | core | plan D03 T11 §5 |  |
-| IP-0654 | Hot: PAL or NTSC safe colors, reduce luminance or saturation, blacken | -- | -- | GP-1766, GP-1767, GP-1768, GP-1769, GP-1770, GP-1771, GP-1772 | core | plan D03 T11 §5 |  |
+| IP-0649 | Color to gray (c2g): radius, samples, iterations, enhance shadows | -- | -- | GP-1547, GP-1548, GP-1549, GP-1550, GP-1551, GP-3356 | core | plan D03 T11 §12 |  |
+| IP-0650 | Mono mixer with preserve luminosity | -- | -- | GP-1514, GP-1630, GP-1631, GP-1632, GP-1633, GP-1634, GP-3426 | core | plan D03 T11 §12 |  |
+| IP-0651 | Dither: per-channel levels, Floyd-Steinberg, Bayer, random, arithmetic, blue noise, seed | -- | -- | GP-1592, GP-1593, GP-1594, GP-1595, GP-1596, GP-1597, GP-1598, GP-1599, GP-1600, GP-1601, GP-1602, GP-1603, GP-1604, GP-1605, GP-1606, GP-1607, GP-1608, GP-1609, GP-1610, GP-3379 | core | plan D03 T11 §12 | Engine D01 T03 §3 dithering |
+| IP-0652 | Extract component with invert and linear output | -- | -- | GP-1582, GP-1583, GP-1584, GP-1585, GP-3369 | core | plan D03 T11 §12 |  |
+| IP-0653 | RGB clip: low and high limits | -- | -- | GP-1641, GP-1642, GP-1643, GP-1644, GP-1645, GP-3460 | core | plan D03 T11 §12 |  |
+| IP-0654 | Hot: PAL or NTSC safe colors, reduce luminance or saturation, blacken | -- | -- | GP-1766, GP-1767, GP-1768, GP-1769, GP-1770, GP-1771, GP-1772 | core | plan D03 T11 §12 |  |
 | IP-0655 | Sepia: strength, sRGB | -- | -- | GP-1649, GP-1650, GP-1651, GP-3465 | core | plan D03 T11 §5 | Engine D01 T03 §11 sepia toning |
 | IP-0656 | Alien map: RGB or HSL frequencies, phase shifts, keep components | -- | -- | GP-1527, GP-1528, GP-1529, GP-1530, GP-1531, GP-1532, GP-1533, GP-1534, GP-1535, GP-1536, GP-1537, GP-1538, GP-1539, GP-1540, GP-1541, GP-1542, GP-1543, GP-1544, GP-1545, GP-1546, GP-3345 | core | plan D01 T06 §13 | Imago menu and dialog: D03 T14 §2 |
-| IP-0657 | Palette map: recolor from the active palette by value | -- | -- | GP-1773 | core | plan D03 T11 §5 |  |
+| IP-0657 | Palette map: recolor from the active palette by value | -- | -- | GP-1773 | core | plan D03 T11 §12 |  |
 | IP-0658 | Matte look filter and live filter | -- | AF-1604, AF-1605 | -- | core | plan D03 T11 §5 | Lifted blacks, faded contrast |
 | IP-0659 | Erase white paper (white to transparency) | -- | AF-1732 | -- | core | plan D03 T11 §5 | Color to alpha preset |
-| IP-0660 | Monochrome dither and web-safe dither filters | -- | AF-1745, AF-1765 | -- | core | plan D03 T11 §5 | Engine D01 T03 §3 |
-| IP-0661 | Negative darkroom (film negative enlargement simulation) | -- | -- | GP-3432 | core | plan D03 T11 §5 | Invert variant with film and paper response |
+| IP-0660 | Monochrome dither and web-safe dither filters | -- | AF-1745, AF-1765 | -- | core | plan D03 T11 §12 | Engine D01 T03 §3 |
+| IP-0661 | Negative darkroom (film negative enlargement simulation) | -- | -- | GP-3432 | core | plan D03 T11 §12 | Invert variant with film and paper response |
 | IP-0662 | Threshold alpha | -- | -- | GP-1311, GP-1312 | core | plan D03 T11 §5 |  |
 | IP-0663 | Semi-flatten | -- | -- | GP-1319 | core | plan D03 T11 §5 |  |
 | IP-0664 | Color to alpha | -- | -- | GP-1323 | core | plan D03 T11 §5 |  |
@@ -770,6 +770,9 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-0670 | Levels: per channel input and output, gamma, histogram, auto | PS-A-0998, PS-A-0999, PS-A-1000, PS-A-1001, PS-A-1002, PS-A-1004 | AF-1198, AF-1201, AF-1202, AF-1203, AF-1204, AF-1205, AF-1206 | GP-1718, GP-1719, GP-1720, GP-1721, GP-1727, GP-1728, GP-1729, GP-3411 | core | shipped-scope D03 T05 §2 |  |
 | IP-0671 | Curves: per channel point curves, numeric input and output, histogram, delete and nudge points | PS-A-1010, PS-A-1011, PS-A-1012, PS-A-1015, PS-A-1021, PS-A-1026 | AF-1163, AF-1166, AF-1167, AF-1168, AF-1170, AF-1171, AF-1174 | GP-1688, GP-1689, GP-1690, GP-1691, GP-1692, GP-1693, GP-1694, GP-1695, GP-1697, GP-1703, GP-1704, GP-1705 | core | shipped-scope D03 T05 §2 |  |
 | IP-0672 | Hue/Saturation: master and six ranges, hue, saturation, lightness, colorize | PS-A-1048, PS-A-1049, PS-A-1050, PS-A-1051, PS-A-1052, PS-A-1053 | AF-1185, AF-1187, AF-1190, AF-1191, AF-1192 | GP-1710, GP-1711, GP-1713, GP-1714, GP-1715, GP-1716, GP-1717 | core | shipped-scope D03 T05 §2 |  |
+| IP-2370 | Photo effect adjustment layer: a list of preset photographic looks (sepia, cross-process, and similar) as one adjustment kind | -- | -- | -- | core | plan D03 T11 §5 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1329; AC-2985); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T11 §5 |
+| IP-2375 | One-click photo looks (ACDSee special effects: blue steel, childhood, dramatic, gloom, grunge, lomo, purple haze, seventies, somber) as built-in look presets | -- | -- | -- | core | plan D03 T11 §4 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1387; AC-3255, AC-3278, AC-3305 to AC-3307, AC-3323, AC-3324, AC-3333, AC-3334, AC-3340 to AC-3342, AC-3375, AC-3407, AC-3433); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T11 §4 |
+| IP-2385 | Light EQ tone equalizer as a filter and adjustment layer: auto, one-step, basic, per-band brightening and darkening, advanced curves, on-image drag | -- | -- | -- | core | plan D03 T11 §11 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1497; AC-3721 to AC-3745, AC-4808, AC-4871); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T11 §11 |
 
 ## Image modes and color
 
@@ -1165,8 +1168,9 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1030 | GEGL Operation tool: pick any engine op, generated settings, preview, reset | -- | -- | GP-0132, GP-0133, GP-0134, GP-0135, GP-0136, GP-0137, GP-0138 | core | plan D03 T14 §8 |  |
 | IP-1031 | GEGL filter browser searchable by name, title, description | -- | -- | GP-3338, GP-3339, GP-3340, GP-3341 | automation | plan D03 T14 §8 |  |
 | IP-1032 | Filter applies to the selection or the whole active layer, with apply, cancel, and progress | PS-B-0013, PS-B-0015 | AF-1391, AF-1407, AF-1415, AF-1416 | -- | core | shipped-scope D03 T05 §1 |  |
-| IP-1033 | Photoshop 64-bit plug-in filters | -- | AF-2605 | -- | format | backlog B-012 |  |
+| IP-1033 | Photoshop 64-bit plug-in filters | -- | AF-2605 | -- | format | plan D03 T14 §11 |  |
 | IP-1034 | Digimarc watermark filters | PS-B-0334 | -- | -- | core | excluded: removed | Removed by Adobe; listed only as removed |
+| IP-2368 | Smart brushing on filter and adjustment brushes: restrict strokes to pixels similar in color, brightness, or both within a tolerance, Shift to override | -- | -- | -- | core | plan D03 T14 §1 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1266; AC-2659 to AC-2664); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T14 §1 |
 
 ## Blur, sharpen, and noise filters
 
@@ -1333,6 +1337,9 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1188 | Ocean ripple | PS-B-0091, PS-B-0092 | -- | -- | core | shipped-scope D01 T03 §7 | Imago menu and dialog: D03 T14 §2 |
 | IP-1189 | Wave: generators, wavelength, amplitude, scale, type, randomize, edge handling | PS-B-0218, PS-B-0219, PS-B-0220, PS-B-0221, PS-B-0222 | -- | -- | core | shipped-scope D03 T07 §3 |  |
 | IP-1190 | Vanishing Point export to DXF or 3DS and return to 3D layer | PS-B-0425, PS-B-0426 | -- | -- | 3d | excluded: removed | Removed with Photoshop legacy 3D |
+| IP-2378 | Jiggle distortion: random jagged displacement with size, detail, strength, and seed | -- | -- | -- | core | plan D01 T06 §6 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1404; AC-3335 to AC-3339); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D01 T06 §6 |
+| IP-2379 | Pixel explosion: pixels scattered outward from a center with intensity, direction, and seed | -- | -- | -- | core | plan D01 T06 §6 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1413; AC-3364 to AC-3369); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D01 T06 §6 |
+| IP-2381 | Water reflection: rippled mirror of the subject below a water line with amplitude, wavelength, perspective, and lighting | -- | -- | -- | core | plan D01 T06 §6 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1431; AC-3455 to AC-3460); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D01 T06 §6 |
 
 ## Render, light, and shadow filters
 
@@ -1402,6 +1409,8 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1252 | Gradient flare selector and editor: new, edit, copy, delete, preview | -- | -- | GP-2587, GP-2588, GP-2593, GP-2604, GP-2605, GP-2606, GP-2607 | core | plan D03 T14 §5 |  |
 | IP-1253 | Clouds | PS-B-0266 | -- | -- | core | shipped-scope D03 T07 §3 |  |
 | IP-1254 | Lens flare with brightness and click-to-place center | PS-B-0270, PS-B-0271 | -- | GP-2555, GP-2556, GP-2557 | core | shipped-scope D03 T07 §3 | Also built in D01 T03 §11 |
+| IP-2380 | Rain render: streaks with strength, opacity, amount, angle and variance, background blur, and color | -- | -- | -- | core | plan D01 T06 §9 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1417; AC-3384 to AC-3392); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D01 T06 §9 |
+| IP-2382 | Water drops: refracting droplets over the photo with density, radius, height, and seed | -- | -- | -- | core | plan D01 T06 §8 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1432; AC-3461 to AC-3465); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D01 T06 §8 |
 
 ## Artistic, stylize, edge, and generic filters
 
@@ -1552,6 +1561,9 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1397 | Glowing edges: width, brightness, smoothness | PS-B-0121, PS-B-0122 | -- | -- | core | shipped-scope D01 T03 §9 | Imago menu and dialog: D03 T14 §2 |
 | IP-1398 | Emboss: angle, height, amount | PS-B-0304, PS-B-0305 | -- | -- | core | shipped-scope D03 T07 §3 |  |
 | IP-1399 | Find edges | PS-B-0308 | -- | -- | core | shipped-scope D03 T07 §3 |  |
+| IP-2376 | Collage effect: break the photo into scattered smaller copies with count, size, background, and reshuffle | -- | -- | -- | core | plan D01 T06 §11 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1392; AC-3283 to AC-3287); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D01 T06 §11 |
+| IP-2377 | Furry edges effect: fur strands grown along detected edges with length, variance, direction, colors, and seed | -- | -- | -- | core | plan D01 T06 §12 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1400; AC-3313 to AC-3322); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D01 T06 §12 |
+| IP-2384 | Decorative border frames: tiled textures, irregular edge masks, edge blur, drop shadow, raised edge with light direction, user texture and edge folders | -- | -- | -- | core | plan D03 T14 §9 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1472; AC-3565 to AC-3574); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T14 §9 |
 
 ## Develop and tone mapping
 
@@ -1612,17 +1624,17 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1452 | Targeted adjustment tool for curve and color mixer | PS-B-0481, PS-B-0491 | -- | -- | core | plan D03 T15 §1 | drag on image; engine D01 T07 §1 and §2 |
 | IP-1453 | Before and after views: single, split, mirror, side by side | PS-B-0571 | AF-1880, AF-1881, AF-1882 | -- | core | plan D03 T15 §1 | states from D01 T07 §6 |
 | IP-1454 | Before and after sync and swap | -- | AF-1883, AF-1884, AF-1885 | -- | core | plan D03 T15 §1 |  |
-| IP-1455 | Develop histogram, scope, and clipping overlays for highlights, shadows, tones | PS-B-0572 | AF-1886, AF-1887, AF-1888, AF-1977 | -- | core | plan D03 T15 §1 | histogram data from D01 T07 §1 |
-| IP-1456 | Develop vectorscope with skin tone line and Lab readout | PS-B-0573 | -- | -- | core | plan D03 T15 §1 | scopes engine shared with D03 T08 §11 |
-| IP-1457 | Develop metadata info panel | PS-B-0574 | -- | -- | core | plan D03 T15 §1 |  |
-| IP-1458 | Autofocus points and focus data panel | PS-B-0575 | AF-1972, AF-1973 | -- | core | plan D03 T15 §1 | only for makers whose raw notes are decoded |
-| IP-1459 | Focus peaking overlay with color choice | -- | AF-1982, AF-1983 | -- | core | plan D03 T15 §1 | view only |
-| IP-1460 | Render to DNG with edits baked in | PS-B-0577 | -- | -- | format | plan D03 T15 §1 | no DNG writer section; built with the develop surface |
+| IP-1455 | Develop histogram, scope, and clipping overlays for highlights, shadows, tones | PS-B-0572 | AF-1886, AF-1887, AF-1888, AF-1977 | -- | core | plan D03 T15 §13 | histogram data from D01 T07 §1 |
+| IP-1456 | Develop vectorscope with skin tone line and Lab readout | PS-B-0573 | -- | -- | core | plan D03 T15 §13 | scopes engine shared with D03 T08 §11 |
+| IP-1457 | Develop metadata info panel | PS-B-0574 | -- | -- | core | plan D03 T15 §13 |  |
+| IP-1458 | Autofocus points and focus data panel | PS-B-0575 | AF-1972, AF-1973 | -- | core | plan D03 T15 §13 | only for makers whose raw notes are decoded |
+| IP-1459 | Focus peaking overlay with color choice | -- | AF-1982, AF-1983 | -- | core | plan D03 T15 §13 | view only |
+| IP-1460 | Render to DNG with edits baked in | PS-B-0577 | -- | -- | format | plan D03 T15 §13 | no DNG writer section; built with the develop surface |
 | IP-1461 | Panel reset, active toggles, and double-click slider reset | PS-B-0580 | AF-1879, AF-1901, AF-1902 | -- | core | plan D03 T15 §1 |  |
-| IP-1462 | Develop zoom, hand, and view tools | PS-B-0581 | AF-1971 | -- | core | plan D03 T15 §1 |  |
-| IP-1463 | Workflow options: color space, output ICC profile, bit depth 16 or 32 float, size, open as smart object | PS-B-0582 | AF-1894, AF-1914 | -- | core | plan D03 T15 §1 | extends D03 T07 §11 |
-| IP-1464 | Geometry grid overlay and loupe | PS-B-0517 | -- | -- | core | plan D03 T15 §1 |  |
-| IP-1465 | Camera Raw preferences, develop assistant defaults, and develop presets panel | PS-B-1251 | AF-2506, AF-2726 | -- | core | plan D03 T15 §1 |  |
+| IP-1462 | Develop zoom, hand, and view tools | PS-B-0581 | AF-1971 | -- | core | plan D03 T15 §13 |  |
+| IP-1463 | Workflow options: color space, output ICC profile, bit depth 16 or 32 float, size, open as smart object | PS-B-0582 | AF-1894, AF-1914 | -- | core | plan D03 T15 §13 | extends D03 T07 §11 |
+| IP-1464 | Geometry grid overlay and loupe | PS-B-0517 | -- | -- | core | plan D03 T15 §13 |  |
+| IP-1465 | Camera Raw preferences, develop assistant defaults, and develop presets panel | PS-B-1251 | AF-2506, AF-2726 | -- | core | plan D03 T15 §13 |  |
 | IP-1466 | Develop studio adjustment set | -- | AF-1381 | -- | core | plan D03 T15 §12 |  |
 | IP-1467 | Develop noise reduction: luminance, details, contribution, colors | -- | AF-1277, AF-1278, AF-1279, AF-1280, AF-1281, AF-1282 | -- | core | plan D03 T15 §12 | Engine D01 T07 §3 |
 | IP-1468 | Develop noise addition: intensity, color, gaussian | -- | AF-1283, AF-1284, AF-1285, AF-1286 | -- | core | plan D03 T15 §12 | Engine D01 T07 §3 grain |
@@ -1717,11 +1729,11 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1552 | Focus merge RAW development preset | -- | AF-2070 | -- | core | plan D03 T15 §9 |  |
 | IP-1553 | Focus merge source cloning | -- | AF-2072 | -- | core | plan D03 T15 §9 |  |
 | IP-1554 | Sources panel: global clone sources with preview, add, delete | -- | AF-2073, AF-2074, AF-2075, AF-2076 | -- | core | plan D03 T15 §9 | feeds clone, healing, patch in D03 T13 |
-| IP-1555 | Tone stretch adjustment: basic, arcsinh, logarithmic, auto for FITS, live stretch | -- | AF-1368, AF-1369, AF-1370, AF-1371, AF-1372, AF-1373, AF-1374 | -- | core | plan D03 T15 §10 |  |
-| IP-1556 | Astrophotography background removal with sample handles, radius, gray and RGB subtraction, output black level | -- | AF-1843, AF-1844, AF-1845, AF-1846, AF-1847, AF-1848, AF-1849, AF-1850, AF-1851 | -- | core | plan D03 T15 §10 | Classical gradient and light pollution subtraction, not AI subject removal |
-| IP-1557 | Astrophotography: color map mono layers, enhance structure | -- | AF-1852, AF-1859 | -- | core | plan D03 T15 §10 |  |
-| IP-1558 | Astrophotography tone filters: linear fit, auto stretch, color calibration | -- | AF-1853, AF-1855, AF-1856 | -- | core | plan D03 T15 §10 |  |
-| IP-1559 | Separate luminosity and color, separate stars and background | -- | AF-1854, AF-1857 | -- | core | plan D03 T15 §10 | Classical star detection |
+| IP-1555 | Tone stretch adjustment: basic, arcsinh, logarithmic, auto for FITS, live stretch | -- | AF-1368, AF-1369, AF-1370, AF-1371, AF-1372, AF-1373, AF-1374 | -- | core | plan D03 T15 §14 |  |
+| IP-1556 | Astrophotography background removal with sample handles, radius, gray and RGB subtraction, output black level | -- | AF-1843, AF-1844, AF-1845, AF-1846, AF-1847, AF-1848, AF-1849, AF-1850, AF-1851 | -- | core | plan D03 T15 §14 | Classical gradient and light pollution subtraction, not AI subject removal |
+| IP-1557 | Astrophotography: color map mono layers, enhance structure | -- | AF-1852, AF-1859 | -- | core | plan D03 T15 §14 |  |
+| IP-1558 | Astrophotography tone filters: linear fit, auto stretch, color calibration | -- | AF-1853, AF-1855, AF-1856 | -- | core | plan D03 T15 §14 |  |
+| IP-1559 | Separate luminosity and color, separate stars and background | -- | AF-1854, AF-1857 | -- | core | plan D03 T15 §14 | Classical star detection |
 | IP-1560 | Align layers by stars | -- | AF-1860 | -- | core | plan D03 T15 §10 | Uses alignment engine D03 T15 §5 |
 | IP-1561 | Astrophotography stack studio | -- | AF-0014, AF-2077 | -- | core | plan D03 T15 §10 |  |
 | IP-1562 | Astrophotography studio with align by stars and color map buttons | -- | AF-0015, AF-2078, AF-2106 | -- | core | plan D03 T15 §10 |  |
@@ -1733,14 +1745,14 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1568 | Astro stacking: mean, median, sigma clipping with threshold and iterations | -- | AF-2088, AF-2089, AF-2090 | -- | core | plan D03 T15 §10 |  |
 | IP-1569 | Astro demosaic method, white balance, subtract black level | -- | AF-2091, AF-2092, AF-2093 | -- | core | plan D03 T15 §10 |  |
 | IP-1570 | Stack command, stacked images panel, apply as layers | -- | AF-2094, AF-2095, AF-2100 | -- | core | plan D03 T15 §10 |  |
-| IP-1571 | Channel color mapping and narrowband compositing | -- | AF-2096, AF-2097, AF-2103 | -- | core | plan D03 T15 §10 |  |
-| IP-1572 | Live tone stretch and tone stretch adjustment | -- | AF-2098, AF-2104 | -- | core | plan D03 T15 §10 |  |
+| IP-1571 | Channel color mapping and narrowband compositing | -- | AF-2096, AF-2097, AF-2103 | -- | core | plan D03 T15 §14 |  |
+| IP-1572 | Live tone stretch and tone stretch adjustment | -- | AF-2098, AF-2104 | -- | core | plan D03 T15 §14 |  |
 | IP-1573 | Bad pixel map tool: automatic hot and cold detection with thresholds | -- | AF-0400, AF-0402, AF-0403, AF-0404, AF-2099 | -- | core | plan D03 T15 §10 |  |
 | IP-1574 | Bad pixel map manual marking by pixel or column, show, Bayer view, reset | -- | AF-0405, AF-0406, AF-0407, AF-0408 | -- | core | plan D03 T15 §10 |  |
 | IP-1575 | Bad pixel map presets | -- | AF-0401 | -- | core | plan D03 T15 §10 |  |
 | IP-1576 | Align by stars | -- | AF-2101 | -- | core | plan D03 T15 §10 |  |
-| IP-1577 | Color map mono layers filter | -- | AF-2102 | -- | core | plan D03 T15 §10 |  |
-| IP-1578 | Astro filters: auto stretch and background gradient removal | -- | AF-2105 | -- | core | plan D03 T15 §10 |  |
+| IP-1577 | Color map mono layers filter | -- | AF-2102 | -- | core | plan D03 T15 §14 |  |
+| IP-1578 | Astro filters: auto stretch and background gradient removal | -- | AF-2105 | -- | core | plan D03 T15 §14 |  |
 | IP-1579 | Crop and Straighten Photos | PS-B-0724 | -- | -- | automation | plan D03 T15 §11 |  |
 | IP-1580 | ML star and background separation | -- | AF-1858 | -- | ai | backlog B-046 | On-device star-removal model; classical separation in D03 T15 §10 |
 | IP-1581 | macOS EDR preview options | -- | AF-1352, AF-1354, AF-1357 | -- | core | excluded: platform | macOS EDR only; Windows HDR counterpart planned |
@@ -1750,13 +1762,13 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | ID | Feature | Photoshop | Affinity | GIMP | Category | Status | Notes |
 | -- | ------- | --------- | -------- | ---- | -------- | ------ | ----- |
 | IP-1582 | Type layer | PS-A-0689 | -- | -- | core | plan D03 T16 §1 |  |
-| IP-1583 | Edit text on canvas from the Layers panel | -- | -- | GP-3737 | core | plan D03 T16 §1 |  |
-| IP-1584 | Horizontal type tool with point and paragraph text, resizable text box, and GIMP dynamic or fixed box | PS-A-0433, PS-A-0446, PS-A-0447, PS-A-0448 | AF-0435 | GP-0179, GP-0209 | core | plan D03 T16 §1 | Shaping is the Nodus HarfBuzz engine moved to Photon.Core; Affinity Artistic Text maps to point text |
-| IP-1585 | Vertical type tool, toggle orientation, and vertical Roman alignment | PS-A-0434, PS-A-0437, PS-A-1560, PS-A-1561, PS-A-1613 | -- | GP-0215, GP-0216, GP-0217, GP-0218 | core | plan D03 T16 §1 | GIMP mixed and upright vertical orientations included |
-| IP-1586 | Horizontal and vertical type mask tools | PS-A-0435, PS-A-0436, PS-A-1631 | -- | -- | core | plan D03 T16 §1 | Result is a selection, not a text layer |
-| IP-1587 | On-canvas text editing: commit or cancel, double-click to edit, transform while editing, floating style editor | PS-A-0451, PS-A-0452, PS-A-0453, PS-A-1633, PS-A-1634 | -- | GP-0041, GP-0063, GP-0064, GP-0099, GP-0184 | core | plan D03 T16 §1 | GIMP on-canvas editor is draggable and toggleable; masked text layers stay clickable |
-| IP-1588 | Text editor window with load from file and clear all | -- | -- | GP-0180, GP-0183, GP-0211, GP-0212 | core | plan D03 T16 §1 |  |
-| IP-1589 | Convert text to work path or shape layer | PS-A-1616, PS-A-1617 | -- | -- | core | plan D03 T16 §1 | Outlines feed paths D03 T16 §5 and shapes §7 |
+| IP-1583 | Edit text on canvas from the Layers panel | -- | -- | GP-3737 | core | plan D03 T16 §9 |  |
+| IP-1584 | Horizontal type tool with point and paragraph text, resizable text box, and GIMP dynamic or fixed box | PS-A-0433, PS-A-0446, PS-A-0447, PS-A-0448 | AF-0435 | GP-0179, GP-0209 | core | plan D03 T16 §9 | Shaping is the Nodus HarfBuzz engine moved to Photon.Core; Affinity Artistic Text maps to point text |
+| IP-1585 | Vertical type tool, toggle orientation, and vertical Roman alignment | PS-A-0434, PS-A-0437, PS-A-1560, PS-A-1561, PS-A-1613 | -- | GP-0215, GP-0216, GP-0217, GP-0218 | core | plan D03 T16 §9 | GIMP mixed and upright vertical orientations included |
+| IP-1586 | Horizontal and vertical type mask tools | PS-A-0435, PS-A-0436, PS-A-1631 | -- | -- | core | plan D03 T16 §9 | Result is a selection, not a text layer |
+| IP-1587 | On-canvas text editing: commit or cancel, double-click to edit, transform while editing, floating style editor | PS-A-0451, PS-A-0452, PS-A-0453, PS-A-1633, PS-A-1634 | -- | GP-0041, GP-0063, GP-0064, GP-0099, GP-0184 | core | plan D03 T16 §9 | GIMP on-canvas editor is draggable and toggleable; masked text layers stay clickable |
+| IP-1588 | Text editor window with load from file and clear all | -- | -- | GP-0180, GP-0183, GP-0211, GP-0212 | core | plan D03 T16 §9 |  |
+| IP-1589 | Convert text to work path or shape layer | PS-A-1616, PS-A-1617 | -- | -- | core | plan D03 T16 §9 | Outlines feed paths D03 T16 §5 and shapes §7 |
 | IP-1590 | Rasterize type layer | PS-A-1618 | -- | -- | core | plan D03 T16 §1 |  |
 | IP-1591 | World-ready text engine and language options | PS-A-1608, PS-A-1609, PS-A-1623 | -- | -- | core | plan D03 T16 §1 | One HarfBuzz engine handles all scripts; the option selects the feature set shown |
 | IP-1592 | Character panel with font family, style, and size, panel toggles, and reset | PS-A-0438, PS-A-0439, PS-A-0444, PS-A-1534, PS-A-1535, PS-A-1536, PS-A-1537, PS-A-1562, PS-A-1611 | -- | GP-0181, GP-0182, GP-0219 | core | plan D03 T16 §2 |  |
@@ -1804,15 +1816,16 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1634 | Additional spelling dictionary folder | -- | AF-2714 | -- | core | plan D03 T16 §4 |  |
 | IP-1635 | Adobe Fonts activation and browsing | PS-A-1567, PS-A-1610 | -- | -- | cloud | excluded: cloud | Adobe cloud font service |
 | IP-1636 | 3D extrusion from text | PS-A-0445, PS-A-1615 | -- | -- | 3d | excluded: removed | Legacy 3D removed by Adobe |
+| IP-2371 | Insert image metadata fields (EXIF, IPTC, file properties) as text in a text layer | -- | -- | -- | core | plan D03 T16 §4 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1354; AC-3061, AC-3062); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T16 §4 |
 
 ## Paths, shapes, and vectors
 
 | ID | Feature | Photoshop | Affinity | GIMP | Category | Status | Notes |
 | -- | ------- | --------- | -------- | ---- | -------- | ------ | ----- |
 | IP-1637 | Show target path | PS-A-1728 | -- | -- | core | plan D03 T16 §5 |  |
-| IP-1638 | Import SVG paths with scale to fit image | -- | -- | GP-0118 | format | plan D03 T16 §5 |  |
-| IP-1639 | Export paths to Illustrator | PS-B-0914 | -- | -- | core | plan D03 T16 §5 | writes a PDF-compatible AI path file |
-| IP-1640 | Convert top-level clipping to clipping paths on JPEG and TIFF export | -- | AF-2562 | -- | format | plan D03 T16 §5 |  |
+| IP-1638 | Import SVG paths with scale to fit image | -- | -- | GP-0118 | format | plan D03 T16 §10 |  |
+| IP-1639 | Export paths to Illustrator | PS-B-0914 | -- | -- | core | plan D03 T16 §10 | writes a PDF-compatible AI path file |
+| IP-1640 | Convert top-level clipping to clipping paths on JPEG and TIFF export | -- | AF-2562 | -- | format | plan D03 T16 §10 |  |
 | IP-1641 | Paths panel with work path, thumbnails, rename, deselect, multi-select, and panel options | PS-A-1481, PS-A-1482, PS-A-1493, PS-A-1494, PS-A-1495 | -- | GP-3963, GP-3965, GP-3966, GP-3967, GP-3973, GP-3974, GP-3975, GP-3984, GP-3985 | core | plan D03 T16 §5 | GIMP Paths dialog merged; path geometry in Photon.Core |
 | IP-1642 | Path management: new, save work path, duplicate, delete, raise and lower | PS-A-1483, PS-A-1484, PS-A-1485, PS-A-1486 | -- | GP-3976, GP-3977, GP-3978, GP-3979, GP-3983, GP-3987, GP-3988, GP-3989, GP-3990, GP-3991 | core | plan D03 T16 §5 |  |
 | IP-1643 | Path visibility, lock attributes, and color tags | -- | -- | GP-3968, GP-3969, GP-3970, GP-3971, GP-3972, GP-3986 | core | plan D03 T16 §5 |  |
@@ -1821,12 +1834,12 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1646 | Path to selection with replace, add, subtract, intersect | PS-A-1489 | -- | GP-3980, GP-3994, GP-3995, GP-3996, GP-3997 | core | plan D03 T16 §5 |  |
 | IP-1647 | Selection to path with tolerance and advanced settings | PS-A-1490 | -- | GP-3981, GP-3998 | core | plan D03 T16 §5 |  |
 | IP-1648 | Clipping path with flatness for export | PS-A-1492 | -- | -- | print | plan D03 T16 §5 |  |
-| IP-1649 | Export paths to Illustrator | PS-A-1496 | -- | -- | format | plan D03 T16 §5 | Writes paths as a PostScript-based .ai file |
-| IP-1650 | Merge visible paths | -- | -- | GP-3992 | core | plan D03 T16 §5 |  |
-| IP-1651 | Copy and paste paths between images | -- | -- | GP-4001, GP-4002 | core | plan D03 T16 §5 |  |
-| IP-1652 | Import and export paths as SVG | -- | -- | GP-4003, GP-4004 | core | plan D03 T16 §5 |  |
-| IP-1653 | Path operations: combine, subtract front, intersect, exclude, merge components | PS-A-0418, PS-A-0432, PS-A-1661, PS-A-1662, PS-A-1663, PS-A-1664, PS-A-1665 | -- | -- | core | plan D03 T16 §5 | Applies to shape layers in D03 T16 §7 |
-| IP-1654 | Align, distribute, and arrange path components | PS-A-0419, PS-A-0420 | -- | -- | core | plan D03 T16 §5 |  |
+| IP-1649 | Export paths to Illustrator | PS-A-1496 | -- | -- | format | plan D03 T16 §10 | Writes paths as a PostScript-based .ai file |
+| IP-1650 | Merge visible paths | -- | -- | GP-3992 | core | plan D03 T16 §10 |  |
+| IP-1651 | Copy and paste paths between images | -- | -- | GP-4001, GP-4002 | core | plan D03 T16 §10 |  |
+| IP-1652 | Import and export paths as SVG | -- | -- | GP-4003, GP-4004 | core | plan D03 T16 §10 |  |
+| IP-1653 | Path operations: combine, subtract front, intersect, exclude, merge components | PS-A-0418, PS-A-0432, PS-A-1661, PS-A-1662, PS-A-1663, PS-A-1664, PS-A-1665 | -- | -- | core | plan D03 T16 §10 | Applies to shape layers in D03 T16 §7 |
+| IP-1654 | Align, distribute, and arrange path components | PS-A-0419, PS-A-0420 | -- | -- | core | plan D03 T16 §10 |  |
 | IP-1655 | Paths panel | PS-B-1355 | -- | -- | core | plan D03 T16 §5 |  |
 | IP-1656 | Pen tool with Bezier anchors, close and continue path, modifiers, and add subpaths to selected curves | PS-A-0404, PS-A-0425, PS-A-1653, PS-A-1654, PS-A-1655 | AF-0409, AF-0410, AF-0414, AF-0415 | GP-0149 | core | plan D03 T16 §6 | GIMP Paths tool design mode and Affinity Pen mode |
 | IP-1657 | GIMP path tool edit modes: design, edit, move with modifier keys | -- | -- | GP-0151, GP-0152, GP-0153, GP-0154, GP-0155, GP-0156 | core | plan D03 T16 §6 |  |
@@ -1845,18 +1858,18 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1670 | Node and pen snapping options | -- | AF-0421, AF-0429 | -- | core | plan D03 T16 §6 | Snapping engine D03 T08 §4 |
 | IP-1671 | Path and direct selection tools with layer scope, marquee, duplicate by drag, transform controls | PS-A-0426, PS-A-0427, PS-A-0428, PS-A-0430, PS-A-0431, PS-A-1657, PS-A-1659 | AF-0424, AF-0428 | -- | core | plan D03 T16 §6 | Affinity Node tool merged |
 | IP-1672 | Transform path and selected anchors | PS-A-1660 | AF-0427 | -- | core | plan D03 T16 §6 |  |
-| IP-1673 | Shapes panel | PS-A-1447 | -- | -- | core | plan D03 T16 §7 |  |
-| IP-1674 | Define custom shape | PS-A-1251 | -- | -- | core | plan D03 T16 §7 |  |
-| IP-1675 | Gfig geometric figures: lines, rectangles, circles, ellipses, arcs, polygons, stars, spirals, curves, stroke, fill, grid snap | -- | -- | GP-3099, GP-3100, GP-3101, GP-3102, GP-3103, GP-3104, GP-3105, GP-3106, GP-3107, GP-3108, GP-3109, GP-3110, GP-3111, GP-3112, GP-3113, GP-3114, GP-3115, GP-3116, GP-3117, GP-3118, GP-3119, GP-3120, GP-3121, GP-3122, GP-3123, GP-3124, GP-3125, GP-3126, GP-3127, GP-3128, GP-3129 | core | plan D03 T16 §7 | Gfig job met by shape tools and shape layers, rasterized on demand |
+| IP-1673 | Shapes panel | PS-A-1447 | -- | -- | core | plan D03 T16 §11 |  |
+| IP-1674 | Define custom shape | PS-A-1251 | -- | -- | core | plan D03 T16 §11 |  |
+| IP-1675 | Gfig geometric figures: lines, rectangles, circles, ellipses, arcs, polygons, stars, spirals, curves, stroke, fill, grid snap | -- | -- | GP-3099, GP-3100, GP-3101, GP-3102, GP-3103, GP-3104, GP-3105, GP-3106, GP-3107, GP-3108, GP-3109, GP-3110, GP-3111, GP-3112, GP-3113, GP-3114, GP-3115, GP-3116, GP-3117, GP-3118, GP-3119, GP-3120, GP-3121, GP-3122, GP-3123, GP-3124, GP-3125, GP-3126, GP-3127, GP-3128, GP-3129 | core | plan D03 T16 §11 | Gfig job met by shape tools and shape layers, rasterized on demand |
 | IP-1676 | Shape layer | PS-A-0690 | -- | -- | core | plan D03 T16 §7 |  |
-| IP-1677 | Edit vector layer on canvas | -- | -- | GP-3738 | core | plan D03 T16 §7 | GIMP 3.2 vector layers |
+| IP-1677 | Edit vector layer on canvas | -- | -- | GP-3738 | core | plan D03 T16 §11 | GIMP 3.2 vector layers |
 | IP-1678 | Combine shapes: unite, subtract, intersect, exclude | PS-A-0671 | -- | -- | core | plan D03 T16 §7 |  |
 | IP-1679 | Rectangle and ellipse tools with per-corner radius and on-canvas corner widgets | PS-A-0454, PS-A-0455, PS-A-0468, PS-A-0478 | AF-0431 | -- | core | plan D03 T16 §7 |  |
 | IP-1680 | Corner types: rounded, straight, concave, cutout, absolute or relative | -- | AF-0432 | -- | core | plan D03 T16 §7 |  |
 | IP-1681 | Triangle tool with corner radius | PS-A-0456 | -- | -- | core | plan D03 T16 §7 |  |
 | IP-1682 | Polygon and star tool with sides, star ratio, smooth indents and corners | PS-A-0457, PS-A-0469, PS-A-0470, PS-A-0471, PS-A-0472 | -- | -- | core | plan D03 T16 §7 |  |
 | IP-1683 | Line tool with weight and arrowheads | PS-A-0458, PS-A-0473, PS-A-0474 | -- | -- | core | plan D03 T16 §7 |  |
-| IP-1684 | Custom shape tool, shape picker, legacy shapes, define custom shape | PS-A-0459, PS-A-0476, PS-A-0477, PS-A-1673 | -- | -- | core | plan D03 T16 §7 | CSH import |
+| IP-1684 | Custom shape tool, shape picker, legacy shapes, define custom shape | PS-A-0459, PS-A-0476, PS-A-0477, PS-A-1673 | -- | -- | core | plan D03 T16 §11 | CSH import |
 | IP-1685 | Additional shape tools: rounded rectangle, star variants, diamond, trapezoid, cog, crescent, donut, and more | -- | AF-0434 | -- | core | plan D03 T16 §7 |  |
 | IP-1686 | Shape fill and stroke paint: solid, gradient, pattern, none, with gradient and pattern options | PS-A-0460, PS-A-0461, PS-A-0462, PS-A-1667, PS-A-1668 | -- | -- | core | plan D03 T16 §7 |  |
 | IP-1687 | Stroke options: align, caps, corners, dashes, and saved stroke presets | PS-A-0463, PS-A-0464, PS-A-0465, PS-A-0466, PS-A-1669 | -- | -- | core | plan D03 T16 §7 |  |
@@ -1865,10 +1878,10 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1690 | Shape pixels mode | PS-A-0479 | -- | -- | core | plan D03 T16 §7 |  |
 | IP-1691 | Merge shape layers | PS-A-1670 | -- | -- | core | plan D03 T16 §7 |  |
 | IP-1692 | Rasterize shape | PS-A-1671 | -- | -- | core | plan D03 T16 §7 |  |
-| IP-1693 | Vector layers from paths with non-destructive transform and drop to fill | -- | -- | GP-0053, GP-0056, GP-0057, GP-0159, GP-3993 | core | plan D03 T16 §7 | GIMP 3.2 vector layers; layer kind in D03 T09 §1 |
-| IP-1694 | Vector layer fill and stroke: color or pattern, antialias, width, cap, join, miter, dashes | -- | -- | GP-0054, GP-0055, GP-0160, GP-0161, GP-0162, GP-0163, GP-0164, GP-0165, GP-0166, GP-0167, GP-0168, GP-0169, GP-0170, GP-0171, GP-0172, GP-0173 | core | plan D03 T16 §7 |  |
+| IP-1693 | Vector layers from paths with non-destructive transform and drop to fill | -- | -- | GP-0053, GP-0056, GP-0057, GP-0159, GP-3993 | core | plan D03 T16 §11 | GIMP 3.2 vector layers; layer kind in D03 T09 §1 |
+| IP-1694 | Vector layer fill and stroke: color or pattern, antialias, width, cap, join, miter, dashes | -- | -- | GP-0054, GP-0055, GP-0160, GP-0161, GP-0162, GP-0163, GP-0164, GP-0165, GP-0166, GP-0167, GP-0168, GP-0169, GP-0170, GP-0171, GP-0172, GP-0173 | core | plan D03 T16 §11 |  |
 | IP-1695 | Live shape properties in the Properties panel: per-corner radii and shape operations | PS-A-1522, PS-A-1523 | -- | -- | core | plan D03 T16 §7 |  |
-| IP-1696 | Shapes panel and legacy shape tool option | PS-B-1240, PS-B-1358 | -- | -- | core | plan D03 T16 §7 |  |
+| IP-1696 | Shapes panel and legacy shape tool option | PS-B-1240, PS-B-1358 | -- | -- | core | plan D03 T16 §11 |  |
 | IP-1697 | SVG export: vector layers, embed raster layers as PNG or JPEG or omit | PS-B-1032 | -- | GP-4706, GP-4707, GP-4708, GP-4709, GP-4710, GP-4830 | format | plan D03 T16 §8 |  |
 | IP-1698 | Frames: frame from layers and convert to frame | PS-A-0636, PS-A-0637, PS-A-0693 | -- | -- | core | plan D03 T16 §8 |  |
 | IP-1699 | Copy CSS and SVG from layers | PS-A-0640, PS-A-0641 | AF-0961 | -- | format | plan D03 T16 §8 |  |
@@ -1894,11 +1907,11 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1714 | Save content options: layers, alpha channels, spot colors, notes | PS-B-0898 | -- | -- | core | plan D03 T17 §1 |  |
 | IP-1715 | Format list: bit depth and mode support matrix, customize list, legacy Save As | PS-B-0900, PS-B-1034, PS-B-1036 | -- | -- | format | plan D03 T17 §1 |  |
 | IP-1716 | Revert | PS-B-0901 | -- | GP-0868 | core | plan D03 T17 §1 |  |
-| IP-1717 | Export and overwrite semantics, save over image formats | -- | AF-2597 | GP-0819, GP-0839, GP-0840, GP-4326 | core | plan D03 T17 §1 |  |
-| IP-1718 | Place embedded and place linked with placement preferences, PDF place | PS-B-0923, PS-B-0924, PS-B-0925, PS-B-0926, PS-B-0927 | AF-2611 | -- | core | plan D03 T17 §1 |  |
-| IP-1719 | Import notes from PDF or FDF | PS-B-0933 | -- | -- | core | plan D03 T17 §1 |  |
-| IP-1720 | Place embedded | PS-A-0701 | -- | -- | core | plan D03 T17 §1 | Creates a D03 T09 §9 smart object |
-| IP-1721 | Load files into stack with auto align and convert to smart object | PS-B-0772, PS-B-0773, PS-B-0774 | -- | -- | automation | plan D03 T17 §1 |  |
+| IP-1717 | Export and overwrite semantics, save over image formats | -- | AF-2597 | GP-0819, GP-0839, GP-0840, GP-4326 | core | plan D03 T17 §15 |  |
+| IP-1718 | Place embedded and place linked with placement preferences, PDF place | PS-B-0923, PS-B-0924, PS-B-0925, PS-B-0926, PS-B-0927 | AF-2611 | -- | core | plan D03 T17 §15 |  |
+| IP-1719 | Import notes from PDF or FDF | PS-B-0933 | -- | -- | core | plan D03 T17 §15 |  |
+| IP-1720 | Place embedded | PS-A-0701 | -- | -- | core | plan D03 T17 §15 | Creates a D03 T09 §9 smart object |
+| IP-1721 | Load files into stack with auto align and convert to smart object | PS-B-0772, PS-B-0773, PS-B-0774 | -- | -- | automation | plan D03 T17 §15 |  |
 | IP-1722 | Drop files on the document tab bar to open | -- | -- | GP-0071 | core | plan D03 T17 §12 |  |
 | IP-1723 | Open from compressed archives (gz, bz2, xz, zip) | -- | -- | GP-4801 | format | plan D03 T17 §12 |  |
 | IP-1724 | Open location (URL, file, http, https, ftp) | -- | -- | GP-0860, GP-0861, GP-0862, GP-0863, GP-0864, GP-4873 | core | plan D03 T17 §12 |  |
@@ -1951,18 +1964,18 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1771 | Load multiple DICOM files into one document | PS-B-0775 | -- | -- | format | plan D03 T17 §6 |  |
 | IP-1772 | PDF import options: pages, DPI, color space, editable text | -- | AF-2362 | -- | format | plan D03 T17 §7 |  |
 | IP-1773 | PDF import: pages or images, crop box, size, resolution, reverse order, anti-aliasing, fill transparent | PS-B-1028, PS-B-1029 | AF-2608, AF-2609 | GP-4784, GP-4786, GP-4787, GP-4788, GP-4789, GP-4790, GP-4791, GP-4792, GP-4793, GP-4794, GP-4826 | format | plan D03 T17 §7 |  |
-| IP-1774 | PostScript, EPS, and AI import: bounding box, coloring, text and graphic anti-aliasing | PS-B-1030 | AF-2606, AF-2607 | GP-4785, GP-4795, GP-4796, GP-4797, GP-4798, GP-4828 | print | plan D03 T17 §7 | external Ghostscript, AI through its embedded PDF stream, no AI export |
+| IP-1774 | PostScript, EPS, and AI import: bounding box, coloring, text and graphic anti-aliasing | PS-B-1030 | AF-2606, AF-2607 | GP-4785, GP-4795, GP-4796, GP-4797, GP-4798, GP-4828 | print | plan D03 T17 §16 | external Ghostscript, AI through its embedded PDF stream, no AI export |
 | IP-1775 | Photoshop PDF save: presets, PDF/X standards, compatibility, preserve editing, thumbnails, fast web view, summary | PS-B-1016, PS-B-1037, PS-B-1038, PS-B-1039, PS-B-1040, PS-B-1041, PS-B-1042, PS-B-1043, PS-B-1053, PS-B-1054 | AF-2610 | -- | format | plan D03 T17 §7 |  |
 | IP-1776 | PDF presets manager | PS-B-1055 | -- | -- | format | plan D03 T17 §7 |  |
 | IP-1777 | PDF compression: downsampling, ZIP, JPEG, JPEG 2000, 16 to 8 bit | PS-B-1044, PS-B-1045, PS-B-1046 | -- | -- | format | plan D03 T17 §7 |  |
 | IP-1778 | PDF output: color conversion, profile inclusion, output intent | PS-B-1047, PS-B-1048, PS-B-1049 | -- | -- | format | plan D03 T17 §7 |  |
 | IP-1779 | PDF security: open password, permissions, encryption level | PS-B-1050, PS-B-1051, PS-B-1052 | -- | -- | format | plan D03 T17 §7 |  |
 | IP-1780 | PDF export: layers as pages, reverse order, root layers, apply masks, vectorize, omit hidden, fill transparent, text as image | -- | -- | GP-4631, GP-4632, GP-4633, GP-4634, GP-4635, GP-4636, GP-4637, GP-4638, GP-4639, GP-4827 | format | plan D03 T17 §7 |  |
-| IP-1781 | Photoshop EPS save: preview, encoding, halftone screen, transfer, vector data | PS-B-1017, PS-B-1018, PS-B-1019, PS-B-1020 | AF-2613 | -- | format | plan D03 T17 §7 |  |
-| IP-1782 | PostScript and EPS export: size, offset, unit, rotation, level 2, preview | -- | -- | GP-4460, GP-4461, GP-4462, GP-4463, GP-4464, GP-4465, GP-4466, GP-4467, GP-4468, GP-4469, GP-4470, GP-4471, GP-4472, GP-4473, GP-4474, GP-4475, GP-4666, GP-4667, GP-4668, GP-4669, GP-4670, GP-4671, GP-4672, GP-4673, GP-4674, GP-4675, GP-4676, GP-4677, GP-4678, GP-4679, GP-4680, GP-4681 | print | plan D03 T17 §7 |  |
-| IP-1783 | SVG import (rasterize) | PS-B-1031 | AF-2612 | GP-4829 | format | plan D03 T17 §7 | SVG export in D03 T16 §8 |
-| IP-1784 | WMF import | -- | -- | GP-4831 | format | plan D03 T17 §7 |  |
-| IP-1785 | WMF and EMF export | -- | AF-2627 | -- | format | plan D03 T17 §7 | §7 lists metafile import only, add export there |
+| IP-1781 | Photoshop EPS save: preview, encoding, halftone screen, transfer, vector data | PS-B-1017, PS-B-1018, PS-B-1019, PS-B-1020 | AF-2613 | -- | format | plan D03 T17 §16 |  |
+| IP-1782 | PostScript and EPS export: size, offset, unit, rotation, level 2, preview | -- | -- | GP-4460, GP-4461, GP-4462, GP-4463, GP-4464, GP-4465, GP-4466, GP-4467, GP-4468, GP-4469, GP-4470, GP-4471, GP-4472, GP-4473, GP-4474, GP-4475, GP-4666, GP-4667, GP-4668, GP-4669, GP-4670, GP-4671, GP-4672, GP-4673, GP-4674, GP-4675, GP-4676, GP-4677, GP-4678, GP-4679, GP-4680, GP-4681 | print | plan D03 T17 §16 |  |
+| IP-1783 | SVG import (rasterize) | PS-B-1031 | AF-2612 | GP-4829 | format | plan D03 T17 §16 | SVG export in D03 T16 §8 |
+| IP-1784 | WMF import | -- | -- | GP-4831 | format | plan D03 T17 §16 |  |
+| IP-1785 | WMF and EMF export | -- | AF-2627 | -- | format | plan D03 T17 §16 | §7 lists metafile import only, add export there |
 | IP-1786 | PDF export compatibility and PDF/X standards, open when complete | -- | AF-2542, AF-2551 | -- | print | plan D03 T17 §7 | PDF 1.4 to 2.0, PDF/X-1a, X-3, X-4 |
 | IP-1787 | PDF export color: color space, output profile, spot colors, overprint black | -- | AF-2543, AF-2544 | -- | print | plan D03 T17 §7 | Engine D01 T04 |
 | IP-1788 | PDF export layers as optional content | -- | AF-2545 | -- | print | plan D03 T17 §7 |  |
@@ -1970,8 +1983,8 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1790 | PDF export printer marks: crop, registration, color bars, page information | -- | AF-2547 | -- | print | plan D03 T17 §7 | Mark drawing shared with D03 T18 §6 |
 | IP-1791 | PDF export passwords and permissions | -- | AF-2550 | -- | print | plan D03 T17 §7 |  |
 | IP-1792 | Vector-format export rasterization: raster DPI, rasterize nothing or everything or unsupported, downsample images | -- | AF-2522, AF-2523, AF-2524 | -- | core | plan D03 T17 §7 | Applies to PDF, SVG, EPS |
-| IP-1793 | EPS export PostScript level and minimize size | -- | AF-2564 | -- | format | plan D03 T17 §7 |  |
-| IP-1794 | WMF and EMF export with enhanced metafile and clip transparency | -- | AF-2563 | -- | format | plan D03 T17 §7 | skeleton lists WMF and EMF import only; export added here |
+| IP-1793 | EPS export PostScript level and minimize size | -- | AF-2564 | -- | format | plan D03 T17 §16 |  |
+| IP-1794 | WMF and EMF export with enhanced metafile and clip transparency | -- | AF-2563 | -- | format | plan D03 T17 §16 | skeleton lists WMF and EMF import only; export added here |
 | IP-1795 | PDF presets manager | PS-B-1196 | -- | -- | format | plan D03 T17 §7 |  |
 | IP-1796 | BMP open and export: RLE, color space info, 16, 24, 32 bit formats, OS/2, flip row order | PS-B-0999, PS-B-1000 | AF-2626 | GP-4356, GP-4357, GP-4358, GP-4359, GP-4360, GP-4361, GP-4362, GP-4363, GP-4364, GP-4365, GP-4824 | format | plan D03 T17 §8 |  |
 | IP-1797 | GIF single frame open and export: indexed conversion, interlace, comment | PS-B-0990, PS-B-0991, PS-B-0992 | AF-2617 | GP-4483, GP-4484, GP-4485, GP-4486, GP-4825 | format | plan D03 T17 §8 | animation in B-044 |
@@ -2037,6 +2050,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1857 | Search Adobe Stock | PS-B-0922 | -- | -- | cloud | excluded: cloud |  |
 | IP-1858 | Images from device and iPhone or iPad import | PS-B-0935, PS-B-0936 | -- | -- | core | excluded: platform | macOS only |
 | IP-1859 | X11 mouse cursor XMC open and export | -- | -- | GP-4770, GP-4771, GP-4772, GP-4773, GP-4774, GP-4775, GP-4776, GP-4777, GP-4778, GP-4779, GP-4780, GP-4781, GP-4847 | format | excluded: platform | X11 cursor themes, Linux only |
+| IP-2383 | Watermark placement: saved watermark image list, anchor positions with pixel offsets, keyed transparency color, blend mode, opacity, as a new layer, presets | -- | -- | -- | core | plan D03 T17 §15 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1469; AC-3544 to AC-3557, AC-4790); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T17 §15 |
 
 ## Metadata
 
@@ -2071,13 +2085,13 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1881 | Export As dialog: format, transparency, 8-bit PNG, quality, image and canvas size, metadata, sRGB, preview with size | PS-B-0903, PS-B-1056, PS-B-1057, PS-B-1058, PS-B-1059, PS-B-1060, PS-B-1061, PS-B-1063, PS-B-1064, PS-B-1065 | -- | -- | format | plan D03 T18 §1 |  |
 | IP-1882 | Export As scale multiples with suffixes | PS-B-1062 | -- | -- | format | plan D03 T18 §1 |  |
 | IP-1883 | Quick Export As with format, quality, and location | PS-B-0902, PS-B-0904, PS-B-1069, PS-B-1070 | -- | -- | format | plan D03 T18 §1 |  |
-| IP-1884 | Export layers to files, from the Export As list and Layers panel | PS-B-0910, PS-B-1066, PS-B-1068 | -- | -- | automation | plan D03 T18 §1 |  |
-| IP-1885 | Export artboards to files and PDF | PS-B-0906, PS-B-0907 | -- | -- | core | plan D03 T18 §1 |  |
-| IP-1886 | Export layer comps to files and PDF | PS-B-0908, PS-B-0909 | -- | -- | automation | plan D03 T18 §1 |  |
-| IP-1887 | Generate image assets from layer names | PS-B-0918, PS-B-0919, PS-B-0920, PS-B-0921 | -- | -- | core | plan D03 T18 §1 |  |
-| IP-1888 | Quick export and export as for layers, export layers to files | PS-A-0647, PS-A-0648, PS-A-0807 | -- | -- | automation | plan D03 T18 §1 |  |
-| IP-1889 | Layer comps to files | PS-A-0939 | -- | -- | automation | plan D03 T18 §1 |  |
-| IP-1890 | Artboards to files and to PDF | PS-A-0965, PS-A-0966 | -- | -- | automation | plan D03 T18 §1 |  |
+| IP-1884 | Export layers to files, from the Export As list and Layers panel | PS-B-0910, PS-B-1066, PS-B-1068 | -- | -- | automation | plan D03 T18 §8 |  |
+| IP-1885 | Export artboards to files and PDF | PS-B-0906, PS-B-0907 | -- | -- | core | plan D03 T18 §8 |  |
+| IP-1886 | Export layer comps to files and PDF | PS-B-0908, PS-B-0909 | -- | -- | automation | plan D03 T18 §8 |  |
+| IP-1887 | Generate image assets from layer names | PS-B-0918, PS-B-0919, PS-B-0920, PS-B-0921 | -- | -- | core | plan D03 T18 §8 |  |
+| IP-1888 | Quick export and export as for layers, export layers to files | PS-A-0647, PS-A-0648, PS-A-0807 | -- | -- | automation | plan D03 T18 §8 |  |
+| IP-1889 | Layer comps to files | PS-A-0939 | -- | -- | automation | plan D03 T18 §8 |  |
+| IP-1890 | Artboards to files and to PDF | PS-A-0965, PS-A-0966 | -- | -- | automation | plan D03 T18 §8 |  |
 | IP-1891 | Export dialog: every format in one list, favorites, live zoomable preview, estimated file size | -- | AF-2508, AF-2509, AF-2510, AF-2511, AF-2512 | -- | core | plan D03 T18 §1 | Extends D03 T04 §2 save paths |
 | IP-1892 | Export presets: built-in per format, create, rename, delete | -- | AF-2513, AF-2514 | -- | core | plan D03 T18 §1 |  |
 | IP-1893 | Export area: whole document, selection area, selection only | -- | AF-2515 | -- | core | plan D03 T18 §1 |  |
@@ -2087,21 +2101,21 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1897 | Export color profile: keep, convert, embed, or unprofiled, with installed system profiles | -- | AF-2529, AF-2530, AF-2228, AF-2229 | -- | format | plan D03 T18 §1 | Engine D01 T04 §1 |
 | IP-1898 | Export include bleed | -- | AF-2531 | -- | print | plan D03 T18 §1 | Needs a document bleed setting |
 | IP-1899 | Quick export button and panel with draggable preview | -- | AF-2569, AF-2570, AF-2571 | -- | core | plan D03 T18 §1 |  |
-| IP-1900 | Layer comps to files | PS-B-0764 | -- | -- | automation | plan D03 T18 §1 |  |
-| IP-1901 | Export layers to files with destination, prefix, visible only, trim, and per-format options | PS-B-0765, PS-B-0766, PS-B-0767 | -- | -- | automation | plan D03 T18 §1 |  |
+| IP-1900 | Layer comps to files | PS-B-0764 | -- | -- | automation | plan D03 T18 §8 |  |
+| IP-1901 | Export layers to files with destination, prefix, visible only, trim, and per-format options | PS-B-0765, PS-B-0766, PS-B-0767 | -- | -- | automation | plan D03 T18 §8 |  |
 | IP-1902 | Image map editor | -- | -- | GP-0104 | core | plan D03 T18 §2 |  |
 | IP-1903 | Save for Web dialog: views, presets, optimize to size, image size, metadata, color conversion, browser preview | PS-B-0905, PS-B-1073, PS-B-1074, PS-B-1081, PS-B-1083, PS-B-1084, PS-B-1085 | -- | -- | format | plan D03 T18 §2 |  |
 | IP-1904 | Save for Web GIF and PNG-8: color reduction, lossy, dither, color table editing | PS-B-1075, PS-B-1076, PS-B-1080 | -- | -- | format | plan D03 T18 §2 |  |
 | IP-1905 | Save for Web PNG-24, JPEG, and WBMP options | PS-B-1077, PS-B-1078, PS-B-1079 | -- | -- | format | plan D03 T18 §2 |  |
 | IP-1906 | Save for Web slices and HTML output settings | PS-B-1086, PS-B-1087, PS-B-1088 | -- | -- | format | plan D03 T18 §2 |  |
 | IP-1907 | Zoomify tiled export with HTML template | PS-B-0916, PS-B-0917 | -- | -- | core | plan D03 T18 §2 |  |
-| IP-1908 | Export studio: slice workspace for layers, groups, and drawn areas | -- | AF-0010, AF-2573 | -- | core | plan D03 T18 §2 | A workspace preset via D03 T20 §1 |
-| IP-1909 | Export visibility per item independent of canvas visibility | -- | AF-2577, AF-2516 | -- | core | plan D03 T18 §2 |  |
-| IP-1910 | Slices panel: multiple formats and 1x, 2x, 3x or absolute sizes per slice, DPI scaling | -- | AF-2579, AF-2580, AF-2586 | -- | core | plan D03 T18 §2 |  |
-| IP-1911 | Export options panel: per-slice or default settings, presets, copy and paste setups | -- | AF-2578, AF-2584 | -- | core | plan D03 T18 §2 |  |
-| IP-1912 | Slice file naming tokens and folder paths | -- | AF-2581, AF-2582 | -- | core | plan D03 T18 §2 |  |
-| IP-1913 | Continuous export of changed slices | -- | AF-2583 | -- | core | plan D03 T18 §2 |  |
-| IP-1914 | App icon presets and Xcode icon set JSON | -- | AF-2585 | -- | core | plan D03 T18 §2 |  |
+| IP-1908 | Export studio: slice workspace for layers, groups, and drawn areas | -- | AF-0010, AF-2573 | -- | core | plan D03 T18 §9 | A workspace preset via D03 T20 §1 |
+| IP-1909 | Export visibility per item independent of canvas visibility | -- | AF-2577, AF-2516 | -- | core | plan D03 T18 §9 |  |
+| IP-1910 | Slices panel: multiple formats and 1x, 2x, 3x or absolute sizes per slice, DPI scaling | -- | AF-2579, AF-2580, AF-2586 | -- | core | plan D03 T18 §9 |  |
+| IP-1911 | Export options panel: per-slice or default settings, presets, copy and paste setups | -- | AF-2578, AF-2584 | -- | core | plan D03 T18 §9 |  |
+| IP-1912 | Slice file naming tokens and folder paths | -- | AF-2581, AF-2582 | -- | core | plan D03 T18 §9 |  |
+| IP-1913 | Continuous export of changed slices | -- | AF-2583 | -- | core | plan D03 T18 §9 |  |
+| IP-1914 | App icon presets and Xcode icon set JSON | -- | AF-2585 | -- | core | plan D03 T18 §9 |  |
 | IP-1915 | Web filters menu and Semi-flatten with color | -- | -- | GP-3266, GP-3267, GP-3268 | core | plan D03 T18 §2 | Engine D03 T11 §5 semi-flatten |
 | IP-1916 | Image map editor: working area, area list, source view, gray view | -- | -- | GP-3269, GP-3270, GP-3271, GP-3272, GP-3273, GP-3281, GP-3282, GP-3283, GP-3284, GP-3285 | core | plan D03 T18 §2 | Writes HTML image map text, not pixels |
 | IP-1917 | Image map areas: rectangle, circle, polygon, edit area info, reorder | -- | -- | GP-3279, GP-3280, GP-3286, GP-3287, GP-3288, GP-3289, GP-3290, GP-3298, GP-3299 | core | plan D03 T18 §2 |  |
@@ -2126,8 +2140,8 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1931 | Keep any RGB working space end to end | -- | -- | GP-0010 | core | plan D03 T18 §4 |  |
 | IP-1932 | Rendering intent and black point compensation for conversions | -- | AF-2223, AF-2224 | -- | core | plan D03 T18 §4 | Engine D01 T04 §2 |
 | IP-1933 | Convert opened and placed images to the working space | -- | AF-2225, AF-2227 | -- | core | plan D03 T18 §4 |  |
-| IP-1934 | OpenColorIO configuration and display emulation | -- | AF-2245, AF-2242 | -- | core | plan D03 T18 §4 |  |
-| IP-1935 | ACES RRT display filter with exposure stops | -- | -- | GP-1005, GP-1010 | core | plan D03 T18 §4 | Display transform via OCIO |
+| IP-1934 | OpenColorIO configuration and display emulation | -- | AF-2245, AF-2242 | -- | core | plan D03 T18 §10 |  |
+| IP-1935 | ACES RRT display filter with exposure stops | -- | -- | GP-1005, GP-1010 | core | plan D03 T18 §10 | Display transform via OCIO |
 | IP-1936 | Opened file profile handling and convert to working space | -- | AF-2636 | GP-0806 | format | plan D03 T18 §4 |  |
 | IP-1937 | Save color options: embed ICC profile, use proof setup | PS-B-0899 | -- | -- | core | plan D03 T18 §4 |  |
 | IP-1938 | Color settings dialog with presets and save and load of settings files | PS-B-1140, PS-B-1141, PS-B-1158 | -- | -- | core | plan D03 T18 §4 | Engine D01 T04 |
@@ -2142,11 +2156,11 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1947 | Document color profile in new document and document setup | -- | AF-2218 | -- | core | plan D03 T18 §4 | New document UI D03 T08 §2 |
 | IP-1948 | Embedded profile indicator in status bar and title | PS-B-1165 | -- | -- | core | plan D03 T18 §4 |  |
 | IP-1949 | Image color management submenu and save profile to file | -- | -- | GP-1271, GP-1275 | core | plan D03 T18 §4 |  |
-| IP-1950 | Display color management per view: color-manage this view, as in preferences | -- | -- | GP-1293, GP-1294, GP-1295, GP-1296 | core | plan D03 T18 §4 | Monitor profile from Windows |
-| IP-1951 | OCIO display and view transforms, applied to exports from 32-bit | -- | AF-2241, AF-2246 | -- | format | plan D03 T18 §4 | Needs a user OCIO config; 32-bit preview D03 T15 §4 |
-| IP-1952 | OpenColorIO configuration with OCIO 2.5 | -- | AF-2018, AF-2019 | -- | core | plan D03 T18 §4 |  |
+| IP-1950 | Display color management per view: color-manage this view, as in preferences | -- | -- | GP-1293, GP-1294, GP-1295, GP-1296 | core | plan D03 T18 §10 | Monitor profile from Windows |
+| IP-1951 | OCIO display and view transforms, applied to exports from 32-bit | -- | AF-2241, AF-2246 | -- | format | plan D03 T18 §10 | Needs a user OCIO config; 32-bit preview D03 T15 §4 |
+| IP-1952 | OpenColorIO configuration with OCIO 2.5 | -- | AF-2018, AF-2019 | -- | core | plan D03 T18 §10 |  |
 | IP-1953 | Color settings preferences: default RGB, 32-bit, CMYK, gray, Lab profiles, intent, BPC, convert and warn on open, file open policy, OCIO by filename | -- | AF-2667, AF-2668, AF-2669, AF-2670, AF-2671, AF-2672 | GP-4148, GP-4149, GP-4150, GP-4151 | core | plan D03 T18 §4 |  |
-| IP-1954 | Display color management preferences: image display mode, monitor profile, intent, BPC, optimize for speed or fidelity | -- | -- | GP-4140, GP-4141, GP-4142, GP-4143, GP-4144, GP-4145 | core | plan D03 T18 §4 |  |
+| IP-1954 | Display color management preferences: image display mode, monitor profile, intent, BPC, optimize for speed or fidelity | -- | -- | GP-4140, GP-4141, GP-4142, GP-4143, GP-4144, GP-4145 | core | plan D03 T18 §10 |  |
 | IP-1955 | Soft proof adjustment layer: profile, intent, black point compensation, gamut check | -- | AF-1250, AF-1251, AF-1252, AF-1253, AF-1254, AF-1255, AF-1256 | -- | print | plan D03 T18 §5 |  |
 | IP-1956 | Proof setup and proof colors | PS-A-1708, PS-A-1709 | -- | -- | print | plan D03 T18 §5 |  |
 | IP-1957 | Gamut warning | PS-A-1710 | -- | -- | print | plan D03 T18 §5 |  |
@@ -2316,6 +2330,10 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-2111 | Segmentation model download for object selection | -- | AF-0487 | -- | ai | backlog B-046 | Imago default is OpenRouter vision plus the local classical engine |
 | IP-2112 | On-device ML settings: inference device, segmentation and saliency models, model download and uninstall | -- | AF-2664, AF-2665, AF-2666, AF-2734 | -- | ai | backlog B-046 |  |
 | IP-2113 | Content credentials on develop edits and exports | PS-B-0591 | -- | -- | ai | backlog B-047 | provenance still recorded via D01 T05 §3 |
+| IP-2369 | One-click masked background adjustments from an AI subject mask: black and white background (blur background is IP-2061) | -- | -- | -- | core | plan D03 T19 §15 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1284; AC-2825); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T19 §15 |
+| IP-2372 | Face edit framework: detect faces with landmark points, face selector, correctable points, symmetric left and right link, grouped sliders, presets | -- | -- | -- | core | plan D03 T19 §11 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1372; AC-3141, AC-3142, AC-3158, AC-3194 to AC-3196, AC-3198); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T19 §11 |
+| IP-2373 | Face color retouching over face landmarks: eye sharpen, whitening, eye and iris color, sclera, eyebrow color, nose contouring, teeth whitening, lip color, blush, eyeshadow | -- | -- | -- | core | plan D03 T19 §11 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1375; AC-3155 to AC-3157, AC-3163, AC-3168, AC-3170, AC-3188 to AC-3193); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T19 §11 |
+| IP-2374 | Hair recolor with an automatic hair mask: color wheel limited to natural colors, temperature, tint, saturation, shadows, midtones, highlights, sharpness, hair mask editing | -- | -- | -- | core | plan D03 T19 §11 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1376; AC-3173 to AC-3181, AC-3197); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T19 §11 |
 
 ## Workspace and UI
 
@@ -2472,13 +2490,13 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 
 | ID | Feature | Photoshop | Affinity | GIMP | Category | Status | Notes |
 | -- | ------- | --------- | -------- | ---- | -------- | ------ | ----- |
-| IP-2250 | Photoshop-compatible 64-bit filter plug-ins | -- | AF-1861 | -- | core | backlog B-012 |  |
-| IP-2251 | Host legacy 8BF filter plug-ins | PS-B-0790 | -- | -- | automation | backlog B-012 |  |
-| IP-2252 | Host Photoshop format and acquire plug-ins | PS-B-0791 | -- | -- | automation | backlog B-012 |  |
-| IP-2253 | Photoshop plug-in settings: default folder, search folders, support folder authorization, detected list with support status, allow unknown, restart | -- | AF-1862, AF-1863, AF-1864, AF-1865, AF-1866, AF-1867, AF-1868, AF-2727 | -- | core | backlog B-012 |  |
-| IP-2254 | Manage installed plug-ins and About Plug-ins list | PS-B-0787, PS-B-1415 | -- | -- | automation | backlog B-024 | Imago-native plug-in manager |
-| IP-2255 | Extension modules manager | -- | -- | GP-0910 | core | backlog B-024 |  |
-| IP-2256 | Third-party engine operations appear as filters | -- | -- | GP-4884 | automation | backlog B-024 |  |
+| IP-2250 | Photoshop-compatible 64-bit filter plug-ins | -- | AF-1861 | -- | core | plan D03 T14 §11 |  |
+| IP-2251 | Host legacy 8BF filter plug-ins | PS-B-0790 | -- | -- | automation | plan D03 T14 §11 |  |
+| IP-2252 | Host Photoshop format and acquire plug-ins | PS-B-0791 | -- | -- | automation | plan D03 T14 §11 |  |
+| IP-2253 | Photoshop plug-in settings: default folder, search folders, support folder authorization, detected list with support status, allow unknown, restart | -- | AF-1862, AF-1863, AF-1864, AF-1865, AF-1866, AF-1867, AF-1868, AF-2727 | -- | core | plan D03 T14 §11 |  |
+| IP-2254 | Manage installed plug-ins and About Plug-ins list | PS-B-0787, PS-B-1415 | -- | -- | automation | plan D03 T14 §11 | Imago-native plug-in manager |
+| IP-2255 | Extension modules manager | -- | -- | GP-0910 | core | plan D03 T14 §12 |  |
+| IP-2256 | Third-party engine operations appear as filters | -- | -- | GP-4884 | automation | plan D03 T14 §12 |  |
 | IP-2257 | Plug-in API messages only in interactive mode | -- | -- | GP-0106 | automation | backlog B-041 |  |
 | IP-2258 | Select subject recordable in macros | -- | AF-2122 | -- | automation | backlog B-041 | Shortcut binding via D03 T20 §3 |
 | IP-2259 | MCP server for external AI agents with file, network, script, AI tool, and local memory permissions | -- | AF-2171, AF-2172, AF-2173, AF-2174, AF-2175, AF-2176, AF-2177 | -- | automation | backlog B-041 |  |
@@ -2608,5 +2626,5 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-2363 | Unified vector, photo, and layout app | -- | AF-0001 | -- | core | other-app: Nodus vector and layout disciplines live in Nodus, Imago is the photo discipline |  |
 | IP-2364 | Vector studio | -- | AF-0004 | -- | core | other-app: Nodus vector drawing workspace |  |
 | IP-2365 | Substance 3D Viewer integration and Substance 3D materials | PS-B-0875, PS-B-0876 | -- | -- | 3d | other-app: none Adobe Substance 3D companion products |  |
-| IP-2366 | G'MIC-Qt third-party filter collection | -- | -- | GP-4888 | automation | other-app: none third-party plug-in, hostable via B-024 if ported |  |
+| IP-2366 | G'MIC-Qt third-party filter collection | -- | -- | GP-4888 | automation | plan D03 T14 §13 | G'MIC core (CeCILL-2.1, GPL-compatible) runs in the D01 T09 §1 host process |
 | IP-2367 | DaVinci Resolve and Cavalry integration | -- | AF-2640, AF-2641 | -- | video | other-app: none third-party video and animation products |  |

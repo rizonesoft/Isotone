@@ -48,9 +48,9 @@ track: I18
 - -> XREF: D02 T14 §15 -- the export queue §1 moves
 - -> XREF: D02 T14 §16 -- the web encoder §2 moves
 - -> XREF: D02 T14 §17 -- the slice model and image map writer §2 moves
-- -> XREF: D03 T02 §2 -- the viewport display transform §4 and §5 drive
+- -> XREF: D03 T02 §2 -- the viewport display transform §10 and §5 drive
 - -> XREF: D03 T02 §3 -- blend gamma in the render graph from §4's advanced settings
-- -> XREF: D03 T02 §5 -- the GPU path with CPU parity for the display transform
+- -> XREF: D03 T02 §5 -- the GPU path with CPU parity for §10's display transform
 - -> XREF: D03 T04 §2 -- the save paths Export As extends
 - -> XREF: D03 T08 §1 -- slices, soft proof layers, and document color settings persist through the contract
 - -> XREF: D03 T08 §2 -- document profile and bleed in New Document
@@ -60,18 +60,18 @@ track: I18
 - -> XREF: D03 T09 §13 -- artboards to files
 - -> XREF: D03 T10 §10 -- spot channels for separations
 - -> XREF: D03 T11 §1 -- the adjustment host for the soft proof layer
-- -> XREF: D03 T11 §4 -- the OpenColorIO wrapper
+- -> XREF: D03 T11 §4 -- the OpenColorIO wrapper §10 configures
 - -> XREF: D03 T11 §5 -- semi-flatten for the Web filters
 - -> XREF: D03 T11 §7 -- mode conversions Convert to Profile shares
-- -> XREF: D03 T15 §4 -- the 32-bit preview OCIO views drive
+- -> XREF: D03 T15 §4 -- the 32-bit preview §10's OCIO views drive
 - -> XREF: D03 T16 §1 -- captions on contact sheets and presentations
 - -> XREF: D03 T17 §1 -- the format registry Export As lists
 - -> XREF: D03 T17 §5 -- the web codecs exports use
 - -> XREF: D03 T17 §6 -- OCIO by filename for EXR exports
-- -> XREF: D03 T17 §7 -- the PDF writer, EPS writer, and printer marks renderer exports and print use
+- -> XREF: D03 T17 §7 -- the PDF writer and printer marks renderer exports and print use; `D03 T17 §16` owns the EPS writer §7 writes halftones and transfer functions through
 - -> XREF: D03 T17 §10 -- the metadata policy exports apply
 - -> XREF: D03 T17 §11 -- the CMYK writers the CMYK proof workflow exports through
-- -> XREF: D03 T20 §1 -- registers §2's Export studio as a workspace preset
+- -> XREF: D03 T20 §1 -- registers §9's Export studio as a workspace preset
 - -> XREF: D03 T20 §4 -- preference pages that list the `Imago.Color.*` and `Imago.Export.*` keys
 - -> XREF: D03 T20 §5 -- preference pages that list the `Imago.Print.*` keys
 
@@ -92,23 +92,26 @@ track: I18
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | Export As, Quick Export, and asset export | D03 T17 §5, D03 T09 §13, D03 T09 §11 |  [ ]   |
-|   2   |   §2    | Save for Web and the Export studio | §1 |  [ ]   |
-|   3   |   §3    | Slices | §2 |  [ ]   |
-|   4   |   §4    | Color settings, profiles, and display color management | D01 T04 §2, D03 T08 §1 |  [ ]   |
-|   5   |   §5    | Soft proofing and gamut warning | §4 |  [ ]   |
-|   6   |   §6    | Print | §4, D02 T13 §2 |  [ ]   |
-|   7   |   §7    | Print output extras, contact sheets, PDF presentation, and preflight | §6, D03 T17 §7 |  [ ]   |
+|   1   |   §1    | Export As and Quick Export | D03 T17 §5, D03 T09 §13, D03 T09 §11 |  [ ]   |
+|   2   |   §8    | Layers, artboards, and comps to files and PDF, and generated image assets | §1, D03 T17 §7 |  [ ]   |
+|   3   |   §2    | Save for Web, Web filters, and the Image Map editor | §1 |  [ ]   |
+|   4   |   §9    | The Export studio: slices, per-slice formats, naming tokens, continuous export, and app icons | §2 |  [ ]   |
+|   5   |   §3    | Slices | §2, §9 |  [ ]   |
+|   6   |   §4    | Color settings, policies, custom CMYK, and assign and convert | D01 T04 §2, D03 T08 §1 |  [ ]   |
+|   7   |   §10   | Display color management per view and OpenColorIO | §4, D03 T11 §4, D03 T15 §4 |  [ ]   |
+|   8   |   §5    | Soft proofing and gamut warning | §4, §10 |  [ ]   |
+|   9   |   §6    | Print | §4, D02 T13 §2 |  [ ]   |
+|  10   |   §7    | Print output extras, contact sheets, PDF presentation, and preflight | §6, D03 T17 §7, D03 T17 §16 |  [ ]   |
 
 ---
 
-## 1. Export As, Quick Export, and Asset Export
+## 1. Export As and Quick Export
 
-Today Export only logs. Designers need to export exactly the pixels, size, format, and profile a client asks for, from the whole document, a selection, a layer, an artboard, or a comp, and re-export after edits without a dialog. This section builds one `ExportJob` model over `D03 T17 §1`'s registry and writers, runs it on the export queue Nodus built (`D02 T14 §15`, moved here into `Photon.Core` as its second consumer), and puts Export As, Quick Export, the layer, artboard, and comp exports, and Photoshop Generator-style asset generation on top of it. Catalog: IP-1881 to IP-1901 (21 features: the Export As dialog, scale multiples with suffixes, Quick Export As, layers to files, artboards to files and PDF, comps to files and PDF, generated image assets, quick export for layers, comps to files as GIMP's row, artboards to files and PDF as Affinity's row, the export dialog with every format in one list and a live preview, export presets, the export area, export size and resampling, pixel format and depth and DPI, quality and matte and palettised output, the export color profile, include bleed, the Quick Export panel, comps to files as Affinity's row, and layers to files with their options).
+Today Export only logs. Designers need to export exactly the pixels, size, format, and profile a client asks for, from the whole document, a selection, a layer, an artboard, or a comp, and re-export after edits without a dialog. This section builds one `ExportJob` model over `D03 T17 §1`'s registry and writers, runs it on the export queue Nodus built (`D02 T14 §15`, moved here into `Photon.Core` as its second consumer), and puts Export As and Quick Export on top of it. The layer, artboard, and comp exports and Photoshop Generator-style asset generation are §8's, split from this section on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. Catalog: IP-1881 to IP-1883 and IP-1891 to IP-1899 (12 features: the Export As dialog, scale multiples with suffixes, Quick Export As, the export dialog with every format in one list and a live preview, export presets, the export area, export size and resampling, pixel format and depth and DPI, quality and matte and palettised output, the export color profile, include bleed, and the Quick Export panel).
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/export-as/` and `docs/captures/imago/quick-export/`.
 **Job:** a designer exports exactly the pixels, size, format, and profile a client needs in one action, and re-exports after edits. Consumer: the exported files and whoever receives them.
-**Treatment:** an Export As dialog with every registered format in one list, favorites, presets, scale multiples with suffixes, a live zoomable preview of the encoded result with its real size, and per-layer, artboard, and comp lists; Quick Export as one command and an Affinity-style panel with a draggable preview. Cheaper substitute that fails the checkpoint: Save As under another name.
+**Treatment:** an Export As dialog with every registered format in one list, favorites, presets, scale multiples with suffixes, and a live zoomable preview of the encoded result with its real size; Quick Export as one command and an Affinity-style panel with a draggable preview. Cheaper substitute that fails the checkpoint: Save As under another name.
 **Chrome:** consume the `D03 T17 §1` registry and writers, the moved export queue, the status strip, and the settings store. Do not add a second export queue.
 
 **Requires:** display-session -- the dialog, preview, and panel captures need an interactive desktop
@@ -130,33 +133,26 @@ Today Export only logs. Designers need to export exactly the pixels, size, forma
 - [ ] Add export presets per format (IP-1892): built-in presets plus create, rename, and delete, stored as JSON under `%LOCALAPPDATA%\Rizonesoft\Imago\presets\export\`. Done when: a user preset survives a restart and a deleted one is gone.
 - [ ] Add File, Export, Quick Export (IP-1883) with `Imago.Export.Quick.Format`, `Imago.Export.Quick.Quality`, and `Imago.Export.Quick.Location` (ask or same folder). Done when: with the location set to same folder, Quick Export writes beside the document with no dialog.
 - [ ] Add a Quick Export toolbar button and an Affinity-style Quick Export panel with a draggable preview (IP-1899). Done when: a driven drag of the panel preview writes the export to the drop folder.
-- [ ] Add Export Layers to Files (IP-1884, IP-1901): a target folder, prefix, visible only, trim, and per-format options. Done when: a three-layer fixture writes three trimmed files named with the prefix.
-- [ ] Add Quick Export and Export As for layers from the Layers panel context menu (IP-1888). Done when: a driven right-click export of one layer writes one file.
-- [ ] Add artboards to files (IP-1885, IP-1890) through `D03 T09 §13`. Done when: a two-artboard fixture writes two files sized to their artboards.
-- [ ] Add artboards to PDF through the `D03 T17 §7` PDF writer. Done when: PdfPig reads one page per artboard with its media box.
-- [ ] Add comps to files (IP-1886, IP-1889, IP-1900) through `D03 T09 §11`. Done when: a three-comp fixture writes three files whose pixels differ as the comps do.
-- [ ] Add comps to PDF through the `D03 T17 §7` PDF writer. Done when: PdfPig reads one page per comp.
-- [ ] Add Generate Image Assets (IP-1887): Photoshop Generator syntax in layer names (for example `200% hero@2x.png, 80% hero.jpg`, folders, and a `default` layer) parsed by `src/Imago/Photon.Imago.Core/Export/AssetNameParser.cs`, regenerated on change into `<document>-assets/`. Done when: `AssetNameParserTests` pass Adobe's documented examples and an edit to a tagged layer rewrites only its assets.
 - [ ] Warn by name on per-format size limits (for example JPEG's 65,535 px) and refuse a read-only target folder by name. Done when: tests assert both messages.
 - [ ] Log one Serilog Information line per exported file (`Exported {Source} to {Path} as {Format} {Width}x{Height} {Bytes} bytes in {ElapsedMs} ms`). Done when: a Serilog test logger asserts the line.
-- [ ] Commit fixtures under `tests/fixtures/imago/export/` (layers, artboards, comps, Generator-named layers) with `reference.txt`. Done when: every fixture carries its note.
-- [ ] Commit captures under `docs/captures/imago/export-as/` and `docs/captures/imago/quick-export/`, and write `docs/user/imago/export.md`. Done when: every control appears in a capture and the page documents it.
-- [ ] Commit: `"imago: Export As, Quick Export, and asset export"`
+- [ ] Commit fixtures under `tests/fixtures/imago/export/` (a flat document, a selection, a 16-bit document, and a Display P3 document) with `reference.txt`. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/export-as/` and `docs/captures/imago/quick-export/`, and write `docs/user/imago/export.md`. Done when: every control this section adds appears in a capture and the page documents it.
+- [ ] Commit: `"imago: Export As and Quick Export on one export job model"`
 
-**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~ExportJobTests|FullyQualifiedName~ExportPreviewTests|FullyQualifiedName~AssetNameParserTests"` exits 0, resolving sizes for every mode, passing Adobe's documented Generator examples, and asserting the preview's shown size equals the written file's byte count; a driven export of layers, artboards, and comps is captured with the written file list quoted. Cheaper substitute that fails: Save As reuse, which ignores scale, area, and suffixes and fails those tests.
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~ExportJobTests|FullyQualifiedName~ExportPreviewTests"` exits 0, resolving sizes for every mode and asserting the preview's shown size equals the written file's byte count; a driven Export As of each favorite format with scale multiples and a Quick Export beside the document are captured with the written file list quoted. Cheaper substitute that fails: Save As reuse, which ignores scale, area, and suffixes and fails those tests.
 
-## 2. Save for Web and the Export Studio
+## 2. Save for Web, Web Filters, and the Image Map Editor
 
-Web designers need the smallest good-looking files, sliced exports kept current while they edit, and clickable image maps. This section builds Photoshop's Save for Web with 2-up and 4-up optimization, lossy GIF, optimize to size, and Zoomify; Affinity's Export studio with slices, per-slice formats and sizes, naming tokens, continuous export, and app icon sets; the Web filters with semi-flatten; and GIMP's Image Map editor. The web encoder, the slice model, and the image map writer come from Nodus (`D02 T14 §16`, `D02 T14 §17`) and move into `Photon.Core/Export/Web/` here; the slice model moves in this section rather than §3 because the studio and the slices output need it first. The Export studio is its own window in this phase, and `D03 T20 §1` registers it as a workspace preset when workspaces land. Catalog: IP-1902 to IP-1919 (18 features: the Image Map editor, the Save for Web dialog, GIF and PNG-8 reduction, PNG-24, JPEG, and WBMP options, slices output, Zoomify, the Export studio, per-item export visibility, the slices panel, the export options panel, naming tokens, continuous export, app icon presets, the Web filters with semi-flatten, and the image map working area, areas, files, and grid and guides).
+Web designers need the smallest good-looking files, sliced exports kept current while they edit, and clickable image maps. This section builds Photoshop's Save for Web with 2-up and 4-up optimization, lossy GIF, optimize to size, and Zoomify; the Web filters with semi-flatten; and GIMP's Image Map editor. Affinity's Export studio with per-slice formats and sizes, naming tokens, continuous export, and app icon sets is §9's, split from this section on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. The web encoder, the slice model, and the image map writer come from Nodus (`D02 T14 §16`, `D02 T14 §17`) and move into `Photon.Core/Export/Web/` here; the slice model moves in this section rather than §3 because the slices output and §9's studio need it first. Catalog: IP-1902 to IP-1907 and IP-1915 to IP-1919 (11 features: the Image Map editor, the Save for Web dialog, GIF and PNG-8 reduction, PNG-24, JPEG, and WBMP options, slices output, Zoomify, the Web filters with semi-flatten, and the image map working area, areas, files, and grid and guides).
 
-**Fidelity:** new build, no baseline; captured to `docs/captures/imago/save-for-web/`, `docs/captures/imago/export-studio/`, and `docs/captures/imago/image-map/`.
-**Job:** a web designer ships the smallest good-looking files, keeps sliced exports current while editing, and builds clickable image maps. Consumer: browsers, app stores, and the site the files are published to.
-**Treatment:** a Save for Web dialog (original, optimized, 2-up, 4-up, presets, color table, size, preview in browser), the Export studio window (slices, export options, and layers panels with continuous export), and an Image Map editor window (areas list, source and gray views, grid and guides). Cheaper substitute that fails the checkpoint: a quality slider on JPEG export.
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/save-for-web/` and `docs/captures/imago/image-map/`.
+**Job:** a web designer ships the smallest good-looking files and builds clickable image maps. Consumer: browsers and the site the files are published to.
+**Treatment:** a Save for Web dialog (original, optimized, 2-up, 4-up, presets, color table, size, preview in browser) and an Image Map editor window (areas list, source and gray views, grid and guides). Cheaper substitute that fails the checkpoint: a quality slider on JPEG export.
 **Chrome:** consume §1's job model, the moved web encoder, slice model, and image map writer, and the `D03 T08 §4` guides. Do not add a second palette quantizer.
 
 **Requires:** display-session -- the dialogs, the studio, and the editor need an interactive desktop
 
-**Freeze check:** Save for Web, the Export studio, continuous export, Zoomify, and image map saves write through `AtomicFileWriter` and never to the open document's own path; continuous export rewrites only the changed slices' files; a failed or cancelled write leaves any existing target byte-identical; the open document is never changed by any of them except the slice and visibility edits the user makes, which are undoable. Fixture source: `tests/fixtures/imago/web/` (created by this section).
+**Freeze check:** Save for Web, slices output, Zoomify, and image map saves write through `AtomicFileWriter` and never to the open document's own path; a failed or cancelled write leaves any existing target byte-identical; the open document is never changed by any of them except the slice edits the user makes, which are undoable. Fixture source: `tests/fixtures/imago/web/` (created by this section).
 
 - [ ] Move first: the encoder half of `D02 T14 §16` (`WebEncoderSettings`, size estimates, presets) into `src/Photon.Core/Export/Web/`, repointing Nodus. Done when: one `WebEncoderSettings` definition remains and Nodus's web export tests pass.
 - [ ] Move the HTML `<map>` writer of `D02 T14 §17` into `src/Photon.Core/Export/Web/ImageMap/`, repointing Nodus. Done when: one image map writer definition remains.
@@ -170,31 +166,24 @@ Web designers need the smallest good-looking files, sliced exports kept current 
 - [ ] Add PNG-24, JPEG, and WBMP options (IP-1905). Done when: size rises monotonically with JPEG quality on a committed fixture.
 - [ ] Add slices output (IP-1906): one image per slice plus an HTML table or CSS layout with output settings. Done when: the written HTML parses and references one image per slice.
 - [ ] Add Zoomify export (IP-1907): a 256 px JPEG pyramid in `TileGroupN` folders with `ImageProperties.xml` and an own HTML template. Done when: `ZoomifyTests` check tile counts per level and the XML attributes against the format.
-- [ ] Add the Export studio window `src/Imago/Photon.Imago.Desktop/Views/Export/ExportStudioWindow.xaml` (IP-1908): a layout of the Slices, Export Options, and Layers panels, with slices created from layers and groups; its Draw Slice button is disabled with a tooltip naming `D03 T18 §3`, whose slice tool enables it. Done when: a driven run creates slices from two layers and the capture shows the studio.
-- [ ] Add per-item export visibility independent of canvas visibility (IP-1909). Done when: a layer hidden for export but visible on canvas is absent from its slice's output and present on screen.
-- [ ] Add the Slices panel (IP-1910): multiple formats per slice and 1x, 2x, and 3x or absolute sizes with DPI scaling. Done when: one slice with two formats and two sizes writes four files.
-- [ ] Add the Export Options panel (IP-1911): per-slice or default settings, presets, and copy and paste of setups. Done when: pasting a setup onto a second slice gives equal settings.
-- [ ] Add naming tokens and folder paths (IP-1912), for example `{slice}/{name}@{scale}x.{ext}`. Done when: a test expands every token for a fixture slice.
-- [ ] Add continuous export (IP-1913): subscribe to document change events, debounce, and re-export only slices whose bounds intersect the change, with a status indicator. Done when: `ContinuousExportTests` edit inside one slice and only that slice's files change.
-- [ ] Add app icon presets (IP-1914) for iOS, Android, Windows, and macOS sets, with Xcode `AppIcon.appiconset/Contents.json`. Done when: the iOS preset writes every size its `Contents.json` lists and the JSON parses.
 - [ ] Add the Web filters menu with Semi-flatten (IP-1915) through `D03 T11 §5`. Done when: semi-flatten against a color leaves no partially transparent pixel.
 - [ ] Add the Image Map editor window `src/Imago/Photon.Imago.Desktop/Views/Export/ImageMapWindow.xaml` (IP-1902, IP-1916): the working area, an area list, and source and gray views. Done when: a driven run switches views and the capture shows both.
 - [ ] Add image map areas (IP-1917): rectangle, circle, and polygon, with area info (URL, alt, target, and event attributes written, never executed) and reorder. Done when: a test asserts event attributes are written verbatim and no script is evaluated.
 - [ ] Add image map files (IP-1918): open, recent, save, save as, and map info in CSIM, NCSA, and CERN formats through the moved writer. Done when: `ImageMapTests` round-trip all three formats and parse the HTML.
 - [ ] Add the image map grid and guides (IP-1919): grid settings, use guides from `D03 T08 §4`, and create guide areas. Done when: create guide areas produces one area per guide cell.
-- [ ] Log one Serilog Information line per Save for Web, studio export, continuous re-export, and image map save. Done when: a Serilog test logger asserts each line.
+- [ ] Log one Serilog Information line per Save for Web, Zoomify export, and image map save. Done when: a Serilog test logger asserts each line.
 - [ ] Commit fixtures under `tests/fixtures/imago/web/` with `reference.txt`. Done when: every fixture carries its note.
-- [ ] Commit captures under `docs/captures/imago/save-for-web/`, `export-studio/`, and `image-map/`, and write `docs/user/imago/web-output.md`. Done when: every window appears in a capture and the page documents it.
-- [ ] Commit: `"imago: Save for Web, the Export studio, and the Image Map editor"`
+- [ ] Commit captures under `docs/captures/imago/save-for-web/` and `image-map/`, and write `docs/user/imago/web-output.md`. Done when: every window this section adds appears in a capture and the page documents it.
+- [ ] Commit: `"imago: Save for Web, the Web filters, and the Image Map editor"`
 
-**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~WebEncoderTests|FullyQualifiedName~ZoomifyTests|FullyQualifiedName~ImageMapTests|FullyQualifiedName~ContinuousExportTests"` exits 0, asserting palette size, transparency index, and monotonic size with quality, optimize-to-size within 5 percent under target, Zoomify tile counts and XML, all three map formats round-tripping, and only the changed slice rewritten; captures committed. Cheaper substitute that fails: re-exporting every slice on each change, which the changed-slice test catches.
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~WebEncoderTests|FullyQualifiedName~ZoomifyTests|FullyQualifiedName~ImageMapTests"` exits 0, asserting palette size, transparency index, and monotonic size with quality, optimize-to-size within 5 percent under target, Zoomify tile counts and XML, and all three map formats round-tripping; captures committed. Cheaper substitute that fails: a JPEG quality slider, which the optimize-to-size and palette tests catch.
 
 ## 3. Slices
 
 Web designers cut a comp into named, linked images. This section adds Photoshop's slice and slice select tools, auto slices around user slices, slices from guides, divide, options, layer-based slices, and slice display on the `Slice` model §2 moved into `Photon.Core`, and it enables the Export studio's Draw Slice button. Catalog: IP-1920 to IP-1928 (9 features: slice display, snapping, lock, and clear, new layer-based slice, the slice tool, slices from guides, the slice select tool, user and auto slices, divide slice, slice options, and layer-based slices with revert to auto size).
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/slices/`.
-**Job:** a web designer cuts a comp into named, linked images. Consumer: §2's slices output, the Export studio, and continuous export.
+**Job:** a web designer cuts a comp into named, linked images. Consumer: §2's slices output, and §9's Export studio and continuous export.
 **Treatment:** the slice tool with styles, the slice select tool with order, align, and distribute, a Slice Options dialog, a Divide Slice dialog, and numbered slice overlays. Cheaper substitute that fails the checkpoint: exporting rectangles typed by hand.
 **Chrome:** consume the moved `Slice` model, the `D03 T08 §4` guides and snapping, and the suite history. Do not add a second slice model.
 
@@ -210,23 +199,23 @@ Web designers cut a comp into named, linked images. This section adds Photoshop'
 - [ ] Add the Slice Options dialog (IP-1927): name, URL, target, message, alt, dimensions, and background type and color. Done when: every field round-trips `.imago`.
 - [ ] Add layer-based slices (IP-1921, IP-1928) following layer or group bounds, with revert to auto size. Done when: `SliceTests.LayerBased` move the layer and the slice follows.
 - [ ] Add numbered slice overlays, snapping, lock, and clear (IP-1920) under `Imago.Slices.ShowNumbers`, `Imago.Slices.LineColor`, and `Imago.Slices.Snap`. Done when: toggling each setting redraws without a restart.
-- [ ] Enable the Export studio's Draw Slice button from §2 with this tool, and register slice edges as `D03 T08 §4` snap candidates. Done when: the button activates the Slice tool in a driven run and a crop edge snaps to a slice edge.
+- [ ] Enable the Export studio's Draw Slice button from §9 with this tool, and register slice edges as `D03 T08 §4` snap candidates. Done when: the button activates the Slice tool in a driven run and a crop edge snaps to a slice edge.
 - [ ] Make every slice edit one undoable command with one Serilog Information line. Done when: a Serilog test logger asserts the line and undo reverses a divide.
 - [ ] Commit captures under `docs/captures/imago/slices/` and extend `docs/user/imago/web-output.md` with slices. Done when: both tools and both dialogs appear in captures and the page documents them.
 - [ ] Commit: `"imago: slices and the slice tools"`
 
 **Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~SliceTests"` exits 0 covering auto-slice generation around user slices, divide, layer-based bounds following a moved layer, and a `.imago` round trip of every field; a driven capture of both tools is committed under `docs/captures/imago/slices/`. Cheaper substitute that fails: user slices only, which the auto-slice coverage test catches.
 
-## 4. Color Settings, Profiles, and Display Color Management
+## 4. Color Settings, Policies, Custom CMYK, and Assign and Convert
 
-Imago's color is hand-rolled today: four RGB profiles by primaries and gamma and a matrix soft proof, with no ICC engine. This section retires those classes and puts every color decision on the suite engine of `D01 T04 §1` to `D01 T04 §3`: one color-settings file read by Nodus, Imago, and Lumen, working spaces and policies, conversion options, custom CMYK, Assign and Convert to Profile, document profiles and indicators, per-view display color management on the CPU and GPU paths, and OpenColorIO. Nodus's Color Settings dialog (`D02 T13 §1`) moves into `Photon.UI` as the shared shell so no second dialog exists. This promotes backlog B-023. Catalog: IP-1931 to IP-1954 (24 features: keeping any RGB working space, intent and BPC, converting opened and placed images, the OCIO configuration, the ACES display filter, opened-file profile handling, save color options, the Color Settings dialog, suite-shared settings, working spaces, policies and warnings, conversion options, advanced options, custom CMYK, assign, convert, the document profile, profile indicators, the Color Management submenu, per-view display color management, OCIO display and view transforms, OCIO 2.5 configurations, color settings preferences, and display color management preferences). -> SOURCE: legacy-imago-1.3
+Imago's color is hand-rolled today: four RGB profiles by primaries and gamma and a matrix soft proof, with no ICC engine. This section retires those classes and puts every color decision on the suite engine of `D01 T04 §1` to `D01 T04 §3`: one color-settings file read by Nodus, Imago, and Lumen, working spaces and policies, conversion options, custom CMYK, Assign and Convert to Profile, and document profiles and indicators. Display color management per view and OpenColorIO are §10's, split from this section on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. Nodus's Color Settings dialog (`D02 T13 §1`) moves into `Photon.UI` as the shared shell so no second dialog exists. This promotes backlog B-023. Catalog: IP-1931 to IP-1933, IP-1936 to IP-1949, and IP-1953 (18 features: keeping any RGB working space, intent and BPC, converting opened and placed images, opened-file profile handling, save color options, the Color Settings dialog, suite-shared settings, working spaces, policies and warnings, conversion options, advanced options, custom CMYK, assign, convert, the document profile, profile indicators, the Color Management submenu, and color settings preferences). -> SOURCE: legacy-imago-1.3
 
-**Fidelity:** new build, no baseline; captured to `docs/captures/imago/color-settings/`, `docs/captures/imago/convert-profile/`, and `docs/captures/imago/ocio/`.
-**Job:** a photographer or prepress user keeps color correct from open to screen to file across the suite. Consumer: every render, conversion, export, and print in Imago, and Nodus and Lumen through the shared settings file.
-**Treatment:** a Color Settings dialog (presets, working spaces, policies, conversion options, advanced, custom CMYK) with save and load, Assign Profile and Convert to Profile dialogs, an Image, Color Management submenu, profile indicators in the status bar and title, per-view color management toggles, and OCIO configuration and view pickers. Cheaper substitute that fails the checkpoint: sRGB assumed everywhere.
-**Chrome:** consume the `D01 T04 §1` engine, the `D03 T11 §4` OCIO wrapper, `D03 T02 §2` and `D03 T02 §5` for display, the moved dialog shell in `Photon.UI`, and the suite history. Do not keep a second profile type.
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/color-settings/` and `docs/captures/imago/convert-profile/`.
+**Job:** a photographer or prepress user keeps color correct from open to file across the suite. Consumer: every conversion, export, and print in Imago, §10's display transform, and Nodus and Lumen through the shared settings file.
+**Treatment:** a Color Settings dialog (presets, working spaces, policies, conversion options, advanced, custom CMYK) with save and load, Assign Profile and Convert to Profile dialogs, an Image, Color Management submenu, and profile indicators in the status bar and title. Cheaper substitute that fails the checkpoint: sRGB assumed everywhere.
+**Chrome:** consume the `D01 T04 §1` engine, `D03 T02 §3` for blend gamma, the moved dialog shell in `Photon.UI`, and the suite history. Do not keep a second profile type.
 
-**Requires:** display-session -- the dialogs and the display transform on a live view need an interactive desktop
+**Requires:** display-session -- the dialogs and captures need an interactive desktop
 
 - [ ] Retire first: delete `src/Imago/Photon.Imago.Core/Colors/ColorProfile.cs` and `SoftProofing.cs` and route every caller to the `D01 T04 §1` and `D01 T04 §2` types (`IccProfile`, `ColorTransformService`, `ProofTransform`). Done when: `grep -rn "class ColorProfile\|class SoftProofing" src/Imago` prints nothing and Imago's tests pass.
 - [ ] Add `src/Photon.Core/Color/Settings/ColorSettings.cs` (IP-1939): one file `%LOCALAPPDATA%\Rizonesoft\Photon\Color\color-settings.json` read by Nodus, Imago, and Lumen, written through `AtomicFileWriter`, and repoint Nodus's `D02 T13 §1` defaults and policies to it. Done when: a change saved from Imago is read by a Nodus `ColorSettings` instance in a test, and Nodus's color tests pass.
@@ -246,17 +235,12 @@ Imago's color is hand-rolled today: four RGB profiles by primaries and gamma and
 - [ ] Add the profile indicator in the status bar and title (IP-1948). Done when: the capture shows the profile name and an untagged document shows "Untagged".
 - [ ] Add the Image, Color Management submenu with Save Profile to File (IP-1949). Done when: the saved profile's bytes equal the document's.
 - [ ] Add the save color options embed ICC profile and use proof setup (IP-1937). Done when: a PNG saved with embed off carries no iCCP chunk.
-- [ ] Read the per-monitor profile through `WcsGetDefaultColorProfile`, refreshed on display change and when the window moves to another monitor (IP-1954). Done when: a test with a fake WCS provider asserts the display transform uses the new monitor's profile after a move.
-- [ ] Add per-view display color management (IP-1950, IP-1954): a color-manage-this-view toggle, intent, BPC, and optimize for speed (8-bit LUT) or fidelity (float), applied in the `D03 T02 §2` viewport and on the `D03 T02 §5` GPU path with CPU parity. Done when: CPU and GPU display transforms agree within 1/255 on a committed fixture.
-- [ ] Add OpenColorIO configuration choice (IP-1952): the built-in `ocio://` configs of OCIO 2.5, a user config file, or `$OCIO`, through the `D03 T11 §4` wrapper, replacing the fixed `ocio://default` of `D03 T11 §4`'s OCIO adjustment and the per-view config file of `D03 T15 §4`; an absent or invalid config is refused by name. Done when: selecting an invalid file shows the refusal naming it and both consumers read the chosen config.
-- [ ] Add OCIO display and view transforms (IP-1934) and the ACES display with exposure stops (IP-1935) on the `D03 T15 §4` 32-bit preview. Done when: the ACES view of a committed EXR matches OpenImageIO 3.0 `oiiotool --ociodisplay` output within 1/255.
-- [ ] Apply OCIO view transforms to exports from 32-bit documents (IP-1951), and register the suite configuration for `D03 T17 §6`'s OCIO-by-filename handling. Done when: an 8-bit export from a 32-bit document with the ACES view matches the preview within 1/255.
 - [ ] Log one Serilog Information line per assign, convert, and color-settings change (from, to, intent, BPC) as the audit trail beside the history entry. Done when: a Serilog test logger asserts the lines.
-- [ ] Commit fixtures under `tests/fixtures/imago/color/` (mismatched, untagged, ProPhoto, Display P3, EXR) with `transicc` and `oiiotool` goldens and `reference.txt` naming lcms2 2.16 and OCIO 2.5. Done when: every fixture carries its note.
-- [ ] Commit captures under `docs/captures/imago/color-settings/`, `convert-profile/`, and `ocio/`, and write `docs/user/imago/color-management.md`. Done when: every dialog and toggle appears in a capture and the page documents it.
-- [ ] Commit: `"imago: color settings, assign and convert, display color management, and OCIO"`
+- [ ] Commit fixtures under `tests/fixtures/imago/color/` (mismatched, untagged, ProPhoto, Display P3) with `transicc` goldens and `reference.txt` naming lcms2 2.16. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/color-settings/` and `convert-profile/`, and write `docs/user/imago/color-management.md`. Done when: every dialog this section adds appears in a capture and the page documents it.
+- [ ] Commit: `"imago: color settings, policies, custom CMYK, and assign and convert"`
 
-**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~Color"` exits 0 with Convert to Profile matching `transicc` goldens within Delta E 2000 0.5 for every intent with and without BPC, `CmykProfileBuilderTests` holding the total ink limit and K-only neutrals, and CPU and GPU display transforms agreeing within 1/255; captures committed under `docs/captures/imago/color-settings/`. Cheaper substitute that fails: keeping `ColorProfile.cs` matrix math, which the CMYK goldens and the single-profile-type grep reject.
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~Color"` exits 0 with Convert to Profile matching `transicc` goldens within Delta E 2000 0.5 for every intent with and without BPC, `CmykProfileBuilderTests` holding the total ink limit and K-only neutrals, and a ProPhoto fixture keeping its profile bytes and values through save and reopen; captures committed under `docs/captures/imago/color-settings/`. Cheaper substitute that fails: keeping `ColorProfile.cs` matrix math, which the CMYK goldens and the single-profile-type grep reject.
 
 ## 5. Soft Proofing and Gamut Warning
 
@@ -336,8 +320,8 @@ Prepress users send correct separations and check a file before it leaves, and p
 
 - [ ] Move first: `SeparationRenderer`, `HalftoneScreen`, and `InkSet` of `D02 T13 §5` into `src/Photon.Core/Print/`, and `PreflightEngine` of `D02 T13 §9` into `src/Photon.Core/Preflight/`, with tests, repointing Nodus. Done when: `grep -rn "class SeparationRenderer\|class PreflightEngine" src` prints one path each, under `src/Photon.Core/`.
 - [ ] Add spot and overprint global colors (IP-1982): Affinity-style global colors flagged spot or overprint, feeding `D03 T10 §10` spot channels and the separations. Done when: a global color flagged spot creates a spot channel with its name.
-- [ ] Add transfer functions (IP-1983): per-ink curves stored with the document and written to PostScript and PDF (`/TR`) through the `D03 T17 §7` writers. Done when: PdfPig reads the `/TR` function of each ink from a written PDF.
-- [ ] Add halftone screens per ink (IP-1984): frequency, angle, and shape, written to EPS and PDF through `D03 T17 §7`. Done when: a written PDF's halftone dictionary carries each ink's frequency and angle.
+- [ ] Add transfer functions (IP-1983): per-ink curves stored with the document and written to PostScript and PDF (`/TR`) through the `D03 T17 §16` and `D03 T17 §7` writers. Done when: PdfPig reads the `/TR` function of each ink from a written PDF.
+- [ ] Add halftone screens per ink (IP-1984): frequency, angle, and shape, written to EPS and PDF through `D03 T17 §16` and `D03 T17 §7`. Done when: a written PDF's halftone dictionary carries each ink's frequency and angle.
 - [ ] Add separations (IP-1985): one plate per process ink and spot channel, printed or saved to files, and enable §6's separations color handling. Done when: plates of the committed CMYK plus spot fixture equal the channel values within 1/255.
 - [ ] Add the print pages for transfer, screens, and separations to the §6 dialog. Done when: the capture shows each page.
 - [ ] Add the Imago preflight rules (IP-1986): effective resolution below a threshold, RGB content in CMYK output, out-of-gamut percentage, missing linked smart objects, missing fonts, spot channel count, and total ink over the limit. Done when: `PreflightRuleTests` fire each rule on its fixture and stay silent on a clean one.
@@ -350,6 +334,84 @@ Prepress users send correct separations and check a file before it leaves, and p
 - [ ] Commit: `"imago: separations, halftones, preflight, contact sheets, and PDF presentations"`
 
 **Test checkpoint:** Unit test and format fidelity proof: `dotnet test Photon.slnx --filter "FullyQualifiedName~Separation|FullyQualifiedName~PreflightRuleTests|FullyQualifiedName~ContactSheet|FullyQualifiedName~PdfPresentation"` exits 0 with plates of the committed CMYK plus spot fixture equal to the channel values within 1/255, each preflight rule firing on its fixture, a PDF Presentation reading back with PdfPig showing the page count and `/Trans` entries, and a contact sheet of the committed folder matching its golden layout. Cheaper substitute that fails: composite-per-plate printing, which the plate value test catches.
+
+## 8. Layers, Artboards, and Comps to Files and PDF, and Generated Image Assets
+
+Designers export every layer, artboard, or comp as its own file or PDF page in one action, and web teams keep image assets regenerated from layer names while they edit. This section adds those batch exports and Photoshop Generator-style asset generation on §1's `ExportJob`, `ExportRunner`, and presets, never a second export queue. Split from §1 on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. Catalog: IP-1884 to IP-1890, IP-1900, and IP-1901 (9 features: layers to files, artboards to files and PDF, comps to files and PDF, generated image assets, quick export for layers, comps to files as GIMP's row, artboards to files and PDF as Affinity's row, comps to files as Affinity's row, and layers to files with their options).
+
+**Fidelity:** `docs/captures/imago/export-as/` (baseline from §1); new captures to `docs/captures/imago/batch-export/`.
+**Job:** a designer exports every layer, artboard, or comp in one action and keeps generated assets current as they edit. Consumer: the exported files, PDF pages, and asset folders, and whoever receives them.
+**Treatment:** Export Layers to Files, Artboards to Files and PDF, and Comps to Files and PDF dialogs with a target folder, prefix, and per-format options; Layers panel context-menu exports; File, Generate, Image Assets as a toggle. Cheaper substitute that fails the checkpoint: exporting each layer by hand through Export As, which the file-count tests catch.
+**Chrome:** consume §1's `ExportJob`, `ExportRunner`, and presets, the moved export queue, the `D03 T17 §7` PDF writer, and the `D03 T09 §13` artboards and `D03 T09 §11` comps. Do not add a second export queue.
+
+**Requires:** display-session -- the dialogs, the context menu, and the captures need an interactive desktop
+
+**Freeze check:** Every batch export and asset regeneration writes through `AtomicFileWriter` to its chosen targets and never to the open document's own path; asset generation writes only inside `<document>-assets/`; the open document's pixels, path, and dirty state are unchanged; a failed or cancelled export leaves any existing target byte-identical. Fixture source: `tests/fixtures/imago/export/` (created by §1, extended here).
+
+- [ ] Add Export Layers to Files (IP-1884, IP-1901): a target folder, prefix, visible only, trim, and per-format options. Done when: a three-layer fixture writes three trimmed files named with the prefix.
+- [ ] Add Quick Export and Export As for layers from the Layers panel context menu (IP-1888). Done when: a driven right-click export of one layer writes one file.
+- [ ] Add artboards to files (IP-1885, IP-1890) through `D03 T09 §13`. Done when: a two-artboard fixture writes two files sized to their artboards.
+- [ ] Add artboards to PDF through the `D03 T17 §7` PDF writer. Done when: PdfPig reads one page per artboard with its media box.
+- [ ] Add comps to files (IP-1886, IP-1889, IP-1900) through `D03 T09 §11`. Done when: a three-comp fixture writes three files whose pixels differ as the comps do.
+- [ ] Add comps to PDF through the `D03 T17 §7` PDF writer. Done when: PdfPig reads one page per comp.
+- [ ] Add Generate Image Assets (IP-1887): Photoshop Generator syntax in layer names (for example `200% hero@2x.png, 80% hero.jpg`, folders, and a `default` layer) parsed by `src/Imago/Photon.Imago.Core/Export/AssetNameParser.cs`, regenerated on change into `<document>-assets/`. Done when: `AssetNameParserTests` pass Adobe's documented examples and an edit to a tagged layer rewrites only its assets.
+- [ ] Add `BatchExportTests` in `tests/Photon.Imago.Core.Tests/Export/` asserting file names, counts, and sizes for layers, artboards, and comps on the committed fixtures. Done when: the tests pass and fail when a hidden layer is exported with visible only on.
+- [ ] Log one Serilog Information line per batch export and asset regeneration naming the source kind, file count, and milliseconds. Done when: a Serilog test logger asserts the line.
+- [ ] Commit fixtures under `tests/fixtures/imago/export/` (layers, artboards, comps, Generator-named layers) with `reference.txt`. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/batch-export/` and extend `docs/user/imago/export.md`. Done when: every control this section adds appears in a capture and the page documents it.
+- [ ] Commit: `"imago: layers, artboards, and comps to files and PDF, and generated assets"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~BatchExportTests|FullyQualifiedName~AssetNameParserTests"` exits 0, passing Adobe's documented Generator examples and asserting file names, counts, and sizes for layers, artboards, and comps; PdfPig reads one page per artboard and per comp; a driven export of layers, artboards, and comps is captured with the written file list quoted. Cheaper substitute that fails: per-layer Export As by hand, which the file-count tests catch.
+
+## 9. The Export Studio: Slices, Per-Slice Formats, Naming Tokens, Continuous Export, and App Icons
+
+Affinity's Export studio keeps sliced exports current while a designer edits: slices from layers and groups, several formats and sizes per slice, naming tokens and folders, export visibility independent of the canvas, continuous export that rewrites only what changed, and app icon sets. This section builds that studio as its own window on §2's moved slice model and web encoder and §1's export job; `D03 T20 §1` registers it as a workspace preset when workspaces land. Split from §2 on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. Catalog: IP-1908 to IP-1914 (7 features: the Export studio, per-item export visibility, the slices panel, the export options panel, naming tokens, continuous export, and app icon presets).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/export-studio/`.
+**Job:** a web or app designer keeps every sliced export current while editing and ships app icon sets. Consumer: browsers, app stores, and the folders the files are published to.
+**Treatment:** the Export studio window (slices, export options, and layers panels with continuous export and a status indicator), naming-token fields, and app icon presets. Cheaper substitute that fails the checkpoint: re-exporting every slice on each change, which the changed-slice test catches.
+**Chrome:** consume §2's moved slice model and web encoder, §1's job model and runner, the settings store, and the dock. Do not add a second slice model.
+
+**Requires:** display-session -- the studio window and captures need an interactive desktop
+
+**Freeze check:** Studio exports and continuous export write through `AtomicFileWriter` and never to the open document's own path; continuous export rewrites only the changed slices' files; a failed or cancelled write leaves any existing target byte-identical; the open document is never changed except by the slice and export-visibility edits the user makes, which are undoable. Fixture source: `tests/fixtures/imago/web/` (created by §2, extended here).
+
+- [ ] Add the Export studio window `src/Imago/Photon.Imago.Desktop/Views/Export/ExportStudioWindow.xaml` (IP-1908): a layout of the Slices, Export Options, and Layers panels, with slices created from layers and groups; its Draw Slice button is disabled with a tooltip naming `D03 T18 §3`, whose slice tool enables it. Done when: a driven run creates slices from two layers and the capture shows the studio.
+- [ ] Add per-item export visibility independent of canvas visibility (IP-1909). Done when: a layer hidden for export but visible on canvas is absent from its slice's output and present on screen.
+- [ ] Add the Slices panel (IP-1910): multiple formats per slice and 1x, 2x, and 3x or absolute sizes with DPI scaling. Done when: one slice with two formats and two sizes writes four files.
+- [ ] Add the Export Options panel (IP-1911): per-slice or default settings, presets, and copy and paste of setups. Done when: pasting a setup onto a second slice gives equal settings.
+- [ ] Add naming tokens and folder paths (IP-1912), for example `{slice}/{name}@{scale}x.{ext}`. Done when: a test expands every token for a fixture slice.
+- [ ] Add continuous export (IP-1913): subscribe to document change events, debounce, and re-export only slices whose bounds intersect the change, with a status indicator. Done when: `ContinuousExportTests` edit inside one slice and only that slice's files change.
+- [ ] Add app icon presets (IP-1914) for iOS, Android, Windows, and macOS sets, with Xcode `AppIcon.appiconset/Contents.json`. Done when: the iOS preset writes every size its `Contents.json` lists and the JSON parses.
+- [ ] Log one Serilog Information line per studio export and continuous re-export naming the slices and files written. Done when: a Serilog test logger asserts each line.
+- [ ] Commit studio fixtures under `tests/fixtures/imago/web/` (a two-slice document and an icon source) with `reference.txt`. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/export-studio/` and extend `docs/user/imago/web-output.md` with the studio. Done when: every panel appears in a capture and the page documents it.
+- [ ] Commit: `"imago: the Export studio with continuous export and app icon sets"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~ContinuousExportTests"` exits 0 with only the changed slice rewritten, a slice with two formats and two sizes writes four files, every naming token expands for a fixture slice, and the iOS icon preset writes every size its `Contents.json` lists; a driven run creates slices from two layers with the studio captured. Cheaper substitute that fails: re-exporting every slice on each change, which the changed-slice test catches.
+
+## 10. Display Color Management per View and OpenColorIO
+
+What a user sees must be what the file holds, on whichever monitor the window sits: per-monitor profiles, a per-view display transform on the CPU and GPU paths with parity, and for 32-bit work OpenColorIO configurations, display and view transforms, and the ACES view, applied to exports from 32-bit documents too. This section builds that on §4's suite color settings and the `D01 T04 §1` engine, with one OpenColorIO configuration choice replacing the fixed `ocio://default` of `D03 T11 §4` and the per-view config file of `D03 T15 §4`. Split from §4 on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. Catalog: IP-1934, IP-1935, IP-1950 to IP-1952, and IP-1954 (6 features: the OCIO configuration, the ACES display filter, per-view display color management, OCIO display and view transforms, OCIO 2.5 configurations, and display color management preferences).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/ocio/` and `docs/captures/imago/display-color/`.
+**Job:** a photographer sees correct color on every monitor and grades 32-bit work through the view transform the pipeline uses. Consumer: the `D03 T02 §2` viewport and `D03 T02 §5` GPU path, the `D03 T15 §4` 32-bit preview, and exports from 32-bit documents.
+**Treatment:** per-view color management toggles (color-manage this view, intent, BPC, speed or fidelity) in the View menu, and OCIO configuration, display, and view pickers with ACES exposure stops. Cheaper substitute that fails the checkpoint: one sRGB display transform for every monitor, which the monitor-move test catches.
+**Chrome:** consume §4's suite settings, the `D01 T04 §1` engine, the `D03 T11 §4` OCIO wrapper, `D03 T02 §2` and `D03 T02 §5` for display, and the settings store. Do not add a second display transform.
+
+**Requires:** display-session -- the display transform on a live view and the monitor move need an interactive desktop
+
+- [ ] Read the per-monitor profile through `WcsGetDefaultColorProfile`, refreshed on display change and when the window moves to another monitor (IP-1954). Done when: a test with a fake WCS provider asserts the display transform uses the new monitor's profile after a move.
+- [ ] Add per-view display color management (IP-1950, IP-1954): a color-manage-this-view toggle, intent, BPC, and optimize for speed (8-bit LUT) or fidelity (float), applied in the `D03 T02 §2` viewport and on the `D03 T02 §5` GPU path with CPU parity. Done when: CPU and GPU display transforms agree within 1/255 on a committed fixture.
+- [ ] Add OpenColorIO configuration choice (IP-1952): the built-in `ocio://` configs of OCIO 2.5, a user config file, or `$OCIO`, through the `D03 T11 §4` wrapper, replacing the fixed `ocio://default` of `D03 T11 §4`'s OCIO adjustment and the per-view config file of `D03 T15 §4`; an absent or invalid config is refused by name. Done when: selecting an invalid file shows the refusal naming it and both consumers read the chosen config.
+- [ ] Add OCIO display and view transforms (IP-1934) and the ACES display with exposure stops (IP-1935) on the `D03 T15 §4` 32-bit preview. Done when: the ACES view of a committed EXR matches OpenImageIO 3.0 `oiiotool --ociodisplay` output within 1/255.
+- [ ] Apply OCIO view transforms to exports from 32-bit documents (IP-1951), and register the suite configuration for `D03 T17 §6`'s OCIO-by-filename handling. Done when: an 8-bit export from a 32-bit document with the ACES view matches the preview within 1/255.
+- [ ] Log one Serilog Information line per display color management toggle and OCIO configuration, display, or view change. Done when: a Serilog test logger asserts the lines.
+- [ ] Commit fixtures under `tests/fixtures/imago/color/` (an EXR and a two-monitor fake WCS profile set) with `oiiotool` goldens and `reference.txt` naming OCIO 2.5 and OpenImageIO 3.0. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/ocio/` and `docs/captures/imago/display-color/`, and extend `docs/user/imago/color-management.md` with display color management and OCIO. Done when: every toggle and picker appears in a capture and the page documents it.
+- [ ] Commit: `"imago: display color management per view and OpenColorIO"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~DisplayColor|FullyQualifiedName~Ocio"` exits 0 with CPU and GPU display transforms agreeing within 1/255 on a committed fixture, the display transform following a fake WCS provider's monitor change, the ACES view of the committed EXR matching OpenImageIO 3.0 `oiiotool --ociodisplay` within 1/255, and an 8-bit export from a 32-bit document matching the preview within 1/255; captures committed. Cheaper substitute that fails: one sRGB display transform for every monitor, which the monitor-move test catches.
 
 ## Verification
 

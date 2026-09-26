@@ -36,7 +36,8 @@ track: I16
 - [`todo/backlog.md`](../backlog.md) -- B-018 (`legacy-imago-4.8`) is promoted into §1 and B-019 (`legacy-imago-4.7`) into §7; both entries leave the backlog in the integration commit
 - -> XREF: D02 T10 §1 -- the shaping engine §1 moves
 - -> XREF: D02 T10 §2 -- the rich-text model and edit session §1 moves
-- -> XREF: D02 T10 §3 -- fonts, filters, and substitution §2 moves
+- -> XREF: D02 T10 §3 -- fonts and font filters §2 moves
+- -> XREF: D02 T10 §16 -- the font substitution service §2 moves (split out of D02 T10 §3 on 2026-09-27)
 - -> XREF: D02 T10 §4 -- character formatting and optical kerning §2 moves
 - -> XREF: D02 T10 §5 -- OpenType features, glyphs, and variable fonts §2 moves
 - -> XREF: D02 T10 §6 -- the composers and hyphenation §3 moves
@@ -102,24 +103,27 @@ track: I16
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | Text layers on the shared text engine | D02 T10 §1, D03 T09 §1 |  [ ]   |
-|   2   |   §5    | Paths, the Paths panel, and path geometry in Photon.Core | D02 T08 §10, D03 T10 §1 |  [ ]   |
-|   3   |   §2    | Character formatting, OpenType, glyphs, and fonts | §1 |  [ ]   |
-|   4   |   §3    | Paragraph formatting and text frames | §1 |  [ ]   |
-|   5   |   §4    | Type styles and text commands | §2, §3, §5 |  [ ]   |
-|   6   |   §6    | Pen and path editing tools | §5 |  [ ]   |
-|   7   |   §7    | Shape layers, shape tools, and vector layers | §5, D03 T09 §4 |  [ ]   |
-|   8   |   §8    | Frames and vector output | §7 |  [ ]   |
+| 1 |   §1    | Text layers on the shared text engine | D02 T10 §1, D03 T09 §1 |  [ ]   |
+| 2 |   §9    | Type tools and on-canvas text editing | §1 |  [ ]   |
+| 3 |   §5    | Paths, the Paths panel, and path geometry in Photon.Core | D02 T08 §10, D03 T10 §1 |  [ ]   |
+| 4 |   §10   | Path exchange and path commands: SVG, Illustrator, clipping paths, booleans, and align | §5 |  [ ]   |
+| 5 |   §2    | Character formatting, OpenType, glyphs, and fonts | §1, D02 T10 §16 |  [ ]   |
+| 6 |   §3    | Paragraph formatting and text frames | §1 |  [ ]   |
+| 7 |   §4    | Type styles and text commands | §2, §3, §5, §9 |  [ ]   |
+| 8 |   §6    | Pen and path editing tools | §5 |  [ ]   |
+| 9 |   §7    | Shape layers and shape tools | §5, D03 T09 §4 |  [ ]   |
+| 10 |   §11   | Custom shapes, vector layers, and the Gfig job | §7, §6 |  [ ]   |
+| 11 |   §8    | Frames and vector output | §7, §11 |  [ ]   |
 
 ---
 
 ## 1. Text Layers on the Shared Text Engine
 
-Imago's text layer today is one font, one size, and one color drawn as a bitmap, which cannot join Arabic, reorder Devanagari, or hold two styles in one line. Nodus already built the suite's HarfBuzz engine and rich-text model (`D02 T10 §1`, `D02 T10 §2`), so Imago becomes its second consumer and the engine moves into `Photon.Core/Text/` in this section instead of being copied. Text layers become live stories of runs and paragraphs, created by the four type tools and edited on the canvas, and persist as `imago:text` beside a rendered PNG so other OpenRaster readers still see pixels. This promotes backlog B-018. Catalog: IP-1582 to IP-1591 (10 features: the type layer, on-canvas editing from the Layers panel, the horizontal type tool with point and paragraph text and GIMP's dynamic or fixed box, the vertical type tool with orientation toggle and vertical Roman alignment, the type mask tools, on-canvas editing behavior with the floating style editor, the Text Editor window, convert to work path or shape, rasterize type, and the world-ready text engine option). -> SOURCE: legacy-imago-4.8
+Imago's text layer today is one font, one size, and one color drawn as a bitmap, which cannot join Arabic, reorder Devanagari, or hold two styles in one line. Nodus already built the suite's HarfBuzz engine and rich-text model (`D02 T10 §1`, `D02 T10 §2`), so Imago becomes its second consumer and the engine moves into `Photon.Core/Text/` in this section instead of being copied. Text layers become live stories of runs and paragraphs (point or paragraph, horizontal or vertical) and persist as `imago:text` beside a rendered PNG so other OpenRaster readers still see pixels; the type tools, the mask tools, and on-canvas editing that create and edit them are §9, split out on 2026-09-27 so each half stays reviewable in one pass. This promotes backlog B-018. Catalog: IP-1582, IP-1590, IP-1591 (3 features: the type layer, rasterize type, and the world-ready text engine option). -> SOURCE: legacy-imago-4.8
 
-**Fidelity:** new build, no baseline; captured to `docs/captures/imago/type/`.
-**Job:** a designer can add live text in Latin, Arabic, Devanagari, or CJK, edit it on the canvas, and keep it editable until rasterizing. Consumer: the layer renderer, the `.imago` save, and the later PSD and XCF mappings.
-**Treatment:** the type tool group (horizontal, vertical, horizontal mask, vertical mask; T cycles), click for point text or drag a paragraph box (GIMP dynamic or fixed box), an on-canvas editor with caret, selection, IME underline, commit (Ctrl+Enter or the check) and cancel (Esc), transform handles while editing, GIMP's floating style editor, and a Text Editor window. Cheaper substitute that fails the checkpoint: a modal text dialog that stamps a bitmap.
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/type/` (the rendered stories and the Rasterize Type command; the tools are §9's captures).
+**Job:** a designer's text stays live in Latin, Arabic, Devanagari, or CJK, renders exactly as Nodus renders the same story, and stays editable until rasterizing. Consumer: the layer renderer, the `.imago` save, §9's editing tools, and the later PSD and XCF mappings.
+**Treatment:** text layers in the Layers panel with the T badge, the Type, Rasterize Type command, and the text engine choice in the type options. Cheaper substitute that fails the checkpoint: a text layer that stores only a bitmap and a string.
 **Chrome:** consume the moved engine, the tool options strip of `D03 T03 §4`, the `Photon.UI` dialog styles, and the suite history. Do not add a second shaper or text model.
 
 **Requires:** display-session -- typing into a layer, IME composition, and the captures need an interactive desktop
@@ -133,14 +137,6 @@ Imago's text layer today is one font, one size, and one color drawn as a bitmap,
 - [ ] Add orientation to `TextLayer`: horizontal or vertical, mixed or upright, and vertical Roman alignment (IP-1585). Done when: a vertical CJK fixture renders within 1/255 of the Nodus render of the same story.
 - [ ] Re-render a text layer's tiles from the layout only when the story or transform changes, caching the shaped layout per story version. Done when: a test asserts moving another layer re-shapes nothing and editing one character re-shapes only that layer.
 - [ ] Register `imago:text` (the story as XML runs with a schema version) beside the rendered PNG with the `D03 T08 §1` contract. Done when: `TextLayerFormatTests` save a document with Arabic and Latin runs, reopen it, and the story is equal run by run.
-- [ ] Add `HorizontalTypeTool` and `VerticalTypeTool` in `src/Imago/Photon.Imago.Desktop/Tools/Type/`: click for point text, drag for a paragraph box, T cycling the group. Done when: a driven run creates one point and one paragraph layer and the capture shows both. Cheaper substitute: a text dialog that stamps pixels.
-- [ ] Add `HorizontalTypeMaskTool` and `VerticalTypeMaskTool` that produce a `D03 T10 §1` selection from the glyph outlines, never a layer (IP-1586). Done when: a test commits a mask entry and the document gains a selection whose bounds equal the glyph outline bounds and no new layer.
-- [ ] Add the Toggle Text Orientation command for the active text layer (IP-1585). Done when: a test toggles a layer and undo restores the original orientation.
-- [ ] Add on-canvas editing (IP-1583, IP-1587): double-click a text layer or its Layers-panel thumbnail to edit, caret and selection through the moved `TextEditSession`, IME composition through `TextInputBridge`, commit with Ctrl+Enter or the check, and cancel with Esc. Done when: a driven run types Arabic through the Windows IME and the capture shows the joined text; Esc after typing restores the previous story.
-- [ ] Keep transform handles live while editing and keep masked text layers clickable by a layer-bounds hit test. Done when: a driven run scales a text box mid-edit and the story is unchanged.
-- [ ] Add GIMP's floating style editor as a draggable overlay above the text box, shown when `Imago.Type.ShowOnCanvasEditor` is true (default true). Done when: toggling the setting hides the overlay without a restart.
-- [ ] Add the Text Editor window (IP-1588): multi-line editing of the active layer with Load from File (UTF-8 and UTF-16) and Clear All. Done when: loading a UTF-16 fixture fills the layer with its text exactly.
-- [ ] Add Convert to Work Path and Convert to Shape (IP-1589) to the Type menu, disabled with tooltips naming `D03 T16 §5` (work path) and `D03 T16 §7` (shape layer), which enable them. Done when: `python scripts/todo-graph.py resolve 'D03 T16 §5'` and `'D03 T16 §7'` both resolve and the tooltips name them.
 - [ ] Add Rasterize Type (IP-1590) as one undo step "Rasterize Type" that replaces the text layer with a pixel layer of the same render. Done when: a test rasterizes, compares pixels within 1/255 of the live render, and undo restores the live layer.
 - [ ] Add `Imago.Type.TextEngine` (East Asian or World-Ready, IP-1591) choosing which panel feature sets show, while one engine shapes every script. Done when: a test switches the setting and the Devanagari fixture still shapes identically.
 - [ ] Enable the controls earlier sections deferred to text layers, removing each tooltip: Paste without Formatting (`D03 T08 §8`), the scale marker's text label (`D03 T08 §5`), text bases for fill text with an image (`D03 T09 §4`), and the Slide label and Filmstrip numbering fields (`D03 T14 §9`). Done when: each owning section's disabled-state test is updated to assert the enabled control and passes.
@@ -148,11 +144,10 @@ Imago's text layer today is one font, one size, and one color drawn as a bitmap,
 - [ ] Add `tests/Photon.Imago.Core.Tests/Text/TextEditBudgetTests.cs`: a keystroke in a 2,000-character paragraph at 300 ppi re-lays out and re-renders its tiles within 16 ms. Done when: the test prints the measured time and passes.
 - [ ] Commit fixtures under `tests/fixtures/imago/text/` (Arabic, Devanagari, vertical CJK, and Latin stories with the Nodus renders as goldens) with `reference.txt`. Done when: `TextLayerRenderTests` render each within 1/255 of its Nodus golden.
 - [ ] Add a GIMP fallback check: `gimp-console-3.2` opens a saved `.imago` renamed to `.ora` and its composite matches Imago's within 1/255 (GIMP version recorded; skipped with a reason where GIMP is absent). Done when: the test result is quoted with GIMP's version.
-- [ ] Commit captures of the type tools, on-canvas editing, IME composition, the style editor, and the Text Editor window under `docs/captures/imago/type/`. Done when: each capture exists and the Treatment's controls each appear in one.
-- [ ] Write `docs/user/imago/type.md` covering the type tools, on-canvas editing, the Text Editor, and rasterize. Done when: the page documents every control on this surface.
+- [ ] Write `docs/user/imago/type.md` covering text layers, the text engine choice, and rasterize; §9 adds the tools and editing. Done when: the page documents every control on this surface.
 - [ ] Commit: `"imago: live text layers on the HarfBuzz engine moved to Photon.Core"`
 
-**Test checkpoint:** Unit test, format fidelity proof, and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Text|FullyQualifiedName~Photon.Imago.Core.Tests.Text"` exits 0 with the moved `ShaperGoldenTests` and conformance suites, `TextLayerRenderTests` (Arabic and Devanagari within 1/255 of the Nodus render), `TextLayerFormatTests`, and `TextEditBudgetTests` reporting; the `gimp-console-3.2` fallback comparison is quoted within 1/255; a driven IME typing run is captured under `docs/captures/imago/type/`. Cheaper substitute that fails: an Imago-local `DrawText` path, which the one-definition grep and the Arabic golden catch.
+**Test checkpoint:** Unit test and format fidelity proof: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Text|FullyQualifiedName~Photon.Imago.Core.Tests.Text"` exits 0 with the moved `ShaperGoldenTests` and conformance suites, `TextLayerRenderTests` (Arabic and Devanagari within 1/255 of the Nodus render), `TextLayerFormatTests`, and `TextEditBudgetTests` reporting; the `gimp-console-3.2` fallback comparison is quoted within 1/255. Cheaper substitute that fails: an Imago-local `DrawText` path, which the one-definition grep and the Arabic golden catch.
 
 ## 2. Character Formatting, OpenType, Glyphs, and Fonts
 
@@ -165,7 +160,7 @@ Character formatting is where a text tool earns trust: every attribute, every Op
 
 **Requires:** display-session -- the panels and on-canvas alternates need an interactive desktop
 
-- [ ] Move first: `FontFilter` and `FontSubstitutionService` (`D02 T10 §3`) into `src/Photon.Core/Text/Fonts/`, repointing Nodus. Done when: `grep -rn "class FontSubstitutionService" src` prints one path, under `src/Photon.Core/`.
+- [ ] Move first: `FontFilter` (`D02 T10 §3`) and `FontSubstitutionService` (`D02 T10 §16`, split out of `D02 T10 §3` on 2026-09-27) into `src/Photon.Core/Text/Fonts/`, repointing Nodus. Done when: `grep -rn "class FontSubstitutionService" src` prints one path, under `src/Photon.Core/`.
 - [ ] Move `OpticalKerner` and `FontFeatureSet` (`D02 T10 §4`, `D02 T10 §5`) and `GlyphSnapProvider` into `src/Photon.Core/Text/`, repointing Nodus. Done when: one definition of each remains and Nodus's formatting tests pass.
 - [ ] Move the view models and XAML of `CharacterPanel`, `OpenTypePanel`, `GlyphsPanel`, and `FontPicker` into `src/Photon.UI/Text/`, bound through an `ITextFormattingTarget` adapter each app implements, repointing Nodus. Done when: one definition of each remains and Nodus's driven Character panel check still passes.
 - [ ] Add `src/Imago/Photon.Imago.Desktop/Text/ImagoTextFormattingTarget.cs`, applying panel changes to the selected runs of the edited layer or to whole selected text layers. Done when: `ImagoTextFormattingTargetTests` set size on a selection of runs and on two whole layers.
@@ -224,7 +219,7 @@ Paragraph text in Imago must lay out like a layout tool: alignment, indents, spa
 
 ## 4. Type Styles and Text Commands
 
-Consistency across many text layers needs styles, find and replace, and spelling, and expressive type needs type on a path and warp text. The services and panels come from Nodus (`D02 T10 §9` to `D02 T10 §13`) and move here; warp text reuses the envelope math of `D03 T13 §6`, so warped text stays live and editable. Loading styles from a PSD waits for `D03 T17 §3`, which reads PSD text, and says so by name until then. Catalog: IP-1619 to IP-1634 (16 features: check spelling, find and replace, type on a path and text to path, point and paragraph conversion, placeholder text, character and paragraph styles, find and replace and spelling as their Affinity and GIMP rows, missing fonts, East Asian options, right-to-left options, warp text, dynamic text presets, the styles panels, and the additional spelling dictionary folder).
+Consistency across many text layers needs styles, find and replace, and spelling, and expressive type needs type on a path and warp text. The services and panels come from Nodus (`D02 T10 §9` to `D02 T10 §13`) and move here; warp text reuses the envelope math of `D03 T13 §6`, so warped text stays live and editable. Loading styles from a PSD waits for `D03 T17 §3`, which reads PSD text, and says so by name until then. Catalog: IP-1619 to IP-1634, IP-2371 (17 features: check spelling, find and replace, type on a path and text to path, point and paragraph conversion, placeholder text, character and paragraph styles, find and replace and spelling as their Affinity and GIMP rows, missing fonts, East Asian options, right-to-left options, warp text, dynamic text presets, the styles panels, the additional spelling dictionary folder, and inserting metadata fields as text).
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/type-styles/` and `docs/captures/imago/warp-text/`.
 **Job:** a designer keeps type consistent across layers and bends it onto paths and shapes. Consumer: every text layer's story.
@@ -250,6 +245,7 @@ Consistency across many text layers needs styles, find and replace, and spelling
 - [ ] Add right-to-left and Middle Eastern options (IP-1629): paragraph direction, digit shapes (Arabic, Hindi, Farsi), diacritic position, and kashida. Done when: an Arabic paragraph with Hindi digits renders within 1/255 of its golden.
 - [ ] Add Warp Text (IP-1630): arc, arc lower, arc upper, arch, bulge, shell lower and upper, flag, wave, fish, rise, fisheye, inflate, squeeze, and twist with bend and horizontal and vertical distortion, on the `D03 T13 §6` envelope math applied to the glyph outlines and stored live in `imago:text`. Done when: `WarpTextTests` assert the text stays editable after warp and the render matches the envelope applied to the outlines within 1/255.
 - [ ] Add dynamic text presets (IP-1632): path-text presets with spacing, position, direction, dynamic fit, and on-canvas endpoint handles. Done when: a test applies a preset and dragging an endpoint handle refits the text.
+- [ ] Add Type, Insert Metadata Field (IP-2371; ACDSee Edit mode, Lumen row LP-1333): inserts a live field token (file name, dimensions, dates, camera, lens, exposure, author, copyright, caption, keywords) at the caret of a text layer, resolved from the document's metadata and file properties and re-resolved on save or on the Refresh Fields command; the file properties work now and the EXIF, IPTC, and XMP fields fill as `D03 T17 §10` extends the metadata reader, each field listed disabled with the tooltip "Planned: D03 T17 §10" until then. Done when: `MetadataFieldTests` insert the file-name and dimensions tokens, rename the document, refresh, and assert the new name, and assert the EXIF fields' tooltip resolves. Cheaper substitute: pasting the values as static text.
 - [ ] Commit fixtures under `tests/fixtures/imago/text-commands/` (misspelling, missing font, kinsoku, Arabic, path text, warp) with goldens and `reference.txt`. Done when: every fixture carries its note.
 - [ ] Commit captures under `docs/captures/imago/type-styles/` and `docs/captures/imago/warp-text/` and write `docs/user/imago/type-commands.md`. Done when: every dialog in the Treatment appears in a capture and the page documents it.
 - [ ] Commit: `"imago: type styles, spelling, find and replace, type on a path, and warp text"`
@@ -258,7 +254,7 @@ Consistency across many text layers needs styles, find and replace, and spelling
 
 ## 5. Paths, the Paths Panel, and Path Geometry in Photon.Core
 
-Retouchers keep precise outlines as paths and reuse them as selections, strokes, fills, and clipping paths. Nodus owns the suite's path model and booleans (`D02 T08 §10`) and its SVG document reader, so both move into `Photon.Core/Vector/` here as Imago becomes their second consumer, and Imago's own `VectorPathSegment` is re-based on the shared geometry so one path type remains. The SVG reader moves in this phase rather than with `D03 T17 §7` because SVG path import needs it now; `D03 T17 §7` then moves only the renderer. Catalog: IP-1637 to IP-1655 (19 features: show target path, SVG path import with scale to fit, export to Illustrator, clipping paths on JPEG and TIFF export, the Paths panel with its options, path management, visibility and locks and color tags, fill path, stroke path, path to selection, selection to path, clipping paths with flatness, Illustrator export as its second row, merge visible paths, copy and paste paths, SVG import and export, path operations, align and distribute components, and the Paths panel itself).
+Retouchers keep precise outlines as paths and reuse them as selections, strokes, fills, and clipping paths. Nodus owns the suite's path model and booleans (`D02 T08 §10`) and its SVG document reader, so both move into `Photon.Core/Vector/` here as Imago becomes their second consumer, and Imago's own `VectorPathSegment` is re-based on the shared geometry so one path type remains. The SVG reader moves in this phase rather than with `D03 T17 §7` because SVG path import needs it now; `D03 T17 §7` then moves only the renderer. Path exchange (SVG import and export, Illustrator export, the export clipping path) and path editing commands (merge, copy and paste, path operations, align) are §10, split out on 2026-09-27 so each half stays reviewable in one pass. Catalog: IP-1637, IP-1641 to IP-1648, and IP-1655 (10 features: show target path, the Paths panel with its options, path management, visibility and locks and color tags, fill path, stroke path, path to selection, selection to path, clipping paths with flatness, and the Paths panel itself).
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/paths-panel/`.
 **Job:** a retoucher can keep, name, and reuse precise outlines as selections, strokes, fills, and clipping paths. Consumer: selections, the fill and stroke engine, and the JPEG and TIFF writers.
@@ -276,27 +272,19 @@ Retouchers keep precise outlines as paths and reuse them as selections, strokes,
 - [ ] Add `src/Imago/Photon.Imago.Desktop/Views/Panels/PathsPanel.xaml` (IP-1641, IP-1655): a list of the work path in italics and the saved paths, with thumbnails, rename in place, deselect, multi-select, and panel options (thumbnail size). Done when: a driven run renames a path in place and the capture shows the panel. Cheaper substitute: paths shown only in the Layers panel as vector masks.
 - [ ] Add Show Target Path (IP-1637), which toggles the on-canvas display of the selected path. Done when: a driven run toggles it and the capture shows both states.
 - [ ] Add path management commands (IP-1642): new path, save work path, duplicate, delete, raise, and lower. Done when: a test runs each and undo reverses each.
-- [ ] Add Merge Visible Paths (IP-1650). Done when: a test merges two visible paths and a hidden one stays separate.
-- [ ] Add copy and paste of paths between images (IP-1651) as an internal clipboard flavor plus SVG text. Done when: a path pasted into a second document keeps its geometry within 1e-6, and pasting into a text editor yields SVG path data.
 - [ ] Add Fill Path (IP-1644) with color, pattern, or history source through `D03 T12 §8`. Done when: filling a closed fixture path matches its golden within 1/255.
 - [ ] Add Stroke Path (IP-1645) with a painting tool along the flattened path with simulated pressure tapers, or with a line style. Done when: a stroke with simulated pressure is thinner at both ends than in the middle, measured on the result.
 - [ ] Add Make Selection from a path (IP-1646) with replace, add, subtract, and intersect, feather, and anti-alias, producing a `D03 T10 §1` selection. Done when: a circle path's selection matches the analytic coverage within 1/255.
 - [ ] Add Make Work Path from a selection (IP-1647): marching squares on the mask then Schneider 1990 fitting with tolerance and GIMP's advanced settings (corner threshold, line and curve error). Done when: `SelectionToPathTests` fit a circular selection within 0.5 px using at most eight segments.
-- [ ] Add path operations (IP-1653): combine, subtract front, intersect, exclude, and merge components on `PathBooleans`. Done when: each operation on two overlapping fixture figures matches its golden geometry within 1e-6.
-- [ ] Add align, distribute, and arrange for path components (IP-1654). Done when: a test aligns three components' left edges to within 1e-9.
-- [ ] Add SVG path import (IP-1638, IP-1652) through the moved reader: merged or separate paths, with scale to fit the image. Done when: importing the fixture SVG yields the expected path count and fits within the canvas.
-- [ ] Add SVG path export (IP-1652) of the selected or all paths through `SvgPathData`, written through `AtomicFileWriter`. Done when: exported paths re-import through Inkscape 1.4 (version recorded) within 0.01 px.
-- [ ] Add Export Paths to Illustrator (IP-1639, IP-1649): one writer for both rows, a PostScript Illustrator 3 path file (the paths-only subset of the Illustrator File Format Specification v7) with the canvas as crop marks, in `src/Imago/Photon.Imago.FileFormats/Illustrator/IllustratorPathWriter.cs`. Done when: the file reads back through Nodus's `D02 T14 §4` legacy AI reader with equal geometry.
-- [ ] Mark a top-level clipping path for export (IP-1640) so `D03 T17 §11`'s JPEG and TIFF writers turn it into a clipping path resource. Done when: `ImagoPathSet.ExportClippingPath` returns the flagged path and its flatness, asserted in a test.
 - [ ] Enable Convert to Work Path for text layers (IP-1589) from §1 through glyph outlines (`SKFont.GetGlyphPath` into `PathGeometry`). Done when: converting the Latin fixture yields one figure per glyph contour and the menu item is enabled.
 - [ ] Register the path implementations earlier sections wait on and enable their controls, removing each tooltip: Vector Mask from Current Path (`D03 T09 §4`), the Selection Editor's To Path button (`D03 T10 §1`), Selection to Path and Path to Selection (`D03 T10 §9`), Place Along Path and the fill and stroke path commands (`D03 T12 §8`), symmetry from a path (`D03 T12 §11`), the Path transform target (`D03 T13 §11`), and path key points as `D03 T08 §4` snap candidates. Done when: each owning section's disabled-state test is updated to assert the enabled control and passes.
 - [ ] Add Filter, Render, Flame Along Path, passing the active path flattened to a `Polyline` into the `D01 T06 §9` `Flame` effect's dialog in place of the polyline drawn on canvas. Done when: a test renders a flame along a fixture path and the effect's `Polyline` parameter equals the flattened path within 0.25 px.
 - [ ] Name the history steps "New Path", "Save Path", "Stroke Path", "Fill Path", "Make Selection", and "Make Work Path", each with one Serilog Information line. Done when: a Serilog test logger asserts each line.
-- [ ] Commit fixtures under `tests/fixtures/imago/paths/` (SVG input, circle selection, boolean pairs) with goldens and `reference.txt` naming Inkscape 1.4. Done when: every fixture carries its note.
+- [ ] Commit fixtures under `tests/fixtures/imago/paths/` (circle selection, fill and stroke goldens) with `reference.txt`. Done when: every fixture carries its note.
 - [ ] Commit captures under `docs/captures/imago/paths-panel/` and write `docs/user/imago/paths.md`. Done when: every panel and menu command appears in a capture and the page documents it.
 - [ ] Commit: `"imago: paths and the Paths panel on path geometry moved to Photon.Core"`
 
-**Test checkpoint:** Unit test and format fidelity proof: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Vector|FullyQualifiedName~PathSetTests|FullyQualifiedName~SelectionToPathTests"` exits 0 with the moved `PathBooleansTests` passing; exported SVG paths re-import through Inkscape 1.4 within 0.01 px; the Illustrator path file reads back through the `D02 T14 §4` reader with equal geometry; `grep -rn "class VectorPathSegment" src` prints nothing. Cheaper substitute that fails: a second Imago path type, which the one-path-type grep catches.
+**Test checkpoint:** Unit test and format fidelity proof: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Vector|FullyQualifiedName~PathSetTests|FullyQualifiedName~SelectionToPathTests"` exits 0 with the moved `PathBooleansTests` passing and `PathSetTests.RoundTrip` reopening every attribute within 1e-6; a filled fixture path matches its golden within 1/255; `grep -rn "class VectorPathSegment" src` prints nothing. Cheaper substitute that fails: a second Imago path type, which the one-path-type grep catches.
 
 ## 6. Pen and Path Editing Tools
 
@@ -334,13 +322,13 @@ Paths are only as good as the tools that draw them. This section builds the pen 
 
 **Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~PathEditorTests|FullyQualifiedName~PenToolTests|FullyQualifiedName~MagneticPenTests"` exits 0, with the magnetic pen within 1.5 px of the committed edge; a driven drawing session is captured under `docs/captures/imago/pen-tools/`. Cheaper substitute that fails: an Imago-only pen editing its own segment lists, which the one-path-type grep of §5 catches.
 
-## 7. Shape Layers, Shape Tools, and Vector Layers
+## 7. Shape Layers and Shape Tools
 
-Shapes must stay resolution-independent and editable: per-corner radii, custom shapes, fill and stroke paint, live combine, and GIMP 3.2's vector layers bound to paths. The live-shape generators and corner model come from Nodus (`D02 T08 §4`) and move into `Photon.Core/Vector/Shapes/`; `ShapeLayer` is rewritten over §5's geometry. GIMP's Gfig job is met by these tools plus arc and spiral generators, with no gfig file reader. This promotes backlog B-019. Catalog: IP-1673 to IP-1696 (24 features: the Shapes panel, define custom shape, Gfig figures, the shape layer, editing vector layers on canvas, combine shapes, the rectangle and ellipse tools with corner widgets, corner types, the triangle tool, polygon and star, the line tool, the custom shape tool, Affinity's extra shape tools, fill and stroke paint, stroke options and presets, shape geometry, live shape properties and conversion to a path, pixels mode, merge shape layers, rasterize shape, vector layers from paths, vector layer fill and stroke, live properties in the Properties panel, and the legacy shape option). -> SOURCE: legacy-imago-4.7
+Shapes must stay resolution-independent and editable: per-corner radii, custom shapes, fill and stroke paint, live combine, and GIMP 3.2's vector layers bound to paths. The live-shape generators and corner model come from Nodus (`D02 T08 §4`) and move into `Photon.Core/Vector/Shapes/`; `ShapeLayer` is rewritten over §5's geometry. Custom shapes, GIMP's vector layers, and the Gfig job are §11, split out on 2026-09-27 so each half stays reviewable in one pass. This promotes backlog B-019. Catalog: IP-1676, IP-1678 to IP-1683, IP-1685 to IP-1692, and IP-1695 (16 features: the shape layer, combine shapes, the rectangle and ellipse tools with corner widgets, corner types, the triangle tool, polygon and star, the line tool, Affinity's extra shape tools, fill and stroke paint, stroke options and presets, shape geometry, live shape properties and conversion to a path, pixels mode, merge shape layers, rasterize shape, and live properties in the Properties panel). -> SOURCE: legacy-imago-4.7
 
-**Fidelity:** new build, no baseline; captured to `docs/captures/imago/shapes/` and `docs/captures/imago/vector-layers/`.
-**Job:** a designer draws resolution-independent shapes and vector layers that stay editable. Consumer: the layer renderer, the `.imago` save, and the later PSD and XCF mappings.
-**Treatment:** the shape tool group with on-canvas corner widgets, the Shapes panel, live shape properties in the Properties panel, fill and stroke paint pickers with stroke presets, and GIMP-style vector layer options. Cheaper substitute that fails the checkpoint: shapes rasterized at creation.
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/shapes/`.
+**Job:** a designer draws resolution-independent shapes that stay editable. Consumer: the layer renderer, the `.imago` save, and the later PSD and XCF mappings.
+**Treatment:** the shape tool group with on-canvas corner widgets, live shape properties in the Properties panel, and fill and stroke paint pickers with stroke presets. Cheaper substitute that fails the checkpoint: shapes rasterized at creation.
 **Chrome:** consume §5's geometry, the `D03 T12 §9` gradients, the `D03 T12 §10` patterns, the Properties panel, and the suite history. Do not add a second corner model.
 
 **Requires:** display-session -- the shape tools and captures need an interactive desktop
@@ -354,10 +342,6 @@ Shapes must stay resolution-independent and editable: per-corner radii, custom s
 - [ ] Add the polygon and star tool (IP-1682): sides, star ratio, smooth indents, and smooth corners. Done when: a 5-point star at ratio 0.5 matches its golden geometry within 1e-6.
 - [ ] Add the line tool with weight and arrowheads (IP-1683). Done when: a line with both arrowheads matches its golden within 1/255.
 - [ ] Add Affinity's extra shape tools (IP-1685): rounded rectangle, star variants, diamond, trapezoid, cog, crescent, donut, pie, tear, heart, cloud, callouts, and arrow, each as a `LiveShapeSpec` generator. Done when: each renders a committed golden within 1/255.
-- [ ] Add the Shapes panel (IP-1673, IP-1696) with Photon's own shape set (no Adobe shapes bundled) and the legacy shape tool option. Done when: a driven run places a shape from the panel and the capture shows it.
-- [ ] Add Define Custom Shape (IP-1674) from the active path into the user's shape library. Done when: a defined shape appears in the panel after reopening Imago.
-- [ ] Add the custom shape tool with its shape picker (IP-1684). Done when: a scripted drag places the picked shape at the dragged size.
-- [ ] Add CSH import from the user's own files only, with a reader built from the published reverse-engineered layout named in a `docs/dev/decisions.md` row; unknown versions, and files the file system's permissions deny, are refused by name. Done when: a CSH fixture made for the tests imports its shapes, and an unknown-version fixture is refused with its name.
 - [ ] Add shape fill and stroke paint (IP-1686): solid, gradient (through `D03 T12 §9`), pattern (through `D03 T12 §10`), or none, with gradient and pattern options. Done when: a gradient-filled shape reopens live with equal gradient stops.
 - [ ] Add stroke options (IP-1687): align inside, center, or outside, caps, corners, dashes, and saved stroke presets as the `StrokeStyle` record §2 shares. Done when: a saved preset applies to a second shape with equal fields.
 - [ ] Add shape geometry fields (IP-1688): W, H, X, Y, drawing constraints, and keep selected. Done when: typing W and H resizes the shape exactly.
@@ -366,17 +350,12 @@ Shapes must stay resolution-independent and editable: per-corner radii, custom s
 - [ ] Add Merge Shape Layers (IP-1691). Done when: merging two shape layers yields one shape layer with both figures.
 - [ ] Add the shape pixels mode (IP-1690), which paints the shape into the active pixel layer. Done when: a scripted drag in pixels mode adds no layer and paints the expected coverage.
 - [ ] Add Rasterize Shape (IP-1692) as one undo step. Done when: rasterized pixels match the live render within 1/255 and undo restores the live layer.
-- [ ] Add a `VectorLayer` kind (`D03 T09 §1`) in `src/Imago/Photon.Imago.Core/Layers/VectorLayer.cs` bound to a saved path, with non-destructive transform and drop to fill (IP-1693). Done when: editing the bound path updates the vector layer render.
-- [ ] Add vector layer fill and stroke (IP-1694): color or pattern, antialias, width, cap, join, miter, and dashes. Done when: each option renders within 1/255 of a GIMP 3.2 golden of the same vector layer.
-- [ ] Add on-canvas editing of vector layers with the §6 tools (IP-1677). Done when: a driven run moves an anchor of a vector layer's path and the layer re-renders.
-- [ ] Register `imago:vector` with the PNG fallback through the `D03 T08 §1` contract. Done when: a vector layer round-trips `.imago` live and the fallback renders in `gimp-console-3.2` within 1/255.
-- [ ] Meet the Gfig job (IP-1675) with arc and spiral generators added to `src/Photon.Core/Vector/Shapes/` and grid snap; no gfig file reader is built, recorded in `docs/user/imago/shapes.md`. Done when: the arc and spiral generators render their goldens.
 - [ ] Enable Convert to Shape for text layers (IP-1589) from §1, producing a shape layer from the glyph outlines. Done when: converting the Latin fixture yields a shape layer whose geometry matches §5's work-path conversion.
 - [ ] Enable the controls earlier sections deferred to shape layers: shape key points as snap candidates and New Guides from shape layers (`D03 T08 §4`), and the gradient stroke context on shape layers (`D03 T12 §9`), and supply rasterized custom shapes as the aux kernel of the `D01 T06 §2` shape blur. Done when: each owning section's disabled-state test is updated to assert the enabled control and passes, and a shape blur with a custom heart shape matches its golden.
-- [ ] Commit captures of every tool, the Shapes panel, and vector layer options under `docs/captures/imago/shapes/` and `docs/captures/imago/vector-layers/`, and write `docs/user/imago/shapes.md`. Done when: every tool appears in a capture and the page documents it.
-- [ ] Commit: `"imago: live shape layers, custom shapes, and vector layers"`
+- [ ] Commit captures of every shape tool and the live shape properties under `docs/captures/imago/shapes/`, and write `docs/user/imago/shapes.md`. Done when: every tool appears in a capture and the page documents it.
+- [ ] Commit: `"imago: live shape layers and the shape tools"`
 
-**Test checkpoint:** Format fidelity proof and unit test: shape and vector layer fixtures under `tests/fixtures/imago/shapes/` round-trip `.imago` live (geometry within 1e-6, paint fields equal) and `gimp-console-3.2` renders their fallbacks within 1/255 (GIMP version quoted); `dotnet test Photon.slnx --filter "FullyQualifiedName~LiveShapeTests|FullyQualifiedName~ShapeLayerTests"` exits 0 against the moved Nodus corner goldens; a driven capture of every tool is committed. Cheaper substitute that fails: rasterizing on creation, which the reopen-live assertion catches.
+**Test checkpoint:** Format fidelity proof and unit test: shape layer fixtures under `tests/fixtures/imago/shapes/` round-trip `.imago` live (geometry within 1e-6, paint fields equal) and `gimp-console-3.2` renders their fallbacks within 1/255 (GIMP version quoted); `dotnet test Photon.slnx --filter "FullyQualifiedName~LiveShapeTests|FullyQualifiedName~ShapeLayerTests"` exits 0 against the moved Nodus corner goldens; a driven capture of every shape tool is committed. Cheaper substitute that fails: rasterizing on creation, which the reopen-live assertion catches.
 
 ## 8. Frames and Vector Output
 
@@ -406,6 +385,81 @@ Designers crop content into frames and hand vector work to the web. Frame layers
 - [ ] Commit: `"imago: frames and SVG export"`
 
 **Test checkpoint:** Format fidelity proof: the exported SVG of the committed vector fixture renders in Inkscape 1.4 and resvg 0.45 within 1/255 of Imago's render and contains one element per vector layer, and a frame round-trips `.imago` with its content live, all reported by `dotnet test Photon.slnx --filter "FullyQualifiedName~ImagoSvgExporterTests|FullyQualifiedName~FrameLayerTests"`. Cheaper substitute that fails: one embedded PNG, which the element-count assertion catches.
+
+## 9. Type Tools and On-Canvas Text Editing
+
+Split from §1 on 2026-09-27 so each half stays reviewable in one pass: §1 moves the engine and builds the live text layer, and this section builds the surfaces that create and edit it, the four type tools (T cycles), the type mask tools, the Toggle Text Orientation command, on-canvas editing with caret, selection, IME composition, commit and cancel, GIMP's floating style editor, the Text Editor window, and the Convert to Work Path and Convert to Shape entries §5 and §7 enable. Catalog: IP-1583 to IP-1589 (7 features: on-canvas editing from the Layers panel, the horizontal type tool with point and paragraph text and GIMP's dynamic or fixed box, the vertical type tool with orientation toggle and vertical Roman alignment, the type mask tools, on-canvas editing behavior with the floating style editor, the Text Editor window, and convert to work path or shape).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/type-tools/`.
+**Job:** a designer can add live text in any script with the type tools and edit it on the canvas. Consumer: §1's text layers and their stories.
+**Treatment:** the type tool group (horizontal, vertical, horizontal mask, vertical mask; T cycles), click for point text or drag a paragraph box (GIMP dynamic or fixed box), an on-canvas editor with caret, selection, IME underline, commit (Ctrl+Enter or the check) and cancel (Esc), transform handles while editing, GIMP's floating style editor, and a Text Editor window. Cheaper substitute that fails the checkpoint: a modal text dialog that stamps a bitmap.
+**Chrome:** consume §1's text layer and the moved `TextEditSession` and `TextInputBridge`, the tool options strip of `D03 T03 §4`, the `Photon.UI` dialog styles, and the suite history. Do not add a second text editor model.
+
+**Requires:** display-session -- typing into a layer, IME composition, and the captures need an interactive desktop
+
+- [ ] Add `HorizontalTypeTool` and `VerticalTypeTool` in `src/Imago/Photon.Imago.Desktop/Tools/Type/`: click for point text, drag for a paragraph box, T cycling the group. Done when: a driven run creates one point and one paragraph layer and the capture shows both. Cheaper substitute: a text dialog that stamps pixels.
+- [ ] Add `HorizontalTypeMaskTool` and `VerticalTypeMaskTool` that produce a `D03 T10 §1` selection from the glyph outlines, never a layer (IP-1586). Done when: a test commits a mask entry and the document gains a selection whose bounds equal the glyph outline bounds and no new layer.
+- [ ] Add the Toggle Text Orientation command for the active text layer (IP-1585). Done when: a test toggles a layer and undo restores the original orientation.
+- [ ] Add on-canvas editing (IP-1583, IP-1587): double-click a text layer or its Layers-panel thumbnail to edit, caret and selection through the moved `TextEditSession`, IME composition through `TextInputBridge`, commit with Ctrl+Enter or the check, and cancel with Esc. Done when: a driven run types Arabic through the Windows IME and the capture shows the joined text; Esc after typing restores the previous story.
+- [ ] Keep transform handles live while editing and keep masked text layers clickable by a layer-bounds hit test. Done when: a driven run scales a text box mid-edit and the story is unchanged.
+- [ ] Add GIMP's floating style editor as a draggable overlay above the text box, shown when `Imago.Type.ShowOnCanvasEditor` is true (default true). Done when: toggling the setting hides the overlay without a restart.
+- [ ] Add the Text Editor window (IP-1588): multi-line editing of the active layer with Load from File (UTF-8 and UTF-16) and Clear All. Done when: loading a UTF-16 fixture fills the layer with its text exactly.
+- [ ] Add Convert to Work Path and Convert to Shape (IP-1589) to the Type menu, disabled with tooltips naming `D03 T16 §5` (work path) and `D03 T16 §7` (shape layer), which enable them. Done when: `python scripts/todo-graph.py resolve 'D03 T16 §5'` and `'D03 T16 §7'` both resolve and the tooltips name them.
+- [ ] Commit captures of the type tools, on-canvas editing, IME composition, the style editor, and the Text Editor window under `docs/captures/imago/type-tools/`. Done when: each capture exists and the Treatment's controls each appear in one.
+- [ ] Extend `docs/user/imago/type.md` with the type tools, the mask tools, on-canvas editing, the style editor, and the Text Editor. Done when: the page documents every control on this surface.
+- [ ] Commit: `"imago: the type tools and on-canvas text editing"`
+
+**Test checkpoint:** Driven run with evidence and unit test: a driven run creates one point and one paragraph layer with the type tools, types Arabic through the Windows IME, and cancels an edit with Esc, captured under `docs/captures/imago/type-tools/` with the committed story read back equal; `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Imago.Core.Tests.Text"` exits 0 with the mask-tool selection-bounds test and the orientation-toggle undo test reporting. Cheaper substitute that fails: a modal dialog that stamps pixels, which the still-live story readback catches.
+
+## 10. Path Exchange and Path Commands: SVG, Illustrator, Clipping Paths, Booleans, and Align
+
+Split from §5 on 2026-09-27 so each half stays reviewable in one pass: §5 moves the geometry, builds the path set and the Paths panel, and bridges paths to selections, fills, and strokes; this section moves paths in and out of Imago and edits many at once: SVG path import and export through the SVG reader §5 moved, the Illustrator paths export, the clipping path flagged for JPEG and TIFF export, merge visible paths, copy and paste between images, path booleans, and component alignment. Catalog: IP-1638 to IP-1640, IP-1649 to IP-1654 (9 features: SVG path import with scale to fit, export to Illustrator, clipping paths on JPEG and TIFF export, Illustrator export as its second row, merge visible paths, copy and paste paths, SVG import and export, path operations, and align and distribute components).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/paths-exchange/`.
+**Job:** a retoucher brings paths in from and sends them out to vector apps and combines and aligns path components. Consumer: the path set, the JPEG and TIFF writers of `D03 T17 §11`, and the SVG and Illustrator files other apps read.
+**Treatment:** Paths panel menu entries for import, export, merge, and operations, an SVG import options dialog (merged or separate, scale to fit), and path operation and align buttons in the options bar for the path selection tool. Cheaper substitute that fails the checkpoint: exporting paths only as raster masks.
+**Chrome:** consume §5's Paths panel, path set, `SvgPathData`, and moved SVG reader, `PathBooleans`, `AtomicFileWriter`, and the suite history. Do not add a second SVG path parser.
+
+**Requires:** display-session -- the import dialog, the panel commands, and the captures need an interactive desktop
+
+- [ ] Add Merge Visible Paths (IP-1650). Done when: a test merges two visible paths and a hidden one stays separate.
+- [ ] Add copy and paste of paths between images (IP-1651) as an internal clipboard flavor plus SVG text. Done when: a path pasted into a second document keeps its geometry within 1e-6, and pasting into a text editor yields SVG path data.
+- [ ] Add path operations (IP-1653): combine, subtract front, intersect, exclude, and merge components on `PathBooleans`. Done when: each operation on two overlapping fixture figures matches its golden geometry within 1e-6.
+- [ ] Add align, distribute, and arrange for path components (IP-1654). Done when: a test aligns three components' left edges to within 1e-9.
+- [ ] Add SVG path import (IP-1638, IP-1652) through the moved reader: merged or separate paths, with scale to fit the image. Done when: importing the fixture SVG yields the expected path count and fits within the canvas.
+- [ ] Add SVG path export (IP-1652) of the selected or all paths through `SvgPathData`, written through `AtomicFileWriter`. Done when: exported paths re-import through Inkscape 1.4 (version recorded) within 0.01 px.
+- [ ] Add Export Paths to Illustrator (IP-1639, IP-1649): one writer for both rows, a PostScript Illustrator 3 path file (the paths-only subset of the Illustrator File Format Specification v7) with the canvas as crop marks, in `src/Imago/Photon.Imago.FileFormats/Illustrator/IllustratorPathWriter.cs`. Done when: the file reads back through Nodus's `D02 T14 §4` legacy AI reader with equal geometry.
+- [ ] Mark a top-level clipping path for export (IP-1640) so `D03 T17 §11`'s JPEG and TIFF writers turn it into a clipping path resource. Done when: `ImagoPathSet.ExportClippingPath` returns the flagged path and its flatness, asserted in a test.
+- [ ] Commit fixtures under `tests/fixtures/imago/paths/` (SVG input, boolean pairs) with goldens and `reference.txt` naming Inkscape 1.4. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/paths-exchange/` and extend `docs/user/imago/paths.md` with import, export, merge, operations, and align. Done when: every command appears in a capture and the page documents it.
+- [ ] Commit: `"imago: path exchange with SVG and Illustrator, clipping paths for export, and path commands"`
+
+**Test checkpoint:** Format fidelity proof and unit test: exported SVG paths re-import through Inkscape 1.4 (version recorded) within 0.01 px; the Illustrator path file reads back through Nodus's `D02 T14 §4` legacy AI reader with equal geometry; `dotnet test Photon.slnx --filter "FullyQualifiedName~PathSetTests|FullyQualifiedName~Photon.Imago.Core.Tests.Paths"` exits 0 with each boolean operation on the fixture pairs matching its golden geometry within 1e-6 and the flagged clipping path returned with its flatness. Cheaper substitute that fails: a writer proven only by Imago's own reader, which the Inkscape re-import catches.
+
+## 11. Custom Shapes, Vector Layers, and the Gfig Job
+
+Split from §7 on 2026-09-27 so each half stays reviewable in one pass: §7 builds live shape layers and the shape tools, and this section adds the user's own shape library (the Shapes panel, Define Custom Shape, the custom shape tool, and CSH import from the user's files), GIMP 3.2's vector layers bound to paths with their fill, stroke, and on-canvas editing, and GIMP's Gfig job met by arc and spiral generators with no gfig file reader. Catalog: IP-1673 to IP-1675, IP-1677, IP-1684, IP-1693, IP-1694, and IP-1696 (8 features: the Shapes panel, define custom shape, Gfig figures, editing vector layers on canvas, the custom shape tool, vector layers from paths, vector layer fill and stroke, and the legacy shape option).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/custom-shapes/` and `docs/captures/imago/vector-layers/`.
+**Job:** a designer keeps a personal shape library and draws GIMP-style vector layers that follow their paths. Consumer: the layer renderer, the `.imago` save, and the later PSD and XCF mappings.
+**Treatment:** the Shapes panel with Photon's own shape set, the custom shape picker, and GIMP-style vector layer options. Cheaper substitute that fails the checkpoint: shapes stamped as pixels from a bundled image list.
+**Chrome:** consume §7's shape layer and `LiveShapeSpec`, §5's saved paths, §6's path tools, the Properties panel, and the suite history. Do not add a second shape library store.
+
+**Requires:** display-session -- the Shapes panel, the custom shape tool, and vector layer editing need an interactive desktop
+
+- [ ] Add the Shapes panel (IP-1673, IP-1696) with Photon's own shape set (no Adobe shapes bundled) and the legacy shape tool option. Done when: a driven run places a shape from the panel and the capture shows it.
+- [ ] Add Define Custom Shape (IP-1674) from the active path into the user's shape library. Done when: a defined shape appears in the panel after reopening Imago.
+- [ ] Add the custom shape tool with its shape picker (IP-1684). Done when: a scripted drag places the picked shape at the dragged size.
+- [ ] Add CSH import from the user's own files only, with a reader built from the published reverse-engineered layout named in a `docs/dev/decisions.md` row; unknown versions, and files the file system's permissions deny, are refused by name. Done when: a CSH fixture made for the tests imports its shapes, and an unknown-version fixture is refused with its name.
+- [ ] Add a `VectorLayer` kind (`D03 T09 §1`) in `src/Imago/Photon.Imago.Core/Layers/VectorLayer.cs` bound to a saved path, with non-destructive transform and drop to fill (IP-1693). Done when: editing the bound path updates the vector layer render.
+- [ ] Add vector layer fill and stroke (IP-1694): color or pattern, antialias, width, cap, join, miter, and dashes. Done when: each option renders within 1/255 of a GIMP 3.2 golden of the same vector layer.
+- [ ] Add on-canvas editing of vector layers with the §6 tools (IP-1677). Done when: a driven run moves an anchor of a vector layer's path and the layer re-renders.
+- [ ] Register `imago:vector` with the PNG fallback through the `D03 T08 §1` contract. Done when: a vector layer round-trips `.imago` live and the fallback renders in `gimp-console-3.2` within 1/255.
+- [ ] Meet the Gfig job (IP-1675) with arc and spiral generators added to `src/Photon.Core/Vector/Shapes/` and grid snap; no gfig file reader is built, recorded in `docs/user/imago/shapes.md`. Done when: the arc and spiral generators render their goldens.
+- [ ] Commit captures of the Shapes panel, the custom shape tool, and vector layer options under `docs/captures/imago/custom-shapes/` and `docs/captures/imago/vector-layers/`, and extend `docs/user/imago/shapes.md`. Done when: every control appears in a capture and the page documents it.
+- [ ] Commit: `"imago: custom shapes, vector layers, and the Gfig generators"`
+
+**Test checkpoint:** Format fidelity proof and unit test: vector layer fixtures under `tests/fixtures/imago/shapes/` round-trip `.imago` live and `gimp-console-3.2` renders their fallbacks within 1/255 (GIMP version quoted), each vector layer fill and stroke option renders within 1/255 of its GIMP 3.2 golden, and `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Imago.Core.Tests.Shapes"` exits 0 with a defined shape surviving an Imago restart and the unknown-version CSH fixture refused by name. Cheaper substitute that fails: vector layers baked to pixels, which the edit-the-bound-path re-render test catches.
 
 ## Verification
 

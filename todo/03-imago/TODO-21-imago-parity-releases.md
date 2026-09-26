@@ -13,12 +13,12 @@ track: I21
 > **Goal:** Each Imago parity phase ends with a published, independently installable Imago release on its own `imago-v*` tag, proven on a clean machine, whose release notes list the parity catalog features the phase completed, so progress is shipped rather than accumulated; `imago-v1.0.0` at the end of Phase 27 declares the catalog complete (every `plan` row stamped, every other row carrying its recorded status).
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** Imago's only planned release so far is 0.1.0 (`D03 T06 §3`, `todo/03-imago/TODO-06-imago-release.md`), which has not shipped: no `imago-v*` tag exists and `CHANGELOG.md` has no Imago release section. The release checklist every section here runs is `standards/release.md`. The Imago installer script `installer/Imago.iss` already registers the opt-in `.psd` association (seven `.psd` mentions) that the parity formats extend. The catalog the releases reconcile exists at `docs/parity/imago-parity.md` (2,367 features, 1,997 of them planned), but the query every release quotes does not exist until `D00 T01 §6` and `D00 T01 §7` ship it: `scripts/todo-parity.py` is absent. The Imago user guide folder `docs/user/imago/` does not exist yet; `D06 T01 §2` creates it.
+> **Current state (verified 2026-09-26):** Imago's only planned release so far is 0.1.0 (`D03 T06 §3`, `todo/03-imago/TODO-06-imago-release.md`), which has not shipped: no `imago-v*` tag exists and `CHANGELOG.md` has no Imago release section. The release checklist every section here runs is `standards/release.md`. The Imago installer script `installer/Imago.iss` already registers the opt-in `.psd` association (seven `.psd` mentions) that the parity formats extend. The catalog the releases reconcile exists at `docs/parity/imago-parity.md` (2,385 features since the 18 rows routed from the Lumen catalog were added on 2026-09-27, 2,024 of them planned after the operator's 2026-09-27 promotions), but the query every release quotes does not exist until `D00 T01 §6` and `D00 T01 §7` ship it: `scripts/todo-parity.py` is absent. The Imago user guide folder `docs/user/imago/` does not exist yet; `D06 T01 §2` creates it.
 <!-- claim: exists todo/03-imago/TODO-06-imago-release.md -->
 <!-- claim: exists standards/release.md -->
 <!-- claim: count "\.psd" installer/Imago.iss = 7 -->
 <!-- claim: exists docs/parity/imago-parity.md -->
-<!-- claim: count "^\| IP-\d{4} \|" docs/parity/imago-parity.md = 2367 -->
+<!-- claim: count "^\| IP-\d{4} \|" docs/parity/imago-parity.md = 2385 -->
 <!-- claim: absent scripts/todo-parity.py -->
 <!-- claim: absent docs/user/imago -->
 
@@ -55,18 +55,18 @@ track: I21
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |  §1    | Imago 0.2.0 (Phase 16) | D03 T06 §3, D03 T08 §1, D03 T08 §2, D03 T08 §3, D03 T08 §10, D03 T08 §4, D03 T08 §5, D03 T08 §11, D03 T08 §6, D03 T08 §7, D03 T08 §8, D03 T08 §9, D03 T09 §1, D03 T09 §2, D03 T09 §14, D03 T09 §3, D03 T09 §4, D03 T09 §5, D03 T09 §6 |  [ ]   |
+|   1   |  §1    | Imago 0.2.0 (Phase 16) | D03 T06 §3, D03 T08 §1, D03 T08 §12, D03 T08 §2, D03 T08 §3, D03 T08 §13, D03 T08 §10, D03 T08 §4, D03 T08 §14, D03 T08 §5, D03 T08 §11, D03 T08 §6, D03 T08 §7, D03 T08 §8, D03 T08 §9, D03 T09 §1, D03 T09 §2, D03 T09 §14, D03 T09 §3, D03 T09 §4, D03 T09 §5, D03 T09 §6 |  [ ]   |
 |   2   |  §2    | Imago 0.3.0 (Phase 17) | §1, D03 T10 §1, D03 T10 §2, D03 T10 §3, D03 T10 §4, D03 T10 §6, D03 T10 §5, D03 T10 §7, D03 T10 §8, D03 T10 §9, D03 T10 §10, D03 T09 §7, D03 T09 §8, D03 T09 §9, D03 T09 §10, D03 T09 §11, D03 T09 §12, D03 T09 §13 |  [ ]   |
-|   3   |  §3    | Imago 0.4.0 (Phase 18) | §2, D03 T11 §1, D03 T11 §2, D03 T11 §3, D03 T11 §4, D03 T11 §5, D03 T11 §6, D03 T11 §7, D03 T11 §8, D03 T11 §9, D03 T11 §10 |  [ ]   |
+|   3   |  §3    | Imago 0.4.0 (Phase 18) | §2, D03 T11 §1, D03 T11 §2, D03 T11 §11, D03 T11 §3, D03 T11 §4, D03 T11 §5, D03 T11 §12, D03 T11 §6, D03 T11 §7, D03 T11 §8, D03 T11 §9, D03 T11 §10 |  [ ]   |
 |   4   |  §4    | Imago 0.5.0 (Phase 19) | §3, D03 T12 §1, D03 T12 §2, D03 T12 §3, D03 T12 §4, D03 T12 §5, D03 T12 §6, D03 T12 §7, D03 T12 §8, D03 T12 §9, D03 T12 §10, D03 T12 §11 |  [ ]   |
 |   5   |  §5    | Imago 0.6.0 (Phase 20) | §4, D03 T13 §1, D03 T13 §2, D03 T13 §3, D03 T13 §4, D03 T13 §5, D03 T13 §11, D03 T13 §6, D03 T13 §7, D03 T13 §8, D03 T13 §9, D03 T13 §10 |  [ ]   |
-|   6   |  §6    | Imago 0.7.0 (Phase 21) | §5, D03 T07 §3, D01 T06 §1, D01 T06 §2, D01 T06 §3, D01 T06 §4, D01 T06 §5, D01 T06 §6, D01 T06 §7, D01 T06 §14, D03 T14 §1, D03 T14 §2, D03 T14 §3, D03 T14 §4, D03 T14 §6, D03 T14 §7 |  [ ]   |
-|   7   |  §7    | Imago 0.8.0 (Phase 22) | §6, D01 T06 §8, D01 T06 §9, D01 T06 §10, D01 T06 §11, D01 T06 §12, D01 T06 §13, D03 T14 §5, D03 T14 §8, D03 T14 §9, D03 T14 §10 |  [ ]   |
-|   8   |  §8    | Imago 0.9.0 (Phase 23) | §7, D01 T07 §1, D01 T07 §2, D01 T07 §3, D01 T07 §4, D01 T07 §5, D01 T07 §6, D03 T15 §1, D03 T15 §12, D03 T15 §2, D03 T15 §4, D03 T15 §3, D03 T15 §5, D03 T15 §6, D03 T15 §7, D03 T15 §8, D03 T15 §9, D03 T15 §10, D03 T15 §11 |  [ ]   |
-|   9   |  §9    | Imago 0.10.0 (Phase 24) | §8, D03 T16 §1, D03 T16 §5, D03 T16 §2, D03 T16 §3, D03 T16 §4, D03 T16 §6, D03 T16 §7, D03 T16 §8 |  [ ]   |
-|  10   |  §10   | Imago 0.11.0 (Phase 25) | §9, D03 T17 §1, D03 T17 §12, D03 T17 §2, D03 T17 §13, D03 T17 §3, D03 T17 §4, D03 T17 §14, D03 T17 §5, D03 T17 §6, D03 T17 §7, D03 T17 §8, D03 T17 §9, D03 T17 §11, D03 T17 §10, D03 T18 §1, D03 T18 §2, D03 T18 §3, D03 T18 §4, D03 T18 §5, D03 T18 §6, D03 T18 §7 |  [ ]   |
+|   6   |  §6    | Imago 0.7.0 (Phase 21) | §5, D03 T07 §3, D01 T06 §1, D01 T06 §2, D01 T06 §3, D01 T06 §4, D01 T06 §5, D01 T06 §6, D01 T06 §7, D01 T06 §14, D03 T14 §1, D03 T14 §2, D03 T14 §11, D03 T14 §3, D03 T14 §4, D03 T14 §6, D03 T14 §7 |  [ ]   |
+|   7   |  §7    | Imago 0.8.0 (Phase 22) | §6, D01 T06 §8, D01 T06 §9, D01 T06 §10, D01 T06 §11, D01 T06 §12, D01 T06 §13, D03 T14 §5, D03 T14 §8, D03 T14 §9, D03 T14 §10, D03 T14 §12, D03 T14 §13 |  [ ]   |
+|   8   |  §8    | Imago 0.9.0 (Phase 23) | §7, D01 T07 §1, D01 T07 §2, D01 T07 §3, D01 T07 §4, D01 T07 §5, D01 T07 §6, D03 T15 §1, D03 T15 §13, D03 T15 §12, D03 T15 §2, D03 T15 §4, D03 T15 §3, D03 T15 §5, D03 T15 §6, D03 T15 §7, D03 T15 §8, D03 T15 §9, D03 T15 §10, D03 T15 §14, D03 T15 §11 |  [ ]   |
+|   9   |  §9    | Imago 0.10.0 (Phase 24) | §8, D03 T16 §1, D03 T16 §9, D03 T16 §5, D03 T16 §10, D03 T16 §2, D03 T16 §3, D03 T16 §4, D03 T16 §6, D03 T16 §7, D03 T16 §11, D03 T16 §8 |  [ ]   |
+|  10   |  §10   | Imago 0.11.0 (Phase 25) | §9, D03 T17 §1, D03 T17 §15, D03 T17 §12, D03 T17 §2, D03 T17 §13, D03 T17 §3, D03 T17 §4, D03 T17 §14, D03 T17 §5, D03 T17 §6, D03 T17 §7, D03 T17 §16, D03 T17 §8, D03 T17 §9, D03 T17 §11, D03 T17 §10, D03 T18 §1, D03 T18 §8, D03 T18 §2, D03 T18 §9, D03 T18 §3, D03 T18 §4, D03 T18 §10, D03 T18 §5, D03 T18 §6, D03 T18 §7 |  [ ]   |
 |  11   |  §11   | Imago 0.12.0 (Phase 26) | §10, D03 T19 §1, D03 T19 §2, D03 T19 §3, D03 T19 §4, D03 T19 §5, D03 T19 §6, D03 T19 §15, D03 T19 §7, D03 T19 §14, D03 T19 §8, D03 T19 §9, D03 T19 §10, D03 T19 §11, D03 T19 §12, D03 T19 §13 |  [ ]   |
-|  12   |  §12   | Imago 1.0.0 (Phase 27): the parity catalog complete | §11, D03 T07 §17, D03 T20 §1, D03 T20 §2, D03 T20 §3, D03 T20 §4, D03 T20 §9, D03 T20 §5, D03 T20 §6, D03 T20 §7, D03 T20 §8, D03 T07 §16 |  [ ]   |
+|  12   |  §12   | Imago 1.0.0 (Phase 27): the parity catalog complete | §11, D03 T07 §17, D03 T20 §1, D03 T20 §2, D03 T20 §3, D03 T20 §4, D03 T20 §9, D03 T20 §5, D03 T20 §6, D03 T20 §7, D03 T20 §8, D03 T07 §18, D03 T07 §19, D03 T07 §20, D03 T07 §16 |  [ ]   |
 
 ---
 
@@ -393,6 +393,7 @@ track: I21
 - [ ] Push the tag `imago-v1.0.0`. Done when: the `release` workflow run is `success` (URL quoted).
 - [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 1.0.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 1.0.0 as the current Imago release and only `imago-v1.0.0` points at the release commit.
+- [ ] Run `pwsh scripts/perf-gate.ps1` (from `D03 T07 §18`) on the release build and quote its table. Done when: every scenario is within its budget and no scenario regresses more than the gate's tolerance over the committed baseline.
 - [ ] Commit: `"release: Imago 1.0.0"`
 
 **Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-1.0.0/`; `gh release view imago-v1.0.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 27` output is quoted with zero Phase 27 rows pointing at an unshipped section. The whole-catalog `query parity --catalog imago` output reports zero unshipped `plan` rows across Phases 16 to 27. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.

@@ -50,6 +50,7 @@ track: N13
 - -> XREF: D02 T10 §2 -- the rich text model merge fields and text hyperlinks live in
 - -> XREF: D02 T10 §13 -- the RTF reader and the DocumentFormat.OpenXml reference §13's data sources reuse
 - -> XREF: D02 T11 §1 -- the live-effect framework for Crop Marks and Trap
+- -> XREF: D02 T11 §10 -- the 3D and Materials meshes, materials, and renders §17 writes as interactive 3D annotations
 - -> XREF: D02 T12 §1 -- the always-overprint-black flag Convert to Bitmap writes, honored by §7
 - -> XREF: D02 T12 §2 -- the Document Raster Effects Settings resolution §8 prints at
 - -> XREF: D02 T14 §2 -- PDF import, which moves the PdfPig reference §2 adds for tests into `Photon.Nodus.Core`
@@ -92,6 +93,7 @@ track: N13
 |  14   |   §14   | The PDF writer: spot colors, layers, and exact vector output | §1, D02 T04 §4 |  [ ]   |
 |  15   |   §15   | PDF presets and standards: PDF/X, PDF/A, compatibility, compression, and marks | §14, §4 |  [ ]   |
 |  16   |   §16   | PDF interactivity and security: bookmarks, hyperlinks, tagged PDF, and passwords | §14 |  [ ]   |
+|  17   |   §17   | Interactive 3D models in PDF: U3D annotations | §14, §15, D02 T11 §10 |  [ ]   |
 
 ---
 
@@ -555,6 +557,35 @@ A PDF sent to a client is navigated, read by screen readers, and sometimes prote
 - [ ] Commit: `"nodus: PDF links, bookmarks, tagging, security, and linearization"`
 
 **Test checkpoint:** Format fidelity proof: `dotnet test Photon.slnx` exits 0 with `PdfLinkBookmarkTests`, `PdfTaggingTests`, and `PdfSecurityTests` reporting; the fixtures validate as PDF/UA-1 in veraPDF (version quoted) and as linearized in qpdf, and the permission bits read back. Cheaper substitute that fails: `/Alt` missing on figures or a password stored in the preset, which the tagging and password-leak tests reject.
+
+## 17. Interactive 3D Models in PDF: U3D Annotations
+
+CorelDRAW keeps 3D models interactive in exported PDF (Compatibility Acrobat 8.0 or higher), so a reviewer rotates a product mockup in Acrobat Reader instead of looking at one frozen angle. Nodus's 3D and Materials objects (`D02 T11 §10`) already hold a `Mesh3D` with materials, lights, and a camera; this section writes them into the PDF of §14 as 3D annotations (ISO 32000-1 section 13.6, `/Subtype /3D`) carrying a U3D stream (ECMA-363 4th edition, 2007), with named views, activation and deactivation, lighting, rendering mode, and the rendered view as the annotation's appearance and poster so every other reader still shows the art. No maintained .NET writer exists for U3D or PRC: the Intel Universal 3D Sample Software (Apache-2.0, maintained fork github.com/ningfei/u3d) is native C++ and PRC's only open writer is Asymptote's `oPRCFile` (LGPL-3.0), so Nodus writes U3D with its own managed encoder built from ECMA-363, and uses the Intel sample's IDTF tools only as a test-time oracle. Both licenses are GPL-3.0 compatible, recorded in the decision item. -> SOURCE: parity-pdf-3d. Catalog: NP-2262 (1 feature: interactive 3D models in PDF).
+
+**Fidelity:** extends the §14 Publish to PDF dialog; captured to `docs/captures/nodus/export-pdf-3d/` (the 3D option on the Objects page and Acrobat Reader showing the activated model).
+**Job:** a designer can send a PDF whose 3D mockup the reviewer can rotate, zoom, and switch views on. Consumer: Acrobat and Acrobat Reader, and any PDF reader through the poster appearance.
+**Treatment:** an "Export 3D objects as interactive 3D" check box with a views list (default view plus the named views of each 3D object) and an activation choice (on page open, on click) on the §14 Objects page. Cheaper substitute that fails the checkpoint: embedding only the rendered bitmap, which the annotation-dictionary test catches.
+**Chrome:** consume the §14 writer and dialog shell, the `D02 T11 §10` `Mesh3D`, `MaterialLibrary`, and `PathTracer`, and the settings store. Do not add a second PDF writer or a second 3D scene model.
+
+**Requires:** display-session -- the Publish to PDF dialog is driven and captured, and the Acrobat Reader check is a driven run
+
+- [ ] Record in `docs/dev/decisions.md` the 3D PDF decision: U3D (ECMA-363) written by an own managed encoder because Acrobat and Reader read it since PDF 1.6 and the Intel sample is native C++; PRC (ISO 14739-1) through Asymptote's LGPL-3.0 `oPRCFile` rejected because it needs a native build and adds no reader coverage; the Intel U3D sample (Apache-2.0, license verified 2026-09-27 at the ningfei/u3d fork) used only as a test-time oracle, and any file ported from it keeping its Apache-2.0 header and NOTICE. Done when: the row names both licenses, the commits checked, and the reason.
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Pdf/ThreeD/U3dBitStreamWriter.cs`: the ECMA-363 section 10 context-adaptive arithmetic coder (static and dynamic contexts, U8 to U32, F32, and strings). Done when: `U3dBitStreamWriterTests` encode the committed coder vectors and decode them back with an own test decoder built from the same clauses.
+- [ ] Add `U3dFileWriter` with the file header, the modifier chain, and the node blocks (group, model, light, view) of ECMA-363 section 9. Done when: a single-triangle file matches the committed golden byte for byte.
+- [ ] Add the CLOD mesh generator declaration and base mesh continuation blocks writing positions, normals, texture coordinates, and faces of each `Mesh3D` at full resolution (no progressive resolution updates). Done when: `U3dMeshTests` write the cube and the inflated-logo fixture meshes and the Intel sample's `IDTFConverter` export of the same geometry decodes to the same vertex and face counts.
+- [ ] Map `MaterialLibrary` materials to U3D material and lit texture shader resources (diffuse, specular, emissive, opacity, one texture layer as PNG image resource). Done when: a test asserts each material's colors in the written resource block.
+- [ ] Write the scene's lights (ambient, directional, point, spot) and the camera as U3D light and view nodes. Done when: a test reads back the light and view blocks with the own test decoder.
+- [ ] Add `Pdf3DAnnotationWriter` on §14's `PdfResourceBuilder`: the `/3D` stream (`/Subtype /U3D`), the `/3DD` and `/3DV` view dictionaries (camera to world matrix, center of orbit, projection, background, render mode, lighting scheme), `/3DA` activation, and the page annotation at the object's bounds. Done when: `Pdf3DAnnotationTests` parse the written PDF with PdfPig and assert every key against ISO 32000-1 table 298 to table 304.
+- [ ] Write the annotation's `/AP` appearance and the poster from the `D02 T11 §10` render of the default view, so readers without 3D support show the art. Done when: MuPDF `mutool draw` renders the page within the §14 tolerance of the non-3D export of the same page.
+- [ ] Named views: the default view plus each saved 3D view of the object become `/VA` entries in document order. Done when: a test with three saved views asserts three `/3DV` entries with their names.
+- [ ] Add the dialog option on the §14 Objects page with the views list and activation choice, persisted under `Nodus.Export.Pdf.ThreeD.*` and read by `Pdf3DAnnotationWriter`. Done when: a settings readback asserts each default and the dialog capture is committed.
+- [ ] Refuse the option by name when the §15 preset forbids it: PDF/X and PDF/A presets and compatibility below Acrobat 7 (PDF 1.6) export the poster only with a report line. Done when: a PDF/X-4 export of the fixture has no `/3D` annotation and the report names the reason.
+- [ ] Log `Exported 3D annotation {ElementId} ({Vertices} vertices, {Views} views)` once per 3D object. Done when: the line is asserted with a Serilog test logger.
+- [ ] Commit fixtures `tests/fixtures/nodus/pdf-3d/` (cube, inflated logo with texture, revolved bottle with three views) with the Intel U3D sample `IDTFConverter` decode report and the PdfPig key dump as goldens, versions recorded. Done when: every fixture has its goldens.
+- [ ] Update `docs/user/nodus/export-pdf.md` with interactive 3D, its views, and its limits (Acrobat and Reader only; other readers show the poster). Done when: the page covers the option and the refusal.
+- [ ] Commit: `"nodus: interactive 3D models in exported PDF"`
+
+**Test checkpoint:** Format fidelity proof: `dotnet test Photon.slnx --filter "FullyQualifiedName~U3dBitStreamWriterTests|FullyQualifiedName~U3dMeshTests|FullyQualifiedName~Pdf3DAnnotationTests"` exits 0: each fixture's U3D stream decodes through the Intel U3D sample tools to the source vertex, face, material, and view counts, and the PDF's 3D annotation keys match ISO 32000-1; driven run with evidence: the bottle fixture opened in Acrobat Reader activates and rotates, captured to `docs/captures/nodus/export-pdf-3d/`, and `mutool draw` renders the poster. Cheaper substitute that fails: embedding the rendered bitmap only, which the `/3D` annotation assertion catches.
 
 ## Verification
 
