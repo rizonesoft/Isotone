@@ -12,7 +12,7 @@ These are the roadmaps the two imported applications carried before they joined 
 On 2026-09-26 both files were read end to end and converted into the plan under `todo/`:
 
 - Near-term work (the foundation, correctness, and the first release of each app) became granular sections in `todo/02-nodus/` and `todo/03-imago/`.
-- The long tail became coarser sections in `todo/02-nodus/TODO-06-nodus-roadmap.md` and `todo/03-imago/TODO-07-imago-roadmap.md`. Each carries a `-> SOURCE: legacy-...` line naming the legacy phase it was mined from.
+- The long tail first became coarser roadmap sections, each carrying a `-> SOURCE: legacy-...` line. When the plan was bounded later on 2026-09-26, the ones nothing else needed moved to [`todo/backlog.md`](../../todo/backlog.md) (B-001 to B-036, keeping their SOURCE keys); the few that own deferrals or acceptance-bar aims stay as sections in the trimmed roadmap files.
 - Nodus phases 16 to 25 (collaboration, cross-platform and mobile, 3D, enterprise, industry suites, gamification, audio and video, sustainability, AR and VR) and the Imago "Killer Feature Ideas" list were **not** converted. They are outside the product the suite is building; a future plan that wants one files it through `add-todo`.
 
 ## Read the check marks with suspicion

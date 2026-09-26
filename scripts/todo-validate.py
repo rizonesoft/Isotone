@@ -2460,6 +2460,15 @@ def validate(graph, _args) -> int:
                     )
                 seen_sources.setdefault(key, here)
 
+    # THE BUDGET AND THE BACKLOG (operator 2026-09-26): the plan must not
+    # grow unconditionally. Every class here is FATAL, so the commit hook
+    # and CI refuse a phase over its ceiling, a tree over the total, a
+    # ceiling moved without its history entry, and a backlog over its cap
+    # or outside its one-line grammar. The rules live in graph.budget_findings
+    # so `query budget` and the Progress line read the same numbers.
+    for cls, msg in graph.budget_findings(todos):
+        flag(cls, msg)
+
     # Internal self-tests deliberately point TODO_DIR at a standalone fixture.
     # Normal checkout validation always inspects its actual platform sources.
     # Resolute day-1 port: the coming-soon inspector is not ported

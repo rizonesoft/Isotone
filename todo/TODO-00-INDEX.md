@@ -5,14 +5,14 @@ The live execution plan for the Photon Graphics Suite. Format spec: [README.md](
 ## How to use this tree
 
 - **This file** carries domain order and the active TODOs. Keep it at that altitude: no checklists.
-- **Each domain's `INDEX.md`** owns its own backlog and is the place to look for scope within a domain.
+- **Each domain's `INDEX.md`** lists its own TODO files and is the place to look for scope within a domain. Ideas that are not planned work live in [`backlog.md`](./backlog.md), never in a domain.
 - Give every topic **one canonical home**. Cross-link with XREFs instead of duplicating scope.
 - Numbering is local to a domain (`TODO-01`, `TODO-02`) and never reused.
 - When work graduates to documentation, move it to the domain's Completed section rather than leaving a stale checklist here.
 
 ## What this plan is
 
-Photon is a .NET 11 WPF monorepo holding three standalone creative applications: **Nodus** (vector, imported from Bezier under `src/Nodus/`), **Imago** (raster, imported under `src/Imago/`), and **Lumen** (darkroom and asset manager, planned). They are developed together and distributed separately. Shared code lives in `Photon.Core` (non-UI) and `Photon.UI` (WPF), and only once a second app needs it. The imported apps' legacy roadmaps were mined into this tree on 2026-09-26 and are kept for reference in [`../docs/legacy/`](../docs/legacy/README.md).
+Photon is a .NET 11 WPF monorepo holding three standalone creative applications: **Nodus** (vector, imported from Bezier under `src/Nodus/`), **Imago** (raster, imported under `src/Imago/`), and **Lumen** (darkroom and asset manager, planned). They are developed together and distributed separately. Shared code lives in `Photon.Core` (non-UI) and `Photon.UI` (WPF), and only once a second app needs it. The imported apps' legacy roadmaps were mined into this tree on 2026-09-26 and are kept for reference in [`../docs/legacy/`](../docs/legacy/README.md); the same day the plan was bounded by [`budget.json`](./budget.json), and the feature ideas no planned row needs moved to [`backlog.md`](./backlog.md).
 
 ## Domain order
 
@@ -24,9 +24,9 @@ Domains are numbered in **allocation order**. `DNN TNN §N` cross-references enc
 | :-: | ------ | :---: | ------- |
 | 00 | [Workspace](./00-workspace/INDEX.md) | 0, 2 | Toolchain, solution, gates, CI, the TODO system, import debt, and visual baselines. |
 | 01 | [Core](./01-core/INDEX.md) | 2, 3, 5 | `Photon.Core` (non-UI services) and `Photon.UI` (the WPF house style), each filled only when two apps need it. |
-| 02 | [Nodus](./02-nodus/INDEX.md) | 1, 2, 3, 9 | The vector editor: rename, foundation, 0.1.0, then the legacy roadmap. |
-| 03 | [Imago](./03-imago/INDEX.md) | 1, 4, 5, 10 | The raster editor: rename, WPF-UI removal, rendering, 0.1.0, then the legacy roadmap. |
-| 04 | [Lumen](./04-lumen/INDEX.md) | 6, 7, 11 | The darkroom and photo library: planned from nothing, 0.1.0, then its roadmap. |
+| 02 | [Nodus](./02-nodus/INDEX.md) | 1, 2, 3, 9 | The vector editor: rename, foundation, 0.1.0, then its deferral owners and accessibility. |
+| 03 | [Imago](./03-imago/INDEX.md) | 1, 4, 5, 10 | The raster editor: rename, WPF-UI removal, rendering, 0.1.0, then its deferral owners and accessibility. |
+| 04 | [Lumen](./04-lumen/INDEX.md) | 6, 7, 11 | The darkroom and photo library: planned from nothing, 0.1.0, then accessibility. |
 | 05 | [Release](./05-release/INDEX.md) | 3, 8 | Clean-machine proof, signing, arm64, the update check, winget, and the suite bundle. |
 | 06 | [Docs](./06-docs/INDEX.md) | 3, 5, 7, 8 | User guides, developer docs that stay true to the tree, and the documentation site. |
 | 99 | [Manual](./99-manual/INDEX.md) | 99 | Operator-only steps: repository settings, the signing certificate, icon licenses, accent colors. |

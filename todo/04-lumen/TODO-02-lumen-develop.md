@@ -3,15 +3,15 @@ schema_version: 1
 id: lumen-develop
 domain: 04-lumen
 status: draft
-title: "TODO-02 -- Lumen: Non-Destructive Develop, Export, and 0.1.0"
+title: "TODO-02 -- Lumen: Non-Destructive Develop, Export, 0.1.0, and Accessibility"
 depends_on: []
 frozen: true
 track: L2
 ---
 
-# TODO-02 -- Lumen: Non-Destructive Develop, Export, and 0.1.0
+# TODO-02 -- Lumen: Non-Destructive Develop, Export, 0.1.0, and Accessibility
 
-> **Goal:** A Lumen user develops RAW and JPEG photos non-destructively (white balance, exposure, contrast, highlights and shadows, whites and blacks, tone curve, vibrance and saturation, crop and straighten), copies settings across a batch, exports finished files with size, format, color space, and metadata choices, hands a photo to Imago when Imago is installed, and gets all of it as `lumen-v0.1.0`, with the original never written.
+> **Goal:** A Lumen user develops RAW and JPEG photos non-destructively (white balance, exposure, contrast, highlights and shadows, whites and blacks, tone curve, vibrance and saturation, crop and straighten), copies settings across a batch, exports finished files with size, format, color space, and metadata choices, hands a photo to Imago when Imago is installed, and gets all of it as `lumen-v0.1.0`, with the original never written; after the release, every Lumen surface works by keyboard and screen reader and is translatable.
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Nothing exists: no develop code, no pipeline, no export. The Lumen notes removed on 2026-09-26 asked for "RAW processing and non-destructive editing", "batch adjustments and presets", and "Edit In (send to Imago)" with no technical choices. `standards/lumen.md` sets the contract this file builds to: edits are data in the catalog, the pipeline is float32 linear-light with one output transform at the end, previews and exports of the same settings agree within a stated tolerance, and "Edit in Imago" never loads Imago's assemblies.
@@ -36,6 +36,7 @@ track: L2
 - Export writes JPEG, TIFF (8 or 16 bit), and PNG with resize, sharpening for screen or print, color space (sRGB, Display P3, Adobe RGB), metadata choices, and file naming, in the background with progress.
 - "Edit in Imago" renders a 16-bit TIFF, opens it in Imago when installed, and stacks the result beside the original; when Imago is absent the command is disabled with a tooltip saying so.
 - `lumen-v0.1.0` is a published release that passes `standards/release.md`.
+- Every Lumen surface passes an Accessibility Insights audit and every string is localizable (§9, relocated on 2026-09-26 from the retired Lumen roadmap file, whose other sections wait in `todo/backlog.md` as B-028 to B-036).
 
 **Adjacency:** list=not-applicable (the grid in D04 T01 §8 is the list); document=applicable @ D04 T02 §6; settings=applicable @ D04 T02 §5; reporting=applicable; notifications=applicable; permissions=applicable; audit=applicable; exchange=applicable; reverse=applicable @ D04 T02 §1
 
@@ -53,6 +54,7 @@ track: L2
 |   6   |   §6    | Export                                            | §2, D04 T01 §10                                              |  [ ]   |
 |   7   |   §7    | Edit in Imago                                     | §6, D03 T06 §3                                               |  [ ]   |
 |   8   |   §8    | Lumen 0.1.0                                       | §4, §5, §7, D04 T01 §11, D06 T01 §3, D05 T01 §1              |  [ ]   |
+|   9   |   §9    | Accessibility and localization                    | §8                                                           |  [ ]   |
 
 ---
 
@@ -187,6 +189,18 @@ Lumen's first release, following `standards/release.md` as Nodus and Imago did, 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
 
 **Test checkpoint:** `gh release view lumen-v0.1.0 --json isPrerelease,assets` shows a non-prerelease with three assets; every checklist line has quoted evidence, including the unchanged-originals hash table from the installed build. Cheaper substitute that fails: releasing without the installed-build guard check.
+
+## 9. Accessibility and Localization
+
+Every Lumen surface keyboard- and screen-reader-operable and translatable: the acceptance bar's "It works without a mouse or eyes" row names this section for Lumen. Relocated on 2026-09-26 from the retired Lumen roadmap file when the plan was bounded; it runs after the release like the Nodus and Imago accessibility sections. -> SOURCE: lumen-roadmap-a11y
+
+- [ ] Accessibility Insights audit (version quoted) with every failure fixed. Done when: the committed report shows none.
+- [ ] Strings in `.resx` with a pseudo-locale build. Done when: the capture shows no untransformed string.
+- [ ] Commit: `"lumen: accessibility fixes and localizable strings"`
+
+**Requires:** display-session -- the audit needs an interactive desktop
+
+**Test checkpoint:** the audit report shows zero failures. Cheaper substitute that fails: automation names on buttons only.
 
 ## Verification
 

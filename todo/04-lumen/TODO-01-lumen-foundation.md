@@ -38,7 +38,7 @@ track: L1
 
 **Audience:** enthusiast and working photographers who today use Lightroom Classic, darktable, or a file browser plus an editor.
 
-**Non-goals for this file:** tethered capture; cloud sync; face recognition; maps and GPS editing; printing, books, and slideshows; video; plugins. Each is a roadmap candidate in `D04 T03`, not a promise.
+**Non-goals for this file:** tethered capture; cloud sync; face recognition; maps and GPS editing; printing, books, and slideshows; video; plugins. Each is at most a backlog candidate (`todo/backlog.md`), not a promise.
 
 **Working name and one-line purpose:** Lumen, "the darkroom and library for your photos" (quoted by the About dialog, the installer, and the user guide).
 
@@ -67,7 +67,7 @@ From documentation, to be confirmed and extended by driven runs in §1 (each row
 - Ratings, flags, labels, keywords, and collections are stored in the catalog, undoable, searchable, and optionally mirrored to `.xmp` sidecars.
 - `todo/README.md` lists Lumen's original-file guard in the frozen set.
 
-**Adjacency:** list=applicable @ D04 T01 §8; document=not-applicable (contact sheets and prints are roadmap items, D04 T03); settings=applicable @ D04 T01 §2; reporting=applicable @ D04 T01 §10; notifications=applicable; permissions=applicable; audit=applicable; exchange=applicable; reverse=applicable
+**Adjacency:** list=applicable @ D04 T01 §8; document=not-applicable (contact sheets and prints wait in the backlog as B-035); settings=applicable @ D04 T01 §2; reporting=applicable @ D04 T01 §10; notifications=applicable; permissions=applicable; audit=applicable; exchange=applicable; reverse=applicable
 
 **Adjacency rationale:** The grid is the list; import progress and its completion summary are the notifications; a read-only card or an unreadable file is the refusal case; library statistics per collection are reporting; every metadata change logs, undoes, and exchanges through XMP sidecars.
 

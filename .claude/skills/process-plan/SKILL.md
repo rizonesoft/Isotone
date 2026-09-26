@@ -33,6 +33,7 @@ python scripts/todo-graph.py validate
 python scripts/todo-graph.py plan --check
 python scripts/todo-graph.py query ready
 python scripts/todo-graph.py query blocked
+python scripts/todo-graph.py query budget
 ```
 
 The audit is these commands and the recorded lines, nothing more: the deep phase repair belongs to `process-phase` step 1. Fix every FATAL before talking about shipping. If `plan --check` is stale, run `plan --sync`, then re-check. **Never tick a box in `implementation-plan.md` by hand**: the boxes are a projection of the Implementation Order tables.
@@ -43,7 +44,8 @@ Record these lines **in the run's findings file**, not as the turn's last words:
 2. Plan currency: the `--check` result.
 3. Ready rows: count and first ref per phase.
 4. Blocked rows: count and what blocks them.
-5. The phase being started, and why it is first.
+5. Budget: sections against the total ceiling, the started phase's room, and the backlog against its cap. A budget FATAL is fixed like any other before shipping (merge, supersede, or backlog; only the operator raises a ceiling).
+6. The phase being started, and why it is first.
 
 If no phase has a ready row, every remaining `[ ]` row is blocked or runnable-elsewhere in this context. Report them and stop. That is a genuine halt, and it is the only one this skill has.
 
@@ -104,7 +106,7 @@ A parked phase is **not** complete, and it is **not** a stall. Do not call it ei
 python scripts/todo-graph.py query ready
 ```
 
-If another phase has a ready row, re-point the guard to the new phase's run file before anything else: `CronDelete` the old job, `CronCreate` a new one from the canonical prompt with the new phase and run file, re-point the guard with `python scripts/campaign_guard.py acquire` (`phase`, `run_file`, `cron_id`, a fresh `generation`, and `session_id` from this shell) (a new run file resets the breaker state under the guard lock), and record the new ids in the new run file; then start `process-phase` on it in the same turn. Same session, same rules. If no phase has a ready row, the remaining leftovers are blocked, runnable-elsewhere in this context, or the plan is done: report which. Commit the phase's run file at closeout or park at the latest (earlier ships allowed): reconstructed round figures must resolve to a committed copy, never an untracked path. When the plan is done (no `[ ]` rows anywhere), run the terminal acceptance before deleting the guard: re-execute the release domain's clean-machine acceptance section (the `05-release` section whose checkpoint installs and launches every app on a `Clean Windows machine (no .NET SDK)`) fresh on a clean machine. A failure reopens that section through `review-todo-section` in audit stance and the plan is not done; a pass is recorded in the findings file, then the run ends through `python scripts/campaign_guard.py end --session $CLAUDE_CODE_SESSION_ID --reason plan-done`, which deletes the guard file and the state file under the guard lock, and the heartbeat job it names is `CronDelete`d. Until that section is authored, the plan cannot be declared done: file it through `add-todo` first. The acceptance row proves each app shippable when it ships; the re-run proves it still is when everything else has landed.
+If another phase has a ready row, re-point the guard to the new phase's run file before anything else: `CronDelete` the old job, `CronCreate` a new one from the canonical prompt with the new phase and run file, re-point the guard with `python scripts/campaign_guard.py acquire` (`phase`, `run_file`, `cron_id`, a fresh `generation`, and `session_id` from this shell) (a new run file resets the breaker state under the guard lock), and record the new ids in the new run file; then start `process-phase` on it in the same turn. Same session, same rules. If no phase has a ready row, the remaining leftovers are blocked, runnable-elsewhere in this context, or the plan is done: report which, with the budget line from `query budget`. Commit the phase's run file at closeout or park at the latest (earlier ships allowed): reconstructed round figures must resolve to a committed copy, never an untracked path. When the plan is done (no `[ ]` rows anywhere), run the terminal acceptance before deleting the guard: re-execute the release domain's clean-machine acceptance section (the `05-release` section whose checkpoint installs and launches every app on a `Clean Windows machine (no .NET SDK)`) fresh on a clean machine. A failure reopens that section through `review-todo-section` in audit stance and the plan is not done; a pass is recorded in the findings file, then the run ends through `python scripts/campaign_guard.py end --session $CLAUDE_CODE_SESSION_ID --reason plan-done`, which deletes the guard file and the state file under the guard lock, and the heartbeat job it names is `CronDelete`d. Until that section is authored, the plan cannot be declared done: file it through `add-todo` first. The acceptance row proves each app shippable when it ships; the re-run proves it still is when everything else has landed.
 
 ## 3. Deny
 

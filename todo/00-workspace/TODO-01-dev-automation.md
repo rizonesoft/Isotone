@@ -18,7 +18,7 @@ track: W1
 <!-- claim: exists tools/provision.ps1 -->
 <!-- claim: count "^COVERAGE_FLOOR = 1$" scripts/todo-claims.py = 1 -->
 <!-- claim: count "^    \"display-session\",$" scripts/todo-graph.py = 1 -->
-<!-- claim: count "\"operator\"" scripts/todo-graph.py = 0 -->
+<!-- claim: count "^    \"operator\",$" scripts/todo-graph.py = 0 -->
 <!-- claim: exists .conclave/panel.toml -->
 
 ## Inputs

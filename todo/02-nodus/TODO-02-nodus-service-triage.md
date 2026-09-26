@@ -40,7 +40,7 @@ track: N2
 - Arrange, align, distribute, rotate, flip, and the four boolean operations change the document through commands, with undo, from the menus.
 - The layers panel reorders, hides, locks, and renames elements with undo; snapping and one keymap work on the canvas.
 
-**Adjacency:** list=applicable @ D02 T02 §6; document=not-applicable (printing is a roadmap item, D02 T06 §19); settings=applicable @ D02 T02 §7; reporting=not-applicable (document info lives in the status strip, D02 T03 §5); notifications=not-applicable (every operation here is instant on a 0.1.0-sized document); permissions=not-applicable (no files are written here); audit=applicable @ D02 T02 §4; exchange=not-applicable (formats are D02 T04's); reverse=applicable @ D02 T02 §4
+**Adjacency:** list=applicable @ D02 T02 §6; document=not-applicable (printing waits in the backlog as B-011); settings=applicable @ D02 T02 §7; reporting=not-applicable (document info lives in the status strip, D02 T03 §5); notifications=not-applicable (every operation here is instant on a 0.1.0-sized document); permissions=not-applicable (no files are written here); audit=applicable @ D02 T02 §4; exchange=not-applicable (formats are D02 T04's); reverse=applicable @ D02 T02 §4
 
 **Adjacency rationale:** The layers panel is the list of a document's elements; snapping options are settings; every arrange, align, boolean, and layers action is a command, so it is both logged (audit) and undoable (reverse).
 
@@ -146,7 +146,7 @@ The Path menu's Union, Subtract, Intersect, and Exclude reach a service that ret
 **Fidelity:** Nodus main window, Path menu -- docs/captures/nodus/main-window/. Menu wording unchanged; each operation disabled unless two or more path-convertible elements are selected.
 **Job:** a designer can combine selected shapes into one path with union, subtract, intersect, or exclude, and undo it. Consumer: the document and the SVG writer.
 **Treatment:** convert each selected element to an `SKPath` in document coordinates (rect, ellipse, circle, line, polygon, polyline, path), fold with `SKPath.Op` in z-order (subtract: bottom minus the rest), replace the inputs with one `SvgPath` carrying the bottom element's fill and stroke, as one history entry. Cheaper substitute that fails the checkpoint: grouping the inputs and calling it a union.
-**Chrome:** consume the existing Path menu, `SelectionManager`, and the history. Do not add a Pathfinder panel in this section (roadmap, `D02 T06 §5`).
+**Chrome:** consume the existing Path menu, `SelectionManager`, and the history. Do not add a Pathfinder panel in this section (the appearance work waits in the backlog as B-003).
 
 **Requires:** display-session -- driving the Path menu on the canvas needs an interactive desktop
 

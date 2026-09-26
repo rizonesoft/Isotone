@@ -36,7 +36,7 @@ track: I3
 - A tool abstraction drives move, hand, zoom, rectangular and elliptical marquee, lasso, brush, eraser, transform, crop, fill, gradient, and eyedropper, each with its options bar, cursor, and shortcut.
 - A color panel holds foreground and background colors with a picker, hex entry, and swap.
 
-**Adjacency:** list=applicable @ D03 T03 §3; document=not-applicable (printing is a roadmap item, D03 T07 §9); settings=applicable; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are TODO-04's); audit=applicable @ D03 T03 §2; exchange=not-applicable (formats are TODO-04's); reverse=applicable @ D03 T03 §2
+**Adjacency:** list=applicable @ D03 T03 §3; document=not-applicable (printing waits in the backlog as B-021); settings=applicable; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are TODO-04's); audit=applicable @ D03 T03 §2; exchange=not-applicable (formats are TODO-04's); reverse=applicable @ D03 T03 §2
 
 **Adjacency rationale:** The layers panel is the browsable list; tool options persist as settings; document info and the long-operation progress live in the status strip that §1 builds; the History panel is both audit and reverse.
 
@@ -189,7 +189,7 @@ The remaining basic tools and the color panel every painting tool reads. -> SOUR
 **Fidelity:** Color panel -- new build, no baseline; captured to docs/captures/imago/color/.
 **Job:** a user can pick colors, fill regions, draw gradients, and sample colors from the image. Consumer: brush, fill, and gradient tools.
 **Treatment:** a color panel with foreground and background swatches, swap (X) and reset (D), an HSV square and hue strip, RGB and hex fields; paint bucket with tolerance and contiguous options; linear and radial gradient tool from foreground to background with dithering; eyedropper with sample size (point, 3 by 3, 5 by 5) and current layer or composite. Cheaper substitute that fails the checkpoint: the Windows color dialog.
-**Chrome:** consume the theme; the picker is built in Imago now and moves to `Photon.UI` when Nodus's appearance work (`D02 T06 §5`) needs one, through `add-todo`.
+**Chrome:** consume the theme; the picker is built in Imago now and moves to `Photon.UI` when Nodus's appearance work (backlog B-003, once promoted) needs one, through `add-todo`.
 
 **Requires:** display-session -- the color panel and tools need an interactive desktop
 

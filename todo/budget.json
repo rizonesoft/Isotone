@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "note": "Bounds the plan. ceilings: the most sections (open plus shipped) each phase of implementation-plan.md may hold; the total ceiling is their sum. backlog_cap: the most entries todo/backlog.md may hold. per_run_new_sections: the most new sections one phase run may add. The live values must equal the latest history snapshot; history is append-only; a raise needs approved_by operator and the operator's words quoted in reason. Format and rules: todo/README.md, The budget and the backlog.",
+  "ceilings": {
+    "0": 15,
+    "1": 4,
+    "2": 18,
+    "3": 27,
+    "4": 10,
+    "5": 26,
+    "6": 10,
+    "7": 13,
+    "8": 9,
+    "9": 9,
+    "10": 5,
+    "11": 2,
+    "99": 6
+  },
+  "backlog_cap": 150,
+  "per_run_new_sections": 3,
+  "history": [
+    {
+      "date": "2026-09-26",
+      "change": "Initial budget. Each phase's ceiling is its section count after the legacy-roadmap sections nothing else needed moved to todo/backlog.md (B-001 to B-036), plus 10 percent rounded up with a minimum of one: 134 sections against a total ceiling of 154. Backlog cap 150; at most 3 new sections per phase run.",
+      "reason": "Operator decision 2026-09-26: \"the plan must not grow unconditionally\". The operator set the ceilings to each phase's count after the roadmap move \"+10% rounded up, minimum +1\", with \"backlog_cap: 150, per_run_new_sections: 3\".",
+      "approved_by": "operator",
+      "snapshot": {
+        "ceilings": {
+          "0": 15,
+          "1": 4,
+          "2": 18,
+          "3": 27,
+          "4": 10,
+          "5": 26,
+          "6": 10,
+          "7": 13,
+          "8": 9,
+          "9": 9,
+          "10": 5,
+          "11": 2,
+          "99": 6
+        },
+        "backlog_cap": 150,
+        "per_run_new_sections": 3
+      }
+    }
+  ]
+}

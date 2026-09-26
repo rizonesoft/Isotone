@@ -13,6 +13,8 @@ A new file is warranted when a subject no existing file owns needs a durable hom
 
 Name the domain and the next free `TODO-NN` number in it. Confirm no existing file covers the subject by searching as `add-todo` does. A file that overlaps an existing file's scope is a defect at birth.
 
+Every section the file will hold passes `add-todo`'s admission test, and every phase it lands in has room (`python scripts/todo-graph.py query budget`). A file never raises a ceiling: sections that fail the test, or that do not fit, become backlog entries in `todo/backlog.md` instead, and a new phase needs the operator's approval recorded in `todo/budget.json`.
+
 A new domain is allowed when no domain owns the subject: create `todo/NN-kebab-name/` with its `INDEX.md` (copy the shape of an existing domain index), append it to the Domain order table in `todo/TODO-00-INDEX.md`, and take the next free number. The tooling reads domains from the tree, so nothing else registers it.
 
 ### 2. Author from the template

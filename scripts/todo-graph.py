@@ -9,6 +9,8 @@ markdown cannot answer by grep -- what is ready, what is blocked, and on what.
     python scripts/todo-graph.py validate
     python scripts/todo-graph.py self-test
     python scripts/todo-graph.py query ready|blocked|stats|deferred|frozen|findings|surfaces
+    python scripts/todo-graph.py query budget|backlog
+    python scripts/todo-graph.py query growth --since <ref> [--check]
     python scripts/todo-graph.py render > docs-graph.md
     python scripts/todo-graph.py plan [--check]
     python scripts/todo-graph.py classify 'D00 T01 §11' 'D02 T01 §13'
@@ -945,6 +947,32 @@ SEVERITY_MAP: dict[str, str] = {
     # teaches an ambiguous address; the fix is mechanical (expand to a
     # full DNN TNN §N ref). D00 T04 §13.
     "skill-citation-short-form": "fatal",
+    # The plan must not grow unconditionally (operator 2026-09-26). The
+    # budget file is the contract: a missing, unparseable, or incomplete
+    # one (a phase with no ceiling, a ceiling for a phase the plan does not
+    # have) leaves the plan unbounded, so it is as broken as a breach.
+    "budget-malformed": "fatal",
+    # a phase holding more sections (open plus shipped) than its ceiling:
+    # the fix is a merge, a supersession, or the backlog, never a quiet row.
+    "budget-over-phase": "fatal",
+    # more sections in the tree than the phase ceilings add up to: catches
+    # sections that sit in no phase at all, which no phase check can see.
+    "budget-over-total": "fatal",
+    # a live ceiling or cap that differs from the latest history snapshot,
+    # a history entry edited or removed against the committed file, or a
+    # raise without the operator's quoted words: a ceiling only moves
+    # through an appended, attributed history entry.
+    "budget-unrecorded-change": "fatal",
+    # a backlog line outside the one-line entry grammar, one that reads as
+    # a section (a checkbox, a numbered heading, a stamp), or one citing a
+    # dead or short section ref: the backlog is a list, never runnable.
+    "backlog-malformed": "fatal",
+    # a backlog id or source key used twice, or a source key a live section
+    # already carries: one real-world thing, one home.
+    "backlog-duplicate": "fatal",
+    # more backlog entries than `backlog_cap`: triage (merge, drop, promote
+    # with budget room) before adding, never a raised cap on the side.
+    "backlog-over-cap": "fatal",
 }
 
 
@@ -2154,6 +2182,104 @@ def cmd_query(args) -> int:
                 left = MAX_SECTIONS_PER_FILE - count
                 room = f"{left} left" if left > 0 else "OVER CAP"
                 print(f"  {count:>3}  {room:<9}  {path}")
+        summary = budget_summary(todos)
+        if summary is not None:
+            print(
+                f"budget           {summary['used']} of {summary['ceiling']} sections; "
+                f"backlog {summary['backlog']} of {summary['backlog_cap']}; "
+                f"{summary['per_run_new_sections']} new sections per run"
+            )
+            for row in summary["phases"]:
+                cap = row["ceiling"]
+                room = "no ceiling" if cap is None else (
+                    f"{cap - row['used']} left" if row["used"] <= cap else "OVER CEILING"
+                )
+                print(f"  phase {row['phase']:>3}  {row['used']:>3} of {cap if cap is not None else '-':>3}  {room}")
+        return 0
+
+    if what == "budget":
+        summary = budget_summary(todos)
+        if summary is None:
+            _b, problems = load_budget()
+            print("no usable todo/budget.json" + (f": {problems[0]}" if problems else ""))
+            return 1
+        over = False
+        print(
+            f"budget  {summary['used']} of {summary['ceiling']} sections (the total ceiling is "
+            f"the sum of the phase ceilings); backlog {summary['backlog']} of "
+            f"{summary['backlog_cap']}; per run at most {summary['per_run_new_sections']} new sections"
+        )
+        print(f"\n  {'phase':>5}  {'used':>4}  {'ceiling':>7}  {'room':>5}  title")
+        for row in summary["phases"]:
+            cap = row["ceiling"]
+            if cap is None:
+                room = "none"
+                over = True
+            else:
+                room = str(cap - row["used"])
+                over = over or row["used"] > cap
+            print(f"  {row['phase']:>5}  {row['used']:>4}  {cap if cap is not None else '-':>7}  {room:>5}  {row['title']}")
+        latest = summary["history"][-1]
+        print(
+            f"\nhistory {len(summary['history'])} entr{'y' if len(summary['history']) == 1 else 'ies'}; "
+            f"latest {latest['date']} approved by {latest['approved_by']}: {latest['change']}"
+        )
+        if summary["used"] > summary["ceiling"] or summary["backlog"] > summary["backlog_cap"]:
+            over = True
+        if over:
+            print("\nOVER BUDGET: `python scripts/todo-graph.py validate` names the breach.")
+        return 1 if over else 0
+
+    if what == "backlog":
+        loaded = load_backlog()
+        if loaded is None:
+            print("no todo/backlog.md")
+            return 1
+        entries, problems = loaded
+        for entry in entries:
+            f = entry["fields"]
+            app = f.get("app", "-")
+            needs = f"  needs: {f['needs']}" if "needs" in f else ""
+            print(f"{entry['id']:<6} {f.get('added', '?'):<10}  {app:<6}  {entry['title']}{needs}")
+        summary = budget_summary(todos)
+        cap = f" of {summary['backlog_cap']}" if summary is not None else ""
+        print(f"\n{len(entries)}{cap} backlog entr{'y' if len(entries) == 1 else 'ies'}"
+              + (f"; {len(problems)} malformed (see validate)" if problems else ""))
+        return 0
+
+    if what == "growth":
+        since = getattr(args, "since", None)
+        if not since:
+            print("query growth needs --since <ref> (the run's start commit)")
+            return 2
+        report = growth_report(since, todos)
+        if report is None:
+            print(f"cannot read {since} through git; pass a commit the repository has")
+            return 2
+        titles = report["titles"]
+        print(f"growth since {since}:")
+        for ref in report["sections_added"]:
+            print(f"  + {ref}  {titles.get(ref, '')}")
+        for ref in report["sections_removed"]:
+            print(f"  - {ref}  {titles.get(ref, '')}")
+        for bid in report["backlog_added"]:
+            print(f"  + backlog {bid}  {titles.get(bid, '')}")
+        for bid in report["backlog_removed"]:
+            print(f"  - backlog {bid}  {titles.get(bid, '')}")
+        added, removed = len(report["sections_added"]), len(report["sections_removed"])
+        summary = budget_summary(todos)
+        cap = summary["per_run_new_sections"] if summary is not None else None
+        print(
+            f"sections: +{added} -{removed} (net {added - removed:+d}); "
+            f"backlog: +{len(report['backlog_added'])} -{len(report['backlog_removed'])}"
+            + (f"; per-run cap: {added} of {cap} new sections" if cap is not None else "")
+        )
+        if getattr(args, "check", False) and cap is not None and added > cap:
+            print(
+                f"OVER THE PER-RUN CAP: {added} new sections since {since}, cap {cap}. "
+                "Route further work to an existing section or todo/backlog.md."
+            )
+            return 1
         return 0
 
     if what == "deferred":
@@ -4761,6 +4887,593 @@ def cmd_progress(args: argparse.Namespace) -> int:
     return 0
 
 
+# ------------------------------------------------------------ budget + backlog
+#
+# The plan must not grow unconditionally (operator 2026-09-26). Before this,
+# nothing bounded the tree: the gap audit, the research pass, the plan-review
+# round, the groom gap scan, and every deferral could each file a section,
+# and every one of them did the reasonable thing. Two files bound it now:
+#
+#   todo/budget.json  a ceiling per phase on TOTAL sections (open + shipped:
+#                     shipped work does not free room), a total that is the
+#                     sum of the ceilings, a backlog cap, and a per-run cap
+#                     on new sections. The live values must equal the latest
+#                     `history` entry's snapshot, the history is append-only
+#                     against the committed file, and a raise carries
+#                     `approved_by: operator` plus the operator's quoted words.
+#   todo/backlog.md   one line per deferred idea, never runnable, never in
+#                     the plan, never counted by plan parity, capped.
+#
+# Both are validated FATAL, so the commit hook and CI refuse a breach.
+
+BACKLOG_ENTRY_RE = re.compile(r"^- \[(?P<id>B-\d{3,})\]\s+(?P<rest>\S.*?)\s*$")
+# Anything list-shaped with a bracket: an entry, or a would-be entry that
+# failed the grammar. Prose in the file uses no bracketed list items.
+BACKLOG_ITEMISH_RE = re.compile(r"^\s*[-*+]\s+\[")
+BACKLOG_CHECKBOX_RE = re.compile(r"^\s*[-*+]\s+\[[ xX/]\]")
+BACKLOG_FIELDS_REQUIRED = ("source", "added", "why deferred", "promote when")
+BACKLOG_FIELDS_OPTIONAL = ("app", "summary", "needs")
+BACKLOG_FIELD_SEP = " -- "
+BACKLOG_SOURCE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@+-]*$")
+# Text that makes a line read as a section or a stamp rather than a list entry.
+BACKLOG_SECTION_MARKS = ("**Verified:**", "**Test checkpoint:**", "-> XREF:", "**Deferred:**")
+BUDGET_TOP_KEYS = ("schema_version", "note", "ceilings", "backlog_cap", "per_run_new_sections", "history")
+BUDGET_ENTRY_KEYS = ("date", "change", "reason", "approved_by", "snapshot")
+BUDGET_SNAPSHOT_KEYS = ("ceilings", "backlog_cap", "per_run_new_sections")
+# The operator's own words, quoted: straight or curly double quotes around at
+# least three characters. A raise without them is a skill raising its own cap.
+BUDGET_QUOTE_RE = re.compile(r"[\"“][^\"”]{3,}[\"”]")
+
+
+def budget_path() -> Path:
+    return TODO_DIR / "budget.json"
+
+
+def backlog_path() -> Path:
+    return TODO_DIR / "backlog.md"
+
+
+def _live_tree() -> bool:
+    """True for the checkout's own todo/ (or the hook's staged copy of it).
+
+    Fixture trees in the self-test may omit budget.json and backlog.md; the
+    real tree may not, or deleting the file would switch the budget off.
+    """
+    try:
+        return TODO_DIR.resolve() == (REPO / "todo").resolve()
+    except OSError:
+        return False
+
+
+def _valid_day(value: object) -> bool:
+    if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        return False
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        return False
+    return True
+
+
+def _snapshot_problems(snap: object, where: str) -> list[str]:
+    if not isinstance(snap, dict):
+        return [f"{where} is not a JSON object"]
+    out: list[str] = []
+    ceilings = snap.get("ceilings")
+    if not isinstance(ceilings, dict) or not ceilings:
+        out.append(f"{where}.ceilings must be a non-empty object of phase number to ceiling")
+    else:
+        for key, value in ceilings.items():
+            if not re.fullmatch(r"\d+", str(key)) or str(int(key)) != str(key):
+                out.append(f"{where}.ceilings key `{key}` is not a phase number (write `0`, `9`, `99`)")
+            if type(value) is not int or value < 0:
+                out.append(f"{where}.ceilings[{key}] must be a whole number >= 0, not {value!r}")
+    for key in ("backlog_cap", "per_run_new_sections"):
+        value = snap.get(key)
+        if type(value) is not int or value < 0:
+            out.append(f"{where}.{key} must be a whole number >= 0, not {value!r}")
+    return out
+
+
+def _snapshot(obj: dict) -> dict:
+    return {
+        "ceilings": {str(k): v for k, v in (obj.get("ceilings") or {}).items()},
+        "backlog_cap": obj.get("backlog_cap"),
+        "per_run_new_sections": obj.get("per_run_new_sections"),
+    }
+
+
+def load_budget() -> tuple[dict | None, list[str]]:
+    """(budget, problems). The budget is None when absent or unusable."""
+    path = budget_path()
+    if not path.exists():
+        return None, []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return None, [f"todo/budget.json does not parse as JSON: {error}"]
+    if not isinstance(data, dict):
+        return None, ["todo/budget.json must hold one JSON object"]
+    problems: list[str] = []
+    for key in data:
+        if key not in BUDGET_TOP_KEYS:
+            problems.append(f"todo/budget.json has an unknown key `{key}` (allowed: {', '.join(BUDGET_TOP_KEYS)})")
+    if data.get("schema_version") != 1:
+        problems.append("todo/budget.json needs `schema_version: 1`")
+    problems += _snapshot_problems(data, "todo/budget.json")
+    history = data.get("history")
+    if not isinstance(history, list) or not history:
+        problems.append("todo/budget.json needs a non-empty `history` list; the first entry records the setup")
+    else:
+        last_day = ""
+        for i, entry in enumerate(history, start=1):
+            where = f"todo/budget.json history entry {i}"
+            if not isinstance(entry, dict):
+                problems.append(f"{where} is not a JSON object")
+                continue
+            for key in entry:
+                if key not in BUDGET_ENTRY_KEYS:
+                    problems.append(f"{where} has an unknown key `{key}` (allowed: {', '.join(BUDGET_ENTRY_KEYS)})")
+            day = entry.get("date")
+            if not _valid_day(day):
+                problems.append(f"{where} needs a real `date` (YYYY-MM-DD), not {day!r}")
+            elif day < last_day:
+                problems.append(f"{where} is dated {day}, before the entry above it ({last_day}); history is appended in date order")
+            else:
+                last_day = day
+            for key in ("change", "reason", "approved_by"):
+                value = entry.get(key)
+                if not isinstance(value, str) or not value.strip():
+                    problems.append(f"{where} needs a non-empty `{key}`")
+            problems += _snapshot_problems(entry.get("snapshot"), f"{where}.snapshot")
+    return (None if problems else data), problems
+
+
+def _budget_raises(prev: dict, cur: dict) -> list[str]:
+    raised: list[str] = []
+    for phase, value in cur["ceilings"].items():
+        old = prev["ceilings"].get(phase)
+        if old is None or value > old:
+            raised.append(f"Phase {phase} {'none' if old is None else old} -> {value}")
+    for key in ("backlog_cap", "per_run_new_sections"):
+        if cur[key] > prev[key]:
+            raised.append(f"{key} {prev[key]} -> {cur[key]}")
+    return raised
+
+
+def _budget_committed_text() -> str | None:
+    """budget.json as HEAD has it, for the append-only rule.
+
+    Live tree only: a fixture's history has nothing to do with this repo's
+    HEAD. None when unprovable (no git, no commit, no file yet), which skips
+    the rule rather than failing it, like the other history legs. The
+    self-test patches this name.
+    """
+    if not _live_tree():
+        return None
+    return git_file_at("HEAD", "todo/budget.json")
+
+
+def _budget_history_problems(budget: dict) -> list[str]:
+    out: list[str] = []
+    history = budget["history"]
+    live = _snapshot(budget)
+    latest = _snapshot(history[-1]["snapshot"])
+    for key in BUDGET_SNAPSHOT_KEYS:
+        if live[key] != latest[key]:
+            if key == "ceilings":
+                diffs = sorted(
+                    set(live["ceilings"]) | set(latest["ceilings"]),
+                    key=lambda p: int(p),
+                )
+                named = ", ".join(
+                    f"Phase {p} {latest['ceilings'].get(p, 'none')} -> {live['ceilings'].get(p, 'none')}"
+                    for p in diffs
+                    if live["ceilings"].get(p) != latest["ceilings"].get(p)
+                )
+            else:
+                named = f"{latest[key]} -> {live[key]}"
+            out.append(
+                f"todo/budget.json `{key}` differs from the latest history snapshot ({named}). "
+                "A ceiling or cap changes only by appending a history entry whose snapshot "
+                "carries the new values; a raise needs the operator's quoted words."
+            )
+    prev = {"ceilings": {}, "backlog_cap": 0, "per_run_new_sections": 0}
+    for i, entry in enumerate(history, start=1):
+        cur = _snapshot(entry["snapshot"])
+        raised = _budget_raises(prev, cur)
+        if raised:
+            who = entry["approved_by"].strip().lower()
+            if who != "operator" or not BUDGET_QUOTE_RE.search(entry["reason"]):
+                out.append(
+                    f"todo/budget.json history entry {i} ({entry['date']}) raises "
+                    f"{'; '.join(raised)} without the operator's approval: a raise needs "
+                    "`approved_by: operator` and the operator's explicit words quoted in "
+                    "`reason`. Skills never raise a ceiling; they merge, supersede, or backlog."
+                )
+        prev = cur
+    committed_text = _budget_committed_text()
+    if committed_text is not None:
+        try:
+            committed = json.loads(committed_text)
+        except ValueError:
+            committed = None
+        old = committed.get("history") if isinstance(committed, dict) else None
+        if isinstance(old, list):
+            if len(history) < len(old) or any(history[i] != old[i] for i in range(len(old))):
+                changed = next(
+                    (i + 1 for i in range(len(old)) if i >= len(history) or history[i] != old[i]),
+                    len(old),
+                )
+                out.append(
+                    f"todo/budget.json history entry {changed} was edited or removed against "
+                    "the committed file. History is append-only: record a correction as a new entry."
+                )
+    return out
+
+
+def plan_phase_counts() -> dict[str, dict]:
+    """Phase number -> {title, count}: plan rows plus Moved lines per phase.
+
+    A Moved section still exists (it keeps its row in its TODO file), so it
+    still spends its phase's budget. Order is the plan's.
+    """
+    out: dict[str, dict] = {}
+    if not PLAN.exists():
+        return out
+    current: str | None = None
+    for line in PLAN.read_text(encoding="utf-8").splitlines():
+        heading = PHASE_HEADING_RE.match(line)
+        if heading:
+            current = str(int(heading.group("id")))
+            out.setdefault(current, {"title": heading.group("title").strip(), "count": 0})
+            continue
+        if line.startswith("## ") or (line.startswith("### ") and not line.startswith("### Phase ")):
+            current = None
+            continue
+        if current is not None and (PLAN_ROW_RE.match(line) or PLAN_MOVED_RE.match(line)):
+            out[current]["count"] += 1
+    return out
+
+
+def parse_backlog(text: str) -> tuple[list[dict], list[tuple[str, str]]]:
+    """(entries, problems) for todo/backlog.md.
+
+    One entry per line: `- [B-NNN] <title> -- source: <key> -- added:
+    <YYYY-MM-DD> -- why deferred: <text> -- promote when: <text>`, optionally
+    with `app:`, `summary:`, and `needs:` fields. Fenced blocks are skipped.
+    """
+    entries: list[dict] = []
+    problems: list[tuple[str, str]] = []
+    raw = text.splitlines()
+    try:
+        kept, _ = _fenced_flags(raw)  # True = outside every fence
+    except Exception:
+        kept = [True] * len(raw)
+    for lineno, line in enumerate(raw, start=1):
+        if lineno - 1 < len(kept) and not kept[lineno - 1]:
+            continue
+        where = f"todo/backlog.md:{lineno}"
+        if (
+            BODY_RE.match(line)
+            or ROW_RE.match(line)
+            or BACKLOG_CHECKBOX_RE.match(line)
+            or any(mark in line for mark in BACKLOG_SECTION_MARKS)
+        ):
+            problems.append((
+                "backlog-malformed",
+                f"{where} reads as a section (a numbered heading, an Implementation Order "
+                "row, a checkbox, a stamp, or an XREF). The backlog is a flat list and never "
+                "runnable: promote an entry through add-todo, which writes the real section.",
+            ))
+            continue
+        m = BACKLOG_ENTRY_RE.match(line)
+        if not m:
+            if BACKLOG_ITEMISH_RE.match(line) or line.lstrip().startswith("- [B-"):
+                problems.append((
+                    "backlog-malformed",
+                    f"{where} is not a backlog entry: write `- [B-NNN] <title> -- source: <key> "
+                    "-- added: YYYY-MM-DD -- why deferred: <text> -- promote when: <text>`.",
+                ))
+            continue
+        parts = m.group("rest").split(BACKLOG_FIELD_SEP)
+        title = parts[0].strip()
+        fields: dict[str, str] = {}
+        bad: list[str] = []
+        if not title or title.split(":", 1)[0].strip() in BACKLOG_FIELDS_REQUIRED + BACKLOG_FIELDS_OPTIONAL:
+            bad.append("no title before the first field")
+        for seg in parts[1:]:
+            key, sep, value = seg.partition(":")
+            key, value = key.strip(), value.strip()
+            if not sep or key not in BACKLOG_FIELDS_REQUIRED + BACKLOG_FIELDS_OPTIONAL:
+                bad.append(f"unknown field `{seg.strip()[:40]}`")
+            elif key in fields:
+                bad.append(f"`{key}:` twice")
+            elif not value:
+                bad.append(f"empty `{key}:`")
+            else:
+                fields[key] = value
+        for key in BACKLOG_FIELDS_REQUIRED:
+            if key not in fields and not any(b.startswith(f"empty `{key}:`") for b in bad):
+                bad.append(f"no `{key}:`")
+        if "added" in fields and not _valid_day(fields["added"]):
+            bad.append(f"`added:` is not a real YYYY-MM-DD date ({fields['added']})")
+        if "source" in fields and not BACKLOG_SOURCE_RE.match(fields["source"]):
+            bad.append(f"`source:` must be one key token (a legacy key, a finding ID, or a SOURCE key), not `{fields['source']}`")
+        if bad:
+            problems.append(("backlog-malformed", f"{where} [{m.group('id')}] is malformed: {'; '.join(bad)}"))
+        entries.append({"id": m.group("id"), "title": title, "fields": fields, "line": lineno, "text": line})
+    return entries, problems
+
+
+def load_backlog() -> tuple[list[dict], list[tuple[str, str]]] | None:
+    path = backlog_path()
+    if not path.exists():
+        return None
+    try:
+        return parse_backlog(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        return [], [("backlog-malformed", f"todo/backlog.md cannot be read: {error}")]
+
+
+def _section_refs(todos: list[Todo]) -> dict[str, str]:
+    """'D02 T06 §7' -> section title, for every section in the tree."""
+    return {
+        f"D{t.domain.split('-')[0]} T{t.number} §{num}": s.title
+        for t in todos
+        for num, s in t.sections.items()
+    }
+
+
+def _section_sources(todos: list[Todo]) -> dict[str, str]:
+    """Lower-cased `-> SOURCE:` key -> 'path §N' for every live section."""
+    found: dict[str, str] = {}
+    for todo in todos:
+        try:
+            text = (REPO / todo.path).read_text(encoding="utf-8")
+        except OSError:
+            try:
+                text = Path(todo.path).read_text(encoding="utf-8")
+            except OSError:
+                continue
+        current = "?"
+        for line in text.split("\n"):
+            heading = re.match(r"^## (\d+)\.", line)
+            if heading:
+                current = f"§{heading.group(1)}"
+            for m in SOURCE_RE.finditer(line):
+                found.setdefault(m.group("key").lower(), f"{todo.path} {current}")
+    return found
+
+
+def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
+    """Every budget and backlog breach as (severity class, message)."""
+    out: list[tuple[str, str]] = []
+    live = _live_tree()
+    budget: dict | None = None
+    if not budget_path().exists():
+        if live:
+            out.append((
+                "budget-malformed",
+                "todo/budget.json is missing, so nothing bounds the plan. Restore it from "
+                "git; the format is in todo/README.md under \"The budget and the backlog\".",
+            ))
+    else:
+        budget, problems = load_budget()
+        out += [("budget-malformed", p) for p in problems]
+    if budget is not None:
+        out += [("budget-unrecorded-change", p) for p in _budget_history_problems(budget)]
+        ceilings = {str(k): v for k, v in budget["ceilings"].items()}
+        phases = plan_phase_counts()
+        for phase, info in phases.items():
+            cap = ceilings.get(phase)
+            if cap is None:
+                out.append((
+                    "budget-malformed",
+                    f"Phase {phase} ({info['title']}) has no ceiling in todo/budget.json. A new "
+                    "phase is a budget change: the operator approves it in a history entry.",
+                ))
+            elif info["count"] > cap:
+                out.append((
+                    "budget-over-phase",
+                    f"Phase {phase} ({info['title']}) holds {info['count']} section{'' if info['count'] == 1 else 's'}, over its "
+                    f"ceiling of {cap} in todo/budget.json. Merge the new work into an existing "
+                    "section, supersede one, or move it to todo/backlog.md; never raise the "
+                    "ceiling without the operator.",
+                ))
+        for phase in ceilings:
+            if phase not in phases:
+                out.append((
+                    "budget-malformed",
+                    f"todo/budget.json carries a ceiling for Phase {phase}, which the plan does "
+                    "not have. Drop it in a new history entry.",
+                ))
+        total = sum(len(t.sections) for t in todos)
+        cap_total = sum(ceilings.values())
+        if total > cap_total:
+            out.append((
+                "budget-over-total",
+                f"The tree holds {total} sections, over the total ceiling of {cap_total} (the "
+                "sum of the phase ceilings in todo/budget.json). A section outside every phase "
+                "still spends the budget: sequence it, merge it, or move it to todo/backlog.md.",
+            ))
+    loaded = load_backlog()
+    if loaded is None:
+        if live:
+            out.append((
+                "backlog-malformed",
+                "todo/backlog.md is missing. Restore it from git; an empty backlog is the "
+                "file with no entries, not no file.",
+            ))
+        return out
+    entries, problems = loaded
+    out += problems
+    refs = _section_refs(todos)
+    sources = _section_sources(todos)
+    seen_ids: dict[str, int] = {}
+    seen_sources: dict[str, str] = {}
+    for entry in entries:
+        where = f"todo/backlog.md:{entry['line']} [{entry['id']}]"
+        if entry["id"] in seen_ids:
+            out.append((
+                "backlog-duplicate",
+                f"{where} reuses the id on line {seen_ids[entry['id']]}. Ids are never reused: "
+                "take the next free number.",
+            ))
+        seen_ids.setdefault(entry["id"], entry["line"])
+        source = entry["fields"].get("source", "").lower()
+        if source:
+            if source in seen_sources:
+                out.append((
+                    "backlog-duplicate",
+                    f"{where} carries `source: {source}`, already on {seen_sources[source]}. One "
+                    "real-world thing, one entry: merge them.",
+                ))
+            seen_sources.setdefault(source, entry["id"])
+            if source in sources:
+                out.append((
+                    "backlog-duplicate",
+                    f"{where} carries `source: {source}`, which {sources[source]} already files "
+                    "as a section. A promoted entry leaves the backlog in the promoting commit.",
+                ))
+        body = entry["text"].split("]", 1)[1] if "]" in entry["text"] else entry["text"]
+        for m in XREF_RE.finditer(body):
+            if m.group("dom") and m.group("todo"):
+                ref = f"D{m.group('dom')} T{m.group('todo')} §{m.group('sec')}"
+                if ref not in refs:
+                    out.append((
+                        "backlog-malformed",
+                        f"{where} cites {ref}, which is not a section. Cite a live section or "
+                        "another backlog id, never a dead address.",
+                    ))
+            else:
+                out.append((
+                    "backlog-malformed",
+                    f"{where} cites the short form `{m.group(0)}`. The backlog has no home "
+                    "file, so it cites full `DNN TNN §N` refs only.",
+                ))
+    if budget is not None and len(entries) > budget["backlog_cap"]:
+        out.append((
+            "backlog-over-cap",
+            f"todo/backlog.md holds {len(entries)} entries, over `backlog_cap` "
+            f"{budget['backlog_cap']}. Triage first (groom-plan): merge duplicates, drop stale "
+            "entries with a reason, promote only with budget room.",
+        ))
+    return out
+
+
+def budget_summary(todos: list[Todo]) -> dict | None:
+    """Budget use for the Progress line and the queries; None without a usable budget."""
+    budget, _problems = load_budget()
+    if budget is None:
+        return None
+    ceilings = {str(k): v for k, v in budget["ceilings"].items()}
+    phases = plan_phase_counts()
+    loaded = load_backlog()
+    backlog_n = len(loaded[0]) if loaded is not None else 0
+    rows = [
+        {"phase": p, "title": info["title"], "used": info["count"], "ceiling": ceilings.get(p)}
+        for p, info in phases.items()
+    ]
+    rows += [
+        {"phase": p, "title": "(no such phase in the plan)", "used": 0, "ceiling": c}
+        for p, c in ceilings.items()
+        if p not in phases
+    ]
+    return {
+        "used": sum(len(t.sections) for t in todos),
+        "ceiling": sum(ceilings.values()),
+        "backlog": backlog_n,
+        "backlog_cap": budget["backlog_cap"],
+        "per_run_new_sections": budget["per_run_new_sections"],
+        "phases": rows,
+        "history": budget["history"],
+    }
+
+
+def budget_progress_text(todos: list[Todo]) -> str:
+    """The Progress line's budget clause, or '' when there is no usable budget."""
+    summary = budget_summary(todos)
+    if summary is None:
+        return ""
+    return (
+        f" Budget: {summary['used']} of {summary['ceiling']} sections; "
+        f"backlog {summary['backlog']} of {summary['backlog_cap']}."
+    )
+
+
+def _tree_at(ref: str) -> tuple[dict[str, str], dict[str, str]] | None:
+    """(section refs -> title, backlog ids -> title) as `ref` had them.
+
+    The TODO files and the backlog at `ref` are written to a temp tree and
+    parsed by the same parser as the working tree, so a section counts the
+    same way on both sides. None when git cannot read the ref.
+    """
+    global TODO_DIR  # noqa: PLW0603 -- rebinding for one parse, restored below
+    root = TODO_DIR.parent
+    rel = TODO_DIR.name
+    try:
+        listing = subprocess.run(
+            ["git", "-C", str(root), "ls-tree", "-r", "--name-only", ref, "--", rel],
+            capture_output=True, text=True, timeout=60,
+        )
+    except Exception:
+        return None
+    if listing.returncode != 0:
+        return None
+    saved = TODO_DIR
+    with tempfile.TemporaryDirectory(prefix="todo-growth-") as tmp:
+        base = Path(tmp)
+        for name in listing.stdout.splitlines():
+            parts = Path(name).parts
+            wanted = (
+                (len(parts) == 3 and TODO_FILE_RE.match(parts[2]))
+                or (len(parts) == 2 and parts[1] == "backlog.md")
+            )
+            if not wanted:
+                continue
+            blob = subprocess.run(
+                ["git", "-C", str(root), "show", f"{ref}:{name}"],
+                capture_output=True, timeout=60,
+            )
+            if blob.returncode != 0:
+                return None
+            dest = base / name
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(blob.stdout)
+        try:
+            TODO_DIR = base / rel
+            todos = load_todos()
+            loaded = load_backlog()
+        finally:
+            TODO_DIR = saved
+    backlog = {e["id"]: e["title"] for e in (loaded[0] if loaded else [])}
+    return _section_refs(todos), backlog
+
+
+def growth_report(ref: str, todos: list[Todo]) -> dict | None:
+    """Sections and backlog entries added and removed since `ref`."""
+    then = _tree_at(ref)
+    if then is None:
+        return None
+    then_secs, then_backlog = then
+    now_secs = _section_refs(todos)
+    loaded = load_backlog()
+    now_backlog = {e["id"]: e["title"] for e in (loaded[0] if loaded else [])}
+
+    def _key(ref_: str) -> tuple[int, int, int]:
+        d, t, s = re.findall(r"\d+", ref_)
+        return int(d), int(t), int(s)
+
+    return {
+        "sections_added": sorted((r for r in now_secs if r not in then_secs), key=_key),
+        "sections_removed": sorted((r for r in then_secs if r not in now_secs), key=_key),
+        "backlog_added": sorted(i for i in now_backlog if i not in then_backlog),
+        "backlog_removed": sorted(i for i in then_backlog if i not in now_backlog),
+        "titles": {**then_secs, **now_secs, **then_backlog, **now_backlog},
+    }
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Sync (or check) implementation-plan.md's boxes against the graph.
 
@@ -4862,12 +5575,19 @@ def cmd_plan(args: argparse.Namespace) -> int:
     total = len(seen)
     pct = round(done / total * 100) if total else 0
     summary = (
-        f"**{done} of {total} sections complete ({pct}%).** "
+        f"**{done} of {total} sections complete ({pct}%).**{budget_progress_text(todos)} "
         f"Derived from the Implementation Order tables by "
         f"`python scripts/todo-graph.py plan --sync` -- never edited by hand."
     )
     text = "\n".join(out) + "\n"
+    written_progress_line = PLAN_PROGRESS_RE.search(text)
     text, n = PLAN_PROGRESS_RE.subn(lambda mo: mo.group("prefix") + summary, text, count=1)
+    # The Progress line carries budget use, which moves without any row
+    # changing (a backlog entry, a ceiling), so --check compares the line too.
+    progress_stale = bool(
+        written_progress_line
+        and written_progress_line.group(0) != written_progress_line.group("prefix") + summary
+    )
     if n == 0:
         print(
             "warning: no '> **Progress:**' line in the plan, so the summary was "
@@ -4953,10 +5673,16 @@ def cmd_plan(args: argparse.Namespace) -> int:
                 f"::error::{_rel(OPERATOR_JSON)} is stale -- "
                 "run `python scripts/todo-graph.py plan --sync`"
             )
-        if stale or unknown or missing or dupes or json_stale or operator_stale or moved_rows or stale_notes:
+        if progress_stale:
+            print(
+                f"::error::{_rel(PLAN)}'s Progress line is stale (completion or budget use) -- "
+                "run `python scripts/todo-graph.py plan --sync`"
+            )
+        if stale or unknown or missing or dupes or json_stale or operator_stale or moved_rows or stale_notes or progress_stale:
             print(
                 f"\n{len(stale)} stale row(s), {len(unknown)} unknown ref(s), "
                 f"{len(missing)} unsequenced section(s), {len(dupes)} duplicated section(s)"
+                f"{', Progress line stale' if progress_stale else ''}"
                 f"{f', {len(moved_rows)} moved row(s)' if moved_rows else ''}"
                 f"{f', {len(stale_notes)} stale Moved line(s)' if stale_notes else ''}"
                 f"{', progress JSON stale' if json_stale else ''}"
@@ -8826,6 +9552,255 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             for _rp in findings_09:
                 (root / _rp).unlink()
 
+        # --- the budget and the backlog (operator 2026-09-26) -----------------
+        # Its own tree, so the budget arithmetic is exact: three sections in
+        # two phases, one TODO file, one INDEX, two backlog entries.
+        import io as _gio
+        import contextlib as _gctx
+        groot = root / "budget-fixture"
+        gtodo = groot / "todo"
+        (gtodo / "95-budget").mkdir(parents=True)
+        (gtodo / "95-budget" / "INDEX.md").write_text(
+            "# 95 Budget\n\n| TODO | Title |\n| --- | --- |\n"
+            "| [TODO-01](./TODO-01-budget.md) | Budget |\n| [TODO-02](./TODO-02-extra.md) | Extra |\n",
+            encoding="utf-8",
+        )
+
+        def _gsection(n: int, extra: str = "") -> str:
+            return (
+                f"## {n}. Thing {n}\n\nContext.{extra}\n\n- [ ] Do thing {n}\n"
+                f"- [ ] Commit: `\"selftest: thing {n}\"`\n\n**Test checkpoint:** `true`\n\n"
+            )
+
+        def _gtodo(nums: list[int]) -> str:
+            rows = "".join(f"| {i} | §{n} | Thing {n} | -- | [ ] |\n" for i, n in enumerate(nums, 1))
+            body = "".join(_gsection(n, " -> SOURCE: fixture-src-1" if n == 1 else "") for n in nums)
+            return (
+                "---\nschema_version: 1\nid: budget-fixture\ndomain: 95-budget\nstatus: active\n"
+                "title: \"TODO-01 -- Budget fixture\"\n---\n\n# TODO-01 -- Budget fixture\n\n"
+                "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
+                "| :---: | :-----: | ----------- | ---------- | :----: |\n" + rows + "\n---\n\n" + body
+            )
+
+        gfile = gtodo / "95-budget" / "TODO-01-budget.md"
+        gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
+        gplan = gtodo / "implementation-plan.md"
+        gplan.write_text(
+            "# Implementation plan\n\n> **Progress:** placeholder\n\n"
+            "### Phase 0 -- Budget fixture\n\nWhy.\n\n| ✔ | Section | Deliverable | Items |\n| :-: | --- | --- | :-: |\n"
+            "| [ ] | `D95 T01 §1` | Thing 1 | 2 |\n| [ ] | `D95 T01 §2` | Thing 2 | 2 |\n\n"
+            "### Phase 1 -- Second fixture\n\nWhy.\n\n| ✔ | Section | Deliverable | Items |\n| :-: | --- | --- | :-: |\n"
+            "| [ ] | `D95 T01 §3` | Thing 3 | 2 |\n",
+            encoding="utf-8",
+        )
+
+        def _gbudget(ceilings: dict, cap: int = 2, per_run: int = 1, history=None, live=None) -> None:
+            snap = {"ceilings": ceilings, "backlog_cap": cap, "per_run_new_sections": per_run}
+            data = dict(live if live is not None else snap)
+            data["schema_version"] = 1
+            data["history"] = history if history is not None else [{
+                "date": "2026-09-26", "change": "fixture setup",
+                "reason": "operator said \"set the fixture budget\"",
+                "approved_by": "operator", "snapshot": snap,
+            }]
+            (gtodo / "budget.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+        _gok = (
+            "# Backlog\n\nProse.\n\n## Entries\n\n"
+            "- [B-001] First idea -- app: fixture -- source: fixture-idea-1 -- added: 2026-09-26 "
+            "-- needs: D95 T01 §2 -- why deferred: nice to have -- promote when: asked\n"
+            "- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-26 "
+            "-- why deferred: nice to have -- promote when: asked\n"
+        )
+
+        def _gbacklog(text: str) -> None:
+            (gtodo / "backlog.md").write_text(text, encoding="utf-8")
+
+        def _gclasses() -> list[str]:
+            return sorted({cls for cls, _ in budget_findings(load_todos())})
+
+        def _gmsgs() -> list[str]:
+            return [msg for _, msg in budget_findings(load_todos())]
+
+        saved_g = (TODO_DIR, PLAN, PROGRESS_JSON, OPERATOR_JSON)
+        _real_committed = globals()["_budget_committed_text"]
+        try:
+            TODO_DIR, PLAN = gtodo, gplan
+            PROGRESS_JSON = groot / "build" / "progress.json"
+            OPERATOR_JSON = groot / "build" / "operator.json"
+            check("budget: every budget and backlog class is FATAL",
+                  [SEVERITY_MAP.get(c) for c in ("budget-malformed", "budget-over-phase", "budget-over-total",
+                                                 "budget-unrecorded-change", "backlog-malformed",
+                                                 "backlog-duplicate", "backlog-over-cap")],
+                  ["fatal"] * 7)
+            check("budget: a fixture tree without the files is silent", _gclasses(), [])
+            _gbudget({"0": 2, "1": 1})
+            _gbacklog(_gok)
+            check("budget: a tree inside every ceiling is clean", _gclasses(), [])
+            check("budget: phase counts read rows per phase",
+                  {k: v["count"] for k, v in plan_phase_counts().items()}, {"0": 2, "1": 1})
+            _gbudget({"0": 1, "1": 2})
+            check("budget: a phase over its ceiling is budget-over-phase", _gclasses(), ["budget-over-phase"])
+            check("budget: the over-phase message names the phase and both numbers",
+                  any("Phase 0" in m and "holds 2 sections" in m and "ceiling of 1" in m for m in _gmsgs()), True)
+            vbuf = _gio.StringIO()
+            with _gctx.redirect_stdout(vbuf), _gctx.redirect_stderr(_gio.StringIO()):
+                vcode = cmd_validate(None)
+            check("budget: validate prints the breach as FATAL and exits 1",
+                  (vcode, any(l.startswith("FATAL") and "ceiling of 1" in l for l in vbuf.getvalue().splitlines())),
+                  (1, True))
+            _gbudget({"0": 2, "1": 1})
+            (gtodo / "95-budget" / "TODO-02-extra.md").write_text(
+                _gtodo([1]).replace("budget-fixture", "budget-extra").replace("TODO-01 -- Budget", "TODO-02 -- Extra")
+                .replace("fixture-src-1", "fixture-src-2"),
+                encoding="utf-8",
+            )
+            check("budget: a section outside every phase breaks the total, not a phase",
+                  _gclasses(), ["budget-over-total"])
+            (gtodo / "95-budget" / "TODO-02-extra.md").unlink()
+            _gbudget({"0": 2, "1": 1}, cap=1)
+            check("budget: a backlog over its cap is backlog-over-cap", _gclasses(), ["backlog-over-cap"])
+            _gbudget({"0": 2, "1": 1})
+            _gbacklog(_gok.replace("[B-002]", "[B-001]"))
+            check("budget: a duplicate backlog id is backlog-duplicate", _gclasses(), ["backlog-duplicate"])
+            _gbacklog(_gok.replace("fixture-idea-2", "fixture-idea-1"))
+            check("budget: a duplicate backlog source is backlog-duplicate", _gclasses(), ["backlog-duplicate"])
+            _gbacklog(_gok.replace("fixture-idea-2", "fixture-src-1"))
+            check("budget: a source a live section carries is backlog-duplicate",
+                  (_gclasses(), any("already files" in m for m in _gmsgs())), (["backlog-duplicate"], True))
+            _gbacklog(_gok.replace(" -- promote when: asked\n- [B-002]", "\n- [B-002]"))
+            check("budget: an entry without `promote when:` is backlog-malformed",
+                  (_gclasses(), any("[B-001] is malformed" in m and "no `promote when:`" in m for m in _gmsgs())),
+                  (["backlog-malformed"], True))
+            _gbacklog(_gok.replace("added: 2026-09-26 -- needs", "added: 2026-13-40 -- needs"))
+            check("budget: an impossible `added:` date is backlog-malformed", _gclasses(), ["backlog-malformed"])
+            _gbacklog(_gok.replace("-- app: fixture", "-- owner: someone"))
+            check("budget: an unknown field is backlog-malformed", _gclasses(), ["backlog-malformed"])
+            _gbacklog(_gok + "- [ ] a checklist item pretending to be work\n")
+            check("budget: a checkbox in the backlog claims to be a section",
+                  (_gclasses(), any("reads as a section" in m for m in _gmsgs())), (["backlog-malformed"], True))
+            _gbacklog(_gok + "\n## 4. A section heading\n")
+            check("budget: a numbered section heading in the backlog is backlog-malformed", _gclasses(), ["backlog-malformed"])
+            _gbacklog(_gok + "- [B-3] too short an id -- source: x -- added: 2026-09-26 -- why deferred: a -- promote when: b\n")
+            check("budget: a bracketed line outside the id grammar is backlog-malformed", _gclasses(), ["backlog-malformed"])
+            _gbacklog(_gok.replace("needs: D95 T01 §2", "needs: D95 T01 §9"))
+            check("budget: a dead section ref in an entry is backlog-malformed",
+                  (_gclasses(), any("D95 T01 §9" in m and "not a section" in m for m in _gmsgs())),
+                  (["backlog-malformed"], True))
+            _gbacklog(_gok.replace("needs: D95 T01 §2", "needs: T01 §2"))
+            check("budget: a short section ref in an entry is backlog-malformed", _gclasses(), ["backlog-malformed"])
+            _gbacklog("```\n- [B-009] quoted in a fence -- source: q\n```\n" + _gok)
+            check("budget: fenced lines are not entries", (_gclasses(), len(load_backlog()[0])), ([], 2))
+            _gbacklog(_gok)
+            # Ceilings move only through history.
+            _gbudget({"0": 2, "1": 1}, live={"ceilings": {"0": 3, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1})
+            check("budget: a ceiling changed without a history entry is budget-unrecorded-change",
+                  (_gclasses(), any("Phase 0 2 -> 3" in m for m in _gmsgs())), (["budget-unrecorded-change"], True))
+            _gbudget({"0": 2, "1": 1}, live={"ceilings": {"0": 2, "1": 1}, "backlog_cap": 5, "per_run_new_sections": 1})
+            check("budget: a cap changed without a history entry is budget-unrecorded-change",
+                  _gclasses(), ["budget-unrecorded-change"])
+            _h1 = {"date": "2026-09-26", "change": "setup", "reason": "operator said \"set it\"",
+                   "approved_by": "operator",
+                   "snapshot": {"ceilings": {"0": 2, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1}}
+            _h2 = {"date": "2026-09-27", "change": "raise phase 0", "reason": "more room needed",
+                   "approved_by": "add-todo",
+                   "snapshot": {"ceilings": {"0": 3, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1}}
+            _gbudget({"0": 3, "1": 1}, history=[_h1, _h2])
+            check("budget: a raise a skill approved is budget-unrecorded-change",
+                  (_gclasses(), any("history entry 2" in m and "without the operator's approval" in m for m in _gmsgs())),
+                  (["budget-unrecorded-change"], True))
+            _gbudget({"0": 3, "1": 1}, history=[_h1, dict(_h2, approved_by="operator")])
+            check("budget: an operator raise without quoted words is budget-unrecorded-change",
+                  _gclasses(), ["budget-unrecorded-change"])
+            _gbudget({"0": 3, "1": 1}, history=[_h1, dict(_h2, approved_by="operator", reason="operator: \"raise phase 0 to 3\"")])
+            check("budget: an operator raise with quoted words is clean", _gclasses(), [])
+            _h3 = {"date": "2026-09-28", "change": "lower phase 0", "reason": "merged two sections",
+                   "approved_by": "groom-plan",
+                   "snapshot": {"ceilings": {"0": 2, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1}}
+            _gbudget({"0": 2, "1": 1}, history=[_h1, dict(_h2, approved_by="operator", reason="operator: \"raise phase 0 to 3\""), _h3])
+            check("budget: lowering a ceiling needs a history entry, not the operator", _gclasses(), [])
+            _gbudget({"0": 2, "1": 1}, history=[dict(_h1, date="2026-09-28"), dict(_h3, date="2026-09-27")])
+            check("budget: history out of date order is budget-malformed", _gclasses(), ["budget-malformed"])
+            # Append-only against the committed file.
+            _gbudget({"0": 2, "1": 1}, history=[_h1])
+            _committed = json.dumps({"history": [dict(_h1, change="the committed wording")]})
+            globals()["_budget_committed_text"] = lambda: _committed
+            check("budget: a history entry edited against HEAD is budget-unrecorded-change",
+                  (_gclasses(), any("edited or removed" in m for m in _gmsgs())), (["budget-unrecorded-change"], True))
+            _committed = json.dumps({"history": [_h1]})
+            globals()["_budget_committed_text"] = lambda: _committed
+            _gbudget({"0": 3, "1": 1}, history=[_h1, dict(_h2, approved_by="operator", reason="operator: \"raise it\"")])
+            check("budget: appending to the committed history is clean", _gclasses(), [])
+            globals()["_budget_committed_text"] = _real_committed
+            # Coverage: every phase needs a ceiling, every ceiling a phase.
+            _gbudget({"0": 3})
+            check("budget: a phase with no ceiling is budget-malformed",
+                  (_gclasses(), any("Phase 1" in m and "no ceiling" in m for m in _gmsgs())), (["budget-malformed"], True))
+            _gbudget({"0": 2, "1": 1, "7": 4})
+            check("budget: a ceiling for a phase the plan lacks is budget-malformed",
+                  (_gclasses(), any("Phase 7" in m for m in _gmsgs())), (["budget-malformed"], True))
+            (gtodo / "budget.json").write_text("{ not json", encoding="utf-8")
+            check("budget: an unparseable budget.json is budget-malformed", _gclasses(), ["budget-malformed"])
+            _gbudget({"0": 2, "1": 1})
+            # The Progress line carries budget use, and --check compares it.
+            with _gctx.redirect_stdout(_gio.StringIO()), _gctx.redirect_stderr(_gio.StringIO()):
+                cmd_plan(argparse.Namespace(check=False))
+                rc_clean = cmd_plan(argparse.Namespace(check=True))
+            check("budget: the synced Progress line reports budget use",
+                  "Budget: 3 of 3 sections; backlog 2 of 2." in gplan.read_text(encoding="utf-8"), True)
+            check("budget: plan --check is clean after the sync", rc_clean, 0)
+            _gbacklog(_gok.replace("- [B-002]", "- [B-000] Zeroth -- source: z0 -- added: 2026-09-26 -- why deferred: a -- promote when: b\n- [B-002]"))
+            _gbudget({"0": 2, "1": 1}, cap=3)
+            with _gctx.redirect_stdout(_gio.StringIO()), _gctx.redirect_stderr(_gio.StringIO()):
+                rc_stale = cmd_plan(argparse.Namespace(check=True))
+            check("budget: plan --check refuses a Progress line whose budget use moved", rc_stale, 1)
+            _gbacklog(_gok)
+            _gbudget({"0": 2, "1": 1})
+
+            def _gquery(what: str, **kw) -> tuple[int, str]:
+                buf = _gio.StringIO()
+                with _gctx.redirect_stdout(buf), _gctx.redirect_stderr(_gio.StringIO()):
+                    code = cmd_query(argparse.Namespace(what=what, all=False, **kw))
+                return code, buf.getvalue()
+
+            code, out = _gquery("budget")
+            check("budget: query budget prints each phase's use and ceiling",
+                  (code, "3 of 3 sections" in out and re.search(r"^\s+0\s+2\s+2\s+0\s+Budget fixture$", out, re.M) is not None),
+                  (0, True))
+            code, out = _gquery("stats")
+            check("budget: query stats carries the budget line", "budget           3 of 3 sections; backlog 2 of 2" in out, True)
+            code, out = _gquery("backlog")
+            check("budget: query backlog lists every entry and the cap",
+                  (code, "B-001" in out and "B-002" in out and "2 of 2 backlog entries" in out), (0, True))
+            # Growth since a ref: a real git history in the fixture tree.
+            _genv = ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+            subprocess.run(["git", "init", "-q"], cwd=groot, capture_output=True, text=True, timeout=60)
+            subprocess.run(["git", "add", "todo"], cwd=groot, capture_output=True, text=True, timeout=60)
+            subprocess.run(["git", *_genv, "commit", "-q", "-m", "fixture start"], cwd=groot,
+                           capture_output=True, text=True, timeout=60)
+            gfile.write_text(_gtodo([1, 2, 3, 4]), encoding="utf-8")
+            _gbacklog(_gok.replace("- [B-002]", "- [B-003]"))
+            code, out = _gquery("growth", since="HEAD", check=True)
+            check("growth: counts one added section and names it",
+                  (code, "+ D95 T01 §4  Thing 4" in out, "sections: +1 -0 (net +1)" in out),
+                  (0, True, True))
+            check("growth: counts backlog entries added and removed",
+                  ("+ backlog B-003" in out, "- backlog B-002" in out, "backlog: +1 -1" in out), (True, True, True))
+            check("growth: reports use of the per-run cap", "per-run cap: 1 of 1 new sections" in out, True)
+            gfile.write_text(_gtodo([1, 2, 4, 5]), encoding="utf-8")
+            code, out = _gquery("growth", since="HEAD", check=True)
+            check("growth: --check exits 1 past the per-run cap and names the removal",
+                  (code, "- D95 T01 §3" in out, "sections: +2 -1 (net +1)" in out), (1, True, True))
+            code, out = _gquery("growth", since="no-such-ref", check=False)
+            check("growth: an unreadable ref exits 2", code, 2)
+            code, out = _gquery("growth", since=None, check=False)
+            check("growth: --since is required", code, 2)
+        finally:
+            globals()["_budget_committed_text"] = _real_committed
+            TODO_DIR, PLAN, PROGRESS_JSON, OPERATOR_JSON = saved_g
+            _sh_g = __import__("shutil")
+            _sh_g.rmtree(groot, ignore_errors=True)
+
     finally:
         TODO_DIR, PLAN, SKILLS_DIR = saved_todo_dir, saved_plan, saved_skills
         tmp.cleanup()
@@ -8867,14 +9842,15 @@ def main() -> int:
     q = sub.add_parser("query", help="ask the graph a question")
     q.add_argument(
         "what",
-        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run"],
+        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth"],
     )
     q.add_argument("target", nargs="?", help="run: run ID to inspect")
+    q.add_argument("--since", metavar="REF", help="growth: the commit to count from (a run's start commit)")
     q.add_argument("--all", action="store_true", help="findings: include ones already done")
     q.add_argument("--file", help="adjacency: exact repository-relative TODO path")
     q.add_argument("--at", help="adjacency: inspect an isolated historical commit")
     q.add_argument("--json", action="store_true", help="adjacency, plan-health: machine-readable report")
-    q.add_argument("--check", action="store_true", help="plan-health: exit 1 on actionable entries (covered escalations and bare partials pass; --fail-on gates presence)")
+    q.add_argument("--check", action="store_true", help="plan-health: exit 1 on actionable entries (covered escalations and bare partials pass; --fail-on gates presence); growth: exit 1 past the per-run cap")
     q.add_argument("--fail-on", metavar="DIMS", help="plan-health: comma-separated dimensions whose non-emptiness exits 1")
     q.add_argument("--require-owned", action="store_true", help="adjacency: refuse incomplete file ownership at closeout")
     q.add_argument("--require-conformance", action="store_true", help="adjacency: require non-vacuous tree-wide kind coverage")
