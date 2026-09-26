@@ -30,6 +30,12 @@ track: I4
 - -> XREF: D01 T04 §1 -- the suite color engine whose next consumer is §2's embedded PNG and JPEG profiles
 - -> XREF: D01 T05 §3 -- the AI provenance record §2's save may later embed
 - -> XREF: D02 T14 §12 -- Nodus's WIC codec, which moves to `Photon.Core` if §1 picks WIC; `D02 T14 §13`'s PSD reader moves to `Photon.Core` for §5
+- -> XREF: D03 T08 §1 -- Imago parity document and view cites §4: the native format D03 T08 §1 extends with the `imago:` contract; §2: recent files D03 T08 §2 extends; §5: the PSD adapter D03 T08 §1, D03 T08 §4, and D03 T08 §5 extend with resolution, pixel aspect, guide, and note resources
+- -> XREF: D03 T09 §1 -- Imago parity layers cites §4: the native format whose fixtures every freeze check re-saves byte-identical; §5: the PSD adapter D03 T09 §1, D03 T09 §3, D03 T09 §4, D03 T09 §5, D03 T09 §7, and D03 T09 §9 extend with locks, labels, masks, clipping, blending ranges, effects, and placed layers
+- -> XREF: D03 T15 §1 -- Imago parity photo (Camera Raw and merges) cites §3: the TIFF reader for linear DNG sources and the DNG read-back
+- -> XREF: D03 T17 §11 -- Imago parity formats cites §1: the codec decision and the WIC codec it placed; §2: PNG and JPEG readers and writers and the JPEG options dialog D03 T17 §11 extends; §3: the TIFF reader and writer D03 T17 §11 extends; §4: the native format and its atomic save; §5: the PSD reader D03 T17 §2 and D03 T17 §3 extend
+- -> XREF: D03 T18 §1 -- Imago parity export, color management, and print cites §2: the save paths Export As extends
+- -> XREF: D03 T20 §5 -- Imago parity workspace cites §6: autosave and recovery D03 T20 §5 configures
 
 ## Outcome
 

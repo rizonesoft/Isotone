@@ -34,6 +34,7 @@ track: C1
 - -> XREF: D01 T05 §4 -- the shared AI surfaces (send preview, AI settings page) built on §3's theme
 - -> XREF: D02 T09 §2 -- the Nodus color picker and the swatch-well, checkerboard, and gamut-warning tokens it adds to §3's theme; the picker moves here when Imago's color panel (`D03 T03 §8`) needs it
 - -> XREF: D02 T16 §6 -- the UI brightness dictionaries it adds to §3's theme and the error-reporting toggle that governs §2's exception window
+- -> XREF: D03 T20 §1 -- Imago parity workspace cites §2: the exception window the debugging and crash-report preferences govern; §3: the suite theme; §4: the shared About and Shortcuts dialogs
 
 ## Outcome
 

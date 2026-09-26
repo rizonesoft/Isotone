@@ -41,6 +41,9 @@ track: C5
 - -> XREF: D02 T15 §5 -- the brand kit's first consumer: brand-constrained recolor
 - -> XREF: D02 T15 §11 -- the suite pipeline that carries provenance across app hand-offs and syncs brand kits
 - -> XREF: D03 T04 §2 -- Imago's save, a later consumer of provenance embedding
+- -> XREF: D03 T11 §10 -- Imago parity adjustments and color cites §5: brand kit palettes and the ASE reader and writer D03 T11 §10 reuses
+- -> XREF: D03 T16 §4 -- Imago parity type and vectors cites §5: brand kit type styles shown in D03 T16 §4's styles panels
+- -> XREF: D03 T19 §1 -- Imago AI cites §1: the client, image generate and edit, structured output, and the recorded transport every test there runs over; §2: the key store and per-task model settings Imago extends; §3: the provenance record, store, re-run, and diff embedded in the `.imago` document; §4: the send gate, send preview, AI settings page, progress panel, and usage indicator; §5: the brand kit library and `BrandKitConstraint`
 
 ## Outcome
 

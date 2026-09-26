@@ -33,6 +33,7 @@ track: N6
 - -> XREF: D02 T14 §2 -- the readers and exporters (`D02 T14 §2`, `§12`, `§15`, `§19`) that extend §14's import table and export dialog
 - -> XREF: D02 T15 §6 -- the assistant's tool catalog that reads §12's command index, and the AI Preferences page §13 hosts
 - -> XREF: D02 T16 §1 -- workspaces, the command index, menus, and preference pages that extend §7, §12, and §13; §17 audits every parity surface
+- -> XREF: D03 T20 §1 -- Imago parity workspace cites §12: the command index command search reads
 
 ## Outcome
 
@@ -132,7 +133,7 @@ Nodus opens one document at a time; the history and selection are app singletons
 
 ## 12. The Command Palette and the On-Canvas HUD
 
-`CommandPaletteService`, `CanvasHUDService`, and `PresetService` are deferred here. A command palette (Ctrl+K) makes every command reachable by name; the HUD shows live dimensions and angles while dragging. -> SOURCE: legacy-nodus-5.3-5.4
+`CommandPaletteService`, `CanvasHUDService`, and `PresetService` are deferred here. A command palette (Ctrl+K) makes every command reachable by name; the HUD shows live dimensions and angles while dragging. **Imago second consumer (2026-09-26):** the command index built here moves to `Photon.UI/Workspace/CommandIndex.cs` in `D03 T20 §3`, the command palette consuming it unchanged. -> SOURCE: legacy-nodus-5.3-5.4
 
 **Fidelity:** Command palette overlay and canvas HUD -- new build, no baseline; captured to docs/captures/nodus/command-palette/ and docs/captures/nodus/hud/.
 **Job:** a user can run any command by typing its name, and see exact values while dragging. Consumer: the keymap's commands; the tools.

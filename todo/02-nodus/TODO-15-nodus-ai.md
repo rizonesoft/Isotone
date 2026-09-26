@@ -53,6 +53,7 @@ track: N15
 - -> XREF: D02 T06 §13 -- the Preferences dialog that hosts the AI page
 - -> XREF: D03 T05 §1 -- Imago's filter pipeline, the cleanup target of the hand-off
 - -> XREF: D04 T02 §7 -- Lumen's Edit in Imago, which uses the same App Paths lookup §11 moves to `Photon.Core`
+- -> XREF: D03 T19 §11 -- Imago AI cites §1: the Nodus precedent for the AI menu and provenance panel whose shared parts stay in `Photon.UI`; §7: the `FontMatcher` D03 T19 §11 moves to `Photon.Core/Text/` as its second consumer; §11: `SuiteAppLocator`, the hand-off folder, and sidecar provenance D03 T19 §13 consumes
 
 ## Outcome
 
@@ -257,7 +258,7 @@ The assistant turns words into production edits without becoming a scripting eng
 
 ## 7. AI Text: Rewrite, Translate, Proofread, Fit, and Retype
 
-Text features keep the designer's formatting and fonts: rewriting and translation preserve formatting runs, grammar checking reports issues the user accepts one at a time, and retype matches glyphs against installed fonts locally so no font list leaves the machine. Spelling stays with the Windows Spell Checking API that `D02 T10 §13` wires. Catalog: NP-2513 (retype: identify fonts), NP-2514 (retype: convert image text to live text), NP-2515 (rewrite: generate, rephrase, translate, proofread, fit text), NP-2516 (grammar check), NP-2517 (grammar check options and checking styles).
+Text features keep the designer's formatting and fonts: rewriting and translation preserve formatting runs, grammar checking reports issues the user accepts one at a time, and retype matches glyphs against installed fonts locally so no font list leaves the machine. Spelling stays with the Windows Spell Checking API that `D02 T10 §13` wires. Catalog: NP-2513 (retype: identify fonts), NP-2514 (retype: convert image text to live text), NP-2515 (rewrite: generate, rephrase, translate, proofread, fit text), NP-2516 (grammar check), NP-2517 (grammar check options and checking styles). **Imago second consumer (2026-09-26):** the `FontMatcher` built here moves to `Photon.Core/Text/` in `D03 T19 §11`, Nodus consuming it unchanged.
 
 **Fidelity:** new build, no baseline; captured to docs/captures/nodus/ai-rewrite/ and docs/captures/nodus/retype/.
 **Job:** a designer can improve or translate copy in place and turn text in an image into live text in a matching installed font. Consumer: the text model and the document.

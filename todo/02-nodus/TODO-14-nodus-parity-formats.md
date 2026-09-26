@@ -62,6 +62,9 @@ track: N14
 - -> XREF: D01 T02 §4 -- the suite history every import and slice edit records into
 - -> XREF: D03 T04 §1 -- Imago's codec decision, which decides whether §12's WIC codec moves to `Photon.Core`
 - -> XREF: D03 T04 §5 -- Imago's PSD import, which consumes §13's reader from `Photon.Core` instead of building a second one
+- -> XREF: D03 T16 §8 -- Imago parity type and vectors cites §1: the SVG export options D03 T16 §8 moves and shares; §4: Nodus's legacy AI reader, the read-back oracle for D03 T16 §5's Illustrator paths
+- -> XREF: D03 T17 §1 -- Imago parity formats cites §2: PdfPig, which D03 T17 §1 and D03 T17 §7 reuse for annotations and text positions; §9: the Ghostscript runner D03 T17 §7 moves; §11: the EMF and WMF code D03 T17 §7 moves; §12: the TGA, PCX, BMP, and CUR codecs D03 T17 §8 moves, and the JPEG 2000 decision D03 T17 §5 reconciles; §13: the PSD writer D03 T17 §2 moves; §16: Nodus's progressive JPEG path switches to D03 T17 §11's encoder; §19: the WIA acquire service D03 T17 §12 moves
+- -> XREF: D03 T18 §1 -- Imago parity export, color management, and print cites §15: the export queue D03 T18 §1 moves; §16: the web encoder D03 T18 §2 moves; §17: the slice model and image map writer D03 T18 §2 moves
 
 ## Outcome
 

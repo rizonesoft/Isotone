@@ -10,10 +10,10 @@ track: I7
 
 # TODO-07 -- Imago after 0.1.0: Deferral Owners and Accessibility
 
-> **Goal:** The Imago work after its first release that the plan is already committed to: the rest of the filter catalog that the 0.1.0 Filter menu names for its disabled items, RAW import through the decoder Lumen shares, and the workspaces, Preferences, accessibility, and localization work the acceptance bar requires. When this file closes, no Imago menu item is disabled as planned, and Imago works without a mouse or eyes.
+> **Goal:** The Imago work after its first release that the plan is already committed to: the rest of the filter catalog that the 0.1.0 Filter menu names for its disabled items, RAW import through the decoder Lumen shares, and the workspaces, Preferences, accessibility, and localization work the acceptance bar requires. When this file closes, no Imago menu item is disabled as planned, and Imago works without a mouse or eyes. On 2026-09-26 the Imago parity plan relocated three of these sections into its phases without changing their addresses: the filter catalog (§3) runs first in Phase 21, where the filter surfaces and engine extensions extend it, workspaces and Preferences (§17) run first in Phase 27, and the accessibility and localization audit (§16) runs last in Phase 27 so it covers every parity surface; RAW import (§11) stays in Phase 31, after Lumen's decoder ships.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The legacy roadmap (`docs/legacy/imago-roadmap.md`, 853 lines, phases 0 to 11) was mined into 18 sections on 2026-09-26. The same day the plan was bounded (`todo/budget.json`): the 14 sections nothing outside this file depends on, defers to, or names in the acceptance bar moved to `todo/backlog.md` as B-014 to B-027, and their section numbers are retired, never reused. What stays: the filter catalog (§3), which `D03 T05 §3` names in the tooltips of its disabled filters; RAW import (§11), which `D04 T01` cross-references for the shared decoder; accessibility (§16), which the acceptance bar names; and workspaces and Preferences (§17), which §16 builds on and which enables the planned Preferences item. Several features have model types and no behavior, among them `AdjustmentLayer` and a Roslyn `ScriptEngine` in `Imago.Scripting` (62 lines), whose sections now wait in the backlog. Every section below names its legacy source with a `-> SOURCE:` line.
+> **Current state (verified 2026-09-26):** The legacy roadmap (`docs/legacy/imago-roadmap.md`, 853 lines, phases 0 to 11) was mined into 18 sections on 2026-09-26. The same day the plan was bounded (`todo/budget.json`): the 14 sections nothing outside this file depends on, defers to, or names in the acceptance bar moved to `todo/backlog.md` as B-014 to B-027, and their section numbers are retired, never reused. What stays: the filter catalog (§3), which `D03 T05 §3` names in the tooltips of its disabled filters; RAW import (§11), which `D04 T01` cross-references for the shared decoder; accessibility (§16), which the acceptance bar names; and workspaces and Preferences (§17), which §16 builds on and which enables the planned Preferences item. Several features have model types and no behavior, among them `AdjustmentLayer` and a Roslyn `ScriptEngine` in `Imago.Scripting` (62 lines), whose sections now wait in the backlog. Every section below names its legacy source with a `-> SOURCE:` line. **Corrected 2026-09-26:** the Imago parity plan promoted B-014 to B-023 and B-027 into its sections, merged B-025 (scripting) into the suite-wide B-041, and kept B-024 and B-026 in the backlog; `AdjustmentLayer` gains its behavior in `D03 T11 §1`, and the parity sections extend §3, §16, and §17 through their dependency edges.
 <!-- claim: lines docs/legacy/imago-roadmap.md = 853 -->
 <!-- claim: exists src/Imago/src/Imago.Core/Layers/AdjustmentLayer.cs -->
 <!-- claim: lines src/Imago/src/Imago.Scripting/ScriptEngine.cs = 62 -->
@@ -23,14 +23,20 @@ track: I7
 - [`docs/legacy/imago-roadmap.md`](../../docs/legacy/imago-roadmap.md) -- the source of every section; read the named legacy phase before grooming
 - [`standards/imago.md`](../../standards/imago.md) -- the rules every section builds to
 - -> XREF: D04 T01 §4 -- the Lumen RAW decoder §11 moves to `Photon.Core` when Imago imports RAW
-- [`../backlog.md`](../backlog.md) -- the Imago feature ideas that left this file (B-014 to B-027); one is promoted only through `add-todo` with the admission test and budget room
+- -> XREF: D01 T07 §1 -- the suite develop engine cites §11: Imago's RAW open dialog develops through D01 T07 §1 instead of its own exposure and white balance code
+- -> XREF: D03 T08 §1 -- Imago parity document and view cites §17: workspaces the panels there dock into
+- -> XREF: D03 T14 §2 -- Imago parity filters cites §3: the legacy filter catalog whose disabled items D03 T14 §2 resolves
+- -> XREF: D03 T15 §12 -- Imago parity photo (Camera Raw and merges) cites §11: RAW import: opens RAW into D03 T15 §12's studio and supplies camera RAW sources to RAW layers, merges, and astro frames when it ships in Phase 31
+- -> XREF: D03 T20 §9 -- Imago parity workspace cites §17: workspaces and the Preferences dialog it extends; §16: the accessibility and localization audit that consumes D03 T20 §9's settings
+- -> XREF: D03 T21 §12 -- the Imago parity releases cites §16: the accessibility and localization audit D03 T21 §12 depends on, so 1.0.0 ships no unaudited surface
+- [`../backlog.md`](../backlog.md) -- the Imago feature ideas that left this file (B-014 to B-027); on 2026-09-26 the Imago parity plan promoted B-014 to B-023 and B-027 and merged B-025 into B-041, and the entries still there (B-024, B-026) are promoted only through `add-todo` with the admission test and budget room
 
 ## Outcome
 
 - Every section below ships with its surface, commands with undo, settings, log lines, user-guide page, and tests, like the 0.1.0 sections before it.
 - Every disabled "Planned" menu item from 0.1.0 that names a section of this file is working when this file closes.
 
-**Adjacency:** list=applicable; document=not-applicable (printing waits in the backlog as B-021); settings=applicable @ D03 T07 §17; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are owned by the format sections in D03 T04); audit=applicable; exchange=applicable; reverse=applicable @ D03 T07 §17
+**Adjacency:** list=applicable; document=not-applicable (printing arrives with the Imago parity phases in D03 T18 §6); settings=applicable @ D03 T07 §17; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are owned by the format sections in D03 T04); audit=applicable; exchange=applicable; reverse=applicable @ D03 T07 §17
 
 **Adjacency rationale:** The workspace and Preferences work is the settings and list surface; filter parity and RAW open results are reporting; long filters and RAW opens notify through the status strip; every edit is logged and undoable.
 
@@ -39,9 +45,9 @@ track: I7
 | Order | Section | Deliverable                                            | Depends On              | Status |
 | :---: | :-----: | ------------------------------------------------------ | ----------------------- | :----: |
 | 1 | §3 | The rest of the filter catalog                         | D03 T06 §3              |  [ ]   |
-| 2 | §11 | RAW import through the shared decoder                  | D03 T06 §3, D04 T01 §4  |  [ ]   |
+| 2 | §11 | RAW import through the shared decoder                  | D03 T06 §3, D04 T01 §4, D01 T07 §1, D03 T15 §12 |  [ ]   |
 | 3 | §17 | Workspaces, panels, and preferences                    | D03 T06 §3              |  [ ]   |
-| 4 | §16 | Accessibility and localization                         | §17                     |  [ ]   |
+| 4 | §16 | Accessibility and localization                         | §17, D03 T20 §8, D03 T20 §9 |  [ ]   |
 
 ---
 
@@ -61,10 +67,11 @@ The legacy plan lists motion and surface blur, smart sharpen, noise (add, reduce
 Lumen decodes RAW (`D04 T01 §4`). The day Imago imports RAW, the decoder adapter moves from `Photon.Lumen.Core` to `Photon.Core` and both apps consume it; nothing is copied. -> SOURCE: legacy-imago-7.2-raw
 
 - [ ] Move the RAW decoder adapter and its tests to `Photon.Core` (and its native dependency with it), with Lumen consuming it unchanged. Done when: Lumen's RAW tests pass against the moved type and `grep` finds one decoder class.
-- [ ] Imago opens RAW files through a minimal develop dialog (exposure, white balance, then open as a 16-bit document). Done when: a committed small DNG fixture opens with its dimensions.
+- [ ] Imago opens RAW files into the Develop studio (`D03 T15 §12`), developing through the suite develop engine (`D01 T07 §1`) with the decoder's output as a `RawDevelopSource`, then opens the result as a document in the workflow's bit depth (IP-1471). Done when: a committed small DNG fixture opens with its dimensions and a test asserts the render went through `DevelopPipeline`. **Corrected 2026-09-26:** said "a minimal develop dialog (exposure, white balance, then open as a 16-bit document)"; the Imago parity plan built the Develop studio and the shared engine first, so a second dialog would be a copy.
+- [ ] Enable `File, Open RAW into Develop` and RAW layer sources, removing the `Planned: D03 T07 §11` entry `D03 T15 §12` registered in `PlannedCommands`, and register camera RAW with the focus-merge and astro frame loaders that refuse it by name until now (`D03 T15 §9`, `D03 T15 §10`). Done when: `MenuAuditTests` pass with no item planned to this section and a test loads a camera RAW fixture as a focus-merge source.
 - [ ] Commit: `"core: share the RAW decoder; Imago opens RAW files"`
 
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the moved decoder tests and an Imago RAW open test reporting; `grep -rn "class .*RawDecoder" src` prints one path under `src/Photon.Core/`. Cheaper substitute that fails: Imago referencing Lumen's assembly.
+**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the moved decoder tests, an Imago RAW open test through the Develop studio, and `MenuAuditTests` reporting; `grep -rn "class .*RawDecoder" src` prints one path under `src/Photon.Core/`. Cheaper substitute that fails: Imago referencing Lumen's assembly.
 
 ## 16. Accessibility and Localization
 

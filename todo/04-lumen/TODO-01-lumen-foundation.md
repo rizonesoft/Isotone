@@ -31,6 +31,8 @@ track: L1
 - -> XREF: D04 T02 §1 -- the edit stack that stores develop settings in §5's catalog
 - -> XREF: D03 T07 §11 -- moves §4's decoder adapter to `Photon.Core` when Imago imports RAW
 - -> XREF: D05 T01 §6 -- the suite bundle that ships Lumen beside Nodus and Imago
+- -> XREF: D01 T07 §1 -- the suite develop engine cites §4: the RAW decoder supplies linear camera RGB and its matrix through D01 T07 §1's `IDevelopSource`; §11: Lumen's XMP sidecars consume D01 T07 §6's XMP core
+- -> XREF: D03 T17 §10 -- Imago parity formats cites §11: Lumen's sidecars consume D03 T17 §10's EXIF and IPTC code
 
 ## Job and non-goals
 

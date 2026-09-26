@@ -1,0 +1,424 @@
+---
+schema_version: 1
+id: imago-parity-retouch
+domain: 03-imago
+status: draft
+title: "TODO-13 -- Imago Parity: Retouching, Content-Aware Tools, Transform, Warp, and Liquify"
+depends_on: []
+track: I13
+---
+
+# TODO-13 -- Imago Parity: Retouching, Content-Aware Tools, Transform, Warp, and Liquify
+
+> **Goal:** Imago has the full retouching and geometry toolset of Photoshop 27.10, Affinity Photo 3.3, and GIMP 3.2.6: clone stamp with the Clone Source panel, perspective and seamless clone, healing, spot healing, patch, blemish, inpainting, and red eye; a classical content-aware engine (PatchMatch fill workspace, content-aware scale and move, delete and fill, heal selection) in `src/Imago/Photon.Imago.Core/Retouch/` that runs with no network; dodge, burn, sponge, tone, blur, sharpen, and median brushes; Free Transform extensions and the GIMP transform tools; warp and mesh warp, puppet warp, cage and N-point deformation, and perspective warp; Liquify with a GPU path and face-aware controls; and frequency separation. Tools run on the `D03 T03 §4` tool system and the `D03 T12 §1` brush engine with the `D03 T12 §5` paint options, geometry samples through the `D01 T03 §2` resampler and inverse mapper, warp-style math moves out of Nodus rather than being copied, every stroke or apply is one undoable command through the suite history with tile snapshots and one Serilog Information line, warps on smart objects stay re-editable, and generative modes belong to `D03 T19 §3`, never to this file.
+
+> [!IMPORTANT]
+> **Current state (verified 2026-09-26):** No retouching, content-aware, warp, or liquify code exists in Imago: no source file under `src/Imago/src/` mentions healing, liquify, warp, PatchMatch, or a clone source. Imago has no tool folder or tool abstraction yet (`src/Imago/src/Imago.Core/Tools` is absent); `D03 T03 §4` adds it. The history's command categories in `src/Imago/src/Imago.Core/History/Commands/CommandBase.cs` already name `Transform`, but no command uses it. The Image menu's rotate and flip commands in `src/Imago/src/Imago.UI/ViewModels/MainWindowViewModel.cs` only write a Debug line (five of them); `D03 T03 §7` wires them before §5 extends them to layers. The selection tools are a 328-line model (`src/Imago/src/Imago.Core/Selections/SelectionTools.cs`) that `D03 T10 §1` replaces; the content-aware sampling area reads the replacement. Raster layers tile at 256 pixels (`TileSize = 256` in `src/Imago/src/Imago.Core/Tiles/Tile.cs`), the unit every retouch stroke snapshots. These paths move to `src/Imago/Photon.Imago.*` when `D03 T01 §1` renames the projects; every item below names the target paths.
+<!-- claim: count "Heal|Liquify|Warp|PatchMatch|CloneSource" src/Imago/src/**/*.cs = 0 -->
+<!-- claim: absent src/Imago/src/Imago.Core/Tools -->
+<!-- claim: count "^    Transform,$" src/Imago/src/Imago.Core/History/Commands/CommandBase.cs = 1 -->
+<!-- claim: count "CommandCategory\.(Transform|Filter)" src/Imago/src/**/*.cs = 0 -->
+<!-- claim: count "_logger\.Debug\(\"(Rotate|Flip) " src/Imago/src/Imago.UI/ViewModels/MainWindowViewModel.cs = 5 -->
+<!-- claim: lines src/Imago/src/Imago.Core/Selections/SelectionTools.cs = 328 -->
+<!-- claim: count "TileSize = 256" src/Imago/src/Imago.Core/Tiles/Tile.cs = 1 -->
+
+## Inputs
+
+- [`standards/imago.md`](../../standards/imago.md) -- zero allocations per dab, GPU path with CPU parity, tiles, and ComputeSharp shader rules
+- [`standards/shared.md`](../../standards/shared.md) -- one log line per document change, progress and cancel over one second, the design contract
+- [`docs/parity/imago-section-design.md`](../../docs/parity/imago-section-design.md) -- the blueprint for this file; [`docs/parity/imago-parity.md`](../../docs/parity/imago-parity.md) -- the catalog rows each section owns
+- GIMP 3.2.6 (heal, clone, perspective clone, seamless clone, warp transform, N-point, cage, unified and 3D transform tools) and its GEGL -- behavior and golden references, versions recorded beside each fixture
+- Papers named per item: Perez, Gangnet, and Blake 2003; Farbman et al. 2009; Barnes et al. 2009 and 2010; Wexler, Shechtman, and Irani 2007; Avidan and Shamir 2007; Rubinstein, Shamir, and Avidan 2008; Telea 2004; Igarashi, Moscovich, and Hughes 2005; Schaefer, McPhail, and Warren 2006; Hormann and Floater 2006; Dvoroznak 2014
+- The resynthesizer plug-in (GPL-3.0-or-later) -- the content-aware fill and heal-selection behavior reference
+- -> XREF: D03 T03 §2 -- the tile-snapshot commands every stroke commits through
+- -> XREF: D03 T03 §4 -- the tool system every tool here derives from
+- -> XREF: D03 T03 §7 -- the free transform and canvas rotate §5 extends
+- -> XREF: D03 T12 §1 -- the brush engine, stabilizer, and wet edges every retouch brush reuses
+- -> XREF: D03 T12 §5 -- the shared paint options and paint-tool base with the retouch brush options (IP-0751, IP-0809)
+- -> XREF: D03 T12 §8 -- the Fill dialog whose content-aware option §3 adds
+- -> XREF: D03 T12 §10 -- the pattern sources for clone and healing
+- -> XREF: D03 T12 §11 -- the symmetry the retouch brushes honor
+- -> XREF: D03 T10 §1 -- the selection model the content-aware engine reads
+- -> XREF: D03 T09 §9 -- smart objects that keep transforms and warps re-editable
+- -> XREF: D03 T08 §1 -- the `imago:` contract for clone sources and warp parameters
+- -> XREF: D03 T08 §9 -- content-aware crop fill consumes §3
+- -> XREF: D01 T03 §2 -- the resampler, inverse mapper, and perspective corrector §1, §5, §7, §8, and §11 sample through
+- -> XREF: D01 T03 §7 -- the `MeshWarp` and `Offset` §6 and §11 extend
+- -> XREF: D01 T06 §4 -- enables the Sharpen tool's Clarity mode §4 ships disabled
+- -> XREF: D01 T06 §6 -- moves §7's `MlsDeformer` into `Photon.Core` and registers §6's mesh warp as a filter
+- -> XREF: D02 T11 §5 -- the warp-style and mesh-map math §6 moves to `Photon.Core/Vector/Warp/`
+- -> XREF: D03 T14 §1 -- the live-filter forms of mesh warp, puppet warp, perspective warp, and liquify
+- -> XREF: D03 T14 §6 -- adaptive wide angle and the perspective filter reuse §7's solver and §8's engine
+- -> XREF: D03 T14 §7 -- Vanishing Point stamps and heals through §1 and §2
+- -> XREF: D03 T15 §7 -- panorama edge fill consumes §3
+- -> XREF: D03 T16 §4 -- warp text consumes §6's moved warp styles
+- -> XREF: D03 T16 §5 -- the Path transform target §11 enables
+- -> XREF: D03 T19 §3 -- generative remove adds its mode to §2's Remove tool
+- -> XREF: D03 T19 §9 -- distraction removal fills through §3
+- -> XREF: D03 T19 §11 -- face landmarks for §9's face-aware liquify
+- -> XREF: D03 T20 §1 -- the retouching studio preset §10 defines
+- -> XREF: D03 T20 §3 -- the GIMP shortcut set §11's tool shortcuts join
+- -> XREF: D01 T07 §5 -- develop spot removal and red eye consume §2's healing and red-eye detection instead of their own
+
+## Outcome
+
+- A retoucher clones from any open document with scaled, rotated, flipped sources and a live overlay; heals, patches, removes blemishes and small objects, inpaints, and removes red eye with tone matched to the surroundings.
+- A classical, offline content-aware engine fills, scales, moves, and heals selections with a sampling area the user controls, and every content-aware mode of the healing tools runs on it.
+- Dodge, burn, sponge, tone, blur, sharpen, convolve, and median brushes change pixels only where painted, one undo step per stroke.
+- Free Transform, the Transform panel, move-tool transforms, and every GIMP transform tool share one transform session that resamples once from the original on commit.
+- Warp, mesh warp, the warp transform brush, puppet warp, deform with bones, N-point deformation, cage transform, perspective warp, and Liquify with face-aware controls bend layers, re-open for editing on smart objects, and preview on the GPU with CPU parity.
+- Frequency separation splits texture from tone with exact recombination in 16-bit and float.
+- Every tool and command is one named undo step with one Serilog Information line, and locked layers refuse strokes by name.
+
+**Adjacency:** list=applicable @ D03 T13 §1; document=not-applicable (no printed output); settings=applicable @ D03 T13 §4; reporting=applicable @ D03 T13 §5; notifications=applicable @ D03 T13 §3; permissions=applicable @ D03 T13 §1; audit=applicable @ D03 T13 §2; exchange=applicable @ D03 T13 §9; reverse=applicable @ D03 T13 §9
+
+**Adjacency rationale:** The Clone Source panel's source list is the browsable list, beside liquify mesh files and content-aware output targets. Every tool option is an `Imago.<Tool>.*` settings key with a default and a consumer; the toning keys of §4 are the pattern, and Preferences lists them through `D03 T20 §4`. Reporting is the transform HUD and the Transform panel's numeric readout. Content-aware fill, scale, and move, liquify commit, and warp renders report progress and cancel on the status strip. Locked layers and locked pixels refuse strokes by name, a pixel tool on a text or shape layer follows the `D03 T12 §5` non-pixel-layer policy, and a closed clone-source document is refused by name. Every command writes one Information line with tool, layer, and parameters hash. Exchange is the liquify `.imgmesh` file, warp, deformation, and perspective parameters and clone sources in the `imago:` namespace, and GIMP transform-tool parity. Every stroke and apply is one undo step; the liquify and content-aware workspaces keep their own inner undo, and Cancel restores the layer.
+
+## Implementation Order
+
+| Order | Section | Deliverable | Depends On | Status |
+| :---: | :-----: | ----------- | ---------- | :----: |
+|   1   |   §1    | Clone stamp and the clone source panel | D03 T12 §5 |  [ ]   |
+|   2   |   §2    | Healing, patch, blemish, inpainting, and red eye | §1 |  [ ]   |
+|   3   |   §3    | The content-aware engine: fill, scale, and move | D03 T10 §1, §2 |  [ ]   |
+|   4   |   §4    | Toning and focus tools | D03 T12 §5 |  [ ]   |
+|   5   |   §5    | Free Transform and move-tool transform extensions | D03 T03 §7, D03 T09 §9 |  [ ]   |
+|   6   |   §11   | The GIMP transform tools | §5 |  [ ]   |
+|   7   |   §6    | Warp and mesh warp | §5 |  [ ]   |
+|   8   |   §7    | Puppet warp, cage transform, and pins | §5 |  [ ]   |
+|   9   |   §8    | Perspective warp | §5, §7 |  [ ]   |
+|  10   |   §9    | Liquify | §6 |  [ ]   |
+|  11   |   §10   | Frequency separation and retouching workflows | §2 |  [ ]   |
+
+---
+
+## 1. Clone Stamp and the Clone Source Panel
+
+Cloning is the first retouching tool every photo editor ships, and Photoshop's version is the bar: up to five sources from any open document, each with offset, scale, rotation, and flip, and a live overlay that shows where the source lands before the stroke. GIMP adds perspective clone and a seamless clone paste on a gradient-domain blender, and that blender is what §2's healing tools reuse, so it is built here once. This section promotes backlog B-017 (retouching tools); the authoring commit deletes the B-017 line from `todo/backlog.md`. Catalog: IP-0900 to IP-0905 (6 features: the clone stamp with alignment and sampling options, the Clone Source panel and global sources with transform, the clone source overlay, perspective clone, seamless clone paste, and the Clone Source panel window). **Corrected 2026-09-26 (integration):** the clone source model is open to later source kinds, such as `GlobalCloneSource` (`D03 T15 §9`, a focus-merge frame in aligned coordinates), so clone, healing, and patch paint from them unchanged. -> SOURCE: legacy-imago-4.6
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/clone-source-panel/` and `docs/captures/imago/clone-stamp/`.
+**Job:** a retoucher can copy texture from anywhere, including another open document, scaled and rotated, and see where it lands before painting. Consumer: the active layer and the `imago:` document block.
+**Treatment:** Alt-click sets a source, a live overlay of the source follows the cursor clipped to the brush, and the Clone Source panel holds five source slots with offset, W and H, angle, flip, and overlay options. Cheaper substitute that fails the checkpoint: a clone that only offsets within the same layer, which the cross-document and scaled-source tests catch.
+**Chrome:** consume the `D03 T12 §5` paint-tool base and options bar, the `D03 T12 §1` brush engine, and the canvas overlay layer. Do not build a second brush engine or options bar.
+
+**Requires:** display-session -- clone strokes, the source overlay, and the panel are driven and captured
+
+- [ ] Add `src/Imago/Photon.Imago.Core/Tools/Retouch/CloneStampTool.cs` on the `D03 T12 §5` paint-tool base with Alt-click source, aligned, and the sample modes current layer, current and below, and all layers, plus ignore adjustment layers (IP-0900). Done when: `CloneStampTests.SampleModes` clone from each mode on a three-layer fixture and assert the expected source pixels. Cheaper substitute: sampling only the active layer.
+- [ ] Add the image or pattern source (patterns from `D03 T12 §10`) and GIMP's alignment modes none, aligned, registered, and fixed to `CloneStampTool`. Done when: `CloneStampTests.Alignment` assert the source offset after a second stroke for each mode and a pattern source tiles the committed pattern fixture.
+- [ ] Bind the shared retouch brush options (width, opacity, flow, hardness, pressure, stabilizer, wet edges, symmetry) from `D03 T12 §1`, `D03 T12 §5`, and `D03 T12 §11` unchanged. Done when: a test asserts `CloneStampTool` exposes the same `PaintToolOptions` instance type as the brush tool and a symmetry stroke clones on both sides.
+- [ ] Add `src/Imago/Photon.Imago.Core/Retouch/CloneSources.cs` with five `CloneSource` slots (document id, layer, sample point, offset, scale W and H, rotation, flip H and V, and a source-area rectangle for Affinity's define-source-area) resolved through the open-document registry so another document can be the source (IP-0901). Done when: `CloneSourceTests.CrossDocument` clone from a second open document into the first.
+- [ ] Refuse a clone stroke whose source document has closed, and a stroke on a locked layer or locked pixels, under the locked-layer policy, each with a status-strip message naming the document or layer. Done when: `CloneSourceTests.ClosedSource` and `CloneStampTests.LockedLayer` assert no pixels change and the message text.
+- [ ] Sample each dab through the `D01 T03 §2` `Resampler` (bicubic) with the source slot's affine matrix, using pooled tile spans. Done when: `CloneSourceTests.ScaledRotatedFlipped` place a 150 percent, 30-degree, horizontally flipped source at the expected pixels within 2 of 255 and a benchmark shows zero allocations per dab.
+- [ ] Add the Clone Source panel `src/Imago/Photon.Imago.Desktop/Panels/CloneSourcePanel.xaml` with `CloneSourcePanelViewModel` (IP-0905, IP-0901), which lists the five source slots as buttons with offset, W and H with a link toggle, angle, flip, reset transform, and frame offset hidden (no video until backlog B-043). Done when: a driven run sets slot 2 from a second document, changes its angle, and clones, with a capture under `docs/captures/imago/clone-source-panel/`. Cheaper substitute: a single source with no panel.
+- [ ] Add overlay options show, opacity, clipped, auto hide, invert, and blend mode (IP-0902), drawn by the canvas overlay layer as the cursor moves. Done when: a driven run captures the clipped overlay at 50 percent opacity following the cursor and `CloneOverlayTests` assert auto hide suppresses it during a stroke.
+- [ ] Add `PerspectiveCloneTool` (IP-0903): a modify-perspective mode editing a four-corner quad whose `D01 T03 §2` `PerspectiveCorrector` homography maps source to destination, and a clone mode painting through it. Done when: `PerspectiveCloneTests` clone a tile of a synthetic floor grid into a receding plane with corner error under 1 pixel.
+- [ ] Add `src/Imago/Photon.Imago.Core/Retouch/Blending/SeamlessBlender.cs`: mean-value-coordinates cloning (Farbman et al. 2009, the method GEGL's `gegl:seamless-clone` uses) with a Poisson multigrid refinement (Perez, Gangnet, and Blake 2003) over float tiles, the blender §2 reuses. Done when: `SeamlessBlenderTests` match a GIMP 3.2.6 `gegl:seamless-clone` golden within 4 of 255.
+- [ ] Add Edit, Paste Special, Seamless Clone (IP-0904): pastes the clipboard as a floating layer and blends it with `SeamlessBlender` on commit, one undo step "Seamless Clone Paste". Done when: a driven paste over the sky fixture commits in one undo step and the seam tone difference is within 2 of 255.
+- [ ] Persist clone sources that refer to this document as `<imago:clone-sources>` in the document block through the `D03 T08 §1` contract; other-document sources persist by path only and are dropped with one Warning when the path is gone. Done when: `CloneSourceFormatTests` reopen a saved document with two slots restored and a missing-path slot dropped with the Warning quoted.
+- [ ] Commit one tile-snapshot command per stroke named "Clone Stamp" or "Perspective Clone" and log `Clone stroke on {LayerId} from source {Slot} ({Dabs} dabs)`. Done when: a Serilog test-sink test asserts one line per stroke and undo restores the layer hash.
+- [ ] Add `tests/Photon.Imago.Core.Tests/Retouch/CloneBudgetTests.cs`: a 300-pixel brush on a 24-megapixel document keeps 60 frames per second with zero allocations per dab. Done when: the benchmark quotes the frame time and allocated bytes.
+- [ ] Update the Imago user guide page `docs/user/imago/retouching.md` with the clone stamp, the Clone Source panel, perspective clone, and seamless clone paste. Done when: the page documents every control on the panel and options bar.
+- [ ] Commit: `"imago: clone stamp, clone sources, perspective clone, and seamless clone paste"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `CloneStampTests`, `CloneSourceTests` (a scaled, rotated source from a second document lands at the expected pixels), `CloneOverlayTests`, `PerspectiveCloneTests`, `SeamlessBlenderTests` (GIMP 3.2.6 golden within 4 of 255), and `CloneSourceFormatTests` reporting, `CloneBudgetTests` quoting its numbers, and a driven clone stroke plus undo restoring the layer hash (quoted) with captures under `docs/captures/imago/clone-source-panel/` and `clone-stamp/`. Cheaper substitute that fails: an offset-only copy, which the scaled-source test rejects.
+
+## 2. Healing, Patch, Blemish, Inpainting, and Red Eye
+
+Healing differs from cloning in one way that matters: the texture comes from the source but the tone is solved from the destination's boundary, so the repair disappears. Every tool here (healing brush, spot healing, patch, blemish removal, GIMP's seamless clone tool) runs on §1's `SeamlessBlender`, classical inpainting fills small regions with no network, and red eye shares one detector between the tool, the filter, and the develop engine (`D01 T07 §5`). The content-aware modes of spot healing and patch are wired by §3 when its engine lands in the same phase; until then they are shown disabled naming §3. The Remove tool's generative mode is `D03 T19 §3`'s. Catalog: IP-0906 to IP-0916 (11 features: the red eye filter, seamless clone and seamless clone compose, the healing brush, the spot healing brush, the patch tool, the patch tool's content-aware mode, the Remove tool's classical mode, blemish removal, the inpainting brush and Inpaint command, the red eye tool, and the seamless clone tool).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/healing/` and `docs/captures/imago/red-eye/`.
+**Job:** a retoucher can remove blemishes, dust, and small objects so the repair matches surrounding texture and tone. Consumer: the active layer.
+**Treatment:** brush tools with the shared retouch options, a patch tool that drags a selection, and a red-eye click tool with pupil size and darken amount. Cheaper substitute that fails the checkpoint: a clone relabeled as healing, which the tone-match test catches.
+**Chrome:** consume the `D03 T12 §5` paint-tool base, §1's `SeamlessBlender`, and the `D03 T10 §1` selection model. Do not add a second options bar or blender.
+
+**Requires:** display-session -- healing strokes, patch drags, and red-eye clicks are driven and captured
+
+- [ ] Add `src/Imago/Photon.Imago.Core/Tools/Retouch/HealingBrushTool.cs` (IP-0908): sampled or pattern source, aligned, sample layers, diffusion 1 to 7, mode, and Photoshop's legacy algorithm, each dab taking texture from the source with tone solved by §1's `SeamlessBlender` over the dab's boundary. Done when: `HealingTests.ToneMatch` heal a patch of the gradient-sky fixture and the healed-region mean is within 2 of 255 of the ring around it. Cheaper substitute: a plain clone dab.
+- [ ] Add `SpotHealingBrushTool` (IP-0909) with proximity match (the best boundary-matching patch in a search ring) and create texture (synthesized from the stroke's neighborhood). Done when: `HealingTests.SpotHealing` remove every dust speck on the dust-on-sky fixture and leave pixels outside the strokes unchanged.
+- [ ] Show the spot healing Content-Aware type disabled with the tooltip `Planned: D03 T13 §3` until §3 wires it. Done when: a UI test finds the type disabled with a tooltip that `python scripts/todo-graph.py resolve 'D03 T13 §3'` resolves.
+- [ ] Add `PatchTool` (IP-0910): source or destination, transparent, pattern, diffusion, and Affinity's scale and rotation on drop, dragging a `D03 T10 §1` selection. Done when: `PatchToolTests` patch the blemish fixture in source mode and destination mode and assert the tone-match property for each.
+- [ ] Show the patch tool's content-aware mode (IP-0911: structure, color, sample all layers) disabled with the tooltip `Planned: D03 T13 §3` until §3 wires it. Done when: a UI test finds the mode disabled with the resolving tooltip.
+- [ ] Add `src/Imago/Photon.Imago.Core/Retouch/Inpaint/FastMarchingInpainter.cs` (Telea 2004, managed; OpenCvSharp stays scoped to `Photo/`). Done when: `InpaintTests` fill a 40 by 40 hole in the brick fixture with the mean within 3 of 255 of the surrounding ring.
+- [ ] Add the Inpaint command and the inpainting brush (IP-0914), which rasterizes a non-pixel target layer only after a named confirmation per the `D03 T12 §5` non-pixel-layer policy. Done when: `InpaintTests.Brush` inpaint a stroke and a test on a text layer asserts the confirmation is required and cancelling leaves the layer unchanged.
+- [ ] Add the Remove tool's classical mode (IP-0912: brush or circle, remove after each stroke, sample all layers) on `FastMarchingInpainter`, and hand regions above `Imago.Retouch.InpaintPatchThreshold` (default 64 pixels) to §3's content-aware fill once §3 lands. Done when: `RemoveToolTests` remove a small object from the dust fixture and the threshold key is read from settings.
+- [ ] Add `BlemishRemovalTool` (IP-0913, Affinity): click or drag a radius, and the best patch in a ring is healed in with `SeamlessBlender`. Done when: `HealingTests.Blemish` remove each blemish on the skin fixture with the tone-match property passing.
+- [ ] Add `SeamlessCloneTool` and seamless clone compose (IP-0907, IP-0916, GIMP): drag pasted content with live gradient-domain blending on `SeamlessBlender`. Done when: a driven drag previews at view scale and commits one undo step, with the capture committed.
+- [ ] Add `src/Imago/Photon.Imago.Core/Retouch/RedEye/RedEyeDetector.cs`: redness `r - max(g, b)` threshold in a click box or selection, largest near-circular connected component, desaturate and darken. Done when: `RedEyeTests.Detector` find both pupils on the red-eye portrait crop fixture and reject a red scarf of the same hue by its circularity.
+- [ ] Add `RedEyeTool` (pupil size, darken amount; IP-0915) and Filters, Enhance, Red Eye Removal (threshold; IP-0906) sharing `RedEyeDetector`, recorded as the detector `D01 T07 §5` consumes in `src/Imago/Photon.Imago.Core/Retouch/README.md`. Done when: `RedEyeTests` show pupils lose at least 80 percent of their redness and untouched pixels are unchanged, for the tool and the filter.
+- [ ] Refuse strokes on locked layers or locked pixels by name for every tool in this section. Done when: a parameterized test over the tools asserts no pixels change and the message names the layer.
+- [ ] Record each command as one history step, named "Healing Brush", "Spot Healing", "Patch", "Blemish Removal", "Inpaint", "Remove", and "Red Eye", each with one Information line naming the layer and the parameters hash. Done when: a Serilog test-sink test asserts one line per command and undo restores the pixel hash.
+- [ ] Commit the fixtures under `tests/fixtures/imago/retouch/` (skin with blemishes, dust on sky, a red-eye portrait crop, a brick wall, all original Rizonesoft images, none from third parties) with `reference.txt`, and GIMP 3.2.6 heal-tool and red-eye goldens where the algorithm matches. Done when: `HealingTests` match the GIMP 3.2.6 heal golden within 4 of 255.
+- [ ] Add `tests/Photon.Imago.Core.Tests/Retouch/HealingBudgetTests.cs`: a 200-pixel healing dab under 16 ms and inpainting a 100 by 100 region under 300 ms. Done when: the test quotes both times.
+- [ ] Update `docs/user/imago/retouching.md` with healing, spot healing, patch, blemish removal, inpainting, the Remove tool, seamless clone, and red eye. Done when: the page documents every option of each tool.
+- [ ] Commit: `"imago: healing, patch, blemish, inpainting, remove, and red eye"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `HealingTests`, `PatchToolTests`, `InpaintTests`, `RemoveToolTests`, and `RedEyeTests` passing the tone-match and redness properties and the GIMP 3.2.6 goldens, `HealingBudgetTests` quoting its times, and driven strokes captured under `docs/captures/imago/healing/` and `red-eye/` with undo restoring the pixel hash (quoted). Cheaper substitute that fails: clone-only healing, which the ring tone-match property rejects on the gradient-sky fixture.
+
+## 3. The Content-Aware Engine: Fill, Scale, and Move
+
+Content-aware fill, scale, and move are the features users name when they compare photo editors, and all three are classical algorithms (PatchMatch completion, seam carving) that run offline; generative fill is `D03 T19 §2` and never replaces them. The engine lives in `Photon.Imago.Core/Retouch/ContentAware/` because only Imago needs it today, and its later consumers (`D03 T08 §9` crop fill, `D03 T15 §7` panorama edges, `D03 T19 §3` and `§9`) are recorded in the folder README. This section also wires §2's spot healing content-aware type, the patch tool's content-aware mode, and the Remove tool's large-region fill, which run earlier in the same phase. Catalog: IP-0917 to IP-0926 (10 features: the Content-Aware Fill workspace and its sampling, adaptation, and output settings, content-aware scale with protection, content-aware fill from the Fill dialog, content-aware move and extend, delete and fill, and heal selection).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/content-aware-fill/` and `docs/captures/imago/content-aware-scale/`.
+**Job:** a user can remove an object or extend a scene and control which pixels the fill samples from, with no network and no AI. Consumer: a new layer by default, or the current or a duplicate layer.
+**Treatment:** a workspace showing the document with the sampling area as a tinted overlay, sampling brush and lasso tools, a live full-resolution preview panel, and adaptation settings, applied to a new layer by default. Cheaper substitute that fails the checkpoint: a blur or smear fill, which the texture-statistics property catches.
+**Chrome:** consume the `D03 T10 §1` selection model, the `D03 T03 §4` tool system, the `D03 T12 §1` brush cursor, and the suite dialog chrome. Do not add a second preview renderer.
+
+**Requires:** display-session -- the fill workspace, scale handles, and move drags are driven and captured
+
+- [ ] Add the row "Content-aware engine: own PatchMatch (Barnes et al. 2009, generalized with rotation and scale per Barnes et al. 2010) with coarse-to-fine EM completion (Wexler, Shechtman, and Irani 2007), resynthesizer (GPL-3.0-or-later) as reference, no package, patent check recorded" to `docs/dev/decisions.md`. Done when: the row names this section and records the patent check's result and date.
+- [ ] Add `src/Imago/Photon.Imago.Core/Retouch/ContentAware/PatchMatchField.cs`: a nearest-neighbor field over float tiles with a sampling mask, seeded and tile-order independent. Done when: `PatchMatchTests` converge to the exact offset on a shifted-copy fixture within five iterations.
+- [ ] Add `ImageCompletion.cs` in the same folder: pyramid, voting, color adaptation by per-patch gain and bias, and rotation, scale, and mirror adaptation. Done when: `CompletionTests.TextureStatistics` fill a hole in the brick fixture with gradient-histogram statistics within 10 percent of the sampling area and the same seed yields identical bytes.
+- [ ] Add the Content-Aware Fill workspace `src/Imago/Photon.Imago.Desktop/Retouch/ContentAwareFillWorkspace.xaml` (IP-0917, IP-0918, IP-0921): sampling brush add and subtract, fill-area lasso, expand and contract, sampling area auto, rectangular, or custom, overlay color and opacity, and a preview panel at 100 percent. Done when: a driven run paints out part of the sampling area, the preview updates, and the capture is committed. Cheaper substitute: a one-click fill with no sampling control.
+- [ ] Add the fill settings (IP-0922): color adaptation none, default, high, very high; rotation adaptation none to full; scale; mirror; output to current layer, new layer (default), or duplicate layer; reset; apply and OK; stored as `Imago.ContentAware.ColorAdaptation`, `RotationAdaptation`, `Scale`, `Mirror`, and `Output`. Done when: `ContentAwareSettingsTests` round-trip every key and output to new layer leaves the source layer's hash unchanged.
+- [ ] Add Content-Aware with color adaptation to the `D03 T12 §8` Fill dialog (IP-0920). Done when: a driven Edit, Fill with Content-Aware over a selection commits one undo step "Content-Aware Fill".
+- [ ] Add Edit, Delete and Fill Selection (IP-0925) as one command on `ImageCompletion`. Done when: a test runs it on the brick fixture and asserts one history entry and the texture-statistics property.
+- [ ] Add Heal Selection (IP-0926: sampling width, sample from sides, above and below, or all around, fill order) as the resynthesizer equivalent. Done when: `HealSelectionTests` assert each sample-from option restricts the sampled region.
+- [ ] Add `src/Imago/Photon.Imago.Core/Retouch/ContentAware/SeamCarver.cs` for Content-Aware Scale (IP-0919, IP-0923): seam carving (Avidan and Shamir 2007) with forward energy (Rubinstein, Shamir, and Avidan 2008), amount, protect channel (an alpha channel mask), protect skin tones by a classical YCbCr skin range, and reference point, on the `D03 T03 §7` transform handles. Done when: `SeamCarvingTests` assert protected pixels unchanged and the output width exact.
+- [ ] Add Content-Aware Move (IP-0924): move and extend modes, structure 1 to 7, color 0 to 10, transform on drop; the moved patch blends through §1's `SeamlessBlender` and the hole fills through `ImageCompletion`. Done when: `ContentAwareMoveTests` move a patch on the brick fixture, the hole passes the texture-statistics property, and extend mode leaves the source in place.
+- [ ] Wire §2: spot healing's Content-Aware type (IP-0909), the patch tool's content-aware mode (IP-0911), and the Remove tool's regions above `Imago.Retouch.InpaintPatchThreshold` now call `ImageCompletion`, and their disabled tooltips are removed. Done when: a UI test finds all three enabled and `HealingTests.ContentAware` pass the texture-statistics property.
+- [ ] Run fill, scale, and move off the UI thread with status-strip progress, notify completion on the status strip, and offer Cancel that restores the layer, cancellable within one pyramid level. Done when: a driven cancel mid-fill leaves the layer hash unchanged and the cancel log line is quoted.
+- [ ] Record the consumers `D03 T08 §9` (crop fill), `D03 T15 §7` (panorama edges), `D03 T19 §3` (Remove tool off mode), and `D03 T19 §9` (distraction removal) in `src/Imago/Photon.Imago.Core/Retouch/README.md`. Done when: the README names each consumer and the entry point it calls.
+- [ ] Name undo steps "Content-Aware Fill", "Content-Aware Scale", "Content-Aware Move", and "Delete and Fill", each logging area, seed, and milliseconds in one Information line. Done when: a Serilog test-sink test asserts the lines and undo restores the hash.
+- [ ] Add `tests/Photon.Imago.Core.Tests/Retouch/ContentAwareBudgetTests.cs`: a 400 by 400 hole in a 24-megapixel image under 5 s on the reference machine. Done when: the test quotes the time and the machine.
+- [ ] Update `docs/user/imago/content-aware.md` with the workspace, the Fill dialog option, delete and fill, heal selection, content-aware scale, and content-aware move. Done when: the page documents every workspace control and setting.
+- [ ] Commit: `"imago: the content-aware engine with fill, scale, and move"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `PatchMatchTests`, `CompletionTests`, `SeamCarvingTests`, `ContentAwareMoveTests`, `HealSelectionTests`, and `ContentAwareSettingsTests` passing, `ContentAwareBudgetTests` quoting its time, and a driven workspace fill onto a new layer captured under `docs/captures/imago/content-aware-fill/` with its elapsed time quoted. Cheaper substitute that fails: diffusion fill labeled content-aware, which the brick texture-statistics property rejects.
+
+## 4. Toning and Focus Tools
+
+Dodge, burn, sponge, blur, and sharpen brushes are the local-adjustment tools every retoucher uses daily, Affinity adds a tone brush and a median brush, and GIMP folds blur and sharpen into one convolve tool. They all apply a tile-local operation under the brush mask per dab, so one `EffectDab` mechanism serves every tool and no tool grows its own dab loop. The Sharpen tool's Clarity mode needs `D01 T06 §4`'s `Clarity`, which lands in Phase 21, so it ships disabled here naming that section. Catalog: IP-0927 to IP-0933 (7 features: dodge and burn with range, exposure, protect tones, and protect hue, the sponge, the tone brush, the blur tool, the sharpen tool, GIMP's convolve tool, and the median brush).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/toning-tools/`.
+**Job:** a retoucher can lighten, darken, saturate, blur, or sharpen exactly where they paint. Consumer: the active layer.
+**Treatment:** tools on the paint-tool base with their options in the options bar beside the shared brush options. Cheaper substitute that fails the checkpoint: painting white or black at low opacity labeled as dodge and burn, which the protect-tones test catches.
+**Chrome:** consume the `D03 T12 §5` paint-tool base and options bar and the `D03 T12 §1` brush engine. Do not add a second dab loop.
+
+**Requires:** display-session -- toning strokes are driven and captured
+
+- [ ] Add `src/Imago/Photon.Imago.Core/Painting/EffectDab.cs`: applies a tile-local operation under the brush mask per dab with the dab's opacity and flow, the one mechanism every tool here uses. Done when: `EffectDabTests` show an identity operation leaves the layer unchanged and a dab touches only tiles under the mask, with zero allocations per dab.
+- [ ] Add `DodgeTool` and `BurnTool` (IP-0927) with range shadows, midtones, and highlights, exposure, Photoshop's protect tones, and Affinity's protect hue, as a luminance-only adjustment in linear light with hue held. Done when: `ToningToolTests.ProtectTones` dodge midtones and leave pure black and white unchanged, and protect hue keeps hue within 1 degree on a colored fixture. Cheaper substitute: painting white at low opacity.
+- [ ] Add `SpongeTool` (IP-0928): saturate or desaturate, flow, and vibrance on the `D01 T03 §5` `Vibrance` math. Done when: `ToningToolTests.Sponge` show desaturate reduces chroma monotonically stroke over stroke and vibrance mode changes skin tones less than saturated blues.
+- [ ] Add `ToneBrush` (IP-0929, Affinity 3): paint brightness, contrast, and color offsets with nozzle colors sampled from the canvas. Done when: a zero-offset stroke is the identity and a brightness stroke raises luminance only under the mask.
+- [ ] Add `BlurTool` (IP-0930): strength, mode, and sample all layers on the `D01 T03 §6` `GaussianBlur`. Done when: strength 0 is the identity and sample all layers blurs a merged sample into the active layer only.
+- [ ] Add `SharpenTool` (IP-0931): strength, protect detail, and the unsharp mask and harsh modes on the `D01 T03 §6` `UnsharpMask`. Done when: `ToningToolTests.Sharpen` raise edge contrast on the edge fixture and protect detail limits overshoot to within 5 percent.
+- [ ] Show the Sharpen tool's Clarity mode disabled with the tooltip `Planned: D01 T06 §4`, which enables it through the `SupportsDab` `Clarity` effect. Done when: a UI test finds the mode disabled with a tooltip that `python scripts/todo-graph.py resolve 'D01 T06 §4'` resolves.
+- [ ] Add `ConvolveTool` (IP-0932, GIMP): blur or sharpen with rate, and Ctrl toggling the direction during a stroke. Done when: a test asserts Ctrl flips blur to sharpen mid-stroke and rate scales strength.
+- [ ] Add `MedianBrush` (IP-0933, Affinity) on the `D01 T03 §6` `Median`. Done when: `ToningToolTests.Median` remove an isolated speck under the stroke and leave pixels outside unchanged.
+- [ ] Add the settings keys `Imago.Toning.<Tool>.<Option>` per option with defaults matching Photoshop (exposure 50 percent, midtones, protect tones on), read by each tool's options view model. Done when: `ToningSettingsTests` assert every default and a changed value survives a restart.
+- [ ] Refuse toning strokes on locked layers and locked pixels by name. Done when: a parameterized test over the tools asserts no pixels change and the message names the layer.
+- [ ] Name one undo step per stroke after the tool and write one Information line per stroke with tool, layer, and parameters hash. Done when: a Serilog test-sink test asserts one line per stroke and undo restores the hash.
+- [ ] Add `tests/Photon.Imago.Core.Tests/Painting/ToningBudgetTests.cs`: a 200-pixel dab under 4 ms on a 16-bit document with zero allocations per dab. Done when: the test quotes the time and the allocated bytes.
+- [ ] Update `docs/user/imago/retouching.md` with the toning and focus tools and each option. Done when: the page documents every option, including the disabled Clarity mode and its planned section.
+- [ ] Commit: `"imago: dodge, burn, sponge, tone, blur, sharpen, convolve, and median brushes"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `EffectDabTests`, `ToningToolTests` (protect tones keeps black and white, sponge monotone, blur strength 0 identity, median removes the speck), and `ToningSettingsTests` reporting, `ToningBudgetTests` quoting its numbers, and driven strokes captured under `docs/captures/imago/toning-tools/` with undo restoring the hash (quoted). Cheaper substitute that fails: overlay painting labeled dodge, which the protect-tones endpoint test rejects.
+
+## 5. Free Transform and Move-Tool Transform Extensions
+
+`D03 T03 §7` ships a basic Free Transform with scale, rotate, and move handles; Photoshop adds skew, distort, perspective, warp, numeric entry, transform again, multi-layer transforms, and clipping, and Affinity adds a Transform panel and transforms on the move tool itself. All of them share one `TransformSession` that holds a 3 by 3 matrix and resamples once from the original on commit, never cumulatively, which is what keeps ten small rotations as sharp as one large one. §6, §7, §8, and §11 build on this session. Catalog: IP-0937 to IP-0955 (19 features: the Transform submenu, transform clipping, the Transform panel, scale override for strokes, effects, and text, move-tool rotate and shear with a transform origin, move-tool transform options, cycle and set selection box, layer rotate and flip, modifier-driven modes, numeric options, proportional-by-default with the legacy preference, transform again, multi-layer transforms, layer flip and rotate 90 or 180, the Transform panel's sizing options, move-tool nudge, transforming selected pixels, modifier keys, and the transformation HUD).
+
+**Fidelity:** extends `docs/captures/imago/main-window/` (transform handles and options bar); new captures to `docs/captures/imago/transform-panel/`.
+**Job:** a user can scale, rotate, skew, distort, and put layers into perspective by handle or by number, and repeat it. Consumer: the selected layers, floated selected pixels, or a smart object's stored matrix.
+**Treatment:** handles on the canvas with modifier-driven modes, a numeric options bar with a reference-point grid, a Transform panel, and a HUD near the cursor. Cheaper substitute that fails the checkpoint: a render-transform preview that resamples on every drag step, which the single-resample test catches.
+**Chrome:** consume the `D03 T03 §4` tool system and options-bar host, the `D01 T03 §2` resampler, and the suite numeric field controls. Do not add a second handle renderer.
+
+**Requires:** display-session -- handle drags, modifiers, and the panel are driven and captured
+
+- [ ] Add `src/Imago/Photon.Imago.Core/Transform/TransformSession.cs` extending `D03 T03 §7`'s free transform: a target (layers, selected pixels floated from the selection, several selected layers together, or a smart object's stored matrix per `D03 T09 §9`), a 3 by 3 matrix, and one resample from the original on commit (IP-0949, IP-0953). Done when: `TransformSessionTests.SingleResample` rotate 10 degrees ten times in one session and match one 100-degree rotate within 1 of 255. Cheaper substitute: resampling on every drag step.
+- [ ] Add Edit, Transform with Again, Scale, Rotate, Skew, Distort, Perspective, Warp (handing off to §6), Rotate 180, Rotate 90 clockwise and counterclockwise, and Flip Horizontal and Vertical (IP-0937). Done when: `TransformSessionTests.Modes` assert each command's matrix on a unit square.
+- [ ] Add the modifier keys (IP-0945, IP-0954): Ctrl distort, Ctrl+Shift skew, Ctrl+Alt+Shift perspective, Shift proportional toggle, Alt from center, Shift rotation in 15-degree steps, and Esc cancel. Done when: `TransformModifierTests` drive each modifier through the session API and assert the resulting matrix.
+- [ ] Make scaling proportional by default with the legacy preference `Imago.Transform.LegacyProportional` (IP-0947). Done when: a test asserts corner drags keep aspect by default and not with the preference on, read without a restart.
+- [ ] Add the numeric options bar (IP-0946): reference point grid, X and Y absolute or relative, W and H percent with link, angle, H and V skew, and interpolation (nearest, bilinear, bicubic, bicubic smoother, bicubic sharper, Lanczos, and NoHalo and LoHalo once §11 adds them to the resampler). Done when: typing W 50 with link on halves both dimensions around the chosen reference point in a test.
+- [ ] Add Transform Again (Shift+Ctrl+T) and duplicate and transform again (Alt+Shift+Ctrl+T) replaying the last matrix relative to the current bounds (IP-0948). Done when: a test applies a 15-degree rotate then Transform Again three times and asserts a 60-degree total with one resample per step.
+- [ ] Add the clipping options adjust, clip, crop to result, and crop with aspect (IP-0938), shared with §11. Done when: `TransformClipTests` assert the output bounds for each option on a rotated layer.
+- [ ] Add the Transform panel `src/Imago/Photon.Imago.Desktop/Panels/TransformPanel.xaml` with `TransformPanelViewModel` (IP-0939, IP-0951): position, size, rotation, shear, anchor, aspect link, size to key object, absolute per-object sizing, and size to same. Done when: `TransformPanelTests` set each field on two selected layers and assert the resulting bounds, and a driven capture is committed under `docs/captures/imago/transform-panel/`. Cheaper substitute: a read-only readout.
+- [ ] Add scale override for strokes, effects, and text (IP-0940) as `Imago.Transform.ScaleEffects`, scaling layer-style parameters through `D03 T09 §7`'s `IScalableLayerContent` in the same command. Done when: a test scales a layer with a 10-pixel stroke style by 200 percent and asserts a 20-pixel stroke with the setting on and 10 with it off.
+- [ ] Add move-tool transforms (IP-0941, IP-0942, IP-0952, Affinity): rotate and shear handles on the move tool, a draggable transform origin, arrow nudge 1 pixel and Shift 10, lock children, hide selection while dragging, transform separately, and aspect constrain. Done when: `MoveToolTransformTests` assert rotation about a moved origin, the nudge distances, and transform separately rotating each layer about its own center.
+- [ ] Add cycle and set selection box between base and regular bounding boxes (IP-0943, Affinity). Done when: a test on a rotated layer asserts the two box modes report different bounds and the toggle cycles them.
+- [ ] Add Layer, Transform, Rotate 90, Rotate 180, arbitrary angle, and Flip Horizontal and Vertical on the selected layers (IP-0944, IP-0950), distinct from `D03 T03 §7`'s canvas rotate. Done when: `LayerRotateFlipTests` rotate one layer of a two-layer document and assert the other layer and the canvas size are unchanged.
+- [ ] Add the transformation HUD (IP-0955): width, height, angle, and delta near the cursor, with placement `Imago.Transform.HudPlacement` (off, top right, bottom right, top left, bottom left). Done when: a driven drag captures the HUD values and a test asserts the setting's values.
+- [ ] Write the session's matrix into the smart object's `Placement` (owned by `D03 T09 §9`) so re-transforming resamples from the embedded source instead of the rendered pixels. Done when: `SmartObjectTransformTests` scale a smart object to 10 percent and back to 100 percent and match the source within 1 of 255.
+- [ ] Refuse transforms of locked layers or locked position by name. Done when: a test asserts the refusal message and no change to the layer.
+- [ ] Name undo steps "Free Transform", "Transform Again", "Rotate Layer", and "Flip Layer" with one Information line carrying the matrix and interpolation. Done when: a Serilog test-sink test asserts the line and undo restores the hash.
+- [ ] Update `docs/user/imago/transform.md` with Free Transform, its modes and modifiers, the numeric options, the Transform panel, move-tool transforms, and the HUD. Done when: the page documents every control and shortcut.
+- [ ] Commit: `"imago: Free Transform modes, numeric options, Transform panel, and move-tool transforms"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `TransformSessionTests` (including `SingleResample`), `TransformModifierTests`, `TransformClipTests`, `TransformPanelTests`, `MoveToolTransformTests`, `LayerRotateFlipTests`, and `SmartObjectTransformTests` reporting, and a driven perspective transform with Transform Again captured under `docs/captures/imago/transform-panel/` with undo restoring the hash (quoted). Cheaper substitute that fails: resampling each drag step, which the single-resample test rejects.
+
+## 6. Warp and Mesh Warp
+
+Photoshop's Bezier warp with split grids and style presets, Affinity's mesh warp tool, and GIMP's warp transform brush all bend a layer by a field, and Nodus already owns the warp-style math and Coons-patch mesh map (`D02 T11 §5`). This section moves that math into `Photon.Core/Vector/Warp/` as its second consumer rather than copying it, extends the one `D01 T03 §7` `MeshWarp` with Bezier nodes rather than adding a second mesh, and builds the displacement field §9's Liquify reuses. The live-filter form of mesh warp is `D03 T14 §1`; until it ships, the mesh is kept on the smart object. Catalog: IP-0967 to IP-0970 (4 features: the Bezier warp mesh with split grids, presets, multi-point selection, and guides, the warp style presets, the warp transform brush, and the mesh warp tool).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/warp/` and `docs/captures/imago/warp-transform/`.
+**Job:** a user can bend a layer by a grid, a preset, or a brush and re-edit the warp on a smart object. Consumer: the active layer or the smart object's stored mesh.
+**Treatment:** a Bezier grid over the layer with control-point handles, split and grid-size options, a style preset dropdown with bend and distortion, and a warp brush with behaviors. Cheaper substitute that fails the checkpoint: a bilinear grid without Bezier handles, which the curved-edge test catches.
+**Chrome:** consume §5's `TransformSession` and handle renderer, the moved warp math, and the `D03 T12 §1` brush cursor. Do not add a second mesh.
+
+**Requires:** display-session -- grid drags, presets, and warp brush strokes are driven and captured
+
+- [ ] Move `WarpEffect`'s style math and `MeshMap` (Coons patches) from `src/Nodus/Photon.Nodus.Core/Effects/Warp/` and `Effects/Envelope/` (`D02 T11 §5`) into `src/Photon.Core/Vector/Warp/` as their second consumer, and point Nodus at the moved types. Done when: Nodus's warp-style goldens still pass and `grep -rn "class MeshMap" src` prints one path under `src/Photon.Core/`.
+- [ ] Extend `src/Photon.Core/Imaging/Effects/Distort/MeshWarp.cs` (`D01 T03 §7`) with Bezier-patch nodes (sharp, smooth, symmetric), add-node, source and destination modes, and synchronize, so there is one mesh implementation that `D01 T06 §6` later registers as a filter. Done when: an undisturbed Bezier mesh is the identity and `MeshWarpBezierTests` move one node and assert only its adjacent patches change.
+- [ ] Add `src/Imago/Photon.Imago.Core/Transform/Warp/BezierWarp.cs` (IP-0967): grid presets 3 by 3, 4 by 4, 5 by 5, and custom; split crosswise, horizontal, and vertical; marquee multi-point selection of control points; guides; entered from Free Transform through §5's session. Done when: `BezierWarpTests` assert an identity grid is the identity and a curved edge has no kinks against a dense-sampled reference. Cheaper substitute: a bilinear grid.
+- [ ] Add the warp styles (IP-0968) arc, arc lower, arc upper, arch, bulge, shell lower, shell upper, flag, wave, fish, rise, fisheye, inflate, squeeze, twist, and cylinder, with bend and horizontal and vertical distortion, on the moved math. Done when: `WarpStyleRasterTests` map the grid of each style like Nodus's goldens within 0.5 pixel.
+- [ ] Add the Affinity mesh warp tool (IP-0970): source or destination mode, synchronize, add nodes, and resampling, over the extended `MeshWarp`. Done when: a test warps in destination mode, switches to source mode, and asserts the inverse mapping.
+- [ ] Keep the Bezier warp or mesh on a smart object in the warp slot of its `D03 T09 §9` `Placement`, persisted as `<imago:mesh-warp>` through the `D03 T08 §1` contract, and re-open it for editing; the live-filter form is `D03 T14 §1`. Done when: `MeshWarpFormatTests` reopen a saved smart object and restore the mesh nodes exactly.
+- [ ] Add `src/Imago/Photon.Imago.Core/Transform/Warp/DisplacementField.cs` (a tiled float2 field) with the GIMP warp transform behaviors move, grow, shrink, swirl clockwise and counterclockwise, erase, and smooth (IP-0969). Done when: `DisplacementFieldTests` show erase restores the identity and swirl rotates a test point by the expected angle.
+- [ ] Add `WarpTransformTool` over `DisplacementField` with strength, size, hardness, spacing, abyss (the `D01 T03 §2` edge modes), high-quality and real-time previews, and stroke during motion or periodically. Done when: a driven stroke is captured under `docs/captures/imago/warp-transform/` and each option changes the field in a test.
+- [ ] Add `src/Imago/Photon.Imago.Rendering/Shaders/WarpFieldShader.cs` (ComputeSharp, `readonly partial struct` implementing `IComputeShader`) applying the field, with a CPU fallback that logs one Warning. Done when: `WarpFieldShaderParityTests` match the CPU path within 1 of 255 and a forced fallback logs the Warning once.
+- [ ] Refuse warps on locked layers by name and follow the `D03 T12 §5` non-pixel-layer policy for text and shape layers. Done when: a test asserts the refusal and the policy prompt.
+- [ ] Name undo steps "Warp", "Mesh Warp", and "Warp Transform" (one step per session or stroke) with one Information line each. Done when: a Serilog test-sink test asserts the lines and undo restores the hash.
+- [ ] Update `docs/user/imago/transform.md` with warp, warp styles, the mesh warp tool, and the warp transform brush. Done when: the page documents every option.
+- [ ] Commit: `"imago: warp, warp styles, mesh warp, and the warp transform brush"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `MeshWarpBezierTests`, `BezierWarpTests`, `WarpStyleRasterTests`, `MeshWarpFormatTests`, `DisplacementFieldTests`, and `WarpFieldShaderParityTests` reporting, `grep -rn "class MeshMap" src` printing one path under `src/Photon.Core/`, and driven warps captured under `docs/captures/imago/warp/` and `warp-transform/`. Cheaper substitute that fails: copying the Nodus style math into Imago, which the one-path `grep` rejects.
+
+## 7. Puppet Warp, Cage Transform, and Pins
+
+Photoshop's puppet warp, Affinity's deform tool with bones, and GIMP's N-point deformation and cage transform pose a subject by handles while the rest bends naturally, and all four solve a sparse linear system over a triangle mesh or lattice. This section builds one mesher and one sparse solver in Imago, which §8's perspective warp and `D03 T14 §6`'s adaptive wide angle reuse. The moving-least-squares deformer is built here and moves to `Photon.Core` when `D01 T06 §6` registers the Deform filter as its second consumer. The live-filter forms are `D03 T14 §1`. Catalog: IP-0971 to IP-0979 (9 features: the puppet warp command, show mesh and edit pins, the deform tool with bone chains, the N-point deformation op, the N-point deformation tool and its duplicate row, puppet warp modes and pin options, the deform tool and filter options, and cage transform).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/puppet-warp/` and `docs/captures/imago/cage/`.
+**Job:** a user can pose a subject by pins, bones, or a cage while it bends naturally. Consumer: the active layer or the smart object's stored deformation.
+**Treatment:** a mesh overlay with pins and rotation rings, a deform tool with anchor points and bone chains, and a cage polygon tool. Cheaper substitute that fails the checkpoint: per-pin radial displacement, which the rigidity test catches.
+**Chrome:** consume §5's `TransformSession`, the `D03 T03 §4` tool system, and the canvas overlay. Do not add a second solver.
+
+**Requires:** display-session -- pin drags and cage edits are driven and captured
+
+- [ ] Add `src/Imago/Photon.Imago.Core/Transform/Deform/TriangleMesher.cs`: own constrained Delaunay (Bowyer-Watson with boundary constraints) over the layer's alpha, with density fewer, normal, and more points and expansion in pixels, no package. Done when: `TriangleMesherTests` assert no triangle's circumcircle holds another vertex and the mesh covers the alpha plus the expansion.
+- [ ] Add `SparseSolver.cs` in the same folder (sparse Cholesky with a prefactor on pin add, conjugate gradient fallback), shared by puppet warp, N-point, §8, and `D03 T14 §6`. Done when: `SparseSolverTests` solve a 2,000-vertex Laplacian to a residual below 1e-8 and the prefactored re-solve is at least five times faster than the first.
+- [ ] Add puppet warp (IP-0971, IP-0972, IP-0976): as-rigid-as-possible two-step deformation (Igarashi, Moscovich, and Hughes 2005) with modes rigid, normal, and distort, pin depth order, pin rotation auto or fixed with a rotation ring, multiple pins, and show mesh. Done when: `PuppetWarpTests.RigidKeepsAreas` drag one pin and keep triangle areas within 5 percent. Cheaper substitute: radial displacement per pin.
+- [ ] Add `src/Imago/Photon.Imago.Core/Transform/Deform/MlsDeformer.cs` (Schaefer, McPhail, and Warren 2006): rigid, similarity, and affine moving least squares with strength, anchor points, and bones as line-segment handles with bone chains (Affinity 3.3). Done when: `MlsDeformerTests` map anchors exactly and a bone rotated 30 degrees rotates its attached region by 30 degrees within 1 degree.
+- [ ] Add the Deform tool (IP-0973, IP-0977) over `MlsDeformer`, recording in `src/Imago/Photon.Imago.Core/Transform/README.md` that `D01 T06 §6` moves `MlsDeformer` to `Photon.Core` as its second consumer. Done when: a driven deform with two anchors and a bone chain is captured and the README names the pending move.
+- [ ] Add N-point deformation (IP-0974, IP-0975, IP-0979, GIMP): ARAP on a square lattice (Dvoroznak 2014, the algorithm behind GEGL's `gegl:npd`) with square size, rigidity, ASAP, and mesh visibility, on the shared solver. Done when: `NPointTests` compare a two-point drag against a GIMP 3.2.6 `gegl:npd` golden within 4 of 255.
+- [ ] Add the cage transform tool (IP-0978, GIMP): create cage, deform, and fill the original position with a plain color, by mean value coordinates (Hormann and Floater 2006). Done when: `CageTransformTests` match a GIMP 3.2.6 `gegl:cage-transform` golden within 4 of 255.
+- [ ] Render the commit by per-triangle inverse mapping through the `D01 T03 §2` resampler, and the preview through a GPU triangle-mesh path in `src/Imago/Photon.Imago.Rendering/Shaders/TriangleMeshShader.cs` with CPU parity and one Warning on fallback. Done when: `TriangleMeshShaderParityTests` match the CPU path within 1 of 255.
+- [ ] Keep pins, bones, and cages on smart objects (`<imago:puppet-warp>`, `<imago:deform>`, `<imago:cage>`) through the `D03 T08 §1` contract and re-open them for editing; the live-filter form is `D03 T14 §1`. Done when: `DeformFormatTests` reopen a saved smart object and restore every pin, bone, and cage vertex exactly.
+- [ ] Refuse deformations on locked layers by name. Done when: a test asserts the refusal and no change to the layer.
+- [ ] Name undo steps "Puppet Warp", "Deform", "N-Point Deformation", and "Cage Transform" with one Information line each. Done when: a Serilog test-sink test asserts the lines and undo restores the hash.
+- [ ] Add `tests/Photon.Imago.Core.Tests/Transform/DeformBudgetTests.cs`: a pin drag re-solves 2,000 vertices under 16 ms. Done when: the test quotes the time.
+- [ ] Update `docs/user/imago/transform.md` with puppet warp, the deform tool, N-point deformation, and cage transform. Done when: the page documents every option.
+- [ ] Commit: `"imago: puppet warp, deform with bones, N-point, and cage transform"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `TriangleMesherTests`, `SparseSolverTests`, `PuppetWarpTests.RigidKeepsAreas`, `MlsDeformerTests`, `NPointTests`, `CageTransformTests` (GIMP 3.2.6 golden within 4 of 255), `TriangleMeshShaderParityTests`, and `DeformFormatTests` reporting, `DeformBudgetTests` quoting its time, and driven pin drags captured under `docs/captures/imago/puppet-warp/` and `cage/`. Cheaper substitute that fails: radial falloff per pin, which the area-preservation test rejects.
+
+## 8. Perspective Warp
+
+Photoshop's perspective warp changes the viewpoint of a photo by drawing planes in layout mode and dragging their corners in warp mode, and Affinity's perspective tool maps an object onto one or two planes. Independent homographies per plane tear at shared edges, so joined planes are smoothed together on §7's `SparseSolver`, which runs earlier in this phase. `D03 T14 §6`'s perspective filter reuses this engine and `D03 T14 §1` hosts its live form. Catalog: IP-0980 to IP-0982 (3 features: the perspective warp command, its layout and warp modes with auto and edge straightening, and Affinity's perspective tool).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/perspective-warp/`.
+**Job:** a user can change the viewpoint of architecture or match an object to a scene's perspective. Consumer: the active layer or the smart object's stored planes.
+**Treatment:** layout mode draws quads that snap and join on shared edges, warp mode drags corners, and straighten buttons level the edges. Cheaper substitute that fails the checkpoint: independent homographies per plane that tear at shared edges, which the seam-continuity test catches.
+**Chrome:** consume §5's `TransformSession`, §7's `SparseSolver`, and the `D01 T03 §2` `PerspectiveCorrector`. Do not add second homography code.
+
+**Requires:** display-session -- layout and warp drags are driven and captured
+
+- [ ] Add `src/Imago/Photon.Imago.Core/Transform/PerspectiveWarp/PerspectiveWarpSession.cs` (IP-0980): planes as quads, auto-join of edges within 10 screen pixels, and each plane's homography from the `D01 T03 §2` `PerspectiveCorrector` four-point variant. Done when: `PerspectiveWarpTests.Join` draw two quads 8 pixels apart and assert they share an edge.
+- [ ] Smooth the joined mesh with §7's `SparseSolver` so shared edges stay continuous. Done when: `PerspectiveWarpTests.Seam` warp two joined planes and assert no seam larger than 0.5 pixel along the shared edge. Cheaper substitute: independent per-plane homographies.
+- [ ] Add layout and warp modes with Enter commit, Esc cancel, and grid visibility (IP-0981). Done when: a driven layout-then-warp session is captured and Esc restores the layer hash.
+- [ ] Add auto straighten near-vertical, auto level near-horizontal, both, and edge straighten by Shift-click (IP-0981). Done when: `PerspectiveWarpTests.Straighten` straighten the synthetic building fixture's verticals to within 0.2 degree.
+- [ ] Add Affinity's perspective tool (IP-0982): single or dual plane, source or destination mode, grid, autoclip, rotate, flip, and snap, on the same session. Done when: a test maps a square onto a dual-plane corner and asserts the corner error under 1 pixel in both modes.
+- [ ] Record in `src/Imago/Photon.Imago.Core/Transform/README.md` that `D03 T14 §6`'s perspective filter and `D03 T14 §1`'s live form reuse `PerspectiveWarpSession`. Done when: the README names both consumers.
+- [ ] Keep planes on smart objects as `<imago:perspective-warp>` through the `D03 T08 §1` contract for re-editing. Done when: `PerspectiveWarpFormatTests` reopen a saved smart object and restore every quad exactly.
+- [ ] Refuse perspective warp on locked layers by name. Done when: a test asserts the refusal and no change to the layer.
+- [ ] Name the undo step "Perspective Warp" with one Information line carrying the plane count. Done when: a Serilog test-sink test asserts the line and undo restores the hash.
+- [ ] Update `docs/user/imago/transform.md` with perspective warp and the perspective tool. Done when: the page documents both modes and every command.
+- [ ] Commit: `"imago: perspective warp and the perspective tool"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `PerspectiveWarpTests` (straighten within 0.2 degree, no seam above 0.5 pixel) and `PerspectiveWarpFormatTests` reporting, and a driven warp captured under `docs/captures/imago/perspective-warp/` with Esc restoring the hash (quoted). Cheaper substitute that fails: unjoined per-plane homographies, which the seam assertion rejects.
+
+## 9. Liquify
+
+Liquify is the retoucher's most demanding interactive surface: a full-window workspace that pushes pixels at 60 frames per second on large layers, with masks, reconstruct modes, a mesh that saves and loads, face-aware sliders, and its own undo. It runs on §6's `DisplacementField` and `WarpFieldShader`, previews at display resolution on the GPU, and resamples at full resolution once on OK. Face-aware controls ship here with manual landmark placement that works offline; `D03 T19 §11` supplies AI detection through the same `IFaceLandmarkSource`. The smart-filter stack entry is `D03 T14 §1`; this section stores the mesh on the smart object. Catalog: IP-0983 to IP-0995 (13 features: the liquify tools, brush options, mesh, mask, view, and reconstruct options, face-aware liquify, the Liquify command, the workspace, the live filter, Affinity's distortion tools, turbulence and mesh clone, reconstruct, freeze, and thaw with mask operations, Affinity's brush options, the mesh with save and load, and view modes with commit).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/liquify/`.
+**Job:** a retoucher can push, twirl, pucker, and bloat pixels smoothly at full resolution and reshape faces by slider. Consumer: the active layer, or the smart object's stored mesh.
+**Treatment:** a full-window workspace with a tool strip, brush and mesh options, mask and view options, face-aware sliders, and its own undo, previewing at display resolution on the GPU. Cheaper substitute that fails the checkpoint: a CPU-only preview that stutters above 12 megapixels, which the frame-time benchmark catches.
+**Chrome:** consume §6's `DisplacementField` and `WarpFieldShader`, the `D03 T12 §1` brush cursor, and the suite dialog chrome. Do not add a second field.
+
+**Requires:** display-session -- liquify strokes, face sliders, and the frame-time measurement need an interactive desktop
+
+- [ ] Add `src/Imago/Photon.Imago.Desktop/Retouch/LiquifyWorkspace.xaml` with `LiquifyViewModel` over §6's `DisplacementField`, opened by Filter, Liquify (Shift+Ctrl+X) (IP-0987, IP-0988). Done when: a driven run opens the workspace on the portrait fixture and the capture is committed under `docs/captures/imago/liquify/`.
+- [ ] Add the Photoshop tools (IP-0983) forward warp W, reconstruct R, smooth E, twirl clockwise C (Alt counterclockwise), pucker S, bloat B, push left O, freeze mask F, thaw mask D, face A, hand H, and zoom Z as field operations in `src/Imago/Photon.Imago.Core/Retouch/Liquify/LiquifyTools.cs`. Done when: `LiquifyToolTests` assert each tool's field direction on a test point (twirl direction flips with Alt).
+- [ ] Add Affinity's push forward, push left, twirl, pinch, and punch (IP-0990), and turbulence and mesh clone (IP-0991), as parameter sets and operations on the same field. Done when: `LiquifyToolTests.Affinity` assert pinch contracts and punch expands a ring of test points and mesh clone copies a field region.
+- [ ] Add the brush options (IP-0984, IP-0993): size, density, pressure, rate, stylus pressure, pin edges, hardness, opacity, speed, ramp, drag resize, and slow warp, stored as `Imago.Liquify.<Option>`. Done when: `LiquifySettingsTests` round-trip every key and pin edges keeps border displacement at zero.
+- [ ] Add masks (IP-0985, IP-0992): freeze and thaw with clear, all, and invert, and replace, add, subtract, and intersect from the selection, transparency, or a layer mask. Done when: `LiquifyToolTests.FreezeMask` show a frozen region receives no displacement under a forward-warp stroke.
+- [ ] Add the reconstruct modes revert, rigid, stiff, smooth, and loose with an amount (IP-0985, IP-0992). Done when: `LiquifyToolTests.Reconstruct` show revert at 100 percent returns the field to identity and rigid keeps local rotation only.
+- [ ] Add the mesh options (IP-0994): show, divisions, color, opacity, reconstruct, apply, reset, and last mesh. Done when: a test applies last mesh to a second layer and asserts an equal field.
+- [ ] Add export and import of the mesh as an own `.imgmesh` file (header plus a half-float field at full resolution, zlib-compressed) in `src/Imago/Photon.Imago.Core/Retouch/Liquify/LiquifyMeshFile.cs`, written through the atomic writer; Photoshop `.msh` is not read (undocumented), stated in the help page. Done when: `MeshFileTests` round-trip a mesh within half-float precision and refuse a truncated file by path with the document unchanged.
+- [ ] Add view options and commit (IP-0995): show image, mesh, guides, and backdrop (layer, mode in front, behind, or blend, opacity), view modes none, split, and mirror, OK applies, and Cancel restores the layer. Done when: a driven run captures each view mode and Cancel leaves the layer hash unchanged.
+- [ ] Add `src/Imago/Photon.Imago.Core/Retouch/Liquify/IFaceLandmarkSource.cs` and `ManualFaceLandmarks` (drag 12 points) that work offline; `D03 T19 §11` supplies AI detection through the same interface. Done when: a test places the 12 points on the portrait fixture and the face tool reads them.
+- [ ] Add face-aware controls (IP-0986): eyes (size, height, width, tilt, distance), nose (height, width), mouth (smile, upper and lower lip, width, height), and face shape (forehead, chin height, jawline, face width) as parametric displacement fields around the landmarks. Done when: `FaceAwareTests` show eye size moves only pixels within the eye landmarks' neighborhood and every slider at 0 is the identity.
+- [ ] Add `src/Imago/Photon.Imago.Rendering/Shaders/LiquifyBrushShader.cs` (ComputeSharp) updating the field per dab on the GPU beside §6's `WarpFieldShader`, with CPU parity within 1 of 255 and one Warning on fallback; preview at display resolution and one full-resolution resample on OK. Done when: `LiquifyShaderParityTests` match the CPU path within 1 of 255.
+- [ ] Store the mesh on a smart object (`<imago:liquify mesh="data/<id>.imgmesh">` through the `D03 T08 §1` contract) so Edit in workspace and Reset mesh work (IP-0989); the smart-filter stack entry is `D03 T14 §1`. Done when: `LiquifyFormatTests` reopen a saved smart object, re-enter the workspace with the mesh restored, and reset it to identity.
+- [ ] Keep an inner undo inside the workspace (Ctrl+Z and a history of strokes), and commit one outer undo step "Liquify" on OK with one Information line (strokes, tools used, milliseconds). Done when: a test undoes two of three inner strokes, commits, and asserts one outer history entry and the log line.
+- [ ] Refuse Liquify on locked layers by name and follow the `D03 T12 §5` non-pixel-layer policy. Done when: a test asserts the refusal and the policy prompt.
+- [ ] Add `tests/Photon.Imago.Rendering.Tests/Liquify/LiquifyFrameTimeTests.cs` and a driven measurement: a 200-pixel brush at 60 frames per second on a 24-megapixel layer with a DirectX 12 device, and the CPU fallback at 30 frames per second on 12 megapixels. Done when: the driven run logs per-frame times and the quoted medians meet both budgets.
+- [ ] Update `docs/user/imago/liquify.md` with every tool, option, mask, mesh, view mode, and face-aware slider, and the note that Photoshop `.msh` files are not read. Done when: the page documents every workspace control.
+- [ ] Commit: `"imago: Liquify with face-aware controls and a GPU path"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `LiquifyToolTests`, `LiquifySettingsTests`, `MeshFileTests`, `FaceAwareTests`, `LiquifyShaderParityTests`, and `LiquifyFormatTests` reporting, and a driven session on a 24-megapixel fixture logs its frame times (medians quoted against the 60 and 30 frames-per-second budgets) with captures of each view mode under `docs/captures/imago/liquify/`. Cheaper substitute that fails: CPU-only per-frame full-resolution resampling, which the frame-time budget rejects.
+
+## 10. Frequency Separation and Retouching Workflows
+
+Frequency separation splits an image into a low-frequency tone layer and a high-frequency texture layer so a retoucher can smooth skin without losing pores; Photoshop users build it by hand with an 8-bit recipe that drifts, and Affinity ships it as a filter with exact recombination. This section builds Affinity's version with Gaussian, median, and bilateral methods, the retouching studio workspace preset, and the two workflow commands retouchers build by hand (a dodge-and-burn layer and a vignette from a feathered selection). Catalog: IP-0934 to IP-0936 (3 features: frequency separation, the retouching studio workspace, and the dodge-and-burn and feathered-vignette workflows).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/frequency-separation/`.
+**Job:** a retoucher can split texture from tone and retouch each without changing the other. Consumer: a new layer group in the document.
+**Treatment:** a dialog with radius, method, tolerance, low and high previews, and a layer switch, producing a named group. Cheaper substitute that fails the checkpoint: a Gaussian split whose recombination drifts in 8-bit, which the exact-recombination test catches.
+**Chrome:** consume the `D03 T05 §1` filter dialog frame, the layer model, and the blend modes. Do not add a second dialog frame.
+
+**Requires:** display-session -- the dialog and its previews are driven and captured
+
+- [ ] Add `src/Imago/Photon.Imago.Core/Retouch/FrequencySeparation.cs` (IP-0934): the low pass by the `D01 T03 §6` `GaussianBlur`, `Median`, or `SmartBlur` (the thresholded bilateral) with radius and tolerance. Done when: `FrequencySeparationTests.LowPass` match each underlying effect's output for the same parameters.
+- [ ] Compute the high frequency as the difference plus 50 percent gray in Linear Light for 8-bit and 16-bit documents, and as an exact subtraction in 32-bit float. Done when: `FrequencySeparationTests.Recombination` recombine a noise fixture exactly in 16-bit and float and within 1 of 255 in 8-bit for each method. Cheaper substitute: Photoshop's 8-bit subtract-and-divide recipe without offset handling.
+- [ ] Create a group "Frequency Separation" with Low and High layers (High in Linear Light) in one command. Done when: a test asserts the group structure, blend mode, and one history entry.
+- [ ] Add the dialog through the `D03 T05 §1` frame with low, high, and combined previews and a layer switch choosing which layer is active after apply. Done when: a driven run captures each preview under `docs/captures/imago/frequency-separation/` and the chosen layer is active after OK.
+- [ ] Add the retouching studio workspace preset `src/Imago/Photon.Imago.Desktop/Workspaces/retouching.json` (IP-0935): panels Layers, History, Clone Source, and Brushes; tools healing, clone, dodge, burn, and liquify. Done when: a test parses the preset and asserts every panel and tool id exists.
+- [ ] List the preset in Window, Workspace through `D03 T07 §17`'s workspaces until `D03 T20 §1`'s switcher loads it. Done when: a driven run switches to the retouching workspace and the capture shows the listed panels.
+- [ ] Add Layer, New, Dodge and Burn Layer (IP-0936): an Overlay layer filled 50 percent gray with the neutral-color flag, one undo step. Done when: a test asserts the new layer composites to the identity and one history entry.
+- [ ] Add Layer, New, Vignette from Feathered Selection (IP-0936): an adjustment layer with a feathered elliptical mask, one undo step. Done when: a test asserts the mask's feather radius and one history entry.
+- [ ] Name undo steps "Frequency Separation", "New Dodge and Burn Layer", and "Vignette" with one Information line each. Done when: a Serilog test-sink test asserts the lines and undo removes the created layers.
+- [ ] Update `docs/user/imago/retouching.md` with frequency separation, the retouching workspace, and the two workflow commands. Done when: the page documents every dialog control.
+- [ ] Commit: `"imago: frequency separation and retouching workflows"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `FrequencySeparationTests` proving exact recombination in 16-bit and float and within 1 of 255 in 8-bit for the Gaussian, median, and bilateral methods, and the dialog captured under `docs/captures/imago/frequency-separation/`. Cheaper substitute that fails: Photoshop's 8-bit subtract-and-divide recipe without offset handling, which the recombination test rejects.
+
+## 11. The GIMP Transform Tools
+
+GIMP users expect one tool per transform (unified, handle, scale, rotate, shear, perspective, 3D transform, flip) with shared options for target, direction, interpolation, clipping, previews, and guides, plus Scale Layer and Offset Layer. Every one of them runs on §5's `TransformSession`, so there is still one transform implementation; the corrective direction applies the inverse matrix, which is what lets a user straighten by aligning a grid to a skewed feature. This section also adds GIMP's NoHalo and LoHalo samplers to the `D01 T03 §2` resampler, which §5's interpolation list then offers. Catalog: IP-0956 to IP-0966 (11 features: the Scale Layer dialog, Offset Layer with edge behavior, the common transform options, the flip tool, the unified transform tool, the handle transform tool, the scale tool, the rotate tool, the shear tool, the perspective tool, and the 3D transform tool).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/gimp-transform-tools/`.
+**Job:** a GIMP user finds every transform tool they know with the same options. Consumer: the active layer, selection, path, or image.
+**Treatment:** one tool per GIMP transform with its on-canvas widget, the shared options in the options bar, and an on-canvas info panel with Readjust and the matrix. Cheaper substitute that fails the checkpoint: aliases to Free Transform without the GIMP options, which the corrective-direction and handle-transform tests catch.
+**Chrome:** consume §5's `TransformSession` and handle renderer and the `D03 T03 §4` options-bar host. Do not add a second transform implementation.
+
+**Requires:** display-session -- each tool's widget is driven and captured
+
+- [ ] Extend `src/Photon.Core/Imaging/Geometry/Resampler.cs` (`D01 T03 §2`) with `NoHalo` and `LoHalo` modes (Robidoux's samplers as in GEGL). Done when: `ResamplerHaloTests` match GIMP 3.2.6 `gegl:transform sampler=nohalo` and `sampler=lohalo` goldens under `tests/fixtures/imaging/resample/` within 2 of 255.
+- [ ] Add `src/Imago/Photon.Imago.Core/Transform/GimpTransformOptions.cs` (IP-0958): transform target layer, selection, path, or image; direction normal or corrective (inverse matrix); interpolation none, linear, cubic, NoHalo, and LoHalo; clipping adjust, clip, crop to result, and crop with aspect (shared with §5). Done when: `GimpTransformToolTests.Corrective` assert corrective direction applies the inverse of the normal matrix.
+- [ ] Show the Path target disabled with the tooltip `Planned: D03 T16 §5`, which enables it. Done when: a UI test finds the target disabled with a tooltip that `python scripts/todo-graph.py resolve 'D03 T16 §5'` resolves.
+- [ ] Add the preview options image preview, composited preview, preview opacity, and guides (none, center lines, thirds, fifths, golden sections, diagonals, number of lines, spacing) to `GimpTransformOptions`. Done when: a driven run captures each guide type over the rotate tool's preview.
+- [ ] Add `UnifiedTransformTool` (constrain, from pivot, pivot snap, matrix readout, readjust; IP-0960) in `src/Imago/Photon.Imago.Core/Tools/Transform/`. Done when: a test drives scale, rotate, and shear handles in one session and asserts the composed matrix and one resample.
+- [ ] Add `HandleTransformTool` (add, move, and remove one to four handles solving translation, similarity, affine, or perspective by correspondence; IP-0961). Done when: `GimpTransformToolTests.Handles` show four handles on a quad equal the perspective tool on the same quad within 1e-6.
+- [ ] Add `ScaleTool` (keep aspect, around center, width and height, readjust; IP-0962) and `RotateTool` (angle, center, 15-degree snap, readjust; IP-0963). Done when: tests assert the scale and rotation matrices and the 15-degree snap.
+- [ ] Add `ShearTool` (magnitude X and Y, arrow keys; IP-0964) and `PerspectiveTool` (constrain handles, around center, matrix, readjust; IP-0965). Done when: tests assert the shear matrix and a perspective quad's corner mapping within 1e-6.
+- [ ] Add `FlipTool` (direction toggle with Ctrl, arrow keys; IP-0959). Done when: a test flips horizontally, toggles with Ctrl to vertical, and asserts the matrix.
+- [ ] Add `ThreeDTransformTool` (IP-0966): camera field of view, rotate X, Y, and Z, pan, constrain axis, Z axis, and local frame, composed to a homography for the session. Done when: `GimpTransformToolTests.ThreeDIdentity` show zero angles are the identity and a 30-degree Y rotation matches a closed-form homography within 1e-6.
+- [ ] Add Image, Scale Layer with interpolation (IP-0956). Done when: a test scales one layer of a two-layer document and asserts the other layer and the canvas are unchanged.
+- [ ] Add Layer, Offset (IP-0957) with edge behavior wrap, transparent, and repeat edge through the `D01 T03 §7` `Offset` and the inverse-mapper edge modes; `D01 T06 §13` later adds only GEGL parameter names. Done when: an offset by the full width in wrap mode is the identity and each edge mode matches a GIMP 3.2.6 golden.
+- [ ] Register the GIMP shortcuts Shift+T unified, Shift+L handle, Shift+S scale, Shift+R rotate, Shift+H shear, Shift+P perspective, Shift+F flip, and Shift+W 3D transform in the GIMP shortcut set `D03 T20 §3` switches, through the `D03 T03 §4` keymap. Done when: `ImagoKeymapTests` assert the GIMP set binds each shortcut with no conflicts.
+- [ ] Name one undo step after each tool with one Information line carrying the tool, matrix, and direction. Done when: a Serilog test-sink test asserts the line and undo restores the hash.
+- [ ] Update `docs/user/imago/transform.md` with every GIMP transform tool, the common options, Scale Layer, and Offset. Done when: the page documents each tool and option.
+- [ ] Commit: `"imago: the GIMP transform tools on the shared transform session"`
+
+**Test checkpoint:** Format fidelity proof and driven run with evidence: `dotnet test Photon.slnx` exits 0 with `ResamplerHaloTests` matching the GIMP 3.2.6 NoHalo and LoHalo goldens in `tests/fixtures/imaging/resample/` within 2 of 255 and `GimpTransformToolTests` (corrective direction, four-handle equals perspective, 3D identity) and `ImagoKeymapTests` passing, with each tool captured under `docs/captures/imago/gimp-transform-tools/`. Cheaper substitute that fails: Free Transform aliases, which the corrective-direction test rejects.
+
+## Verification
+
+- [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
+- [ ] `dotnet test Photon.slnx` exits 0 with every test class this file names reporting, the budget and frame-time numbers quoted
+- [ ] One implementation each: `grep -rn "class MeshMap\|class SeamlessBlender\|class TransformSession\|class SparseSolver\|class DisplacementField" src` prints one path per class
+- [ ] No generative code path: `grep -rn "OpenRouter\|IAiClient" src/Imago/Photon.Imago.Core/Retouch src/Imago/Photon.Imago.Core/Transform` prints nothing
+- [ ] Every disabled control in this file's surfaces names a section that `python scripts/todo-graph.py resolve` resolves
+- [ ] `docs/user/imago/retouching.md`, `content-aware.md`, `transform.md`, and `liquify.md` document every surface this file ships, and the captures under `docs/captures/imago/` exist for each Fidelity line
+- [ ] `python scripts/todo-graph.py validate` clean

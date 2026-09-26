@@ -31,6 +31,8 @@ track: R1
 - -> XREF: D99 T01 §3 -- the operator step that supplies the certificate §2 needs
 - -> XREF: D06 T01 §4 -- the install guide that documents what §1 proves
 - -> XREF: D02 T17 §1 -- the Nodus parity releases that run §1's clean-machine procedure
+- -> XREF: D03 T20 §8 -- Imago parity workspace cites §4: the opt-in `UpdateChecker` D03 T20 §8 consumes
+- -> XREF: D03 T21 §1 -- the Imago parity releases cites §1: the clean-machine procedure every release runs
 
 ## Outcome
 

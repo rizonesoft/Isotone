@@ -46,6 +46,12 @@ track: C2
 - -> XREF: D02 T14 §1 -- the format options persisted in §2 and the import and slice edits recorded in §4
 - -> XREF: D02 T15 §11 -- the suite hand-off inbox that receives files through §3's single-instance forwarding
 - -> XREF: D02 T16 §5 -- the preferences that write through §2 and set §4's undo limit
+- -> XREF: D01 T06 §1 -- the pixel engine extensions cites §2: the settings store that holds the `Photon.Imaging.ProcessingSpace` key
+- -> XREF: D01 T07 §1 -- the suite develop engine cites §1: the Photon.Core project and the app-data paths the presets folder uses; §2: the settings store for profile favorites, raw defaults, and the presets folder
+- -> XREF: D03 T08 §6 -- Imago parity document and view cites §4: the suite history D03 T08 §6 builds its tree over; §5: atomic writes for templates, logs, and exports
+- -> XREF: D03 T09 §1 -- Imago parity layers cites §4: the suite history every command there records into; §5: the atomic writer the frozen `.imago` save path goes through
+- -> XREF: D03 T17 §1 -- Imago parity formats cites §3: single-instance file-open forwarding D03 T17 §1 routes through; §5: the atomic writer every writer there saves through
+- -> XREF: D03 T20 §1 -- Imago parity workspace cites §2: the settings store every preference writes through
 
 ## Outcome
 

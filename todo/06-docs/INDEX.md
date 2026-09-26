@@ -1,6 +1,6 @@
 # 06 Docs
 
-> **Phases 3, 15, 17, and 18**
+> **Phases 3, 15, 29, and 30**
 
 User guides for each app and the suite, developer documentation that stays true to the tree, and the published documentation site. UI sections in the app domains update their guide in the same commit; this domain owns each guide's structure, its complete pass before a release, and the suite-wide pages.
 

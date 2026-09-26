@@ -10,15 +10,15 @@ track: C4
 
 # TODO-04 -- Photon.Core Color Management: ICC Transforms, Proofing, and Bitmap Color Modes
 
-> **Goal:** Photon.Core gains one color-management engine for the suite under `src/Photon.Core/Color/`: a recorded decision (lcms2, MIT, through a thin `LibraryImport` P/Invoke wrapper with the native DLL bundled per RID, against Windows WCS as the rejected candidate), ICC v2 and v4 profile loading, RGB, CMYK, gray, and Lab transforms with rendering intents, black point compensation, proofing transforms, and a gamut API (§1 and §2, Phase 6), then bitmap color modes including duotone and multichannel (§3, Phase 10). It lives in Photon.Core, not in an app, because the operator-mandated Photon.Core pixel engine (`D01 T03 §3`) needs it for Lab, CMYK, and duotone bitmaps, and Imago's ICC work (`D03 T04 §2`) and Lumen's output transform (`D04 T02 §2`) are its next consumers; Nodus's color model (`D02 T09 §1`) is its first. The engine part of backlog B-023 (Imago color management) is superseded by this file's §1 decision.
+> **Goal:** Photon.Core gains one color-management engine for the suite under `src/Photon.Core/Color/`: a recorded decision (lcms2, MIT, through a thin `LibraryImport` P/Invoke wrapper with the native DLL bundled per RID, against Windows WCS as the rejected candidate), ICC v2 and v4 profile loading, RGB, CMYK, gray, and Lab transforms with rendering intents, black point compensation, proofing transforms, and a gamut API (§1 and §2, Phase 6), then bitmap color modes including duotone and multichannel (§3, Phase 10). It lives in Photon.Core, not in an app, because the operator-mandated Photon.Core pixel engine (`D01 T03 §3`) needs it for Lab, CMYK, and duotone bitmaps, and Imago's ICC work (`D03 T04 §2`) and Lumen's output transform (`D04 T02 §2`) are its next consumers; Nodus's color model (`D02 T09 §1`) is its first. The engine part of backlog B-023 (Imago color management) is superseded by this file's §1 decision. **Corrected 2026-09-26:** B-023's remaining Imago part was promoted into `D03 T18 §4` by the Imago parity plan, which consumes this engine.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** `src/Photon.Core/` does not exist yet; `D01 T02 §1` creates it. No ICC code exists anywhere in the tree: no lcms binding, no WPF `ColorContext` use, and no profile type in any `.cs` file under `src/`. Nodus's only color type is the sRGB byte struct `Color` in `src/Nodus/Bezier.Core/Models/Color.cs` with HSL and HSV math and no CMYK, Lab, or spot representation. The engine decision sat in the backlog as part of B-023 (Imago color management), recorded there as undecided between an lcms2 wrapper and WCS; B-023 was reworded on 2026-09-26 to consume this file.
+> **Current state (verified 2026-09-26):** `src/Photon.Core/` does not exist yet; `D01 T02 §1` creates it. No ICC code exists anywhere in the tree: no lcms binding, no WPF `ColorContext` use, and no profile type in any `.cs` file under `src/`. Nodus's only color type is the sRGB byte struct `Color` in `src/Nodus/Bezier.Core/Models/Color.cs` with HSL and HSV math and no CMYK, Lab, or spot representation. The engine decision sat in the backlog as part of B-023 (Imago color management), recorded there as undecided between an lcms2 wrapper and WCS; B-023 was reworded on 2026-09-26 to consume this file, and promoted the same day into `D03 T18 §4`.
 <!-- claim: absent src/Photon.Core/Photon.Core.csproj -->
 <!-- claim: count "lcms|IccProfile|ColorContext" src/**/*.cs = 0 -->
 <!-- claim: count "public readonly struct Color" src/Nodus/Bezier.Core/Models/Color.cs = 1 -->
 <!-- claim: count "Cmyk|\bLab\b|Spot" src/Nodus/Bezier.Core/Models/Color.cs = 0 -->
-<!-- claim: count "B-023\]" todo/backlog.md = 1 -->
+<!-- claim: count "B-023\]" todo/backlog.md = 0 -->
 
 ## Inputs
 
@@ -27,7 +27,7 @@ track: C4
 - [`docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md) -- the catalog rows NP-2076 to NP-2085 this file owns
 - [lcms2 2.16 API reference](https://github.com/mm2/Little-CMS/blob/master/doc/LittleCMS2.16%20API.pdf) -- the function set the wrapper binds; `transicc` is the golden oracle
 - [ICC.1:2022 (profile version 4.4)](https://www.color.org/specification/ICC.1-2022-05.pdf) -- the profile format the loader validates
-- [`../backlog.md`](../backlog.md) -- B-023's engine part is superseded by §1; its Assign, Convert, and soft-proof parts stay with Imago; the "wrapper moves to Photon.Core" note of B-011 (promoted into `D02 T13 §2`) is fulfilled by §1
+- [`../backlog.md`](../backlog.md) -- B-023's engine part is superseded by §1; its Assign, Convert, and soft-proof parts stay with Imago, promoted on 2026-09-26 into `D03 T18 §4`; the "wrapper moves to Photon.Core" note of B-011 (promoted into `D02 T13 §2`) is fulfilled by §1
 - -> XREF: D01 T02 §1 -- Photon.Core and its app-data paths, which §1 builds inside
 - -> XREF: D01 T02 §2 -- the settings store holding default profiles, intent, and black point keys
 - -> XREF: D01 T03 §3 -- the pixel buffers and quantization §3 converts between modes
@@ -40,6 +40,14 @@ track: C4
 - -> XREF: D02 T14 §2 -- PDF import maps DeviceN duotone images into §3's `DuotoneSpec` and reads ICC-based spaces through §1
 - -> XREF: D03 T04 §2 -- Imago's embedded PNG and JPEG profiles are this engine's next consumer
 - -> XREF: D04 T02 §2 -- Lumen's output transform to sRGB, Display P3, and Adobe RGB is a later consumer
+- -> XREF: D01 T06 §1 -- the pixel engine extensions cites §1: the transfer curves the linear processing space converts through; §3: Lab and CMYK sources and the halftone GCR and UCR conversion
+- -> XREF: D01 T07 §1 -- the suite develop engine cites §1: input and output transforms; §2: rendering intents and black point compensation on the output transform
+- -> XREF: D03 T08 §1 -- Imago parity document and view cites §1: profile names and conversions for D03 T08 §1's profile tab and D03 T08 §11's readouts
+- -> XREF: D03 T10 §4 -- Imago parity selection and channels cites §2: the `GamutMask` behind D03 T10 §4's Out of Gamut
+- -> XREF: D03 T11 §9 -- Imago parity adjustments and color cites §1: the conversions every mode, LUT, and ink readout goes through; §2: gamut checks and device links behind D03 T11 §9's warnings; §3: mode conversions and duotone, whose dialog D03 T11 §7 moves to `Photon.UI`
+- -> XREF: D03 T15 §1 -- Imago parity photo (Camera Raw and merges) cites §2: working-space and output transforms into and out of the develop space
+- -> XREF: D03 T17 §12 -- Imago parity formats cites §1: profiles for every reader and writer, and the monitor profile D03 T17 §12 tags screenshots with; §3: CMYK, Lab, and duotone buffers for PSD, TIFF, JPEG, and JPEG XL
+- -> XREF: D03 T18 §4 -- Imago parity export, color management, and print cites §1: profiles and transforms D03 T18 §4 consumes; §2: intents, proofing transforms, and gamut checks D03 T18 §4 and D03 T18 §5 consume; §3: CMYK, Lab, and multichannel conversions for Convert to Profile
 
 ## Outcome
 

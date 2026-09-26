@@ -26,6 +26,12 @@ track: I2
 - The W3C Compositing and Blending Level 1 specification (https://www.w3.org/TR/compositing-1/) -- the formulas §4 implements and tests against
 - -> XREF: D03 T01 §2 -- the ported `ImageCanvas` that §2's viewport drives
 - -> XREF: D03 T03 §4 -- the tool system that draws into §2's viewport
+- -> XREF: D03 T08 §6 -- Imago parity document and view cites §1: the tile store whose reference counts D03 T08 §6's snapshots share; §2: the viewport and mip cache D03 T08 §3 and D03 T08 §10 extend; §5: GPU parity for D03 T08 §10's display filters
+- -> XREF: D03 T09 §3 -- Imago parity layers cites §3: the render graph and `GroupNode` D03 T09 §3 to D03 T09 §8 extend; §4: the blend-mode registry and goldens D03 T09 §6 extends; §5: GPU parity for every compositing path there
+- -> XREF: D03 T11 §1 -- Imago parity adjustments and color cites §4: the render graph and blend modes adjustment nodes join
+- -> XREF: D03 T15 §1 -- Imago parity photo (Camera Raw and merges) cites §5: the ComputeSharp path the float display transform runs in
+- -> XREF: D03 T18 §4 -- Imago parity export, color management, and print cites §2: the viewport display transform D03 T18 §4 and D03 T18 §5 drive; §3: blend gamma in the render graph from D03 T18 §4's advanced settings; §5: the GPU path with CPU parity for the display transform
+- -> XREF: D03 T20 §5 -- Imago parity workspace cites §1: the tile cache and swap D03 T20 §5 tunes; §5: the ComputeSharp GPU path D03 T20 §5 toggles
 
 ## Outcome
 
