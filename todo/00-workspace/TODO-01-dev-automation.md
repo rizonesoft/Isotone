@@ -53,6 +53,7 @@ track: W1
 |   3   |   §3    | Raise the claims coverage floor               | --         |  [ ]   |
 |   4   |   §4    | Prove the review panel end to end             | --         |  [ ]   |
 |   5   |   §5    | First push: CI green and read back            | §1         |  [ ]   |
+|   6   |   §6    | The parity catalog validator                  | §1         |  [ ]   |
 
 ---
 
@@ -115,6 +116,42 @@ Two workflows guard `main`: `build` (restore, Release build, tests) and `plan-ga
 - [ ] Commit: `"workspace: record the first green CI runs"`
 
 **Test checkpoint:** both `gh run list` queries return `success` for the pushed commit's SHA (`headSha` matches `git rev-parse HEAD`), and `docs/dev/build.md` cites the two URLs. Cheaper substitute that fails: a local `pwsh scripts/check-all.ps1`, which proves the machine and not the runner.
+
+## 6. The Parity Catalog Validator
+
+The Nodus parity catalog (`docs/parity/nodus-parity.md`) is plan data like `todo/`: 2,802 features merged from 1,294 Illustrator rows and 3,041 CorelDRAW rows, each with one status that points at a section, a backlog entry, an exclusion, or another app. Nothing checks it today, so a catalog row can silently lose its source id, point at a section that was renumbered or moved, or name a backlog entry that was promoted. The acceptance-bar aim "Nodus covers every CorelDRAW and Illustrator capability in the parity catalog" needs a gate before the first parity row runs, so the check joins `validate` beside the budget and backlog checks, and a `query parity` report gives each Nodus parity release (`D02 T17 §1` to `§10`) the per-phase counts it quotes. The status grammar and the update rules it enforces are in `docs/parity/README.md`. It owns no catalog rows of its own: it enforces them. Current state (verified 2026-09-26): no parity code exists in `scripts/` (`scripts/todo-parity.py` is absent), and `validate` wires its budget and backlog checks through `graph.budget_findings` in `scripts/todo-validate.py`, the pattern this section follows.
+<!-- claim: absent scripts/todo-parity.py -->
+<!-- claim: count "parity-id" scripts/todo-graph.py = 0 -->
+<!-- claim: count "graph\.budget_findings\(todos\)" scripts/todo-validate.py = 1 -->
+<!-- claim: exists docs/parity/sources/illustrator-30.8.md -->
+<!-- claim: exists docs/parity/sources/coreldraw-2026.md -->
+
+- -> XREF: D02 T17 §1 -- the Nodus releases that quote `query parity` for their phase
+- -> XREF: D02 T17 §10 -- the 1.0.0 release that quotes the whole-catalog report as the acceptance-bar evidence
+
+**Fidelity:** no surface of its own (stdlib tooling run by `validate`, the commit hook, and CI).
+
+- [ ] Add `scripts/todo-parity.py` (stdlib only, like the other TODO tooling) with `parse_sources(repo)` reading every `| AI-#### |` row of `docs/parity/sources/illustrator-30.8.md` and every `| CD-### |` row of `docs/parity/sources/coreldraw-2026.md`. Done when: its self-check prints 1,294 Illustrator and 3,041 CorelDRAW ids on today's files.
+- [ ] Add `parse_catalog(repo)` reading every `| NP-#### |` row of `docs/parity/nodus-parity.md` into (id, feature, Illustrator ids, CorelDRAW ids, category, status, notes). Done when: it returns 2,802 rows on today's file.
+- [ ] Add `parse_status(text)` implementing the status grammar of `docs/parity/README.md`: `plan <DNN TNN §N>`, `shipped-scope <DNN TNN §N>`, `backlog B-NNN`, `excluded: <reason>`, and `other-app: <Imago|Lumen|none> <reason>`. Done when: each form parses and anything else returns a malformed marker.
+- [ ] Add `parity_findings(graph, todos)` returning `(class, message)` pairs for `parity-id-missing` (a source id in no catalog row), `parity-id-duplicate` (a source id in two rows), and `parity-id-unknown` (a catalog id no source defines). Done when: each message names the id and the catalog line.
+- [ ] Add `parity-np-duplicate` (an `NP-` id used twice) and `parity-status-malformed` (a status outside the grammar) to `parity_findings`. Done when: each message names the `NP-` id.
+- [ ] Add `parity-ref-dead`: a `plan` or `shipped-scope` ref that `graph.resolve_ref` cannot find, or that names a section carrying a `> **Moved:**` marker. Done when: the message names the `NP-` id and the ref.
+- [ ] Add `parity-backlog-dead`: a `backlog B-NNN` id with no live entry in `todo/backlog.md`, read through `graph.parse_backlog`. Done when: the message names the `NP-` id and the backlog id.
+- [ ] Load `scripts/todo-parity.py` from `scripts/todo-graph.py` through `importlib.util.spec_from_file_location`, as `cmd_validate` loads `scripts/todo-validate.py`. Done when: `python scripts/todo-graph.py validate` runs with the module loaded and no import-time side effects (`sys.dont_write_bytecode` held as `adjacency_module` does).
+- [ ] Call `parity_findings` from `scripts/todo-validate.py` beside `graph.budget_findings(todos)`, flagging each class, and skip the check when `docs/parity/nodus-parity.md` is absent so a bare-tree export still validates. Done when: `validate` on today's tree reports zero parity findings once the parity sections exist.
+- [ ] Add the seven classes to `SEVERITY_MAP` in `scripts/todo-graph.py` as `fatal`. Done when: `python scripts/todo-graph.py self-test` reports `0 failed`.
+- [ ] Add the seven rows to the per-class table in `todo/README.md` with their "Why" text, in the same commit as the map. Done when: the self-test's README-parity check passes; editing one side alone makes it fail.
+- [ ] Add `query parity [--phase N] [--json]` to the `query` choices in `scripts/todo-graph.py`: per phase, the catalog rows planned to its sections and how many of those sections are stamped; per status kind, the totals. Done when: `python scripts/todo-graph.py query parity --phase 4` prints the Phase 4 rows and `--json` emits the same numbers as an object.
+- [ ] Resolve a section's phase for `query parity` from the phase tables of `todo/implementation-plan.md`, the same source `query budget` reads. Done when: a section in no phase is reported under `unplaced` rather than dropped.
+- [ ] Add self-test fixtures under the self-test's temporary tree: a tiny source pair, a tiny catalog, and a backlog with one entry. Done when: the fixtures are built in the self-test and leave nothing behind.
+- [ ] Add self-test cases: one missing id, one duplicate source id, one unknown id, one duplicate `NP-` id, one malformed status, one dead ref, one ref to a Moved section, one dead backlog id, and one clean catalog with zero findings. Done when: each case asserts exactly its class and `self-test` reports `0 failed`.
+- [ ] Add a self-test case for `query parity --phase N --json` over the fixture tree. Done when: the case asserts the planned and stamped counts.
+- [ ] Confirm the check runs wherever `validate` runs: the commit hook (`tools/githooks/pre-commit`), the `plan-gates` workflow, and `scripts/check-all.ps1`, with no new CI job. Done when: a staged catalog with one id deleted is refused by the hook naming `parity-id-missing`.
+- [ ] Add a short "Enforcement" note to `docs/parity/README.md` naming the seven classes and `query parity`. Done when: the README's Enforcement paragraph lists every class by name.
+- [ ] Commit: `"workspace: validate the Nodus parity catalog against its sources and the plan"`
+
+**Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the new parity cases counted; `python scripts/todo-graph.py validate` exits 0 on the tree; deleting one `AI-` id from a scratch copy of the catalog makes `validate` exit 1 naming `parity-id-missing`, and pointing one row at `D02 T99 §1` makes it exit 1 naming `parity-ref-dead`; `python scripts/todo-graph.py query parity --phase 4 --json` prints the Phase 4 counts. Cheaper substitute that fails: a one-off script outside `validate` that CI never runs, which the hook refusal catches.
 
 ## Verification
 

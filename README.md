@@ -277,9 +277,10 @@ Development is driven by a TODO tree in [`todo/`](todo/), with the ordered plan 
 
 1. **Foundation:** one solution, shared build infrastructure, CI, installers, and release automation.
 2. **Nodus preview:** stabilize the vector editor and ship the first public build.
-3. **Photon.Core:** extract rendering, file I/O, and color handling into the shared library.
-4. **Imago:** canvas, layers, core tools, and PNG, JPEG, and TIFF support.
-5. **Lumen:** library, RAW development, and the Edit in Imago handoff.
+3. **Nodus parity:** bring Nodus to parity with Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2), every feature of both, in ten releases from 0.2.0 to 1.0.0. The [parity catalog](docs/parity/nodus-parity.md) routes each of their 4,335 inventory rows to a planned section, an existing one, the backlog, an exclusion (scripting, cloud services), or another Photon app. Nodus AI runs on OpenRouter with your own API key (BYOK), sends nothing without an explicit action, and rests on three pillars: results are editable, undoable vector objects; brand kits and hand-offs work across the suite; and every AI action is recorded so it can be re-run, compared, and reverted.
+4. **Photon.Core:** the shared library grows the pixel engine, color management, and the AI core with the parity work, and takes rendering, file I/O, and other code as a second app needs it.
+5. **Imago:** canvas, layers, core tools, and PNG, JPEG, and TIFF support.
+6. **Lumen:** library, RAW development, and the Edit in Imago handoff.
 
 The plan file is the source of truth; this list is a summary and may lag behind it.
 

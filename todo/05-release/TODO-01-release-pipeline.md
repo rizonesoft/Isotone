@@ -30,6 +30,7 @@ track: R1
 - -> XREF: D04 T01 §2 -- Lumen's app creation that makes it a shipping app for §6
 - -> XREF: D99 T01 §3 -- the operator step that supplies the certificate §2 needs
 - -> XREF: D06 T01 §4 -- the install guide that documents what §1 proves
+- -> XREF: D02 T17 §1 -- the Nodus parity releases that run §1's clean-machine procedure
 
 ## Outcome
 

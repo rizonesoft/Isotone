@@ -34,6 +34,8 @@ track: N1
 - [`scripts/apps.psd1`](../../scripts/apps.psd1), [`installer/Nodus.iss`](../../installer/Nodus.iss), [`Photon.slnx`](../../Photon.slnx) -- the files that name the executable and the projects
 - -> XREF: D00 T02 §6 -- the xUnit v3 migration that waits for §1 to move the test project
 - -> XREF: D01 T02 §1 -- the logging bootstrap §2 and §3 consume
+- -> XREF: D02 T07 §1 -- the live-object contract, first of the Nodus parity sections whose checklists name the `Photon.Nodus.*` paths §1's rename creates
+- -> XREF: D02 T11 §1 -- the effect framework whose paths assume §1's rename
 
 ## Outcome
 

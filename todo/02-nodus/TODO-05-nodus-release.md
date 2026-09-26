@@ -27,6 +27,9 @@ track: N5
 - -> XREF: D06 T01 §1 -- the Nodus user guide §4 requires
 - -> XREF: D05 T01 §1 -- the clean-machine proof §4 requires
 - -> XREF: D00 T02 §8 -- the .NET 11 GA SDK pin §4 waits for, so no release ships on a release-candidate SDK
+- -> XREF: D02 T07 §1 -- the Nodus parity phases (4 to 13) that follow the 0.1.0 release §4 ships
+- -> XREF: D02 T16 §3 -- the shortcut sets that extend §2's shortcuts dialog, and the Help entries `D02 T16 §6` and `§9` add to §3's menu
+- -> XREF: D02 T17 §1 -- the parity releases (0.2.0 to 1.0.0) that repeat §4's release procedure
 
 ## Outcome
 

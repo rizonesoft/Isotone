@@ -30,6 +30,10 @@ track: N2
 - -> XREF: D02 T06 §12 -- owns the deferred command palette and on-canvas HUD services
 - -> XREF: D02 T06 §14 -- owns the deferred import and export-dialog services
 - -> XREF: D02 T03 §5 -- the menu sweep that consumes every command this file wires
+- -> XREF: D02 T07 §5 -- the Objects panel that §6's layers panel grows into, with selection (§3) extended by `D02 T07 §6` and snapping (§7) by `D02 T07 §11`
+- -> XREF: D02 T08 §10 -- Pathfinder and the shape builder on §5's booleans; `D02 T08 §12` and `§14` extend §4's align, arrange, and transform commands
+- -> XREF: D02 T10 §4 -- the type sections that register their shortcuts in §8's keymap
+- -> XREF: D02 T16 §3 -- the toolbars, menus, and shortcut sets that read §8's one keymap
 
 ## Outcome
 
@@ -40,7 +44,7 @@ track: N2
 - Arrange, align, distribute, rotate, flip, and the four boolean operations change the document through commands, with undo, from the menus.
 - The layers panel reorders, hides, locks, and renames elements with undo; snapping and one keymap work on the canvas.
 
-**Adjacency:** list=applicable @ D02 T02 §6; document=not-applicable (printing waits in the backlog as B-011); settings=applicable @ D02 T02 §7; reporting=not-applicable (document info lives in the status strip, D02 T03 §5); notifications=not-applicable (every operation here is instant on a 0.1.0-sized document); permissions=not-applicable (no files are written here); audit=applicable @ D02 T02 §4; exchange=not-applicable (formats are D02 T04's); reverse=applicable @ D02 T02 §4
+**Adjacency:** list=applicable @ D02 T02 §6; document=not-applicable (printing is owned by D02 T13 §2); settings=applicable @ D02 T02 §7; reporting=not-applicable (document info lives in the status strip, D02 T03 §5); notifications=not-applicable (every operation here is instant on a 0.1.0-sized document); permissions=not-applicable (no files are written here); audit=applicable @ D02 T02 §4; exchange=not-applicable (formats are D02 T04's); reverse=applicable @ D02 T02 §4
 
 **Adjacency rationale:** The layers panel is the list of a document's elements; snapping options are settings; every arrange, align, boolean, and layers action is a command, so it is both logged (audit) and undoable (reverse).
 
@@ -146,7 +150,7 @@ The Path menu's Union, Subtract, Intersect, and Exclude reach a service that ret
 **Fidelity:** Nodus main window, Path menu -- docs/captures/nodus/main-window/. Menu wording unchanged; each operation disabled unless two or more path-convertible elements are selected.
 **Job:** a designer can combine selected shapes into one path with union, subtract, intersect, or exclude, and undo it. Consumer: the document and the SVG writer.
 **Treatment:** convert each selected element to an `SKPath` in document coordinates (rect, ellipse, circle, line, polygon, polyline, path), fold with `SKPath.Op` in z-order (subtract: bottom minus the rest), replace the inputs with one `SvgPath` carrying the bottom element's fill and stroke, as one history entry. Cheaper substitute that fails the checkpoint: grouping the inputs and calling it a union.
-**Chrome:** consume the existing Path menu, `SelectionManager`, and the history. Do not add a Pathfinder panel in this section (the appearance work waits in the backlog as B-003).
+**Chrome:** consume the existing Path menu, `SelectionManager`, and the history. Do not add a Pathfinder panel in this section (the Pathfinder panel is owned by D02 T08 §10, and the appearance work by D02 T09 §14).
 
 **Requires:** display-session -- driving the Path menu on the canvas needs an interactive desktop
 

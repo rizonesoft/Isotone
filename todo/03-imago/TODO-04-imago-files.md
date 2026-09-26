@@ -27,6 +27,9 @@ track: I4
 - -> XREF: D00 T02 §4 -- removed ImageSharp and left the codec choice to §1
 - -> XREF: D01 T02 §5 -- the shared atomic writer §2 is the second consumer of
 - -> XREF: D03 T03 §2 -- the history recovery must restore into
+- -> XREF: D01 T04 §1 -- the suite color engine whose next consumer is §2's embedded PNG and JPEG profiles
+- -> XREF: D01 T05 §3 -- the AI provenance record §2's save may later embed
+- -> XREF: D02 T14 §12 -- Nodus's WIC codec, which moves to `Photon.Core` if §1 picks WIC; `D02 T14 §13`'s PSD reader moves to `Photon.Core` for §5
 
 ## Outcome
 
@@ -49,7 +52,7 @@ track: I4
 |   2   |   §2    | PNG and JPEG open and save                           | §1, D01 T02 §5, D03 T03 §1          |  [ ]   |
 |   3   |   §3    | TIFF open and save                                   | §2                                  |  [ ]   |
 |   4   |   §4    | The native layered format                            | §2, D03 T03 §3                      |  [ ]   |
-|   5   |   §5    | PSD import                                           | §4, D03 T02 §4                      |  [ ]   |
+|   5   |   §5    | PSD import                                           | §4, D03 T02 §4, D02 T14 §13         |  [ ]   |
 |   6   |   §6    | Autosave and crash recovery                          | §4, D03 T03 §2                      |  [ ]   |
 
 ---
@@ -58,8 +61,10 @@ track: I4
 
 Imago needs decoders and encoders for PNG, JPEG, TIFF, and PSD, with 16-bit and ICC profile support. The candidates, with the facts the decision must verify at the time it is made: **WIC** through WPF's `System.Windows.Media.Imaging` (part of Windows; PNG, JPEG, TIFF, BMP, GIF with 16-bit and `ColorContext` profiles; no PSD; Windows-only, which Imago is); **SkiaSharp** (BSD-3-Clause, already in the suite; PNG, JPEG, WebP; no TIFF or PSD; 8-bit oriented encoders); **Magick.NET** (Apache-2.0 wrapper over ImageMagick's own license; every format including PSD; tens of megabytes of native code); **LibTiff.NET** (BSD; TIFF only); **SixLabors.ImageSharp** (Six Labors Split License; 4.x needs a paid key; removed by `D00 T02 §4`); and a **hand-written PSD reader** against Adobe's published file format specification. **Justified default:** WIC for PNG, JPEG, and TIFF (no new dependency, 16-bit and profiles supported), a hand-written PSD reader (the layer structure is what Imago needs, and a reader is testable against Photoshop-produced fixtures), SkiaSharp for WebP later. Cost of changing: each codec sits behind `IImageFormat`, so a swap is one class per format.
 
+**Corrected 2026-09-26:** the Nodus parity plan runs before Imago's foundation, so Nodus builds its raster codecs first: `D02 T14 §12` adds a `WicCodec` over WPF's `BitmapDecoder` and `BitmapEncoder` (plus own TGA and PCX codecs), and `D02 T14 §13` adds a `PsdReader` against Adobe's specification. This decision therefore also records whether Imago picks the same WIC stack; if it does, the Nodus `WicCodec` moves to `Photon.Core` (the shared-once rule) and Imago consumes it rather than writing a second WIC wrapper, and the PSD choice is the reader `D02 T14 §13` built (see §5).
+
 - [ ] For each candidate, record license (with the license text URL), GPL-3.0 compatibility, format coverage including 16-bit and ICC support, installed size, and a decode-time measurement of the same 24-megapixel PNG and JPEG (a small benchmark in `tests/Photon.Imago.Benchmarks`). Done when: `docs/dev/decisions.md` carries the table with every cell filled.
-- [ ] Decide per format and record the choice, the evidence, and the cost of change. Done when: the decision entry names a codec for PNG, JPEG, TIFF, and PSD.
+- [ ] Decide per format and record the choice, the evidence, and the cost of change, including whether the WIC choice reuses the Nodus `WicCodec` from `D02 T14 §12` (moved to `Photon.Core`) and that PSD uses the `D02 T14 §13` reader. Done when: the decision entry names a codec for PNG, JPEG, TIFF, and PSD, and names the shared Nodus codec it moves or the reason it does not.
 - [ ] Add any chosen package to `Directory.Packages.props` with its license noted in the package table of `docs/dev/build.md`. Done when: restore is green, or the entry says no package was needed.
 - [ ] Commit: `"imago: decide the codecs with licenses and measurements"`
 
@@ -117,7 +122,9 @@ A document with layers needs a format that keeps them. The native format is a ZI
 
 Layered work from Photoshop arrives as PSD, and the installer offers a `.psd` association. Imago reads the layer structure: raster layers, groups, blend modes, opacity, visibility, and layer masks, 8 and 16 bit RGB. Everything it cannot represent (adjustment layers, smart objects, text engine data, layer effects) is either rasterized from the layer's stored pixels or reported, never silently dropped. -> SOURCE: legacy-imago-7.2
 
-- [ ] Add `PsdReader` in `Photon.Imago.FileFormats/Psd/` against Adobe's specification (header, color mode data, image resources, layer and mask info, image data; RLE and raw channels; 8 and 16 bit). Done when: unit tests parse each section of a minimal fixture.
+**Corrected 2026-09-26:** this section no longer writes its own PSD reader. Nodus's `PsdReader` (`D02 T14 §13`, in `src/Nodus/Photon.Nodus.Core/Formats/Psd/`, against the same Adobe specification) ships first; this section moves it into `Photon.Core` as its second consumer and maps its output onto Imago's layers. A second PSD parser in `Photon.Imago.FileFormats/` would be a copy the shared-once rule forbids.
+
+- [ ] Move `PsdReader` from `src/Nodus/Photon.Nodus.Core/Formats/Psd/` into `src/Photon.Core/Formats/Psd/` with its tests, repoint Nodus's PSD import to it, and add the Imago adapter in `Photon.Imago.FileFormats/Psd/` that maps its layers, groups, and channels (RLE and raw; 8 and 16 bit) onto Imago's document. Done when: `PsdReaderTests` run from `tests/Photon.Core.Tests/`, Nodus's PSD tests still pass, and `grep -rn "class PsdReader" src` finds exactly one definition. Cheaper substitute: a second reader in Imago, which the single-definition grep refuses.
 - [ ] Map PSD blend-mode keys to `BlendMode`, and layer masks to `LayerMask`. Done when: a fixture with one layer per mode opens with the right modes.
 - [ ] Unsupported features produce a per-file import report ("3 adjustment layers were rasterized; text layers are pixels") shown once and logged. Done when: a fixture with an adjustment layer shows the report.
 - [ ] Fixtures under `tests/fixtures/imago/psd/`, produced by Photoshop or Photopea (tool and version recorded), each with the composite exported beside it as PNG; `PsdFidelityTests` compare Imago's composite of the imported layers with that PNG within 2/255. Done when: every fixture passes or names its gap's section.

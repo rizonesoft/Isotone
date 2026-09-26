@@ -1,8 +1,8 @@
 # 02 Nodus
 
-> **Phases 1, 2, 3, and 9**
+> **Phases 1, 2, 3, and 4 to 13**
 
-Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs first among the apps: it is renamed and restructured, its orphan services triaged, its editing made correct, its documents made safe, and it ships `nodus-v0.1.0` before Imago's foundation starts. After the suite release, TODO-06 ships the sections 0.1.0 names as deferral owners plus accessibility; the rest of the legacy roadmap waits in [`../backlog.md`](../backlog.md) (B-001 to B-013) and is promoted only through `add-todo`.
+Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs first among the apps: it is renamed and restructured, its orphan services triaged, its editing made correct, its documents made safe, and it ships `nodus-v0.1.0` before Imago's foundation starts. After 0.1.0, the parity phases (4 to 13) bring Nodus to parity with every Illustrator 30.8 and CorelDRAW 2026 capability in the parity catalog ([`../../docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md)): TODO-07 to TODO-16 own the features, TODO-17 ships one release per phase from `nodus-v0.2.0` to `nodus-v1.0.0`, and TODO-06's eight sections move into the parity phases where their dependents need them. The legacy roadmap entries the parity sections promoted left the backlog; B-012 remains there with the other catalog backlog entries (B-037 to B-040).
 
 ## TODOs
 
@@ -14,6 +14,17 @@ Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs fi
 | [TODO-04](./TODO-04-nodus-documents.md) | Nodus Documents: Save, Fidelity, Export, and Recovery | draft |
 | [TODO-05](./TODO-05-nodus-release.md) | Nodus 0.1.0 | draft |
 | [TODO-06](./TODO-06-nodus-roadmap.md) | Nodus after 0.1.0: Deferral Owners and Accessibility | draft |
+| [TODO-07](./TODO-07-nodus-parity-document.md) | Nodus Parity: Document Model, Pages, Layers, Selection, and View | draft |
+| [TODO-08](./TODO-08-nodus-parity-paths.md) | Nodus Parity: Drawing, Paths, Shapes, Shaping, and Transform | draft |
+| [TODO-09](./TODO-09-nodus-parity-color.md) | Nodus Parity: Color, Fills, Strokes, Brushes, Transparency, Styles, and Symbols | draft |
+| [TODO-10](./TODO-10-nodus-parity-type.md) | Nodus Parity: Type, Tables, and Graphs | draft |
+| [TODO-11](./TODO-11-nodus-parity-effects.md) | Nodus Parity: Interactive and Live Effects | draft |
+| [TODO-12](./TODO-12-nodus-parity-bitmaps.md) | Nodus Parity: Bitmaps, Tracing, and Raster Effects | draft |
+| [TODO-13](./TODO-13-nodus-parity-print.md) | Nodus Parity: Color Management, Print, Prepress, and PDF | draft |
+| [TODO-14](./TODO-14-nodus-parity-formats.md) | Nodus Parity: File Formats, Export, and Web | draft |
+| [TODO-15](./TODO-15-nodus-ai.md) | Nodus AI: Editable, Suite-Aware, Reproducible | draft |
+| [TODO-16](./TODO-16-nodus-parity-workspace.md) | Nodus Parity: Workspace, Customization, Preferences, and Utilities | draft |
+| [TODO-17](./TODO-17-nodus-parity-releases.md) | Nodus Parity Releases: 0.2.0 to 1.0.0 | draft |
 
 ## Completed
 

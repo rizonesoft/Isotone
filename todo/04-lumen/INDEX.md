@@ -1,6 +1,6 @@
 # 04 Lumen
 
-> **Phases 6, 7, and 11**
+> **Phases 16, 17, and 20**
 
 Lumen, the digital darkroom and photo library, planned from nothing with `plan-new-feature` rigor. Its spine, catalog, import, RAW decode, and library views come first; non-destructive develop, export, "Edit in Imago", and `lumen-v0.1.0` follow; accessibility (TODO-02 §9) follows the suite release, and the feature ideas beyond it wait in [`../backlog.md`](../backlog.md) (B-028 to B-036), promoted only through `add-todo`. Lumen never writes an original image.
 

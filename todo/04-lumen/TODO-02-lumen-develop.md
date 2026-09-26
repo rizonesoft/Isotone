@@ -26,6 +26,8 @@ track: L2
 - -> XREF: D04 T01 §5 -- the catalog where §1 stores edit stacks
 - -> XREF: D03 T06 §3 -- the Imago release §7 hands photos to
 - -> XREF: D06 T01 §3 -- the Lumen user guide §8 requires
+- -> XREF: D01 T04 §1 -- the suite color engine §2's output transform consumes
+- -> XREF: D02 T15 §11 -- the `SuiteAppLocator` in `Photon.Core/Suite/` that §7 consumes for its App Paths lookup
 
 ## Outcome
 
@@ -52,7 +54,7 @@ track: L2
 |   4   |   §4    | Crop and straighten                               | §3                                                           |  [ ]   |
 |   5   |   §5    | Presets, copy and paste settings, and sync        | §3                                                           |  [ ]   |
 |   6   |   §6    | Export                                            | §2, D04 T01 §10                                              |  [ ]   |
-|   7   |   §7    | Edit in Imago                                     | §6, D03 T06 §3                                               |  [ ]   |
+|   7   |   §7    | Edit in Imago                                     | §6, D03 T06 §3, D02 T15 §11                                  |  [ ]   |
 |   8   |   §8    | Lumen 0.1.0                                       | §4, §5, §7, D04 T01 §11, D06 T01 §3, D05 T01 §1              |  [ ]   |
 |   9   |   §9    | Accessibility and localization                    | §8                                                           |  [ ]   |
 
@@ -158,6 +160,8 @@ Export is how developed photos leave Lumen: rendered at full resolution through 
 
 Lumen is the bridge from the camera to Imago, and the suite's rule is that no app needs another at runtime. So the hand-off is over files: Lumen renders a 16-bit TIFF, asks Windows to open it with Imago if Imago is installed, and watches for the edited file to come back. -> SOURCE: lumen-notes-edit-in
 
+**Corrected 2026-09-26:** Nodus's suite pipeline (`D02 T15 §11`) ships first and adds `src/Photon.Core/Suite/SuiteAppLocator.cs`, which reads a suite app's App Paths entry (`HKCU`, then `HKLM`) and verifies the exe exists. This section consumes it to locate Imago instead of writing its own App Paths lookup; the Treatment below keeps the same registry keys.
+
 **Fidelity:** Photo, Edit In menu -- docs/captures/lumen/develop/.
 **Job:** a photographer can take a developed photo into Imago for pixel work and see the result back in the library. Consumer: Imago (through the file) and the catalog.
 **Treatment:** Photo, Edit In, Imago (Ctrl+E) renders a 16-bit ProPhoto or Adobe RGB TIFF (a setting) named `<name>-Edit.tif` beside the original's folder in Lumen's working location, locates Imago through its App Paths registry entry (`HKCU` then `HKLM\Software\Microsoft\Windows\CurrentVersion\App Paths\Imago.exe`, written by the Imago installer), starts it with the path, and adds the TIFF to the catalog stacked with the original; when the file changes on disk the thumbnail refreshes. When Imago is not found, the menu item is disabled with the tooltip "Install Imago to edit photos in it." Cheaper substitute that fails the checkpoint: referencing Imago's assemblies.
@@ -166,7 +170,7 @@ Lumen is the bridge from the camera to Imago, and the suite's rule is that no ap
 **Requires:** display-session -- the hand-off drive needs an interactive desktop
 
 - [ ] Confirm or add the App Paths entry in `installer/Imago.iss` (and document it in `docs/dev/build.md`). Done when: after installing Imago, `reg query` shows the entry.
-- [ ] `EditInService` (render, locate, launch, stack, watch) with tests using a fake locator and launcher. Done when: tests cover found, not found, and the file-changed refresh.
+- [ ] `EditInService` (render, locate through `Photon.Core`'s `SuiteAppLocator` from `D02 T15 §11`, launch, stack, watch) with tests using a fake locator and launcher. Done when: tests cover found, not found, and the file-changed refresh, and `grep -rn "App Paths" src/Lumen` finds no second registry lookup.
 - [ ] Stacks in the catalog (a stack groups an original and its derivatives; the grid shows a stack badge and expands with S). Done when: the edited TIFF appears stacked.
 - [ ] Commit: `"lumen: Edit in Imago over files, never over assemblies"`
 

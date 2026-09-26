@@ -63,6 +63,7 @@ Sections: [Nodus](#nodus) · [Imago](#imago) · [Lumen](#lumen) · [Photon.Core]
 - Repository face: README, contributing guide, security policy, code of conduct, issue forms, pull request template, and documentation indexes.
 - Brand assets under `resources/brand/`: Rizonesoft logos for light and dark themes, the Photon banner, and a social preview image.
 - The Windows installers show a notice on Windows 10: the apps target Windows 11, and Windows 10 22H2 may work but is unsupported by .NET 11. Silent installs skip the notice.
+- Plan: Nodus parity with Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2), by operator decision. The parity catalog under `docs/parity/` merges every row of both feature inventories (4,335 in all) into 2,802 Nodus features, each with one status, and 180 new TODO sections own the planned ones: ten new phases (4 to 13) ending in `nodus-v0.2.0` to `nodus-v1.0.0`, shared pixel-engine, color-management, and AI-core files in `Photon.Core`, and a planned validator that keeps the catalog and the plan in step. Nodus AI is planned on OpenRouter with the user's own key and three pillars: editable structured output, suite-aware brand kits and hand-offs, and reproducible provenance.
 
 #### Changed
 
@@ -72,6 +73,7 @@ Sections: [Nodus](#nodus) · [Imago](#imago) · [Lumen](#lumen) · [Photon.Core]
 - Installers: Inno Setup 7.1 builds 64-bit Setup programs with a wizard that follows the system light or dark theme. The suite installer (one component per app) is built by `photon-v*` tags and `scripts/package.ps1 -Suite`.
 - Supported OS: Windows 11 (23H2 or later); Windows 10 22H2 is best-effort.
 - CI: the plan gates run on `ubuntu-26.04`; release builds install a hash-pinned Inno Setup 7.
+- Plan: the budget's total ceiling rose from 154 to 354 sections on the operator's approval ("New parity phases, up to +200"); the Imago, Lumen, and distribution phases were renumbered 14 to 20, the old Phase 9 (Nodus after 0.1.0) moved its eight sections into the parity phases, twelve backlog entries were promoted into parity sections, and four were added for obsolete formats, camera RAW import, and 3D in PDF.
 
 #### Removed
 

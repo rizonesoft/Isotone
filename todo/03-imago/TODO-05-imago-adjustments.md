@@ -23,6 +23,8 @@ track: I5
 - [`docs/legacy/imago-roadmap.md`](../../docs/legacy/imago-roadmap.md) -- phase 5 (filters and effects), the source of this file
 - libvips (https://www.libvips.org/) and GIMP -- the reference implementations for goldens, versions recorded beside them
 - -> XREF: D03 T03 §2 -- the tile-snapshot history every filter commits through
+- -> XREF: D01 T03 §1 -- the suite pixel engine §1's filter pipeline consumes instead of growing its own
+- -> XREF: D02 T15 §9 -- the Nodus AI cleanup hand-off that targets §1's pipeline
 
 ## Outcome
 

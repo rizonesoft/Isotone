@@ -29,6 +29,9 @@ track: N3
 - -> XREF: D02 T02 §4 -- the arrange and align commands §5's sweep accounts for
 - -> XREF: D01 T02 §4 -- the suite history that absorbs this file's commands once Imago needs it
 - -> XREF: D02 T04 §1 -- the dirty prompt and atomic save that §5's Close command uses
+- -> XREF: D02 T07 §13 -- paste variants and quick duplicates on §3's clipboard, and the property bar (`D02 T07 §8`) that writes through §4's property commands
+- -> XREF: D02 T08 §13 -- the transform tools that record drags as undo steps the way §1 does
+- -> XREF: D02 T14 §19 -- more clipboard flavors and OLE objects on §3's `ClipboardService`
 
 ## Outcome
 
