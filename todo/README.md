@@ -1,6 +1,6 @@
 # TODO System -- Format Spec
 
-The `todo/` tree is the live execution plan for Photon, the Rizonesoft Graphics Suite: Nodus (vector), Imago (raster), Lumen (darkroom), and the shared `Photon.Core` they consume. Markdown is canonical; the graph cache is a derived read-only projection rebuilt by `scripts/todo-graph.py`.
+The `todo/` tree is the live execution plan for the Photon Graphics Suite: Nodus (vector), Imago (raster), Lumen (darkroom), and the shared `Photon.Core` they consume. Markdown is canonical; the graph cache is a derived read-only projection rebuilt by `scripts/todo-graph.py`.
 
 One rule governs everything below: **a TODO section must be implementable by someone with zero conversation context.** A fresh session starts with none, and a session that hits the usage limit resumes cold. If a section only makes sense to someone who was in the room, it is not done.
 

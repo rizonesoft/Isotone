@@ -1,6 +1,6 @@
 # Building, packaging, and CI
 
-How the Rizonesoft Graphics Suite (codename Photon) builds from the repository root: one solution, one build configuration, one package version list.
+How the Photon Graphics Suite builds from the repository root: one solution, one build configuration, one package version list.
 
 ## Toolchain
 
@@ -97,7 +97,7 @@ A Python gate whose script is missing is skipped with a warning rather than fail
 `installer/common.iss` holds the shared defines and `[Setup]` directives. Each app script defines its name, exe, AppId GUID, and icon, then includes it.
 
 - Per-user by default (`PrivilegesRequired=lowest`); the privileges dialog offers an all-users install.
-- Each app has its own AppId and its own install folder (`{autopf}\<App>`). The suite has its own AppId, installs each app into its own subfolder of `{autopf}\Rizonesoft Graphics Suite`, and uses its own ProgIDs, so it never shares folders or registry keys with the standalone installers.
+- Each app has its own AppId and its own install folder (`{autopf}\<App>`). The suite has its own AppId, installs each app into its own subfolder of `{autopf}\Photon Graphics Suite`, and uses its own ProgIDs, so it never shares folders or registry keys with the standalone installers.
 - x64 only (`x64compatible`), modern wizard, LZMA2 max solid compression, uninstaller, Start menu shortcut, optional desktop icon.
 - File associations are opt-in tasks: Nodus `.svg`; Imago `.png`, `.jpg`/`.jpeg`, `.psd`.
 - Version from `/DAppVersion` (SemVer) and `/DAppFileVersion` (four-part), passed by `package.ps1`.

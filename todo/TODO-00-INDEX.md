@@ -1,6 +1,6 @@
 # Photon -- TODO Index
 
-The live execution plan for Photon, the Rizonesoft Graphics Suite. Format spec: [README.md](./README.md). Ordered plan: [implementation-plan.md](./implementation-plan.md).
+The live execution plan for the Photon Graphics Suite. Format spec: [README.md](./README.md). Ordered plan: [implementation-plan.md](./implementation-plan.md).
 
 ## How to use this tree
 

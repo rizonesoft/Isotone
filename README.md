@@ -8,9 +8,9 @@
   </picture>
 </a>
 
-<h1>Rizonesoft Graphics Suite</h1>
+<h1>Photon Graphics Suite</h1>
 
-<p><strong>Codename Photon.</strong> Three native Windows creative apps, one shared core: a vector editor, a raster editor, and a digital darkroom.<br>Free, open source, and yours to keep.</p>
+<p>Three native Windows creative apps, one shared core: a vector editor, a raster editor, and a digital darkroom.<br>Free, open source, and yours to keep.</p>
 
 [![Build](https://github.com/rizonesoft/Photon/actions/workflows/build.yml/badge.svg)](https://github.com/rizonesoft/Photon/actions/workflows/build.yml)
 [![Plan](https://github.com/rizonesoft/Photon/actions/workflows/plan.yml/badge.svg)](https://github.com/rizonesoft/Photon/actions/workflows/plan.yml)
@@ -298,7 +298,7 @@ More documentation: [docs/](docs/README.md) · [user guides](docs/user/README.md
 
 Copyright (C) 2025-2026 Rizonesoft
 
-The Rizonesoft Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text.
+The Photon Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text.
 
 Nodus and Imago were previously published under the MIT License as separate projects by the same author. Both are now part of this repository and are licensed under GPL-3.0.
 

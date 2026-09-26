@@ -1,6 +1,6 @@
 # Photon -- Implementation Plan to 100%
 
-The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Rizonesoft Graphics Suite bundle.
+The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
 > **Progress:** **0 of 169 sections complete (0%).** Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >

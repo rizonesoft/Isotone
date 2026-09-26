@@ -10,7 +10,7 @@ track: R1
 
 # TODO-01 -- Distribution: Clean-Machine Proof, Signing, arm64, Updates, winget, and the Suite Bundle
 
-> **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Rizonesoft Graphics Suite (`photon-v1.0.0`) without any app's version moving.
+> **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Photon Graphics Suite (`photon-v1.0.0`) without any app's version moving.
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `nodus-v*`, `imago-v*`, `lumen-v*`, and `photon-v*` tags. A local Nodus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Nodus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Nodus and Imago publishes and names Nodus's executable `Bezier.Desktop.exe`.
@@ -142,7 +142,7 @@ The suite bundle packages all three apps in one installer and one ZIP without ch
 - [ ] A `photon-v1.0.0` section in `CHANGELOG.md` listing the app versions the bundle carries. Done when: it exists.
 - [ ] Run the clean-machine procedure for the suite installer: install all three, uninstall one component, confirm the others still run and no standalone install's registry keys were touched. Done when: every step passes (quoted).
 - [ ] Push `photon-v1.0.0`; verify the workflow, the assets, and `SHA256SUMS`. Done when: all pass (URLs and hashes quoted).
-- [ ] Commit: `"release: the Rizonesoft Graphics Suite 1.0.0 bundle"`
+- [ ] Commit: `"release: the Photon Graphics Suite 1.0.0 bundle"`
 
 **Requires:** display-session -- the suite installer's component page and the app launches need an interactive desktop
 

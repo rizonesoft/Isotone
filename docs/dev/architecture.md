@@ -1,6 +1,6 @@
 # Architecture
 
-How the Rizonesoft Graphics Suite (codename **Photon**) is put together: the applications, the shared libraries, the rules that keep them independent, and where the code is going. The build itself is described in [build.md](build.md) and versioning in [versioning.md](versioning.md). The live plan is [`todo/`](../../todo/TODO-00-INDEX.md).
+How the Photon Graphics Suite is put together: the applications, the shared libraries, the rules that keep them independent, and where the code is going. The build itself is described in [build.md](build.md) and versioning in [versioning.md](versioning.md). The live plan is [`todo/`](../../todo/TODO-00-INDEX.md).
 
 ## The application family
 

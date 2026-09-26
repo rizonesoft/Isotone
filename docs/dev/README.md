@@ -1,6 +1,6 @@
 # Developer Guides
 
-Documentation for contributors and maintainers of the Rizonesoft Graphics Suite.
+Documentation for contributors and maintainers of the Photon Graphics Suite.
 
 ## Guides
 

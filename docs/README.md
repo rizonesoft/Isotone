@@ -1,6 +1,6 @@
 # Documentation
 
-Documentation for the Rizonesoft Graphics Suite (codename Photon).
+Documentation for the Photon Graphics Suite.
 
 | Section | For | Start here |
 | ------- | --- | ---------- |

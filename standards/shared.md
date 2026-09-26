@@ -1,6 +1,6 @@
 # Shared Standards
 
-Cross-cutting standards for every app in the Rizonesoft Graphics Suite (Nodus, Imago, Lumen) and for `Photon.Core` and `Photon.UI`. App files ([`nodus.md`](nodus.md), [`imago.md`](imago.md), [`lumen.md`](lumen.md)) add to this file and never contradict it. [`AGENTS.md`](../AGENTS.md) holds the binding decisions; this file spells them out.
+Cross-cutting standards for every app in the Photon Graphics Suite (Nodus, Imago, Lumen) and for `Photon.Core` and `Photon.UI`. App files ([`nodus.md`](nodus.md), [`imago.md`](imago.md), [`lumen.md`](lumen.md)) add to this file and never contradict it. [`AGENTS.md`](../AGENTS.md) holds the binding decisions; this file spells them out.
 
 ## The stack
 

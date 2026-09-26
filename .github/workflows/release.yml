@@ -3,7 +3,7 @@ name: release
 # Tag-driven releases. The tag prefix picks what ships:
 #   nodus-v1.2.3  -> Nodus      imago-v1.2.3 -> Imago
 #   lumen-v1.2.3  -> Lumen (refused by package.ps1 until Lumen ships)
-#   photon-v1.2.3 -> the Rizonesoft Graphics Suite bundle (all shipping apps)
+#   photon-v1.2.3 -> the Photon Graphics Suite bundle (all shipping apps)
 # A version with a hyphen (1.2.3-beta.1) is published as a prerelease.
 
 on:
@@ -47,7 +47,7 @@ jobs:
           }
           $prefix = $Matches[1]; $version = $Matches[2]
           $app = @{ nodus = 'Nodus'; imago = 'Imago'; lumen = 'Lumen'; photon = 'Suite' }[$prefix]
-          $title = if ($app -eq 'Suite') { "Rizonesoft Graphics Suite $version" } else { "$app $version" }
+          $title = if ($app -eq 'Suite') { "Photon Graphics Suite $version" } else { "$app $version" }
           "app=$app" >> $env:GITHUB_OUTPUT
           "version=$version" >> $env:GITHUB_OUTPUT
           "title=$title" >> $env:GITHUB_OUTPUT
