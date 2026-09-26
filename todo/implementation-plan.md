@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
-> **Progress:** **0 of 169 sections complete (0%).** Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 170 sections complete (0%).** Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -150,7 +150,7 @@ Nodus goes first among the apps. This phase gives it a real composition root on 
 | [ ] | `D02 T01 §4` | Culture-safe formatting and comparisons            |   5   |
 | [ ] | `D02 T01 §5` | The rest of the analyzer backlog                   |   4   |
 | [ ] | `D02 T02 §1` | The triage record and the delete group             |   4   |
-| [ ] | `D02 T02 §2` | One SVG render path                                |   5   |
+| [ ] | `D02 T02 §2` | One SVG render path                                |   6   |
 | [ ] | `D02 T01 §6` | SkiaSharp 4                                        |   6   |
 | [ ] | `D02 T01 §7` | Warnings are errors in Nodus                       |   4   |
 | [ ] | `D02 T02 §3` | Selection has one owner                            |   5   |
@@ -162,7 +162,7 @@ Nodus goes first among the apps. This phase gives it a real composition root on 
 
 ### Phase 3 -- Nodus 0.1.0: shared UI, complete editing, documents, release
 
-With its foundation sound, Nodus becomes a complete first release: `Photon.UI` takes the controls and windows Nodus and Imago duplicate and the suite theme, single instance moves to `Photon.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the clean-machine procedure is proven, and `nodus-v0.1.0` ships.
+With its foundation sound, Nodus becomes a complete first release: `Photon.UI` takes the controls and windows Nodus and Imago duplicate and the suite theme, single instance moves to `Photon.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the SDK pin moves from the .NET 11 release candidate to GA (`D00 T02 §8`, which waits for the November 2026 GA and parks with that blocker named until then), the clean-machine procedure is proven on Windows 11, and `nodus-v0.1.0` ships.
 
 |  ✔  | Section      | Deliverable                                          | Items |
 | :-: | ------------ | ---------------------------------------------------- | :---: |
@@ -187,6 +187,7 @@ With its foundation sound, Nodus becomes a complete first release: `Photon.UI` t
 | [ ] | `D02 T05 §3` | The Help menu                                        |   3   |
 | [ ] | `D06 T01 §1` | The Nodus user guide                                 |   4   |
 | [ ] | `D06 T02 §1` | The architecture page matches the tree               |   4   |
+| [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                               |   6   |
 | [ ] | `D05 T01 §1` | The clean-machine install procedure                  |   3   |
 | [ ] | `D02 T05 §4` | Nodus 0.1.0                                          |   8   |
 

@@ -11,6 +11,8 @@ Guides for people using the Photon Graphics Suite. The suite is pre-alpha and ha
 | Getting started with Imago: documents, layers, painting, export | Imago (raster) | *planned* |
 | Getting started with Lumen: importing, developing RAW files, Edit in Imago | Lumen (darkroom) | *planned* |
 
+**Requirements:** Windows 11 (23H2 or later), 64-bit. Windows 10 22H2 may work but is unsupported: .NET 11, which the apps are built on, does not support consumer Windows 10, and the installer shows a notice there before continuing.
+
 Until these exist, the [README](../../README.md#download-and-install) explains how releases will ship, and [Build from source](../../README.md#build-from-source) shows how to run Nodus today.
 
 ## Help

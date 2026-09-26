@@ -25,7 +25,11 @@ env:
   DOTNET_NOLOGO: 'true'
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
-  INNO_SETUP_VERSION: '6.7.1'
+  # Inno Setup 7 (installer/common.iss needs SetupArchitecture=x64). Chocolatey has
+  # no Inno 7 package, so the official installer is fetched from the jrsoftware/issrc
+  # release and checked against this hash. The image's preinstalled Inno 6 is ignored.
+  INNO_SETUP_VERSION: '7.1.0'
+  INNO_SETUP_SHA256: '0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f'
 
 jobs:
   release:
@@ -57,17 +61,26 @@ jobs:
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
-      - name: Ensure Inno Setup
+      - name: Ensure Inno Setup 7
         run: |
-          $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $iscc) {
-            choco install innosetup --version $env:INNO_SETUP_VERSION -y --no-progress
-            if ($LASTEXITCODE -ne 0) { throw "choco install innosetup failed ($LASTEXITCODE)" }
-            $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          $iscc = "$env:ProgramFiles\Inno Setup 7\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            $tag = 'is-' + ($env:INNO_SETUP_VERSION -replace '\.', '_')
+            $url = "https://github.com/jrsoftware/issrc/releases/download/$tag/innosetup-$env:INNO_SETUP_VERSION-x64.exe"
+            $exe = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+            Invoke-WebRequest -Uri $url -OutFile $exe
+            $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($hash -ne $env:INNO_SETUP_SHA256) { throw "Inno Setup installer hash $hash does not match the pin" }
+            $p = Start-Process $exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/ALLUSERS' -Wait -PassThru
+            if ($p.ExitCode -ne 0) { throw "Inno Setup install failed ($($p.ExitCode))" }
           }
-          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found after install" }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found at $iscc after install" }
+          # The banner goes to stderr and the usage text to stdout; scan both.
+          $text = (& $iscc 2>&1 | ForEach-Object { "$_" }) -join "`n"
+          if ($text -notmatch 'Inno Setup 7 Command-Line Compiler') { throw "Expected Inno Setup 7 at $iscc" }
           "ISCC=$iscc" >> $env:GITHUB_ENV
-          Write-Host "Using $iscc"
+          Write-Host "Using $iscc (Inno Setup 7)"
+          exit 0
       - name: Test
         run: dotnet test Photon.slnx -c Release
       - name: Package

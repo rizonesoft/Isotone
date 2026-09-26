@@ -60,7 +60,7 @@ track: C1
 
 **Fidelity:** no surface of its own -- the icons render inside existing windows whose captures (`docs/captures/nodus/main-window/`, `docs/captures/imago/main-window/`) must look the same after the move.
 
-- [ ] Create `src/Photon.UI/Photon.UI.csproj` (`net10.0-windows`, `UseWPF`, `Nullable` enable, namespace root `Photon.UI`) and add it to `Photon.slnx` under a `/Shared/` folder. Done when: `dotnet build Photon.slnx -c Release` builds it.
+- [ ] Create `src/Photon.UI/Photon.UI.csproj` (`net11.0-windows10.0.26100.0` with `TargetPlatformMinVersion` 10.0.17763.0, as the apps; **Corrected 2026-09-26:** said `net10.0-windows`, `UseWPF`, `Nullable` enable, namespace root `Photon.UI`) and add it to `Photon.slnx` under a `/Shared/` folder. Done when: `dotnet build Photon.slnx -c Release` builds it.
 - [ ] Merge the two `icons.json` catalogs into `src/Photon.UI/Resources/icons.json` (union by icon name; where both define a name with different path data, keep Nodus's and list the conflict in the commit body). Done when: every icon name used in either app's XAML (`grep -rho 'Icon="[A-Za-z0-9]*"'`) exists in the merged file.
 - [ ] Move `VectorIcon` to `src/Photon.UI/Controls/VectorIcon.cs` from the larger Nodus copy, folding in any Imago-only behavior. Done when: both apps' copies are deleted and their XAML uses `xmlns:pui="clr-namespace:Photon.UI.Controls;assembly=Photon.UI"`.
 - [ ] Move `IconService` to `src/Photon.UI/Icons/IconCatalog.cs` as a class registered as a singleton in each app's composition root; keep a static accessor only where `VectorIcon` needs one at XAML parse time, and document why beside it. Done when: neither app calls `IconService.Instance`.

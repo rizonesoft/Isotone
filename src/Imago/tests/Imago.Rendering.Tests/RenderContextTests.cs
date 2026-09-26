@@ -1,6 +1,6 @@
 namespace Imago.Rendering.Tests;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 public class RenderContextTests

@@ -265,6 +265,19 @@ dotnet_naming_symbols.constants.required_modifiers = const
 
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
+# Private constants: the Roslyn in the .NET 11 SDK matches a const field against
+# `required_modifiers = static`, so the static-field rule above (private, static)
+# outranked the constants rule and demanded an s_ prefix. Naming rules are ordered
+# by specificity, not file order: two required modifiers outrank one, so private
+# constants stay PascalCase.
+dotnet_naming_rule.private_constants_should_be_pascal_case.severity = warning
+dotnet_naming_rule.private_constants_should_be_pascal_case.symbols = private_constants
+dotnet_naming_rule.private_constants_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.private_constants.applicable_kinds = field
+dotnet_naming_symbols.private_constants.applicable_accessibilities = private
+dotnet_naming_symbols.private_constants.required_modifiers = const, static
+
 # Public members should be PascalCase
 dotnet_naming_rule.public_members_should_be_pascal_case.severity = warning
 dotnet_naming_rule.public_members_should_be_pascal_case.symbols = public_members

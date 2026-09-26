@@ -1,6 +1,6 @@
 namespace Imago.Core.Tests.Layers;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Imago.Core.Layers;
 using Xunit;
 

@@ -18,8 +18,9 @@
 [![Latest release](https://img.shields.io/github/v/release/rizonesoft/Photon?include_prereleases&sort=semver&label=release)](https://github.com/rizonesoft/Photon/releases)
 <br>
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-[![.NET 10](https://img.shields.io/badge/.NET-10.0.400-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/10.0)
-[![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0078D4?logo=windows&logoColor=white)](#download-and-install)
+[![.NET 11 RC](https://img.shields.io/badge/.NET-11.0.100--rc.1-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/11.0)
+[![Inno Setup 7](https://img.shields.io/badge/Inno%20Setup-7.1-264B99)](https://jrsoftware.org/isinfo.php)
+[![Windows 11](https://img.shields.io/badge/Windows-11%20x64-0078D4?logo=windows&logoColor=white)](#download-and-install)
 
 <br>
 
@@ -49,7 +50,7 @@
 Professional graphics software has drifted toward subscriptions, sign-ins, and cloud lock-in. Photon goes the other way.
 
 - **Own your tools.** No account, no subscription, no telemetry required to open a file.
-- **Native and fast.** Built for Windows on .NET 10, WPF, and SkiaSharp, with startup time and responsiveness treated as features.
+- **Native and fast.** Built for Windows on .NET 11, WPF, and SkiaSharp, with startup time and responsiveness treated as features.
 - **Open formats first.** SVG, PNG, TIFF, and JPEG are first-class citizens, with import paths for the formats you already have.
 - **One family, three tools.** Each app installs and updates on its own, yet they share a core so colors, rendering, and plugins behave the same everywhere.
 - **Free software.** GPL-3.0, developed in the open.
@@ -176,15 +177,15 @@ flowchart TB
 
 | Piece | Choice |
 | ----- | ------ |
-| Runtime | .NET 10 (SDK pinned to 10.0.400) |
+| Runtime | .NET 11 (SDK pinned to 11.0.100-rc.1 until .NET 11 ships in November 2026) |
 | UI | WPF with standard controls (no third-party UI framework) |
 | Rendering | SkiaSharp |
 | MVVM | CommunityToolkit.Mvvm |
 | Logging | Serilog |
-| Tests | xUnit |
-| Installers | Inno Setup, self-contained .NET |
+| Tests | xUnit v3, AwesomeAssertions |
+| Installers | Inno Setup 7 (64-bit Setup), self-contained .NET |
 | Versioning | MinVer, from Git tags |
-| Platform | Windows 10 and 11, x64 |
+| Platform | Windows 11, x64 (Windows 10 22H2 best-effort, unsupported) |
 
 </details>
 
@@ -216,13 +217,13 @@ Every app ships on its own, in two forms:
 | ---- | -------- | ----- |
 | **Installer** (`.exe`, Inno Setup) | Most people | Start menu entry and a clean uninstall |
 | **Portable ZIP** | Locked-down machines, trying it out | Unzip and run, no installer needed |
-| **Suite installer** | Getting everything at once | Installs Nodus, Imago, and Lumen together |
+| **Suite installer** | Getting everything at once | One Photon Graphics Suite installer with a component per app (Nodus and Imago today) |
 
 **Per-user or all-users.** The installer asks at startup. A per-user install needs no administrator rights and lands in your profile; an all-users install needs elevation and lands in Program Files.
 
 **No .NET install needed.** Every build is self-contained, so the right .NET runtime travels with the app.
 
-**Requirements:** Windows 10 or Windows 11, 64-bit (x64).
+**Requirements:** Windows 11 (23H2 or later), 64-bit (x64). Windows 10 22H2 may work but is unsupported: .NET 11 does not support consumer Windows 10, and the installer says so before it continues.
 
 **Package managers:** winget packages are planned after the first stable release.
 
@@ -231,11 +232,11 @@ Every app ships on its own, in two forms:
 <details open>
 <summary><strong>Prerequisites</strong></summary>
 
-- Windows 10 or 11, x64
+- Windows 11 (23H2 or later), x64. Windows 10 22H2 may work but is unsupported.
 - [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) (`pwsh`)
 - [Git](https://git-scm.com/)
-- .NET SDK **10.0.400**, pinned in `global.json`. The provisioning script installs it for you.
-- Optional: [Inno Setup 6](https://jrsoftware.org/isinfo.php) to build installers locally
+- .NET SDK **11.0.100-rc.1.26425.128** (the .NET 11 release candidate), pinned in `global.json`. The provisioning script installs it for you.
+- Optional: [Inno Setup 7.1](https://jrsoftware.org/isinfo.php) or newer to build installers locally (the provisioning script installs it)
 
 </details>
 
@@ -307,15 +308,13 @@ Nodus and Imago were previously published under the MIT License as separate proj
 Photon stands on the shoulders of excellent open source work:
 
 - [SkiaSharp](https://github.com/mono/SkiaSharp) and [Skia](https://skia.org/) for 2D rendering
-- [Svg.Skia](https://github.com/wieslawsoltes/Svg.Skia) for SVG rendering on Skia
+- [SharpVectors](https://github.com/ElinamLLC/SharpVectors) for the Nodus splash logo
 - [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) for MVVM source generators
 - [Serilog](https://serilog.net/) for structured logging
 - [AvalonDock](https://github.com/Dirkster99/AvalonDock) for docking panels
-- [AvalonEdit](https://github.com/icsharpcode/AvalonEdit) for the code view
-- [ImageSharp](https://github.com/SixLabors/ImageSharp) for image format support
 - [MinVer](https://github.com/adamralph/minver) for tag-based versioning
 - [Inno Setup](https://jrsoftware.org/isinfo.php) for installers
-- [xUnit](https://xunit.net/) for testing
+- [xUnit](https://xunit.net/) and [AwesomeAssertions](https://awesomeassertions.org/) for testing
 
 <div align="center">
 <sub>Made in the open by <a href="https://www.rizonesoft.com">Rizonesoft</a>.</sub>

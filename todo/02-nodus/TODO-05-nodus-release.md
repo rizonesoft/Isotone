@@ -26,6 +26,7 @@ track: N5
 - -> XREF: D01 T01 §4 -- moves §1 and §2's dialogs to `Photon.UI` the day Imago needs them
 - -> XREF: D06 T01 §1 -- the Nodus user guide §4 requires
 - -> XREF: D05 T01 §1 -- the clean-machine proof §4 requires
+- -> XREF: D00 T02 §8 -- the .NET 11 GA SDK pin §4 waits for, so no release ships on a release-candidate SDK
 
 ## Outcome
 
@@ -45,7 +46,7 @@ track: N5
 |   1   |   §1    | The About dialog                       | D02 T03 §2                                                                              |  [ ]   |
 |   2   |   §2    | The keyboard shortcuts dialog          | D02 T02 §8                                                                              |  [ ]   |
 |   3   |   §3    | The Help menu                          | §1, §2                                                                                  |  [ ]   |
-|   4   |   §4    | Nodus 0.1.0                            | §3, D02 T01 §7, D02 T03 §5, D02 T04 §6, D01 T01 §3, D06 T01 §1, D05 T01 §1, D00 T02 §7 |  [ ]   |
+|   4   |   §4    | Nodus 0.1.0                            | §3, D02 T01 §7, D02 T03 §5, D02 T04 §6, D01 T01 §3, D06 T01 §1, D05 T01 §1, D00 T02 §7, D00 T02 §8 |  [ ]   |
 
 ---
 
@@ -105,7 +106,7 @@ Every Help item must work or name its owner (the rule `D02 T03 §5` enforces). D
 
 ## 4. Nodus 0.1.0
 
-The first real release proves the whole product path for one app: every gate green, the changelog and guide current, the installer clean on a machine that has never seen .NET, and the tag producing a verified GitHub release. It follows the checklist in `standards/release.md` exactly, quoting each line's evidence.
+The first real release proves the whole product path for one app: every gate green, the changelog and guide current, the installer clean on a machine that has never seen .NET, and the tag producing a verified GitHub release. It follows the checklist in `standards/release.md` exactly, quoting each line's evidence. It builds on the .NET 11 GA SDK (`D00 T02 §8`), never on the release candidate the toolchain upgrade of 2026-09-26 pinned. The clean machine is Windows 11 (the supported OS); an extra Windows 10 22H2 smoke is optional and best-effort, its failures recorded rather than blocking.
 
 **Needs:** Clean Windows machine (no .NET SDK)
 

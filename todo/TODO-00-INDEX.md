@@ -12,7 +12,7 @@ The live execution plan for the Photon Graphics Suite. Format spec: [README.md](
 
 ## What this plan is
 
-Photon is a .NET 10 WPF monorepo holding three standalone creative applications: **Nodus** (vector, imported from Bezier under `src/Nodus/`), **Imago** (raster, imported under `src/Imago/`), and **Lumen** (darkroom and asset manager, planned). They are developed together and distributed separately. Shared code lives in `Photon.Core` (non-UI) and `Photon.UI` (WPF), and only once a second app needs it. The imported apps' legacy roadmaps were mined into this tree on 2026-09-26 and are kept for reference in [`../docs/legacy/`](../docs/legacy/README.md).
+Photon is a .NET 11 WPF monorepo holding three standalone creative applications: **Nodus** (vector, imported from Bezier under `src/Nodus/`), **Imago** (raster, imported under `src/Imago/`), and **Lumen** (darkroom and asset manager, planned). They are developed together and distributed separately. Shared code lives in `Photon.Core` (non-UI) and `Photon.UI` (WPF), and only once a second app needs it. The imported apps' legacy roadmaps were mined into this tree on 2026-09-26 and are kept for reference in [`../docs/legacy/`](../docs/legacy/README.md).
 
 ## Domain order
 

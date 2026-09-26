@@ -4,9 +4,9 @@ How the suite proves its work. The five proofs a TODO checkpoint may cite are de
 
 ## Test projects
 
-- xUnit, one test project per production assembly or app `Core`, under `tests/` once the layout restructure lands (`tests/Photon.Nodus.Tests`, `tests/Photon.Imago.Core.Tests`, and so on). Today they sit inside each app folder.
+- xUnit v3 through the `xunit.v3.mtp-off` package with `xunit.runner.visualstudio` and `Microsoft.NET.Test.Sdk`, so `dotnet test` runs on VSTest and honors `tests/Photon.runsettings` (the plain `xunit.v3` package turns on Microsoft.Testing.Platform, which the .NET 10+ SDK refuses under VSTest). Test projects set `OutputType` `Exe`. One test project per production assembly or app `Core`, under `tests/` once the layout restructure lands (`tests/Photon.Nodus.Tests`, `tests/Photon.Imago.Core.Tests`, and so on). Today they sit inside each app folder.
 - Every test runs through `dotnet test Photon.slnx`. A test that needs something the CI runner lacks (a display, a GPU, a network) is marked with a trait (`[Trait("Requires", "display")]`) and skipped with a reason, never left to fail.
-- Assertions: plain xUnit `Assert`, or the assertion library the recorded decision in `docs/dev/decisions.md` names. One assertion library in the whole suite.
+- Assertions: plain xUnit `Assert`, or AwesomeAssertions (Apache-2.0, the community fork of FluentAssertions 7; FluentAssertions 8 carries the Xceed commercial license). One assertion library in the whole suite; the decision record is owed to `docs/dev/decisions.md` by `D00 T02 §5`.
 
 ## Naming and shape
 

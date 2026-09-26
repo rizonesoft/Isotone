@@ -48,15 +48,35 @@ function Get-FileVersion([string]$SemVer) {
   return "$core.$build"
 }
 
+function Get-IsccMajor([string]$Path) {
+  # ISCC.exe has no version resource; its banner names the major version
+  # ("Inno Setup 7 Command-Line Compiler"). Run without arguments it prints the
+  # banner and usage, then exits non-zero; only the banner matters here.
+  # The whole output is read (no Select-Object -First, which stops the pipeline
+  # early and can abort a caller's loop under $ErrorActionPreference = 'Stop').
+  $major = 0
+  try {
+    $text = (& $Path 2>&1 | ForEach-Object { "$_" }) -join "`n"
+    if ($text -match 'Inno Setup (\d+) Command-Line Compiler') { $major = [int]$Matches[1] }
+  } catch { }
+  $global:LASTEXITCODE = 0
+  return $major
+}
+
 function Find-Iscc {
+  # Inno Setup 7 is required: installer/common.iss uses SetupArchitecture=x64 and
+  # WizardStyle=modern dynamic, which Inno Setup 6 rejects. $env:ISCC wins when it
+  # points at an Inno 7 compiler; Inno 6 installs are skipped, never used.
   $candidates = @(
     $env:ISCC,
-    (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
-    (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe'),
-    (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
-  ) | Where-Object { $_ -and (Test-Path $_) }
-  if ($candidates) { return @($candidates)[0] }
+    (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),
+    (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe')
+  )
   $cmd = Get-Command ISCC.exe -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-  throw 'ISCC.exe (Inno Setup 6) not found. Run tools/provision.ps1 or set $env:ISCC.'
+  if ($cmd) { $candidates += $cmd.Source }
+  foreach ($c in $candidates) {
+    if ($c -and (Test-Path $c) -and (Get-IsccMajor $c) -ge 7) { return $c }
+  }
+  throw 'ISCC.exe (Inno Setup 7.1 or newer) not found. Run tools/provision.ps1 or set $env:ISCC.'
 }

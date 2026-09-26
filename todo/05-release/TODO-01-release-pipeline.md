@@ -59,11 +59,11 @@ track: R1
 
 ## 1. The Clean-Machine Install Procedure
 
-A developer machine has the .NET SDK and runtimes, so a self-contained publish that accidentally depends on an installed runtime passes there and fails for users. Every release is proven on a clean Windows machine (a Windows Sandbox instance or a VM snapshot), and the procedure is written once so each app's release section runs the same steps.
+A developer machine has the .NET SDK and runtimes, so a self-contained publish that accidentally depends on an installed runtime passes there and fails for users. Every release is proven on a clean Windows 11 machine (a Windows Sandbox instance or a VM snapshot), and the procedure is written once so each app's release section runs the same steps. **Corrected 2026-09-26:** the supported OS is Windows 11 (23H2 or later); Windows 10 22H2 is best-effort because .NET 11 supports only its LTSC and IoT editions, so an extra Windows 10 22H2 smoke is optional and its failures are recorded, never blocking.
 
 **Needs:** Clean Windows machine (no .NET SDK)
 
-- [ ] Write `docs/dev/clean-machine.md`: how to get a clean machine (Windows Sandbox with a `.wsb` file mapping `artifacts/dist` read-only, committed as `tools/sandbox/clean-machine.wsb`), and the steps: confirm `dotnet --list-runtimes` fails, install per-user silently, launch, open a fixture, save, close, check the log for errors, uninstall, confirm the install folder and Start menu entry are gone; repeat all-users (elevated) and confirm a non-elevated all-users install is refused with the Inno Setup message; upgrade over the previous release and confirm settings survive. Done when: the page and the `.wsb` file exist.
+- [ ] Write `docs/dev/clean-machine.md`: how to get a clean Windows 11 machine (Windows Sandbox with a `.wsb` file mapping `artifacts/dist` read-only, committed as `tools/sandbox/clean-machine.wsb`), and the steps: confirm `dotnet --list-runtimes` fails, install per-user silently, launch, open a fixture, save, close, check the log for errors, uninstall, confirm the install folder and Start menu entry are gone; repeat all-users (elevated) and confirm a non-elevated all-users install is refused with the Inno Setup message; upgrade over the previous release and confirm settings survive; on Windows 10 22H2 (optional, best-effort), confirm the interactive installer shows the "not officially supported" notice and a `/VERYSILENT` install does not. Done when: the page and the `.wsb` file exist.
 - [ ] Run the procedure for Nodus on the current build and quote each step. Done when: every step passes, or each failure is filed through `add-todo` with its owner.
 - [ ] Commit: `"release: a written clean-machine install procedure, run for Nodus"`
 
@@ -87,7 +87,7 @@ Unsigned installers trigger SmartScreen warnings and cannot build reputation. Th
 
 ## 3. win-arm64 Publish and Installers
 
-Windows on Arm machines run x64 apps under emulation, slowly. .NET 10 and WPF support `win-arm64`; SkiaSharp ships arm64 native assets. `publish.ps1` already takes `-Runtime win-arm64`; the installers and workflow do not.
+Windows on Arm machines run x64 apps under emulation, slowly. .NET 11 and WPF support `win-arm64`; SkiaSharp ships arm64 native assets. `publish.ps1` already takes `-Runtime win-arm64`; the installers and workflow do not.
 
 **Needs:** Windows host (build/test)
 

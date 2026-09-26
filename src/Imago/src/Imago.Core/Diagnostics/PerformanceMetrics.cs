@@ -81,7 +81,7 @@ public sealed class PerformanceMetrics
     /// </summary>
     public sealed class OperationStats
     {
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private TimeSpan _totalTime;
         private TimeSpan _minTime;
         private TimeSpan _maxTime;

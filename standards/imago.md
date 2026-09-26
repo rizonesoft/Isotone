@@ -39,4 +39,4 @@ Rendering, compositing, painting, and input are hot paths:
 
 - Every codec is a format reader or writer and owes a format fidelity proof against a committed fixture ([`testing.md`](testing.md)), with the tolerance stated.
 - A codec that cannot represent a document (layers into JPEG, 16-bit into an 8-bit format) says so before it writes: flatten, convert, or refuse, never silently.
-- The codec library is chosen by a recorded decision (`docs/dev/decisions.md`) with its license checked against GPL-3.0. SixLabors.ImageSharp is referenced today but used by no code, and 4.x fails the build without a paid license key; the plan removes it, and bringing any version back needs its own recorded decision.
+- The codec library is chosen by a recorded decision (`docs/dev/decisions.md`) with its license checked against GPL-3.0. SixLabors.ImageSharp was referenced but used by no code and was removed on 2026-09-26, and 4.x fails the build without a paid license key; the plan removes it, and bringing any version back needs its own recorded decision.

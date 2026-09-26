@@ -37,7 +37,7 @@ If your change is not covered by an existing section, open an issue first so it 
 
 ## Set up and build
 
-You need Windows 10 or 11 (x64), [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows), and Git. The .NET SDK is pinned to **10.0.400** in `global.json`; the provisioning script installs it.
+You need Windows 11 (x64; Windows 10 22H2 may work but is unsupported), [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows), and Git. The .NET SDK is pinned to **11.0.100-rc.1.26425.128** in `global.json`; the provisioning script installs it, and Inno Setup 7 for building installers.
 
 ```powershell
 git clone https://github.com/rizonesoft/Photon.git

@@ -6,13 +6,13 @@ Cross-cutting standards for every app in the Photon Graphics Suite (Nodus, Imago
 
 | Concern | Choice | Notes |
 | ------- | ------ | ----- |
-| Runtime | .NET 10, C# `latest` | SDK pinned by `global.json`; every project builds from `Photon.slnx` |
+| Runtime | .NET 11, C# `latest` | SDK pinned by `global.json`; every project builds from `Photon.slnx`. WPF projects target `net11.0-windows10.0.26100.0` with `TargetPlatformMinVersion` 10.0.17763.0; non-UI projects target `net11.0` |
 | UI | WPF, standard controls, custom theming | **No WPF-UI** and no other UI framework: a WPF-UI reference is a defect |
 | MVVM | CommunityToolkit.Mvvm | `ObservableObject`, `[ObservableProperty]`, `[RelayCommand]`, `IMessenger` where messaging is genuinely needed. **No ReactiveUI.** `Ioc.Default` is not used: composition goes through Microsoft DI |
 | Composition | Microsoft.Extensions.DependencyInjection, one Generic Host per app | One composition root per app; constructor injection; no static service locator (`App.Services`, `Foo.Instance`) |
 | Logging | Serilog | Configured once per app through `Photon.Core` |
 | Rendering | SkiaSharp (all apps), ComputeSharp (Imago GPU path) | |
-| Tests | xUnit | See [`testing.md`](testing.md) |
+| Tests | xUnit v3, AwesomeAssertions | See [`testing.md`](testing.md) |
 | JSON | System.Text.Json with source-generated contexts | Newtonsoft.Json is not used |
 
 **A dependency is a decision.** A package outside this table is added by a section that records why, and its license is checked against GPL-3.0 before it lands: permissive (MIT, BSD, Apache-2.0) and LGPL are compatible; a license that forbids redistribution, needs a paid key, or restricts field of use is not.

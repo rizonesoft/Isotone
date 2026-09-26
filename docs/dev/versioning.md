@@ -49,6 +49,12 @@ So `Photon.Core.dll` inside the Nodus 1.2.3 installer reports 1.2.3, and inside 
 
 The suite bundle (`package.ps1 -Suite`) passes the `photon-v` version to every app's publish. All binaries in a suite installer therefore carry the suite version.
 
+## Suite and per-app releases
+
+Per-app tags (`nodus-v*`, `imago-v*`) release one app: `release.yml` runs `package.ps1 -App <App>` and the release carries only that app's installer, portable ZIP, and `SHA256SUMS`. It never builds or needs the suite installer. A `photon-v*` tag releases the Photon Graphics Suite: `package.ps1 -Suite` builds `Photon-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, one component per shipping app) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
+
+The toolchain is not a version input: moving the SDK pin (today the .NET 11 release candidate, GA through `D00 T02 §8`) changes no app's version. Only tags do.
+
 ## Cutting a release
 
 1. Add a CHANGELOG section whose heading names the tag, for example `## [nodus-v0.2.0] - 2026-10-01`. The release workflow uses that section as the release notes. Without one, GitHub generates notes from the commits.

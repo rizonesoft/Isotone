@@ -1,6 +1,6 @@
 namespace Imago.Core.Tests.History;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Imago.Core.History;
 using Moq;
 using Xunit;

@@ -12,11 +12,12 @@
     LEGACY DEBT (imported Imago code): the root configuration applies in full
     (warnings are errors, code style enforced) except for the diagnostics below,
     which stay visible as warnings. Listed in docs/dev/build.md; retire by TODO.
-      IDE0005  unnecessary using directives (12 sites)
-      CS0618   obsolete API use (2 sites)
-      NU1701   packages restored for .NET Framework (SkiaSharp.Views.WPF 3.x, OpenTK)
+      IDE0005  unnecessary using directives
+      CS0618   obsolete API use (WPF-UI IContentDialogService.SetDialogHost)
+    NU1701 left on 2026-09-26: SkiaSharp.Views.WPF 4 on the Windows SDK TFM
+    restores OpenTK 4 for .NET, not the .NET Framework OpenTK 3 packages.
   -->
   <PropertyGroup>
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);IDE0005;CS0618;NU1701</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);IDE0005;CS0618</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>

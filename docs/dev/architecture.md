@@ -26,8 +26,8 @@ The imported trees still use their legacy names; the plan renames them in its fi
 
 ```
 src/
-  Photon.Core/                  shared non-UI library (net10.0)
-  Photon.UI/                    shared WPF library (net10.0-windows)
+  Photon.Core/                  shared non-UI library (net11.0)
+  Photon.UI/                    shared WPF library (net11.0-windows10.0.26100.0)
   Nodus/
     Photon.Nodus.Core/          document model, tools, commands, SVG I/O
     Photon.Nodus.Desktop/       WPF app, AssemblyName Nodus (Nodus.exe)
