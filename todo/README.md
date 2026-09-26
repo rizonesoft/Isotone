@@ -13,6 +13,8 @@ todo/
 ├── README.md               this file
 ├── TODO-00-INDEX.md        root index -- domain order + active work
 ├── implementation-plan.md  phase plan, the front door for a run (boxes derived)
+├── budget.json             the plan's ceilings: per phase, total, backlog cap, per-run cap
+├── backlog.md              deferred ideas, one line each; never sections, never runnable
 ├── .warning-baseline       accepted warnings; a NEW warning fails validate
 ├── 00-workspace/
 │   ├── INDEX.md            domain index -- every TODO in this domain
@@ -396,6 +398,9 @@ python scripts/todo-graph.py query stats        # tree health
 python scripts/todo-graph.py query plan-health  # review-loop governance: --json for machines; --check/--fail-on gate automation
 python scripts/todo-graph.py query summary      # operator digest: incomplete runs, blocked clearances, overdue owners, next action, gate verdict
 python scripts/todo-graph.py query run <id>     # one run ID resolves to candidate, scope, findings, lineage, outage, artifacts
+python scripts/todo-graph.py query budget       # per-phase sections used against each ceiling, the total, the backlog, the per-run cap
+python scripts/todo-graph.py query backlog      # every backlog entry: id, date, app, title, needs
+python scripts/todo-graph.py query growth --since <ref> [--check]   # sections and backlog entries added or removed since a commit; --check exits 1 past the per-run cap
 python scripts/todo-graph.py render             # mermaid dependency graph
 python scripts/todo-graph.py plan --sync        # re-derive the checkboxes AND re-align every table
 python scripts/todo-graph.py plan --check       # fail if the boxes are stale or a section has no row
@@ -420,13 +425,49 @@ is a complete instruction: nobody has to translate domain `00` and TODO `01` int
 
 - A phase is a level-3 heading of exactly the shape `### Phase <N> -- <Title>`, numbered from 0 in run order, followed by one paragraph saying why it runs where it does, then one table.
 - The table header is `| ✔ | Section | Deliverable | Items |`. Each row is `| [ ] | \`DNN TNN §N\` | <deliverable> | <items> |`: the box and the items cell are rewritten by `plan --sync`, the deliverable is prose you author (usually the Implementation Order row's deliverable).
-- **Every section in the tree appears in exactly one row of exactly one phase.** Authoring a TODO file therefore includes placing each of its sections in a phase table; `plan --check` fails on a section with no row, a row naming no section, a duplicated row, or a stale box.
+- **Every section in the tree appears in exactly one row of exactly one phase**, within that phase's ceiling in `budget.json` (see "The budget and the backlog" below). Authoring a TODO file therefore includes placing each of its sections in a phase table; `plan --check` fails on a section with no row, a row naming no section, a duplicated row, or a stale box.
 - A section's phase is chosen so every `Depends On` edge points at a section in the same or an earlier phase, and within a phase rows run in table order; `groom-plan` checks both.
-- The `> **Progress:**` line under the title is rewritten by `plan --sync`. Never type a total into prose.
+- The `> **Progress:**` line under the title is rewritten by `plan --sync`, including its budget use (sections against the total ceiling, backlog entries against the cap), and `plan --check` fails when the line is stale. Never type a total into prose.
 
 The boxes **are never ticked by hand**; `plan --check` runs in CI and in the pre-commit hook's validate path, so a stale projection fails instead of quietly misinforming whoever reads it next. Run `plan --sync` after any row flips.
 
 **CI enforces exactly this contract and nothing more.** The plan workflow runs `self-test`, `validate`, and `plan --check` on every push touching `todo/`, `scripts/`, or the workflow itself, so a FATAL (or a NEW warning) fails the build like any other defect.
+
+### The budget and the backlog
+
+The plan must not grow unconditionally (operator decision, 2026-09-26). Every source of new work (a phase run's gap audit, the review research pass and plan-review round, the groom gap scan, deferrals, adjacent defects) files something reasonable on its own, and together they grow the plan faster than it ships. Two files bound it, and `validate` enforces both as FATAL, so the commit hook and CI refuse a breach.
+
+**`todo/budget.json`** holds the plan's limits and their history:
+
+- `ceilings`: for each phase of the plan, the most sections it may hold, counting open and shipped rows (and Moved lines) alike. Shipped work does not free room: a phase's ceiling is the size of the phase, not a work-in-progress limit.
+- The total ceiling is the sum of the phase ceilings, checked against every section in the tree, so a section that sits in no phase still spends budget.
+- `backlog_cap`: the most entries `backlog.md` may hold.
+- `per_run_new_sections`: the most new sections one phase run may add, counted with `python scripts/todo-graph.py query growth --since <run start commit>`.
+- `history`: an append-only list of `{date, change, reason, approved_by, snapshot}` entries, where `snapshot` carries the ceilings and both caps as that entry set them. The first entry records the setup.
+
+Design: the live values sit at the top of the file where a reader looks, and must equal the latest entry's `snapshot` (`budget-unrecorded-change` otherwise), so changing a number means appending an entry. The history itself is checked against the committed file (`git show HEAD:todo/budget.json`): an entry edited or removed fails, so a snapshot cannot be quietly rewritten after it lands. An entry that raises anything (a ceiling up, a new phase's ceiling, either cap up) must say `approved_by: operator` and quote the operator's words in `reason`. Lowering a ceiling, or dropping the ceiling of a phase that left the plan, needs only an entry. Every phase in the plan needs a ceiling and every ceiling a phase (`budget-malformed`).
+
+**How the operator raises a ceiling:** say so in words, for example "raise Phase 3 to 30". The session then appends one history entry dated today with the new snapshot, `approved_by: operator`, and those words quoted in `reason`, updates the live value to match, and runs `validate` plus `plan --sync`. No skill raises a ceiling on its own initiative, and a skill that finds a phase at its ceiling merges, supersedes, or backlogs instead.
+
+**`todo/backlog.md`** is a flat list of ideas worth keeping that are not planned work. It is not in the plan, never runnable, never counted by plan parity, and nothing may defer to it. One entry per line:
+
+```
+- [B-NNN] <title> -- source: <key> -- added: YYYY-MM-DD -- why deferred: <text> -- promote when: <text>
+```
+
+with optional `app:`, `summary:`, and `needs:` fields (`needs:` cites full `DNN TNN §N` refs to live sections, or other backlog ids). `source` is one key token: a legacy key, a finding ID, or the `-> SOURCE:` key the section would carry, so a scan that runs twice finds its own entry. Ids are taken in order and never reused. `validate` refuses a malformed line, a line that reads as a section, a dead or short ref, a duplicate id or source, an entry whose source a live section already carries, and a count over `backlog_cap`. `query backlog` lists it.
+
+**The admission test.** New work becomes a section only when it is one of:
+
+1. a defect in shipped or in-flight work;
+2. something an aim in the plan's acceptance bar requires;
+3. a prerequisite of an existing planned row.
+
+Everything else (a competitor feature, a premium win, a nice-to-have from a review) goes to the backlog. A section that passes the test still needs budget room in its phase: at the ceiling, merge the work into an existing section as an item, supersede a section it replaces, or backlog it.
+
+**The per-run cap.** A phase run records its start commit and adds at most `per_run_new_sections` new sections, checked at every section boundary with `query growth --since <start> --check` (a section relocated to another file counts as one removed and one added). Past the cap, admission-test passes land as items on existing open sections or go to the backlog, and the run file records each overflow. The one exception is a defect in shipped work with no open section to carry it: it may pass the per-run cap (never a phase ceiling), and the run file says why.
+
+**Promotion and triage.** Promotion is `add-todo` with the admission test and the budget check; the promoting commit writes the section with the entry's source as its `-> SOURCE:` line and deletes the entry. Triage is `groom-plan`: when the backlog nears its cap, merge duplicates, drop stale entries (one line of reason each in the commit message), and promote only where a phase has room.
 
 ### FATAL blocks; WARN is ratcheted
 
@@ -484,6 +525,13 @@ The boxes **are never ticked by hand**; `plan --check` runs in CI and in the pre
 | `risk-acceptance-chain-broken` | FATAL | A `supersedes <date>` link that names no earlier record on its target, points forward, branches, or cycles. |
 | `skill-citation-unresolved` | FATAL | A skill citing a full section ref (`DNN TNN §N`) that resolves to no live section. |
 | `skill-citation-short-form` | FATAL | A skill citing a short section form (a bare section mark, `TNN` plus a section, or a file plus a section) instead of a full `DNN TNN §N` ref. |
+| `budget-malformed` | FATAL | `todo/budget.json` missing, unparseable, or incomplete: a phase with no ceiling, or a ceiling for a phase the plan does not have. An incomplete budget bounds nothing. |
+| `budget-over-phase` | FATAL | A phase holds more sections (open plus shipped) than its ceiling. Merge, supersede, or backlog; never raise the ceiling without the operator. |
+| `budget-over-total` | FATAL | The tree holds more sections than the sum of the phase ceilings, which catches sections that sit in no phase. |
+| `budget-unrecorded-change` | FATAL | A live ceiling or cap that differs from the latest history snapshot, a history entry edited or removed against the committed file, or a raise without `approved_by: operator` and the operator's quoted words. |
+| `backlog-malformed` | FATAL | A `todo/backlog.md` line outside the entry grammar, a line that reads as a section (checkbox, numbered heading, stamp, XREF), or an entry citing a dead or short section ref. |
+| `backlog-duplicate` | FATAL | A backlog id or source key used twice, or a source key a live section already carries: a promoted entry leaves the backlog in the promoting commit. |
+| `backlog-over-cap` | FATAL | More backlog entries than `backlog_cap`. Triage (merge, drop, promote with room) before adding. |
 
 Treat a warning as a decision to make rather than noise to clear. The tree starts at zero FATAL and zero non-baselined warnings, and it is worth keeping there.
 

@@ -2,7 +2,7 @@
 
 > **Phases 1, 2, 3, and 9**
 
-Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs first among the apps: it is renamed and restructured, its orphan services triaged, its editing made correct, its documents made safe, and it ships `nodus-v0.1.0` before Imago's foundation starts. The long tail of the legacy roadmap follows the suite release.
+Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs first among the apps: it is renamed and restructured, its orphan services triaged, its editing made correct, its documents made safe, and it ships `nodus-v0.1.0` before Imago's foundation starts. After the suite release, TODO-06 ships the sections 0.1.0 names as deferral owners plus accessibility; the rest of the legacy roadmap waits in [`../backlog.md`](../backlog.md) (B-001 to B-013) and is promoted only through `add-todo`.
 
 ## TODOs
 
@@ -13,7 +13,7 @@ Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs fi
 | [TODO-03](./TODO-03-nodus-editing.md) | Editing Correctness: Undo, Clipboard, and the View Model Split | draft |
 | [TODO-04](./TODO-04-nodus-documents.md) | Nodus Documents: Save, Fidelity, Export, and Recovery | draft |
 | [TODO-05](./TODO-05-nodus-release.md) | Nodus 0.1.0 | draft |
-| [TODO-06](./TODO-06-nodus-roadmap.md) | Nodus Roadmap after 0.1.0 | draft |
+| [TODO-06](./TODO-06-nodus-roadmap.md) | Nodus after 0.1.0: Deferral Owners and Accessibility | draft |
 
 ## Completed
 

@@ -1,6 +1,6 @@
 ---
 name: groom-plan
-description: Harden the todo tree for a weaker executor -- sequence check, drift sweep, gap scan, complete-feature pass -- without moving rows between phases, ticking boxes, or starting a campaign. Use before a long run, or when the plan feels stale.
+description: Harden the todo tree for a weaker executor -- sequence check, drift sweep, gap scan, complete-feature pass, backlog triage -- inside the plan's budget, without moving rows between phases, ticking boxes, or starting a campaign. Use before a long run, or when the plan feels stale.
 ---
 
 # Groom Plan
@@ -17,7 +17,9 @@ Read what it says about direction before acting on it. **A filing is not proof t
 
 The command proposes and cannot act: it opens no file for writing. Reordering happens here, by hand, with the addresses and cross-references kept consistent as below.
 
-Hardening the tree so a weaker executor can run it. Grooming adds prerequisites and fills gaps; it never moves a row out of its phase, never ticks a box, and never starts a campaign.
+Hardening the tree so a weaker executor can run it. Grooming adds prerequisites and fills gaps inside the budget; it never moves a row out of its phase, never ticks a box, never raises a ceiling, and never starts a campaign.
+
+Record the groom's start commit (`git rev-parse HEAD`) first: a groom is a run for the per-run cap, so it adds at most `per_run_new_sections` new sections (`todo/budget.json`), checked with `python scripts/todo-graph.py query growth --since <start> --check` before each new section.
 
 ## Workflow
 
@@ -50,17 +52,30 @@ Pay special attention to:
 
 ### 3. Gap scan
 
-Read the plan as the user will use each finished app, domain by domain, and ask what has no owner: surfaces, commands, handoffs between apps (Lumen to Imago, Imago to Nodus), error paths, settings without consumers, writes without readback. File each gap with `add-todo` (evidence, owner, dependency), place the new rows in their phases, and sync the plan.
+Read the plan as the user will use each finished app, domain by domain, and ask what has no owner: surfaces, commands, handoffs between apps (Lumen to Imago, Imago to Nodus), error paths, settings without consumers, writes without readback. File each gap with `add-todo` (evidence, owner, dependency), which applies the admission test and the budget check: a gap becomes a section only when it is a defect in shipped or in-flight work, something an acceptance-bar aim requires, or a prerequisite of a planned row, and its phase has room. Nice-to-haves go to the backlog by default. Past the per-run cap, admission-test passes merge into existing sections as items or go to the backlog, and the groom record lists each overflow. Place any new rows in their phases and sync the plan.
 
 Check the Adjacency declarations while here: `python scripts/todo-graph.py query adjacency` advisories that name real gaps become sections; ones that are already covered get their anchors sharpened.
 
 ### 4. Complete-feature pass
 
-For every UI surface in the plan, confirm the feature is whole: list, find, create, edit, delete (or the honest not-applicable), settings with consumers, refusal paths exercised (read-only file, locked file, unsupported format), undo for every edit, and the reverse of every create. For every write to a user's document or library, confirm the atomic save, the readback, the recovery path, and the log line. For every type in `Photon.Core`, confirm at least two apps consume it, and for every pattern duplicated across two apps, confirm a section moves it into `Photon.Core`. File what is missing; do not redesign what exists.
+For every UI surface in the plan, confirm the feature is whole: list, find, create, edit, delete (or the honest not-applicable), settings with consumers, refusal paths exercised (read-only file, locked file, unsupported format), undo for every edit, and the reverse of every create. For every write to a user's document or library, confirm the atomic save, the readback, the recovery path, and the log line. For every type in `Photon.Core`, confirm at least two apps consume it, and for every pattern duplicated across two apps, confirm a section moves it into `Photon.Core`. File what is missing through `add-todo` (these usually pass the admission test, because the acceptance bar names undo, atomic saves, and shared code), preferring an item on the owning section to a new section; do not redesign what exists.
 
-### 5. Report and commit
+### 5. Backlog triage
 
-Write the groom record: what was sequenced, what drifted and was corrected, what gaps were filed and where they landed, what the totals now say. Commit as `todo: groom <scope> (<date>)` after a final `validate` plus `plan --sync` plus `plan --check`.
+```bash
+python scripts/todo-graph.py query backlog
+python scripts/todo-graph.py query budget
+```
+
+When the backlog is at or near `backlog_cap` (within 10 percent), or on any groom that finds it stale, triage it:
+
+- **Merge duplicates**: two entries for one real-world thing become one (keep the lower id; fold the other's text and `source` into the survivor's summary, since a second `source` field is refused).
+- **Drop stale entries**: an idea overtaken by shipped work, a decision, or a removed feature leaves the file, with one line of reason per dropped id in the commit message.
+- **Promote only with room**: an entry whose `promote when` has come true and that passes the admission test is promoted through `add-todo` (the promoting commit writes the section and deletes the entry), only where its phase has room. Never raise a ceiling to promote.
+
+### 6. Report and commit
+
+Write the groom record: what was sequenced, what drifted and was corrected, what gaps were filed and where they landed (sections versus backlog, and any overflow past the per-run cap), what the backlog triage merged, dropped, and promoted, and the budget line the Progress block now shows. Commit as `todo: groom <scope> (<date>)` after a final `validate` plus `plan --sync` plus `plan --check`.
 
 ## Guardrails
 
@@ -68,4 +83,5 @@ Write the groom record: what was sequenced, what drifted and was corrected, what
 - Do not tick a box. Grooming never ships.
 - Do not start a campaign. Grooming prepares one.
 - Do not redesign sections. Harden them.
+- Do not raise a ceiling or a cap, and do not add past the per-run cap except for a defect in shipped work with no open owner. Merge, supersede, or backlog.
 - Do not leave the tree unvalidated. `validate` plus `plan --check` pass before the commit.

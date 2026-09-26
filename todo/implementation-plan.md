@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
-> **Progress:** **0 of 170 sections complete (0%).** Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 134 sections complete (0%).** Budget: 134 of 154 sections; backlog 36 of 150. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -25,6 +25,8 @@ process todo section: | [ ] | `D00 T01 §1` | Wire the TODO gate into every clon
 > python scripts/todo-graph.py plan --sync     # rewrite the boxes, then re-align every table
 > python scripts/todo-graph.py plan --check    # fail if they have gone stale
 > ```
+
+**The plan is bounded.** Every phase has a ceiling on its total sections (open plus shipped) in [`budget.json`](./budget.json), the tree's total is capped at their sum, and `validate` refuses a breach. Work that fails the admission test in [`README.md`](./README.md) ("The budget and the backlog") goes to [`backlog.md`](./backlog.md), which is not in this plan, never runnable, and capped too. Only the operator raises a ceiling. The Progress line above reports the use.
 
 **How phases are authored.** A phase is a `### Phase <N> -- <Title>` heading, one paragraph on why it runs where it does, and one table. Every section in the tree sits in exactly one phase row; a new TODO file places each of its sections here in the commit that authors it. A section's phase is never earlier than the phase of anything it depends on, and within a phase rows run in dependency order. The format is specified in [`README.md`](./README.md) under "The implementation plan: phases and rows".
 
@@ -52,7 +54,7 @@ The finished suite is **three standalone creative applications that behave like 
 | No menu item silently does nothing              | `D02 T03 §5` · `D03 T06 §2`                                                   |
 | Originals are never written                     | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1`                                   |
 | It looks like one suite                         | `standards/shared.md` (design contract) · `D01 T01 §3`                        |
-| It works without a mouse or eyes                | `D02 T06 §17` · `D03 T07 §16` · `D04 T03 §10`                                 |
+| It works without a mouse or eyes                | `D02 T06 §17` · `D03 T07 §16` · `D04 T02 §9`                                  |
 | Each app ships alone, proven on a clean machine | `D05 T01 §1` · `D02 T05 §4` · `D03 T06 §3` · `D04 T02 §8`                     |
 | The suite ships together without re-versioning  | `D05 T01 §6`                                                                  |
 | Users can learn it                              | `D06 T01 §1`-`§4`                                                             |
@@ -286,75 +288,39 @@ With all three apps released, distribution catches up: signing (waiting on the o
 | [ ] | `D06 T02 §2` | README images from real captures    |   3   |
 | [ ] | `D06 T02 §3` | The user guides as a published site |   4   |
 
-### Phase 9 -- Nodus roadmap
+### Phase 9 -- Nodus after 0.1.0: deferral owners and accessibility
 
-The long tail of the legacy Bezier roadmap at feature grain, after the suite release. Each section is born complete and is expected to be split by `groom-plan` before it runs; the deferred services from the triage are wired here.
+After the suite release, Nodus ships what its 0.1.0 work already points at: path editing and text to path for the disabled and planned commands, tabs for multi-file open, the symbol, palette, and format sections the service triage hands its deferred services to, Preferences, and the accessibility and localization the acceptance bar requires. The rest of the legacy Bezier roadmap waits in [`backlog.md`](./backlog.md) (B-001 to B-013).
 
 |  ✔  | Section       | Deliverable                                            | Items |
 | :-: | ------------- | ------------------------------------------------------ | :---: |
-| [ ] | `D02 T06 §1`  | Shape tools: polygon, star, spiral, arc                |   5   |
 | [ ] | `D02 T06 §2`  | Path editing: continue, join, break, reverse, simplify |   4   |
 | [ ] | `D02 T06 §3`  | Text: area text, text on path, text to path            |   4   |
-| [ ] | `D02 T06 §4`  | Clipping, masks, and compound paths                    |   4   |
-| [ ] | `D02 T06 §5`  | Appearance: swatches, multiple fills, conic gradients  |   4   |
-| [ ] | `D02 T06 §6`  | Artboards: presets, duplicate, arrange, fit            |   3   |
 | [ ] | `D02 T06 §7`  | Documents in tabs, saved layouts, nested layers        |   5   |
-| [ ] | `D02 T06 §8`  | The contextual property bar                            |   2   |
-| [ ] | `D02 T06 §9`  | Transform precision and smart selection                |   3   |
-| [ ] | `D02 T06 §10` | Guides and measurement                                 |   3   |
 | [ ] | `D02 T06 §11` | Symbols and the asset library                          |   3   |
 | [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD              |   4   |
 | [ ] | `D02 T06 §13` | Preferences and shortcut remapping                     |   4   |
 | [ ] | `D02 T06 §14` | More formats and the export dialog                     |   4   |
-| [ ] | `D02 T06 §15` | Freehand tools: pencil, brush, eraser                  |   3   |
-| [ ] | `D02 T06 §16` | Large documents: spatial index, culling, dirty regions |   5   |
 | [ ] | `D02 T06 §17` | Accessibility and localization                         |   4   |
-| [ ] | `D02 T06 §18` | Brushes, patterns, and color tools                     |   3   |
-| [ ] | `D02 T06 §19` | Print and prepress                                     |   3   |
-| [ ] | `D02 T06 §20` | Scripting and plugins                                  |   4   |
-| [ ] | `D02 T06 §21` | Onboarding and the navigator                           |   3   |
 
-### Phase 10 -- Imago roadmap
+### Phase 10 -- Imago after 0.1.0: deferral owners and accessibility
 
-The long tail of the legacy Imago roadmap at feature grain: non-destructive adjustments, masks, the rest of the filter catalog, styles, retouching, text and shapes, brushes, formats, the shared RAW decoder, color management, plugins, scripting, performance, accessibility, and workspaces. Rows run in dependency order (color management before print, workspaces before accessibility).
+After the suite release, Imago ships what its 0.1.0 work already points at: the rest of the filter catalog its disabled Filter menu items name, RAW import through the decoder Lumen shares, workspaces and Preferences, and the accessibility and localization the acceptance bar requires, workspaces first because accessibility audits them. The rest of the legacy Imago roadmap waits in [`backlog.md`](./backlog.md) (B-014 to B-027).
 
-|  ✔  | Section       | Deliverable                                            | Items |
-| :-: | ------------- | ------------------------------------------------------ | :---: |
-| [ ] | `D03 T07 §1`  | Adjustment layers                                      |   4   |
-| [ ] | `D03 T07 §2`  | Layer masks, clipping masks, and vector masks          |   3   |
-| [ ] | `D03 T07 §3`  | The rest of the filter catalog                         |   4   |
-| [ ] | `D03 T07 §4`  | Layer styles                                           |   3   |
-| [ ] | `D03 T07 §5`  | Retouching tools                                       |   3   |
-| [ ] | `D03 T07 §6`  | Text layers                                            |   3   |
-| [ ] | `D03 T07 §7`  | Shape layers and vector tools                          |   3   |
-| [ ] | `D03 T07 §8`  | The brush engine: tips, dynamics, presets              |   3   |
-| [ ] | `D03 T07 §10` | More formats: WebP, HEIC, EXR, GIF, PSD write          |   5   |
-| [ ] | `D03 T07 §11` | RAW import through the shared decoder                  |   3   |
-| [ ] | `D03 T07 §12` | Color management and soft proofing                     |   4   |
-| [ ] | `D03 T07 §9`  | Print                                                  |   2   |
-| [ ] | `D03 T07 §13` | Filter plugins                                         |   4   |
-| [ ] | `D03 T07 §14` | Scripting                                              |   4   |
-| [ ] | `D03 T07 §15` | Performance: memory, SIMD, startup                     |   4   |
-| [ ] | `D03 T07 §17` | Workspaces, panels, and preferences                    |   3   |
-| [ ] | `D03 T07 §16` | Accessibility and localization                         |   4   |
-| [ ] | `D03 T07 §18` | Smart selection: magic wand, quick select, color range |   3   |
+|  ✔  | Section       | Deliverable                           | Items |
+| :-: | ------------- | ------------------------------------- | :---: |
+| [ ] | `D03 T07 §3`  | The rest of the filter catalog        |   4   |
+| [ ] | `D03 T07 §11` | RAW import through the shared decoder |   3   |
+| [ ] | `D03 T07 §17` | Workspaces, panels, and preferences   |   3   |
+| [ ] | `D03 T07 §16` | Accessibility and localization        |   4   |
 
-### Phase 11 -- Lumen roadmap
+### Phase 11 -- Lumen after 0.1.0: accessibility
 
-The darkroom features beyond the first release, drawn from the competitor survey: local adjustments, detail, lens corrections, color grading, merges, a GPU path, map, print, catalog maintenance, and accessibility.
+After the suite release, Lumen gets the accessibility and localization the acceptance bar requires. The darkroom features beyond the first release (local adjustments, detail, lens corrections, color grading, merges, a GPU path, map, print, catalog maintenance) wait in [`backlog.md`](./backlog.md) (B-028 to B-036).
 
-|  ✔  | Section       | Deliverable                                    | Items |
-| :-: | ------------- | ---------------------------------------------- | :---: |
-| [ ] | `D04 T03 §1`  | Local adjustments: brush, linear, radial masks |   3   |
-| [ ] | `D04 T03 §2`  | Detail: sharpening and noise reduction         |   3   |
-| [ ] | `D04 T03 §3`  | Lens corrections                               |   3   |
-| [ ] | `D04 T03 §4`  | Color grading and HSL                          |   2   |
-| [ ] | `D04 T03 §5`  | HDR and panorama merge                         |   3   |
-| [ ] | `D04 T03 §6`  | A GPU develop path with CPU parity             |   2   |
-| [ ] | `D04 T03 §7`  | Map and GPS                                    |   2   |
-| [ ] | `D04 T03 §8`  | Contact sheets and print                       |   2   |
-| [ ] | `D04 T03 §9`  | Catalog maintenance and library statistics     |   4   |
-| [ ] | `D04 T03 §10` | Accessibility and localization                 |   3   |
+|  ✔  | Section      | Deliverable                    | Items |
+| :-: | ------------ | ------------------------------ | :---: |
+| [ ] | `D04 T02 §9` | Accessibility and localization |   3   |
 
 ### Phase 99 -- Manual: operator-only steps
 

@@ -65,7 +65,7 @@ Every filter shares the same needs: parameters, a preview that updates as slider
 
 ## 2. Core Adjustments
 
-The adjustments every photo edit uses first. Destructive in 0.1.0 (adjustment layers are `D03 T07 §1`), each through the §1 pipeline. -> SOURCE: legacy-imago-5.1
+The adjustments every photo edit uses first. Destructive in 0.1.0 (adjustment layers wait in the backlog as B-014), each through the §1 pipeline. -> SOURCE: legacy-imago-5.1
 
 **Fidelity:** Adjustment dialogs -- new build, no baseline; captured to docs/captures/imago/adjustments/.
 **Job:** a user can correct brightness, contrast, levels, curves, and hue and saturation with a live histogram. Consumer: the active layer.

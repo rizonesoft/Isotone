@@ -58,7 +58,7 @@ Use the `skill arg` line it prints as the canonical form for the rest of the run
 ## Execution discipline
 
 - **Validate before building.** Step 2 is a gate, not a formality. A section that cannot pass it gets fixed first.
-- **Follow the corrected contract.** The checklist items define the scope. Do not widen because something adjacent looks wrong; file it instead with `add-todo`. Correcting a defect *in* the section is not widening; adding work the section never asked for is.
+- **Follow the corrected contract.** The checklist items define the scope. Do not widen because something adjacent looks wrong; file it instead with `add-todo`, whose admission test and budget check decide between an item on an open section, a new section, and the backlog. Correcting a defect *in* the section is not widening; adding work the section never asked for is.
 - **One section = one commit.** If you cannot describe the change in one commit message, the section was mis-sized. Plan corrections may ride in that commit, or land as their own `todo:` commit first when they are substantial. Review fix-loop commits append to the section's candidate range (never amend), and the stamp names the whole range.
 - **Commits are free; pushes are not.** Commit locally as often as you like. Push twice per section: the SHIP push, then the STAMP push. While iterating, run the affected checks only (`dotnet build` on the touched project, `dotnet test Photon.slnx --filter '<names>'`), not the whole sweep. A third push is allowed when it is named and the reason recorded.
 - **Never mark `[x]` without evidence.** The Implementation Order row flips only after the review stamp exists.

@@ -3,17 +3,17 @@ schema_version: 1
 id: nodus-roadmap
 domain: 02-nodus
 status: draft
-title: "TODO-06 -- Nodus Roadmap after 0.1.0"
+title: "TODO-06 -- Nodus after 0.1.0: Deferral Owners and Accessibility"
 depends_on: []
 track: N6
 ---
 
-# TODO-06 -- Nodus Roadmap after 0.1.0
+# TODO-06 -- Nodus after 0.1.0: Deferral Owners and Accessibility
 
-> **Goal:** The long tail of the legacy Bezier roadmap, mined into buildable sections at feature grain: the shape, path, text, masking, appearance, artboard, document, precision, library, command, preference, format, freehand, performance, accessibility, color, print, scripting, and onboarding work that takes Nodus from a first release to a daily-driver vector editor. Each section is born complete, and each is expected to be split further by `groom-plan` before it runs.
+> **Goal:** The Nodus work after its first release that the plan is already committed to: the sections that 0.1.0 work names as the owner of a disabled command, a planned menu stub, or a deferred service, and the accessibility and localization work the acceptance bar requires. When this file closes, no Nodus control defers to a section that does not ship, no triaged service is left unwired, and Nodus works without a mouse or eyes.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The legacy roadmap (`docs/legacy/nodus-roadmap.md`, 3,199 lines, phases 0 to 25) was mined on 2026-09-26. Its check marks are unreliable (see `docs/legacy/README.md`): services exist for several of these features, but none is reachable from the app, and the triage in `D02 T02 §1` defers them to sections here. Phases 16 to 25 (collaboration, cross-platform, 3D, enterprise, industry suites, gamification, audio and video, sustainability, AR and VR) are deliberately not converted. Every section below names its legacy source with a `-> SOURCE:` line.
+> **Current state (verified 2026-09-26):** The legacy roadmap (`docs/legacy/nodus-roadmap.md`, 3,199 lines, phases 0 to 25) was mined into 21 sections on 2026-09-26. The same day the plan was bounded (`todo/budget.json`): the 13 sections nothing outside this file depends on, defers to, or names in the acceptance bar moved to `todo/backlog.md` as B-001 to B-013, and their section numbers are retired, never reused. What stays: path editing (§2) and text to path (§3), which `D02 T02 §5` and `D02 T03 §5` name for disabled or planned commands; tabs (§7), which `D02 T04 §6` names for multi-file open and §11 builds on; the three sections the triage in `D02 T02 §1` hands its deferred services to (§11, §12, §14); Preferences (§13), which `D02 T03 §5` and `D02 T05 §2` name; and accessibility (§17), which the acceptance bar names. Services exist for several of these features, but none is reachable from the app. Every section below names its legacy source with a `-> SOURCE:` line.
 <!-- claim: lines docs/legacy/nodus-roadmap.md = 3199 -->
 <!-- claim: exists src/Nodus/Bezier.Core/Services/SymbolLibraryService.cs -->
 <!-- claim: exists src/Nodus/Bezier.Core/Services/CommandPaletteService.cs -->
@@ -24,62 +24,31 @@ track: N6
 - [`standards/nodus.md`](../../standards/nodus.md) -- the document model, tool, and SVG rules every section builds to
 - `docs/dev/nodus/service-triage.md` (written by `D02 T02 §1`) -- the deferred services §11, §12, and §14 wire
 - -> XREF: D02 T02 §1 -- the triage that hands the deferred services to §11, §12, and §14
+- [`../backlog.md`](../backlog.md) -- the Nodus feature ideas that left this file (B-001 to B-013); one is promoted only through `add-todo` with the admission test and budget room
 
 ## Outcome
 
 - Every section below ships with its surface, its commands with undo, its settings, its log lines, its user-guide page, and its tests, like the 0.1.0 sections before it.
-- No deferred service from the triage remains unwired when this file closes.
+- No deferred service from the triage remains unwired when this file closes, and no disabled or planned Nodus command names a section of this file that has not shipped.
 
-**Adjacency:** list=applicable @ D02 T06 §11; document=applicable @ D02 T06 §19; settings=applicable @ D02 T06 §13; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are owned by the save and export sections in D02 T04); audit=applicable; exchange=applicable @ D02 T06 §14; reverse=applicable
+**Adjacency:** list=applicable @ D02 T06 §11; document=not-applicable (printing and prepress wait in the backlog as B-011); settings=applicable @ D02 T06 §13; reporting=not-applicable (measurement and the Info panel wait in the backlog as B-007; document info lives in the status strip, D02 T03 §5); notifications=applicable; permissions=not-applicable (file refusals are owned by the save and export sections in D02 T04); audit=applicable; exchange=applicable @ D02 T06 §14; reverse=applicable
 
-**Adjacency rationale:** The asset library is the browsable list; print is the carried document; the Preferences dialog is the settings surface; measurement and document info are reporting; long operations on large documents notify through the status strip; every edit in every section is a logged, undoable command.
+**Adjacency rationale:** The asset library is the browsable list; the Preferences dialog is the settings surface; long exports notify through the status strip; every edit in every section is a logged, undoable command.
 
 ## Implementation Order
 
 | Order | Section | Deliverable                                              | Depends On  | Status |
 | :---: | :-----: | -------------------------------------------------------- | ----------- | :----: |
-|   1   |   §1    | Shape tools: polygon, star, spiral, arc                  | D02 T05 §4  |  [ ]   |
-|   2   |   §2    | Path editing: continue, join, break, reverse, simplify   | D02 T05 §4  |  [ ]   |
-|   3   |   §3    | Text: area text, text on path, text to path             | D02 T05 §4  |  [ ]   |
-|   4   |   §4    | Clipping, masks, and compound paths                      | D02 T05 §4  |  [ ]   |
-|   5   |   §5    | Appearance: swatches, multiple fills, conic gradients    | D02 T05 §4  |  [ ]   |
-|   6   |   §6    | Artboards: presets, duplicate, arrange, fit              | D02 T05 §4  |  [ ]   |
-|   7   |   §7    | Documents in tabs, saved layouts, nested layers          | D02 T05 §4  |  [ ]   |
-|   8   |   §8    | The contextual property bar                              | §7          |  [ ]   |
-|   9   |   §9    | Transform precision and smart selection                  | D02 T05 §4  |  [ ]   |
-|  10   |   §10   | Guides and measurement                                   | D02 T05 §4  |  [ ]   |
-|  11   |   §11   | Symbols and the asset library                            | §7          |  [ ]   |
-|  12   |   §12   | The command palette and the on-canvas HUD                | D02 T05 §4  |  [ ]   |
-|  13   |   §13   | Preferences and shortcut remapping                       | D02 T05 §4  |  [ ]   |
-|  14   |   §14   | More formats and the export dialog                       | D02 T05 §4  |  [ ]   |
-|  15   |   §15   | Freehand tools: pencil, brush, eraser                    | §2          |  [ ]   |
-|  16   |   §16   | Large documents: spatial index, culling, dirty regions   | D02 T05 §4  |  [ ]   |
-|  17   |   §17   | Accessibility and localization                           | §13         |  [ ]   |
-|  18   |   §18   | Brushes, patterns, and color tools                       | §5, §15     |  [ ]   |
-|  19   |   §19   | Print and prepress                                       | §6          |  [ ]   |
-|  20   |   §20   | Scripting and plugins                                    | §12         |  [ ]   |
-|  21   |   §21   | Onboarding and the navigator                             | §13         |  [ ]   |
+| 1 | §2 | Path editing: continue, join, break, reverse, simplify   | D02 T05 §4  |  [ ]   |
+| 2 | §3 | Text: area text, text on path, text to path             | D02 T05 §4  |  [ ]   |
+| 3 | §7 | Documents in tabs, saved layouts, nested layers          | D02 T05 §4  |  [ ]   |
+| 4 | §11 | Symbols and the asset library                            | §7          |  [ ]   |
+| 5 | §12 | The command palette and the on-canvas HUD                | D02 T05 §4  |  [ ]   |
+| 6 | §13 | Preferences and shortcut remapping                       | D02 T05 §4  |  [ ]   |
+| 7 | §14 | More formats and the export dialog                       | D02 T05 §4  |  [ ]   |
+| 8 | §17 | Accessibility and localization                           | §13         |  [ ]   |
 
 ---
-
-## 1. Shape Tools: Polygon, Star, Spiral, Arc
-
-Rectangle, ellipse, and line are the only shape tools. Every competitor ships polygon and star tools with on-canvas controls for sides and inner radius; they are the most requested primitives after the basics. -> SOURCE: legacy-nodus-3.2
-
-**Fidelity:** Nodus tool rail and canvas -- docs/captures/nodus/main-window/. New tools join the rail's shape flyout in the order rectangle, ellipse, polygon, star, spiral, arc, line.
-**Job:** a designer can draw regular polygons, stars, spirals, and arcs and edit their parameters afterwards. Consumer: the document and the SVG writer.
-**Treatment:** each tool draws from the center with Shift constraining rotation to 15 degrees; the context toolbar shows its parameters (sides 3 to 100; star points and inner radius ratio; spiral turns and decay; arc start, sweep, and closed or open); parameters stay editable after creation as `data-nodus-*` attributes that the SVG writer preserves, and the geometry is written as a plain `<path>` or `<polygon>` so other apps read it. Cheaper substitute that fails the checkpoint: shapes that become dumb paths at creation.
-**Chrome:** consume `ToolBase`, the keymap, the icon catalog, and the history. Do not add a separate parameters window.
-
-**Requires:** display-session -- drawing with the new tools needs an interactive desktop
-
-- [ ] Add `PolygonTool`, `StarTool`, `SpiralTool`, and `ArcTool` in `Photon.Nodus.Core/Tools/` with geometry in `Photon.Nodus.Core/Geometry/Parametric/`. Done when: geometry tests assert vertex counts and radii for each.
-- [ ] Add a `ParametricShape` element (or attributes on `SvgPath`) that the importer and exporter round-trip. Done when: a fidelity fixture per shape round-trips with parameters intact.
-- [ ] Context toolbar parameter controls, each edit one undo step. Done when: a driven edit of star points then Ctrl+Z restores the shape.
-- [ ] Keymap entries and user-guide pages for the four tools. Done when: the shortcuts dialog lists them.
-- [ ] Commit: `"nodus: polygon, star, spiral, and arc tools with editable parameters"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the geometry and fidelity tests reporting; a driven run draws each shape, edits one parameter, saves, reopens in Inkscape (version quoted) and the shapes render there. Cheaper substitute that fails: parameters lost on reopen.
 
 ## 2. Path Editing: Continue, Join, Break, Reverse, Simplify
 
@@ -117,59 +86,6 @@ Point text exists. Layouts need text flowing inside a shape, text following a cu
 
 **Test checkpoint:** `dotnet test Photon.slnx` exits 0 with text fidelity fixtures reporting; the three driven cases are captured. Cheaper substitute that fails: text to path that returns a bitmap.
 
-## 4. Clipping, Masks, and Compound Paths
-
-The model has `SvgClipPath` and `SvgMask`, and the importer does not honor them on import (legacy 1.6 lists both as open); nothing in the UI makes one. -> SOURCE: legacy-nodus-1.6-4.4
-
-**Fidelity:** Nodus canvas and Object menu -- docs/captures/nodus/main-window/.
-**Job:** a designer can clip artwork to a shape, apply an opacity mask, and make compound paths with holes. Consumer: the document, the renderer, and the SVG writer.
-**Treatment:** Object, Clipping Mask, Make and Release (top object clips the rest); Object, Compound Path, Make and Release (even-odd and nonzero fill rules); opacity masks from the Appearance panel (§5); the importer honors `clip-path`, `mask`, and `marker` references. Cheaper substitute that fails the checkpoint: clipping that the renderer ignores on reopen.
-**Chrome:** consume the history, `SkiaRenderer` (`SKCanvas.ClipPath`, save layers for masks).
-
-**Requires:** display-session -- clipping on the canvas needs an interactive desktop
-
-- [ ] Importer support for `clip-path`, `mask`, and `marker`, with fixtures. Done when: the fixtures render against Inkscape goldens within the `D02 T04 §2` tolerance.
-- [ ] Make and Release commands for clipping masks and compound paths with undo. Done when: tests cover each and its release.
-- [ ] Renderer support for masks via save layers. Done when: the mask fixture passes its golden.
-- [ ] Commit: `"nodus: clipping masks, opacity masks, and compound paths"`
-
-**Test checkpoint:** `dotnet test Photon.slnx --filter "Category=Fidelity"` passes the clip, mask, and marker fixtures; a driven make-release-undo cycle is logged. Cheaper substitute that fails: grouping instead of clipping.
-
-## 5. Appearance: Swatches, Multiple Fills, Conic Gradients
-
-Designers reuse colors through swatches and stack fills and strokes on one object. Conic and mesh gradients are open in the legacy fills list. -> SOURCE: legacy-nodus-4.2-1.4
-
-**Fidelity:** Appearance and Swatches panels -- new build, no baseline; captured to docs/captures/nodus/appearance/ and docs/captures/nodus/swatches/.
-**Job:** a designer can define document swatches, apply them, stack fills and strokes, and use conic gradients. Consumer: the document and the SVG writer.
-**Treatment:** a Swatches panel (document swatches written as SVG `<linearGradient>`/`<solidColor>` equivalents in `<defs>` with `id`s, plus global swatches in settings); an Appearance panel listing an element's fills and strokes in paint order with add, remove, reorder, and per-entry opacity (written as stacked duplicate elements in a group marked `data-nodus-appearance` so other apps render it); conic gradient fills rendered with `SKShader.CreateSweepGradient` and exported with a fallback raster pattern. Cheaper substitute that fails the checkpoint: one fill per element.
-**Chrome:** consume the shared color picker once `Photon.UI` has one (file one through `add-todo` if Imago has built a picker by then); the theme.
-
-**Requires:** display-session -- the panels need an interactive desktop
-
-- [ ] Swatches panel and model with round trip. Done when: a fixture keeps its swatches after reopen.
-- [ ] Appearance panel and stacked paint model with round trip. Done when: a two-fill fixture reopens with both fills.
-- [ ] Conic gradient fill with export fallback. Done when: Inkscape renders the exported fallback.
-- [ ] Commit: `"nodus: swatches, the appearance stack, and conic gradients"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the appearance model tests reporting; captures committed; round-trip fixtures pass. Cheaper substitute that fails: appearance kept only in memory.
-
-## 6. Artboards: Presets, Duplicate, Arrange, Fit
-
-Artboards exist (`ArtboardManager`); the legacy list leaves presets, duplicate, arrange, and fit-to-artwork open. -> SOURCE: legacy-nodus-4.6
-
-**Fidelity:** Artboards panel and artboard tool -- docs/captures/nodus/main-window/.
-**Job:** a designer can create artboards from presets (A4, Letter, social sizes, icon sizes), duplicate them with contents, arrange them in a grid, and fit one to its artwork. Consumer: the document, PDF export (one page per artboard), and raster export.
-**Treatment:** preset list from one table; duplicate copies contained elements; Arrange lays out in rows with a spacing setting; Fit to Artwork resizes to the contained bounds; each is one undo step. Cheaper substitute that fails the checkpoint: presets that set the document size only.
-**Chrome:** consume `ArtboardManager`, the history, and the export sections.
-
-**Requires:** display-session -- artboard editing needs an interactive desktop
-
-- [ ] Preset table and New Artboard from preset. Done when: tests assert sizes in document units.
-- [ ] Duplicate, Arrange, and Fit to Artwork commands with undo. Done when: each has a test.
-- [ ] Commit: `"nodus: artboard presets, duplicate, arrange, and fit"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the artboard tests reporting; a two-artboard document exports a two-page PDF with the right page sizes. Cheaper substitute that fails: one artboard per document.
-
 ## 7. Documents in Tabs, Saved Layouts, Nested Layers
 
 Nodus opens one document at a time; the history and selection are app singletons. Multiple documents need per-document scopes, tabs with dirty markers, and dock layouts that persist. The layers panel shows nested groups as one row. -> SOURCE: legacy-nodus-2.4-2.9
@@ -188,56 +104,6 @@ Nodus opens one document at a time; the history and selection are app singletons
 - [ ] Commit: `"nodus: multiple documents in tabs with per-document undo and saved layouts"`
 
 **Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the scope tests reporting; the driven multi-document run is captured. Cheaper substitute that fails: a second window per document.
-
-## 8. The Contextual Property Bar
-
-The context toolbar shows document size and selection geometry. Competitors show per-tool and per-selection controls: stroke for a path, font for text, corner radius for a rectangle. -> SOURCE: legacy-nodus-2.5
-
-**Fidelity:** Nodus context toolbar -- docs/captures/nodus/main-window/.
-**Job:** a designer can change the most-used properties of the current tool or selection without opening a panel. Consumer: the document through property commands.
-**Treatment:** a template selector over the active tool and selection type, each template bound to property commands (`D02 T03 §4`) with merge. Cheaper substitute that fails the checkpoint: one static bar for everything.
-**Chrome:** consume the property commands and the theme.
-
-**Requires:** display-session -- the bar changes with the selection on the canvas
-
-- [ ] Templates for select (geometry), text (font, size, alignment), path (stroke, fill), rectangle (corner radius), and each drawing tool (its options). Done when: a driven pass shows each template.
-- [ ] Commit: `"nodus: a context toolbar that follows the tool and the selection"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with a template-selector test per case; captures per template committed. Cheaper substitute that fails: the static bar.
-
-## 9. Transform Precision and Smart Selection
-
-Precision work needs numeric transforms, reflect and skew, and repeating the last transform; selection needs "select same fill", "select same stroke", and deep select into groups. -> SOURCE: legacy-nodus-3.1
-
-**Fidelity:** Transform dialog -- new build, no baseline; captured to docs/captures/nodus/transform/.
-**Job:** a designer can move, scale, rotate, reflect, and skew by exact values, repeat the last transform, and select objects by shared attributes. Consumer: the document.
-**Treatment:** Object, Transform, Transform Each (a dialog with move, scale, rotate, skew, reflect, reference point, copy); Object, Transform Again (Ctrl+D after a transform); Select, Same, Fill Color and Stroke Color; Ctrl+click deep-selects inside groups. Cheaper substitute that fails the checkpoint: reflect implemented as scale by -1 around the origin.
-**Chrome:** consume `TransformService`, `SelectionManager`, and the history.
-
-**Requires:** display-session -- the dialog and canvas selection need an interactive desktop
-
-- [ ] Transform dialog and `TransformEachCommand`. Done when: tests assert exact matrices for each operation about each reference point.
-- [ ] Transform Again and Select Same. Done when: tests cover both.
-- [ ] Commit: `"nodus: numeric transforms, transform again, and select same"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the transform tests reporting; the dialog capture is committed. Cheaper substitute that fails: a transform dialog that edits only position.
-
-## 10. Guides and Measurement
-
-Ruler guides and snapping exist; numeric guide entry, guide locking, and a measure tool with distance, angle, and area are open. -> SOURCE: legacy-nodus-3.7-3.8
-
-**Fidelity:** Nodus canvas and guides -- docs/captures/nodus/main-window/.
-**Job:** a designer can place guides by value, lock them, and measure distances, angles, and areas. Consumer: snapping and the Info panel.
-**Treatment:** double-clicking a guide opens a position box; View, Lock Guides; a Measure tool shows distance and angle live and writes nothing to the document; an Info panel shows selection bounds, path length, and area in the document unit. Cheaper substitute that fails the checkpoint: a measure tool that draws a line element.
-**Chrome:** consume `SnapManager`, the overlay layer, and the unit settings.
-
-**Requires:** display-session -- measuring on the canvas needs an interactive desktop
-
-- [ ] Numeric guides and guide lock persisted in the document. Done when: guides survive save and reopen.
-- [ ] Measure tool and Info panel with area via flattened paths. Done when: a 10 by 10 square reports area 100 and perimeter 40.
-- [ ] Commit: `"nodus: numeric guides, guide locking, measurement, and the Info panel"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the measurement tests reporting; a driven measurement is captured. Cheaper substitute that fails: area from bounding boxes.
 
 ## 11. Symbols and the Asset Library
 
@@ -310,35 +176,6 @@ Settings accumulate across sections (snapping, autosave, export defaults, units)
 
 **Test checkpoint:** `dotnet test Photon.slnx --filter "Category=Fidelity"` passes every new format fixture; `MenuAuditTests` passes with XAML export enabled. Cheaper substitute that fails: formats without fixtures.
 
-## 15. Freehand Tools: Pencil, Brush, Eraser
-
-Sketching needs a pencil that fits smooth curves to input, a variable-width brush, and a path eraser. -> SOURCE: legacy-nodus-3.6
-
-**Fidelity:** Nodus tool rail and canvas -- docs/captures/nodus/main-window/.
-**Job:** a designer can sketch freehand and get clean, editable curves. Consumer: the document.
-**Treatment:** pencil samples input (with WPF stylus pressure where present), smooths with a fidelity setting, and fits cubics (Schneider's algorithm); brush outlines a variable-width stroke into a filled path; eraser splits paths it crosses. Cheaper substitute that fails the checkpoint: polylines of raw input points.
-**Chrome:** consume `ToolBase`, the §2 path operations, and the history.
-
-**Requires:** display-session -- freehand input needs an interactive desktop
-
-- [ ] Curve fitting with tests bounding the error and node count. Done when: a recorded input trace fixture fits within tolerance.
-- [ ] Pencil, brush, and eraser tools with keymap entries and guide pages. Done when: each has a driven capture.
-- [ ] Commit: `"nodus: pencil, brush, and eraser tools with curve fitting"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the fitting tests reporting against the recorded trace. Cheaper substitute that fails: raw polylines.
-
-## 16. Large Documents: Spatial Index, Culling, Dirty Regions
-
-`standards/shared.md` names the budget: a 10,000-node path set must stay interactive. Hit-testing and rendering are linear in element count today. -> SOURCE: legacy-nodus-12.1
-
-- [ ] Add a benchmark project (`tests/Photon.Nodus.Benchmarks`, BenchmarkDotNet) with a generated 10,000-element document measuring hit-test and full render. Done when: baseline numbers are recorded in `docs/dev/nodus/performance.md`.
-- [ ] Add an R-tree spatial index for hit-testing and viewport culling. Done when: hit-test time drops by at least 10x on the benchmark (quoted).
-- [ ] Render only dirty regions on edits and cache static layers as pictures (`SKPicture`). Done when: a single-element move re-renders under 16 ms on the benchmark machine (quoted with its CPU).
-- [ ] Long operations (open, export) over one second show progress in the status strip and can be cancelled. Done when: opening the generated document shows progress.
-- [ ] Commit: `"nodus: interactive editing of 10,000-element documents"`
-
-**Test checkpoint:** the benchmark run's before and after numbers are quoted; `dotnet test Photon.slnx` exits 0 with spatial-index tests reporting. Cheaper substitute that fails: a cap on element count.
-
 ## 17. Accessibility and Localization
 
 Every surface must be operable by keyboard and screen reader and translatable. -> SOURCE: legacy-nodus-13
@@ -351,70 +188,6 @@ Every surface must be operable by keyboard and screen reader and translatable. -
 **Requires:** display-session -- the accessibility audit and captures need an interactive desktop
 
 **Test checkpoint:** the committed audit report shows zero failures; the pseudo-locale capture shows no untransformed string. Cheaper substitute that fails: adding automation names only to toolbar buttons.
-
-## 18. Brushes, Patterns, and Color Tools
-
-Artistic work needs calligraphic and pattern brushes, pattern fills, and color harmony and recolor tools. -> SOURCE: legacy-nodus-6
-
-**Fidelity:** Brushes panel and Recolor dialog -- new build, no baseline; captured to docs/captures/nodus/brushes/ and docs/captures/nodus/recolor/.
-**Job:** a designer can apply brush styles to paths, fill with patterns, and recolor artwork by harmony rules. Consumer: the document.
-**Treatment:** brushes are expanded to outlines on export so other apps render them; patterns map to SVG `<pattern>`; recolor maps a selection's colors through a harmony wheel with preview. Cheaper substitute that fails the checkpoint: brush styles that exist only in Nodus's renderer.
-**Chrome:** consume §5's swatches and §15's brush outlining.
-
-**Requires:** display-session -- the panels need an interactive desktop
-
-- [ ] Brush library with calligraphic and pattern brushes, expanded on export. Done when: an exported brushed path renders in Inkscape.
-- [ ] Pattern fills and the Recolor dialog. Done when: fixtures round-trip patterns and a recolor test maps a known palette.
-- [ ] Commit: `"nodus: brushes, pattern fills, and recolor"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the brush and recolor tests reporting; captures committed. Cheaper substitute that fails: renderer-only brushes.
-
-## 19. Print and Prepress
-
-A designer prints proofs and prepares files for print shops: bleed, crop marks, and CMYK proofing. -> SOURCE: legacy-nodus-9
-
-**Fidelity:** Print dialog -- new build, no baseline; captured to docs/captures/nodus/print/.
-**Job:** a designer can print artboards with marks and bleed and soft-proof colors against a CMYK profile. Consumer: the printer and the PDF export.
-**Treatment:** File, Print through the Windows print dialog with artboard selection, scaling, crop marks, and bleed; PDF export gains bleed and marks; View, Proof Colors applies an ICC CMYK profile through a color-management library chosen by a recorded decision (lcms2 bindings or equivalent, license checked). Cheaper substitute that fails the checkpoint: printing a screenshot of the canvas.
-**Chrome:** consume the PDF exporter and the artboard model.
-
-**Requires:** display-session -- the print dialog needs an interactive desktop
-
-- [ ] Print with marks and bleed. Done when: printing to "Microsoft Print to PDF" shows marks at the bleed offset (file committed).
-- [ ] Soft proofing with a recorded color-management decision in `docs/dev/decisions.md`. Done when: a proof of a known color matches the profile's conversion within a stated delta E.
-- [ ] Commit: `"nodus: printing with marks and bleed, and CMYK soft proofing"`
-
-**Test checkpoint:** the printed PDF and the proof test are quoted; the decision entry exists. Cheaper substitute that fails: canvas screenshots.
-
-## 20. Scripting and Plugins
-
-Power users automate repetitive work. The legacy plan named JavaScript scripting and plugins; this suite's Imago already has a Roslyn scripting host project. Nodus's scripting starts from a stable command surface: scripts call the same commands the keymap does. -> SOURCE: legacy-nodus-7.4
-
-- [ ] Decide the scripting language and host (C# scripting through Roslyn as Imago has, or a JavaScript engine), license checked, recorded in `docs/dev/decisions.md`; if both editors choose the same host, file its move to `Photon.Core` through `add-todo`. Done when: the entry exists.
-- [ ] Expose a documented object model (document, selection, commands) to scripts, with every script edit recorded as one undoable transaction. Done when: a sample script that aligns and recolors a selection runs and undoes in one step.
-- [ ] A Scripts menu listing scripts from the app-data `scripts` folder, with errors shown with line numbers. Done when: a script with a syntax error reports its line.
-- [ ] Commit: `"nodus: scripting over the command surface"`
-
-**Requires:** display-session -- running scripts from the menu needs an interactive desktop
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with scripting-host tests reporting; the sample script run is logged and undone. Cheaper substitute that fails: scripts that edit the model outside the history.
-
-## 21. Onboarding and the Navigator
-
-First-run users need orientation, and large artboards need a navigator (minimap). -> SOURCE: legacy-nodus-5.8-5.9
-
-**Fidelity:** First-run welcome and Navigator panel -- new build, no baseline; captured to docs/captures/nodus/welcome/ and docs/captures/nodus/navigator/.
-**Job:** a new user can start from a template or a recent file on first run; any user can pan a large document from a thumbnail. Consumer: the user.
-**Treatment:** a welcome surface on start with no document (New from preset, Open, recent files, a link to the guide), dismissible and remembered; a Navigator panel with a live thumbnail and a draggable viewport rectangle. Cheaper substitute that fails the checkpoint: a static splash image.
-**Chrome:** consume the artboard presets, recent files, and the renderer.
-
-**Requires:** display-session -- the surfaces need an interactive desktop
-
-- [ ] Welcome surface with its settings key. Done when: it shows on first run and not after "Don't show again".
-- [ ] Navigator panel. Done when: dragging its rectangle pans the canvas (capture).
-- [ ] Commit: `"nodus: a welcome surface and a navigator panel"`
-
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with the welcome settings test reporting; captures committed. Cheaper substitute that fails: a splash image.
 
 ## Verification
 

@@ -2,7 +2,7 @@
 
 > **Phases 1, 4, 5, and 10**
 
-Imago, the raster editor, imported under `src/Imago/`. Its rename runs early beside Nodus's; its foundation (the snapshot port, WPF-UI removal, tiles, and rendering) starts after Nodus ships 0.1.0, followed by editing, file I/O, filters, and `imago-v0.1.0`. The legacy roadmap's long tail follows the suite release.
+Imago, the raster editor, imported under `src/Imago/`. Its rename runs early beside Nodus's; its foundation (the snapshot port, WPF-UI removal, tiles, and rendering) starts after Nodus ships 0.1.0, followed by editing, file I/O, filters, and `imago-v0.1.0`. After the suite release, TODO-07 ships the filter catalog, RAW import, workspaces, and accessibility the plan already names; the rest of the legacy roadmap waits in [`../backlog.md`](../backlog.md) (B-014 to B-027) and is promoted only through `add-todo`.
 
 ## TODOs
 
@@ -14,7 +14,7 @@ Imago, the raster editor, imported under `src/Imago/`. Its rename runs early bes
 | [TODO-04](./TODO-04-imago-files.md) | Imago File I/O | draft |
 | [TODO-05](./TODO-05-imago-adjustments.md) | Imago Filters and Adjustments for 0.1.0 | draft |
 | [TODO-06](./TODO-06-imago-release.md) | Imago 0.1.0 | draft |
-| [TODO-07](./TODO-07-imago-roadmap.md) | Imago Roadmap after 0.1.0 | draft |
+| [TODO-07](./TODO-07-imago-roadmap.md) | Imago after 0.1.0: Deferral Owners and Accessibility | draft |
 
 ## Completed
 

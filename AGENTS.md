@@ -27,6 +27,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `tools/` | `provision.ps1` (sets up a clone, including the commit hook) and `githooks/pre-commit` |
 | `todo/` | The live execution plan; read `todo/README.md` before authoring or implementing |
 | `todo/implementation-plan.md` | Ordered phase plan; its boxes are synchronized through `scripts/todo-graph.py` |
+| `todo/budget.json`, `todo/backlog.md` | The plan's ceilings and their history; the capped list of deferred ideas that are not sections |
 | `standards/` | Coding, design, testing, and release standards; the design contract every surface answers to |
 | `docs/dev/`, `docs/user/` | Developer documentation and each app's user guide |
 | `docs/legacy/` | The imported apps' pre-monorepo roadmaps, kept for reference only; `todo/` is the plan |
@@ -59,6 +60,8 @@ Everything here is Windows-only. The TODO tooling is stdlib Python 3 (`python` o
 `todo/` is the live execution plan; **format spec: `todo/README.md`.** Markdown is canonical and `build/` holds derived, gitignored projections.
 
 Domains are flat-numbered from `00`, allocated in order, and read from the tree: `00-workspace` (toolchain, solution, gates, CI, this system), `01-core` (`Photon.Core` and `Photon.UI`), `02-nodus`, `03-imago`, `04-lumen`, `05-release` (per-app packaging, signing, tags, the suite bundle), `06-docs`, and `99-manual` (operator-only rows no agent session can perform). Numbers are stable addresses: a new domain appends after the last one. `todo/TODO-00-INDEX.md` is the authority for which exist.
+
+**The plan is bounded** (operator decision, 2026-09-26). `todo/budget.json` caps the sections each phase may hold (open plus shipped), the total at their sum, the backlog, and the new sections one phase run may add; `validate` refuses a breach. New work becomes a section only when it is a defect in shipped or in-flight work, something an acceptance-bar aim requires, or a prerequisite of a planned row, and its phase has room; everything else goes to `todo/backlog.md`, which is never runnable. At a ceiling, merge, supersede, or backlog. Only the operator raises a ceiling, in words a new history entry quotes. The rules are in `todo/README.md` under "The budget and the backlog".
 
 Files are `todo/NN-domain/TODO-NN-short-name.md`. The **Implementation Order table is the dependency graph**: every `## N.` section has exactly one row and vice versa, and a row flips to `[x]` only when a `Verified:` stamp covers it. Cross-references use section marks in the forms `§N`, `TNN §N`, and `DNN TNN §N` as spelled out in `todo/README.md`, and must be bidirectional. Every section sits in exactly one phase table of `todo/implementation-plan.md`.
 
@@ -132,6 +135,8 @@ python scripts/todo-graph.py plan --check    # fail if the projection went stale
 python scripts/todo-graph.py query ready     # dependency-safe work right now
 python scripts/todo-graph.py query blocked   # sections waiting on something
 python scripts/todo-graph.py query stats     # tree health
+python scripts/todo-graph.py query budget    # sections per phase against each ceiling, the backlog against its cap
+python scripts/todo-graph.py query growth --since <ref> --check   # a run's new sections against the per-run cap
 python scripts/todo-graph.py resolve 'DNN TNN §N'   # ref -> file, section, deps, status
 python scripts/todo-claims.py                # re-measure what the TODOs claim about the repo
 python scripts/todo-claims.py --coverage     # name every Current state block nothing re-measures
