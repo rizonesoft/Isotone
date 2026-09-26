@@ -1,6 +1,6 @@
 namespace Imago.Core.Tests.Tiles;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Imago.Core.Tiles;
 using Xunit;
 

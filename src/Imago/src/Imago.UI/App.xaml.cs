@@ -156,7 +156,7 @@ public partial class App : Application
         ExceptionWindow.Show(ex, title, canContinue: true);
     }
 
-    private async void OnExit(object sender, ExitEventArgs e)
+    private async void OnExitAsync(object sender, ExitEventArgs e)
     {
         Log.Information("Imago shutting down...");
 

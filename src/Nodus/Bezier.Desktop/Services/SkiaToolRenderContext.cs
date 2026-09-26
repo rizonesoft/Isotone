@@ -150,7 +150,7 @@ public class SkiaToolRenderContext : IToolRenderContext
             IsAntialias = true
         };
         using var font = new SKFont(SKTypeface.Default, fontSize / (float)_zoom);
-        _canvas.DrawText(text, (float)x, (float)y, font, paint);
+        _canvas.DrawText(text, (float)x, (float)y, SKTextAlign.Left, font, paint);
     }
 
     public void DrawElementPreview(object element, double offsetX, double offsetY, double opacity = 0.5)

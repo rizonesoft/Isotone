@@ -9,8 +9,8 @@ namespace Imago.UI.Services;
 /// </summary>
 public sealed class IconService
 {
-    private static IconService? _instance;
-    public static IconService Instance => _instance ??= new IconService();
+    private static IconService? s_instance;
+    public static IconService Instance => s_instance ??= new IconService();
 
     private Dictionary<string, string> _iconPaths = [];
     private readonly Dictionary<string, Geometry> _geometryCache = [];

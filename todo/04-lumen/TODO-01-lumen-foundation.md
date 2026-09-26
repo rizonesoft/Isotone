@@ -115,7 +115,7 @@ Lumen needs the same spine as the other two: projects in the suite layout, a com
 
 **Requires:** display-session -- launching the new app needs an interactive desktop
 
-- [ ] Create `src/Lumen/Photon.Lumen.Core/Photon.Lumen.Core.csproj` (`net10.0`), `src/Lumen/Photon.Lumen.Desktop/Photon.Lumen.Desktop.csproj` (`net10.0-windows`, WPF, `AssemblyName` Lumen), `src/Lumen/Directory.Build.props` (MinVer prefix `lumen-v`, `Product` Lumen), and `tests/Photon.Lumen.Tests`, all in `Photon.slnx`. Done when: `dotnet build Photon.slnx -c Release` builds them.
+- [ ] Create `src/Lumen/Photon.Lumen.Core/Photon.Lumen.Core.csproj` (`net11.0`), `src/Lumen/Photon.Lumen.Desktop/Photon.Lumen.Desktop.csproj` (`net11.0-windows10.0.26100.0` with `TargetPlatformMinVersion` 10.0.17763.0, WPF; **Corrected 2026-09-26:** said `net10.0` and `net10.0-windows`, the suite moved to .NET 11, `AssemblyName` Lumen), `src/Lumen/Directory.Build.props` (MinVer prefix `lumen-v`, `Product` Lumen), and `tests/Photon.Lumen.Tests`, all in `Photon.slnx`. Done when: `dotnet build Photon.slnx -c Release` builds them.
 - [ ] The composition root with `UsePhotonLogging("Lumen")`, the settings store, and single instance. Done when: a launch logs its startup line to `%LOCALAPPDATA%\Rizonesoft\Lumen\logs\`.
 - [ ] The shell window and empty state per Treatment. Done when: a capture is committed.
 - [ ] The Lumen icon from `resources/icons/lens.png` into `resources/icons/lumen/` (sizes as for Nodus), with its source and license status recorded in `resources/icons/README.md` pending operator confirmation (`D99 T01 §4`). Done when: `Lumen.exe` shows it.

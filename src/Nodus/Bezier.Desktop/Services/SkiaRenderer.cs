@@ -18,6 +18,7 @@ public class SkiaRenderer
     private readonly SKPaint _gridMajorPaint;
     private readonly SKPaint _rulerPaint;
     private readonly SKPaint _rulerTextPaint;
+    private readonly SKFont _rulerFont;
     private readonly SKPaint _rulerTickPaint;
 
     public SkiaRenderer()
@@ -47,10 +48,9 @@ public class SkiaRenderer
         _rulerTextPaint = new SKPaint
         {
             Color = new SKColor(180, 180, 180),
-            TextSize = 10,
-            IsAntialias = true,
-            Typeface = SKTypeface.FromFamilyName("Segoe UI", SKFontStyle.Normal)
+            IsAntialias = true
         };
+        _rulerFont = new SKFont(SKTypeface.FromFamilyName("Segoe UI", SKFontStyle.Normal), 10);
         
         _rulerTickPaint = new SKPaint
         {
@@ -389,14 +389,15 @@ public class SkiaRenderer
     {
         if (polygon.Points.Count < 2) return;
         
-        using var skPath = new SKPath();
-        skPath.MoveTo((float)polygon.Points[0].X, (float)polygon.Points[0].Y);
+        using var builder = new SKPathBuilder();
+        builder.MoveTo((float)polygon.Points[0].X, (float)polygon.Points[0].Y);
         
         for (int i = 1; i < polygon.Points.Count; i++)
         {
-            skPath.LineTo((float)polygon.Points[i].X, (float)polygon.Points[i].Y);
+            builder.LineTo((float)polygon.Points[i].X, (float)polygon.Points[i].Y);
         }
-        skPath.Close();
+        builder.Close();
+        using var skPath = builder.Detach();
         
         var bounds = skPath.Bounds;
         
@@ -439,13 +440,14 @@ public class SkiaRenderer
     {
         if (polyline.Points.Count < 2) return;
         
-        using var skPath = new SKPath();
-        skPath.MoveTo((float)polyline.Points[0].X, (float)polyline.Points[0].Y);
+        using var builder = new SKPathBuilder();
+        builder.MoveTo((float)polyline.Points[0].X, (float)polyline.Points[0].Y);
         
         for (int i = 1; i < polyline.Points.Count; i++)
         {
-            skPath.LineTo((float)polyline.Points[i].X, (float)polyline.Points[i].Y);
+            builder.LineTo((float)polyline.Points[i].X, (float)polyline.Points[i].Y);
         }
+        using var skPath = builder.Detach();
         
         var bounds = skPath.Bounds;
         
@@ -486,20 +488,17 @@ public class SkiaRenderer
 
     private void RenderText(SKCanvas canvas, SvgText text, bool outlineMode, VectorDocument? document)
     {
-        using var paint = new SKPaint
-        {
-            TextSize = (float)text.FontSize,
-            Typeface = SKTypeface.FromFamilyName(
+        // SkiaSharp 4: size and typeface live on SKFont, not SKPaint.
+        using var font = new SKFont(
+            SKTypeface.FromFamilyName(
                 text.FontFamily,
                 text.FontWeight,
                 (int)SKFontStyleWidth.Normal,
                 text.Italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright),
-            IsAntialias = true
-        };
+            (float)text.FontSize);
         
         // Measure text for bounds
-        var textBounds = new SKRect();
-        paint.MeasureText(text.Text, ref textBounds);
+        font.MeasureText(text.Text, out var textBounds);
         
         var x = (float)text.X;
         var y = (float)text.Y;
@@ -519,11 +518,9 @@ public class SkiaRenderer
             using var fillPaint = text.Fill.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (fillPaint is not null)
             {
-                fillPaint.TextSize = paint.TextSize;
-                fillPaint.Typeface = paint.Typeface;
                 fillPaint.IsAntialias = true;
                 fillPaint.Style = SKPaintStyle.Fill;
-                canvas.DrawText(text.Text, (float)text.X, (float)text.Y, fillPaint);
+                canvas.DrawText(text.Text, (float)text.X, (float)text.Y, SKTextAlign.Left, font, fillPaint);
             }
         }
         
@@ -532,15 +529,13 @@ public class SkiaRenderer
             using var strokePaint = text.Stroke.ToSkiaPaint(bounds, document, p => RenderPatternToPicture(p, document));
             if (strokePaint is not null)
             {
-                strokePaint.TextSize = paint.TextSize;
-                strokePaint.Typeface = paint.Typeface;
                 strokePaint.IsAntialias = true;
                 if (outlineMode)
                 {
                     strokePaint.Color = SKColors.Black;
                     strokePaint.StrokeWidth = 1;
                 }
-                canvas.DrawText(text.Text, (float)text.X, (float)text.Y, strokePaint);
+                canvas.DrawText(text.Text, (float)text.X, (float)text.Y, SKTextAlign.Left, font, strokePaint);
             }
         }
         else if (outlineMode)
@@ -550,11 +545,9 @@ public class SkiaRenderer
                 Style = SKPaintStyle.Stroke,
                 Color = SKColors.Black,
                 StrokeWidth = 1,
-                IsAntialias = true,
-                TextSize = paint.TextSize,
-                Typeface = paint.Typeface
+                IsAntialias = true
             };
-            canvas.DrawText(text.Text, (float)text.X, (float)text.Y, outlinePaint);
+            canvas.DrawText(text.Text, (float)text.X, (float)text.Y, SKTextAlign.Left, font, outlinePaint);
         }
     }
 
@@ -715,11 +708,12 @@ public class SkiaRenderer
         var hx = cursorScreenPosition.X;
         if (hx > RulerSize)
         {
-            var trianglePath = new SKPath();
-            trianglePath.MoveTo(hx - 4, RulerSize - 8);
-            trianglePath.LineTo(hx + 4, RulerSize - 8);
-            trianglePath.LineTo(hx, RulerSize - 2);
-            trianglePath.Close();
+            using var triangle = new SKPathBuilder();
+            triangle.MoveTo(hx - 4, RulerSize - 8);
+            triangle.LineTo(hx + 4, RulerSize - 8);
+            triangle.LineTo(hx, RulerSize - 2);
+            triangle.Close();
+            using var trianglePath = triangle.Detach();
             canvas.DrawPath(trianglePath, indicatorPaint);
             
             // Draw vertical guide line
@@ -730,11 +724,12 @@ public class SkiaRenderer
         var vy = cursorScreenPosition.Y;
         if (vy > RulerSize)
         {
-            var trianglePath = new SKPath();
-            trianglePath.MoveTo(RulerSize - 8, vy - 4);
-            trianglePath.LineTo(RulerSize - 8, vy + 4);
-            trianglePath.LineTo(RulerSize - 2, vy);
-            trianglePath.Close();
+            using var triangle = new SKPathBuilder();
+            triangle.MoveTo(RulerSize - 8, vy - 4);
+            triangle.LineTo(RulerSize - 8, vy + 4);
+            triangle.LineTo(RulerSize - 2, vy);
+            triangle.Close();
+            using var trianglePath = triangle.Detach();
             canvas.DrawPath(trianglePath, indicatorPaint);
             
             // Draw horizontal guide line
@@ -764,7 +759,7 @@ public class SkiaRenderer
             if (isMajor)
             {
                 var label = docX.ToString("0");
-                canvas.DrawText(label, screenX + 2, RulerSize - tickHeight - 2, _rulerTextPaint);
+                canvas.DrawText(label, screenX + 2, RulerSize - tickHeight - 2, SKTextAlign.Left, _rulerFont, _rulerTextPaint);
             }
         }
     }
@@ -796,7 +791,7 @@ public class SkiaRenderer
                 canvas.Save();
                 canvas.Translate(RulerSize - tickWidth - 2, screenY + 2);
                 canvas.RotateDegrees(-90);
-                canvas.DrawText(label, 0, 0, _rulerTextPaint);
+                canvas.DrawText(label, 0, 0, SKTextAlign.Left, _rulerFont, _rulerTextPaint);
                 canvas.Restore();
             }
         }

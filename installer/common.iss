@@ -1,4 +1,4 @@
-; Photon Graphics Suite: shared Inno Setup definitions.
+; Photon Graphics Suite: shared Inno Setup definitions (Inno Setup 7.1 or newer).
 ;
 ; Each app script (Nodus.iss, Imago.iss, Lumen.iss) defines the app identity,
 ; then includes this file. scripts/package.ps1 passes the build inputs:
@@ -41,11 +41,16 @@ VersionInfoCopyright=Copyright (c) Rizonesoft
 ; Per-user by default; the dialog offers an all-users install.
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-; 64-bit only. The .NET runtime ships inside the app (self-contained): no prerequisites.
+; 64-bit only: a 64-bit Setup (Inno 7 SetupArchitecture) installing in 64-bit mode.
+; The .NET runtime ships inside the app (self-contained): no prerequisites.
+SetupArchitecture=x64
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+; Supported: Windows 11. Windows 10 (1809 or later) may install and run but is
+; unsupported by .NET 11; the wizard says so on build < 22000 (see [Code]).
 MinVersion=10.0.17763
-WizardStyle=modern
+; Inno 7: follow the system light or dark theme.
+WizardStyle=modern dynamic
 Compression=lzma2/max
 SolidCompression=yes
 OutputDir={#OutputDir}
@@ -109,3 +114,37 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 #endif
+
+[Code]
+// Windows 10 is not on the .NET 11 supported-OS list (only Windows 11 and the
+// Windows 10 LTSC/IoT editions are), so on build < 22000 the wizard shows one
+// non-blocking notice page. Silent installs (/SILENT, /VERYSILENT) never show
+// wizard pages, so they skip it. Event attributes keep this composable with any
+// InitializeWizard or ShouldSkipPage an including script adds.
+var
+  PhotonWin10Page: TOutputMsgWizardPage;
+
+function PhotonIsWindows10: Boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  Result := (Version.Major = 10) and (Version.Build < 22000);
+end;
+
+<event('InitializeWizard')>
+procedure PhotonInitializeWizard;
+begin
+  PhotonWin10Page := CreateOutputMsgPage(wpWelcome,
+    'Windows 10 is not officially supported',
+    '{#AppName} is built for Windows 11.',
+    'Windows 10 is not officially supported by .NET 11, which {#AppName} is built on. ' +
+    '{#AppName} may work, but it is untested on Windows 10.' + #13#10#13#10 +
+    'Click Next to continue anyway, or Cancel to exit Setup.');
+end;
+
+<event('ShouldSkipPage')>
+function PhotonShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := (PhotonWin10Page <> nil) and (PageID = PhotonWin10Page.ID) and not PhotonIsWindows10;
+end;

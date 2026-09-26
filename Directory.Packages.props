@@ -3,6 +3,8 @@
     Central package management for the whole suite. Projects reference packages
     without a Version; the version lives here, once. Versions checked against
     nuget.org on 2026-09-26. Dependabot (.github/dependabot.yml) keeps them current.
+    Microsoft.Extensions.* track the .NET runtime the SDK in global.json ships
+    (11.0.0-rc.1 until .NET 11 GA; see D00 T02 §8).
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -14,34 +16,23 @@
   </ItemGroup>
 
   <ItemGroup Label="UI">
-    <PackageVersion Include="AvalonEdit" Version="6.3.1.120" />
     <PackageVersion Include="Dirkster.AvalonDock" Version="5.0.0" />
     <PackageVersion Include="Dirkster.AvalonDock.Themes.VS2013" Version="5.0.0" />
     <PackageVersion Include="FluentIcons.Wpf" Version="2.1.341" />
+    <!-- Nodus splash logo only (SplashWindow.xaml svgc:SvgViewbox); retired by D02 T02 §2. -->
     <PackageVersion Include="SharpVectors.Wpf" Version="1.8.6" />
     <!-- Imago only; removal is planned (Nodus already dropped it). -->
     <PackageVersion Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
 
-  <ItemGroup Label="MVVM and Reactive">
+  <ItemGroup Label="MVVM">
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageVersion Include="ReactiveUI.WPF" Version="23.2.28" />
   </ItemGroup>
 
   <ItemGroup Label="Rendering">
-    <PackageVersion Include="SkiaSharp" Version="3.119.4" />
-    <PackageVersion Include="SkiaSharp.Views.WPF" Version="3.119.4" />
-    <PackageVersion Include="Svg.Skia" Version="4.9.1" />
+    <PackageVersion Include="SkiaSharp" Version="4.152.1" />
+    <PackageVersion Include="SkiaSharp.Views.WPF" Version="4.152.1" />
     <PackageVersion Include="ComputeSharp" Version="3.2.0" />
-  </ItemGroup>
-
-  <ItemGroup Label="Image Processing">
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
-    <PackageVersion Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
-  </ItemGroup>
-
-  <ItemGroup Label="Input">
-    <PackageVersion Include="SharpDX.DirectInput" Version="4.2.0" />
   </ItemGroup>
 
   <ItemGroup Label="Scripting">
@@ -50,12 +41,8 @@
   </ItemGroup>
 
   <ItemGroup Label="Hosting and DI">
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
-  </ItemGroup>
-
-  <ItemGroup Label="Serialization">
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0-rc.1.26425.128" />
   </ItemGroup>
 
   <ItemGroup Label="Logging">
@@ -68,10 +55,12 @@
 
   <ItemGroup Label="Testing">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
-    <PackageVersion Include="xunit" Version="2.9.3" />
+    <!-- mtp-off: the xunit.v3 flavor without Microsoft.Testing.Platform, so dotnet test
+         stays on VSTest (xunit.runner.visualstudio) and honors tests/Photon.runsettings. -->
+    <PackageVersion Include="xunit.v3.mtp-off" Version="4.0.1" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="Moq" Version="4.21.0" />
-    <PackageVersion Include="FluentAssertions" Version="8.11.0" />
+    <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
   </ItemGroup>
 </Project>

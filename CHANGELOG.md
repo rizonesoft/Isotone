@@ -62,8 +62,20 @@ Sections: [Nodus](#nodus) · [Imago](#imago) · [Lumen](#lumen) · [Photon.Core]
 - GPL-3.0 `LICENSE` for the whole repository.
 - Repository face: README, contributing guide, security policy, code of conduct, issue forms, pull request template, and documentation indexes.
 - Brand assets under `resources/brand/`: Rizonesoft logos for light and dark themes, the Photon banner, and a social preview image.
+- The Windows installers show a notice on Windows 10: the apps target Windows 11, and Windows 10 22H2 may work but is unsupported by .NET 11. Silent installs skip the notice.
+
+#### Changed
+
+- Toolchain: .NET 11 (SDK 11.0.100-rc.1.26425.128 pinned until .NET 11 ships in November 2026), C# `latest` in every project, Windows SDK target 10.0.26100 with Windows 10 1809 as the minimum platform. `Imago.Plugins.Abstractions` moved from `netstandard2.1` to `net11.0`.
+- Packages: SkiaSharp and SkiaSharp.Views.WPF 4.152.1 (Nodus text drawing moved to `SKFont`, paths to `SKPathBuilder`; no .NET Framework OpenTK packages remain), Microsoft.Extensions.* 11.0.0-rc.1.
+- Tests: xUnit v3 (4.0.1, on VSTest) and AwesomeAssertions 9.6.0 in place of xUnit 2.9.3 and FluentAssertions 8.
+- Installers: Inno Setup 7.1 builds 64-bit Setup programs with a wizard that follows the system light or dark theme. The suite installer (one component per app) is built by `photon-v*` tags and `scripts/package.ps1 -Suite`.
+- Supported OS: Windows 11 (23H2 or later); Windows 10 22H2 is best-effort.
+- CI: the plan gates run on `ubuntu-26.04`; release builds install a hash-pinned Inno Setup 7.
 
 #### Removed
+
+- Unused packages: ReactiveUI.WPF, SharpDX.DirectInput, SixLabors.ImageSharp and ImageSharp.Drawing (Imago); Newtonsoft.Json, AvalonEdit, and Svg.Skia (Nodus), with the unused AvalonEdit highlighting file and the unreferenced `SvgVisualEditor` service.
 
 - Per-app README, CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, LICENSE, and issue templates under `src/Nodus/` and `src/Imago/`; their content is merged into the root files.
 

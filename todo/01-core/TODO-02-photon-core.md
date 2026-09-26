@@ -36,7 +36,7 @@ track: C2
 
 ## Outcome
 
-- `src/Photon.Core/Photon.Core.csproj` (`net10.0`, no WPF) exists, is in `Photon.slnx`, and is referenced by both editors.
+- `src/Photon.Core/Photon.Core.csproj` (`net11.0`, no WPF) exists, is in `Photon.slnx`, and is referenced by both editors.
 - Both apps log through one bootstrap to `%LOCALAPPDATA%\Rizonesoft\<App>\logs\`, with the rolling and retention the standard names.
 - Both apps read and write settings through one atomic JSON store under `%LOCALAPPDATA%\Rizonesoft\<App>\settings.json`.
 - A second launch of either app with a file path hands the path to the running instance and exits.
@@ -63,7 +63,7 @@ track: C2
 
 Both editors need logging and an app-data folder, and they do it differently today: Imago through the Generic Host and Serilog, Nodus through a private `DebugLogger` with no file at all. This is the first shared need, so it creates the library. The location changes from `%LOCALAPPDATA%\Imago` to `%LOCALAPPDATA%\Rizonesoft\Imago` as `standards/shared.md` decides; nothing has shipped, so there is nothing to migrate.
 
-- [ ] Create `src/Photon.Core/Photon.Core.csproj` (`net10.0`, `Nullable` enable, root namespace `Photon.Core`) and add it to `Photon.slnx` under `/Shared/`. Done when: `dotnet build Photon.slnx -c Release` builds it.
+- [ ] Create `src/Photon.Core/Photon.Core.csproj` (`net11.0`; **Corrected 2026-09-26:** said `net10.0`, `Nullable` enable, root namespace `Photon.Core`) and add it to `Photon.slnx` under `/Shared/`. Done when: `dotnet build Photon.slnx -c Release` builds it.
 - [ ] Add `src/Photon.Core/AppData/AppDataPaths.cs`: given an app name, returns `%LOCALAPPDATA%\Rizonesoft\<App>` and its `logs`, `settings.json`, and `recovery` locations, creating folders on first use, with an override root for tests. Done when: `AppDataPathsTests` pass with a temporary root.
 - [ ] Add `src/Photon.Core/Logging/PhotonLogging.cs` with `UsePhotonLogging(this IHostBuilder, string appName)`: Serilog to `<logs>\<app>-.log`, daily rolling, 7 files, 10 MB per file, the `Debug` output in Debug builds, minimum level from configuration. Done when: `PhotonLoggingTests` asserts a written event lands in the file under a temporary root.
 - [ ] Imago's `App.xaml.cs` replaces its inline `UseSerilog` block with `UsePhotonLogging("Imago")`, and its `appsettings.json` `Logging.FilePath` entry is removed. Done when: an Imago run writes `%LOCALAPPDATA%\Rizonesoft\Imago\logs\imago-<date>.log`.

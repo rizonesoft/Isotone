@@ -45,14 +45,14 @@ public class VectorIcon : Control
     public Geometry Geometry
     {
         get => (Geometry)GetValue(GeometryProperty);
-        private set => SetValue(GeometryPropertyKey, value);
+        private set => SetValue(s_geometryPropertyKey, value);
     }
 
-    private static readonly DependencyPropertyKey GeometryPropertyKey =
+    private static readonly DependencyPropertyKey s_geometryPropertyKey =
         DependencyProperty.RegisterReadOnly(nameof(Geometry), typeof(Geometry), typeof(VectorIcon),
             new PropertyMetadata(Geometry.Empty));
 
-    public static readonly DependencyProperty GeometryProperty = GeometryPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty GeometryProperty = s_geometryPropertyKey.DependencyProperty;
     #endregion
 
     #region Size Property

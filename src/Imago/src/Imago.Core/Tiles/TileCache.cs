@@ -8,7 +8,7 @@ using System.Collections.Concurrent;
 public sealed class TileCache : IDisposable
 {
     private readonly ConcurrentDictionary<TileCoordinate, TileEntry> _cache = new();
-    private readonly object _evictionLock = new();
+    private readonly Lock _evictionLock = new();
     private readonly long _maxMemoryBytes;
     private long _currentMemoryBytes;
     private bool _disposed;

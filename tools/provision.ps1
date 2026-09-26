@@ -4,11 +4,13 @@
   Verifies and repairs the developer toolchain for the Photon Graphics Suite.
 .DESCRIPTION
   Legs:
-    sdk     the .NET SDK pinned in global.json (exact version, rollForward disable).
+    sdk     the .NET SDK pinned in global.json (exact version, rollForward disable;
+            a prerelease pin such as 11.0.100-rc.1 is matched exactly too).
             Accepts a machine-wide install; otherwise repair downloads it, verifies
             the SHA512 sidecar, and unpacks it to .tools/dotnet-win-x64.
-    inno    Inno Setup 6 (ISCC.exe), version >= $MinInno. Repair installs the
-            pinned Chocolatey package ($InnoChocoVersion), falling back to winget.
+    inno    Inno Setup 7 (ISCC.exe), version >= $MinInno. Repair installs it with
+            winget (JRSoftware.InnoSetup.7), falling back to the pinned official
+            installer ($InnoVersion, SHA256 verified). Chocolatey has no Inno 7.
     hooks   git core.hooksPath = tools/githooks and tools/githooks/pre-commit present.
     python  Python 3 on PATH (plan gates in scripts/check-all.ps1).
   -Verify runs the checks only: exit 0 when all legs are green, 1 otherwise.
@@ -26,8 +28,11 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $Rid = 'win-x64'
 $LocalSdk = Join-Path $Root ".tools\dotnet-$Rid"
-$MinInno = [version]'6.4.0'
-$InnoChocoVersion = '6.7.1'
+$MinInno = [version]'7.1.0'
+$InnoVersion = '7.1.0'
+$InnoWingetId = 'JRSoftware.InnoSetup.7'
+$InnoInstallerUrl = "https://github.com/jrsoftware/issrc/releases/download/is-$($InnoVersion -replace '\.', '_')/innosetup-$InnoVersion-x64.exe"
+$InnoInstallerSha256 = '0362A383ED217D4C4239B5933866DD96D3EB2102737DA92F80F6057A4B40DF2F'
 
 function Get-PinnedSdkVersion {
   return (Get-Content (Join-Path $Root 'global.json') -Raw | ConvertFrom-Json).sdk.version
@@ -75,9 +80,9 @@ function Install-Sdk {
 
 function Find-InnoSetup {
   $keys = @(
-    'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1',
-    'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1',
-    'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1'
+    'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 7_is1',
+    'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 7_is1',
+    'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 7_is1'
   )
   foreach ($k in $keys) {
     $p = Get-ItemProperty $k -ErrorAction SilentlyContinue
@@ -88,9 +93,9 @@ function Find-InnoSetup {
   }
   $paths = @(
     $env:ISCC,
-    (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
-    (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe'),
-    (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
+    (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),
+    (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe')
   ) | Where-Object { $_ -and (Test-Path $_) }
   if ($paths) { return @{ Exe = @($paths)[0]; Version = $null } }
   return $null
@@ -99,7 +104,7 @@ function Find-InnoSetup {
 function Test-InnoLeg {
   if ($SkipInno) { return @{ Name = 'inno'; Ok = $true; Detail = 'skipped (-SkipInno)' } }
   $inno = Find-InnoSetup
-  if (-not $inno) { return @{ Name = 'inno'; Ok = $false; Detail = 'Inno Setup 6 (ISCC.exe) not found' } }
+  if (-not $inno) { return @{ Name = 'inno'; Ok = $false; Detail = 'Inno Setup 7 (ISCC.exe) not found' } }
   if (-not $inno.Version) { return @{ Name = 'inno'; Ok = $true; Detail = "$($inno.Exe) (version unknown)" } }
   $v = [version](($inno.Version -split '[^\d\.]')[0])
   if ($v -lt $MinInno) { return @{ Name = 'inno'; Ok = $false; Detail = "Inno Setup $v is older than $MinInno" } }
@@ -107,15 +112,26 @@ function Test-InnoLeg {
 }
 
 function Install-Inno {
-  if (Get-Command choco -ErrorAction SilentlyContinue) {
-    & choco install innosetup --version $InnoChocoVersion -y --no-progress
-    if ($LASTEXITCODE -eq 0) { return }
-  }
   if (Get-Command winget -ErrorAction SilentlyContinue) {
-    & winget install --id JRSoftware.InnoSetup -e --accept-source-agreements --accept-package-agreements
+    & winget install --id $InnoWingetId -e --version $InnoVersion --accept-source-agreements --accept-package-agreements
     if ($LASTEXITCODE -eq 0) { return }
   }
-  Write-Warning 'provision: install Inno Setup 6 manually from https://jrsoftware.org/isdl.php'
+  # Fallback: the official installer from the jrsoftware/issrc release, hash-pinned.
+  $exe = Join-Path ([IO.Path]::GetTempPath()) "innosetup-$InnoVersion-x64.exe"
+  try {
+    Write-Host "provision: downloading Inno Setup $InnoVersion"
+    Invoke-WebRequest -Uri $InnoInstallerUrl -OutFile $exe -UseBasicParsing
+    $actual = (Get-FileHash -Path $exe -Algorithm SHA256).Hash
+    if ($actual -ne $InnoInstallerSha256) { throw "provision: SHA256 mismatch for $InnoInstallerUrl" }
+    $p = Start-Process -FilePath $exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-' -Wait -PassThru
+    if ($p.ExitCode -eq 0) { return }
+    Write-Warning "provision: Inno Setup installer exited $($p.ExitCode)"
+  } catch {
+    Write-Warning $_
+  } finally {
+    Remove-Item -Force $exe -ErrorAction SilentlyContinue
+  }
+  Write-Warning 'provision: install Inno Setup 7 manually from https://jrsoftware.org/isdl.php'
 }
 
 function Test-HooksLeg {

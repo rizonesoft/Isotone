@@ -99,7 +99,7 @@ public static class ColorConverter
         if (s < 0.00001f)
             return (v, v, v);
 
-        h = h % 360f;
+        h %= 360f;
         if (h < 0) h += 360f;
 
         float c = v * s;
@@ -164,7 +164,7 @@ public static class ColorConverter
         float x = c * (1f - MathF.Abs((h / 60f) % 2f - 1f));
         float m = l - c * 0.5f;
 
-        h = h % 360f;
+        h %= 360f;
         if (h < 0) h += 360f;
 
         float r, g, b;

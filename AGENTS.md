@@ -4,7 +4,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 
 ## What this project is
 
-`Photon` is the monorepo of the **Photon Graphics Suite**: three standalone creative applications for Windows, built on .NET 10 and WPF.
+`Photon` is the monorepo of the **Photon Graphics Suite**: three standalone creative applications for Windows 11, built on .NET 11 and WPF.
 
 | App | Kind | State |
 | --- | ---- | ----- |
@@ -43,12 +43,12 @@ Everything here is Windows-only. The TODO tooling is stdlib Python 3 (`python` o
 
 ## The decisions this project runs on
 
-- **.NET 10 and C#**, SDK pinned by `global.json`, built from `Photon.slnx`, warnings as errors through `Directory.Build.props`, packages centrally versioned in `Directory.Packages.props`.
+- **.NET 11 and C# `latest`**, SDK pinned by `global.json` (the 11.0.100 release candidate until .NET 11 ships; `D00 T02 §8` moves the pin to GA), built from `Photon.slnx`, warnings as errors through `Directory.Build.props`, packages centrally versioned in `Directory.Packages.props`.
 - **WPF only, standard controls with custom theming. No WPF-UI** and no other UI framework: a WPF-UI reference is a defect.
 - **CommunityToolkit.Mvvm** for view models (`ObservableObject`, `RelayCommand`, source generators). Logic lives in view models and services; code-behind is for view-only concerns.
 - **Microsoft.Extensions.DependencyInjection** for composition: one composition root per app, constructor injection, no static service locator.
 - **Serilog** for logging: one configuration per app, structured events, one log line per action that changes a document or a setting.
-- **xUnit** (with FluentAssertions where already used) for tests, run through `dotnet test Photon.slnx`.
+- **xUnit v3** (the `xunit.v3.mtp-off` package, run on VSTest) with **AwesomeAssertions** where fluent assertions are used, run through `dotnet test Photon.slnx`.
 - **Shared code goes to `Photon.Core` only when two apps need it.** One app's need stays in that app, with a note naming when it would move. A second copy of a behavior in a second app is a defect; so is a `Photon.Core` type only one app consumes.
 - **Per-app versioning.** Each app releases on its own tag: `nodus-v*`, `imago-v*`, `lumen-v*`. A suite release that bundles a set of app versions tags `photon-v*`. No app's version moves because another app shipped.
 - **Build output lives under `artifacts/`**, scratch and guard state under `build/`; both are gitignored and neither is ever cited as a record.
