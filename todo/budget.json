@@ -1,44 +1,8 @@
 {
-  "schema_version": 1,
-  "note": "Bounds the plan. ceilings: the most sections (open plus shipped) each phase of implementation-plan.md may hold; the total ceiling is their sum. backlog_cap: the most entries todo/backlog.md may hold. per_run_new_sections: the most new sections one phase run may add. The live values must equal the latest history snapshot; history is append-only; a raise needs approved_by operator and the operator's words quoted in reason. Format and rules: todo/README.md, The budget and the backlog.",
-  "ceilings": {
-    "0": 15,
-    "1": 4,
-    "2": 18,
-    "3": 27,
-    "4": 18,
-    "5": 19,
-    "6": 29,
-    "7": 19,
-    "8": 22,
-    "9": 24,
-    "10": 20,
-    "11": 22,
-    "12": 19,
-    "13": 17,
-    "14": 10,
-    "15": 26,
-    "16": 21,
-    "17": 20,
-    "18": 13,
-    "19": 14,
-    "20": 14,
-    "21": 18,
-    "22": 13,
-    "23": 21,
-    "24": 10,
-    "25": 25,
-    "26": 18,
-    "27": 14,
-    "28": 10,
-    "29": 13,
-    "30": 9,
-    "31": 5,
-    "32": 2,
-    "99": 6
-  },
-  "backlog_cap": 150,
-  "per_run_new_sections": 3,
+  "schema_version": 2,
+  "note": "Bounds campaign discovery, never operator planning. per_run_discovered_sections: the most sections one campaign run may file on its own (each carries an `**Origin:** discovered run=<id> <YYYY-MM-DD>` line; a section with no Origin line is operator-directed and uncapped). backlog_cap: the most entries todo/backlog.md may hold. The live values must equal the latest history snapshot; history is append-only (entries 1 to 3 are schema 1 snapshots with the retired phase ceilings); a raise needs approved_by operator and the operator's words quoted in reason. Format and rules: todo/README.md, The budget and the backlog.",
+  "backlog_cap": 500,
+  "per_run_discovered_sections": 15,
   "history": [
     {
       "date": "2026-09-26",
@@ -143,6 +107,16 @@
         },
         "backlog_cap": 150,
         "per_run_new_sections": 3
+      }
+    },
+    {
+      "date": "2026-09-27",
+      "change": "Phase ceilings and the total ceiling removed: operator-directed planning (sections written in attended sessions at the operator's request, which is every section in the tree today) is never capped. The per-run cap now counts only sections a campaign files on its own, marked by an `**Origin:** discovered run=<id> <date>` line, at most 15 per phase run (per_run_new_sections 3 renamed per_run_discovered_sections and raised to 15), with no shared pool. Backlog cap 150 -> 500. Schema 2: the snapshot carries backlog_cap and per_run_discovered_sections only.",
+      "reason": "Operator decision 2026-09-27: \"Why is there a phase limit on planning, should the limit not only be on new sections beign created automatically, but even then that shoiuld not be a small limit\". The operator chose \"15 per phase run\", \"No pool, per-run cap only\", and for the backlog \"Raise to 500\".",
+      "approved_by": "operator",
+      "snapshot": {
+        "backlog_cap": 500,
+        "per_run_discovered_sections": 15
       }
     }
   ]

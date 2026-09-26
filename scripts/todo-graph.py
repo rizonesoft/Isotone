@@ -947,22 +947,26 @@ SEVERITY_MAP: dict[str, str] = {
     # teaches an ambiguous address; the fix is mechanical (expand to a
     # full DNN TNN §N ref). D00 T04 §13.
     "skill-citation-short-form": "fatal",
-    # The plan must not grow unconditionally (operator 2026-09-26). The
-    # budget file is the contract: a missing, unparseable, or incomplete
-    # one (a phase with no ceiling, a ceiling for a phase the plan does not
-    # have) leaves the plan unbounded, so it is as broken as a breach.
+    # The plan must not grow unconditionally (operator 2026-09-26), and
+    # operator-directed planning is never capped (operator 2026-09-27). The
+    # budget file is the contract: a missing, unparseable, or incomplete one
+    # leaves campaign discovery unbounded, so it is as broken as a breach.
     "budget-malformed": "fatal",
-    # a phase holding more sections (open plus shipped) than its ceiling:
-    # the fix is a merge, a supersession, or the backlog, never a quiet row.
-    "budget-over-phase": "fatal",
-    # more sections in the tree than the phase ceilings add up to: catches
-    # sections that sit in no phase at all, which no phase check can see.
-    "budget-over-total": "fatal",
-    # a live ceiling or cap that differs from the latest history snapshot,
-    # a history entry edited or removed against the committed file, or a
-    # raise without the operator's quoted words: a ceiling only moves
-    # through an appended, attributed history entry.
+    # a live cap that differs from the latest history snapshot, a history
+    # entry edited or removed against the committed file, or a raise without
+    # the operator's quoted words: a cap only moves through an appended,
+    # attributed history entry.
     "budget-unrecorded-change": "fatal",
+    # a `**Origin:**` line outside the grammar (`**Origin:** discovered
+    # run=<12 hex> <YYYY-MM-DD>`), outside a numbered section, or twice in
+    # one section: the per-run cap counts these lines, so a malformed one is
+    # a section the cap cannot see.
+    "origin-malformed": "fatal",
+    # more sections carrying one campaign run id than
+    # `per_run_discovered_sections`: the stateless form of the per-run cap,
+    # checked without git. Overflow merges into an open section or goes to
+    # the backlog.
+    "run-cap-exceeded": "fatal",
     # a backlog line outside the one-line entry grammar, one that reads as
     # a section (a checkbox, a numbered heading, a stamp), or one citing a
     # dead or short section ref: the backlog is a list, never runnable.
@@ -970,8 +974,8 @@ SEVERITY_MAP: dict[str, str] = {
     # a backlog id or source key used twice, or a source key a live section
     # already carries: one real-world thing, one home.
     "backlog-duplicate": "fatal",
-    # more backlog entries than `backlog_cap`: triage (merge, drop, promote
-    # with budget room) before adding, never a raised cap on the side.
+    # more backlog entries than `backlog_cap`: triage (merge, drop, promote)
+    # before adding, never a raised cap on the side.
     "backlog-over-cap": "fatal",
 }
 
@@ -2185,16 +2189,10 @@ def cmd_query(args) -> int:
         summary = budget_summary(todos)
         if summary is not None:
             print(
-                f"budget           {summary['used']} of {summary['ceiling']} sections; "
+                f"budget           {summary['sections']} sections ({summary['discovered']} discovered); "
                 f"backlog {summary['backlog']} of {summary['backlog_cap']}; "
-                f"{summary['per_run_new_sections']} new sections per run"
+                f"at most {summary['per_run_discovered_sections']} discovered sections per run"
             )
-            for row in summary["phases"]:
-                cap = row["ceiling"]
-                room = "no ceiling" if cap is None else (
-                    f"{cap - row['used']} left" if row["used"] <= cap else "OVER CEILING"
-                )
-                print(f"  phase {row['phase']:>3}  {row['used']:>3} of {cap if cap is not None else '-':>3}  {room}")
         return 0
 
     if what == "budget":
@@ -2203,31 +2201,29 @@ def cmd_query(args) -> int:
             _b, problems = load_budget()
             print("no usable todo/budget.json" + (f": {problems[0]}" if problems else ""))
             return 1
-        over = False
+        cap = summary["per_run_discovered_sections"]
         print(
-            f"budget  {summary['used']} of {summary['ceiling']} sections (the total ceiling is "
-            f"the sum of the phase ceilings); backlog {summary['backlog']} of "
-            f"{summary['backlog_cap']}; per run at most {summary['per_run_new_sections']} new sections"
+            f"budget  {summary['sections']} sections ({summary['discovered']} discovered); "
+            f"backlog {summary['backlog']} of {summary['backlog_cap']}; per run at most {cap} "
+            "discovered sections. Operator-directed sections are never capped."
         )
-        print(f"\n  {'phase':>5}  {'used':>4}  {'ceiling':>7}  {'room':>5}  title")
+        print(f"\n  {'phase':>5}  {'sections':>8}  {'discovered':>10}  title")
         for row in summary["phases"]:
-            cap = row["ceiling"]
-            if cap is None:
-                room = "none"
-                over = True
-            else:
-                room = str(cap - row["used"])
-                over = over or row["used"] > cap
-            print(f"  {row['phase']:>5}  {row['used']:>4}  {cap if cap is not None else '-':>7}  {room:>5}  {row['title']}")
+            print(f"  {row['phase']:>5}  {row['sections']:>8}  {row['discovered']:>10}  {row['title']}")
+        over = summary["backlog"] > summary["backlog_cap"]
+        if summary["runs"]:
+            print("\ndiscovered sections per campaign run:")
+            for run, n in sorted(summary["runs"].items(), key=lambda kv: (-kv[1], kv[0])):
+                flag = "  OVER THE PER-RUN CAP" if n > cap else ""
+                over = over or n > cap
+                print(f"  run={run}  {n} of {cap}{flag}")
         latest = summary["history"][-1]
         print(
             f"\nhistory {len(summary['history'])} entr{'y' if len(summary['history']) == 1 else 'ies'}; "
             f"latest {latest['date']} approved by {latest['approved_by']}: {latest['change']}"
         )
-        if summary["used"] > summary["ceiling"] or summary["backlog"] > summary["backlog_cap"]:
-            over = True
         if over:
-            print("\nOVER BUDGET: `python scripts/todo-graph.py validate` names the breach.")
+            print("\nOVER A CAP: `python scripts/todo-graph.py validate` names the breach.")
         return 1 if over else 0
 
     if what == "backlog":
@@ -2259,7 +2255,9 @@ def cmd_query(args) -> int:
         titles = report["titles"]
         print(f"growth since {since}:")
         for ref in report["sections_added"]:
-            print(f"  + {ref}  {titles.get(ref, '')}")
+            run = report["discovered_added"].get(ref)
+            mark = f"  [discovered run={run}]" if run else ""
+            print(f"  + {ref}  {titles.get(ref, '')}{mark}")
         for ref in report["sections_removed"]:
             print(f"  - {ref}  {titles.get(ref, '')}")
         for bid in report["backlog_added"]:
@@ -2267,17 +2265,19 @@ def cmd_query(args) -> int:
         for bid in report["backlog_removed"]:
             print(f"  - backlog {bid}  {titles.get(bid, '')}")
         added, removed = len(report["sections_added"]), len(report["sections_removed"])
+        discovered = len(report["discovered_added"])
         summary = budget_summary(todos)
-        cap = summary["per_run_new_sections"] if summary is not None else None
+        cap = summary["per_run_discovered_sections"] if summary is not None else None
         print(
-            f"sections: +{added} -{removed} (net {added - removed:+d}); "
+            f"sections: +{added} -{removed} (net {added - removed:+d}), {discovered} discovered; "
             f"backlog: +{len(report['backlog_added'])} -{len(report['backlog_removed'])}"
-            + (f"; per-run cap: {added} of {cap} new sections" if cap is not None else "")
+            + (f"; per-run cap: {discovered} of {cap} discovered sections" if cap is not None else "")
         )
-        if getattr(args, "check", False) and cap is not None and added > cap:
+        if getattr(args, "check", False) and cap is not None and discovered > cap:
             print(
-                f"OVER THE PER-RUN CAP: {added} new sections since {since}, cap {cap}. "
-                "Route further work to an existing section or todo/backlog.md."
+                f"OVER THE PER-RUN CAP: {discovered} discovered sections since {since}, cap {cap}. "
+                "Merge further discoveries into open sections as items or file them in "
+                "todo/backlog.md, and record each overflow in the run file."
             )
             return 1
         return 0
@@ -4889,22 +4889,30 @@ def cmd_progress(args: argparse.Namespace) -> int:
 
 # ------------------------------------------------------------ budget + backlog
 #
-# The plan must not grow unconditionally (operator 2026-09-26). Before this,
-# nothing bounded the tree: the gap audit, the research pass, the plan-review
-# round, the groom gap scan, and every deferral could each file a section,
-# and every one of them did the reasonable thing. Two files bound it now:
+# The plan must not grow unconditionally (operator 2026-09-26), and planning
+# the operator asks for is never capped (operator 2026-09-27: "Why is there a
+# phase limit on planning, should the limit not only be on new sections beign
+# created automatically, but even then that shoiuld not be a small limit").
+# The 2026-09-26 design capped every phase and the whole tree, which bounded
+# the operator's own planning as hard as a campaign's discoveries. Now only
+# the second is bounded:
 #
-#   todo/budget.json  a ceiling per phase on TOTAL sections (open + shipped:
-#                     shipped work does not free room), a total that is the
-#                     sum of the ceilings, a backlog cap, and a per-run cap
-#                     on new sections. The live values must equal the latest
+#   Origin line       a section a campaign files on its own (a gap audit, a
+#                     research or plan-review finding, a groom gap scan, an
+#                     adjacent defect) carries `**Origin:** discovered
+#                     run=<run id> <YYYY-MM-DD>`. No line means the operator
+#                     directed it, and nothing caps that.
+#   todo/budget.json  `per_run_discovered_sections`: the most discovered
+#                     sections one run may add (checked statelessly, per run
+#                     id, and against git by `query growth --check`), and
+#                     `backlog_cap`. The live values must equal the latest
 #                     `history` entry's snapshot, the history is append-only
 #                     against the committed file, and a raise carries
 #                     `approved_by: operator` plus the operator's quoted words.
 #   todo/backlog.md   one line per deferred idea, never runnable, never in
 #                     the plan, never counted by plan parity, capped.
 #
-# Both are validated FATAL, so the commit hook and CI refuse a breach.
+# All of it is validated FATAL, so the commit hook and CI refuse a breach.
 
 BACKLOG_ENTRY_RE = re.compile(r"^- \[(?P<id>B-\d{3,})\]\s+(?P<rest>\S.*?)\s*$")
 # Anything list-shaped with a bracket: an entry, or a would-be entry that
@@ -4917,12 +4925,29 @@ BACKLOG_FIELD_SEP = " -- "
 BACKLOG_SOURCE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@+-]*$")
 # Text that makes a line read as a section or a stamp rather than a list entry.
 BACKLOG_SECTION_MARKS = ("**Verified:**", "**Test checkpoint:**", "-> XREF:", "**Deferred:**")
-BUDGET_TOP_KEYS = ("schema_version", "note", "ceilings", "backlog_cap", "per_run_new_sections", "history")
+BUDGET_SCHEMA_VERSION = 2
+BUDGET_TOP_KEYS = ("schema_version", "note", "backlog_cap", "per_run_discovered_sections", "history")
 BUDGET_ENTRY_KEYS = ("date", "change", "reason", "approved_by", "snapshot")
-BUDGET_SNAPSHOT_KEYS = ("ceilings", "backlog_cap", "per_run_new_sections")
+BUDGET_SNAPSHOT_KEYS = ("backlog_cap", "per_run_discovered_sections")
+# Schema 1 snapshots (2026-09-26) carried phase ceilings and the per-run cap
+# under its old name. History is append-only, so they stay readable: the
+# ceilings are ignored and `per_run_new_sections` reads as the per-run cap.
+BUDGET_LEGACY_SNAPSHOT_KEYS = ("ceilings", "backlog_cap", "per_run_new_sections")
 # The operator's own words, quoted: straight or curly double quotes around at
 # least three characters. A raise without them is a skill raising its own cap.
 BUDGET_QUOTE_RE = re.compile(r"[\"“][^\"”]{3,}[\"”]")
+# The one line that marks a section a campaign filed on its own. The run id
+# is the one `campaign_guard.py` mints (`mint_generation()`: 12 lowercase hex
+# digits), so a run file's `run=<id>` markers and its sections' Origin lines
+# name the same run. A trailing ` -- <note>` may say what found it.
+ORIGIN_LINE_RE = re.compile(
+    r"^\*\*Origin:\*\* discovered run=(?P<run>[0-9a-f]{12}) (?P<day>\d{4}-\d{2}-\d{2})"
+    r"(?: -- (?P<note>\S.*?))?\s*$"
+)
+# Anything that tries to be an Origin line, so a near miss is refused rather
+# than silently read as operator-directed.
+ORIGIN_ATTEMPT_RE = re.compile(r"^\s*(?:>\s*)?(?:[-*]\s+)?(?:\*\*)?origin(?:\*\*)?\s*:", re.IGNORECASE)
+ORIGIN_GRAMMAR = "`**Origin:** discovered run=<12-hex run id> <YYYY-MM-DD>` (optionally ` -- <note>`)"
 
 
 def budget_path() -> Path:
@@ -4955,20 +4980,26 @@ def _valid_day(value: object) -> bool:
     return True
 
 
-def _snapshot_problems(snap: object, where: str) -> list[str]:
+def _snapshot_problems(snap: object, where: str, legacy_ok: bool = False) -> list[str]:
+    """Problems with one history snapshot, or with the live top level.
+
+    `legacy_ok` admits a schema 1 history snapshot: ceilings plus
+    `per_run_new_sections`. The live values and every new entry use schema 2.
+    """
     if not isinstance(snap, dict):
         return [f"{where} is not a JSON object"]
     out: list[str] = []
-    ceilings = snap.get("ceilings")
-    if not isinstance(ceilings, dict) or not ceilings:
-        out.append(f"{where}.ceilings must be a non-empty object of phase number to ceiling")
-    else:
-        for key, value in ceilings.items():
-            if not re.fullmatch(r"\d+", str(key)) or str(int(key)) != str(key):
-                out.append(f"{where}.ceilings key `{key}` is not a phase number (write `0`, `9`, `99`)")
-            if type(value) is not int or value < 0:
-                out.append(f"{where}.ceilings[{key}] must be a whole number >= 0, not {value!r}")
-    for key in ("backlog_cap", "per_run_new_sections"):
+    legacy = legacy_ok and "ceilings" in snap
+    keys = BUDGET_LEGACY_SNAPSHOT_KEYS if legacy else BUDGET_SNAPSHOT_KEYS
+    if where.endswith(".snapshot"):
+        for key in snap:
+            if key not in keys:
+                out.append(f"{where} has an unknown key `{key}` (allowed: {', '.join(keys)})")
+    if legacy and not isinstance(snap.get("ceilings"), dict):
+        out.append(f"{where}.ceilings must be an object of phase number to ceiling")
+    for key in keys:
+        if key == "ceilings":
+            continue
         value = snap.get(key)
         if type(value) is not int or value < 0:
             out.append(f"{where}.{key} must be a whole number >= 0, not {value!r}")
@@ -4976,11 +5007,11 @@ def _snapshot_problems(snap: object, where: str) -> list[str]:
 
 
 def _snapshot(obj: dict) -> dict:
-    return {
-        "ceilings": {str(k): v for k, v in (obj.get("ceilings") or {}).items()},
-        "backlog_cap": obj.get("backlog_cap"),
-        "per_run_new_sections": obj.get("per_run_new_sections"),
-    }
+    """The caps a snapshot (or the live file) sets, schema 1 read as schema 2."""
+    per_run = obj.get("per_run_discovered_sections")
+    if per_run is None:
+        per_run = obj.get("per_run_new_sections")
+    return {"backlog_cap": obj.get("backlog_cap"), "per_run_discovered_sections": per_run}
 
 
 def load_budget() -> tuple[dict | None, list[str]]:
@@ -4997,15 +5028,20 @@ def load_budget() -> tuple[dict | None, list[str]]:
     problems: list[str] = []
     for key in data:
         if key not in BUDGET_TOP_KEYS:
-            problems.append(f"todo/budget.json has an unknown key `{key}` (allowed: {', '.join(BUDGET_TOP_KEYS)})")
-    if data.get("schema_version") != 1:
-        problems.append("todo/budget.json needs `schema_version: 1`")
+            hint = (
+                " (phase ceilings were removed on 2026-09-27: operator planning is never capped)"
+                if key == "ceilings" else ""
+            )
+            problems.append(f"todo/budget.json has an unknown key `{key}` (allowed: {', '.join(BUDGET_TOP_KEYS)}){hint}")
+    if data.get("schema_version") != BUDGET_SCHEMA_VERSION:
+        problems.append(f"todo/budget.json needs `schema_version: {BUDGET_SCHEMA_VERSION}`")
     problems += _snapshot_problems(data, "todo/budget.json")
     history = data.get("history")
     if not isinstance(history, list) or not history:
         problems.append("todo/budget.json needs a non-empty `history` list; the first entry records the setup")
     else:
         last_day = ""
+        seen_current = False
         for i, entry in enumerate(history, start=1):
             where = f"todo/budget.json history entry {i}"
             if not isinstance(entry, dict):
@@ -5025,19 +5061,28 @@ def load_budget() -> tuple[dict | None, list[str]]:
                 value = entry.get(key)
                 if not isinstance(value, str) or not value.strip():
                     problems.append(f"{where} needs a non-empty `{key}`")
-            problems += _snapshot_problems(entry.get("snapshot"), f"{where}.snapshot")
+            snap = entry.get("snapshot")
+            is_legacy = isinstance(snap, dict) and "ceilings" in snap
+            if is_legacy and seen_current:
+                problems.append(
+                    f"{where} writes a schema 1 snapshot (with `ceilings`) after a schema 2 one; "
+                    "new entries carry `backlog_cap` and `per_run_discovered_sections` only"
+                )
+            problems += _snapshot_problems(snap, f"{where}.snapshot", legacy_ok=not seen_current)
+            seen_current = seen_current or (isinstance(snap, dict) and not is_legacy)
+        if not seen_current:
+            problems.append(
+                "todo/budget.json history holds only schema 1 snapshots; append an entry whose "
+                "snapshot carries the live `backlog_cap` and `per_run_discovered_sections`"
+            )
     return (None if problems else data), problems
 
 
 def _budget_raises(prev: dict, cur: dict) -> list[str]:
     raised: list[str] = []
-    for phase, value in cur["ceilings"].items():
-        old = prev["ceilings"].get(phase)
-        if old is None or value > old:
-            raised.append(f"Phase {phase} {'none' if old is None else old} -> {value}")
-    for key in ("backlog_cap", "per_run_new_sections"):
-        if cur[key] > prev[key]:
-            raised.append(f"{key} {prev[key]} -> {cur[key]}")
+    for key in BUDGET_SNAPSHOT_KEYS:
+        if prev[key] is None or cur[key] > prev[key]:
+            raised.append(f"{key} {'none' if prev[key] is None else prev[key]} -> {cur[key]}")
     return raised
 
 
@@ -5061,24 +5106,12 @@ def _budget_history_problems(budget: dict) -> list[str]:
     latest = _snapshot(history[-1]["snapshot"])
     for key in BUDGET_SNAPSHOT_KEYS:
         if live[key] != latest[key]:
-            if key == "ceilings":
-                diffs = sorted(
-                    set(live["ceilings"]) | set(latest["ceilings"]),
-                    key=lambda p: int(p),
-                )
-                named = ", ".join(
-                    f"Phase {p} {latest['ceilings'].get(p, 'none')} -> {live['ceilings'].get(p, 'none')}"
-                    for p in diffs
-                    if live["ceilings"].get(p) != latest["ceilings"].get(p)
-                )
-            else:
-                named = f"{latest[key]} -> {live[key]}"
             out.append(
-                f"todo/budget.json `{key}` differs from the latest history snapshot ({named}). "
-                "A ceiling or cap changes only by appending a history entry whose snapshot "
-                "carries the new values; a raise needs the operator's quoted words."
+                f"todo/budget.json `{key}` differs from the latest history snapshot "
+                f"({latest[key]} -> {live[key]}). A cap changes only by appending a history "
+                "entry whose snapshot carries the new values; a raise needs the operator's quoted words."
             )
-    prev = {"ceilings": {}, "backlog_cap": 0, "per_run_new_sections": 0}
+    prev = {"backlog_cap": None, "per_run_discovered_sections": None}
     for i, entry in enumerate(history, start=1):
         cur = _snapshot(entry["snapshot"])
         raised = _budget_raises(prev, cur)
@@ -5089,7 +5122,7 @@ def _budget_history_problems(budget: dict) -> list[str]:
                     f"todo/budget.json history entry {i} ({entry['date']}) raises "
                     f"{'; '.join(raised)} without the operator's approval: a raise needs "
                     "`approved_by: operator` and the operator's explicit words quoted in "
-                    "`reason`. Skills never raise a ceiling; they merge, supersede, or backlog."
+                    "`reason`. Skills never raise a cap; they merge, supersede, or backlog."
                 )
         prev = cur
     committed_text = _budget_committed_text()
@@ -5113,10 +5146,10 @@ def _budget_history_problems(budget: dict) -> list[str]:
 
 
 def plan_phase_counts() -> dict[str, dict]:
-    """Phase number -> {title, count}: plan rows plus Moved lines per phase.
+    """Phase number -> {title, count, refs}: plan rows plus Moved lines per phase.
 
     A Moved section still exists (it keeps its row in its TODO file), so it
-    still spends its phase's budget. Order is the plan's.
+    still counts in its phase. Order is the plan's.
     """
     out: dict[str, dict] = {}
     if not PLAN.exists():
@@ -5126,14 +5159,83 @@ def plan_phase_counts() -> dict[str, dict]:
         heading = PHASE_HEADING_RE.match(line)
         if heading:
             current = str(int(heading.group("id")))
-            out.setdefault(current, {"title": heading.group("title").strip(), "count": 0})
+            out.setdefault(current, {"title": heading.group("title").strip(), "count": 0, "refs": []})
             continue
         if line.startswith("## ") or (line.startswith("### ") and not line.startswith("### Phase ")):
             current = None
             continue
-        if current is not None and (PLAN_ROW_RE.match(line) or PLAN_MOVED_RE.match(line)):
+        row = PLAN_ROW_RE.match(line) or PLAN_MOVED_RE.match(line)
+        if current is not None and row:
             out[current]["count"] += 1
+            out[current]["refs"].append(" ".join(row.group("ref").split()))
     return out
+
+
+def section_origins(todos: list[Todo]) -> tuple[dict[str, dict], list[str]]:
+    """('DNN TNN §N' -> {run, day, note, where}, problems) for Origin lines.
+
+    A section with no Origin line is operator-directed and absent from the
+    map. Fenced lines are skipped, so a spec quoting the grammar is inert.
+    """
+    origins: dict[str, dict] = {}
+    problems: list[str] = []
+    for todo in todos:
+        try:
+            text = (REPO / todo.path).read_text(encoding="utf-8")
+        except OSError:
+            try:
+                text = Path(todo.path).read_text(encoding="utf-8")
+            except OSError:
+                continue
+        raw = text.split("\n")
+        try:
+            kept, _ = _fenced_flags(raw)  # True = outside every fence
+        except Exception:
+            kept = [True] * len(raw)
+        prefix = f"D{todo.domain.split('-')[0]} T{todo.number}"
+        current: int | None = None
+        for lineno, line in enumerate(raw, start=1):
+            if lineno - 1 < len(kept) and not kept[lineno - 1]:
+                continue
+            heading = BODY_RE.match(line)
+            if heading:
+                current = int(heading.group("num"))
+                continue
+            if line.startswith("## "):
+                current = None
+                continue
+            if not ORIGIN_ATTEMPT_RE.match(line):
+                continue
+            where = f"{todo.path}:{lineno}"
+            if current is None:
+                problems.append(
+                    f"{where} carries an Origin line outside a numbered section. It belongs in "
+                    "the body of the `## N.` section it marks."
+                )
+                continue
+            ref = f"{prefix} §{current}"
+            m = ORIGIN_LINE_RE.match(line)
+            if not m:
+                hint = (
+                    " A section the operator asked for carries no Origin line at all: delete it."
+                    if re.search(r"operator|attended|directed", line, re.IGNORECASE) else ""
+                )
+                problems.append(
+                    f"{where} ({ref}) has a malformed Origin line: write {ORIGIN_GRAMMAR}, the run "
+                    f"id being the one `campaign_guard.py` minted for the run.{hint}"
+                )
+                continue
+            if not _valid_day(m.group("day")):
+                problems.append(f"{where} ({ref}) has an Origin date that is not a real day ({m.group('day')})")
+                continue
+            if ref in origins:
+                problems.append(
+                    f"{where} ({ref}) carries a second Origin line (the first is on "
+                    f"{origins[ref]['where']}). One section, one origin."
+                )
+                continue
+            origins[ref] = {"run": m.group("run"), "day": m.group("day"), "note": m.group("note") or "", "where": where}
+    return origins, problems
 
 
 def parse_backlog(text: str) -> tuple[list[dict], list[tuple[str, str]]]:
@@ -5247,7 +5349,7 @@ def _section_sources(todos: list[Todo]) -> dict[str, str]:
 
 
 def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
-    """Every budget and backlog breach as (severity class, message)."""
+    """Every budget, origin, and backlog breach as (severity class, message)."""
     out: list[tuple[str, str]] = []
     live = _live_tree()
     budget: dict | None = None
@@ -5255,48 +5357,30 @@ def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
         if live:
             out.append((
                 "budget-malformed",
-                "todo/budget.json is missing, so nothing bounds the plan. Restore it from "
-                "git; the format is in todo/README.md under \"The budget and the backlog\".",
+                "todo/budget.json is missing, so nothing bounds campaign discovery. Restore it "
+                "from git; the format is in todo/README.md under \"The budget and the backlog\".",
             ))
     else:
         budget, problems = load_budget()
         out += [("budget-malformed", p) for p in problems]
     if budget is not None:
         out += [("budget-unrecorded-change", p) for p in _budget_history_problems(budget)]
-        ceilings = {str(k): v for k, v in budget["ceilings"].items()}
-        phases = plan_phase_counts()
-        for phase, info in phases.items():
-            cap = ceilings.get(phase)
-            if cap is None:
+    origins, origin_problems = section_origins(todos)
+    out += [("origin-malformed", p) for p in origin_problems]
+    if budget is not None:
+        cap = budget["per_run_discovered_sections"]
+        per_run: dict[str, list[str]] = {}
+        for ref, origin in origins.items():
+            per_run.setdefault(origin["run"], []).append(ref)
+        for run, refs in sorted(per_run.items()):
+            if len(refs) > cap:
                 out.append((
-                    "budget-malformed",
-                    f"Phase {phase} ({info['title']}) has no ceiling in todo/budget.json. A new "
-                    "phase is a budget change: the operator approves it in a history entry.",
+                    "run-cap-exceeded",
+                    f"Campaign run {run} filed {len(refs)} discovered sections, over "
+                    f"`per_run_discovered_sections` {cap} in todo/budget.json ({', '.join(refs[:4])}"
+                    f"{', ...' if len(refs) > 4 else ''}). Merge the overflow into open sections as "
+                    "items or move it to todo/backlog.md, and record each overflow in the run file.",
                 ))
-            elif info["count"] > cap:
-                out.append((
-                    "budget-over-phase",
-                    f"Phase {phase} ({info['title']}) holds {info['count']} section{'' if info['count'] == 1 else 's'}, over its "
-                    f"ceiling of {cap} in todo/budget.json. Merge the new work into an existing "
-                    "section, supersede one, or move it to todo/backlog.md; never raise the "
-                    "ceiling without the operator.",
-                ))
-        for phase in ceilings:
-            if phase not in phases:
-                out.append((
-                    "budget-malformed",
-                    f"todo/budget.json carries a ceiling for Phase {phase}, which the plan does "
-                    "not have. Drop it in a new history entry.",
-                ))
-        total = sum(len(t.sections) for t in todos)
-        cap_total = sum(ceilings.values())
-        if total > cap_total:
-            out.append((
-                "budget-over-total",
-                f"The tree holds {total} sections, over the total ceiling of {cap_total} (the "
-                "sum of the phase ceilings in todo/budget.json). A section outside every phase "
-                "still spends the budget: sequence it, merge it, or move it to todo/backlog.md.",
-            ))
     loaded = load_backlog()
     if loaded is None:
         if live:
@@ -5357,47 +5441,55 @@ def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
             "backlog-over-cap",
             f"todo/backlog.md holds {len(entries)} entries, over `backlog_cap` "
             f"{budget['backlog_cap']}. Triage first (groom-plan): merge duplicates, drop stale "
-            "entries with a reason, promote only with budget room.",
+            "entries with a reason, promote what has come due.",
         ))
     return out
 
 
 def budget_summary(todos: list[Todo]) -> dict | None:
-    """Budget use for the Progress line and the queries; None without a usable budget."""
+    """Section, discovery, and backlog use for the Progress line and the queries.
+
+    None without a usable budget. Phases carry no ceiling: the counts are
+    for reading, and only discovered sections per run and the backlog are capped.
+    """
     budget, _problems = load_budget()
     if budget is None:
         return None
-    ceilings = {str(k): v for k, v in budget["ceilings"].items()}
+    origins, _origin_problems = section_origins(todos)
     phases = plan_phase_counts()
     loaded = load_backlog()
     backlog_n = len(loaded[0]) if loaded is not None else 0
     rows = [
-        {"phase": p, "title": info["title"], "used": info["count"], "ceiling": ceilings.get(p)}
+        {
+            "phase": p,
+            "title": info["title"],
+            "sections": info["count"],
+            "discovered": sum(1 for r in info["refs"] if r in origins),
+        }
         for p, info in phases.items()
     ]
-    rows += [
-        {"phase": p, "title": "(no such phase in the plan)", "used": 0, "ceiling": c}
-        for p, c in ceilings.items()
-        if p not in phases
-    ]
+    runs: dict[str, int] = {}
+    for origin in origins.values():
+        runs[origin["run"]] = runs.get(origin["run"], 0) + 1
     return {
-        "used": sum(len(t.sections) for t in todos),
-        "ceiling": sum(ceilings.values()),
+        "sections": sum(len(t.sections) for t in todos),
+        "discovered": len(origins),
         "backlog": backlog_n,
         "backlog_cap": budget["backlog_cap"],
-        "per_run_new_sections": budget["per_run_new_sections"],
+        "per_run_discovered_sections": budget["per_run_discovered_sections"],
         "phases": rows,
+        "runs": runs,
         "history": budget["history"],
     }
 
 
 def budget_progress_text(todos: list[Todo]) -> str:
-    """The Progress line's budget clause, or '' when there is no usable budget."""
+    """The Progress line's size clause, or '' when there is no usable budget."""
     summary = budget_summary(todos)
     if summary is None:
         return ""
     return (
-        f" Budget: {summary['used']} of {summary['ceiling']} sections; "
+        f" {summary['sections']} sections ({summary['discovered']} discovered); "
         f"backlog {summary['backlog']} of {summary['backlog_cap']}."
     )
 
@@ -5452,7 +5544,12 @@ def _tree_at(ref: str) -> tuple[dict[str, str], dict[str, str]] | None:
 
 
 def growth_report(ref: str, todos: list[Todo]) -> dict | None:
-    """Sections and backlog entries added and removed since `ref`."""
+    """Sections and backlog entries added and removed since `ref`.
+
+    `discovered_added` is the added sections that carry an Origin line now:
+    the per-run cap counts only those. An operator-directed section (no
+    Origin line) is listed and never counted.
+    """
     then = _tree_at(ref)
     if then is None:
         return None
@@ -5465,8 +5562,11 @@ def growth_report(ref: str, todos: list[Todo]) -> dict | None:
         d, t, s = re.findall(r"\d+", ref_)
         return int(d), int(t), int(s)
 
+    added = sorted((r for r in now_secs if r not in then_secs), key=_key)
+    origins, _problems = section_origins(todos)
     return {
-        "sections_added": sorted((r for r in now_secs if r not in then_secs), key=_key),
+        "sections_added": added,
+        "discovered_added": {r: origins[r]["run"] for r in added if r in origins},
         "sections_removed": sorted((r for r in then_secs if r not in now_secs), key=_key),
         "backlog_added": sorted(i for i in now_backlog if i not in then_backlog),
         "backlog_removed": sorted(i for i in then_backlog if i not in now_backlog),
@@ -5582,8 +5682,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
     text = "\n".join(out) + "\n"
     written_progress_line = PLAN_PROGRESS_RE.search(text)
     text, n = PLAN_PROGRESS_RE.subn(lambda mo: mo.group("prefix") + summary, text, count=1)
-    # The Progress line carries budget use, which moves without any row
-    # changing (a backlog entry, a ceiling), so --check compares the line too.
+    # The Progress line carries the section and discovered counts and backlog
+    # use, which move without any row changing (a backlog entry, an Origin
+    # line), so --check compares the line too.
     progress_stale = bool(
         written_progress_line
         and written_progress_line.group(0) != written_progress_line.group("prefix") + summary
@@ -5675,7 +5776,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
             )
         if progress_stale:
             print(
-                f"::error::{_rel(PLAN)}'s Progress line is stale (completion or budget use) -- "
+                f"::error::{_rel(PLAN)}'s Progress line is stale (completion, section counts, or backlog use) -- "
                 "run `python scripts/todo-graph.py plan --sync`"
             )
         if stale or unknown or missing or dupes or json_stale or operator_stale or moved_rows or stale_notes or progress_stale:
@@ -9552,9 +9653,11 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             for _rp in findings_09:
                 (root / _rp).unlink()
 
-        # --- the budget and the backlog (operator 2026-09-26) -----------------
-        # Its own tree, so the budget arithmetic is exact: three sections in
-        # two phases, one TODO file, one INDEX, two backlog entries.
+        # --- the budget, origins, and the backlog (operator 2026-09-26, 09-27) --
+        # Its own tree, so the arithmetic is exact: three sections in two
+        # phases, one TODO file, one INDEX, two backlog entries. Operator
+        # planning is never capped; only discovered sections per run and the
+        # backlog are.
         import io as _gio
         import contextlib as _gctx
         groot = root / "budget-fixture"
@@ -9562,22 +9665,31 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
         (gtodo / "95-budget").mkdir(parents=True)
         (gtodo / "95-budget" / "INDEX.md").write_text(
             "# 95 Budget\n\n| TODO | Title |\n| --- | --- |\n"
-            "| [TODO-01](./TODO-01-budget.md) | Budget |\n| [TODO-02](./TODO-02-extra.md) | Extra |\n",
+            "| [TODO-01](./TODO-01-budget.md) | Budget |\n",
             encoding="utf-8",
         )
+        _run_a, _run_b = "0a1b2c3d4e5f", "f5e4d3c2b1a0"
 
-        def _gsection(n: int, extra: str = "") -> str:
+        def _gorigin(run: str = _run_a, day: str = "2026-09-27") -> str:
+            return f"**Origin:** discovered run={run} {day} -- fixture gap audit"
+
+        def _gsection(n: int, extra: str = "", origin: str = "") -> str:
+            lead = f"{origin}\n\n" if origin else ""
             return (
-                f"## {n}. Thing {n}\n\nContext.{extra}\n\n- [ ] Do thing {n}\n"
+                f"## {n}. Thing {n}\n\n{lead}Context.{extra}\n\n- [ ] Do thing {n}\n"
                 f"- [ ] Commit: `\"selftest: thing {n}\"`\n\n**Test checkpoint:** `true`\n\n"
             )
 
-        def _gtodo(nums: list[int]) -> str:
+        def _gtodo(nums: list[int], origins: dict | None = None, preamble: str = "") -> str:
+            origins = origins or {}
             rows = "".join(f"| {i} | §{n} | Thing {n} | -- | [ ] |\n" for i, n in enumerate(nums, 1))
-            body = "".join(_gsection(n, " -> SOURCE: fixture-src-1" if n == 1 else "") for n in nums)
+            body = "".join(
+                _gsection(n, " -> SOURCE: fixture-src-1" if n == 1 else "", origins.get(n, ""))
+                for n in nums
+            )
             return (
                 "---\nschema_version: 1\nid: budget-fixture\ndomain: 95-budget\nstatus: active\n"
-                "title: \"TODO-01 -- Budget fixture\"\n---\n\n# TODO-01 -- Budget fixture\n\n"
+                "title: \"TODO-01 -- Budget fixture\"\n---\n\n# TODO-01 -- Budget fixture\n\n" + preamble +
                 "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
                 "| :---: | :-----: | ----------- | ---------- | :----: |\n" + rows + "\n---\n\n" + body
             )
@@ -9594,12 +9706,15 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             encoding="utf-8",
         )
 
-        def _gbudget(ceilings: dict, cap: int = 2, per_run: int = 1, history=None, live=None) -> None:
-            snap = {"ceilings": ceilings, "backlog_cap": cap, "per_run_new_sections": per_run}
+        def _gsnap(cap: int = 2, per_run: int = 1) -> dict:
+            return {"backlog_cap": cap, "per_run_discovered_sections": per_run}
+
+        def _gbudget(cap: int = 2, per_run: int = 1, history=None, live=None) -> None:
+            snap = _gsnap(cap, per_run)
             data = dict(live if live is not None else snap)
-            data["schema_version"] = 1
+            data.setdefault("schema_version", 2)
             data["history"] = history if history is not None else [{
-                "date": "2026-09-26", "change": "fixture setup",
+                "date": "2026-09-27", "change": "fixture setup",
                 "reason": "operator said \"set the fixture budget\"",
                 "approved_by": "operator", "snapshot": snap,
             }]
@@ -9616,6 +9731,13 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
         def _gbacklog(text: str) -> None:
             (gtodo / "backlog.md").write_text(text, encoding="utf-8")
 
+        def _gmany(n: int) -> str:
+            return "# Backlog\n\n## Entries\n\n" + "".join(
+                f"- [B-{i:03d}] Idea {i} -- source: many-{i} -- added: 2026-09-27 "
+                "-- why deferred: nice to have -- promote when: asked\n"
+                for i in range(1, n + 1)
+            )
+
         def _gclasses() -> list[str]:
             return sorted({cls for cls, _ in budget_findings(load_todos())})
 
@@ -9628,39 +9750,93 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             TODO_DIR, PLAN = gtodo, gplan
             PROGRESS_JSON = groot / "build" / "progress.json"
             OPERATOR_JSON = groot / "build" / "operator.json"
-            check("budget: every budget and backlog class is FATAL",
-                  [SEVERITY_MAP.get(c) for c in ("budget-malformed", "budget-over-phase", "budget-over-total",
-                                                 "budget-unrecorded-change", "backlog-malformed",
+            check("budget: every budget, origin, and backlog class is FATAL",
+                  [SEVERITY_MAP.get(c) for c in ("budget-malformed", "budget-unrecorded-change",
+                                                 "origin-malformed", "run-cap-exceeded", "backlog-malformed",
                                                  "backlog-duplicate", "backlog-over-cap")],
                   ["fatal"] * 7)
+            check("budget: the phase and total ceiling classes are gone",
+                  [c for c in ("budget-over-phase", "budget-over-total") if c in SEVERITY_MAP], [])
             check("budget: a fixture tree without the files is silent", _gclasses(), [])
-            _gbudget({"0": 2, "1": 1})
+            _gbudget()
             _gbacklog(_gok)
-            check("budget: a tree inside every ceiling is clean", _gclasses(), [])
+            check("budget: a clean tree is clean", _gclasses(), [])
             check("budget: phase counts read rows per phase",
                   {k: v["count"] for k, v in plan_phase_counts().items()}, {"0": 2, "1": 1})
-            _gbudget({"0": 1, "1": 2})
-            check("budget: a phase over its ceiling is budget-over-phase", _gclasses(), ["budget-over-phase"])
-            check("budget: the over-phase message names the phase and both numbers",
-                  any("Phase 0" in m and "holds 2 sections" in m and "ceiling of 1" in m for m in _gmsgs()), True)
+            # Operator planning is never capped: any number of sections with no
+            # Origin line, in any phase, is clean.
+            gfile.write_text(_gtodo(list(range(1, 41))), encoding="utf-8")
+            check("budget: forty operator-directed sections under a per-run cap of 1 are clean", _gclasses(), [])
+            gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
+            _gbudget(live={"ceilings": {"0": 2, "1": 1}, **_gsnap()})
+            check("budget: a phase ceiling in budget.json is budget-malformed",
+                  (_gclasses(), any("ceilings" in m and "never capped" in m for m in _gmsgs())),
+                  (["budget-malformed"], True))
+            _gbudget(live={"schema_version": 1, **_gsnap()})
+            check("budget: schema_version 1 is budget-malformed", _gclasses(), ["budget-malformed"])
+            _gbudget()
+            # Origin lines.
+            gfile.write_text(_gtodo([1, 2, 3], {1: _gorigin()}), encoding="utf-8")
+            check("origin: a well-formed Origin line is clean and read",
+                  (_gclasses(), section_origins(load_todos())[0].get("D95 T01 §1", {}).get("run")),
+                  ([], _run_a))
+            for _bad, _why in (
+                ("**Origin:** discovered run=xyz 2026-09-27", "a run id that is not 12 hex"),
+                (f"**Origin:** discovered run={_run_a[:11]} 2026-09-27", "an 11-digit run id"),
+                (f"**Origin:** discovered run={_run_a.upper()} 2026-09-27", "an upper-case run id"),
+                (f"**Origin:** discovered run={_run_a}", "no date"),
+                (f"**Origin:** found run={_run_a} 2026-09-27", "a word other than discovered"),
+                (f"**Origin:**  discovered run={_run_a} 2026-09-27", "a doubled space"),
+                (f"Origin: discovered run={_run_a} 2026-09-27", "no bold label"),
+                ("**Origin:** operator", "an operator origin"),
+            ):
+                gfile.write_text(_gtodo([1, 2, 3], {2: _bad}), encoding="utf-8")
+                check(f"origin: {_why} is origin-malformed", _gclasses(), ["origin-malformed"])
+            check("origin: an operator Origin line is told to delete itself",
+                  any("carries no Origin line at all" in m for m in _gmsgs()), True)
+            gfile.write_text(_gtodo([1, 2, 3], {2: _gorigin(day="2026-13-40")}), encoding="utf-8")
+            check("origin: an impossible date is origin-malformed", _gclasses(), ["origin-malformed"])
+            gfile.write_text(_gtodo([1, 2, 3], {2: _gorigin() + "\n\n" + _gorigin(_run_b)}), encoding="utf-8")
+            check("origin: two Origin lines in one section is origin-malformed",
+                  (_gclasses(), any("second Origin line" in m for m in _gmsgs())), (["origin-malformed"], True))
+            gfile.write_text(_gtodo([1, 2, 3], preamble=_gorigin() + "\n\n"), encoding="utf-8")
+            check("origin: an Origin line outside a numbered section is origin-malformed",
+                  (_gclasses(), any("outside a numbered section" in m for m in _gmsgs())), (["origin-malformed"], True))
+            gfile.write_text(_gtodo([1, 2, 3], {2: "```\n**Origin:** anything at all\n```"}), encoding="utf-8")
+            check("origin: a fenced Origin line is inert", (_gclasses(), section_origins(load_todos())[0]), ([], {}))
+            # The per-run cap, checked statelessly per run id.
+            _gbudget(cap=2, per_run=15)
+            gfile.write_text(_gtodo(list(range(1, 16)), {n: _gorigin() for n in range(1, 16)}), encoding="utf-8")
+            check("run cap: 15 discovered sections from one run are clean", _gclasses(), [])
+            gfile.write_text(_gtodo(list(range(1, 17)), {n: _gorigin() for n in range(1, 17)}), encoding="utf-8")
+            check("run cap: 16 discovered sections from one run is run-cap-exceeded",
+                  (_gclasses(), any(f"run {_run_a} filed 16 discovered sections" in m and "15" in m for m in _gmsgs())),
+                  (["run-cap-exceeded"], True))
             vbuf = _gio.StringIO()
             with _gctx.redirect_stdout(vbuf), _gctx.redirect_stderr(_gio.StringIO()):
                 vcode = cmd_validate(None)
-            check("budget: validate prints the breach as FATAL and exits 1",
-                  (vcode, any(l.startswith("FATAL") and "ceiling of 1" in l for l in vbuf.getvalue().splitlines())),
+            check("run cap: validate prints the breach as FATAL and exits 1",
+                  (vcode, any(l.startswith("FATAL") and "filed 16 discovered sections" in l
+                              for l in vbuf.getvalue().splitlines())),
                   (1, True))
-            _gbudget({"0": 2, "1": 1})
-            (gtodo / "95-budget" / "TODO-02-extra.md").write_text(
-                _gtodo([1]).replace("budget-fixture", "budget-extra").replace("TODO-01 -- Budget", "TODO-02 -- Extra")
-                .replace("fixture-src-1", "fixture-src-2"),
+            gfile.write_text(
+                _gtodo(list(range(1, 17)), {n: _gorigin(_run_a if n <= 15 else _run_b) for n in range(1, 17)}),
                 encoding="utf-8",
             )
-            check("budget: a section outside every phase breaks the total, not a phase",
-                  _gclasses(), ["budget-over-total"])
-            (gtodo / "95-budget" / "TODO-02-extra.md").unlink()
-            _gbudget({"0": 2, "1": 1}, cap=1)
+            check("run cap: 15 from one run and 1 from another are clean (the cap is per run)", _gclasses(), [])
+            gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
+            _gbudget()
+            # The backlog cap.
+            _gbudget(cap=1)
             check("budget: a backlog over its cap is backlog-over-cap", _gclasses(), ["backlog-over-cap"])
-            _gbudget({"0": 2, "1": 1})
+            _gbudget(cap=500)
+            _gbacklog(_gmany(500))
+            check("budget: 500 backlog entries at a cap of 500 are clean", _gclasses(), [])
+            _gbacklog(_gmany(501))
+            check("budget: 501 backlog entries at a cap of 500 is backlog-over-cap",
+                  (_gclasses(), any("holds 501 entries" in m and "`backlog_cap` 500" in m for m in _gmsgs())),
+                  (["backlog-over-cap"], True))
+            _gbudget()
             _gbacklog(_gok.replace("[B-002]", "[B-001]"))
             check("budget: a duplicate backlog id is backlog-duplicate", _gclasses(), ["backlog-duplicate"])
             _gbacklog(_gok.replace("fixture-idea-2", "fixture-idea-1"))
@@ -9692,70 +9868,91 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _gbacklog("```\n- [B-009] quoted in a fence -- source: q\n```\n" + _gok)
             check("budget: fenced lines are not entries", (_gclasses(), len(load_backlog()[0])), ([], 2))
             _gbacklog(_gok)
-            # Ceilings move only through history.
-            _gbudget({"0": 2, "1": 1}, live={"ceilings": {"0": 3, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1})
-            check("budget: a ceiling changed without a history entry is budget-unrecorded-change",
-                  (_gclasses(), any("Phase 0 2 -> 3" in m for m in _gmsgs())), (["budget-unrecorded-change"], True))
-            _gbudget({"0": 2, "1": 1}, live={"ceilings": {"0": 2, "1": 1}, "backlog_cap": 5, "per_run_new_sections": 1})
-            check("budget: a cap changed without a history entry is budget-unrecorded-change",
-                  _gclasses(), ["budget-unrecorded-change"])
-            _h1 = {"date": "2026-09-26", "change": "setup", "reason": "operator said \"set it\"",
-                   "approved_by": "operator",
-                   "snapshot": {"ceilings": {"0": 2, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1}}
-            _h2 = {"date": "2026-09-27", "change": "raise phase 0", "reason": "more room needed",
-                   "approved_by": "add-todo",
-                   "snapshot": {"ceilings": {"0": 3, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1}}
-            _gbudget({"0": 3, "1": 1}, history=[_h1, _h2])
-            check("budget: a raise a skill approved is budget-unrecorded-change",
-                  (_gclasses(), any("history entry 2" in m and "without the operator's approval" in m for m in _gmsgs())),
+            # Caps move only through history.
+            _gbudget(live=_gsnap(cap=5))
+            check("budget: a backlog cap changed without a history entry is budget-unrecorded-change",
+                  (_gclasses(), any("`backlog_cap` differs" in m and "2 -> 5" in m for m in _gmsgs())),
                   (["budget-unrecorded-change"], True))
-            _gbudget({"0": 3, "1": 1}, history=[_h1, dict(_h2, approved_by="operator")])
-            check("budget: an operator raise without quoted words is budget-unrecorded-change",
+            _gbudget(live=_gsnap(per_run=4))
+            check("budget: a per-run cap changed without a history entry is budget-unrecorded-change",
                   _gclasses(), ["budget-unrecorded-change"])
-            _gbudget({"0": 3, "1": 1}, history=[_h1, dict(_h2, approved_by="operator", reason="operator: \"raise phase 0 to 3\"")])
-            check("budget: an operator raise with quoted words is clean", _gclasses(), [])
-            _h3 = {"date": "2026-09-28", "change": "lower phase 0", "reason": "merged two sections",
-                   "approved_by": "groom-plan",
-                   "snapshot": {"ceilings": {"0": 2, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1}}
-            _gbudget({"0": 2, "1": 1}, history=[_h1, dict(_h2, approved_by="operator", reason="operator: \"raise phase 0 to 3\""), _h3])
-            check("budget: lowering a ceiling needs a history entry, not the operator", _gclasses(), [])
-            _gbudget({"0": 2, "1": 1}, history=[dict(_h1, date="2026-09-28"), dict(_h3, date="2026-09-27")])
+            _h1 = {"date": "2026-09-27", "change": "setup", "reason": "operator said \"set it\"",
+                   "approved_by": "operator", "snapshot": _gsnap()}
+            for _key, _snap in (("backlog_cap", _gsnap(cap=3)), ("per_run_discovered_sections", _gsnap(per_run=3))):
+                _h2 = {"date": "2026-09-28", "change": f"raise {_key}", "reason": "more room needed",
+                       "approved_by": "add-todo", "snapshot": _snap}
+                _gbudget(live=_snap, history=[_h1, _h2])
+                check(f"budget: a {_key} raise a skill approved is budget-unrecorded-change",
+                      (_gclasses(), any("history entry 2" in m and _key in m and "without the operator's approval" in m
+                                        for m in _gmsgs())),
+                      (["budget-unrecorded-change"], True))
+                _gbudget(live=_snap, history=[_h1, dict(_h2, approved_by="operator")])
+                check(f"budget: an operator {_key} raise without quoted words is budget-unrecorded-change",
+                      _gclasses(), ["budget-unrecorded-change"])
+                _gbudget(live=_snap, history=[_h1, dict(_h2, approved_by="operator", reason="operator: \"raise it to 3\"")])
+                check(f"budget: an operator {_key} raise with quoted words is clean", _gclasses(), [])
+            _h3 = {"date": "2026-09-29", "change": "lower the per-run cap", "reason": "fewer discoveries",
+                   "approved_by": "groom-plan", "snapshot": _gsnap(per_run=0)}
+            _gbudget(per_run=0, history=[_h1, _h3])
+            check("budget: lowering a cap needs a history entry, not the operator", _gclasses(), [])
+            _gbudget(history=[dict(_h1, date="2026-09-28"), dict(_h1, date="2026-09-27")])
             check("budget: history out of date order is budget-malformed", _gclasses(), ["budget-malformed"])
+            # Schema 1 history stays readable: its ceilings are ignored and its
+            # per_run_new_sections reads as the per-run cap.
+            _legacy = {"date": "2026-09-26", "change": "old ceilings", "reason": "operator said \"bound it\"",
+                       "approved_by": "operator",
+                       "snapshot": {"ceilings": {"0": 2, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1}}
+            _gbudget(history=[_legacy, _h1])
+            check("budget: a schema 1 entry followed by a schema 2 entry is clean", _gclasses(), [])
+            _gbudget(per_run=15, cap=500, history=[_legacy, dict(_h1, snapshot=_gsnap(500, 15), reason="a skill wanted room")])
+            check("budget: raising the legacy per-run cap without quoted words is budget-unrecorded-change",
+                  (_gclasses(), any("per_run_discovered_sections 1 -> 15" in m for m in _gmsgs())),
+                  (["budget-unrecorded-change"], True))
+            _gbudget(history=[_h1, dict(_legacy, date="2026-09-28")])
+            check("budget: a schema 1 entry after a schema 2 one is budget-malformed", _gclasses(), ["budget-malformed"])
+            _gbudget(history=[_legacy])
+            check("budget: a history of only schema 1 entries is budget-malformed", _gclasses(), ["budget-malformed"])
             # Append-only against the committed file.
-            _gbudget({"0": 2, "1": 1}, history=[_h1])
+            _gbudget(history=[_h1])
             _committed = json.dumps({"history": [dict(_h1, change="the committed wording")]})
             globals()["_budget_committed_text"] = lambda: _committed
             check("budget: a history entry edited against HEAD is budget-unrecorded-change",
                   (_gclasses(), any("edited or removed" in m for m in _gmsgs())), (["budget-unrecorded-change"], True))
             _committed = json.dumps({"history": [_h1]})
             globals()["_budget_committed_text"] = lambda: _committed
-            _gbudget({"0": 3, "1": 1}, history=[_h1, dict(_h2, approved_by="operator", reason="operator: \"raise it\"")])
+            _h2 = {"date": "2026-09-28", "change": "raise", "reason": "operator: \"raise it\"",
+                   "approved_by": "operator", "snapshot": _gsnap(cap=3)}
+            _gbudget(cap=3, history=[_h1, _h2])
             check("budget: appending to the committed history is clean", _gclasses(), [])
+            _gbudget(history=[])
+            check("budget: removing every history entry is budget-malformed", _gclasses(), ["budget-malformed"])
             globals()["_budget_committed_text"] = _real_committed
-            # Coverage: every phase needs a ceiling, every ceiling a phase.
-            _gbudget({"0": 3})
-            check("budget: a phase with no ceiling is budget-malformed",
-                  (_gclasses(), any("Phase 1" in m and "no ceiling" in m for m in _gmsgs())), (["budget-malformed"], True))
-            _gbudget({"0": 2, "1": 1, "7": 4})
-            check("budget: a ceiling for a phase the plan lacks is budget-malformed",
-                  (_gclasses(), any("Phase 7" in m for m in _gmsgs())), (["budget-malformed"], True))
             (gtodo / "budget.json").write_text("{ not json", encoding="utf-8")
             check("budget: an unparseable budget.json is budget-malformed", _gclasses(), ["budget-malformed"])
-            _gbudget({"0": 2, "1": 1})
-            # The Progress line carries budget use, and --check compares it.
+            _gbudget()
+            # The Progress line carries the section count, the discovered
+            # count, and backlog use, and --check compares it.
             with _gctx.redirect_stdout(_gio.StringIO()), _gctx.redirect_stderr(_gio.StringIO()):
                 cmd_plan(argparse.Namespace(check=False))
                 rc_clean = cmd_plan(argparse.Namespace(check=True))
-            check("budget: the synced Progress line reports budget use",
-                  "Budget: 3 of 3 sections; backlog 2 of 2." in gplan.read_text(encoding="utf-8"), True)
+            check("budget: the synced Progress line reports sections, discoveries, and backlog use",
+                  "3 sections (0 discovered); backlog 2 of 2." in gplan.read_text(encoding="utf-8"), True)
+            check("budget: the synced Progress line names no ceiling", "Budget:" in gplan.read_text(encoding="utf-8"), False)
             check("budget: plan --check is clean after the sync", rc_clean, 0)
             _gbacklog(_gok.replace("- [B-002]", "- [B-000] Zeroth -- source: z0 -- added: 2026-09-26 -- why deferred: a -- promote when: b\n- [B-002]"))
-            _gbudget({"0": 2, "1": 1}, cap=3)
+            _gbudget(cap=3)
             with _gctx.redirect_stdout(_gio.StringIO()), _gctx.redirect_stderr(_gio.StringIO()):
                 rc_stale = cmd_plan(argparse.Namespace(check=True))
-            check("budget: plan --check refuses a Progress line whose budget use moved", rc_stale, 1)
+            check("budget: plan --check refuses a Progress line whose backlog use moved", rc_stale, 1)
             _gbacklog(_gok)
-            _gbudget({"0": 2, "1": 1})
+            _gbudget()
+            gfile.write_text(_gtodo([1, 2, 3], {3: _gorigin()}), encoding="utf-8")
+            with _gctx.redirect_stdout(_gio.StringIO()), _gctx.redirect_stderr(_gio.StringIO()):
+                rc_stale = cmd_plan(argparse.Namespace(check=True))
+                cmd_plan(argparse.Namespace(check=False))
+            check("budget: plan --check refuses a Progress line whose discovered count moved", rc_stale, 1)
+            check("budget: the resynced Progress line counts the discovered section",
+                  "3 sections (1 discovered); backlog 2 of 2." in gplan.read_text(encoding="utf-8"), True)
 
             def _gquery(what: str, **kw) -> tuple[int, str]:
                 buf = _gio.StringIO()
@@ -9764,33 +9961,49 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 return code, buf.getvalue()
 
             code, out = _gquery("budget")
-            check("budget: query budget prints each phase's use and ceiling",
-                  (code, "3 of 3 sections" in out and re.search(r"^\s+0\s+2\s+2\s+0\s+Budget fixture$", out, re.M) is not None),
-                  (0, True))
+            check("budget: query budget prints each phase's sections and discovered sections, no ceiling",
+                  (code, "3 sections (1 discovered)" in out,
+                   re.search(r"^\s+0\s+2\s+0\s+Budget fixture$", out, re.M) is not None,
+                   re.search(r"^\s+1\s+1\s+1\s+Second fixture$", out, re.M) is not None,
+                   f"run={_run_a}  1 of 1" in out, "ceiling" in out),
+                  (0, True, True, True, True, False))
             code, out = _gquery("stats")
-            check("budget: query stats carries the budget line", "budget           3 of 3 sections; backlog 2 of 2" in out, True)
+            check("budget: query stats carries the budget line",
+                  "budget           3 sections (1 discovered); backlog 2 of 2" in out, True)
             code, out = _gquery("backlog")
             check("budget: query backlog lists every entry and the cap",
                   (code, "B-001" in out and "B-002" in out and "2 of 2 backlog entries" in out), (0, True))
-            # Growth since a ref: a real git history in the fixture tree.
+            gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
+            # Growth since a ref: a real git history in the fixture tree. Only
+            # sections that carry an Origin line count against the cap.
             _genv = ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
             subprocess.run(["git", "init", "-q"], cwd=groot, capture_output=True, text=True, timeout=60)
             subprocess.run(["git", "add", "todo"], cwd=groot, capture_output=True, text=True, timeout=60)
             subprocess.run(["git", *_genv, "commit", "-q", "-m", "fixture start"], cwd=groot,
                            capture_output=True, text=True, timeout=60)
-            gfile.write_text(_gtodo([1, 2, 3, 4]), encoding="utf-8")
+            gfile.write_text(_gtodo([1, 2, 3, 4], {4: _gorigin()}), encoding="utf-8")
             _gbacklog(_gok.replace("- [B-002]", "- [B-003]"))
             code, out = _gquery("growth", since="HEAD", check=True)
-            check("growth: counts one added section and names it",
-                  (code, "+ D95 T01 §4  Thing 4" in out, "sections: +1 -0 (net +1)" in out),
+            check("growth: counts one added discovered section and names it",
+                  (code, f"+ D95 T01 §4  Thing 4  [discovered run={_run_a}]" in out,
+                   "sections: +1 -0 (net +1), 1 discovered" in out),
                   (0, True, True))
             check("growth: counts backlog entries added and removed",
                   ("+ backlog B-003" in out, "- backlog B-002" in out, "backlog: +1 -1" in out), (True, True, True))
-            check("growth: reports use of the per-run cap", "per-run cap: 1 of 1 new sections" in out, True)
-            gfile.write_text(_gtodo([1, 2, 4, 5]), encoding="utf-8")
+            check("growth: reports use of the per-run cap", "per-run cap: 1 of 1 discovered sections" in out, True)
+            gfile.write_text(_gtodo([1, 2, 4, 5], {4: _gorigin(), 5: _gorigin()}), encoding="utf-8")
             code, out = _gquery("growth", since="HEAD", check=True)
             check("growth: --check exits 1 past the per-run cap and names the removal",
-                  (code, "- D95 T01 §3" in out, "sections: +2 -1 (net +1)" in out), (1, True, True))
+                  (code, "- D95 T01 §3" in out, "sections: +2 -1 (net +1), 2 discovered" in out), (1, True, True))
+            gfile.write_text(_gtodo([1, 2, 3, 4, 5, 6]), encoding="utf-8")
+            code, out = _gquery("growth", since="HEAD", check=True)
+            check("growth: --check ignores operator-directed sections",
+                  (code, "sections: +3 -0 (net +3), 0 discovered" in out, "0 of 1 discovered" in out),
+                  (0, True, True))
+            gfile.write_text(_gtodo([1, 2, 3, 4, 5, 6], {5: _gorigin()}), encoding="utf-8")
+            code, out = _gquery("growth", since="HEAD", check=True)
+            check("growth: --check counts only the discovered one among operator sections",
+                  (code, "sections: +3 -0 (net +3), 1 discovered" in out), (0, True))
             code, out = _gquery("growth", since="no-such-ref", check=False)
             check("growth: an unreadable ref exits 2", code, 2)
             code, out = _gquery("growth", since=None, check=False)
