@@ -30,7 +30,7 @@ track: I2
 - -> XREF: D03 T09 §3 -- Imago parity layers cites §3: the render graph and `GroupNode` D03 T09 §3 to D03 T09 §8 extend; §4: the blend-mode registry and goldens D03 T09 §6 extends; §5: GPU parity for every compositing path there
 - -> XREF: D03 T11 §1 -- Imago parity adjustments and color cites §4: the render graph and blend modes adjustment nodes join
 - -> XREF: D03 T15 §1 -- Imago parity photo (Camera Raw and merges) cites §5: the ComputeSharp path the float display transform runs in
-- -> XREF: D03 T18 §4 -- Imago parity export, color management, and print cites §2: the viewport display transform D03 T18 §4 and D03 T18 §5 drive; §3: blend gamma in the render graph from D03 T18 §4's advanced settings; §5: the GPU path with CPU parity for the display transform
+- -> XREF: D03 T18 §4 -- Imago parity export, color management, and print cites §2: the viewport display transform D03 T18 §10 and D03 T18 §5 drive; §3: blend gamma in the render graph from D03 T18 §4's advanced settings; §5: the GPU path with CPU parity for the display transform
 - -> XREF: D03 T20 §5 -- Imago parity workspace cites §1: the tile cache and swap D03 T20 §5 tunes; §5: the ComputeSharp GPU path D03 T20 §5 toggles
 
 ## Outcome

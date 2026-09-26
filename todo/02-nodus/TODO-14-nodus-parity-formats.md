@@ -61,9 +61,11 @@ track: N14
 - -> XREF: D01 T02 §2 -- the settings store every format option persists in
 - -> XREF: D01 T02 §4 -- the suite history every import and slice edit records into
 - -> XREF: D03 T04 §1 -- Imago's codec decision, which decides whether §12's WIC codec moves to `Photon.Core`
+- -> XREF: D01 T08 §3 -- moves §12's ICO and CUR decoder into `src/Photon.Core/Formats/Raster/` and adds the ICO writer and executable icon extraction, so Nodus, Imago, and Lumen share one icon codec
+- -> XREF: D02 T18 §1 -- the legacy formats this file does not cover (FreeHand, FXG, SWF, Publisher, Visio, PowerPoint, Corel and Micrografx legacy, PICT, MET, GEM, FMV, Lotus PIC, NAPLPS, WordPerfect, Quattro Pro, Lotus 1-2-3, WordStar, legacy rasters, XCF, and RAW) extend §6, §7, §9, §11, §12, and §14
 - -> XREF: D03 T04 §5 -- Imago's PSD import, which consumes §13's reader from `Photon.Core` instead of building a second one
 - -> XREF: D03 T16 §8 -- Imago parity type and vectors cites §1: the SVG export options D03 T16 §8 moves and shares; §4: Nodus's legacy AI reader, the read-back oracle for D03 T16 §5's Illustrator paths
-- -> XREF: D03 T17 §1 -- Imago parity formats cites §2: PdfPig, which D03 T17 §1 and D03 T17 §7 reuse for annotations and text positions; §9: the Ghostscript runner D03 T17 §7 moves; §11: the EMF and WMF code D03 T17 §7 moves; §12: the TGA, PCX, BMP, and CUR codecs D03 T17 §8 moves, and the JPEG 2000 decision D03 T17 §5 reconciles; §13: the PSD writer D03 T17 §2 moves; §16: Nodus's progressive JPEG path switches to D03 T17 §11's encoder; §19: the WIA acquire service D03 T17 §12 moves
+- -> XREF: D03 T17 §1 -- Imago parity formats cites §2: PdfPig, which D03 T17 §15 and D03 T17 §7 reuse for annotations and text positions; §9: the Ghostscript runner D03 T17 §16 moves; §11: the EMF and WMF code D03 T17 §16 moves; §12: the TGA, PCX, and BMP codecs D03 T17 §8 moves (the ICO and CUR decoder moves earlier, in D01 T08 §3), and the JPEG 2000 decision D03 T17 §5 reconciles; §13: the PSD writer D03 T17 §2 moves; §16: Nodus's progressive JPEG path switches to D03 T17 §11's encoder; §19: the WIA acquire service D03 T17 §12 moves
 - -> XREF: D03 T18 §1 -- Imago parity export, color management, and print cites §15: the export queue D03 T18 §1 moves; §16: the web encoder D03 T18 §2 moves; §17: the slice model and image map writer D03 T18 §2 moves
 
 ## Outcome
@@ -411,7 +413,7 @@ Any common image must place at the right size, and any page must export to the r
 - [ ] Add `TgaCodec` in `src/Nodus/Photon.Nodus.Core/Formats/Raster/` (8-bit gray to 32-bit, RLE, Normal or Enhanced). Done when: TGA fixtures decode pixel-exact and written files decode in ImageMagick to the source pixels.
 - [ ] Add `PcxCodec` (versions 2.5 to 3.0, RLE, paletted through `D01 T03 §3`). Done when: PCX fixtures decode pixel-exact and round-trip.
 - [ ] BMP variants: Windows BMP, DIB, RLE, and OS/2 v1.3 and v2.0 through an own header shim where WIC declines. Done when: each BMP variant fixture decodes pixel-exact.
-- [ ] CUR import through the ICO decoder path, keeping the hotspot in object notes. Done when: the CUR fixture decodes and its hotspot is recorded.
+- [ ] CUR import through the ICO decoder path, keeping the hotspot in object notes; `D01 T08 §3` later moves this ICO and CUR decoder to `Photon.Core` unchanged in behavior. Done when: the CUR fixture decodes and its hotspot is recorded.
 - [ ] JPEG 2000: WIC has no JP2 codec; record in `docs/dev/decisions.md` the choice between CoreJ2K (BSD, managed) and OpenJPEG (BSD-2, native P/Invoke), with export quality and progression options; if neither is taken, JP2 is refused by name. Done when: the row exists and either the JP2 fixtures decode or the refusal is asserted.
 - [ ] GIF import including animated frames (frame picker) and GIF export with transparency. Done when: an animated fixture exposes its frame count and a written GIF keeps the transparent index.
 - [ ] JPEG import in gray, RGB, and CMYK with EXIF orientation, CMYK converting through `D01 T04 §1`. Done when: the CMYK fixture matches its golden within the stated tolerance and the rotated fixture places upright.
@@ -461,7 +463,7 @@ Photoshop and Imago compositions arrive as layered PSD, and vector drawings go b
 
 ## 14. Office and Text Documents, Export For Office, and Font Export
 
-Designers pull a client's copy deck into a layout and put artwork into Word or PowerPoint. This section imports TXT, RTF, DOC, DOCX, XLS, XLSX, and CSV, exports text as TXT, RTF, and DOC, adds the Export For Office dialog, and exports a curve as a TrueType or Type 1 glyph. DocumentFormat.OpenXml (MIT) handles OOXML and NPOI (Apache-2.0) the binary DOC and XLS; binary PPT, PUB, VSD, and WPD are backlog B-037, and VSDX and PPTX import have no catalog row and are filed through `add-todo` rather than built here. Catalog: NP-2336 to NP-2350 (15 features).
+Designers pull a client's copy deck into a layout and put artwork into Word or PowerPoint. This section imports TXT, RTF, DOC, DOCX, XLS, XLSX, and CSV, exports text as TXT, RTF, and DOC, adds the Export For Office dialog, and exports a curve as a TrueType or Type 1 glyph. DocumentFormat.OpenXml (MIT) handles OOXML and NPOI (Apache-2.0) the binary DOC and XLS; binary PUB and VSD are `D02 T18 §2`, PPT is `D02 T18 §3`, and WPD is `D02 T18 §7`, and VSDX and PPTX import have no catalog row and are filed through `add-todo` rather than built here. Catalog: NP-2336 to NP-2350 (15 features).
 
 **Fidelity:** new build, no baseline; captured to docs/captures/nodus/export-for-office/.
 **Job:** a designer can put artwork into a Word or PowerPoint file and pull a client's copy deck into a layout. Consumer: the document on import; Office applications through the written file or the clipboard.

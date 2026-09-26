@@ -140,7 +140,7 @@ Every bitmap object Nodus places will be resized, straightened, or corrected, an
 
 1-bit and paletted bitmaps, posterize, tracing, and web export all reduce colors, so reduction is built once with every dither and palette type both competitors expose. Error diffusion is one class driven by kernel tables, palettes are built by named strategies, and the whole thing is deterministic for a seed so a trace or an export reproduces. Catalog: NP-1734 to NP-1752 (19 features: seven 1-bit methods, seven palette types, paletted dithering and intensity, paletted presets, processed palette editing, range sensitivity, and posterize).
 
-**Fidelity:** no surface of its own (the Black and White and Paletted dialogs are D02 T12 §1)
+**Fidelity:** no surface of its own (the Black and White and Paletted dialogs are D02 T12 §9)
 
 - [ ] Add `src/Photon.Core/Imaging/Quantize/BilevelConverter.cs` with `BilevelMethod { LineArt, Ordered, Halftone, CardinalityDistribution, Jarvis, Stucki, FloydSteinberg }` and an `Intensity` parameter (threshold for line art, bias for the rest) (CD-1996 to CD-2002). Done when: `BilevelConverterTests` produce only 0 and 1 values for every method.
 - [ ] Add `src/Photon.Core/Imaging/Quantize/ErrorDiffuser.cs` driven by kernel tables for Floyd-Steinberg, Jarvis-Judice-Ninke, and Stucki with serpentine scanning. Done when: the Floyd-Steinberg output matches an ImageMagick 7.1 `-dither FloydSteinberg -monochrome` golden under `tests/fixtures/imaging/quantize/` exactly.

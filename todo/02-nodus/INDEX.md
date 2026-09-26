@@ -1,8 +1,8 @@
 # 02 Nodus
 
-> **Phases 1, 2, 3, and 4 to 13**
+> **Phases 1, 2, 3, 4 to 13, and 31**
 
-Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs first among the apps: it is renamed and restructured, its orphan services triaged, its editing made correct, its documents made safe, and it ships `nodus-v0.1.0` before Imago's foundation starts. After 0.1.0, the parity phases (4 to 13) bring Nodus to parity with every Illustrator 30.8 and CorelDRAW 2026 capability in the parity catalog ([`../../docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md)): TODO-07 to TODO-16 own the features, TODO-17 ships one release per phase from `nodus-v0.2.0` to `nodus-v1.0.0`, and TODO-06's eight sections move into the parity phases where their dependents need them. The legacy roadmap entries the parity sections promoted left the backlog; B-012 remains there with the other catalog backlog entries (B-037 to B-040).
+Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs first among the apps: it is renamed and restructured, its orphan services triaged, its editing made correct, its documents made safe, and it ships `nodus-v0.1.0` before Imago's foundation starts. After 0.1.0, the parity phases (4 to 13) bring Nodus to parity with every Illustrator 30.8 and CorelDRAW 2026 capability in the parity catalog ([`../../docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md)): TODO-07 to TODO-16 own the features, TODO-17 ships one release per phase from `nodus-v0.2.0` to `nodus-v1.0.0`, and TODO-06's eight sections move into the parity phases where their dependents need them. The legacy roadmap entries the parity sections promoted left the backlog. On 2026-09-27 the operator promoted the Nodus catalog's remaining backlog rows too: TODO-18 plans the legacy vector, document, and raster formats (the old B-037 and B-038, the rasters on the shared codecs of `D01 T08`) in Phase 13 and GIMP XCF and camera RAW import (the old B-039) in Phase 31 after Imago's XCF reader and Lumen's RAW decoder exist, `D02 T13 §17` plans interactive 3D in PDF (the old B-040), and `D02 T12 §10` runs third-party 8BF plug-in filters on the suite host `D01 T09` (the old B-012).
 
 ## TODOs
 
@@ -25,6 +25,7 @@ Nodus, the vector editor, imported from Bezier under `src/Nodus/`. Nodus runs fi
 | [TODO-15](./TODO-15-nodus-ai.md) | Nodus AI: Editable, Suite-Aware, Reproducible | draft |
 | [TODO-16](./TODO-16-nodus-parity-workspace.md) | Nodus Parity: Workspace, Customization, Preferences, and Utilities | draft |
 | [TODO-17](./TODO-17-nodus-parity-releases.md) | Nodus Parity Releases: 0.2.0 to 1.0.0 | draft |
+| [TODO-18](./TODO-18-nodus-legacy-formats.md) | Nodus Legacy Formats and Camera RAW: FreeHand, Publisher, Visio, PowerPoint, Corel Legacy, Metafiles, Legacy Rasters, XCF, and RAW | draft |
 
 ## Completed
 

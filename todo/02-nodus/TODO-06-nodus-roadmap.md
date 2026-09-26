@@ -24,7 +24,7 @@ track: N6
 - [`standards/nodus.md`](../../standards/nodus.md) -- the document model, tool, and SVG rules every section builds to
 - `docs/dev/nodus/service-triage.md` (written by `D02 T02 §1`) -- the deferred services §11, §12, and §14 wire
 - -> XREF: D02 T02 §1 -- the triage that hands the deferred services to §11, §12, and §14
-- [`../backlog.md`](../backlog.md) -- B-012, the one Nodus idea from this file still in the backlog (third-party filter plug-in hosts); B-001 to B-011 and B-013 were promoted into the parity sections and left it
+- [`../backlog.md`](../backlog.md) -- B-001 to B-011 and B-013 were promoted into the parity sections and left it; B-012 (third-party filter plug-in hosts) was promoted on 2026-09-27 into the suite plug-in host `D01 T09` and its Nodus consumer `D02 T12 §10`, so no Nodus idea from this file remains in the backlog
 - -> XREF: D02 T07 §3 -- pages, layers, and views (`D02 T07 §3`, `§5`, `§12`) that build on §7; `D02 T07 §10` shares §12's HUD label style
 - -> XREF: D02 T08 §6 -- node editing and the pen extensions that extend §2
 - -> XREF: D02 T09 §21 -- dynamic symbols and libraries that extend §11

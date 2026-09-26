@@ -2,13 +2,13 @@
 
 Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, merged into Nodus features, each with exactly one status. The sources are [`sources/illustrator-30.8.md`](sources/illustrator-30.8.md) and [`sources/coreldraw-2026.md`](sources/coreldraw-2026.md); the status grammar and the update rules are in [`README.md`](README.md); the sections that own `plan` rows are designed in [`section-design.md`](section-design.md).
 
-**Totals (2026-09-26):** 2,802 features covering 1,294 Illustrator rows and 3,041 CorelDRAW rows (4,335 in all); every source id appears in exactly one row. Updated 2026-09-26 (Imago parity decision): the eleven automation rows moved from `excluded` to the suite-wide backlog entries B-041 (scripting and macros) and B-042 (batch processing), deferred to after the first release rather than excluded.
+**Totals (2026-09-26):** 2,802 features covering 1,294 Illustrator rows and 3,041 CorelDRAW rows (4,335 in all); every source id appears in exactly one row. Updated 2026-09-26 (Imago parity decision): the eleven automation rows moved from `excluded` to the suite-wide backlog entries B-041 (scripting and macros) and B-042 (batch processing), deferred to after the first release rather than excluded. Updated 2026-09-27 (operator decision "Group 1: plan them all"): the 37 rows that pointed at B-012 and B-037 to B-040 are planned (legacy formats and camera RAW in `D02 T18`, 3D in PDF in `D02 T13 §17`, third-party plug-in filters in `D02 T12 §10`).
 
 | Status | Features | Source rows |
 | ------ | -------: | ----------: |
-| `plan` | 2,643 | 3,943 |
+| `plan` | 2,680 | 3,998 |
 | `shipped-scope` | 69 | 150 |
-| `backlog` | 48 | 119 |
+| `backlog` | 11 | 64 |
 | `excluded` | 24 | 105 |
 | `other-app` | 18 | 18 |
 | **Total** | **2,802** | **4,335** |
@@ -1484,28 +1484,28 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 
 | ID | Feature | Illustrator | CorelDRAW | Category | Status | Notes |
 | -- | ------- | ----------- | --------- | -------- | ------ | ----- |
-| NP-1319 | Find Font: list and replace document fonts | AI-0359 | -- | core | plan D02 T10 §3 |  |
-| NP-1320 | Resolve missing fonts by replacement | AI-0360 | -- | cloud | plan D02 T10 §3 | Adobe Fonts activation excluded (cloud); local replacement only |
-| NP-1321 | Edit text set in a missing font without replacing it | AI-0361 | -- | core | plan D02 T10 §3 |  |
-| NP-1322 | Highlight substituted fonts and glyphs | AI-0362, AI-1150 | -- | core | plan D02 T10 §3 |  |
+| NP-1319 | Find Font: list and replace document fonts | AI-0359 | -- | core | plan D02 T10 §16 |  |
+| NP-1320 | Resolve missing fonts by replacement | AI-0360 | -- | cloud | plan D02 T10 §16 | Adobe Fonts activation excluded (cloud); local replacement only |
+| NP-1321 | Edit text set in a missing font without replacing it | AI-0361 | -- | core | plan D02 T10 §16 |  |
+| NP-1322 | Highlight substituted fonts and glyphs | AI-0362, AI-1150 | -- | core | plan D02 T10 §16 |  |
 | NP-1323 | Font list: family and style picker | AI-0407 | CD-1095, CD-1097 | core | plan D02 T10 §3 | Adobe Fonts discovery and CC Libraries excluded (cloud) |
 | NP-1324 | Font filters: classification, similar, favorites, technology, variable, weight, width, style, range, OpenType, clear | AI-0408 | CD-1192, CD-1193, CD-1194 | core | plan D02 T10 §3 | Adobe Fonts activated filter excluded (cloud) |
 | NP-1325 | Recently used fonts and their count | AI-0412 | CD-1188, CD-1189 | core | plan D02 T10 §3 | More from Adobe Fonts excluded (cloud) |
 | NP-1326 | Font name previews in their own face and preview size | AI-1151 | CD-1184, CD-1187 | core | plan D02 T10 §3 |  |
-| NP-1327 | Type 1 font detection and warning | -- | CD-235, CD-1179 | core | plan D02 T10 §3 |  |
-| NP-1328 | Embed fonts on save (option and default) | -- | CD-244, CD-1180 | core | plan D02 T10 §3 | SVG embeds font data in @font-face; CDR embedding follows D02 T14 §8 |
+| NP-1327 | Type 1 font detection and warning | -- | CD-235, CD-1179 | core | plan D02 T10 §16 |  |
+| NP-1328 | Embed fonts on save (option and default) | -- | CD-244, CD-1180 | core | plan D02 T10 §16 | SVG embeds font data in @font-face; CDR embedding follows D02 T14 §8 |
 | NP-1329 | Match the Latin font when inserting text in another script | -- | CD-1167 | core | plan D02 T10 §3 |  |
 | NP-1330 | Script filter for font changes | -- | CD-1168 | core | plan D02 T10 §3 |  |
 | NP-1331 | Change the default font for new text | -- | CD-1169 | core | plan D02 T10 §3 |  |
-| NP-1332 | Substitute missing fonts dialog on open and import | -- | CD-1170, CD-1227 | core | plan D02 T10 §3 |  |
-| NP-1333 | PANOSE suggested match | -- | CD-1171 | core | plan D02 T10 §3 |  |
-| NP-1334 | Manual font substitution | -- | CD-1172 | core | plan D02 T10 §3 |  |
-| NP-1335 | Permanent or session-only substitution | -- | CD-1173 | core | plan D02 T10 §3 |  |
-| NP-1336 | Font substitution exceptions list | -- | CD-1174, CD-1176 | core | plan D02 T10 §3 |  |
-| NP-1337 | PANOSE font matching preferences | -- | CD-1175 | core | plan D02 T10 §3 |  |
-| NP-1338 | Font embedding permissions (fsType) | -- | CD-1181 | core | plan D02 T10 §3 |  |
-| NP-1339 | Fonts cannot be embedded warning | -- | CD-1182 | core | plan D02 T10 §3 |  |
-| NP-1340 | Non-editable embedded font indicator | -- | CD-1183 | core | plan D02 T10 §3 |  |
+| NP-1332 | Substitute missing fonts dialog on open and import | -- | CD-1170, CD-1227 | core | plan D02 T10 §16 |  |
+| NP-1333 | PANOSE suggested match | -- | CD-1171 | core | plan D02 T10 §16 |  |
+| NP-1334 | Manual font substitution | -- | CD-1172 | core | plan D02 T10 §16 |  |
+| NP-1335 | Permanent or session-only substitution | -- | CD-1173 | core | plan D02 T10 §16 |  |
+| NP-1336 | Font substitution exceptions list | -- | CD-1174, CD-1176 | core | plan D02 T10 §16 |  |
+| NP-1337 | PANOSE font matching preferences | -- | CD-1175 | core | plan D02 T10 §16 |  |
+| NP-1338 | Font embedding permissions (fsType) | -- | CD-1181 | core | plan D02 T10 §16 |  |
+| NP-1339 | Fonts cannot be embedded warning | -- | CD-1182 | core | plan D02 T10 §16 |  |
+| NP-1340 | Non-editable embedded font indicator | -- | CD-1183 | core | plan D02 T10 §16 |  |
 | NP-1341 | Group fonts by family | -- | CD-1185 | core | plan D02 T10 §3 |  |
 | NP-1342 | Show Latin names for non-Latin fonts | -- | CD-1186 | core | plan D02 T10 §3 |  |
 | NP-1343 | Live font preview on hover | -- | CD-1190 | core | plan D02 T10 §3 |  |
@@ -1516,12 +1516,12 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-1348 | Font Sampler samples: add, remove, reorder, edit text | -- | CD-1200 | core | plan D02 T10 §3 |  |
 | NP-1349 | Font Sampler copy or drag a sample to the document | -- | CD-1201 | core | plan D02 T10 §3 |  |
 | NP-1350 | Font Sampler OpenType on samples | -- | CD-1202 | core | plan D02 T10 §3 |  |
-| NP-1351 | Font matching on text import | -- | CD-1226 | format | plan D02 T10 §3 |  |
+| NP-1351 | Font matching on text import | -- | CD-1226 | format | plan D02 T10 §16 |  |
 | NP-1352 | Font List Options command | -- | CD-1228 | core | plan D02 T10 §3 |  |
 | NP-1353 | Check spelling dialog | AI-0356 | CD-1212 | core | plan D02 T10 §13 | Windows Spell Checking API |
 | NP-1354 | Auto spell check while typing | AI-0357 | -- | core | plan D02 T10 §13 |  |
 | NP-1355 | Custom dictionary and user word lists | AI-0358 | CD-1222 | core | plan D02 T10 §13 |  |
-| NP-1356 | Import text files into frames (TXT, RTF, DOC, DOCX) | AI-0418 | CD-949, CD-2583 | format | plan D02 T10 §13 | WPD is backlog B-037; D02 T14 §14 reuses these readers |
+| NP-1356 | Import text files into frames (TXT, RTF, DOC, DOCX) | AI-0418 | CD-949, CD-2583 | format | plan D02 T10 §13 | WPD is D02 T18 §7; D02 T14 §14 reuses these readers |
 | NP-1357 | Plain text (TXT) export and ANSI text transfer | AI-0419 | CD-2631 | format | plan D02 T10 §13 |  |
 | NP-1358 | Importing and Pasting Text dialog | -- | CD-950 | core | plan D02 T10 §13 |  |
 | NP-1359 | Force CMYK black on imported text | -- | CD-951 | print | plan D02 T10 §13 |  |
@@ -1574,8 +1574,8 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-1401 | Table as a transformable object | -- | CD-1273 | core | plan D02 T10 §14 |  |
 | NP-1402 | Place an image in a cell | -- | CD-1274 | core | plan D02 T10 §14 |  |
 | NP-1403 | Table and cell background | -- | CD-1275 | core | plan D02 T10 §14 |  |
-| NP-1404 | Import tables from spreadsheets | -- | CD-1276 | core | plan D02 T10 §14 | XLS via NPOI, XLSX via OpenXml, CSV; Quattro Pro is backlog B-037; overlaps D02 T14 §14 |
-| NP-1405 | Import tables from word processors | -- | CD-1277 | core | plan D02 T10 §14 | DOCX and DOC tables; WordPerfect is backlog B-037 |
+| NP-1404 | Import tables from spreadsheets | -- | CD-1276 | core | plan D02 T10 §14 | XLS via NPOI, XLSX via OpenXml, CSV; Quattro Pro is D02 T18 §7; overlaps D02 T14 §14 |
+| NP-1405 | Import tables from word processors | -- | CD-1277 | core | plan D02 T10 §14 | DOCX and DOC tables; WordPerfect is D02 T18 §7 |
 | NP-1406 | Import and paste table formatting options | -- | CD-1278 | core | plan D02 T10 §14 |  |
 | NP-1407 | Column and stacked column graphs | AI-0126, AI-0795 | -- | core | plan D02 T10 §15 |  |
 | NP-1408 | Bar and stacked bar graphs | AI-0796, AI-0797 | -- | core | plan D02 T10 §15 |  |
@@ -1960,19 +1960,19 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-1767 | Straighten crop options | -- | CD-1983 | core | plan D02 T12 §1 |  |
 | NP-1768 | Straighten grid size and color | -- | CD-1984 | core | plan D02 T12 §1 |  |
 | NP-1769 | Straighten remember settings | -- | CD-1985 | core | plan D02 T12 §1 |  |
-| NP-1770 | Color a monochrome bitmap from the palette | -- | CD-1988 | core | plan D02 T12 §1 |  |
-| NP-1771 | Bitmap color mask panel | -- | CD-1990, CD-2076, CD-2093 | core | plan D02 T12 §1 | menu and docker listings of one panel |
-| NP-1772 | Bitmap mask: hide or show selected colors | -- | CD-1991 | core | plan D02 T12 §1 |  |
-| NP-1773 | Bitmap mask tolerance | -- | CD-1992 | core | plan D02 T12 §1 |  |
-| NP-1774 | Save and open a bitmap color mask | -- | CD-1993 | core | plan D02 T12 §1 | reads the Corel .ini mask; saves Nodus JSON |
-| NP-1775 | Edit a masked color | -- | CD-1994 | core | plan D02 T12 §1 |  |
-| NP-1776 | Bitmap mode: black and white (1-bit) | -- | CD-1995, CD-2077 | core | plan D02 T12 §1 |  |
-| NP-1777 | Bitmap mode: grayscale (8-bit) | -- | CD-2003, CD-2078 | core | plan D02 T12 §1 |  |
-| NP-1778 | Bitmap mode: duotone (8-bit) | -- | CD-2004, CD-2079 | print | plan D02 T12 §1 | command lands here; the conversion is D01 T04 §3 (Phase 10), disabled until then |
-| NP-1779 | Bitmap mode: paletted (8-bit) | -- | CD-2009, CD-2080 | core | plan D02 T12 §1 |  |
-| NP-1780 | Bitmap mode: RGB (24-bit) | -- | CD-2021, CD-2081 | core | plan D02 T12 §1 |  |
-| NP-1781 | Bitmap mode: Lab (24-bit) | -- | CD-2022, CD-2082 | core | plan D02 T12 §1 | command lands here; the conversion is D01 T04 §3 (Phase 10), disabled until then |
-| NP-1782 | Bitmap mode: CMYK (32-bit) | -- | CD-2023, CD-2083 | print | plan D02 T12 §1 | command lands here; the conversion is D01 T04 §3 (Phase 10), disabled until then |
+| NP-1770 | Color a monochrome bitmap from the palette | -- | CD-1988 | core | plan D02 T12 §9 |  |
+| NP-1771 | Bitmap color mask panel | -- | CD-1990, CD-2076, CD-2093 | core | plan D02 T12 §9 | menu and docker listings of one panel |
+| NP-1772 | Bitmap mask: hide or show selected colors | -- | CD-1991 | core | plan D02 T12 §9 |  |
+| NP-1773 | Bitmap mask tolerance | -- | CD-1992 | core | plan D02 T12 §9 |  |
+| NP-1774 | Save and open a bitmap color mask | -- | CD-1993 | core | plan D02 T12 §9 | reads the Corel .ini mask; saves Nodus JSON |
+| NP-1775 | Edit a masked color | -- | CD-1994 | core | plan D02 T12 §9 |  |
+| NP-1776 | Bitmap mode: black and white (1-bit) | -- | CD-1995, CD-2077 | core | plan D02 T12 §9 |  |
+| NP-1777 | Bitmap mode: grayscale (8-bit) | -- | CD-2003, CD-2078 | core | plan D02 T12 §9 |  |
+| NP-1778 | Bitmap mode: duotone (8-bit) | -- | CD-2004, CD-2079 | print | plan D02 T12 §9 | command lands here; the conversion is D01 T04 §3 (Phase 10), disabled until then |
+| NP-1779 | Bitmap mode: paletted (8-bit) | -- | CD-2009, CD-2080 | core | plan D02 T12 §9 |  |
+| NP-1780 | Bitmap mode: RGB (24-bit) | -- | CD-2021, CD-2081 | core | plan D02 T12 §9 |  |
+| NP-1781 | Bitmap mode: Lab (24-bit) | -- | CD-2022, CD-2082 | core | plan D02 T12 §9 | command lands here; the conversion is D01 T04 §3 (Phase 10), disabled until then |
+| NP-1782 | Bitmap mode: CMYK (32-bit) | -- | CD-2023, CD-2083 | print | plan D02 T12 §9 | command lands here; the conversion is D01 T04 §3 (Phase 10), disabled until then |
 | NP-1783 | Correct perspective | -- | CD-2075 | core | plan D02 T12 §1 |  |
 | NP-1784 | Object mosaic (raster to vector tiles) | AI-0209 | -- | core | plan D02 T12 §6 |  |
 | NP-1785 | Create mockup on a photo surface | AI-0953 | -- | core | plan D02 T12 §6 |  |
@@ -2222,7 +2222,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2024 | Apply SVG filter | AI-0701 | -- | format | plan D02 T12 §8 |  |
 | NP-2025 | Import SVG filters and edit filter code | AI-0702 | -- | format | plan D02 T12 §8 |  |
 | NP-2026 | Built-in SVG filter presets | AI-0703 | -- | format | plan D02 T12 §8 | own preset set; Adobe AI_ preset names not copied |
-| NP-2027 | Third-party bitmap plug-in filters | AI-0778 | CD-2092, CD-2112, CD-2113 | core | backlog B-012 | 8BF-style plug-in host |
+| NP-2027 | Third-party bitmap plug-in filters | AI-0778 | CD-2092, CD-2112, CD-2113 | core | plan D02 T12 §10 | 8BF host process in D01 T09 |
 
 ## Tracing
 
@@ -2477,7 +2477,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2259 | PDF include comments | -- | CD-2535 | core | plan D02 T13 §16 |  |
 | NP-2260 | PDF printing, editing, and copying permissions | -- | CD-2547, CD-2548, CD-2549 | core | plan D02 T13 §16 |  |
 | NP-2261 | Optimize PDF for web (linearize) | -- | CD-2553 | core | plan D02 T13 §16 |  |
-| NP-2262 | Interactive 3D models in PDF | -- | CD-2529 | core | backlog B-040 |  |
+| NP-2262 | Interactive 3D models in PDF | -- | CD-2529 | core | plan D02 T13 §17 |  |
 
 ## Import and export formats
 
@@ -2519,7 +2519,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2296 | Advanced save: store or rebuild texture fills, blends, and extrusions | -- | CD-251, CD-252 | core | plan D02 T14 §8 |  |
 | NP-2297 | Default CDR save version setting | -- | CD-2825 | core | plan D02 T14 §8 |  |
 | NP-2298 | Ask when saving to an earlier version setting | -- | CD-2836 | core | plan D02 T14 §8 |  |
-| NP-2299 | Open, import, or place EPS: Illustrator EPS as editable art, other EPS through Ghostscript, or placed with its preview | AI-0951, AI-0998 | CD-2589 | format | plan D02 T14 §9 | DCS is backlog B-038; AutoCAD is §10 |
+| NP-2299 | Open, import, or place EPS: Illustrator EPS as editable art, other EPS through Ghostscript, or placed with its preview | AI-0951, AI-0998 | CD-2589 | format | plan D02 T14 §9 | DCS is D02 T18 §8; AutoCAD is §10 |
 | NP-2300 | EPS export general options: version, color output, preview TIFF or none, text as curves, fonts, PostScript level, flattening | AI-1007 | CD-2590 | format | plan D02 T14 §9 | own EPS writer |
 | NP-2301 | EPS export advanced options: bounding box, JPEG compression, overprint and trapping flags, fountain steps | -- | CD-2591 | format | plan D02 T14 §9 | OPI links recorded as not written |
 | NP-2302 | Ghostscript interpreter location and detection | -- | CD-2592 | format | plan D02 T14 §9 | AGPL-3.0, external process, never bundled |
@@ -2531,7 +2531,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2308 | HPGL PLT import with scale, curve resolution, and pen mapping | -- | CD-2608 | format | plan D02 T14 §11 |  |
 | NP-2309 | HPGL PLT export of outlines with pen settings and plotter origin | -- | CD-2609 | format | plan D02 T14 §11 |  |
 | NP-2310 | WordPerfect Graphic WPG import and export | -- | CD-2626 | format | plan D02 T14 §11 | own codec |
-| NP-2311 | Place and open raster images through WIC (GIF, JPEG, JP2, PNG, TIFF, TGA, PCX, WebP) | AI-0950, AI-1000 | -- | format | plan D02 T14 §12 | PICT and Pixar are backlog B-037 and B-038 |
+| NP-2311 | Place and open raster images through WIC (GIF, JPEG, JP2, PNG, TIFF, TGA, PCX, WebP) | AI-0950, AI-1000 | -- | format | plan D02 T14 §12 | PICT is D02 T18 §5; Pixar is placed through the D01 T08 §1 codec registered by D02 T18 §8 |
 | NP-2312 | Open and place AVIF | AI-0994 | -- | format | plan D02 T14 §12 | WIC AV1 extension, refused by name when absent |
 | NP-2313 | BMP import and export: Windows BMP, DIB, RLE, OS/2 v1.3 and v2.0 | AI-0995, AI-1013 | CD-2575, CD-2576 | format | plan D02 T14 §12 |  |
 | NP-2314 | TGA import and export with RLE | AI-1020 | CD-2619 | format | plan D02 T14 §12 | own codec |
@@ -2545,7 +2545,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2322 | Export compression type where the format supports it | -- | CD-2495 | core | plan D02 T14 §12 |  |
 | NP-2323 | Export notes into file metadata | -- | CD-2496 | core | plan D02 T14 §12 |  |
 | NP-2324 | Hidden layers export unless the layer export flag is off | -- | CD-2497 | core | plan D02 T14 §12 |  |
-| NP-2325 | Cursor CUR import | -- | CD-2582 | format | plan D02 T14 §12 | the ICO decoder covers CUR; backlog B-038 also lists CUR |
+| NP-2325 | Cursor CUR import | -- | CD-2582 | format | plan D02 T14 §12 | the ICO decoder covers CUR; D01 T08 §3 moves the decoder to Photon.Core and D02 T18 §8 adds ICO and EXE icons |
 | NP-2326 | GIF import (including animated frames) and GIF export with transparency | -- | CD-2594, CD-2595 | format | plan D02 T14 §12 |  |
 | NP-2327 | Import HEIF and HEIC key image | -- | CD-2596 | format | plan D02 T14 §12 | WIC HEIF extension, refused by name when absent |
 | NP-2328 | JPEG import in gray, RGB, and CMYK with EXIF orientation | -- | CD-2597 | format | plan D02 T14 §12 |  |
@@ -2556,7 +2556,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2333 | Place linked PSD with a chosen layer comp | AI-0944 | -- | format | plan D02 T14 §13 |  |
 | NP-2334 | Exchange paths and pixels with raster editors through the clipboard | AI-0952 | -- | format | plan D02 T14 §13 | Imago is the first partner |
 | NP-2335 | Export PSD: color model, resolution, flat or layered, anti-alias, embed ICC, spot channels | AI-1018 | CD-2613 | format | plan D02 T14 §13 | text rasterized; own writer |
-| NP-2336 | Import office and text documents: TXT, RTF, DOC, DOCX | AI-1003 | CD-2555 | format | plan D02 T14 §14 | DocumentFormat.OpenXml and NPOI; WPD is backlog B-037 |
+| NP-2336 | Import office and text documents: TXT, RTF, DOC, DOCX | AI-1003 | CD-2555 | format | plan D02 T14 §14 | DocumentFormat.OpenXml and NPOI; PUB, VSD, and PPT are D02 T18 §2 and §3; WPD is D02 T18 §7 |
 | NP-2337 | Export text as TXT | AI-1022 | -- | format | plan D02 T14 §14 |  |
 | NP-2338 | Export For Office dialog with preview, zoom, pan, and estimated size | -- | CD-2498, CD-2563 | core | plan D02 T14 §14 |  |
 | NP-2339 | Export For Office: compatibility target as PNG | -- | CD-2499 | core | plan D02 T14 §14 |  |
@@ -2592,41 +2592,41 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2369 | PNG export | AI-1017 | CD-2611 | format | shipped-scope D02 T04 §3 |  |
 | NP-2370 | Place (import) linked or embedded | AI-0931 | -- | core | shipped-scope D02 T06 §14 |  |
 | NP-2371 | WebP import and export | AI-1023 | CD-2623, CD-2624 | format | shipped-scope D02 T06 §14 |  |
-| NP-2372 | FreeHand file import | AI-1004 | CD-2646 | format | backlog B-037 | legacy format |
-| NP-2373 | FXG save | AI-1010 | -- | format | backlog B-037 | removed from current Illustrator |
-| NP-2374 | Macintosh PICT import and export | AI-1024 | CD-2600 | format | backlog B-037 | legacy format |
-| NP-2375 | SWF (Flash) export | AI-1025 | CD-2618 | format | backlog B-037 | deprecated format |
-| NP-2376 | Microsoft Publisher (PUB) import | -- | CD-2585 | format | backlog B-037 |  |
-| NP-2377 | Corel DESIGNER and Micrografx Designer import | -- | CD-2586 | format | backlog B-037 |  |
-| NP-2378 | Visio (VSD) import | -- | CD-2622 | format | backlog B-037 |  |
-| NP-2379 | WordPerfect document text import and export | -- | CD-2625 | format | backlog B-037 |  |
-| NP-2380 | Corel ArtShow (CPX) import | -- | CD-2633 | format | backlog B-037 |  |
-| NP-2381 | Corel Presentations (SHW) import | -- | CD-2634 | format | backlog B-037 |  |
-| NP-2382 | Corel R.A.V.E. (CLK) import | -- | CD-2635 | format | backlog B-037 |  |
-| NP-2383 | Frame Vector Metafile (FMV) import and export | -- | CD-2641 | format | backlog B-037 |  |
-| NP-2384 | GEM Paint and GEM File import and export | -- | CD-2642 | format | backlog B-037 |  |
-| NP-2385 | Lotus PIC import | -- | CD-2644 | format | backlog B-037 |  |
-| NP-2386 | OS/2 MET metafile import and export | -- | CD-2647 | format | backlog B-037 |  |
-| NP-2387 | Picture Publisher 4 (PP4) import | -- | CD-2648 | format | backlog B-037 |  |
-| NP-2388 | PowerPoint (PPT) import | -- | CD-2650 | format | backlog B-037 |  |
-| NP-2389 | NAPLPS (NAP) metafile import | -- | CD-2651 | format | backlog B-037 |  |
-| NP-2390 | Legacy spreadsheet and word processor import (WB, WK, WSD) | -- | CD-2655 | format | backlog B-037 |  |
-| NP-2391 | DCS (Desktop Color Separation) import and export | AI-0948 | CD-2638 | print | backlog B-038 |  |
-| NP-2392 | Corel PHOTO-PAINT (CPT) import and export | -- | CD-2580 | format | backlog B-038 |  |
-| NP-2393 | Kodak Photo CD (PCD) import | -- | CD-2599 | format | backlog B-038 |  |
-| NP-2394 | Corel Painter (RIF) import | -- | CD-2614 | format | backlog B-038 |  |
-| NP-2395 | Wavelet Compressed Bitmap (WI) import and export | -- | CD-2628 | format | backlog B-038 |  |
-| NP-2396 | CALS Compressed Bitmap (CAL) import and export | -- | CD-2632 | format | backlog B-038 |  |
-| NP-2397 | Windows icon (ICO, EXE resource) import and export | -- | CD-2639 | format | backlog B-038 |  |
-| NP-2398 | FlashPix (FPX) import | -- | CD-2640 | format | backlog B-038 |  |
-| NP-2399 | GIMP (XCF) import with layers | -- | CD-2643 | format | backlog B-038 |  |
-| NP-2400 | MacPaint (MAC) import and export | -- | CD-2645 | format | backlog B-038 |  |
-| NP-2401 | Scitex CT (SCT) import | -- | CD-2654 | format | backlog B-038 |  |
-| NP-2402 | X PixMap (XPM) import and export | -- | CD-2656 | format | backlog B-038 |  |
-| NP-2403 | RAW develop dialog with previews, snapshots, and apply to all | -- | CD-2059, CD-2060, CD-2061, CD-2068, CD-2071 | core | backlog B-039 |  |
-| NP-2404 | RAW white balance, tone, and histogram | -- | CD-2062, CD-2063, CD-2064, CD-2065, CD-2066, CD-2067 | core | backlog B-039 |  |
-| NP-2405 | RAW sharpening and noise reduction | -- | CD-2069, CD-2070 | core | backlog B-039 |  |
-| NP-2406 | Camera RAW file import | -- | CD-2567, CD-2627 | format | backlog B-039 |  |
+| NP-2372 | FreeHand file import | AI-1004 | CD-2646 | format | plan D02 T18 §1 | legacy format |
+| NP-2373 | FXG save | AI-1010 | -- | format | plan D02 T18 §1 | removed from current Illustrator |
+| NP-2374 | Macintosh PICT import and export | AI-1024 | CD-2600 | format | plan D02 T18 §5 | legacy format |
+| NP-2375 | SWF (Flash) export | AI-1025 | CD-2618 | format | plan D02 T18 §1 | deprecated format |
+| NP-2376 | Microsoft Publisher (PUB) import | -- | CD-2585 | format | plan D02 T18 §2 |  |
+| NP-2377 | Corel DESIGNER and Micrografx Designer import | -- | CD-2586 | format | plan D02 T18 §4 |  |
+| NP-2378 | Visio (VSD) import | -- | CD-2622 | format | plan D02 T18 §2 |  |
+| NP-2379 | WordPerfect document text import and export | -- | CD-2625 | format | plan D02 T18 §7 |  |
+| NP-2380 | Corel ArtShow (CPX) import | -- | CD-2633 | format | plan D02 T18 §4 |  |
+| NP-2381 | Corel Presentations (SHW) import | -- | CD-2634 | format | plan D02 T18 §4 |  |
+| NP-2382 | Corel R.A.V.E. (CLK) import | -- | CD-2635 | format | plan D02 T18 §4 |  |
+| NP-2383 | Frame Vector Metafile (FMV) import and export | -- | CD-2641 | format | plan D02 T18 §6 |  |
+| NP-2384 | GEM Paint and GEM File import and export | -- | CD-2642 | format | plan D02 T18 §6 |  |
+| NP-2385 | Lotus PIC import | -- | CD-2644 | format | plan D02 T18 §6 |  |
+| NP-2386 | OS/2 MET metafile import and export | -- | CD-2647 | format | plan D02 T18 §5 |  |
+| NP-2387 | Picture Publisher 4 (PP4) import | -- | CD-2648 | format | plan D02 T18 §4 |  |
+| NP-2388 | PowerPoint (PPT) import | -- | CD-2650 | format | plan D02 T18 §3 |  |
+| NP-2389 | NAPLPS (NAP) metafile import | -- | CD-2651 | format | plan D02 T18 §6 |  |
+| NP-2390 | Legacy spreadsheet and word processor import (WB, WK, WSD) | -- | CD-2655 | format | plan D02 T18 §7 |  |
+| NP-2391 | DCS (Desktop Color Separation) import and export | AI-0948 | CD-2638 | print | plan D02 T18 §8 |  |
+| NP-2392 | Corel PHOTO-PAINT (CPT) import and export | -- | CD-2580 | format | plan D02 T18 §8 |  |
+| NP-2393 | Kodak Photo CD (PCD) import | -- | CD-2599 | format | plan D02 T18 §8 |  |
+| NP-2394 | Corel Painter (RIF) import | -- | CD-2614 | format | plan D02 T18 §8 |  |
+| NP-2395 | Wavelet Compressed Bitmap (WI) import and export | -- | CD-2628 | format | plan D02 T18 §8 |  |
+| NP-2396 | CALS Compressed Bitmap (CAL) import and export | -- | CD-2632 | format | plan D02 T18 §8 |  |
+| NP-2397 | Windows icon (ICO, EXE resource) import and export | -- | CD-2639 | format | plan D02 T18 §8 |  |
+| NP-2398 | FlashPix (FPX) import | -- | CD-2640 | format | plan D02 T18 §8 |  |
+| NP-2399 | GIMP (XCF) import with layers | -- | CD-2643 | format | plan D02 T18 §9 |  |
+| NP-2400 | MacPaint (MAC) import and export | -- | CD-2645 | format | plan D02 T18 §8 |  |
+| NP-2401 | Scitex CT (SCT) import | -- | CD-2654 | format | plan D02 T18 §8 |  |
+| NP-2402 | X PixMap (XPM) import and export | -- | CD-2656 | format | plan D02 T18 §8 |  |
+| NP-2403 | RAW develop dialog with previews, snapshots, and apply to all | -- | CD-2059, CD-2060, CD-2061, CD-2068, CD-2071 | core | plan D02 T18 §10 |  |
+| NP-2404 | RAW white balance, tone, and histogram | -- | CD-2062, CD-2063, CD-2064, CD-2065, CD-2066, CD-2067 | core | plan D02 T18 §10 |  |
+| NP-2405 | RAW sharpening and noise reduction | -- | CD-2069, CD-2070 | core | plan D02 T18 §10 |  |
+| NP-2406 | Camera RAW file import | -- | CD-2567, CD-2627 | format | plan D02 T18 §10 |  |
 
 ## Export for screens and web
 

@@ -40,13 +40,15 @@ track: N12
 - -> XREF: D02 T11 §5 -- the envelope mesh the mockups warp through
 - -> XREF: D02 T11 §11 -- the lens framework the bitmap effect lens joins
 - -> XREF: D02 T11 §17 -- Live Paint for editing expanded trace results
-- -> XREF: D01 T04 §3 -- the Lab, CMYK, and duotone conversions the §1 mode commands wait for
+- -> XREF: D01 T04 §3 -- the Lab, CMYK, and duotone conversions the §9 mode commands wait for
 - -> XREF: D02 T15 §9 -- AI upsampling, shown disabled on the §5 adjustments page until it ships
 - -> XREF: D02 T15 §10 -- AI-assisted tracing that extends §5
 - -> XREF: D01 T02 §3 -- single-instance forwarding Edit Bitmap in Imago relies on
 - -> XREF: D02 T14 §9 -- EPS placement, which keeps placed EPS linked through §7 and reads its low-resolution proxy setting
 - -> XREF: D02 T13 §7 -- honors the `nodus:overprint-black` flag §1's Convert to Bitmap writes
 - -> XREF: D02 T13 §8 -- prints raster effects at the §2 Document Raster Effects Settings resolution
+- -> XREF: D01 T09 §2 -- the suite 8BF filter host §10 runs third-party plug-in filters through
+- -> XREF: D01 T09 §4 -- the shared plug-in manager page §10 hosts under Options, Plug-ins
 - -> XREF: D01 T06 §1 -- the pixel engine extensions cites §2: Nodus's effect gallery lists the new effects from the registry with no Nodus change
 - -> XREF: D03 T09 §10 -- Imago parity layers cites §7: Nodus's `LinkManager`, moved to `Photon.Core` by D03 T09 §10
 
@@ -68,25 +70,27 @@ track: N12
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | Bitmap objects: crop, resample, rasterize, convert to bitmap, color mask, and straighten | D01 T03 §2, D02 T06 §14 |  [ ]   |
-|   2   |   §2    | The effect stack on objects: FX panel, effect gallery, preview, flatten, and effect lenses | D01 T03 §1, D02 T11 §1 |  [ ]   |
-|   3   |   §3    | Adjustments in Nodus: the Image Adjustment Lab and adjustment presets | D01 T03 §5, §2 |  [ ]   |
-|   4   |   §4    | The tracing engine: outline tracing, color quantization, and stacking | D01 T03 §3 |  [ ]   |
-|   5   |   §5    | Centerline tracing, the Image Trace panel, and PowerTRACE | §4 |  [ ]   |
-|   6   |   §6    | Photo artwork: Pointillizer, PhotoCocktail, Object Mosaic, and mockups | §1, D02 T11 §5 |  [ ]   |
-|   7   |   §7    | The Links panel and linked sources | §1 |  [ ]   |
-|   8   |   §8    | SVG filter effects | §2 |  [ ]   |
+|   1   |   §1    | Bitmap objects: crop, resample, rasterize, convert to bitmap, straighten, and perspective | D01 T03 §2, D02 T06 §14 |  [ ]   |
+|   2   |   §9    | Bitmap color modes, monochrome coloring, and the bitmap color mask | §1, D01 T03 §3, D02 T09 §2 |  [ ]   |
+|   3   |   §2    | The effect stack on objects: FX panel, effect gallery, preview, flatten, and effect lenses | D01 T03 §1, D02 T11 §1 |  [ ]   |
+|   4   |   §10    | Third-party plug-in filters in Nodus | §2, D01 T09 §2, D01 T09 §4 |  [ ]   |
+|   5   |   §3    | Adjustments in Nodus: the Image Adjustment Lab and adjustment presets | D01 T03 §5, §2 |  [ ]   |
+|   6   |   §4    | The tracing engine: outline tracing, color quantization, and stacking | D01 T03 §3 |  [ ]   |
+|   7   |   §5    | Centerline tracing, the Image Trace panel, and PowerTRACE | §4 |  [ ]   |
+|   8   |   §6    | Photo artwork: Pointillizer, PhotoCocktail, Object Mosaic, and mockups | §1, D02 T11 §5 |  [ ]   |
+|   9   |   §7    | The Links panel and linked sources | §1 |  [ ]   |
+|   10   |   §8    | SVG filter effects | §2 |  [ ]   |
 
 ---
 
-## 1. Bitmap Objects: Crop, Resample, Rasterize, Convert to Bitmap, Color Mask, and Straighten
+## 1. Bitmap Objects: Crop, Resample, Rasterize, Convert to Bitmap, Straighten, and Perspective
 
-A designer who places a photo expects to fix it where it sits: crop it, straighten it, reduce it, mask a background color, or turn vector art into a bitmap. This section gives `SvgImage` decoded pixels and a color mode and wires every bitmap command onto the `D01 T03` engine, each as one undoable command whose result survives save and reopen as a live value rather than a flattened guess. `D02 T06 §14` (File, Place and `SvgImage` rendering) is relocated into Phase 9 ahead of this section, so this section starts from placed, visible images. Lab, CMYK, and Duotone modes are present but disabled naming `D01 T04 §3`, which ships their conversions in Phase 10. Catalog: NP-1753 to NP-1783 (31 features: crop image and its resolution, make pixel perfect, rasterize and convert to bitmap with dithered, overprint black, anti-aliasing, and transparent background options, convert to bitmap on export, bitmap info on the status bar, crop to an irregular shape and node editing of the boundary, the Resample dialog, straighten with its crop, grid, and remember options, monochrome coloring, the bitmap color mask panel with hide or show, tolerance, save and open, and edit color, the seven bitmap modes, and correct perspective).
+A designer who places a photo expects to fix it where it sits: crop it, straighten it, correct its perspective, reduce it, or turn vector art into a bitmap. This section gives `SvgImage` decoded pixels and a color mode and wires the geometry and rasterize commands onto the `D01 T03` engine, each as one undoable command whose result survives save and reopen as a live value rather than a flattened guess. `D02 T06 §14` (File, Place and `SvgImage` rendering) is relocated into Phase 9 ahead of this section, so this section starts from placed, visible images. The color-mode commands, monochrome coloring, and the bitmap color mask are §9, split out of this section on 2026-09-27 (operator decision to split packed sections). Catalog: NP-1753 to NP-1769 and NP-1783 (18 features: crop image and its resolution, make pixel perfect, rasterize and convert to bitmap with dithered, overprint black, anti-aliasing, and transparent background options, convert to bitmap on export, bitmap info on the status bar, crop to an irregular shape and node editing of the boundary, the Resample dialog, straighten with its crop, grid, and remember options, and correct perspective).
 
-**Fidelity:** new build, no baseline; captured to `docs/captures/nodus/bitmaps/` (Bitmaps menu, Resample, Straighten Image, Correct Perspective, Convert to Bitmap, Black and White, and Paletted dialogs, Bitmap Mask panel), main window changes to `docs/captures/nodus/main-window/`.
-**Job:** a designer can place a photo and fix, reduce, and mask it without leaving Nodus. Consumer: the document and the SVG writer.
-**Treatment:** modal dialogs with live preview, the color mask as a dockable panel, crop handles and boundary node editing on the canvas. Cheaper substitute that fails the checkpoint: a single Image Properties dialog with numeric fields and no preview.
-**Chrome:** consume the shared theme, the icon catalog, the suite history (`D01 T02 §4`), the settings store (`D01 T02 §2`), `Photon.UI` numeric controls, and the Nodus color picker from `D02 T09 §2`. Do not add a second color picker or a Nodus-local undo.
+**Fidelity:** new build, no baseline; captured to `docs/captures/nodus/bitmaps/` (Bitmaps menu, Resample, Straighten Image, Correct Perspective, and Convert to Bitmap dialogs), main window changes to `docs/captures/nodus/main-window/`.
+**Job:** a designer can place a photo and crop, straighten, reduce, and rasterize it without leaving Nodus. Consumer: the document and the SVG writer.
+**Treatment:** modal dialogs with live preview, and crop handles and boundary node editing on the canvas. Cheaper substitute that fails the checkpoint: a single Image Properties dialog with numeric fields and no preview.
+**Chrome:** consume the shared theme, the icon catalog, the suite history (`D01 T02 §4`), the settings store (`D01 T02 §2`), and `Photon.UI` numeric controls. Do not add a Nodus-local undo.
 
 **Requires:** display-session -- the dialogs, on-canvas crop handles, and boundary node editing need an interactive desktop
 
@@ -105,21 +109,14 @@ A designer who places a photo expects to fix it where it sits: crop it, straight
 - [ ] Add the Convert to Bitmap options dithered, anti-aliasing, and transparent background (CD-1962, CD-1964, CD-1965). Done when: tests assert a transparent background leaves alpha 0 outside the art and anti-aliasing off yields only the art's exact colors on its edges.
 - [ ] Add Always overprint black, stored as `nodus:overprint-black="true"` on the result for `D02 T13 §7` to honor (CD-1963). Done when: the attribute round-trips through save and reopen.
 - [ ] Offer the same option set (size, resolution, color mode, dithering) in the raster export dialog from `D02 T06 §14` through one shared `RasterizeOptions` view model (CD-1966). Done when: a test asserts both dialogs bind the same view model type.
-- [ ] Add the Bitmaps, Mode submenu with RGB (24-bit) and Grayscale (8-bit) commands and the Black and White (1-bit) dialog over `D01 T03 §3` `BilevelConverter` with every method and intensity (CD-2021, CD-2003, CD-1995). Done when: each command changes `ColorMode`, re-encodes the image as RGB, gray, or 1-bit PNG, and records `nodus:color-mode`.
-- [ ] Add the Paletted (8-bit) dialog: palette type, color count, dithering and intensity, range sensitivity, the processed palette editor, and presets saved under `%LOCALAPPDATA%\Rizonesoft\Nodus\presets\paletted\` (CD-2009). Done when: a preset saved in the dialog reloads with every field and the result is an indexed PNG with at most the chosen count of colors. Cheaper substitute: a fixed 256-color palette.
-- [ ] Show Lab (24-bit), CMYK (32-bit), and Duotone (8-bit) in the Mode submenu disabled with the tooltip `Planned: D01 T04 §3` (CD-2022, CD-2023, CD-2004). Done when: `MenuAuditTests` finds each item disabled with a tooltip that `python scripts/todo-graph.py resolve 'D01 T04 §3'` resolves.
-- [ ] Color a 1-bit bitmap from the palette: a click sets the background color and a right-click the foreground, stored as `nodus:mono-colors` with the recolored PNG as the fallback (CD-1988). Done when: reopening restores the two colors as live values and an external reader shows the recolored image.
-- [ ] Add the Bitmap Mask panel (`Views/Panels/BitmapMaskPanel.xaml`): up to 10 color slots, hide or show selected colors, tolerance per slot, an eyedropper, and Edit Color through the Nodus color picker (CD-1990, CD-1991, CD-1992, CD-1994). Done when: masking the white backdrop of the product fixture at tolerance 10 makes it transparent on the canvas and the capture shows the panel.
-- [ ] Save and open masks as Nodus JSON and read Corel `.ini` masks, with a committed `.ini` fixture under `tests/fixtures/nodus/bitmaps/masks/` (CD-1993). Done when: `BitmapMaskFileTests` read the `.ini` fixture into the expected slots and round-trip the JSON.
-- [ ] Persist the mask as `nodus:color-mask` parameters with the masked PNG as the fallback. Done when: reopening restores the slots live and an external reader shows the masked image.
 - [ ] Add Object, Make Pixel Perfect (`MakePixelPerfectCommand`) snapping path nodes and bitmap bounds to the 1-pixel grid at 72 ppi document units (AI-0210). Done when: a test asserts every node of the fixture lands on a whole pixel and undo restores the original coordinates.
 - [ ] Run every bitmap command over 1 second off the UI thread with status-strip progress and Cancel, never blocking the UI. Done when: a driven run cancels a resample of the 24-megapixel fixture, the image is unchanged, and the cancel log line is quoted.
 - [ ] Record every command in the history with one Serilog Information line (`Bitmap {Command} on {ElementId}: {Summary}`). Done when: `BitmapCommandTests` assert one history entry and one log line per command with a Serilog test logger.
-- [ ] Add the reopen test `BitmapRoundTripTests`: crop, crop to shape, mode, mask, and mono colors survive save and reopen as live values, not as the fallback. Done when: every case passes against the fixtures in `tests/fixtures/nodus/svg/bitmaps/`.
-- [ ] Update the Nodus user guide page `docs/user/nodus/bitmaps.md` in the same commit. Done when: the page documents every command, dialog, and panel control.
-- [ ] Commit: `"nodus: bitmap objects with crop, resample, straighten, modes, and color masks"`
+- [ ] Add the reopen test `BitmapRoundTripTests`: crop, crop to shape, straighten, and rasterize results survive save and reopen as live values, not as the fallback. Done when: every case passes against the fixtures in `tests/fixtures/nodus/svg/bitmaps/`.
+- [ ] Update the Nodus user guide page `docs/user/nodus/bitmaps.md` in the same commit. Done when: the page documents every command and dialog of this section.
+- [ ] Commit: `"nodus: bitmap objects with crop, resample, straighten, perspective, and rasterize"`
 
-**Test checkpoint:** Format fidelity proof plus driven run: `dotnet test Photon.slnx` exits 0 with `WicBitmapCodecTests`, `BitmapCommandTests`, `BitmapMaskFileTests`, and `BitmapRoundTripTests` reporting (each command, its undo, and SVG reopen as a live value against `tests/fixtures/nodus/svg/bitmaps/`), and a driven session places, straightens, masks, and converts the photo fixture to paletted with captures committed under `docs/captures/nodus/bitmaps/` and the log lines quoted. Cheaper substitute that fails: mode changes applied only to the on-screen preview, which the reopen test rejects.
+**Test checkpoint:** Format fidelity proof plus driven run: `dotnet test Photon.slnx` exits 0 with `WicBitmapCodecTests`, `BitmapCommandTests`, and `BitmapRoundTripTests` reporting (each command, its undo, and SVG reopen as a live value against `tests/fixtures/nodus/svg/bitmaps/`), and a driven session places, crops, straightens, and rasterizes the photo fixture with captures committed under `docs/captures/nodus/bitmaps/` and the log lines quoted. Cheaper substitute that fails: a crop applied only to the on-screen preview, which the reopen test rejects.
 
 ## 2. The Effect Stack on Objects: FX Panel, Effect Gallery, Preview, Flatten, and Effect Lenses
 
@@ -336,12 +333,66 @@ SVG filters are the one kind of effect that survives in a browser, so web design
 
 **Test checkpoint:** Format fidelity proof: `dotnet test Photon.slnx` exits 0 with `SvgFilterTests` rendering each fixture in `tests/fixtures/nodus/svg/filters/` against its Inkscape 1.4 golden within the stated tolerance and round-tripping it element by element; a driven apply of a preset is captured to `docs/captures/nodus/svg-filters/`. Cheaper substitute that fails: dropping `<filter>` on save, which the round-trip test rejects.
 
+## 9. Bitmap Color Modes, Monochrome Coloring, and the Bitmap Color Mask
+
+Placed photos and scans arrive in the wrong mode: a logo scan needs 1-bit, a web graphic needs a palette, and a product shot needs its white backdrop masked away. This section, split out of §1 on 2026-09-27 (operator decision to split packed sections), adds the Bitmaps, Mode submenu over `D01 T03 §3`'s converters, monochrome coloring, and the Bitmap Mask panel, each as one undoable command that survives save and reopen as a live value with a rasterized fallback for other readers. Lab, CMYK, and Duotone modes are present but disabled naming `D01 T04 §3`, which ships their conversions in Phase 10. Catalog: NP-1770 to NP-1782 (13 features: monochrome coloring, the bitmap color mask panel with hide or show, tolerance, save and open, and edit color, and the seven bitmap modes).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/nodus/bitmaps/` (Black and White and Paletted dialogs, Bitmap Mask panel), main window changes to `docs/captures/nodus/main-window/` (Mode submenu).
+**Job:** a designer can change a bitmap's color mode, color a monochrome bitmap, and mask colors away without leaving Nodus. Consumer: the document and the SVG writer.
+**Treatment:** the Mode submenu with modal Black and White and Paletted dialogs with live preview, and the color mask as a dockable panel. Cheaper substitute that fails the checkpoint: a fixed 256-color conversion with no dialog and no mask panel.
+**Chrome:** consume §1's bitmap objects and codec, the shared theme, the icon catalog, the suite history (`D01 T02 §4`), the settings store (`D01 T02 §2`), and the Nodus color picker from `D02 T09 §2`. Do not add a second color picker.
+
+**Requires:** display-session -- the mode dialogs and the Bitmap Mask panel need an interactive desktop
+
+- [ ] Add the Bitmaps, Mode submenu with RGB (24-bit) and Grayscale (8-bit) commands and the Black and White (1-bit) dialog over `D01 T03 §3` `BilevelConverter` with every method and intensity (CD-2021, CD-2003, CD-1995). Done when: each command changes `ColorMode`, re-encodes the image as RGB, gray, or 1-bit PNG, and records `nodus:color-mode`.
+- [ ] Add the Paletted (8-bit) dialog: palette type, color count, dithering and intensity, range sensitivity, the processed palette editor, and presets saved under `%LOCALAPPDATA%\Rizonesoft\Nodus\presets\paletted\` (CD-2009). Done when: a preset saved in the dialog reloads with every field and the result is an indexed PNG with at most the chosen count of colors. Cheaper substitute: a fixed 256-color palette.
+- [ ] Show Lab (24-bit), CMYK (32-bit), and Duotone (8-bit) in the Mode submenu disabled with the tooltip `Planned: D01 T04 §3` (CD-2022, CD-2023, CD-2004). Done when: `MenuAuditTests` finds each item disabled with a tooltip that `python scripts/todo-graph.py resolve 'D01 T04 §3'` resolves.
+- [ ] Color a 1-bit bitmap from the palette: a click sets the background color and a right-click the foreground, stored as `nodus:mono-colors` with the recolored PNG as the fallback (CD-1988). Done when: reopening restores the two colors as live values and an external reader shows the recolored image.
+- [ ] Add the Bitmap Mask panel (`Views/Panels/BitmapMaskPanel.xaml`): up to 10 color slots, hide or show selected colors, tolerance per slot, an eyedropper, and Edit Color through the Nodus color picker (CD-1990, CD-1991, CD-1992, CD-1994). Done when: masking the white backdrop of the product fixture at tolerance 10 makes it transparent on the canvas and the capture shows the panel.
+- [ ] Save and open masks as Nodus JSON and read Corel `.ini` masks, with a committed `.ini` fixture under `tests/fixtures/nodus/bitmaps/masks/` (CD-1993). Done when: `BitmapMaskFileTests` read the `.ini` fixture into the expected slots and round-trip the JSON.
+- [ ] Persist the mask as `nodus:color-mask` parameters with the masked PNG as the fallback. Done when: reopening restores the slots live and an external reader shows the masked image.
+- [ ] Run the mode conversions and the mask over 1 second off the UI thread with status-strip progress and Cancel, each recorded as one history entry with one Serilog Information line (`Bitmap {Command} on {ElementId}: {Summary}`). Done when: `BitmapModeCommandTests` assert one history entry and one log line per command and a cancelled paletted conversion leaves the image unchanged.
+- [ ] Add the reopen test `BitmapModeRoundTripTests`: mode, mask, and mono colors survive save and reopen as live values, not as the fallback. Done when: every case passes against the fixtures in `tests/fixtures/nodus/svg/bitmaps/`.
+- [ ] Extend `docs/user/nodus/bitmaps.md` with the Mode submenu, the mode dialogs, monochrome coloring, and the Bitmap Mask panel. Done when: the page documents every control of this section.
+- [ ] Commit: `"nodus: bitmap color modes, monochrome coloring, and color masks"`
+
+**Test checkpoint:** Format fidelity proof plus driven run: `dotnet test Photon.slnx` exits 0 with `BitmapModeCommandTests`, `BitmapMaskFileTests`, and `BitmapModeRoundTripTests` reporting (each mode command, its undo, the Corel `.ini` mask read, and SVG reopen as a live value), `MenuAuditTests` finds the Lab, CMYK, and Duotone items disabled naming `D01 T04 §3`, and a driven session converts the photo fixture to paletted and masks its backdrop with captures committed under `docs/captures/nodus/bitmaps/`. Cheaper substitute that fails: mode changes applied only to the on-screen preview, which the reopen test rejects.
+
+
+## 10. Third-Party Plug-in Filters in Nodus
+
+CorelDRAW's Bitmaps, Plug-ins menu and Illustrator's Photoshop-compatible effects run third-party 8BF filters on placed images. This section consumes the suite plug-in host (`D01 T09 §2` for 8BF filters, `D01 T09 §4` for the plug-in manager): installed filters appear under Effects, Plug-ins by category, run on a bitmap object's pixels in the isolated host process, and join the `§2` effect stack as a raster effect whose parameters (the plug-in's scripting descriptor) persist so the stack re-renders on reopen; a plug-in without a scripting descriptor applies destructively as one undoable command and says so. Nothing runs inside the Nodus process. Catalog: NP-2027 (1 feature: third-party bitmap plug-in filters, their folders, and the plug-ins effects category).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/nodus/plugins/` (Effects, Plug-ins menu, the plug-in manager page in Options, a running plug-in's own dialog over the canvas).
+**Job:** a designer can run the 8BF filters they already own on a bitmap in Nodus and tune them again later. Consumer: the `§2` effect stack, the renderer, and the SVG writer.
+**Treatment:** an Effects, Plug-ins submenu grouped by the plug-ins' own categories, the shared plug-in manager page under Options, Plug-ins, and the plug-in's own dialog shown by the host. Cheaper substitute that fails the checkpoint: loading 8BF DLLs into the Nodus process, which the crash-isolation test catches.
+**Chrome:** consume the `D01 T09 §4` plug-in manager page and the `D01 T09 §2` filter client, the `§2` effect stack, and the suite history. Do not add a Nodus-local plug-in loader or a second manager dialog.
+
+**Requires:** display-session -- plug-in dialogs and the manager page need an interactive desktop
+
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Effects/PluginFilterEffectNode.cs`, registering each `D01 T09 §2` detected filter as a raster effect in the `D02 T11 §1` registry under `plugin:<vendor>/<name>` with its scripting descriptor as parameters. Done when: `PluginFilterEffectTests` register the committed test 8BF (built by `D01 T09 §2`) and find it in the registry.
+- [ ] Add the Effects, Plug-ins submenu grouped by the PiPL category, rebuilt when the manager's folder list changes (CD-2092, CD-2113). Done when: a view-model test adds a folder and asserts the submenu gains the test filter under its category.
+- [ ] Apply a filter to a bitmap object through `IPluginFilterClient.RunAsync` with the object's pixels at their native resolution and the selection-shaped mask the object's crop boundary gives. Done when: the test filter's invert output on the photo fixture equals its committed golden pixel for pixel.
+- [ ] Filters with a scripting descriptor join the `§2` stack as a live entry that re-runs the plug-in with the stored descriptor on render. Done when: `PluginFilterRoundTripTests` save, reopen, and re-render the entry with pixels equal to the first run.
+- [ ] Filters without a descriptor apply destructively as one undoable command, marked in the FX panel as applied, with the original bytes restored by undo. Done when: a test asserts the undo restores the original image by SHA-256.
+- [ ] Store the live entry as `nodus:plugin-filter` parameters (plug-in identity, version, descriptor as base64) with the rendered PNG as the fallback. Done when: reopening on a machine without the plug-in shows the fallback and a report line naming the missing plug-in.
+- [ ] Vector objects run a plug-in through `§2`'s rasterize-then-filter path at the Document Raster Effects Settings resolution. Done when: a test applies the test filter to a rectangle and asserts the effect entry renders at the document resolution.
+- [ ] Add the Options, Plug-ins page hosting the `D01 T09 §4` manager (folders, detected list, support status, enable and disable, allow unknown) for Nodus under `Nodus.Plugins.*` (CD-2112). Done when: a settings readback asserts the folder list and the page capture is committed.
+- [ ] A plug-in that crashes, hangs past its timeout, or refuses the image mode is reported by name, the object is unchanged, and the plug-in is disabled with a message as `D01 T09 §1` decides. Done when: the crashing test plug-in leaves the document unchanged and the refusal sentence is asserted.
+- [ ] Show progress and Cancel for a plug-in run over 1 second; Cancel sends the abort to the host and leaves the object unchanged. Done when: a driven run cancels the slow test plug-in and the log line is quoted.
+- [ ] Log `Plug-in filter {Name} applied to {ElementId} ({Live|Applied})` and `Plug-in filter {Name} refused: {Reason}`. Done when: both lines are asserted with a Serilog test logger.
+- [ ] Write `docs/user/nodus/plugins.md`: installing filters, the folders page, live versus applied entries, and what a missing plug-in does to a reopened document. Done when: the page covers every control on the menu and the page.
+- [ ] Commit: `"nodus: third-party 8BF plug-in filters on the shared host"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~PluginFilterEffectTests|FullyQualifiedName~PluginFilterRoundTripTests"` exits 0 with the committed test 8BF (invert, slow, and crashing variants from `D01 T09 §2`) producing its golden pixels, surviving save and reopen as a live entry, and the crashing variant leaving the document unchanged; a driven session runs the invert filter from Effects, Plug-ins on the photo fixture with the capture committed under `docs/captures/nodus/plugins/` and the log line quoted. Cheaper substitute that fails: loading the 8BF into the Nodus process, which the crashing variant turns into a Nodus crash.
+
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
 - [ ] `dotnet test Photon.slnx` exits 0 with every `tests/Photon.Nodus.Tests/Bitmaps/`, `Effects/`, `Tracing/`, `Mosaic/`, `Links/`, and `Svg/SvgFilterTests` class reporting
 - [ ] Every fixture under `tests/fixtures/nodus/trace/` and `tests/fixtures/nodus/svg/filters/` carries `reference.txt` naming its oracle (potrace 1.16, Inkscape 1.4, Chromium) and version
 - [ ] Every ported potrace file under `src/Nodus/Photon.Nodus.Core/Tracing/Potrace/` carries the GPL-2.0-or-later notice, and `docs/dev/decisions.md` records the port
+- [ ] `docs/user/nodus/plugins.md` exists and every plug-in refusal names the plug-in and its reason (log lines quoted)
 - [ ] Every disabled control on this file's surfaces names a section that `python scripts/todo-graph.py resolve` resolves (`D01 T04 §3`, `D02 T15 §9`, `D02 T14 §6`, `D02 T14 §14`)
 - [ ] Captures under `docs/captures/nodus/bitmaps/`, `effects-panel/`, `adjustments/`, `trace/`, `mosaics/`, `links/`, and `svg-filters/` are committed, and the matching `docs/user/nodus/` pages exist
 - [ ] `python scripts/todo-graph.py validate` clean

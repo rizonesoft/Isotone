@@ -33,7 +33,7 @@ track: I17
 - libwebp 1.5, libavif 1.2 with dav1d and libaom, libheif 1.19 with libde265 and x265, libjxl 0.11, OpenJPEG 2.5, OpenEXR 3.3, PDFium, and libjpeg-turbo 3.1, with their CLIs as oracles
 - ISO 32000-2 (PDF 2.0), ISO 15930 (PDF/X-1a, X-3, X-4), Adobe EPS 3.0 (Technical Note 5002), MS-EMF and MS-WMF, DICOM PS3.5, PS3.10, and PS3.15 (2025), FITS 4.0, IPTC Photo Metadata Standard 2024.1, XMP Specification Parts 1 to 3
 - Test-time oracles only: exiftool 13, ImageMagick 7.1, OpenImageIO 3.0 `oiiotool`, dcmtk 3.6 `dcm2pnm`, DirectXTex `texconv`, Ghostscript 10.x, MuPDF `mutool draw`, Inkscape 1.4
-- [`todo/backlog.md`](../backlog.md) -- B-022 (`legacy-imago-7.2-7.3`) is promoted into §5 and leaves the backlog in the integration commit; B-038 (Nodus legacy raster formats) can consume §4 and §14 when promoted; B-044 (animation) owns animated GIF, WebP, and APNG; B-045 (Affinity files) relies on §3 as its interop path
+- [`todo/backlog.md`](../backlog.md) -- B-022 (`legacy-imago-7.2-7.3`) is promoted into §5 and leaves the backlog in the integration commit; B-038 (Nodus legacy raster formats) was promoted on 2026-09-27 into `D02 T18 §8` and `D02 T18 §9`, whose XCF import moves §4's decoding core to `Photon.Core`; B-044 (animation) owns animated GIF, WebP, and APNG; B-045 (Affinity files) relies on §3 as its interop path
 - -> XREF: D01 T02 §3 -- single-instance file-open forwarding §1 routes through
 - -> XREF: D01 T02 §5 -- the atomic writer every writer here saves through
 - -> XREF: D01 T03 §2 -- mipmap and export resampling in §8
@@ -92,10 +92,14 @@ track: I17
 - -> XREF: D03 T19 §1 -- provenance written as XMP through §10
 - -> XREF: D04 T01 §11 -- Lumen's sidecars consume §10's EXIF and IPTC code
 - -> XREF: D03 T08 §6 -- the XMP history log §10 exports
-- -> XREF: D03 T08 §8 -- the SVG and EMF paste entries §7 enables
+- -> XREF: D03 T08 §8 -- the SVG and EMF paste entries §16 enables
 - -> XREF: D03 T14 §6 -- EXIF lens data from §10 for its profile match
 - -> XREF: D03 T15 §6 -- EXIF exposure values from §10 for bracket EVs
 - -> XREF: D03 T20 §5 -- the Files and Export preference pages that surface the `Imago.Files.*`, `Imago.Formats.*`, and export metadata keys
+- -> XREF: D01 T08 §1 -- the XPM, Pixar PXR, and Scitex CT codecs §8 and §9 register instead of writing their own
+- -> XREF: D01 T08 §3 -- the ICO and CUR codec (moved from `D02 T14 §12`) §8 registers
+- -> XREF: D02 T18 §8 -- Nodus's DCS reader and writer, which §9 moves to `Photon.Core` beside the EPS writer
+- -> XREF: D02 T18 §9 -- Nodus's XCF import, which moves §4's decoding core to `Photon.Core`
 
 ## Outcome
 
@@ -107,32 +111,34 @@ track: I17
 
 **Adjacency:** list=applicable @ D03 T17 §12; document=applicable @ D03 T17 §7; settings=applicable @ D03 T17 §1; reporting=applicable @ D03 T17 §3; notifications=applicable @ D03 T17 §1; permissions=applicable @ D03 T17 §7; audit=applicable @ D03 T17 §1; exchange=applicable @ D03 T17 §1; reverse=applicable @ D03 T17 §1
 
-**Adjacency rationale:** The lists are the format list and matrix (§1), the document history dialog (§12), the PDF presets manager (§7), and metadata templates (§10). Photoshop PDF, PDF export, and EPS (§7) are the documents a print shop receives; printing itself is `D03 T18 §6`. Settings are `Imago.Formats.<Format>.*` per codec and `Imago.Files.*`, each with a default and a named consumer. Every import returns a report naming what was rasterized, dropped, or mapped (§3 for PSD, §4 for XCF), and File Info shows the metadata (§10). Reads and writes over one second show progress and Cancel, and exports raise a completion notification (§1). Read-only targets, absent Ghostscript, missing native codecs, encrypted PDFs, and online reads without a user action are refused by name (§1, §5, §7, §12). One Serilog Information line per open, save, place, and export with format, size, and milliseconds is the audit trail (§1). Every format in this file is exchange. Revert to saved, Save a Copy never changing the document, and undoable places and metadata edits are the reverse (§1, §10).
+**Adjacency rationale:** The lists are the format list and matrix (§1), the document history dialog (§12), the PDF presets manager (§7), and metadata templates (§10). Photoshop PDF and PDF export (§7) and EPS (§16) are the documents a print shop receives; printing itself is `D03 T18 §6`. Settings are `Imago.Formats.<Format>.*` per codec and `Imago.Files.*`, each with a default and a named consumer. Every import returns a report naming what was rasterized, dropped, or mapped (§3 for PSD, §4 for XCF), and File Info shows the metadata (§10). Reads and writes over one second show progress and Cancel, and exports raise a completion notification (§1). Read-only targets, absent Ghostscript, missing native codecs, encrypted PDFs, and online reads without a user action are refused by name (§1, §5, §7, §12, §16). One Serilog Information line per open, save, place, and export with format, size, and milliseconds is the audit trail (§1, §15). Every format in this file is exchange. Revert to saved, Save a Copy never changing the document, and undoable places and metadata edits are the reverse (§1, §10).
 
 ## Implementation Order
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | File menu extensions: open, place, revert, close, and save a copy | D03 T08 §1, D03 T09 §10 |  [ ]   |
-|   2   |   §12   | Create from clipboard, screenshots, scanners, URLs, and archives | §1 |  [ ]   |
-|   3   |   §2    | PSD and PSB write: structure | D03 T04 §5, D03 T09 §9 |  [ ]   |
-|   4   |   §13   | PSD write: live content and editability options | §2, D03 T16 §1, D03 T11 §1, D03 T09 §8, D03 T09 §11 |  [ ]   |
-|   5   |   §3    | PSD read fidelity: live adjustments, styles, text, and smart objects | §13 |  [ ]   |
-|   6   |   §4    | GIMP XCF read | D03 T08 §1, D03 T14 §1, D03 T16 §7, D03 T09 §10 |  [ ]   |
-|   7   |   §14   | GIMP XCF write | §4 |  [ ]   |
-|   8   |   §5    | Modern web formats: WebP, AVIF, HEIF, JPEG XL, JPEG 2000, QOI, JPEG XR | D03 T04 §1 |  [ ]   |
-|   9   |   §6    | HDR and scientific formats | D03 T15 §4 |  [ ]   |
-|  10   |   §7    | Document and vector formats: PDF, Photoshop PDF, EPS, SVG, and metafiles | D03 T16 §5, D02 T13 §14, D02 T14 §9 |  [ ]   |
-|  11   |   §8    | Common and legacy raster formats I | D03 T04 §1 |  [ ]   |
-|  12   |   §9    | Legacy raster formats II and text and resource exports | §8 |  [ ]   |
-|  13   |   §11   | JPEG, PNG, and TIFF option extensions | D03 T04 §3 |  [ ]   |
-|  14   |   §10   | Metadata: EXIF, IPTC, XMP, and File Info | D03 T08 §1 |  [ ]   |
+|   1   |   §1    | File menu extensions: open, revert, close, and save a copy | D03 T08 §1, D03 T09 §10, D03 T14 §11 |  [ ]   |
+|   2   |   §15   | Place, export and overwrite semantics, notes import, Load Files into Stack, and watermarks | §1, D03 T09 §9 |  [ ]   |
+|   3   |   §12   | Create from clipboard, screenshots, scanners, URLs, and archives | §1 |  [ ]   |
+|   4   |   §2    | PSD and PSB write: structure | D03 T04 §5, D03 T09 §9 |  [ ]   |
+|   5   |   §13   | PSD write: live content and editability options | §2, D03 T16 §1, D03 T11 §1, D03 T09 §8, D03 T09 §11 |  [ ]   |
+|   6   |   §3    | PSD read fidelity: live adjustments, styles, text, and smart objects | §13 |  [ ]   |
+|   7   |   §4    | GIMP XCF read | D03 T08 §1, D03 T14 §1, D03 T16 §7, D03 T16 §11, D03 T09 §10 |  [ ]   |
+|   8   |   §14   | GIMP XCF write | §4 |  [ ]   |
+|   9   |   §5    | Modern web formats: WebP, AVIF, HEIF, JPEG XL, JPEG 2000, QOI, JPEG XR | D03 T04 §1 |  [ ]   |
+|  10   |   §6    | HDR and scientific formats | D03 T15 §4 |  [ ]   |
+|  11   |   §7    | Document formats: PDF import, Photoshop PDF, and PDF export | D03 T16 §5, D02 T13 §14, D02 T14 §9, §15 |  [ ]   |
+|  12   |   §16   | PostScript, EPS, SVG, and metafiles | §7, D03 T16 §5 |  [ ]   |
+|  13   |   §8    | Common and legacy raster formats I | D03 T04 §1, D01 T08 §1, D01 T08 §3 |  [ ]   |
+|  14   |   §9    | Legacy raster formats II and text and resource exports | §8, D01 T08 §1, D02 T18 §8 |  [ ]   |
+|  15   |   §11   | JPEG, PNG, and TIFF option extensions | D03 T04 §3, D03 T16 §10 |  [ ]   |
+|  16   |   §10   | Metadata: EXIF, IPTC, XMP, and File Info | D03 T08 §1 |  [ ]   |
 
 ---
 
-## 1. File Menu Extensions: Open, Place, Revert, Close, and Save a Copy
+## 1. File Menu Extensions: Open, Revert, Close, and Save a Copy
 
-Every later section adds a codec, and without one registry each would add its own filter string and menu entry, which is how today's dialogs came to list WebP with no codec behind it. This section builds the `FormatRegistry` every codec registers with and generates the File menu, the dialogs' filters, and the format matrix from it, then adds the commands the competitors have around opening and saving: vector routing, Open As, open as smart object or layers, Place Embedded and Linked, Revert, Close Others and All, Save a Copy with content options, export and overwrite semantics, PDF notes import, and Load Files into Stack. The open document is never written by any of these except an explicit save. Catalog: IP-1704 to IP-1721 (18 features: open including vector files, drag to open, revert, close and close all, the open dialog, Open As, open as smart object or layers, shell open and drag to place, close others, Save a Copy, save content options, the format list and matrix, revert as GIMP's row, export and overwrite semantics, place embedded and linked, notes from PDF or FDF, place embedded as Affinity's row, and Load Files into Stack).
+Every later section adds a codec, and without one registry each would add its own filter string and menu entry, which is how today's dialogs came to list WebP with no codec behind it. This section builds the `FormatRegistry` every codec registers with and generates the File menu, the dialogs' filters, and the format matrix from it, then adds the commands the competitors have around opening and saving: vector routing, Open As, open as smart object or layers, Revert, Close Others and All, and Save a Copy with content options. Placing, export and overwrite semantics, PDF notes import, Load Files into Stack, and watermark placement are §15's, split from this section on 2026-09-27 (operator decision to split the packed sections). The open document is never written by any of these except an explicit save. Catalog: IP-1704 to IP-1716 (13 features: open including vector files, drag to open, revert, close and close all, the open dialog, Open As, open as smart object or layers, shell open and drag to place, close others, Save a Copy, save content options, the format list and matrix, and revert as GIMP's row).
 
 **Fidelity:** `docs/captures/imago/main-window/` for the File menu, extended; new build, no baseline for the format matrix and Save a Copy dialogs, captured to `docs/captures/imago/file-menu/`.
 **Job:** a user gets any file in as a document, layer, or smart object and gets copies out without disturbing the open document. Consumer: the document tabs, the Layers panel, and the file on disk.
@@ -141,13 +147,13 @@ Every later section adds a codec, and without one registry each would add its ow
 
 **Requires:** display-session -- driving the File menu, dialogs, and drops needs an interactive desktop
 
-**Freeze check:** Save a Copy writes through `AtomicFileWriter` to the chosen path and never to the open document's own path without the overwrite prompt; the document's path and dirty state are unchanged after it; saving over an imported non-native file shows the lossy-format notice before writing and Cancel writes nothing; a failed or interrupted write leaves any existing target byte-identical; opening, placing, and reverting never open a source file for writing. Fixture source: `tests/fixtures/imago/file-menu/` (created by this section) and `tests/fixtures/save-over/`.
+**Freeze check:** Save a Copy writes through `AtomicFileWriter` to the chosen path and never to the open document's own path without the overwrite prompt; the document's path and dirty state are unchanged after it; a failed or interrupted write leaves any existing target byte-identical; opening and reverting never open a source file for writing. Fixture source: `tests/fixtures/imago/file-menu/` (created by this section) and `tests/fixtures/save-over/`.
 
 - [ ] Extend `IImageFormat` with a `FormatCapabilities` record (extensions, magic bytes, read and write support, modes and depths, and what it carries: layers, alpha, spot, notes, ICC) in `src/Imago/Photon.Imago.FileFormats/FormatCapabilities.cs` (IP-1714). Done when: the existing PNG, JPEG, TIFF, native, and PSD formats declare their capabilities and a test lists them.
 - [ ] Add `src/Imago/Photon.Imago.FileFormats/FormatRegistry.cs`: registration, lookup by extension and by magic bytes, and generated filter strings (All Readable plus one per format). Done when: `FormatRegistryTests` assert the generated filter lists every registered reader and a PNG renamed `.jpg` opens as PNG by its magic bytes.
 - [ ] Delete the hard-coded `FileFilters` and `ExportFormats` strings in `IFileDialogService` and route every open, save, and export dialog through the registry. Done when: `grep -rn "\*\.webp" src/Imago` finds no string literal and the dialogs list only registered formats.
 - [ ] Wire File, Open (IP-1704, IP-1708) through the Windows common file dialog with All Readable and per-format filters; browse, search, bookmarks, columns, and hidden files come from the common dialog itself, recorded in `docs/user/imago/files.md`. Done when: a driven open of each fixture opens it in a new tab.
-- [ ] Route vector files (SVG, PDF, EPS, AI) to the import dialogs `D03 T17 §7` registers; until that section lands, those extensions are refused with a message naming it. Done when: `python scripts/todo-graph.py resolve 'D03 T17 §7'` resolves and a test asserts the refusal text names the section.
+- [ ] Route vector files to the import dialogs `D03 T17 §7` (PDF) and `D03 T17 §16` (SVG, EPS, AI) register; until each lands, its extensions are refused with a message naming it. Done when: `python scripts/todo-graph.py resolve 'D03 T17 §7'` and `python scripts/todo-graph.py resolve 'D03 T17 §16'` resolve and a test asserts each refusal text names its section.
 - [ ] Add Open As (IP-1709), which forces a chosen format regardless of extension. Done when: Open As PNG on a `.dat` copy of a PNG fixture opens it.
 - [ ] Add Open as Smart Object and Open as Layers (IP-1710) through `D03 T09 §9`. Done when: a driven Open as Smart Object yields one smart object layer whose content equals the file.
 - [ ] Route shell open, drag and drop onto the window to open or onto a document to place, and single-instance forwarding through `D01 T02 §3` (IP-1705, IP-1711). Done when: a driven drop of two files opens two tabs and a drop onto an open document places a layer.
@@ -157,21 +163,15 @@ Every later section adds a codec, and without one registry each would add its ow
 - [ ] Add the content options (IP-1714): layers, alpha channels, spot colors, notes, and ICC profile, each enabled only when the chosen format's capabilities carry it. Done when: choosing JPEG disables Layers with a tooltip naming what JPEG cannot carry.
 - [ ] Add the format matrix dialog (IP-1715) generated from the registry (bit depth and mode support per format) with a customize list stored in `Imago.Formats.Visible`. Done when: hiding a format removes it from the dialogs without a restart and the capture shows the matrix.
 - [ ] Add `Imago.Files.LegacySaveAs` (default false), restoring Photoshop's legacy Save As that lists every writable format. Done when: with the setting on, Save As lists non-native formats.
-- [ ] Add export and overwrite semantics (IP-1717): `Imago.Files.SaveNativeOnly` (GIMP's rule; default false), and File, Overwrite <name> and Export To <name> for imported files. Done when: with the setting on, Save offers only `.imago` and Overwrite <name> writes the imported format.
-- [ ] Show the lossy-format notice before saving over an imported non-native file ("Saving over <name> as JPEG loses layers and quality. Save anyway?"). Done when: a test asserts the notice and that Cancel writes nothing.
-- [ ] Add File, Place Embedded (IP-1718, IP-1720) through `D03 T09 §9` with the placement preferences resize to canvas, always create smart object, and skip transform. Done when: placing a larger fixture with resize to canvas fits it inside the canvas.
-- [ ] Add File, Place Linked (IP-1718) through `D03 T09 §10`. Done when: editing the linked file on disk updates the placed layer after the link refresh.
-- [ ] Add a PDF page picker for placing PDF files, which `D03 T17 §7` enables when its PDFium importer lands; until then placing a PDF is refused naming that section. Done when: the refusal text names the section and it resolves.
-- [ ] Add File, Import, Notes (IP-1719): PDF text annotations read through PdfPig (Apache-2.0, already in the suite since `D02 T14 §2`) into `D03 T08 §5` notes, and FDF through a small own parser on PdfPig's tokenizer. Done when: a PDF fixture with three annotations imports three notes with their text and positions.
-- [ ] Add File, Load Files into Stack (IP-1721): one layer per file, optional auto-align through `D03 T15 §5`, and optional convert to smart object. Done when: loading three fixtures yields three layers named after the files, aligned when the option is on.
 - [ ] Register the SVG writer of `D03 T16 §8` as a write-only format, so the SVG export appears in the generated lists. Done when: the Save a Copy format list contains SVG.
+- [ ] Register the Photoshop format plug-ins (`.8bi`) that `D01 T09 §3` hosts as `FormatRegistry` entries through the `D03 T14 §11` adapter, each named with its plug-in and marked third-party in the format matrix; a plug-in format that fails in the host is refused by name and never falls back silently to another codec. Done when: `FormatRegistryTests.PluginFormat` registers a stub plug-in format entry, the generated filter lists it with its plug-in name, and a failing stub is refused by name.
 - [ ] Show progress with Cancel on the status strip for any read or write over one second, and a completion notification for exports. Done when: a driven save of a 100-megapixel fixture shows progress and Cancel leaves the target unchanged.
-- [ ] Log one Serilog Information line per open, save, and place (`{Action} {Format} {Path} {Width}x{Height} in {ElapsedMs} ms`) as the audit trail, and name the history steps "Place Embedded", "Place Linked", and "Revert". Done when: a Serilog test logger asserts each line.
-- [ ] Commit fixtures under `tests/fixtures/imago/file-menu/` (a PDF with annotations, an FDF, three stack images, a mislabeled PNG) with `reference.txt`. Done when: every fixture carries its note.
-- [ ] Commit captures under `docs/captures/imago/file-menu/` and the extended `docs/captures/imago/main-window/`, and write `docs/user/imago/files.md`. Done when: every File menu command appears in a capture and the page documents it.
+- [ ] Log one Serilog Information line per open and save (`{Action} {Format} {Path} {Width}x{Height} in {ElapsedMs} ms`) as the audit trail, and name the history step "Revert". Done when: a Serilog test logger asserts each line.
+- [ ] Commit fixtures under `tests/fixtures/imago/file-menu/` (a mislabeled PNG, a `.dat` copy of a PNG, and one fixture per registered format) with `reference.txt`. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/file-menu/` and the extended `docs/captures/imago/main-window/`, and write `docs/user/imago/files.md`. Done when: every File menu command this section adds appears in a capture and the page documents it.
 - [ ] Commit: `"imago: the File menu on one format registry"`
 
-**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~FormatRegistryTests"` exits 0, asserting the generated filter lists every registered reader and the matrix matches each codec's declaration; a driven run opens, places linked, reverts, and saves a copy of the fixtures with captures committed and the unchanged source hash quoted. Cheaper substitute that fails: keeping hard-coded filters, which the registry test catches when a codec is added.
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~FormatRegistryTests"` exits 0, asserting the generated filter lists every registered reader and the matrix matches each codec's declaration; a driven run opens, reverts, and saves a copy of the fixtures with captures committed and the unchanged source hash quoted. Cheaper substitute that fails: keeping hard-coded filters, which the registry test catches when a codec is added.
 
 ## 12. Create from Clipboard, Screenshots, Scanners, URLs, and Archives
 
@@ -191,7 +191,7 @@ Users start documents from whatever is at hand: the clipboard, a screenshot, a s
 - [ ] Add SharpCompress (MIT) for bz2 and xz, with a new `docs/dev/decisions.md` row naming the license and that .NET reads neither format. Done when: `ArchiveOpenTests` open `.png.bz2` and `.png.xz` to identical pixels.
 - [ ] Add File, Open Location (IP-1724): http and https through `HttpClient` only on the user's command, with `Imago.Files.OpenLocation.MaxMegabytes` (default 512), a content-type check, progress, and Cancel, plus `file:` URIs. Done when: `OpenLocationTests` fetch from a local `HttpListener` and refuse an oversize response by name.
 - [ ] Add ftp locations through FluentFTP (MIT) with a `docs/dev/decisions.md` row; if the row declines the package, ftp URLs are refused by name. Done when: the decision row exists and a test covers the chosen behavior.
-- [ ] Add File, New from Clipboard (IP-1726) for PNG, DIBV5 with alpha, and DIB flavors; the SVG flavor is disabled with a tooltip naming `D03 T17 §7`, whose rasterizer enables it. Done when: a test puts a DIBV5 with alpha on the clipboard and the new document keeps the alpha.
+- [ ] Add File, New from Clipboard (IP-1726) for PNG, DIBV5 with alpha, and DIB flavors; the SVG flavor is disabled with a tooltip naming `D03 T17 §16`, whose rasterizer enables it. Done when: a test puts a DIBV5 with alpha on the clipboard and the new document keeps the alpha.
 - [ ] Add File, Create, Screenshot (IP-1727) through `Windows.Graphics.Capture` for a window, the whole screen, or one monitor. Done when: a driven capture of a known window yields a document of its size.
 - [ ] Add the screenshot options: region by an overlay, include decorations, pointer composited from `GetCursorInfo`, and a delay, with the document tagged with the monitor's profile through `D01 T04 §1`; selection delay is not available on Windows, documented in `docs/user/imago/acquire.md`. Done when: a capture with the pointer option contains the cursor image and the document carries the monitor profile.
 - [ ] Add Copy Image Location and Show in Explorer (IP-1728). Done when: a test asserts the clipboard text equals the document path.
@@ -309,7 +309,7 @@ GIMP's XCF is fully documented and GIMP is the oracle, so Imago reads it with it
 - [ ] Read the `icc-profile`, comment, and `gimp-image-metadata` parasites, keeping every unknown parasite for §14. Done when: the profile bytes equal the fixture's and an unknown parasite survives in the document model.
 - [ ] Map GIMP legacy and default layer modes to Imago blend modes, reporting unmapped modes by name. Done when: a one-layer-per-mode fixture maps every mode or names it in the report.
 - [ ] Read the `gimp-text-layer` parasite (markup) into `D03 T16 §1` text layers, keeping pixels and reporting when a font is missing. Done when: a text fixture imports its string and font live, and a missing-font fixture imports pixels with a report line.
-- [ ] Read GIMP 3.2 link layers into `D03 T09 §10` linked layers and vector layers into `D03 T16 §7`. Done when: both fixtures import live.
+- [ ] Read GIMP 3.2 link layers into `D03 T09 §10` linked layers and vector layers into `D03 T16 §11`. Done when: both fixtures import live.
 - [ ] Read GIMP 3 non-destructive filter stacks into `D03 T14 §1` live filters through the `D01 T06 §1` GEGL op-id map; unknown ops stay as pixels with a report line. Done when: a fixture with a Gaussian blur filter imports a live blur with equal parameters.
 - [ ] Open compressed XCF (`.xcf.gz`, `.xcf.bz2`, `.xcf.xz`) through §12's archive readers. Done when: each compressed fixture composites like the uncompressed one.
 - [ ] Register XCF read with §1's registry, returning the import report. Done when: File, Open lists XCF.
@@ -334,7 +334,7 @@ Imago writes XCF with the same structures §4 reads, choosing the lowest version
 - [ ] Write back every unknown parasite §4 read, unchanged. Done when: a round trip of a fixture with an unknown parasite keeps its bytes.
 - [ ] Register XCF write, with the compression and compatibility option descriptors, in §1's registry. Done when: Save a Copy lists XCF with both options.
 - [ ] Log one Serilog Information line per XCF write (version, compression, layers, milliseconds). Done when: a Serilog test logger asserts the line.
-- [ ] Record in `docs/dev/imago/xcf.md` that Nodus's backlog B-038 can consume this reader and writer when promoted, moving them to `Photon.Core`. Done when: the page names B-038 and this section.
+- [ ] Record in `docs/dev/imago/xcf.md` that Nodus's XCF import (`D02 T18 §9`, promoted from backlog B-038 on 2026-09-27) moves §4's decoding core to `Photon.Core` and consumes it, while this writer stays in Imago. Done when: the page names `D02 T18 §9`, §4, and this section.
 - [ ] Commit fixtures under `tests/fixtures/imago/xcf-write/` with `reference.txt` naming `gimp-console-3.2` and, where installed, `gimp-console-2.10`. Done when: every fixture carries its note.
 - [ ] Commit: `"imago: write GIMP XCF with a compatibility choice"`
 
@@ -395,7 +395,7 @@ VFX, astronomy, and medical users bring formats where every bit and every channe
 - [ ] Write half or float per channel class (IP-1766) and an export precision choice. Done when: a test asserts the pixel type per channel in the written header.
 - [ ] Read and write multichannel and multipart EXR as layers (IP-1754, IP-1769). Done when: a four-part fixture opens as four layers named after its parts and writes back with equal part names.
 - [ ] Add alpha associate, unpremultiply, and perturb zero alpha (IP-1768). Done when: a test asserts each option's effect on a pixel with zero alpha and nonzero color.
-- [ ] Add EXR color space from a filename affix (IP-1765, IP-1767) through the `D03 T11 §4` OCIO wrapper's configuration (the suite configuration choice of `D03 T18 §4` applies once it lands), converting on import and export. Done when: `plate_acescg.exr` converts to the working space within 1e-4 of `ociocheck` or `oiiotool --colorconvert`.
+- [ ] Add EXR color space from a filename affix (IP-1765, IP-1767) through the `D03 T11 §4` OCIO wrapper's configuration (the suite configuration choice of `D03 T18 §10` applies once it lands), converting on import and export. Done when: `plate_acescg.exr` converts to the working space within 1e-4 of `ociocheck` or `oiiotool --colorconvert`.
 - [ ] Add own Radiance HDR RGBE with RLE (IP-1757) in `src/Photon.Core/Formats/Radiance/`. Done when: fixtures decode within 1e-4 of `oiiotool` and round trips re-read equal.
 - [ ] Add own PFM (IP-1758). Done when: round trips are exact.
 - [ ] Add own PBM, PGM, PPM, and PAM, binary and ASCII, with 16-bit maxval (IP-1759). Done when: round trips are exact for every variant.
@@ -417,26 +417,24 @@ VFX, astronomy, and medical users bring formats where every bit and every channe
 
 **Test checkpoint:** Format fidelity proof: EXR, HDR, PFM, and FITS fixtures under `tests/fixtures/imago/hdr-formats/` decode within 1e-4 of OpenImageIO 3.0 `oiiotool` output and written files re-read equal per channel; DICOM fixtures match dcmtk 3.6 `dcm2pnm` within 1/255 at the same window; PNM round trips are exact; all reported by `dotnet test Photon.slnx --filter "Category=Fidelity&FullyQualifiedName~HdrFormats"`. Cheaper substitute that fails: one EXR compression, which the per-compression fixtures catch.
 
-## 7. Document and Vector Formats: PDF, Photoshop PDF, EPS, SVG, and Metafiles
+## 7. Document Formats: PDF Import, Photoshop PDF, and PDF Export
 
-Print shops receive PDF and EPS, and designers bring PDF, EPS, AI, SVG, and metafiles to rasterize. Imago rasterizes PDF with PDFium (the reference rasterizer; Nodus's PdfPig path builds vector objects, a different job), runs the user's own Ghostscript for PostScript (never bundled, because it is AGPL), and writes Photoshop PDF and EPS on the PDF, PostScript, SVG, metafile, and printer-marks code Nodus built (`D02 T13 §4`, `D02 T13 §10`, `D02 T13 §14` to `D02 T13 §16`, `D02 T14 §9`, `D02 T14 §11`), each moved into `Photon.Core` here as its second consumer. This section also enables the vector routing and PDF page picker §1 deferred to it and the SVG clipboard flavor §12 deferred to it. Catalog: IP-1772 to IP-1795 (24 features: PDF import options and import, PostScript, EPS, and AI import, Photoshop PDF save, the PDF presets manager, PDF compression, PDF output color, PDF security, PDF export options, EPS save, PostScript and EPS export, SVG import, WMF import, WMF and EMF export, PDF export compatibility and PDF/X, PDF export color and spots, optional content layers, fonts and links, printer marks, passwords and permissions, the rasterization policy, EPS level and minimize size, metafile export options, and the presets manager as Affinity's row).
+Print shops receive PDF, and designers bring PDF to rasterize. Imago rasterizes PDF with PDFium (the reference rasterizer; Nodus's PdfPig path builds vector objects, a different job) and writes Photoshop PDF on the PDF, PostScript, metafile, and printer-marks code Nodus built (`D02 T13 §4`, `D02 T13 §10`, `D02 T13 §14` to `D02 T13 §16`, `D02 T14 §9`, `D02 T14 §11`), each moved into `Photon.Core` here as its second consumer. This section also enables the PDF half of §1's vector routing and the PDF page picker §15 deferred to it. PostScript, EPS, AI, SVG, and metafiles are §16's, split from this section on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. Catalog: IP-1772, IP-1773, IP-1775 to IP-1780, IP-1786 to IP-1792, and IP-1795 (16 features: PDF import options and import, Photoshop PDF save, the PDF presets manager, PDF compression, PDF output color, PDF security, PDF export options, PDF export compatibility and PDF/X, PDF export color and spots, optional content layers, fonts and links, printer marks, passwords and permissions, the rasterization policy, and the presets manager as Affinity's row).
 
-**Fidelity:** new build, no baseline; captured to `docs/captures/imago/pdf-import/`, `docs/captures/imago/pdf-export/`, and `docs/captures/imago/eps/`.
-**Job:** a user rasterizes vector documents in and sends print-ready PDF and EPS out. Consumer: print shops, PDF readers, and PostScript RIPs.
-**Treatment:** a PDF import dialog (pages with thumbnails or images, crop box, size, resolution, mode, reverse, anti-aliasing, fill transparent, editable text), a PostScript import dialog, a Save Adobe PDF dialog with a presets manager and General, Compression, Output, Security, Marks, and Summary pages, EPS options, and metafile options. Cheaper substitute that fails the checkpoint: `SKDocument` PDF output.
-**Chrome:** consume the moved writer and presets, the moved Ghostscript runner, the `D01 T04 §1` output intents, and §1's registry. Do not add a second PDF writer.
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/pdf-import/` and `docs/captures/imago/pdf-export/`.
+**Job:** a user rasterizes PDF pages in and sends print-ready PDF out. Consumer: print shops, PDF readers, and preflight tools.
+**Treatment:** a PDF import dialog (pages with thumbnails or images, crop box, size, resolution, mode, reverse, anti-aliasing, fill transparent, editable text), and a Save Adobe PDF dialog with a presets manager and General, Compression, Output, Security, Marks, and Summary pages. Cheaper substitute that fails the checkpoint: `SKDocument` PDF output.
+**Chrome:** consume the moved writer, presets, standards enforcer, security handler, and printer-marks renderer, the `D01 T04 §1` output intents, and §1's registry. Do not add a second PDF writer.
 
 **Requires:** display-session -- the dialogs and captures need an interactive desktop
 
-**Freeze check:** Photoshop PDF, PDF, EPS, and metafile saves write through `AtomicFileWriter`; a failed or interrupted write leaves any existing target byte-identical; passwords never reach presets, settings, or logs; importing a PDF, EPS, AI, SVG, or metafile never opens the source for writing and Ghostscript runs with `-dSAFER`. Fixture source: `tests/fixtures/imago/pdf/`, `eps/`, and `metafile/` (created by this section).
+**Freeze check:** Photoshop PDF and PDF saves write through `AtomicFileWriter`; a failed or interrupted write leaves any existing target byte-identical; passwords never reach presets, settings, or logs; importing a PDF never opens the source for writing. Fixture source: `tests/fixtures/imago/pdf/` (created by this section).
 
 - [ ] Move first: the PDF writer of `D02 T13 §14` (`PdfContentWriter`, `PdfResourceBuilder`, `TrueTypeSubsetter`), its presets and standards of `D02 T13 §15` (`PdfPresetStore`, `PdfStandardEnforcer`), and its security of `D02 T13 §16` into `src/Photon.Core/Pdf/`, repointing Nodus. Done when: `grep -rn "class PdfContentWriter\|class PdfPresetStore" src` prints one path each, under `src/Photon.Core/`, and Nodus's PDF tests pass.
 - [ ] Move `GhostscriptBridge` (`D02 T14 §9`) and `PostScriptWriter` (`D02 T13 §10`) into `src/Photon.Core/Formats/PostScript/`, the EMF and WMF readers and writers of `D02 T14 §11` into `src/Photon.Core/Formats/Metafile/`, and `PrinterMarksRenderer` (`D02 T13 §4`) into `src/Photon.Core/Print/` for `D03 T18 §6`, repointing Nodus. Done when: one definition of each remains and Nodus's tests pass.
-- [ ] Move the SVG renderer into `src/Photon.Core/Vector/Svg/` beside the reader `D03 T16 §5` moved, repointing Nodus. Done when: one SVG renderer definition remains.
 - [ ] Add PDFium through a thin `LibraryImport` P/Invoke (`FPDF_LoadMemDocument`, `FPDF_RenderPageBitmapWithMatrix`) in `src/Photon.Core/Pdf/Import/`, built per RID with `SOURCE.txt`, with BSD-3-Clause and Apache-2.0 notices and a `docs/dev/decisions.md` row. Done when: the row names both licenses and a missing DLL is refused by name through `NativeCodecLoader`.
 - [ ] Add the PDF import dialog (IP-1772, IP-1773): pages with thumbnails or embedded images; media, crop, bleed, trim, or art box; size, resolution, mode, reverse order, anti-aliasing, fill transparent; and a password prompt for encrypted files. Done when: imports match `pdfium_test --png` at the same DPI within 1/255 and a wrong password is refused by name.
 - [ ] Import editable text from PdfPig text positions as `D03 T16 §1` text layers above the page (IP-1772). Done when: a one-line PDF imports a text layer whose string equals the PDF text.
-- [ ] Add PostScript, EPS, and AI import (IP-1774) through the moved runner with `-dSAFER`, `-dTextAlphaBits`, `-dGraphicsAlphaBits`, bounding box, and coloring; AI opens through its embedded PDF stream; an absent Ghostscript is refused by name; no AI export. Done when: an EPS fixture renders within the stated tolerance of Ghostscript 10.x and the absent-runner refusal is asserted.
 - [ ] Add the Save Adobe PDF dialog General page (IP-1775): presets, PDF/X-1a, X-3, and X-4, compatibility 1.4 to 2.0, preserve editing (the `.imago` package embedded as an attachment Imago reopens live), thumbnails, fast web view (linearized when the writer supports it, otherwise refused by name and recorded), and a Summary page. Done when: a preserve-editing PDF reopens in Imago with its layers live.
 - [ ] Add the PDF presets manager (IP-1776, IP-1795) on the moved `PdfPresetStore`: create, edit, import, export, and delete. Done when: a user preset round-trips through export and import.
 - [ ] Add the Compression page (IP-1777): downsampling, ZIP, JPEG, JPEG 2000 through §5's OpenJPEG, and 16 to 8 bit. Done when: PdfPig reads each image's filter as chosen.
@@ -449,37 +447,33 @@ Print shops receive PDF and EPS, and designers bring PDF, EPS, AI, SVG, and meta
 - [ ] Add embed and subset fonts, text as curves, and hyperlinks and bookmarks (IP-1789). Done when: PdfPig reads a subset font for a text layer and a bookmark per artboard.
 - [ ] Add printer marks (IP-1790) through `PrinterMarksRenderer`: crop, registration, color bars, and page information. Done when: the marks render as vector paths in the MuPDF `mutool draw` golden within 1 percent of pixels.
 - [ ] Add the rasterization policy for PDF, SVG, and EPS output (IP-1792): raster DPI, rasterize nothing, everything, or unsupported, and downsample images. Done when: a test asserts a vector shape stays a path under "nothing" and becomes an image under "everything".
-- [ ] Add EPS save (IP-1781, IP-1782, IP-1793) on the moved `PostScriptWriter`: TIFF preview 1 or 8 bit or none, ASCII85, binary, or JPEG encoding, halftone screen and transfer inclusion, vector data, size, offset, unit, rotation, PostScript level 2 or 3, and minimize size. Done when: a written EPS renders through Ghostscript within the stated tolerance of Imago's render.
-- [ ] Add SVG import (IP-1783) rasterized at a chosen size by the moved renderer, and enable §12's SVG clipboard flavor. Done when: an SVG fixture imports within 1/255 of Inkscape 1.4's render at the same size.
-- [ ] Add WMF and EMF import (IP-1784) rasterized at a chosen DPI through the moved readers. Done when: fixtures import within the stated tolerance of Inkscape 1.4's render.
-- [ ] Add WMF and EMF export (IP-1785, IP-1794): vector layers as records and raster layers as bitmap records, with enhanced metafile and clip transparency options. Done when: exported files re-import through Inkscape 1.4 within the stated tolerance.
-- [ ] Register every reader and writer with §1's registry, enabling §1's vector routing and its PDF page picker for Place, the SVG and EMF paste entries of `D03 T08 §8`, and SVG, PDF, and EPS placement in `D03 T09 §9`, removing each tooltip. Done when: File, Open on a PDF opens this section's dialog, placing a PDF shows the page picker, and the owning sections' disabled-state tests are updated to assert the enabled controls and pass.
-- [ ] Log one Serilog Information line per import and export with format, pages, and milliseconds, never a password. Done when: a Serilog test logger asserts the line and a password-leak test finds no password in logs, settings, or presets.
-- [ ] Commit fixtures under `tests/fixtures/imago/pdf/`, `eps/`, and `metafile/` with `reference.txt` naming `pdfium_test`, Ghostscript 10.x, MuPDF `mutool draw`, and Inkscape 1.4 with versions and commands. Done when: every fixture carries its note.
+- [ ] Register the PDF reader and the Photoshop PDF and PDF writers with §1's registry, enabling §1's vector routing for PDF, §15's PDF page picker for Place, and PDF placement in `D03 T09 §9`, removing each tooltip. Done when: File, Open on a PDF opens this section's dialog, placing a PDF shows the page picker, and the owning sections' disabled-state tests are updated to assert the enabled controls and pass.
+- [ ] Log one Serilog Information line per PDF import and export with format, pages, and milliseconds, never a password. Done when: a Serilog test logger asserts the line and a password-leak test finds no password in logs, settings, or presets.
+- [ ] Commit fixtures under `tests/fixtures/imago/pdf/` with `reference.txt` naming `pdfium_test` and MuPDF `mutool draw` with versions and commands. Done when: every fixture carries its note.
 - [ ] Record in `docs/dev/imago/pdf.md` that Acrobat preflight of PDF/X output is an operator check recorded as a risk, not a gate. Done when: the page names the risk and this section.
-- [ ] Commit captures under `docs/captures/imago/pdf-import/`, `pdf-export/`, and `eps/`, and write `docs/user/imago/pdf-eps.md`. Done when: every dialog page appears in a capture and the page documents it.
-- [ ] Commit: `"imago: PDF, Photoshop PDF, EPS, SVG, and metafiles on the shared writers"`
+- [ ] Commit captures under `docs/captures/imago/pdf-import/` and `pdf-export/`, and write `docs/user/imago/pdf-eps.md` with its PDF pages. Done when: every dialog page appears in a capture and the page documents it.
+- [ ] Commit: `"imago: PDF import, Photoshop PDF, and PDF export on the shared writer"`
 
-**Test checkpoint:** Format fidelity proof: PDF imports match `pdfium_test --png` at the same DPI within 1/255 and Ghostscript 10.x within a stated tolerance; written PDFs read back with PdfPig (optional content names, output intent, Separation names, encryption) and render against MuPDF `mutool draw` goldens within 1 percent of pixels; written EPS renders through Ghostscript within tolerance of Imago's render; EMF and WMF re-import through Inkscape 1.4 within tolerance; PDF/X conformance is proven by the moved enforcer's rule tests; all under `dotnet test Photon.slnx --filter "Category=Fidelity&FullyQualifiedName~Pdf|FullyQualifiedName~Eps|FullyQualifiedName~Metafile"`. Cheaper substitute that fails: `SKDocument`, which has no Separation color space or optional content.
+**Test checkpoint:** Format fidelity proof: PDF imports match `pdfium_test --png` at the same DPI within 1/255; written PDFs read back with PdfPig (optional content names, output intent, Separation names, encryption) and render against MuPDF `mutool draw` goldens within 1 percent of pixels; PDF/X conformance is proven by the moved enforcer's rule tests; Nodus's PDF, PostScript, and metafile tests pass after the moves; all under `dotnet test Photon.slnx --filter "Category=Fidelity&FullyQualifiedName~Pdf"`. Cheaper substitute that fails: `SKDocument`, which has no Separation color space or optional content.
 
 ## 8. Common and Legacy Raster Formats I
 
-Icons, cursors, textures, and the X11 and workstation formats are small and documented, and WIC lacks most of them, so Imago reads and writes them with own codecs and Nodus's raster codecs (`D02 T14 §12`) moved into `Photon.Core` as their second consumer; DDS block compression uses BCnEncoder.Net (MIT). Animated GIF is backlog B-044. Catalog: IP-1796 to IP-1813 (18 features: BMP, single-frame GIF, ICO, CUR, ANI, ICNS, DDS, DDS mipmaps, TGA, PCX and DCX, XBM, XPM, XWD, Sun raster, SGI, farbfeld, WBMP, and the GIMP 3 format additions).
+Icons, cursors, textures, and the X11 and workstation formats are small and documented, and WIC lacks most of them, so Imago reads and writes them with own codecs, Nodus's raster codecs (`D02 T14 §12`) moved into `Photon.Core` as their second consumer, and the ICO, CUR, and XPM codecs `D01 T08 §3` and `D01 T08 §1` already put there; DDS block compression uses BCnEncoder.Net (MIT). Animated GIF is backlog B-044. Catalog: IP-1796 to IP-1813 (18 features: BMP, single-frame GIF, ICO, CUR, ANI, ICNS, DDS, DDS mipmaps, TGA, PCX and DCX, XBM, XPM, XWD, Sun raster, SGI, farbfeld, WBMP, and the GIMP 3 format additions).
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/legacy-formats/`.
 **Job:** a user opens and writes icon, texture, and legacy raster files with their format's options. Consumer: the apps, engines, and systems reading the files.
 **Treatment:** one options page per writable format in §1's shell (BMP, GIF, ICO, CUR, ANI, DDS, TGA, XBM, SGI, Sun). Cheaper substitute that fails the checkpoint: routing everything through WIC, which lacks most of these.
-**Chrome:** consume the registry and the moved codecs. Do not add a second TGA or PCX codec.
+**Chrome:** consume the registry, the moved codecs, and the `D01 T08 §1` and `D01 T08 §3` codecs. Do not add a second TGA, PCX, ICO, CUR, or XPM codec.
 
 **Requires:** display-session -- the option pages need an interactive desktop
 
 **Freeze check:** Every writer here saves through `AtomicFileWriter`; a failed or interrupted write leaves any existing target byte-identical; an indexed or 1-bit target shows its conversion notice before writing and Cancel writes nothing. Fixture source: `tests/fixtures/imago/legacy-formats/` (created by this section).
 
-- [ ] Move first: `TgaCodec`, `PcxCodec`, the OS/2 BMP shim, and the CUR path of `D02 T14 §12` from `src/Nodus/Photon.Nodus.Core/Formats/Raster/` into `src/Photon.Core/Formats/Raster/`, repointing Nodus, and consume the WIC codec where `D03 T04 §1` placed it. Done when: `grep -rn "class TgaCodec\|class PcxCodec" src` prints one path each, under `src/Photon.Core/`.
+- [ ] Move first: `TgaCodec`, `PcxCodec`, and the OS/2 BMP shim of `D02 T14 §12` from `src/Nodus/Photon.Nodus.Core/Formats/Raster/` into `src/Photon.Core/Formats/Raster/`, repointing Nodus (its ICO and CUR codec already moved there with `D01 T08 §3`), and consume the WIC codec where `D03 T04 §1` placed it. Done when: `grep -rn "class TgaCodec\|class PcxCodec" src` prints one path each, under `src/Photon.Core/`.
 - [ ] Add BMP (IP-1796): RLE4 and RLE8, V4 and V5 color space info, 16-bit 565 and 555, 24, and 32 with alpha and bitfields, OS/2, and row order. Done when: each variant matches `magick <file> rgba:` exactly and writes decode exactly.
 - [ ] Add single-frame GIF (IP-1797): indexed conversion through `D01 T03 §3` and `D03 T11 §7`, interlace, and comment; animation is backlog B-044. Done when: a written GIF decodes in ImageMagick 7.1 exactly to the indexed pixels.
-- [ ] Add ICO (IP-1798): per-size BMP or PNG entries with PNG compression. Done when: a multi-size ICO round-trips every entry exactly.
-- [ ] Add CUR (IP-1799) with save type, PNG compression, and hot spot. Done when: the hot spot round-trips.
+- [ ] Register ICO (IP-1798) through the `D01 T08 §3` codec (per-size BMP or PNG entries with PNG compression) instead of writing a second one. Done when: a multi-size ICO round-trips every entry exactly.
+- [ ] Register CUR (IP-1799) through the `D01 T08 §3` codec with save type, PNG compression, and hot spot. Done when: the hot spot round-trips.
 - [ ] Add ANI (IP-1800): the RIFF `anih`, `rate`, `seq`, and INFO name and author chunks, with frames as layers. Done when: an ANI fixture opens one layer per frame and its frames match GIMP 3.2's export.
 - [ ] Add ICNS (IP-1801): an own reader and writer for PNG and JPEG 2000 entries (§5's OpenJPEG) with the color profile. Done when: an ICNS round-trips every entry and profile.
 - [ ] Add BCnEncoder.Net (MIT) to `Directory.Packages.props` with a `docs/dev/decisions.md` row naming the license. Done when: the row names this section.
@@ -488,7 +482,7 @@ Icons, cursors, textures, and the X11 and workstation formats are small and docu
 - [ ] Add TGA (IP-1804) through the moved codec: bits per pixel, RLE, and origin. Done when: round trips are exact.
 - [ ] Add PCX through the moved codec and an own DCX container (IP-1805). Done when: a DCX fixture opens one layer per page.
 - [ ] Add XBM (IP-1806): X10 or X11, prefix, comment, hot spot, and mask file. Done when: fixtures match GIMP 3.2's decode exactly and writes decode in GIMP exactly.
-- [ ] Add XPM (IP-1807) with the X11 color-name table (MIT). Done when: fixtures match GIMP 3.2's decode exactly.
+- [ ] Register XPM (IP-1807) through the `D01 T08 §1` codec (the X11 color-name table included there). Done when: fixtures match GIMP 3.2's decode exactly.
 - [ ] Add XWD (IP-1808). Done when: fixtures match ImageMagick 7.1 exactly.
 - [ ] Add Sun raster (IP-1809), standard or RLE. Done when: round trips are exact.
 - [ ] Add SGI (IP-1810): none, RLE, and aggressive RLE. Done when: round trips are exact and ImageMagick 7.1 decodes each write.
@@ -509,16 +503,16 @@ The long tail: Amiga, Pixar, prepress, camera, game, and hobby formats GIMP and 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/resource-exports/`.
 **Job:** a user opens old and game files and exports images as code, HTML, text art, or GIMP resources. Consumer: compilers, browsers, terminals, and GIMP reading the output.
 **Treatment:** option pages for C source, HTML table, colored HTML, ASCII art, DCS, TIM, and the GIMP resources. Cheaper substitute that fails the checkpoint: skipping the text exports.
-**Chrome:** consume the registry and the `D03 T12 §3` and `D03 T12 §10` resource readers. Do not add a second brush or pattern reader.
+**Chrome:** consume the registry, the `D03 T12 §3` and `D03 T12 §10` resource readers, the `D01 T08 §1` Pixar PXR and Scitex CT codecs, and Nodus's moved DCS code. Do not add a second brush or pattern reader, Pixar or Scitex CT codec, or DCS writer.
 
 **Requires:** display-session -- the option pages need an interactive desktop
 
 **Freeze check:** Every writer and exporter here saves through `AtomicFileWriter`; a failed or interrupted write leaves any existing target byte-identical; the open document is never changed by an export. Fixture source: `tests/fixtures/imago/legacy-formats-2/` (created by this section).
 
 - [ ] Add IFF ILBM read with HAM and EHB (IP-1814). Done when: fixtures match ImageMagick 7.1 exactly.
-- [ ] Add Pixar PXR read and write (IP-1815). Done when: round trips are exact.
-- [ ] Add Scitex CT write (IP-1816). Done when: ImageMagick 7.1 decodes the written file exactly.
-- [ ] Add Photoshop DCS 1.0 and 2.0 (IP-1817): single or multiple files with a composite, on §7's EPS writer. Done when: the plates of a written DCS 2.0 file render through Ghostscript within tolerance of the channel values.
+- [ ] Register Pixar PXR read and write (IP-1815) through the `D01 T08 §1` codec instead of writing a second one. Done when: round trips are exact.
+- [ ] Register Scitex CT write (IP-1816) through the `D01 T08 §1` codec instead of writing a second one. Done when: ImageMagick 7.1 decodes the written file exactly.
+- [ ] Move Nodus's DCS reader and writer (`D02 T18 §8`) into `src/Photon.Core/Formats/PostScript/` beside §7's moved EPS writer, repointing Nodus, and add Photoshop DCS 1.0 and 2.0 (IP-1817) on it: single or multiple files with a composite. Done when: one DCS writer definition remains, under `src/Photon.Core/`, Nodus's DCS tests pass, and the plates of a written DCS 2.0 file render through Ghostscript within tolerance of the channel values.
 - [ ] Add MPO read (IP-1818): the MPF index into layers. Done when: a two-image MPO opens two layers.
 - [ ] Add Paint Shop Pro read (IP-1819): layers and the selection shape from the published PSP file format description. Done when: a PSP fixture opens its layers within 1/255 of GIMP 3.2's import.
 - [ ] Add KiSS CEL read and write (IP-1820). Done when: round trips are exact and GIMP 3.2 decodes the write.
@@ -608,7 +602,7 @@ The three most common formats need their full option sets: arithmetic coding and
 - [ ] Add BigTIFF, pyramid sub-IFDs, and GeoTIFF tags kept from import. Done when: `tiffinfo` reports BigTIFF and the sub-IFD count, and the GeoTIFF tags of a fixture survive a round trip.
 - [ ] Add layered TIFF (IP-1838, IP-1842): Photoshop-style layers in tag 37724 through §2's PSD layer section, with save and crop layers and layer compression. Done when: ImageMagick 7.1 reads the layered TIFF's layers.
 - [ ] Add `Imago.Formats.Tiff.AskLayered` (IP-1843, default true) prompting before a layered TIFF save. Done when: a test asserts the prompt with the setting on and none with it off.
-- [ ] Add Photoshop data in JPEG and TIFF (IP-1839): APP13 and tag 34377 image resources for clipping paths (2000 to 2999, from `D03 T16 §5`'s clipping flag) and guides (1032). Done when: exiftool 13 reads the clipping path name and psd-tools' resource parser reads the guides.
+- [ ] Add Photoshop data in JPEG and TIFF (IP-1839): APP13 and tag 34377 image resources for clipping paths (2000 to 2999, from `D03 T16 §5`'s clipping flag through `D03 T16 §10`'s `ExportClippingPath`) and guides (1032). Done when: exiftool 13 reads the clipping path name and psd-tools' resource parser reads the guides.
 - [ ] Add CMYK JPEG, TIFF, and JPEG XL import and export with a CMYK profile (IP-1840) through `D01 T04 §1` and `D01 T04 §3`; PSD CMYK is §2 and §3's. Done when: a CMYK TIFF round-trips its channel values exactly with its profile.
 - [ ] Add the JPEG, PNG, and TIFF option pages with live preview and saved defaults, extending the `D03 T04 §2` JPEG dialog. Done when: the captures show each page and a changed default is used by the next save.
 - [ ] Commit fixtures under `tests/fixtures/imago/png-tiff-options/` with `reference.txt` naming `djpeg`, exiftool 13, `pngcheck` 3.0, libtiff 4.7, and ImageMagick 7.1. Done when: every fixture carries its note.
@@ -617,6 +611,61 @@ The three most common formats need their full option sets: arithmetic coding and
 
 **Test checkpoint:** Format fidelity proof: libjpeg-turbo `djpeg` and exiftool 13 confirm each JPEG option in written files, `pngcheck` 3.0 validates every PNG chunk and libpng decodes it exactly, libtiff 4.7 `tiffdump` confirms each TIFF tag and compression, and ImageMagick 7.1 reads the layered TIFF's layers, under `dotnet test Photon.slnx --filter "Category=Fidelity&FullyQualifiedName~JpegPngTiff"`. Cheaper substitute that fails: WIC's encoder, which cannot write arithmetic coding, cICP, or BigTIFF and fails those assertions.
 
+## 15. Place, Export and Overwrite Semantics, Notes Import, Load Files into Stack, and Watermarks
+
+Users bring other files into an open document (embedded or linked, a PDF page, annotations as notes, a folder of frames as a stack, a watermark at a fixed anchor) and expect GIMP's and Photoshop's rules for what Save does to a file that was imported rather than native. This section adds those commands on §1's registry and dialogs. Placing never opens a source file for writing, and overwriting an imported file warns before any loss. Split from §1 on 2026-09-27 (operator decision to split the packed sections). Catalog: IP-1717 to IP-1721 and IP-2383 (6 features: export and overwrite semantics, place embedded and linked, notes from PDF or FDF, place embedded as Affinity's row, Load Files into Stack, and watermark placement with saved images, anchors, keyed transparency, blend, and presets).
+
+**Fidelity:** `docs/captures/imago/file-menu/` (baseline from §1), extended; new build, no baseline for the watermark dialog, captured to `docs/captures/imago/watermark/`.
+**Job:** a user brings any file into the open document as a layer, a smart object, notes, a stack, or a watermark, and saves an imported file knowing what a lossy format drops. Consumer: the Layers panel, the `D03 T08 §5` notes, and the file on disk.
+**Treatment:** File, Place Embedded, Place Linked, Place Watermark, Import, Notes, and Load Files into Stack commands; a PDF page picker; a watermark dialog with an image list, an anchor grid, and presets; File, Overwrite <name> and Export To <name> for imported files with the lossy-format notice. Cheaper substitute that fails the checkpoint: Open followed by copy and paste, which loses the link and the placement preferences.
+**Chrome:** consume §1's registry and dialogs, `AtomicFileWriter`, the `D03 T09 §9` and `D03 T09 §10` smart objects, the settings store, and the suite history. Do not add a second file dialog service.
+
+**Requires:** display-session -- driving Place, the page picker, the watermark dialog, and drops needs an interactive desktop
+
+**Freeze check:** Overwrite <name> shows the lossy-format notice before writing and Cancel writes nothing; every write goes through `AtomicFileWriter`, and a failed or interrupted write leaves any existing target byte-identical; placing, importing notes, loading a stack, and placing a watermark never open a source file for writing (source hashes quoted); watermark presets are written through the settings store. Fixture source: `tests/fixtures/imago/file-menu/` (created by §1, extended here).
+
+- [ ] Add export and overwrite semantics (IP-1717): `Imago.Files.SaveNativeOnly` (GIMP's rule; default false), and File, Overwrite <name> and Export To <name> for imported files. Done when: with the setting on, Save offers only `.imago` and Overwrite <name> writes the imported format.
+- [ ] Show the lossy-format notice before saving over an imported non-native file ("Saving over <name> as JPEG loses layers and quality. Save anyway?"). Done when: a test asserts the notice and that Cancel writes nothing.
+- [ ] Add File, Place Embedded (IP-1718, IP-1720) through `D03 T09 §9` with the placement preferences resize to canvas, always create smart object, and skip transform. Done when: placing a larger fixture with resize to canvas fits it inside the canvas.
+- [ ] Add File, Place Linked (IP-1718) through `D03 T09 §10`. Done when: editing the linked file on disk updates the placed layer after the link refresh.
+- [ ] Add a PDF page picker for placing PDF files, which `D03 T17 §7` enables when its PDFium importer lands; until then placing a PDF is refused naming that section. Done when: the refusal text names the section and it resolves.
+- [ ] Add File, Import, Notes (IP-1719): PDF text annotations read through PdfPig (Apache-2.0, already in the suite since `D02 T14 §2`) into `D03 T08 §5` notes, and FDF through a small own parser on PdfPig's tokenizer. Done when: a PDF fixture with three annotations imports three notes with their text and positions.
+- [ ] Add File, Load Files into Stack (IP-1721): one layer per file, optional auto-align through `D03 T15 §5`, and optional convert to smart object. Done when: loading three fixtures yields three layers named after the files, aligned when the option is on.
+- [ ] Add File, Place Watermark (IP-2383) in `src/Imago/Photon.Imago.Desktop/Views/Files/WatermarkDialog.xaml`: a saved watermark image list (`Imago.Watermark.Images`), nine anchor positions with pixel offsets, a keyed transparency color with a tolerance, blend mode and opacity, and named presets in `Imago.Watermark.Presets`, placing the watermark as a new layer (a smart object through `D03 T09 §9` when embedding) as one undo step "Place Watermark", after ACDSee Photo Studio Ultimate 2027's Edit-mode Watermark tool (user guide, Watermark). Done when: `WatermarkPlacementTests` place a fixture watermark at the bottom-right anchor with a 16 px offset and keyed white, and assert the layer bounds, alpha 0 on the keyed pixels, and one history step. Cheaper substitute: a Place Embedded the user positions by hand, which the anchor test catches.
+- [ ] Log one Serilog Information line per place, import, stack load, watermark placement, and overwrite (`{Action} {Format} {Path} in {ElapsedMs} ms`), and name the history steps "Place Embedded", "Place Linked", and "Place Watermark". Done when: a Serilog test logger asserts each line.
+- [ ] Commit fixtures under `tests/fixtures/imago/file-menu/` (a PDF with annotations, an FDF, three stack images, a watermark PNG with a white key) with `reference.txt`. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/file-menu/` and `docs/captures/imago/watermark/`, and extend `docs/user/imago/files.md`. Done when: every command this section adds appears in a capture and the page documents it.
+- [ ] Commit: `"imago: place, export semantics, notes import, stacks, and watermarks"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~WatermarkPlacementTests"` exits 0, and a driven run places embedded and linked (editing the linked file on disk updates the layer after the link refresh), imports three PDF annotations as notes, loads three files into a stack, places a watermark at an anchor, and cancels an Overwrite at the lossy-format notice, with captures committed and every source hash quoted unchanged. Cheaper substitute that fails: Open followed by copy and paste, which the linked-update step catches.
+
+## 16. PostScript, EPS, SVG, and Metafiles
+
+Print shops still receive EPS, and designers bring EPS, AI, SVG, and metafiles to rasterize. This section runs the user's own Ghostscript for PostScript (never bundled, because it is AGPL), writes EPS on the PostScript writer §7 moved into `Photon.Core`, rasterizes SVG with Nodus's SVG renderer moved here as its second consumer, and reads and writes WMF and EMF through the metafile code §7 moved. It also enables the SVG, EPS, and AI half of §1's vector routing and the SVG clipboard flavor §12 deferred to it. Split from §7 on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. Catalog: IP-1774, IP-1781 to IP-1785, IP-1793, and IP-1794 (8 features: PostScript, EPS, and AI import, EPS save, PostScript and EPS export, SVG import, WMF import, WMF and EMF export, EPS level and minimize size, and metafile export options).
+
+**Fidelity:** new build, no baseline; captured to `docs/captures/imago/eps/` and `docs/captures/imago/metafile/`.
+**Job:** a user rasterizes EPS, AI, SVG, and metafiles in and sends EPS and metafiles out. Consumer: the document on import; PostScript RIPs and metafile readers on export.
+**Treatment:** a PostScript import dialog, an SVG size dialog, a metafile DPI dialog, EPS options, and metafile options. Cheaper substitute that fails the checkpoint: rasterizing EPS or SVG through WPF, which the Ghostscript and Inkscape comparisons catch.
+**Chrome:** consume the moved Ghostscript runner, `PostScriptWriter`, EMF and WMF code, and SVG renderer, and §1's registry and options shell. Do not add a second PostScript writer or SVG renderer.
+
+**Requires:** display-session -- the dialogs and captures need an interactive desktop
+
+**Freeze check:** EPS and metafile saves write through `AtomicFileWriter`; a failed or interrupted write leaves any existing target byte-identical; importing an EPS, AI, SVG, or metafile never opens the source for writing and Ghostscript runs with `-dSAFER`. Fixture source: `tests/fixtures/imago/eps/` and `metafile/` (created by this section).
+
+- [ ] Move the SVG renderer into `src/Photon.Core/Vector/Svg/` beside the reader `D03 T16 §5` moved, repointing Nodus. Done when: one SVG renderer definition remains.
+- [ ] Add PostScript, EPS, and AI import (IP-1774) through the moved runner with `-dSAFER`, `-dTextAlphaBits`, `-dGraphicsAlphaBits`, bounding box, and coloring; AI opens through its embedded PDF stream; an absent Ghostscript is refused by name; no AI export. Done when: an EPS fixture renders within the stated tolerance of Ghostscript 10.x and the absent-runner refusal is asserted.
+- [ ] Add EPS save (IP-1781, IP-1782, IP-1793) on the moved `PostScriptWriter`: TIFF preview 1 or 8 bit or none, ASCII85, binary, or JPEG encoding, halftone screen and transfer inclusion, vector data, size, offset, unit, rotation, PostScript level 2 or 3, and minimize size. Done when: a written EPS renders through Ghostscript within the stated tolerance of Imago's render.
+- [ ] Add SVG import (IP-1783) rasterized at a chosen size by the moved renderer, and enable §12's SVG clipboard flavor. Done when: an SVG fixture imports within 1/255 of Inkscape 1.4's render at the same size.
+- [ ] Add WMF and EMF import (IP-1784) rasterized at a chosen DPI through the moved readers. Done when: fixtures import within the stated tolerance of Inkscape 1.4's render.
+- [ ] Add WMF and EMF export (IP-1785, IP-1794): vector layers as records and raster layers as bitmap records, with enhanced metafile and clip transparency options. Done when: exported files re-import through Inkscape 1.4 within the stated tolerance.
+- [ ] Register the PostScript, EPS, AI, SVG, WMF, and EMF readers and the EPS, WMF, and EMF writers with §1's registry, enabling §1's vector routing for those files, the SVG and EMF paste entries of `D03 T08 §8`, and SVG and EPS placement in `D03 T09 §9`, removing each tooltip. Done when: File, Open on an EPS and an SVG opens their import dialogs, and the owning sections' disabled-state tests are updated to assert the enabled controls and pass.
+- [ ] Log one Serilog Information line per PostScript, SVG, and metafile import and export with format and milliseconds. Done when: a Serilog test logger asserts the line.
+- [ ] Commit fixtures under `tests/fixtures/imago/eps/` and `metafile/` with `reference.txt` naming Ghostscript 10.x and Inkscape 1.4 with versions and commands. Done when: every fixture carries its note.
+- [ ] Commit captures under `docs/captures/imago/eps/` and `docs/captures/imago/metafile/`, and extend `docs/user/imago/pdf-eps.md` with PostScript, EPS, SVG, and metafiles. Done when: every dialog appears in a capture and the page documents it.
+- [ ] Commit: `"imago: PostScript, EPS, SVG, and metafiles on the shared writers"`
+
+**Test checkpoint:** Format fidelity proof: EPS imports render within the stated tolerance of Ghostscript 10.x and the absent-runner refusal is asserted; a written EPS renders through Ghostscript within tolerance of Imago's render; SVG imports match Inkscape 1.4's render at the same size within 1/255; WMF and EMF imports match Inkscape 1.4 within tolerance and exported files re-import through Inkscape 1.4 within tolerance; all under `dotnet test Photon.slnx --filter "Category=Fidelity&FullyQualifiedName~Eps|FullyQualifiedName~Svg|FullyQualifiedName~Metafile"`. Cheaper substitute that fails: rasterizing through WPF, which the Ghostscript and Inkscape comparisons catch.
+
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
@@ -624,6 +673,6 @@ The three most common formats need their full option sets: arithmetic coding and
 - [ ] Every fixture folder this file creates carries `reference.txt` naming its oracle (psd-tools, GIMP, ImageMagick, OpenImageIO, dcmtk, DirectXTex, PDFium, Ghostscript, MuPDF, Inkscape, exiftool, libtiff, pngcheck, or a reference CLI) and version
 - [ ] `grep -rn "class PsdWriter\|class PdfContentWriter\|class GhostscriptBridge\|class WiaAcquireService\|class TgaCodec" src` prints one path each, all under `src/Photon.Core/`
 - [ ] `docs/dev/decisions.md` has a row with a GPL-3.0 check for every native library and package this file adds (libwebp, libavif, dav1d, libaom, libheif, libde265, x265, libjxl, OpenJPEG, OpenEXR, PDFium, libjpeg-turbo, SharpCompress, FluentFTP, BCnEncoder.Net, and the TIFF writer choice)
-- [ ] Every disabled control on this file's surfaces names a section that `python scripts/todo-graph.py resolve` resolves (`D03 T17 §7`, `D03 T17 §10`)
+- [ ] Every disabled control on this file's surfaces names a section that `python scripts/todo-graph.py resolve` resolves (`D03 T17 §7`, `D03 T17 §10`, `D03 T17 §15`, `D03 T17 §16`)
 - [ ] B-022 is gone from `todo/backlog.md`, and its source key `legacy-imago-7.2-7.3` is carried by §5 alone
 - [ ] `python scripts/todo-graph.py validate` clean
