@@ -1,0 +1,425 @@
+---
+schema_version: 1
+id: nodus-parity-workspace
+domain: 02-nodus
+status: draft
+title: "TODO-16 -- Nodus Parity: Workspace, Customization, Preferences, and Utilities"
+depends_on: []
+frozen: true
+track: N16
+---
+
+# TODO-16 -- Nodus Parity: Workspace, Customization, Preferences, and Utilities
+
+> **Goal:** Nodus reaches Illustrator 30.8 and CorelDRAW 2026 parity for the workspace a professional customizes and lives in: named workspaces with presets and import and export, a customizable toolbox, toolbars, property bar, status bar, menus, context menus, and shortcut sets, complete Preferences across general, selection and nodes, display, files, performance, and warnings, UI appearance, scaling, and diagnostics, the welcome screen and navigator (promoting backlog B-013, source `legacy-nodus-5.8-5.9`, into §7), pen, touch, and Surface Dial input, hints and a project timer, object data with find and replace objects, and QR codes and barcodes. It extends, never duplicates, the command palette (`D02 T06 §12`), the Preferences dialog and shortcut remapping (`D02 T06 §13`), accessibility (`D02 T06 §17`), and the shortcuts dialog and Help menu (`D02 T05 §2`, `D02 T05 §3`). The file is frozen because §5 moves document saves onto a background worker and adds a backup of the original before save.
+
+> [!IMPORTANT]
+> **Current state (verified 2026-09-26):** The main window's Window menu toggles five fixed panels through `Show*Panel` bindings in `src/Nodus/Bezier.Desktop/Views/MainWindowView.xaml`, and nothing saves a named arrangement. `Dirkster.AvalonDock` is referenced by `src/Nodus/Bezier.Desktop/Bezier.Desktop.csproj` but no view uses a `DockingManager` yet (tabs and dock layouts arrive with `D02 T06 §7`). `ShortcutManager` in `src/Nodus/Bezier.Core/Services/ShortcutManager.cs` already models profiles including an Illustrator set, remapping, conflicts, and JSON export, which §3 extends rather than replaces. Theming is the Catppuccin `ThemeManager` (`src/Nodus/Bezier.Core/Services/ThemeManager.cs`), which the suite theme of `D01 T01 §3` replaces before §6 adds brightness levels. Nodus has no welcome screen or navigator, no pen, stylus, or touch handling, and no QR or barcode library. The status strip shows one bound `StatusText`.
+<!-- claim: count "IsChecked=\"\{Binding Show[A-Za-z]*Panel\}\"" src/Nodus/Bezier.Desktop/Views/MainWindowView.xaml = 5 -->
+<!-- claim: count "Dirkster.AvalonDock\"" src/Nodus/Bezier.Desktop/Bezier.Desktop.csproj = 1 -->
+<!-- claim: count "Illustrator," src/Nodus/Bezier.Core/Services/ShortcutManager.cs = 1 -->
+<!-- claim: count "CatppuccinThemes" src/Nodus/Bezier.Core/Services/ThemeManager.cs = 2 -->
+<!-- claim: count "Navigator" src/Nodus/**/*.cs = 0 -->
+<!-- claim: count "Stylus" src/Nodus/**/*.cs = 0 -->
+<!-- claim: count "ZXing" src/Nodus/**/*.csproj = 0 -->
+<!-- claim: count "Text=\"\{Binding StatusText\}\"" src/Nodus/Bezier.Desktop/Views/MainWindowView.xaml = 1 -->
+
+## Inputs
+
+- [`standards/nodus.md`](../../standards/nodus.md) -- modifier conventions, the tool and command model, and icons every customization surface builds to
+- [`standards/shared.md`](../../standards/shared.md) -- settings, logging, atomic writes, and the refusal-message rules
+- [`docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md) -- the catalog rows NP-2551 to NP-2750 this file owns (per-section ranges in each context paragraph)
+- [`docs/legacy/nodus-roadmap.md`](../../docs/legacy/nodus-roadmap.md) -- phases 5.8 and 5.9, the source of backlog B-013 that §7 promotes
+- [`../backlog.md`](../backlog.md) -- B-013 (Onboarding and the navigator) is promoted into §7 and leaves the backlog in the same commit
+- -> XREF: D02 T06 §7 -- tabs and saved dock layouts that §1's workspaces serialize
+- -> XREF: D02 T06 §12 -- the command palette and command index §2 and §3 extend
+- -> XREF: D02 T06 §13 -- the Preferences dialog and shortcut remapping that §1, §3, §4, and §5 extend
+- -> XREF: D02 T06 §17 -- the accessibility and scaling audit that runs over §6 and §8
+- -> XREF: D02 T05 §2 -- the shortcuts dialog and its print path §3 extends
+- -> XREF: D02 T05 §3 -- the Help menu §6 and §9 add entries to
+- -> XREF: D02 T02 §8 -- the one keymap every toolbar, menu, and shortcut set reads
+- -> XREF: D02 T04 §5 -- recent files and recovery that §5's preferences and §7's welcome screen drive
+- -> XREF: D01 T01 §3 -- the suite theme §6 adds brightness dictionaries to
+- -> XREF: D01 T01 §2 -- the exception window the §6 error-reporting toggle governs
+- -> XREF: D01 T02 §2 -- the settings store every preference writes through
+- -> XREF: D01 T02 §4 -- the suite history whose undo limit §5 sets
+- -> XREF: D02 T07 §5 -- the Objects panel tree and object names §10 queries
+- -> XREF: D02 T07 §8 -- the property bar and contextual task bar §2 customizes
+- -> XREF: D02 T07 §12 -- zoom, rotate view, view modes, and document windows the view preferences drive
+- -> XREF: D02 T07 §14 -- the New Document dialog and presets the welcome screen and §4's save-as-default use
+- -> XREF: D02 T08 §3 -- the canvas stylus fields (`ToolPoint` pressure, tilt, and bearing) that §8 calibrates and extends
+- -> XREF: D02 T08 §13 -- `ModifierPolicy`, which §4's Ctrl and Shift convention setting drives
+- -> XREF: D02 T13 §13 -- ZXing.Net and the QR module-matrix encoder §11 builds its live QR objects on
+- -> XREF: D02 T09 §1 -- the color model QR and barcode fills use
+- -> XREF: D02 T09 §6 -- the color replace engine §10's Find and Replace consumes
+- -> XREF: D02 T15 §1 -- the AI usage indicator the application bar shows
+
+## Outcome
+
+- A workspace switcher applies, saves, duplicates, renames, deletes, resets, imports, and exports named workspaces that bundle dock layout, toolbars, toolbox set, property bar items, menus, shortcut set, and status bar; F8 at startup resets to factory defaults.
+- Every toolbar, the toolbox, the property bar, and the status bar are customizable through one `CommandBarDefinition` model and survive restart.
+- Menus and context menus render from definitions a user can reorder, rename, extend, and reset; shortcut sets are per editing context, saved, loaded, exported to TXT and CSV, and printed.
+- Every Preferences key on the General, Selection and Anchors, Nodes and Handles, Type, Tools, File Handling, Backup, Locations, Performance, Warnings, Startup, Appearance, and Devices pages has a control, a default, and a named consumer, proven by a coverage test.
+- Four brightness themes switch live, UI and cursor scale apply without restart, and System Information, Safe Mode, and the GPU check diagnose locally with no telemetry.
+- A welcome tab and a Navigator panel exist; pen pressure, tilt, and bearing reach tools; touch and Surface Dial navigate.
+- Hints follow the active tool; a project timer tracks tasks per document with idle handling and exports a time sheet.
+- Object data fields persist in SVG, total in a manager, and Find and Replace objects selects and batch-changes by property in one undo step.
+- QR codes and barcodes are live vector objects that decode back to their payload locally.
+
+**Adjacency:** list=applicable @ D02 T16 §1; document=applicable @ D02 T16 §10; settings=applicable @ D02 T06 §13; reporting=applicable @ D02 T16 §10; notifications=applicable @ D02 T16 §5; permissions=applicable @ D02 T16 §5; audit=applicable @ D02 T16 §10; exchange=applicable @ D02 T16 §1; reverse=applicable @ D02 T16 §1
+
+**Adjacency rationale:** Workspaces, toolbars, shortcut sets, find results, object data, and timer tasks are listed and searchable. The printed shortcut list (§3), the printed object data summary (§10), and QR codes and barcodes on the printed page (§11) are what a user carries. The Preferences dialog of `D02 T06 §13` is the settings surface this file fills. The Document Info panel and object data totals (§10), the time sheet export (§9), and system information (§6) are the reports. Background save progress (§5), the inactivity prompt (§9), and the safe mode report (§6) are the notifications. A read-only workspace or shortcut file on import, a missing content folder, and an unavailable GPU are refused by name (§1, §5, §6). Every document edit here (object data, replace objects, insert QR) is an undoable logged command, and each customization change logs one line. Workspace files, shortcut sets, search criteria, time sheet CSV, and object data CSV are the exchange formats. Reset workspace, reset menus, reset shortcuts, reset preferences, F8 factory reset, and undo for every document edit are the reverses.
+
+## Implementation Order
+
+| Order | Section | Deliverable | Depends On | Status |
+| :---: | :-----: | ----------- | ---------- | :----: |
+|   1   |   §1    | Workspaces: presets, save, reset, import, and export | D02 T06 §13 |  [ ]   |
+|   2   |   §2    | Toolbox, toolbars, property bar, and status bar customization | §1, D02 T07 §8 |  [ ]   |
+|   3   |   §3    | Menus, context menus, command search, and shortcut sets | §1, D02 T06 §12 |  [ ]   |
+|   4   |   §4    | Preferences: general, selection and nodes, display, and units | D02 T06 §13 |  [ ]   |
+|   5   |   §5    | Preferences: files, backup, performance, GPU, and warnings | §4 |  [ ]   |
+|   6   |   §6    | UI appearance, scaling, and diagnostics | §4 |  [ ]   |
+|   7   |   §7    | The welcome screen and the navigator | D02 T07 §14 |  [ ]   |
+|   8   |   §8    | Pen, touch, and Surface Dial input | §4 |  [ ]   |
+|   9   |   §9    | Hints, in-app learning, and the project timer | §1 |  [ ]   |
+|  10   |   §10   | Object data, the Object Data Manager, and find and replace objects | D02 T07 §5 |  [ ]   |
+|  11   |   §11   | QR codes and barcodes | D02 T09 §1 |  [ ]   |
+
+---
+
+## 1. Workspaces: Presets, Save, Reset, Import, and Export
+
+A professional arranges the window for the task in front of them and carries that arrangement between machines. A workspace here is a named bundle of the dock layout from `D02 T06 §7`, visible toolbars and the toolbox set, property bar items, menu customization, the shortcut set, and the status bar configuration, so switching one switches all of them. Saving only dock positions is the substitute this section must not ship. Catalog: NP-2551 to NP-2566 (16 features: NP-2551 workspace switcher, NP-2552 new, duplicate, rename, and delete workspaces, NP-2553 panel docking, grouping, floating, and collapse to icons, NP-2554 hide and show all panels, NP-2555 application bar, NP-2556 application window layout, NP-2557 panel quick customize, NP-2558 Lite workspace, NP-2559 Touch workspace preset, NP-2560 Illustration workspace, NP-2561 Page layout workspace, NP-2562 Illustrator-style workspace, NP-2563 F8 factory reset, NP-2564 import and export workspace files, NP-2565 Default workspace, NP-2566 lock panels).
+
+**Fidelity:** Nodus main window -- docs/captures/nodus/main-window/, extended with captures per preset under docs/captures/nodus/workspaces/.
+**Job:** a designer can switch the whole window arrangement for a task and carry their own arrangement to another machine. Consumer: the main window's dock manager, toolbars, menus, keymap, and status bar, which apply the workspace.
+**Treatment:** an application bar workspace switcher and a Window, Workspace menu; a workspace is a named bundle of dock layout, visible toolbars and toolbox set, property bar items, menu customization, shortcut set, and status bar. Cheaper substitute that fails the checkpoint: saving only the dock layout.
+**Chrome:** consume AvalonDock layout serialization from `D02 T06 §7`, the settings store, the keymap, and the theme. Do not add a second layout persistence.
+
+**Requires:** display-session -- switching and capturing workspaces needs an interactive desktop
+
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Workspace/WorkspaceDefinition.cs` (id, name, description, basedOn, dockLayoutXml, toolbars, toolboxSet, propertyBarItems, menuCustomization, shortcutSetId, statusBar) as a record serialized by a System.Text.Json source-generated context. Done when: `WorkspaceDefinitionTests` round-trip a definition with every part populated and compare member by member.
+- [ ] Add `WorkspaceService` (List, Apply, SaveCurrent, Duplicate, Rename, Delete, ResetToPreset) in `src/Nodus/Photon.Nodus.Core/Workspace/`, each mutating call logging one Information line. Done when: `WorkspaceServiceTests` apply a workspace and assert every part reached its consumer through fakes.
+- [ ] Ship presets as read-only JSON in `src/Nodus/Photon.Nodus.Desktop/Workspaces/`: Default, Lite (reduced toolbox and panels), Touch (enlarged controls; touch behavior is §8), Illustration, Page Layout, and Illustrator-style (panels on the right, the Illustrator shortcut profile from `ShortcutManager`). Done when: each preset file loads and a test asserts the Illustrator-style preset names the Illustrator shortcut set.
+- [ ] Refuse deleting Default and editing any preset in place (Duplicate is offered); Reset restores a user workspace to its `basedOn` preset. Done when: `WorkspaceServiceTests` assert the refusal message names Default and a reset workspace equals its preset.
+- [ ] Save user workspaces under `%LOCALAPPDATA%\Rizonesoft\Nodus\workspaces\<id>.json` through the atomic writer, with setting `nodus.workspace.current` read by `MainWindowViewModel` at startup. Done when: a restart restores the last workspace in a driven run and `settings.json` shows the key.
+- [ ] Add import and export of `.nodusws` (a zip of the JSON plus referenced button images) with a checkbox list of parts to import (panels, toolbars, menus, shortcuts) into the current or a new workspace. Done when: `WorkspaceFileTests` round-trip `tests/fixtures/nodus/workspace/illustration.nodusws` with every part equal. Cheaper substitute: exporting only the dock XML, which the part comparison rejects.
+- [ ] Refuse a read-only target folder, a malformed zip, or a JSON of an unknown schema version by name with the reason and no partial import. Done when: three refusal tests assert the message and that the workspace list is unchanged.
+- [ ] Check F8 held at startup in `App.OnStartup` with `Keyboard.IsKeyDown(Key.F8)` and ask to reset application, workspace, and tool settings to factory defaults, keeping global suite settings and the AI key; log the reset. Done when: a driven launch holding F8 shows the prompt and the log line is quoted.
+- [ ] Bind Tab to hide or show all panels and Shift+Tab to hide all except the toolbox and property bar, through the keymap of `D02 T02 §8`. Done when: `PanelVisibilityTests` assert the visible set after each gesture.
+- [ ] Add Window, Hide Panels and Window, Lock Panels; lock disables AvalonDock drag and float for every anchorable. Done when: a driven drag of a locked panel does not move it (capture).
+- [ ] Collapse panels to icon strips when `nodus.ui.autoCollapseIconPanels` is on (consumed here; its toggle lives on §6's Appearance page). Done when: a driven run with the key on shows icon strips (capture).
+- [ ] Add panel quick customize: a chevron on each dock group listing its panels with checkboxes. Done when: unchecking a panel hides it and the change survives restart through the workspace.
+- [ ] Add the application bar in `src/Nodus/Photon.Nodus.Desktop/Views/ApplicationBar.xaml`: workspace switcher, command search (`D02 T06 §12`), and AI usage (`D02 T15 §1`); no account or cloud items. Done when: each control works in a driven run and the capture shows no sign-in item.
+- [ ] Capture each preset to `docs/captures/nodus/workspaces/<preset>.png`. Done when: six captures exist and differ in layout.
+- [ ] Update `docs/user/nodus/workspaces.md` with presets, saving, import and export, F8 reset, and panel locking. Done when: every control of the switcher and menu is documented.
+- [ ] Commit: `"nodus: workspaces with presets, save, reset, import, and export"`
+
+**Test checkpoint:** Format fidelity proof and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~Workspace"` exits 0 with `WorkspaceServiceTests` and `WorkspaceFileTests` reporting; the committed `.nodusws` fixture imports and re-exports with every part equal; switching presets in a driven run changes the captured layout and logs one line per switch. Cheaper substitute that fails: a workspace that saves only dock positions, which the part-by-part comparison rejects.
+
+## 2. Toolbox, Toolbars, Property Bar, and Status Bar Customization
+
+Users put the tools and commands they use where they want them. Every bar here, the toolbox included, is one `CommandBarDefinition` over the keymap's command registry, saved in the current §1 workspace, so there is one command registry and no per-toolbar command copy. The status bar becomes a configurable set of items. Catalog: NP-2567 to NP-2593 (27 features: NP-2567 status bar details, NP-2568 basic and advanced tool sets, NP-2569 edit toolbar drawer, NP-2570 custom toolbars, NP-2571 single or double column toolbox and tear-off flyouts, NP-2572 toolbox bottom controls, NP-2573 Alt-click cycling, NP-2574 Standard toolbar, NP-2575 Zoom toolbar, NP-2576 Text toolbar, NP-2577 Layout toolbar, NP-2578 Transform toolbar, NP-2579 Web toolbar, NP-2580 lock toolbars, NP-2581 toolbox with flyouts, NP-2582 toolbox quick customize, NP-2583 move, dock, float, and resize toolbars, NP-2584 show or hide toolbars, NP-2585 add, remove, move, and copy toolbar items, NP-2586 button size and style, NP-2587 replace a button image, NP-2588 property bar positioning, NP-2589 property bar quick customize, NP-2590 status bar lines, items, and size, NP-2591 status bar position and reset, NP-2592 document management toolbar, NP-2593 command bar customization page).
+
+**Fidelity:** Nodus main window -- docs/captures/nodus/main-window/, with new captures under docs/captures/nodus/toolbars/.
+**Job:** a designer can put the tools and commands they use where they want them. Consumer: the main window's toolbar tray, toolbox, property bar, and status bar, which render from the definitions.
+**Treatment:** toolbars as `ToolBarTray` bands bound to a `CommandBarDefinition` model; Alt-drag moves and Ctrl+Alt-drag copies buttons; a Customization page lists all commands for drag-in. Cheaper substitute that fails the checkpoint: fixed XAML toolbars with visibility toggles only.
+**Chrome:** consume the icon catalog, the keymap's command registry, and the workspace model of §1. One command registry, no per-toolbar command copies.
+
+**Requires:** display-session -- toolbar drag customization is a driven run
+
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Workspace/CommandBarDefinition.cs` (id, caption, items of command id, separator, or control id, dock edge, band, floating bounds, button size Small, Medium, or Large, style Icon, Caption, or Icon and Caption, locked) saved into the current workspace. Done when: `CommandBarDefinitionTests` add, move, copy, and remove items and round-trip the definition through JSON.
+- [ ] Render bars in `src/Nodus/Photon.Nodus.Desktop/Controls/CommandBars/CommandBarHost.xaml` as `ToolBarTray` bands whose buttons bind to keymap commands by id. Done when: a test renders a definition and every button's `Command` resolves to the registry entry.
+- [ ] Ship built-in bars Standard, Zoom, Text, Layout, Transform, Web (the export-for-screens commands), and Document (tabs and windows); Window, Toolbars lists each with a check. Done when: each built-in bar renders with no unresolved command id.
+- [ ] Add `ToolboxDefinition` with flyout groups from `ToolManager`, single or double column, and Basic and Advanced tool sets. Done when: `ToolboxDefinitionTests` switch sets and assert the visible tools.
+- [ ] Add tear-off flyouts (a flyout dragged off becomes a floating bar) and Alt-click cycling through a flyout's hidden tools. Done when: `ToolboxDefinitionTests` assert the cycling order and a driven tear-off shows a floating bar (capture).
+- [ ] Add the All Tools drawer to drag tools into and out of the toolbox. Done when: a driven drag adds a tool that survives restart.
+- [ ] Add quick customize buttons on the toolbox, each toolbar, and the property bar showing checkbox lists with Reset. Done when: unchecking an item hides it and Reset restores the definition's default.
+- [ ] Support Alt-drag to move and Ctrl+Alt-drag to copy buttons between bars, and drag to dock, float, and resize a bar; Lock Toolbars disables it. Done when: a driven Ctrl+Alt-drag copies a button and the capture after restart shows it. Cheaper substitute: bars that reset on restart, which the capture rejects.
+- [ ] Add the Customization page in the `D02 T06 §13` dialog: a searchable command list with drag onto any bar, New, Rename, and Delete toolbar, button size and style, and Replace Button Image from an `.ico`, `.png`, or `.svg` file with Restore Default. Done when: a driven run replaces an image, restarts, and the new image shows.
+- [ ] Make the property bar dock to any edge or float, with per-context item toggles over the contexts of `D02 T07 §8`. Done when: a test toggles an item in the rectangle context and it hides only there.
+- [ ] Add `StatusBarConfig` with sections for tool hint, object details (fill, stroke, size, position, type), cursor coordinates, document color profile, zoom, and artboard navigation; 1 or 2 lines, top or bottom, sizes small to large, items added by Alt-drag, Reset. Done when: `StatusBarConfigTests` round-trip a two-line configuration.
+- [ ] Make the status bar's fill and stroke swatches open their editors (the `D02 T09 §2` wells) on click, replacing the single `StatusText` binding. Done when: a driven click on the fill swatch opens the picker.
+- [ ] Persist show or hide of the toolbox bottom controls (fill and stroke, draw mode, screen mode) per workspace. Done when: hiding them in one workspace leaves them visible in another.
+- [ ] Log each customization change (bar, item, image, status item) at Information naming the bar and item. Done when: the lines appear in a driven run.
+- [ ] Capture the customized tray, toolbox, and status bar to `docs/captures/nodus/toolbars/`. Done when: the captures show a custom toolbar and a two-line status bar.
+- [ ] Update `docs/user/nodus/customization.md` with toolbars, toolbox, property bar, and status bar customization. Done when: every control of the Customization page is documented.
+- [ ] Commit: `"nodus: customizable toolbox, toolbars, property bar, and status bar"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~CommandBar|FullyQualifiedName~Toolbox|FullyQualifiedName~StatusBarConfig"` exits 0; `CommandBarDefinitionTests` round-trip a customized bar through the workspace file; a driven Ctrl+Alt-drag copies a button and the capture after restart shows it. Cheaper substitute that fails: toolbars that reset on restart.
+
+## 3. Menus, Context Menus, Command Search, and Shortcut Sets
+
+Menus and shortcuts are how a user's habits reach the app. This section renders the main menu from a `MenuDefinition` a user can change, builds context menus from the selection kind out of registered commands, and gives `ShortcutManager` a per-context dimension so a gesture can mean one thing while editing text and another while editing nodes. It extends the shortcuts dialog of `D02 T05 §2` and never keeps a second shortcut list. Catalog: NP-2594 to NP-2607 (14 features: NP-2594 export shortcuts to TXT or CSV, NP-2595 delete a shortcut and conflict warnings, NP-2596 shortcut set files, NP-2597 context menus, NP-2598 shortcut tables per editing context, NP-2599 view all and reset all, NP-2600 print shortcuts, NP-2601 reorder menus and commands, NP-2602 rename a caption, NP-2603 add or remove menu items, NP-2604 command search in customization, NP-2605 menu bar mode, NP-2606 reset menus, NP-2607 the Customization dialog).
+
+**Fidelity:** extends the shortcuts dialog -- docs/captures/nodus/shortcuts/ (from `D02 T05 §2`) and the Preferences dialog -- docs/captures/nodus/preferences/ (from `D02 T06 §13`); context menu captures under docs/captures/nodus/context-menus/.
+**Job:** a user can make menus and shortcuts match their habits and take their shortcut set to another machine. Consumer: the main menu, the canvas context menus, and the keymap's gesture dispatch.
+**Treatment:** a Customization dialog with Commands, Menus, and Shortcuts pages; shortcut tables for Main, Text Editing, Node Editing, Table Editing, and Print Preview contexts. Cheaper substitute that fails the checkpoint: a second shortcut list outside `ShortcutManager`.
+**Chrome:** consume `ShortcutManager`, the command index of `D02 T06 §12`, the shortcuts dialog of `D02 T05 §2`, and the §1 workspace model. Do not build a second command list.
+
+**Requires:** display-session -- menu customization and context menus are driven runs
+
+- [ ] Add `src/Nodus/Photon.Nodus.Desktop/Menus/ContextMenuProvider.cs` building canvas context menus from the selection kind (none, path, text, group, image, artboard, guide) out of registered commands, including isolate, clip, arrange, and transform entries. Done when: `ContextMenuProviderTests` list the expected items for each of the seven kinds.
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Workspace/MenuDefinition.cs` (a tree of command ids and submenus with caption overrides and `&` access keys) stored in the workspace. Done when: `MenuDefinitionTests` reorder, rename, add, and remove items and round-trip the tree.
+- [ ] Add `MenuBuilder` rendering the main menu from the definition, replacing the fixed XAML menu. Done when: a test asserts every item of the default definition resolves to a keymap command and the rendered menu matches the default tree.
+- [ ] Add Reset Menus restoring the default tree, logged. Done when: `MenuDefinitionTests` assert equality with the default after a reset.
+- [ ] Add menu bar mode Normal or Compact (File, Edit, View, Help only) through `nodus.ui.menuBarMode` read by `MenuBuilder`. Done when: switching the key re-renders the menu without restart in a driven run.
+- [ ] Add the Customization dialog's Commands page with a search box over the `D02 T06 §12` fuzzy index and drag of a command onto a menu. Done when: a test searches "rev" and finds Reverse Path.
+- [ ] Add the Menus page with drag reorder, caption rename, add and remove, and Reset. Done when: a driven rename of a caption survives restart (capture).
+- [ ] Give `ShortcutManager` a `Context` dimension (Main, TextEditing, NodeEditing, TableEditing, PrintPreview); gesture dispatch picks the active context first, then Main. Done when: `ShortcutContextTests` bind Ctrl+J differently in TextEditing and Main and each context dispatches its own.
+- [ ] Check conflicts within a context and refuse a conflicting assignment by name ("Ctrl+J is already Join in Node Editing"); Delete Shortcut removes one gesture. Done when: `ShortcutContextTests` refuse a same-context conflict and allow the cross-context one. Cheaper substitute: one global table, which the per-context test fails.
+- [ ] Add shortcut set files as JSON under `%LOCALAPPDATA%\Rizonesoft\Nodus\shortcuts\` with Save As, Load, Delete, and Clear All; the Illustrator profile ships as a read-only set. Done when: `ShortcutSetFileTests` save, load, and refuse editing the read-only set by name.
+- [ ] Add View All (every command with its gestures in every context) and Reset All on the Shortcuts page. Done when: a test asserts View All lists every keymap command once per context binding.
+- [ ] Export shortcuts to TXT and CSV (context, category, command, gesture) through the atomic writer. Done when: `ShortcutExportTests` match `tests/fixtures/nodus/shortcuts/default-export.csv`.
+- [ ] Extend the `D02 T05 §2` print path with a context column for Print Shortcuts. Done when: a driven print to Microsoft Print to PDF shows the context column (capture).
+- [ ] Log each menu and shortcut change at Information naming the command and gesture. Done when: the lines appear in a driven run.
+- [ ] Capture the context menus for path, text, and group to `docs/captures/nodus/context-menus/`. Done when: three captures exist.
+- [ ] Update `docs/user/nodus/customization.md` with menus, context menus, and shortcut sets. Done when: every Customization page control is documented.
+- [ ] Commit: `"nodus: customizable menus, context menus, and per-context shortcut sets"`
+
+**Test checkpoint:** Unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~ShortcutContext|FullyQualifiedName~ShortcutExport|FullyQualifiedName~MenuDefinition|FullyQualifiedName~ContextMenuProvider"` exits 0; `ShortcutContextTests` refuse a conflicting gesture in one context and allow it in another, and `ShortcutExportTests` match the committed golden CSV. Cheaper substitute that fails: one global table, which the per-context test fails.
+
+## 4. Preferences: General, Selection and Nodes, Display, and Units
+
+A preference that nothing reads is worse than none. This section fills the `D02 T06 §13` Preferences dialog with the general, selection, node, type, and tool pages both competitors have, and a coverage test that fails when any key lacks a control, a default, or a named consumer. The keys and consumers table below is the section's contract. Catalog: NP-2658 to NP-2698 (41 features: NP-2658 anchor, handle, and bounding box size, NP-2659 use preview bounds, NP-2660 keyboard increment, NP-2661 constrain angle, NP-2662 corner radius, NP-2663 pen auto add and delete, NP-2664 precise cursors, NP-2665 anti-aliased artwork, NP-2666 legacy new document dialog, NP-2667 print size at 100 percent, NP-2668 double-click to isolate, NP-2669 transform defaults, NP-2670 wheel zoom and scroll direction, NP-2671 reset preferences, NP-2672 selection tolerance, NP-2673 select by path only, NP-2674 snap to point distance, NP-2675 Ctrl+click behind, NP-2676 move locked and hidden art with artboards, NP-2677 zoom to selection, NP-2678 handles for multiple anchors, NP-2679 rubber band preview, NP-2680 type select by path only, NP-2681 font names in English, NP-2682 recent fonts count, NP-2683 Rectangle defaults, NP-2684 Ellipse defaults, NP-2685 Spiral defaults, NP-2686 Graph Paper defaults, NP-2687 node shape per type, NP-2688 curve direction, NP-2689 unselected nodes filled, NP-2690 node color scheme, NP-2691 highlight on previews, NP-2692 node types in colors, NP-2693 save settings as default, NP-2694 Ctrl and Shift convention, NP-2695 category switcher, NP-2696 application page, NP-2697 tool page, NP-2698 global suite page).
+
+**Fidelity:** extends the Preferences dialog -- docs/captures/nodus/preferences/ (from `D02 T06 §13`).
+**Job:** a designer can tune how selection, nodes, snapping distance, and tool defaults behave. Consumer: each key's named consumer in the table built by this section.
+**Treatment:** categories General, Selection and Anchors, Nodes and Handles, Type, and Tools (Rectangle, Ellipse, Spiral, Graph Paper, Pick), each control bound to a settings key with a default and a named consumer, and a category switcher of Application, Tools, and Global. Cheaper substitute that fails the checkpoint: controls that persist a value nothing reads.
+**Chrome:** consume `NodusSettings`, the settings store, and the `D02 T06 §13` dialog shell. Do not open a second options window.
+
+**Requires:** display-session -- preferences captures and driven changes need an interactive desktop
+
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Settings/PreferenceKeyRegistry.cs`: every key with type, default, page, and consumer (a type and member name), and `docs/dev/nodus/preference-keys.md` generated from it as the keys-and-consumers table. Done when: the generated table lists every key of this section with its consumer.
+- [ ] Add `PreferencesCoverageTests` asserting every registry key has a control on its page, a default, and a consumer that exists by reflection. Done when: removing a consumer reference from the registry makes the test fail.
+- [ ] Add the General page keys `nodus.edit.keyboardIncrement` (1 px), `nodus.edit.constrainAngle` (0 degrees base, 15 degree step), `nodus.shapes.cornerRadius`, `nodus.pen.autoAddDelete`, `nodus.ui.preciseCursors`, and `nodus.render.antialias`, consumed by the nudge command, `ToolBase` constraint, the shape tools, `PenTool`, the cursor service, and `SkiaRenderer`. Done when: `PreferencesCoverageTests` pass for them and a nudge test uses the configured increment.
+- [ ] Add General keys `nodus.geometry.usePreviewBounds`, `nodus.view.printSizeAt100`, `nodus.edit.doubleClickIsolates`, `nodus.transform.patterns`, `nodus.transform.scaleCorners`, `nodus.transform.scaleStrokes`, `nodus.view.wheelZooms`, and `nodus.view.invertScroll`, consumed by bounds math, the zoom of `D02 T07 §12`, isolation mode, and the transform commands. Done when: `PreferencesCoverageTests` pass for them and a zoom test honors `printSizeAt100`.
+- [ ] Add the Selection and Anchors page keys `nodus.select.tolerancePx`, `nodus.select.byPathOnly`, `nodus.snap.pointDistancePx` (consumed by the snapping of `D02 T02 §7`), `nodus.select.ctrlClickBehind`, `nodus.artboard.moveLockedHidden`, `nodus.view.zoomToSelection`, `nodus.handles.size`, `nodus.handles.showForMultiple`, and `nodus.pen.rubberBand`. Done when: `PreferencesCoverageTests` pass for them and a hit-test uses the configured tolerance.
+- [ ] Add the Nodes and Handles page (size, shape per node type cusp, smooth, symmetric, show curve direction, fill unselected nodes, color scheme Default or Custom with main and secondary colors, show highlight, node types in colors) rendered by the node overlay through a `NodeStyle` record. Done when: `NodeStyleTests` build the style from settings and a driven change of node size shows larger handles (capture).
+- [ ] Add the Type page keys `nodus.type.selectByPathOnly`, `nodus.type.fontNamesInEnglish`, and `nodus.type.recentFontsCount`, consumed by the text hit-test and the font list of `D02 T10 §3`. Done when: `PreferencesCoverageTests` pass for them.
+- [ ] Add the Ctrl and Shift convention setting `nodus.input.modifierConvention` (Nodus default: Shift constrains, Alt from center, per `standards/nodus.md`; or CorelDRAW: Ctrl constrains, Shift from center) consumed by `ModifierPolicy` of `D02 T08 §13`; loading the CorelDRAW shortcut set of §3 offers to switch it. Done when: `ModifierConventionTests` assert both mappings for the rectangle tool through `ModifierPolicy`.
+- [ ] Add Tools pages for Rectangle, Ellipse (ellipse, pie, arc, start and end angles, direction), Spiral, Graph Paper, and Pick defaults read by those tools on creation. Done when: a test sets the ellipse default to pie and a new ellipse is a pie.
+- [ ] Add the category switcher of Application, Tools, and Global (suite-wide keys stored in the Photon settings scope). Done when: a test lists which scope each page writes to and a Global key lands outside `nodus.*`.
+- [ ] Add Save Settings as Default writing the current document's units, grid, guides, and nudge to the new-document defaults consumed by `D02 T07 §14`, and register the legacy new document dialog key `nodus.document.legacyNewDialog` consumed by `D02 T07 §14`. Done when: a test saves defaults and the next new document carries the units.
+- [ ] Add Reset Preferences per page and for all pages, applied on OK and logged. Done when: a test resets a page and every key on it equals its default while other pages keep their values. Cheaper substitute: a reset that deletes `settings.json`, which the other-pages assertion rejects.
+- [ ] Log every preference change at Information naming the key and new value. Done when: the lines appear in a driven run.
+- [ ] Capture every page to `docs/captures/nodus/preferences/`. Done when: one capture per page exists.
+- [ ] Update `docs/user/nodus/preferences.md` with every page of this section. Done when: every control is documented with its default.
+- [ ] Commit: `"nodus: general, selection, node, type, and tool preferences with a coverage test"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~PreferencesCoverage|FullyQualifiedName~ModifierConvention|FullyQualifiedName~NodeStyle"` exits 0; `PreferencesCoverageTests` fail if a key lacks a consumer, and a driven change of the node size shows larger handles in a capture and in `settings.json`. Cheaper substitute that fails: a settings page whose values nothing reads, which the coverage test catches.
+
+## 5. Preferences: Files, Backup, Performance, GPU, and Warnings
+
+Where Nodus writes, how it recovers, how it performs, and which warnings it shows are the preferences with the highest stakes, because two of them change how a user's document is written: saving on a background worker and backing up the original before save. Both run through the atomic writer and the recovery of `D02 T04 §5`, and the freeze check below guards them. Catalog: NP-2699 to NP-2716 (18 features: NP-2699 background save and export, NP-2700 scratch folder, NP-2701 GPU rendering and memory, NP-2702 animated zoom, NP-2703 undo levels, NP-2704 real-time drawing, NP-2705 recovery interval and folder, NP-2706 recovery off for complex documents, NP-2707 recent files count, NP-2708 warnings and message settings, NP-2709 startup action, NP-2710 show the New Document dialog, NP-2711 missing content folder indicator, NP-2712 back up original before saving, NP-2713 auto-backup interval and location, NP-2714 content folder locations, NP-2715 working folder, NP-2716 import and export format filters).
+
+**Freeze check:** Background save serializes an immutable document snapshot on the UI thread, then writes on a worker only through the atomic writer (temp file in the target folder, flush, `File.Replace`); a cancelled or failed background save leaves the previous file byte-identical and the document dirty; the original-file backup is written to `backup_of_<name>.svg` before the replace and never over the user's file; killing the process mid-save leaves the original byte-identical. Fixture source: `tests/fixtures/nodus/save-over/` (from `D02 T04 §1`) plus `tests/fixtures/nodus/large/10k-objects.svg` created by this section.
+
+**Fidelity:** extends the Preferences dialog -- docs/captures/nodus/preferences/.
+**Job:** a user can control where Nodus writes, how it recovers, how it performs, and which warnings it shows. Consumer: the save path, recovery, the renderer, the history, and the warning registry, each named per key.
+**Treatment:** pages File Handling, Backup, Locations, Performance, Warnings, and Startup, each key with a default and a named consumer; background save shows progress and Cancel in the status strip. Cheaper substitute that fails the checkpoint: background save that blocks the UI thread.
+**Chrome:** consume the settings store, the atomic writer, the recovery of `D02 T04 §5`, the suite history's limit of `D01 T02 §4`, and the §4 key registry. Do not add a second writer.
+
+**Requires:** display-session -- background save progress and warnings are driven runs
+
+- [ ] Add File Handling keys `nodus.recovery.enabled`, `nodus.recovery.intervalMinutes`, `nodus.recovery.folder`, `nodus.recovery.skipAboveElements` (default 50,000), and `nodus.recent.count` to the §4 registry, consumed by `AutosaveService` and Open Recent of `D02 T04 §5`. Done when: `PreferencesCoverageTests` pass for them and an autosave test skips a 60,000-element document.
+- [ ] Add `src/Nodus/Photon.Nodus.Desktop/Services/BackgroundSaveService.cs`: snapshot the document on the UI thread, serialize and write on a worker through the atomic writer, report progress to the status strip as a lifecycle notification with Cancel, and let editing continue. Done when: `BackgroundSaveServiceTests` edit the live document during a save and the saved file equals the snapshot. Cheaper substitute: a synchronous save behind a spinner, which the frame-time assertion rejects.
+- [ ] Gate background save and export with `nodus.save.background` and `nodus.export.background` (default on). Done when: turning the key off makes Save synchronous in a test.
+- [ ] Prove cancellation safety: a cancelled background save deletes its temp file, leaves the previous file byte-identical, and keeps the document dirty. Done when: `BackgroundSaveServiceTests` compare SHA-256 before and after a cancel.
+- [ ] Add Backup keys `nodus.backup.originalBeforeSave` (writes `backup_of_<name>.svg` beside the file), `nodus.backup.autoIntervalMinutes` (Never, 5 to 60), and `nodus.backup.folder`, consumed by the save path of `D02 T07 §14`. Done when: a test saves twice and the backup equals the first version.
+- [ ] Add the Locations page: content folders (brushes, symbols, swatches, templates, fonts) with Change and Reset, a missing-folder badge naming the path and the fix, a scratch folder, and a working folder for the Open and Save dialogs. Done when: `ContentFolderTests` flag a deleted folder with a message naming it.
+- [ ] Refuse a content or backup folder that is read-only or unreachable by name at selection time, keeping the previous value (the permissions case for this file). Done when: a test selects a read-only folder and the refusal message names it.
+- [ ] Add the Import and Export Filters list: order and enable each registered format reader and writer, with Reset to Default, consumed by the Open and Export dialogs' filter strings. Done when: disabling the PNG writer removes it from the export filter in a test.
+- [ ] Add Performance keys `nodus.render.gpu` (on when a supported GPU is found), `nodus.render.gpuMemoryMb`, `nodus.view.animatedZoom` (consumed by the zoom of `D02 T07 §12`), `nodus.history.levels` (default 100, consumed by `D01 T02 §4`), and `nodus.edit.realtimeDrawing`. Done when: a test sets levels to 5 and the sixth command evicts the first.
+- [ ] Add `src/Nodus/Photon.Nodus.Desktop/Services/WarningRegistry.cs`: every dismissable warning registers a `WarningId`; the Warnings page lists them with checkboxes and Reset All; Help, Message Settings opens the page. Done when: `WarningRegistryTests` dismiss one warning, reset all, and see it again.
+- [ ] Add Startup keys `nodus.startup.action` (Welcome screen, New document, Open, New from template, Nothing; consumed by §7) and `nodus.startup.showNewDocumentDialog` (consumed by `D02 T07 §14`). Done when: `PreferencesCoverageTests` pass for them.
+- [ ] Create `tests/fixtures/nodus/large/10k-objects.svg` (10,000 paths, authored for the suite, GPL-3.0) and drive a background save of it. Done when: the log shows progress lines and no UI frame exceeds 100 ms as measured by `PerformanceMetricsService`.
+- [ ] Log each save start, progress completion, cancel, and backup write at Information with the path. Done when: the lines appear in the driven run.
+- [ ] Capture the six pages to `docs/captures/nodus/preferences/`. Done when: six captures exist.
+- [ ] Update `docs/user/nodus/preferences.md` with files, backup, locations, performance, warnings, and startup. Done when: every control is documented with its default.
+- [ ] Commit: `"nodus: file, backup, location, performance, warning, and startup preferences with background save"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~BackgroundSaveService|FullyQualifiedName~WarningRegistry|FullyQualifiedName~ContentFolder"` exits 0; `BackgroundSaveServiceTests` prove a cancelled save leaves the previous file byte-identical, and a driven save of the 10,000-object fixture logs progress while the UI keeps responding. Cheaper substitute that fails: a synchronous save behind a spinner.
+
+## 6. UI Appearance, Scaling, and Diagnostics
+
+A user spends hours in this window, so it must be comfortable on their display and diagnosable without sending anything anywhere. This section adds four brightness levels as token dictionaries beside the suite's `Photon.Dark.xaml`, live UI and cursor scaling, Windows 11 window conventions, and local diagnostics: System Information, Safe Mode, a GPU check, the error-reporting toggle, and a startup time budget. Catalog: NP-2608 to NP-2623 (16 features: NP-2608 UI theme and brightness, NP-2609 canvas and desktop color, NP-2610 auto-collapse panels, documents as tabs, and large tabs, NP-2611 UI and cursor scaling, NP-2612 GPU compatibility check, NP-2613 safe mode, NP-2614 error reporting toggle, NP-2615 Windows 11 window conventions, NP-2616 system information, NP-2617 refreshed icons and active-tool highlight, NP-2618 fast launch budget, NP-2619 Appearance page, NP-2620 local-only privacy, NP-2621 hardware acceleration and GPU choice, NP-2622 center dialog boxes, NP-2623 window border color).
+
+**Fidelity:** Nodus main window -- docs/captures/nodus/main-window/, with brightness and scale captures under docs/captures/nodus/appearance/.
+**Job:** a user can make Nodus comfortable on their display and diagnose problems locally. Consumer: the theme service, the canvas renderer, the window chrome, and the exception window.
+**Treatment:** an Appearance page (brightness Dark, Medium Dark, Medium Light, Light; canvas color match or white; desktop and border colors; UI scale 100 to 200 percent; cursor scale; large tabs; center dialogs) and Help, System Information and Help, Restart in Safe Mode. Cheaper substitute that fails the checkpoint: theme switching that needs a restart or leaves hardcoded colors.
+**Chrome:** consume the suite theme of `D01 T01 §3` (brightness variants as additional token dictionaries), the exception window of `D01 T01 §2`, and `DebugInfoService`. Do not keep `CatppuccinThemes`.
+
+**Requires:** display-session -- brightness and scaling captures need an interactive desktop
+
+- [ ] Add `src/Photon.UI/Themes/Photon.Light.xaml`, `Photon.MediumLight.xaml`, and `Photon.MediumDark.xaml` beside `Photon.Dark.xaml`, each defining every token of `standards/shared.md`. Done when: `ThemeTokensTests` pass for all four dictionaries. Cheaper substitute: a light theme with hardcoded dark literals, which the token test rejects.
+- [ ] Add `ThemeService.Apply(Brightness)` in `src/Photon.UI/Themes/` swapping the merged dictionary live, with `photon.ui.brightness` as the key. Done when: `ThemeServiceTests` apply Light and every token resolves from the Light dictionary without restart.
+- [ ] Delete `CatppuccinThemes` and its `ThemeManager` references from Nodus. Done when: `grep -rn CatppuccinThemes src/Nodus` prints nothing.
+- [ ] Add canvas and desktop color keys `nodus.view.canvasColor` (MatchUI, White, or custom) and `nodus.view.desktopColor`, consumed by `SkiaRenderer` for the area outside artboards. Done when: a render test with White draws white inside artboards and the desktop color outside.
+- [ ] Apply the window border color through `DwmSetWindowAttribute(DWMWA_BORDER_COLOR)` from `nodus.ui.borderColor`. Done when: a driven run shows the configured border (capture).
+- [ ] Add UI scaling through a root `LayoutTransform` bound to `nodus.ui.scale` (100 to 200 percent) layered over per-monitor DPI, and cursor scaling choosing 32 or 48 px cursor assets from `nodus.ui.cursorScale`. Done when: captures at 100 and 200 percent in Light and Dark are committed to `docs/captures/nodus/appearance/`.
+- [ ] Add Windows 11 conventions: rounded corners and Mica through `DWMWA_WINDOW_CORNER_PREFERENCE` and `DWMWA_SYSTEMBACKDROP_TYPE`, and snap layouts by returning `HTMAXBUTTON` from `WM_NCHITTEST` over the custom maximize button. Done when: a driven hover over maximize shows the snap layout flyout (capture).
+- [ ] Add `nodus.ui.centerDialogs` (center on the main window, or remember the last position per dialog) and large tabs, documents as tabs, and auto-collapse panels toggles consumed by §1's dock host. Done when: a test opens a dialog twice with remember on and it reopens at the saved position.
+- [ ] Add the active-tool highlight token and draw every tool icon from the catalog. Done when: a test asserts every registered tool has a catalog icon and the highlight token exists in all four dictionaries.
+- [ ] Add the System Information dialog: OS, .NET, GPU and driver, displays and DPI, printers, loaded assemblies with versions, and the settings folder, with Copy and Save as TXT. Done when: `SystemInfoReportTests` assert every field is present in the TXT output.
+- [ ] Add safe mode: `--safe-mode` or Shift held at startup disables GPU rendering, custom workspaces, and user fonts beyond system fonts, and writes a report of what was disabled to the log and a dialog. Done when: `SafeModeTests` assert the disabled set and a driven Restart in Safe Mode shows the report.
+- [ ] Add `GpuDiagnostics` probing SkiaSharp GPU context creation, reporting adapter and result, and setting `nodus.render.gpu`; the Hardware Acceleration page picks the adapter. Done when: a test with a failing fake context turns GPU rendering off and logs the reason. Cheaper substitute: assuming GPU support, which the failing-probe test rejects.
+- [ ] Add the error reporting toggle `photon.errors.showDialog` consumed by the exception window of `D01 T01 §2`, and a Privacy page stating no telemetry is sent. Done when: with the toggle off an unhandled test exception logs without the dialog.
+- [ ] Log time to interactive window at each start through `PerformanceMetricsService` and assert it under 1.5 s against a recorded baseline in `StartupBudgetTests` (trait `Category=Performance`). Done when: the baseline file `tests/Photon.Nodus.Tests/Performance/startup-baseline.json` exists and the test passes on the reference machine.
+- [ ] Update `docs/user/nodus/appearance.md` with brightness, scaling, window options, System Information, Safe Mode, and privacy. Done when: every control is documented.
+- [ ] Commit: `"nodus: brightness themes, UI scaling, Windows 11 chrome, and local diagnostics"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~ThemeTokens|FullyQualifiedName~ThemeService|FullyQualifiedName~SystemInfoReport|FullyQualifiedName~SafeMode"` exits 0; `ThemeTokensTests` pass for all four brightness dictionaries and captures at 100 and 200 percent in Light and Dark are committed. Cheaper substitute that fails: a light theme with hardcoded dark literals, which the token test and capture reveal.
+
+## 7. The Welcome Screen and the Navigator
+
+A user should start or resume work in one click and move around a large document without zooming out. This section promotes backlog B-013 into a welcome tab (new from preset, open, recent with thumbnails, quick start, discover, AI entries) and a Navigator panel with a live thumbnail and a draggable viewport rectangle. It must not write a second renderer: thumbnails come from `SkiaRenderer`. The promoting commit deletes B-013 from `todo/backlog.md`. Catalog: NP-2624 to NP-2628 (5 features: NP-2624 Navigator panel, NP-2625 welcome screen, NP-2626 show the welcome screen when no documents are open, NP-2627 Discover panel, NP-2628 quick start guide). -> SOURCE: legacy-nodus-5.8-5.9
+
+**Fidelity:** new build, no baseline; captured to docs/captures/nodus/welcome/ and docs/captures/nodus/navigator/.
+**Job:** a user can start or resume work in one click, and move around a large document without zooming out. Consumer: the document area (new or opened documents) and the canvas viewport.
+**Treatment:** a welcome tab in the document area with New (presets from `D02 T07 §14`), Open, Recent (thumbnails, pin, remove), Quick Start, Discover, and AI entries (`D02 T15 §2`); a Navigator panel with a thumbnail, a draggable viewport rectangle, a zoom slider, an artboards-only option, and a view box color, plus the corner pop-up navigator. Cheaper substitute that fails the checkpoint: a static splash image, or a navigator that renders a stale thumbnail.
+**Chrome:** consume recent files of `D02 T04 §5`, presets of `D02 T07 §14`, `SkiaRenderer` for thumbnails, and the dock. Do not write a second renderer.
+
+**Requires:** display-session -- welcome and navigator captures need an interactive desktop
+
+- [ ] Add `src/Nodus/Photon.Nodus.Desktop/Views/WelcomeView.xaml` and `WelcomeViewModel` shown as a document tab when no document is open (`nodus.welcome.showWhenEmpty`, default true) and from Help, Welcome Screen. Done when: `WelcomeViewModelTests` assert the tab opens when the last document closes and not when the key is false.
+- [ ] Add New from preset (the `D02 T07 §14` preset list) and Open on the welcome tab. Done when: a test picks the A4 preset and a new A4 document opens.
+- [ ] Add Recent with thumbnails rendered by `SkiaRenderer` into `%LOCALAPPDATA%\Rizonesoft\Nodus\thumbs\`, invalidated by file timestamp, with Pin and Remove; missing files show struck through with Remove. Done when: `WelcomeViewModelTests` cover ordering, pinning, a missing file, and a timestamp change re-rendering the thumbnail.
+- [ ] Add Quick Start opening the local `docs/user/nodus/quick-start.md` in a help viewer, and Discover listing local topic cards and quick actions (Trace an image, Make a pattern). Done when: each card runs its command or opens its page in a driven run.
+- [ ] Add the AI entries that open `D02 T15 §2`'s generation surfaces. Done when: the entry opens the surface in a driven run.
+- [ ] Read `nodus.startup.action` from §5 at launch to decide whether the welcome tab opens. Done when: a test with action New document opens a document instead of the tab.
+- [ ] Add `src/Nodus/Photon.Nodus.Desktop/Views/Navigator/NavigatorPanel.xaml` and `NavigatorViewModel`: a thumbnail re-rendered at most every 200 ms from document change events at a 256 px budget from a cached picture. Done when: a test raises 20 change events in 100 ms and exactly one render runs. Cheaper substitute: a thumbnail rendered once at open, which the change-event test rejects.
+- [ ] Map the viewport rectangle both ways: dragging it pans the canvas, and canvas pan and zoom move it. Done when: `NavigatorViewModelTests` prove the exact canvas pan at 25, 100, and 400 percent.
+- [ ] Add the zoom slider bound to canvas zoom, the artboards-only toggle, and `nodus.navigator.boxColor`. Done when: moving the slider changes canvas zoom in a test.
+- [ ] Add the corner pop-up navigator on the canvas scroll corner (click and hold to jump). Done when: a driven click-and-hold jump pans to the released point (capture).
+- [ ] Measure navigator refresh on the 10,000-object fixture from §5 under 16 ms per frame. Done when: a performance test (trait `Category=Performance`) records the time.
+- [ ] Capture both surfaces to `docs/captures/nodus/welcome/` and `docs/captures/nodus/navigator/`. Done when: captures exist.
+- [ ] Update `docs/user/nodus/welcome-and-navigator.md` and write `docs/user/nodus/quick-start.md`. Done when: every welcome and navigator control is documented.
+- [ ] Commit: `"nodus: the welcome screen and the navigator"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~WelcomeViewModel|FullyQualifiedName~NavigatorViewModel"` exits 0; `NavigatorViewModelTests` prove dragging the rectangle maps to the exact canvas pan at 25, 100, and 400 percent, and captures of both surfaces are committed. Cheaper substitute that fails: a navigator that only scrolls, which the mapping test fails.
+
+## 8. Pen, Touch, and Surface Dial Input
+
+A designer on a tablet draws with a pen and navigates with fingers or a Dial. Stylus pressure, tilt, and bearing already reach tools through the `ToolPoint` fields `D02 T08 §3` fills in the canvas input path, and the stylus eraser end is owned by `D02 T08 §8`; this section adds twist, calibrates pressure, maps pinch and two-finger gestures to zoom, pan, and rotate view, switches workspaces in tablet mode, and adds Surface Dial menus. It extends that one input path and `D02 T09 §17`'s `StylusInput` helper rather than keeping a second stylus reader. Catalog: NP-2629 to NP-2635 (7 features: NP-2629 Devices preferences page, NP-2630 Touch workspace UI, NP-2631 Surface Dial support, NP-2632 touch gestures, NP-2633 tablet mode auto-switch, NP-2634 pen pressure, tilt, and bearing, NP-2635 pen pressure calibration and presets).
+
+**Fidelity:** new build, no baseline; captured to docs/captures/nodus/touch/ and docs/captures/nodus/devices/.
+**Job:** a designer can draw with a pen and navigate by touch or Dial on a tablet. Consumer: the pen, pencil, and brush tools, the canvas view transform, and the workspace service.
+**Treatment:** stylus pressure reaching the brush and pen tools, a calibration page with a sample stroke, gestures that zoom around the pinch center, and a Touch workspace with larger controls and an undo, redo, copy, paste, delete strip. Cheaper substitute that fails the checkpoint: treating the pen as a mouse.
+**Chrome:** consume the workspace presets of §1, the tools, the `D02 T08 §3` canvas stylus path, `D02 T09 §17`'s `StylusInput` helper, and the settings store. Do not add a second stylus reader.
+
+**Requires:** display-session -- pen, touch, and Dial are driven on a pen-enabled Windows device
+
+- [ ] Extend the canvas stylus path of `D02 T08 §3` in `src/Nodus/Photon.Nodus.Desktop/Controls/Canvas/SkiaCanvas.cs` with `StylusPointProperties.TwistOrientation` into a new `ToolPoint.Twist` field (0 when the device does not report it). Done when: `PenInputMappingTests` map a synthetic `StylusPointCollection` with twist into the expected `ToolPoint` values.
+- [ ] Apply the calibrated pressure curve inside `D02 T09 §17`'s `StylusInput` helper so every tool reads calibrated pressure; WinTab is not supported and the Devices page says so. Done when: `PenInputMappingTests` assert calibrated pressure reaches a fake tool and a grep finds no `StylusPoint` reader outside `SkiaCanvas.cs`.
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Input/PressureCurve.cs` (min, max, gamma) applied to raw pressure. Done when: `PressureCurveTests` assert the curve at 0, 0.5, and 1 for three gammas.
+- [ ] Add the Devices preferences page with calibration from a sample stroke (fits min, max, and gamma) and named curve presets saved under `nodus.devices.pressureCurves`. Done when: a driven calibration saves a preset and the brush width responds to it (capture).
+- [ ] Add the Devices page option `nodus.devices.eraserEndAction` (Eraser tool, which `D02 T08 §8` implements, or Undo) consumed by the canvas stylus path. Done when: a test with a fake inverted stylus and the Undo option undoes instead of erasing.
+- [ ] Enable `IsManipulationEnabled` on the canvas: `ManipulationDelta` scale zooms around the pinch center, translation pans, and rotation rotates the view through `D02 T07 §12`. Done when: `ManipulationMathTests` prove pinch zoom keeps the pinch center fixed in document space.
+- [ ] Map tap-and-hold to open tool flyouts. Done when: a driven tap-and-hold on a flyout tool opens it.
+- [ ] Finish the §1 Touch preset: 1.5x controls, a reduced toolbox, and an action strip (undo, redo, copy, paste, delete) in the status bar. Done when: the preset applies and captures to `docs/captures/nodus/touch/`.
+- [ ] Detect tablet mode with `UIViewSettings.UserInteractionMode` and switch to the workspace chosen per mode (`nodus.devices.tabletWorkspace`, `nodus.devices.desktopWorkspace`). Done when: a test with a fake mode source switches workspaces in both directions.
+- [ ] Add Surface Dial support through `RadialController` created by `IRadialControllerInterop.CreateForWindow`, with menu items Zoom, Rotate View, Undo and Redo, Brush Size, and Opacity; rotation steps change the value and click commits. Done when: `DialMenuTests` with a fake controller assert each item's effect.
+- [ ] Log pen pressure samples at Debug during a stroke and each device setting change at Information. Done when: a driven pen stroke logs varying pressure values.
+- [ ] Capture the Devices page to `docs/captures/nodus/devices/`. Done when: the capture exists.
+- [ ] Update `docs/user/nodus/pen-and-touch.md` with pen, calibration, gestures, tablet mode, and the Dial. Done when: every control and gesture is documented.
+- [ ] Commit: `"nodus: pen pressure and tilt, touch gestures, tablet mode, and the Surface Dial"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Photon.slnx --filter "FullyQualifiedName~PressureCurve|FullyQualifiedName~PenInputMapping|FullyQualifiedName~ManipulationMath|FullyQualifiedName~DialMenu"` exits 0; `ManipulationMathTests` prove pinch zoom keeps the pinch center fixed in document space, and a driven pen stroke logs pressure values varying across the stroke. Cheaper substitute that fails: mouse-promoted stylus input, which reports constant pressure.
+
+## 9. Hints, In-App Learning, and the Project Timer
+
+Learning a tool in place beats leaving the app, and freelancers bill by the hour. This section adds a Hints panel that follows the active tool, rich tooltips, an Illustrator and CorelDRAW terminology map, and a project timer that tracks tasks per document, excludes idle time on request, and exports a time sheet. Timer data travels with the file in `nodus:timer` metadata. Catalog: NP-2636 to NP-2646 (11 features: NP-2636 tooltips and rich tooltips, NP-2637 Hints panel, NP-2638 project timer toolbar, NP-2639 project timer tasks, NP-2640 edit the active task and reset its counter, NP-2641 export time sheet, NP-2642 automatic start, NP-2643 inactivity detection and prompt, NP-2644 pause rules, NP-2645 timer toolbar appearance, NP-2646 terminology map).
+
+**Fidelity:** new build, no baseline; captured to docs/captures/nodus/hints/ and docs/captures/nodus/project-timer/.
+**Job:** a user can learn the active tool in place, and track time spent per task on a document. Consumer: the user reading the hint; the document's `nodus:timer` metadata and the exported time sheet.
+**Treatment:** a Hints panel that follows the active tool with a short description, modifiers, and a Learn more link into the user guide; a Project Timer toolbar (Track button, task name, elapsed) and panel. Cheaper substitute that fails the checkpoint: hints that are static text not following the tool, or a timer that counts idle time.
+**Chrome:** consume the tool manager, the user guide under `docs/user/nodus/`, the Help menu of `D02 T05 §3`, and the toolbar model of §2. Do not add a second toolbar mechanism for the timer.
+
+**Requires:** display-session -- hints and timer captures need an interactive desktop
+
+- [ ] Add hint files `src/Nodus/Photon.Nodus.Desktop/Help/hints/<toolId>.md` for every registered tool, and `HintsService` loading the active tool's hint on tool change with Back and Forward history. Done when: `HintsCoverageTests` assert every registered tool has a hint file and a tool change updates the panel's content.
+- [ ] Add `src/Nodus/Photon.Nodus.Desktop/Views/HintsPanel.xaml` with description, modifiers, and a Learn more link into `docs/user/nodus/`. Done when: a driven tool change updates the panel (capture). Cheaper substitute: static text, which the tool-change test rejects.
+- [ ] Add tooltips with `nodus.ui.showTooltips` and `nodus.ui.richTooltips` (description, gesture, and an example image), reading command names and gestures from the keymap. Done when: a test asserts a tooltip's gesture text changes after remapping its shortcut.
+- [ ] Write `docs/user/nodus/terminology.md` (anchor point and node, clipping mask and PowerClip, smart guides and dynamic guides, panel and docker, stroke and outline, and more), linked from Help and indexed by the command palette of `D02 T06 §12`. Done when: searching "PowerClip" in the palette finds the terminology entry.
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Timer/ProjectTimer.cs` with tasks (add, activate, rename, reorder, delete, edit recorded time and dates, reset counter) and a global task list option. Done when: `ProjectTimerTests` cover every task operation with a fake clock.
+- [ ] Persist timer data per document in `nodus:timer` metadata through the live-object contract of `D02 T07 §1`, each edit an undoable command. Done when: a round-trip test saves, reopens, and compares tasks and durations exactly.
+- [ ] Add automatic start on open, create, or task activation, and pause rules when minimized, when another document is focused, or while the timer panel is open, each a setting under `nodus.timer.*`. Done when: `ProjectTimerTests` with a fake clock assert each rule.
+- [ ] Add inactivity detection (tolerance minutes, default 5) and the Inactivity Detected dialog on return: discard, keep, or log a custom number of minutes, with Remember my choice. Done when: `ProjectTimerTests` prove idle time is excluded under Discard and included under Keep. Cheaper substitute: a wall-clock timer, which the idle test fails.
+- [ ] Export the time sheet as CSV (task, start, end, duration) or TXT through the atomic writer. Done when: `TimeSheetExportTests` match `tests/fixtures/nodus/timer/time-sheet.csv`.
+- [ ] Add the Project Timer toolbar as a §2 `CommandBarDefinition` with show Track button, task name, and timer settings. Done when: hiding the task name in settings removes it from the bar in a test.
+- [ ] Log each task start, stop, and edit at Information. Done when: the lines appear in a driven run.
+- [ ] Capture the Hints panel and the timer to their capture folders. Done when: captures exist.
+- [ ] Update `docs/user/nodus/hints-and-timer.md`. Done when: every control is documented.
+- [ ] Commit: `"nodus: hints, rich tooltips, the terminology map, and the project timer"`
+
+**Test checkpoint:** Unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~HintsCoverage|FullyQualifiedName~ProjectTimer|FullyQualifiedName~TimeSheetExport"` exits 0; `ProjectTimerTests` with a fake clock prove idle time is excluded under Discard and included under Keep, and `TimeSheetExportTests` match the golden CSV. Cheaper substitute that fails: a wall-clock timer, which the idle test fails.
+
+## 10. Object Data, the Object Data Manager, and Find and Replace Objects
+
+Designers attach data to objects (part numbers, prices, dates), total it, and find or batch-change objects by their properties. This section stores object data in the document as `nodus:data-*` attributes, adds the Object Data panel and the spreadsheet manager with totals and print, builds Find and Replace objects on a composable query, and adds the Document Info panel. Color and outline replacement reuse the engines `D02 T09 §6` and `D02 T09 §12` build. Catalog: NP-2719 to NP-2738 (20 features: NP-2719 Document Info panel, NP-2720 Find and Replace objects panel, NP-2721 query builder, NP-2722 find from selection, NP-2723 find by name or style, NP-2724 find next, previous, all, and all on page, NP-2725 save and load criteria, NP-2726 replace object properties, NP-2727 search range, NP-2728 Object Data panel, NP-2729 field editor, NP-2730 field formats, NP-2731 copy data from another object, NP-2732 clear all fields, NP-2733 manager spreadsheet, NP-2734 show levels, NP-2735 summarize groups, NP-2736 show hierarchy, NP-2737 show totals, NP-2738 print the summary).
+
+**Fidelity:** new build, no baseline; captured to docs/captures/nodus/object-data/, docs/captures/nodus/find-replace/, and docs/captures/nodus/document-info/.
+**Job:** a designer can attach data to objects, total it, and find or batch-change objects by their properties. Consumer: the document (`nodus:data-*` attributes), the selection, and the printed summary.
+**Treatment:** an Object Data panel with typed fields, a spreadsheet manager with group subtotals, and a Find and Replace panel whose queries select results on canvas and whose Replace is one undoable step. Cheaper substitute that fails the checkpoint: find by name only, or data stored outside the document.
+**Chrome:** consume the Objects panel tree and names of `D02 T07 §5`, the selection owner, the history, the print path, and the replace services of `D02 T09 §6` and `D02 T09 §12`. Do not write a second color matcher.
+
+**Requires:** display-session -- panel captures and the printed summary are driven runs
+
+- [ ] Add `src/Nodus/Photon.Nodus.Core/ObjectData/ObjectDataField.cs` (name, type General, DateTime, Linear, Angular, Numeric, format string) with field definitions stored in the document and an application default set in `nodus.objectData.defaultFields`. Done when: `ObjectDataTests` create each type and format a value per its format string.
+- [ ] Persist per-element values as `nodus:data-<field>` attributes and field definitions in the root `nodus:document` metadata per `D02 T07 §1`. Done when: `ObjectDataTests` round-trip `tests/fixtures/nodus/object-data/fields.svg` element by element with every field and format.
+- [ ] Add `src/Nodus/Photon.Nodus.Desktop/Views/ObjectData/ObjectDataPanel.xaml` editing the selection's values, with Copy Data From (append from a picked object) and Clear All Fields, each an undoable `SetObjectDataCommand`. Done when: a test copies data from one object and undo restores the target's previous values. Cheaper substitute: data kept in app memory, which the reopen assertion rejects.
+- [ ] Add the Object Data Manager: a `DataGrid` over all or selected objects with Show Levels (group depth), Summarize Groups, Show Hierarchy, and Show Totals for numeric fields. Done when: a test over a two-group fixture asserts per-group subtotals and the grand total.
+- [ ] Add Export CSV from the manager through the atomic writer, and Print through `PrintDialog` with page setup. Done when: the CSV matches `tests/fixtures/nodus/object-data/summary.csv` and a driven print to Microsoft Print to PDF shows the grid (capture).
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Find/ObjectQuery.cs`: composable predicates on type, fill, stroke, effect, name, style name, and text content, with And and Or. Done when: `ObjectQueryTests` evaluate each predicate on a fixture document.
+- [ ] Add the query builder dialog and From Selection building a query from every property of the selected object. Done when: From Selection on a red rectangle finds every red rectangle in the fixture and nothing else.
+- [ ] Add Find Next, Previous, All, and All on Page, and search range Selection, Current artboard, All artboards, or listed artboards, selecting results on canvas. Done when: `ObjectQueryTests` assert result order and range filtering.
+- [ ] Save and load criteria as `.nodusquery` JSON. Done when: a round-trip test compares the query tree exactly.
+- [ ] Add Replace on all matches as one `CompositeCommand`: color (exact, by color model, or by palette, through `D02 T09 §6`'s `ColorReplaceService`), stroke properties (through `D02 T09 §12`'s `OutlineReplaceService`), and text properties. Done when: `ReplaceObjectsTests` replace on 50 objects and one undo restores all.
+- [ ] Add the Document Info panel: document settings, object counts by type, styles, brushes, spot colors, patterns, gradients, fonts, and linked and embedded images, with a selection-only toggle and Save as TXT. Done when: `DocumentInfoReportTests` match a golden TXT for the fixture.
+- [ ] Measure Find All on the 10,000-object fixture from §5 under 200 ms. Done when: a performance test (trait `Category=Performance`) records the time.
+- [ ] Log each data edit, replace, and export at Information naming the object count, the audit record beside the undo history. Done when: the lines appear in a driven run.
+- [ ] Capture the three surfaces to their capture folders. Done when: captures exist.
+- [ ] Update `docs/user/nodus/object-data-and-find.md`. Done when: every control is documented.
+- [ ] Commit: `"nodus: object data, the data manager, find and replace objects, and document info"`
+
+**Test checkpoint:** Format fidelity proof and unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~ObjectData|FullyQualifiedName~ObjectQuery|FullyQualifiedName~ReplaceObjects|FullyQualifiedName~DocumentInfoReport"` exits 0; the object-data fixture round-trips every field and format element by element, and `ReplaceObjectsTests` undo in one step. Cheaper substitute that fails: data kept in app memory, lost on reopen.
+
+## 11. QR Codes and Barcodes
+
+A packaging or print designer needs a scannable code that stays editable and styled, generated without a sign-in and validated without the network. ZXing.Net (Apache-2.0, GPL-3.0 compatible) and the `QrMatrixEncoder` that `D02 T13 §13` adds for print merge encode the module matrix, and ZXing.Net decodes for validation; Nodus draws the vector geometry itself and keeps the code a live object through `D02 T07 §1`. Catalog: NP-2739 to NP-2750 (12 features: NP-2739 insert barcode, NP-2740 insert QR code, NP-2741 QR content types, NP-2742 pixel fill and background fill, NP-2743 pixel outline, NP-2744 quiet-zone margin, NP-2745 pixel shape and fill factor, NP-2746 weld pixels, NP-2747 pixel roundness, NP-2748 error correction level, NP-2749 QR styles and defaults, NP-2750 validate QR codes and barcodes).
+
+**Fidelity:** new build, no baseline; captured to docs/captures/nodus/qr-code/ and docs/captures/nodus/barcode/.
+**Job:** a designer can place a scannable, styled QR code or barcode that stays editable. Consumer: the document (a live `nodus:qr-*` object with expanded vector fallback) and whoever scans the printed code.
+**Treatment:** Object, Insert, QR Code creates a live QR object edited in the Properties panel; Object, Insert, Barcode opens a wizard; Validate decodes the rendered result locally. Cheaper substitute that fails the checkpoint: an embedded bitmap QR code, or one that needs a sign-in.
+**Chrome:** consume the live-object contract of `D02 T07 §1`, the color model of `D02 T09 §1`, object styles of `D02 T09 §15`, the Properties panel of `D02 T07 §8`, and `D02 T13 §13`'s `QrMatrixEncoder` and ZXing.Net reference. Do not render codes as bitmaps, and do not add a second QR encoder.
+
+**Requires:** display-session -- Properties panel captures need an interactive desktop
+
+- [ ] Reuse `src/Nodus/Photon.Nodus.Core/Barcodes/QrMatrixEncoder.cs` and the ZXing.Net reference from `D02 T13 §13`, extending its `docs/dev/decisions.md` row with this section's uses (live QR objects, barcodes, and local validation). Done when: the row names this section and `grep -rn "new QRCodeWriter\|BarcodeWriter" src/Nodus` finds encoder construction only inside `Barcodes/`.
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Barcodes/QrPayload.cs` builders for URL, `mailto:`, `tel:`, `SMSTO:`, vCard 3.0, MECARD, iCalendar `VEVENT`, `geo:` URI, and plain text. Done when: `QrPayloadTests` assert the expected string for each type, including escaping of `;` and `,` in vCard fields.
+- [ ] Add `src/Nodus/Photon.Nodus.Core/Barcodes/QrCodeObject.cs`: content type and fields, error correction L, M, Q, or H, margin in modules, pixel shape (square, circle, diamond, star, rounded), fill factor percent, roundness, weld adjacent modules, pixel fill, background fill, and pixel outline, with finder patterns kept square. Done when: `QrCodeObjectTests` build geometry for every shape and assert finder patterns are square.
+- [ ] Weld adjacent modules by union through `SKPath.Op` into one path per connected region. Done when: a test on a known matrix produces the expected region count.
+- [ ] Persist per `D02 T07 §1`: parameters as `nodus:qr-*` attributes and the expanded paths as the SVG fallback, restored live on reopen. Done when: `tests/fixtures/nodus/codes/qr-live.svg` reopens as a live QR object with identical parameters. Cheaper substitute: a raster QR image, which reopens as a plain image and fails the live-object check.
+- [ ] Add Object, Insert, QR Code creating the live object at the view center as one undoable command, and a Properties panel section editing every parameter, each change one command. Done when: a driven insert and edit updates the code and undo restores it (capture).
+- [ ] Let QR objects accept object styles of `D02 T09 §15` and a document default QR style under `nodus.defaults.qr`. Done when: applying a style changes pixel fill and shape in a test.
+- [ ] Add the Insert Barcode wizard: symbology (EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, ITF-14, Codabar), data with check digit validation, bar height, human-readable text font and size, and quiet zone, producing a live barcode object with vector bars and live text. Done when: `BarcodeTests` compute check digits for EAN-13 and UPC-A and refuse a wrong digit by name.
+- [ ] Add Validate: render the object at 300 DPI to a bitmap and decode with ZXing.Net, reporting the decoded text and whether it matches, for Nodus codes and for any selected code artwork, with no network use. Done when: `QrCodeObjectTests` decode every pixel shape at fill factor 60 to 100 with error correction H back to its payload, and `BarcodeTests` decode every symbology.
+- [ ] Log each insert, edit, and validation result at Information. Done when: the lines appear in a driven run.
+- [ ] Capture the QR Properties section and the barcode wizard to their capture folders. Done when: captures exist.
+- [ ] Update `docs/user/nodus/qr-and-barcodes.md`. Done when: every content type, option, and symbology is documented.
+- [ ] Commit: `"nodus: live QR codes and barcodes with local validation"`
+
+**Test checkpoint:** Unit test and format fidelity proof: `dotnet test Photon.slnx --filter "FullyQualifiedName~QrPayload|FullyQualifiedName~QrCodeObject|FullyQualifiedName~Barcode"` exits 0; every styled QR and barcode fixture decodes back to its payload with ZXing.Net, and `qr-live.svg` reopens as a live QR object with identical parameters. Cheaper substitute that fails: a raster QR image, which reopens as a plain image and fails the live-object check.
+
+## Verification
+
+- [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
+- [ ] `dotnet test Photon.slnx` exits 0 with every test class named in §1 to §11 reporting
+- [ ] `PreferencesCoverageTests` pass over every key added by §4 and §5, and `docs/dev/nodus/preference-keys.md` matches the registry
+- [ ] The freeze check of §5 passes on the committed fixtures
+- [ ] Every capture named in a Fidelity line exists under `docs/captures/nodus/`, and every user guide page named in a section exists under `docs/user/nodus/`
+- [ ] B-013 is gone from `todo/backlog.md` and §7 carries its source key
+- [ ] `python scripts/todo-claims.py` holds for this file
+- [ ] `python scripts/todo-graph.py validate` clean

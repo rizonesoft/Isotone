@@ -12,7 +12,7 @@ The live execution plan for the Photon Graphics Suite. Format spec: [README.md](
 
 ## What this plan is
 
-Photon is a .NET 11 WPF monorepo holding three standalone creative applications: **Nodus** (vector, imported from Bezier under `src/Nodus/`), **Imago** (raster, imported under `src/Imago/`), and **Lumen** (darkroom and asset manager, planned). They are developed together and distributed separately. Shared code lives in `Photon.Core` (non-UI) and `Photon.UI` (WPF), and only once a second app needs it. The imported apps' legacy roadmaps were mined into this tree on 2026-09-26 and are kept for reference in [`../docs/legacy/`](../docs/legacy/README.md); the same day the plan was bounded by [`budget.json`](./budget.json), and the feature ideas no planned row needs moved to [`backlog.md`](./backlog.md).
+Photon is a .NET 11 WPF monorepo holding three standalone creative applications: **Nodus** (vector, imported from Bezier under `src/Nodus/`), **Imago** (raster, imported under `src/Imago/`), and **Lumen** (darkroom and asset manager, planned). They are developed together and distributed separately. Shared code lives in `Photon.Core` (non-UI) and `Photon.UI` (WPF), and only once a second app needs it. The imported apps' legacy roadmaps were mined into this tree on 2026-09-26 and are kept for reference in [`../docs/legacy/`](../docs/legacy/README.md); the same day the plan was bounded by [`budget.json`](./budget.json), and the feature ideas no planned row needs moved to [`backlog.md`](./backlog.md). Also on 2026-09-26 the operator decided that Nodus gets every CorelDRAW and every Illustrator feature: the parity catalog in [`../docs/parity/`](../docs/parity/README.md) routes each one to a section, and ten parity phases (4 to 13) run between Nodus 0.1.0 and Imago's foundation.
 
 ## Domain order
 
@@ -23,12 +23,12 @@ Domains are numbered in **allocation order**. `DNN TNN §N` cross-references enc
 | No. | Domain | Phase | Purpose |
 | :-: | ------ | :---: | ------- |
 | 00 | [Workspace](./00-workspace/INDEX.md) | 0, 2 | Toolchain, solution, gates, CI, the TODO system, import debt, and visual baselines. |
-| 01 | [Core](./01-core/INDEX.md) | 2, 3, 5 | `Photon.Core` (non-UI services) and `Photon.UI` (the WPF house style), each filled only when two apps need it. |
-| 02 | [Nodus](./02-nodus/INDEX.md) | 1, 2, 3, 9 | The vector editor: rename, foundation, 0.1.0, then its deferral owners and accessibility. |
-| 03 | [Imago](./03-imago/INDEX.md) | 1, 4, 5, 10 | The raster editor: rename, WPF-UI removal, rendering, 0.1.0, then its deferral owners and accessibility. |
-| 04 | [Lumen](./04-lumen/INDEX.md) | 6, 7, 11 | The darkroom and photo library: planned from nothing, 0.1.0, then accessibility. |
-| 05 | [Release](./05-release/INDEX.md) | 3, 8 | Clean-machine proof, signing, arm64, the update check, winget, and the suite bundle. |
-| 06 | [Docs](./06-docs/INDEX.md) | 3, 5, 7, 8 | User guides, developer docs that stay true to the tree, and the documentation site. |
+| 01 | [Core](./01-core/INDEX.md) | 2, 3, 6, 9, 10, 12, 15 | `Photon.Core` (non-UI services) and `Photon.UI` (the WPF house style), each filled only when two apps need it, plus the pixel engine, color management, and the AI core the operator placed there for the Nodus parity phases. |
+| 02 | [Nodus](./02-nodus/INDEX.md) | 1, 2, 3, 4-13 | The vector editor: rename, foundation, 0.1.0, then parity with Illustrator 30.8 and CorelDRAW 2026 through 1.0.0. |
+| 03 | [Imago](./03-imago/INDEX.md) | 1, 14, 15, 19 | The raster editor: rename, WPF-UI removal, rendering, 0.1.0, then its deferral owners and accessibility. |
+| 04 | [Lumen](./04-lumen/INDEX.md) | 16, 17, 20 | The darkroom and photo library: planned from nothing, 0.1.0, then accessibility. |
+| 05 | [Release](./05-release/INDEX.md) | 3, 18 | Clean-machine proof, signing, arm64, the update check, winget, and the suite bundle. |
+| 06 | [Docs](./06-docs/INDEX.md) | 3, 15, 17, 18 | User guides, developer docs that stay true to the tree, and the documentation site. |
 | 99 | [Manual](./99-manual/INDEX.md) | 99 | Operator-only steps: repository settings, the signing certificate, icon licenses, accent colors. |
 
 `99-manual` is numbered apart from the allocation sequence on purpose, as ScratchPad's is: it is the operator's phase, not a build area, and a new build domain still appends after `06`.

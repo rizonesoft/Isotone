@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
-> **Progress:** **0 of 134 sections complete (0%).** Budget: 134 of 154 sections; backlog 36 of 150. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 314 sections complete (0%).** Budget: 314 of 354 sections; backlog 28 of 150. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -36,28 +36,33 @@ process todo section: | [ ] | `D00 T01 §1` | Wire the TODO gate into every clon
 
 The finished suite is **three standalone creative applications that behave like one product**: each built by one command from a clean checkout, checked by the same gates, installed by its own installer on a machine that has never seen .NET, versioned and released on its own tag, logging every action that changes a document or a setting, undoing every edit, saving atomically, recovering after a crash, opening and saving its formats with proven fidelity, looking and behaving like its siblings through one theme and one set of shared controls, reachable by keyboard and screen reader, and never needing another Photon app at runtime. Lumen additionally never writes an original image. The count of sections is deliberately not repeated here: read it from `query stats`.
 
-| Aim                                             | Owned by                                                                      |
-| ----------------------------------------------- | ----------------------------------------------------------------------------- |
-| Every clone refuses a broken plan               | `D00 T01 §1` (hook) · `D00 T01 §5` (CI read back)                             |
-| Operator-only work never stalls a runner        | `D00 T01 §2` · `D99 T01 §1`-`§5`                                              |
-| The review panel works before the first stamp   | `D00 T01 §4`                                                                  |
-| No quarantined test, no excused warning         | `D00 T02 §1` · `D00 T02 §2` · `D02 T01 §7`                                    |
-| No dependency without a reason and a license    | `D00 T02 §4` · `D00 T02 §5` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3`      |
-| Every surface has a baseline to review against  | `D00 T03 §2`                                                                  |
-| The apps carry their own names                  | `D02 T01 §1` · `D03 T01 §1` · `D03 T01 §4`                                    |
-| One composition root per app, logging to disk   | `D01 T02 §1` · `D02 T01 §2` · `D02 T01 §3` · `D03 T01 §5` · `D04 T01 §2`      |
-| Shared once, never copied                       | `D01 T01 §1`-`§4` (Photon.UI) · `D01 T02 §1`-`§5` (Photon.Core)               |
-| Every edit has a reverse                        | `D02 T03 §1` · `D02 T03 §4` · `D01 T02 §4` · `D03 T03 §2` · `D04 T02 §1`      |
-| Saves never damage the user's file              | `D02 T04 §1` · `D01 T02 §5` · `D03 T04 §2`                                    |
-| A crash loses nothing                           | `D02 T04 §5` · `D03 T04 §6`                                                   |
-| Formats are proven, not assumed                 | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` |
-| No menu item silently does nothing              | `D02 T03 §5` · `D03 T06 §2`                                                   |
-| Originals are never written                     | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1`                                   |
-| It looks like one suite                         | `standards/shared.md` (design contract) · `D01 T01 §3`                        |
-| It works without a mouse or eyes                | `D02 T06 §17` · `D03 T07 §16` · `D04 T02 §9`                                  |
-| Each app ships alone, proven on a clean machine | `D05 T01 §1` · `D02 T05 §4` · `D03 T06 §3` · `D04 T02 §8`                     |
-| The suite ships together without re-versioning  | `D05 T01 §6`                                                                  |
-| Users can learn it                              | `D06 T01 §1`-`§4`                                                             |
+| Aim                                                                           | Owned by                                                                                                                                                             |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Every clone refuses a broken plan                                             | `D00 T01 §1` (hook) · `D00 T01 §5` (CI read back)                                                                                                                    |
+| Operator-only work never stalls a runner                                      | `D00 T01 §2` · `D99 T01 §1`-`§5`                                                                                                                                     |
+| The review panel works before the first stamp                                 | `D00 T01 §4`                                                                                                                                                         |
+| No quarantined test, no excused warning                                       | `D00 T02 §1` · `D00 T02 §2` · `D02 T01 §7`                                                                                                                           |
+| No dependency without a reason and a license                                  | `D00 T02 §4` · `D00 T02 §5` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` |
+| Every surface has a baseline to review against                                | `D00 T03 §2`                                                                                                                                                         |
+| The apps carry their own names                                                | `D02 T01 §1` · `D03 T01 §1` · `D03 T01 §4`                                                                                                                           |
+| One composition root per app, logging to disk                                 | `D01 T02 §1` · `D02 T01 §2` · `D02 T01 §3` · `D03 T01 §5` · `D04 T01 §2`                                                                                             |
+| Shared once, never copied                                                     | `D01 T01 §1`-`§4` (Photon.UI) · `D01 T02 §1`-`§5` (Photon.Core) · `D01 T03 §1` · `D01 T04 §1` · `D01 T05 §1`                                                         |
+| Every edit has a reverse                                                      | `D02 T03 §1` · `D02 T03 §4` · `D01 T02 §4` · `D03 T03 §2` · `D04 T02 §1`                                                                                             |
+| Saves never damage the user's file                                            | `D02 T04 §1` · `D01 T02 §5` · `D03 T04 §2`                                                                                                                           |
+| A crash loses nothing                                                         | `D02 T04 §5` · `D03 T04 §6`                                                                                                                                          |
+| Formats are proven, not assumed                                               | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §12`                                          |
+| No menu item silently does nothing                                            | `D02 T03 §5` · `D03 T06 §2`                                                                                                                                          |
+| Originals are never written                                                   | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1`                                                                                                                          |
+| It looks like one suite                                                       | `standards/shared.md` (design contract) · `D01 T01 §3`                                                                                                               |
+| It works without a mouse or eyes                                              | `D02 T06 §17` · `D03 T07 §16` · `D04 T02 §9`                                                                                                                         |
+| Each app ships alone, proven on a clean machine                               | `D05 T01 §1` · `D02 T05 §4` · `D03 T06 §3` · `D04 T02 §8`                                                                                                            |
+| The suite ships together without re-versioning                                | `D05 T01 §6`                                                                                                                                                         |
+| Users can learn it                                                            | `D06 T01 §1`-`§4`                                                                                                                                                    |
+| Nodus covers every CorelDRAW and Illustrator capability in the parity catalog | `D00 T01 §6` (the catalog gate) · `D02 T17 §1`-`§10` (each release reconciles its phase)                                                                             |
+| Nodus opens and saves Illustrator and CorelDRAW files                         | `D02 T14 §3` · `D02 T14 §4` · `D02 T14 §5` · `D02 T14 §6` · `D02 T14 §7` · `D02 T14 §8`                                                                              |
+| Print and PDF output are prepress-grade                                       | `D02 T13 §5` · `D02 T13 §7` · `D02 T13 §14` · `D02 T13 §15`                                                                                                          |
+| AI results are editable, undoable, and reproducible                           | `D01 T05 §3` · `D02 T15 §1` · `D02 T15 §2` · `D02 T15 §6`                                                                                                            |
+| Nothing leaves the machine without an explicit user action                    | `D01 T05 §2` · `D01 T05 §4`                                                                                                                                          |
 
 ---
 
@@ -70,6 +75,8 @@ Nothing in this plan has been built, but the tree is not empty.
 **Imago** (imported under `src/Imago/`) has a sound core model (layers, masks, selections, tiles, color, history) with 41 test methods, a WPF shell still built on WPF-UI, a document service that pretends, and no rendering, tools, or codecs. A local branch carries a December 2025 snapshot with a canvas, ruler, and a WPF-UI-free main window that `D03 T01 §2` ports.
 
 **Lumen** has no code; it is planned in full in `todo/04-lumen/`.
+
+**Nodus parity** is planned, not built: on 2026-09-26 the operator decided Nodus gets every CorelDRAW and every Illustrator feature, the catalog in [`../docs/parity/nodus-parity.md`](../docs/parity/nodus-parity.md) routes each of their 4,335 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 4 to 13 run the sections between Nodus 0.1.0 and Imago's foundation.
 
 **The workspace** has a pinned SDK, one solution, one build configuration, scripts, installers, and CI workflows written on 2026-09-26 and not yet committed or run on GitHub.
 
@@ -119,6 +126,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T01 §2` | The operator requirement for manual rows            |   6   |
 | [ ] | `D00 T01 §3` | Raise the claims coverage floor                     |   3   |
 | [ ] | `D00 T01 §4` | Prove the review panel end to end                   |   5   |
+| [ ] | `D00 T01 §6` | The parity catalog validator                        |  19   |
 | [ ] | `D00 T02 §1` | Fix the quarantined tests and empty the quarantine  |   5   |
 | [ ] | `D00 T02 §2` | Imago diagnostics to zero                           |   4   |
 | [ ] | `D00 T02 §3` | Quiet the WPF temporary project output              |   3   |
@@ -193,9 +201,266 @@ With its foundation sound, Nodus becomes a complete first release: `Photon.UI` t
 | [ ] | `D05 T01 §1` | The clean-machine install procedure                  |   3   |
 | [ ] | `D02 T05 §4` | Nodus 0.1.0                                          |   8   |
 
-### Phase 4 -- Imago foundation: snapshot port, WPF-UI out, tiles, rendering
+### Phase 4 -- Nodus parity I: document model, pages, layers, selection, and view
 
-Imago starts once Nodus has shipped. The December 2025 snapshot's canvas, ruler, and container are ported onto `main` and the branch deleted, WPF-UI leaves the suite for good, Imago starts through the shared logging and settings, its layers become tile-backed, the viewport renders the tiled composite at any zoom, the render graph composites every blend mode against reference goldens, and a ComputeSharp path matches the CPU. The codec decision is made here so file work can start the moment editing exists.
+Parity starts where every later feature stands. This phase fixes how live objects persist in SVG (the `nodus:` namespace with an expanded fallback), gives the canvas a spatial index so documents with thousands of objects stay interactive, unifies CorelDRAW pages and Illustrator artboards into one model with its panel, and completes layers and the Objects panel, selection, isolation and focus mode, the Properties panel and property bar, rulers, guides, grids, snapping, view modes, history, and the New Document dialog with templates. Tabs and nested layers (`D02 T06 §7`) move here first because pages and layers build on them. It ends with `nodus-v0.2.0`.
+
+|  ✔  | Section       | Deliverable                                                        | Items |
+| :-: | ------------- | ------------------------------------------------------------------ | :---: |
+| [ ] | `D02 T06 §7`  | Documents in tabs, saved layouts, nested layers                    |   5   |
+| [ ] | `D02 T07 §1`  | The live-object contract in the nodus namespace                    |  20   |
+| [ ] | `D02 T07 §2`  | Spatial index, culling, and dirty-region rendering                 |  19   |
+| [ ] | `D02 T07 §3`  | Pages and artboards: one model, panel, and commands                |  22   |
+| [ ] | `D02 T07 §4`  | Multipage views, page background, page numbers, navigation         |  23   |
+| [ ] | `D02 T07 §5`  | Layers, master layers, lock and hide, the Objects panel            |  23   |
+| [ ] | `D02 T07 §6`  | Selection: Select menu, Select Same, wand, lasso, saved selections |  19   |
+| [ ] | `D02 T07 §7`  | Isolation mode and focus mode                                      |  11   |
+| [ ] | `D02 T07 §8`  | The Properties panel and the contextual property bar               |  14   |
+| [ ] | `D02 T07 §9`  | Rulers, units, drawing scale, and grids                            |  13   |
+| [ ] | `D02 T07 §10` | Guides, the Guides panel, the measure tool, the Info panel         |  15   |
+| [ ] | `D02 T07 §11` | Snapping modes, smart guides, dynamic and alignment guides         |  19   |
+| [ ] | `D02 T07 §12` | View modes, zoom, rotate view, saved views, windows                |  18   |
+| [ ] | `D02 T07 §13` | History panel, repeat, paste variants, quick duplicates            |  14   |
+| [ ] | `D02 T07 §14` | New Document dialog, presets, templates, document information      |  20   |
+| [ ] | `D02 T17 §1`  | Nodus 0.2.0 (Phase 4)                                              |  12   |
+
+### Phase 5 -- Nodus parity II: drawing, paths, shapes, shaping, and transform
+
+With the document model settled, the drawing layer catches up: every pen, curve, freehand, and smart-drawing tool, live shapes with editable parameters and live corners, full node editing, cutting and erasing, liquify and shape-editing brushes, Pathfinder and the shape builder, compound paths and clipping masks, precise transforms and Transform Each, align and distribute extensions, and dimensions and connectors. Path editing (`D02 T06 §2`) moves here first because node editing extends it. It ends with `nodus-v0.3.0`.
+
+|  ✔  | Section       | Deliverable                                                                  | Items |
+| :-: | ------------- | ---------------------------------------------------------------------------- | :---: |
+| [ ] | `D02 T06 §2`  | Path editing: continue, join, break, reverse, simplify                       |   4   |
+| [ ] | `D02 T08 §1`  | Pen, Bezier, and anchor point tools                                          |  14   |
+| [ ] | `D02 T08 §2`  | Curvature, B-spline, polyline, 3-point, line and arc tools, parallel drawing |  14   |
+| [ ] | `D02 T08 §3`  | Pencil, freehand, smooth, path eraser, join, and smart drawing               |  17   |
+| [ ] | `D02 T08 §4`  | Live shapes and live corners                                                 |  20   |
+| [ ] | `D02 T08 §5`  | Grid, graph paper, flare, common shapes, and impact tools                    |  16   |
+| [ ] | `D02 T08 §6`  | Node editing: types, transforms, align, distribute, reduce                   |  20   |
+| [ ] | `D02 T08 §7`  | Join curves, average, offset, anchors, clean up, split into grid             |  14   |
+| [ ] | `D02 T08 §8`  | Knife, scissors, eraser, virtual segment delete, crop                        |  15   |
+| [ ] | `D02 T08 §9`  | Liquify and shape-editing brushes                                            |  17   |
+| [ ] | `D02 T08 §10` | Pathfinder, shaping, and the shape builder                                   |  18   |
+| [ ] | `D02 T08 §11` | Compound paths, clipping masks, draw inside and behind, intertwine           |  14   |
+| [ ] | `D02 T08 §12` | The Transform panel, dialogs, Transform Again, Transform Each                |  17   |
+| [ ] | `D02 T08 §13` | Rotate, reflect, scale, shear, reshape, and free transform tools             |  14   |
+| [ ] | `D02 T08 §14` | Align, distribute, arrange, and step and repeat extensions                   |  16   |
+| [ ] | `D02 T08 §15` | Dimensions, connectors, and callouts                                         |  17   |
+| [ ] | `D02 T17 §2`  | Nodus 0.3.0 (Phase 5)                                                        |  12   |
+
+### Phase 6 -- Nodus parity III: color, fills, strokes, brushes, transparency, styles, and symbols
+
+Appearance comes next because every effect and every format carries it. `Photon.Core` gains its color-management engine first, then Nodus gets the full color model (CMYK, Lab, spot, global), the color panel and pickers, swatches and palettes, color styles and harmonies, Recolor Artwork, every gradient kind including mesh, pattern and texture fills, complete strokes with arrowheads and variable width, the Appearance stack, graphic and object styles, the brush engine with every brush kind, every blend and merge mode with opacity masks, and symbols with overrides and libraries (after `D02 T06 §11`). It ends with `nodus-v0.4.0`.
+
+|  ✔  | Section       | Deliverable                                                                                                  | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------------------------------------ | :---: |
+| [ ] | `D02 T06 §11` | Symbols and the asset library                                                                                |   3   |
+| [ ] | `D01 T04 §1`  | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms |  18   |
+| [ ] | `D01 T04 §2`  | Rendering intents, black point compensation, proofing transforms, and gamut checks                           |  14   |
+| [ ] | `D02 T09 §1`  | The color model: RGB, CMYK, HSB, Lab, grayscale, spot, global, and tints                                     |  13   |
+| [ ] | `D02 T09 §2`  | The Color panel, color picker, recent colors, and eyedroppers                                                |  17   |
+| [ ] | `D02 T09 §3`  | The Swatches panel, document palette, and color groups                                                       |  14   |
+| [ ] | `D02 T09 §4`  | The palette bar, palette editor, color libraries, and palette files                                          |  18   |
+| [ ] | `D02 T09 §5`  | Color styles, harmonies, and the color guide                                                                 |  15   |
+| [ ] | `D02 T09 §6`  | Recolor Artwork, Edit Colors, and find and replace color                                                     |  14   |
+| [ ] | `D02 T09 §7`  | The gradient model: linear, radial, conical, rectangular, stops, repeat, and interpolation                   |  14   |
+| [ ] | `D02 T09 §8`  | The gradient tool, interactive fill, stroke gradients, and freeform gradients                                |  15   |
+| [ ] | `D02 T09 §9`  | Gradient mesh and mesh fill                                                                                  |  13   |
+| [ ] | `D02 T09 §10` | Pattern fills and pattern editing                                                                            |  12   |
+| [ ] | `D02 T09 §11` | Texture and procedural fills, and the fill library                                                           |  13   |
+| [ ] | `D02 T09 §12` | The Stroke panel: caps, joins, alignment, dashes, arrowheads, and line styles                                |  16   |
+| [ ] | `D02 T09 §13` | The width tool and variable outlines                                                                         |  11   |
+| [ ] | `D02 T09 §14` | The Appearance panel: stacked fills, strokes, and effects                                                    |  14   |
+| [ ] | `D02 T09 §15` | Graphic styles, object styles, style sets, and default properties                                            |  15   |
+| [ ] | `D02 T09 §16` | The brush engine, art brushes, and pattern brushes                                                           |  14   |
+| [ ] | `D02 T09 §17` | Scatter, sprayer, and calligraphic brushes, the paintbrush, and the blob brush                               |  14   |
+| [ ] | `D02 T09 §18` | Bristle and painterly brushes, and brush libraries                                                           |  19   |
+| [ ] | `D02 T09 §19` | Opacity and blend modes                                                                                      |  11   |
+| [ ] | `D02 T09 §20` | Opacity masks, fountain and pattern transparency, knockout, and feather                                      |  14   |
+| [ ] | `D02 T09 §21` | Symbols: dynamic symbols, 9-slice scaling, registration, nesting, and linked libraries                       |  15   |
+| [ ] | `D02 T09 §22` | Symbolism tools and the symbol sprayer                                                                       |  11   |
+| [ ] | `D02 T17 §3`  | Nodus 0.4.0 (Phase 6)                                                                                        |  12   |
+
+### Phase 7 -- Nodus parity IV: type, tables, and graphs
+
+Type is its own discipline, so it gets its own phase: HarfBuzz shaping with bidirectional and CJK support, the rich text model, fonts and substitution, character, OpenType, and paragraph formatting, frames, threading and wrap, type on a path, text commands, styles, writing tools and text import, then tables and graphs, which are built from text and appearance. Area text and text on a path (`D02 T06 §3`) move here first. It ends with `nodus-v0.5.0`.
+
+|  ✔  | Section       | Deliverable                                                                            | Items |
+| :-: | ------------- | -------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D02 T06 §3`  | Text: area text, text on path, text to path                                            |   4   |
+| [ ] | `D02 T10 §1`  | The text shaping engine: HarfBuzzSharp, bidi, script runs, and font fallback           |  23   |
+| [ ] | `D02 T10 §2`  | The rich text model and text objects: point, area, path, and vertical                  |  24   |
+| [ ] | `D02 T10 §3`  | Fonts: the font list, filters, samples, and missing-font substitution                  |  28   |
+| [ ] | `D02 T10 §4`  | Character formatting                                                                   |  18   |
+| [ ] | `D02 T10 §5`  | OpenType features, glyphs, variable fonts, and glyph snapping                          |  26   |
+| [ ] | `D02 T10 §6`  | Paragraph formatting, composers, justification, and hyphenation                        |  19   |
+| [ ] | `D02 T10 §7`  | Tabs, drop caps, and bullets and numbering                                             |  15   |
+| [ ] | `D02 T10 §8`  | Area text frames, columns, threading, and text wrap                                    |  21   |
+| [ ] | `D02 T10 §9`  | Type on a path options and effects                                                     |  14   |
+| [ ] | `D02 T10 §10` | Vertical, CJK, and right-to-left type                                                  |  17   |
+| [ ] | `D02 T10 §11` | Text commands: find and replace, change case, special characters, and placeholder text |  20   |
+| [ ] | `D02 T10 §12` | Character, paragraph, and frame styles                                                 |  13   |
+| [ ] | `D02 T10 §13` | Writing tools, and text import and export                                              |  25   |
+| [ ] | `D02 T10 §14` | Tables                                                                                 |  22   |
+| [ ] | `D02 T10 §15` | Graphs                                                                                 |  17   |
+| [ ] | `D02 T17 §4`  | Nodus 0.5.0 (Phase 7)                                                                  |  12   |
+
+### Phase 8 -- Nodus parity V: interactive and live effects
+
+Effects sit on the Appearance stack and the live-object contract, both shipped by now. This phase builds the effect framework and then every interactive effect both competitors ship: blend, contour, envelope and warp, distort, shadows and glows and bevels, 3D extrude and 3D and Materials, lenses, PowerClip, symmetry, the perspective grid and perspective objects, puppet warp, Live Paint, repeats and objects on a path, and path effects. It ends with `nodus-v0.6.0`.
+
+|  ✔  | Section       | Deliverable                                                                                  | Items |
+| :-: | ------------- | -------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D02 T11 §1`  | The live-effect framework: effect stack, parameters, copy, clone, clear, and expand          |  19   |
+| [ ] | `D02 T11 §2`  | Blend: tool, steps, spacing, easing, and color acceleration                                  |  17   |
+| [ ] | `D02 T11 §3`  | Blend on a path, node mapping, split, fuse, compound blends, and presets                     |  15   |
+| [ ] | `D02 T11 §4`  | Contour                                                                                      |  15   |
+| [ ] | `D02 T11 §5`  | Envelope distort and warp                                                                    |  19   |
+| [ ] | `D02 T11 §6`  | The distort tool and Distort & Transform effects                                             |  14   |
+| [ ] | `D02 T11 §7`  | Drop, inner, perspective, and block shadows                                                  |  17   |
+| [ ] | `D02 T11 §8`  | Glows, feather, scribble, round corners, and bevels                                          |  14   |
+| [ ] | `D02 T11 §9`  | 3D extrude and revolve: geometry, lighting, bevels, and vanishing points                     |  18   |
+| [ ] | `D02 T11 §10` | 3D and Materials: inflate, plane, materials, mapped art, ray-traced rendering, and 3D export |  25   |
+| [ ] | `D02 T11 §11` | Lenses                                                                                       |  15   |
+| [ ] | `D02 T11 §12` | PowerClip frames                                                                             |  15   |
+| [ ] | `D02 T11 §13` | Symmetry drawing mode                                                                        |  14   |
+| [ ] | `D02 T11 §14` | The perspective grid and drawing planes                                                      |  15   |
+| [ ] | `D02 T11 §15` | Perspective objects and the Add Perspective effect                                           |  17   |
+| [ ] | `D02 T11 §16` | Puppet warp                                                                                  |  13   |
+| [ ] | `D02 T11 §17` | Live Paint and smart fill                                                                    |  15   |
+| [ ] | `D02 T11 §18` | Repeats and objects on a path                                                                |  16   |
+| [ ] | `D02 T11 §19` | Path effects: convert to shape, offset, outline, and pathfinder effects                      |  13   |
+| [ ] | `D02 T17 §5`  | Nodus 0.6.0 (Phase 8)                                                                        |  12   |
+
+### Phase 9 -- Nodus parity VI: bitmaps, tracing, and the shared pixel engine
+
+Bitmaps arrive once vectors are complete. `Photon.Core` gains the pixel engine the operator placed there for the whole suite (buffers, resampling, dithering, adjustments, and every bitmap effect family), and Nodus gets bitmap objects, the non-destructive effect stack, the adjustment lab, tracing (Image Trace and PowerTRACE), photo-based artwork, the Links panel, and SVG filters. Placing images (`D02 T06 §14`) moves here first because bitmap objects need it. It ends with `nodus-v0.7.0`.
+
+|  ✔  | Section       | Deliverable                                                                                | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------------------ | :---: |
+| [ ] | `D02 T06 §14` | More formats and the export dialog                                                         |   4   |
+| [ ] | `D01 T03 §1`  | Pixel buffers, the effect contract, and the golden harness                                 |  20   |
+| [ ] | `D01 T03 §2`  | Resampling, rotation, straighten, perspective, and lens correction                         |  14   |
+| [ ] | `D01 T03 §3`  | Palette quantization and dithering                                                         |  16   |
+| [ ] | `D01 T03 §4`  | Tonal adjustments                                                                          |  16   |
+| [ ] | `D01 T03 §5`  | Color adjustments                                                                          |  15   |
+| [ ] | `D01 T03 §6`  | Blur, sharpen, and noise                                                                   |  17   |
+| [ ] | `D01 T03 §7`  | Distort and 3D-style effects                                                               |  15   |
+| [ ] | `D01 T03 §8`  | Artistic and art-stroke effects                                                            |  16   |
+| [ ] | `D01 T03 §9`  | Brush-stroke and sketch effects                                                            |  13   |
+| [ ] | `D01 T03 §10` | Texture and creative effects                                                               |  15   |
+| [ ] | `D01 T03 §11` | Camera, color-transform, edge, custom, pixelate, and video effects                         |  16   |
+| [ ] | `D02 T12 §1`  | Bitmap objects: crop, resample, rasterize, convert to bitmap, color mask, and straighten   |  28   |
+| [ ] | `D02 T12 §2`  | The effect stack on objects: FX panel, effect gallery, preview, flatten, and effect lenses |  21   |
+| [ ] | `D02 T12 §3`  | Adjustments in Nodus: the Image Adjustment Lab and adjustment presets                      |  17   |
+| [ ] | `D02 T12 §4`  | The tracing engine: outline tracing, color quantization, and stacking                      |  15   |
+| [ ] | `D02 T12 §5`  | Centerline tracing, the Image Trace panel, and PowerTRACE                                  |  19   |
+| [ ] | `D02 T12 §6`  | Photo artwork: Pointillizer, PhotoCocktail, Object Mosaic, and mockups                     |  17   |
+| [ ] | `D02 T12 §7`  | The Links panel and linked sources                                                         |  20   |
+| [ ] | `D02 T12 §8`  | SVG filter effects                                                                         |  13   |
+| [ ] | `D02 T17 §6`  | Nodus 0.7.0 (Phase 9)                                                                      |  12   |
+
+### Phase 10 -- Nodus parity VII: color management, print, prepress, and PDF
+
+Output comes after everything it has to print exists. Bitmap color modes finish the color engine, then Nodus gets document color settings, the print dialog, marks and bleed, separations, soft proofing, overprint and trapping, flattening, preflight and packaging, PostScript options, imposition and layout styles, print merge with variable data, and its own PDF writer with PDF/X presets and interactivity. It ends with `nodus-v0.8.0`.
+
+|  ✔  | Section       | Deliverable                                                                      | Items |
+| :-: | ------------- | -------------------------------------------------------------------------------- | :---: |
+| [ ] | `D01 T04 §3`  | Bitmap color modes, duotone, and multichannel, with the Nodus Duotone dialog     |  18   |
+| [ ] | `D02 T13 §1`  | Document color settings: profiles, policies, assign, convert, and embed          |  20   |
+| [ ] | `D02 T13 §2`  | The print dialog: printers, range, copies, placement, scaling, and preview       |  20   |
+| [ ] | `D02 T13 §3`  | Print tiling, print styles, print to file, and print summaries                   |  11   |
+| [ ] | `D02 T13 §4`  | Printer's marks and bleed                                                        |  14   |
+| [ ] | `D02 T13 §5`  | Separations, halftone screens, and the ink manager                               |  16   |
+| [ ] | `D02 T13 §6`  | Soft proofing, gamut warning, overprint preview, and separations preview         |  14   |
+| [ ] | `D02 T13 §7`  | Overprint attributes and trapping                                                |  17   |
+| [ ] | `D02 T13 §8`  | Transparency flattening and the flattener preview                                |  12   |
+| [ ] | `D02 T13 §9`  | Preflight, Package, and Collect for Output                                       |  11   |
+| [ ] | `D02 T13 §10` | PostScript output and driver compatibility options                               |  15   |
+| [ ] | `D02 T13 §11` | Imposition, binding, and page placement                                          |  10   |
+| [ ] | `D02 T13 §12` | Layout styles, labels, and banners                                               |  11   |
+| [ ] | `D02 T13 §13` | Print merge and variable data                                                    |  19   |
+| [ ] | `D02 T13 §14` | The PDF writer: spot colors, layers, and exact vector output                     |  17   |
+| [ ] | `D02 T13 §15` | PDF presets and standards: PDF/X, PDF/A, compatibility, compression, and marks   |  16   |
+| [ ] | `D02 T13 §16` | PDF interactivity and security: bookmarks, hyperlinks, tagged PDF, and passwords |  14   |
+| [ ] | `D02 T17 §7`  | Nodus 0.8.0 (Phase 10)                                                           |  12   |
+
+### Phase 11 -- Nodus parity VIII: file formats, export, and web
+
+Formats come after the object model they must carry is complete, so each reader and writer maps onto real Nodus objects and owes a fidelity proof: SVG options, PDF import, Illustrator `.ai` import and export, CorelDRAW `.cdr` import and export, EPS, DXF and DWG, metafiles, raster formats, PSD, office documents, Export for Screens and the export list, Export for Web, slices and hyperlinks, pixel-perfect drawing, and clipboard and OLE exchange. It ends with `nodus-v0.9.0`.
+
+|  ✔  | Section       | Deliverable                                                                 | Items |
+| :-: | ------------- | --------------------------------------------------------------------------- | :---: |
+| [ ] | `D02 T14 §1`  | SVG options: SVGZ, styling modes, CSS export, and SVG code                  |  17   |
+| [ ] | `D02 T14 §2`  | PDF import                                                                  |  19   |
+| [ ] | `D02 T14 §3`  | Illustrator import: PDF-compatible .ai files                                |   9   |
+| [ ] | `D02 T14 §4`  | Illustrator import: private data and legacy PostScript .ai                  |   9   |
+| [ ] | `D02 T14 §5`  | Illustrator .ai export                                                      |  13   |
+| [ ] | `D02 T14 §6`  | CorelDRAW import: containers, pages, layers, and objects                    |  14   |
+| [ ] | `D02 T14 §7`  | CorelDRAW import: fills, outlines, text, effects, and bitmaps; CMX          |  10   |
+| [ ] | `D02 T14 §8`  | CorelDRAW CDR and CMX export                                                |  12   |
+| [ ] | `D02 T14 §9`  | EPS and PostScript import and export                                        |  15   |
+| [ ] | `D02 T14 §10` | DXF and DWG import and export                                               |  12   |
+| [ ] | `D02 T14 §11` | EMF, WMF, CGM, HPGL, and WPG                                                |  12   |
+| [ ] | `D02 T14 §12` | Raster formats: import and export through WIC                               |  25   |
+| [ ] | `D02 T14 §13` | Photoshop PSD import and export                                             |  12   |
+| [ ] | `D02 T14 §14` | Office and text documents, Export For Office, and font export               |  16   |
+| [ ] | `D02 T14 §15` | Export for Screens, asset export, and the export list                       |  20   |
+| [ ] | `D02 T14 §16` | Export for Web: optimized preview and web formats                           |  15   |
+| [ ] | `D02 T14 §17` | Slices, image maps, hyperlinks, rollovers, and SVG interactivity            |  20   |
+| [ ] | `D02 T14 §18` | Pixel-perfect drawing, pixel preview, and object hinting                    |  12   |
+| [ ] | `D02 T14 §19` | Clipboard formats, OLE objects, placing multiple files, and scanner acquire |  17   |
+| [ ] | `D02 T17 §8`  | Nodus 0.9.0 (Phase 11)                                                      |  12   |
+
+### Phase 12 -- Nodus AI: editable, suite-aware, reproducible
+
+The AI features are Nodus's own and come after the object model, formats, and tracing they produce and consume. `Photon.Core` and `Photon.UI` gain the shared AI core (OpenRouter with the user's own key, DPAPI key storage, the explicit-send gate, provenance, and the brand kit), then Nodus maps every competitor AI job to an editable, undoable, reproducible feature: vector generation, patterns and fills, expand and bleed, recolor, the assistant, text rewriting and retyping, image generation and cleanup, concept to vector, and the suite pipeline. It ends with `nodus-v0.10.0`.
+
+|  ✔  | Section       | Deliverable                                                                   | Items |
+| :-: | ------------- | ----------------------------------------------------------------------------- | :---: |
+| [ ] | `D01 T05 §1`  | The OpenRouter client: chat, structured output, images, streaming, and models |  22   |
+| [ ] | `D01 T05 §2`  | API keys with DPAPI and the AI settings contract                              |  15   |
+| [ ] | `D01 T05 §3`  | The AI provenance record                                                      |  14   |
+| [ ] | `D01 T05 §4`  | The explicit-send gate and the shared AI surfaces in Photon.UI                |  17   |
+| [ ] | `D01 T05 §5`  | The suite brand kit: shared palettes and styles                               |  13   |
+| [ ] | `D02 T15 §1`  | AI in Nodus: the AI menu, settings, usage, and the provenance panel           |  21   |
+| [ ] | `D02 T15 §2`  | Generate vector artwork from a prompt                                         |  18   |
+| [ ] | `D02 T15 §3`  | Generate patterns and fill shapes                                             |  11   |
+| [ ] | `D02 T15 §4`  | Generative expand and print bleed                                             |  10   |
+| [ ] | `D02 T15 §5`  | AI recolor and palettes from the brand kit                                    |   9   |
+| [ ] | `D02 T15 §6`  | The AI assistant: prompt to edit with undoable commands                       |  15   |
+| [ ] | `D02 T15 §7`  | AI text: rewrite, translate, proofread, fit, and retype                       |  12   |
+| [ ] | `D02 T15 §8`  | AI images: generate, remix, and reference images                              |  11   |
+| [ ] | `D02 T15 §9`  | AI image cleanup: remove background, upscale, repair, and art style           |  10   |
+| [ ] | `D02 T15 §10` | Concept to vector: sketches and images to structured vectors                  |  11   |
+| [ ] | `D02 T15 §11` | The suite pipeline: Lumen to Imago to Nodus hand-offs and shared brand kits   |  15   |
+| [ ] | `D02 T17 §9`  | Nodus 0.10.0 (Phase 12)                                                       |  12   |
+
+### Phase 13 -- Nodus parity IX: workspace, customization, preferences, and Nodus 1.0.0
+
+The last parity phase customizes and audits the whole surface once it exists: the command palette and Preferences (`D02 T06 §12`, `§13`) move here, then workspaces, toolbars, menus and shortcut sets, the preference pages, UI appearance and diagnostics, the welcome screen and navigator, pen and touch input, hints and the project timer, object data and find and replace, QR codes and barcodes, and the accessibility and localization audit (`D02 T06 §17`) over every parity surface. It ends with `nodus-v1.0.0`, which declares the parity catalog complete.
+
+|  ✔  | Section       | Deliverable                                                        | Items |
+| :-: | ------------- | ------------------------------------------------------------------ | :---: |
+| [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD                          |   4   |
+| [ ] | `D02 T06 §13` | Preferences and shortcut remapping                                 |   4   |
+| [ ] | `D02 T16 §1`  | Workspaces: presets, save, reset, import, and export               |  16   |
+| [ ] | `D02 T16 §2`  | Toolbox, toolbars, property bar, and status bar customization      |  17   |
+| [ ] | `D02 T16 §3`  | Menus, context menus, command search, and shortcut sets            |  17   |
+| [ ] | `D02 T16 §4`  | Preferences: general, selection and nodes, display, and units      |  16   |
+| [ ] | `D02 T16 §5`  | Preferences: files, backup, performance, GPU, and warnings         |  16   |
+| [ ] | `D02 T16 §6`  | UI appearance, scaling, and diagnostics                            |  16   |
+| [ ] | `D02 T16 §7`  | The welcome screen and the navigator                               |  14   |
+| [ ] | `D02 T16 §8`  | Pen, touch, and Surface Dial input                                 |  14   |
+| [ ] | `D02 T16 §9`  | Hints, in-app learning, and the project timer                      |  14   |
+| [ ] | `D02 T16 §10` | Object data, the Object Data Manager, and find and replace objects |  16   |
+| [ ] | `D02 T16 §11` | QR codes and barcodes                                              |  13   |
+| [ ] | `D02 T06 §17` | Accessibility and localization                                     |   4   |
+| [ ] | `D02 T17 §10` | Nodus 1.0.0 (Phase 13)                                             |  14   |
+
+### Phase 14 -- Imago foundation: snapshot port, WPF-UI out, tiles, rendering
+
+Imago starts once Nodus has shipped `nodus-v1.0.0` at the end of the parity phases. The December 2025 snapshot's canvas, ruler, and container are ported onto `main` and the branch deleted, WPF-UI leaves the suite for good, Imago starts through the shared logging and settings, its layers become tile-backed, the viewport renders the tiled composite at any zoom, the render graph composites every blend mode against reference goldens, and a ComputeSharp path matches the CPU. The codec decision is made here so file work can start the moment editing exists.
 
 |  ✔  | Section      | Deliverable                                       | Items |
 | :-: | ------------ | ------------------------------------------------- | :---: |
@@ -209,7 +474,7 @@ Imago starts once Nodus has shipped. The December 2025 snapshot's canvas, ruler,
 | [ ] | `D03 T02 §5` | The ComputeSharp compositing path with CPU parity |   5   |
 | [ ] | `D03 T04 §1` | The codec decision                                |   4   |
 
-### Phase 5 -- Imago 0.1.0: editing, files, filters, release
+### Phase 15 -- Imago 0.1.0: editing, files, filters, release
 
 Imago becomes a complete first release: the suite undo history and the atomic document writer move to `Photon.Core` as Imago becomes their second consumer, the About and shortcuts dialogs move to `Photon.UI`, documents open in tabs with every edit in the history, the layers panel and core tools work, PNG, JPEG, TIFF, the native layered format, and PSD import are proven by round trips, autosave and recovery work, the core adjustments and blurs match reference goldens, the user guide is written, and `imago-v0.1.0` ships.
 
@@ -225,7 +490,7 @@ Imago becomes a complete first release: the suite undo history and the atomic do
 | [ ] | `D03 T03 §5` | Selection tools                                   |   4   |
 | [ ] | `D03 T03 §6` | Brush and eraser                                  |   3   |
 | [ ] | `D03 T03 §7` | Transform, crop, image size, and canvas size      |   4   |
-| [ ] | `D03 T03 §8` | Fill, gradient, eyedropper, and the color panel   |   3   |
+| [ ] | `D03 T03 §8` | Fill, gradient, eyedropper, and the color panel   |   4   |
 | [ ] | `D03 T04 §2` | PNG and JPEG open and save                        |   7   |
 | [ ] | `D03 T04 §3` | TIFF open and save                                |   4   |
 | [ ] | `D03 T04 §4` | The native layered format                         |   5   |
@@ -239,7 +504,7 @@ Imago becomes a complete first release: the suite undo history and the atomic do
 | [ ] | `D06 T01 §2` | The Imago user guide                              |   4   |
 | [ ] | `D03 T06 §3` | Imago 0.1.0                                       |   7   |
 
-### Phase 6 -- Lumen foundation: spine, catalog, import, RAW, library
+### Phase 16 -- Lumen foundation: spine, catalog, import, RAW, library
 
 Lumen is planned from nothing with `plan-new-feature` rigor and built on the spine the other two apps proved. The competitor survey is driven first so the plan is corrected by evidence; then the app is created on `Photon.Core` and `Photon.UI`, the RAW decoder is chosen with coverage, speed, and license measured, decoding is proven against a reference, the SQLite catalog and safe import land (the original-file guard joins the frozen set), and the preview cache, grid, and loupe make a 50,000-photo library usable.
 
@@ -255,7 +520,7 @@ Lumen is planned from nothing with `plan-new-feature` rigor and built on the spi
 | [ ] | `D04 T01 §8` | The library grid                  |   5   |
 | [ ] | `D04 T01 §9` | Loupe, compare, and filmstrip     |   3   |
 
-### Phase 7 -- Lumen 0.1.0: develop, export, Edit in Imago, release
+### Phase 17 -- Lumen 0.1.0: develop, export, Edit in Imago, release
 
 Lumen becomes a complete first release: keywords, collections, culling, and XMP sidecars finish the library; the edit stack, the float32 develop pipeline, the develop panel, crop, presets, and export make it a darkroom; Edit in Imago hands photos to Imago over files, never over assemblies; the user guide is written; and `lumen-v0.1.0` ships with the original-file guard proven on the installed build.
 
@@ -273,7 +538,7 @@ Lumen becomes a complete first release: keywords, collections, culling, and XMP 
 | [ ] | `D04 T02 §7`  | Edit in Imago                                |   4   |
 | [ ] | `D04 T02 §8`  | Lumen 0.1.0                                  |   7   |
 
-### Phase 8 -- Distribution and the suite bundle
+### Phase 18 -- Distribution and the suite bundle
 
 With all three apps released, distribution catches up: signing (waiting on the operator's certificate through its `Needs:` line), win-arm64 builds, an opt-in update check shared by every app, winget manifests, the install and troubleshooting guides, and the first suite bundle, `photon-v1.0.0`, which carries each app at its own version. The README shows the real apps and the guides are published as a site.
 
@@ -288,22 +553,7 @@ With all three apps released, distribution catches up: signing (waiting on the o
 | [ ] | `D06 T02 §2` | README images from real captures    |   3   |
 | [ ] | `D06 T02 §3` | The user guides as a published site |   4   |
 
-### Phase 9 -- Nodus after 0.1.0: deferral owners and accessibility
-
-After the suite release, Nodus ships what its 0.1.0 work already points at: path editing and text to path for the disabled and planned commands, tabs for multi-file open, the symbol, palette, and format sections the service triage hands its deferred services to, Preferences, and the accessibility and localization the acceptance bar requires. The rest of the legacy Bezier roadmap waits in [`backlog.md`](./backlog.md) (B-001 to B-013).
-
-|  ✔  | Section       | Deliverable                                            | Items |
-| :-: | ------------- | ------------------------------------------------------ | :---: |
-| [ ] | `D02 T06 §2`  | Path editing: continue, join, break, reverse, simplify |   4   |
-| [ ] | `D02 T06 §3`  | Text: area text, text on path, text to path            |   4   |
-| [ ] | `D02 T06 §7`  | Documents in tabs, saved layouts, nested layers        |   5   |
-| [ ] | `D02 T06 §11` | Symbols and the asset library                          |   3   |
-| [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD              |   4   |
-| [ ] | `D02 T06 §13` | Preferences and shortcut remapping                     |   4   |
-| [ ] | `D02 T06 §14` | More formats and the export dialog                     |   4   |
-| [ ] | `D02 T06 §17` | Accessibility and localization                         |   4   |
-
-### Phase 10 -- Imago after 0.1.0: deferral owners and accessibility
+### Phase 19 -- Imago after 0.1.0: deferral owners and accessibility
 
 After the suite release, Imago ships what its 0.1.0 work already points at: the rest of the filter catalog its disabled Filter menu items name, RAW import through the decoder Lumen shares, workspaces and Preferences, and the accessibility and localization the acceptance bar requires, workspaces first because accessibility audits them. The rest of the legacy Imago roadmap waits in [`backlog.md`](./backlog.md) (B-014 to B-027).
 
@@ -314,7 +564,7 @@ After the suite release, Imago ships what its 0.1.0 work already points at: the 
 | [ ] | `D03 T07 §17` | Workspaces, panels, and preferences   |   3   |
 | [ ] | `D03 T07 §16` | Accessibility and localization        |   4   |
 
-### Phase 11 -- Lumen after 0.1.0: accessibility
+### Phase 20 -- Lumen after 0.1.0: accessibility
 
 After the suite release, Lumen gets the accessibility and localization the acceptance bar requires. The darkroom features beyond the first release (local adjustments, detail, lens corrections, color grading, merges, a GPU path, map, print, catalog maintenance) wait in [`backlog.md`](./backlog.md) (B-028 to B-036).
 

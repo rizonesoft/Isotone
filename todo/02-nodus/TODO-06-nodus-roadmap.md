@@ -10,10 +10,10 @@ track: N6
 
 # TODO-06 -- Nodus after 0.1.0: Deferral Owners and Accessibility
 
-> **Goal:** The Nodus work after its first release that the plan is already committed to: the sections that 0.1.0 work names as the owner of a disabled command, a planned menu stub, or a deferred service, and the accessibility and localization work the acceptance bar requires. When this file closes, no Nodus control defers to a section that does not ship, no triaged service is left unwired, and Nodus works without a mouse or eyes.
+> **Goal:** The Nodus work after its first release that the plan is already committed to: the sections that 0.1.0 work names as the owner of a disabled command, a planned menu stub, or a deferred service, and the accessibility and localization work the acceptance bar requires. When this file closes, no Nodus control defers to a section that does not ship, no triaged service is left unwired, and Nodus works without a mouse or eyes. Its sections now run inside the Nodus parity phases, where the parity sections that extend them need them, rather than in a phase of their own.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The legacy roadmap (`docs/legacy/nodus-roadmap.md`, 3,199 lines, phases 0 to 25) was mined into 21 sections on 2026-09-26. The same day the plan was bounded (`todo/budget.json`): the 13 sections nothing outside this file depends on, defers to, or names in the acceptance bar moved to `todo/backlog.md` as B-001 to B-013, and their section numbers are retired, never reused. What stays: path editing (§2) and text to path (§3), which `D02 T02 §5` and `D02 T03 §5` name for disabled or planned commands; tabs (§7), which `D02 T04 §6` names for multi-file open and §11 builds on; the three sections the triage in `D02 T02 §1` hands its deferred services to (§11, §12, §14); Preferences (§13), which `D02 T03 §5` and `D02 T05 §2` name; and accessibility (§17), which the acceptance bar names. Services exist for several of these features, but none is reachable from the app. Every section below names its legacy source with a `-> SOURCE:` line.
+> **Current state (verified 2026-09-26):** The legacy roadmap (`docs/legacy/nodus-roadmap.md`, 3,199 lines, phases 0 to 25) was mined into 21 sections on 2026-09-26. The same day the plan was bounded (`todo/budget.json`): the 13 sections nothing outside this file depends on, defers to, or names in the acceptance bar moved to `todo/backlog.md` as B-001 to B-013, and their section numbers are retired, never reused. What stays: path editing (§2) and text to path (§3), which `D02 T02 §5` and `D02 T03 §5` name for disabled or planned commands; tabs (§7), which `D02 T04 §6` names for multi-file open and §11 builds on; the three sections the triage in `D02 T02 §1` hands its deferred services to (§11, §12, §14); Preferences (§13), which `D02 T03 §5` and `D02 T05 §2` name; and accessibility (§17), which the acceptance bar names. Services exist for several of these features, but none is reachable from the app. Every section below names its legacy source with a `-> SOURCE:` line. The Nodus parity plan (2026-09-26, `docs/parity/section-design.md`) relocated all eight rows from the old Phase 9, which left the plan, into the parity phases without changing their addresses: §7 to Phase 4, §2 to Phase 5, §11 to Phase 6, §3 to Phase 7, §14 to Phase 9, and §12, §13, and §17 to Phase 13; the parity catalog marks their features `shipped-scope` and the parity sections extend them through `Depends On`. Twelve of the thirteen backlog entries that left this file (all but B-012) were promoted into parity sections the same day.
 <!-- claim: lines docs/legacy/nodus-roadmap.md = 3199 -->
 <!-- claim: exists src/Nodus/Bezier.Core/Services/SymbolLibraryService.cs -->
 <!-- claim: exists src/Nodus/Bezier.Core/Services/CommandPaletteService.cs -->
@@ -24,14 +24,22 @@ track: N6
 - [`standards/nodus.md`](../../standards/nodus.md) -- the document model, tool, and SVG rules every section builds to
 - `docs/dev/nodus/service-triage.md` (written by `D02 T02 §1`) -- the deferred services §11, §12, and §14 wire
 - -> XREF: D02 T02 §1 -- the triage that hands the deferred services to §11, §12, and §14
-- [`../backlog.md`](../backlog.md) -- the Nodus feature ideas that left this file (B-001 to B-013); one is promoted only through `add-todo` with the admission test and budget room
+- [`../backlog.md`](../backlog.md) -- B-012, the one Nodus idea from this file still in the backlog (third-party filter plug-in hosts); B-001 to B-011 and B-013 were promoted into the parity sections and left it
+- -> XREF: D02 T07 §3 -- pages, layers, and views (`D02 T07 §3`, `§5`, `§12`) that build on §7; `D02 T07 §10` shares §12's HUD label style
+- -> XREF: D02 T08 §6 -- node editing and the pen extensions that extend §2
+- -> XREF: D02 T09 §21 -- dynamic symbols and libraries that extend §11
+- -> XREF: D02 T10 §1 -- the text engine that builds on §3 and replaces its per-string outline path; `D02 T10 §15` reuses §11's symbol store
+- -> XREF: D02 T12 §1 -- bitmap objects that need §14's File, Place
+- -> XREF: D02 T14 §2 -- the readers and exporters (`D02 T14 §2`, `§12`, `§15`, `§19`) that extend §14's import table and export dialog
+- -> XREF: D02 T15 §6 -- the assistant's tool catalog that reads §12's command index, and the AI Preferences page §13 hosts
+- -> XREF: D02 T16 §1 -- workspaces, the command index, menus, and preference pages that extend §7, §12, and §13; §17 audits every parity surface
 
 ## Outcome
 
 - Every section below ships with its surface, its commands with undo, its settings, its log lines, its user-guide page, and its tests, like the 0.1.0 sections before it.
 - No deferred service from the triage remains unwired when this file closes, and no disabled or planned Nodus command names a section of this file that has not shipped.
 
-**Adjacency:** list=applicable @ D02 T06 §11; document=not-applicable (printing and prepress wait in the backlog as B-011); settings=applicable @ D02 T06 §13; reporting=not-applicable (measurement and the Info panel wait in the backlog as B-007; document info lives in the status strip, D02 T03 §5); notifications=applicable; permissions=not-applicable (file refusals are owned by the save and export sections in D02 T04); audit=applicable; exchange=applicable @ D02 T06 §14; reverse=applicable
+**Adjacency:** list=applicable @ D02 T06 §11; document=not-applicable (printing and prepress are owned by D02 T13 §2 and the rest of that file); settings=applicable @ D02 T06 §13; reporting=not-applicable (measurement and the Info panel are owned by D02 T07 §10; document info lives in the status strip, D02 T03 §5); notifications=applicable; permissions=not-applicable (file refusals are owned by the save and export sections in D02 T04); audit=applicable; exchange=applicable @ D02 T06 §14; reverse=applicable
 
 **Adjacency rationale:** The asset library is the browsable list; the Preferences dialog is the settings surface; long exports notify through the status strip; every edit in every section is a logged, undoable command.
 

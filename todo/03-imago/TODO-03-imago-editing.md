@@ -27,6 +27,7 @@ track: I3
 - -> XREF: D03 T02 §2 -- the viewport every tool draws into
 - -> XREF: D03 T04 §6 -- the recovery that restores documents into §2's history
 - -> XREF: D03 T05 §1 -- the filter pipeline that commits through §2 and respects §5's selections
+- -> XREF: D02 T09 §2 -- the Nodus color picker that moves to `Photon.UI` the day §8 needs it
 
 ## Outcome
 
@@ -51,7 +52,7 @@ track: I3
 |   5   |   §5    | Selection tools                                      | §4, §2                       |  [ ]   |
 |   6   |   §6    | Brush and eraser                                     | §4, §2                       |  [ ]   |
 |   7   |   §7    | Transform, crop, image size, and canvas size         | §5                           |  [ ]   |
-|   8   |   §8    | Fill, gradient, eyedropper, and the color panel      | §4, §2                       |  [ ]   |
+|   8   |   §8    | Fill, gradient, eyedropper, and the color panel      | §4, §2, D02 T09 §2           |  [ ]   |
 
 ---
 
@@ -189,10 +190,13 @@ The remaining basic tools and the color panel every painting tool reads. -> SOUR
 **Fidelity:** Color panel -- new build, no baseline; captured to docs/captures/imago/color/.
 **Job:** a user can pick colors, fill regions, draw gradients, and sample colors from the image. Consumer: brush, fill, and gradient tools.
 **Treatment:** a color panel with foreground and background swatches, swap (X) and reset (D), an HSV square and hue strip, RGB and hex fields; paint bucket with tolerance and contiguous options; linear and radial gradient tool from foreground to background with dithering; eyedropper with sample size (point, 3 by 3, 5 by 5) and current layer or composite. Cheaper substitute that fails the checkpoint: the Windows color dialog.
-**Chrome:** consume the theme; the picker is built in Imago now and moves to `Photon.UI` when Nodus's appearance work (backlog B-003, once promoted) needs one, through `add-todo`.
+**Chrome:** consume the theme and the color picker Nodus builds in `D02 T09 §2` (`Photon.Nodus.Desktop/Controls/ColorPicker/`), which this section moves to `Photon.UI` as its second consumer; do not build a second picker in Imago.
+
+**Corrected 2026-09-26:** the Chrome line said the picker is built in Imago now and moves to `Photon.UI` when Nodus's appearance work (backlog B-003) needs one. The Nodus parity plan promoted B-003 and runs before Imago's foundation, so the ownership reversed: `D02 T09 §2` builds the picker in Nodus and it moves to `Photon.UI` the day this section needs it.
 
 **Requires:** display-session -- the color panel and tools need an interactive desktop
 
+- [ ] Move the Nodus color picker (`D02 T09 §2`) from `src/Nodus/Photon.Nodus.Desktop/Controls/ColorPicker/` into `src/Photon.UI/Controls/ColorPicker/`, repoint Nodus to it, and host it in Imago's color panel. Done when: Nodus's picker tests pass against the moved control and `grep -rln "class ColorPicker" src` finds only the `Photon.UI` copy.
 - [ ] Color panel and view model with HSV and hex conversions tested. Done when: `ColorPanelViewModelTests` round-trip hex and HSV.
 - [ ] Paint bucket, gradient, and eyedropper tools, each fill an undo step. Done when: tests assert a flood fill's region on a fixture and gradient endpoints.
 - [ ] Commit: `"imago: fill, gradient, eyedropper, and a color panel"`

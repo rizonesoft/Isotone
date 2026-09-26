@@ -1,6 +1,6 @@
 # 03 Imago
 
-> **Phases 1, 4, 5, and 10**
+> **Phases 1, 14, 15, and 19**
 
 Imago, the raster editor, imported under `src/Imago/`. Its rename runs early beside Nodus's; its foundation (the snapshot port, WPF-UI removal, tiles, and rendering) starts after Nodus ships 0.1.0, followed by editing, file I/O, filters, and `imago-v0.1.0`. After the suite release, TODO-07 ships the filter catalog, RAW import, workspaces, and accessibility the plan already names; the rest of the legacy roadmap waits in [`../backlog.md`](../backlog.md) (B-014 to B-027) and is promoted only through `add-todo`.
 

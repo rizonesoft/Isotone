@@ -1,0 +1,303 @@
+---
+schema_version: 1
+id: nodus-parity-releases
+domain: 02-nodus
+status: draft
+title: "TODO-17 -- Nodus Parity Releases: 0.2.0 to 1.0.0"
+depends_on: []
+track: N17
+---
+
+# TODO-17 -- Nodus Parity Releases: 0.2.0 to 1.0.0
+
+> **Goal:** Each parity phase ends in a real, independently installable Nodus release: every section of the phase stamped, every catalog row the phase plans reconciled against its section's stamp, the changelog and user guide current, the installer proven on a clean machine, and a `nodus-v*` tag whose GitHub release carries verified assets; `nodus-v1.0.0` declares parity with the catalog complete.
+
+> [!IMPORTANT]
+> **Current state (verified 2026-09-26):** The release checklist every section here runs is `standards/release.md` (seven lines, each quoted from a real run). The previous release section is `D02 T05 §4` (Nodus 0.1.0), which has not shipped: no `nodus-v*` tag exists yet. The catalog the releases reconcile exists at `docs/parity/nodus-parity.md` (2,802 features, 2,643 of them planned to parity sections), but the parity query every release quotes does not exist until `D00 T01 §6` ships it (`scripts/todo-parity.py` is absent). The Nodus user guide folder `docs/user/nodus/` does not exist yet; `D06 T01 §1` creates it.
+<!-- claim: exists standards/release.md -->
+<!-- claim: exists todo/02-nodus/TODO-05-nodus-release.md -->
+<!-- claim: exists docs/parity/nodus-parity.md -->
+<!-- claim: absent scripts/todo-parity.py -->
+<!-- claim: absent docs/user/nodus -->
+
+## Inputs
+
+- [`standards/release.md`](../../standards/release.md) -- the release checklist each section runs line by line
+- [`CHANGELOG.md`](../../CHANGELOG.md) -- the Nodus section each release fills under its tag
+- [`docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md) -- the catalog each release reconciles for its phase
+- [`docs/parity/section-design.md`](../../docs/parity/section-design.md) -- the phase layout: each release is the last row of its phase
+- -> XREF: D02 T05 §4 -- the 0.1.0 release procedure these repeat
+- -> XREF: D05 T01 §1 -- the clean-machine procedure every release runs
+- -> XREF: D00 T01 §6 -- the parity query each release quotes and the catalog gate it relies on
+- -> XREF: D06 T01 §1 -- the Nodus user guide each release extends
+- -> XREF: D02 T07 §1 -- Phase 4's live-object contract, whose expanded fallback every release checks in the previous release
+- -> XREF: D02 T08 §15 -- the last Phase 5 section §2 releases
+
+## Outcome
+
+- Ten published GitHub releases, `nodus-v0.2.0` to `nodus-v1.0.0`, each with an installer, a portable ZIP, and `SHA256SUMS` that match the downloads, and each proven on a clean Windows 11 machine with no .NET SDK.
+- At each tag, every catalog row planned to that phase resolves to a stamped section, or was rerouted in the catalog with its reason in the release commit.
+- Each release's `CHANGELOG.md` section names the `NP-` ranges it shipped, and the Nodus user guide has a page for every surface the phase added.
+- A document saved by each release opens in the previous release with its new live objects degraded to their expanded fallback geometry, never lost.
+- `nodus-v1.0.0` carries the parity query's evidence that zero planned rows remain unshipped across Phases 4 to 13.
+
+**Adjacency:** list=not-applicable (a release section adds no browsable records); document=not-applicable (the printed and exported documents are owned by D02 T13 and D02 T14; a release only re-proves them on the installed build); settings=not-applicable (no new settings); reporting=applicable @ D02 T17 §1; notifications=not-applicable (no long operation of its own); permissions=not-applicable (nothing written but release assets); audit=applicable @ D02 T17 §1; exchange=applicable @ D02 T17 §1; reverse=not-applicable (a release reverses nothing; a bad release is superseded by the next patch tag)
+
+**Adjacency rationale:** Each release reports its phase's parity query counts, so reporting is applicable in every section; the changelog and the tag are the audit trail; each release opens its phase's fidelity fixtures on the installed build and checks how a saved document degrades in the previous release, which is the exchange surface.
+
+## Implementation Order
+
+| Order | Section | Deliverable | Depends On | Status |
+| :---: | :-----: | ----------- | ---------- | :----: |
+|   1   |  §1    | Nodus 0.2.0 (Phase 4) | D02 T05 §4, D02 T06 §7, D02 T07 §1, D02 T07 §2, D02 T07 §3, D02 T07 §4, D02 T07 §5, D02 T07 §6, D02 T07 §7, D02 T07 §8, D02 T07 §9, D02 T07 §10, D02 T07 §11, D02 T07 §12, D02 T07 §13, D02 T07 §14 |  [ ]   |
+|   2   |  §2    | Nodus 0.3.0 (Phase 5) | §1, D02 T06 §2, D02 T08 §1, D02 T08 §2, D02 T08 §3, D02 T08 §4, D02 T08 §5, D02 T08 §6, D02 T08 §7, D02 T08 §8, D02 T08 §9, D02 T08 §10, D02 T08 §11, D02 T08 §12, D02 T08 §13, D02 T08 §14, D02 T08 §15 |  [ ]   |
+|   3   |  §3    | Nodus 0.4.0 (Phase 6) | §2, D02 T06 §11, D01 T04 §1, D01 T04 §2, D02 T09 §1, D02 T09 §2, D02 T09 §3, D02 T09 §4, D02 T09 §5, D02 T09 §6, D02 T09 §7, D02 T09 §8, D02 T09 §9, D02 T09 §10, D02 T09 §11, D02 T09 §12, D02 T09 §13, D02 T09 §14, D02 T09 §15, D02 T09 §16, D02 T09 §17, D02 T09 §18, D02 T09 §19, D02 T09 §20, D02 T09 §21, D02 T09 §22 |  [ ]   |
+|   4   |  §4    | Nodus 0.5.0 (Phase 7) | §3, D02 T06 §3, D02 T10 §1, D02 T10 §2, D02 T10 §3, D02 T10 §4, D02 T10 §5, D02 T10 §6, D02 T10 §7, D02 T10 §8, D02 T10 §9, D02 T10 §10, D02 T10 §11, D02 T10 §12, D02 T10 §13, D02 T10 §14, D02 T10 §15 |  [ ]   |
+|   5   |  §5    | Nodus 0.6.0 (Phase 8) | §4, D02 T11 §1, D02 T11 §2, D02 T11 §3, D02 T11 §4, D02 T11 §5, D02 T11 §6, D02 T11 §7, D02 T11 §8, D02 T11 §9, D02 T11 §10, D02 T11 §11, D02 T11 §12, D02 T11 §13, D02 T11 §14, D02 T11 §15, D02 T11 §16, D02 T11 §17, D02 T11 §18, D02 T11 §19 |  [ ]   |
+|   6   |  §6    | Nodus 0.7.0 (Phase 9) | §5, D02 T06 §14, D01 T03 §1, D01 T03 §2, D01 T03 §3, D01 T03 §4, D01 T03 §5, D01 T03 §6, D01 T03 §7, D01 T03 §8, D01 T03 §9, D01 T03 §10, D01 T03 §11, D02 T12 §1, D02 T12 §2, D02 T12 §3, D02 T12 §4, D02 T12 §5, D02 T12 §6, D02 T12 §7, D02 T12 §8 |  [ ]   |
+|   7   |  §7    | Nodus 0.8.0 (Phase 10) | §6, D01 T04 §3, D02 T13 §1, D02 T13 §2, D02 T13 §3, D02 T13 §4, D02 T13 §5, D02 T13 §6, D02 T13 §7, D02 T13 §8, D02 T13 §9, D02 T13 §10, D02 T13 §11, D02 T13 §12, D02 T13 §13, D02 T13 §14, D02 T13 §15, D02 T13 §16 |  [ ]   |
+|   8   |  §8    | Nodus 0.9.0 (Phase 11) | §7, D02 T14 §1, D02 T14 §2, D02 T14 §3, D02 T14 §4, D02 T14 §5, D02 T14 §6, D02 T14 §7, D02 T14 §8, D02 T14 §9, D02 T14 §10, D02 T14 §11, D02 T14 §12, D02 T14 §13, D02 T14 §14, D02 T14 §15, D02 T14 §16, D02 T14 §17, D02 T14 §18, D02 T14 §19 |  [ ]   |
+|   9   |  §9    | Nodus 0.10.0 (Phase 12) | §8, D01 T05 §1, D01 T05 §2, D01 T05 §3, D01 T05 §4, D01 T05 §5, D02 T15 §1, D02 T15 §2, D02 T15 §3, D02 T15 §4, D02 T15 §5, D02 T15 §6, D02 T15 §7, D02 T15 §8, D02 T15 §9, D02 T15 §10, D02 T15 §11 |  [ ]   |
+|  10   |  §10   | Nodus 1.0.0 (Phase 13) | §9, D02 T06 §12, D02 T06 §13, D02 T06 §17, D02 T16 §1, D02 T16 §2, D02 T16 §3, D02 T16 §4, D02 T16 §5, D02 T16 §6, D02 T16 §7, D02 T16 §8, D02 T16 §9, D02 T16 §10, D02 T16 §11 |  [ ]   |
+
+---
+
+## 1. Nodus 0.2.0
+
+`nodus-v0.2.0` releases Phase 4 (document model, pages, layers, selection, and view). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 4` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 4 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 4 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 4 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.2.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 4 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 4 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 4 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 4 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.2.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open `tests/fixtures/nodus/svg-live/`, `pages/`, `layers/`, `guides/`, and `metadata/`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the live objects, pages, layers, guides, and the `nodus:` document block this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.2.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.2.0. Done when: the README names 0.2.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.2.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.2.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 4` output is quoted with no Phase 4 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 2. Nodus 0.3.0
+
+`nodus-v0.3.0` releases Phase 5 (drawing, paths, shapes, shaping, and transform). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 5` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 5 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 5 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 5 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.3.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 5 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 5 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 5 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 5 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.3.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open `tests/fixtures/nodus/svg/live-shapes/`, `generators/`, `compound-shapes/`, `clipping/`, and `annotations/`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the live shapes, generators, compound shapes, intertwine, dimensions, and connectors this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.3.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.3.0. Done when: the README names 0.3.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.3.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.3.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 5` output is quoted with no Phase 5 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 3. Nodus 0.4.0
+
+`nodus-v0.4.0` releases Phase 6 (color, fills, strokes, brushes, transparency, styles, and symbols). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 6` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 6 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 6 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 6 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.4.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 6 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 6 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 6 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 6 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.4.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 6 fixtures committed by `D02 T09` and `D01 T04`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the gradients, mesh, pattern and texture fills, brushes, appearance stacks, and symbol overrides this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.4.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.4.0. Done when: the README names 0.4.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.4.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.4.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 6` output is quoted with no Phase 6 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 4. Nodus 0.5.0
+
+`nodus-v0.5.0` releases Phase 7 (type, tables, and graphs). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 7` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 7 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 7 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 7 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.5.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 7 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 7 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 7 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 7 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.5.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 7 fixtures committed by `D02 T10`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the text frames, threads, path text, tables, and graphs this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.5.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.5.0. Done when: the README names 0.5.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.5.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.5.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 7` output is quoted with no Phase 7 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 5. Nodus 0.6.0
+
+`nodus-v0.6.0` releases Phase 8 (interactive and live effects). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 8` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 8 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 8 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 8 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.6.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 8 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 8 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 8 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 8 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.6.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 8 fixtures committed by `D02 T11`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the effect stacks, blends, contours, envelopes, extrusions, lenses, PowerClip frames, and perspective objects this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.6.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.6.0. Done when: the README names 0.6.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.6.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.6.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 8` output is quoted with no Phase 8 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 6. Nodus 0.7.0
+
+`nodus-v0.7.0` releases Phase 9 (bitmaps, tracing, and the shared pixel engine). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 9` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 9 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 9 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 9 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.7.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 9 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 9 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 9 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 9 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.7.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 9 fixtures committed by `D01 T03` and `D02 T12`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the bitmap objects, non-destructive bitmap effect stacks, and traced results this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.7.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.7.0. Done when: the README names 0.7.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.7.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.7.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 9` output is quoted with no Phase 9 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 7. Nodus 0.8.0
+
+`nodus-v0.8.0` releases Phase 10 (color management, print, prepress, and PDF). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 10` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 10 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 10 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 10 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.8.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 10 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 10 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 10 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 10 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.8.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 10 fixtures committed by `D01 T04` and `D02 T13`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the document color settings, print styles, and imposition layouts this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.8.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.8.0. Done when: the README names 0.8.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.8.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.8.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 10` output is quoted with no Phase 10 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 8. Nodus 0.9.0
+
+`nodus-v0.9.0` releases Phase 11 (file formats, export, and web). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 11` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 11 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 11 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 11 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.9.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 11 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 11 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 11 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 11 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.9.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 11 fixtures committed by `D02 T14`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the export settings, slices, and hyperlinks this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.9.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.9.0. Done when: the README names 0.9.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.9.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.9.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 11` output is quoted with no Phase 11 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 9. Nodus 0.10.0
+
+`nodus-v0.10.0` releases Phase 12 (Nodus AI: editable, suite-aware, reproducible). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through.
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 12` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 12 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 12 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 12 row pointing at an unshipped section.
+- [ ] Write the `nodus-v0.10.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 12 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 12 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 12 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 12 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 0.10.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 12 fixtures committed by `D01 T05` and `D02 T15`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the AI provenance records and generated objects this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Push the tag `nodus-v0.10.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 0.10.0. Done when: the README names 0.10.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 0.10.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.10.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 12` output is quoted with no Phase 12 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## 10. Nodus 1.0.0
+
+`nodus-v1.0.0` releases Phase 13 (workspace, customization, preferences, and the completion of parity). It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, and it adds two parity duties: the phase's catalog rows are reconciled against their sections' stamps, and a document saved by this release is opened in the previous release to prove its new live objects degrade to their expanded fallback. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit (to a later section, or to the backlog through `add-todo`) with its reason, never left pointing at an unshipped section. The clean machine is Windows 11 (the supported OS); a Windows 10 22H2 smoke is best-effort and recorded, never blocking. The release owns no catalog rows of its own: it is infrastructure the planned features ship through. As the last parity release, it also declares the catalog complete and records the evidence for the acceptance-bar aim "Nodus covers every CorelDRAW and Illustrator capability in the parity catalog".
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+- [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
+- [ ] Run `python scripts/todo-graph.py query parity --phase 13` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 13 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 13 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 13 row pointing at an unshipped section.
+- [ ] Write the `nodus-v1.0.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the Phase 13 sections' commits, naming the catalog `NP-` ranges shipped, the audit trail of what this tag carries. Done when: the section exists, names the release date, and lists every Phase 13 section's user-visible change.
+- [ ] Confirm the Nodus user guide under `docs/user/nodus/` has a page for every surface Phase 13 added (each UI section's documentation duty) and that every Help menu link resolves. Done when: no Phase 13 surface lacks a page (list quoted).
+- [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 1.0.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.
+- [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the fixtures of every parity phase (4 to 13), save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
+- [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the workspaces, object data, QR codes, and barcodes this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
+- [ ] Run `python scripts/todo-graph.py query parity` over Phases 4 to 13. Done when: it reports zero `plan` rows whose section is unshipped, and the output is quoted as the evidence of the acceptance-bar aim.
+- [ ] State in `README.md` that Nodus covers the Illustrator 30.8 and CorelDRAW 2026 parity catalog, linking the excluded and backlog rows of `docs/parity/nodus-parity.md`. Done when: the paragraph and both links exist.
+- [ ] Push the tag `nodus-v1.0.0`. Done when: the `release` workflow run is `success` (URL quoted).
+- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Update `README.md`'s Nodus status line to 1.0.0. Done when: the README names 1.0.0 as the current Nodus release.
+- [ ] Commit: `"release: Nodus 1.0.0"`
+
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v1.0.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 13` output is quoted with no Phase 13 row pointing at an unshipped section. The whole-catalog `query parity` output reports zero unshipped `plan` rows across Phases 4 to 13. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+
+## Verification
+
+- [ ] `gh release list` shows `nodus-v0.2.0` to `nodus-v1.0.0`, none a prerelease, each with installer, ZIP, and checksums that match
+- [ ] `python scripts/todo-graph.py query parity` reports zero `plan` rows whose section is unshipped across Phases 4 to 13
+- [ ] `CHANGELOG.md` has a section headed by each of the ten tags
+- [ ] `pwsh scripts/check-all.ps1` exits 0 at the `nodus-v1.0.0` commit
+- [ ] `python scripts/todo-graph.py validate` clean

@@ -25,6 +25,7 @@ track: D1
 - -> XREF: D03 T06 §3 -- the Imago release that needs §2
 - -> XREF: D04 T02 §8 -- the Lumen release that needs §3
 - -> XREF: D05 T01 §1 -- the clean-machine procedure whose install steps §4 documents for users
+- -> XREF: D02 T17 §1 -- the Nodus parity releases, each of which extends §1's user guide
 
 ## Outcome
 

@@ -31,6 +31,9 @@ track: C1
 - -> XREF: D03 T06 §1 -- the Imago About and shortcuts surfaces §4 exists for
 - -> XREF: D03 T01 §3 -- the WPF-UI removal that must land before Imago consumes this library's dialogs
 - -> XREF: D06 T02 §1 -- the architecture page that documents this library once §2 lands
+- -> XREF: D01 T05 §4 -- the shared AI surfaces (send preview, AI settings page) built on §3's theme
+- -> XREF: D02 T09 §2 -- the Nodus color picker and the swatch-well, checkerboard, and gamut-warning tokens it adds to §3's theme; the picker moves here when Imago's color panel (`D03 T03 §8`) needs it
+- -> XREF: D02 T16 §6 -- the UI brightness dictionaries it adds to §3's theme and the error-reporting toggle that governs §2's exception window
 
 ## Outcome
 

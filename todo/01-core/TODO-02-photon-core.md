@@ -33,6 +33,19 @@ track: C2
 - -> XREF: D02 T01 §2 -- the Nodus composition root that consumes §1's logging bootstrap
 - -> XREF: D02 T03 §1 -- the Nodus resize and rotate undo that completes the command set §4 merges
 - -> XREF: D03 T03 §2 -- the Imago edits that are §4's second consumer
+- -> XREF: D01 T03 §1 -- the pixel engine, built in `Photon.Core/Imaging/` on §1's project and §2's settings
+- -> XREF: D01 T04 §1 -- the color-management engine, built in `Photon.Core/Color/` on §1's project with its defaults in §2's store
+- -> XREF: D01 T05 §1 -- the AI core, logging through §1, keeping model choices in §2, and recording applies into §4's history
+- -> XREF: D02 T07 §13 -- the History panel that reads §4's suite history
+- -> XREF: D02 T08 §1 -- the drawing tools whose defaults go through §2's settings store
+- -> XREF: D02 T09 §1 -- the color model whose `nodus.*` keys write through §2 and whose commands record into §4
+- -> XREF: D02 T10 §1 -- the type sections whose `Nodus.Type.*` keys go through §2 and whose text commands record into §4
+- -> XREF: D02 T11 §1 -- the effect framework whose settings go through §2 and whose commands record into §4
+- -> XREF: D02 T12 §1 -- Edit Bitmap in Imago, which relies on §3's single-instance forwarding
+- -> XREF: D02 T13 §1 -- the print, proof, and PDF settings kept in §2 and the commands recorded in §4
+- -> XREF: D02 T14 §1 -- the format options persisted in §2 and the import and slice edits recorded in §4
+- -> XREF: D02 T15 §11 -- the suite hand-off inbox that receives files through §3's single-instance forwarding
+- -> XREF: D02 T16 §5 -- the preferences that write through §2 and set §4's undo limit
 
 ## Outcome
 
