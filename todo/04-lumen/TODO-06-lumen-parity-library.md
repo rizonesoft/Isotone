@@ -428,7 +428,7 @@ A photographer on a laptop wants to keep developing when the photo drive is at h
 
 **Requires:** display-session -- the offline develop check is driven on an interactive desktop
 
-- [ ] Write or extend the design spec `docs/design/components/LumenDevelop/README.md` and `preview.html` with the smart-preview indicator under the histogram (anatomy, every state, tokens, sizes; `D04 T02 §3` writes the spec) before building; Done when: the spec covers it and the design page rebuild passes.
+- [ ] Write or extend the design spec `docs/design/components/LumenDevelop/README.md` and `preview.html` with the smart-preview indicator under the histogram (window or module layout only; the panels come from the shared `docs/design/components/DevelopPanels/README.md`; (anatomy, every state, tokens, sizes; `D04 T02 §3` writes the spec) before building; Done when: the spec covers it and the design page rebuild passes.
 - [ ] Add `SmartPreviewStore` in `src/Lumen/Photon.Lumen.Core/SmartPreviews/SmartPreviewStore.cs` (LP-0401): lossy DNG at 2,560 px long edge through `D04 T13 §7` in `<catalog>.smartpreviews/`, keyed by image id and file hash. Done when: `SmartPreviewStoreTests` build, find, and discard a proxy.
 - [ ] Enforce the size limit `Lumen.SmartPreviews.MaxMB` and report per-photo status and the total size in Catalog Settings. Done when: `SmartPreviewStoreTests.Limit` refuses a build past the limit with a message naming it.
 - [ ] Add Build and Discard Smart Previews to Library, Previews, queued with progress and Cancel. Done when: a test builds proxies for a selection and cancels midway leaving no partial file.
