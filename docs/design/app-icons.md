@@ -42,15 +42,16 @@ Each master keeps its gradient and clip ids prefixed with the app (`nodus-c-bg`,
 
 Sizes in between are rendered from the next smaller file's grid only when it is an exact multiple (20 from 16 at 125 percent, 30 from 24, 40 from 32); never scale a small variant up past its range.
 
-## Pixel-grid rules for the small variants
+## The small variants (16, 24, 32)
 
-The 16, 24 and 32 variants are hand-tuned, not reductions of the master, and follow these rules.
+At taskbar and title-bar sizes an icon is recognized by its silhouette, so the small variants carry the app's main object alone, enlarged to fill the space above the band (operator decision, 2026-09-27: less detail at 32, 24 and 16).
 
-- The tile is a flat #2B2C31 (the gradient's midpoint): a 20-step gradient over 16 pixels only adds blur.
-- The spectrum band becomes a straight bar on whole pixels: 2 px at 16, 2.5 px at 24, 3.5 px at 32, clipped to the tile corners.
-- The inner highlight and the band crest are dropped; they cannot resolve below 48 px.
-- Glyphs are simplified to their silhouette: Nodus keeps the nib, the ferrule and two anchor squares; Imago keeps the brush and one to four pixel squares; Lumen keeps the aperture blades, and the viewfinder corners from 24 up.
-- Straight edges and small squares sit on whole or half pixels so they render crisp at 100 percent; anchor squares are at least 2 px.
+- Nodus: the pen nib alone (no Bezier curve, handle, or anchor nodes). The breather hole stays at 24 and 32; at 16 the nib is solid with only the slit.
+- Imago: the paintbrush alone (no pixel squares). The light ferrule band stays at every size, since it is what makes the shape read as a brush.
+- Lumen: the six-blade aperture alone (no viewfinder corners); at 16 the blade separators are heavier so the blades stay distinct.
+- The glyph is scaled to fill a box inset from the tile (1.5 px at 16, 2.6 px at 24, 3.2 px at 32) and centered above the band.
+- The tile keeps the master's graphite gradient with a smaller corner radius (3, 4, 6), and the spectrum band is a straight bar 2, 2.5, and 3.5 px tall, clipped to the tile corners; the inner highlight and the band crest are dropped.
+- The variants are generated from the masters' glyph shapes by `scripts/generate-small-icons.py`, so a change to a master glyph carries through; regenerate them after editing a master.
 - Accent colors stay the same hex values as the master, so an icon reads as the same app at every size.
 
 ## Colors
@@ -60,7 +61,7 @@ The 16, 24 and 32 variants are hand-tuned, not reductions of the master, and fol
 | Tile (master) | vertical gradient #34353B (top) to #1E1F23 (bottom) |
 | Tile (16 to 32) | flat #2B2C31 |
 | Spectrum band | stops at 0, 0.17, 0.33, 0.5, 0.67, 0.83 and 1: #FF4D6D, #FF9A3C, #FFD84A, #4CC47A, #29C5E6, #5B7CFF, #B45CFF |
-| Nodus glyph | `accent-nodus` #29C5E6, light facet #8BE6F7, ferrule #1597BA, anchors white |
+| Nodus glyph | `accent-nodus` #29C5E6, light facet #8BE6F7, ferrule #1597BA, anchors white (48 px and up) |
 | Imago glyph | `accent-imago` #F5923E, highlight #FFC98F, tuft to #FFE08A, pixels #FFD84A and warm neighbours |
 | Lumen glyph | `accent-lumen` #4CC47A, light blades #9BE8B6, dark body #1B7A3D and #0B3A1C, viewfinder white |
 
