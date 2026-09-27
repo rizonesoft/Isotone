@@ -52,7 +52,12 @@ CHANGEME: one paragraph of context: why this section exists and what it must not
 
 CHANGEME: one paragraph of context.
 
-(UI sections also carry `**Fidelity:**`, `**Job:**`, `**Treatment:**`, and `**Chrome:**` blocks. Host-bound sections carry a `**Needs:**` line from the closed list in `todo/README.md`, e.g. `**Needs:** Windows host (build/test)`.)
+(UI sections also carry `**Fidelity:**` (the design it answers to and its golden folder under `docs/captures/golden/`), `**Design:**`, `**Job:**`, `**Treatment:**`, and `**Chrome:**` blocks, per `todo/README.md` Surface fidelity and `standards/design-contract.md`:
+
+**Fidelity:** CHANGEME surface -- docs/design/components/CHANGEME/ per standards/design-contract.md; goldens under docs/captures/golden/CHANGEME-area/.
+**Design:** docs/design/components/CHANGEME/README.md, docs/design/shell-layout.md#regions -- states: all in spec -- themes: all four -- density: both
+
+A surface with no spec yet writes `new surface: docs/design/components/<Name>/README.md` as its ref and adds the spec as its first item. Host-bound sections carry a `**Needs:**` line from the closed list in `todo/README.md`, e.g. `**Needs:** Windows host (build/test)`.)
 
 - [ ] CHANGEME micro-step in `backtick/path`. Done when: CHANGEME observable end state.
 - [ ] Commit: `"CHANGEME: one-line commit message"`

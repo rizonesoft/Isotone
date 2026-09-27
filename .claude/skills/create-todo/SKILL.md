@@ -27,7 +27,7 @@ Copy `.claude/skills/create-todo/todo-template.md` to `todo/<domain>/TODO-NN-<sh
 - **Inputs:** specs, captures, existing files with what each section consumes, and `-> XREF:` lines to related work.
 - **Outcome:** observable end states, plus the one `**Adjacency:**` line and its rationale paragraph.
 - **Implementation Order:** one row per section with real `Depends On` edges (`--` only when truly standalone).
-- **Sections:** context, micro-step checklist with `Commit:`, `Test checkpoint:` citing one of the five proofs in `todo/README.md`, Fidelity/Job/Treatment/Chrome on UI sections, `Needs:` on host-bound sections, `Requires:` on environment-gated sections.
+- **Sections:** context, micro-step checklist with `Commit:`, `Test checkpoint:` citing one of the five proofs in `todo/README.md`, Fidelity/Job/Treatment/Chrome plus the `**Design:**` line on UI sections (the design is the Fidelity source, `standards/design-contract.md`; a surface with no spec yet names `new surface: docs/design/<path>.md` and carries the item that writes that spec first), `Needs:` on host-bound sections, `Requires:` on environment-gated sections.
 - **Verification:** the file-level checks `process-todo-file` will run.
 
 Size sections by what holds together (max 30 items; a file caps at 55 sections). Every section must be implementable with zero conversation context: no "as discussed".
@@ -53,4 +53,5 @@ Commit as `todo: author <id> (<n> sections)`. Report the file, its phase placeme
 - Do not author a file whose subject an existing file owns. Search first.
 - Do not file-only stub sections. Every section is born buildable.
 - Do not skip the Adjacency line. Silence is not a decision.
+- Do not author a surface section without its `**Design:**` line. A new section is never added to `todo/.design-baseline`; `validate` refuses it.
 - Do not leave rows unsequenced. `plan --check` must pass before the commit.

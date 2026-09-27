@@ -139,6 +139,7 @@ REVIEW_KIND_LABELS = {
     "source-defect": "Source",
     "record": "Record",
     "design": "Design",
+    "design-fidelity": "Design fidelity",
     "fidelity": "Fidelity",
     "integration": "Integration",
     # The stage 4 advisory pass (writers-and-reviewers §7): a gray badge.
@@ -977,6 +978,24 @@ SEVERITY_MAP: dict[str, str] = {
     # more backlog entries than `backlog_cap`: triage (merge, drop, promote)
     # before adding, never a raised cap on the side.
     "backlog-over-cap": "fatal",
+    # THE DESIGN CONTRACT (standards/design-contract.md, operator 2026-09-27).
+    # A surface section without its `**Design:**` line, outside the baseline
+    # of 2026-09-27: a surface built from a guess instead of the spec.
+    "design-missing": "fatal",
+    # a Design or Design deviation line outside its grammar, a second Design
+    # line, or `new surface:` without the item that adds the spec first.
+    "design-malformed": "fatal",
+    # a Design ref whose file or GitHub-style heading anchor does not exist,
+    # or a deviation whose follow-up names no live section.
+    "design-dead-ref": "fatal",
+    # a baseline ref that now has its Design line, is stamped, is no longer
+    # a surface, is gone, or is listed twice: the list only shrinks.
+    "design-baseline-stale": "fatal",
+    # a baseline ref HEAD does not list: new gaps are never exempted.
+    "design-baseline-grown": "fatal",
+    # a Design deviation still open (its follow-up not [x]) in a file whose
+    # app has a release section stamped on or after the day it opened.
+    "design-deviation-open-at-release": "fatal",
 }
 
 
@@ -2512,6 +2531,21 @@ def cmd_query(args) -> int:
                 continue
             checked = sum(1 for s in t.sections.values() if s.has_freeze_check)
             print(f"{t.path}  ({checked}/{len(t.sections)} sections carry a Freeze check)")
+        return 0
+
+    if what == "design":
+        # The design contract at a glance (standards/design-contract.md):
+        # how many surfaces name their spec, how many the baseline still
+        # exempts, and every Design deviation with its state.
+        summ = design_summary(todos)
+        print(f"design: {summ['surfaces']} surface section(s), {summ['with_design']} with a Design line, "
+              f"{summ['baseline']} exempt by todo/{DESIGN_BASELINE_NAME}, "
+              f"{summ['missing_unlisted']} missing and unlisted")
+        print(f"deviations: {len(summ['deviations_open'])} open, {len(summ['deviations_closed'])} closed")
+        for d in summ["deviations_open"]:
+            print(f"  OPEN   {d['section']:14} opened {d['opened']} spec {d['spec']} -> {d['follow_up']} ({d['fix']})  {d['where']}")
+        for d in summ["deviations_closed"]:
+            print(f"  closed {d['section']:14} opened {d['opened']} spec {d['spec']} -> {d['follow_up']} ({d['fix']})")
         return 0
 
     if what == "surfaces":
@@ -4418,7 +4452,7 @@ PHASE_HEADING_RE = re.compile(
 PROGRESS_JSON = REPO / "build" / "todo-progress.json"
 OPERATOR_JSON = REPO / "build" / "todo-operator.json"
 REVIEW_KIND_RE = re.compile(
-    r"`(adversarial|consistency|optimisation|source-defect|record|design|fidelity)`"
+    r"`(adversarial|consistency|optimisation|source-defect|record|design-fidelity|design|fidelity)`"
 )
 REQUIRED_REVIEW_KINDS = ("adversarial", "consistency", "optimisation", "record")
 # Wave-1 debt named in CLAUDE.md. Verified 2026-08-13/14 without the panel.
@@ -5444,6 +5478,433 @@ def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
             "entries with a reason, promote what has come due.",
         ))
     return out
+
+
+# ------------------------------------------------------------ design contract
+#
+# `standards/design-contract.md` (operator decisions 2026-09-27: pixel perfect
+# is "Exact tokens + ±1 DIP geometry + approved goldens"; legacy work is
+# "Record existing violations, fail new ones"). Every section that builds or
+# changes a user-facing surface names the design it implements 1:1 on one
+# `**Design:**` line; the refs must exist under docs/design/ (or be
+# `standards/ui.md#<anchor>`), anchors are checked against the Markdown
+# headings slugged GitHub-style, and a spec that does not exist yet is named
+# `new surface: <path>` beside the item that adds it. The surfaces that have
+# no Design line today are listed in `todo/.design-baseline`, which may only
+# shrink. A `**Design deviation:**` names the spec clause, the reason, and the
+# follow-up section; it is open until the follow-up's row is `[x]`, and an
+# app release stamped while one of its deviations is open is FATAL.
+
+DESIGN_LINE_RE = re.compile(r"^\*\*Design:\*\* (?P<body>.+?)\s*$")
+DESIGN_ATTEMPT_RE = re.compile(r"^\s*(?:>\s*)?(?:[-*]\s+)?(?:\*\*)?design(?:\*\*)?\s*:", re.IGNORECASE)
+DESIGN_BODY_RE = re.compile(
+    r"^(?P<refs>.+?) -- states: (?P<states>.+?) -- themes: (?P<themes>.+?) -- density: (?P<density>.+?)$"
+)
+DESIGN_DEVIATION_RE = re.compile(
+    r"^\*\*Design deviation:\*\* opened (?P<day>\d{4}-\d{2}-\d{2}) -- spec: (?P<spec>\S+) "
+    r"-- reason: (?P<reason>.+?) -- follow-up: (?P<follow>D\d{2} T\d{2} §\d+) \((?P<fix>fix design|fix code)\)\s*$"
+)
+DESIGN_DEVIATION_ATTEMPT_RE = re.compile(
+    r"^\s*(?:>\s*)?(?:[-*]\s+)?(?:\*\*)?design\s+deviation(?:\*\*)?\s*:", re.IGNORECASE
+)
+# A ref: a file under docs/design/ with an optional anchor, or a
+# standards/ui.md anchor (the UI standard's rules are cited by heading).
+DESIGN_REF_RE = re.compile(
+    r"^(?P<path>docs/design/[A-Za-z0-9._/-]+\.(?:md|json|html)|standards/ui\.md)(?:#(?P<anchor>[a-z0-9_-]+))?$"
+)
+DESIGN_NEW_SURFACE_RE = re.compile(r"^new surface: (?P<path>docs/design/[A-Za-z0-9._/-]+\.md)$")
+DESIGN_STATE_RE = re.compile(r"^[a-z][a-z0-9+/-]*(?: [a-z0-9+/-]+){0,3}$")
+DESIGN_NA_RE = re.compile(r"^n/a \((?P<reason>[^()]{3,})\)$")
+DESIGN_BASELINE_NAME = ".design-baseline"
+DESIGN_BASELINE_REF_RE = re.compile(r"^D\d{2} T\d{2} §\d+$")
+# The checklist item that ships an app release: pushing its tag.
+RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<app>nodus|imago|lumen)-v\d+\.\d+\.\d+`")
+DESIGN_DOMAIN_APPS = {"01": ("nodus", "imago", "lumen"), "02": ("nodus",), "03": ("imago",), "04": ("lumen",)}
+
+
+def design_root() -> Path:
+    """The checkout root Design refs resolve against: the todo/ dir's parent,
+    so a self-test fixture carries its own docs/design/ and standards/."""
+    return TODO_DIR.parent
+
+
+def design_baseline_path() -> Path:
+    return TODO_DIR / DESIGN_BASELINE_NAME
+
+
+def github_slug(heading: str) -> str:
+    """GitHub's heading anchor: strip inline markup, lower-case, drop every
+    character that is not a word character, a space, or a hyphen, then turn
+    spaces into hyphens (no collapsing, as GitHub does)."""
+    text = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", heading)
+    text = text.replace("`", "").replace("*", "")
+    text = re.sub(r"<[^>]+>", "", text)
+    text = text.strip().lower()
+    text = re.sub(r"[^\w\- ]", "", text)
+    return text.replace(" ", "-")
+
+
+_DESIGN_ANCHOR_CACHE: dict[str, set[str]] = {}
+
+
+def markdown_anchors(path: Path) -> set[str]:
+    """Every anchor GitHub renders for a Markdown file: slugged headings
+    outside fences (duplicates suffixed -1, -2 ...) plus explicit HTML ids."""
+    key = str(path.resolve())
+    if key in _DESIGN_ANCHOR_CACHE:
+        return _DESIGN_ANCHOR_CACHE[key]
+    anchors: set[str] = set()
+    try:
+        raw = path.read_text(encoding="utf-8").replace("\r\n", "\n").split("\n")
+    except OSError:
+        return anchors
+    try:
+        kept, _ = _fenced_flags(raw)
+    except Exception:
+        kept = [True] * len(raw)
+    seen: dict[str, int] = {}
+    for i, line in enumerate(raw):
+        if i < len(kept) and not kept[i]:
+            continue
+        m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
+        if m:
+            slug = github_slug(m.group(1))
+            n = seen.get(slug, 0)
+            anchors.add(slug if n == 0 else f"{slug}-{n}")
+            seen[slug] = n + 1
+        for a in re.finditer(r"""\b(?:id|name)=["']([A-Za-z0-9_-]+)["']""", line):
+            anchors.add(a.group(1).lower())
+    _DESIGN_ANCHOR_CACHE[key] = anchors
+    return anchors
+
+
+def check_design_ref(ref: str) -> tuple[str, str] | None:
+    """(class, problem) for one Design ref, or None when it resolves."""
+    m = DESIGN_REF_RE.match(ref)
+    if not m:
+        return ("design-malformed",
+                f"`{ref}` is not a design ref: cite `docs/design/<file>[#anchor]` or "
+                "`standards/ui.md#<anchor>` (repository-relative, no link syntax)")
+    rel, anchor = m.group("path"), m.group("anchor")
+    if rel == "standards/ui.md" and not anchor:
+        return ("design-malformed", "`standards/ui.md` is cited by heading: write `standards/ui.md#<anchor>`")
+    target = design_root() / rel
+    if not target.is_file():
+        return ("design-dead-ref", f"`{ref}` names `{rel}`, which does not exist")
+    if anchor:
+        if not rel.endswith(".md"):
+            return ("design-malformed", f"`{ref}` carries an anchor on a file that is not Markdown")
+        if anchor not in markdown_anchors(target):
+            return ("design-dead-ref", f"`{ref}`: `{rel}` has no heading whose GitHub anchor is `#{anchor}`")
+    return None
+
+
+def parse_design_line(body: str) -> tuple[dict, list[tuple[str, str]]]:
+    """The parsed Design line and its problems as (class, message)."""
+    problems: list[tuple[str, str]] = []
+    m = DESIGN_BODY_RE.match(body)
+    if not m:
+        return {}, [("design-malformed",
+                     "a Design line reads `**Design:** <refs> -- states: <list or all in spec> "
+                     "-- themes: all four -- density: both` (todo/README.md, Surface fidelity)")]
+    refs = [r.strip().strip("`").strip() for r in m.group("refs").split(",")]
+    parsed = {"refs": [], "new": [], "states": m.group("states").strip(),
+              "themes": m.group("themes").strip(), "density": m.group("density").strip()}
+    if not refs or any(not r for r in refs):
+        problems.append(("design-malformed", "the ref list is empty or has an empty entry"))
+    for ref in refs:
+        if not ref:
+            continue
+        ns = DESIGN_NEW_SURFACE_RE.match(ref)
+        if ns:
+            parsed["new"].append(ns.group("path"))
+            continue
+        if ref.lower().startswith("new surface"):
+            problems.append(("design-malformed", f"`{ref}`: write `new surface: docs/design/<path>.md`"))
+            continue
+        parsed["refs"].append(ref)
+        bad = check_design_ref(ref)
+        if bad:
+            problems.append(bad)
+    states = parsed["states"]
+    if states != "all in spec":
+        items = [s.strip() for s in states.split(",")]
+        if not all(DESIGN_STATE_RE.match(s) for s in items):
+            problems.append(("design-malformed",
+                             f"states `{states}`: write `all in spec` or a comma list of lower-case state names"))
+    if parsed["themes"] != "all four" and not DESIGN_NA_RE.match(parsed["themes"]):
+        problems.append(("design-malformed", f"themes `{parsed['themes']}`: write `all four` or `n/a (<reason>)`"))
+    if parsed["density"] != "both" and not DESIGN_NA_RE.match(parsed["density"]):
+        problems.append(("design-malformed", f"density `{parsed['density']}`: write `both` or `n/a (<reason>)`"))
+    return parsed, problems
+
+
+def design_sections(todos: list[Todo]) -> tuple[dict[str, dict], list[tuple[str, str]]]:
+    """('DNN TNN §N' -> {design, deviations, where, items}, problems).
+
+    Re-reads each file (fenced lines skipped, like the Origin scan), so a
+    spec quoting the grammar inside a fence is inert."""
+    found: dict[str, dict] = {}
+    problems: list[tuple[str, str]] = []
+    for todo in todos:
+        try:
+            text = (REPO / todo.path).read_text(encoding="utf-8")
+        except OSError:
+            try:
+                text = Path(todo.path).read_text(encoding="utf-8")
+            except OSError:
+                continue
+        raw = text.replace("\r\n", "\n").split("\n")
+        try:
+            kept, _ = _fenced_flags(raw)
+        except Exception:
+            kept = [True] * len(raw)
+        prefix = f"D{todo.domain.split('-')[0]} T{todo.number}"
+        current: int | None = None
+        for lineno, line in enumerate(raw, start=1):
+            if lineno - 1 < len(kept) and not kept[lineno - 1]:
+                continue
+            heading = BODY_RE.match(line)
+            if heading:
+                current = int(heading.group("num"))
+                found.setdefault(f"{prefix} §{current}", {"design": [], "deviations": [], "where": f"{todo.path}:{lineno}"})
+                continue
+            if line.startswith("## "):
+                current = None
+                continue
+            is_dev = DESIGN_DEVIATION_ATTEMPT_RE.match(line)
+            is_design = not is_dev and DESIGN_ATTEMPT_RE.match(line)
+            if not (is_dev or is_design):
+                continue
+            where = f"{todo.path}:{lineno}"
+            if current is None:
+                problems.append(("design-malformed",
+                                 f"{where} carries a Design line outside a numbered section; it belongs in the "
+                                 "body of the `## N.` section whose surface it names"))
+                continue
+            entry = found[f"{prefix} §{current}"]
+            if is_dev:
+                m = DESIGN_DEVIATION_RE.match(line.strip())
+                if not m:
+                    problems.append(("design-malformed",
+                                     f"{where} is a Design deviation outside the grammar `**Design deviation:** "
+                                     "opened YYYY-MM-DD -- spec: <design ref> -- reason: <text> -- follow-up: "
+                                     "DNN TNN §N (fix design|fix code)`"))
+                    continue
+                entry["deviations"].append({"where": where, **m.groupdict()})
+                continue
+            m = DESIGN_LINE_RE.match(line.strip()) if line.startswith("**Design:** ") else None
+            if not m:
+                problems.append(("design-malformed",
+                                 f"{where} is a near miss of a Design line: it starts the line with exactly "
+                                 "`**Design:** ` (bold label, one space)"))
+                continue
+            entry["design"].append({"where": where, "body": m.group("body")})
+    return found, problems
+
+
+def load_design_baseline(text: str | None = None) -> tuple[list[str], list[str]]:
+    """(refs in file order, malformed lines) of todo/.design-baseline."""
+    if text is None:
+        path = design_baseline_path()
+        if not path.exists():
+            return [], []
+        text = path.read_text(encoding="utf-8")
+    refs: list[str] = []
+    bad: list[str] = []
+    for n, line in enumerate(text.replace("\r\n", "\n").split("\n"), start=1):
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        if DESIGN_BASELINE_REF_RE.match(s):
+            refs.append(s)
+        else:
+            bad.append(f"line {n}: {s!r}")
+    return refs, bad
+
+
+def _design_baseline_committed_text() -> str | None:
+    """todo/.design-baseline as HEAD has it, for the shrink-only rule. Live
+    tree only; None when unprovable (no git, no commit, no file yet), which
+    skips the rule. The self-test patches this name."""
+    if not _live_tree():
+        return None
+    return git_file_at("HEAD", "todo/" + DESIGN_BASELINE_NAME)
+
+
+def _surface_sections(todos: list[Todo]) -> dict[str, tuple[Todo, int, Section]]:
+    """Every section whose Fidelity line names a surface (not exempt)."""
+    return {
+        f"D{t.domain.split('-')[0]} T{t.number} §{num}": (t, num, s)
+        for t in todos
+        for num, s in t.sections.items()
+        if s.has_fidelity_block and not s.fidelity_exempt
+    }
+
+
+def design_findings(todos: list[Todo]) -> list[tuple[str, str]]:
+    """Every design-contract breach as (severity class, message)."""
+    out: list[tuple[str, str]] = []
+    _DESIGN_ANCHOR_CACHE.clear()
+    found, problems = design_sections(todos)
+    out += problems
+    surfaces = _surface_sections(todos)
+    sections = {
+        f"D{t.domain.split('-')[0]} T{t.number} §{num}": (t, num, s)
+        for t in todos for num, s in t.sections.items()
+    }
+    baseline, bad_lines = load_design_baseline()
+    for b in bad_lines:
+        out.append(("design-baseline-stale",
+                    f"todo/{DESIGN_BASELINE_NAME} {b} is not a `DNN TNN §N` ref; the file lists refs, one per line"))
+    seen: set[str] = set()
+    for ref in baseline:
+        where = f"todo/{DESIGN_BASELINE_NAME} {ref}"
+        if ref in seen:
+            out.append(("design-baseline-stale", f"{where} is listed twice; remove the duplicate"))
+            continue
+        seen.add(ref)
+        if ref not in sections:
+            out.append(("design-baseline-stale", f"{where} names no live section; remove the line (the list only shrinks)"))
+        elif ref not in surfaces:
+            out.append(("design-baseline-stale",
+                        f"{where} is no longer a surface section (its Fidelity line says it has no surface "
+                        "of its own, or it has none); remove the line"))
+        elif found.get(ref, {}).get("design"):
+            out.append(("design-baseline-stale",
+                        f"{where} now carries a Design line; remove it from the baseline in the same commit"))
+        elif sections[ref][2].status == "x":
+            out.append(("design-baseline-stale",
+                        f"{where} is stamped [x] while exempt; a surface never stamps without its Design line, "
+                        "so add the line and remove the ref"))
+    committed = _design_baseline_committed_text()
+    if committed is not None:
+        before = set(load_design_baseline(committed)[0])
+        for ref in baseline:
+            if ref not in before:
+                out.append(("design-baseline-grown",
+                            f"todo/{DESIGN_BASELINE_NAME} adds {ref}, which HEAD does not list: the baseline "
+                            "records the gaps of 2026-09-27 and only shrinks; give the section its Design line"))
+    exempt = set(baseline)
+    for ref, (t, num, s) in sorted(surfaces.items()):
+        if not found.get(ref, {}).get("design") and ref not in exempt:
+            out.append(("design-missing",
+                        f"{t.path}:{s.line}: §{num} builds or changes a surface (its Fidelity line names one) but "
+                        "carries no `**Design:**` line naming the docs/design spec it implements 1:1 "
+                        "(todo/README.md, Surface fidelity; standards/design-contract.md)"))
+    # Release sections by app, with their stamp dates.
+    releases: dict[str, list[tuple[str, str | None, str]]] = {}
+    for ref, (t, num, s) in sections.items():
+        for _done, text in s.items:
+            rm = RELEASE_ITEM_RE.match(text)
+            if rm:
+                releases.setdefault(rm.group("app"), []).append((ref, s.stamped_on if s.status == "x" else None, s.status))
+    for ref, entry in found.items():
+        if len(entry["design"]) > 1:
+            out.append(("design-malformed",
+                        f"{entry['design'][1]['where']} is a second Design line in {ref}; one line lists every ref"))
+        for d in entry["design"][:1]:
+            parsed, probs = parse_design_line(d["body"])
+            for cls, msg in probs:
+                out.append((cls, f"{d['where']}: {msg}"))
+            if parsed.get("new") and ref in sections:
+                items = " ".join(text for _done, text in sections[ref][2].items)
+                for path in parsed["new"]:
+                    if (design_root() / path).is_file():
+                        out.append(("design-malformed",
+                                    f"{d['where']}: `new surface: {path}` names a spec that exists now; cite it directly"))
+                    elif path not in items:
+                        out.append(("design-malformed",
+                                    f"{d['where']}: `new surface: {path}` needs a checklist item in the same section "
+                                    "that adds that spec to docs/design first (design-first rule)"))
+        for dev in entry["deviations"]:
+            if not _valid_day(dev["day"]):
+                out.append(("design-malformed", f"{dev['where']}: opened {dev['day']} is not a real date"))
+            bad = check_design_ref(dev["spec"].strip("`"))
+            if bad:
+                out.append((bad[0], f"{dev['where']}: {bad[1]}"))
+            follow = sections.get(dev["follow"])
+            if follow is None:
+                out.append(("design-dead-ref", f"{dev['where']}: follow-up {dev['follow']} names no live section"))
+                continue
+            if follow[2].status == "x":
+                continue  # closed: the follow-up shipped
+            domain = ref[1:3]
+            for app in DESIGN_DOMAIN_APPS.get(domain, ()):
+                for rel_ref, stamped_on, _status in releases.get(app, []):
+                    if stamped_on is not None and stamped_on >= dev["day"]:
+                        out.append(("design-deviation-open-at-release",
+                                    f"{dev['where']}: the Design deviation opened {dev['day']} is still open "
+                                    f"(follow-up {dev['follow']} is not [x]) while the {app} release {rel_ref} "
+                                    f"is stamped {stamped_on}; close it before the release stamps"))
+    return out
+
+
+def design_summary(todos: list[Todo]) -> dict:
+    """Counts for `query design`: surfaces, Design lines, the baseline, deviations."""
+    found, _ = design_sections(todos)
+    surfaces = _surface_sections(todos)
+    sections = {
+        f"D{t.domain.split('-')[0]} T{t.number} §{num}": s
+        for t in todos for num, s in t.sections.items()
+    }
+    baseline, _ = load_design_baseline()
+    with_line = sorted(r for r in surfaces if found.get(r, {}).get("design"))
+    deviations = []
+    for ref, entry in sorted(found.items()):
+        for dev in entry["deviations"]:
+            follow = sections.get(dev["follow"])
+            deviations.append({
+                "section": ref, "where": dev["where"], "opened": dev["day"], "spec": dev["spec"],
+                "follow_up": dev["follow"], "fix": dev["fix"],
+                "open": not (follow is not None and follow.status == "x"),
+            })
+    return {
+        "surfaces": len(surfaces),
+        "with_design": len(with_line),
+        "baseline": len(baseline),
+        "missing_unlisted": len([r for r in surfaces if r not in set(baseline) and r not in set(with_line)]),
+        "deviations_open": [d for d in deviations if d["open"]],
+        "deviations_closed": [d for d in deviations if not d["open"]],
+    }
+
+
+def cmd_design_baseline(args) -> int:
+    """Write todo/.design-baseline. Without --init it only REMOVES refs that
+    no longer need exemption (the shrink-only ratchet); --init writes every
+    surface section lacking a Design line, which is how the file was made on
+    2026-09-27 and is refused once HEAD carries the file."""
+    todos = load_todos()
+    found, _ = design_sections(todos)
+    surfaces = _surface_sections(todos)
+    needing = [r for r in surfaces if not found.get(r, {}).get("design") and surfaces[r][2].status != "x"]
+    path = design_baseline_path()
+    if args.init:
+        if _design_baseline_committed_text() is not None:
+            print(f"design-baseline: todo/{DESIGN_BASELINE_NAME} is committed; --init would re-grow it. "
+                  "The baseline only shrinks: run without --init.")
+            return 1
+        keep = needing
+    else:
+        current, _ = load_design_baseline()
+        need = set(needing)
+        keep = [r for r in dict.fromkeys(current) if r in need]
+    def _key(r: str) -> tuple[int, int, int]:
+        d, t, s = re.match(r"D(\d+) T(\d+) §(\d+)", r).groups()
+        return (int(d), int(t), int(s))
+    keep = sorted(set(keep), key=_key)
+    header = (
+        "# Surface sections exempt from design-missing (standards/design-contract.md).\n"
+        "# Generated 2026-09-27 from every section whose Fidelity line names a surface and\n"
+        "# which had no **Design:** line. This list only shrinks: validate fails a ref that\n"
+        "# now has its Design line, is stamped, or is gone (design-baseline-stale), and a ref\n"
+        "# HEAD does not list (design-baseline-grown). Shrink it with\n"
+        "#   python scripts/todo-graph.py design-baseline\n"
+        "# after adding Design lines; never add a ref by hand.\n"
+    )
+    path.write_text(header + "".join(f"{r}\n" for r in keep), encoding="utf-8", newline=chr(10))
+    print(f"design-baseline: {len(keep)} ref(s) written to todo/{DESIGN_BASELINE_NAME}")
+    return 0
 
 
 def budget_summary(todos: list[Todo]) -> dict | None:
@@ -10014,6 +10475,232 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _sh_g = __import__("shutil")
             _sh_g.rmtree(groot, ignore_errors=True)
 
+        # --- the design contract (standards/design-contract.md, 2026-09-27) --
+        # Its own tree with a miniature docs/design/ and standards/ui.md, so
+        # every ref, anchor, and baseline case is exact.
+        droot = root / "design-fixture"
+        dtodo = droot / "todo"
+        (dtodo / "96-design").mkdir(parents=True)
+        (dtodo / "96-design" / "INDEX.md").write_text(
+            "# 96 Design\n\n| TODO | Title |\n| --- | --- |\n"
+            "| [TODO-01](./TODO-01-design.md) | Design |\n",
+            encoding="utf-8",
+        )
+        (droot / "docs" / "design" / "components" / "Button").mkdir(parents=True)
+        (droot / "docs" / "design" / "components" / "Button" / "README.md").write_text(
+            "# Button\n\n## Anatomy and sizes\n\nText.\n\n## States\n\nRest.\n\n```\n## Not A Heading\n```\n",
+            encoding="utf-8",
+        )
+        (droot / "docs" / "design" / "shell-layout.md").write_text(
+            "# Shell layout\n\n## Regions\n\n### Nodus (vector)\n\n## Regions\n\n<a id=\"title-bar\"></a>\n",
+            encoding="utf-8",
+        )
+        (droot / "standards").mkdir(parents=True)
+        (droot / "standards" / "ui.md").write_text("# UI Standard\n\n## Focus\n\nOne ring.\n", encoding="utf-8")
+        _dok = ("**Design:** docs/design/components/Button/README.md#states, docs/design/shell-layout.md#nodus-vector "
+                "-- states: all in spec -- themes: all four -- density: both")
+
+        def _dsection(n: int, fidelity: str = "", design: str = "", extra_items: str = "",
+                      status_body: str = "") -> str:
+            lines = [f"## {n}. Thing {n}\n\nContext.\n"]
+            if fidelity:
+                lines.append(f"\n{fidelity}\n**Job:** a user can. Consumer: none: this surface is the consumer.\n"
+                             "**Treatment:** t. Cheaper substitute that fails the checkpoint: s.\n"
+                             "**Chrome:** consume c. Do not invent a second c.\n")
+            if design:
+                lines.append(f"{design}\n")
+            lines.append(f"\n- [ ] Do thing {n}\n{extra_items}- [ ] Commit: `\"selftest: thing {n}\"`\n\n"
+                         f"**Test checkpoint:** `true`\n{status_body}\n")
+            return "".join(lines)
+
+        def _dtodo(sections: list[str], nums: list[int]) -> str:
+            rows = "".join(f"| {i} | §{n} | Thing {n} | -- | [ ] |\n" for i, n in enumerate(nums, 1))
+            return (
+                "---\nschema_version: 1\nid: design-fixture\ndomain: 96-design\nstatus: active\n"
+                "title: \"TODO-01 -- Design fixture\"\n---\n\n# TODO-01 -- Design fixture\n\n"
+                "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
+                "| :---: | :-----: | ----------- | ---------- | :----: |\n" + rows + "\n---\n\n" + "".join(sections)
+            )
+
+        dfile = dtodo / "96-design" / "TODO-01-design.md"
+        _dsurf = "**Fidelity:** the fixture window -- docs/captures/golden/fixture/."
+        _dnone = "**Fidelity:** no surface of its own -- a script."
+
+        def _dwrite(s1: str = "", s2: str = "", s3: str = "") -> None:
+            dfile.write_text(_dtodo([s1 or _dsection(1, _dsurf, _dok), s2 or _dsection(2, _dnone),
+                                     s3 or _dsection(3, _dsurf, _dok)], [1, 2, 3]), encoding="utf-8")
+
+        def _dbase(refs: list[str] | None) -> None:
+            path = dtodo / DESIGN_BASELINE_NAME
+            if refs is None:
+                path.unlink(missing_ok=True)
+            else:
+                path.write_text("# fixture baseline\n" + "".join(f"{r}\n" for r in refs), encoding="utf-8")
+
+        def _dclasses() -> list[str]:
+            return sorted({cls for cls, _ in design_findings(load_todos())})
+
+        def _dmsgs() -> list[str]:
+            return [msg for _, msg in design_findings(load_todos())]
+
+        saved_d = (TODO_DIR, PLAN)
+        _real_dcommitted = globals()["_design_baseline_committed_text"]
+        try:
+            TODO_DIR = dtodo
+            PLAN = dtodo / "implementation-plan.md"
+            globals()["_design_baseline_committed_text"] = lambda: None
+            check("design: every design class is FATAL",
+                  [SEVERITY_MAP.get(c) for c in ("design-missing", "design-malformed", "design-dead-ref",
+                                                 "design-baseline-stale", "design-baseline-grown",
+                                                 "design-deviation-open-at-release")],
+                  ["fatal"] * 6)
+            check("design: github_slug drops punctuation and keeps hyphens",
+                  (github_slug("Nodus (vector)"), github_slug("`WPF` mapping"), github_slug("Splash and Home"),
+                   github_slug("Anatomy and sizes")),
+                  ("nodus-vector", "wpf-mapping", "splash-and-home", "anatomy-and-sizes"))
+            check("design: markdown_anchors suffixes duplicates, skips fences, reads HTML ids",
+                  sorted(markdown_anchors(droot / "docs" / "design" / "shell-layout.md")),
+                  ["nodus-vector", "regions", "regions-1", "shell-layout", "title-bar"])
+            check("design: a fenced heading is no anchor",
+                  "not-a-heading" in markdown_anchors(droot / "docs" / "design" / "components" / "Button" / "README.md"),
+                  False)
+            _dwrite()
+            _dbase(None)
+            check("design: a clean tree with live refs is clean", _dclasses(), [])
+            # design-missing and the baseline
+            _dwrite(s3=_dsection(3, _dsurf))
+            check("design: a surface section without a Design line is design-missing", _dclasses(), ["design-missing"])
+            check("design: design-missing names the section",
+                  any("§3 builds or changes a surface" in m for m in _dmsgs()), True)
+            _dwrite(s1=_dsection(1, _dnone))
+            check("design: a no-surface section needs no Design line", _dclasses(), [])
+            _dwrite(s3=_dsection(3, _dsurf))
+            _dbase(["D96 T01 §3"])
+            check("design: a baseline ref exempts its surface section", _dclasses(), [])
+            _dwrite()
+            check("design: a baseline ref that now has its Design line is stale",
+                  (_dclasses(), any("now carries a Design line" in m for m in _dmsgs())),
+                  (["design-baseline-stale"], True))
+            _dwrite(s3=_dsection(3, _dsurf))
+            _dbase(["D96 T01 §3", "D96 T01 §9"])
+            check("design: a baseline ref naming no section is stale", _dclasses(), ["design-baseline-stale"])
+            _dbase(["D96 T01 §3", "D96 T01 §2"])
+            check("design: a baseline ref to a no-surface section is stale", _dclasses(), ["design-baseline-stale"])
+            _dbase(["D96 T01 §3", "D96 T01 §3"])
+            check("design: a duplicated baseline ref is stale", _dclasses(), ["design-baseline-stale"])
+            _dbase(["D96 T01 §3", "not a ref"])
+            check("design: a malformed baseline line is stale", _dclasses(), ["design-baseline-stale"])
+            _dbase(["D96 T01 §3"])
+            globals()["_design_baseline_committed_text"] = lambda: "# head\n"
+            check("design: a baseline ref HEAD does not list is design-baseline-grown",
+                  _dclasses(), ["design-baseline-grown"])
+            globals()["_design_baseline_committed_text"] = lambda: "# head\nD96 T01 §3\nD96 T01 §1\n"
+            check("design: a baseline that shrank against HEAD is clean", _dclasses(), [])
+            globals()["_design_baseline_committed_text"] = lambda: None
+            _dbase(None)
+            # design-malformed
+            for _bad, _why in (
+                ("**Design:** docs/design/components/Button/README.md", "no states, themes, or density"),
+                ("**Design:** docs/design/components/Button/README.md -- states: Hover! -- themes: all four -- density: both",
+                 "a state that is not a lower-case name"),
+                ("**Design:** docs/design/components/Button/README.md -- states: all in spec -- themes: dark -- density: both",
+                 "themes other than all four"),
+                ("**Design:** docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: compact",
+                 "density other than both"),
+                ("**Design:** [Button](docs/design/components/Button/README.md) -- states: all in spec -- themes: all four -- density: both",
+                 "link syntax instead of a path"),
+                ("**Design:** standards/ui.md -- states: all in spec -- themes: all four -- density: both",
+                 "standards/ui.md without an anchor"),
+                ("**Design:** new surface docs/design/components/Foo/README.md -- states: all in spec -- themes: all four -- density: both",
+                 "new surface without its colon"),
+                ("Design: docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both",
+                 "no bold label"),
+                ("**Design deviation:** the button is 25 px", "a deviation outside its grammar"),
+            ):
+                _dwrite(s1=_dsection(1, _dsurf, _bad if _bad.startswith("**Design:**") else _dok + "\n" + _bad))
+                check(f"design: {_why} is design-malformed", _dclasses(), ["design-malformed"])
+            _dwrite(s1=_dsection(1, _dsurf, _dok + "\n" + _dok))
+            check("design: two Design lines in one section is design-malformed", _dclasses(), ["design-malformed"])
+            _dwrite(s1=_dsection(1, _dsurf, "**Design:** docs/design/components/Button/README.md -- states: rest, hover, "
+                                            "pressed, keyboard focus, on+hover -- themes: n/a (the card is the same in "
+                                            "every theme) -- density: n/a (a fixed 640 by 360 card)"))
+            check("design: a state list and reasoned n/a values are clean", _dclasses(), [])
+            _dwrite(s1=_dsection(1, _dsurf, "```\n**Design:** nonsense\n```"))
+            check("design: a fenced Design line is inert (and the section is missing one)",
+                  _dclasses(), ["design-missing"])
+            # design-dead-ref
+            for _bad, _why in (
+                ("docs/design/components/Nope/README.md", "a missing spec file"),
+                ("docs/design/components/Button/README.md#hover", "an anchor no heading makes"),
+                ("docs/design/components/Button/README.md#not-a-heading", "a fenced heading's anchor"),
+                ("standards/ui.md#themes", "a standards/ui.md anchor that does not exist"),
+            ):
+                _dwrite(s1=_dsection(1, _dsurf, f"**Design:** {_bad} -- states: all in spec -- themes: all four -- density: both"))
+                check(f"design: {_why} is design-dead-ref", _dclasses(), ["design-dead-ref"])
+            _dwrite(s1=_dsection(1, _dsurf, "**Design:** standards/ui.md#focus, `docs/design/shell-layout.md#title-bar` "
+                                            "-- states: all in spec -- themes: all four -- density: both"))
+            check("design: a standards/ui.md anchor, a backticked ref, and an HTML id resolve", _dclasses(), [])
+            # new surface
+            _dnew = ("**Design:** new surface: docs/design/components/Foo/README.md -- states: all in spec "
+                     "-- themes: all four -- density: both")
+            _dwrite(s1=_dsection(1, _dsurf, _dnew))
+            check("design: new surface without the item that adds the spec is design-malformed",
+                  _dclasses(), ["design-malformed"])
+            _dwrite(s1=_dsection(1, _dsurf, _dnew, extra_items="- [ ] Add `docs/design/components/Foo/README.md` "
+                                                                "and its preview first. Done when: the card builds.\n"))
+            check("design: new surface with its design-first item is clean", _dclasses(), [])
+            _dwrite(s1=_dsection(1, _dsurf, _dnew.replace("Foo", "Button"),
+                                 extra_items="- [ ] Add `docs/design/components/Button/README.md`.\n"))
+            check("design: new surface naming a spec that exists is design-malformed", _dclasses(), ["design-malformed"])
+            # deviations and the release gate
+            _ddev = ("**Design deviation:** opened 2026-09-27 -- spec: docs/design/components/Button/README.md#states "
+                     "-- reason: the WPF hover state cannot be forced offscreen yet -- follow-up: D96 T01 §3 (fix code)")
+            _dwrite(s1=_dsection(1, _dsurf, _dok + "\n" + _ddev))
+            check("design: a well-formed open deviation is clean", _dclasses(), [])
+            check("design: the summary counts the open deviation",
+                  (len(design_summary(load_todos())["deviations_open"]), design_summary(load_todos())["with_design"]),
+                  (1, 2))
+            _dwrite(s1=_dsection(1, _dsurf, _dok + "\n" + _ddev.replace("D96 T01 §3", "D96 T01 §7")))
+            check("design: a deviation whose follow-up names no section is design-dead-ref",
+                  _dclasses(), ["design-dead-ref"])
+            _dwrite(s1=_dsection(1, _dsurf, _dok + "\n" + _ddev.replace("#states", "#nope")))
+            check("design: a deviation citing a dead anchor is design-dead-ref", _dclasses(), ["design-dead-ref"])
+            _dwrite(s1=_dsection(1, _dsurf, _dok + "\n" + _ddev.replace("2026-09-27", "2026-13-40")))
+            check("design: a deviation with an impossible date is design-malformed", _dclasses(), ["design-malformed"])
+            # A release section (it pushes a tag) stamped after the deviation opened.
+            _drel = _dsection(2, _dnone, extra_items="- [x] Push the tag `nodus-v0.1.0`. Done when: green.\n")
+            _dstamped = _dtodo([_dsection(1, _dsurf, _dok + "\n" + _ddev), _drel, _dsection(3, _dsurf, _dok)], [1, 2, 3])
+            _dstamped = _dstamped.replace("| 2 | §2 | Thing 2 | -- | [ ] |", "| 2 | §2 | Thing 2 | -- | [x] |")
+            _dstamped = _dstamped.replace(
+                "**Test checkpoint:** `true`\n\n## 3.",
+                "**Test checkpoint:** `true`\n\n> **Verified:** 2026-09-28 | §2 | fixture\n\n## 3.")
+            _dstamped = _dstamped.replace("- [ ] Do thing 2", "- [x] Do thing 2").replace(
+                "- [ ] Commit: `\"selftest: thing 2\"`", "- [x] Commit: `\"selftest: thing 2\"`")
+            dfile.write_text(_dstamped, encoding="utf-8")
+            _dt = load_todos()
+            check("design: the fixture release section parses as stamped",
+                  (_dt[0].sections[2].status, _dt[0].sections[2].stamped_on), ("x", "2026-09-28"))
+            check("design: a domain outside the apps never gates a release", _dclasses(), [])
+            (dtodo / "96-design").rename(dtodo / "02-design")
+            dfile = dtodo / "02-design" / "TODO-01-design.md"
+            dfile.write_text(_dstamped.replace("domain: 96-design", "domain: 02-design")
+                             .replace("D96 T01", "D02 T01"), encoding="utf-8")
+            check("design: an open Nodus deviation beside a Nodus release stamped after it opened is FATAL",
+                  _dclasses(), ["design-deviation-open-at-release"])
+            dfile.write_text(_dstamped.replace("domain: 96-design", "domain: 02-design")
+                             .replace("D96 T01", "D02 T01").replace("2026-09-28", "2026-09-26"), encoding="utf-8")
+            check("design: a release stamped before the deviation opened does not trip it", _dclasses(), [])
+            dfile.write_text(_dstamped.replace("domain: 96-design", "domain: 02-design")
+                             .replace("D96 T01", "D02 T01").replace("follow-up: D02 T01 §3", "follow-up: D02 T01 §2"),
+                             encoding="utf-8")
+            check("design: a deviation whose follow-up shipped is closed and silent", _dclasses(), [])
+            check("design: the summary counts the closed deviation",
+                  len(design_summary(load_todos())["deviations_closed"]), 1)
+        finally:
+            globals()["_design_baseline_committed_text"] = _real_dcommitted
+            TODO_DIR, PLAN = saved_d
+            __import__("shutil").rmtree(droot, ignore_errors=True)
+
     finally:
         TODO_DIR, PLAN, SKILLS_DIR = saved_todo_dir, saved_plan, saved_skills
         tmp.cleanup()
@@ -10055,7 +10742,7 @@ def main() -> int:
     q = sub.add_parser("query", help="ask the graph a question")
     q.add_argument(
         "what",
-        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth"],
+        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth", "design"],
     )
     q.add_argument("target", nargs="?", help="run: run ID to inspect")
     q.add_argument("--since", metavar="REF", help="growth: the commit to count from (a run's start commit)")
@@ -10103,6 +10790,13 @@ def main() -> int:
     # than a redundant flag.
     mode.add_argument("--sync", action="store_true", help="rewrite the boxes (the default)")
     pl.set_defaults(fn=cmd_plan)
+    db = sub.add_parser(
+        "design-baseline",
+        help="shrink todo/.design-baseline to the surface sections still lacking a Design line (never grows it)",
+    )
+    db.add_argument("--init", action="store_true",
+                    help="write every surface section lacking a Design line; refused once HEAD carries the file")
+    db.set_defaults(fn=cmd_design_baseline)
     pr = sub.add_parser("progress", help="emit rebuild-progress JSON for the progress dashboard")
     pr.add_argument("--json", action="store_true", help="JSON on stdout (the only format)")
     pr.add_argument(

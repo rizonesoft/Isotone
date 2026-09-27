@@ -13,6 +13,9 @@
   8. python scripts/todo-runs.py --check
   9. python scripts/campaign_guard.py --self-test
   10. python scripts/build-design-site.py --check (docs/design/index.html is current)
+  11. python scripts/design-lint.py --self-test
+  12. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
+      (no new design-contract violation in the UI sources; standards/design-contract.md)
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
 .EXAMPLE
@@ -76,6 +79,8 @@ try {
     Invoke-PythonGate 'todo-runs --check' 'todo-runs.py' @('--check')
     Invoke-PythonGate 'campaign_guard self-test' 'campaign_guard.py' @('--self-test')
     Invoke-PythonGate 'design site --check' 'build-design-site.py' @('--check')
+    Invoke-PythonGate 'design-lint self-test' 'design-lint.py' @('--self-test')
+    Invoke-PythonGate 'design-lint baseline' 'design-lint.py' @('--baseline', 'docs/design/.lint-baseline.json')
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'
     $results.Add([pscustomobject]@{ Gate = 'python gates'; Status = 'SKIP (no python)'; Seconds = 0 })

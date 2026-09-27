@@ -28,14 +28,15 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `todo/` | The live execution plan; read `todo/README.md` before authoring or implementing |
 | `todo/implementation-plan.md` | Ordered phase plan; its boxes are synchronized through `scripts/todo-graph.py` |
 | `todo/budget.json`, `todo/backlog.md` | The caps on campaign discovery and the backlog, with their history; the capped list of deferred ideas that are not sections |
-| `standards/` | Coding, design, testing, and release standards; `ui.md` is the UI standard every surface answers to |
+| `standards/` | Coding, design, testing, and release standards; `ui.md` is the UI standard every surface answers to and `design-contract.md` the binding contract that holds the code to `docs/design/` |
 | `docs/dev/`, `docs/user/` | Developer documentation and each app's user guide |
 | `docs/design/` | The Photon Interface design system, canonical: `tokens.json` (the source of every UI value), the component specs, the shell layout, the app icon guide, and `EDITING.md` (how to change it and regenerate the published page at https://rizonesoft.github.io/Photon/design/) |
 | `docs/legacy/` | The imported apps' pre-monorepo roadmaps, kept for reference only; `todo/` is the plan |
 | `docs/parity/` | The parity evidence for all three apps: the Illustrator 30.8 and CorelDRAW 2026 inventories with the Nodus catalog (`nodus-parity.md`), the Photoshop 27.10, Affinity 3.3, and GIMP 3.2.6 inventories with the Imago catalog (`imago-parity.md`), the Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76 inventories with the Lumen catalog (`lumen-parity.md`), one status per feature, and the three section designs the parity TODO files were authored from |
 | `docs/reviews/` | Per-section review findings, attestations, the derived findings ledger, run records |
 | `docs/phase-runs/` | One findings file per phase run, written as the run goes |
-| `docs/captures/<app>/` | Committed captures of rendered surfaces, the visual reference for review |
+| `docs/captures/<app>/` | Committed captures of the imported apps' surfaces, a before record only (never a fidelity source) |
+| `docs/captures/golden/` | Approved golden renders of every control and surface, per state, theme, Highlight, density, and scale; written only by `review-todo-section` through the visual harness's approve path (`standards/design-contract.md`) |
 | `resources/` | Brand, icons, screens |
 | `.claude/` | Claude Code skills, the Stop hook, and settings |
 | `.conclave/panel.toml` | The review panel wiring: writer, model registry, and every review slot |
@@ -97,7 +98,7 @@ A checkpoint citing a gate that does not exist yet is unfalsifiable and is not a
 - **Section atomicity is the candidate range:** one section ships as one logical change, and review fix-loop commits append to that range (never amend); each fix is re-reviewed and the stamp names the whole range. "One section = one commit" never means "one hash".
 - **User documents first:** atomic writes, readback, skip-and-report, confirmed destructive paths, an undo for every edit, and originals never written by a non-destructive workflow. Checkpoints prove the failure path too.
 - **One suite, shared deliberately:** shared behavior is consumed from `Photon.Core` once two apps need it, never reimplemented in a second app, and never moved there speculatively.
-- **Every surface answers to the design contract under `standards/`,** with the captures under `docs/captures/<app>/` as its visual reference. A surface never hardcodes a color, a size, or a spacing value its theme resources name.
+- **Every surface answers to the design contract, `standards/design-contract.md` (binding):** `docs/design/` is the source and code implements it 1:1 (exact tokens, geometry within 1 DIP at 100, 150, and 200 percent, every state and theme the spec lists, approved goldens); a change to how something looks goes to `docs/design/` first. Every surface section carries a `**Design:**` line (`todo/README.md`, Surface fidelity), `scripts/design-lint.py` fails any new literal color, size, or font in the UI sources, and a deviation needs a `**Design deviation:**` line with a follow-up section. A surface never hardcodes a color, a size, or a spacing value its theme resources name.
 - **UI follows `standards/ui.md`;** `docs/design/tokens.json` is canonical and the `Photon.UI` theme dictionaries are generated from it, never hand-edited; after a design change, regenerate the design page as `docs/design/EDITING.md` describes.
 - **No em dashes** in authored prose; use `--`, a colon, or a new sentence. One line per paragraph and list item in Markdown.
 - **Source of truth:** file formats via their specifications and reference implementations, WPF and .NET behavior via Microsoft Learn, competitor behavior via a driven run of the competitor (with its version), plan state via `todo/`. Disagreements are recorded decisions, not silent reinterpretations.
@@ -105,7 +106,7 @@ A checkpoint citing a gate that does not exist yet is unfalsifiable and is not a
 
 ## The commit hook
 
-`tools/githooks/pre-commit` refuses a commit whose **staged** tree fails `python scripts/todo-graph.py validate`, checked in a temp checkout of the index. It must stay a POSIX shell script with LF endings and index mode `100755`. `tools/provision.ps1` points `core.hooksPath` at `tools/githooks` for each clone; run it once after cloning. A red hook is a defect to fix, never a gate to skip.
+`tools/githooks/pre-commit` refuses a commit whose **staged** tree fails `python scripts/todo-graph.py validate` or `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json`, checked in a temp checkout of the index. It must stay a POSIX shell script with LF endings and index mode `100755`. `tools/provision.ps1` points `core.hooksPath` at `tools/githooks` for each clone; run it once after cloning. A red hook is a defect to fix, never a gate to skip.
 
 ## A measurement recorded is a measurement re-checked
 
@@ -148,6 +149,10 @@ python scripts/todo-findings.py --check      # fail if docs/reviews/findings.md 
 python scripts/todo-runs.py --check          # run records agree with the review files
 python scripts/campaign_guard.py --self-test # the Stop hook and guard lifecycle, in a throwaway workspace
 python scripts/panel_slots.py validate       # the review panel wiring holds
+python scripts/design-lint.py --baseline docs/design/.lint-baseline.json   # no new design-contract violation in the UI sources
+python scripts/design-lint.py --self-test    # the lint's own fixtures
+python scripts/todo-graph.py query design    # surfaces with a Design line, the baseline, open deviations
+python scripts/render-design-reference.py    # design reference renders + side-by-side report under build/design-reference/
 ```
 
 Run checks owed by the task. Report only commands actually run, and distinguish static evidence, test output, driven-run output, fidelity output, and review proof.

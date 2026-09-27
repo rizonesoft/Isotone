@@ -32,6 +32,13 @@ jobs:
         with:
           # Full history: MinVer derives the version from tags and commit height.
           fetch-depth: 0
+      # The design contract (standards/design-contract.md): no new design-lint
+      # violation in the UI sources; the recorded ones of 2026-09-27 pass and
+      # a fixed one must leave docs/design/.lint-baseline.json.
+      - name: Design lint self-test
+        run: python scripts/design-lint.py --self-test
+      - name: Design lint (no new violations)
+        run: python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
       - name: Set up .NET (global.json)
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -57,5 +64,20 @@ jobs:
         with:
           name: test-results
           path: artifacts/TestResults/
+          if-no-files-found: warn
+          retention-days: 14
+      # Review aid, not a gate: headless Edge (on the runner image) renders every
+      # docs/design component preview per theme and density for side-by-side
+      # comparison with the WPF renders (scripts/render-design-reference.py).
+      - name: Design reference renders (optional)
+        continue-on-error: true
+        run: python scripts/render-design-reference.py
+      - name: Upload design reference renders
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: design-reference
+          path: build/design-reference/
           if-no-files-found: warn
           retention-days: 14

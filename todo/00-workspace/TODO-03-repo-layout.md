@@ -10,7 +10,7 @@ track: W3
 
 # TODO-03 -- Repository Layout, Visual Baselines, and App Icon Export
 
-> **Goal:** Nothing in the tree is a leftover of the imports: each app's documentation lives under `docs/`, sample files sit with the test fixtures, empty folders are gone, both imported apps have committed captures of their current surfaces, so every later UI section has a visual baseline to be reviewed against, and every raster app icon (PNG sizes and the multi-resolution ICO of Nodus, Imago, and Lumen) is generated from the committed SVG sources by one script whose check fails the gates when a raster drifts from its source.
+> **Goal:** Nothing in the tree is a leftover of the imports: each app's documentation lives under `docs/`, sample files sit with the test fixtures, empty folders are gone, both imported apps have committed captures of their current surfaces as a before record of the legacy look (never a fidelity source: the design in `docs/design/` is, under `standards/design-contract.md`), and every raster app icon (PNG sizes and the multi-resolution ICO of Nodus, Imago, and Lumen) is generated from the committed SVG sources by one script whose check fails the gates when a raster drifts from its source.
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The imports brought their own documentation folders: `src/Nodus/docs/` (a `README.md` indexing mostly missing pages, `components/vector-icon.md`, `ui/status-bar.md`) and `src/Imago/docs/` (five `README.md` stubs under `api/`, `architecture/`, `plugins/`, `user-guide/`). Two loose SVG files sit at `src/Nodus/test.svg` and `src/Nodus/bezier-sample.svg`. `src/Imago/.github/` is an empty directory left after the per-app workflows were removed. There is no `docs/captures/` folder, so a `Fidelity:` block that names one cannot be satisfied and `process-todo-section` would refuse every UI section.
@@ -49,7 +49,7 @@ track: W3
 
 - `src/Nodus/` and `src/Imago/` hold only projects and build overlays; their documentation lives under `docs/dev/nodus/` and `docs/dev/imago/`.
 - The two sample SVG files are committed fixtures under `tests/fixtures/nodus/svg/` with a README naming their source.
-- `docs/captures/nodus/main-window/` and `docs/captures/imago/main-window/` hold dated captures of each app's current main window at 100 and 150 percent scaling, with a `README.md` recording the commit and machine.
+- `docs/captures/nodus/main-window/` and `docs/captures/imago/main-window/` hold dated before captures of each app's imported main window at 100 and 150 percent scaling, with a `README.md` recording the commit and machine and saying the captures are a before record, not a fidelity source.
 - `python scripts/export-icons.py` regenerates `resources/icons/<app>/PNG/` and `resources/icons/<app>/<app>.ico` for Nodus, Imago, and Lumen from the committed SVGs, and `python scripts/export-icons.py --check` fails CI and `scripts/check-all.ps1` when a committed raster differs from what the sources render.
 
 **Adjacency:** all=not-applicable (moving files, recording baselines, and generating icon rasters at build time: no records, settings, or documents a user changes)
@@ -61,7 +61,7 @@ track: W3
 | Order | Section | Deliverable                                          | Depends On | Status |
 | :---: | :-----: | ---------------------------------------------------- | ---------- | :----: |
 |   1   |   §1    | Fold the per-app docs and samples into the suite     | --         |  [ ]   |
-|   2   |   §2    | Baseline captures of Nodus and Imago                 | --         |  [ ]   |
+|   2   |   §2    | Before captures of the imported Nodus and Imago      | --         |  [ ]   |
 |   3   |   §3    | Export the app icon rasters from the SVG sources     | D00 T01 §5, D00 T02 §5 |  [ ]   |
 
 ---
@@ -80,12 +80,14 @@ The suite has one documentation tree (`docs/dev/`, `docs/user/`) and one fixture
 
 **Test checkpoint:** `Get-ChildItem src/Nodus, src/Imago -Directory -Recurse | Where-Object Name -in 'docs','.github'` returns nothing; every relative link in `docs/dev/nodus/*.md` and `docs/dev/imago/*.md` resolves to an existing file (a PowerShell loop over the links with `Test-Path`, quoted); `dotnet build Photon.slnx -c Release` still exits 0. Cheaper substitute that fails: copying the pages and leaving the originals, which leaves two copies to drift.
 
-## 2. Baseline Captures of Nodus and Imago
+## 2. Before Captures of Nodus and Imago
 
-Every UI section carries a `Fidelity:` block naming a capture under `docs/captures/<app>/`, and `process-todo-section` refuses to build a surface whose capture does not exist. The apps have no captures yet, so this section records the imported surfaces exactly as they are today: not the target look, the starting line the next changes are reviewed against.
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: pixel perfect is "Exact tokens + ±1 DIP geometry + approved goldens", signed off by the review panel) makes `docs/design/` the only fidelity source and the review-approved goldens under `docs/captures/golden/` the regression reference. This section said: every UI section's `Fidelity:` block names a capture under `docs/captures/<app>/`, `process-todo-section` refuses to build a surface whose capture does not exist, and these captures are the starting line the next changes are reviewed against; its Fidelity line named the two main windows as the baseline and its Job line named `review-todo-section` comparing against the capture. The captures are now a before record of the legacy look only: they show a reviewer what a section changed, and no section is built or reviewed to match them.
 
-**Fidelity:** Nodus main window and Imago main window as imported -- docs/captures/nodus/main-window/ and docs/captures/imago/main-window/ are created by this section; the captures record the current state, and the design contract in `standards/ui.md` and `docs/design/` (**Corrected 2026-09-27:** said `standards/shared.md`) is what later sections move them toward.
-**Job:** a reviewer can compare a changed surface against how it looked before the change. Consumer: `review-todo-section`, which compares the rendered surface against the named capture before stamping.
+The imported apps have no captures yet, so this section records their surfaces exactly as they are today, before `Photon.UI` and the design system replace them.
+
+**Fidelity:** no surface of its own -- this section records the imported windows as a before record under `docs/captures/nodus/main-window/` and `docs/captures/imago/main-window/`; it builds or changes no surface, and the design in `docs/design/` (`standards/design-contract.md`) is the fidelity source for the sections that do.
+**Job:** a reviewer can see how a legacy surface looked before a section changed it. Consumer: the before-and-after notes of `D01 T01 §1`, `D01 T01 §3`, and `D01 T01 §7`, never a fidelity comparison.
 **Treatment:** full-window PNG captures of each app's main window with an empty document, at 100 and 150 percent display scaling, plus one with a sample document open. Cheaper substitute that fails the checkpoint: the marketing screenshots under `resources/screens/`, which are not captures of the built app.
 **Chrome:** consume the existing windows unchanged. Do not restyle anything in this section.
 
@@ -95,7 +97,7 @@ Every UI section carries a `Fidelity:` block naming a capture under `docs/captur
 - [ ] Open `tests/fixtures/nodus/svg/bezier-sample.svg` (or `src/Nodus/bezier-sample.svg` if §1 has not shipped) and capture `docs/captures/nodus/main-window/sample-100.png`. Done when: the drawing is visible on the canvas in the capture.
 - [ ] Repeat the empty capture at 150 percent scaling as `empty-150.png`. Done when: the file exists and its pixel width is about 1.5 times the 100 percent capture for the same window size.
 - [ ] Launch `Imago.exe` from `artifacts/bin/Imago.UI/debug/` and capture `docs/captures/imago/main-window/empty-100.png` and `empty-150.png`. Done when: both files exist.
-- [ ] Write `docs/captures/README.md` (folder per app, then per surface; file names `<state>-<scale>.png`; each surface folder's `README.md` records the commit, date, Windows build, and scaling) and one `README.md` per surface folder. Done when: both surface folders carry their record.
+- [ ] Write `docs/captures/README.md` (folder per app, then per surface; file names `<state>-<scale>.png`; each surface folder's `README.md` records the commit, date, Windows build, and scaling; the per-app folders are before records of the imported apps and never a fidelity source, while `docs/captures/golden/` holds the review-approved goldens of `standards/design-contract.md`) and one `README.md` per surface folder. Done when: both surface folders carry their record and `docs/captures/README.md` names `standards/design-contract.md` (**Corrected 2026-09-27:** the before-record and golden sentences added).
 - [ ] Quote the Serilog error count for the Imago run (`%LOCALAPPDATA%\Imago\logs\`) and the debug-log state for Nodus (it has no file log yet, `D02 T01 §3`). Done when: both are in the commit body.
 - [ ] Commit: `"docs: record baseline captures of Nodus and Imago"`
 
@@ -132,6 +134,6 @@ Source map, one rule for all three apps (from `resources/icons/README.md`): 16 a
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` exits 0 after the moves
-- [ ] `docs/captures/` exists with a record per surface
+- [ ] `docs/captures/` exists with a record per surface, and its README says the per-app captures are a before record and `golden/` holds the approved goldens
 - [ ] `python scripts/export-icons.py --check` exits 0, and every raster under `resources/icons/` is one it produces
 - [ ] `python scripts/todo-graph.py validate` clean

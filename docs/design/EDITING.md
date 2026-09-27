@@ -21,3 +21,4 @@ The app icon SVGs live in `resources/icons/<app>/` and are documented in `resour
 
 - `docs/design/tokens.json` and `docs/design/design-system.json` must parse as JSON.
 - Every color token has a value for all four themes and a usage note; text pairs meet the contrast targets in `standards/ui.md` in every theme.
+- The code is held to this system by `standards/design-contract.md`: every surface section in `todo/` names the specs it implements on a `**Design:**` line (refs to files and heading anchors here, checked by `python scripts/todo-graph.py validate`, so renaming a heading or a component folder means updating those lines in the same commit), `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` refuses new literal values in the WPF sources, and `python scripts/render-design-reference.py` renders every component preview per theme and density into `build/design-reference/` for review beside the WPF renders.

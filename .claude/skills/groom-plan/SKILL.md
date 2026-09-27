@@ -49,6 +49,8 @@ Pay special attention to:
 - Paths under `src/Nodus/` and `src/Imago/` that the imports and renames moved.
 - Deferrals whose descriptions drifted while their owners stayed open.
 - XREFs whose targets moved or shipped (reciprocity still holds, or the line is corrected).
+- **Design lines** (`standards/design-contract.md`): every open section whose Fidelity line names a surface carries a live `**Design:**` line (`python scripts/todo-graph.py query design` counts them; `validate` fails a dead ref). For each section still listed in `todo/.design-baseline`, write its Design line from the specs its surface needs (component READMEs under `docs/design/components/`, `docs/design/shell-layout.md` region anchors, `standards/ui.md` anchors), rewrite any Fidelity line that still names an old-app capture under `docs/captures/<app>/` as its source so it names the design and its golden folder, and shrink the baseline in the same commit with `python scripts/todo-graph.py design-baseline`; the baseline never grows. A surface no spec covers gets `new surface: docs/design/<path>.md` plus the item that writes that spec first. Record each with `**Groomed YYYY-MM-DD:**`.
+- **Design deviations**: `python scripts/todo-graph.py query design` lists them; an open one whose follow-up drifted or whose reason is gone is corrected, and one sitting in front of an app release is sequenced so its follow-up ships first.
 
 ### 3. Gap scan
 
@@ -85,3 +87,4 @@ Write the groom record: what was sequenced, what drifted and was corrected, what
 - Do not redesign sections. Harden them.
 - Do not raise a cap, and do not file discovered sections past the per-run cap or without their Origin line. Merge, supersede, or backlog.
 - Do not leave the tree unvalidated. `validate` plus `plan --check` pass before the commit.
+- Do not add a ref to `todo/.design-baseline` or an entry to `docs/design/.lint-baseline.json`. Both only shrink.
