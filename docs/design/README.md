@@ -82,7 +82,7 @@ Segoe UI Variable, falling back to Segoe UI and system-ui: the Windows 11 system
 | `section-header` | 11 / 14, +0.04em, capitals | 600 | panel section headers (Bezier's ALL CAPS SemiBold, in `text-secondary`) |
 | `title` | 14 / 20 | 400 | flyout and empty-state headings |
 | `dialog-title` | 14 / 20 | 600 | dialog titles |
-| `display` | 28 / 36 | 300 | splash app name only |
+| `display` | 46 / 56, -0.5px | 600 | splash app name only (the Suite card) |
 | `mono` | 11 / 14 | 400 | status bar coordinates, pixel readouts |
 | `mono-body` | 12 / 16 | 400 | hex values, logs |
 
@@ -135,8 +135,8 @@ Shadows are darker and tighter in the dark themes and lighter in Light. Every fl
 Bezier's timings with one curve, `ease-out` (cubic out):
 
 - `duration-fast` 100ms: hover and press colors, checkbox and toggle transitions, scroll bar widening, thumb scale.
-- `duration-standard` 200ms: menus and flyouts fading in, section expand and collapse, toasts sliding in 20px.
-- `duration-slow` 400ms: dialogs popping in from scale 0.95, splash transitions (the splash's travelling border glow fades over 300ms).
+- `duration-standard` 200ms: menus and flyouts fading in, section expand and collapse, toasts sliding in 20px, the splash fading out when the main window is ready.
+- `duration-slow` 400ms: dialogs popping in from scale 0.95. The splash's travelling border glow keeps Bezier's own timing: one lap per 6 s, fading in over 300ms and out over 500ms.
 - `tooltip-delay` 400ms before a tooltip opens.
 
 When Windows "Animation effects" is off (`SystemParameters.ClientAreaAnimation` false, or `UISettings.AnimationsEnabled` false), every duration is 0 and marching ants, spinners and indeterminate bars stop. Nothing in the chrome moves on its own otherwise.
@@ -145,7 +145,7 @@ When Windows "Animation effects" is off (`SystemParameters.ClientAreaAnimation` 
 
 One family: Lucide geometry (ISC), in the shared icon catalog as path data. 24 viewBox, `icon-stroke` 1.5px at `icon-sm` 16px (menus, panels, options bar, rows, buttons) and `icon-md` 20px (tool rail), round caps and joins, strokes only. Icons are `icon` at rest, `text-primary` when hovered or active, `state-on` on a `state` fill, `text-disabled` when disabled. FluentIcons.Wpf, which Bezier mixed in, leaves the suite; the caption buttons draw `minus`, `maximize`, `restore` and `x` from the same catalog at stroke 1. Emoji are never icons.
 
-This UI icon catalog (Lucide-style strokes) is separate from the app icons. The app icons of Nodus, Imago and Lumen are Direction C, the suite tile: a shared graphite tile, the spectrum band along its foot and the app's accent glyph. They are drawn from their own SVG files, never from the catalog, and they appear in the taskbar, Start menu, installer, file associations, About dialog and the title-bar app mark (the hand-tuned `-16` file); the splash uses each app's neon art. Sizes, construction, colors and rules are in the App icons section, and the files are in the App icons asset group.
+This UI icon catalog (Lucide-style strokes) is separate from the app icons. The app icons of Nodus, Imago and Lumen are Direction C, the suite tile: a shared graphite tile, the spectrum band along its foot and the app's accent glyph. They are drawn from their own SVG files, never from the catalog, and they appear in the taskbar, Start menu, installer, file associations, About dialog and the title-bar app mark (the hand-tuned `-16` file); the splash is the Suite card, which carries the master icon at 136 px (see the Splash component guide). Sizes, construction, colors and rules are in the App icons section, and the files are in the App icons asset group.
 
 ## Accessibility
 

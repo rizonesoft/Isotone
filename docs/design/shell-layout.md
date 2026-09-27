@@ -72,5 +72,23 @@ The previous Imago layout (Layers on the left, Properties on the right) moves to
 
 ## Splash and Home
 
-- Splash: 480 x 280, `surface-raised` with `radius-lg` and `shadow-dialog`, the app's neon splash art (`<app>-splash.svg`, see App icons) at 64px, the app name in `display`, the version in `caption`, and a launch progress bar in `accent-<app>`. The Bezier border glow (a segment travelling around the edge) stays, in the app accent, fading over 300ms; none when animations are off.
 - Home (no document open): the canvas region shows New and Open (New is the primary button), recent documents as a list with 96px thumbnails, and nothing else.
+- Splash: the Suite card (operator decision 2026-09-27), built in XAML so the version, status and progress are live; `<app>-splash.svg` is its reference design and a marketing image, never shown by the app. The full spec is the Splash component guide (`components/Splash/README.md`); the table below is its summary.
+
+### Splash spec
+
+| Aspect | Spec |
+| --- | --- |
+| Size | 640 x 360 DIPs, radius 8, centred on the monitor that holds the cursor; no title bar, not in the taskbar |
+| Card | vertical gradient #303136 to #1A1B1E, a 1px inner highlight of white at 8 percent; the same in every brightness theme |
+| Layout grid | icon column x 56 to 192 centred on y 160; text column from x 230 to x 610; text positions are baselines |
+| Icon | the Direction C master at 136 x 136, x 56, y 92, over a radial halo of `accent-<app>` at 20 percent (centre 128, 160, radius 150) |
+| App name | Segoe UI Variable Display 46px semibold, letter spacing -0.5px, #F4F4F5, x 228, baseline 148 |
+| Role | 16px regular #B7B8BD, baseline 178 ("Vector editor", "Raster and photo editor", "Digital darkroom and photo manager") |
+| Suite and version | 13px regular #8C8D93, baseline 212: "Photon Graphics Suite · Version 0.1.0", the dot in #6C6D73 |
+| Status | Segoe UI Variable Text 12px #A3A4AA, baseline 272, live from startup ("Loading tools…", "Loading brushes…", "Opening the catalog…") |
+| Progress | 340 x 3 track #3A3B41 at x 230, y 284, radius 1.5; fill `accent-<app>`, determinate, advanced by the startup steps |
+| Copyright | 11px #6E6F75, right-aligned at x 610, baseline 312: "© 2026 Rizonesoft · Free and open source (GPL-3.0)" |
+| Band | the spectrum as a gentle wave along the bottom edge (the seven app icon stops), with a 1.5px white crest at 35 percent |
+| Glow | Bezier's `BorderGlowAnimator` in `accent-<app>`: a 1.5px highlight travelling around the edge, one lap per 6 s while loading, fading in over 300ms and out over 500ms; none when Windows animation effects are off |
+| Timing | shown from process start until the main window is ready, then fades out over `duration-standard` 200ms; no minimum display time and no artificial delay; closes at once when animations are off |

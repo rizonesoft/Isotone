@@ -7,7 +7,7 @@ Bars and rings for work that takes longer than a second. Anything slower than a 
 | Part | Size | Tokens |
 | --- | --- | --- |
 | Bar | 4px tall, 2px radius, width from the host | track `surface-field` with a 1px `divider-strong` inner edge; fill `state-line` |
-| Launch bar | as bar, splash screen only | fill `accent-<app>` |
+| Launch bar | 340 x 3px, 1.5px radius, splash screen only (see Splash) | track #3A3B41 with no edge, fill `accent-<app>` |
 | Failed | fill stops where it failed | `status-error` fill and a helper line |
 | Ring | 16px (stroke 2) inline, 32px (stroke 3) in empty states | track `divider-strong`, arc `state-line` |
 | Label | `caption`: percent and counts ("42% · 104 of 248") | `text-secondary` |

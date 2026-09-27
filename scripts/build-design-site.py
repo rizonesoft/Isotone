@@ -426,7 +426,7 @@ def icons_gallery() -> str:
         cells.append(f'<div class="s-app"><h4>{name}</h4><div class="s-app-row">'
                      f'<figure class="s-ic s-ic-master"><div class="s-ic-art">{svg_inline(d / f"{app}.svg")}</div><figcaption><code>{app}.svg</code> master, shown at 96</figcaption></figure>'
                      f'<div class="s-ladder">{ladder}</div>'
-                     f'<figure class="s-ic s-ic-splash"><div class="s-ic-art">{svg_inline(d / f"{app}-splash.svg")}</div><figcaption><code>{app}-splash.svg</code> splash art</figcaption></figure>'
+                     f'<figure class="s-ic s-ic-splash"><div class="s-ic-art">{svg_inline(d / f"{app}-splash.svg")}</div><figcaption><code>{app}-splash.svg</code> Suite card splash, reference design</figcaption></figure>'
                      "</div></div>")
     return '<div class="s-apps">' + "".join(cells) + '</div><p class="s-muted">Source files: <code>resources/icons/&lt;app&gt;/</code>. The small files are hand-tuned; they are shown at their native size on the page ground.</p>'
 
@@ -534,7 +534,7 @@ pre code { white-space: pre; border: 0; background: none; padding: 0; font-size:
 .s-ic-24 svg { width: 24px; height: 24px; }
 .s-ic-32 svg { width: 32px; height: 32px; }
 .s-ic-master svg { width: 96px; height: 96px; }
-.s-ic-splash svg { width: 96px; height: 96px; }
+.s-ic-splash svg { width: 320px; height: 180px; max-width: 100%; }
 .s-group > h3 { font-size: 16px; margin: 32px 0 12px; font-weight: 600; color: var(--text-secondary); letter-spacing: .02em; }
 .s-card { background: var(--surface-panel); border: 1px solid var(--divider); border-radius: var(--radius-lg); margin: 0 0 24px; overflow: hidden; }
 .s-card-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 14px 20px 10px; }

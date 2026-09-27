@@ -39,7 +39,7 @@ Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. I
 ## Type
 
 - Segoe UI Variable (then Segoe UI, then system-ui) for the interface; Segoe UI Variable Display for the splash name only; Cascadia Mono (then Consolas) for coordinates, readouts, hex values, and logs. Nothing ships a font.
-- The scale: `caption` 11/14, `body` 12/16, `body-strong` 12/16 semibold, `section-header` 11/14 semibold in capitals, `title` 14/20, `dialog-title` 14/20 semibold, `display` 28/36 light, `mono` 11/14, `mono-body` 12/16. Comfortable density raises caption, body, and body-strong to 12/16, 13/18, and 13/18.
+- The scale: `caption` 11/14, `body` 12/16, `body-strong` 12/16 semibold, `section-header` 11/14 semibold in capitals, `title` 14/20, `dialog-title` 14/20 semibold, `display` 46/56 semibold (the splash app name), `mono` 11/14, `mono-body` 12/16. Comfortable density raises caption, body, and body-strong to 12/16, 13/18, and 13/18.
 - Sentence case for buttons, labels, and messages; title case for menu items and dialog titles; an ellipsis on commands that open a dialog. No exclamation marks, no emoji, never "we".
 
 ## Spacing and density
@@ -52,7 +52,7 @@ Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. I
 
 - Radii: `radius-sm` 2 px for everything docked in the chrome, `radius-md` 4 px for menus, dropdowns, and flyouts, `radius-lg` 6 px for dialogs and toasts, `radius-round` only for radio buttons, toggle switches, slider thumbs, and status dots.
 - Docked chrome is flat and separated by 1 px `divider` hairlines. Elevation exists only on things that float: `shadow-tooltip` on tooltips, `shadow-popup` on menus, dropdowns, and flyouts, `shadow-dialog` on dialogs, toasts, and floating panels, each with a 1 px `border-popup`.
-- Motion uses one curve, `ease-out` (cubic out), at `duration-fast` 100 ms (hover, press, toggles), `duration-standard` 200 ms (menus, flyouts, expanders, toasts), and `duration-slow` 400 ms (dialogs, splash); tooltips open after `tooltip-delay` 400 ms.
+- Motion uses one curve, `ease-out` (cubic out), at `duration-fast` 100 ms (hover, press, toggles), `duration-standard` 200 ms (menus, flyouts, expanders, toasts, the splash fade-out), and `duration-slow` 400 ms (dialogs); tooltips open after `tooltip-delay` 400 ms.
 - When Windows animation effects are off (`SystemParameters.ClientAreaAnimation` or `UISettings.AnimationsEnabled` false), every duration is 0 and marching ants, spinners, and indeterminate bars stop. Nothing in the chrome moves on its own otherwise.
 
 ## Focus

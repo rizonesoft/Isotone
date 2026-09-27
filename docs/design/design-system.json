@@ -61,7 +61,7 @@
         "nodus-splash.svg": {
           "name": "nodus-splash.svg",
           "blob": "9452bc9b0dcc643557d0a1bf44247c5f",
-          "size": 4305,
+          "size": 4933,
           "type": "image/svg+xml"
         },
         "imago.svg": {
@@ -91,7 +91,7 @@
         "imago-splash.svg": {
           "name": "imago-splash.svg",
           "blob": "fd7fd384b9913ecaf1cfaef8fbc0a63f",
-          "size": 4207,
+          "size": 5245,
           "type": "image/svg+xml"
         },
         "lumen.svg": {
@@ -121,7 +121,7 @@
         "lumen-splash.svg": {
           "name": "lumen-splash.svg",
           "blob": "a749e77d9697bc973a79ec3eeaeb6e10",
-          "size": 4084,
+          "size": 5012,
           "type": "image/svg+xml"
         }
       }
@@ -133,8 +133,8 @@
   },
   "lastChange": {
     "by": "Derick Payne",
-    "at": "2026-09-27T09:00:56Z",
+    "at": "2026-09-27T12:00:00Z",
     "via": "repo",
-    "note": "WPF theme file names: MediumGray.xaml, Highlight.Blue/Orange.xaml, Density.Compact/Comfortable.xaml (README, Highlight)"
+    "note": "Splash: the Suite card (operator decision 2026-09-27); splash SVG records point at the new reference designs; Splash component guide added"
   }
 }

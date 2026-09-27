@@ -1,6 +1,6 @@
 # App icons
 
-Nodus, Imago and Lumen share one app icon system: Direction C, the suite tile, chosen on 2026-09-27. Direction A, the neon art, is kept for the splash and for marketing only.
+Nodus, Imago and Lumen share one app icon system: Direction C, the suite tile, chosen on 2026-09-27. The splash is the Suite card (operator decision 2026-09-27), a 640 x 360 graphite card that carries the master icon; its spec is the Splash component guide. Direction A, the neon art, is retired and no longer in the repository.
 
 The app icons are separate from the UI icon catalog: catalog icons are Lucide-style strokes that draw commands and tools in the chrome, while app icons are full-color files that identify an app to Windows and to the person using it.
 
@@ -76,10 +76,14 @@ The accents are the dark-theme values of the `accent-<app>` tokens; the icon kee
 | Installer (Inno Setup wizard and uninstall entry) | from the `.ico` | all sizes |
 | File associations (Explorer) | 16 to 256 px from the `.ico` | all sizes |
 | About dialog | 128 px | master |
-| Splash | 64 px | `<app>-splash.svg` (Direction A neon art), never the tile |
-| Marketing and store art | any | the neon art or the master |
+| Splash (the Suite card) | 136 px | master, on the card built in XAML to the Splash component guide |
+| Marketing and store art | any | the master, or `<app>-splash.svg` (the Suite card reference design, 640 x 360) |
 
 The title bar is the only place in the chrome where the app icon appears; everywhere else the chrome stays neutral and the app is identified by its accent on the one primary button.
+
+## The Suite card splash
+
+The splash shows the master icon at 136 px on a graphite card (640 x 360, radius 8, the same family of greys as the tile), over a soft halo of the app accent, beside the app name, its role, the suite and version line, a live status line and the launch progress in the accent, with the spectrum band as a gentle wave along the card's bottom edge (the same seven stops as the icons). The card is identical in the three apps apart from the icon, the accent and the words. `<app>-splash.svg` is its reference design and a marketing image; the app draws the card in XAML so the version, status and progress are live. The full spec (layout grid, colors, text styles, progress, band, glow and timing) is the Splash component guide, summarized in the Shell layout's Splash and Home.
 
 ## Do and do not
 
@@ -91,7 +95,7 @@ The title bar is the only place in the chrome where the app icon appears; everyw
 - Do not add text, a version number or a badge to the tile.
 - Do not drop or reorder the spectrum band, or change its colors per app.
 - Do not use a catalog icon (`pen-tool`, `brush`, `aperture`) as a stand-in for an app icon.
-- Do not use the neon art as the app icon; it is for the splash and marketing.
+- Do not use the Suite card splash as an app icon, or ship its SVG or a PNG of it as the in-app splash: the app builds the card in XAML so its text is live.
 
 ## Export
 
@@ -99,4 +103,6 @@ PNG sizes and each app's multi-resolution `.ico` (16, 20, 24, 30, 32, 40, 48, 64
 
 Never hand-edit an exported PNG or `.ico`: change the SVG and export again.
 
-Source files: `resources/icons/<app>/<app>.svg` (master), `<app>-16.svg`, `<app>-24.svg`, `<app>-32.svg` and `<app>-splash.svg`, the same fifteen files as the App icons asset group.
+The export also renders each `<app>-splash.svg` at 640 x 360, 960 x 540 and 1280 x 720 (1x, 1.5x and 2x) for marketing only; the apps never load them.
+
+Source files: `resources/icons/<app>/<app>.svg` (master), `<app>-16.svg`, `<app>-24.svg`, `<app>-32.svg` and `<app>-splash.svg` (the Suite card reference design), the same fifteen files as the App icons asset group.

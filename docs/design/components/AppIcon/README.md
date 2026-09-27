@@ -12,7 +12,7 @@ The full guide (construction, colors, pixel-grid rules, export) is the App icons
 | 24 and 30 px | `<app>-24.svg` |
 | 32 to 40 px | `<app>-32.svg` |
 | 48 px and up | `<app>.svg` |
-| Splash only | `<app>-splash.svg` (Direction A neon art) |
+| Splash (the Suite card) | the master at 136 px, on the card built in XAML (see Splash); `<app>-splash.svg` is the card's reference design and a marketing image, not an icon |
 
 ## Rules
 
