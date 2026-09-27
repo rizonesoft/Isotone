@@ -12,6 +12,7 @@
   7. python scripts/todo-findings.py --check
   8. python scripts/todo-runs.py --check
   9. python scripts/campaign_guard.py --self-test
+  10. python scripts/build-design-site.py --check (docs/design/index.html is current)
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
 .EXAMPLE
@@ -74,6 +75,7 @@ try {
     Invoke-PythonGate 'todo-findings --check' 'todo-findings.py' @('--check')
     Invoke-PythonGate 'todo-runs --check' 'todo-runs.py' @('--check')
     Invoke-PythonGate 'campaign_guard self-test' 'campaign_guard.py' @('--self-test')
+    Invoke-PythonGate 'design site --check' 'build-design-site.py' @('--check')
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'
     $results.Add([pscustomobject]@{ Gate = 'python gates'; Status = 'SKIP (no python)'; Seconds = 0 })

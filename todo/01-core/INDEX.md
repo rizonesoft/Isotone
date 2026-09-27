@@ -27,7 +27,7 @@ The two shared libraries: `Photon.Core` (non-UI services) and `Photon.UI` (the W
 
 - `src/Photon.Core/` and `src/Photon.UI/`, their test projects, and every move of duplicated code into them
 - App-data paths, logging bootstrap, settings store, single instance, undo history, atomic document writer
-- Icon catalog, shared windows and dialogs, the theme resources the design contract names
+- Icon catalog, shared windows and dialogs, the theme resources the design contract names, the implicit control styles, and the shared window chrome (title bar, document tabs, dock theme, status bar)
 - The pixel engine and its extensions, the color-management engine, the AI core (OpenRouter client, key store, explicit-send gate, provenance, brand kit), the develop engine, the legacy raster codecs Nodus, Imago, and Lumen share, and the isolated host for third-party Photoshop-compatible plug-ins
 
 ## Out of scope

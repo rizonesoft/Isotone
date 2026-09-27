@@ -75,6 +75,8 @@ track: I20
 - -> XREF: D05 T01 §4 -- the opt-in `UpdateChecker` §8 consumes
 - -> XREF: D01 T01 §2 -- the exception window the debugging and crash-report preferences govern
 - -> XREF: D01 T01 §3 -- the suite theme
+- -> XREF: D01 T01 §7 -- the shared `PhotonWindow` title bar and Snap Layouts hook §9 consumes
+- -> XREF: D01 T01 §8 -- the shared AvalonDock theme and document tabs §1 docks with
 - -> XREF: D01 T01 §4 -- the shared About and Shortcuts dialogs
 - -> XREF: D01 T02 §2 -- the settings store every preference writes through
 - -> XREF: D03 T13 §10 -- Imago parity retouching and transform cites §1: the retouching studio preset D03 T13 §10 defines; §3: the GIMP shortcut set D03 T13 §11's tool shortcuts join
@@ -101,11 +103,11 @@ track: I20
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | Workspaces, panels, the Properties panel, and the Contextual Task Bar | D03 T07 §17, D02 T16 §1 |  [ ]   |
+|   1   |   §1    | Workspaces, panels, the Properties panel, and the Contextual Task Bar | D03 T07 §17, D02 T16 §1, D01 T01 §8 |  [ ]   |
 |   2   |   §2    | The toolbar and the options bar | §1, D02 T16 §2 |  [ ]   |
 |   3   |   §3    | Menus, shortcuts, and command search | §1, D02 T16 §3 |  [ ]   |
 |   4   |   §4    | Preferences I: general, tools, cursors, units, guides, and type | D03 T07 §17 |  [ ]   |
-|   5   |   §9    | Interface appearance, language, and accessibility display preferences | §4 |  [ ]   |
+|   5   |   §9    | Interface appearance, language, and accessibility display preferences | §4, D01 T01 §7 |  [ ]   |
 |   6   |   §5    | Preferences II: files, performance, memory, and resources | §4 |  [ ]   |
 |   7   |   §6    | Pen, touch, and input devices | §4 |  [ ]   |
 |   8   |   §7    | The presets manager and resource libraries | §4, D03 T12 §3 |  [ ]   |
@@ -122,6 +124,7 @@ A professional rearranges the whole window for a task and carries that arrangeme
 **Treatment:** a workspace and studio switcher (studios with name, icon, color, and function key), a Window, Workspace menu, AvalonDock panels with tab groups, iconic collapse, and panel menus, document tabs with drag out and dock back, Window, Single-Window Mode, the Properties panel with Document, Pixel Layer, and Type pages, and a floating Contextual Task Bar with pin, reset, and hide. Cheaper substitute that fails the checkpoint: saving only the dock layout, which the part-by-part workspace comparison rejects.
 **Chrome:** consume the moved `Photon.UI/Workspace/` frame, AvalonDock, the settings store, the keymap, `CompactNumberBox`, and the theme. Do not add a second layout persistence or a second numeric box.
 **Corrected 2026-09-27:** the specs are `docs/design/shell-layout.md` (the Imago dock in Photoshop's default arrangement), `docs/design/components/Panel/README.md`, `docs/design/components/DocumentTabs/README.md`, and `docs/design/components/NumberBox/README.md`; selection in panels and tabs is `state-subtle` and `state-line`, never `accent-imago`.
+**Corrected 2026-09-27:** the `DockingManager` takes the Photon AvalonDock theme and `Photon.DocumentTab` of `D01 T01 §8` in place of the VS2013 theme Imago references today, and the `Dirkster.AvalonDock.Themes.VS2013` reference leaves `Photon.Imago.Desktop` in this section's commit.
 
 **Requires:** display-session -- switching, docking, floating tabs, and bar captures need an interactive desktop
 
@@ -387,10 +390,11 @@ A user must be able to make Imago comfortable and readable on their display and 
 **Treatment:** an Interface page (theme, follow system, accent and highlight color, custom theme file, dark title bar, reload theme, icon theme and style, icon scale, UI font size, scale UI to font, UI scale, larger sliders, merge menu into title bar), a Language page, an Accessibility display page, and a Canvas page (surround color per screen mode, border, pasteboard gray levels, preview sizes). Cheaper substitute that fails the checkpoint: a theme switch that needs a restart or leaves hardcoded colors.
 **Chrome:** consume the `D01 T01 §3` suite theme, the `D02 T16 §6` brightness dictionaries and `ThemeService` in `Photon.UI`, the icon catalog, and the settings store. Do not add a second theme service.
 **Corrected 2026-09-27:** the brightness dictionaries and the three services are `D01 T01 §3`'s. Per `standards/ui.md` the menu bar always sits inside the title bar (`docs/design/components/WindowChrome/README.md`), the Highlight color is the Blue, Photon orange, or Windows accent choice of `HighlightService`, and the suite has one Lucide icon family, so icon style variants are stroke weights and sizes of that family, never a second set.
+**Corrected 2026-09-27:** the title bar with the menu inside it, the caption buttons, and the Snap Layouts hook are `D01 T01 §7`'s `PhotonWindow`, which Imago's main window already uses from `D03 T01 §3`, so this section moves only the UI-scale helper and merges no chrome of its own.
 
 **Requires:** display-session -- theme, scale, language, and right-to-left captures need an interactive desktop
 
-- [ ] Move the root `LayoutTransform` UI-scale helper and the Windows 11 chrome helpers from `D02 T16 §6` to `src/Photon.UI/Windowing/UiScale.cs` and `src/Photon.UI/Windowing/WindowChrome11.cs`, Nodus consuming them unchanged. Done when: `UiScaleTests` pass from `tests/Photon.UI.Tests/Windowing/` and one `class UiScale` exists in `src`.
+- [ ] Move the root `LayoutTransform` UI-scale helper and the Windows 11 chrome helpers from `D02 T16 §6` to `src/Photon.UI/Windowing/UiScale.cs` and `src/Photon.UI/Windowing/WindowChrome11.cs`, Nodus consuming them unchanged (**Corrected 2026-09-27:** the chrome helpers already live in `src/Photon.UI/Windows/` from `D01 T01 §7`, so only `UiScale` moves). Done when: `UiScaleTests` pass from `tests/Photon.UI.Tests/Windowing/` and one `class UiScale` exists in `src`.
 - [ ] Consume `ThemeService` and the four brightness dictionaries in `src/Photon.UI/Themes/` from the Interface page. Done when: a driven switch from Dark to Light repaints without restart (captures in both).
 - [ ] Follow the Windows app mode through `UISettings.ColorValuesChanged` when `Imago.UI.FollowSystemTheme` is on (Dark for dark mode, Light for light mode), and bind the Highlight color choice to `HighlightService` from `D01 T01 §3`, whose Windows accent option already follows the accent (**Corrected 2026-09-27:** said add a highlight color token override here). Done when: a test with a fake `UISettings` source asserts the theme change and that the Highlight choice reaches `HighlightService`.
 - [ ] Add custom themes as a token override XAML file validated against the token list (the Imago equivalent of GIMP CSS themes), with Reload Theme. Done when: `CustomThemeValidatorTests` reject a theme missing a token by name and accept a complete one. Cheaper substitute: loading any XAML unchecked, which the validator test rejects.
@@ -398,7 +402,7 @@ A user must be able to make Imago comfortable and readable on their display and 
 - [ ] Add icon style color, monochrome, or symbolic as icon catalog variants and icon scale, `Imago.UI.IconStyle` consumed by `VectorIcon`; the legacy set is not shipped and the user guide says so. Done when: a test renders one icon in each style at 200 percent without raster scaling.
 - [ ] Add UI font size, scale UI to font, and auto (per-monitor DPI) or fixed scale 100 to 200 percent through the moved `UiScale`. Done when: `UiScaleTests` assert the root transform for each mode and captures at 100 and 200 percent exist.
 - [ ] Add the `SpinScale` control (a slider with inline value and plus and minus buttons) in `src/Photon.UI/Controls/SpinScale.cs` built on `CompactNumberBox`, with `Imago.UI.LargeSliders` for a larger height. Done when: `SpinScaleTests` assert step, drag, and typed entry, and the large mode height.
-- [ ] Draw the menu bar inside the title bar, always, with a custom caption area that keeps snap layouts through the moved chrome helper (**Corrected 2026-09-27:** said behind an `Imago.UI.MergeMenuIntoTitle` toggle; `docs/design/components/WindowChrome/README.md` makes it the only layout). Done when: a driven hover over maximize shows the snap layout flyout with the merged bar (capture).
+- [ ] Draw the menu bar inside the title bar, always, with a custom caption area that keeps snap layouts through the moved chrome helper (**Corrected 2026-09-27:** through `D01 T01 §7`'s `PhotonWindow`, whose `TitleBarMenu` slot hosts the menu; **Corrected 2026-09-27:** said behind an `Imago.UI.MergeMenuIntoTitle` toggle; `docs/design/components/WindowChrome/README.md` makes it the only layout). Done when: a driven hover over maximize shows the snap layout flyout with the merged bar (capture).
 - [ ] Add `Imago.UI.Language` (a culture or Follow Windows) applied at startup through resource lookups, with the pseudo-locale and `.resx` extraction owned by `D03 T07 §16`. Done when: a test starts with a fixed culture and asserts a resource lookup uses it.
 - [ ] Apply `FlowDirection.RightToLeft` for right-to-left cultures while keeping the canvas and rulers left-to-right. Done when: `RightToLeftLayoutTests` assert panel flow is right-to-left while the canvas transform is unchanged, and one right-to-left capture exists.
 - [ ] Add the Accessibility display page: larger UI font, handle size, UI contrast (high-contrast tokens), text contrast, UI brightness, and reduce motion (disables animated zoom and panel animations), each consumed by the theme or canvas. Done when: the §4 coverage test names each consumer and a test asserts reduce motion disables the zoom animation.

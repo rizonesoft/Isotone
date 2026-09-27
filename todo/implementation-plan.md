@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
-> **Progress:** **0 of 679 sections complete (0%).** 679 sections (0 discovered); backlog 14 of 500. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 683 sections complete (0%).** 683 sections (0 discovered); backlog 14 of 500. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -53,7 +53,7 @@ The finished suite is **three standalone creative applications that behave like 
 | Formats are proven, not assumed                                                                                                                                                                                  | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §12` · `D03 T17 §2` · `D03 T17 §4` · `D03 T17 §5` · `D03 T17 §6` · `D01 T08 §1` · `D02 T18 §8` · `D04 T13 §1` · `D04 T13 §2` · `D04 T13 §3` · `D04 T13 §4` · `D04 T13 §6` · `D04 T13 §7` · `D04 T13 §8` · `D04 T08 §9`                                                                                                                        |
 | No menu item silently does nothing                                                                                                                                                                               | `D02 T03 §5` · `D03 T06 §2`                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Originals are never written unless the user opts in; a verified backup is taken by default                                                                                                                       | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1` · `D04 T11 §1` · `D04 T08 §9` · `D04 T14 §10` · `D04 T04 §11` · `D04 T04 §16` · `D04 T05 §6` · `D04 T08 §8` · `D04 T09 §17`                                                                                                                                                                                                                                                                                              |
-| It looks like one suite                                                                                                                                                                                          | `standards/ui.md` and `docs/design/` (design contract) · `D01 T01 §3`                                                                                                                                                                                                                                                                                                                                                                                                |
+| It looks like one suite                                                                                                                                                                                          | `standards/ui.md` and `docs/design/` (design contract) · `D01 T01 §3` · `D01 T01 §5` · `D01 T01 §6` · `D01 T01 §7` · `D01 T01 §8`                                                                                                                                                                                                                                                                                                                                    |
 | It works without a mouse or eyes                                                                                                                                                                                 | `D02 T06 §17` · `D03 T07 §16` · `D04 T02 §9`                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Each app ships alone, proven on a clean machine                                                                                                                                                                  | `D05 T01 §1` · `D02 T05 §4` · `D03 T06 §3` · `D04 T02 §8` · `D04 T15 §10`                                                                                                                                                                                                                                                                                                                                                                                            |
 | The suite ships together without re-versioning                                                                                                                                                                   | `D05 T01 §6`                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -189,34 +189,38 @@ Nodus goes first among the apps. This phase gives it a real composition root on 
 
 ### Phase 3 -- Nodus 0.1.0: shared UI, complete editing, documents, release
 
-With its foundation sound, Nodus becomes a complete first release: `Photon.UI` takes the controls and windows Nodus and Imago duplicate and the suite theme, single instance moves to `Photon.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the SDK pin moves from the .NET 11 release candidate to GA (`D00 T02 §8`, which waits for the November 2026 GA and parks with that blocker named until then), the clean-machine procedure is proven on Windows 11, and `nodus-v0.1.0` ships.
+With its foundation sound, Nodus becomes a complete first release: `Photon.UI` takes the controls and windows Nodus and Imago duplicate, the suite theme, the implicit control styles, and the shared window chrome (title bar with Snap Layouts, document tabs, dock theme, status bar), single instance moves to `Photon.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the SDK pin moves from the .NET 11 release candidate to GA (`D00 T02 §8`, which waits for the November 2026 GA and parks with that blocker named until then), the clean-machine procedure is proven on Windows 11, and `nodus-v0.1.0` ships.
 
-|  ✔  | Section      | Deliverable                                          | Items |
-| :-: | ------------ | ---------------------------------------------------- | :---: |
-| [ ] | `D01 T01 §1` | Create Photon.UI with the icon catalog               |   8   |
-| [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Photon.UI |   7   |
-| [ ] | `D01 T01 §3` | The suite theme resources                            |  19   |
-| [ ] | `D01 T02 §3` | Single instance and file-open forwarding             |   4   |
-| [ ] | `D02 T02 §4` | Arrange, align, distribute, rotate, and flip         |   8   |
-| [ ] | `D02 T02 §5` | Boolean path operations on SKPath.Op                 |   5   |
-| [ ] | `D02 T02 §6` | The layers panel on LayerManager                     |   7   |
-| [ ] | `D02 T02 §7` | Snapping on SnapManager                              |   5   |
-| [ ] | `D02 T02 §8` | One keymap on ShortcutManager                        |   4   |
-| [ ] | `D02 T03 §3` | Clipboard and the Edit menu                          |   6   |
-| [ ] | `D02 T03 §4` | Property edits are undo steps                        |   4   |
-| [ ] | `D02 T04 §3` | PNG and JPEG export                                  |   6   |
-| [ ] | `D02 T04 §4` | PDF export                                           |   4   |
-| [ ] | `D02 T04 §5` | Recent files, autosave, and crash recovery           |   7   |
-| [ ] | `D02 T04 §6` | Open from the command line and the .svg association  |   4   |
-| [ ] | `D02 T03 §5` | Every menu command works or names its owner          |   5   |
-| [ ] | `D02 T05 §1` | The About dialog                                     |   5   |
-| [ ] | `D02 T05 §2` | The keyboard shortcuts dialog                        |   4   |
-| [ ] | `D02 T05 §3` | The Help menu                                        |   3   |
-| [ ] | `D06 T01 §1` | The Nodus user guide                                 |   4   |
-| [ ] | `D06 T02 §1` | The architecture page matches the tree               |   4   |
-| [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                               |   6   |
-| [ ] | `D05 T01 §1` | The clean-machine install procedure                  |   3   |
-| [ ] | `D02 T05 §4` | Nodus 0.1.0                                          |   8   |
+|  ✔  | Section      | Deliverable                                                     | Items |
+| :-: | ------------ | --------------------------------------------------------------- | :---: |
+| [ ] | `D01 T01 §1` | Create Photon.UI with the icon catalog                          |   8   |
+| [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Photon.UI            |   7   |
+| [ ] | `D01 T01 §3` | The suite theme resources                                       |  19   |
+| [ ] | `D01 T01 §5` | Implicit control styles: buttons and inputs                     |  23   |
+| [ ] | `D01 T01 §6` | Implicit control styles: navigation, data, menus, and feedback  |  24   |
+| [ ] | `D01 T01 §7` | Shared window chrome: title bar and caption buttons             |  15   |
+| [ ] | `D01 T01 §8` | Shared window chrome: document tabs, dock theme, and status bar |  18   |
+| [ ] | `D01 T02 §3` | Single instance and file-open forwarding                        |   4   |
+| [ ] | `D02 T02 §4` | Arrange, align, distribute, rotate, and flip                    |   8   |
+| [ ] | `D02 T02 §5` | Boolean path operations on SKPath.Op                            |   5   |
+| [ ] | `D02 T02 §6` | The layers panel on LayerManager                                |   7   |
+| [ ] | `D02 T02 §7` | Snapping on SnapManager                                         |   5   |
+| [ ] | `D02 T02 §8` | One keymap on ShortcutManager                                   |   4   |
+| [ ] | `D02 T03 §3` | Clipboard and the Edit menu                                     |   6   |
+| [ ] | `D02 T03 §4` | Property edits are undo steps                                   |   4   |
+| [ ] | `D02 T04 §3` | PNG and JPEG export                                             |   6   |
+| [ ] | `D02 T04 §4` | PDF export                                                      |   4   |
+| [ ] | `D02 T04 §5` | Recent files, autosave, and crash recovery                      |   7   |
+| [ ] | `D02 T04 §6` | Open from the command line and the .svg association             |   4   |
+| [ ] | `D02 T03 §5` | Every menu command works or names its owner                     |   5   |
+| [ ] | `D02 T05 §1` | The About dialog                                                |   5   |
+| [ ] | `D02 T05 §2` | The keyboard shortcuts dialog                                   |   4   |
+| [ ] | `D02 T05 §3` | The Help menu                                                   |   3   |
+| [ ] | `D06 T01 §1` | The Nodus user guide                                            |   4   |
+| [ ] | `D06 T02 §1` | The architecture page matches the tree                          |   4   |
+| [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                                          |   6   |
+| [ ] | `D05 T01 §1` | The clean-machine install procedure                             |   3   |
+| [ ] | `D02 T05 §4` | Nodus 0.1.0                                                     |   8   |
 
 ### Phase 4 -- Nodus parity I: document model, pages, layers, selection, and view
 
@@ -503,7 +507,7 @@ Imago starts once Nodus has shipped `nodus-v1.0.0` at the end of the parity phas
 |  ✔  | Section      | Deliverable                                       | Items |
 | :-: | ------------ | ------------------------------------------------- | :---: |
 | [ ] | `D03 T01 §2` | Port the snapshot canvas, ruler, and container    |   7   |
-| [ ] | `D03 T01 §3` | WPF-UI out of Imago                               |   6   |
+| [ ] | `D03 T01 §3` | WPF-UI out of Imago                               |   7   |
 | [ ] | `D03 T01 §5` | Composition root on Photon.Core                   |   4   |
 | [ ] | `D03 T02 §1` | The tiled image store                             |   5   |
 | [ ] | `D03 T02 §2` | The viewport on the tiled document                |   6   |

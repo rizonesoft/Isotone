@@ -41,6 +41,9 @@ track: N16
 - -> XREF: D02 T02 §8 -- the one keymap every toolbar, menu, and shortcut set reads
 - -> XREF: D02 T04 §5 -- recent files and recovery that §5's preferences and §7's welcome screen drive
 - -> XREF: D01 T01 §3 -- the suite theme §6 adds brightness dictionaries to
+- -> XREF: D01 T01 §7 -- the shared `PhotonWindow` title bar, caption buttons, and Snap Layouts hook §6 consumes
+- -> XREF: D01 T01 §8 -- the shared AvalonDock theme, document tabs, and `PhotonStatusBar` §1 and §2 build on
+- -> XREF: D01 T01 §6 -- the implicit menu, context menu, and tooltip styles §3 and §9 draw with
 - -> XREF: D01 T01 §2 -- the exception window the §6 error-reporting toggle governs
 - -> XREF: D01 T02 §2 -- the settings store every preference writes through
 - -> XREF: D01 T02 §4 -- the suite history whose undo limit §5 sets
@@ -76,15 +79,15 @@ track: N16
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | Workspaces: presets, save, reset, import, and export | D02 T06 §13 |  [ ]   |
-|   2   |   §2    | Toolbox, toolbars, property bar, and status bar customization | §1, D02 T07 §8 |  [ ]   |
-|   3   |   §3    | Menus, context menus, command search, and shortcut sets | §1, D02 T06 §12 |  [ ]   |
+|   1   |   §1    | Workspaces: presets, save, reset, import, and export | D02 T06 §13, D01 T01 §8 |  [ ]   |
+|   2   |   §2    | Toolbox, toolbars, property bar, and status bar customization | §1, D02 T07 §8, D01 T01 §8 |  [ ]   |
+|   3   |   §3    | Menus, context menus, command search, and shortcut sets | §1, D02 T06 §12, D01 T01 §6 |  [ ]   |
 |   4   |   §4    | Preferences: general, selection and nodes, display, and units | D02 T06 §13 |  [ ]   |
 |   5   |   §5    | Preferences: files, backup, performance, GPU, and warnings | §4 |  [ ]   |
-|   6   |   §6    | UI appearance, scaling, and diagnostics | §4 |  [ ]   |
+|   6   |   §6    | UI appearance, scaling, and diagnostics | §4, D01 T01 §7 |  [ ]   |
 |   7   |   §7    | The welcome screen and the navigator | D02 T07 §14 |  [ ]   |
 |   8   |   §8    | Pen, touch, and Surface Dial input | §4 |  [ ]   |
-|   9   |   §9    | Hints, in-app learning, and the project timer | §1 |  [ ]   |
+|   9   |   §9    | Hints, in-app learning, and the project timer | §1, D01 T01 §6 |  [ ]   |
 |  10   |   §10   | Object data, the Object Data Manager, and find and replace objects | D02 T07 §5 |  [ ]   |
 |  11   |   §11   | QR codes and barcodes | D02 T09 §1 |  [ ]   |
 
@@ -99,6 +102,7 @@ A professional arranges the window for the task in front of them and carries tha
 **Treatment:** an application bar workspace switcher and a Window, Workspace menu; a workspace is a named bundle of dock layout, visible toolbars and toolbox set, property bar items, menu customization, shortcut set, and status bar. Cheaper substitute that fails the checkpoint: saving only the dock layout.
 **Chrome:** consume AvalonDock layout serialization from `D02 T06 §7`, the settings store, the keymap, and the theme. Do not add a second layout persistence.
 **Corrected 2026-09-27:** the specs are `docs/design/shell-layout.md` (regions, right dock 280 px, 1 px gaps on `frame`), `docs/design/components/Panel/README.md`, and `docs/design/components/DocumentTabs/README.md`; the selected panel or document tab is marked with `state-line`, never an app accent.
+**Corrected 2026-09-27:** the dock, document tabs, floating panels, and collapsed icon strips are drawn by the Photon AvalonDock theme and `Photon.DocumentTab` of `D01 T01 §8`; this section serializes and switches layouts and adds no dock styling of its own.
 
 **Requires:** display-session -- switching and capturing workspaces needs an interactive desktop
 
@@ -130,6 +134,7 @@ Users put the tools and commands they use where they want them. Every bar here, 
 **Treatment:** toolbars as `ToolBarTray` bands bound to a `CommandBarDefinition` model; Alt-drag moves and Ctrl+Alt-drag copies buttons; a Customization page lists all commands for drag-in. Cheaper substitute that fails the checkpoint: fixed XAML toolbars with visibility toggles only.
 **Chrome:** consume the icon catalog, the keymap's command registry, and the workspace model of §1. One command registry, no per-toolbar command copies.
 **Corrected 2026-09-27:** the specs are `docs/design/components/ToolRail/README.md` (the toolbox), `docs/design/components/OptionsBar/README.md` (the property bar), and `docs/design/components/StatusBar/README.md`; a checked tool shows `state-tint`, a 1 px `state-line` border, and `glow-state`, never an accent or orange fill.
+**Corrected 2026-09-27:** the status bar is `PhotonStatusBar` of `D01 T01 §8` (slots, status dot, throttled readouts) with the `D01 T01 §6` style; customization adds, removes, and orders its slots rather than building a second status strip.
 
 **Requires:** display-session -- toolbar drag customization is a driven run
 
@@ -162,6 +167,7 @@ Menus and shortcuts are how a user's habits reach the app. This section renders 
 **Treatment:** a Customization dialog with Commands, Menus, and Shortcuts pages; shortcut tables for Main, Text Editing, Node Editing, Table Editing, and Print Preview contexts. Cheaper substitute that fails the checkpoint: a second shortcut list outside `ShortcutManager`.
 **Chrome:** consume `ShortcutManager`, the command index of `D02 T06 §12`, the shortcuts dialog of `D02 T05 §2`, and the §1 workspace model. Do not build a second command list.
 **Corrected 2026-09-27:** the specs are `docs/design/components/Menu/README.md`, `docs/design/components/ContextMenu/README.md`, and `docs/design/components/Dialog/README.md` for the Customization dialog; the highlighted menu item is `state` with `state-on` text, and the menu bar sits inside the title bar (`docs/design/components/WindowChrome/README.md`).
+**Corrected 2026-09-27:** menus and context menus render through the implicit `Menu`, `MenuItem`, and `ContextMenu` styles of `D01 T01 §6` (highlight, submenu, checked, radio, separators, group headers); definitions change what the menus hold, never how they are drawn.
 
 **Requires:** display-session -- menu customization and context menus are driven runs
 
@@ -256,6 +262,7 @@ A user spends hours in this window, so it must be comfortable on their display a
 **Treatment:** an Appearance page (brightness Darkest, Dark, Medium Gray, Light; Highlight color Blue, Photon orange, or Windows accent; density Compact or Comfortable; canvas color match or white; desktop and border colors; UI scale 100 to 200 percent; cursor scale; large tabs; center dialogs) and Help, System Information and Help, Restart in Safe Mode. Cheaper substitute that fails the checkpoint: theme switching that needs a restart or leaves hardcoded colors.
 **Chrome:** consume the suite theme of `D01 T01 §3` (brightness variants as additional token dictionaries), the exception window of `D01 T01 §2`, and `DebugInfoService`. Do not keep `CatppuccinThemes`.
 **Corrected 2026-09-27:** `D01 T01 §3` now generates all four brightness themes (Darkest, Dark, Medium Gray, Light), the Highlight dictionaries, and the density dictionaries from `docs/design/tokens.json`, and owns `ThemeService`, `HighlightService`, and `DensityService`; this section consumes them. The brightness names were Dark, Medium Dark, Medium Light, and Light. The title bar follows `docs/design/components/WindowChrome/README.md`: one custom title bar with the menu bar inside it and 46 x 32 caption buttons drawn from the icon catalog (the Bezier emoji caption buttons and the doubled OS title bar are removed), and no Mica backdrop, because the title bar is the opaque `frame` token.
+**Corrected 2026-09-27:** the custom title bar, caption buttons, rounded corners, and the `WM_NCHITTEST` Snap Layouts hook are `D01 T01 §7`'s `PhotonWindow`, which Nodus's main window already uses; this section adds only the Nodus appearance options around it (border color, UI and cursor scale, dialog placement) and builds no chrome helper of its own.
 
 **Requires:** display-session -- brightness and scaling captures need an interactive desktop
 
@@ -265,7 +272,7 @@ A user spends hours in this window, so it must be comfortable on their display a
 - [ ] Add canvas and desktop color keys `nodus.view.canvasColor` (MatchUI, White, or custom) and `nodus.view.desktopColor`, consumed by `SkiaRenderer` for the area outside artboards. Done when: a render test with White draws white inside artboards and the desktop color outside.
 - [ ] Apply the window border color through `DwmSetWindowAttribute(DWMWA_BORDER_COLOR)` from `nodus.ui.borderColor`. Done when: a driven run shows the configured border (capture).
 - [ ] Add UI scaling through a root `LayoutTransform` bound to `nodus.ui.scale` (100 to 200 percent) layered over per-monitor DPI, and cursor scaling choosing 32 or 48 px cursor assets from `nodus.ui.cursorScale`. Done when: captures at 100 and 200 percent in Light and Dark are committed to `docs/captures/nodus/appearance/`.
-- [ ] Add Windows 11 conventions: rounded corners through `DWMWA_WINDOW_CORNER_PREFERENCE` (**Corrected 2026-09-27:** no Mica backdrop), the custom title bar of `docs/design/components/WindowChrome/README.md`, and snap layouts by returning `HTMAXBUTTON` from `WM_NCHITTEST` over the custom maximize button. Done when: a driven hover over maximize shows the snap layout flyout (capture).
+- [ ] Add Windows 11 conventions: rounded corners through `DWMWA_WINDOW_CORNER_PREFERENCE` (**Corrected 2026-09-27:** no Mica backdrop), the custom title bar of `docs/design/components/WindowChrome/README.md`, and snap layouts by returning `HTMAXBUTTON` from `WM_NCHITTEST` over the custom maximize button (**Corrected 2026-09-27:** all three are `D01 T01 §7`'s `PhotonWindow`; this item verifies them in Nodus under each brightness theme and UI scale instead of building them). Done when: a driven hover over maximize shows the snap layout flyout (capture).
 - [ ] Add `nodus.ui.centerDialogs` (center on the main window, or remember the last position per dialog) and large tabs, documents as tabs, and auto-collapse panels toggles consumed by §1's dock host. Done when: a test opens a dialog twice with remember on and it reopens at the saved position.
 - [ ] Draw the active tool with the `state-tint`, `state-line`, and `glow-state` tokens (**Corrected 2026-09-27:** said add an active-tool highlight token; the design system already names these) and draw every tool icon from the catalog. Done when: a test asserts every registered tool has a catalog icon and the three tokens exist in all four dictionaries.
 - [ ] Add the System Information dialog: OS, .NET, GPU and driver, displays and DPI, printers, loaded assemblies with versions, and the settings folder, with Copy and Save as TXT. Done when: `SystemInfoReportTests` assert every field is present in the TXT output.
@@ -343,6 +350,7 @@ Learning a tool in place beats leaving the app, and freelancers bill by the hour
 **Treatment:** a Hints panel that follows the active tool with a short description, modifiers, and a Learn more link into the user guide; a Project Timer toolbar (Track button, task name, elapsed) and panel. Cheaper substitute that fails the checkpoint: hints that are static text not following the tool, or a timer that counts idle time.
 **Chrome:** consume the tool manager, the user guide under `docs/user/nodus/`, the Help menu of `D02 T05 §3`, and the toolbar model of §2. Do not add a second toolbar mechanism for the timer.
 **Corrected 2026-09-27:** rich tooltips follow `docs/design/components/Tooltip/README.md` (title, description, shortcut, `tooltip-delay` 400 ms, `shadow-tooltip`).
+**Corrected 2026-09-27:** the tooltip surface and the rich layout (title, shortcut chip, description) are the implicit `Photon.ToolTip` style and the `ToolTipInfo` template of `D01 T01 §6`; the rich tooltips here bind each command's title, gesture, and description to `ToolTipInfo` and add no layout of their own.
 
 **Requires:** display-session -- hints and timer captures need an interactive desktop
 

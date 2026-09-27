@@ -28,6 +28,8 @@
 
 </div>
 
+**Design:** [Photon Interface design system: themes, controls, and app icons](https://rizonesoft.github.io/Photon/design/), a live page generated from [`docs/design/`](docs/design/README.md).
+
 > [!NOTE]
 > **Status: pre-alpha.** There is no release yet. Nodus (the vector editor) edits real SVG files today; Imago has its domain model and application shell; Lumen is planned. Everything below marks what works and what is still on the roadmap. Star or watch the repository to hear about the first preview.
 
@@ -296,6 +298,7 @@ Contributions are welcome, from bug reports to pull requests.
 - Ask questions and share ideas in [Discussions](https://github.com/rizonesoft/Photon/discussions).
 - Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 - Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+- UI work follows [standards/ui.md](standards/ui.md) and the [Photon Interface design system page](https://rizonesoft.github.io/Photon/design/) (source: [`docs/design/`](docs/design/README.md)).
 
 More documentation: [docs/](docs/README.md) · [user guides](docs/user/README.md) · [developer guides](docs/dev/README.md).
 

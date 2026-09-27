@@ -33,6 +33,8 @@ track: I1
 - [`installer/Imago.iss`](../../installer/Imago.iss), [`scripts/apps.psd1`](../../scripts/apps.psd1), [`Photon.slnx`](../../Photon.slnx) -- the files that name Imago's projects and icon
 - -> XREF: D00 T02 §4 -- removes ReactiveUI, SharpDX, and ImageSharp before §1 renames the projects
 - -> XREF: D01 T01 §4 -- the shared dialogs whose Imago consumer is `D03 T06 §1`, after §3 removes WPF-UI
+- -> XREF: D01 T01 §6 -- the implicit Photon control styles (with `D01 T01 §5`) §3 merges in place of WPF-UI's `ControlsDictionary`
+- -> XREF: D01 T01 §7 -- the shared `PhotonWindow` §3 hosts Imago's main window in
 - -> XREF: D03 T02 §2 -- the tiled viewport that builds on the canvas §2 ports
 - -> XREF: D03 T08 §4 -- Imago parity document and view cites §1: the rename the target paths assume; §2: the ported `Ruler` control D03 T08 §4 extends
 
@@ -54,7 +56,7 @@ track: I1
 | :---: | :-----: | ------------------------------------------------------ | ----------------------- | :----: |
 |   1   |   §1    | Restructure and rename Imago to Photon.Imago           | D00 T02 §2, D00 T02 §4  |  [ ]   |
 |   2   |   §2    | Port the snapshot canvas, ruler, and container         | §1                      |  [ ]   |
-|   3   |   §3    | WPF-UI out of Imago                                    | §2                      |  [ ]   |
+|   3   |   §3    | WPF-UI out of Imago                                    | §2, D01 T01 §6, D01 T01 §7 |  [ ]   |
 |   4   |   §4    | The Imago icon                                         | §1, D00 T03 §3          |  [ ]   |
 |   5   |   §5    | Composition root on Photon.Core                        | §3, D01 T02 §2          |  [ ]   |
 
@@ -102,11 +104,13 @@ The suite forbids WPF-UI; Imago is the last user. What remains after §2 is the 
 **Job:** a user sees Imago's window, menus, and dialogs exactly as before, with no dependency on WPF-UI. Consumer: every Imago surface.
 **Treatment:** a standard `Window` with the system title bar (a custom chrome is a later design decision, not a WPF-UI replacement); standard `Menu` and `MenuItem` with the shared icon catalog's `VectorIcon` in place of `SymbolIcon`; `DialogService` on standard WPF windows; snackbar messages shown in the status strip with a timeout. Cheaper substitute that fails the checkpoint: keeping WPF-UI's dictionaries "for now".
 **Chrome:** consume Imago's existing theme dictionaries and `VectorIcon` (moving to `Photon.UI` in `D01 T01 §1`). Do not build a second window chrome.
+**Corrected 2026-09-27:** `Photon.UI` now carries the implicit control styles (`D01 T01 §5`, `D01 T01 §6`) and the shared title bar (`D01 T01 §7`), both built before this section runs, so Imago merges them instead of writing `Themes/Styles.xaml` and hosts its main window in `PhotonWindow` instead of keeping the system title bar; the Treatment's "custom chrome is a later design decision" is superseded by `docs/design/components/WindowChrome/README.md`.
 
 **Requires:** display-session -- the launch smoke and captures of every Imago surface need an interactive desktop
 
 - [ ] Replace every remaining `wpfui:` element in `MainWindow.xaml` and code-behind with a standard control. Done when: `grep -c "wpfui" src/Imago/Photon.Imago.Desktop/Views/MainWindow.xaml` prints 0.
-- [ ] Remove `ThemesDictionary` and `ControlsDictionary` from `App.xaml`, and give every control Imago uses an implicit style in `Themes/Styles.xaml` where the WPF-UI style supplied one (buttons, menus, scroll bars, text boxes, sliders). Done when: every surface in a driven pass looks styled (captures of main window, a dialog, and a menu committed).
+- [ ] Remove `ThemesDictionary` and `ControlsDictionary` from `App.xaml`, and give every control Imago uses an implicit style in `Themes/Styles.xaml` where the WPF-UI style supplied one (buttons, menus, scroll bars, text boxes, sliders) (**Corrected 2026-09-27:** merge `src/Photon.UI/Themes/Controls/Controls.xaml` from `D01 T01 §5` and `D01 T01 §6` instead; `Themes/Styles.xaml` keeps no control style). Done when: every surface in a driven pass looks styled (captures of main window, a dialog, and a menu committed).
+- [ ] Host `src/Imago/Photon.Imago.Desktop/Views/MainWindow.xaml` in `D01 T01 §7`'s `PhotonWindow` with Imago's `AppIdentity`, its menu in the `TitleBarMenu` slot, removing the system title bar (**Corrected 2026-09-27**). Done when: Imago shows one custom title bar with the menu inside it and a driven hover over maximize opens Snap Layouts (capture).
 - [ ] Remove `IThemeService`, `ISnackbarService`, and `IContentDialogService` registrations; route snackbar messages through a `StatusMessageService` that shows text in the status strip for 4 seconds. Done when: `grep -rn "Snackbar\|ContentDialog\|IThemeService" src/Imago` prints nothing.
 - [ ] Rewrite `DialogService` on standard WPF (`MessageBox` for simple prompts, a small themed `Window` for input), keeping its interface. Done when: its tests pass and `grep -n "Wpf.Ui" src/Imago/Photon.Imago.Desktop/Services/DialogService.cs` prints nothing.
 - [ ] Remove the `WPF-UI` package from `Photon.Imago.Desktop.csproj` and `Directory.Packages.props`, and the "Imago still depends on WPF-UI" bullet from `docs/dev/build.md`. Done when: `grep -rn "WPF-UI\|Wpf.Ui\|wpfui" src Directory.Packages.props docs/dev/build.md` prints nothing.
