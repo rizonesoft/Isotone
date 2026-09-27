@@ -1,0 +1,26 @@
+<!-- @dsCard group="Inputs" height=136 subtitle="Bezier CompactNumberBox: drag the label to scrub" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NumberBox</title>
+<style>
+.nb{display:grid;grid-template-columns:repeat(4,max-content);gap:var(--space-1) var(--space-4)}
+</style>
+</head>
+<body>
+<div class="pv"><div class="nb">
+  <div class="pv-col"><span class="pv-k">rest (drag W to scrub)</span><span class="ph-num "><span class="scrub" data-scrub title="Drag to change">W</span><input value="1920" aria-label="W" data-min="1" data-max="30000"><span class="unit">px</span></span></div>
+  <div class="pv-col"><span class="pv-k">hover</span><span class="ph-num is-hover"><span class="scrub" data-scrub title="Drag to change">H</span><input value="1080" aria-label="H"><span class="unit">px</span></span></div>
+  <div class="pv-col"><span class="pv-k">scrubbing</span><span class="ph-num is-scrubbing"><span class="scrub" data-scrub title="Drag to change">X</span><input value="1204" aria-label="X"><span class="unit">px</span></span></div>
+  <div class="pv-col"><span class="pv-k">focus</span><span class="ph-num is-focus"><span class="scrub" data-scrub title="Drag to change">Y</span><input value="388" aria-label="Y"><span class="unit">px</span></span></div>
+  <div class="pv-col"><span class="pv-k">grip, spinners</span><span class="ph-num "><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="12" aria-label="Font size"><span class="unit">pt</span><span class="spin"><span><i data-i="chevron-up" data-s="8" data-w="2"></i></span><span><i data-i="chevron-down" data-s="8" data-w="2"></i></span></span></span></div>
+  <div class="pv-col"><span class="pv-k">no unit</span><span class="ph-num " style="width:88px"><span class="scrub" data-scrub title="Drag to change">Angle</span><input value="-15" aria-label="Angle"><span class="unit">°</span></span></div>
+  <div class="pv-col"><span class="pv-k">disabled</span><span class="ph-num is-disabled"><span class="scrub" data-scrub title="Drag to change">W</span><input value="640" aria-label="W" disabled><span class="unit">px</span></span></div>
+  <div class="pv-col"><span class="pv-k">out of range</span><span class="ph-num is-error" style="width:104px"><span class="scrub" data-scrub title="Drag to change">Opacity</span><input value="140" aria-label="Opacity"><span class="unit">%</span></span><span class="ph-help error"><i data-i="error" data-s="12"></i>0 to 100</span></div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

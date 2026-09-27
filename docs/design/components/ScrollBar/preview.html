@@ -1,0 +1,22 @@
+<!-- @dsCard group="Navigation" height=188 subtitle="Thin overlay scroll bar that widens on hover" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ScrollBar</title>
+<style>
+.sbx{display:flex;gap:var(--space-6)}
+.sbx .box{display:flex;width:170px;height:140px;border:1px solid var(--divider);background:var(--surface-panel)}
+.sbx .lines{flex:1;padding:var(--space-1) 0;overflow:hidden}
+.sbx .ph-sb{height:100%}
+</style>
+</head>
+<body>
+<div class="pv"><div class="sbx">
+<div class="pv-col"><span class="pv-k">rest (4px thumb)</span><div class="box"><div class="lines"><div class="ph-row"><i data-i="image" data-s="14"></i>Harbor at dusk</div><div class="ph-row"><i data-i="image" data-s="14"></i>Portrait retouch</div><div class="ph-row"><i data-i="image" data-s="14"></i>Night market</div><div class="ph-row"><i data-i="image" data-s="14"></i>Label layout</div><div class="ph-row"><i data-i="image" data-s="14"></i>Studio test 04</div><div class="ph-row"><i data-i="image" data-s="14"></i>Beach panorama</div></div><div class="ph-sb "><span class="thumb" style="top:18px;height:44px"></span></div></div></div><div class="pv-col"><span class="pv-k">hover (10px bar, 6px thumb, arrows)</span><div class="box"><div class="lines"><div class="ph-row"><i data-i="image" data-s="14"></i>Harbor at dusk</div><div class="ph-row"><i data-i="image" data-s="14"></i>Portrait retouch</div><div class="ph-row"><i data-i="image" data-s="14"></i>Night market</div><div class="ph-row"><i data-i="image" data-s="14"></i>Label layout</div><div class="ph-row"><i data-i="image" data-s="14"></i>Studio test 04</div><div class="ph-row"><i data-i="image" data-s="14"></i>Beach panorama</div></div><div class="ph-sb is-hover"><span class="arr" style="top:0"><i data-i="chevron-up" data-s="8" data-w="2"></i></span><span class="arr" style="bottom:0"><i data-i="chevron-down" data-s="8" data-w="2"></i></span><span class="thumb" style="top:40px;height:44px"></span></div></div></div><div class="pv-col"><span class="pv-k">dragging</span><div class="box"><div class="lines"><div class="ph-row"><i data-i="image" data-s="14"></i>Harbor at dusk</div><div class="ph-row"><i data-i="image" data-s="14"></i>Portrait retouch</div><div class="ph-row"><i data-i="image" data-s="14"></i>Night market</div><div class="ph-row"><i data-i="image" data-s="14"></i>Label layout</div><div class="ph-row"><i data-i="image" data-s="14"></i>Studio test 04</div><div class="ph-row"><i data-i="image" data-s="14"></i>Beach panorama</div></div><div class="ph-sb is-pressed"><span class="arr" style="top:0"><i data-i="chevron-up" data-s="8" data-w="2"></i></span><span class="arr" style="bottom:0"><i data-i="chevron-down" data-s="8" data-w="2"></i></span><span class="thumb" style="top:62px;height:44px"></span></div></div></div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

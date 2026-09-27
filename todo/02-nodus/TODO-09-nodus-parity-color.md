@@ -33,7 +33,7 @@ track: N9
 ## Inputs
 
 - [`standards/nodus.md`](../../standards/nodus.md) -- SVG is native, one renderer, Inkscape goldens, commands for every mutation
-- [`standards/shared.md`](../../standards/shared.md) -- theme tokens (this file adds swatch-well, checkerboard, and gamut-warning tokens to it and to `Photon.Dark.xaml`), settings, logging, and refusal messages
+- [`standards/shared.md`](../../standards/shared.md) -- theme tokens (this file adds swatch-well and gamut-warning tokens to `docs/design/tokens.json` and regenerates the `D01 T01 §3` dictionaries; **Corrected 2026-09-27:** said swatch-well, checkerboard, and gamut-warning tokens in `standards/shared.md` and `Photon.Dark.xaml`), settings, logging, and refusal messages
 - [`docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md) -- the catalog rows NP-0677 to NP-1116 this file owns (per-section ranges in each context paragraph)
 - [`docs/parity/section-design.md`](../../docs/parity/section-design.md) -- "Formats and licensing" (no bundled PANTONE or other licensed color books, no Corel content) and "SVG stays native; live features ride the nodus namespace"
 - [W3C Compositing and Blending Level 1](https://www.w3.org/TR/compositing-1/) -- the 16 blend mode formulas §19 tests against
@@ -141,11 +141,11 @@ A designer picks, mixes, samples, and applies color hundreds of times a session.
 **Fidelity:** new build, no baseline; captured to docs/captures/nodus/color/ (panel, picker, eyedropper loupe).
 **Job:** a designer can pick, mix, sample, and apply any color to fill or stroke without leaving the canvas. Consumer: the selection's paint, recorded as commands.
 **Treatment:** a docked Color panel with fill and stroke wells, per-model sliders with Shift-drag tandem tint, a hex field with Copy Hex, gamut and web-safe warnings, and a picker dialog with 1D and 3D viewers, palette mode, and a sampling loupe. Cheaper substitute that fails the checkpoint: the Windows color dialog.
-**Chrome:** consume `Photon.Dark.xaml` (`D01 T01 §3`, extended with swatch-well, checkerboard, and gamut-warning tokens), the icon catalog, the Properties panel host (`D02 T07 §8`), and the settings store; the picker is Nodus-local under `Photon.Nodus.Desktop/Controls/ColorPicker/`. Do not build a second picker in the stroke or gradient panels.
+**Chrome:** consume the generated theme dictionaries (`D01 T01 §3`, extended with swatch-well and gamut-warning tokens; **Corrected 2026-09-27:** said `Photon.Dark.xaml`; the swatch spec is `docs/design/components/Swatches/README.md`), the icon catalog, the Properties panel host (`D02 T07 §8`), and the settings store; the picker is Nodus-local under `Photon.Nodus.Desktop/Controls/ColorPicker/`. Do not build a second picker in the stroke or gradient panels.
 
 **Requires:** display-session -- the panel, picker, and desktop eyedropper need an interactive desktop
 
-- [ ] Add swatch-well, checkerboard, and gamut-warning tokens to `standards/shared.md` and `src/Photon.UI/Themes/Photon.Dark.xaml`. Done when: `ThemeTokensTests` assert the three tokens exist.
+- [ ] Add the swatch-well and gamut-warning tokens to `docs/design/tokens.json` with a value per brightness theme (the checkerboard already exists as `checker-light`, `checker-dark`, and `checker-tile`), regenerate with `scripts/generate-theme.py`, and republish the design system per `docs/design/SYNC.md` (**Corrected 2026-09-27:** said add them to `standards/shared.md` and `Photon.Dark.xaml` by hand). Done when: `ThemeTokensTests` assert the tokens exist in all four themes and the drift check passes.
 - [ ] Add `src/Nodus/Photon.Nodus.Desktop/Views/Color/ColorPanel.xaml` and `ColorPanelViewModel` (F6) with models Grayscale, RGB, HSB, CMYK, Lab, and Web Safe RGB, and Invert and Complement menu items. Done when: `ColorPanelViewModelTests` round-trip a color through every model and assert Complement's hue offset of 180 degrees.
 - [ ] Support Shift-drag on any slider to move all components in tandem (a tint of the current color). Done when: `ColorPanelViewModelTests` Shift-drag cyan in CMYK and every component scales by the same factor.
 - [ ] Add Create New Swatch in the panel menu handing the current color to §3's `AddSwatchCommand`. Done when: the command appears in the document swatch library in a test.

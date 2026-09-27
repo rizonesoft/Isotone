@@ -1,0 +1,49 @@
+<!-- @dsCard group="Shell" height=524 subtitle="Tool rail, flyout groups, rich tooltip, every tool state" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ToolRail</title>
+<style>
+.tr-wrap{display:flex;gap:var(--space-4);align-items:flex-start;height:524px}
+.tr-wrap .ph-rail{height:524px}
+.tr-mid{position:relative;display:flex;flex-direction:column;gap:var(--space-3);padding-top:var(--space-3)}
+.tr-fly .ph-mi{grid-template-columns:20px 1fr auto 8px}
+.tr-cur{width:4px;height:4px;background:currentColor}
+.tr-states{display:grid;grid-template-columns:repeat(6,auto);gap:var(--space-1) var(--space-3);justify-items:center}
+</style>
+</head>
+<body>
+<div class="tr-wrap app-imago">
+<div class="ph-rail" role="toolbar" aria-orientation="vertical" aria-label="Tools">
+  <button class="ph-tool group is-checked" aria-label="Move Tool (V)"><i data-i="pointer" data-s="20"></i></button><button class="ph-tool group" aria-label="Rectangular Marquee (M)"><i data-i="marquee" data-s="20"></i></button><button class="ph-tool group" aria-label="Lasso (L)"><i data-i="lasso" data-s="20"></i></button><button class="ph-tool group" aria-label="Crop (C)"><i data-i="crop" data-s="20"></i></button>
+  <div class="sep"></div>
+  <button class="ph-tool group is-hover" aria-label="Brush (B)"><i data-i="brush" data-s="20"></i></button><button class="ph-tool group" aria-label="Clone Stamp (S)"><i data-i="stamp" data-s="20"></i></button><button class="ph-tool group" aria-label="Eraser (E)"><i data-i="eraser" data-s="20"></i></button>
+  <div class="sep"></div>
+  <button class="ph-tool group" aria-label="Pen (P)"><i data-i="pen-tool" data-s="20"></i></button><button class="ph-tool group" aria-label="Type (T)"><i data-i="type" data-s="20"></i></button><button class="ph-tool group" aria-label="Rectangle (U)"><i data-i="square" data-s="20"></i></button>
+  <div class="sep"></div>
+  <button class="ph-tool " aria-label="Hand (H)"><i data-i="hand" data-s="20"></i></button><button class="ph-tool " aria-label="Zoom (Z)"><i data-i="zoom-in" data-s="20"></i></button>
+  <div class="ph-chips" aria-label="Foreground and background colors"><span class="fg" style="background:var(--text-primary)"></span><span class="bg" style="background:var(--frame)"></span></div>
+</div>
+<div class="tr-mid">
+  <div class="pv-k">Hover 400ms: rich tooltip</div>
+  <div class="ph-tip" role="tooltip"><div class="t">Brush Tool <span class="ph-kbd">B</span></div><div class="d">Paints with the foreground color. Shift-click to paint a straight line.</div></div>
+  <div class="pv-k">Press and hold, or right-click a grouped tool: flyout</div>
+  <div class="ph-menu tr-fly" role="menu">
+    <div class="ph-mi" role="menuitem"><span class="ic"><i data-i="brush" data-s="16"></i></span><span>Brush Tool</span><span class="sc">B</span><span class="sub"><span class="tr-cur"></span></span></div>
+    <div class="ph-mi is-hl" role="menuitem"><span class="ic"><i data-i="pencil" data-s="16"></i></span><span>Pencil Tool</span><span class="sc">B</span><span class="sub"></span></div>
+    <div class="ph-mi" role="menuitem"><span class="ic"><i data-i="contrast" data-s="16"></i></span><span>Color Replacement Tool</span><span class="sc">B</span><span class="sub"></span></div>
+  </div>
+  <div class="tr-states">
+    <span class="pv-k">rest</span><span class="pv-k">hover</span><span class="pv-k">pressed</span><span class="pv-k">checked</span><span class="pv-k">disabled</span><span class="pv-k">focus</span>
+    <button class="ph-tool group" aria-label=""><i data-i="crop" data-s="20"></i></button><button class="ph-tool group is-hover" aria-label=""><i data-i="crop" data-s="20"></i></button><button class="ph-tool group is-pressed" aria-label=""><i data-i="crop" data-s="20"></i></button><button class="ph-tool group is-checked" aria-label=""><i data-i="crop" data-s="20"></i></button><button class="ph-tool group is-disabled" aria-label=""><i data-i="crop" data-s="20"></i></button><button class="ph-tool group is-focus" aria-label=""><i data-i="crop" data-s="20"></i></button>
+  </div>
+  <div class="pv-k">Comfortable: 40px buttons, 48px rail</div>
+  <div class="pv-row ph-comfortable"><button class="ph-tool group is-checked" aria-label=""><i data-i="pointer" data-s="20"></i></button><button class="ph-tool group" aria-label=""><i data-i="brush" data-s="20"></i></button><button class="ph-tool group" aria-label=""><i data-i="type" data-s="20"></i></button></div>
+</div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

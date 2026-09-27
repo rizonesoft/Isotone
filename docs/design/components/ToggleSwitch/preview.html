@@ -1,0 +1,21 @@
+<!-- @dsCard group="Inputs" height=100 subtitle="Immediate on/off settings in Preferences" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ToggleSwitch</title>
+<style>
+.tgg{display:grid;grid-template-columns:max-content repeat(4,max-content);gap:var(--space-2) var(--space-4);align-items:center}
+</style>
+</head>
+<body>
+<div class="pv"><div class="tgg">
+  <span></span><span class="pv-k">rest</span><span class="pv-k">hover</span><span class="pv-k">disabled</span><span class="pv-k">focus</span>
+  <span class="pv-k">Off</span><span class="ph-toggle " role="switch" aria-checked="false"><span class="track"></span><span>GPU acceleration</span></span><span class="ph-toggle is-hover" role="switch" aria-checked="false"><span class="track"></span><span>GPU acceleration</span></span><span class="ph-toggle is-disabled" role="switch" aria-checked="false"><span class="track"></span><span>GPU acceleration</span></span><span class="ph-toggle is-focus" role="switch" aria-checked="false"><span class="track"></span><span>GPU acceleration</span></span>
+  <span class="pv-k">On</span><span class="ph-toggle is-on " role="switch" aria-checked="true"><span class="track"></span><span>GPU acceleration</span></span><span class="ph-toggle is-on is-hover" role="switch" aria-checked="true"><span class="track"></span><span>GPU acceleration</span></span><span class="ph-toggle is-on is-disabled" role="switch" aria-checked="true"><span class="track"></span><span>GPU acceleration</span></span><span class="ph-toggle is-on is-focus" role="switch" aria-checked="true"><span class="track"></span><span>GPU acceleration</span></span>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

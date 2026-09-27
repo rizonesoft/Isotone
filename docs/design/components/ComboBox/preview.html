@@ -1,0 +1,44 @@
+<!-- @dsCard group="Inputs" height=250 subtitle="Closed states, open list, editable combo" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ComboBox</title>
+<style>
+.cbx{display:flex;gap:var(--space-6);align-items:flex-start}
+.cbx .list{margin-top:2px;min-width:140px}
+.cbx .list .ph-mi{grid-template-columns:16px 1fr}
+</style>
+</head>
+<body>
+<div class="pv"><div class="cbx">
+<div class="pv-col" style="gap:var(--space-2)">
+  <span class="pv-k">rest</span><span class="ph-combo " role="combobox" aria-expanded="false"><span>Normal</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span>
+  <span class="pv-k">hover</span><span class="ph-combo is-hover" role="combobox" aria-expanded="false"><span>Normal</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span>
+  <span class="pv-k">focus</span><span class="ph-combo is-focus" role="combobox" aria-expanded="false"><span>Normal</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span>
+  <span class="pv-k">disabled</span><span class="ph-combo is-disabled" role="combobox" aria-expanded="false"><span>Normal</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span>
+</div>
+<div class="pv-col">
+  <span class="pv-k">open</span><span class="ph-combo is-open" role="combobox" aria-expanded="false"><span>Multiply</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span>
+  <div class="ph-menu list" role="listbox">
+    <div class="ph-mi" role="option"><span class="ic"></span><span>Normal</span></div>
+    <div class="ph-mi is-disabled" role="option" aria-disabled="true"><span class="ic"></span><span>Dissolve</span></div>
+    <div class="ph-msep"></div>
+    <div class="ph-mi" role="option"><span class="ic"></span><span>Darken</span></div>
+    <div class="ph-mi" role="option" aria-selected="true"><span class="ic"><i data-i="check" data-s="14" data-w="2"></i></span><span>Multiply</span></div>
+    <div class="ph-mi is-hl" role="option"><span class="ic"></span><span>Color Burn</span></div>
+    <div class="ph-mi" role="option"><span class="ic"></span><span>Linear Burn</span></div>
+  </div>
+</div>
+<div class="pv-col" style="gap:var(--space-2)">
+  <span class="pv-k">editable</span>
+  <span class="ph-combo editable" style="width:112px" role="combobox"><input value="12 pt" aria-label="Font size"><span class="drop"><i data-i="chevron-down" data-s="12" data-w="2"></i></span></span>
+  <span class="pv-k">editable, focus</span>
+  <span class="ph-combo editable is-open" style="width:112px;box-shadow:inset 0 0 0 1px var(--focus-ring)"><input value="Segoe UI Variable" aria-label="Font"><span class="drop"><i data-i="chevron-down" data-s="12" data-w="2"></i></span></span>
+</div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

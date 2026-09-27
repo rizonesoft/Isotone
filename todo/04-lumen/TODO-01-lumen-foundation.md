@@ -123,10 +123,11 @@ From documentation, to be confirmed and extended by driven runs in §1 (each row
 
 Lumen needs the same spine as the other two: projects in the suite layout, a composition root on `Photon.Core` logging and settings, single instance, the `Photon.UI` theme, splash, and exception window, an About dialog, and a working publish and installer. It ships nothing useful yet; it proves Lumen builds, installs, and starts. -> SOURCE: lumen-notes-structure
 
-**Fidelity:** Lumen main window shell -- new build, no baseline; follows the window anatomy in `standards/shared.md` and is captured to docs/captures/lumen/main-window/.
+**Fidelity:** Lumen main window shell -- new build, no baseline; follows the window anatomy in `docs/design/shell-layout.md` (**Corrected 2026-09-27:** said `standards/shared.md`) and is captured to docs/captures/lumen/main-window/.
 **Job:** a user can install Lumen, start it, and see an empty library with an Import button. Consumer: every later Lumen section.
 **Treatment:** a main window with the module switcher (Library, Develop) at the top, a left panel (folders, collections), the center grid area with the empty state "Your library is empty. Import a folder of photos to begin." and an Import button, a right panel (metadata), and a status strip; Help, About Lumen through `Photon.UI`. Cheaper substitute that fails the checkpoint: a blank window.
 **Chrome:** consume `Photon.UI` (theme, splash, exception window, About and shortcuts dialogs, icon catalog) and `Photon.Core` (logging, settings, single instance). Do not copy any of them.
+**Corrected 2026-09-27:** the specs are `docs/design/shell-layout.md` (Lumen: Library and Develop as tabs in the title bar area after the menus, left dock, filmstrip, Home), `docs/design/components/WindowChrome/README.md`, and `docs/design/components/StatusBar/README.md`; the Import button is the view's one primary button in `accent-lumen`.
 
 **Requires:** display-session -- launching the new app needs an interactive desktop
 

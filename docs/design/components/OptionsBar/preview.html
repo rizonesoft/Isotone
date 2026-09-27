@@ -1,0 +1,43 @@
+<!-- @dsCard group="Shell" height=176 subtitle="Context toolbar per tool, with the hint bar" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OptionsBar</title>
+<style>
+.ob{display:flex;flex-direction:column}
+.ob .pv-k{padding:var(--space-2) var(--space-3) var(--space-1)}
+.ob .preset{display:flex;align-items:center;gap:2px}
+</style>
+</head>
+<body>
+<div class="ob app-imago">
+<div class="pv-k">Brush tool</div>
+<div class="ph-optbar" role="toolbar" aria-label="Tool options">
+  <span class="ph-btn subtle preset" style="padding:0 var(--space-1);min-width:0"><i data-i="brush" data-s="16"></i><i data-i="chevron-down" data-s="10" data-w="2"></i></span>
+  <span class="ph-vsep"></span>
+  <span class="ph-num " style="width:92px"><span class="scrub" data-scrub title="Drag to change">Size</span><input value="24" aria-label="Size" data-min="1" data-max="5000"><span class="unit">px</span></span>
+  <span class="ph-num " style="width:84px"><span class="scrub" data-scrub title="Drag to change">Hard</span><input value="80" aria-label="Hard" data-min="0" data-max="100"><span class="unit">%</span></span>
+  <span class="ph-vsep"></span>
+  <span class="lbl">Mode</span><span class="ph-combo " style="width:104px" role="combobox" aria-expanded="false"><span>Normal</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span>
+  <span class="ph-num is-focus" style="width:104px"><span class="scrub" data-scrub title="Drag to change">Opacity</span><input value="100" aria-label="Opacity" data-min="0" data-max="100"><span class="unit">%</span></span>
+  <span class="ph-num " style="width:88px"><span class="scrub" data-scrub title="Drag to change">Flow</span><input value="65" aria-label="Flow" data-min="0" data-max="100"><span class="unit">%</span></span>
+  <span class="ph-btn icon subtle toggle is-on" title="Airbrush (Shift+Alt+P)" aria-pressed="true"><i data-i="wand" data-s="16"></i></span>
+  <span class="ph-btn icon subtle toggle" title="Pressure for size" aria-pressed="false"><i data-i="pen-tool" data-s="16"></i></span>
+</div>
+<div class="ph-infobar"><i data-i="bulb" data-s="14"></i><span class="msg"><b>Brush:</b> Click to paint. Shift-click to paint a straight line. Alt-click samples a color. [ and ] change the size.</span></div>
+<div class="pv-k">Move tool</div>
+<div class="ph-optbar">
+  <span class="ph-btn subtle" style="padding:0 var(--space-1);min-width:0"><i data-i="pointer" data-s="16"></i><i data-i="chevron-down" data-s="10" data-w="2"></i></span>
+  <span class="ph-vsep"></span>
+  <span class="ph-check is-checked" role="checkbox" aria-checked="true"><span class="box"><i data-i="check" data-s="12" data-w="2.5" data-c="c"></i><i data-i="minus" data-s="12" data-w="2.5" data-c="m"></i></span><span>Auto-Select:</span></span><span class="ph-combo " style="width:84px" role="combobox" aria-expanded="false"><span>Layer</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span>
+  <span class="ph-check " role="checkbox" aria-checked="false"><span class="box"><i data-i="check" data-s="12" data-w="2.5" data-c="c"></i><i data-i="minus" data-s="12" data-w="2.5" data-c="m"></i></span><span>Show Transform Controls</span></span>
+  <span class="ph-vsep"></span>
+  <span class="ph-btn icon subtle is-disabled" title="Align left edges (needs 2 layers)"><i data-i="sliders" data-s="16"></i></span>
+</div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

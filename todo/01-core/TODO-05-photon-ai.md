@@ -157,7 +157,7 @@ Nothing leaves the machine without an explicit user action, and the user sees ex
 **Fidelity:** new build, no baseline; captured to docs/captures/photon-ui/ai-send-preview/ and docs/captures/photon-ui/ai-settings/.
 **Job:** a user can see and approve exactly what an AI action sends, and set their key and models once for the whole suite. Consumer: `AiSendGate` reads the approval; `AiKeyStore` and `AiSettings` read the settings page.
 **Treatment:** a modal Send Preview dialog listing the prompt text, each attached image as a thumbnail with pixel size and bytes, the selection SVG size, the model id, and the estimated cost, with Send and Cancel and a per-session "Do not ask again for this action" option; an AI settings page with masked key entry, fingerprint, Test connection, Remove key, per-task model pickers filtered by capability with prices, timeout, and seed mode. Cheaper substitute that fails the checkpoint: a generic "Send to AI?" yes/no box that shows nothing, which the byte-equality test catches.
-**Chrome:** consume `Photon.Dark.xaml` from `D01 T01 §3`, the shared icon catalog, the `D01 T02 §2` settings store, and the suite toast. Do not build a per-app key dialog or a second progress control.
+**Chrome:** consume the generated theme dictionaries from `D01 T01 §3` (**Corrected 2026-09-27:** said `Photon.Dark.xaml`; the toast spec is `docs/design/components/Toast/README.md`), the shared icon catalog, the `D01 T02 §2` settings store, and the suite toast. Do not build a per-app key dialog or a second progress control.
 
 **Requires:** display-session -- the send-preview and settings captures need an interactive desktop
 

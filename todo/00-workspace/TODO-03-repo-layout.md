@@ -34,7 +34,7 @@ track: W3
 
 - [`docs/README.md`](../../docs/README.md), [`docs/dev/README.md`](../../docs/dev/README.md) -- the documentation indexes §1 links the moved pages from
 - [`.claude/skills/process-todo-section/gates.md`](../../.claude/skills/process-todo-section/gates.md) -- the launch smoke §2 follows
-- [`standards/shared.md`](../../standards/shared.md) -- the design contract the captures illustrate
+- [`standards/ui.md`](../../standards/ui.md) and [`docs/design/`](../../docs/design/README.md) -- the design contract the captures illustrate (**Corrected 2026-09-27:** said `standards/shared.md`, which now points here)
 - [`resources/icons/README.md`](../../resources/icons/README.md) -- the icon set, which SVG feeds which size, the construction rules, and the license §3 exports from
 - [`installer/common.iss`](../../installer/common.iss) -- `SetupIconFile` falls back to the Inno Setup icon with a `WARNING: icon ... not found` message when `AppIcon` is absent, which §3's checkpoint reads
 - resvg (https://github.com/linebender/resvg, Apache-2.0 or MIT) through resvg-py 0.5.0 (https://pypi.org/project/resvg-py/, MPL-2.0), and Pillow 12.3.0 (https://pillow.readthedocs.io/, MIT-CMU) with its ICO writer (`IcoImagePlugin`, `sizes` and `append_images`) -- the renderer and the ICO writer §3 pins
@@ -84,7 +84,7 @@ The suite has one documentation tree (`docs/dev/`, `docs/user/`) and one fixture
 
 Every UI section carries a `Fidelity:` block naming a capture under `docs/captures/<app>/`, and `process-todo-section` refuses to build a surface whose capture does not exist. The apps have no captures yet, so this section records the imported surfaces exactly as they are today: not the target look, the starting line the next changes are reviewed against.
 
-**Fidelity:** Nodus main window and Imago main window as imported -- docs/captures/nodus/main-window/ and docs/captures/imago/main-window/ are created by this section; the captures record the current state, and the design contract in `standards/shared.md` is what later sections move them toward.
+**Fidelity:** Nodus main window and Imago main window as imported -- docs/captures/nodus/main-window/ and docs/captures/imago/main-window/ are created by this section; the captures record the current state, and the design contract in `standards/ui.md` and `docs/design/` (**Corrected 2026-09-27:** said `standards/shared.md`) is what later sections move them toward.
 **Job:** a reviewer can compare a changed surface against how it looked before the change. Consumer: `review-todo-section`, which compares the rendered surface against the named capture before stamping.
 **Treatment:** full-window PNG captures of each app's main window with an empty document, at 100 and 150 percent display scaling, plus one with a sample document open. Cheaper substitute that fails the checkpoint: the marketing screenshots under `resources/screens/`, which are not captures of the built app.
 **Chrome:** consume the existing windows unchanged. Do not restyle anything in this section.

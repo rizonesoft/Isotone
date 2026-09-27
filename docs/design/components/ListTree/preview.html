@@ -1,0 +1,38 @@
+<!-- @dsCard group="Data" height=212 subtitle="List and tree rows: hover, selected, unfocused, disabled, drop targets" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ListTree</title>
+<style>
+.lt{display:flex;gap:var(--space-4)}
+.lt .ph-list{width:260px;border:1px solid var(--divider);padding:var(--space-1) 0}
+.lt .k{margin-left:auto;padding-right:var(--space-2)}
+</style>
+</head>
+<body>
+<div class="pv"><div class="lt app-lumen">
+<div class="pv-col"><span class="pv-k">Focused tree (Lumen folders)</span>
+<div class="ph-list" role="tree">
+  <div class="ph-row " role="treeitem" style="padding-left:8px" aria-expanded="true"><span class="chev"><i data-i="chevron-down" data-s="12" data-w="2"></i></span><i data-i="folder" data-s="14"></i><span>Photos 2026</span><span class="meta">4,812</span></div>
+  <div class="ph-row is-hover" role="treeitem" style="padding-left:24px" aria-expanded="false"><span class="chev"><i data-i="chevron-right" data-s="12" data-w="2"></i></span><i data-i="folder" data-s="14"></i><span>01 Winter</span><span class="meta">612</span></div>
+  <div class="ph-row is-selected is-focus" role="treeitem" style="padding-left:24px" aria-expanded="false"><span class="chev"><i data-i="chevron-right" data-s="12" data-w="2"></i></span><i data-i="folder" data-s="14"></i><span>02 Harbor</span><span class="meta">248</span></div>
+  <div class="ph-row is-drop-into" role="treeitem" style="padding-left:24px" aria-expanded="false"><span class="chev"><i data-i="chevron-right" data-s="12" data-w="2"></i></span><i data-i="folder" data-s="14"></i><span>03 Studio</span><span class="meta">96</span></div>
+  <div class="ph-row " role="treeitem" style="padding-left:24px" aria-expanded="false"><span class="chev"><i data-i="chevron-right" data-s="12" data-w="2"></i></span><i data-i="folder" data-s="14"></i><span>04 Travel</span><span class="meta">1,730</span></div>
+  <div class="ph-row is-disabled" role="treeitem" style="padding-left:8px" aria-expanded="false"><span class="chev"><i data-i="chevron-right" data-s="12" data-w="2"></i></span><i data-i="folder" data-s="14"></i><span>Offline drive</span><span class="meta">offline</span></div>
+  <div class="ph-row is-drop-before" role="treeitem" style="padding-left:8px" aria-expanded="false"><span class="chev"><i data-i="chevron-right" data-s="12" data-w="2"></i></span><i data-i="folder" data-s="14"></i><span>Imports</span><span class="meta">12</span></div>
+</div></div>
+<div class="pv-col"><span class="pv-k">Same list without focus</span>
+<div class="ph-list" role="listbox">
+  <div class="ph-row " role="treeitem" style="padding-left:8px"><span class="chev"></span><i data-i="image" data-s="14"></i><span>01 Winter</span><span class="meta">612</span></div>
+  <div class="ph-row is-selected-inactive" role="treeitem" style="padding-left:8px"><span class="chev"></span><i data-i="image" data-s="14"></i><span>02 Harbor</span><span class="meta">248</span></div>
+  <div class="ph-row " role="treeitem" style="padding-left:8px"><span class="chev"></span><i data-i="image" data-s="14"></i><span>03 Studio</span><span class="meta">96</span></div>
+</div>
+<span class="pv-k" style="margin-top:var(--space-2)">hover · selected + focus · drop into · drop before · selected, panel unfocused</span>
+</div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

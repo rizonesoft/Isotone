@@ -1,0 +1,35 @@
+<!-- @dsCard group="Shell" height=148 subtitle="Dense status strip with separators and mono coordinates" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>StatusBar</title>
+<style>
+.sbw{display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-3) 0}
+.sbw .pv-k{padding:0 var(--space-3)}
+.sbw .ph-progress{width:96px}
+</style>
+</head>
+<body>
+<div class="sbw">
+<div class="pv-k">Nodus, idle (Compact, 22px)</div>
+<div class="ph-status" role="status">
+  <span class="dot" style="background:var(--status-success)"></span><span>Ready</span><span class="s"></span>
+  <span>2 objects selected</span><span class="s"></span><span>RGB</span><span class="s"></span>
+  <span class="it"><i data-i="magnet" data-s="12"></i>Snap on</span><span class="s"></span><span>Artboard 1</span>
+  <span class="fill"></span>
+  <span class="mono">X 1204.5  Y 388.0</span><span class="s"></span><span>66.7%</span><span class="s"></span><span>148 elements</span><span class="s"></span><span>1920 × 1080</span><span class="s"></span><span>412 MB</span><span class="s"></span><span>GPU</span>
+</div>
+<div class="pv-k">Imago, working (Comfortable, 26px)</div>
+<div class="ph-status ph-comfortable">
+  <span class="dot" style="background:var(--status-warning)"></span><span>Applying Gaussian Blur</span><span class="s"></span>
+  <span class="ph-progress"><span class="v" style="width:42%;display:block"></span></span><span style="margin-left:var(--space-2)">42%</span>
+  <span class="fill"></span>
+  <span class="mono">X 2210  Y 1407</span><span class="s"></span><span>50%</span><span class="s"></span><span>Doc: 88.4 MB / 212 MB</span>
+</div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

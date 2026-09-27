@@ -105,7 +105,7 @@ The pipeline turns a decoded RAW (or a JPEG converted to linear) plus `DevelopSe
 
 The develop module is where the pipeline meets the photographer: the photo large in the center, controls on the right in the order the competitors agree on, a live histogram, and before and after. -> SOURCE: lumen-notes-develop-panel
 
-**Fidelity:** Lumen develop module -- new build, no baseline; follows the window anatomy in `standards/shared.md` and the control order recorded in `docs/dev/lumen/competitor-survey.md`, captured to docs/captures/lumen/develop/.
+**Fidelity:** Lumen develop module -- new build, no baseline; follows the window anatomy in `docs/design/shell-layout.md` (**Corrected 2026-09-27:** said `standards/shared.md`) and the control order recorded in `docs/dev/lumen/competitor-survey.md`, captured to docs/captures/lumen/develop/.
 **Job:** a photographer can adjust a photo's tone and color with immediate visual feedback and compare against the original. Consumer: the edit stack and the pipeline.
 **Treatment:** a histogram (RGB and luminance, clipping indicators toggled by J); Basic panel (white balance presets, temperature, tint, exposure, contrast, highlights, shadows, whites, blacks, vibrance, saturation); Tone Curve (parametric and point); a History list and Snapshots; before and after with \ (toggle) and Y (side by side); double-click a slider resets it; Alt-drag on exposure or blacks shows clipping; every slider keyboard adjustable. Cheaper substitute that fails the checkpoint: sliders that apply only on release with no live preview.
 **Chrome:** consume the histogram control from Imago moved to `Photon.UI` (filed through `add-todo` when this section starts, since two apps then need it), the theme, and the keymap pattern.

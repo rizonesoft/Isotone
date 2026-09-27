@@ -4,7 +4,8 @@ The standards every change in the Photon Graphics Suite answers to. [`AGENTS.md`
 
 | File | Covers |
 | ---- | ------ |
-| [`shared.md`](shared.md) | Everything all apps share: the stack, C# style, MVVM, DI, logging, errors, documents, performance, commits, and the **design contract** every surface answers to |
+| [`shared.md`](shared.md) | Everything all apps share: the stack, C# style, MVVM, DI, logging, errors, documents, performance, commits, and a pointer to the design contract |
+| [`ui.md`](ui.md) | The **UI standard** every surface answers to: themes, the Highlight color and app accents, type, density, focus, icons, window anatomy, accessibility, and the WPF mapping, summarizing the design system in [`docs/design/`](../docs/design/README.md) |
 | [`nodus.md`](nodus.md) | Nodus, the vector editor: the document model, the canvas, tools, SVG, icons |
 | [`imago.md`](imago.md) | Imago, the raster editor: tiles, zero-allocation hot paths, GPU shaders, codecs |
 | [`lumen.md`](lumen.md) | Lumen, the darkroom: the original-file guard, the catalog, the develop pipeline |

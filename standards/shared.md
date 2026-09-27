@@ -98,49 +98,9 @@ Conventional Commits: `<type>(<scope>): <description>`, imperative, types `feat`
 
 ## The design contract
 
-Every user-facing surface answers to this contract; the captures under `docs/captures/<app>/` are its visual reference, and where a capture and this contract disagree, the contract wins. `Photon.UI` carries these values as resources once it exists (`todo/01-core/`); until then each app's theme dictionary carries them under the same keys.
+Every user-facing surface answers to the UI standard in [`ui.md`](ui.md), the binding summary of the Photon Interface design system in [`docs/design/`](../docs/design/README.md): four brightness themes, the Highlight color for state and the app accent for identity only, type, spacing and density, focus, icons, window anatomy, accessibility, and the WPF mapping. `docs/design/tokens.json` is the source of every value, and the theme dictionaries in `Photon.UI` are generated from it; no surface hardcodes a color, size, or spacing value a token names. The captures under `docs/captures/<app>/` are its visual reference; where a capture and the design system disagree, the design system wins.
 
-### Color
+Two behavior rules every surface also follows:
 
-The suite is a neutral dark UI so the artwork carries the color. One grey ramp, shared by every app:
-
-| Token | Value | Use |
-| ----- | ----- | --- |
-| `Crust` | `#151515` | Window frame, title bar |
-| `Base` | `#1A1A1A` | Canvas surround, main background |
-| `Mantle` | `#202020` | Panels and docks |
-| `Surface0` | `#2A2A2A` | Controls at rest, list rows |
-| `Surface1` | `#353535` | Controls hovered |
-| `Surface2` | `#404040` | Controls pressed, selected rows |
-| `Overlay0` | `#505050` | Borders, separators |
-| `Subtext0` | `#B0B0B0` | Secondary text, captions |
-| `Text` | `#E0E0E0` | Primary text |
-
-These are Nodus's values as imported (`MainWindowView.xaml`, "Convert all app colors to pure greys"). Imago still carries Catppuccin Mocha with an orange accent; the shared theme section in `todo/01-core/` replaces it. Each app names one accent color for focus and selection, chosen by the operator on 2026-09-27 from each app's icon and tuned for contrast in the dark theme and in a light one (ratios per WCAG 2.x relative luminance, at least 4.5:1 against the surface they sit on):
-
-| App | Accent | Dark-theme value | Ratio against `Base` `#1A1A1A` | Light-theme value | Ratio against `#FFFFFF` |
-| --- | ------ | ---------------- | ------------------------------ | ----------------- | ----------------------- |
-| Nodus | Cyan (the pen nib) | `#29C5E6` | 8.47:1 | `#00758C` | 5.35:1 |
-| Imago | Orange (the paintbrush) | `#F5923E` | 7.51:1 | `#B04F00` | 5.30:1 |
-| Lumen | Green (the aperture) | `#4CC47A` | 7.86:1 | `#1B7A3D` | 5.39:1 |
-
-The theme names each as `Accent` in that app's resources; the suite ships the dark theme, and the light-theme values are the ones any light theme or light surface uses. Status colors (error, warning, success) are named once in the theme and used only for status, never for decoration.
-
-### Type and spacing
-
-- Font: Segoe UI Variable (Segoe UI fallback), 12 px body, 11 px captions, 14 px dialog titles. Monospace: Cascadia Mono, then Consolas.
-- Spacing on a 4 px grid: 4, 8, 12, 16, 24. Controls are 24 px tall in toolbars and panels, 28 px in dialogs.
-- Icons are 16 px in menus and panels, 20 px on the tool rail, drawn from the shared icon catalog, and never a mix of icon families on one surface.
-
-### Behavior
-
-- Every icon-only control has a tooltip naming the command and its shortcut, and an `AutomationProperties.Name`.
-- Every dialog is fully keyboard operable in a logical tab order, with Enter and Escape doing what their buttons say.
-- Surfaces render correctly at 100, 150, and 200 percent scaling and in Windows high contrast.
-- Animated feedback respects the Windows "animation effects" setting.
 - Confirmations name what, how many, and how large; refusals name the action and what it needed.
-- A surface never hardcodes a color, size, or spacing its theme resources name.
-
-### Window anatomy
-
-A document window is a menu bar, a tool rail on the left, the canvas, docked panels on the right, and a status strip at the bottom. Panels dock and float through AvalonDock with the shared theme. A feature adds to this anatomy; it does not invent a second one.
+- Animated feedback respects the Windows "animation effects" setting.

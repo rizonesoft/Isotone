@@ -1,0 +1,48 @@
+<!-- @dsCard group="Data" height=348 subtitle="Layers panel: visibility, thumbnail, mask link, lock; blend and opacity" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LayersRow</title>
+<style>
+.lyw{display:flex;gap:var(--space-4);padding:var(--space-3);background:var(--frame)}
+.lyw .ph-panel{width:300px;border:1px solid var(--divider)}
+.lyw .top{display:flex;flex-direction:column;gap:var(--space-1-5);padding:var(--space-2);border-bottom:1px solid var(--divider)}
+.lyw .top .pv-row{gap:var(--space-2);flex-wrap:nowrap}
+.lyw .foot{display:flex;justify-content:flex-end;gap:2px;padding:2px var(--space-1);border-top:1px solid var(--divider)}
+.lyw .foot .ph-btn{width:22px;height:22px}
+.lyw .legend{display:flex;flex-direction:column;gap:6px;padding-top:40px}
+</style>
+</head>
+<body>
+<div class="lyw app-imago">
+<div class="ph-panel" role="region" aria-label="Layers">
+  <div class="ph-ptabs"><div class="ph-ptab is-selected">Layers</div><div class="ph-ptab">Channels</div><div class="fill"></div><div class="tools"><span class="ph-btn icon subtle" style="width:20px;height:20px"><i data-i="menu" data-s="14"></i></span></div></div>
+  <div class="top">
+    <div class="pv-row"><span class="ph-combo " style="width:132px" role="combobox" aria-expanded="false"><span>Normal</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span><span class="ph-num " style="width:118px"><span class="scrub" data-scrub title="Drag to change">Opacity</span><input value="100" aria-label="Opacity" data-min="0" data-max="100"><span class="unit">%</span></span></div>
+    <div class="pv-row"><span class="ph-label">Lock:</span><span class="ph-btn icon subtle" style="width:20px;height:20px" title="Lock transparent pixels"><i data-i="grid" data-s="14"></i></span><span class="ph-btn icon subtle" style="width:20px;height:20px" title="Lock image pixels"><i data-i="brush" data-s="14"></i></span><span class="ph-btn icon subtle toggle is-on" style="width:20px;height:20px" title="Lock position"><i data-i="move" data-s="14"></i></span><span class="ph-btn icon subtle" style="width:20px;height:20px" title="Lock all"><i data-i="lock" data-s="14"></i></span><span style="flex:1"></span><span class="ph-num " style="width:92px"><span class="scrub" data-scrub title="Drag to change">Fill</span><input value="100" aria-label="Fill" data-min="0" data-max="100"><span class="unit">%</span></span></div>
+  </div>
+  <div role="tree">
+    <div class="ph-layer is-hover" role="treeitem" aria-selected="false"><button class="vis ph-focusable" style="background:none;border:0;border-right:1px solid var(--divider)" aria-label="Hide layer"><i data-i="eye" data-s="14"></i></button><span class="th"><span style="position:absolute;inset:0;display:grid;place-items:center;background:var(--surface-control);color:var(--text-primary);font-weight:600">T</span></span><span class="nm">Title</span><span class="end"><span style="font-size:var(--type-caption);color:var(--text-secondary)">fx</span></span></div>
+    <div class="ph-layer is-selected" role="treeitem" aria-selected="true"><button class="vis ph-focusable" style="background:none;border:0;border-right:1px solid var(--divider)" aria-label="Hide layer"><i data-i="eye" data-s="14"></i></button><span class="th"><span style="position:absolute;inset:0;background:linear-gradient(160deg,#f2b8a8,#b8325e)"></span></span><span class="lnk"><i data-i="link" data-s="12"></i></span><span class="th" style="margin-left:0;background:linear-gradient(90deg,#000 0 40%,#fff 60%)"></span><span class="nm">Retouch</span><span class="end"></span></div>
+    <div class="ph-layer " role="treeitem" aria-selected="false"><button class="vis ph-focusable" style="background:none;border:0;border-right:1px solid var(--divider)" aria-label="Hide layer"><i data-i="eye" data-s="14"></i></button><span class="chev" style="width:16px;display:grid;place-items:center;color:var(--icon);margin-left:4px"><i data-i="chevron-down" data-s="12" data-w="2"></i></span><span class="th" style="margin-left:2px;background:none;border:0;display:grid;place-items:center;color:var(--icon)"><i data-i="folder" data-s="16"></i></span><span class="nm">Background elements</span><span class="end"></span></div>
+    <div class="ph-layer is-drop-before child" role="treeitem" aria-selected="false"><button class="vis ph-focusable" style="background:none;border:0;border-right:1px solid var(--divider)" aria-label="Hide layer"><i data-i="eye" data-s="14"></i></button><span class="th"><span style="position:absolute;inset:0;background:linear-gradient(#0d3f80,#f5923e)"></span></span><span class="nm">Sky replacement</span><span class="end"></span></div>
+    <div class="ph-layer is-hidden child" role="treeitem" aria-selected="false"><button class="vis ph-focusable" style="background:none;border:0;border-right:1px solid var(--divider)" aria-label="Show layer"></button><span class="th"><span style="position:absolute;inset:0;background:radial-gradient(circle at 30% 40%,#404040 2px,#00000000 3px)"></span></span><span class="nm">Dust spots (hidden)</span><span class="end"></span></div>
+    <div class="ph-layer " role="treeitem" aria-selected="false"><button class="vis ph-focusable" style="background:none;border:0;border-right:1px solid var(--divider)" aria-label="Hide layer"><i data-i="eye" data-s="14"></i></button><span class="th"><span style="position:absolute;inset:0;background:linear-gradient(#136d80,#1f6b3e)"></span></span><span class="nm" style="font-style:italic">Background</span><span class="end"><i data-i="lock" data-s="14"></i></span></div>
+  </div>
+  <div class="foot"><span class="ph-btn icon subtle"><i data-i="link" data-s="14"></i></span><span class="ph-btn icon subtle"><i data-i="fx" data-s="14"></i></span><span class="ph-btn icon subtle"><i data-i="mask" data-s="14"></i></span><span class="ph-btn icon subtle"><i data-i="contrast" data-s="14"></i></span><span class="ph-btn icon subtle"><i data-i="folder-plus" data-s="14"></i></span><span class="ph-btn icon subtle"><i data-i="file-plus" data-s="14"></i></span><span class="ph-btn icon subtle"><i data-i="trash" data-s="14"></i></span></div>
+</div>
+<div class="legend">
+  <span class="pv-k">hover (Title, text layer, fx)</span>
+  <span class="pv-k">selected, with linked mask</span>
+  <span class="pv-k">group, expanded</span>
+  <span class="pv-k">drop line while dragging</span>
+  <span class="pv-k">hidden: no eye, dimmed</span>
+  <span class="pv-k">locked Background</span>
+</div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

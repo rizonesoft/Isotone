@@ -1,0 +1,22 @@
+<!-- @dsCard group="Foundations" height=500 subtitle="The one icon family: Lucide geometry, 16 and 20px, stroke 1.5" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Icons</title>
+<style>
+.ic-sizes{display:flex;gap:var(--space-4);align-items:center}
+.ic-sizes .ph-i{color:var(--text-primary)}
+</style>
+</head>
+<body>
+<div class="pv">
+<div class="ic-sizes"><span class="pv-k">16px menus, panels, options bar</span><i data-i="brush" data-s="16"></i><i data-i="layers" data-s="16"></i><i data-i="eye" data-s="16"></i><span class="pv-k">20px tool rail</span><i data-i="brush" data-s="20"></i><i data-i="layers" data-s="20"></i><i data-i="eye" data-s="20"></i><span class="pv-k">disabled</span><span style="color:var(--text-disabled)"><i data-i="brush" data-s="16"></i></span></div>
+<div class="ph-icongrid" id="grid"></div>
+</div>
+<script>
+var g=document.getElementById('grid');if(g&&window.Photon){g.innerHTML=Photon.icons.map(function(n){return '<div class="cell">'+Photon.svg(n,20)+'<span>'+n+'</span></div>';}).join('');}
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>
