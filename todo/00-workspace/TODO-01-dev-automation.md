@@ -41,6 +41,7 @@ track: W1
 - One review slot of each kind has run against a probe and its record is committed, so the first real stamp does not discover a broken panel.
 - The first push of `main` has a green `build` run and a green `plan-gates` run, quoted by URL in `docs/dev/build.md`.
 - The design contract is enforced: every surface section names its `docs/design/` spec on a `**Design:**` line or is listed in the shrink-only `todo/.design-baseline`, `scripts/design-lint.py` refuses any new literal color, size, or font in the UI sources at commit time and in CI, and `scripts/render-design-reference.py` renders the design's own previews for review (§9).
+- Docs cannot drift silently: `docs/facts.json` is the one source for names, roles, the description, and topics; `scripts/drift-check.py` refuses a retired name or a README fact that disagrees with it at commit time and in CI, Markdown claims are re-measured outside `todo/` too, CI reads the GitHub About bar against the facts, and review refuses a stamp while a doc still describes changed behavior the old way (§10).
 
 **Adjacency:** all=not-applicable (repository plumbing: gates, hooks, and CI with no user-facing records, settings, documents, or reversible user actions)
 
@@ -59,6 +60,7 @@ track: W1
 |   7   |   §7    | The validator reads the Pinxit parity catalog  | §6         |  [ ]   |
 |   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [ ]   |
 |   9   |   §9    | The design contract gates                     | §1         |  [ ]   |
+|  10   |   §10   | The drift gates                               | §1         |  [ ]   |
 
 ---
 
@@ -260,6 +262,26 @@ The operator asked on 2026-09-27 whether the design, graphics, and docs were wir
 - [ ] Commit: `"workspace: the design contract, the Design line and its baseline, design-lint, and the design reference renders"`
 
 **Test checkpoint:** `python scripts/todo-graph.py self-test` prints `0 failed`; `python scripts/todo-graph.py validate` reports 0 fatal and 0 warnings; `python scripts/design-lint.py --self-test` prints `0 failed`; `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` exits 0 with `0 new, 0 stale`, and exits 1 naming the file after a probe `Background="#FF0000"` is added to a UI XAML file (quoted, then reverted); a probe surface section without a Design line in a scratch copy of the tree fails `validate` with `design-missing`; `python scripts/render-design-reference.py --components Button` renders eight PNGs. Cheaper substitute that fails: a prose rule in a standard with no gate, which the probes above (a literal color and a missing Design line, both refused) show is enforced.
+
+## 10. The Drift Gates: Product Facts, Retired Names, Doc Claims, and the GitHub Mirror
+
+The operator asked on 2026-09-27, after the rename to Isotone, "how are we preventing drift in docs, readme's, suporting files, comments, descriptions, etc. like the repo description", and then "add what you have to". Until this section ships, drift is caught only inside the plan: `todo-claims.py` re-measures claims in TODO files, `validate` checks the plan's structure, and `design-lint.py` checks UI literals. Nothing re-checks the README, `docs/`, `standards/`, the changelog, or code comments, and nothing reads the repository's settings on GitHub, which is how the About description still said "Photon Graphics Suite ... Nodus vector editor, Imago raster editor, Lumen digital darkroom. .NET 10" after the rename. It is operator-directed and a new section beside §9 because it is its own gate with its own scripts; it is in Phase 0 so the long run starts with it enforced. The social preview image can only be set in the web UI, so it stays with `D99 T01 §1`.
+
+-> XREF: D99 T01 §1 -- the About bar row: its description and topics become the values `docs/facts.json` owns and `--sync-github` applies
+
+**Fidelity:** no surface of its own -- a facts file, a check script, hook and CI wiring, and a review lens.
+
+**Needs:** Windows host (build/test)
+
+- [ ] Add `docs/facts.json`, the one source for product facts: the suite name, each app's name, slug, tag prefix, and one-line role, the repository description, the eight topics, the homepage, and `retired` (the retired names Photon, Nodus, Imago, Lumen and the phrase ".NET 10", each with its replacement and the date). Versions are not copied into it: it names where each comes from (`global.json` for the SDK, `Directory.Packages.props` for packages, `installer/common.iss` for Inno Setup). Done when: the file parses and `docs/dev/README.md` links it with one sentence saying facts change here first.
+- [ ] Add `scripts/drift-check.py` (stdlib) with `--self-test`: rule `retired-name` fails any retired word in a tracked text file, whole-word and case-aware as the 2026-09-27 rename matched, except under `docs/legacy/`, inside the verbatim operator quotes, `todo/budget.json` history, historic `git show <sha>:` paths, and backlog `merged:` markers, with an allowlist in `docs/facts.json` that grows only with a reason; rule `readme-facts` fails when the README's description line or badge versions differ from `docs/facts.json` and the pinned versions. Done when: `python scripts/drift-check.py --self-test` prints `0 failed` with a case per rule and per allowlist kind, and `python scripts/drift-check.py` prints `0 finding(s)` on the tree.
+- [ ] Let `<!-- claim: -->` lines live in any Markdown file under `docs/`, `standards/`, and the root READMEs, not only in TODO files: `scripts/todo-claims.py` re-measures them with the same verbs and reports them by path. Done when: a claim added to `docs/dev/build.md` is measured and a false one fails (both quoted), and the self-test covers the new scope.
+- [ ] Add `--check-github` and `--sync-github`: the check reads `gh repo view rizonesoft/Isotone --json description,repositoryTopics,homepageUrl` and fails on any difference from `docs/facts.json`; the sync applies the facts with `gh repo edit` under the operator's own login (the CI token cannot edit repository settings), printing each change before making it. Done when: the check names the difference against a changed probe value in a scratch facts file, and a real `--sync-github` run by the operator leaves the check clean (both quoted).
+- [ ] Wire the gates: `tools/githooks/pre-commit` runs `drift-check.py` on the staged tree after `validate`; `scripts/check-all.ps1` runs the self-test and the check; `.github/workflows/plan.yml` runs both plus `--check-github` (read-only, with the workflow token). Done when: a staged README line naming "Imago" makes the hook exit non-zero naming `drift-check`, and the same commit passes once the line is fixed (both quoted).
+- [ ] Add a `docs-drift` lens to `review-todo-section`, run in-session beside `source-defect`: the candidate range must update every doc, README, standard, XML doc comment, and code comment that describes behavior the range changed, and a stamp is refused while one still describes the old behavior. Name it in `.claude/skills/process-todo-section/gates.md` too. Done when: `Select-String docs-drift` finds both skills and the stamp template carries a `Docs:` verification line.
+- [ ] Commit: `"workspace: the drift gates: product facts, retired names, doc claims, and the GitHub mirror"`
+
+**Test checkpoint:** Unit test and driven run: `python scripts/drift-check.py --self-test` prints `0 failed`; `python scripts/drift-check.py` prints `0 finding(s)` on the tree and exits 1 naming the file and `retired-name` after a probe line "Imago raster editor" is added to `README.md` (quoted, then reverted); `python scripts/drift-check.py --check-github` exits 0 after the operator's sync and names the field after a probe difference; `python scripts/todo-claims.py` measures a claim in `docs/dev/build.md`. Cheaper substitute that fails: a one-off grep during the rename, which is what let the GitHub description drift.
 
 ## Verification
 

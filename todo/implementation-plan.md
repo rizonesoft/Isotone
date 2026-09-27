@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Pinxit, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **0 of 750 sections complete (0%).** 750 sections (0 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 751 sections complete (0%).** 751 sections (0 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -149,25 +149,26 @@ The copyright holder is Rizonetech (Pty) Ltd and Rizonesoft is its brand; the re
 
 Nothing in this plan can be proven until the gates run on every clone and every push, so this phase wires the commit hook, marks operator-only rows, raises the claims ratchet, proves the review panel, and reads back the first green CI runs. It also retires the import debt that belongs to the workspace (the test quarantine, Pinxit's excused diagnostics, unused packages, the assertion library's license), records before captures of the imported apps (a record of the legacy look, never a fidelity source), lands the design contract gates (the `**Design:**` line and its shrink-only baseline, design-lint over the UI sources, the design reference renders; operator decisions 2026-09-27) so every later UI section is held to `docs/design/`, and dry-runs the release pipeline as a draft release that is deleted after inspection (operator decision 2026-09-27). Every row here is ready on day one or depends only on another row here.
 
-|  ✔  | Section      | Deliverable                                         | Items |
-| :-: | ------------ | --------------------------------------------------- | :---: |
-| [ ] | `D00 T01 §1` | Wire the TODO gate into every clone                 |   4   |
-| [ ] | `D00 T01 §2` | The operator requirement for manual rows            |   6   |
-| [ ] | `D00 T01 §3` | Raise the claims coverage floor                     |   3   |
-| [ ] | `D00 T01 §4` | Prove the review panel end to end                   |   5   |
-| [ ] | `D00 T01 §6` | The parity catalog validator                        |  19   |
-| [ ] | `D00 T01 §7` | The validator reads the Pinxit parity catalog       |  22   |
-| [ ] | `D00 T01 §8` | The validator reads the Albumen parity catalog      |  22   |
-| [ ] | `D00 T02 §1` | Fix the quarantined tests and empty the quarantine  |   5   |
-| [ ] | `D00 T02 §2` | Pinxit diagnostics to zero                          |   4   |
-| [ ] | `D00 T02 §3` | Quiet the WPF temporary project output              |   3   |
-| [ ] | `D00 T02 §4` | Prune packages no code uses                         |   7   |
-| [ ] | `D00 T02 §5` | The assertion library decision and the decision log |   5   |
-| [ ] | `D00 T03 §1` | Fold the per-app docs and samples into the suite    |   7   |
-| [ ] | `D00 T03 §2` | Before captures of the imported Stilus and Pinxit   |   7   |
-| [ ] | `D00 T01 §9` | The design contract gates                           |   9   |
-| [ ] | `D00 T01 §5` | First push: CI green and read back                  |   5   |
-| [ ] | `D00 T02 §7` | Release pipeline dry run as a draft release         |  10   |
+|  ✔  | Section       | Deliverable                                         | Items |
+| :-: | ------------- | --------------------------------------------------- | :---: |
+| [ ] | `D00 T01 §1`  | Wire the TODO gate into every clone                 |   4   |
+| [ ] | `D00 T01 §2`  | The operator requirement for manual rows            |   6   |
+| [ ] | `D00 T01 §3`  | Raise the claims coverage floor                     |   3   |
+| [ ] | `D00 T01 §4`  | Prove the review panel end to end                   |   5   |
+| [ ] | `D00 T01 §6`  | The parity catalog validator                        |  19   |
+| [ ] | `D00 T01 §7`  | The validator reads the Pinxit parity catalog       |  22   |
+| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog      |  22   |
+| [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine  |   5   |
+| [ ] | `D00 T02 §2`  | Pinxit diagnostics to zero                          |   4   |
+| [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output              |   3   |
+| [ ] | `D00 T02 §4`  | Prune packages no code uses                         |   7   |
+| [ ] | `D00 T02 §5`  | The assertion library decision and the decision log |   5   |
+| [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite    |   7   |
+| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Pinxit   |   7   |
+| [ ] | `D00 T01 §9`  | The design contract gates                           |   9   |
+| [ ] | `D00 T01 §10` | The drift gates                                     |   7   |
+| [ ] | `D00 T01 §5`  | First push: CI green and read back                  |   5   |
+| [ ] | `D00 T02 §7`  | Release pipeline dry run as a draft release         |  10   |
 
 ### Phase 1 -- Suite layout and names
 
