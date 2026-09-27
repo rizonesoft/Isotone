@@ -177,7 +177,7 @@ Nodus goes first among the apps. This phase gives it a real composition root on 
 | [ ] | `D02 T01 §4` | Culture-safe formatting and comparisons            |   5   |
 | [ ] | `D02 T01 §5` | The rest of the analyzer backlog                   |   4   |
 | [ ] | `D02 T02 §1` | The triage record and the delete group             |   4   |
-| [ ] | `D02 T02 §2` | One SVG render path                                |   6   |
+| [ ] | `D02 T02 §2` | One SVG render path                                |   7   |
 | [ ] | `D02 T01 §6` | SkiaSharp 4                                        |   6   |
 | [ ] | `D02 T01 §7` | Warnings are errors in Nodus                       |   4   |
 | [ ] | `D02 T02 §3` | Selection has one owner                            |   5   |
@@ -194,7 +194,7 @@ With its foundation sound, Nodus becomes a complete first release: `Photon.UI` t
 |  ✔  | Section      | Deliverable                                                     | Items |
 | :-: | ------------ | --------------------------------------------------------------- | :---: |
 | [ ] | `D01 T01 §1` | Create Photon.UI with the icon catalog                          |   8   |
-| [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Photon.UI            |   7   |
+| [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Photon.UI            |   8   |
 | [ ] | `D01 T01 §3` | The suite theme resources                                       |  19   |
 | [ ] | `D01 T01 §5` | Implicit control styles: buttons and inputs                     |  23   |
 | [ ] | `D01 T01 §6` | Implicit control styles: navigation, data, menus, and feedback  |  24   |
