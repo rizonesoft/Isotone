@@ -2,7 +2,7 @@
 """Build the Photon Interface design system page from docs/design/.
 
 Writes ONE self-contained page, docs/design/index.html, the repository's own
-view of the Design System artifact (operator decision 2026-09-27: "why don't
+view of the design system (operator decision 2026-09-27: "why don't
 we create an html view the same as the artifact in the repo"). It is
 published on GitHub Pages by .github/workflows/pages.yml at
 https://rizonesoft.github.io/Photon/design/.

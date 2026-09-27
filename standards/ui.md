@@ -6,7 +6,7 @@ Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. I
 
 - `docs/design/tokens.json` is the one source for every color, size, spacing, radius, shadow, duration, and type style. A value that is not a token is not part of the system.
 - The WPF resource dictionaries in `src/Photon.UI/Themes/` are generated from `tokens.json` by a committed generator; never hand-edit generated XAML. Change the token, regenerate, and commit both together; the drift check (`D01 T01 §3`) fails when they disagree.
-- `docs/design/` is canonical; the Design System artifact is a published view of it. After a design change, republish the artifact as [`docs/design/SYNC.md`](../docs/design/SYNC.md) describes, and pull any edit made on the artifact page into `docs/design/` before editing here.
+- `docs/design/` is the only home of the design system; its public view is https://rizonesoft.github.io/Photon/design/, generated from it. Edit the sources and regenerate the page as [`docs/design/EDITING.md`](../docs/design/EDITING.md) describes.
 - A surface never hardcodes a color, size, or spacing value that a token names.
 
 ## Themes

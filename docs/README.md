@@ -6,7 +6,7 @@ Documentation for the Photon Graphics Suite.
 | ------- | --- | ---------- |
 | [User guides](user/README.md) | People using Nodus, Imago, and Lumen | Installing, first steps, troubleshooting |
 | [Developer guides](dev/README.md) | Contributors and maintainers | Architecture, building, versioning, the TODO system |
-| [Design system](design/README.md) | Anyone building or reviewing UI | Photon Interface: tokens, components, shell layout, app icons; binding summary in [`standards/ui.md`](../standards/ui.md), sync rules in [`design/SYNC.md`](design/SYNC.md) |
+| [Design system](design/README.md) | Anyone building or reviewing UI | Photon Interface: tokens, components, shell layout, app icons; binding summary in [`standards/ui.md`](../standards/ui.md), editing rules in [`design/EDITING.md`](design/EDITING.md) |
 
 Elsewhere in the repository:
 
