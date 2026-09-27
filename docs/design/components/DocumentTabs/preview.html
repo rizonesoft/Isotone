@@ -1,0 +1,31 @@
+<!-- @dsCard group="Shell" height=116 subtitle="Open documents above the canvas" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DocumentTabs</title>
+<style>
+.dt .ph-doctabs{width:100%}
+.dt .over{margin-left:auto;align-self:center;padding-right:var(--space-1)}
+.dt .under{height:40px;background:var(--canvas-surround)}
+</style>
+</head>
+<body>
+<div class="dt pv" style="padding-top:var(--space-2)">
+<div>
+<div class="ph-doctabs" role="tablist">
+  <div class="ph-doctab is-selected" role="tab" aria-selected="true"><span class="nm">Harbor at dusk.psd @ 66.7% (RGB/8) *</span><span class="x" aria-label="Close"><i data-i="x" data-s="12" data-w="2"></i></span></div>
+  <div class="ph-doctab is-hover" role="tab"><span class="nm">Portrait retouch.tif @ 50% (RGB/16)</span><span class="x"><i data-i="x" data-s="12" data-w="2"></i></span></div>
+  <div class="ph-doctab is-focus" role="tab"><span class="nm">Untitled-1 @ 100%</span><span class="x"><i data-i="x" data-s="12" data-w="2"></i></span></div>
+  <div class="ph-doctab" role="tab"><span class="nm">Label layout.nds</span><span class="x"><i data-i="x" data-s="12" data-w="2"></i></span></div>
+  <span class="ph-btn icon subtle over" title="All open documents"><i data-i="chevrons-right" data-s="14"></i></span>
+</div>
+<div class="under"></div>
+</div>
+<div class="pv-k">selected (bold, state-line top edge, close visible) · hover · keyboard focus · rest. An asterisk marks unsaved changes.</div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

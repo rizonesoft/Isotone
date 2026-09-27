@@ -353,6 +353,7 @@ Illustrator's Control panel and Properties panel and CorelDRAW's property bar an
 **Job:** a designer can read and set the exact values of whatever tool or selection is active. Consumer: `D02 T03 §4` property commands and every later tool's options.
 **Treatment:** templates keyed by tool and selection kind. Cheaper substitute that fails the checkpoint: one static toolbar with disabled boxes.
 **Chrome:** consume the `CompactNumberBox` control (moved to `Photon.UI` when Imago needs it), the theme, and `D02 T03 §4` property commands. Do not add a second numeric box.
+**Corrected 2026-09-27:** the specs are `docs/design/components/NumberBox/README.md` (the scrub label, units column, focus border) and `docs/design/components/OptionsBar/README.md` for the contextual property bar.
 
 **Requires:** display-session -- template switching and field entry need an interactive desktop
 
@@ -436,7 +437,7 @@ Guides live in `SnapManager`'s private list today, so a reopen loses them. This 
 **Fidelity:** View, Snap To submenu, the snapping quick-access menu on the property bar, the Live Guides panel, and canvas overlays -- docs/captures/nodus/main-window/ for the menu; new captures to docs/captures/nodus/snapping/.
 **Job:** a designer can land a point exactly on the geometry they mean and see why it snapped. Consumer: every drawing and transform tool.
 **Treatment:** every candidate names its mode in a screen tip and draws its mark. Cheaper substitute that fails the checkpoint: bounding-box snapping labeled as point snapping.
-**Chrome:** consume the canvas overlay, the theme accent, the §2 index `Nearest`, and the `D02 T02 §7` toggles. Do not add a second snap engine.
+**Chrome:** consume the canvas overlay, the `guide-smart` canvas token (**Corrected 2026-09-27:** said the theme accent), the §2 index `Nearest`, and the `D02 T02 §7` toggles. Do not add a second snap engine.
 
 **Requires:** display-session -- snapping feedback during drags needs an interactive desktop
 

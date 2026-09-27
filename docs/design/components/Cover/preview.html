@@ -1,0 +1,112 @@
+<!-- @dsCard height=360 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Photon Interface</title>
+<style>
+  /* Cover: an Imago document window in the current brightness theme, built only from tokens and bundle.css.
+     Regions: title bar 32 (menu bar inside), options bar 32, tool rail 40, document tab 28, rulers 18, canvas, right dock 280, status bar 22. */
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: var(--frame); }
+  .win { width: 960px; height: 360px; display: flex; flex-direction: column; background: var(--frame); overflow: hidden; }
+  .win .ph-titlebar { flex: none; }
+  .win .ph-optbar { flex: none; }
+  .mid { flex: 1; display: flex; min-height: 0; }
+  .mid .ph-rail { flex: none; overflow: hidden; }
+  .work { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .work .ph-doctabs { flex: none; }
+  .view { flex: 1; position: relative; }
+  .doc { position: absolute; left: 70px; top: 36px; width: 360px; height: 208px; box-shadow: 0 0 0 1px var(--divider-strong); overflow: hidden; }
+  /* the artwork is content: its colors are the image's, not tokens */
+  .sky { position: absolute; inset: 0; background: linear-gradient(180deg, #0d3f80 0%, #5a4a8a 38%, #e07a4a 64%, #f5b86a 69%, #1f2a33 70%, #0f171d 100%); }
+  .sun { position: absolute; left: 212px; top: 108px; width: 58px; height: 58px; border-radius: var(--radius-round); background: #f7d046; }
+  .sea { position: absolute; left: 0; right: 0; top: 146px; bottom: 0; background: linear-gradient(180deg, #2a3a48, #0f171d); }
+  .glint { position: absolute; left: 224px; top: 152px; width: 34px; height: 2px; background: #f7d046; box-shadow: 4px 8px 0 -0px #f5b86a, -2px 16px 0 #e07a4a; }
+  .hull { position: absolute; left: 44px; top: 160px; width: 110px; height: 18px; background: #0b1116; clip-path: polygon(0 0, 100% 0, 86% 100%, 10% 100%); }
+  .mast { position: absolute; left: 96px; top: 70px; width: 2px; height: 90px; background: #0b1116; }
+  .sail { position: absolute; left: 99px; top: 78px; width: 46px; height: 76px; background: #0b1116; clip-path: polygon(0 0, 100% 100%, 0 100%); }
+  .dock { width: 280px; flex: none; display: flex; flex-direction: column; gap: 1px; background: var(--frame); border-left: 1px solid var(--divider); }
+  .dock .ph-panel { overflow: hidden; }
+  .dock .props .bd { padding: var(--space-2) var(--space-3); display: flex; flex-direction: column; gap: var(--space-1-5); }
+  .dock .two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+  .dock .two .ph-num { width: 100%; }
+  .dock .layers { flex: 1; }
+  .dock .top { display: flex; gap: var(--space-2); padding: var(--space-1-5) var(--space-2); border-bottom: 1px solid var(--divider); }
+  .win .ph-status { flex: none; }
+</style>
+</head>
+<body>
+<div class="win app-imago">
+  <div class="ph-titlebar">
+    <div class="ph-appmark"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Imago"><defs><linearGradient id="imago-c-s16-spec" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF4D6D"/><stop offset="0.17" stop-color="#FF9A3C"/><stop offset="0.33" stop-color="#FFD84A"/><stop offset="0.5" stop-color="#4CC47A"/><stop offset="0.67" stop-color="#29C5E6"/><stop offset="0.83" stop-color="#5B7CFF"/><stop offset="1" stop-color="#B45CFF"/></linearGradient><clipPath id="imago-c-s16-clip"><rect x="0" y="0" width="16" height="16" rx="3"/></clipPath></defs><rect x="0" y="0" width="16" height="16" rx="3" fill="#2B2C31"/><rect x="0" y="14" width="16" height="2" fill="url(#imago-c-s16-spec)" clip-path="url(#imago-c-s16-clip)"/><path d="M8.53 4.73L10.27 6.47L12.64 3.36L11.64 2.36Z" fill="#F5923E"/><path d="M6.92 5.84L9.16 8.08L10.27 6.96L8.04 4.73Z" fill="#FFFFFF"/><path d="M5.3 9.7L8.01 9.61L9.09 8.52L6.48 5.91L5.39 6.99Z" fill="#FFD84A"/><rect x="2" y="11" width="2" height="2" fill="#FFD84A"/><rect x="3" y="7" width="1" height="1" fill="#FFD84A"/></svg></div>
+    <div class="ph-menubar"><div class="ph-mb">File</div><div class="ph-mb">Edit</div><div class="ph-mb">Image</div><div class="ph-mb">Layer</div><div class="ph-mb">Select</div><div class="ph-mb">Filter</div><div class="ph-mb">View</div><div class="ph-mb">Window</div><div class="ph-mb">Help</div></div>
+    <div class="drag"></div>
+    <div class="ph-caps"><span class="ph-cap"><i data-i="minus" data-s="14" data-w="1"></i></span><span class="ph-cap"><i data-i="maximize" data-s="14" data-w="1"></i></span><span class="ph-cap close"><i data-i="x" data-s="14" data-w="1"></i></span></div>
+  </div>
+  <div class="ph-optbar">
+    <span class="ph-btn subtle" style="padding:0 var(--space-1);min-width:0"><i data-i="brush"></i><i data-i="chevron-down" data-s="10" data-w="2"></i></span>
+    <span class="ph-vsep"></span>
+    <span class="ph-num" style="width:92px"><span class="scrub">Size</span><input value="24" aria-label="Size"><span class="unit">px</span></span>
+    <span class="ph-num" style="width:84px"><span class="scrub">Hard</span><input value="80" aria-label="Hardness"><span class="unit">%</span></span>
+    <span class="ph-vsep"></span>
+    <span class="lbl">Mode</span><span class="ph-combo" style="width:104px"><span>Normal</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span>
+    <span class="ph-num" style="width:104px"><span class="scrub">Opacity</span><input value="100" aria-label="Opacity"><span class="unit">%</span></span>
+    <span class="ph-num" style="width:88px"><span class="scrub">Flow</span><input value="65" aria-label="Flow"><span class="unit">%</span></span>
+    <span class="ph-btn icon subtle toggle is-on"><i data-i="wand"></i></span>
+  </div>
+  <div class="mid">
+    <div class="ph-rail">
+      <span class="ph-tool group"><i data-i="pointer" data-s="20"></i></span>
+      <span class="ph-tool group"><i data-i="marquee" data-s="20"></i></span>
+      <span class="ph-tool group"><i data-i="lasso" data-s="20"></i></span>
+      <span class="ph-tool group"><i data-i="crop" data-s="20"></i></span>
+      <div class="sep"></div>
+      <span class="ph-tool group is-checked"><i data-i="brush" data-s="20"></i></span>
+      <span class="ph-tool group"><i data-i="stamp" data-s="20"></i></span>
+      <span class="ph-tool group"><i data-i="eraser" data-s="20"></i></span>
+    </div>
+    <div class="work">
+      <div class="ph-doctabs">
+        <div class="ph-doctab is-selected"><span class="nm">Harbor at dusk.psd @ 66.7% (RGB/8) *</span><span class="x"><i data-i="x" data-s="12" data-w="2"></i></span></div>
+        <div class="ph-doctab"><span class="nm">Portrait retouch.tif @ 50%</span><span class="x"><i data-i="x" data-s="12" data-w="2"></i></span></div>
+      </div>
+      <div class="view ph-canvas">
+        <div class="ph-ruler-corner"></div>
+        <div class="ph-ruler-h"><span style="left:0">0</span><span style="left:50px">100</span><span style="left:100px">200</span><span style="left:150px">300</span><span style="left:200px">400</span><span style="left:250px">500</span><span style="left:300px">600</span><span style="left:350px">700</span><span style="left:400px">800</span><span class="ph-ruler-mark-h" style="left:268px;padding:0"></span></div>
+        <div class="ph-ruler-v"><span style="top:2px">0</span><span style="top:52px">100</span><span style="top:102px">200</span><span style="top:152px">300</span><span class="ph-ruler-mark-v" style="top:150px;padding:0"></span></div>
+        <div class="doc">
+          <div class="sky"></div><div class="sun"></div><div class="sea"></div><div class="glint"></div>
+          <div class="mast"></div><div class="sail"></div><div class="hull"></div>
+          <div class="ph-ants" style="left:196px;top:94px;width:92px;height:84px"></div>
+        </div>
+        <div class="ph-guide-v" style="left:250px"></div>
+      </div>
+    </div>
+    <div class="dock">
+      <div class="ph-panel props">
+        <div class="ph-ptabs"><div class="ph-ptab is-selected">Properties</div><div class="ph-ptab">Adjustments</div><div class="fill"></div><div class="tools"><span class="ph-btn icon subtle" style="width:20px;height:20px"><i data-i="menu" data-s="14"></i></span></div></div>
+        <div class="bd">
+          <div class="two"><span class="ph-num"><span class="scrub">W</span><input value="6000" aria-label="Width"><span class="unit">px</span></span><span class="ph-num"><span class="scrub">H</span><input value="4000" aria-label="Height"><span class="unit">px</span></span></div>
+        </div>
+      </div>
+      <div class="ph-panel layers">
+        <div class="ph-ptabs"><div class="ph-ptab is-selected">Layers</div><div class="ph-ptab">Channels</div><div class="ph-ptab">Paths</div><div class="fill"></div></div>
+        <div class="top"><span class="ph-combo" style="width:118px"><span>Normal</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span><span class="ph-num" style="width:130px"><span class="scrub">Opacity</span><input value="100" aria-label="Opacity"><span class="unit">%</span></span></div>
+        <div class="ph-layer"><span class="vis"><i data-i="eye" data-s="14"></i></span><span class="th"><span style="position:absolute;inset:0;display:grid;place-items:center;background:var(--surface-control);color:var(--text-primary);font-weight:600">T</span></span><span class="nm">Title</span><span class="end"><span style="font-size:var(--type-caption);color:var(--text-secondary)">fx</span></span></div>
+        <div class="ph-layer is-selected"><span class="vis"><i data-i="eye" data-s="14"></i></span><span class="th"><span style="position:absolute;inset:0;background:linear-gradient(180deg,#0d3f80,#e07a4a 64%,#0f171d 70%)"></span></span><span class="nm">Sky replacement</span></div>
+        <div class="ph-layer"><span class="vis"><i data-i="eye" data-s="14"></i></span><span class="th"><span style="position:absolute;inset:0;background:linear-gradient(180deg,#5a4a8a,#1f2a33)"></span></span><span class="nm" style="font-style:italic">Background</span><span class="end"><i data-i="lock" data-s="14"></i></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="ph-status">
+    <span class="dot" style="background:var(--status-success)"></span><span>Ready</span><span class="s"></span><span>RGB/8</span><span class="s"></span><span>Sky replacement</span>
+    <span class="fill"></span>
+    <span class="mono">X 2210  Y 1407</span><span class="s"></span><span>66.7%</span><span class="s"></span><span>Doc: 68.7 MB / 212 MB</span><span class="s"></span><span>GPU</span>
+  </div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!-- @dsCard group="Inputs" height=244 subtitle="Foreground and background chips, swatch grid, color field, hex" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Swatches</title>
+<style>
+.sww{display:flex;gap:var(--space-6);align-items:flex-start}
+.chipbox{position:relative;width:44px;height:44px}
+.chipbox .ph-chips{position:absolute;left:0;top:0;margin:0}
+.chipbox .sw{position:absolute;right:-2px;top:-4px;color:var(--icon)}
+.chipbox .rs{position:absolute;left:-2px;bottom:-2px;color:var(--icon)}
+.field{position:relative;width:176px;height:112px;border-radius:var(--radius-sm);background:linear-gradient(to top,#000000,#00000000),linear-gradient(to right,#ffffff,#f5923e);box-shadow:inset 0 0 0 1px var(--border-control)}
+.field .ring{position:absolute;left:78%;top:18%;width:10px;height:10px;margin:-5px;border-radius:var(--radius-round);border:2px solid var(--checker-light);box-shadow:0 0 0 1px var(--ants-dark)}
+.hue{height:10px;width:176px;border-radius:var(--radius-sm);background:linear-gradient(to right,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000);position:relative}
+.hue .tri{position:absolute;left:7.8%;top:11px;margin-left:-5px;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:7px solid var(--text-primary)}
+</style>
+</head>
+<body>
+<div class="pv"><div class="sww">
+<div class="pv-col" style="gap:var(--space-3)">
+  <span class="pv-k">Foreground / background</span>
+  <div class="chipbox"><div class="ph-chips"><span class="fg" style="background:#f5923e"></span><span class="bg" style="background:#ffffff"></span></div><span class="sw" title="Swap colors (X)"><i data-i="swap" data-s="12"></i></span><span class="rs" title="Default colors (D)"><i data-i="square" data-s="10"></i></span></div>
+  <span class="pv-k">Hex</span>
+  <span class="ph-field ph-hex"><span class="pre">#</span><input value="F5923E" aria-label="Hex color"></span>
+</div>
+<div class="pv-col" style="gap:var(--space-2)">
+  <span class="pv-k">Swatches: hover, selected (2px state-line), none</span>
+  <div class="ph-swatches" role="listbox"><button class="ph-swatch" style="background:#000000" title="#000000" aria-label="#000000"></button><button class="ph-swatch" style="background:#404040" title="#404040" aria-label="#404040"></button><button class="ph-swatch" style="background:#808080" title="#808080" aria-label="#808080"></button><button class="ph-swatch" style="background:#bfbfbf" title="#BFBFBF" aria-label="#BFBFBF"></button><button class="ph-swatch" style="background:#ffffff" title="#FFFFFF" aria-label="#FFFFFF"></button><button class="ph-swatch" style="background:#e0301e" title="#E0301E" aria-label="#E0301E"></button><button class="ph-swatch is-selected" style="background:#f5923e" title="#F5923E" aria-label="#F5923E"></button><button class="ph-swatch" style="background:#f7d046" title="#F7D046" aria-label="#F7D046"></button><button class="ph-swatch" style="background:#4cc47a" title="#4CC47A" aria-label="#4CC47A"></button><button class="ph-swatch is-hover" style="background:#29c5e6" title="#29C5E6" aria-label="#29C5E6"></button><button class="ph-swatch" style="background:#1473e6" title="#1473E6" aria-label="#1473E6"></button><button class="ph-swatch" style="background:#8b5cf6" title="#8B5CF6" aria-label="#8B5CF6"></button><button class="ph-swatch" style="background:#7a1b12" title="#7A1B12" aria-label="#7A1B12"></button><button class="ph-swatch is-focus" style="background:#8c4a14" title="#8C4A14" aria-label="#8C4A14"></button><button class="ph-swatch" style="background:#8a7420" title="#8A7420" aria-label="#8A7420"></button><button class="ph-swatch" style="background:#1f6b3e" title="#1F6B3E" aria-label="#1F6B3E"></button><button class="ph-swatch" style="background:#136d80" title="#136D80" aria-label="#136D80"></button><button class="ph-swatch" style="background:#0d3f80" title="#0D3F80" aria-label="#0D3F80"></button><button class="ph-swatch" style="background:#4a2d8a" title="#4A2D8A" aria-label="#4A2D8A"></button><button class="ph-swatch" style="background:#b8325e" title="#B8325E" aria-label="#B8325E"></button><button class="ph-swatch" style="background:#f2b8a8" title="#F2B8A8" aria-label="#F2B8A8"></button><button class="ph-swatch" style="background:#f5d6b0" title="#F5D6B0" aria-label="#F5D6B0"></button><button class="ph-swatch" style="background:#d9ecc9" title="#D9ECC9" aria-label="#D9ECC9"></button><button class="ph-swatch" style="background:#c7e3f3" title="#C7E3F3" aria-label="#C7E3F3"></button><button class="ph-swatch none" title="None" aria-label="None"></button></div>
+</div>
+<div class="pv-col" style="gap:var(--space-2)">
+  <span class="pv-k">Color field and hue</span>
+  <div class="field"><span class="ring"></span></div>
+  <div class="hue"><span class="tri"></span></div>
+</div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

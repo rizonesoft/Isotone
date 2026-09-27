@@ -1,0 +1,31 @@
+<!-- @dsCard group="Inputs" height=292 subtitle="Track, fill, thumb and paired number box; gradient sliders" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Slider</title>
+<style>
+.sg{display:grid;grid-template-columns:64px auto;gap:var(--space-2) var(--space-2);align-items:center}
+.hue{background:linear-gradient(to right,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)}
+.alpha{background-image:linear-gradient(to right,#f5923e00,#f5923e),conic-gradient(var(--checker-dark) 25%,var(--checker-light) 0 50%,var(--checker-dark) 0 75%,var(--checker-light) 0);background-size:100% 100%,8px 8px}
+.sat{background:linear-gradient(to right,#808080,#f5923e)}
+</style>
+</head>
+<body>
+<div class="pv">
+<div class="pv-row" style="gap:var(--space-2)"><span class="ph-label" style="width:64px">Opacity</span><span class="ph-slider " role="slider" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100"><span class="tr"></span><span class="fi" style="width:calc((100% - 10px) * 0.72)"></span><span class="th" style="left:calc(5px + (100% - 10px) * 0.72)"></span></span><span class="ph-num " style="width:72px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="72" aria-label="Opacity" data-min="0" data-max="100"><span class="unit">%</span></span><span class="pv-k">rest</span></div>
+<div class="pv-row" style="gap:var(--space-2)"><span class="ph-label" style="width:64px">Flow</span><span class="ph-slider is-hover" role="slider" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"><span class="tr"></span><span class="fi" style="width:calc((100% - 10px) * 0.45)"></span><span class="th" style="left:calc(5px + (100% - 10px) * 0.45)"></span></span><span class="ph-num " style="width:72px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="45" aria-label="Flow" data-min="0" data-max="100"><span class="unit">%</span></span><span class="pv-k">hover</span></div>
+<div class="pv-row" style="gap:var(--space-2)"><span class="ph-label" style="width:64px">Hardness</span><span class="ph-slider is-pressed" role="slider" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><span class="tr"></span><span class="fi" style="width:calc((100% - 10px) * 0.6)"></span><span class="th" style="left:calc(5px + (100% - 10px) * 0.6)"></span></span><span class="ph-num " style="width:72px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="60" aria-label="Hardness" data-min="0" data-max="100"><span class="unit">%</span></span><span class="pv-k">pressed</span></div>
+<div class="pv-row" style="gap:var(--space-2)"><span class="ph-label" style="width:64px">Spacing</span><span class="ph-slider is-focus" role="slider" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"><span class="tr"></span><span class="fi" style="width:calc((100% - 10px) * 0.25)"></span><span class="th" style="left:calc(5px + (100% - 10px) * 0.25)"></span></span><span class="ph-num " style="width:72px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="25" aria-label="Spacing" data-min="0" data-max="100"><span class="unit">%</span></span><span class="pv-k">focus</span></div>
+<div class="pv-row" style="gap:var(--space-2)"><span class="ph-label" style="width:64px">Smoothing</span><span class="ph-slider is-disabled" role="slider" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"><span class="tr"></span><span class="fi" style="width:calc((100% - 10px) * 0.1)"></span><span class="th" style="left:calc(5px + (100% - 10px) * 0.1)"></span></span><span class="ph-num is-disabled" style="width:72px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="10" aria-label="Smoothing" data-min="0" data-max="100" disabled><span class="unit">%</span></span><span class="pv-k">disabled</span></div>
+<div class="sg">
+  <span class="ph-label">Hue</span><span class="ph-gslider" role="slider" aria-valuenow="28"><span class="ramp hue"></span><span class="tri" style="left:7.8%"></span></span>
+  <span class="ph-label">Saturation</span><span class="ph-gslider" role="slider"><span class="ramp sat"></span><span class="tri" style="left:74%"></span></span>
+  <span class="ph-label">Opacity</span><span class="ph-gslider is-focus" role="slider"><span class="ramp alpha"></span><span class="tri" style="left:88%"></span></span>
+</div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!-- @dsCard group="Shell" height=364 subtitle="Dock panel: tab strip, sections, collapsed icon strip" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Panel</title>
+<style>
+.pn{display:flex;gap:var(--space-4);padding:var(--space-3);background:var(--frame);height:404px;align-items:flex-start}
+.pn .ph-panel{width:280px;border:1px solid var(--divider)}
+.pn .fillchip{width:36px;height:18px;border-radius:var(--radius-sm);box-shadow:inset 0 0 0 1px var(--border-control)}
+.pn .two{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2)}
+.pn .two .ph-num{width:100%}
+.pn .strip-wrap{display:flex;flex-direction:column;gap:var(--space-2)}
+</style>
+</head>
+<body>
+<div class="pn app-imago">
+<div class="ph-panel" role="region" aria-label="Properties">
+  <div class="ph-ptabs" role="tablist">
+    <div class="ph-ptab is-selected" role="tab" aria-selected="true">Properties</div>
+    <div class="ph-ptab is-hover" role="tab">Adjustments</div>
+    <div class="ph-ptab" role="tab">Info</div>
+    <div class="fill"></div>
+    <div class="tools"><span class="ph-btn icon subtle" style="width:20px;height:20px" title="Collapse to icons"><i data-i="chevrons-right" data-s="14"></i></span><span class="ph-btn icon subtle is-hover" style="width:20px;height:20px" title="Panel menu"><i data-i="menu" data-s="14"></i></span></div>
+  </div>
+  <div class="ph-sect">
+    <div class="hd"><i data-i="chevron-down" data-s="12" data-w="2"></i>Appearance</div>
+    <div class="bd">
+      <div class="ph-prop"><span class="k">Fill</span><span class="pv-row"><span class="fillchip" style="background:var(--accent-imago)"></span><span class="ph-combo " style="width:120px" role="combobox" aria-expanded="false"><span>Solid color</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span></span></div>
+      <div class="ph-prop"><span class="k">Stroke</span><span class="pv-row"><span class="fillchip ph-swatch none" style="width:36px;height:18px"></span><span class="ph-num " style="width:72px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="2" aria-label="Stroke width"><span class="unit">px</span></span></span></div>
+      <div class="ph-prop"><span class="k">Opacity</span><span class="ph-num " style="width:72px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="100" aria-label="Opacity" data-min="0" data-max="100"><span class="unit">%</span></span></div>
+    </div>
+  </div>
+  <div class="ph-sect">
+    <div class="hd is-hover"><i data-i="chevron-down" data-s="12" data-w="2"></i>Transform</div>
+    <div class="bd">
+      <div class="two"><span class="ph-num "><span class="scrub" data-scrub title="Drag to change">X</span><input value="1204" aria-label="X"><span class="unit">px</span></span><span class="ph-num "><span class="scrub" data-scrub title="Drag to change">Y</span><input value="388" aria-label="Y"><span class="unit">px</span></span><span class="ph-num "><span class="scrub" data-scrub title="Drag to change">W</span><input value="640" aria-label="W"><span class="unit">px</span></span><span class="ph-num "><span class="scrub" data-scrub title="Drag to change">H</span><input value="427" aria-label="H"><span class="unit">px</span></span></div>
+    </div>
+  </div>
+  <div class="ph-sect"><div class="hd"><i data-i="chevron-right" data-s="12" data-w="2"></i>Align and distribute</div></div>
+  <div class="ph-sect"><div class="hd"><i data-i="chevron-right" data-s="12" data-w="2"></i>History<span class="cnt">14</span></div></div>
+</div>
+<div class="strip-wrap">
+  <div class="pv-k">Collapsed</div>
+  <div class="ph-iconstrip" role="toolbar" aria-orientation="vertical">
+    <button class="ph-tool is-checked" title="Layers (F7)"><i data-i="layers" data-s="16"></i></button>
+    <button class="ph-tool" title="Properties"><i data-i="sliders" data-s="16"></i></button>
+    <button class="ph-tool is-hover" title="Swatches"><i data-i="grid" data-s="16"></i></button>
+    <button class="ph-tool" title="History"><i data-i="undo" data-s="16"></i></button>
+    <button class="ph-tool is-focus" title="Info"><i data-i="info" data-s="16"></i></button>
+  </div>
+</div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

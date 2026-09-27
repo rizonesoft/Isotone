@@ -1,0 +1,33 @@
+<!-- @dsCard group="Feedback" height=256 subtitle="Toasts and in-window info bars" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Toast</title>
+<style>
+.ts{display:flex;gap:var(--space-4);align-items:flex-start}
+.ts .bars{display:flex;flex-direction:column;gap:var(--space-2);width:440px}
+.ts .ph-infobar{border:0;border-radius:var(--radius-sm)}
+</style>
+</head>
+<body>
+<div class="pv"><div class="ts">
+<div class="pv-col" style="gap:var(--space-2)">
+  <span class="pv-k">Toasts (bottom right, 6s, hover pauses)</span>
+  <div class="ph-toast error" role="alert"><i data-i="error" data-s="16"></i><div class="txt"><b>Couldn't save Harbor at dusk.psd</b><span>The folder is read-only. The document stays open with its changes.</span><span><a class="ph-link">Save As…</a></span></div><span class="ph-btn icon subtle" style="width:20px;height:20px" aria-label="Dismiss"><i data-i="x" data-s="12"></i></span></div>
+  <div class="ph-toast success" role="status"><i data-i="success" data-s="16"></i><div class="txt"><b>Exported 248 photos</b><span>1.9 GB to D:\Exports\Harbor, in 42 s.</span></div><span class="ph-btn icon subtle" style="width:20px;height:20px" aria-label="Dismiss"><i data-i="x" data-s="12"></i></span></div>
+</div>
+<div class="bars">
+  <span class="pv-k">Info bars (under the options bar, stay until dismissed)</span>
+  <div class="ph-infobar info"><i data-i="info" data-s="14"></i><span class="msg"><b>Recovered:</b> 1 unsaved document from the last session.</span><a class="ph-link">Open</a><i data-i="x" data-s="12"></i></div>
+  <div class="ph-infobar warning"><i data-i="alert" data-s="14"></i><span class="msg"><b>Scratch disk nearly full:</b> 1.2 GB free on C:.</span><a class="ph-link">Preferences</a><i data-i="x" data-s="12"></i></div>
+  <div class="ph-infobar error"><i data-i="error" data-s="14"></i><span class="msg"><b>GPU unavailable:</b> filters run on the CPU.</span><i data-i="x" data-s="12"></i></div>
+  <div class="ph-infobar success"><i data-i="success" data-s="14"></i><span class="msg"><b>Color profile embedded:</b> Display P3.</span><i data-i="x" data-s="12"></i></div>
+  <div class="ph-infobar"><i data-i="bulb" data-s="14"></i><span class="msg"><b>Hint:</b> hold Space to pan with any tool.</span></div>
+</div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

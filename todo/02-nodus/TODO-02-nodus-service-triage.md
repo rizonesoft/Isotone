@@ -193,14 +193,14 @@ Precise work needs snapping: to the grid, to guides, and to other objects' edges
 **Fidelity:** Nodus main window, View menu and canvas -- docs/captures/nodus/main-window/. Snap toggles appear under View, Snap To in the order grid, guides, objects.
 **Job:** a designer can drop and drag shapes onto the grid, guides, and other objects' edges and centers, with a visible hint. Consumer: the select, rectangle, ellipse, line, and pen tools.
 **Treatment:** during a drag, the active tool asks `SnapManager` for the nearest candidate within a screen-space tolerance (6 px, a setting), moves to it, and draws a thin guide line on the overlay; holding Ctrl while dragging suppresses snapping for that drag. Cheaper substitute that fails the checkpoint: rounding coordinates to the grid, which ignores objects and guides.
-**Chrome:** consume the canvas overlay layer and the theme's accent brush for hints. Do not draw hints with a hardcoded color.
+**Chrome:** consume the canvas overlay layer and the `guide-smart` canvas token for hints (**Corrected 2026-09-27:** said the theme's accent brush; the app accent is identity only, per `standards/ui.md`). Do not draw hints with a hardcoded color.
 
 **Requires:** display-session -- dragging with snapping on the canvas needs an interactive desktop
 
 - [ ] Finish the simplified path in `SnapManager` (the one marker it carries) and add `SnapManagerTests` for grid, guide, edge, and center candidates and the tolerance. Done when: the tests pass and the marker is gone.
 - [ ] Call `SnapManager` from `SelectTool` moves and resizes and from the rectangle, ellipse, line, and pen tools. Done when: each tool's tests include one snapped drag.
 - [ ] Add View, Snap To, Grid, Guides, Objects toggles persisted through the settings store (`Nodus.Snap.Grid`, `Nodus.Snap.Guides`, `Nodus.Snap.Objects`, `Nodus.Snap.TolerancePx`) with a log line per change. Done when: toggles survive a restart (settings readback quoted).
-- [ ] Draw the snap hint on the canvas overlay using the theme accent. Done when: a capture shows the hint.
+- [ ] Draw the snap hint on the canvas overlay using the `guide-smart` token (**Corrected 2026-09-27:** said the theme accent). Done when: a capture shows the hint.
 - [ ] Commit: `"nodus: snapping to grid, guides, and objects"`
 
 **Test checkpoint:** `dotnet test Photon.slnx` exits 0 with `SnapManagerTests` reporting; a driven run drags a rectangle to within 4 px of another's edge and the saved file shows the edges equal; turning Objects off in the View menu and repeating leaves them 4 px apart; `settings.json` shows the toggle (quoted). Cheaper substitute that fails: grid rounding only.

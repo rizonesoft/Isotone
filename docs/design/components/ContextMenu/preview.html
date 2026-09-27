@@ -1,0 +1,37 @@
+<!-- @dsCard group="Shell" height=268 subtitle="Right-click menu on a layer" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ContextMenu</title>
+<style>
+.cm-wrap{position:relative;height:252px;background:var(--surface-panel)}
+.cm-rows{width:260px}
+.cm-menu{position:absolute;left:150px;top:44px}
+.cm-ptr{position:absolute;left:142px;top:36px;color:var(--text-primary)}
+</style>
+</head>
+<body>
+<div class="cm-wrap">
+<div class="cm-rows">
+  <div class="ph-layer"><span class="vis"><i data-i="eye" data-s="16"></i></span><span class="th"></span><span class="nm">Sky replacement</span></div>
+  <div class="ph-layer is-selected"><span class="vis"><i data-i="eye" data-s="16"></i></span><span class="th"></span><span class="nm">Retouch</span></div>
+  <div class="ph-layer"><span class="vis"><i data-i="eye" data-s="16"></i></span><span class="th"></span><span class="nm">Background</span><span class="end"><i data-i="lock" data-s="14"></i></span></div>
+</div>
+<div class="ph-menu cm-menu" role="menu">
+  <div class="ph-mhead">Layer</div>
+  <div class="ph-mi" role="menuitem"><span class="ic"></span><span>Duplicate Layer…</span><span class="sc">Ctrl+J</span><span class="sub"></span></div>
+  <div class="ph-mi" role="menuitem"><span class="ic"><i data-i="trash" data-s="16"></i></span><span>Delete Layer</span><span class="sc">Del</span><span class="sub"></span></div>
+  <div class="ph-msep" role="separator"></div>
+  <div class="ph-mi" role="menuitem"><span class="ic"><i data-i="fx" data-s="16"></i></span><span>Blending Options…</span><span class="sc"></span><span class="sub"></span></div>
+  <div class="ph-mi is-hl" role="menuitem"><span class="ic"></span><span>Convert to Smart Object</span><span class="sc"></span><span class="sub"></span></div>
+  <div class="ph-mi is-disabled" role="menuitem"><span class="ic"></span><span>Rasterize Layer</span><span class="sc"></span><span class="sub"></span></div>
+  <div class="ph-msep" role="separator"></div>
+  <div class="ph-mi" role="menuitem"><span class="ic"></span><span>Select Pixels</span><span class="sc"></span><span class="sub"><i data-i="chevron-right" data-s="12" data-w="2"></i></span></div>
+</div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

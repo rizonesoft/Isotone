@@ -1,0 +1,28 @@
+<!-- @dsCard group="Feedback" height=116 subtitle="Rich tooltip: title, shortcut chip, one-line description" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tooltip</title>
+<style>
+.tt{display:flex;gap:var(--space-6);align-items:flex-start}
+.tt .anchor{display:flex;align-items:flex-start;gap:var(--space-2)}
+</style>
+</head>
+<body>
+<div class="pv"><div class="tt">
+<div class="pv-col"><span class="pv-k">Tool (rich, after 400ms)</span>
+  <div class="anchor"><button class="ph-tool group is-hover"><i data-i="stamp" data-s="20"></i></button><div class="ph-tip" role="tooltip"><div class="t">Clone Stamp Tool <span class="ph-kbd">S</span></div><div class="d">Paints with pixels sampled from another area. Alt-click to set the source.</div></div></div>
+</div>
+<div class="pv-col"><span class="pv-k">Icon button (title and shortcut)</span>
+  <div class="anchor"><span class="ph-btn icon subtle is-hover"><i data-i="magnet" data-s="16"></i></span><div class="ph-tip" role="tooltip"><div class="t">Snap <span class="ph-kbd">Shift+Ctrl+;</span></div></div></div>
+</div>
+<div class="pv-col"><span class="pv-k">Disabled control (says why)</span>
+  <div class="anchor"><span class="ph-btn icon subtle is-disabled"><i data-i="sliders" data-s="16"></i></span><div class="ph-tip" role="tooltip"><div class="t">Align left edges</div><div class="d">Select two or more layers to align them.</div></div></div>
+</div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

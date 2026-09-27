@@ -1,0 +1,32 @@
+<!-- @dsCard group="Feedback" height=356 subtitle="Modal dialog over a scrim; Enter = OK, Escape = Cancel" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dialog</title>
+<style>
+.dg{height:356px;display:grid;place-items:center;position:relative;background:var(--canvas-surround)}
+.dg .ph-scrim{position:absolute;inset:0}
+.dg .ph-dialog{position:relative}
+.dg .two{display:grid;grid-template-columns:72px 1fr;gap:var(--space-2);align-items:center}
+.dg .ph-num,.dg .ph-combo{height:var(--control-h-dialog)}
+</style>
+</head>
+<body>
+<div class="dg app-imago"><div class="ph-scrim"></div>
+<div class="ph-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
+  <div class="hd"><h2 id="dlg-t">Image Size</h2><span class="ph-btn icon subtle" aria-label="Close (Esc)"><i data-i="x" data-s="14"></i></span></div>
+  <div class="bd">
+    <div class="pv-k">Current: 6000 × 4000 px, 68.7 MB</div>
+    <div class="two"><span class="ph-label">Width</span><span class="pv-row"><span class="ph-num is-focus" style="width:120px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="3000" aria-label="Width"><span class="unit">px</span></span></span></div>
+    <div class="two"><span class="ph-label">Height</span><span class="pv-row"><span class="ph-num " style="width:120px"><span class="scrub" data-scrub title="Drag to change"><span class="grip"></span></span><input value="2000" aria-label="Height"><span class="unit">px</span></span></span></div>
+    <div class="two"><span class="ph-label">Resample</span><span class="ph-combo " style="width:220px" role="combobox" aria-expanded="false"><span>Bicubic (smooth gradients)</span><i data-i="chevron-down" data-s="12" data-w="2"></i></span></div>
+    <div class="two"><span></span><span class="ph-check is-checked" role="checkbox" aria-checked="true"><span class="box"><i data-i="check" data-s="12" data-w="2.5" data-c="c"></i><i data-i="minus" data-s="12" data-w="2.5" data-c="m"></i></span><span>Constrain proportions</span></span></div>
+  </div>
+  <div class="ft"><span class="ph-btn dialog" role="button">Cancel</span><span class="ph-btn dialog primary" role="button">OK</span></div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

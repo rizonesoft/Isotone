@@ -26,6 +26,7 @@ track: L14
 ## Inputs
 
 - [`standards/shared.md`](../../standards/shared.md) -- window anatomy, theme resources, the settings store, atomic writes, one log line per settings change
+- [`standards/ui.md`](../../standards/ui.md) -- the UI standard and the component specs under `docs/design/components/` the chrome sections here build to (**Corrected 2026-09-27:** the design contract moved from `standards/shared.md` to `standards/ui.md` and `docs/design/`)
 - [`standards/lumen.md`](../../standards/lumen.md) -- the original-file guard, safe by default with the opt-in writes of `D04 T11 §1` whose settings §10 renders, and the settings location under `%LOCALAPPDATA%\Rizonesoft\Lumen\`
 - [`docs/parity/lumen-section-design.md`](../../docs/parity/lumen-section-design.md) -- the blueprint for this file; [`docs/parity/lumen-parity.md`](../../docs/parity/lumen-parity.md) -- the catalog rows each section owns
 - Operator decision 2026-09-27, "Safe by default, opt-in writes": sidecars and new files by default; opt-in settings for writing into originals owned by `D04 T11 §1` (`OriginalWritePolicy` and `InPlaceWriter`, a verified backup by default), which §10 renders and an administrator can lock off
@@ -104,6 +105,7 @@ By Phase 39 Lumen has many modes (Library, Browse, Develop, Map, Book, Slideshow
 **Job:** a photographer can move between tasks by key and hide everything but the photo when judging it. Consumer: the main window shell and every module's layout.
 **Treatment:** Lightroom's module picker with an Identity Plate Editor, modules hidden by right-click, F5 to F8 panel toggles, Tab and Shift+Tab, solo mode, end marks, auto hide and show, F full-screen cycling, and L lights out with dim level and color. Cheaper substitute that fails the checkpoint: fixed tabs with no panel control.
 **Chrome:** consume the `Photon.UI/Workspace/` frame of `D03 T20 §1` and the `D01 T01 §3` theme. Do not add a second panel host.
+**Corrected 2026-09-27:** the specs are `docs/design/shell-layout.md` (Lumen's Library and Develop workspaces as title-bar tabs after the menus, the filmstrip on `frame`) and `docs/design/components/Panel/README.md`; selected thumbnails use a 2 px `state-line` outline and `state-subtle` fill, and `accent-lumen` is only on the Import button.
 
 **Requires:** display-session -- the workspace, screen modes, and captures need an interactive desktop
 
@@ -130,6 +132,7 @@ A user arranges Lumen for their screens and hands and gets it back next time. Th
 **Job:** a user can arrange Lumen for their screens and hands and get it back next time. Consumer: the shell's toolbars, menus, and dock, and the viewer's input handling.
 **Treatment:** a Customize Toolbar dialog, a Favorites menu, Window, Workspaces and Window, Panes menus, a docking compass, and a Tablet Mode dialog. Cheaper substitute that fails the checkpoint: saving only the window size.
 **Chrome:** consume the `Photon.UI/Workspace/` toolbar, menu, and docking frames of `D03 T20 §1` and `D03 T20 §2`, and the touch handling of `D03 T20 §6`. Do not add a second layout serializer.
+**Corrected 2026-09-27:** the specs are `docs/design/components/Menu/README.md`, `docs/design/components/ToolRail/README.md`, `docs/design/components/StatusBar/README.md`, and `docs/design/components/WindowChrome/README.md`.
 
 **Requires:** display-session -- docking, a second monitor, and touch need an interactive desktop
 
@@ -298,10 +301,11 @@ A user sets Lumen to match their eyes and screen. This section makes both execut
 **Job:** a user can set Lumen to match their eyes and screen. Consumer: the suite theme dictionaries and the icon catalog in both executables.
 **Treatment:** an Appearance page with theme (dark, light, follow Windows), background fill, panel font size, toolbar button size, and icon set. Cheaper substitute that fails the checkpoint: hard-coded colors per window.
 **Chrome:** consume the suite theme resources of `D01 T01 §3`, `ThemeService` in `Photon.UI/Themes/`, and the icon catalog. No surface hardcodes a color.
+**Corrected 2026-09-27:** the suite has four brightness themes (Darkest, Dark, Medium Gray, Light), a Highlight color choice (Blue, Photon orange, Windows accent), and two densities, all from `D01 T01 §3`, not dark and light only; follow Windows picks Dark or Light. Icon sets are sizes and stroke weights of the one Lucide catalog (`docs/design/components/Icons/README.md`), never a second family.
 
 **Requires:** display-session -- theme captures at several DPI settings need an interactive desktop
 
-- [ ] Add the theme choice (LP-1081, LP-1124): dark, light, and follow Windows through `UISettings.ColorValuesChanged`, switching live in `Lumen.exe` and `LumenViewer.exe` through the suite theme dictionaries. Done when: `ThemeSwitchTests` assert both executables' resources change without restart.
+- [ ] Add the theme choice (LP-1081, LP-1124): Darkest, Dark, Medium Gray, Light, and follow Windows through `UISettings.ColorValuesChanged`, plus the Highlight color and density choices of `D01 T01 §3` (**Corrected 2026-09-27:** said dark, light, and follow Windows), switching live in `Lumen.exe` and `LumenViewer.exe` through the suite theme dictionaries. Done when: `ThemeSwitchTests` assert both executables' resources change without restart.
 - [ ] Add background fill and panel font size (LP-1080) as theme overrides stored in `Lumen.Appearance.*`. Done when: a test asserts the override brush and font size reach the main window.
 - [ ] Declare per-monitor v2 DPI awareness in both executables' manifests (LP-1082). Done when: a test reads both manifests and finds `PerMonitorV2`.
 - [ ] Add toolbar button size and icon sets from the Photon icon catalog (LP-1083); IrfanView skin files are not read and no third-party art ships, which the page states. Done when: a test renders one icon in each set at 200 percent without raster scaling.

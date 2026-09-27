@@ -118,10 +118,12 @@ The design contract gives the suite one neutral grey ramp and lets each app name
 
 **Corrected 2026-09-27:** the operator chose the accents on 2026-09-27: Nodus cyan (the pen nib), Imago orange (the paintbrush), and Lumen green (the aperture), tuned for contrast in light and dark themes. The values and their ratios are recorded in `standards/shared.md`'s Color section (dark `#29C5E6`, `#F5923E`, `#4CC47A` against `Base`; light `#00758C`, `#B04F00`, `#1B7A3D` against white). What is left is an independent check of the ratios.
 
-- [ ] Check each accent in `standards/shared.md`'s accent table with WebAIM's contrast checker (https://webaim.org/resources/contrastchecker/): the dark-theme value against `Base` (`#1A1A1A`) and the light-theme value against `#FFFFFF`, each at least 4.5:1. Done when: the six ratios the checker reports are quoted and match the table.
+**Corrected 2026-09-27:** the design system import (`standards/ui.md`, `docs/design/`) makes the app accent identity only (title-bar mark, splash, the one primary button); selection and focus use the Highlight color (`state*` tokens, Blue by default). The accent values are the `accent-<app>` tokens in `docs/design/tokens.json` (one value for Dark, Darkest, and Medium Gray, one for Light), the same hex values as before; the check below measures each `-on` label against its accent fill, not the accent against the retired `Base` `#1A1A1A`.
+
+- [ ] Check each accent in `docs/design/tokens.json` with WebAIM's contrast checker (https://webaim.org/resources/contrastchecker/): the label `accent-<app>-on` against the fill `accent-<app>` (the primary button) in each of the four themes, at least 4.5:1 (**Corrected 2026-09-27:** said the dark-theme value against `Base` `#1A1A1A` and the light-theme value against `#FFFFFF` from `standards/shared.md`'s accent table, which the design system import retired). Done when: the ratios the checker reports are quoted and each is at least 4.5:1.
 - [ ] Commit: `"docs: verify each app's accent color"` -- the agent quotes the ratios; the operator's choice is already recorded.
 
-**Test checkpoint:** `standards/shared.md` names three accents with contrast ratios of at least 4.5:1 against `Base`, and `ThemeTokensTests` (from `D01 T01 §3`) passes after the agent mirrors them into the theme. Cheaper substitute that fails: an accent chosen without a contrast check.
+**Test checkpoint:** `docs/design/tokens.json` names three accents whose `-on` labels contrast at least 4.5:1 with them in all four themes, `standards/ui.md` quotes the same hex values, and `ThemeTokensTests` (from `D01 T01 §3`) passes on the dictionaries generated from those tokens. Cheaper substitute that fails: an accent chosen without a contrast check.
 
 ## Verification
 

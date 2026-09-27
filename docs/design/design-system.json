@@ -1,0 +1,140 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-09-27T01:58:27Z"
+  },
+  "title": "Photon Interface",
+  "namespace": "Photon",
+  "libraries": [],
+  "sections": {},
+  "groups": [
+    "App icons"
+  ],
+  "assetGroups": {
+    "App icons": {
+      "name": "App icons",
+      "tile": "m",
+      "order": [
+        "nodus.svg",
+        "nodus-16.svg",
+        "nodus-24.svg",
+        "nodus-32.svg",
+        "nodus-splash.svg",
+        "imago.svg",
+        "imago-16.svg",
+        "imago-24.svg",
+        "imago-32.svg",
+        "imago-splash.svg",
+        "lumen.svg",
+        "lumen-16.svg",
+        "lumen-24.svg",
+        "lumen-32.svg",
+        "lumen-splash.svg"
+      ],
+      "files": {
+        "nodus.svg": {
+          "name": "nodus.svg",
+          "blob": "f20ad4019d4ba19adc340411314932c1",
+          "size": 2838,
+          "type": "image/svg+xml"
+        },
+        "nodus-16.svg": {
+          "name": "nodus-16.svg",
+          "blob": "9f131cfb8120e2b85209dfef5b67397e",
+          "size": 1428,
+          "type": "image/svg+xml"
+        },
+        "nodus-24.svg": {
+          "name": "nodus-24.svg",
+          "blob": "008204c735d0319c0eb08139a24288f5",
+          "size": 1459,
+          "type": "image/svg+xml"
+        },
+        "nodus-32.svg": {
+          "name": "nodus-32.svg",
+          "blob": "ad1e30a74e1f5bd1e2c22286250f64e2",
+          "size": 1475,
+          "type": "image/svg+xml"
+        },
+        "nodus-splash.svg": {
+          "name": "nodus-splash.svg",
+          "blob": "9452bc9b0dcc643557d0a1bf44247c5f",
+          "size": 4305,
+          "type": "image/svg+xml"
+        },
+        "imago.svg": {
+          "name": "imago.svg",
+          "blob": "5d6e142a182698cca5e83803568974f0",
+          "size": 3170,
+          "type": "image/svg+xml"
+        },
+        "imago-16.svg": {
+          "name": "imago-16.svg",
+          "blob": "29e855414f9149085c647878e6ebe63f",
+          "size": 1302,
+          "type": "image/svg+xml"
+        },
+        "imago-24.svg": {
+          "name": "imago-24.svg",
+          "blob": "45de41eeb1f52234e344e9274efa341d",
+          "size": 1387,
+          "type": "image/svg+xml"
+        },
+        "imago-32.svg": {
+          "name": "imago-32.svg",
+          "blob": "a14a1e039a1fada439f61ccd1df55acc",
+          "size": 1455,
+          "type": "image/svg+xml"
+        },
+        "imago-splash.svg": {
+          "name": "imago-splash.svg",
+          "blob": "fd7fd384b9913ecaf1cfaef8fbc0a63f",
+          "size": 4207,
+          "type": "image/svg+xml"
+        },
+        "lumen.svg": {
+          "name": "lumen.svg",
+          "blob": "7144f28429d697fc3f557724727fa37c",
+          "size": 2908,
+          "type": "image/svg+xml"
+        },
+        "lumen-16.svg": {
+          "name": "lumen-16.svg",
+          "blob": "55df5652e6693c44ab73a4ac2f938277",
+          "size": 1881,
+          "type": "image/svg+xml"
+        },
+        "lumen-24.svg": {
+          "name": "lumen-24.svg",
+          "blob": "a3bdd61064ba5963bc412e69a1517d7c",
+          "size": 2060,
+          "type": "image/svg+xml"
+        },
+        "lumen-32.svg": {
+          "name": "lumen-32.svg",
+          "blob": "7b4bdfe977105503e687d21bc9719131",
+          "size": 2063,
+          "type": "image/svg+xml"
+        },
+        "lumen-splash.svg": {
+          "name": "lumen-splash.svg",
+          "blob": "a749e77d9697bc973a79ec3eeaeb6e10",
+          "size": 4084,
+          "type": "image/svg+xml"
+        }
+      }
+    }
+  },
+  "blobs": {},
+  "docs": {
+    "sections": []
+  },
+  "lastChange": {
+    "by": "Derick Payne",
+    "at": "2026-09-27T08:10:38Z",
+    "via": "Claude Code",
+    "note": "App icons: Direction C, guide and assets"
+  }
+}

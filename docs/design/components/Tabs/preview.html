@@ -1,0 +1,24 @@
+<!-- @dsCard group="Navigation" height=176 subtitle="Panel tab strip and dialog tabs" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tabs</title>
+<style>
+.tbw{display:flex;flex-direction:column;gap:var(--space-3)}
+.tbw .ph-ptabs{width:360px}
+.tbw .body{width:360px;height:20px;background:var(--surface-panel);border:1px solid var(--divider);border-top:0}
+</style>
+</head>
+<body>
+<div class="pv tbw">
+<span class="pv-k">Panel tabs: selected, hover, rest, focus</span>
+<div><div class="ph-ptabs" role="tablist"><div class="ph-ptab is-selected" role="tab" aria-selected="true">Layers</div><div class="ph-ptab is-hover" role="tab">Channels</div><div class="ph-ptab" role="tab">Paths</div><div class="ph-ptab is-focus" role="tab">History</div><div class="fill"></div></div><div class="body"></div></div>
+<span class="pv-k">Dialog tabs: selected, hover, rest, disabled</span>
+<div class="ph-tabs" role="tablist" style="width:420px"><div class="ph-tab" role="tab">General</div><div class="ph-tab is-selected" role="tab" aria-selected="true">Interface</div><div class="ph-tab is-hover" role="tab">Performance</div><div class="ph-tab" role="tab">Scratch disks</div><div class="ph-tab is-disabled" role="tab" aria-disabled="true">Plug-ins</div></div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

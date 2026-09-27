@@ -1,0 +1,26 @@
+<!-- @dsCard group="Inputs" height=136 subtitle="Single-line text field in every state" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TextBox</title>
+<style>
+.tx{display:grid;grid-template-columns:repeat(4,max-content);gap:var(--space-1) var(--space-4)}
+</style>
+</head>
+<body>
+<div class="pv"><div class="tx">
+  <div class="pv-col"><span class="pv-k">rest</span><span class="ph-field "><input value="Retouch" aria-label="Layer name"></span></div>
+  <div class="pv-col"><span class="pv-k">hover</span><span class="ph-field is-hover"><input value="Retouch" aria-label="Layer name"></span></div>
+  <div class="pv-col"><span class="pv-k">focus</span><span class="ph-field is-focus"><input value="Retouch copy" aria-label="Layer name"></span></div>
+  <div class="pv-col"><span class="pv-k">placeholder</span><span class="ph-field "><input placeholder="Layer name" aria-label="Layer name"></span></div>
+  <div class="pv-col"><span class="pv-k">disabled</span><span class="ph-field is-disabled"><input value="Background" aria-label="Layer name" disabled></span></div>
+  <div class="pv-col"><span class="pv-k">read-only</span><span class="ph-field is-readonly"><input value="C:\Photos\2026\Harbor.psd" aria-label="File path" readonly></span></div>
+  <div class="pv-col"><span class="pv-k">error</span><span class="ph-field is-error"><input value="Layer/1" aria-label="Layer name"></span><span class="ph-help error"><i data-i="error" data-s="12"></i>Names can't contain / or \</span></div>
+  <div class="pv-col"><span class="pv-k">search</span><span class="ph-field "><i data-i="search" data-s="14"></i><input placeholder="Search layers" aria-label="Search layers"></span></div>
+</div></div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>

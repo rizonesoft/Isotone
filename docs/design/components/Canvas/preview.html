@@ -1,0 +1,38 @@
+<!-- @dsCard group="Canvas" height=356 subtitle="Surround, rulers, guides, marching ants, transform handles, checkerboard" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Canvas</title>
+<style>
+.cv{height:356px}
+.cv .doc{position:absolute;left:78px;top:48px;width:420px;height:270px;box-shadow:0 0 0 1px var(--divider-strong)}
+.cv .art{position:absolute;left:0;top:0;width:260px;height:270px;background:linear-gradient(180deg,#0d3f80 0%,#8a4a7a 45%,#f5923e 70%,#1f2a33 71%,#0f171d 100%)}
+.cv .sun{position:absolute;left:150px;top:150px;width:60px;height:60px;border-radius:var(--radius-round);background:#f7d046}
+.cv .boat{position:absolute;left:40px;top:196px;width:90px;height:16px;background:#0f171d;clip-path:polygon(0 0,100% 0,85% 100%,12% 100%)}
+.cv .labels{position:absolute;right:12px;bottom:10px;display:flex;flex-direction:column;gap:2px;align-items:flex-end}
+.cv .labels span{font-size:var(--type-caption);color:var(--text-secondary)}
+</style>
+</head>
+<body>
+<div class="ph-canvas cv">
+<div class="ph-ruler-corner"></div>
+<div class="ph-ruler-h"><span style="left:0px">0</span><span style="left:50px">100</span><span style="left:100px">200</span><span style="left:150px">300</span><span style="left:200px">400</span><span style="left:250px">500</span><span style="left:300px">600</span><span style="left:350px">700</span><span style="left:400px">800</span><span style="left:450px">900</span><span style="left:500px">1000</span><span style="left:550px">1100</span><span style="left:600px">1200</span><span class="ph-ruler-mark-h" style="left:402px;padding:0"></span></div>
+<div class="ph-ruler-v"><span style="top:2px">0</span><span style="top:52px">100</span><span style="top:102px">200</span><span style="top:152px">300</span><span style="top:202px">400</span><span style="top:252px">500</span><span style="top:302px">600</span><span class="ph-ruler-mark-v" style="top:180px;padding:0"></span></div>
+<div class="doc ph-checker">
+  <div class="art"><div class="sun"></div><div class="boat"></div></div>
+  <div class="ph-ants" style="left:128px;top:128px;width:108px;height:96px"></div>
+  <div class="ph-bbox" style="left:290px;top:40px;width:100px;height:120px"></div>
+  <span class="ph-handle" style="left:290px;top:40px"></span><span class="ph-handle" style="left:340px;top:40px"></span><span class="ph-handle" style="left:390px;top:40px"></span><span class="ph-handle" style="left:290px;top:100px"></span><span class="ph-handle" style="left:390px;top:100px"></span><span class="ph-handle" style="left:290px;top:160px"></span><span class="ph-handle" style="left:340px;top:160px"></span><span class="ph-handle" style="left:390px;top:160px"></span>
+  <div style="position:absolute;left:300px;top:50px;width:80px;height:100px;background:#e0301e;opacity:.85"></div>
+</div>
+<div class="ph-guide-v" style="left:338px"></div>
+<div class="ph-guide-h" style="top:228px"></div>
+<div class="ph-guide-v ph-guide-smart" style="left:418px;top:88px;bottom:auto;height:130px"></div>
+<div class="labels"><span>surround: canvas-surround</span><span>guides: guide · smart guide: guide-smart</span><span>ants 4px · handles 7px · checker 8px</span></div>
+</div>
+<script>
+if (window.Photon) Photon.hydrate(document);
+</script>
+</body>
+</html>
