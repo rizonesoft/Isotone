@@ -29,7 +29,7 @@ Help, About <App> is a Dialog with the app icon master at 128px (`docs/design/ap
 - "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd": the copyright holder is the company, never the brand.
 - "Rizonesoft is a brand of Rizonetech (Pty) Ltd.": the publisher users see stays Rizonesoft.
 - "Licensed under the GNU General Public License v3.0" with a link opening the license text shipped with the app.
-- "Source code: https://github.com/rizonesoft/Photon/tree/<tag>": the GPL source offer, a link to the exact tag the build came from (`stilus-v0.1.0`); a build with no tag links the commit instead.
+- "Source code: https://github.com/rizonesoft/Isotone/tree/<tag>": the GPL source offer, a link to the exact tag the build came from (`stilus-v0.1.0`); a build with no tag links the commit instead.
 - The product page link: one configured value, `https://www.rizonesoft.com/` until the per-app pages are decided, never a hardcoded per-app URL.
 - The credits list (package, version, license, link) and the repository and issue links.
 

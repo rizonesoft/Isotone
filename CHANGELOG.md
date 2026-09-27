@@ -97,4 +97,4 @@ Sections: [Stilus](#stilus) · [Pinxit](#pinxit) · [Albumen](#albumen) · [Isot
 
 - Per-app README, CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, LICENSE, and issue templates under `src/Stilus/` and `src/Pinxit/`; their content is merged into the root files.
 
-[Unreleased]: https://github.com/rizonesoft/Photon/commits/main
+[Unreleased]: https://github.com/rizonesoft/Isotone/commits/main

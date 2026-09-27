@@ -21,7 +21,7 @@
 #endif
 #define Company "Rizonetech (Pty) Ltd"
 #define Copyright "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd"
-#define RepoUrl "https://github.com/rizonesoft/Photon"
+#define RepoUrl "https://github.com/rizonesoft/Isotone"
 
 #ifndef AppVersion
   #define AppVersion "0.0.0-dev"

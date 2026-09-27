@@ -5,7 +5,7 @@ name: design-pages
 # docs/design/index.html is generated from docs/design/ and resources/icons/
 # by scripts/build-design-site.py and committed; this workflow fails when the
 # committed page has drifted from its sources, then deploys it at
-# https://rizonesoft.github.io/Photon/design/ with a root page that redirects
+# https://rizonesoft.github.io/Isotone/design/ with a root page that redirects
 # there.
 
 on:

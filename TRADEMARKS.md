@@ -25,4 +25,4 @@ The GPL still applies in full to your modified code: this policy limits only the
 
 ## Questions
 
-Ask through [GitHub Discussions](https://github.com/rizonesoft/Photon/discussions) or the contact details at [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=trademarks) before you use a mark in a way this page does not cover.
+Ask through [GitHub Discussions](https://github.com/rizonesoft/Isotone/discussions) or the contact details at [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=trademarks) before you use a mark in a way this page does not cover.

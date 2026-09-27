@@ -1,10 +1,10 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and ideas
-    url: https://github.com/rizonesoft/Photon/discussions
+    url: https://github.com/rizonesoft/Isotone/discussions
     about: Ask questions, share ideas, and show what you made in GitHub Discussions.
   - name: Report a security vulnerability
-    url: https://github.com/rizonesoft/Photon/security/advisories/new
+    url: https://github.com/rizonesoft/Isotone/security/advisories/new
     about: Report security problems privately, never in a public issue.
   - name: Rizonesoft website
     url: https://www.rizonesoft.com/?utm_source=github&utm_medium=issue-chooser

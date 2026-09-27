@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report a bug. Please search [existing issues](https://github.com/rizonesoft/Photon/issues) first.
-        **Security problems** must not be reported here; follow [SECURITY.md](https://github.com/rizonesoft/Photon/blob/main/SECURITY.md) instead.
+        Thanks for taking the time to report a bug. Please search [existing issues](https://github.com/rizonesoft/Isotone/issues) first.
+        **Security problems** must not be reported here; follow [SECURITY.md](https://github.com/rizonesoft/Isotone/blob/main/SECURITY.md) instead.
   - type: dropdown
     id: app
     attributes:

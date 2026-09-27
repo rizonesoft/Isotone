@@ -12,10 +12,10 @@
 
 <p>Three native Windows creative apps, one shared core: a vector editor, a raster editor, and a digital darkroom.<br>Free, open source, and yours to keep.</p>
 
-[![Build](https://github.com/rizonesoft/Photon/actions/workflows/build.yml/badge.svg)](https://github.com/rizonesoft/Photon/actions/workflows/build.yml)
-[![Plan](https://github.com/rizonesoft/Photon/actions/workflows/plan.yml/badge.svg)](https://github.com/rizonesoft/Photon/actions/workflows/plan.yml)
-[![Release](https://github.com/rizonesoft/Photon/actions/workflows/release.yml/badge.svg)](https://github.com/rizonesoft/Photon/actions/workflows/release.yml)
-[![Latest release](https://img.shields.io/github/v/release/rizonesoft/Photon?include_prereleases&sort=semver&label=release)](https://github.com/rizonesoft/Photon/releases)
+[![Build](https://github.com/rizonesoft/Isotone/actions/workflows/build.yml/badge.svg)](https://github.com/rizonesoft/Isotone/actions/workflows/build.yml)
+[![Plan](https://github.com/rizonesoft/Isotone/actions/workflows/plan.yml/badge.svg)](https://github.com/rizonesoft/Isotone/actions/workflows/plan.yml)
+[![Release](https://github.com/rizonesoft/Isotone/actions/workflows/release.yml/badge.svg)](https://github.com/rizonesoft/Isotone/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/rizonesoft/Isotone?include_prereleases&sort=semver&label=release)](https://github.com/rizonesoft/Isotone/releases)
 [![Download](https://img.shields.io/badge/download-rizonesoft.com-2EA043)](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-badge)
 <br>
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
@@ -29,7 +29,7 @@
 
 </div>
 
-**Design:** [Isotone Interface design system: themes, controls, and app icons](https://rizonesoft.github.io/Photon/design/), a live page generated from [`docs/design/`](docs/design/README.md).
+**Design:** [Isotone Interface design system: themes, controls, and app icons](https://rizonesoft.github.io/Isotone/design/), a live page generated from [`docs/design/`](docs/design/README.md).
 
 > [!NOTE]
 > **Status: pre-alpha.** There is no release yet. Stilus (the vector editor) edits real SVG files today; Pinxit has its domain model and application shell; Albumen is planned. Everything below marks what works and what is still on the roadmap. Star or watch the repository to hear about the first preview.
@@ -214,7 +214,7 @@ flowchart TB
 > [!IMPORTANT]
 > No builds have been published yet. This section describes how releases will ship.
 
-**Download from [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-download).** Installers and portable ZIPs are published only there, served from `download.rizonesoft.com`, never attached to GitHub. Each [GitHub release](https://github.com/rizonesoft/Photon/releases) carries the release notes, the source code of that tag, the SHA-256 checksums, and links to the files on `download.rizonesoft.com`, so you can check what you downloaded. Once the first release exists, its files live at `https://download.rizonesoft.com/<app>/<version>/` (for example `https://download.rizonesoft.com/stilus/0.1.0/`).
+**Download from [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-download).** Installers and portable ZIPs are published only there, served from `download.rizonesoft.com`, never attached to GitHub. Each [GitHub release](https://github.com/rizonesoft/Isotone/releases) carries the release notes, the source code of that tag, the SHA-256 checksums, and links to the files on `download.rizonesoft.com`, so you can check what you downloaded. Once the first release exists, its files live at `https://download.rizonesoft.com/<app>/<version>/` (for example `https://download.rizonesoft.com/stilus/0.1.0/`).
 
 Every app ships on its own, in two forms:
 
@@ -246,7 +246,7 @@ Every app ships on its own, in two forms:
 </details>
 
 ```powershell
-git clone https://github.com/rizonesoft/Photon.git
+git clone https://github.com/rizonesoft/Isotone.git
 cd Isotone
 
 pwsh tools/provision.ps1          # install the pinned .NET SDK and tools
@@ -298,11 +298,11 @@ Contributions are welcome, from bug reports to pull requests.
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, commit style, and sign-off terms.
 - The names and icons are covered by the [trademark policy](TRADEMARKS.md): a modified version you distribute needs its own name and icons.
-- Report bugs and request features through [Issues](https://github.com/rizonesoft/Photon/issues/new/choose).
-- Ask questions and share ideas in [Discussions](https://github.com/rizonesoft/Photon/discussions).
+- Report bugs and request features through [Issues](https://github.com/rizonesoft/Isotone/issues/new/choose).
+- Ask questions and share ideas in [Discussions](https://github.com/rizonesoft/Isotone/discussions).
 - Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 - Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
-- UI work follows [standards/ui.md](standards/ui.md) and the [Isotone Interface design system page](https://rizonesoft.github.io/Photon/design/) (source: [`docs/design/`](docs/design/README.md)).
+- UI work follows [standards/ui.md](standards/ui.md) and the [Isotone Interface design system page](https://rizonesoft.github.io/Isotone/design/) (source: [`docs/design/`](docs/design/README.md)).
 
 More documentation: [docs/](docs/README.md) · [user guides](docs/user/README.md) · [developer guides](docs/dev/README.md).
 

@@ -17,9 +17,9 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Se
 
 ## Ways to contribute
 
-- **Report a bug** with the [bug report form](https://github.com/rizonesoft/Photon/issues/new?template=bug_report.yml). Include the app, its version, your Windows version, and steps to reproduce.
-- **Suggest a feature** with the [feature request form](https://github.com/rizonesoft/Photon/issues/new?template=feature_request.yml). Describe the problem first, then the solution you have in mind.
-- **Ask a question** in [Discussions](https://github.com/rizonesoft/Photon/discussions) rather than an issue.
+- **Report a bug** with the [bug report form](https://github.com/rizonesoft/Isotone/issues/new?template=bug_report.yml). Include the app, its version, your Windows version, and steps to reproduce.
+- **Suggest a feature** with the [feature request form](https://github.com/rizonesoft/Isotone/issues/new?template=feature_request.yml). Describe the problem first, then the solution you have in mind.
+- **Ask a question** in [Discussions](https://github.com/rizonesoft/Isotone/discussions) rather than an issue.
 - **Improve the docs**: fixes to `docs/` and the READMEs are always welcome.
 - **Send code**: pick an open item from the plan (below) or an issue labelled for help, and say so on the issue before starting large work.
 
@@ -41,7 +41,7 @@ If your change is not covered by an existing section, open an issue first so it 
 You need Windows 11 (x64; Windows 10 22H2 may work but is unsupported), [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows), and Git. The .NET SDK is pinned to **11.0.100-rc.1.26425.128** in `global.json`; the provisioning script installs it, and Inno Setup 7 for building installers.
 
 ```powershell
-git clone https://github.com/rizonesoft/Photon.git
+git clone https://github.com/rizonesoft/Isotone.git
 cd Isotone
 
 pwsh tools/provision.ps1              # install the pinned SDK and tools

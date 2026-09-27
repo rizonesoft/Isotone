@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the idea. Please search [existing issues](https://github.com/rizonesoft/Photon/issues) and the [roadmap](https://github.com/rizonesoft/Photon/blob/main/todo/implementation-plan.md) first; it may already be planned.
-        Open-ended ideas and questions fit better in [Discussions](https://github.com/rizonesoft/Photon/discussions).
+        Thanks for the idea. Please search [existing issues](https://github.com/rizonesoft/Isotone/issues) and the [roadmap](https://github.com/rizonesoft/Isotone/blob/main/todo/implementation-plan.md) first; it may already be planned.
+        Open-ended ideas and questions fit better in [Discussions](https://github.com/rizonesoft/Isotone/discussions).
   - type: dropdown
     id: app
     attributes:
