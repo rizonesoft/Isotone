@@ -31,6 +31,7 @@ track: W1
 - [`.conclave/panel.toml`](../../.conclave/panel.toml) and [`scripts/panel_slots.py`](../../scripts/panel_slots.py) -- the review panel §4 proves
 - [`.github/workflows/build.yml`](../../.github/workflows/build.yml), [`.github/workflows/plan.yml`](../../.github/workflows/plan.yml) -- the workflows §5 reads back
 - -> XREF: D99 T01 §1 -- the operator rows that carry the mark §2 adds; §2 edits that file
+- [`standards/design-contract.md`](../../standards/design-contract.md), [`docs/design/`](../../docs/design/README.md) -- the contract and the design system §9's gates enforce
 
 ## Outcome
 
@@ -39,6 +40,7 @@ track: W1
 - `COVERAGE_FLOOR` equals the number of `Current state` blocks carrying a claim on the day §3 ships.
 - One review slot of each kind has run against a probe and its record is committed, so the first real stamp does not discover a broken panel.
 - The first push of `main` has a green `build` run and a green `plan-gates` run, quoted by URL in `docs/dev/build.md`.
+- The design contract is enforced: every surface section names its `docs/design/` spec on a `**Design:**` line or is listed in the shrink-only `todo/.design-baseline`, `scripts/design-lint.py` refuses any new literal color, size, or font in the UI sources at commit time and in CI, and `scripts/render-design-reference.py` renders the design's own previews for review (§9).
 
 **Adjacency:** all=not-applicable (repository plumbing: gates, hooks, and CI with no user-facing records, settings, documents, or reversible user actions)
 
@@ -56,6 +58,7 @@ track: W1
 |   6   |   §6    | The parity catalog validator                  | §1         |  [ ]   |
 |   7   |   §7    | The validator reads the Imago parity catalog  | §6         |  [ ]   |
 |   8   |   §8    | The validator reads the Lumen parity catalog  | §7         |  [ ]   |
+|   9   |   §9    | The design contract gates                     | §1         |  [ ]   |
 
 ---
 
@@ -237,6 +240,26 @@ The Lumen parity catalog (`docs/parity/lumen-parity.md`) is plan data like `todo
 - [ ] Commit: `"workspace: validate the Lumen parity catalog against its sources, the plan, and the Imago routes"`
 
 **Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the Lumen cases counted; `python scripts/todo-graph.py validate` exits 0 on the integrated tree; deleting one `AC-` id from a scratch copy of `docs/parity/lumen-parity.md` makes `validate` exit 1 naming `lumen:` and `parity-id-missing`, and changing one routed row to `other-app: Imago IP-9999` makes it exit 1 naming `parity-ip-route-dead`; `python scripts/todo-graph.py query parity --catalog lumen --phase 30 --json` prints the Phase 30 counts. Cheaper substitute that fails: a copy of `§7`'s module hard-wired to the Lumen file, which the self-test's single-module import and the unchanged Nodus and Imago cases expose as a second implementation.
+
+## 9. The Design Contract Gates: the Design Line, design-lint, and the Reference Renders
+
+The operator asked on 2026-09-27 whether the design, graphics, and docs were wired into the TODO system so that every item implements the design 1:1, and asked for "a design contract, policies, rules, inforcement scripts, etc.", choosing that pixel perfect means "Exact tokens + ±1 DIP geometry + approved goldens", that legacy code is handled by "Record existing violations, fail new ones", and that goldens are signed off by the "Review panel only". The infrastructure was built in the same attended session, before this section was filed; this section records it as delivered work so it runs through `process-todo-section` (whose fact-check ticks each item that is already true, with its evidence) and `review-todo-section` like any other change, instead of landing unreviewed. It is operator-directed and a new section rather than items folded into §1 or §6, because it is its own subject with its own gates, and widening a planned section with delivered work would blur what that section's review covers. The Design lines themselves are added across the tree by a later backfill that shrinks `todo/.design-baseline`; the WPF visual regression harness is `D01 T01 §9`.
+
+**Fidelity:** no surface of its own -- validator rules, a lint script, a render script, and documentation.
+
+**Needs:** Windows host (build/test)
+
+- [ ] `standards/design-contract.md` (binding) states the design-first rule, what fidelity means (exact tokens; geometry within 1 DIP at 100, 150, and 200 percent; every state, theme, Highlight, and density the spec lists; type styles), goldens under `docs/captures/golden/<area>/<Comp>/` approved only by `review-todo-section` and pixel-diffed in CI with a stated tolerance, `**Design deviation:**` lines, the enforcement table, and the definition of done for a UI section, and it is linked from `standards/ui.md`, `standards/README.md`, and `AGENTS.md`. Done when: `Select-String design-contract.md standards/ui.md, standards/README.md, AGENTS.md` finds each link and the file has no em dash.
+- [ ] `todo/README.md` "Surface fidelity" makes the design the Fidelity source (the old-app captures of `D00 T03 §2` a before record only) and defines the `**Design:**` line grammar, `new surface:`, the baseline, and `**Design deviation:**`. Done when: the section carries the grammar block and the severity table carries the six design classes.
+- [ ] `scripts/todo-graph.py` and `scripts/todo-validate.py` add the FATAL classes `design-missing`, `design-malformed`, `design-dead-ref` (paths under `docs/design/`, anchors checked against Markdown headings slugged GitHub-style and HTML ids), `design-baseline-stale`, `design-baseline-grown` (a ref HEAD does not list), and `design-deviation-open-at-release` (an open deviation beside a stamped release section of its app), plus `query design` and the shrink-only `design-baseline` subcommand, with self-test cases for every class and the ratchet. Done when: `python scripts/todo-graph.py self-test` prints `0 failed` with the `design:` cases reporting.
+- [ ] `todo/.design-baseline` lists every surface section that had no Design line on 2026-09-27 (generated with `python scripts/todo-graph.py design-baseline --init`, which refuses once HEAD carries the file). Done when: `python scripts/todo-graph.py query design` prints the baseline count and `0 missing and unlisted`, and `validate` reports 0 fatal.
+- [ ] `scripts/design-lint.py` (stdlib) scans the UI projects' XAML and C# for literal colors, named colors, color APIs, `StaticResource` colors, non-token color keys, unknown keys (warn), literal sizes, literal font families, WPF-UI and FluentIcons, emoji, and system backdrops, printing `file:line:rule:message`, with `docs/design/.lint-baseline.json` recording the violations of 2026-09-27 by file, rule, and normalized line text (shrink-only `--update-baseline`, `--allow-add --reason`, and a HEAD comparison that refuses unrecorded growth) and a `--self-test`. Done when: `python scripts/design-lint.py --self-test` prints `0 failed` and `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` prints `0 new, 0 stale`.
+- [ ] The lint is wired into `tools/githooks/pre-commit` (the staged tree, after `validate`), `scripts/check-all.ps1` (self-test and baseline gates), `.github/workflows/build.yml` (both steps), and `.github/workflows/plan.yml` (the self-test). Done when: a staged XAML file with a new literal color makes the hook exit non-zero naming `design-lint`, and the same commit passes once the color is a token key (both quoted).
+- [ ] `scripts/render-design-reference.py` renders every component preview of `docs/design/components/` per theme and density with the Blue Highlight at 1x through headless Edge over the DevTools protocol (a stdlib WebSocket client) into `build/design-reference/<Comp>/<theme>-<density>.png`, with `build/design-reference/report.html` pairing each with the WPF card render when one exists, and runs as an optional CI step whose output is uploaded. Done when: `python scripts/render-design-reference.py` prints `0 failure(s)` with one reference per component, theme, and density (quoted count).
+- [ ] The skills carry the contract: `process-todo-section` (read the Design specs, tokens, and the contract before a surface; token keys only; run design-lint; produce WPF renders; never approve goldens), `review-todo-section` (the `design-fidelity` lens, golden approval after it passes, the stamp's `Design:` verification line, refusal on new lint violations or open deviations), `groom-plan` (a live Design line on every surface section; baseline shrink), `create-todo` and its template, `plan-new-feature` (Design line required; new surfaces add their spec first), `add-todo`, and `.claude/skills/process-todo-section/gates.md` (the design-lint and visual regression gates). Done when: `Select-String design-fidelity, design-lint` finds each skill and `validate` reports no skill citation problem.
+- [ ] Commit: `"workspace: the design contract, the Design line and its baseline, design-lint, and the design reference renders"`
+
+**Test checkpoint:** `python scripts/todo-graph.py self-test` prints `0 failed`; `python scripts/todo-graph.py validate` reports 0 fatal and 0 warnings; `python scripts/design-lint.py --self-test` prints `0 failed`; `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` exits 0 with `0 new, 0 stale`, and exits 1 naming the file after a probe `Background="#FF0000"` is added to a UI XAML file (quoted, then reverted); a probe surface section without a Design line in a scratch copy of the tree fails `validate` with `design-missing`; `python scripts/render-design-reference.py --components Button` renders eight PNGs. Cheaper substitute that fails: a prose rule in a standard with no gate, which the probes above (a literal color and a missing Design line, both refused) show is enforced.
 
 ## Verification
 

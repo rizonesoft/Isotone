@@ -17,6 +17,7 @@
 .gitignore text eol=lf
 tools/githooks/** text eol=lf
 todo/.warning-baseline text eol=lf
+todo/.design-baseline text eol=lf
 docs/reviews/** text eol=lf
 
 # CRLF: Windows-native sources and project files

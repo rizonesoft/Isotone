@@ -61,9 +61,10 @@ Look specifically for the failure modes this codebase is prone to:
 - A hardcoded color, size, or spacing value on a surface the app's theme resources already name.
 - A frozen behavior that moved.
 - A checkpoint that passes by being unfalsifiable (a build of a project the section did not touch, a screenshot of the wrong window, a round trip over a fixture the change cannot affect).
-- A surface compared against memory instead of the capture under `docs/captures/<app>/`.
+- A surface compared against memory, or against the old-app captures under `docs/captures/<app>/` (a before record), instead of the specs its `**Design:**` line names and its approved goldens.
+- A literal color, size, radius, spacing, font, or duration where a token names the value, a `StaticResource` color, or a new `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` violation.
 
-The `source-defect` and `design` lenses run here, in-session: the panel prompt below mandates the four core lenses (the output checker enforces exactly those), so source reading and rendered-surface judgment stay with the session that can see the sources and the pixels. Judge a rendered surface against the capture or contract, never source alone, and record those verdicts in the findings file beside the panel's.
+The `source-defect` and `design-fidelity` lenses run here, in-session: the panel prompt below mandates the four core lenses (the output checker enforces exactly those), so source reading and rendered-surface judgment stay with the session that can see the sources and the pixels. Judge a rendered surface against the design and its goldens, never source alone, and record those verdicts in the findings file beside the panel's.
 
 Cheap defects caught here cost nothing; the same defect caught by a lens costs a whole round.
 
@@ -87,7 +88,7 @@ Run each lens as a separate pass over the candidate, recording findings in the f
 | `consistency` | Does this agree with the rest of the suite: naming, the paths table and stack rules in `AGENTS.md`, the design contract under `standards/`, the settings writer, the Serilog logging call? |
 | `integration` | Do the callers and consumers still hold: every app that consumes the changed `Photon.Core` type, the view that binds the changed view model, the solution and publish profile that ship it, the user guide that names it? Does each app still build and run on its own? |
 | `source-defect` | When owed (a file-format specification, a .NET or WPF contract, or another app's behavior is at stake): is the source read correctly, and is the deviation declared? |
-| `design` | On a surface: judge the RENDERED surface against the baseline or contract, never source alone. Screenshots or driven captures, not impressions. A UI section without its captures under `docs/captures/<app>/` (each theme the app ships, at 100 and 150 percent scaling) is needs-attention, never approve. |
+| `design-fidelity` | On a surface (`standards/design-contract.md`): **tokens exact** (every resolved color, size, radius, spacing, font, and duration equals its `docs/design/tokens.json` value in each theme; `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` reports 0 new); **geometry within 1 DIP** (measure heights, paddings, gaps, radii, icon boxes, hairlines, and focus ring offsets from the WPF renders at 1x, 1.5x, and 2x against the specs); **every state and theme** the Design line's specs list is rendered (all four themes, Blue and Photon orange, both densities); the WPF card render compared side by side with the design reference render (`python scripts/render-design-reference.py`, `build/design-reference/report.html`, and the harness report under `build/wpf-renders/`). Screenshots and measured renders, never impressions. A surface section with no validating Design line, no renders, a new lint violation, or an unexplained difference is needs-attention, never approve. (Older records name this lens `design`.) |
 | `record` | Is the record honest: does the stamp's evidence match what ran, do deferrals name owners, is the row flip earned? |
 
 Each lens ends in a verdict: `approve`, `needs-attention` (with findings), or `advisory` (noted, not blocking). Findings are fixed in the candidate and the affected lens re-runs: iterate until no lens reports anything the plan would fix, under the soft-3/hard-5 caps below (the early sequence always runs whole before the `signoff` slot, which always runs because it governs the stamp). A unit patched three rounds running is stopped and re-thought instead of patched again.
@@ -161,7 +162,15 @@ After the last fix, re-run the section's Test checkpoint and the owed gates (aff
 
 ### 6. Surface check (UI sections)
 
-Every control, menu item, dialog, and state on the Fidelity counterpart is working (proven on the rendered surface in this review) or deferred to a named, resolving section. Refuse the stamp for an unaccounted control. Compare the rendered surface against the baseline artifact or design contract before stamping, and confirm the user-guide update shipped in the same commit.
+Every control, menu item, dialog, and state the section's design specs list (its `**Design:**` line) is working (proven on the rendered surface in this review) or deferred to a named, resolving section. Refuse the stamp for an unaccounted control. Confirm the user-guide update shipped in the same commit.
+
+Then the design gate, in order:
+
+1. **The Design line holds.** `python scripts/todo-graph.py validate` reports no `design-*` finding and the section is out of `todo/.design-baseline`. Refuse the stamp otherwise.
+2. **No new lint violation.** `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` prints `0 new, 0 stale` at the candidate. Refuse the stamp on any new violation. Only review may grow that baseline, with `--update-baseline --allow-add --reason "<reason>"`, and only for a reason it approves and quotes in the stamp.
+3. **No unexplained deviation.** Every difference the `design-fidelity` lens found is fixed in the candidate or carried by a `**Design deviation:**` line whose follow-up section resolves (`validate` checks the grammar). Refuse the stamp while the section's deviations are open and the section is an app release, or while any difference has neither a fix nor a deviation line.
+4. **Approve the goldens, and only then.** When the `design-fidelity` lens approves, run the harness's approve path for the section's scenarios (`pwsh scripts/visual-tests.ps1 -Approve -Section '<DNN TNN §N>' -Filter <name>`, once `D01 T01 §9` ships), which copies the reviewed renders into `docs/captures/golden/<area>/<Comp>/`; commit them with the stamp and re-run the visual tests against them. A golden is updated later only after a design change or with a reason this review approves and quotes. The implementing session never approves.
+5. **Record it.** The stamp carries one line under `Verified:`: `> **Design verified:** <specs checked> | tokens exact | geometry max <n> DIP off | states <n> of <n> | themes 4 | densities 2 | goldens <n> approved under docs/captures/golden/<path> | design-lint 0 new | deviations <none or the open ones with their follow-ups>`.
 
 ### 7. Frozen check (frozen TODOs)
 
@@ -311,6 +320,7 @@ On an already-`[x]` section: run steps 1-6 against the section's own candidate. 
 
 - Do not stamp without a findings file. A verdict with no record is an opinion.
 - Do not stamp an unaccounted control on a UI section.
+- Do not stamp a surface section without a validating Design line, with a new design-lint violation, or with a difference from the design that is neither fixed nor carried by a Design deviation line; do not approve a golden before the `design-fidelity` lens passes.
 - Do not stamp a frozen behavior that moved without approval.
 - Do not flip a row this review did not earn.
 - Do not review the working tree when the candidate is a commit. Name the hashes.

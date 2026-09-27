@@ -64,7 +64,7 @@ Use the `skill arg` line it prints as the canonical form for the rest of the run
 - **Never mark `[x]` without evidence.** The Implementation Order row flips only after the review stamp exists.
 - **User documents first.** A section that writes a user's file, library, preset, or settings is built to: atomic writes (write a temp file beside the target, flush, then replace), read back what was written, skip and report rather than drop or duplicate, and every destructive path confirmed. Its Test checkpoint exercises the failure path, not only the happy path: a read-only target, a locked file, a full disk, a malformed input file.
 - **One source of truth for a value.** Any value the user trusts (a pixel, a coordinate, a color, an undo step) is computed in exactly one place, a model or service, and the view binds to it rather than deciding it. A calculation in code-behind that nothing verifies is a bug.
-- **House style is the bar on surfaces.** A section that builds a surface proves it against the capture under `docs/captures/<app>/` and the design contract under `standards/`, not against memory of what the other apps look like. Standard WPF with custom theming, never WPF-UI. A second color picker, undo stack, or settings writer in a second app is a defect, and so is moving code into `Photon.Core` before a second app needs it.
+- **The design is the bar on surfaces.** `standards/design-contract.md` is binding: `docs/design/` is the source and the code implements it 1:1 (exact tokens, geometry within 1 DIP at 100, 150, and 200 percent, every state and theme the spec lists, approved goldens). A section that builds a surface proves it against the specs its `**Design:**` line names and against its review-approved goldens, never against the old-app captures under `docs/captures/<app>/` (a before record) and never against memory of what the other apps look like. Standard WPF with custom theming, never WPF-UI. A second color picker, undo stack, or settings writer in a second app is a defect, and so is moving code into `Photon.Core` before a second app needs it.
 - **Edits are proven in both directions.** A section that changes a document proves the undo as well as the do, the save as well as the reopen, and what happens when the file cannot be written.
 
 ## The session does every step
@@ -169,9 +169,20 @@ Work the checklist top to bottom. Tick each item as its Done-when becomes true, 
 - UI sections: consume the shared styles, controls, and services named in `**Chrome:**`. A second color picker, progress indicator, or settings writer is a defect, not a shortcut.
 - The stack is fixed (`AGENTS.md`): WPF with MVVM through CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection, and Serilog. A section that needs another dependency records the decision and its reason in the section before adding it.
 
+### 4a. Build a surface to the design (UI sections)
+
+Before writing any XAML for a section whose Fidelity line names a surface:
+
+1. **The Design line validates.** The section carries one `**Design:**` line (grammar in `todo/README.md`, Surface fidelity) and `python scripts/todo-graph.py validate` reports no `design-*` finding for it. If the section is still listed in `todo/.design-baseline`, write its Design line now from the specs the surface needs (component READMEs under `docs/design/components/`, `docs/design/shell-layout.md` region anchors, `standards/ui.md` anchors), mark it `**Corrected YYYY-MM-DD:**`, and shrink the baseline in the same commit with `python scripts/todo-graph.py design-baseline`. A surface is never built from a section with no Design line.
+2. **Design first.** A ref written `new surface: docs/design/<path>.md` means the spec does not exist: write it (README, `preview.html` card, the page regenerated with `python scripts/build-design-site.py` per `docs/design/EDITING.md`) as the section's first item, then cite it directly on the Design line. A look the spec does not describe goes into `docs/design/` first, never straight into XAML.
+3. **Read the whole design input.** Every spec the Design line names, `docs/design/tokens.json` for every value they cite, `standards/design-contract.md`, and the design reference renders (`python scripts/render-design-reference.py --components <Comp>` writes `build/design-reference/<Comp>/<theme>-<density>.png`).
+4. **Token keys only.** Every color through `DynamicResource` with a color token key (or `Photon.App.*` for the app accent), every size, spacing, radius, font, and duration through its token key. No literal, no private palette, no `StaticResource` color. `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` reports 0 new violations before the commit, and when the section removes recorded violations it shrinks the baseline with `--update-baseline` in the same range. Never run `--allow-add` from this skill.
+5. **Every state, theme, Highlight, density, and scale.** Implement every state the specs list; add the section's scenarios to `tests/Photon.UI.VisualTests` (the harness of `D01 T01 §9`, once it ships) and produce the WPF renders under `build/wpf-renders/` with `pwsh scripts/visual-tests.ps1 -Filter <name>`. Hand them to review with the side-by-side report.
+6. **Never approve a golden.** `docs/captures/golden/` is written only by `review-todo-section` after its `design-fidelity` lens passes. A render that differs from the spec is fixed in the code, or recorded as a `**Design deviation:**` line (grammar in `todo/README.md`) with a follow-up section that fixes the design or the code; there is no silent deviation.
+
 ### 5. Surface completeness (UI sections)
 
-Before the checkpoint, account for **every control, menu item, dialog, command, and state** the section's Fidelity counterpart has, each resolved to working (proven on the rendered surface) or deferred to a named, resolving section. A control disabled with a reason that names no section is missing, not deferred. `review-todo-section` refuses the stamp for an unaccounted control; decide here, not there.
+Before the checkpoint, account for **every control, menu item, dialog, command, and state** the section's design specs (its `**Design:**` line) list, each resolved to working (proven on the rendered surface) or deferred to a named, resolving section. A control disabled with a reason that names no section is missing, not deferred. `review-todo-section` refuses the stamp for an unaccounted control; decide here, not there.
 
 ### 6. Run the Test checkpoint, for real
 
@@ -253,7 +264,8 @@ Tell the user plainly: what was built, what the checkpoint proved (quoted), what
 - Do not widen the section. File adjacent work.
 - Do not flip the Implementation Order row. Review owns that.
 - Do not claim a checkpoint passed without running it: quote the output.
-- Do not build a UI surface whose named baseline artifact does not exist. The capture ships first.
+- Do not build a UI surface whose `**Design:**` line is missing or does not validate, or whose `new surface:` spec is not written into `docs/design/` first.
+- Do not commit a new design-lint violation, run `design-lint.py --allow-add`, or write under `docs/captures/golden/`. Goldens are review's to approve.
 - Do not end with the plan unsynced.
 - Do not stamp before the independent review has run, or without recording that it could not.
 - Do not discard a review finding silently. Fix it, refute it in the stamp, or file it.

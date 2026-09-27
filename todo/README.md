@@ -16,6 +16,7 @@ todo/
 ├── budget.json             the caps on campaign discovery and the backlog, with their history
 ├── backlog.md              deferred ideas, one line each; never sections, never runnable
 ├── .warning-baseline       accepted warnings; a NEW warning fails validate
+├── .design-baseline        surface sections still exempt from the Design line; only shrinks
 ├── 00-workspace/
 │   ├── INDEX.md            domain index -- every TODO in this domain
 │   ├── TODO-01-<short-name>.md
@@ -250,17 +251,52 @@ The frozen set as of this file is empty, because none of those paths has shipped
 
 ## Surface fidelity
 
-The freeze check has a visual twin. Photon is not a clone of somebody else's product, so fidelity here means the **house style**: each app looks and behaves like the rest of the suite, because they share one theming approach (standard WPF with custom theming, no WPF-UI) and, where two apps need it, one set of controls in `Photon.UI`.
+The freeze check has a visual twin. Photon is not a clone of somebody else's product, so fidelity here means **the design**: the Photon Interface design system in `docs/design/` is the source, and each surface implements it 1:1. The binding rules are [`standards/design-contract.md`](../standards/design-contract.md) (operator decisions 2026-09-27: pixel perfect is "Exact tokens + ±1 DIP geometry + approved goldens"; legacy code is "Record existing violations, fail new ones"; goldens are signed off by the review panel only). A section never restates a rule from the contract, it points at it.
 
-**Every section that builds or changes a user-facing surface carries a `Fidelity:` block** naming the house-style source it must match and the captured artifact(s) under `docs/captures/<app>/`.
-
-The binding UI rules live in the design contract under `standards/`; the captures are its visual reference. Where a capture and the contract disagree, **the contract wins** and the capture is restaked. A `Fidelity:` block never restates a rule from the contract, it points at it:
+**Every section that builds or changes a user-facing surface carries a `Fidelity:` line** naming the surface, the design it answers to, and the golden folder its approved renders land in:
 
 ```
-**Fidelity:** Photon document window (menu, tool rail, canvas, panels dock, status strip) -- docs/captures/nodus/main-window/. Control order, spacing, font, and terminology match the capture; deviations only from the approved list.
+**Fidelity:** Photon.UI buttons and inputs -- docs/design/components/ (Button, Checkbox, TextBox cards) per standards/design-contract.md; goldens under docs/captures/golden/photon-ui/.
+**Fidelity:** Nodus main window chrome -- docs/design/shell-layout.md (Regions) and docs/design/components/WindowChrome/; goldens under docs/captures/golden/nodus/main-window/.
 ```
 
-**The same sections carry the documentation duty:** shipping or changing a user-facing surface updates that app's user guide under `docs/user/` in the same commit; review checks it before stamping. `process-todo-section` refuses to build a surface whose named artifact does not exist: that means the capture has not shipped for it, and building from a one-line description freezes a guess instead of the real thing. `review-todo-section` compares the rendered surface against the artifact before stamping. A genuinely new surface with no counterpart anywhere in the suite says so explicitly: `**Fidelity:** new build, no baseline` -- so silence is never ambiguous.
+The captures of the imported apps under `docs/captures/<app>/` (recorded by `D00 T03 §2`) are a **before** record of the legacy surfaces, useful to show what changed. They are never the fidelity source: a surface is compared with the design and its approved goldens, not with what Bezier or the old Imago looked like, and a section never cites them as the thing to match.
+
+### The Design line
+
+The same sections carry one more line, the machine-checked half of the Fidelity line. It names every spec the surface implements:
+
+```
+**Design:** <ref>[, <ref>...] -- states: <all in spec | state, state, ...> -- themes: <all four | n/a (<reason>)> -- density: <both | n/a (<reason>)>
+```
+
+- A `<ref>` is a repository-relative path, optionally in backticks, one of: a file under `docs/design/` (`docs/design/components/Button/README.md`, `docs/design/tokens.json`), optionally with a heading anchor (`docs/design/components/Button/README.md#states`); a shell-layout region by its heading anchor (`docs/design/shell-layout.md#regions`, `#nodus-vector`, `#splash-and-home`); or a UI-standard rule by its heading anchor (`standards/ui.md#focus`), where the anchor is required. Anchors are GitHub's: the heading lower-cased, punctuation other than hyphens dropped, spaces turned into hyphens, a repeated heading suffixed `-1`, `-2`.
+- `new surface: docs/design/<path>.md` names a spec that does not exist yet. It is allowed only together with a checklist item in the same section that adds that spec to `docs/design/` (with its preview card, the page regenerated) before any XAML is written; once the spec exists, the line cites it directly.
+- `states:` is `all in spec` (every state the cited component READMEs list) or a comma list of lower-case state names (`rest, hover, pressed, focus, disabled`).
+- `themes:` is `all four` (Darkest, Dark, Medium Gray, Light, each with the Blue and Photon orange Highlight) or `n/a (<reason>)` for a surface the spec draws the same in every theme (the splash card). `density:` is `both` (Compact and Comfortable) or `n/a (<reason>)` for a fixed-size surface.
+- One line per section, directly under the Fidelity line, with every ref comma-separated. Example:
+
+```
+**Design:** docs/design/components/Button/README.md, docs/design/components/FocusRing/README.md, standards/ui.md#focus -- states: all in spec -- themes: all four -- density: both
+```
+
+`validate` enforces it: a surface section (its Fidelity line names a surface) without a Design line is `design-missing`, a line outside the grammar or a near miss is `design-malformed`, and a ref whose file or anchor does not exist is `design-dead-ref`, all FATAL. The surface sections that had no Design line when the rule landed (2026-09-27) are listed in `todo/.design-baseline` and exempt until they get one. The list only shrinks: a listed ref that now has its Design line, is stamped, is no longer a surface, or is gone is `design-baseline-stale`, and a ref HEAD does not list is `design-baseline-grown`, both FATAL. Shrink it in the commit that adds the Design lines with `python scripts/todo-graph.py design-baseline`, which only ever removes refs. `python scripts/todo-graph.py query design` counts surfaces, Design lines, the baseline, and deviations.
+
+### Design deviations
+
+A surface that cannot match its spec now says so, directly under its Design line, and names who fixes it:
+
+```
+**Design deviation:** opened YYYY-MM-DD -- spec: <design ref> -- reason: <why the code cannot match now> -- follow-up: DNN TNN §N (fix design|fix code)
+```
+
+The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Nodus, Imago, or Lumen file (a `Photon.UI` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
+
+### Gates and goldens
+
+`scripts/design-lint.py` fails any new literal color, size, font family, `StaticResource` color, non-token color key, WPF-UI or FluentIcons use, emoji glyph, or system backdrop in the UI sources; the violations of 2026-09-27 are recorded in `docs/design/.lint-baseline.json`, which passes them, fails new ones, and fails a recorded one that no longer occurs until the baseline shrinks. The commit hook, `scripts/check-all.ps1`, and the `build` workflow run it. The visual harness (`tests/Photon.UI.VisualTests`, `D01 T01 §9`) renders each control and surface per state, theme, Highlight, density, and scale into `build/wpf-renders/`; `python scripts/render-design-reference.py` renders the design's own previews into `build/design-reference/` with a side-by-side report; `review-todo-section` compares the two in its `design-fidelity` lens and alone approves the goldens under `docs/captures/golden/<area>/`, which CI then pixel-diffs against.
+
+**The same sections carry the documentation duty:** shipping or changing a user-facing surface updates that app's user guide under `docs/user/` in the same commit; review checks it before stamping. `process-todo-section` refuses to build a surface whose Design line does not validate, or whose spec is named `new surface:` without the item that writes it first: building from a one-line description freezes a guess instead of the design. `review-todo-section` compares the rendered surface against the design reference renders and the approved goldens before stamping. A genuinely new surface with no spec yet says `new surface:` on its Design line, so silence is never ambiguous.
 
 ### Surface completeness: what a UI section owes beyond looking right
 
@@ -283,7 +319,7 @@ Every section that builds or changes a user-facing surface carries three blocks 
 
 `Chrome:` is load-bearing in this repo. Three apps grow side by side, and the failure mode is an app growing its own color picker, its own undo stack, or its own settings writer when another app already has one that belongs in `Photon.Core`. A second implementation of a shared control is a defect, not a shortcut; equally, code moves into `Photon.Core` only when a second app needs it.
 
-A section whose Fidelity line says the work has no surface of its own ("no surface of its own", "not a surface", "the library is not a surface") skips these three.
+A section whose Fidelity line says the work has no surface of its own ("no surface of its own", "not a surface", "the library is not a surface") skips these three and the Design line.
 
 A section that cannot run without a live host or device the plan cannot otherwise see carries one more line, anywhere in its body:
 
@@ -536,6 +572,12 @@ Everything else (a competitor feature, a premium win, a nice-to-have from a revi
 | `backlog-malformed` | FATAL | A `todo/backlog.md` line outside the entry grammar, a line that reads as a section (checkbox, numbered heading, stamp, XREF), or an entry citing a dead or short section ref. |
 | `backlog-duplicate` | FATAL | A backlog id or source key used twice, or a source key a live section already carries: a promoted entry leaves the backlog in the promoting commit. |
 | `backlog-over-cap` | FATAL | More backlog entries than `backlog_cap`. Triage (merge, drop, promote) before adding. |
+| `design-missing` | FATAL | A section whose Fidelity line names a surface carries no `**Design:**` line and is not listed in `todo/.design-baseline`: a surface built from a guess instead of the spec it implements 1:1. |
+| `design-malformed` | FATAL | A `**Design:**` or `**Design deviation:**` line outside its grammar (near misses included), a second Design line in one section, a line outside a numbered section, or `new surface:` without the item that adds the spec to `docs/design/` first. |
+| `design-dead-ref` | FATAL | A Design ref whose file does not exist or whose anchor matches no heading (slugged GitHub-style) or HTML id, or a deviation whose follow-up names no live section. |
+| `design-baseline-stale` | FATAL | A `todo/.design-baseline` ref that now has its Design line, is stamped, is no longer a surface, names no section, is listed twice, or is not a ref: the list only shrinks, in the commit that makes the entry unnecessary. |
+| `design-baseline-grown` | FATAL | A `todo/.design-baseline` ref HEAD does not list: the baseline records the gaps of 2026-09-27, and a new gap is never exempted. |
+| `design-deviation-open-at-release` | FATAL | A `**Design deviation:**` still open (its follow-up row not `[x]`) in a file whose app has a release section (the one that pushes its tag) stamped on or after the day the deviation opened. |
 
 Treat a warning as a decision to make rather than noise to clear. The tree starts at zero FATAL and zero non-baselined warnings, and it is worth keeping there.
 
