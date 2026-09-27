@@ -72,6 +72,12 @@ Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. I
 - The title bar is drawn through `WindowChrome`: the OS frame is removed, never doubled, and the caption buttons are 46 x 32 catalog glyphs with a red close hover, never tinted by the Highlight color or the accent. Panels dock and float through AvalonDock with a theme built from the same tokens.
 - Each component in the anatomy has its spec under [`docs/design/components/`](../docs/design/components/): `WindowChrome`, `Menu`, `ContextMenu`, `OptionsBar`, `ToolRail`, `DocumentTabs`, `Panel`, `StatusBar`, `Dialog`, `Tooltip`, `Toast`, `NumberBox`, and the rest. A section that builds one of these cites its README as the spec.
 
+## Ownership and legal text
+
+- The copyright holder is Rizonetech (Pty) Ltd; Rizonesoft is its brand and stays the publisher users see (operator decision 2026-09-27). Every surface that states ownership says "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd" (the splash card shortens it to "© 2026 Rizonetech (Pty) Ltd · Free and open source (GPL-3.0)"), and none names Rizonesoft as the copyright holder.
+- The About dialog carries exactly the lines of the About section in [`docs/design/components/Dialog/README.md`](../docs/design/components/Dialog/README.md): version, copyright, "Rizonesoft is a brand of Rizonetech (Pty) Ltd.", the GPL-3.0 license link, the source offer "Source code: <the GitHub tag URL of the build>", the product page, and the credits.
+- A product page or download link is read from one configured value (default `https://www.rizonesoft.com/`), never typed into a surface; binaries are offered only from rizonesoft.com, never from GitHub. The names and icons are covered by [`TRADEMARKS.md`](../TRADEMARKS.md).
+
 ## Accessibility
 
 - Contrast (WCAG 2.x) in all four themes: text at least 4.5:1 against every ground its usage names; control borders, focus rings, icons, and state marks at least 3:1. `text-disabled` is exempt. The checked pairs are in [`docs/design/README.md`](../docs/design/README.md); a new token or ground adds its pairs to that check.

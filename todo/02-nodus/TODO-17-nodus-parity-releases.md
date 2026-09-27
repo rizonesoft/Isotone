@@ -35,7 +35,7 @@ track: N17
 
 ## Outcome
 
-- Eleven published GitHub releases, `nodus-v0.2.0` to `nodus-v1.1.0`, each with an installer, a portable ZIP, and `SHA256SUMS` that match the downloads, and each proven on a clean Windows 11 machine with no .NET SDK.
+- Eleven published GitHub releases, `nodus-v0.2.0` to `nodus-v1.1.0`, each linking an installer, a portable ZIP, and `SHA256SUMS` on `download.rizonesoft.com` that match the downloads (no files attached to the GitHub release, operator decision 2026-09-27), and each proven on a clean Windows 11 machine with no .NET SDK.
 - At each tag, every catalog row planned to that phase resolves to a stamped section, or was rerouted in the catalog with its reason in the release commit.
 - Each release's `CHANGELOG.md` section names the `NP-` ranges it shipped, and the Nodus user guide has a page for every surface the phase added.
 - A document saved by each release opens in the previous release with its new live objects degraded to their expanded fallback geometry, never lost.
@@ -72,6 +72,8 @@ track: N17
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
 
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.2.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
+
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 4` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 4 section resolves to a stamped section.
 - [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 4 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 4 row pointing at an unshipped section.
@@ -81,11 +83,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open `tests/fixtures/nodus/svg-live/`, `pages/`, `layers/`, `guides/`, and `metadata/`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the live objects, pages, layers, guides, and the `nodus:` document block this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.2.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.2.0. Done when: the README names 0.2.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.2.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.2.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 4` output is quoted with no Phase 4 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.2.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.2.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 4` output is quoted with no Phase 4 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 2. Nodus 0.3.0
 
@@ -94,6 +96,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.3.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 5` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 5 section resolves to a stamped section.
@@ -104,11 +108,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open `tests/fixtures/nodus/svg/live-shapes/`, `generators/`, `compound-shapes/`, `clipping/`, and `annotations/`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the live shapes, generators, compound shapes, intertwine, dimensions, and connectors this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.3.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.3.0. Done when: the README names 0.3.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.3.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.3.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 5` output is quoted with no Phase 5 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.3.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.3.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 5` output is quoted with no Phase 5 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 3. Nodus 0.4.0
 
@@ -117,6 +121,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.4.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 6` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 6 section resolves to a stamped section.
@@ -127,11 +133,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 6 fixtures committed by `D02 T09` and `D01 T04`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the gradients, mesh, pattern and texture fills, brushes, appearance stacks, and symbol overrides this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.4.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.4.0. Done when: the README names 0.4.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.4.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.4.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 6` output is quoted with no Phase 6 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.4.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.4.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 6` output is quoted with no Phase 6 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 4. Nodus 0.5.0
 
@@ -140,6 +146,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.5.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 7` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 7 section resolves to a stamped section.
@@ -150,11 +158,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 7 fixtures committed by `D02 T10`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the text frames, threads, path text, tables, and graphs this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.5.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.5.0. Done when: the README names 0.5.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.5.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.5.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 7` output is quoted with no Phase 7 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.5.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.5.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 7` output is quoted with no Phase 7 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 5. Nodus 0.6.0
 
@@ -163,6 +171,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.6.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 8` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 8 section resolves to a stamped section.
@@ -173,11 +183,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 8 fixtures committed by `D02 T11`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the effect stacks, blends, contours, envelopes, extrusions, lenses, PowerClip frames, and perspective objects this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.6.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.6.0. Done when: the README names 0.6.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.6.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.6.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 8` output is quoted with no Phase 8 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.6.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.6.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 8` output is quoted with no Phase 8 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 6. Nodus 0.7.0
 
@@ -186,6 +196,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.7.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 9` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 9 section resolves to a stamped section.
@@ -196,11 +208,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 9 fixtures committed by `D01 T03` and `D02 T12`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the bitmap objects, non-destructive bitmap effect stacks, and traced results this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.7.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.7.0. Done when: the README names 0.7.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.7.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.7.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 9` output is quoted with no Phase 9 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.7.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.7.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 9` output is quoted with no Phase 9 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 7. Nodus 0.8.0
 
@@ -209,6 +221,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.8.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 10` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 10 section resolves to a stamped section.
@@ -219,11 +233,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 10 fixtures committed by `D01 T04` and `D02 T13`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the document color settings, print styles, and imposition layouts this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.8.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.8.0. Done when: the README names 0.8.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.8.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.8.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 10` output is quoted with no Phase 10 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.8.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.8.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 10` output is quoted with no Phase 10 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 8. Nodus 0.9.0
 
@@ -232,6 +246,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.9.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 11` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 11 section resolves to a stamped section.
@@ -242,11 +258,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 11 fixtures committed by `D02 T14`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the export settings, slices, and hyperlinks this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.9.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.9.0. Done when: the README names 0.9.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.9.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.9.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 11` output is quoted with no Phase 11 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.9.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.9.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 11` output is quoted with no Phase 11 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 9. Nodus 0.10.0
 
@@ -255,6 +271,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/0.10.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 12` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 12 section resolves to a stamped section.
@@ -265,11 +283,11 @@ track: N17
 - [ ] Run the clean-machine procedure from `D05 T01 §1`: install per-user and all-users, upgrade over the previous `nodus-v*` release keeping settings, launch, open the Phase 12 fixtures committed by `D01 T05` and `D02 T15`, save, reopen, export one file per phase format the installed build exports, and uninstall. Done when: every step passes and is quoted.
 - [ ] Open a document saved by this release in the previous `nodus-v*` release and record how the AI provenance records and generated objects this phase added degrade there. Done when: every new live object renders as its expanded fallback geometry per `D02 T07 §1` and no element is lost (element counts quoted).
 - [ ] Push the tag `nodus-v0.10.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 0.10.0. Done when: the README names 0.10.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 0.10.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.10.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 12` output is quoted with no Phase 12 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v0.10.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/0.10.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 12` output is quoted with no Phase 12 row pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 10. Nodus 1.0.0
 
@@ -278,6 +296,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/1.0.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 13` (from `D00 T01 §6`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 13 section resolves to a stamped section.
@@ -290,11 +310,11 @@ track: N17
 - [ ] Run `python scripts/todo-graph.py query parity` over Phases 4 to 13. Done when: it reports zero `plan` rows whose section is unshipped, and the output is quoted as the evidence of the acceptance-bar aim.
 - [ ] State in `README.md` that Nodus covers the Illustrator 30.8 and CorelDRAW 2026 parity catalog, linking the excluded and backlog rows of `docs/parity/nodus-parity.md` and naming the rows planned after 1.0.0 (GIMP XCF import `D02 T18 §9` and camera RAW import `D02 T18 §10`, which wait on Imago's XCF reader and the shared RAW decoder). Done when: the paragraph and its links exist.
 - [ ] Push the tag `nodus-v1.0.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 1.0.0. Done when: the README names 1.0.0 as the current Nodus release.
 - [ ] Commit: `"release: Nodus 1.0.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v1.0.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 13` output is quoted with no Phase 13 row pointing at an unshipped section. The whole-catalog `query parity` output reports zero unshipped `plan` rows across Phases 4 to 13. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v1.0.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/1.0.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --phase 13` output is quoted with no Phase 13 row pointing at an unshipped section. The whole-catalog `query parity` output reports zero unshipped `plan` rows across Phases 4 to 13. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with catalog rows still pointing at unshipped sections.
 
 ## 11. Nodus 1.1.0
 
@@ -303,6 +323,8 @@ track: N17
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/nodus/1.1.0/` and writes the feed `update/nodus.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --phase 41` (from `D00 T01 §6`) and quote its report. Done when: every Nodus catalog row whose status is `plan <ref>` for a Phase 41 section resolves to a stamped section.
@@ -314,15 +336,15 @@ track: N17
 - [ ] Open a document saved by this release in `nodus-v1.0.0` and record how the imported XCF layer groups and developed RAW bitmaps appear there. Done when: every imported element renders as a bitmap object with its group structure and no element is lost (element counts quoted).
 - [ ] Run `python scripts/todo-graph.py query parity --catalog nodus`. Done when: it reports zero `plan` rows whose section is unshipped across every Nodus phase, and the output is quoted.
 - [ ] Push the tag `nodus-v1.1.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets and verify `SHA256SUMS`, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body) and verify `SHA256SUMS` and the body's SHA-256 table, then run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts.
 - [ ] Update `README.md`'s Nodus status line to 1.1.0 and drop the "planned after 1.0.0" note `D02 T17 §10` wrote. Done when: the README names 1.1.0 and no longer lists XCF or RAW import as planned.
 - [ ] Commit: `"release: Nodus 1.1.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v1.1.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and `python scripts/todo-graph.py query parity --catalog nodus` is quoted with zero unshipped `plan` rows. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with NP-2399 or NP-2403 to NP-2406 still pointing at an unshipped section.
+**Test checkpoint:** Driven run with evidence: the clean-machine run is quoted step by step; `gh release view nodus-v1.1.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/nodus/1.1.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and `python scripts/todo-graph.py query parity --catalog nodus` is quoted with zero unshipped `plan` rows. Cheaper substitute that fails: tagging from a developer machine without the clean-machine run, or with NP-2399 or NP-2403 to NP-2406 still pointing at an unshipped section.
 
 ## Verification
 
-- [ ] `gh release list` shows `nodus-v0.2.0` to `nodus-v1.1.0`, none a prerelease, each with installer, ZIP, and checksums that match
+- [ ] `gh release list` shows `nodus-v0.2.0` to `nodus-v1.1.0`, none a prerelease, each with no attached files and a body linking the installer, ZIP, and checksums on `download.rizonesoft.com` that match
 - [ ] `python scripts/todo-graph.py query parity` reports zero `plan` rows whose section is unshipped across Phases 4 to 13 at `nodus-v1.0.0`, and across every Nodus phase at `nodus-v1.1.0`
 - [ ] `CHANGELOG.md` has a section headed by each of the eleven tags
 - [ ] `pwsh scripts/check-all.ps1` exits 0 at the `nodus-v1.0.0` commit

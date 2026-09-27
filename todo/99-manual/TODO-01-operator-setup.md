@@ -9,10 +9,12 @@ depends_on: []
 
 # TODO-01 -- Operator Setup (Manual)
 
-> **Goal:** The steps no agent session can perform are done by the operator from exact instructions: the repository's About bar, topics, and social preview are set; `main` is protected by the real required checks; a code-signing certificate exists and is available to the packaging scripts without entering the repository; the licenses of the app icon art are confirmed; and each app's accent color is chosen.
+> **Goal:** The steps no agent session can perform are done by the operator from exact instructions: the repository's About bar, topics, and social preview are set; `main` is protected by the real required checks; a code-signing certificate exists and is available to the packaging scripts without entering the repository; the licenses of the app icon art are confirmed; each app's accent color is chosen; the project's copyright rests with Rizonetech (Pty) Ltd by a signed assignment; the names are cleared and filed as trademarks; the download storage behind `download.rizonesoft.com` exists with its GitHub secrets; the product page URLs are decided; and the contributor agreement question is answered before outside contributions are accepted.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The repository is `github.com/rizonesoft/Photon` with default settings as far as this plan knows. `resources/brand/social-preview.jpg` exists for the social preview. The CI checks are named `build` (workflow `build.yml`) and `plan-gates` (workflow `plan.yml`). There is no code-signing certificate (operator statement, 2026-09-26). The app icon candidates `resources/icons/art-and-design.png` (Imago) and `resources/icons/lens.png` (Lumen) arrived with the initial commit with no recorded source or license. The design contract in `standards/shared.md` leaves each app's accent color to the operator. Until `D00 T01 §2` ships, these rows cannot carry the `**Requires:** operator` mark; they depend on that section so no runner takes them before it does. **Corrected 2026-09-27:** the operator answered three of these rows that day: the social preview is uploaded (§1), the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (§4), and the accents are chosen and recorded in `standards/shared.md` (§5); what each section still owes is its record and its verification, and every row still flips only through a review stamp. **Corrected 2026-09-27, later the same day:** the §4 answer is superseded. The operator chose project-created icons (Direction C, "C it is"), so `resources/icons/art-and-design.png`, `resources/icons/lens.png`, and `resources/icons/nodus_512.png` were removed, and `resources/icons/README.md` records every app icon as created for the project on 2026-09-27 and licensed GPL-3.0 with the repository, with no third-party art.
+> **Current state (verified 2026-09-26):** The repository is `github.com/rizonesoft/Photon` with default settings as far as this plan knows. `resources/brand/social-preview.jpg` exists for the social preview. The CI checks are named `build` (workflow `build.yml`) and `plan-gates` (workflow `plan.yml`). There is no code-signing certificate (operator statement, 2026-09-26). The app icon candidates `resources/icons/art-and-design.png` (Imago) and `resources/icons/lens.png` (Lumen) arrived with the initial commit with no recorded source or license. The design contract in `standards/shared.md` leaves each app's accent color to the operator. Until `D00 T01 §2` ships, these rows cannot carry the `**Requires:** operator` mark; they depend on that section so no runner takes them before it does. **Corrected 2026-09-27:** the operator answered three of these rows that day: the social preview is uploaded (§1), the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (§4), and the accents are chosen and recorded in `standards/shared.md` (§5); what each section still owes is its record and its verification, and every row still flips only through a review stamp. **Corrected 2026-09-27, later the same day:** the §4 answer is superseded. The operator chose project-created icons (Direction C, "C it is"), so `resources/icons/art-and-design.png`, `resources/icons/lens.png`, and `resources/icons/nodus_512.png` were removed, and `resources/icons/README.md` records every app icon as created for the project on 2026-09-27 and licensed GPL-3.0 with the repository, with no third-party art. **Corrected 2026-09-27, operator decisions on ownership and distribution:** the copyright holder is Rizonetech (Pty) Ltd (the operator's company) and Rizonesoft is its brand; the repository now says "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd" and "Rizonesoft is a brand of Rizonetech (Pty) Ltd." (`README.md`, `CONTRIBUTING.md`, `Directory.Build.props`, `installer/common.iss`, the splash cards) and has a trademark policy (`TRADEMARKS.md`, no registration claimed). Binaries ship only from rizonesoft.com through S3-compatible storage behind `download.rizonesoft.com`, which does not exist yet (no provider is chosen, and none of the `PHOTON_DL_S3_*` secrets is set, so `release.yml` refuses a tag release); the product page URLs are undecided, so `PHOTON_SITE_URL` defaults to `https://www.rizonesoft.com/`; contributors keep their copyright under the GPL with the DCO, and a CLA is undecided. No written assignment from Derick Payne to Rizonetech (Pty) Ltd exists yet, and no trademark search or filing has been made. §6 to §10 are those operator steps.
+<!-- claim: exists TRADEMARKS.md -->
+<!-- claim: count "PHOTON_DL_S3_ENDPOINT" .github/workflows/release.yml = 5 -->
 <!-- claim: exists resources/brand/social-preview.jpg -->
 <!-- claim: absent resources/icons/art-and-design.png -->
 <!-- claim: absent resources/icons/lens.png -->
@@ -26,6 +28,10 @@ depends_on: []
 - -> XREF: D00 T01 §2 -- adds the `operator` requirement these rows carry once it ships
 - -> XREF: D05 T01 §2 -- the signing plumbing that consumes §3's certificate
 - -> XREF: D00 T03 §3 -- the app icon raster export (generates the rasters of the project-created icons whose license §4 confirms)
+- -> XREF: D05 T01 §4 -- the update check that reads the feed on §8's storage and links §9's product page
+- -> XREF: D02 T05 §4 -- the first real release, which depends on §8's storage and secrets
+- [`TRADEMARKS.md`](../../TRADEMARKS.md) -- the trademark policy §7 clears and registers the names for
+- [`docs/dev/versioning.md`](../../docs/dev/versioning.md) -- the download layout, the update feed, and the secrets and variables §8 and §9 set
 
 ## Outcome
 
@@ -34,6 +40,11 @@ depends_on: []
 - A code-signing certificate is installed where `scripts/sign.ps1` can use it by thumbprint, or a cloud signing account is configured, and nothing about it is in the repository.
 - `resources/icons/README.md` records a confirmed license for every icon the apps ship.
 - The design contract names each app's accent color.
+- A signed assignment vests the copyright in Bezier (Nodus), Imago, Photon, and all prior work of Derick Payne in them in Rizonetech (Pty) Ltd, and `docs/dev/decisions.md` records its date (never the document).
+- The trademark search results are recorded, and the cleared names are filed with CIPC with their application numbers recorded.
+- `download.rizonesoft.com` serves files from S3-compatible storage over HTTPS, and the four `PHOTON_DL_S3_*` secrets exist, so `release.yml` can publish.
+- The product page URLs are decided and `PHOTON_SITE_URL` is set.
+- A recorded decision says whether outside contributions need a CLA, made before the first outside pull request is merged.
 
 **Adjacency:** all=not-applicable (operator actions in GitHub settings and vendor accounts: no runtime behavior, no records, no reversible user actions)
 
@@ -48,6 +59,11 @@ depends_on: []
 |   3   |   §3    | A code-signing certificate                    | D00 T01 §2             |  [ ]   |
 |   4   |   §4    | Confirm the icon art licenses                 | D00 T01 §2             |  [ ]   |
 |   5   |   §5    | Choose each app's accent color                | D00 T01 §2             |  [ ]   |
+|   6   |   §6    | Assign the copyright to Rizonetech (Pty) Ltd  | D00 T01 §2             |  [ ]   |
+|   7   |   §7    | Trademark clearance and CIPC filing           | §6                     |  [ ]   |
+|   8   |   §8    | Download storage and the release secrets      | D00 T01 §2             |  [ ]   |
+|   9   |   §9    | Decide the product page URLs                  | D00 T01 §2             |  [ ]   |
+|  10   |   §10   | Decide on a CLA before outside contributions  | §6                     |  [ ]   |
 
 ---
 
@@ -124,6 +140,65 @@ The design contract gives the suite one neutral grey ramp and lets each app name
 - [ ] Commit: `"docs: verify each app's accent color"` -- the agent quotes the ratios; the operator's choice is already recorded.
 
 **Test checkpoint:** `docs/design/tokens.json` names three accents whose `-on` labels contrast at least 4.5:1 with them in all four themes, `standards/ui.md` quotes the same hex values, and `ThemeTokensTests` (from `D01 T01 §3`) passes on the dictionaries generated from those tokens. Cheaper substitute that fails: an accent chosen without a contrast check.
+
+## 6. Assign the Copyright to Rizonetech (Pty) Ltd
+
+Operator decision 2026-09-27: the copyright holder is Rizonetech (Pty) Ltd, the operator's company, and Rizonesoft is its brand. The repository already says so, but the work was written by Derick Payne personally (Bezier, now Nodus; Imago; and Photon, including the MIT-licensed releases Bezier and Imago published before the monorepo), so the company holds the copyright only once a written assignment says it does. This is a legal document only the operator can sign. Advice: have a South African intellectual property attorney draft or review it; South African copyright law (the Copyright Act 98 of 1978) expects an assignment in writing signed by the assignor, and the attorney confirms the form.
+
+- [ ] Consult a South African IP attorney about the assignment: its scope (all copyright in Bezier, Imago, Photon, and all prior work in their histories, code, documentation, and art, including the earlier MIT-licensed releases), the waiver of moral rights where the law allows, and whether anything else the operator wrote should be included. Done when: the operator has the attorney's draft or approval.
+- [ ] Sign the deed of assignment from Derick Payne (assignor) to Rizonetech (Pty) Ltd (assignee), signed on the company's behalf by an authorised director, and keep it with the company's records, never in the repository. Done when: the operator states the signing date.
+- [ ] Record the fact, not the document, in `docs/dev/decisions.md`: "Copyright in Bezier (Nodus), Imago, Photon, and all prior work of Derick Payne in them assigned to Rizonetech (Pty) Ltd on <date>; the deed is held by the company." Done when: the entry exists.
+- [ ] Agent verification: `git grep -n "Copyright (C)" -- ':!LICENSE' ':!docs/parity'` lists only the "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd" wording, and `git grep -n -E "Copyright \(C\) [0-9-]+ Rizonesoft|© [0-9]+ Rizonesoft"` prints nothing. Done when: both outputs are quoted.
+- [ ] Commit: `"docs: record the copyright assignment to Rizonetech (Pty) Ltd"` -- ticked as in §1.
+
+**Test checkpoint:** the `docs/dev/decisions.md` entry names the assignment date, and the two `git grep` outputs show no copyright line naming anyone but Rizonetech (Pty) Ltd outside third-party notices. Cheaper substitute that fails: changing the copyright lines without a signed assignment, which leaves the company claiming a copyright it does not hold.
+
+## 7. Trademark Clearance and CIPC Filing
+
+`TRADEMARKS.md` says "Rizonesoft", "Photon Graphics Suite", "Nodus", "Imago", and "Lumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, without claiming registration. Before relying on the names (and before the first release makes them public), the operator clears them against existing marks and files the ones that clear. "Imago", "Lumen", and "Nodus" are common words and may already be registered for software, so a conflict may mean renaming an app, which is far cheaper before its first release than after.
+
+- [ ] Search each name in the CIPC trade mark register (South Africa) and the WIPO Global Brand Database, in Nice classes 9 (downloadable software) and 42 (software services), ideally through a trademark attorney who also advises on conflicts. Done when: `docs/dev/decisions.md` records per name: the searches run, the conflicts found, and the attorney's view.
+- [ ] For a name that does not clear, decide: keep it (with the attorney's risk view), or rename the app; a rename is filed through `add-todo` as agent work before that app's first release. Done when: every name has a recorded decision.
+- [ ] File trade mark applications with CIPC for the cleared names (and the Rizonesoft logo and app icons if the attorney advises), classes 9 and 42. Done when: the application numbers and filing dates are recorded in `docs/dev/decisions.md`.
+- [ ] Once a registration is granted, the agent updates `TRADEMARKS.md` to say that mark is registered in South Africa (and may use the registered symbol for it); until then the policy keeps its "trademarks of" wording with no registration claim. Done when: the policy matches the register (quoted).
+- [ ] Commit: `"docs: record the trademark clearance and filings"` -- ticked as in §1.
+
+**Test checkpoint:** `docs/dev/decisions.md` lists all five names with their search results and a decision each, and every filed name has an application number; `TRADEMARKS.md` claims registration only for a mark whose registration is recorded. Cheaper substitute that fails: filing without a search, or claiming a registration that was only applied for.
+
+## 8. Download Storage and the Release Secrets
+
+Operator decision 2026-09-27: binaries are distributed only from rizonesoft.com, through S3-compatible object storage behind the CDN host `download.rizonesoft.com`; the provider is not chosen. `release.yml` uploads there with rclone and fails a tag release when any of its four secrets is missing, so no app can release until this row is done (`D02 T05 §4` depends on it). The layout, the feed, and the settings are in `docs/dev/versioning.md`.
+
+- [ ] Choose the provider (for example Cloudflare R2, Backblaze B2 with a CDN, Wasabi, DigitalOcean Spaces, or Amazon S3 with CloudFront) and record the choice, its egress cost, and the reason in `docs/dev/decisions.md`. Done when: the entry exists.
+- [ ] Create the bucket (listing disabled, objects publicly readable only through the CDN host) and point `download.rizonesoft.com` at it with a DNS CNAME and HTTPS. Done when: a test object uploaded as `healthcheck.txt` downloads from `https://download.rizonesoft.com/healthcheck.txt`.
+- [ ] Create an access key limited to that bucket (read, write, and delete objects; no account-wide rights). Done when: the key exists and nothing else can be done with it (the provider's policy view).
+- [ ] Add the secrets and the variable without writing them anywhere else: run `gh secret set PHOTON_DL_S3_ENDPOINT`, `gh secret set PHOTON_DL_S3_BUCKET`, `gh secret set PHOTON_DL_S3_ACCESS_KEY_ID`, and `gh secret set PHOTON_DL_S3_SECRET_ACCESS_KEY` and paste each value at the prompt; set `gh variable set PHOTON_DL_BASE_URL --body https://download.rizonesoft.com` only if the host differs from the default. Done when: `gh secret list` names all four.
+- [ ] Agent verification: `gh secret list` and `gh variable list` are quoted (names only), `curl -sI https://download.rizonesoft.com/healthcheck.txt` returns 200, and the next `release.yml` draft dispatch (`D00 T02 §7`) uploads under `drafts/` instead of printing the "Upload skipped" notice. Done when: the three outputs are quoted.
+- [ ] Commit: `"docs: record the download storage behind download.rizonesoft.com"` -- ticked as in §1.
+
+**Test checkpoint:** `gh secret list` names `PHOTON_DL_S3_ENDPOINT`, `PHOTON_DL_S3_BUCKET`, `PHOTON_DL_S3_ACCESS_KEY_ID`, and `PHOTON_DL_S3_SECRET_ACCESS_KEY`; `https://download.rizonesoft.com/healthcheck.txt` answers 200 over HTTPS; a draft run of `release.yml` shows the upload step ran. Cheaper substitute that fails: attaching the installers to the GitHub release instead, which the operator refused and the workflow no longer does.
+
+## 9. Decide the Product Page URLs
+
+Every link to a product page (the installer's publisher URL, the About dialog, the update check's Open Download Page, the README, the release body, and winget's `PackageUrl`) reads one value, `PHOTON_SITE_URL`, which defaults to `https://www.rizonesoft.com/` because the pages on rizonesoft.com are not decided. Links from GitHub surfaces add `?utm_source=github&utm_medium=<place>`.
+
+- [ ] Decide the pages: one suite page, or one page per app (for example `https://www.rizonesoft.com/nodus/`), and publish them on rizonesoft.com. Done when: `docs/dev/decisions.md` records the URLs and each page answers 200.
+- [ ] Set the value: `gh variable set PHOTON_SITE_URL --body <the suite or default page>`. Done when: `gh variable list` shows it.
+- [ ] If per-app pages need more than the one value, the agent files the change through `add-todo` (a per-app value in `AppIdentity`, the installer, and the feed's `page`) rather than typing URLs into surfaces. Done when: the filing exists or the one value is recorded as enough.
+- [ ] Commit: `"docs: record the product page URLs"` -- ticked as in §1.
+
+**Test checkpoint:** `gh variable list` shows `PHOTON_SITE_URL` equal to the recorded page, and `curl -sI` of each recorded URL returns 200 (quoted). Cheaper substitute that fails: typing a per-app URL into the README or a dialog, which leaves the one value and the surfaces disagreeing.
+
+## 10. Decide on a CLA Before Outside Contributions
+
+Contributors keep the copyright of their contributions and license them under GPL-3.0 with the DCO sign-off (`CONTRIBUTING.md`); there is no contributor license agreement. That keeps contributing simple, but it means Rizonetech (Pty) Ltd could not relicense or dual-license code others wrote. The operator decides, with the IP attorney of §6, before the first pull request from someone other than the operator is merged.
+
+- [ ] Decide between keeping the DCO only, a CLA granting Rizonetech (Pty) Ltd a broad license to contributions (for example modelled on the Apache Individual CLA), or a copyright assignment agreement. Done when: `docs/dev/decisions.md` records the choice, the reason, and the attorney's view.
+- [ ] If a CLA or an assignment is chosen, the agent files the work through `add-todo`: the agreement text in the repository, a check that refuses an unsigned pull request, and the `CONTRIBUTING.md` section announcing it before it applies. Done when: the filing exists, or the DCO-only decision is recorded and `CONTRIBUTING.md` needs no change.
+- [ ] Until this row is stamped, no pull request authored by anyone but the operator is merged. Done when: `gh pr list --state merged --json author` shows only the operator's account since 2026-09-27 (quoted at stamping).
+- [ ] Commit: `"docs: record the contributor agreement decision"` -- ticked as in §1.
+
+**Test checkpoint:** the decision is recorded in `docs/dev/decisions.md`, and `CONTRIBUTING.md`'s Licensing and sign-off section matches it (DCO only, or the agreement with its check). Cheaper substitute that fails: accepting outside code first and deciding later, which cannot be undone for code already merged.
 
 ## Verification
 

@@ -9,6 +9,9 @@
   -Version defaults to the MinVer version for the app's tag prefix (photon-v for
   the suite). The installer gets /DAppVersion=<SemVer> and /DAppFileVersion=
   <Major.Minor.Patch.RunNumber>. -SkipPublish reuses artifacts/publish as-is.
+  When $env:PHOTON_SITE_URL is set (the release workflow passes the repository
+  variable), it becomes the installer's publisher and updates URL (/DPublisherUrl);
+  otherwise installer/common.iss uses https://www.rizonesoft.com/.
 .EXAMPLE
   pwsh scripts/package.ps1 -App Nodus
   pwsh scripts/package.ps1 -App Imago -Version 0.2.0
@@ -47,7 +50,9 @@ function Invoke-Iscc([string]$Script, [string]$SemVer, [string[]]$Extra = @()) {
     "/DAppFileVersion=$fileVersion",
     "/DRuntime=$Runtime",
     "/DOutputDir=$dist"
-  ) + $Extra + @((Join-Path $RepoRoot $Script))
+  )
+  if ($env:PHOTON_SITE_URL) { $isccArgs += "/DPublisherUrl=$($env:PHOTON_SITE_URL)" }
+  $isccArgs = $isccArgs + $Extra + @((Join-Path $RepoRoot $Script))
   Write-Step "ISCC $Script ($SemVer, file $fileVersion)"
   Invoke-Native $iscc @isccArgs
 }

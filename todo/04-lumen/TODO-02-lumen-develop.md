@@ -197,17 +197,19 @@ Lumen's first release, following `standards/release.md` as Nodus and Imago did, 
 
 **Needs:** Clean Windows machine (no .NET SDK)
 
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.1.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
+
 - [ ] `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Write the `lumen-v0.1.0` section of `CHANGELOG.md`. Done when: it lists every user-visible feature.
 - [ ] Confirm the user guide covers every surface. Done when: no surface lacks a page.
 - [ ] Package and run the clean-machine procedure from `D05 T01 §1`, including an import of a copied fixture folder, a develop, an export, and a hash check that the originals are unchanged. Done when: every step passes and is quoted.
-- [ ] Push `lumen-v0.1.0`; verify the workflow, assets, and `SHA256SUMS`; run the portable ZIP from an empty folder. Done when: all pass (URLs and hashes quoted).
+- [ ] Push `lumen-v0.1.0`; verify the workflow, the files and `SHA256SUMS` on `download.rizonesoft.com`, and the update feed; run the portable ZIP from an empty folder. Done when: all pass (URLs and hashes quoted).
 - [ ] Update `README.md`'s Lumen status line. Done when: it names 0.1.0.
 - [ ] Commit: `"release: Lumen 0.1.0"`
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
 
-**Test checkpoint:** `gh release view lumen-v0.1.0 --json isPrerelease,assets` shows a non-prerelease with three assets; every checklist line has quoted evidence, including the unchanged-originals hash table from the installed build. Cheaper substitute that fails: releasing without the installed-build guard check.
+**Test checkpoint:** `gh release view lumen-v0.1.0 --json isPrerelease,assets,body` shows a non-prerelease, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.1.0/`; every checklist line has quoted evidence, including the unchanged-originals hash table from the installed build. Cheaper substitute that fails: releasing without the installed-build guard check.
 
 ## 9. Accessibility and Localization
 

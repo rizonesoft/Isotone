@@ -13,11 +13,13 @@ track: R1
 > **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Photon Graphics Suite (`photon-v1.0.0`) without any app's version moving.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `nodus-v*`, `imago-v*`, `lumen-v*`, and `photon-v*` tags. A local Nodus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Nodus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Nodus and Imago publishes and names Nodus's executable `Bezier.Desktop.exe`.
+> **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `nodus-v*`, `imago-v*`, `lumen-v*`, and `photon-v*` tags. A local Nodus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Nodus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Nodus and Imago publishes and names Nodus's executable `Bezier.Desktop.exe`. **Corrected 2026-09-27:** by operator decision that day, binaries are distributed only from rizonesoft.com: `release.yml` uploads the installer, the portable ZIP, and `SHA256SUMS` to S3-compatible storage served as `download.rizonesoft.com` (`<slug>/<version>/<file>`, slug `nodus`, `imago`, `lumen`, or `photon`) with a hash-pinned rclone, writes the update feed `update/<slug>.json` (stable) or `update/<slug>-prerelease.json` last, and creates a GitHub release with no attached files whose body (from `scripts/release-manifest.ps1`) carries the CHANGELOG notes, Download links, the SHA-256 table, and the tag's source link; a tag release fails when the storage secrets are missing, and the storage itself is the operator's step `D99 T01 §8`. Every section below that said a GitHub release carries assets now reads the files from `download.rizonesoft.com`.
 <!-- claim: count "ArchitecturesAllowed=x64compatible" installer/common.iss = 1 -->
 <!-- claim: exists installer/Suite.iss -->
 <!-- claim: count "photon-v\*" .github/workflows/release.yml = 1 -->
 <!-- claim: count "signtool" scripts/package.ps1 = 0 -->
+<!-- claim: exists scripts/release-manifest.ps1 -->
+<!-- claim: count "gh release upload" .github/workflows/release.yml = 0 -->
 
 ## Inputs
 
@@ -29,6 +31,8 @@ track: R1
 - -> XREF: D03 T06 §3 -- the Imago release that runs §1's procedure
 - -> XREF: D04 T01 §2 -- Lumen's app creation that makes it a shipping app for §6
 - -> XREF: D99 T01 §3 -- the operator step that supplies the certificate §2 needs
+- -> XREF: D99 T01 §8 -- the operator step that provisions `download.rizonesoft.com` and the storage secrets every release here uploads to (§3, §5, §6) and the feed §4 reads
+- -> XREF: D99 T01 §9 -- the product page URLs (`PHOTON_SITE_URL`) §4's result dialog and §5's manifests link
 - -> XREF: D06 T01 §4 -- the install guide that documents what §1 proves
 - -> XREF: D02 T17 §1 -- the Nodus parity releases that run §1's clean-machine procedure
 - -> XREF: D03 T20 §8 -- Imago parity workspace cites §4: the opt-in `UpdateChecker` D03 T20 §8 consumes
@@ -40,10 +44,10 @@ track: R1
 
 - `docs/dev/clean-machine.md` is the procedure every app release runs, and Nodus 0.1.0 is its first quoted run.
 - With a certificate supplied from outside the repository, every executable, DLL we build, installer, and uninstaller is Authenticode-signed with a timestamp, and `signtool verify /pa` passes on each.
-- `win-arm64` installers and ZIPs are produced per app and by the release workflow.
-- Each app's Help, Check for Updates compares its version with the latest GitHub release for its tag prefix and offers the download page, with a setting to check on startup.
-- winget manifests for each released app are submitted and install the app.
-- `photon-v1.0.0` publishes the suite installer and ZIP carrying Nodus, Imago, and Lumen at their current versions.
+- `win-arm64` installers and ZIPs are produced per app and uploaded by the release workflow to `download.rizonesoft.com`.
+- Each app's Help, Check for Updates compares its version with its update feed on `download.rizonesoft.com` (`update/<slug>.json`, plus `update/<slug>-prerelease.json` when prereleases are included) and offers the product page, with a setting to check on startup.
+- winget manifests for each released app point at `download.rizonesoft.com` installer URLs, are submitted, and install the app.
+- `photon-v1.0.0` publishes the suite installer and ZIP on `download.rizonesoft.com`, carrying Nodus, Imago, and Lumen at their current versions.
 
 **Adjacency:** list=not-applicable (no browsable records); document=not-applicable (release notes are the changelog's); settings=applicable @ D05 T01 §4; reporting=not-applicable (no summaries); notifications=applicable; permissions=applicable; audit=applicable; exchange=not-applicable (no user formats); reverse=applicable
 
@@ -98,44 +102,46 @@ Windows on Arm machines run x64 apps under emulation, slowly. .NET 11 and WPF su
 
 - [ ] `installer/common.iss` sets `ArchitecturesAllowed` and `ArchitecturesInstallIn64BitMode` from the `Runtime` define (`x64compatible` or `arm64`). Done when: `pwsh scripts/package.ps1 -App Nodus -Runtime win-arm64` produces an arm64 installer.
 - [ ] Every native dependency ships an arm64 asset (SkiaSharp, the RAW decoder, ComputeSharp's DirectX runtime); any that does not is named with its fallback. Done when: the publish folder for each app lists arm64 native DLLs (quoted).
-- [ ] `release.yml` builds both runtimes and uploads both sets of assets with `SHA256SUMS` covering all. Done when: a prerelease tag produces six assets per app.
+- [ ] `release.yml` builds both runtimes and uploads both sets of files to `download.rizonesoft.com/<slug>/<version>/` with `SHA256SUMS` covering all, `scripts/release-manifest.ps1` listing both in the release body and the feed's `files` (**Corrected 2026-09-27:** said uploads both sets of assets to the GitHub release, which carries no binaries since the operator's distribution decision). Done when: a prerelease tag's download folder holds six files per app and its release body links all six.
 - [ ] A launch on arm64 hardware (or an arm64 VM), or, if none is available, the gap recorded with an owner through `add-todo`. Done when: one or the other is quoted.
 - [ ] Commit: `"release: win-arm64 installers and ZIPs for every app"`
 
 **Requires:** display-session -- launching the arm64 build needs an interactive desktop
-**Test checkpoint:** a prerelease tag's release lists `win-x64` and `win-arm64` installers and ZIPs for the app, and `dumpbin /headers` (or `Get-PEArchitecture` via a small script) on the arm64 executable reports `AA64`. Cheaper substitute that fails: an x64 build renamed arm64, which the header check catches.
+**Test checkpoint:** a prerelease tag's download folder on `download.rizonesoft.com` and its release body list `win-x64` and `win-arm64` installers and ZIPs for the app, and `dumpbin /headers` (or `Get-PEArchitecture` via a small script) on the arm64 executable reports `AA64`. Cheaper substitute that fails: an x64 build renamed arm64, which the header check catches.
 
 ## 4. The Update Check
 
-Users should learn a new version exists without the app phoning home silently. Each app asks GitHub for the latest release with its own tag prefix, only when the user asks or has allowed a startup check, and offers the release page; it never downloads or installs by itself. Every app needs it, so it lives in `Photon.Core`.
+Users should learn a new version exists without the app phoning home silently. Each app reads its own update feed, only when the user asks or has allowed a startup check, and offers the product page; it never downloads or installs by itself. Every app needs it, so it lives in `Photon.Core`.
+
+**Corrected 2026-09-27:** said each app asks the GitHub releases API for the latest release with its tag prefix and offers the release page. Operator decision 2026-09-27: binaries ship only from rizonesoft.com, so the check reads the feed `release.yml` writes to `https://download.rizonesoft.com/update/<slug>.json` (latest stable) and, with prereleases included, `update/<slug>-prerelease.json`, taking the higher SemVer of the two; the feed's fields are in `docs/dev/versioning.md` (`version`, `url`, `sha256`, `notes`, `page`, `date`). The base URL is one setting with the default `https://download.rizonesoft.com`, never typed at a call site.
 
 **Fidelity:** Help, Check for Updates and its result dialog -- new build, no baseline; captured to docs/captures/nodus/update-check/ (and the Imago and Lumen equivalents).
 **Job:** a user can find out whether a newer release of the app they run exists and open its download page. Consumer: the user.
-**Treatment:** `UpdateChecker` in `Photon.Core/Updates/` queries `https://api.github.com/repos/rizonesoft/Photon/releases` (unauthenticated, with a user agent naming the app and version), filters by the app's tag prefix and prerelease preference, and compares SemVer; the result dialog says "You have the latest version (x)." or "Nodus y is available (you have x). What's new: ..." with Open Download Page; a setting `Updates.CheckOnStartup` (default off, offered once on first run) and `Updates.IncludePrereleases` (default off); network failure says "Could not check for updates: <reason>." and logs a Warning. Cheaper substitute that fails the checkpoint: comparing version strings as text.
+**Treatment:** `UpdateChecker` in `Photon.Core/Updates/` reads `https://download.rizonesoft.com/update/<slug>.json` (and `<slug>-prerelease.json` when prereleases are included) over HTTPS with a user agent naming the app and version, refuses a feed whose `app` is not its own, and compares SemVer; the result dialog says "You have the latest version (x)." or "Nodus y is available (you have x). What's new: ..." linking the feed's `notes`, with Open Download Page opening the feed's `page` (the product page, `https://www.rizonesoft.com/` until `D99 T01 §9` decides per-app pages) with `?utm_source=app&utm_medium=update-check`; a setting `Updates.CheckOnStartup` (default off, offered once on first run) and `Updates.IncludePrereleases` (default off); network failure says "Could not check for updates: <reason>." and logs a Warning. Cheaper substitute that fails the checkpoint: comparing version strings as text.
 **Chrome:** consume `Photon.Core` settings and logging, the `Photon.UI` dialog shell, and the theme. Do not add a per-app update client.
 
 **Requires:** display-session -- the update dialog needs an interactive desktop
 
-- [ ] `UpdateChecker` with an injectable HTTP handler, SemVer comparison, prefix filtering, and a 10-second timeout. Done when: `UpdateCheckerTests` cover newer, same, older, prerelease filtering, another app's tag ignored, and network failure.
+- [ ] `UpdateChecker` with an injectable HTTP handler, SemVer comparison, the stable and prerelease feeds, and a 10-second timeout (**Corrected 2026-09-27:** said prefix filtering over the GitHub releases API; the feed replaces it). Done when: `UpdateCheckerTests` cover newer, same, older, prerelease filtering (the prerelease feed read only when included, the higher version winning), another app's feed refused (`app` mismatch), and network failure.
 - [ ] The dialog and the Help menu item in every shipping app, replacing each app's planned stub. Done when: `MenuAuditTests` in each app pass with the item enabled.
 - [ ] The two settings and the first-run offer. Done when: the startup check runs only when enabled (test).
-- [ ] Commit: `"core: an opt-in update check against each app's GitHub releases"`
+- [ ] Commit: `"core: an opt-in update check against each app's update feed"`
 
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with `UpdateCheckerTests` reporting all six cases; a driven check from Nodus against the live API shows the correct result for the running version (capture and log line). Cheaper substitute that fails: text comparison, which `0.10.0` versus `0.9.0` catches.
+**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with `UpdateCheckerTests` reporting all six cases; a driven check from Nodus against the live feed `https://download.rizonesoft.com/update/nodus.json` shows the correct result for the running version (capture and log line). Cheaper substitute that fails: text comparison, which `0.10.0` versus `0.9.0` catches.
 
 ## 5. winget Manifests
 
-winget is how many Windows users install software. Each released app gets a manifest in `microsoft/winget-pkgs` pointing at its GitHub release installer, with silent switches and the per-user scope. Unsigned installers are accepted but may be flagged; signing (§2) is recommended first, not required.
+winget is how many Windows users install software. Each released app gets a manifest in `microsoft/winget-pkgs` pointing at its installer on `download.rizonesoft.com`, with silent switches and the per-user scope. **Corrected 2026-09-27:** said pointing at its GitHub release installer; GitHub releases carry no binaries since the operator's distribution decision, so every `InstallerUrl` is `https://download.rizonesoft.com/<slug>/<version>/<App>-<version>-win-x64-Setup.exe` and `PackageUrl` is the product page. Unsigned installers are accepted but may be flagged; signing (§2) is recommended first, not required.
 
 **Needs:** Windows host (build/test)
 
-- [ ] Author manifests with `wingetcreate new` for `Rizonesoft.Nodus`, `Rizonesoft.Imago`, and `Rizonesoft.Lumen` (installer URL, SHA-256, `InstallerType: inno`, `Scope: user` and `machine` entries, license GPL-3.0, publisher Rizonesoft), keeping copies under `installer/winget/`. Done when: `winget validate` passes on each.
+- [ ] Author manifests with `wingetcreate new` for `Rizonesoft.Nodus`, `Rizonesoft.Imago`, and `Rizonesoft.Lumen` (installer URL on `download.rizonesoft.com` and its SHA-256 from the release's `SHA256SUMS`, `InstallerType: inno`, `Scope: user` and `machine` entries, license GPL-3.0, publisher Rizonesoft, `PublisherUrl` and `PackageUrl` from `PHOTON_SITE_URL`, `Copyright: Copyright (C) 2025-2026 Rizonetech (Pty) Ltd`), keeping copies under `installer/winget/`. Done when: `winget validate` passes on each.
 - [ ] `winget install --manifest installer/winget/<App>` installs each app locally. Done when: each installs and starts (quoted).
 - [ ] Submit the manifests with `wingetcreate submit` (the operator's GitHub account authorizes the fork; this runs with `gh` credentials the agent has, or is handed to the operator if not). Done when: the pull requests are open (URLs quoted), or the handoff is recorded as a `D99` row.
-- [ ] A release step (script or workflow job) updates the manifests on each new app release with `wingetcreate update`. Done when: it is documented in `docs/dev/build.md`.
+- [ ] A release step (script or workflow job) updates the manifests on each new app release with `wingetcreate update`, reading the installer URL and hash from the update feed. Done when: it is documented in `docs/dev/build.md`.
 - [ ] Commit: `"release: winget manifests for Nodus, Imago, and Lumen"`
 
-**Test checkpoint:** `winget validate` exits 0 for each manifest; `winget install --manifest` installs each app (quoted); the submission PR URLs are quoted. Cheaper substitute that fails: manifests never validated.
+**Test checkpoint:** `winget validate` exits 0 for each manifest and every `InstallerUrl` starts with `https://download.rizonesoft.com/`; `winget install --manifest` installs each app (quoted); the submission PR URLs are quoted. Cheaper substitute that fails: manifests never validated.
 
 ## 6. The Suite Bundle: photon-v1.0.0
 
@@ -146,16 +152,17 @@ The suite bundle packages all three apps in one installer and one ZIP without ch
 - [ ] `installer/Suite.iss` requires Lumen when Lumen ships (mirroring the Nodus and Imago checks) and its component list names each app with its own version from its latest tag. Done when: the suite installer's component page shows three apps with their versions.
 - [ ] A `photon-v1.0.0` section in `CHANGELOG.md` listing the app versions the bundle carries. Done when: it exists.
 - [ ] Run the clean-machine procedure for the suite installer: install all three, uninstall one component, confirm the others still run and no standalone install's registry keys were touched. Done when: every step passes (quoted).
-- [ ] Push `photon-v1.0.0`; verify the workflow, the assets, and `SHA256SUMS`. Done when: all pass (URLs and hashes quoted).
+- [ ] Push `photon-v1.0.0`; verify the workflow, the files under `https://download.rizonesoft.com/photon/1.0.0/`, `SHA256SUMS`, and the feed `update/photon.json` (**Corrected 2026-09-27:** said the assets, which are no longer attached to the GitHub release). Done when: all pass (URLs and hashes quoted).
 - [ ] Commit: `"release: the Photon Graphics Suite 1.0.0 bundle"`
 
 **Requires:** display-session -- the suite installer's component page and the app launches need an interactive desktop
 
-**Test checkpoint:** `gh release view photon-v1.0.0 --json assets` lists the suite installer, ZIP, and checksums; the clean-machine run shows three apps installed side by side with their own versions in their About dialogs. Cheaper substitute that fails: a bundle that re-versions every app to 1.0.0, which the About dialogs catch.
+**Test checkpoint:** `gh release view photon-v1.0.0 --json assets,body` shows no assets and a body linking the suite installer, ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/photon/1.0.0/`, whose downloads match their hashes; the clean-machine run shows three apps installed side by side with their own versions in their About dialogs. Cheaper substitute that fails: a bundle that re-versions every app to 1.0.0, which the About dialogs catch.
 
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0
 - [ ] Every app release since this file shipped has a quoted clean-machine run
-- [ ] `signtool verify /pa` passes on every asset once signing is configured
+- [ ] `signtool verify /pa` passes on every published file once signing is configured
+- [ ] No GitHub release carries an attached installer or ZIP (`gh release view <tag> --json assets` for each release)
 - [ ] `python scripts/todo-graph.py validate` clean

@@ -91,7 +91,7 @@ Lumen's guide leads with the promise users need most: Lumen never changes your o
 
 One guide for installing any app or the suite, and one for when something goes wrong.
 
-- [ ] `docs/user/install.md`: installer versus portable ZIP, per-user versus all-users, file associations (opt-in), SmartScreen on unsigned builds and why, upgrading, uninstalling, verifying `SHA256SUMS`, and (once §5 of the release file ships) winget. Done when: every step matches `docs/dev/clean-machine.md`.
+- [ ] `docs/user/install.md`: where to download (only rizonesoft.com, served from `download.rizonesoft.com`; GitHub releases carry notes, checksums, and links, never the files, operator decision 2026-09-27), installer versus portable ZIP, per-user versus all-users, file associations (opt-in), SmartScreen on unsigned builds and why, upgrading, uninstalling, verifying `SHA256SUMS`, and (once §5 of the release file ships) winget. Done when: every step matches `docs/dev/clean-machine.md`.
 - [ ] `docs/user/troubleshooting.md`: where each app's logs and settings live (`%LOCALAPPDATA%\Rizonesoft\<App>\`), how to reset settings, recovery drafts, and how to file a bug with the About dialog's copied version info. Done when: every path named exists on an installed app (checked on the clean machine run).
 - [ ] Link both from `docs/user/README.md`. Done when: the planned rows link them.
 - [ ] Commit: `"docs: install and troubleshooting guides for the suite"`

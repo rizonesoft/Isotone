@@ -23,7 +23,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `src/Lumen/` | Lumen, the darkroom (planned) |
 | `src/Photon.Core/`, `src/Photon.UI/` | Shared libraries, only what two apps need (planned); the target layout is in `docs/dev/architecture.md` |
 | `Photon.slnx` | The one solution every build, test, and publish goes through |
-| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `check-all.ps1`, and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots, campaign guard) |
+| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots, campaign guard) |
 | `tools/` | `provision.ps1` (sets up a clone, including the commit hook) and `githooks/pre-commit` |
 | `todo/` | The live execution plan; read `todo/README.md` before authoring or implementing |
 | `todo/implementation-plan.md` | Ordered phase plan; its boxes are synchronized through `scripts/todo-graph.py` |
@@ -55,6 +55,7 @@ Everything here is Windows-only. The TODO tooling is stdlib Python 3 (`python` o
 - **Shared code goes to `Photon.Core` only when two apps need it.** One app's need stays in that app, with a note naming when it would move. A second copy of a behavior in a second app is a defect; so is a `Photon.Core` type only one app consumes.
 - **Per-app versioning.** Each app releases on its own tag: `nodus-v*`, `imago-v*`, `lumen-v*`. A suite release that bundles a set of app versions tags `photon-v*`. No app's version moves because another app shipped.
 - **Build output lives under `artifacts/`**, scratch and guard state under `build/`; both are gitignored and neither is ever cited as a record.
+- **Ownership and distribution** (operator decisions 2026-09-27): the copyright holder is Rizonetech (Pty) Ltd ("Copyright (C) 2025-2026 Rizonetech (Pty) Ltd"; "Rizonesoft is a brand of Rizonetech (Pty) Ltd."), and the publisher users see stays Rizonesoft. The names and icons are trademarks under `TRADEMARKS.md`. Binaries ship only from rizonesoft.com, served from `download.rizonesoft.com` (`<slug>/<version>/<file>`, the update feed at `update/<slug>.json`); a GitHub release carries notes, source archives, the SHA-256 table, and links, never an installer or ZIP. The product page is one value, `PHOTON_SITE_URL` (default `https://www.rizonesoft.com/`). Contributors keep their copyright under the GPL with the DCO; a CLA is an open operator decision (`D99 T01 §10`).
 - **A dependency is a decision.** Adding a package outside the stack above records the reason in the section that adds it.
 
 ## The TODO system

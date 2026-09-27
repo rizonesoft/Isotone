@@ -174,7 +174,9 @@ Nodus builds its About and keyboard-shortcuts dialogs first (`D02 T05 §1`, `§2
 
 **Requires:** display-session -- captures of both apps' dialogs need an interactive desktop
 
-- [ ] Move `AboutDialog` from Nodus to `src/Photon.UI/Dialogs/AboutDialog.xaml(.cs)` with an `AboutViewModel` taking `AppIdentity` and a credits list. Done when: Nodus's copy is deleted and Nodus's Help, About still shows its own identity.
+**Corrected 2026-09-27:** the operator's ownership decision fixes the About dialog's legal lines for every app (the About section of `docs/design/components/Dialog/README.md`): "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd" (read from the app assembly's `AssemblyCopyrightAttribute`), "Rizonesoft is a brand of Rizonetech (Pty) Ltd.", the GPL source offer "Source code: https://github.com/rizonesoft/Photon/tree/<prefix>-v<version>" built from `AppIdentity`'s tag prefix and informational version (the commit URL for an untagged build), and the product page from one configured value (default `https://www.rizonesoft.com/`). Nodus builds them in `D02 T05 §1`; the move keeps them and fills them from `AppIdentity`, so Imago and Lumen show their own tag URLs.
+
+- [ ] Move `AboutDialog` from Nodus to `src/Photon.UI/Dialogs/AboutDialog.xaml(.cs)` with an `AboutViewModel` taking `AppIdentity` and a credits list. Done when: Nodus's copy is deleted and Nodus's Help, About still shows its own identity, and a `Photon.UI.Tests` case asserts an Imago identity at `0.1.0+<sha>` yields the copyright line, the brand line, and `https://github.com/rizonesoft/Photon/tree/imago-v0.1.0`.
 - [ ] Move `ShortcutsDialog` to `src/Photon.UI/Dialogs/ShortcutsDialog.xaml(.cs)`, taking an `IReadOnlyList<ShortcutEntry>` (`record ShortcutEntry(string Category, string Command, string Gesture)`). Done when: Nodus passes its keymap and the dialog shows it unchanged.
 - [ ] Wire both dialogs into Imago's Help menu with Imago's identity, credits, and keymap. Done when: Imago's Help, About and Help, Keyboard Shortcuts open them.
 - [ ] Move the view-model tests with the code to `tests/Photon.UI.Tests`. Done when: they pass there and no copy remains in the Nodus tests.

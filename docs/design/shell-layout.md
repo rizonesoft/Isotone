@@ -88,7 +88,7 @@ The previous Imago layout (Layers on the left, Properties on the right) moves to
 | Suite and version | 13px regular #8C8D93, baseline 212: "Photon Graphics Suite · Version 0.1.0", the dot in #6C6D73 |
 | Status | Segoe UI Variable Text 12px #A3A4AA, baseline 272, live from startup ("Loading tools…", "Loading brushes…", "Opening the catalog…") |
 | Progress | 340 x 3 track #3A3B41 at x 230, y 284, radius 1.5; fill `accent-<app>`, determinate, advanced by the startup steps |
-| Copyright | 11px #6E6F75, right-aligned at x 610, baseline 312: "© 2026 Rizonesoft · Free and open source (GPL-3.0)" |
+| Copyright | 11px #6E6F75, right-aligned at x 610, baseline 312: "© 2026 Rizonetech (Pty) Ltd · Free and open source (GPL-3.0)" |
 | Band | the spectrum as a gentle wave along the bottom edge (the seven app icon stops), with a 1.5px white crest at 35 percent |
 | Glow | Bezier's `BorderGlowAnimator` in `accent-<app>`: a 1.5px highlight travelling around the edge, one lap per 6 s while loading, fading in over 300ms and out over 500ms; none when Windows animation effects are off |
 | Timing | shown from process start until the main window is ready, then fades out over `duration-standard` 200ms; no minimum display time and no artificial delay; closes at once when animations are off |

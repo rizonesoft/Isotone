@@ -39,12 +39,13 @@
     <RunSettingsFilePath>$(MSBuildThisFileDirectory)tests/Photon.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
-  <!-- Identity -->
+  <!-- Identity. The copyright holder is Rizonetech (Pty) Ltd; Rizonesoft is its brand and
+       stays the publisher users see (Authors here, AppPublisher in installer/common.iss). -->
   <PropertyGroup>
-    <Company>Rizonesoft</Company>
+    <Company>Rizonetech (Pty) Ltd</Company>
     <Authors>Rizonesoft</Authors>
     <Product Condition="'$(Product)' == ''">Photon Graphics Suite</Product>
-    <Copyright>Copyright (c) 2024-$([System.DateTime]::UtcNow.Year) Rizonesoft</Copyright>
+    <Copyright>Copyright (C) 2025-2026 Rizonetech (Pty) Ltd</Copyright>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rizonesoft/Photon</PackageProjectUrl>
