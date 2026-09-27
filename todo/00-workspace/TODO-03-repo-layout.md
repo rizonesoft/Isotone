@@ -3,14 +3,14 @@ schema_version: 1
 id: repo-layout
 domain: 00-workspace
 status: draft
-title: "TODO-03 -- Repository Layout and Visual Baselines"
+title: "TODO-03 -- Repository Layout, Visual Baselines, and App Icon Export"
 depends_on: []
 track: W3
 ---
 
-# TODO-03 -- Repository Layout and Visual Baselines
+# TODO-03 -- Repository Layout, Visual Baselines, and App Icon Export
 
-> **Goal:** Nothing in the tree is a leftover of the imports: each app's documentation lives under `docs/`, sample files sit with the test fixtures, empty folders are gone, and both imported apps have committed captures of their current surfaces, so every later UI section has a visual baseline to be reviewed against.
+> **Goal:** Nothing in the tree is a leftover of the imports: each app's documentation lives under `docs/`, sample files sit with the test fixtures, empty folders are gone, both imported apps have committed captures of their current surfaces, so every later UI section has a visual baseline to be reviewed against, and every raster app icon (PNG sizes and the multi-resolution ICO of Nodus, Imago, and Lumen) is generated from the committed SVG sources by one script whose check fails the gates when a raster drifts from its source.
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The imports brought their own documentation folders: `src/Nodus/docs/` (a `README.md` indexing mostly missing pages, `components/vector-icon.md`, `ui/status-bar.md`) and `src/Imago/docs/` (five `README.md` stubs under `api/`, `architecture/`, `plugins/`, `user-guide/`). Two loose SVG files sit at `src/Nodus/test.svg` and `src/Nodus/bezier-sample.svg`. `src/Imago/.github/` is an empty directory left after the per-app workflows were removed. There is no `docs/captures/` folder, so a `Fidelity:` block that names one cannot be satisfied and `process-todo-section` would refuse every UI section.
@@ -19,20 +19,40 @@ track: W3
 <!-- claim: exists src/Nodus/bezier-sample.svg -->
 <!-- claim: exists src/Nodus/test.svg -->
 <!-- claim: absent docs/captures -->
+>
+> **Corrected 2026-09-27:** the operator chose the app icon design that day (Direction C, "Suite tile": "C it is"), and its SVG sources are committed under `resources/icons/<app>/` (`<app>.svg` master for 48 px and up, hand-tuned `<app>-16.svg`, `-24.svg`, `-32.svg`, and the `<app>-splash.svg` neon art), recorded with their construction rules and license in `resources/icons/README.md`. No raster is generated from them yet: `resources/icons/nodus/nodus.ico` and `resources/icons/nodus/PNG/` are still the old Nodus design, which `installer/Nodus.iss` and `installer/Suite.iss` reference, and `resources/icons/imago/imago.ico` and `resources/icons/lumen/lumen.ico`, which `installer/Imago.iss` and `installer/Lumen.iss` point at, do not exist. There is no export script. §3 closes that gap.
+<!-- claim: exists resources/icons/README.md -->
+<!-- claim: exists resources/icons/nodus/nodus.svg -->
+<!-- claim: exists resources/icons/imago/imago-16.svg -->
+<!-- claim: exists resources/icons/lumen/lumen-splash.svg -->
+<!-- claim: exists resources/icons/nodus/nodus.ico -->
+<!-- claim: absent resources/icons/imago/imago.ico -->
+<!-- claim: absent resources/icons/lumen/lumen.ico -->
+<!-- claim: absent scripts/export-icons.py -->
 
 ## Inputs
 
 - [`docs/README.md`](../../docs/README.md), [`docs/dev/README.md`](../../docs/dev/README.md) -- the documentation indexes §1 links the moved pages from
 - [`.claude/skills/process-todo-section/gates.md`](../../.claude/skills/process-todo-section/gates.md) -- the launch smoke §2 follows
 - [`standards/shared.md`](../../standards/shared.md) -- the design contract the captures illustrate
+- [`resources/icons/README.md`](../../resources/icons/README.md) -- the icon set, which SVG feeds which size, the construction rules, and the license §3 exports from
+- [`installer/common.iss`](../../installer/common.iss) -- `SetupIconFile` falls back to the Inno Setup icon with a `WARNING: icon ... not found` message when `AppIcon` is absent, which §3's checkpoint reads
+- resvg (https://github.com/linebender/resvg, Apache-2.0 or MIT) through resvg-py 0.5.0 (https://pypi.org/project/resvg-py/, MPL-2.0), and Pillow 12.3.0 (https://pillow.readthedocs.io/, MIT-CMU) with its ICO writer (`IcoImagePlugin`, `sizes` and `append_images`) -- the renderer and the ICO writer §3 pins
+- -> XREF: D02 T01 §1 -- the Nodus rename consumes §3's `nodus.ico` and `PNG/nodus_32.png`
+- -> XREF: D03 T01 §4 -- the Imago icon consumes §3's `imago.ico` and `PNG/imago_32.png`
+- -> XREF: D04 T01 §2 -- the Lumen app consumes §3's `lumen.ico` and PNGs
+- -> XREF: D01 T01 §2 -- the shared splash window consumes §3's splash PNGs
+- -> XREF: D02 T02 §2 -- the Nodus splash logo replacement consumes §3's PNGs instead of SharpVectors
+- -> XREF: D99 T01 §4 -- the icon license row, answered by the project-created icons §3 exports
 
 ## Outcome
 
 - `src/Nodus/` and `src/Imago/` hold only projects and build overlays; their documentation lives under `docs/dev/nodus/` and `docs/dev/imago/`.
 - The two sample SVG files are committed fixtures under `tests/fixtures/nodus/svg/` with a README naming their source.
 - `docs/captures/nodus/main-window/` and `docs/captures/imago/main-window/` hold dated captures of each app's current main window at 100 and 150 percent scaling, with a `README.md` recording the commit and machine.
+- `python scripts/export-icons.py` regenerates `resources/icons/<app>/PNG/` and `resources/icons/<app>/<app>.ico` for Nodus, Imago, and Lumen from the committed SVGs, and `python scripts/export-icons.py --check` fails CI and `scripts/check-all.ps1` when a committed raster differs from what the sources render.
 
-**Adjacency:** all=not-applicable (moving files and recording baselines: no records, settings, or documents a user changes)
+**Adjacency:** all=not-applicable (moving files, recording baselines, and generating icon rasters at build time: no records, settings, or documents a user changes)
 
 **Adjacency rationale:** The captures are evidence for reviewers, not a product surface; the sections that change those surfaces own their adjacency.
 
@@ -42,6 +62,7 @@ track: W3
 | :---: | :-----: | ---------------------------------------------------- | ---------- | :----: |
 |   1   |   §1    | Fold the per-app docs and samples into the suite     | --         |  [ ]   |
 |   2   |   §2    | Baseline captures of Nodus and Imago                 | --         |  [ ]   |
+|   3   |   §3    | Export the app icon rasters from the SVG sources     | D00 T01 §5, D00 T02 §5 |  [ ]   |
 
 ---
 
@@ -80,8 +101,35 @@ Every UI section carries a `Fidelity:` block naming a capture under `docs/captur
 
 **Test checkpoint:** `Get-ChildItem docs/captures -Recurse -Filter *.png` lists at least five captures, each non-empty and a valid PNG (its first eight bytes are the PNG signature, checked with `Format-Hex`); each surface folder's `README.md` names the commit the captures were taken at. Cheaper substitute that fails: copying `resources/screens/nodus.png`, which the commit record would not match.
 
+## 3. Export the App Icon Rasters from the SVG Sources
+
+The app icons are SVG sources (operator decision 2026-09-27, Direction C, recorded in `resources/icons/README.md`), but Windows and the apps consume rasters: `ApplicationIcon` and Inno Setup's `SetupIconFile` take an `.ico`, and WPF window icons and the splash take PNGs. Hand-exported rasters drift from their sources without anyone noticing, so this section commits one script that renders every raster, and a check that re-renders and compares. It runs in Phase 1 because the renames there set each app's icon: `D02 T01 §1` (Nodus) and `D03 T01 §4` (Imago), then later `D04 T01 §2` (Lumen) and the splash sections `D01 T01 §2` and `D02 T02 §2`, take their files from here and source no icon art of their own. The old Nodus rasters (`nodus/nodus.ico`, `nodus/PNG/*`) are overwritten in place under the same names, so the installers' `AppIcon` paths stay valid.
+
+**Fidelity:** no surface of its own -- the rasters are files; the surfaces that show them (Explorer, title bars, the splash, the installers) are wired by `D02 T01 §1`, `D03 T01 §4`, `D04 T01 §2`, and `D01 T01 §2`.
+
+**Needs:** Windows host (build/test)
+
+Source map, one rule for all three apps (from `resources/icons/README.md`): 16 and 20 px render from `<app>-16.svg`; 24 and 30 px from `<app>-24.svg`; 32, 36, and 40 px from `<app>-32.svg`; 48, 60, 64, 72, 80, 96, 128, 256, and 512 px from the `<app>.svg` master. Every size renders directly from its SVG at its own pixel size, never by resampling another raster.
+
+- [ ] Add `scripts/requirements-icons.txt` pinning `resvg-py==0.5.0` and `Pillow==12.3.0`, with one comment line per package naming its license (resvg-py MPL-2.0 over resvg Apache-2.0 or MIT; Pillow MIT-CMU), and record the decision in `docs/dev/decisions.md` (question: a GPL-compatible SVG renderer for build-time icon export; options: resvg-py, CairoSVG (LGPL-3.0, needs a native Cairo on Windows), the Inkscape CLI (GPL-2.0 or later, a large install), ImageMagick (delegates SVG to librsvg or its own MSVG renderer); evidence: resvg-py rendered the SVGs in `resources/icons/` on 2026-09-27 with no native install; cost of change: one render function). The packages are build-time tools and never ship in an app. Done when: `python -m pip install -r scripts/requirements-icons.txt` in a fresh `python -m venv build/icons-venv` exits 0 (quoted) and the decision entry exists.
+- [ ] Add `scripts/export-icons.py` with the source map above as one table (`SIZES = {16: "16", 20: "16", 24: "24", 30: "24", 32: "32", 36: "32", 40: "32", 48: "master", ...}`), rendering each size with `resvg_py.svg_to_bytes(svg_path=..., width=n, height=n)` and writing `resources/icons/<app>/PNG/<app>_<n>.png` through Pillow as 8-bit RGBA with no text or time chunks. Done when: `python scripts/export-icons.py` writes 16 PNGs per app, and a Pillow read of each reports `(n, n)` and mode `RGBA` (quoted for Imago).
+- [ ] Render each `<app>-splash.svg` to `resources/icons/<app>/PNG/<app>_splash_256.png` and `<app>_splash_512.png` in the same run. Done when: six splash PNGs exist and each reads back at its size.
+- [ ] Write `resources/icons/<app>/<app>.ico` with eight PNG-compressed entries at 16, 20, 24, 32, 40, 48, 64, and 256 px, in that order, each entry the exact frame the script rendered for that size (Pillow `save(format="ICO", sizes=..., append_images=...)`, or the ICONDIR written directly if Pillow resamples an entry). Done when: a header read of each ICO (the ICONDIR count, then each ICONDIRENTRY's width, height, and data starting with the PNG signature) lists the eight sizes, and each entry's decoded pixels equal the committed `PNG/<app>_<n>.png` (quoted for all three apps).
+- [ ] Add `--check` to `scripts/export-icons.py`: render everything into memory and compare against the committed files by decoded pixels (exact equality, so a zlib or encoder difference between machines cannot fail it) and by ICO entry list, and fail on a file under `resources/icons/<app>/PNG/` the script does not produce. Exit 1 naming each differing, missing, or stray file. Done when: `--check` exits 0 on a fresh export, and exits 1 naming the file after one pixel of `imago_48.png` is changed (negative probe quoted, then reverted).
+- [ ] Run the export for all three apps: it overwrites `resources/icons/nodus/nodus.ico` and every `resources/icons/nodus/PNG/nodus_*.png` in place with the Direction C design, and creates `resources/icons/imago/imago.ico`, `resources/icons/imago/PNG/`, `resources/icons/lumen/lumen.ico`, and `resources/icons/lumen/PNG/`. Done when: `git ls-files resources/icons | Select-String "\.(png|ico)$"` lists 57 files (18 PNGs and one ICO per app) and `--check` exits 0.
+- [ ] Remove the `PLACEHOLDER` comment from `installer/Imago.iss` (the ICO it names now exists) and leave every `AppIcon` path as it is. Done when: `Select-String PLACEHOLDER installer/Imago.iss` prints nothing, and `pwsh scripts/package.ps1 -App Nodus` and `-App Imago` print no `icon ... not found` warning from `installer/common.iss` (quoted).
+- [ ] Add a step to the `build-windows` job of `.github/workflows/build.yml` that installs `scripts/requirements-icons.txt` and runs `python scripts/export-icons.py --check`. Done when: the first CI run after the commit shows the step green (run URL quoted).
+- [ ] Add an `export-icons --check` gate to `scripts/check-all.ps1` beside the plan gates, skipped with a warning naming `scripts/requirements-icons.txt` when `resvg_py` or `PIL` does not import (the pattern the script already uses when python is missing). Done when: `pwsh scripts/check-all.ps1` lists the gate as PASS on a machine with the requirements installed and as SKIP with the warning in a venv without them (both quoted).
+- [ ] Update `resources/icons/README.md`: add a "Raster output" table (the PNG sizes and the source of each, the splash PNGs, the ICO entries, and the two commands) and rewrite "Old files and their status" to say the old Nodus rasters were regenerated and the Imago and Lumen ICOs exist. Done when: the README names `scripts/export-icons.py` and lists no raster as pending.
+- [ ] Add an "App icons" paragraph to `docs/dev/build.md` (edit the SVG, run `python scripts/export-icons.py`, commit the SVG and the rasters together; CI runs `--check`) and rewrite its Imago icon bullet to say the ICO exists and only the executable wiring is left to `D03 T01 §4`. Done when: `Select-String "export-icons" docs/dev/build.md` finds the paragraph.
+- [ ] Rewrite every `todo/` claim and sentence this export makes false (the `absent` claims for `imago.ico`, `lumen.ico`, and `scripts/export-icons.py` in this file's Current state, and any other `absent` or old-design statement about `resources/icons/`), then run `python scripts/todo-claims.py`. Done when: it exits 0.
+- [ ] Commit: `"workspace: export the app icon rasters from the SVG sources"`
+
+**Test checkpoint:** `python scripts/export-icons.py --check` exits 0 (quoted); the negative probe (one changed pixel in `resources/icons/imago/PNG/imago_48.png`) makes it exit 1 naming that file (quoted); the ICO header read lists 16, 20, 24, 32, 40, 48, 64, and 256 as PNG entries for each of `nodus.ico`, `imago.ico`, and `lumen.ico` (quoted); `pwsh scripts/package.ps1 -App Imago` prints no icon warning; the CI `build-windows` run shows the check step green. Cheaper substitute that fails: rasters exported by hand from an editor, which `--check` cannot re-derive, or an ICO whose small entries are resampled from the 256 px frame, which the per-entry pixel comparison against the small-variant renders catches.
+
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` exits 0 after the moves
 - [ ] `docs/captures/` exists with a record per surface
+- [ ] `python scripts/export-icons.py --check` exits 0, and every raster under `resources/icons/` is one it produces
 - [ ] `python scripts/todo-graph.py validate` clean

@@ -197,7 +197,7 @@ These legacy tests are excluded through `TestCaseFilter`. Remove each entry in t
 - Projects and namespaces still use the `Bezier.*` names, and the Nodus exe is `Bezier.Desktop.exe` (the installers refer to it by that name).
 - The legacy layout remains: `src/Nodus/Bezier.*` and `src/Imago/src/*`, `src/Imago/tests/*`.
 - Imago still depends on WPF-UI (`FluentWindow`, `TitleBar`, `wpfui:MenuItem`, `SymbolIcon`, the theme dictionaries, and `DialogService`). Removing it is not a trivial change.
-- Imago has no icon: `src/Imago/src/Imago.UI/Assets/imago-icon.png` is an empty file, and `installer/Imago.iss` points at a placeholder, `resources/icons/imago/imago.ico`, which does not exist yet.
+- Imago has no icon yet: `src/Imago/src/Imago.UI/Assets/imago-icon.png` is an empty file, and `installer/Imago.iss` points at `resources/icons/imago/imago.ico`, which does not exist yet. The icon design is chosen and its SVG sources are committed (`resources/icons/README.md`); `D00 T03 §3` generates `imago.ico` and the PNGs for all three apps from those SVGs, and `D03 T01 §4` wires Imago's into the executable.
 - Only x64 is published. There is no win-arm64 publish or installer yet.
 - Code is not signed (installers and binaries).
 - The SDK is the .NET 11 release candidate (`11.0.100-rc.1.26425.128`) and Microsoft.Extensions.* are `11.0.0-rc.1`; `D00 T02 §8` pins GA when it ships (November 2026), and the first product release waits for it.

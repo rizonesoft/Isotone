@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="24" height="24" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="imago-c-s24-spec" x1="1" y1="0" x2="23" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF4D6D"/>
+      <stop offset="0.17" stop-color="#FF9A3C"/>
+      <stop offset="0.33" stop-color="#FFD84A"/>
+      <stop offset="0.5" stop-color="#4CC47A"/>
+      <stop offset="0.67" stop-color="#29C5E6"/>
+      <stop offset="0.83" stop-color="#5B7CFF"/>
+      <stop offset="1" stop-color="#B45CFF"/>
+    </linearGradient>
+    <clipPath id="imago-c-s24-clip">
+      <rect x="1" y="1" width="22" height="22" rx="4"/>
+    </clipPath>
+  </defs>
+  <rect x="1" y="1" width="22" height="22" rx="4" fill="#2B2C31"/>
+  <rect x="1" y="20.5" width="22" height="2.5" fill="url(#imago-c-s24-spec)" clip-path="url(#imago-c-s24-clip)"/>
+  <path d="M12.96 7.64L15.36 10.04L18.61 5.76L17.24 4.39Z" fill="#F5923E"/>
+  <path d="M10.73 9.19L13.81 12.27L15.36 10.73L12.27 7.64Z" fill="#FFFFFF"/>
+  <path d="M8.5 14.5L12.23 14.37L13.73 12.87L10.13 9.27L8.63 10.77Z" fill="#FFD84A"/>
+  <rect x="4" y="16" width="3" height="3" fill="#FFD84A"/>
+  <rect x="5" y="10" width="2" height="2" fill="#FFD84A"/>
+  <rect x="10" y="17" width="2" height="2" fill="#FFD84A"/>
+</svg>

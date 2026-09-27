@@ -36,6 +36,7 @@ track: C1
 - -> XREF: D02 T16 §6 -- the UI brightness dictionaries it adds to §3's theme and the error-reporting toggle that governs §2's exception window
 - -> XREF: D03 T20 §1 -- Imago parity workspace cites §2: the exception window the debugging and crash-report preferences govern; §3: the suite theme; §4: the shared About and Shortcuts dialogs
 - -> XREF: D04 T14 §8 -- Lumen parity workspace cites §3: the suite theme D04 T14 §8 consumes; §4: the shared About and shortcuts dialog D04 T14 §3 and D04 T14 §7 consume
+- -> XREF: D00 T03 §3 -- the app icon raster export (the splash PNGs `AppIdentity.IconUri` names in §2)
 
 ## Outcome
 
@@ -53,7 +54,7 @@ track: C1
 | Order | Section | Deliverable                                            | Depends On                           | Status |
 | :---: | :-----: | ------------------------------------------------------ | ------------------------------------ | :----: |
 |   1   |   §1    | Create Photon.UI with the icon catalog                 | D02 T01 §1, D03 T01 §1               |  [ ]   |
-|   2   |   §2    | Splash, exception window, and glow move to Photon.UI   | §1                                   |  [ ]   |
+|   2   |   §2    | Splash, exception window, and glow move to Photon.UI   | §1, D00 T03 §3                       |  [ ]   |
 |   3   |   §3    | The suite theme resources                              | §1, D00 T03 §2                       |  [ ]   |
 |   4   |   §4    | About and shortcuts dialogs move to Photon.UI          | §3, D02 T05 §1, D02 T05 §2, D03 T01 §3 |  [ ]   |
 
@@ -81,6 +82,8 @@ track: C1
 
 The splash window, the exception window, and `BorderGlowAnimator` are the same code in both apps with small drifts. Each app passes what differs (name, version, icon, log folder) as parameters.
 
+**Corrected 2026-09-27:** each app now has splash art: the operator kept the neon Direction A drawings as splash and marketing art (`resources/icons/<app>/<app>-splash.svg`, `resources/icons/README.md`), and `D00 T03 §3` generates them as `resources/icons/<app>/PNG/<app>_splash_256.png` and `_512.png`. `AppIdentity.IconUri` points at the app's generated splash PNG (a pack URI to a linked `Resource`), so the shared window draws each app's own art without SharpVectors and without a copy of the art in `Photon.UI`. Where that art replaces what the before capture shows, the commit body names the difference.
+
 **Fidelity:** splash and exception windows as imported -- no capture exists for either, so this section captures both apps' splash and exception windows before the move under `docs/captures/nodus/splash/`, `docs/captures/nodus/exception/`, and the Imago equivalents, then shows the moved windows match.
 **Job:** a user sees which app is starting and, when something breaks, can copy a report and choose to continue or exit. Consumer: the user; the report text is also written to the app's log.
 **Treatment:** one `SplashWindow` and one `ExceptionWindow` in `Photon.UI`, parameterized by an `AppIdentity` record (display name, version, icon URI). Cheaper substitute that fails the checkpoint: keeping two copies and sharing only a base class.
@@ -89,7 +92,7 @@ The splash window, the exception window, and `BorderGlowAnimator` are the same c
 **Requires:** display-session -- the before and after captures of the splash and exception windows need an interactive desktop
 
 - [ ] Capture both apps' splash and exception windows before the move (trigger the exception window with a Debug-only menu item or the debug window, then remove any temporary trigger). Done when: four capture folders exist with `before-100.png`.
-- [ ] Add `src/Photon.UI/AppIdentity.cs` (a `record` with `DisplayName`, `Version`, `IconUri`, `LogFolder`). Done when: both apps construct one in their startup from assembly metadata.
+- [ ] Add `src/Photon.UI/AppIdentity.cs` (a `record` with `DisplayName`, `Version`, `IconUri`, `LogFolder`). Done when: both apps construct one in their startup from assembly metadata, with `IconUri` naming the app's `resources/icons/<app>/PNG/<app>_splash_256.png` from `D00 T03 §3` (**Corrected 2026-09-27**).
 - [ ] Move `SplashWindow` to `src/Photon.UI/Windows/SplashWindow.xaml(.cs)`, keeping the separate-thread show and the status-text API. Done when: both apps' copies are deleted and startup shows the shared window with the app's own name.
 - [ ] Move `ExceptionWindow` to `src/Photon.UI/Windows/ExceptionWindow.xaml(.cs)`; "Copy report" copies the exception, the app identity, and the log folder path. Done when: both apps' copies are deleted and the copied text names the app.
 - [ ] Move `BorderGlowAnimator` to `src/Photon.UI/Animation/BorderGlowAnimator.cs`, honoring `SystemParameters.ClientAreaAnimation` (no animation when Windows animation effects are off). Done when: both apps' copies are deleted.

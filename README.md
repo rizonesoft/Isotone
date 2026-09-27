@@ -60,15 +60,15 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
 <table>
   <tr>
     <th width="33%">
-      <img src="resources/icons/nodus_512.png" alt="" width="56"><br>
+      <img src="resources/icons/nodus/nodus.svg" alt="" width="56"><br>
       Rizonesoft Nodus
     </th>
     <th width="33%">
-      <img src="resources/icons/art-and-design.png" alt="" width="56"><br>
+      <img src="resources/icons/imago/imago.svg" alt="" width="56"><br>
       Rizonesoft Imago
     </th>
     <th width="33%">
-      <img src="resources/icons/lens.png" alt="" width="56"><br>
+      <img src="resources/icons/lumen/lumen.svg" alt="" width="56"><br>
       Rizonesoft Lumen
     </th>
   </tr>

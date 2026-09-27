@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="24" height="24" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="nodus-c-s24-spec" x1="1" y1="0" x2="23" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF4D6D"/>
+      <stop offset="0.17" stop-color="#FF9A3C"/>
+      <stop offset="0.33" stop-color="#FFD84A"/>
+      <stop offset="0.5" stop-color="#4CC47A"/>
+      <stop offset="0.67" stop-color="#29C5E6"/>
+      <stop offset="0.83" stop-color="#5B7CFF"/>
+      <stop offset="1" stop-color="#B45CFF"/>
+    </linearGradient>
+    <clipPath id="nodus-c-s24-clip">
+      <rect x="1" y="1" width="22" height="22" rx="4"/>
+    </clipPath>
+  </defs>
+  <rect x="1" y="1" width="22" height="22" rx="4" fill="#2B2C31"/>
+  <rect x="1" y="20.5" width="22" height="2.5" fill="url(#nodus-c-s24-spec)" clip-path="url(#nodus-c-s24-clip)"/>
+  <rect x="8.5" y="16" width="8" height="1" fill="#29C5E6"/>
+  <path d="M8.5 16.5L10.92 8.54L12.91 6.55L15.68 9.32L13.48 11.52A1.05 1.05 0 0 0 12 13Z" fill="#8BE6F7"/>
+  <path d="M8.5 16.5L16.46 14.08L18.45 12.09L15.68 9.32L13.48 11.52A1.05 1.05 0 0 1 12 13Z" fill="#29C5E6"/>
+  <path d="M14.47 6.2L18.8 10.53L20.53 8.8L16.2 4.47Z" fill="#1597BA"/>
+  <rect x="15.5" y="15.5" width="2" height="2" fill="#2B2C31" stroke="#FFFFFF"/>
+  <rect x="7" y="15" width="3" height="3" fill="#FFFFFF"/>
+</svg>

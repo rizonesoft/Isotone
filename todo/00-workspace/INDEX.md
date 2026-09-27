@@ -10,7 +10,7 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 | ---- | ----- | :----: |
 | [TODO-01](./TODO-01-dev-automation.md) | Dev-Automation Wiring | draft |
 | [TODO-02](./TODO-02-build-and-test-debt.md) | Build and Test Debt from the Import | draft |
-| [TODO-03](./TODO-03-repo-layout.md) | Repository Layout and Visual Baselines | draft |
+| [TODO-03](./TODO-03-repo-layout.md) | Repository Layout, Visual Baselines, and App Icon Export | draft |
 
 ## Completed
 
@@ -23,6 +23,7 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 - Warnings as errors, analyzers, and one command that runs every gate (`scripts/check-all.ps1`)
 - CI workflows, the commit hook, and the provisioning script
 - The checks that keep the plan honest about itself: the TODO graph, claims, the findings ledger, and the campaign guard
+- The raster app icons generated from the committed SVG sources under `resources/icons/`, with a check that they match
 
 ## Out of scope
 
