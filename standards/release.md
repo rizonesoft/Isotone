@@ -5,7 +5,7 @@ How each app, and the suite bundle, is versioned, packaged, and released. The me
 ## Versions and tags
 
 - SemVer 2.0 per app, derived from git tags by MinVer. No version string is typed into a project file.
-- Tag prefixes: `nodus-v*`, `imago-v*`, `lumen-v*` for the apps, and `photon-v*` for a suite bundle. A version with a hyphen (`0.1.0-alpha.1`) is a prerelease.
+- Tag prefixes: `nodus-v*`, `imago-v*`, `lumen-v*` for the apps, and `photon-v*` for a suite bundle. A version with a hyphen (`0.1.0-alpha.1`) is a prerelease. A pipeline dry run is a draft release made by dispatching `release.yml` in its draft mode with the tag as an input: the tag is never pushed, and the draft is deleted after inspection (operator decision 2026-09-27, `D00 T02 §7`).
 - **No app's version moves because another app shipped.** A suite bundle records which app versions it carries; it does not re-version them.
 - `Photon.Core` and `Photon.UI` are not released on their own: each app ships the copy it was built with.
 

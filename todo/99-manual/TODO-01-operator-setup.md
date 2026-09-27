@@ -12,7 +12,7 @@ depends_on: []
 > **Goal:** The steps no agent session can perform are done by the operator from exact instructions: the repository's About bar, topics, and social preview are set; `main` is protected by the real required checks; a code-signing certificate exists and is available to the packaging scripts without entering the repository; the licenses of the app icon art are confirmed; and each app's accent color is chosen.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The repository is `github.com/rizonesoft/Photon` with default settings as far as this plan knows. `resources/brand/social-preview.jpg` exists for the social preview. The CI checks are named `build` (workflow `build.yml`) and `plan-gates` (workflow `plan.yml`). There is no code-signing certificate (operator statement, 2026-09-26). The app icon candidates `resources/icons/art-and-design.png` (Imago) and `resources/icons/lens.png` (Lumen) arrived with the initial commit with no recorded source or license. The design contract in `standards/shared.md` leaves each app's accent color to the operator. Until `D00 T01 §2` ships, these rows cannot carry the `**Requires:** operator` mark; they depend on that section so no runner takes them before it does.
+> **Current state (verified 2026-09-26):** The repository is `github.com/rizonesoft/Photon` with default settings as far as this plan knows. `resources/brand/social-preview.jpg` exists for the social preview. The CI checks are named `build` (workflow `build.yml`) and `plan-gates` (workflow `plan.yml`). There is no code-signing certificate (operator statement, 2026-09-26). The app icon candidates `resources/icons/art-and-design.png` (Imago) and `resources/icons/lens.png` (Lumen) arrived with the initial commit with no recorded source or license. The design contract in `standards/shared.md` leaves each app's accent color to the operator. Until `D00 T01 §2` ships, these rows cannot carry the `**Requires:** operator` mark; they depend on that section so no runner takes them before it does. **Corrected 2026-09-27:** the operator answered three of these rows that day: the social preview is uploaded (§1), the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (§4), and the accents are chosen and recorded in `standards/shared.md` (§5); what each section still owes is its record and its verification, and every row still flips only through a review stamp.
 <!-- claim: exists resources/brand/social-preview.jpg -->
 <!-- claim: exists resources/icons/art-and-design.png -->
 <!-- claim: exists resources/icons/lens.png -->
@@ -53,6 +53,8 @@ depends_on: []
 
 The About bar is the repository's first impression and the social preview is its face in every link. Both need the owner's logged-in session.
 
+**Corrected 2026-09-27:** the operator uploaded the social preview (`resources/brand/social-preview.jpg`) on 2026-09-27, so its item is now a verification of the upload rather than the click path; the description and topics are still owed.
+
 - [ ] Set the description. Done when: the repository page shows it under the name.
   1. Open `https://github.com/rizonesoft/Photon` logged in as the owner.
   2. Click the gear icon beside **About** on the right.
@@ -61,9 +63,7 @@ The About bar is the repository's first impression and the social preview is its
   1. Open the About gear again.
   2. In **Topics**, add: `graphics`, `vector-editor`, `image-editor`, `raw-processing`, `wpf`, `dotnet`, `windows`, `open-source`.
   3. Click **Save changes**.
-- [ ] Set the social preview. Done when: **Settings**, **Social preview** shows the image.
-  1. Open `https://github.com/rizonesoft/Photon/settings`, scroll to **Social preview**, click **Edit**, **Upload an image**.
-  2. Choose `resources/brand/social-preview.jpg` from a local clone, then **Save**.
+- [ ] Confirm the social preview the operator uploaded on 2026-09-27 is the committed image. Done when: **Settings**, **Social preview** at `https://github.com/rizonesoft/Photon/settings` shows `resources/brand/social-preview.jpg`, and a logged-out link unfurl shows it (capture).
 - [ ] Agent verification: the agent reads `gh repo view rizonesoft/Photon --json description,repositoryTopics` and quotes it. Done when: the description and all eight topics are quoted.
 - [ ] Commit: `"docs: record the repository About bar setup"` -- the operator ticks the items above in the GitHub web editor; the agent verifies, ticks its item, and commits.
 
@@ -101,8 +101,9 @@ Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is writte
 
 `resources/icons/art-and-design.png` (planned as Imago's icon) and `resources/icons/lens.png` (planned as Lumen's) look like stock illustrations. Shipping them inside an installer requires a license that allows redistribution in a GPL-3.0 application, with attribution if the license asks for it.
 
-- [ ] Find the source of each file and its license terms, or replace it with art Rizonesoft owns. Done when: `resources/icons/README.md` names the source, license, and any required attribution for each app icon.
-- [ ] If attribution is required, add it to the About dialog's credits (the agent does this on request). Done when: the credits list it, or the README says none is required.
+**Corrected 2026-09-27:** the operator answered this row: the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (2026-09-27), and both stay as the Imago and Lumen icons. Finding a source or replacing the art is no longer needed, and no third-party attribution applies; what is left is recording the statement where the Outcome says it lives.
+
+- [ ] Write `resources/icons/README.md` with one row per app icon: Nodus (`resources/icons/nodus/` and `nodus_512.png`, its source as recorded in git history), Imago (`art-and-design.png`), and Lumen (`lens.png`), the last two stating "the operator holds the rights (operator statement 2026-09-27); no attribution required". Done when: the README has the three rows and says no attribution is required for the two operator-owned files.
 - [ ] Commit: `"docs: confirm the app icon licenses"` -- ticked as in §1.
 
 **Test checkpoint:** `resources/icons/README.md` has a license row for Nodus, Imago, and Lumen with a source URL or an ownership statement. Cheaper substitute that fails: "found on the internet".
@@ -111,8 +112,10 @@ Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is writte
 
 The design contract gives the suite one neutral grey ramp and lets each app name one accent for focus and selection. Until chosen, the accent is a grey. This is a taste decision.
 
-- [ ] Choose an accent for Nodus, Imago, and Lumen (hex values), checking each against `Base` (`#1A1A1A`) for at least 4.5:1 contrast with WebAIM's contrast checker (https://webaim.org/resources/contrastchecker/). Done when: the three values and their contrast ratios are written in `standards/shared.md`'s Color section.
-- [ ] Commit: `"docs: name each app's accent color"` -- the operator edits `standards/shared.md` in the web editor; the agent verifies the ratios.
+**Corrected 2026-09-27:** the operator chose the accents on 2026-09-27: Nodus cyan (the pen nib), Imago orange (the paintbrush), and Lumen green (the aperture), tuned for contrast in light and dark themes. The values and their ratios are recorded in `standards/shared.md`'s Color section (dark `#29C5E6`, `#F5923E`, `#4CC47A` against `Base`; light `#00758C`, `#B04F00`, `#1B7A3D` against white). What is left is an independent check of the ratios.
+
+- [ ] Check each accent in `standards/shared.md`'s accent table with WebAIM's contrast checker (https://webaim.org/resources/contrastchecker/): the dark-theme value against `Base` (`#1A1A1A`) and the light-theme value against `#FFFFFF`, each at least 4.5:1. Done when: the six ratios the checker reports are quoted and match the table.
+- [ ] Commit: `"docs: verify each app's accent color"` -- the agent quotes the ratios; the operator's choice is already recorded.
 
 **Test checkpoint:** `standards/shared.md` names three accents with contrast ratios of at least 4.5:1 against `Base`, and `ThemeTokensTests` (from `D01 T01 §3`) passes after the agent mirrors them into the theme. Cheaper substitute that fails: an accent chosen without a contrast check.
 

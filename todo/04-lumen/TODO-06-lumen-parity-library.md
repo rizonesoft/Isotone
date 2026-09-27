@@ -56,7 +56,7 @@ track: L6
 - -> XREF: D04 T08 §8 -- the metadata writer that takes over §2's and §6's sidecar writes and writes IPTC supplemental categories
 - -> XREF: D04 T09 §15 -- soft-proof copies and develop's new files (`D04 T09 §16`, `D04 T09 §17`) stack and version through §3
 - -> XREF: D04 T11 §1 -- the Activity Manager history that reopens §7's saved and advanced searches (LP-0759)
-- -> XREF: D04 T10 §3 -- people entries and suggested faces in §6's catalog pane
+- -> XREF: D04 T10 §3 -- the People group of named people and the unnamed-faces item in §6's catalog pane
 - -> XREF: D04 T10 §5 -- similarity search offered from §7 and similarity auto-stacks beside §3's
 - -> XREF: D04 T12 §4, D04 T12 §7, D04 T12 §9, D04 T12 §10 -- output creations §5 saves as collections
 - -> XREF: D04 T14 §3 -- the keymap editor that rebinds §2's keypad culling keys
@@ -264,7 +264,7 @@ ACDSee users find photos through the Catalog pane: hierarchical categories that 
 - [ ] Delete a category with a confirmation naming the category and how many photos it holds. Done when: `CategoryTreeTests.DeleteConfirms` asserts the text and the undo.
 - [ ] Write categories to sidecars as `lumen:categories` in Lumen's XMP namespace through `D04 T01 §11`'s writer. Done when: `CategoryTreeTests.SidecarField` reads the field back and asserts `dc:subject` is untouched.
 - [ ] Add auto categories (LP-0342) computed from indexed metadata groupings (camera, lens, year, ISO bands, file type, commonly used), multi-select, and combined with ratings, categories, and `D04 T05 §8`'s selective browsing. Done when: `AutoCategoryTests` assert groupings on a seeded catalog.
-- [ ] Add special items (LP-0343): all images, embed pending (filled by `D04 T08 §8`), uncategorized, no keywords, unnamed, auto-named and suggested faces (filled by `D04 T10 §3`, empty until then), tagged, and rejected. Done when: `SpecialItemTests` assert each item's count on a seeded catalog.
+- [ ] Add special items (LP-0343): all images, embed pending (filled by `D04 T08 §8`), uncategorized, no keywords, unnamed faces (filled by `D04 T10 §3`, empty until then), tagged, and rejected; **Corrected 2026-09-27:** said auto-named and suggested faces too, which need face recognition, now backlog B-052 after the operator did not approve Lumen's local face models. Done when: `SpecialItemTests` assert each item's count on a seeded catalog.
 - [ ] Add the Catalog pane in `src/Lumen/Photon.Lumen.Desktop/Panels/CatalogPane.xaml` (LP-0339) hosting every group with counts and click to search. Done when: a capture under docs/captures/lumen/catalog-pane/ shows every group. Cheaper substitute: a flat list of keywords.
 - [ ] Add Easy-Select (LP-0340): bars that add a group to the match with all or any, compiled through §5. Done when: `EasySelectTests` assert a category-plus-rating combination on a seeded catalog.
 - [ ] Add the pane options (LP-0344): icons, the Easy-Select bar and its tooltip, assign by clicking, and delete confirmations, stored as `Lumen.CatalogPane.*`. Done when: a test toggles each option through the settings store.
