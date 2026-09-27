@@ -13,8 +13,8 @@ todo/
 ├── README.md               this file
 ├── TODO-00-INDEX.md        root index -- domain order + active work
 ├── implementation-plan.md  phase plan, the front door for a run (boxes derived)
-├── budget.json             the caps on campaign discovery and the backlog, with their history
-├── backlog.md              deferred ideas, one line each; never sections, never runnable
+├── budget.json             the budget decisions and their history (no caps since 2026-09-27)
+├── backlog.md              deferred ideas, one line each; never sections, never runnable, never dropped silently
 ├── .warning-baseline       accepted warnings; a NEW warning fails validate
 ├── .design-baseline        surface sections still exempt from the Design line; only shrinks
 ├── 00-workspace/
@@ -434,9 +434,9 @@ python scripts/todo-graph.py query stats        # tree health
 python scripts/todo-graph.py query plan-health  # review-loop governance: --json for machines; --check/--fail-on gate automation
 python scripts/todo-graph.py query summary      # operator digest: incomplete runs, blocked clearances, overdue owners, next action, gate verdict
 python scripts/todo-graph.py query run <id>     # one run ID resolves to candidate, scope, findings, lineage, outage, artifacts
-python scripts/todo-graph.py query budget       # sections and discovered sections per phase, discovered sections per run against the cap, the backlog against its cap
+python scripts/todo-graph.py query budget       # sections and discovered sections per phase, discovered sections per run (provenance), the backlog count, the budget history
 python scripts/todo-graph.py query backlog      # every backlog entry: id, date, app, title, needs
-python scripts/todo-graph.py query growth --since <ref> [--check]   # sections and backlog entries added or removed since a commit; --check exits 1 when the discovered ones pass the per-run cap
+python scripts/todo-graph.py query growth --since <ref>   # sections (discovered ones with their run) and backlog entries added or removed since a commit; reports, never fails
 python scripts/todo-graph.py render             # mermaid dependency graph
 python scripts/todo-graph.py plan --sync        # re-derive the checkboxes AND re-align every table (except one under <!-- no-align -->)
 python scripts/todo-graph.py plan --check       # fail if the boxes are stale or a section has no row
@@ -465,7 +465,7 @@ is a complete instruction: nobody has to translate domain `00` and TODO `01` int
 - The table header is `| ✔ | Section | Deliverable | Items |`. Each row is `| [ ] | \`DNN TNN §N\` | <deliverable> | <items> |`: the box and the items cell are rewritten by `plan --sync`, the deliverable is prose you author (usually the Implementation Order row's deliverable).
 - **Every section in the tree appears in exactly one row of exactly one phase.** Phases have no size limit (see "The budget and the backlog" below). Authoring a TODO file therefore includes placing each of its sections in a phase table; `plan --check` fails on a section with no row, a row naming no section, a duplicated row, or a stale box.
 - A section's phase is chosen so every `Depends On` edge points at a section in the same or an earlier phase, and within a phase rows run in table order; `groom-plan` checks both.
-- The `> **Progress:**` line under the title is rewritten by `plan --sync`, including the tree's size (sections, and how many of them a campaign discovered) and backlog use (entries against the cap), and `plan --check` fails when the line is stale. Never type a total into prose.
+- The `> **Progress:**` line under the title is rewritten by `plan --sync`, including the tree's size (sections, and how many of them a campaign discovered) and the backlog's entry count, in the form `<N> sections (<M> discovered); backlog <K> entries.`, and `plan --check` fails when the line is stale. Never type a total into prose.
 
 The boxes **are never ticked by hand**; `plan --check` runs in CI and in the pre-commit hook's validate path, so a stale projection fails instead of quietly misinforming whoever reads it next. Run `plan --sync` after any row flips.
 
@@ -473,31 +473,30 @@ The boxes **are never ticked by hand**; `plan --check` runs in CI and in the pre
 
 ### The budget and the backlog
 
-The plan must not grow unconditionally, but planning the operator asks for is never capped (operator decisions, 2026-09-26 and 2026-09-27: "Why is there a phase limit on planning, should the limit not only be on new sections beign created automatically, but even then that shoiuld not be a small limit"). So the limit falls only on sections a campaign files on its own, and on the backlog. `validate` enforces both as FATAL, so the commit hook and CI refuse a breach. The structural limits (30 items per section, 55 sections per file) are separate and unchanged.
+Nothing in the plan is capped. Planning the operator asks for was never capped (operator decisions, 2026-09-26 and 2026-09-27: "Why is there a phase limit on planning, should the limit not only be on new sections beign created automatically, but even then that shoiuld not be a small limit"), and on 2026-09-27 the operator removed the last two caps, the 15 discovered sections per run and the 500-entry backlog: "the cap is worrying me, because I'm worried features will be left behind." The safeguards chosen in their place are "No drop without operator approval", "Remove the backlog cap", "Release-time backlog gate", and "Remove the 15-per-run cap too". So the rules here are about provenance and loss, not size: every discovered section says which run filed it, nothing leaves the backlog without a trace, and no release ships without reviewing the backlog for its app. `validate` enforces all of it as FATAL, so the commit hook and CI refuse a breach. The structural limits (30 items per section, 55 sections per file) are separate and unchanged.
 
-**Operator-directed and discovered sections.** A section written in an attended session at the operator's request is operator-directed: it carries nothing extra and nothing caps it, in any phase or in total. A section an agent files on its own during a campaign (a `process-phase` gap audit, a `review-todo-section` research or plan-review finding, a `groom-plan` gap scan, an adjacent defect or prerequisite filed through `add-todo` mid-run) is discovered, and carries one line in its body, directly under its heading:
+**Operator-directed and discovered sections.** A section written in an attended session at the operator's request is operator-directed: it carries nothing extra. A section an agent files on its own during a campaign (a `process-phase` gap audit, a `review-todo-section` research or plan-review finding, a `groom-plan` gap scan, an adjacent defect or prerequisite filed through `add-todo` mid-run) is discovered, and carries one line in its body, directly under its heading:
 
 ```
 **Origin:** discovered run=<run id> <YYYY-MM-DD> -- <what found it>
 ```
 
-The run id is the 12-hex-digit id `campaign_guard.py` minted for the run (the one its run file's `run=<id>` markers carry); a groom outside a campaign mints one with `python scripts/campaign_guard.py mint-generation` and records it in the groom record. The ` -- <what found it>` note is optional. No line means operator-directed. `validate` refuses a near miss (a malformed id or date, a missing word, `**Origin:** operator`), a second Origin line in one section, and one outside a numbered section (`origin-malformed`), so a discovered section cannot hide from the cap.
+The run id is the 12-hex-digit id `campaign_guard.py` minted for the run (the one its run file's `run=<id>` markers carry); a groom outside a campaign mints one with `python scripts/campaign_guard.py mint-generation` and records it in the groom record. The ` -- <what found it>` note is optional. No line means operator-directed. The line is provenance, not a quota: `query growth` and `query budget` report discovered sections by run so the operator can see what a campaign added, and no count of them fails anything. `validate` refuses a near miss (a malformed id or date, a missing word, `**Origin:** operator`), a second Origin line in one section, and one outside a numbered section (`origin-malformed`), so a discovered section cannot pass as operator-directed.
 
-**`todo/budget.json`** (schema 2) holds two caps and their history:
+**`todo/budget.json`** (schema 3) records the budget decisions:
 
-- `per_run_discovered_sections` (15): the most discovered sections one run may add. `validate` checks it without git: more sections carrying one `run=<id>` than the cap is `run-cap-exceeded`. A run also checks it at every section boundary with `python scripts/todo-graph.py query growth --since <run start commit> --check`, which counts only added sections that carry an Origin line.
-- `backlog_cap` (500): the most entries `backlog.md` may hold.
-- `history`: an append-only list of `{date, change, reason, approved_by, snapshot}` entries, where `snapshot` carries both caps as that entry set them. The first three entries (2026-09-26) are schema 1 snapshots with the retired phase ceilings; they stay as written, their ceilings are ignored, and their `per_run_new_sections` reads as the per-run cap.
+- `backlog_cap` and `per_run_discovered_sections`: both `null`, meaning no cap. A whole number here is `budget-malformed`.
+- `history`: an append-only list of `{date, change, reason, approved_by, snapshot}` entries. Entries 1 to 3 (2026-09-26) are schema 1 snapshots with the retired phase ceilings, entry 4 is the schema 2 snapshot with the 15-per-run and 500-entry caps, and entry 5 (2026-09-27) is the schema 3 snapshot with both caps `null`. Old entries stay as written and readable; a history only moves forward (no schema 1 or 2 snapshot after a schema 3 one), and it must hold a schema 3 entry.
 
-The live values must equal the latest entry's `snapshot` (`budget-unrecorded-change` otherwise), so changing a cap means appending an entry. The history is checked against the committed file (`git show HEAD:todo/budget.json`): an entry edited or removed fails. An entry that raises either cap must say `approved_by: operator` and quote the operator's words in `reason`; lowering one needs only an entry. **How the operator raises a cap:** say so in words, for example "raise the per-run cap to 25". The session appends one history entry dated today with the new snapshot, `approved_by: operator`, and those words quoted in `reason`, updates the live value to match, and runs `validate` plus `plan --sync`. No skill raises a cap on its own initiative.
+The live values must equal the latest entry's `snapshot` (`budget-unrecorded-change` otherwise). The history is checked against the committed file (`git show HEAD:todo/budget.json`): an entry edited or removed fails. An entry that raises a cap (removing one counts as a raise) must say `approved_by: operator` and quote the operator's words in `reason`. No skill changes the budget on its own initiative.
 
-**`todo/backlog.md`** is a flat list of ideas worth keeping that are not planned work. It is not in the plan, never runnable, never counted by plan parity, and nothing may defer to it. One entry per line:
+**`todo/backlog.md`** is a flat list of ideas worth keeping that are not planned work. It is not in the plan, never runnable, never counted by plan parity, never capped, and nothing may defer to it. One entry per line:
 
 ```
 - [B-NNN] <title> -- source: <key> -- added: YYYY-MM-DD -- why deferred: <text> -- promote when: <text>
 ```
 
-with optional `app:`, `summary:`, and `needs:` fields (`needs:` cites full `DNN TNN §N` refs to live sections, or other backlog ids). `source` is one key token: a legacy key, a finding ID, or the `-> SOURCE:` key the section would carry, so a scan that runs twice finds its own entry. Ids are taken in order and never reused. `validate` refuses a malformed line, a line that reads as a section, a dead or short ref, a duplicate id or source, an entry whose source a live section already carries, and a count over `backlog_cap`. `query backlog` lists it.
+with optional `app:` (`nodus`, `imago`, `lumen`, or `suite`; no field reads as `suite`), `summary:`, and `needs:` fields (`needs:` cites full `DNN TNN §N` refs to live sections, or other backlog ids), and the repeatable `merged:` and `reviewed:` fields below. `source` is one key token: a legacy key, a finding ID, or the `-> SOURCE:` key the section would carry, so a scan that runs twice finds its own entry. Ids are taken in order and never reused. `validate` refuses a malformed line, a line that reads as a section, a dead or short ref, a duplicate id or source, and an entry whose source a live section already carries. `query backlog` lists it.
 
 **The admission test** applies to discovered work only. A campaign files a discovered section only when the work is one of:
 
@@ -505,11 +504,40 @@ with optional `app:`, `summary:`, and `needs:` fields (`needs:` cites full `DNN 
 2. something an aim in the plan's acceptance bar requires;
 3. a prerequisite of an existing planned row.
 
-Everything else (a competitor feature, a premium win, a nice-to-have from a review) goes to the backlog. Work the operator asks for skips the test: the operator's request is the admission.
+Everything else (a competitor feature, a premium win, a nice-to-have from a review) goes to the backlog, where it is kept, not lost. Work the operator asks for skips the test: the operator's request is the admission. A discovered item that passes the test lands where it fits best: an item on an open section whose scope holds it, or a new section with its Origin line. There is no overflow, because there is no cap.
 
-**Overflow.** Past the per-run cap, discoveries that pass the admission test land as items on existing open sections or go to the backlog, and the run file (or the groom record) lists each overflow with where it went. There is no exception and no shared pool: the next run starts at zero.
+**No drop without operator approval.** Every source key HEAD's `todo/backlog.md` holds (an entry's `source`, a merge marker, or a removal record) must still be accounted for in the working file, or `validate` fails with `backlog-dropped` (checked against `git show HEAD:todo/backlog.md`, skipped when HEAD has no such file). An entry leaves the backlog in exactly three ways:
 
-**Promotion and triage.** Promotion is `add-todo` on the entry; the promoting commit writes the section with the entry's source as its `-> SOURCE:` line and deletes the entry. A promotion the operator asks for is operator-directed; one a campaign makes on its own carries an Origin line and counts against its run's cap. Triage is `groom-plan`: when the backlog nears its cap, merge duplicates, drop stale entries (one line of reason each in the commit message), and promote what has come due.
+1. **Promotion**: `add-todo` on the entry. The promoting commit writes the section with the entry's source as its `-> SOURCE:` line and deletes the entry. A promotion the operator asks for is operator-directed; one a campaign makes on its own passes the admission test and carries an Origin line.
+2. **Merge**: two entries for one real-world thing become one. The survivor (the lower id) keeps the absorbed entry's key as a merge marker, in its `summary:` or as its own `merged:` field, and keeps it for as long as it lives:
+
+   ```
+   merged: `<source-key>` (B-NNN, YYYY-MM-DD)
+   ```
+
+   The backticks are required; the parenthesis (the absorbed id and the day) is recommended. A marker naming a key a live entry still carries is `backlog-duplicate`: the merge deletes the absorbed entry.
+3. **Operator removal**: only when the operator says so, in words. The removing commit deletes the entry and appends one line under `## Removed with operator approval` at the end of `todo/backlog.md`:
+
+   ```
+   - B-NNN <source> -- removed YYYY-MM-DD -- operator: "<the operator's words, verbatim>"
+   ```
+
+   A record's id and source are never reused, and the record itself is never deleted (deleting it is `backlog-dropped` too). No skill removes an entry on its own judgement that it is stale; it asks the operator.
+
+**The release-time backlog gate.** Every release section (one whose checklist pushes an app tag, ``Push the tag `<app>-vX.Y.Z` ``, the same test `design-deviation-open-at-release` uses; `photon-vX.Y.Z` is the suite release) carries the item
+
+```
+- [ ] Run the backlog review for `<app>-vX.Y.Z`: ...
+```
+
+or `validate` fails with `release-backlog-review-missing`. Running it means walking every backlog entry whose `app:` is that app or `suite` (every entry, for a `photon` release) and, for each, either promoting it into a section (through `add-todo`; a full promotion deletes the entry) or asking the operator whether it may wait and recording the answer on the entry:
+
+```
+-- reviewed: <app>-vX.Y.Z YYYY-MM-DD promoted DNN TNN §N
+-- reviewed: <app>-vX.Y.Z YYYY-MM-DD deferred by operator: "<the operator's words>"
+```
+
+`promoted` is for an entry only part of which became a section (the rest stays); the ref must be live. The words must not contain ` -- `. One `reviewed:` field per release per entry, appended after the entry's other fields; fields already committed are never edited or removed (`backlog-review-rewritten`). Once a release section is stamped `[x]`, every in-scope entry added on or before the stamp day must carry a `reviewed:` field for that tag, or `validate` fails with `release-backlog-unreviewed`. Release sections stamped before 2026-09-27 are not rewritten.
 
 ### FATAL blocks; WARN is ratcheted
 
@@ -567,13 +595,15 @@ Everything else (a competitor feature, a premium win, a nice-to-have from a revi
 | `risk-acceptance-chain-broken` | FATAL | A `supersedes <date>` link that names no earlier record on its target, points forward, branches, or cycles. |
 | `skill-citation-unresolved` | FATAL | A skill citing a full section ref (`DNN TNN §N`) that resolves to no live section. |
 | `skill-citation-short-form` | FATAL | A skill citing a short section form (a bare section mark, `TNN` plus a section, or a file plus a section) instead of a full `DNN TNN §N` ref. |
-| `budget-malformed` | FATAL | `todo/budget.json` missing, unparseable, or outside schema 2: an unknown key (a phase ceiling included), a cap that is not a whole number, or a history entry out of shape or out of date order. An incomplete budget bounds nothing. |
-| `budget-unrecorded-change` | FATAL | A live cap that differs from the latest history snapshot, a history entry edited or removed against the committed file, or a raise of `backlog_cap` or `per_run_discovered_sections` without `approved_by: operator` and the operator's quoted words. |
-| `origin-malformed` | FATAL | A `**Origin:**` line outside the grammar `**Origin:** discovered run=<12-hex run id> <YYYY-MM-DD>` (optional ` -- <note>`), a second Origin line in one section, or one outside a numbered section. |
-| `run-cap-exceeded` | FATAL | More sections carrying one `run=<id>` Origin than `per_run_discovered_sections`. Merge the overflow into open sections as items or move it to the backlog. |
-| `backlog-malformed` | FATAL | A `todo/backlog.md` line outside the entry grammar, a line that reads as a section (checkbox, numbered heading, stamp, XREF), or an entry citing a dead or short section ref. |
-| `backlog-duplicate` | FATAL | A backlog id or source key used twice, or a source key a live section already carries: a promoted entry leaves the backlog in the promoting commit. |
-| `backlog-over-cap` | FATAL | More backlog entries than `backlog_cap`. Triage (merge, drop, promote) before adding. |
+| `budget-malformed` | FATAL | `todo/budget.json` missing, unparseable, or outside schema 3: an unknown key (a phase ceiling included), a live cap that is not `null`, a history entry out of shape, out of date order, or older in schema than the one before it, or a history with no schema 3 entry. |
+| `budget-unrecorded-change` | FATAL | A live value that differs from the latest history snapshot, a history entry edited or removed against the committed file, or a raise (removing a cap included) of `backlog_cap` or `per_run_discovered_sections` without `approved_by: operator` and the operator's quoted words. |
+| `origin-malformed` | FATAL | A `**Origin:**` line outside the grammar `**Origin:** discovered run=<12-hex run id> <YYYY-MM-DD>` (optional ` -- <note>`), a second Origin line in one section, or one outside a numbered section: a discovered section whose provenance nobody can read. |
+| `backlog-malformed` | FATAL | A `todo/backlog.md` line outside the entry grammar, a line that reads as a section (checkbox, numbered heading, stamp, XREF), an entry citing a dead or short section ref, or a merge marker, `reviewed:` field, or operator removal record outside its grammar (or a record outside its heading). |
+| `backlog-duplicate` | FATAL | A backlog id or source key used twice (entries, merge markers, and removal records share the namespace), or a source key a live section already carries: a promoted entry leaves the backlog in the promoting commit. |
+| `backlog-dropped` | FATAL | A source key HEAD's backlog holds (an entry, a merge marker, or a removal record) that the working file no longer accounts for: not carried by a live section's `-> SOURCE:` line, a surviving entry's merge marker, or an operator removal record. Nothing leaves the backlog without the operator's approval. |
+| `backlog-review-rewritten` | FATAL | A `reviewed:` field HEAD's entry carries that the working entry lost or changed: a release's backlog review is append-only. |
+| `release-backlog-review-missing` | FATAL | A release section (it pushes an app tag) without its ``Run the backlog review for `<tag>` `` checklist item. |
+| `release-backlog-unreviewed` | FATAL | A release section stamped `[x]` while a backlog entry in its scope (its app or `suite`; every entry for `photon`), added on or before the stamp, has no `reviewed:` field for that tag. |
 | `design-missing` | FATAL | A section whose Fidelity line names a surface carries no `**Design:**` line and is not listed in `todo/.design-baseline`: a surface built from a guess instead of the spec it implements 1:1. |
 | `design-malformed` | FATAL | A `**Design:**` or `**Design deviation:**` line outside its grammar (near misses included), a second Design line in one section, a line outside a numbered section, or `new surface:` without the item that adds the spec to `docs/design/` first. |
 | `design-dead-ref` | FATAL | A Design ref whose file does not exist or whose anchor matches no heading (slugged GitHub-style) or HTML id, or a deviation whose follow-up names no live section. |

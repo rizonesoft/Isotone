@@ -74,6 +74,7 @@ track: N7
 - -> XREF: D03 T08 §4 -- Imago parity document and view cites §9: `UnitConverter`, moved to `Photon.Core` by D03 T08 §4; §11: the snapping core, moved to `Photon.Core` by D03 T08 §4
 - -> XREF: D03 T20 §1 -- Imago parity workspace cites §8: `CompactNumberBox`, `UnitExpression`, and the contextual task bar host
 - -> XREF: D01 T01 §5 -- the implicit field styles, focus tracker, and focus ring §8's `CompactNumberBox` template draws with
+- -> XREF: D02 T19 §2 -- Nodus automation cites §1: the nodus: namespace contract embedded macros (<nodus:scripts>) persist through
 
 ## Outcome
 

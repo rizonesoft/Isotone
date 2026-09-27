@@ -1,13 +1,13 @@
 ---
 name: add-todo
-description: Front door for new work -- search the tree and the backlog for an existing home first, then route to an existing section, a new section, a whole new file via create-todo, or the backlog. Work a campaign discovers on its own also passes the admission test, carries an Origin line, and counts against the run's cap; work the operator asks for is never capped. Use whenever work needs capturing, and to promote a backlog entry.
+description: Front door for new work -- search the tree and the backlog for an existing home first, then route to an existing section, a new section, a whole new file via create-todo, or the backlog. Work a campaign discovers on its own also passes the admission test and carries an Origin line for provenance; nothing is capped. Use whenever work needs capturing, and to promote a backlog entry.
 ---
 
 # Add TODO
 
 New work enters through here. The failure this skill exists to prevent is the near-duplicate TODO in a second domain, which is worse than no entry: two owners, neither complete. In Photon the classic shape is the same feature filed once under Nodus and once under Imago when it belongs in `Photon.Core`, or filed in `Photon.Core` when only one app needs it.
 
-The second failure is unbounded discovery: the plan must not grow unconditionally (operator decision, 2026-09-26), but planning the operator asks for is never capped (operator decision, 2026-09-27). So the limits fall only on work a campaign discovers on its own: it passes the admission test, carries an Origin line, and fits the run's per-run cap, or it does not become a section. The rules are in `todo/README.md` under "The budget and the backlog".
+The second failure is lost work: a feature dropped because a cap had no room for it. The operator removed every cap on 2026-09-27 ("the cap is worrying me, because I'm worried features will be left behind."), so nothing here counts against a limit. Work a campaign discovers on its own still passes the admission test (it decides section or backlog, never keep or lose) and carries an Origin line so the operator can see which run filed it; a backlog entry is never deleted without a promotion, a merge marker, or the operator's recorded words. The rules are in `todo/README.md` under "The budget and the backlog".
 
 ## Workflow
 
@@ -27,7 +27,7 @@ Read the candidates. A home exists when a section's scope already covers the wor
 
 Decide first who is asking:
 
-- **Operator-directed**: the operator asked for this work in an attended session. The request is the admission: skip the admission test and the cap, and write no Origin line. Step 5 still decides the home (an existing section beats a new one).
+- **Operator-directed**: the operator asked for this work in an attended session. The request is the admission: skip the admission test, and write no Origin line. Step 5 still decides the home (an existing section beats a new one).
 - **Discovered**: an agent found the work on its own during a campaign run (a `process-phase` gap audit, a `review-todo-section` research or plan-review finding, a `groom-plan` gap scan, an adjacent defect or prerequisite found while building). It takes steps 3 and 4 below.
 
 ### 3. The admission test (discovered work)
@@ -40,7 +40,7 @@ Discovered work becomes a section (or a file of sections) only when it is one of
 
 Everything else (a competitor feature, a premium win, a nice-to-have from a review, research, or a gap scan) takes the Backlog outcome below. "It would be good" is not an admission clause.
 
-### 4. The Origin line and the per-run cap (discovered work)
+### 4. The Origin line (discovered work)
 
 A discovered section carries one line directly under its `## N.` heading, the run id being the one `campaign_guard.py` minted for the run (a groom outside a campaign mints its own with `python scripts/campaign_guard.py mint-generation`):
 
@@ -48,13 +48,13 @@ A discovered section carries one line directly under its `## N.` heading, the ru
 **Origin:** discovered run=<run id> <YYYY-MM-DD> -- <what found it>
 ```
 
-A run adds at most `per_run_discovered_sections` (15, `todo/budget.json`) discovered sections. Before writing one, `python scripts/todo-graph.py query growth --since <run start commit> --check` must exit 0 with room left (it counts only added sections that carry an Origin line). Past the cap there are three moves, and raising the cap is not one of them:
+The line is provenance, not a quota: there is no per-run cap (operator decision 2026-09-27), so a discovery that passes the admission test is never pushed to the backlog for lack of room. `python scripts/todo-graph.py query growth --since <run start commit>` lists what the run has added, discovered sections with their run id, for the run file and the report. Still prefer the smallest honest home:
 
 - **Merge**: add the work as an item (or a Build-order stage) on an existing open section whose scope can hold it.
 - **Supersede**: when the new work replaces an open section, rewrite that section in place (its address stays) rather than adding a second one.
-- **Backlog**: file it as a backlog entry, say why in the report, and record the overflow in the run file (or the groom record).
+- **New section**: otherwise, with its Origin line.
 
-There is no exception and no shared pool: the next run starts at zero. `validate` refuses a malformed Origin line and more than the cap under one run id. Only the operator raises a cap, in words a new `todo/budget.json` history entry quotes (`todo/README.md`, "The budget and the backlog"). There are no phase ceilings: nothing limits how many sections a phase holds.
+`validate` refuses a malformed Origin line (`origin-malformed`). There are no phase ceilings and no caps: nothing limits how many sections a phase, a run, or the tree holds, or how many entries the backlog holds.
 
 ### 5. Route to one of five outcomes
 
@@ -62,13 +62,13 @@ There is no exception and no shared pool: the next run starts at zero. `validate
 | ------- | ---- | ------- |
 | Already covered | A section or a backlog entry owns it | Point at it. File nothing. |
 | Fits a section | An open section's scope covers it | Add a checklist item there, or extend the section body. Never touch a `[x]` section's checklist. |
-| Needs a section | Operator-directed, or discovered and passing the admission test within the run's cap; has no owner and sits inside an existing file's scope | Append a new `## N.` section in numerical position (with its Origin line when discovered) and its Implementation Order row, place the row in a phase of `todo/implementation-plan.md`, then sync the plan. |
-| Needs a file | Operator-directed, or discovered and passing the admission test within the run's cap; a new subject no file owns | Delegate to `create-todo`, or to `plan-new-feature` when the subject is a user-facing feature or a new app, passing on whether it is discovered and the run id. |
-| Backlog | Discovered and failing the admission test, or passing it past the run's cap with nothing to merge into; or the operator asked to defer it | Append one line to `todo/backlog.md` with the next free id: `- [B-NNN] <title> -- app: <app> -- source: <key> -- added: <today> -- summary: <what> -- needs: <refs or ids> -- why deferred: <admission clause failed, or the per-run cap> -- promote when: <trigger>`. At `backlog_cap` (500), triage first (merge or drop through `groom-plan`'s backlog triage) or report to the operator; never file a section instead. |
+| Needs a section | Operator-directed, or discovered and passing the admission test; has no owner and sits inside an existing file's scope | Append a new `## N.` section in numerical position (with its Origin line when discovered) and its Implementation Order row, place the row in a phase of `todo/implementation-plan.md`, then sync the plan. |
+| Needs a file | Operator-directed, or discovered and passing the admission test; a new subject no file owns | Delegate to `create-todo`, or to `plan-new-feature` when the subject is a user-facing feature or a new app, passing on whether it is discovered and the run id. |
+| Backlog | Discovered and failing the admission test, or the operator asked to defer it | Append one line to `todo/backlog.md` (above `## Removed with operator approval`) with the next free id: `- [B-NNN] <title> -- app: <app> -- source: <key> -- added: <today> -- summary: <what> -- needs: <refs or ids> -- why deferred: <the admission clause it failed, or the operator's words> -- promote when: <trigger>`. The backlog has no cap: an idea is never dropped for lack of room. |
 
 Shared or app-local: work lands in the core domain only when a second app needs it now. One app's need is filed in that app's domain, with a note naming the day it would move.
 
-**Promoting a backlog entry** is this skill run on the entry: a promotion the operator asks for is operator-directed, and one a campaign makes on its own passes the admission test, carries an Origin line, and counts against the run's cap. The promoting commit writes the section (carrying the entry's `source` as its `-> SOURCE:` line) and deletes the entry, or `validate` fails on the duplicate source.
+**Promoting a backlog entry** is this skill run on the entry: a promotion the operator asks for is operator-directed, and one a campaign makes on its own passes the admission test and carries an Origin line. The promoting commit writes the section (carrying the entry's `source` as its `-> SOURCE:` line) and deletes the entry, or `validate` fails on the duplicate source. The section carrying the key is what lets the entry leave: an entry deleted any other way, with no merge marker on a survivor and no operator removal record, is `backlog-dropped`. A release's backlog review (an item in every release section) runs through this skill: each entry for the release's app or `suite` (every entry for a `photon-v` release) is promoted, or the operator is asked whether it may wait and the answer is appended to the entry as `-- reviewed: <tag> <YYYY-MM-DD> deferred by operator: "<their words>"`. Never write a deferral the operator did not say. When the review promotes only part of an entry, the rest stays and the entry gains `-- reviewed: <tag> <YYYY-MM-DD> promoted DNN TNN §N`. Committed `reviewed:` fields are never edited or removed.
 
 ### 6. New sections are born complete
 
@@ -92,7 +92,7 @@ python scripts/todo-graph.py plan --check
 
 ### 8. Commit and report
 
-Commit as `todo: file <what> in <ref>`, or `todo: backlog <what> as B-NNN`. Report the address (`DNN TNN §N` or `B-NNN`), whether it is operator-directed or discovered (and for discovered work the admission clause it passed or failed and the run's cap use), why that home won over the alternatives searched, and the size line the Progress block now shows.
+Commit as `todo: file <what> in <ref>`, or `todo: backlog <what> as B-NNN`. Report the address (`DNN TNN §N` or `B-NNN`), whether it is operator-directed or discovered (and for discovered work the admission clause it passed or failed and the run id on its Origin line), why that home won over the alternatives searched, and the size line the Progress block now shows.
 
 ## Guardrails
 
@@ -100,7 +100,8 @@ Commit as `todo: file <what> in <ref>`, or `todo: backlog <what> as B-NNN`. Repo
 - Do not write a bare `TNN` reference without a section on any line containing `XREF`, `Depends`, or `|`.
 - Do not leave the plan unsynced. A section with no plan row breaks `plan --check`.
 - Do not file the same real-world thing twice. Search first (the backlog too), and stamp automated filings with `SOURCE:`.
-- Do not create a discovered section that fails the admission test, lacks its Origin line, or passes the run's cap. Merge, supersede, or backlog.
-- Do not stamp an Origin line on work the operator asked for, and do not apply the admission test or the cap to it.
-- Do not raise a cap in `todo/budget.json`. Only the operator does, in words the history entry quotes.
+- Do not create a discovered section that fails the admission test or lacks its Origin line. Merge, supersede, or backlog.
+- Do not stamp an Origin line on work the operator asked for, and do not apply the admission test to it.
+- Do not delete a backlog entry except by promotion, by a merge that keeps its key as a merge marker, or with the operator's words in a removal record.
+- Do not change `todo/budget.json`. Only the operator does, in words the history entry quotes.
 - Do not file app-agnostic work into one app's domain when a second app already needs it, and do not file into the core domain what only one app needs.

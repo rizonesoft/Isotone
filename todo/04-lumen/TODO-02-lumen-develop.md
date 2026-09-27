@@ -51,7 +51,7 @@ track: L2
 - Export writes JPEG, TIFF (8 or 16 bit), and PNG with resize, sharpening for screen or print, color space (sRGB, Display P3, Adobe RGB), metadata choices, and file naming, in the background with progress.
 - "Edit in Imago" renders a 16-bit TIFF, opens it in Imago when installed, and stacks the result beside the original; when Imago is absent the command is disabled with a tooltip saying so.
 - `lumen-v0.1.0` is a published release that passes `standards/release.md`.
-- Every Lumen surface passes an Accessibility Insights audit and every string is localizable (§9, relocated on 2026-09-26 from the retired Lumen roadmap file and moved on 2026-09-27 into Phase 39, last before Lumen 1.0.0, so it audits every Lumen parity surface; the roadmap file's other sections became Lumen parity sections, and only its GPU develop path waits in `todo/backlog.md` as B-033).
+- Every Lumen surface passes an Accessibility Insights audit and every string is localizable (§9, relocated on 2026-09-26 from the retired Lumen roadmap file and moved on 2026-09-27 into Phase 39, last before Lumen 1.0.0, so it audits every Lumen parity surface; the roadmap file's other sections became Lumen parity sections, and its GPU develop path, once backlog B-033, is `D01 T07 §10` to `§12` since 2026-09-27).
 
 **Adjacency:** list=not-applicable (the grid in D04 T01 §8 is the list); document=applicable @ D04 T02 §6; settings=applicable @ D04 T02 §5; reporting=applicable; notifications=applicable; permissions=applicable; audit=applicable; exchange=applicable; reverse=applicable @ D04 T02 §1
 
@@ -207,10 +207,13 @@ Lumen's first release, following `standards/release.md` as Nodus and Imago did, 
 
 **Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.1.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
+**Corrected 2026-09-27:** added the backlog review before the tag (operator decision 2026-09-27, "Release-time backlog gate", with "No drop without operator approval"; `todo/README.md`, The budget and the backlog): every backlog entry for Lumen or the suite is promoted into a section or deferred by the operator in words recorded on the entry as a `reviewed: lumen-v0.1.0` field, and `validate` refuses this section's stamp while one is unreviewed (`release-backlog-unreviewed`).
+
 - [ ] `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Write the `lumen-v0.1.0` section of `CHANGELOG.md`. Done when: it lists every user-visible feature.
 - [ ] Confirm the user guide covers every surface. Done when: no surface lacks a page.
 - [ ] Package and run the clean-machine procedure from `D05 T01 §1`, including an import of a copied fixture folder, a develop, an export, and a hash check that the originals are unchanged. Done when: every step passes and is quoted.
+- [ ] Run the backlog review for `lumen-v0.1.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry whose `app:` is `lumen` or `suite`, either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: lumen-v0.1.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: lumen-v0.1.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: lumen-v0.1.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
 - [ ] Push `lumen-v0.1.0`; verify the workflow, the files and `SHA256SUMS` on `download.rizonesoft.com`, and the update feed; run the portable ZIP from an empty folder. Done when: all pass (URLs and hashes quoted).
 - [ ] Update `README.md`'s Lumen status line. Done when: it names 0.1.0.
 - [ ] Commit: `"release: Lumen 0.1.0"`

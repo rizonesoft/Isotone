@@ -92,6 +92,7 @@ track: I9
 - -> XREF: D03 T20 §7 -- the Presets Manager that lists §8's styles and places assets as §9's smart objects
 - -> XREF: D03 T21 §1 -- Imago 0.2.0 releases the Phase 16 sections here
 - -> XREF: D03 T21 §2 -- Imago 0.3.0 releases the Phase 17 sections here
+- -> XREF: D03 T23 §1 -- Imago video and animation cites §1: the layer kinds the video layer joins; §2: the layer visibility and order D03 T23 §4's frames record
 
 ## Outcome
 

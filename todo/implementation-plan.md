@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
-> **Progress:** **0 of 690 sections complete (0%).** 690 sections (0 discovered); backlog 14 of 500. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 750 sections complete (0%).** 750 sections (0 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -26,7 +26,7 @@ process todo section: | [ ] | `D00 T01 §1` | Wire the TODO gate into every clon
 > python scripts/todo-graph.py plan --check    # fail if they have gone stale
 > ```
 
-**Campaign discovery is bounded; operator planning is not.** Sections the operator asks for are never capped, per phase or in total. A section a campaign files on its own carries an `**Origin:** discovered run=<run id> <YYYY-MM-DD>` line, and one run may file at most `per_run_discovered_sections` of them (15, in [`budget.json`](./budget.json)); `validate` refuses a breach. Discovered work that fails the admission test in [`README.md`](./README.md) ("The budget and the backlog"), or that comes past the cap, goes to [`backlog.md`](./backlog.md), which is not in this plan, never runnable, and capped at `backlog_cap` (500). Only the operator raises a cap. The Progress line above reports the section count, how many were discovered, and backlog use.
+**Nothing is capped, and nothing is left behind.** Sections the operator asks for are never capped, and since 2026-09-27 neither is campaign discovery nor the backlog (operator decision: "the cap is worrying me, because I'm worried features will be left behind."; [`budget.json`](./budget.json) records it). A section a campaign files on its own carries an `**Origin:** discovered run=<run id> <YYYY-MM-DD>` line so its provenance can be reported. Discovered work that fails the admission test in [`README.md`](./README.md) ("The budget and the backlog") goes to [`backlog.md`](./backlog.md), which is not in this plan and never runnable; an entry leaves it only by promotion, by a merge that keeps its key, or with the operator's recorded words, and every release section reviews the backlog for its app before it stamps. The Progress line above reports the section count, how many were discovered, and the backlog's entry count.
 
 **How phases are authored.** A phase is a `### Phase <N> -- <Title>` heading, one paragraph on why it runs where it does, and one table. Every section in the tree sits in exactly one phase row; a new TODO file places each of its sections here in the commit that authors it. A section's phase is never earlier than the phase of anything it depends on, and within a phase rows run in dependency order. The format is specified in [`README.md`](./README.md) under "The implementation plan: phases and rows".
 
@@ -44,37 +44,40 @@ The finished suite is **three standalone creative applications that behave like 
 | Operator-only work never stalls a runner | `D00 T01 §2` · `D99 T01 §1`-`§10` |
 | The review panel works before the first stamp | `D00 T01 §4` |
 | No quarantined test, no excused warning | `D00 T02 §1` · `D00 T02 §2` · `D02 T01 §7` |
-| No dependency without a reason and a license | `D00 T02 §4` · `D00 T02 §5` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` · `D04 T10 §2` · `D04 T08 §6` · `D04 T08 §7` · `D04 T13 §4` · `D04 T07 §7` · `D04 T12 §8` · `D04 T12 §9` · `D04 T12 §11` · `D00 T03 §3` |
+| No dependency without a reason and a license | `D00 T02 §4` · `D00 T02 §5` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` · `D04 T10 §2` · `D04 T08 §6` · `D04 T08 §7` · `D04 T13 §4` · `D04 T07 §7` · `D04 T12 §8` · `D04 T12 §9` · `D04 T12 §11` · `D00 T03 §3` · `D01 T10 §4` · `D01 T10 §5` · `D01 T10 §6` · `D01 T11 §1` · `D01 T11 §2` · `D01 T12 §1` · `D01 T12 §2` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` |
 | Every surface implements the design 1:1 and is held to it by gates | `D00 T01 §9` (Design line, design-lint, reference renders) · `D01 T01 §9` (visual regression and goldens) · `D00 T03 §2` (before record) |
 | The apps carry their own names | `D02 T01 §1` · `D03 T01 §1` · `D03 T01 §4` · `D00 T03 §3` |
 | One composition root per app, logging to disk | `D01 T02 §1` · `D02 T01 §2` · `D02 T01 §3` · `D03 T01 §5` · `D04 T01 §2` |
-| Shared once, never copied | `D01 T01 §1`-`§4` (Photon.UI) · `D01 T02 §1`-`§5` (Photon.Core) · `D01 T03 §1` · `D01 T04 §1` · `D01 T05 §1` · `D01 T06 §1` · `D01 T07 §1` · `D03 T16 §1` · `D03 T16 §5` · `D03 T17 §2` · `D03 T18 §6` · `D01 T08 §1` · `D01 T09 §1` · `D03 T10 §6` · `D03 T13 §3` · `D04 T13 §1` · `D04 T13 §6` · `D04 T09 §16` · `D04 T10 §7` · `D04 T10 §8` · `D04 T12 §6` · `D01 T07 §9` |
-| Every edit has a reverse | `D02 T03 §1` · `D02 T03 §4` · `D01 T02 §4` · `D03 T03 §2` · `D04 T02 §1` · `D04 T05 §6` · `D04 T11 §3` |
+| Shared once, never copied | `D01 T01 §1`-`§4` (Photon.UI) · `D01 T02 §1`-`§5` (Photon.Core) · `D01 T03 §1` · `D01 T04 §1` · `D01 T05 §1` · `D01 T06 §1` · `D01 T07 §1` · `D03 T16 §1` · `D03 T16 §5` · `D03 T17 §2` · `D03 T18 §6` · `D01 T08 §1` · `D01 T09 §1` · `D03 T10 §6` · `D03 T13 §3` · `D04 T13 §1` · `D04 T13 §6` · `D04 T09 §16` · `D04 T10 §7` · `D04 T10 §8` · `D04 T12 §6` · `D01 T07 §9` · `D01 T10 §1` · `D01 T10 §4` · `D01 T10 §9` · `D01 T11 §1` · `D01 T12 §1` · `D01 T07 §10` · `D04 T13 §9` |
+| Every edit has a reverse | `D02 T03 §1` · `D02 T03 §4` · `D01 T02 §4` · `D03 T03 §2` · `D04 T02 §1` · `D04 T05 §6` · `D04 T11 §3` · `D01 T10 §1` · `D01 T10 §4` |
 | Saves never damage the user's file | `D02 T04 §1` · `D01 T02 §5` · `D03 T04 §2` |
 | A crash loses nothing | `D02 T04 §5` · `D03 T04 §6` |
-| Formats are proven, not assumed | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §12` · `D03 T17 §2` · `D03 T17 §4` · `D03 T17 §5` · `D03 T17 §6` · `D01 T08 §1` · `D02 T18 §8` · `D04 T13 §1` · `D04 T13 §2` · `D04 T13 §3` · `D04 T13 §4` · `D04 T13 §6` · `D04 T13 §7` · `D04 T13 §8` · `D04 T08 §9` |
+| Formats are proven, not assumed | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §12` · `D03 T17 §2` · `D03 T17 §4` · `D03 T17 §5` · `D03 T17 §6` · `D01 T08 §1` · `D02 T18 §8` · `D04 T13 §1` · `D04 T13 §2` · `D04 T13 §3` · `D04 T13 §4` · `D04 T13 §6` · `D04 T13 §7` · `D04 T13 §8` · `D04 T08 §9` · `D01 T11 §3` · `D03 T23 §5` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` · `D04 T13 §12` |
 | No menu item silently does nothing | `D02 T03 §5` · `D03 T06 §2` |
-| Originals are never written unless the user opts in; a verified backup is taken by default | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1` · `D04 T11 §1` · `D04 T08 §9` · `D04 T14 §10` · `D04 T04 §11` · `D04 T04 §16` · `D04 T05 §6` · `D04 T08 §8` · `D04 T09 §17` |
+| Originals are never written unless the user opts in; a verified backup is taken by default | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1` · `D04 T11 §1` · `D04 T08 §9` · `D04 T14 §10` · `D04 T04 §11` · `D04 T04 §16` · `D04 T05 §6` · `D04 T08 §8` · `D04 T09 §17` · `D04 T16 §5` · `D04 T17 §1` · `D04 T17 §3` |
 | It looks like one suite | `standards/design-contract.md`, `standards/ui.md`, and `docs/design/` · `D00 T01 §9` · `D01 T01 §9` · `D01 T01 §3` · `D01 T01 §5` · `D01 T01 §6` · `D01 T01 §7` · `D01 T01 §8` |
 | It works without a mouse or eyes | `D02 T06 §17` · `D03 T07 §16` · `D04 T02 §9` |
-| Each app ships alone, proven on a clean machine | `D05 T01 §1` · `D02 T05 §4` · `D03 T06 §3` · `D04 T02 §8` · `D04 T15 §10` |
-| The suite ships together without re-versioning | `D05 T01 §6` |
+| Each app ships alone, proven on a clean machine | `D05 T01 §1` · `D02 T05 §4` · `D03 T06 §3` · `D04 T02 §8` · `D04 T15 §10` · `D02 T17 §12` · `D03 T21 §15` · `D04 T15 §14` |
+| The suite ships together without re-versioning | `D05 T01 §6` · `D05 T01 §7` |
 | Users can learn it | `D06 T01 §1`-`§4` |
-| Nodus covers every CorelDRAW and Illustrator capability in the parity catalog | `D00 T01 §6` (the catalog gate) · `D02 T17 §1`-`§10` (each release reconciles its phase) |
+| Nodus covers every CorelDRAW and Illustrator capability in the parity catalog | `D00 T01 §6` (the catalog gate) · `D02 T17 §1`-`§10` (each release reconciles its phase) · `D02 T17 §12` (automation, after the first release) |
 | Nodus opens and saves Illustrator and CorelDRAW files | `D02 T14 §3` · `D02 T14 §4` · `D02 T14 §5` · `D02 T14 §6` · `D02 T14 §7` · `D02 T14 §8` |
 | Print and PDF output are prepress-grade | `D02 T13 §5` · `D02 T13 §7` · `D02 T13 §14` · `D02 T13 §15` |
-| AI results are editable, undoable, and reproducible | `D01 T05 §3` · `D02 T15 §1` · `D02 T15 §2` · `D02 T15 §6` · `D03 T19 §1` · `D03 T19 §2` · `D04 T10 §1` · `D04 T10 §4` · `D04 T10 §7` |
-| Nothing leaves the machine without an explicit user action | `D01 T05 §2` · `D01 T05 §4` · `D03 T19 §1` · `D04 T10 §1` · `D04 T08 §6` |
-| Imago covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog | `D00 T01 §7` (the catalog gate) · `D03 T21 §1`-`§12` (each release reconciles its phase) |
+| AI results are editable, undoable, and reproducible | `D01 T05 §3` · `D02 T15 §1` · `D02 T15 §2` · `D02 T15 §6` · `D03 T19 §1` · `D03 T19 §2` · `D04 T10 §1` · `D04 T10 §4` · `D04 T10 §7` · `D01 T12 §1` · `D03 T19 §16` |
+| Nothing leaves the machine without an explicit user action | `D01 T05 §2` · `D01 T05 §4` · `D03 T19 §1` · `D04 T10 §1` · `D04 T08 §6` · `D01 T10 §6` · `D01 T12 §2` |
+| Imago covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog | `D00 T01 §7` (the catalog gate) · `D03 T21 §1`-`§12` (each release reconciles its phase) · `D03 T21 §13`-`§15` (automation, video and animation, and on-device models after the first release) |
 | Imago round-trips Photoshop documents: PSD and PSB open and save with layers, masks, adjustments, styles, text, and smart objects live | `D03 T17 §2` · `D03 T17 §13` · `D03 T17 §3` |
 | Imago opens and saves GIMP's XCF | `D03 T17 §4` · `D03 T17 §14` |
 | Editing stays non-destructive: adjustment layers, smart and live filters, masks, and linked content never overwrite pixels until the user applies | `D03 T08 §1` · `D03 T09 §3` · `D03 T09 §9` · `D03 T11 §1` · `D03 T14 §1` |
 | AI results in Imago are new layers and masks, undoable, and reproducible | `D03 T19 §1` · `D03 T19 §2` · `D03 T19 §3` · `D03 T19 §6` |
-| Lumen covers every Lightroom Classic, ACDSee Photo Studio Ultimate, and IrfanView capability in its parity catalog | `D00 T01 §8` (the catalog gate) · `D04 T15 §1`-`§10` (each release reconciles its phase) |
+| Lumen covers every Lightroom Classic, ACDSee Photo Studio Ultimate, and IrfanView capability in its parity catalog | `D00 T01 §8` (the catalog gate) · `D04 T15 §1`-`§10` (each release reconciles its phase) · `D04 T15 §11`-`§14` (automation, video and audio, on-device models, and the remaining formats after the first release) |
 | Any image opens instantly: the Lumen Viewer paints its first pixel within its recorded startup budgets (cold, warm, hand-off, and next image) and can be the Windows default viewer for every format Lumen reads | `D04 T04 §1` · `D04 T04 §2` · `D04 T04 §3` · `D04 T04 §17` · `D04 T13 §1` |
 | Any folder can be browsed without importing it, listed and indexed in the background within its recorded budgets | `D04 T05 §1` · `D04 T05 §2` · `D04 T05 §4` |
 | Batch tools are core: rename, convert, resize, edit, develop, and export run with a dry run first and write new files unless the user opted in | `D04 T11 §1` · `D04 T11 §3` · `D04 T11 §4` · `D04 T11 §7` · `D04 T11 §9` · `D04 T11 §10` |
 | Faces are detected only on an explicit send with a preview and recorded provenance, and named by hand | `D04 T10 §2` · `D04 T10 §3` |
+| Recorded actions and scripts replay as one undo step and never run untrusted code or open a listener silently | `D01 T10 §1` · `D01 T10 §4` · `D01 T10 §6` · `D01 T10 §7` |
+| A GPU path produces the CPU path's pixels within 1/255 and falls back cleanly without a device | `D03 T02 §5` · `D01 T07 §10` · `D01 T07 §11` · `D01 T07 §12` |
+| Optional external tools (Ghostscript, FFmpeg, GDAL) are never bundled, and what needs them is disabled and explained when they are absent | `D04 T13 §4` · `D01 T11 §1` · `D04 T13 §11` |
 
 ---
 
@@ -92,7 +95,9 @@ Nothing in this plan has been built, but the tree is not empty.
 
 **Nodus parity** is planned, not built: on 2026-09-26 the operator decided Nodus gets every CorelDRAW and every Illustrator feature, the catalog in [`../docs/parity/nodus-parity.md`](../docs/parity/nodus-parity.md) routes each of their 4,335 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 4 to 13 run the sections between Nodus 0.1.0 and Imago's foundation.
 
-**Imago parity** is planned, not built: the same day the operator decided Imago gets every Photoshop feature and those of at least two other popular raster editors, chosen as Affinity Photo (Affinity 3.3) and GIMP 3.2.6; the catalog in [`../docs/parity/imago-parity.md`](../docs/parity/imago-parity.md) routes each of their 10,829 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 16 to 27 run the sections between Imago 0.1.0 and Lumen's foundation. Scripting, macros, batch processing, video, and animation are deferred to after the first release (backlog B-041 to B-044), with scripting and macros as one suite-wide system.
+**Imago parity** is planned, not built: the same day the operator decided Imago gets every Photoshop feature and those of at least two other popular raster editors, chosen as Affinity Photo (Affinity 3.3) and GIMP 3.2.6; the catalog in [`../docs/parity/imago-parity.md`](../docs/parity/imago-parity.md) routes each of their 10,829 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 16 to 27 run the sections between Imago 0.1.0 and Lumen's foundation. Scripting, macros, batch processing, video, and animation run after the first release, in Phases 42 and 43, with scripting and macros as one suite-wide system.
+
+**After the first release** is planned, not built: on 2026-09-27 the operator worried "features will be left behind" and chose to plan the work once deferred to after the first release as real sections rather than backlog entries. Phases 42 to 45 run it after the suite bundle and the shared-decoder imports: suite automation (actions, C# scripting, the automation and MCP servers, extensions, the command line, and batch with droplets), video and audio with frame animation, on-device models beside the OpenRouter default with the GPU develop path, and Lumen's remaining formats (SWF, an optional user-installed GDAL for ECW, MrSID, JPM, and MRC, and clean-room analysis of four undocumented layered formats), each phase ending in app releases and the last in `photon-v1.1.0`; Lumen's CAD and plotter drawings land earlier, in Phase 30, on Nodus's readers moved to `Photon.Core`.
 
 **The workspace** has a pinned SDK, one solution, one build configuration, scripts, installers, and CI workflows written on 2026-09-26 and not yet committed or run on GitHub.
 
@@ -232,7 +237,7 @@ With its foundation sound, Nodus becomes a complete first release: `Photon.UI` t
 | [ ] | `D06 T02 §1` | The architecture page matches the tree                          |   4   |
 | [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                                          |   6   |
 | [ ] | `D05 T01 §1` | The clean-machine install procedure                             |   3   |
-| [ ] | `D02 T05 §4` | Nodus 0.1.0                                                     |  10   |
+| [ ] | `D02 T05 §4` | Nodus 0.1.0                                                     |  11   |
 
 ### Phase 4 -- Nodus parity I: document model, pages, layers, selection, and view
 
@@ -255,7 +260,7 @@ Parity starts where every later feature stands. This phase fixes how live object
 | [ ] | `D02 T07 §12` | View modes, zoom, rotate view, saved views, windows                |  18   |
 | [ ] | `D02 T07 §13` | History panel, repeat, paste variants, quick duplicates            |  14   |
 | [ ] | `D02 T07 §14` | New Document dialog, presets, templates, document information      |  20   |
-| [ ] | `D02 T17 §1`  | Nodus 0.2.0 (Phase 4)                                              |  12   |
+| [ ] | `D02 T17 §1`  | Nodus 0.2.0 (Phase 4)                                              |  13   |
 
 ### Phase 5 -- Nodus parity II: drawing, paths, shapes, shaping, and transform
 
@@ -279,7 +284,7 @@ With the document model settled, the drawing layer catches up: every pen, curve,
 | [ ] | `D02 T08 §13` | Rotate, reflect, scale, shear, reshape, and free transform tools             |  14   |
 | [ ] | `D02 T08 §14` | Align, distribute, arrange, and step and repeat extensions                   |  16   |
 | [ ] | `D02 T08 §15` | Dimensions, connectors, and callouts                                         |  17   |
-| [ ] | `D02 T17 §2`  | Nodus 0.3.0 (Phase 5)                                                        |  12   |
+| [ ] | `D02 T17 §2`  | Nodus 0.3.0 (Phase 5)                                                        |  13   |
 
 ### Phase 6 -- Nodus parity III: color, fills, strokes, brushes, transparency, styles, and symbols
 
@@ -312,7 +317,7 @@ Appearance comes next because every effect and every format carries it. `Photon.
 | [ ] | `D02 T09 §20` | Opacity masks, fountain and pattern transparency, knockout, and feather                                      |  14   |
 | [ ] | `D02 T09 §21` | Symbols: dynamic symbols, 9-slice scaling, registration, nesting, and linked libraries                       |  15   |
 | [ ] | `D02 T09 §22` | Symbolism tools and the symbol sprayer                                                                       |  11   |
-| [ ] | `D02 T17 §3`  | Nodus 0.4.0 (Phase 6)                                                                                        |  12   |
+| [ ] | `D02 T17 §3`  | Nodus 0.4.0 (Phase 6)                                                                                        |  13   |
 
 ### Phase 7 -- Nodus parity IV: type, tables, and graphs
 
@@ -337,7 +342,7 @@ Type is its own discipline, so it gets its own phase: HarfBuzz shaping with bidi
 | [ ] | `D02 T10 §13` | Writing tools, and text import and export                                              |  25   |
 | [ ] | `D02 T10 §14` | Tables                                                                                 |  22   |
 | [ ] | `D02 T10 §15` | Graphs                                                                                 |  18   |
-| [ ] | `D02 T17 §4`  | Nodus 0.5.0 (Phase 7)                                                                  |  12   |
+| [ ] | `D02 T17 §4`  | Nodus 0.5.0 (Phase 7)                                                                  |  13   |
 
 ### Phase 8 -- Nodus parity V: interactive and live effects
 
@@ -364,7 +369,7 @@ Effects sit on the Appearance stack and the live-object contract, both shipped b
 | [ ] | `D02 T11 §17` | Live Paint and smart fill                                                                    |  15   |
 | [ ] | `D02 T11 §18` | Repeats and objects on a path                                                                |  16   |
 | [ ] | `D02 T11 §19` | Path effects: convert to shape, offset, outline, and pathfinder effects                      |  13   |
-| [ ] | `D02 T17 §5`  | Nodus 0.6.0 (Phase 8)                                                                        |  12   |
+| [ ] | `D02 T17 §5`  | Nodus 0.6.0 (Phase 8)                                                                        |  13   |
 
 ### Phase 9 -- Nodus parity VI: bitmaps, tracing, and the shared pixel engine
 
@@ -398,7 +403,7 @@ Bitmaps arrive once vectors are complete. `Photon.Core` gains the pixel engine t
 | [ ] | `D02 T12 §6`  | Photo artwork: Pointillizer, PhotoCocktail, Object Mosaic, and mockups                     |  17   |
 | [ ] | `D02 T12 §7`  | The Links panel and linked sources                                                         |  20   |
 | [ ] | `D02 T12 §8`  | SVG filter effects                                                                         |  13   |
-| [ ] | `D02 T17 §6`  | Nodus 0.7.0 (Phase 9)                                                                      |  12   |
+| [ ] | `D02 T17 §6`  | Nodus 0.7.0 (Phase 9)                                                                      |  13   |
 
 ### Phase 10 -- Nodus parity VII: color management, print, prepress, and PDF
 
@@ -424,7 +429,7 @@ Output comes after everything it has to print exists. Bitmap color modes finish 
 | [ ] | `D02 T13 §15` | PDF presets and standards: PDF/X, PDF/A, compatibility, compression, and marks   |  16   |
 | [ ] | `D02 T13 §17` | Interactive 3D models in PDF: U3D annotations                                    |  15   |
 | [ ] | `D02 T13 §16` | PDF interactivity and security: bookmarks, hyperlinks, tagged PDF, and passwords |  14   |
-| [ ] | `D02 T17 §7`  | Nodus 0.8.0 (Phase 10)                                                           |  12   |
+| [ ] | `D02 T17 §7`  | Nodus 0.8.0 (Phase 10)                                                           |  13   |
 
 ### Phase 11 -- Nodus parity VIII: file formats, export, and web
 
@@ -451,7 +456,7 @@ Formats come after the object model they must carry is complete, so each reader 
 | [ ] | `D02 T14 §17` | Slices, image maps, hyperlinks, rollovers, and SVG interactivity            |  20   |
 | [ ] | `D02 T14 §18` | Pixel-perfect drawing, pixel preview, and object hinting                    |  12   |
 | [ ] | `D02 T14 §19` | Clipboard formats, OLE objects, placing multiple files, and scanner acquire |  17   |
-| [ ] | `D02 T17 §8`  | Nodus 0.9.0 (Phase 11)                                                      |  12   |
+| [ ] | `D02 T17 §8`  | Nodus 0.9.0 (Phase 11)                                                      |  13   |
 
 ### Phase 12 -- Nodus AI: editable, suite-aware, reproducible
 
@@ -475,7 +480,7 @@ The AI features are Nodus's own and come after the object model, formats, and tr
 | [ ] | `D02 T15 §9`  | AI image cleanup: remove background, upscale, repair, and art style           |  10   |
 | [ ] | `D02 T15 §10` | Concept to vector: sketches and images to structured vectors                  |  11   |
 | [ ] | `D02 T15 §11` | The suite pipeline: Lumen to Imago to Nodus hand-offs and shared brand kits   |  15   |
-| [ ] | `D02 T17 §9`  | Nodus 0.10.0 (Phase 12)                                                       |  12   |
+| [ ] | `D02 T17 §9`  | Nodus 0.10.0 (Phase 12)                                                       |  13   |
 
 ### Phase 13 -- Nodus parity IX: legacy formats, workspace, customization, preferences, and Nodus 1.0.0
 
@@ -510,7 +515,7 @@ The last parity phase first reads and writes the legacy formats the operator ask
 | [ ] | `D02 T18 §7`  | WordPerfect, Quattro Pro, Lotus 1-2-3, and WordStar                                                                 |  12   |
 | [ ] | `D02 T18 §8`  | Legacy raster import and export in Nodus                                                                            |  14   |
 | [ ] | `D02 T06 §17` | Accessibility and localization                                                                                      |   4   |
-| [ ] | `D02 T17 §10` | Nodus 1.0.0 (Phase 13)                                                                                              |  14   |
+| [ ] | `D02 T17 §10` | Nodus 1.0.0 (Phase 13)                                                                                              |  15   |
 
 ### Phase 14 -- Imago foundation: snapshot port, WPF-UI out, tiles, rendering
 
@@ -556,7 +561,7 @@ Imago becomes a complete first release: the suite undo history and the atomic do
 | [ ] | `D03 T06 §1` | About, shortcuts, and help in Imago               |   3   |
 | [ ] | `D03 T06 §2` | Every Imago menu command works or names its owner |   3   |
 | [ ] | `D06 T01 §2` | The Imago user guide                              |   4   |
-| [ ] | `D03 T06 §3` | Imago 0.1.0                                       |   7   |
+| [ ] | `D03 T06 §3` | Imago 0.1.0                                       |   8   |
 
 ### Phase 16 -- Imago parity I: document, canvas, view, history, and layers
 
@@ -585,7 +590,7 @@ Parity starts where every later feature stands. This phase fixes how live conten
 | [ ] | `D03 T09 §4`  | Clipping masks, child clipping, and vector masks                        |  15   |
 | [ ] | `D03 T09 §5`  | Blending options, Blend If, and blend ranges                            |  18   |
 | [ ] | `D03 T09 §6`  | GIMP, Affinity, and Porter-Duff blend modes                             |  18   |
-| [ ] | `D03 T21 §1`  | Imago 0.2.0 (Phase 16)                                                  |  14   |
+| [ ] | `D03 T21 §1`  | Imago 0.2.0 (Phase 16)                                                  |  15   |
 
 ### Phase 17 -- Imago parity II: selection, channels, styles, smart objects, and artboards
 
@@ -610,7 +615,7 @@ With layers and masks in place, selection catches up: soft and saved selections,
 | [ ] | `D03 T09 §11` | Layer comps and states                                                           |  13   |
 | [ ] | `D03 T09 §12` | Align, distribute, and move-tool extensions                                      |  16   |
 | [ ] | `D03 T09 §13` | Artboards with constraints                                                       |  16   |
-| [ ] | `D03 T21 §2`  | Imago 0.3.0 (Phase 17)                                                           |  14   |
+| [ ] | `D03 T21 §2`  | Imago 0.3.0 (Phase 17)                                                           |  15   |
 
 ### Phase 18 -- Imago parity III: adjustment layers, adjustments, modes, and color
 
@@ -630,7 +635,7 @@ Adjustments become non-destructive layers over the suite pixel engine: every ton
 | [ ] | `D03 T11 §8`  | Channel operations: split, merge, decompose, compose, apply image, calculations                            |  13   |
 | [ ] | `D03 T11 §9`  | Color panels, pickers, eyedroppers, and color samplers                                                     |  21   |
 | [ ] | `D03 T11 §10` | Swatches, palettes, and color libraries                                                                    |  20   |
-| [ ] | `D03 T21 §3`  | Imago 0.4.0 (Phase 18)                                                                                     |  14   |
+| [ ] | `D03 T21 §3`  | Imago 0.4.0 (Phase 18)                                                                                     |  15   |
 
 ### Phase 19 -- Imago parity IV: the brush engine, painting, fills, gradients, and patterns
 
@@ -649,7 +654,7 @@ Painting is judged on its brush engine, so it gets its own phase: tips, smoothin
 | [ ] | `D03 T12 §9`  | Gradients and the gradient editor                           |  25   |
 | [ ] | `D03 T12 §10` | Patterns                                                    |  17   |
 | [ ] | `D03 T12 §11` | Symmetry painting                                           |  11   |
-| [ ] | `D03 T21 §4`  | Imago 0.5.0 (Phase 19)                                      |  14   |
+| [ ] | `D03 T21 §4`  | Imago 0.5.0 (Phase 19)                                      |  15   |
 
 ### Phase 20 -- Imago parity V: retouching, content-aware tools, transform, warp, and liquify
 
@@ -668,7 +673,7 @@ Retouching builds on painting: clone and the clone source panel, healing, patch,
 | [ ] | `D03 T13 §8`  | Perspective warp                                  |  11   |
 | [ ] | `D03 T13 §9`  | Liquify                                           |  19   |
 | [ ] | `D03 T13 §10` | Frequency separation and retouching workflows     |  11   |
-| [ ] | `D03 T21 §5`  | Imago 0.6.0 (Phase 20)                            |  14   |
+| [ ] | `D03 T21 §5`  | Imago 0.6.0 (Phase 20)                            |  15   |
 
 ### Phase 21 -- Imago parity VI: filters I, the filter surfaces and the engine extensions for blur, sharpen, noise, distort, and pixelate
 
@@ -692,7 +697,7 @@ Filters come once the layer stack can host them non-destructively. The relocated
 | [ ] | `D03 T14 §4`  | The Blur Gallery surface                                                                       |  14   |
 | [ ] | `D03 T14 §6`  | Lens Correction and Adaptive Wide Angle                                                        |  22   |
 | [ ] | `D03 T14 §7`  | Vanishing Point and live projections                                                           |  14   |
-| [ ] | `D03 T21 §6`  | Imago 0.7.0 (Phase 21)                                                                         |  14   |
+| [ ] | `D03 T21 §6`  | Imago 0.7.0 (Phase 21)                                                                         |  15   |
 
 ### Phase 22 -- Imago parity VII: filters II, render, light, stylize, artistic, generic, and GEGL
 
@@ -712,7 +717,7 @@ The second filter phase completes the long tail GIMP and GEGL bring: light and s
 | [ ] | `D03 T14 §10` | Dedicated filter editors and Affinity filter extras |  17   |
 | [ ] | `D03 T14 §12` | Imago extension modules: managed filter plug-ins    |  10   |
 | [ ] | `D03 T14 §13` | The G'MIC filter collection                         |  13   |
-| [ ] | `D03 T21 §7`  | Imago 0.8.0 (Phase 22)                              |  14   |
+| [ ] | `D03 T21 §7`  | Imago 0.8.0 (Phase 22)                              |  15   |
 
 ### Phase 23 -- Imago parity VIII: the develop engine, Camera Raw, HDR, panorama, stacks, and astrophotography
 
@@ -741,7 +746,7 @@ Photography gets its own phase. `Photon.Core` gains the scene-referred develop e
 | [ ] | `D03 T15 §10` | Astrophotography stacking                                                                   |  20   |
 | [ ] | `D03 T15 §14` | Astro filters: stretches, background extraction, calibration, color mapping, and separation |  10   |
 | [ ] | `D03 T15 §11` | Crop and straighten scanned photos                                                          |  10   |
-| [ ] | `D03 T21 §8`  | Imago 0.9.0 (Phase 23)                                                                      |  14   |
+| [ ] | `D03 T21 §8`  | Imago 0.9.0 (Phase 23)                                                                      |  15   |
 
 ### Phase 24 -- Imago parity IX: type, paths, shapes, and vectors
 
@@ -760,7 +765,7 @@ Type and vectors come after the layer stack and styles they live in. The suite t
 | [ ] | `D03 T16 §7`  | Shape layers and shape tools                                                           |  21   |
 | [ ] | `D03 T16 §11` | Custom shapes, vector layers, and the Gfig job                                         |  11   |
 | [ ] | `D03 T16 §8`  | Frames and vector output                                                               |  15   |
-| [ ] | `D03 T21 §9`  | Imago 0.10.0 (Phase 24)                                                                |  14   |
+| [ ] | `D03 T21 §9`  | Imago 0.10.0 (Phase 24)                                                                |  15   |
 
 ### Phase 25 -- Imago parity X: formats, export, color management, and print
 
@@ -794,7 +799,7 @@ Formats come after the document model they must carry is complete, so each reade
 | [ ] | `D03 T18 §5`  | Soft proofing and gamut warning                                                               |  15   |
 | [ ] | `D03 T18 §6`  | Print                                                                                         |  20   |
 | [ ] | `D03 T18 §7`  | Print output extras, contact sheets, PDF presentation, and preflight                          |  14   |
-| [ ] | `D03 T21 §10` | Imago 0.11.0 (Phase 25)                                                                       |  14   |
+| [ ] | `D03 T21 §10` | Imago 0.11.0 (Phase 25)                                                                       |  15   |
 
 ### Phase 26 -- Imago AI: editable, suite-aware, reproducible
 
@@ -817,7 +822,7 @@ The AI features are Imago's own and come after the layers, masks, selections, re
 | [ ] | `D03 T19 §11` | AI type and faces                                                    |  15   |
 | [ ] | `D03 T19 §12` | Sky replacement                                                      |  12   |
 | [ ] | `D03 T19 §13` | The suite pipeline and the brand kit in Imago                        |  15   |
-| [ ] | `D03 T21 §11` | Imago 0.12.0 (Phase 26)                                              |  14   |
+| [ ] | `D03 T21 §11` | Imago 0.12.0 (Phase 26)                                              |  15   |
 
 ### Phase 27 -- Imago parity XI: workspace, customization, preferences, and Imago 1.0.0
 
@@ -839,7 +844,7 @@ The last parity phase customizes and audits the whole surface once it exists: wo
 | [ ] | `D03 T07 §19` | Performance II: memory: tile cache, compression, history, and large-document open |  10   |
 | [ ] | `D03 T07 §20` | Performance III: SIMD hot paths, parallel compositing, and cold start             |  10   |
 | [ ] | `D03 T07 §16` | Accessibility and localization                                                    |   4   |
-| [ ] | `D03 T21 §12` | Imago 1.0.0 (Phase 27): the parity catalog complete                               |  18   |
+| [ ] | `D03 T21 §12` | Imago 1.0.0 (Phase 27): the parity catalog complete                               |  19   |
 
 ### Phase 28 -- Lumen foundation: spine, catalog, import, RAW, library
 
@@ -873,11 +878,11 @@ Lumen becomes a complete first release: keywords, collections, culling, and XMP 
 | [ ] | `D04 T02 §6`  | Export                                           |   4   |
 | [ ] | `D06 T01 §3`  | The Lumen user guide                             |   4   |
 | [ ] | `D04 T02 §7`  | Edit in Imago                                    |   4   |
-| [ ] | `D04 T02 §8`  | Lumen 0.1.0                                      |   7   |
+| [ ] | `D04 T02 §8`  | Lumen 0.1.0                                      |   8   |
 
 ### Phase 30 -- Lumen parity I: shared formats and the fast default viewer
 
-The first pillar comes first. Imago's codec readers move to `Photon.Core/Formats/` as Lumen becomes their second consumer, Lumen reads every modern, HDR, legacy, rare, document, multi-page, and RAW format the three competitors open (the rare set through the shared `D01 T08` codecs), and the Lumen Viewer ships as a second executable with a recorded startup budget and an optional resident quick-start mode: screen-size decode with prefetch and display color, registration as a capable default viewer for every format it reads, zoom and display options, folder browsing, file operations and hand-offs, image information and viewer tools, multi-page and animated images, fullscreen, and the viewer's own slideshow, with the Lumen library one keystroke away. It ends with `lumen-v0.2.0`.
+The first pillar comes first. CAD and plotter drawings (DXF, DWG, HPGL, and CGM, the former backlog B-050 row LP-1053) join it on 2026-09-27, when the operator chose to plan the deferred work as real sections: Nodus's own readers (`D02 T14 §10` on ACadSharp, and `D02 T14 §11`) are ready since Phase 11, so they move to `Photon.Core` here on Lumen as their second consumer (`D04 T13 §9`). Imago's codec readers move to `Photon.Core/Formats/` as Lumen becomes their second consumer, Lumen reads every modern, HDR, legacy, rare, document, multi-page, and RAW format the three competitors open (the rare set through the shared `D01 T08` codecs), and the Lumen Viewer ships as a second executable with a recorded startup budget and an optional resident quick-start mode: screen-size decode with prefetch and display color, registration as a capable default viewer for every format it reads, zoom and display options, folder browsing, file operations and hand-offs, image information and viewer tools, multi-page and animated images, fullscreen, and the viewer's own slideshow, with the Lumen library one keystroke away. It ends with `lumen-v0.2.0`.
 
 |  ✔  | Section       | Deliverable                                                                           | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------- | :---: |
@@ -885,6 +890,7 @@ The first pillar comes first. Imago's codec readers move to `Photon.Core/Formats
 | [ ] | `D04 T13 §2`  | Modern and HDR formats in Lumen                                                       |  15   |
 | [ ] | `D04 T13 §3`  | Common legacy and special raster formats                                              |  18   |
 | [ ] | `D04 T13 §8`  | Rare and historical raster formats                                                    |  21   |
+| [ ] | `D04 T13 §9`  | CAD and plotter drawings: DXF, DWG, HPGL, and CGM                                     |  16   |
 | [ ] | `D04 T13 §4`  | Documents and multi-page formats                                                      |  18   |
 | [ ] | `D04 T13 §5`  | RAW coverage and RAW+JPEG pairs                                                       |  16   |
 | [ ] | `D04 T04 §1`  | The Lumen Viewer: a second executable with a startup budget and the hand-off to Lumen |  22   |
@@ -899,7 +905,7 @@ The first pillar comes first. Imago's codec readers move to `Photon.Core/Formats
 | [ ] | `D04 T04 §10` | Multi-page and animated images in the viewer                                          |  12   |
 | [ ] | `D04 T04 §7`  | Fullscreen and presentation                                                           |  15   |
 | [ ] | `D04 T04 §8`  | Quick slideshow in the viewer                                                         |  14   |
-| [ ] | `D04 T15 §1`  | Lumen 0.2.0 (Phase 30)                                                                |  16   |
+| [ ] | `D04 T15 §1`  | Lumen 0.2.0 (Phase 30)                                                                |  17   |
 
 ### Phase 31 -- Lumen parity II: batch tools and viewer quick edits
 
@@ -925,7 +931,7 @@ The third pillar follows, because the viewer's quick edits run its operations. L
 | [ ] | `D04 T04 §15` | Quick edits III: the effects browser and viewer effects                          |  14   |
 | [ ] | `D04 T04 §13` | Quick edits IV: text, watermarks, borders, and combining images                  |  13   |
 | [ ] | `D04 T04 §18` | Captions and info text through the token engine                                  |  11   |
-| [ ] | `D04 T15 §2`  | Lumen 0.3.0 (Phase 31)                                                           |  16   |
+| [ ] | `D04 T15 §2`  | Lumen 0.3.0 (Phase 31)                                                           |  17   |
 
 ### Phase 32 -- Lumen parity III: browse without importing
 
@@ -945,7 +951,7 @@ The second pillar: any folder opens in Lumen without an import, with browsed pho
 | [ ] | `D04 T05 §10` | Calendar and timeline browsing                                       |  10   |
 | [ ] | `D04 T05 §11` | Duplicate finder                                                     |   9   |
 | [ ] | `D04 T05 §12` | Archives and folder sync                                             |  12   |
-| [ ] | `D04 T15 §3`  | Lumen 0.4.0 (Phase 32)                                               |  15   |
+| [ ] | `D04 T15 §3`  | Lumen 0.4.0 (Phase 32)                                               |  16   |
 
 ### Phase 33 -- Lumen parity IV: library, collections, search, and the catalog
 
@@ -966,7 +972,7 @@ Lightroom's and ACDSee's library catches up over both browsed and imported photo
 | [ ] | `D04 T06 §11` | Smart previews and offline editing                                                             |  11   |
 | [ ] | `D04 T06 §12` | The dashboard and library statistics                                                           |  11   |
 | [ ] | `D04 T06 §13` | Painter and Quick Develop                                                                      |  11   |
-| [ ] | `D04 T15 §4`  | Lumen 0.5.0 (Phase 33)                                                                         |  15   |
+| [ ] | `D04 T15 §4`  | Lumen 0.5.0 (Phase 33)                                                                         |  16   |
 
 ### Phase 34 -- Lumen parity V: metadata, keywords, places, import, and capture
 
@@ -991,7 +997,7 @@ Metadata comes before the import extensions that apply it: every EXIF, IPTC, and
 | [ ] | `D04 T07 §8` | Screen capture                                                                      |  12   |
 | [ ] | `D04 T08 §6` | The map view and places                                                             |  20   |
 | [ ] | `D04 T08 §7` | Track logs, geotagging, and offline reverse geocoding                               |  13   |
-| [ ] | `D04 T15 §5` | Lumen 0.6.0 (Phase 34)                                                              |  15   |
+| [ ] | `D04 T15 §5` | Lumen 0.6.0 (Phase 34)                                                              |  16   |
 
 ### Phase 35 -- Lumen parity VI: develop I, the panels
 
@@ -1011,7 +1017,7 @@ Develop's panels reach Lightroom and ACDSee on the suite develop engine: the ext
 | [ ] | `D04 T09 §10` | Remove, heal, clone, and red eye                                                             |  12   |
 | [ ] | `D04 T09 §11` | Presets and defaults extended                                                                |  18   |
 | [ ] | `D04 T09 §12` | Sync, copy and paste, and auto sync extended                                                 |  12   |
-| [ ] | `D04 T15 §6`  | Lumen 0.7.0 (Phase 35)                                                                       |  15   |
+| [ ] | `D04 T15 §6`  | Lumen 0.7.0 (Phase 35)                                                                       |  16   |
 
 ### Phase 36 -- Lumen parity VII: develop II, masking, ACDSee stages, soft proofing, and photo merge
 
@@ -1026,7 +1032,7 @@ Local work and the stages only ACDSee has: masking with brushes, gradients, rang
 | [ ] | `D04 T09 §14` | Color LUTs, develop blend modes, and develop effects          |  10   |
 | [ ] | `D04 T09 §15` | Soft proofing                                                 |   8   |
 | [ ] | `D04 T09 §16` | Photo merge: HDR, panorama, and focus stacking                |  14   |
-| [ ] | `D04 T15 §7`  | Lumen 0.8.0 (Phase 36)                                        |  15   |
+| [ ] | `D04 T15 §7`  | Lumen 0.8.0 (Phase 36)                                        |  16   |
 
 ### Phase 37 -- Lumen AI: faces, keywords, similarity, culling, and masks
 
@@ -1046,7 +1052,7 @@ AI comes after the library, metadata, and develop surfaces it feeds. Lumen maps 
 | [ ] | `D04 T10 §9`  | Generative and distraction removal                                         |  10   |
 | [ ] | `D04 T10 §10` | Lens blur and depth                                                        |  12   |
 | [ ] | `D04 T10 §11` | Adaptive presets, AI auto settings, and natural-language search            |   9   |
-| [ ] | `D04 T15 §8`  | Lumen 0.9.0 (Phase 37)                                                     |  16   |
+| [ ] | `D04 T15 §8`  | Lumen 0.9.0 (Phase 37)                                                     |  17   |
 
 ### Phase 38 -- Lumen parity VIII: export, print, slideshows, web galleries, and books
 
@@ -1067,7 +1073,7 @@ Output catches up with Lightroom's modules and ACDSee's creation tools: the exte
 | [ ] | `D04 T12 §10` | Books                                                             |  14   |
 | [ ] | `D04 T12 §11` | PDF and PowerPoint creation                                       |  14   |
 | [ ] | `D04 T12 §12` | Email and local sharing                                           |  11   |
-| [ ] | `D04 T15 §9`  | Lumen 0.10.0 (Phase 38)                                           |  15   |
+| [ ] | `D04 T15 §9`  | Lumen 0.10.0 (Phase 38)                                           |  16   |
 
 ### Phase 39 -- Lumen parity IX: workspace, preferences, help, and Lumen 1.0.0
 
@@ -1087,7 +1093,7 @@ The last parity phase customizes and audits the whole surface once it exists: mo
 | [ ] | `D04 T14 §8`  | Themes and appearance                                                             |   8   |
 | [ ] | `D04 T14 §9`  | External editors                                                                  |  13   |
 | [ ] | `D04 T02 §9`  | Accessibility and localization                                                    |   3   |
-| [ ] | `D04 T15 §10` | Lumen 1.0.0 (Phase 39): the parity catalog complete                               |  18   |
+| [ ] | `D04 T15 §10` | Lumen 1.0.0 (Phase 39): the parity catalog complete                               |  19   |
 
 ### Phase 40 -- Distribution and the suite bundle
 
@@ -1099,7 +1105,7 @@ With all three apps released, Lumen at its parity release 1.0.0 (Phase 39), dist
 | [ ] | `D05 T01 §3` | win-arm64 publish and installers    |   5   |
 | [ ] | `D05 T01 §5` | winget manifests                    |   5   |
 | [ ] | `D06 T01 §4` | Install and troubleshooting guides  |   4   |
-| [ ] | `D05 T01 §6` | The suite bundle: photon-v1.0.0     |   5   |
+| [ ] | `D05 T01 §6` | The suite bundle: photon-v1.0.0     |   6   |
 | [ ] | `D06 T02 §2` | README images from real captures    |   3   |
 | [ ] | `D06 T02 §3` | The user guides as a published site |   4   |
 
@@ -1112,7 +1118,94 @@ After the suite release (Phase 40), Imago opens camera RAW files through the dec
 | [ ] | `D03 T07 §11` | RAW import through the shared decoder           |   4   |
 | [ ] | `D02 T18 §9`  | GIMP XCF import in Nodus on the shared XCF core |   9   |
 | [ ] | `D02 T18 §10` | Camera RAW import and the RAW Lab               |  15   |
-| [ ] | `D02 T17 §11` | Nodus 1.1.0 (Phase 41)                          |  13   |
+| [ ] | `D02 T17 §11` | Nodus 1.1.0 (Phase 41)                          |  14   |
+
+### Phase 42 -- Suite automation after the first release: actions, scripting, extensions, the command line, and batch
+
+With every app released, the suite bundled (Phase 40), and the shared-decoder imports shipped (Phase 41), the automation the operator deferred to after the first release on 2026-09-26 runs as real sections, because on 2026-09-27 the operator worried "features will be left behind" and chose to plan it rather than keep it in the backlog. It is one suite-wide system in `Photon.Core` and `Photon.UI` (`D01 T10`), built first because all three apps consume it: recorded actions with conditional steps and playback as one undo step, the Actions panel and action files (Photoshop ATN import; Photon action files are the format), C# scripting through Roslyn (MIT, already referenced by Imago's scripting project; the one scripting language, chosen over Python through pythonnet and JavaScript through Jint or ClearScript, with every other language driving the apps through the automation server), the script editor and console, the automation server with the MCP server behind per-category permissions, the extension SDK beside the 8BF host of `D01 T09`, the command line, and the batch runner with droplets on Lumen's job engine moved to `Photon.Core` (Lumen's own batch tools stay in `D04 T11`). Each app then gets its object model and automation surfaces (`D02 T19`, `D03 T22`, `D04 T17`), and the phase ends with `nodus-v1.2.0`, `imago-v1.1.0`, and `lumen-v1.1.0`.
+
+|  ✔  | Section       | Deliverable                                                       | Items |
+| :-: | ------------- | ----------------------------------------------------------------- | :---: |
+| [ ] | `D01 T10 §1`  | The action model, the recorder, and playback                      |  17   |
+| [ ] | `D01 T10 §2`  | The Actions panel in Photon.UI                                    |  15   |
+| [ ] | `D01 T10 §3`  | Action files and the action library                               |  16   |
+| [ ] | `D01 T10 §4`  | The scripting host                                                |  18   |
+| [ ] | `D01 T10 §5`  | The script editor and console                                     |  17   |
+| [ ] | `D01 T10 §6`  | The automation server and the MCP server                          |  15   |
+| [ ] | `D01 T10 §7`  | The extension SDK and the extension manager                       |  16   |
+| [ ] | `D01 T10 §8`  | The command line                                                  |  13   |
+| [ ] | `D01 T10 §9`  | The suite batch runner and droplets                               |  17   |
+| [ ] | `D02 T19 §1`  | The Nodus object model and recordable commands                    |  15   |
+| [ ] | `D02 T19 §2`  | Scripts, extensions, and macros in Nodus documents                |  14   |
+| [ ] | `D02 T19 §3`  | Batch processing and the command line in Nodus                    |  12   |
+| [ ] | `D02 T17 §12` | Nodus 1.2.0 (Phase 42)                                            |  16   |
+| [ ] | `D03 T22 §1`  | The Imago object model, recordable commands, and actions in Imago |  17   |
+| [ ] | `D03 T22 §2`  | Scripts in Imago                                                  |  14   |
+| [ ] | `D03 T22 §3`  | Procedures and plug-ins in Imago                                  |  16   |
+| [ ] | `D03 T22 §4`  | Extensions, the MCP server, and remote connections in Imago       |  12   |
+| [ ] | `D03 T22 §5`  | Batch, droplets, the Image Processor, and headless runs           |  14   |
+| [ ] | `D03 T22 §6`  | Variables and data sets                                           |  10   |
+| [ ] | `D03 T21 §13` | Imago 1.1.0 (Phase 42)                                            |  18   |
+| [ ] | `D04 T17 §1`  | Recorded actions in Lumen                                         |  16   |
+| [ ] | `D04 T17 §2`  | Lumen extension points                                            |  14   |
+| [ ] | `D04 T17 §3`  | The Lumen command line                                            |  15   |
+| [ ] | `D04 T15 §11` | Lumen 1.1.0 (Phase 42)                                            |  18   |
+
+### Phase 43 -- Video, audio, and animation after the first release
+
+Video, audio, and frame animation were deferred with automation and are planned the same way (operator decision 2026-09-27, "features will be left behind"). The suite media stack comes first (`D01 T11`): Windows Media Foundation through Vortice.MediaFoundation (MIT, part of the Vortice.Windows family the operator approved on 2026-09-27) for decoding, encoding, and playback, XAudio2 through Vortice.XAudio2 for mixed audio, and an optional FFmpeg the user installs, run as an external process and never bundled or linked, for the containers Media Foundation cannot read (FLV among them), so either an LGPL or a GPL build is compatible and no patent-encumbered codec ships in Photon's installers. Imago then gains video layers, the Timeline, audio tracks, Render Video, frame animation with onion skin and tweening, animated GIF, APNG, WebP, MNG, and FLI authoring, and the animation filters (`D03 T23`); Lumen gains video and audio in the library, browse, the viewer, Media mode, image audio, trimming and frame extraction, and video slideshows, always writing new files unless the originals opt-in is on (`D04 T16`). It ends with `imago-v1.2.0` and `lumen-v1.2.0`.
+
+|  ✔  | Section       | Deliverable                                               | Items |
+| :-: | ------------- | --------------------------------------------------------- | :---: |
+| [ ] | `D01 T11 §1`  | The media stack decision and decoding                     |  17   |
+| [ ] | `D01 T11 §2`  | Playback, the audio engine, and the media clock           |  14   |
+| [ ] | `D01 T11 §3`  | Encoding: render video and audio                          |  15   |
+| [ ] | `D01 T11 §4`  | The MediaTransport surface in Photon.UI                   |  13   |
+| [ ] | `D03 T23 §1`  | Video layers and opening video                            |  21   |
+| [ ] | `D03 T23 §2`  | The Timeline panel                                        |  17   |
+| [ ] | `D03 T23 §3`  | Audio tracks and render video                             |  16   |
+| [ ] | `D03 T23 §4`  | Frame animation, onion skin, and tweening                 |  18   |
+| [ ] | `D03 T23 §5`  | Animated formats: GIF, APNG, WebP, MNG, and FLI authoring |  16   |
+| [ ] | `D03 T23 §6`  | Animation filters and temporal blur                       |  13   |
+| [ ] | `D03 T21 §14` | Imago 1.2.0 (Phase 43)                                    |  18   |
+| [ ] | `D04 T16 §1`  | Video and audio in the library and browse                 |  14   |
+| [ ] | `D04 T16 §2`  | Video and audio playback in the viewer and the loupe      |  16   |
+| [ ] | `D04 T16 §3`  | Trim, poster frame, frame extraction, and video export    |  14   |
+| [ ] | `D04 T16 §4`  | Media mode                                                |  14   |
+| [ ] | `D04 T16 §5`  | Image audio                                               |  14   |
+| [ ] | `D04 T16 §6`  | Video in slideshows and slideshow video export            |  12   |
+| [ ] | `D04 T15 §12` | Lumen 1.2.0 (Phase 43)                                    |  18   |
+
+### Phase 44 -- On-device models and the GPU develop path
+
+Two accelerations wait for the apps to be complete (operator decision 2026-09-27, "features will be left behind"). On-device models (`D01 T12`) run through ONNX Runtime with the DirectML execution provider (MIT) and a CPU fallback, behind the same AI task seam as the OpenRouter path of `D01 T05`, which stays the default: a model catalog records each model's source, SHA-256, and license, accepts only permissive or GPL-compatible licenses, downloads only on an explicit user action, and tests run on tiny fixture models; Imago (`D03 T19 §16`, `§17`) and Lumen (`D04 T10 §13`) consume it. The GPU develop path (`D01 T07 §10` to `§12`) moves the ComputeSharp device of `D03 T02 §5` into `Photon.Core` and runs every develop stage on the GPU with CPU parity within 1/255 and measured budgets. It ends with `imago-v1.3.0` and `lumen-v1.3.0`.
+
+|  ✔  | Section       | Deliverable                                                                | Items |
+| :-: | ------------- | -------------------------------------------------------------------------- | :---: |
+| [ ] | `D01 T12 §1`  | The local inference runtime                                                |  14   |
+| [ ] | `D01 T12 §2`  | The model catalog, downloads, and license records                          |  15   |
+| [ ] | `D01 T12 §3`  | The Model Manager surface in Photon.UI                                     |  14   |
+| [ ] | `D01 T12 §4`  | Task adapters: segmentation, inpainting, upscaling, denoise, and depth     |  12   |
+| [ ] | `D01 T07 §10` | The GPU compute device in Photon.Core                                      |  12   |
+| [ ] | `D01 T07 §11` | Develop stages on the GPU with CPU parity                                  |  13   |
+| [ ] | `D01 T07 §12` | GPU masks, the extended stages, and measured budgets                       |  13   |
+| [ ] | `D03 T19 §16` | On-device models in Imago: remove, selection, star separation, and normals |  17   |
+| [ ] | `D03 T19 §17` | On-device photo models: motion blur reduction, mixed light, and SDR to HDR |  13   |
+| [ ] | `D03 T21 §15` | Imago 1.3.0 (Phase 44)                                                     |  19   |
+| [ ] | `D04 T10 §13` | On-device models in Lumen: offline denoise, keywords, and similarity       |  16   |
+| [ ] | `D04 T15 §13` | Lumen 1.3.0 (Phase 44)                                                     |  18   |
+
+### Phase 45 -- Lumen's remaining formats and the Photon suite 1.1.0
+
+The last formats IrfanView and ACDSee open that had no GPL-compatible reader are planned by the routes the operator chose on 2026-09-27 ("features will be left behind"): Flash SWF's first frame through an own parser (FLV already plays through Phase 43's media stack), ECW, MrSID, JPM, and MRC through an optional GDAL the user installs with its driver plug-ins, run as an external process and never bundled (the Ghostscript pattern of `D02 T14 §9`), disabled and explained when absent, and the undocumented layered formats of Artweaver, BodyPaint 3D, Gemstone, and ACDSee through clean-room analysis of sample files (operator approval 2026-09-27), each with an exit that reroutes a format whose structure or driver cannot be established; CAD and plotter drawings already landed in Phase 30 (`D04 T13 §9`) on Nodus's moved readers. Lumen releases `lumen-v1.4.0`, and the second suite bundle, `photon-v1.1.0`, carries Nodus 1.2.0, Imago 1.3.0, and Lumen 1.4.0 at their own versions.
+
+|  ✔  | Section       | Deliverable                                                                        | Items |
+| :-: | ------------- | ---------------------------------------------------------------------------------- | :---: |
+| [ ] | `D04 T13 §10` | Flash SWF: the first frame through an own parser                                   |  15   |
+| [ ] | `D04 T13 §11` | ECW, MrSID, JPM, and MRC through an optional GDAL                                  |  16   |
+| [ ] | `D04 T13 §12` | Artweaver, BodyPaint 3D, Gemstone GSD, and ACDSee ACDC through clean-room analysis |  17   |
+| [ ] | `D04 T15 §14` | Lumen 1.4.0 (Phase 45)                                                             |  18   |
+| [ ] | `D05 T01 §7`  | The suite bundle: photon-v1.1.0                                                    |   9   |
 
 ### Phase 99 -- Manual: operator-only steps
 

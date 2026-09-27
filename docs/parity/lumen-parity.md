@@ -2,13 +2,13 @@
 
 Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76 feature, merged into Lumen features, each with exactly one status. The sources are [`sources/lightroom-classic-15.5.1.md`](sources/lightroom-classic-15.5.1.md), [`sources/acdsee-ultimate-2027.md`](sources/acdsee-ultimate-2027.md), and [`sources/irfanview-4.76.md`](sources/irfanview-4.76.md); the status grammar and the update rules are in [`README.md`](README.md); the sections that own `plan` rows are designed in [`lumen-section-design.md`](lumen-section-design.md).
 
-**Totals (2026-09-27, integrated the same day, updated for the operator's decisions later that day):** 1,622 features covering 1,857 Lightroom Classic rows, 5,182 ACDSee rows, and 1,880 IrfanView rows (8,919 in all); every source id appears in exactly one row. At integration LP-1045 and LP-1051 were split (the shared `D01 T08` codecs now read CPT and FlashPix; the rest stays in B-050 as LP-1621 and LP-1622), the Explorer preview handler (LP-0031) moved to backlog B-051, and the four former B-012 rows moved onto the suite plug-in host `D01 T09`. ACDSee Edit mode (layered pixel editing) and IrfanView Paint are routed to Imago as `other-app: Imago` rows naming the Imago catalog row that covers each capability; keyboard-shortcut and menu rows are folded into the feature they trigger or into the keymap features of the "Keyboard shortcuts and menus" area. Later on 2026-09-27 the operator's dependency decisions moved face recognition and the People view (LP-0291, LP-0695, LP-0700, LP-0702, LP-0704 to LP-0707, LP-0712 to LP-0714, and LP-0716) to backlog B-052, since the local YuNet and SFace face models were not approved for Lumen; face detection (LP-0420, LP-0693, LP-0694, LP-0696 to LP-0698) stays planned through an OpenRouter vision model on explicit send; slideshow music moved from NAudio to Windows Media Foundation through Vortice; and LP-0953's SFTP option is backlog B-053 while its FTP and FTPS parts stay planned.
+**Totals (2026-09-27, integrated the same day, updated for the operator's decisions later that day):** 1,622 features covering 1,857 Lightroom Classic rows, 5,182 ACDSee rows, and 1,880 IrfanView rows (8,919 in all); every source id appears in exactly one row. At integration LP-1045 and LP-1051 were split (the shared `D01 T08` codecs now read CPT and FlashPix; the rest stays in B-050 as LP-1621 and LP-1622), the Explorer preview handler (LP-0031) moved to backlog B-051, and the four former B-012 rows moved onto the suite plug-in host `D01 T09`. ACDSee Edit mode (layered pixel editing) and IrfanView Paint are routed to Imago as `other-app: Imago` rows naming the Imago catalog row that covers each capability; keyboard-shortcut and menu rows are folded into the feature they trigger or into the keymap features of the "Keyboard shortcuts and menus" area. Later on 2026-09-27 the operator's dependency decisions moved face recognition and the People view (LP-0291, LP-0695, LP-0700, LP-0702, LP-0704 to LP-0707, LP-0712 to LP-0714, and LP-0716) to backlog B-052, since the local YuNet and SFace face models were not approved for Lumen; face detection (LP-0420, LP-0693, LP-0694, LP-0696 to LP-0698) stays planned through an OpenRouter vision model on explicit send; slideshow music moved from NAudio to Windows Media Foundation through Vortice; and LP-0953's SFTP option is backlog B-053 while its FTP and FTPS parts stay planned. Later on 2026-09-27 the operator decided to plan the work deferred to after the first release as real sections, because the operator worried "features will be left behind": the 63 rows that pointed at B-041 to B-044 and B-050 are planned, recorded actions, extension points, and the command line in `D04 T17` (Phase 42), video and audio in `D04 T16` (Phase 43), CAD and plotter drawings on Nodus's moved readers in `D04 T13 §9` (Phase 30, whose dependencies are met there), and SWF, the GDAL formats, and the clean-room layered formats in `D04 T13 §10` to `§12` (Phase 45); tethered capture (B-048), self-running slideshows (B-049), the Explorer preview handler (B-051), face recognition (B-052), SFTP (B-053), and Content Credentials (B-047) stay in the backlog.
 
 | Status | Features | Source rows |
 | ------ | -------: | ----------: |
-| `plan` | 1,063 | 6,208 |
+| `plan` | 1,126 | 6,654 |
 | `shipped-scope` | 52 | 282 |
-| `backlog` | 84 | 590 |
+| `backlog` | 21 | 144 |
 | `excluded` | 24 | 209 |
 | `other-app` | 399 | 1,630 |
 | **Total** | **1,622** | **8,919** |
@@ -59,7 +59,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0005 | Small footprint and fast start | -- | -- | IV-0003 | core | plan D04 T04 §1 |  |
 | LP-0006 | Viewer exit behavior: ESC closes, warning on ESC exit, ask to save changes, double-click icon closes | -- | -- | IV-0046, IV-0047, IV-0048, IV-0930, IV-0931, IV-1403 | core | plan D04 T04 §1 |  |
 | LP-0007 | Only one viewer instance or several | -- | -- | IV-0929 | core | plan D04 T04 §1 |  |
-| LP-0008 | Open a file or several files given on the command line | -- | -- | IV-1259, IV-1377 | automation | plan D04 T04 §1 | only the plain open; other switches are B-041 |
+| LP-0008 | Open a file or several files given on the command line | -- | -- | IV-1259, IV-1377 | automation | plan D04 T04 §1 | only the plain open; other switches are D04 T17 §3 |
 | LP-0009 | RAW in the viewer: embedded JPEG preview by default, quick RAW decode on demand or when zooming past the preview, toolbar switch between the two | -- | AC-0124, AC-1862, AC-1863, AC-1864, AC-2053, AC-4631 | -- | core | plan D04 T04 §2 | decodes through D04 T01 §4 |
 | LP-0010 | Developed versus original in the viewer: developed RAW and edited images show their developed result, press and hold to show the original | -- | AC-1861, AC-2020, AC-4629 | -- | core | plan D04 T04 §2 |  |
 | LP-0011 | DNG opcode geometry: apply embedded distortion correction tags when viewing DNG files | -- | AC-1865 | -- | core | plan D04 T04 §2 |  |
@@ -116,7 +116,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0057 | Browsing options: other files in folder, hidden files, folder end dialog, loop, or stop, beep, wheel browsing, always jump on page or wheel | -- | -- | IV-0975, IV-0976, IV-0977, IV-0978, IV-0979, IV-0980, IV-0981, IV-0982 | core | plan D04 T04 §5 |  |
 | LP-0058 | Recent files in the menu and recent folders in dialogs | -- | -- | IV-1016, IV-1017 | core | plan D04 T04 §5 |  |
 | LP-0059 | Multi-page images: next, previous, first, last, go to page, page thumbnails with auto show, page view pane, page keys | -- | AC-0097, AC-4585, AC-4650, AC-4651, AC-4652, AC-4653, AC-4700, AC-4701 | IV-0760, IV-0761, IV-0762, IV-0763, IV-0764, IV-0765, IV-0766, IV-0769, IV-1393, IV-1394, IV-1412, IV-1415, IV-1425 | core | plan D04 T04 §10 |  |
-| LP-0060 | Animated GIF, ANI, APNG, WebP, AVIF, and MNG playback: stop, resume, step frames, speed, option to show the first frame only | -- | AC-4313 | IV-0770, IV-0771, IV-0772, IV-1435, IV-1527, IV-1528 | core | plan D04 T04 §10 | viewing only; extraction and authoring are B-044 |
+| LP-0060 | Animated GIF, ANI, APNG, WebP, AVIF, and MNG playback: stop, resume, step frames, speed, option to show the first frame only | -- | AC-4313 | IV-0770, IV-0771, IV-0772, IV-1435, IV-1527, IV-1528 | core | plan D04 T04 §10 | viewing only; extraction is D04 T16 §3 and authoring is Imago's D03 T23 §5 |
 | LP-0061 | Play pages of a multi-page file as an animation | -- | -- | IV-0767, IV-0768 | core | plan D04 T04 §10 |  |
 | LP-0062 | Viewer window layout: image area, bottom toolbar with icon sizes and add or remove buttons, filmstrip of the folder, hide bottom panels | -- | AC-0083, AC-0084, AC-0085, AC-0116, AC-0117, AC-4581, AC-4626, AC-4627, AC-4628 | -- | core | plan D04 T04 §14 |  |
 | LP-0063 | Always on top for the viewer window | -- | AC-4249, AC-4314 | -- | core | plan D04 T04 §14 |  |
@@ -872,10 +872,10 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0733 | People masks with parts: entire person, skin, eyebrows, eyes, lips, teeth, hair, clothes, several people | LR-0904, LR-0905 | -- | -- | ai | plan D04 T10 §7 |  |
 | LP-0734 | Add a keyword to enhanced images | LR-0156 | -- | -- | ai | plan D04 T10 §8 |  |
 | LP-0735 | Enhance dialog and rules: apply once, headless enhance, AI edits running in the background | LR-0705, LR-0797, LR-0798, LR-0799, LR-1444, LR-1649, LR-1650 | -- | -- | ai | plan D04 T10 §8 |  |
-| LP-0736 | Denoise as a panel feature with amount, for Bayer, X-Trans, linear DNG, and small raw files | LR-0792, LR-0793, LR-0794 | -- | -- | ai | plan D04 T10 §8 | classical denoise; ML model variant is B-046 |
-| LP-0737 | Raw details: enhanced demosaic for Bayer and X-Trans | LR-0795 | -- | -- | ai | plan D04 T10 §8 | classical high-quality demosaic; ML model variant is B-046 |
+| LP-0736 | Denoise as a panel feature with amount, for Bayer, X-Trans, linear DNG, and small raw files | LR-0792, LR-0793, LR-0794 | -- | -- | ai | plan D04 T10 §8 | classical denoise; ML model variant is D04 T10 §13 |
+| LP-0737 | Raw details: enhanced demosaic for Bayer and X-Trans | LR-0795 | -- | -- | ai | plan D04 T10 §8 | classical high-quality demosaic; ML model variant is D04 T10 §13 |
 | LP-0738 | Super resolution to twice the linear size | LR-0796 | -- | -- | ai | plan D04 T10 §8 | OpenRouter image adapter moved to Photon.Core, tiled; writes a new DNG, never the original |
-| LP-0739 | Denoise dialog for one or many photos: strength, show original, preview zoom, live preview of the first photo, output folder options | -- | AC-1391, AC-1392, AC-1393, AC-1394, AC-1395, AC-1396, AC-1397, AC-1398, AC-1399, AC-4498, AC-4507, AC-4683 | -- | ai | plan D04 T10 §8 | classical denoise; ML model variant is B-046; writes a new file, never the original; batch runs on D04 T11 §1 |
+| LP-0739 | Denoise dialog for one or many photos: strength, show original, preview zoom, live preview of the first photo, output folder options | -- | AC-1391, AC-1392, AC-1393, AC-1394, AC-1395, AC-1396, AC-1397, AC-1398, AC-1399, AC-4498, AC-4507, AC-4683 | -- | ai | plan D04 T10 §8 | classical denoise; ML model variant is D04 T10 §13; writes a new file, never the original; batch runs on D04 T11 §1 |
 | LP-0740 | Super resolution dialog: enhance with strength, show original, preview zoom and fit, live preview, output location, hardware note, 16,000 pixel limit | -- | AC-1400, AC-1401, AC-1403, AC-1404, AC-1405, AC-1406, AC-1407, AC-1413, AC-1880, AC-1881, AC-1882, AC-1883, AC-1884, AC-1885, AC-1887, AC-1888, AC-1889, AC-1890, AC-1891, AC-4449, AC-4508, AC-4660 | -- | ai | plan D04 T10 §8 | OpenRouter image adapter moved to Photon.Core with a classical detail-preserving fallback; writes a new file |
 | LP-0741 | Batch super resolution: many photos at once with preview of the first, output same or chosen folder, subfolder, overwrite rules, preserve dates, metadata, and catalog data, presets with shortcuts | -- | AC-1402, AC-1886, AC-4037, AC-4045, AC-4046, AC-4047, AC-4048, AC-4049, AC-4050, AC-4051, AC-4052, AC-4053, AC-4499 | -- | ai | plan D04 T10 §8 | runs on the batch framework D04 T11 §1; replace-original becomes a new file (original-file guard) |
 | LP-0742 | Super resolution target size: percentage, pixels with fit within, print size, long edge, short edge, preserve aspect ratio | -- | AC-1408, AC-1409, AC-1410, AC-1411, AC-1412, AC-1892, AC-1893, AC-1894, AC-1895, AC-1896, AC-4038, AC-4039, AC-4040, AC-4041, AC-4042, AC-4043, AC-4044 | -- | ai | plan D04 T10 §8 | size math shared with D04 T11 §5 batch resize |
@@ -988,8 +988,8 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0844 | Work modes of the batch dialog: convert, rename, or convert and rename | -- | -- | IV-0275, IV-0276, IV-0277 | automation | plan D04 T11 §10 |  |
 | LP-0845 | Start batch with a progress dialog and remember the last used batch folder | -- | -- | IV-0303, IV-0307 | automation | plan D04 T11 §10 |  |
 | LP-0846 | Convert selected files from the Explorer context menu | -- | -- | IV-1041 | automation | plan D04 T11 §10 |  |
-| LP-0847 | Apply a recorded action while exporting a batch | -- | AC-1454 | -- | automation | backlog B-041 | recorded actions are the suite-wide scripting and macro system |
-| LP-0848 | Preserve embedded audio in batch outputs | -- | AC-1621 | -- | automation | backlog B-043 | audio attached to images is video and audio work |
+| LP-0847 | Apply a recorded action while exporting a batch | -- | AC-1454 | -- | automation | plan D04 T17 §1 | recorded actions are the suite-wide action system of D01 T10 |
+| LP-0848 | Preserve embedded audio in batch outputs | -- | AC-1621 | -- | automation | plan D04 T16 §5 |  |
 
 ## Export and publish
 
@@ -1093,7 +1093,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0934 | Slideshow music: tracks, fit slides to music | LR-1196, LR-1197 | -- | -- | core | plan D04 T12 §8 | audio playback through Windows Media Foundation over Vortice.MediaFoundation (MIT), the player of D04 T04 §8 |
 | LP-0935 | Slideshow playback: manual or auto, duration, fades and color, pan and zoom, random, repeat, screen, quality, preview, play | LR-1199, LR-1200, LR-1201, LR-1202, LR-1203, LR-1204, LR-1205, LR-1206, LR-1207, LR-1547, LR-1808, LR-1809, LR-1810, LR-1811, LR-1812, LR-1820 | -- | -- | core | plan D04 T12 §8 |  |
 | LP-0936 | Export slideshow as PDF and as JPEG slides | LR-1208, LR-1209, LR-1545, LR-1814, LR-1815 | -- | -- | core | plan D04 T12 §8 |  |
-| LP-0937 | Play slideshow of selected images, a folder, or a folder with subfolders, with the Configure dialog and remembered contents | -- | AC-1183, AC-1184, AC-1185, AC-1186, AC-1187, AC-1188, AC-4494 | -- | core | plan D04 T12 §8 | videos in slideshows follow B-043 |
+| LP-0937 | Play slideshow of selected images, a folder, or a folder with subfolders, with the Configure dialog and remembered contents | -- | AC-1183, AC-1184, AC-1185, AC-1186, AC-1187, AC-1188, AC-4494 | -- | core | plan D04 T12 §8 | videos in slideshows are D04 T16 §6 |
 | LP-0938 | Slideshow transitions: choose, random, preview | -- | AC-1189, AC-1190 | -- | core | plan D04 T12 §8 |  |
 | LP-0939 | Slideshow variations: pan and zoom, 2-up, 4-up, collage | -- | AC-1191, AC-1192, AC-1193, AC-1194, AC-1195 | -- | core | plan D04 T12 §8 |  |
 | LP-0940 | Slideshow display effects: black and white, sepia, vivid, soft | -- | AC-1196, AC-1197, AC-1198, AC-1199, AC-1200 | -- | core | plan D04 T12 §8 |  |
@@ -1138,7 +1138,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 
 | ID | Feature | Lightroom | ACDSee | IrfanView | Category | Status | Notes |
 | -- | ------- | --------- | ------ | --------- | -------- | ------ | ----- |
-| LP-0972 | Animated image viewing: animated GIF, APNG, animated WebP, animated AVIF playback | -- | -- | IV-1223, IV-1224, IV-1225 | format | plan D04 T04 §10 | viewing only; authoring is B-044 |
+| LP-0972 | Animated image viewing: animated GIF, APNG, animated WebP, animated AVIF playback | -- | -- | IV-1223, IV-1224, IV-1225 | format | plan D04 T04 §10 | viewing only; authoring is Imago's D03 T23 §5 |
 | LP-0973 | Drag a file from Lumen into another application | -- | AC-1962 | -- | format | plan D04 T05 §6 |  |
 | LP-0974 | Archive formats: browse and read ZIP, RAR, 7z, ARJ, CAB, GZ, TAR, TGZ like folders, write ZIP | -- | AC-5140, AC-5141, AC-5142, AC-5143, AC-5144, AC-5145, AC-5146, AC-5177 | -- | format | plan D04 T05 §12 | SharpCompress (MIT), read-only for RAR |
 | LP-0975 | File descriptions read from descript.ion files | -- | AC-5176 | -- | core | plan D04 T08 §8 | read as captions; Lumen writes descriptions to sidecars |
@@ -1188,7 +1188,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1019 | JPEG metadata carry-over on save: keep EXIF, IPTC, XMP, and comment, reset orientation, embedded and DCF thumbnail policy | -- | AC-4374, AC-4375, AC-4376, AC-4377 | IV-0177, IV-0178, IV-0179, IV-0180, IV-0181, IV-0182 | format | plan D04 T13 §6 | writes new files only, never the original (original-file guard) |
 | LP-1020 | Format options dialog shown automatically on Save As for formats with options | -- | -- | IV-0114 | core | plan D04 T13 §6 |  |
 | LP-1021 | JPEG size targeting: reuse the estimated original quality, target a file size, preview dialog to tune quality | -- | -- | IV-0183, IV-0184, IV-0185 | format | plan D04 T13 §6 |  |
-| LP-1022 | GIF save options: interlaced, automatic and custom transparent color, palette index, window color, single frame only | -- | -- | IV-0187, IV-0188, IV-0189, IV-0190, IV-0191, IV-0192 | format | plan D04 T13 §6 | animated GIF authoring is B-044 |
+| LP-1022 | GIF save options: interlaced, automatic and custom transparent color, palette index, window color, single frame only | -- | -- | IV-0187, IV-0188, IV-0189, IV-0190, IV-0191, IV-0192 | format | plan D04 T13 §6 | animated GIF authoring is Imago's D03 T23 §5 |
 | LP-1023 | PNG save options: compression level, automatic and custom transparency, window color, synthetic alpha, optimized PNG | -- | -- | IV-0193, IV-0194, IV-0195, IV-0196, IV-0197, IV-0198, IV-1088 | format | plan D04 T13 §6 | optimization by own zlib pass or oxipng (MIT); OptiPNG is zlib-licensed |
 | LP-1024 | Legacy save options: PNM binary or ASCII, ICO transparency and window color, TGA and BMP RLE | -- | -- | IV-0199, IV-0200, IV-0201, IV-0224, IV-0225 | format | plan D04 T13 §6 |  |
 | LP-1025 | TIFF save options: color and 1-bit compression, grayscale palette, save all pages | -- | -- | IV-0202, IV-0203, IV-0204, IV-0205 | format | plan D04 T13 §6 | consumes D03 T17 §11 |
@@ -1207,25 +1207,25 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1038 | TIFF annotations display | -- | -- | IV-0953 | core | plan D04 T13 §8 |  |
 | LP-1039 | Font file sample text rendering | -- | -- | IV-1009 | format | plan D04 T13 §8 |  |
 | LP-1040 | FLIF, Webshots WBZ and WBC, and WSQ fingerprint images read | -- | -- | IV-1062, IV-1105, IV-1108, IV-1142, IV-1188, IV-1192 | format | plan D04 T13 §8 | WSQ from NIST NBIS (public domain) |
-| LP-1041 | MNG and JNG, and Autodesk FLI and FLC read with playback in the viewer | -- | -- | IV-1081, IV-1159, IV-1211 | format | plan D04 T13 §8 | playback through D04 T04 §10; authoring is B-044 |
+| LP-1041 | MNG and JNG, and Autodesk FLI and FLC read with playback in the viewer | -- | -- | IV-1081, IV-1159, IV-1211 | format | plan D04 T13 §8 | playback through D04 T04 §10; authoring is Imago's D03 T23 §5 |
 | LP-1042 | TrueType font preview rendered with custom sample text | -- | -- | IV-1184, IV-1230 | format | plan D04 T13 §8 |  |
 | LP-1043 | Plain RAW decoding: ARW, CR2, CR3, CRW, cRAW, sRAW, DCR, DNG, ERF, FFF, GPR, MOS, MRW, NEF, NRW, ORF, PEF, RAF, RW2, RWL, SRF, SRW, KDC, CS1, with previews and EXIF | -- | AC-5075, AC-5076, AC-5077, AC-5078, AC-5079, AC-5080, AC-5081, AC-5082, AC-5083, AC-5084, AC-5085, AC-5086, AC-5087, AC-5088, AC-5089, AC-5090, AC-5091, AC-5092, AC-5093, AC-5094, AC-5095 | IV-1050, IV-1116, IV-1130, IV-1161, IV-1215, IV-1233 | format | shipped-scope D04 T01 §4 | through the decoder D04 T01 §3 chooses |
 | LP-1044 | RAW originals never modified: develop settings stored in the catalog and sidecar | -- | AC-5171 | -- | core | shipped-scope D04 T02 §1 |  |
-| LP-1045 | Corel PHOTO-PAINT CPT read (flattened) | -- | -- | IV-1129 | format | plan D04 T13 §8 | through the shared CPT reader of D01 T08 §5; the other layered formats split to LP-1622 (B-050) |
-| LP-1046 | JPM (JPEG 2000 Part 6) read and write with profiles, quality, and thumbnail | -- | -- | IV-0209, IV-0210, IV-0211, IV-1078, IV-1156 | format | backlog B-050 | needs a proprietary LuraTech library; OpenJPEG has no JPM support |
-| LP-1047 | ECW and MrSID wavelet formats: read, write with target compression, extra DLLs | -- | -- | IV-0222, IV-1054, IV-1084, IV-1117, IV-1137, IV-1160 | format | backlog B-050 | proprietary SDKs only |
-| LP-1048 | MrSID and JPM loading options | -- | -- | IV-1014 | format | backlog B-050 |  |
+| LP-1045 | Corel PHOTO-PAINT CPT read (flattened) | -- | -- | IV-1129 | format | plan D04 T13 §8 | through the shared CPT reader of D01 T08 §5; the other layered formats split to LP-1622 (D04 T13 §12) |
+| LP-1046 | JPM (JPEG 2000 Part 6) read and write with profiles, quality, and thumbnail | -- | -- | IV-0209, IV-0210, IV-0211, IV-1078, IV-1156 | format | plan D04 T13 §11 | through an optional user-installed GDAL with a JPM-capable driver, never bundled; reroutes to the backlog if no installable driver opens it |
+| LP-1047 | ECW and MrSID wavelet formats: read, write with target compression, extra DLLs | -- | -- | IV-0222, IV-1054, IV-1084, IV-1117, IV-1137, IV-1160 | format | plan D04 T13 §11 | through an optional user-installed GDAL with the vendors' ECW and MrSID plug-ins, never bundled |
+| LP-1048 | MrSID and JPM loading options | -- | -- | IV-1014 | format | plan D04 T13 §11 | GDAL overview level and band options |
 | LP-1049 | Burn a slideshow to CD, DVD, or Blu-ray | -- | -- | IV-1048, IV-1049, IV-1085 | core | backlog B-049 |  |
-| LP-1050 | Flash SWF and FLV | -- | -- | IV-1061, IV-1180 | format | backlog B-050 | obsolete; needs the removed Flash runtime |
-| LP-1051 | FlashPix (FPX) read | -- | -- | IV-1064, IV-1143 | format | plan D04 T13 §8 | through the shared FlashPix reader of D01 T08 §2; MRC split to LP-1621 (B-050) |
+| LP-1050 | Flash SWF and FLV | -- | -- | IV-1061, IV-1180 | format | plan D04 T13 §10 | an own SWF parser renders the first frame; FLV plays through D04 T16 §2 with the optional FFmpeg |
+| LP-1051 | FlashPix (FPX) read | -- | -- | IV-1064, IV-1143 | format | plan D04 T13 §8 | through the shared FlashPix reader of D01 T08 §2; MRC split to LP-1621 (D04 T13 §11) |
 | LP-1052 | Standalone EXE and screen saver slideshows | -- | -- | IV-1098 | core | backlog B-049 |  |
-| LP-1053 | CAD formats: DXF, DWG, HPGL, CGM | -- | -- | IV-1135, IV-1136 | format | backlog B-050 | proprietary CAD SDKs; DXF import is Nodus work |
+| LP-1053 | CAD formats: DXF, DWG, HPGL, CGM | -- | -- | IV-1135, IV-1136 | format | plan D04 T13 §9 | Nodus's DXF, DWG, CGM, and HPGL readers moved to Photon.Core |
 | LP-1054 | Canon DLLs for CRW and CR2 | -- | -- | IV-1006 | format | excluded: platform 32-bit only vendor DLL |  |
 | LP-1055 | Office document viewing: Word, Excel sheet tabs, PowerPoint slides, RTF through installed Microsoft Office | -- | AC-1931, AC-1932, AC-1933, AC-5159, AC-5160, AC-5162, AC-5163, AC-5164, AC-5165, AC-5166, AC-5167, AC-5168, AC-5169, AC-5178 | -- | format | other-app: none office documents need Microsoft Office and are not photos |  |
 | LP-1056 | Brush files shown as images: ABR, JBR, PBR | -- | AC-5041, AC-5058, AC-5063 | -- | format | other-app: Imago IP-0774 brush files belong to Imago's brush import |  |
 | LP-1057 | Layers not preserved when saving TIFF, PSD, or GSD from the editor | -- | AC-5179 | -- | core | other-app: Imago IP-1842 layered TIFF and PSD saving is Imago's job |  |
-| LP-1621 | MRC (Mixed Raster Content) read | -- | -- | IV-1083, IV-1228 | format | backlog B-050 | only 32-bit proprietary readers exist; split from LP-1051 on 2026-09-27 |
-| LP-1622 | Artweaver, BodyPaint 3D, Gemstone GSD, and ACDSee ACDC layered documents | -- | AC-5042, AC-5053, AC-5124, AC-5139 | IV-1046, IV-1047, IV-1124, IV-1125 | format | backlog B-050 | undocumented proprietary formats with no GPL-compatible reader; split from LP-1045 on 2026-09-27 |
+| LP-1621 | MRC (Mixed Raster Content) read | -- | -- | IV-1083, IV-1228 | format | plan D04 T13 §11 | through an optional user-installed GDAL; reroutes to the backlog if no installable driver opens it; split from LP-1051 on 2026-09-27 |
+| LP-1622 | Artweaver, BodyPaint 3D, Gemstone GSD, and ACDSee ACDC layered documents | -- | AC-5042, AC-5053, AC-5124, AC-5139 | IV-1046, IV-1047, IV-1124, IV-1125 | format | plan D04 T13 §12 | clean-room analysis of sample files (operator approval 2026-09-27); a format whose structure cannot be established reroutes to the backlog; split from LP-1045 on 2026-09-27 |
 
 ## Workspace and UI
 
@@ -1289,7 +1289,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1108 | Named dialog profiles saved and loaded | -- | -- | IV-0067 | core | plan D04 T14 §4 |  |
 | LP-1109 | Viewer start folder | -- | -- | IV-0928 | core | plan D04 T14 §4 |  |
 | LP-1110 | Display color management: previews through the monitor profile, engine, default input profile for untagged images, thumbnails managed, profile details | LR-0037 | AC-4202, AC-4203, AC-4204, AC-4205, AC-4206 | -- | core | plan D04 T14 §5 | consumes D01 T04 §1 |
-| LP-1111 | GPU acceleration preference: auto, custom, off, GPU preview generation, OpenCL processing | LR-0048, LR-1333, LR-1334 | AC-4021 | -- | core | plan D04 T14 §5 | GPU develop path itself is B-033; the preference governs display and previews |
+| LP-1111 | GPU acceleration preference: auto, custom, off, GPU preview generation, OpenCL processing | LR-0048, LR-1333, LR-1334 | AC-4021 | -- | core | plan D04 T14 §5 | the GPU develop path itself is D01 T07 §10 to §12; the preference governs display, previews, and that path |
 | LP-1112 | Develop cache location, maximum size, and purge | LR-1331 | -- | -- | core | plan D04 T14 §5 |  |
 | LP-1113 | Preview generation: previews in parallel, HDR display in Library, hover preview of presets, history, and snapshots | LR-1335, LR-1336, LR-1337 | -- | -- | core | plan D04 T14 §5 |  |
 | LP-1114 | GPU selection for image processing: automatic or primary GPU | -- | AC-4278, AC-4279 | -- | core | plan D04 T14 §5 |  |
@@ -1313,8 +1313,8 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1127 | Shortcut editor: per-mode categories and commands, current keys, assign with conflict warning, remove, reset all, change a menu hotkey by right-click | -- | AC-4364, AC-4365, AC-4366, AC-4367, AC-4368, AC-4380, AC-4557, AC-4917 | IV-0064, IV-1606 | core | plan D04 T14 §3 |  |
 | LP-1128 | Application keys: close Lumen, close the current image, close all images | -- | AC-4379, AC-4553, AC-4561, AC-4562, AC-4915 | -- | core | plan D04 T14 §3 | default keymap entries |
 | LP-1129 | Keyboard focus and context-menu keys: Tab and Shift+Tab through panes, right-click context menus in browse and the viewer | -- | AC-4452, AC-4453, AC-4519, AC-4693 | -- | core | plan D04 T14 §3 | default keymap entries |
-| LP-1130 | Media mode keys: mode switching, rotation, printing, file commands, and full-screen navigation inside Media mode | -- | AC-4535, AC-4536, AC-4537, AC-4538, AC-4539, AC-4540, AC-4541, AC-4542, AC-4543, AC-4544, AC-4545, AC-4546, AC-4547, AC-4548, AC-4549, AC-4550, AC-4551, AC-4552 | -- | core | backlog B-043 | ACDSee Media mode is video and audio browsing |
-| LP-1131 | Video playback keys in the viewer: video context menu, playbar and file name toggles, volume, video zoom, skip by 10, 5, or 1 percent, copy frame | -- | -- | IV-1575, IV-1592, IV-1593, IV-1594, IV-1595, IV-1596, IV-1597, IV-1598, IV-1599, IV-1600 | video | backlog B-043 | video playback is deferred with the suite video work |
+| LP-1130 | Media mode keys: mode switching, rotation, printing, file commands, and full-screen navigation inside Media mode | -- | AC-4535, AC-4536, AC-4537, AC-4538, AC-4539, AC-4540, AC-4541, AC-4542, AC-4543, AC-4544, AC-4545, AC-4546, AC-4547, AC-4548, AC-4549, AC-4550, AC-4551, AC-4552 | -- | core | plan D04 T16 §4 | ACDSee Media mode is video and audio browsing |
+| LP-1131 | Video playback keys in the viewer: video context menu, playbar and file name toggles, volume, video zoom, skip by 10, 5, or 1 percent, copy frame | -- | -- | IV-1575, IV-1592, IV-1593, IV-1594, IV-1595, IV-1596, IV-1597, IV-1598, IV-1599, IV-1600 | video | plan D04 T16 §2 |  |
 
 ## Help and program
 
@@ -1336,64 +1336,64 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 
 | ID | Feature | Lightroom | ACDSee | IrfanView | Category | Status | Notes |
 | -- | ------- | --------- | ------ | --------- | -------- | ------ | ----- |
-| LP-1143 | Plug-in defined metadata in text filters and smart collection rules | LR-0317, LR-0606 | -- | -- | automation | backlog B-041 |  |
-| LP-1144 | Plug-in metadata field set | LR-0385 | -- | -- | automation | backlog B-041 |  |
-| LP-1145 | Third-party publish services and export plug-in destinations, filters, and the plug-in manager from Export | LR-0640, LR-1046, LR-1113, LR-1114, LR-1279 | -- | -- | automation | backlog B-041 | plug-in and extension APIs |
-| LP-1146 | Plug-in manager: add, remove, enable, reload, status, autoload folder | LR-1363, LR-1364, LR-1365, LR-1366, LR-1367, LR-1369, LR-1370, LR-1395, LR-1644 | -- | -- | automation | backlog B-041 |  |
-| LP-1147 | Plug-in extras menus in File, Library, and Help | LR-1371, LR-1372, LR-1373, LR-1396, LR-1435 | -- | -- | automation | backlog B-041 |  |
-| LP-1148 | Plug-in SDK: export and publish providers, export filters, metadata providers, catalog access, develop controller, web engines, library filters, external tools, Lua UI | LR-1374, LR-1375, LR-1376, LR-1377, LR-1378, LR-1379, LR-1380, LR-1381, LR-1382, LR-1383 | -- | -- | automation | backlog B-041 |  |
-| LP-1149 | Plug-in help files | LR-1510 | AC-0185 | -- | automation | backlog B-041 |  |
-| LP-1150 | Actions menu: play recorded actions | -- | AC-0054 | -- | automation | backlog B-041 |  |
-| LP-1151 | Actions Browser in the viewer: play and manage recorded actions | -- | AC-0093, AC-0110, AC-4573 | -- | automation | backlog B-041 |  |
-| LP-1152 | Command line switch to open a specific catalog | -- | AC-1736 | -- | core | backlog B-041 |  |
-| LP-1153 | Plug-in settings: decode, encode, archive, camera, command and pane extensions, disable, priority order, properties, help | -- | AC-1807, AC-1808, AC-1809, AC-1810, AC-1811, AC-1812, AC-1813, AC-1814, AC-1815, AC-1816, AC-1817 | -- | automation | backlog B-041 | formats are built in through the codec registry D04 T13 §1 |
-| LP-1154 | Actions: record edits and play them back on other images, actions browser, categories, output options, import and export of action packages | -- | AC-2776, AC-2777, AC-2778, AC-2779, AC-2780, AC-2781, AC-2782, AC-2783, AC-2784, AC-2785, AC-2786, AC-2787, AC-2788, AC-2789, AC-2790, AC-2791, AC-2792, AC-2793, AC-2794, AC-2795, AC-2796, AC-2797, AC-2798, AC-2799, AC-2800, AC-2801, AC-2802, AC-2803, AC-2804, AC-2805, AC-2806, AC-2807, AC-2808, AC-2809, AC-2810, AC-2811, AC-2812, AC-2813, AC-2814, AC-2815 | -- | automation | backlog B-041 | suite-wide macros and recorded actions |
-| LP-1155 | Recorded actions folder | -- | AC-4280 | -- | automation | backlog B-041 |  |
-| LP-1156 | Batch option sets stored in the settings file and reused from the command line | -- | -- | IV-0350 | automation | backlog B-041 |  |
+| LP-1143 | Plug-in defined metadata in text filters and smart collection rules | LR-0317, LR-0606 | -- | -- | automation | plan D04 T17 §2 |  |
+| LP-1144 | Plug-in metadata field set | LR-0385 | -- | -- | automation | plan D04 T17 §2 |  |
+| LP-1145 | Third-party publish services and export plug-in destinations, filters, and the plug-in manager from Export | LR-0640, LR-1046, LR-1113, LR-1114, LR-1279 | -- | -- | automation | plan D04 T17 §2 | plug-in and extension APIs |
+| LP-1146 | Plug-in manager: add, remove, enable, reload, status, autoload folder | LR-1363, LR-1364, LR-1365, LR-1366, LR-1367, LR-1369, LR-1370, LR-1395, LR-1644 | -- | -- | automation | plan D04 T17 §2 |  |
+| LP-1147 | Plug-in extras menus in File, Library, and Help | LR-1371, LR-1372, LR-1373, LR-1396, LR-1435 | -- | -- | automation | plan D04 T17 §2 |  |
+| LP-1148 | Plug-in SDK: export and publish providers, export filters, metadata providers, catalog access, develop controller, web engines, library filters, external tools, Lua UI | LR-1374, LR-1375, LR-1376, LR-1377, LR-1378, LR-1379, LR-1380, LR-1381, LR-1382, LR-1383 | -- | -- | automation | plan D04 T17 §2 |  |
+| LP-1149 | Plug-in help files | LR-1510 | AC-0185 | -- | automation | plan D04 T17 §2 |  |
+| LP-1150 | Actions menu: play recorded actions | -- | AC-0054 | -- | automation | plan D04 T17 §1 |  |
+| LP-1151 | Actions Browser in the viewer: play and manage recorded actions | -- | AC-0093, AC-0110, AC-4573 | -- | automation | plan D04 T17 §1 |  |
+| LP-1152 | Command line switch to open a specific catalog | -- | AC-1736 | -- | core | plan D04 T17 §3 |  |
+| LP-1153 | Plug-in settings: decode, encode, archive, camera, command and pane extensions, disable, priority order, properties, help | -- | AC-1807, AC-1808, AC-1809, AC-1810, AC-1811, AC-1812, AC-1813, AC-1814, AC-1815, AC-1816, AC-1817 | -- | automation | plan D04 T17 §2 | formats are built in through the codec registry D04 T13 §1 |
+| LP-1154 | Actions: record edits and play them back on other images, actions browser, categories, output options, import and export of action packages | -- | AC-2776, AC-2777, AC-2778, AC-2779, AC-2780, AC-2781, AC-2782, AC-2783, AC-2784, AC-2785, AC-2786, AC-2787, AC-2788, AC-2789, AC-2790, AC-2791, AC-2792, AC-2793, AC-2794, AC-2795, AC-2796, AC-2797, AC-2798, AC-2799, AC-2800, AC-2801, AC-2802, AC-2803, AC-2804, AC-2805, AC-2806, AC-2807, AC-2808, AC-2809, AC-2810, AC-2811, AC-2812, AC-2813, AC-2814, AC-2815 | -- | automation | plan D04 T17 §1 | the suite-wide actions of D01 T10 |
+| LP-1155 | Recorded actions folder | -- | AC-4280 | -- | automation | plan D04 T17 §1 |  |
+| LP-1156 | Batch option sets stored in the settings file and reused from the command line | -- | -- | IV-0350 | automation | plan D04 T17 §3 |  |
 | LP-1157 | Scripted filters, Filter Factory, and Photoshop 8BF plug-in hosting including 32-bit filters | -- | -- | IV-0599, IV-0601, IV-0602, IV-0603, IV-0604, IV-0605, IV-0606, IV-0607, IV-1438, IV-1460 | core | plan D04 T04 §15 | third-party 8BF and Filter Factory filters on the suite plug-in host D01 T09 §2, including 32-bit filters in its x86 host; the batch step is LP-1160 |
-| LP-1158 | Write image information to a text or CSV file from the command line | -- | -- | IV-0834 | automation | backlog B-041 |  |
+| LP-1158 | Write image information to a text or CSV file from the command line | -- | -- | IV-0834 | automation | plan D04 T17 §3 |  |
 | LP-1159 | Adobe 8BF filter folder | -- | -- | IV-1010 | core | plan D04 T04 §15 | plug-in folders through the D01 T09 §4 manager |
-| LP-1160 | Plug-in hosting: Photoshop 8BF filters, Filter Factory, JewelScript effects, 32-bit plug-in stub loader, plug-in SDK | -- | -- | IV-1060, IV-1071, IV-1093, IV-1100, IV-1112, IV-1113, IV-1121 | automation | plan D04 T11 §7 | 8BF and Filter Factory filters as batch steps on the D01 T09 §2 host; JewelScript effects and a plug-in SDK stay in B-041 |
-| LP-1161 | Command-line control of the viewer window: only one instance, fullscreen, fit to desktop, title, position, hide chrome, display parameters, page, file pattern | -- | -- | IV-1247, IV-1248, IV-1249, IV-1250, IV-1251, IV-1252, IV-1264, IV-1291, IV-1299, IV-1337, IV-1338, IV-1339, IV-1340, IV-1347, IV-1370 | automation | backlog B-041 |  |
-| LP-1162 | Command-line convert and image operations: convert, make copy, crop, resize, rotate, flip, gray, invert, color depth, swap black and white, sharpen, contrast, brightness, gamma, effect, replace color, transparent color, DPI, JPEG quality, TIFF compression, lossless JPEG rotate, advanced batch, append pages, multipage, panorama | -- | -- | IV-1253, IV-1254, IV-1265, IV-1268, IV-1269, IV-1270, IV-1271, IV-1272, IV-1279, IV-1280, IV-1284, IV-1285, IV-1286, IV-1287, IV-1288, IV-1289, IV-1290, IV-1292, IV-1293, IV-1294, IV-1295, IV-1296, IV-1297, IV-1298, IV-1303, IV-1304, IV-1305, IV-1306, IV-1329, IV-1330, IV-1331, IV-1332, IV-1333, IV-1334, IV-1335, IV-1336, IV-1341, IV-1342, IV-1343, IV-1344, IV-1345, IV-1346, IV-1348, IV-1349, IV-1350, IV-1351, IV-1352, IV-1353, IV-1354, IV-1355, IV-1356, IV-1357, IV-1358, IV-1359, IV-1360, IV-1363, IV-1364, IV-1366, IV-1367, IV-1368, IV-1369 | automation | backlog B-042 | batch jobs run from the command line |
-| LP-1163 | Command-line slideshow, print, capture, scan, wallpaper, clipboard, palette import and export, hot folder, info export, and EXE slideshow switches | -- | -- | IV-1255, IV-1256, IV-1257, IV-1258, IV-1260, IV-1261, IV-1262, IV-1263, IV-1266, IV-1267, IV-1273, IV-1276, IV-1277, IV-1281, IV-1282, IV-1283, IV-1300, IV-1301, IV-1302, IV-1307, IV-1308, IV-1309, IV-1310, IV-1311, IV-1312, IV-1313, IV-1314, IV-1315, IV-1316, IV-1317, IV-1318, IV-1319, IV-1320, IV-1321, IV-1322, IV-1323, IV-1324, IV-1325, IV-1326, IV-1327, IV-1328, IV-1361, IV-1362, IV-1365, IV-1372, IV-1373, IV-1374 | automation | backlog B-041 |  |
-| LP-1164 | Command-line settings file location, silent errors, syntax rules (lowercase, order, wildcards, length limit, exit codes), and Send To shortcuts | -- | -- | IV-1274, IV-1275, IV-1278, IV-1371, IV-1375, IV-1376, IV-1378, IV-1379, IV-1380, IV-1381, IV-1382 | automation | backlog B-041 |  |
+| LP-1160 | Plug-in hosting: Photoshop 8BF filters, Filter Factory, JewelScript effects, 32-bit plug-in stub loader, plug-in SDK | -- | -- | IV-1060, IV-1071, IV-1093, IV-1100, IV-1112, IV-1113, IV-1121 | automation | plan D04 T11 §7 | 8BF and Filter Factory filters as batch steps on the D01 T09 §2 host; the plug-in SDK is D04 T17 §2 on D01 T10 §7; JewelScript effect scripts are not run (C# scripts of D01 T10 §4 do the job) |
+| LP-1161 | Command-line control of the viewer window: only one instance, fullscreen, fit to desktop, title, position, hide chrome, display parameters, page, file pattern | -- | -- | IV-1247, IV-1248, IV-1249, IV-1250, IV-1251, IV-1252, IV-1264, IV-1291, IV-1299, IV-1337, IV-1338, IV-1339, IV-1340, IV-1347, IV-1370 | automation | plan D04 T17 §3 |  |
+| LP-1162 | Command-line convert and image operations: convert, make copy, crop, resize, rotate, flip, gray, invert, color depth, swap black and white, sharpen, contrast, brightness, gamma, effect, replace color, transparent color, DPI, JPEG quality, TIFF compression, lossless JPEG rotate, advanced batch, append pages, multipage, panorama | -- | -- | IV-1253, IV-1254, IV-1265, IV-1268, IV-1269, IV-1270, IV-1271, IV-1272, IV-1279, IV-1280, IV-1284, IV-1285, IV-1286, IV-1287, IV-1288, IV-1289, IV-1290, IV-1292, IV-1293, IV-1294, IV-1295, IV-1296, IV-1297, IV-1298, IV-1303, IV-1304, IV-1305, IV-1306, IV-1329, IV-1330, IV-1331, IV-1332, IV-1333, IV-1334, IV-1335, IV-1336, IV-1341, IV-1342, IV-1343, IV-1344, IV-1345, IV-1346, IV-1348, IV-1349, IV-1350, IV-1351, IV-1352, IV-1353, IV-1354, IV-1355, IV-1356, IV-1357, IV-1358, IV-1359, IV-1360, IV-1363, IV-1364, IV-1366, IV-1367, IV-1368, IV-1369 | automation | plan D04 T17 §3 | batch jobs run from the command line through D04 T11's operations |
+| LP-1163 | Command-line slideshow, print, capture, scan, wallpaper, clipboard, palette import and export, hot folder, info export, and EXE slideshow switches | -- | -- | IV-1255, IV-1256, IV-1257, IV-1258, IV-1260, IV-1261, IV-1262, IV-1263, IV-1266, IV-1267, IV-1273, IV-1276, IV-1277, IV-1281, IV-1282, IV-1283, IV-1300, IV-1301, IV-1302, IV-1307, IV-1308, IV-1309, IV-1310, IV-1311, IV-1312, IV-1313, IV-1314, IV-1315, IV-1316, IV-1317, IV-1318, IV-1319, IV-1320, IV-1321, IV-1322, IV-1323, IV-1324, IV-1325, IV-1326, IV-1327, IV-1328, IV-1361, IV-1362, IV-1365, IV-1372, IV-1373, IV-1374 | automation | plan D04 T17 §3 | EXE slideshow switches are refused by name (backlog B-049) |
+| LP-1164 | Command-line settings file location, silent errors, syntax rules (lowercase, order, wildcards, length limit, exit codes), and Send To shortcuts | -- | -- | IV-1274, IV-1275, IV-1278, IV-1371, IV-1375, IV-1376, IV-1378, IV-1379, IV-1380, IV-1381, IV-1382 | automation | plan D04 T17 §3 |  |
 
 ## Video and audio
 
 | ID | Feature | Lightroom | ACDSee | IrfanView | Category | Status | Notes |
 | -- | ------- | --------- | ------ | --------- | -------- | ------ | ----- |
-| LP-1165 | Import video files with photos | LR-0126 | -- | -- | format | backlog B-043 |  |
-| LP-1166 | Video frame numbers and draft-quality HD playback in the loupe | LR-0249, LR-0250 | -- | -- | core | backlog B-043 |  |
-| LP-1167 | Video metadata field set | LR-0394 | AC-0939 | -- | video | backlog B-043 |  |
-| LP-1168 | Video playback, trim, poster frame, video quick develop, and video export | LR-0538, LR-0539, LR-0540, LR-0541 | -- | -- | core | backlog B-043 |  |
-| LP-1169 | Video files in export: include, format, quality | LR-1064, LR-1065, LR-1066 | -- | -- | format | backlog B-043 |  |
-| LP-1170 | Slideshow video audio versus music balance | LR-1198 | -- | -- | core | backlog B-043 |  |
-| LP-1171 | Export slideshow as video | LR-1210, LR-1816 | -- | -- | format | backlog B-043 |  |
-| LP-1172 | Video cache size and purge | LR-1332 | -- | -- | core | backlog B-043 |  |
-| LP-1173 | Media mode shell: database-driven photo and video grid with header bar, refresh, catalog folders, and folders pane | -- | AC-0063, AC-0064, AC-0065, AC-0067, AC-0068, AC-1831, AC-1832, AC-1833, AC-1835, AC-1836 | -- | core | backlog B-043 | photo browsing parts are covered by the library grid D04 T01 §8 and browse D04 T05 §1 |
-| LP-1174 | Media mode orphan files: show missing cataloged files | -- | AC-0066, AC-1834, AC-4221 | -- | core | backlog B-043 | missing photos in the library are D04 T06 §8 |
-| LP-1175 | Media mode full screen: double-click to full screen, videos play in place, edge navigation arrows, grid and full screen toggle | -- | AC-0069, AC-0073, AC-0081, AC-1837, AC-1841, AC-1849 | -- | video | backlog B-043 |  |
-| LP-1176 | Media mode context commands: open in view, develop, or edit mode, rotate, show in Explorer, delete, browse to file in Manage | -- | AC-0070, AC-0071, AC-0072, AC-0082, AC-1838, AC-1839, AC-1840, AC-1850, AC-4222 | -- | core | backlog B-043 |  |
-| LP-1177 | Media mode filter, sort, group, group-by pane, and properties pane | -- | AC-0074, AC-0075, AC-0076, AC-0077, AC-0078, AC-0079, AC-0080, AC-1842, AC-1843, AC-1844, AC-1845, AC-1846, AC-1847, AC-1848 | -- | core | backlog B-043 |  |
-| LP-1178 | Audio and video in browse: sound overlay, media file filter, preview and autoplay of clips | -- | AC-0421, AC-0587, AC-0636, AC-4161, AC-4162, AC-4393 | -- | video | backlog B-043 |  |
-| LP-1179 | Special item listing every video | -- | AC-0739 | -- | video | backlog B-043 |  |
-| LP-1180 | Slideshow video stretch and embedded image audio | -- | AC-1204, AC-1205 | -- | video | backlog B-043 |  |
-| LP-1181 | Per-image audio in slideshows | -- | AC-1226 | -- | video | backlog B-043 |  |
-| LP-1182 | Play audio clips embedded in images during Image Advance | -- | AC-1912 | -- | video | backlog B-043 |  |
-| LP-1183 | Video and audio playback: play and pause, loop, mute, volume, zoom, seek keys, playbar, autoplay, context menu, separate player window, default external player option, DirectShow codecs, QuickTime and FLV toggles | -- | AC-1964, AC-1965, AC-1966, AC-1968, AC-1969, AC-4320 | IV-0804, IV-0805, IV-0806, IV-0807, IV-0808, IV-0809, IV-0810, IV-0811, IV-0813, IV-0814, IV-0815, IV-0816, IV-1072, IV-1094, IV-1103 | video | backlog B-043 |  |
-| LP-1184 | Video frame extraction: copy or save the current frame, extract frames, save options | -- | AC-1967, AC-1970, AC-1971 | IV-0812, IV-0818 | video | backlog B-043 |  |
-| LP-1185 | Image audio: audio embedded in TIFF and JPEG and same-named WAV files kept with the image | -- | AC-1972, AC-1973 | -- | video | backlog B-043 |  |
-| LP-1186 | Edit image audio: attach, trim with markers, truncate, clip, record, mix, insert, append, replace, save as sound file, capture device and format | -- | AC-1974, AC-1975, AC-1976, AC-1977, AC-1978, AC-1979, AC-1980, AC-1981, AC-1982, AC-1983, AC-1984, AC-1985, AC-1986, AC-1987, AC-1988 | -- | video | backlog B-043 |  |
-| LP-1187 | Media mode thumbnail pop-ups: hover or Shift, auto hide, thumbnail, configurable information | -- | AC-4223, AC-4224, AC-4225, AC-4226, AC-4227, AC-4228 | -- | core | backlog B-043 |  |
-| LP-1188 | Audio formats: AAC, ADTS, M4A, MP3, MP2, MP1, WAV, WMA, AIF, AU, MIDI, OGG, FLAC, Real Audio, MED | -- | AC-5147, AC-5148, AC-5151, AC-5154, AC-5156, AC-5157 | IV-1082, IV-1095, IV-1099, IV-1197, IV-1198, IV-1199, IV-1200, IV-1201, IV-1202, IV-1203, IV-1236, IV-1237, IV-1239, IV-1240 | video | backlog B-043 |  |
-| LP-1189 | Video formats: ASF, AVI, M4V, MOV, MP4, MKV, WebM, TS, MTS, MPG, WMV, 3GP, Video CD DAT | -- | AC-5149, AC-5150, AC-5152, AC-5153, AC-5155, AC-5158 | IV-1204, IV-1205, IV-1206, IV-1207, IV-1208, IV-1209, IV-1235, IV-1241 | video | backlog B-043 |  |
-| LP-1190 | Save the slideshow as an MP4 video with music, frame size, frame rate, quality, and transitions | -- | -- | IV-0260, IV-0261 | video | backlog B-043 |  |
-| LP-1191 | Extract all frames of animations and video | -- | -- | IV-0640 | video | backlog B-044 |  |
-| LP-1192 | Multimedia player for video, audio, and audio CD | -- | -- | IV-0642 | video | backlog B-043 |  |
-| LP-1193 | Audio CD playback | -- | -- | IV-0817, IV-1238 | video | backlog B-043 |  |
-| LP-1194 | Video thumbnails through installed codecs | -- | -- | IV-0819 | video | backlog B-043 |  |
-| LP-1195 | Save a slideshow as an MP4 video | -- | -- | IV-1104 | video | backlog B-043 |  |
+| LP-1165 | Import video files with photos | LR-0126 | -- | -- | format | plan D04 T16 §1 |  |
+| LP-1166 | Video frame numbers and draft-quality HD playback in the loupe | LR-0249, LR-0250 | -- | -- | core | plan D04 T16 §2 |  |
+| LP-1167 | Video metadata field set | LR-0394 | AC-0939 | -- | video | plan D04 T16 §1 |  |
+| LP-1168 | Video playback, trim, poster frame, video quick develop, and video export | LR-0538, LR-0539, LR-0540, LR-0541 | -- | -- | core | plan D04 T16 §3 |  |
+| LP-1169 | Video files in export: include, format, quality | LR-1064, LR-1065, LR-1066 | -- | -- | format | plan D04 T16 §3 |  |
+| LP-1170 | Slideshow video audio versus music balance | LR-1198 | -- | -- | core | plan D04 T16 §6 |  |
+| LP-1171 | Export slideshow as video | LR-1210, LR-1816 | -- | -- | format | plan D04 T16 §6 |  |
+| LP-1172 | Video cache size and purge | LR-1332 | -- | -- | core | plan D04 T16 §1 |  |
+| LP-1173 | Media mode shell: database-driven photo and video grid with header bar, refresh, catalog folders, and folders pane | -- | AC-0063, AC-0064, AC-0065, AC-0067, AC-0068, AC-1831, AC-1832, AC-1833, AC-1835, AC-1836 | -- | core | plan D04 T16 §4 | photo browsing parts are covered by the library grid D04 T01 §8 and browse D04 T05 §1 |
+| LP-1174 | Media mode orphan files: show missing cataloged files | -- | AC-0066, AC-1834, AC-4221 | -- | core | plan D04 T16 §4 | missing photos in the library are D04 T06 §8 |
+| LP-1175 | Media mode full screen: double-click to full screen, videos play in place, edge navigation arrows, grid and full screen toggle | -- | AC-0069, AC-0073, AC-0081, AC-1837, AC-1841, AC-1849 | -- | video | plan D04 T16 §4 |  |
+| LP-1176 | Media mode context commands: open in view, develop, or edit mode, rotate, show in Explorer, delete, browse to file in Manage | -- | AC-0070, AC-0071, AC-0072, AC-0082, AC-1838, AC-1839, AC-1840, AC-1850, AC-4222 | -- | core | plan D04 T16 §4 |  |
+| LP-1177 | Media mode filter, sort, group, group-by pane, and properties pane | -- | AC-0074, AC-0075, AC-0076, AC-0077, AC-0078, AC-0079, AC-0080, AC-1842, AC-1843, AC-1844, AC-1845, AC-1846, AC-1847, AC-1848 | -- | core | plan D04 T16 §4 |  |
+| LP-1178 | Audio and video in browse: sound overlay, media file filter, preview and autoplay of clips | -- | AC-0421, AC-0587, AC-0636, AC-4161, AC-4162, AC-4393 | -- | video | plan D04 T16 §1 |  |
+| LP-1179 | Special item listing every video | -- | AC-0739 | -- | video | plan D04 T16 §1 |  |
+| LP-1180 | Slideshow video stretch and embedded image audio | -- | AC-1204, AC-1205 | -- | video | plan D04 T16 §6 |  |
+| LP-1181 | Per-image audio in slideshows | -- | AC-1226 | -- | video | plan D04 T16 §6 |  |
+| LP-1182 | Play audio clips embedded in images during Image Advance | -- | AC-1912 | -- | video | plan D04 T16 §5 |  |
+| LP-1183 | Video and audio playback: play and pause, loop, mute, volume, zoom, seek keys, playbar, autoplay, context menu, separate player window, default external player option, DirectShow codecs, QuickTime and FLV toggles | -- | AC-1964, AC-1965, AC-1966, AC-1968, AC-1969, AC-4320 | IV-0804, IV-0805, IV-0806, IV-0807, IV-0808, IV-0809, IV-0810, IV-0811, IV-0813, IV-0814, IV-0815, IV-0816, IV-1072, IV-1094, IV-1103 | video | plan D04 T16 §2 |  |
+| LP-1184 | Video frame extraction: copy or save the current frame, extract frames, save options | -- | AC-1967, AC-1970, AC-1971 | IV-0812, IV-0818 | video | plan D04 T16 §3 |  |
+| LP-1185 | Image audio: audio embedded in TIFF and JPEG and same-named WAV files kept with the image | -- | AC-1972, AC-1973 | -- | video | plan D04 T16 §5 |  |
+| LP-1186 | Edit image audio: attach, trim with markers, truncate, clip, record, mix, insert, append, replace, save as sound file, capture device and format | -- | AC-1974, AC-1975, AC-1976, AC-1977, AC-1978, AC-1979, AC-1980, AC-1981, AC-1982, AC-1983, AC-1984, AC-1985, AC-1986, AC-1987, AC-1988 | -- | video | plan D04 T16 §5 |  |
+| LP-1187 | Media mode thumbnail pop-ups: hover or Shift, auto hide, thumbnail, configurable information | -- | AC-4223, AC-4224, AC-4225, AC-4226, AC-4227, AC-4228 | -- | core | plan D04 T16 §4 |  |
+| LP-1188 | Audio formats: AAC, ADTS, M4A, MP3, MP2, MP1, WAV, WMA, AIF, AU, MIDI, OGG, FLAC, Real Audio, MED | -- | AC-5147, AC-5148, AC-5151, AC-5154, AC-5156, AC-5157 | IV-1082, IV-1095, IV-1099, IV-1197, IV-1198, IV-1199, IV-1200, IV-1201, IV-1202, IV-1203, IV-1236, IV-1237, IV-1239, IV-1240 | video | plan D04 T16 §1 |  |
+| LP-1189 | Video formats: ASF, AVI, M4V, MOV, MP4, MKV, WebM, TS, MTS, MPG, WMV, 3GP, Video CD DAT | -- | AC-5149, AC-5150, AC-5152, AC-5153, AC-5155, AC-5158 | IV-1204, IV-1205, IV-1206, IV-1207, IV-1208, IV-1209, IV-1235, IV-1241 | video | plan D04 T16 §1 |  |
+| LP-1190 | Save the slideshow as an MP4 video with music, frame size, frame rate, quality, and transitions | -- | -- | IV-0260, IV-0261 | video | plan D04 T16 §6 |  |
+| LP-1191 | Extract all frames of animations and video | -- | -- | IV-0640 | video | plan D04 T16 §3 |  |
+| LP-1192 | Multimedia player for video, audio, and audio CD | -- | -- | IV-0642 | video | plan D04 T16 §2 |  |
+| LP-1193 | Audio CD playback | -- | -- | IV-0817, IV-1238 | video | plan D04 T16 §2 |  |
+| LP-1194 | Video thumbnails through installed codecs | -- | -- | IV-0819 | video | plan D04 T16 §1 |  |
+| LP-1195 | Save a slideshow as an MP4 video | -- | -- | IV-1104 | video | plan D04 T16 §6 |  |
 
 ## Cloud and online services
 
@@ -1431,9 +1431,9 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1220 | Restore to developed: discard editor changes and return to the developed photo | -- | AC-3559, AC-3624 | -- | core | shipped-scope D04 T02 §7 | Lumen keeps the developed original; the edited file is a stacked derivative |
 | LP-1221 | Leave the editor for Develop, the previous mode, Manage, Media, View, People, or Dashboard | -- | AC-4713, AC-4716, AC-4908, AC-4909, AC-4910, AC-4911, AC-4912, AC-4914 | -- | core | shipped-scope D04 T02 §7 | Lumen and Imago are separate apps joined by the Edit in hand-off |
 | LP-1222 | Rating and color label keys while editing | -- | AC-4723, AC-4724 | -- | core | shipped-scope D04 T01 §11 | ratings and labels live in Lumen |
-| LP-1223 | Recorded actions play back destructively | -- | AC-3503 | -- | automation | backlog B-041 | actions are the suite-wide scripting and macro system |
+| LP-1223 | Recorded actions play back destructively | -- | AC-3503 | -- | automation | plan D04 T17 §1 | playback writes new files unless the originals opt-in is on |
 | LP-1224 | Photoshop plug-in folders | -- | AC-4281 | -- | automation | plan D04 T04 §15 | plug-in folders through the D01 T09 §4 manager |
-| LP-1225 | Start and stop action recording keys | -- | AC-4906, AC-4907 | -- | automation | backlog B-041 | suite-wide macro recorder |
+| LP-1225 | Start and stop action recording keys | -- | AC-4906, AC-4907 | -- | automation | plan D04 T17 §1 |  |
 | LP-1226 | Switch to 365 mode from the editor | -- | AC-4913 | -- | core | excluded: cloud ACDSee 365 online service |  |
 | LP-1227 | Prompt-based generative editing of a photo | LR-1039 | -- | -- | ai | other-app: Imago IP-2090 prompt-to-edit is Imago D03 T19 §10 |  |
 | LP-1228 | Edit mode summary: selections, brush, layers, targeting, repair, and effects | -- | AC-0136 | -- | core | other-app: Imago IP-0265 layered pixel editing is Imago |  |

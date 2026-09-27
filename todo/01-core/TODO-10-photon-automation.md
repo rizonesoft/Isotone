@@ -1,0 +1,360 @@
+---
+schema_version: 1
+id: photon-automation
+domain: 01-core
+status: draft
+title: "TODO-10 -- Photon.Core and Photon.UI Automation: Actions, Scripting, the Automation Server, Extensions, the Command Line, and Batch"
+depends_on: []
+frozen: true
+track: C10
+---
+
+# TODO-10 -- Photon.Core and Photon.UI Automation: Actions, Scripting, the Automation Server, Extensions, the Command Line, and Batch
+
+> **Goal:** Nodus, Imago, and Lumen share one automation system, built once in `Photon.Core` and `Photon.UI` after the first release (operator decision 2026-09-27, planning the work deferred "after the first release" as real sections because the operator worried "features will be left behind"): recorded actions that play back as one undo step, with sets, conditions, exposed parameters, and an Actions panel; action files and a library that imports Photoshop ATN; one C# scripting host on Roslyn with a trust model, a Scripts menu, startup scripts, and script events; a script editor and console with an object-model reference browser and a command listener; an off-by-default automation server on a per-user named pipe with an MCP bridge whose permissions the user grants; an extension SDK with collectible load contexts and an extension manager; one command-line grammar every app registers its switches into; and one batch runner with droplets, moved from Lumen on its second consumer. Each app's own object model, recordable commands, and catalog rows are its own sections (`D02 T19`, `D03 T22`, `D04 T17`); this file owns no catalog row.
+
+> [!IMPORTANT]
+> **Current state (verified 2026-09-27):** Neither `src/Photon.Core/` nor `src/Photon.UI/` exists yet (`D01 T02 §1` and `D01 T01 §1` create them). The only scripting code in the repository is Imago's `ScriptEngine` (62 lines in `src/Imago/src/Imago.Scripting/ScriptEngine.cs`, `EvaluateAsync<T>` and `RunAsync` over Roslyn scripting with no globals, no trust model, no undo, and no caller), which `D03 T01 §1` renames to `src/Imago/Photon.Imago.Scripting/`. `Directory.Packages.props` already pins `Microsoft.CodeAnalysis.CSharp.Scripting` for it; AvalonEdit and the ModelContextProtocol SDK are not referenced. No app records actions, reads a command line beyond opening files, hosts extensions, or runs a batch: Lumen's batch engine (`Photon.Lumen.Core/Batch/`, `ActivityManager`, `TokenEngine`) is planned in `D04 T11` and does not exist yet. There is no `docs/dev/decisions.md` yet (`D00 T02 §4` creates it), no `src/Photon.Extensibility/`, and no `src/Photon.Mcp/`.
+<!-- claim: absent src/Photon.Core -->
+<!-- claim: absent src/Photon.UI -->
+<!-- claim: lines src/Imago/src/Imago.Scripting/ScriptEngine.cs = 62 -->
+<!-- claim: exists src/Imago/src/Imago.Scripting/Imago.Scripting.csproj -->
+<!-- claim: count "Microsoft.CodeAnalysis.CSharp.Scripting" Directory.Packages.props = 1 -->
+<!-- claim: count "AvalonEdit" Directory.Packages.props = 0 -->
+<!-- claim: count "ModelContextProtocol" Directory.Packages.props = 0 -->
+<!-- claim: absent docs/dev/decisions.md -->
+<!-- claim: absent src/Photon.Extensibility -->
+<!-- claim: absent src/Photon.Mcp -->
+
+## Inputs
+
+- [`standards/shared.md`](../../standards/shared.md) -- one Information log line per action that changes a document or a setting, refusals that name the file and the reason, a dependency is a decision
+- [`standards/design-contract.md`](../../standards/design-contract.md) -- the contract the Actions panel, the script editor, the permissions page, the extension manager tab, and the Batch dialog are built to
+- [`docs/parity/nodus-parity.md`](../../docs/parity/nodus-parity.md), [`docs/parity/imago-parity.md`](../../docs/parity/imago-parity.md), [`docs/parity/lumen-parity.md`](../../docs/parity/lumen-parity.md) -- the automation rows the app sections own and this file serves
+- Roslyn scripting API (https://learn.microsoft.com/dotnet/api/microsoft.codeanalysis.csharp.scripting.csharpscript) -- `CSharpScript.Create`, `ScriptOptions`, and globals, the host §4 builds on
+- `AssemblyLoadContext` (https://learn.microsoft.com/dotnet/core/dependency-loading/understanding-assemblyloadcontext) and collectible contexts (https://learn.microsoft.com/dotnet/standard/assembly/unloadability) -- the extension isolation of §7
+- `NamedPipeServerStream` and `PipeSecurity` (https://learn.microsoft.com/dotnet/api/system.io.pipes.pipesecurity) -- the per-user pipe of §6
+- JSON-RPC 2.0 (https://www.jsonrpc.org/specification) and the Model Context Protocol specification (https://modelcontextprotocol.io/specification) -- the protocols of §6
+- Adobe Photoshop File Formats Specification, "Descriptor structure" -- the serialization ATN action files use, read by §3
+- -> XREF: D05 T01 §6 -- the first suite release; every section here runs after it (operator decision 2026-09-27)
+- -> XREF: D01 T02 §4 -- `UndoHistory` and its transactions, which make each playback and each script run one undo step
+- -> XREF: D03 T20 §3 -- `CommandIndex`, `MenuDefinition`, `MenuBuilder`, and `ShortcutManager` in `Photon.UI`, the command identities §1 records and the menus §4 builds
+- -> XREF: D03 T01 §1 -- the rename that puts `ScriptEngine` in `src/Imago/Photon.Imago.Scripting/`, which §4 moves
+- -> XREF: D01 T09 §4 -- the plug-in manager page §7 adds an Extensions tab to
+- -> XREF: D01 T02 §3 -- single instance, the forwarding path of §8's switches
+- -> XREF: D01 T01 §8 -- the dock the Actions panel and extension panels dock into
+- -> XREF: D04 T11 §1 -- Lumen's batch engine and `ActivityManager`, which §9 moves to `Photon.Core` on the second consumer
+- -> XREF: D04 T11 §2 -- Lumen's `TokenEngine`, which §9 moves for the Batch dialog's naming
+- -> XREF: D04 T11 §10 -- Lumen's batch dialog, the precedent the suite Batch dialog follows and Lumen keeps
+- -> XREF: D02 T19 §1 -- Nodus automation cites §1 to §9: the Nodus object model, scripts, and batch on this file's shared system
+- -> XREF: D03 T22 §1 -- Imago automation cites §1 to §9: the Imago object model, scripts, procedures, extensions, and batch on this file's shared system
+- -> XREF: D04 T17 §1 -- Lumen automation cites §1, §2, §3, §7, §8, and §9: recorded actions, extension points, and the command line on this file's shared system
+- -> XREF: D02 T17 §12 -- Nodus 1.2.0 releases this file's sections with D02 T19 §1 to §3
+- -> XREF: D03 T21 §13 -- Imago 1.1.0 releases this file's sections with D03 T22 §1 to §6
+- -> XREF: D04 T15 §11 -- Lumen 1.1.0 releases this file's sections with D04 T17 §1 to §3
+
+## Outcome
+
+- One action model records any recordable command of any suite app with its parameters and plays it back as one undo step, with sets, step and dialog toggles, stops, conditions, and exposed parameters, and every action converts to a C# script.
+- The Actions panel in `Photon.UI` records, plays, edits, and organizes actions in list and button modes, and the action library loads, saves, imports, and exports action files, including Photoshop ATN import with an unknown-step report.
+- One C# scripting host in `Photon.Core` runs trusted scripts with typed globals, cancellation, a timeout, line-numbered errors, and one undo step per run, builds the Scripts menu from folders, runs startup scripts, and fires script events.
+- The script editor and console edit, run, and explore the object model, and the command listener writes each invoked command as a C# line.
+- An automation server, off by default, answers JSON-RPC 2.0 on a pipe only the current user can open, and the MCP server bridges it with five permission categories the user grants.
+- Extensions install, load into collectible contexts, contribute panels, commands, and dialogs, and are managed from an Extensions tab, with two sample extensions and SDK documentation.
+- Every app parses one command-line grammar with a generated switch reference and exit codes table.
+- One batch runner in `Photon.Core` plays an action over a file set with a dry run first, and droplets run it from a desktop shortcut; Lumen's operations keep running on the moved engine.
+
+**Adjacency:** list=applicable @ D01 T10 §3; document=not-applicable (automation prints nothing; batch outputs are each app's own documents, owned by their writers); settings=applicable @ D01 T10 §4; reporting=applicable @ D01 T10 §9; notifications=applicable @ D01 T10 §9; permissions=applicable @ D01 T10 §6; audit=applicable @ D01 T10 §1; exchange=applicable @ D01 T10 §3; reverse=applicable @ D01 T10 §1
+
+**Adjacency rationale:** The action library (§3), the reference browser (§5), and the extension list (§7) are searchable lists. Settings live in the shared store under `Photon.Automation.*`, `Photon.Scripting.*`, and `Photon.Batch.*`, each with a named consumer (§4, §6, §9). A batch run reports its dry run, its progress through the Activity Manager, and an error log (§9), and notifies completion through the suite toast. Permissions are exercised on refusal: an untrusted script prompts, a revoked MCP category refuses the call by name, and a pipe opened by another user is refused (§4, §6). Every record, playback, script run, server request, and batch output writes one log line (§1, §4, §6, §9). Action files, ATN import, and extension packages are the exchange (§3, §7). Every playback and script run is one undo step, and a batch writes new files unless save and close was chosen (§1, §4, §9).
+
+## Implementation Order
+
+| Order | Section | Deliverable | Depends On | Status |
+| :---: | :-----: | ----------- | ---------- | :----: |
+|   1   |   §1    | The action model, the recorder, and playback | D05 T01 §6, D01 T02 §4, D03 T20 §3 |  [ ]   |
+|   2   |   §2    | The Actions panel in Photon.UI | §1, D01 T01 §3, D01 T01 §8 |  [ ]   |
+|   3   |   §3    | Action files and the action library | §2 |  [ ]   |
+|   4   |   §4    | The scripting host | §1, D03 T01 §1, D01 T02 §1 |  [ ]   |
+|   5   |   §5    | The script editor and console | §4 |  [ ]   |
+|   6   |   §6    | The automation server and the MCP server | §4 |  [ ]   |
+|   7   |   §7    | The extension SDK and the extension manager | §4, D01 T09 §4 |  [ ]   |
+|   8   |   §8    | The command line | §1, §4, D01 T02 §3 |  [ ]   |
+|   9   |   §9    | The suite batch runner and droplets | §1, §8, D04 T11 §1, D04 T11 §2, D04 T11 §10 |  [ ]   |
+
+---
+
+## 1. The Action Model, the Recorder, and Playback
+
+Every automation feature of the three parity catalogs (Photoshop actions, Affinity macros, CorelDRAW recordings, Illustrator actions, ACDSee actions) rests on one idea: a user's commands captured with their parameters and replayed on another document. This section builds that model once in `Photon.Core` on the command identities of `CommandIndex` (`D03 T20 §3`) and the transactions of `UndoHistory` (`D01 T02 §4`), so each app only declares which of its commands are recordable. Actions are data (versioned JSON descriptors), never code, and any action converts to a C# script for §4 and §5 (decision recorded here: operator decision 2026-09-27 to plan the post-release automation as one suite-wide system). A playback is one undo transaction; an AI step replays only through the send gate again. Catalog: none of its own; the rows are owned by `D02 T19 §1`, `D03 T22 §1`, and `D04 T17 §1`, which make their commands recordable on this model. -> SOURCE: parity-suite-scripting
+
+**Fidelity:** no surface of its own (the Actions panel is §2; the model, recorder, and player are library code proven by tests).
+
+- [ ] Add `src/Photon.Core/Automation/ActionDescriptor.cs`: a step with the command id from `CommandIndex`, typed parameters (`ActionValue`: number with unit, bool, string, enum, color, path, rectangle, reference to a layer or object by name or index, nested descriptor), a dialog mode (`None`, `Show`, `ShowIfMissing`), an enabled flag, and a comment. Done when: `ActionDescriptorTests` build one step of each value kind and compare equality by value.
+- [ ] Add `Action` and `ActionSet` (name, function key, color label, steps, nested play-action steps) in `src/Photon.Core/Automation/`. Done when: `ActionSetTests` add, reorder, duplicate, and delete steps and actions and assert the order.
+- [ ] Add `IRecordableCommand` in `src/Photon.Core/Automation/IRecordableCommand.cs` (`CommandId`, `CaptureParameters()`, `Apply(ActionDescriptor, IActionContext)`, `ShowDialog(ActionDescriptor)`), the contract each app's commands implement in `D02 T19 §1`, `D03 T22 §1`, and `D04 T17 §1`. Done when: a fake app in `tests/Photon.Core.Tests/Automation/FakeApp/` implements three commands against it.
+- [ ] Add `ActionRecorder` subscribing to `CommandIndex` invocations: while recording, each recordable command appends a step with its captured parameters, a non-recordable command appends nothing and is listed in `RecordingReport.Skipped` by name, and tool drags record as paths. Done when: `ActionRecorderTests` record three fake commands and a drag and assert three steps, one path step, and one skipped entry.
+- [ ] Add the relative-values option: position and size parameters record as offsets from the document or selection bounds when `Photon.Automation.RecordRelative` is on (default off). Done when: a test records a move on a 100 by 100 document, plays it on a 200 by 200 one, and asserts the scaled offset.
+- [ ] Add `ActionPlayer.PlayAsync(Action, IActionContext, CancellationToken)` wrapping the whole playback in `UndoHistory.BeginTransaction("Action: <name>")` and `Commit`, rolling back on failure or cancel. Done when: `ActionPlayerTests.OneUndoStep` plays five steps, undoes once, and asserts the document equals its pre-play hash.
+- [ ] Add step, stop, and dialog behavior: play from the selected step, play one step, skip disabled steps, show the dialog for steps whose mode says so, and insert-stop steps that show their message with Continue and Stop (a stop with Continue off ends playback). Done when: tests assert each path with a fake dialog host.
+- [ ] Add inserted steps: insert menu item (a command recorded without parameters that shows its dialog on play), insert path (a path parameter the step creates), and record again (re-capture one step's parameters from its dialog). Done when: `ActionStepEditTests` assert each insertion and the re-recorded parameters.
+- [ ] Add playback options (`Photon.Automation.Playback`: accelerated, step by step, pause for n seconds) and single history state playback on by default. Done when: a test with step-by-step playback asserts a delay per step through an injected clock.
+- [ ] Add conditional steps `if <predicate> then play <action> else play <action>` with predicates document mode, orientation, has selection, active layer kind, file type, and bit depth, evaluated through `IActionContext`. Done when: `ConditionalStepTests` assert each predicate on two fake documents and the branch chosen.
+- [ ] Add exposed parameters: a step parameter marked exposed prompts once per playback with its recorded value as the default, through `IActionPrompt`. Done when: a test asserts the prompt is shown once and the entered value reaches the step.
+- [ ] Add AI steps: a step whose command is an AI command stores its provenance record id and replays only through the `D01 T05 §4` send gate with a fresh user action id, and headless playback of an AI step fails the step by name. Done when: tests assert a gate request on interactive play and the named failure headless.
+- [ ] Add `ActionSerializer` writing and reading versioned JSON (`"schemaVersion": 1`), keeping unknown fields on round trip. Done when: `ActionSerializerTests` round-trip every value kind byte-identically and keep an unknown field.
+- [ ] Add `ActionScriptWriter` converting an action to a C# script (one call per step on the app's object model through `IScriptEmitter` the app registers). Done when: a test converts a three-step fake action and the emitted script, run through §4's host in its test, produces the same document hash as playing the action.
+- [ ] Log one Serilog Information line per record start and stop (`Action recording {Set}/{Action} started|stopped {Steps}`) and per playback (`Action played {Set}/{Action} {Steps} {Ms}`), and a Warning per failed step naming the command. Done when: a Serilog test sink asserts the three lines.
+- [ ] Write `src/Photon.Core/Automation/README.md`: the model, the app contract, relative values, conditions, AI steps, and the JSON schema with an example. Done when: the page exists and names every public type in the folder.
+- [ ] Commit: `"core: the suite action model, recorder, and player"`
+
+**Test checkpoint:** Unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Automation"` exits 0, with `ActionPlayerTests.OneUndoStep` proving a five-step playback undoes in one step to the pre-play hash, `ConditionalStepTests` choosing the right branch per predicate, and `ActionSerializerTests` round-tripping every value kind. Cheaper substitute that fails: replaying keystrokes or menu clicks without parameters, which the parameter assertions and the one-undo-step test catch.
+
+## 2. The Actions Panel in Photon.UI
+
+A recorder with no surface is invisible. This section builds the Actions panel once in `Photon.UI`, docked through the suite dock (`D01 T01 §8`), so Nodus, Imago, and Lumen show the same panel with the same states; each app contributes only its built-in sets. The panel is a new surface, so its spec goes into `docs/design/` first. Catalog: none of its own; the app sections own the Actions panel rows (`D02 T19 §1`, `D03 T22 §1`, `D04 T17 §1`). -> SOURCE: parity-suite-actions-panel
+
+**Fidelity:** Photon.UI Actions panel -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/photon-ui/ActionsPanel/.
+**Design:** new surface: docs/design/components/ActionsPanel/README.md, docs/design/components/Panel/README.md, docs/design/components/ListTree/README.md, docs/design/components/Button/README.md, docs/design/components/ContextMenu/README.md, docs/design/components/Dialog/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Tooltip/README.md -- states: all in spec -- themes: all four -- density: both
+**Job:** a user can record, play, and edit actions without leaving the document. Consumer: §1's recorder and player read the panel's commands; the set tree is the model §3 saves.
+**Treatment:** Photoshop's Actions panel: a set and action tree with step rows, a per-row enable check and dialog toggle, list and button modes, a footer with Stop, Record, Play, New Set, New Action, and Delete, a recording indicator, and a panel menu with Insert Stop, Insert Menu Item, Insert Path, Record Again, Action Options, and Playback Options. Cheaper substitute that fails the checkpoint: a plain list of action names with a Play button, which the step toggle and insert tests catch.
+**Chrome:** consume the generated theme dictionaries of `D01 T01 §3`, the dock of `D01 T01 §8`, the icon catalog, `ShortcutManager` for function keys, and §1's model. Do not build a per-app actions list.
+
+**Requires:** display-session -- the panel captures and the driven recording need an interactive desktop
+
+- [ ] Write the design spec `docs/design/components/ActionsPanel/README.md` and its `preview.html` card (anatomy of the set and step tree, list and button modes, the footer, the recording state, every row state including disabled step and dialog-on, tokens, and sizes) before any XAML is written, and regenerate the design page with `python scripts/build-design-site.py`. Done when: the spec and its card exist and `python scripts/build-design-site.py --check` passes.
+- [ ] Add `src/Photon.UI/Automation/ActionsPanelViewModel.cs` (CommunityToolkit.Mvvm) over §1's `ActionSet` collection with the selection, the recording state, and commands Record, Stop, Play, New Set, New Action, Duplicate, and Delete. Done when: `ActionsPanelViewModelTests` drive each command against a fake app and assert the model change.
+- [ ] Add `src/Photon.UI/Automation/ActionsPanel.xaml` in list mode: a tree of sets, actions, and steps with an enable checkbox and a dialog toggle per row, expanders, and the footer buttons with tooltips. Done when: the visual harness of `D01 T01 §9` renders every row state in all four themes and both densities into `build/wpf-renders/`.
+- [ ] Add button mode: each action as a colored button showing its function key, one click plays it. Done when: a view-model test asserts a button per action with its color label and that a click calls `PlayAsync`.
+- [ ] Show the recording state: the Record button in its active state, the recording action highlighted, and new steps appearing as they are captured. Done when: a driven run records two commands and the capture shows both steps with the active Record button.
+- [ ] Add the enable and dialog toggles: unchecking a step disables it, and toggling the dialog icon sets its dialog mode; a set's toggle shows a mixed state when its steps differ. Done when: tests assert the step flags and the mixed state.
+- [ ] Add the panel menu: Insert Stop (a dialog with the message and Allow Continue), Insert Menu Item (pick from `CommandIndex` by search), Insert Path (from the active path), Record Again, Action Options (name, function key through `ShortcutManager`, color), and Playback Options. Done when: `ActionsPanelMenuTests` assert each command's model change and that a function key already bound is refused by name.
+- [ ] Add drag reorder of steps, actions, and sets, and Alt-drag to copy. Done when: a view-model test moves and copies steps and asserts the order.
+- [ ] Add Play from here, Play step, and Stop, with Escape stopping a running playback. Done when: a driven run stops a long fake action and the log shows the stop.
+- [ ] Add the context menu on rows (Play, Record Again, Duplicate, Delete, Action Options) through `docs/design/components/ContextMenu/`. Done when: a view-model test invokes each entry.
+- [ ] Give every control an `AutomationProperties.Name`, a tooltip on each icon button, and a logical tab order; the tree is keyboard navigable with Space toggling enable. Done when: a UI automation test walks the tab order and toggles a step with Space.
+- [ ] Log one Information line per panel edit that changes an action set (`Actions {Change} {Set}/{Action}`). Done when: a test sink asserts the lines for add, delete, and reorder.
+- [ ] Write `docs/user/photon/actions.md`: recording, playing, editing, and the panel menu. Done when: every command in the Treatment is documented on the page.
+- [ ] Commit captures under `docs/captures/photon-ui/actions-panel/` (list mode, button mode, recording) for the review's comparison with the design reference renders. Done when: the three captures exist.
+- [ ] Commit: `"ui: the Actions panel"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~ActionsPanel"` exits 0; a driven run of the test host records two commands, plays the action, and undoes it once, with the log lines and the three captures committed under `docs/captures/photon-ui/actions-panel/`; the visual harness renders every state named in the spec. Cheaper substitute that fails: a name list with a Play button, which the step, toggle, and insert tests catch.
+
+## 3. Action Files and the Action Library
+
+Actions are only worth recording if they can be kept, shared, and brought over from other programs. This section saves and loads the suite action file `.photon-actions` (versioned JSON from §1), ships built-in sets per app as resources, adds the library view with categories and search that Affinity's macro library has, and imports Photoshop ATN files through the descriptor structure the Adobe Photoshop File Formats Specification documents, keeping unknown steps disabled and reported. ATN is read, never written; Affinity `.afmacro` files are not read, because the format is current and undocumented and the operator declined reverse engineering Affinity files on 2026-09-27; Photon action files do the job. Catalog: none of its own; `D03 T22 §1`, `D02 T19 §1`, and `D04 T17 §1` own the action-file and library rows. -> SOURCE: parity-suite-action-library
+
+**Fidelity:** Photon.UI action library -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/photon-ui/ActionsPanel/.
+**Design:** new surface: docs/design/components/ActionsPanel/README.md, docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/TextBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Toast/README.md -- states: all in spec -- themes: all four -- density: both
+**Job:** a user can keep, share, find, and import actions. Consumer: §1's player plays what the library loads; other users' Photon apps read the written files.
+**Treatment:** Load, Append, Replace, Save, Clear, and Reset Actions in the panel menu; a library view with category chips, a search box, and apply options (scale to document, alignment); Import and Export of action packages; an ATN import report listing each unknown step. Cheaper substitute that fails the checkpoint: copying action JSON by hand, and silently dropping ATN steps it cannot map, which the report test catches.
+**Chrome:** consume §2's panel, `AtomicFileWriter` (`D01 T02 §5`), the suite file dialogs of `Photon.UI`, and the toast. Do not add a second action serializer beside §1's.
+
+**Requires:** display-session -- the library view and the import report captures need an interactive desktop
+
+**Freeze check:** Action files and packages are written through `AtomicFileWriter`; a failed or cancelled save leaves the previous file byte-identical; loading or importing never opens a source file for writing. Fixture source: `tests/fixtures/core/actions/` (created by this section).
+
+- [ ] Extend the design spec `docs/design/components/ActionsPanel/README.md` and its card with the library view (category chips, search, apply options) and the ATN import report before any XAML for them is written, and regenerate the design page. Done when: the spec lists the new parts and states and `python scripts/build-design-site.py --check` passes.
+- [ ] Add `ActionFileStore` in `src/Photon.Core/Automation/Files/` saving and loading `.photon-actions` through §1's serializer and `AtomicFileWriter`. Done when: `ActionFileStoreTests` round-trip a fixture set and assert a failed write leaves the old file byte-identical.
+- [ ] Add Load (open a file as new sets), Append, Replace (replace all sets after a confirmation naming the count), Save (one set), Clear (after a confirmation), and Reset to the app's built-in sets. Done when: view-model tests assert each and the confirmations.
+- [ ] Add built-in sets as embedded resources per app through `IBuiltInActionProvider`, each app supplying its own (the app sections list them). Done when: a fake provider's sets appear after Reset and are marked built in.
+- [ ] Watch the recorded actions folder `%APPDATA%\Rizonesoft\Photon\Actions\` (`Photon.Automation.ActionsFolder`) and load its files at startup, refreshing on change. Done when: a test drops a file into a temp folder and asserts the set appears.
+- [ ] Add `ActionLibrary` with categories (user-assigned, plus Built-in and Imported) and search over action names, step command names, and comments. Done when: `ActionLibraryTests` assert category filtering and a search hit on a step name.
+- [ ] Add apply options on playback from the library: scale position and size parameters to the target document, and align to the canvas or selection (top left, center). Done when: a test plays a recorded move with scaling on a larger document and asserts the scaled result.
+- [ ] Add action packages: Export writes a `.photon-actions-pack` zip (sets, their categories, and a manifest with the exporting app and version) and Import reads it, refusing a newer schema by name. Done when: a package round-trips and a schema-2 fixture is refused with its message.
+- [ ] Add `AtnReader` in `src/Photon.Core/Automation/Atn/` parsing ATN version 16 files: set header, actions, events, and descriptors (the "Descriptor structure" of the Adobe Photoshop File Formats Specification, including `Objc`, `VlLs`, `UntF`, `enum`, `bool`, `long`, `doub`, `TEXT`, `obj `, and `alis`). Done when: fixtures created from Photoshop's shipped default actions (committed with their source noted) parse to the right action and step counts.
+- [ ] Map known Photoshop events to suite command ids through `AtnEventMap` (a table each app extends; unknown events become disabled steps that keep their raw descriptor). Done when: a mapped `Gaussian Blur` event imports as an enabled step with its radius and an unknown event imports disabled.
+- [ ] Show the ATN import report dialog listing each unmapped step with its event name and action. Done when: a driven import of the default-actions fixture shows the report and the capture is committed.
+- [ ] Refuse `.afmacro` and `.afmacros` files by name ("Affinity macro files are not supported; record the macro in Photon or import a Photoshop ATN file") and ATN write (not offered). Done when: a test asserts the message and that Save offers only `.photon-actions`.
+- [ ] Log one Information line per load, save, import, and export with the file name and set count. Done when: a test sink asserts the lines.
+- [ ] Commit fixtures under `tests/fixtures/core/actions/` (suite files, a package, ATN files, a truncated ATN) with `README.md` naming each file's source. Done when: the truncated ATN is refused with its byte offset.
+- [ ] Extend `docs/user/photon/actions.md` with files, the library, packages, and ATN import. Done when: the page documents every command in the Treatment.
+- [ ] Commit: `"core: action files, the action library, and ATN import"`
+
+**Test checkpoint:** Format fidelity proof plus unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~ActionFileStore|FullyQualifiedName~ActionLibrary|FullyQualifiedName~AtnReader"` exits 0, with suite files and packages round-tripping byte-identically, the ATN fixtures parsing to the committed action and step counts, and unknown steps kept disabled and listed; the import report capture is committed. Cheaper substitute that fails: an ATN reader that drops unknown steps, which the kept-disabled assertion catches.
+
+## 4. The Scripting Host
+
+Every catalog asks for scripting in a different language (ExtendScript and UXP, Affinity JavaScript, Script-Fu and Python-Fu, VBA and VSTA, Lua), and building five hosts would mean five object-model bindings. The decision recorded here is one language for the whole suite: C# scripting through Roslyn (`Microsoft.CodeAnalysis.CSharp.Scripting`, MIT, already referenced by `Imago.Scripting`), in-process against each app's typed object model. Python through pythonnet was rejected because it needs a separately installed CPython whose version the user controls, marshals every call across two runtimes, and gives no static checking of the object model; JavaScript through Jint (BSD-2-Clause) or ClearScript (MIT) was rejected as a second language and binding to maintain. Other languages drive the apps from outside through §6's automation server. This section moves `ScriptEngine` from Imago into `Photon.Core` on its second consumer and adds globals, trust, the Scripts menu, startup scripts, and script events. Catalog: none of its own; the app sections own the script rows. -> SOURCE: parity-suite-scripting-host
+
+**Fidelity:** no surface of its own (the trust prompt reuses the suite message dialog of `Photon.UI`; the editor is §5, the Scripts menu is built through `MenuBuilder` in each app).
+
+- [ ] Record the scripting-runtime decision above as a row in `docs/dev/decisions.md` (C# through Roslyn, MIT; the pythonnet and Jint or ClearScript alternatives and why they lost; the GPL-3.0 check). Done when: the row names the license URL and both rejected alternatives.
+- [ ] Move `ScriptEngine` from `src/Imago/Photon.Imago.Scripting/` to `src/Photon.Core/Scripting/ScriptEngine.cs` with `git mv`, leaving Imago's project holding only its object model, and repoint Imago. Done when: `grep -rn "class ScriptEngine" src` prints one path, under `src/Photon.Core/`, and the Imago build is green.
+- [ ] Add `IScriptGlobals` and `ScriptHost` in `src/Photon.Core/Scripting/`: globals `App`, `ActiveDocument`, `Log`, and a read-only `Settings`, supplied per app through `IScriptGlobalsFactory`. Done when: `ScriptHostTests` run `ActiveDocument.Name` against a fake app and assert the value.
+- [ ] Restrict `ScriptOptions` references and imports to the app's object-model assemblies plus `System`, `System.Linq`, `System.IO`, and `System.Text` (https://learn.microsoft.com/dotnet/api/microsoft.codeanalysis.scripting.scriptoptions), so a script sees a documented surface, not the app's internals. Done when: a script referencing an internal app type fails to compile with the Roslyn error quoted by the test.
+- [ ] Cache compiled scripts by file hash and options, and support `.csx` files with `#load` relative to the script. Done when: a second run of the same file skips compilation (asserted through a counter) and a `#load` fixture runs.
+- [ ] Run each script inside `UndoHistory.BeginTransaction("Script: <name>")`, rolling back on an exception or cancel. Done when: `ScriptHostTests.OneUndoStep` runs a three-edit script, undoes once, and asserts the pre-run hash.
+- [ ] Add cancellation and a timeout (`Photon.Scripting.TimeoutSeconds`, default 300, 0 for none) enforced through a cancellation token the object model checks at each call. Done when: a looping fixture is cancelled by the timeout and the log names it.
+- [ ] Report compile and runtime errors with file, line, and column (`ScriptDiagnostic`), mapping runtime stack frames to script lines. Done when: tests assert the line of a compile error and of a thrown exception in a fixture.
+- [ ] Add the trust model `ScriptTrust`: scripts in `Photon.Scripting.TrustedFolders` (default the user scripts folder) run; any other file prompts once per SHA-256 with its path and first 40 lines shown, and the answer is stored per hash in `%LOCALAPPDATA%\Rizonesoft\Photon\scripting\trust.json`; a changed file prompts again. Done when: `ScriptTrustTests` assert the prompt, the stored hash, and the re-prompt after an edit.
+- [ ] Add signed script packages: a `.photon-script` zip signed with Authenticode on its catalog shows the publisher on the prompt and can be trusted by publisher; an invalid signature is refused by name. Done when: tests over a signed, a tampered, and an unsigned fixture assert the three outcomes.
+- [ ] Add a never-run list and a Trust settings group (`Photon.Scripting.NeverRun`, trusted folders, trusted publishers) that each app's preferences render. Done when: a test asserts a never-run hash is refused without a prompt.
+- [ ] Add `ScriptMenuBuilder` producing `MenuDefinition` entries (`D03 T20 §3`) for the user scripts folder (`Photon.Scripting.UserFolder`, default `%APPDATA%\Rizonesoft\Photon\Scripts\<App>\`) with subfolders as submenus, plus Browse and Refresh entries. Done when: a test builds the menu from a temp folder tree and asserts the entries and nesting.
+- [ ] Add startup scripts: files in the startup folder run in name order after the app's main window loads, each with a log line and failures reported in the status strip without blocking startup. Done when: a test runs two startup fixtures in order and a failing one logs and continues.
+- [ ] Add `ScriptEventBus` with events application start, new, open, save, close, export, print, and action played, and handlers that are scripts or actions, stored in `Photon.Scripting.Events`. Done when: `ScriptEventBusTests` fire each event on a fake app and assert the handler ran with the document argument.
+- [ ] Suppress interactive UI in headless runs: a script's message box or prompt is logged and answered with its default when `IScriptGlobals.IsInteractive` is false. Done when: a headless test asserts the log line and no dialog call.
+- [ ] Log one Information line per run (`Script ran {Name} {Ms} {Result}`), never the script body. Done when: a test sink asserts the line and the absence of body text.
+- [ ] Write `src/Photon.Core/Scripting/README.md`: the host, globals, trust, the menu, startup scripts, events, and how an app registers its object model. Done when: the page names every public type in the folder.
+- [ ] Commit: `"core: the suite C# scripting host, trust, the Scripts menu, and script events"`
+
+**Test checkpoint:** Unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Scripting"` exits 0, with `ScriptHostTests.OneUndoStep`, the restricted-references compile failure, the trust prompt and re-prompt, the signed-package outcomes, and every script event asserted; `grep -rn "class ScriptEngine" src` prints one path under `src/Photon.Core/`. Cheaper substitute that fails: running any file with full access and no undo transaction, which the trust and one-undo tests catch.
+
+## 5. The Script Editor and Console
+
+Writing a script needs an editor that knows the object model, a console to try one line, and a reference to look things up; GIMP's procedure browser, Affinity's scripting workspace, CorelDRAW's script editor, and Photoshop's ScriptListener are all this job. The editor is AvalonEdit (MIT) with Roslyn completion against the app's object model, highlighted from the design tokens. Breakpoints and step debugging are out of scope: the error list and the command listener serve instead. Catalog: none of its own; `D02 T19 §2`, `D03 T22 §2`, and `D03 T22 §3` own the editor, console, and reference rows. -> SOURCE: parity-suite-script-editor
+
+**Fidelity:** Photon.UI script editor and console -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/photon-ui/ScriptEditor/.
+**Design:** new surface: docs/design/components/ScriptEditor/README.md, docs/design/components/Dialog/README.md, docs/design/components/Tabs/README.md, docs/design/components/ListTree/README.md, docs/design/components/Button/README.md, docs/design/components/StatusBar/README.md, docs/design/components/Menu/README.md, docs/design/components/TextBox/README.md -- states: all in spec -- themes: all four -- density: both
+**Job:** a user can write, run, and debug a script and find the object-model call they need. Consumer: §4's host runs the edited script; the listener log is read back into the editor.
+**Treatment:** a dockable editor window with tabs per open script, line numbers, token-colored C#, completion and signature help, Run, Run Selection, and Stop, an output pane, an error list whose rows jump to the line, a Console tab (one-line evaluation with history), a Reference tab (searchable object-model browser), and a Listener tab. Cheaper substitute that fails the checkpoint: a plain text box with a Run button, which the completion and error-jump tests catch.
+**Chrome:** consume the generated theme dictionaries of `D01 T01 §3` (syntax colors are token keys, never literals), §4's host, and the suite file dialogs. Do not add a second code editor control.
+
+**Requires:** display-session -- the editor captures and the driven run need an interactive desktop
+
+- [ ] Write the design spec `docs/design/components/ScriptEditor/README.md` and its `preview.html` card (anatomy: tabs, gutter, editor, output, error list, Console, Reference, Listener; every state; the syntax color tokens it adds to `docs/design/tokens.json`; sizes) before any XAML is written, and regenerate the design page with `python scripts/build-design-site.py`. Done when: the spec and its card exist, the tokens are in `tokens.json`, and `python scripts/build-design-site.py --check` passes.
+- [ ] Add AvalonEdit (MIT) to `Directory.Packages.props`, referenced only by `Photon.UI`, with a `docs/dev/decisions.md` row (license URL, GPL-3.0 check, and why not a hand-built editor). Done when: the build is green and the row exists.
+- [ ] Add `src/Photon.UI/Scripting/ScriptEditorWindow.xaml` and `ScriptEditorViewModel` with tabs, New, Open, Save, Save As (through `AtomicFileWriter`), dirty markers, and close prompts. Done when: `ScriptEditorViewModelTests` assert the dirty state and the close prompt.
+- [ ] Add C# highlighting through an `IHighlightingDefinition` whose colors are read from the generated theme resources, switching live with the theme. Done when: the visual harness renders the editor in all four themes and `design-lint` reports no literal color.
+- [ ] Add completion and signature help through Roslyn's `CompletionService` over a workspace holding the script and the object-model references of §4 (https://learn.microsoft.com/dotnet/api/microsoft.codeanalysis.completion.completionservice). Done when: a test at `ActiveDocument.` lists the fake object model's members.
+- [ ] Add Run, Run Selection, and Stop through §4's host with output captured to the output pane (`Log.Info` and `Console.Out`). Done when: a driven run prints to the pane and Stop cancels a looping script with its log line.
+- [ ] Add the error list: compile and runtime diagnostics with file, line, and column, double-click jumping to the line with the caret placed. Done when: a view-model test asserts the jump position for a compile error fixture.
+- [ ] Add the Console tab: one-line evaluation with the result printed, Up and Down history, Clear, and Save transcript. Done when: tests evaluate `1 + 1`, assert `2`, and assert history recall.
+- [ ] Add `ObjectModelReference` generated from each app's object-model XML documentation files, with search by name, description, help text, author, version, and member kind (the procedure browser fields). Done when: `ObjectModelReferenceTests` search a fake model by description and by kind and assert the hits.
+- [ ] Add the Reference tab showing a member's signature, summary, remarks, parameters, and example, with Insert putting a call at the caret. Done when: a driven run inserts a call and the capture shows it.
+- [ ] Add the command listener: while `Photon.Scripting.ListenerLog` is on, each command invoked through `CommandIndex` is written as a C# line (through §1's `IScriptEmitter`) to the Listener tab and to `%LOCALAPPDATA%\Rizonesoft\Photon\scripting\listener.csx`. Done when: a test invokes two fake commands and asserts two emitted lines that run through §4's host.
+- [ ] Add Save Undo History as Script: the current document's history since open converted to a script through the same emitter, commands that cannot be emitted listed as comments. Done when: a test converts a three-step history and asserts the script reproduces the document hash.
+- [ ] Add an Examples folder installed with each app and listed in the editor's Open menu. Done when: a fake app's example opens and runs.
+- [ ] Give every control an `AutomationProperties.Name`, tooltips on icon buttons, and keyboard shortcuts (F5 Run, Shift+F5 Stop, Ctrl+Space completion) through `ShortcutManager`. Done when: a UI automation test walks the tab order and triggers F5.
+- [ ] Write `docs/user/photon/scripting.md`: the language, globals, trust, the editor, the console, the reference, the listener, and saving history as a script. Done when: every command in the Treatment is documented on the page.
+- [ ] Commit captures under `docs/captures/photon-ui/script-editor/` (editor with completion, error list, Console, Reference, Listener). Done when: the five captures exist.
+- [ ] Commit: `"ui: the script editor, console, object-model reference, and command listener"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~ScriptEditor|FullyQualifiedName~ObjectModelReference|FullyQualifiedName~Listener"` exits 0; a driven run writes a script with completion, runs it, jumps to a deliberate error, and replays two listener lines, with the captures under `docs/captures/photon-ui/script-editor/`. Cheaper substitute that fails: a text box with a Run button, which the completion, error-jump, and listener tests catch.
+
+## 6. The Automation Server and the MCP Server
+
+Other languages, other tools, and AI agents need to drive the apps from outside: Photoshop's Generator remote connections, Affinity's MCP server with its permissions, Illustrator's MCP server, and GIMP's Script-Fu server all do this. This section adds one JSON-RPC 2.0 server per app on a named pipe only the current user can open, off by default, whose methods are generated from the object model, and a separate MCP server executable that bridges the Model Context Protocol over stdio to that pipe through the official ModelContextProtocol C# SDK (MIT). There is no TCP listener: a remote client reaches the app only through a local bridge the user runs, which is documented as the deliberate limit. Five permission categories (files, network, scripts, AI tools, local memory) are each off until the user grants them. Catalog: none of its own; `D02 T19 §2`, `D03 T22 §3`, and `D03 T22 §4` own the server and MCP rows. -> SOURCE: parity-suite-automation-server
+
+**Fidelity:** Photon.UI automation permissions page and approval prompt -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/photon-ui/automation-permissions/.
+**Design:** docs/design/components/Dialog/README.md, docs/design/components/ToggleSwitch/README.md, docs/design/components/ListTree/README.md, docs/design/components/Button/README.md, docs/design/components/Toast/README.md -- states: all in spec -- themes: all four -- density: both
+**Job:** a user can let an outside tool or agent drive the app, knowing exactly what it may touch. Consumer: `AutomationServer` and `Photon.Mcp` read the permissions; the approval prompt gates each category per session.
+**Treatment:** an Automation page with the server switch, the pipe name, a Copy client configuration button, the five permission categories as switches with a sentence each, the connected clients list with Disconnect, and the local memory store with View and Clear; a per-session approval prompt naming the client and the category. Cheaper substitute that fails the checkpoint: an always-on server with no categories, which the default-off and refusal tests catch.
+**Chrome:** consume the generated theme dictionaries, the settings store, §4's host for scripts, and the `D01 T05 §4` send gate for AI tools. Do not open a network listener.
+
+**Requires:** display-session -- the permissions page and approval prompt captures need an interactive desktop
+
+- [ ] Add `src/Photon.Core/Automation/Server/AutomationServer.cs` listening on `\\.\pipe\photon-<app>-<user SID>` through `NamedPipeServerStream` with a `PipeSecurity` granting only the current user's SID (https://learn.microsoft.com/dotnet/api/system.io.pipes.pipesecurity), started only when `Photon.Automation.ServerEnabled` is true (default false). Done when: `AutomationServerTests` assert no pipe exists by default and the ACL holds one allow entry for the current SID when enabled.
+- [ ] Implement JSON-RPC 2.0 framing (https://www.jsonrpc.org/specification): requests, notifications, batches, and the error codes -32700 to -32603 plus app codes. Done when: tests send each malformed and valid frame and assert the responses.
+- [ ] Generate methods from the app's object model through `IAutomationSurface`: `app.info`, `document.list`, `document.get`, `command.list`, `command.invoke`, `script.run`, `action.play`, and `document.export`, each documented from XML docs. Done when: a fake app's methods appear in `rpc.discover` and `command.invoke` changes its document.
+- [ ] Run every mutating request as one undo transaction on the UI thread with a request timeout. Done when: a test invokes two commands in one request and undoes once to the prior hash.
+- [ ] Add the permission model `AutomationPermissions` with categories Files (open and export paths), Network (extensions or scripts that fetch), Scripts (`script.run`), AI tools (calls that reach `D01 T05`, still through the send gate), and Local memory, each off by default and granted per session through `IAutomationApprovalPrompt`, with an optional remembered grant per client name. Done when: `AutomationPermissionsTests` assert a refused call names its category and a granted one passes.
+- [ ] Add the local memory store in `%LOCALAPPDATA%\Rizonesoft\Photon\mcp\memory\` (JSON key and value per client) readable and clearable by the user. Done when: a test writes, reads, and clears a key through the RPC.
+- [ ] Add `src/Photon.Mcp/` (console app `Photon.Mcp.exe`) speaking MCP over stdio (https://modelcontextprotocol.io/specification) through the ModelContextProtocol C# SDK, mapping the server's methods to MCP tools and documents to resources, and connecting to the running app's pipe named by `--app`. Done when: an MCP client test harness lists the tools and calls `document.list` against a fake app.
+- [ ] Add the ModelContextProtocol package (MIT) to `Directory.Packages.props`, referenced only by `Photon.Mcp`, with a `docs/dev/decisions.md` row. Done when: the row names the license URL and the GPL-3.0 check.
+- [ ] Refuse by name when the app is not running or the server is off ("Nodus is not running with the automation server on; turn it on in Preferences, Automation"). Done when: a test asserts the message and exit code 2.
+- [ ] Add `src/Photon.UI/Automation/AutomationPage.xaml` and its view model: the server switch, pipe name, Copy client configuration (an MCP client JSON snippet naming `Photon.Mcp.exe`), the five category switches, connected clients with Disconnect, and the memory store with View and Clear. Done when: `AutomationPageViewModelTests` assert each binding and Disconnect closing a fake session.
+- [ ] Add the approval prompt dialog naming the client, the category, and the request, with Allow once, Allow for this session, and Deny. Done when: a driven run triggers a Files request and the capture shows the prompt.
+- [ ] Log one Information line per request (`Automation {Client} {Method} {Result} {Ms}`), never argument values that could hold paths or text beyond the method name. Done when: a test sink asserts the line shape.
+- [ ] Write `docs/dev/automation/protocol.md` (methods, errors, permissions, the pipe name) with a Python and a PowerShell client example as documentation only, and `docs/user/photon/automation.md` for the page and the MCP setup. Done when: both pages exist and the examples run against a fake app in a documented manual check recorded in the stamp.
+- [ ] Commit captures under `docs/captures/photon-ui/automation-permissions/` (the page and the prompt). Done when: both captures exist.
+- [ ] Commit: `"core: the automation server, the MCP bridge, and automation permissions"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~AutomationServer|FullyQualifiedName~AutomationPermissions|FullyQualifiedName~Photon.Mcp"` exits 0, proving the server is off by default, the pipe ACL admits only the current user, a refused category is named, and an MCP client lists and calls tools against a fake app; the prompt capture is committed. Cheaper substitute that fails: a TCP listener or an always-on pipe, which the default-off and ACL tests catch.
+
+## 7. The Extension SDK and the Extension Manager
+
+Photoshop's UXP panels, Illustrator's extension panels, Lightroom's plug-in SDK, CorelDRAW's add-ons, and GIMP's plug-in API let third parties add panels, commands, and dialogs. This section publishes one managed SDK, `Photon.Extensibility`, loads each extension into its own collectible `AssemblyLoadContext`, and manages installed extensions from an Extensions tab beside the plug-in manager of `D01 T09 §4` (which keeps Photoshop-compatible 8BF plug-ins in their isolated host; managed extensions are this section's). Extensions run inside a GPL-3.0 program, so the SDK states that consequence for their licensing. Format, export, and publish contracts are added by each app's section. Catalog: none of its own; `D02 T19 §2`, `D03 T22 §3`, `D03 T22 §4`, and `D04 T17 §2` own the extension rows. -> SOURCE: parity-suite-extensions
+
+**Fidelity:** Photon.UI Extensions tab of the plug-in manager -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/photon-ui/extension-manager/.
+**Design:** docs/design/components/ListTree/README.md, docs/design/components/Tabs/README.md, docs/design/components/Button/README.md, docs/design/components/ToggleSwitch/README.md, docs/design/components/Dialog/README.md, docs/design/components/Toast/README.md -- states: all in spec -- themes: all four -- density: both
+**Job:** a user can install, enable, disable, reload, and remove extensions and see why one failed. Consumer: `ExtensionLoader` reads the enabled set; the developer console reads the extension's log.
+**Treatment:** an Extensions tab listing each extension with name, publisher, version, target apps, permissions, and status, with Install, Enable, Disable, Reload, Remove, Help, and Open folder, an autoload folder setting, load order, and a Developer mode switch that adds Load unpacked and a developer console. Cheaper substitute that fails the checkpoint: loading every DLL in a folder into the default context, which the unload and isolation tests catch.
+**Chrome:** consume the plug-in manager page of `D01 T09 §4`, the dock of `D01 T01 §8`, `CommandIndex`, and the settings store. Do not add a second plug-in manager window.
+
+**Requires:** display-session -- the Extensions tab and the sample panel captures need an interactive desktop
+
+- [ ] Add `src/Photon.Extensibility/Photon.Extensibility.csproj` with the public API: `IExtension` (`Activate(IExtensionContext)`, `Deactivate()`), `IExtensionContext` (app info, `RegisterCommand`, `RegisterPanel`, `ShowDialog`, `Settings`, `Log`, `Http` behind the network permission, and the object model), and XML documentation on every public member. Done when: the package builds with documentation warnings as errors.
+- [ ] Define `extension.json` (id, name, version, publisher, target apps with minimum versions, entry assembly, permissions: network, files, scripts) with a JSON schema in `src/Photon.Extensibility/extension.schema.json`. Done when: `ExtensionManifestTests` accept a valid manifest and refuse a missing id and an unknown permission by name.
+- [ ] Add `ExtensionLoader` in `src/Photon.Core/Extensions/` loading each extension into its own collectible `AssemblyLoadContext` (https://learn.microsoft.com/dotnet/standard/assembly/unloadability) with `Photon.Extensibility` shared from the default context. Done when: `ExtensionLoaderTests.Unload` loads, deactivates, and unloads a sample and a `WeakReference` to its context is collected.
+- [ ] Contribute commands into `CommandIndex` and panels into the dock (`D01 T01 §8`) through the context, removed cleanly on deactivate. Done when: a test asserts the command and panel appear on activate and disappear on deactivate.
+- [ ] Enforce permissions: `Http` without the network permission throws `ExtensionPermissionException` naming it, and file access through the context outside the document folder needs the files permission. Done when: tests assert both refusals.
+- [ ] Install from a `.photon-extension` zip into `%APPDATA%\Rizonesoft\Photon\Extensions\<id>\<version>\` after showing the manifest's permissions for approval, refusing a newer target app version by name. Done when: tests install a sample, refuse an incompatible one, and assert the folder.
+- [ ] Add enable, disable, reload (deactivate, unload, load, activate), remove (with confirmation), and the autoload folder (`Photon.Extensions.AutoloadFolder`) with a load order setting. Done when: `ExtensionManagerTests` drive each and assert the state and order.
+- [ ] Record status and the last error per extension; an extension throwing in `Activate` is disabled with its message and a toast. Done when: a throwing sample is disabled and its error shown.
+- [ ] Add developer mode (`Photon.Extensions.DeveloperMode`): Load unpacked (a folder), reload on file change, and a developer console streaming the extension's log. Done when: a test edits an unpacked sample's file and asserts a reload.
+- [ ] Add the Extensions tab to `src/Photon.UI/Plugins/PluginManagerView.xaml` with `ExtensionsViewModel` over the manager. Done when: the visual harness renders the tab in all four themes and both densities.
+- [ ] Open each extension's help file (`help/index.html` or `.md` in the package) from the tab. Done when: a test asserts the help path resolved for the sample.
+- [ ] Add two sample extensions under `samples/extensions/` built by the solution: a panel with a command (Hello Panel) and a dialog that uses the network permission. Done when: both build and load in a driven run of each app's test host.
+- [ ] Write `docs/dev/extensions/README.md`: the API, the manifest, permissions, packaging, developer mode, and the licensing consequence of loading into a GPL-3.0 program. Done when: the page exists and names every public type of `Photon.Extensibility`.
+- [ ] Log one Information line per install, enable, disable, reload, and remove. Done when: a test sink asserts the five lines.
+- [ ] Commit captures under `docs/captures/photon-ui/extension-manager/` (the tab and the sample panel). Done when: both captures exist.
+- [ ] Commit: `"core: the extension SDK, loader, and extension manager"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~Extension"` exits 0, with `ExtensionLoaderTests.Unload` proving the context is collected and the permission refusals named; a driven run installs and enables the Hello Panel sample, and the captures are committed. Cheaper substitute that fails: loading DLLs into the default context, which the unload test catches.
+
+## 8. The Command Line
+
+IrfanView's switches, Photoshop's and GIMP's batch invocation, and ACDSee's catalog switch are the same need: run an app from a script or a shortcut and get a result and an exit code. Today each app only opens the files it is given. This section builds one parser and one switch registry in `Photon.Core` so every app accepts the same grammar (IrfanView-style `/switch=value` and `--switch value`), the reference page is generated from the registry, and switches reach a running instance through single-instance forwarding (`D01 T02 §3`). Each app registers its own switch table in its section. Catalog: none of its own; `D02 T19 §3`, `D03 T22 §5`, and `D04 T17 §3` own the command-line rows. -> SOURCE: parity-suite-command-line
+
+**Fidelity:** no surface of its own (a command line has none; switches are proven by their outputs and exit codes).
+
+- [ ] Add `src/Photon.Core/CommandLine/CommandLineParser.cs` accepting `/switch`, `/switch=value`, `--switch value`, and `--switch=value`, case-insensitive switch names, quoted values, and positional file arguments with wildcards expanded. Done when: `CommandLineParserTests` assert each form and a wildcard fixture folder.
+- [ ] Add `/filelist=<file>` and `@<response file>` reading one path or argument per line. Done when: tests assert both.
+- [ ] Add `ISwitchProvider` and `SwitchRegistry` with typed switches (name, aliases, value kind, description, example) so each app registers its table and an unknown switch is refused by name with the nearest match. Done when: a test registers a fake table and asserts the refusal text for a misspelling.
+- [ ] Define the exit codes in `ExitCodes` (0 success, 1 general failure, 2 bad arguments, 3 file not found, 4 unsupported format, 5 partial batch failure, 6 cancelled) and return them from every headless run. Done when: tests assert codes 2, 3, and 5 from fake runs.
+- [ ] Enforce a documented argument length limit (32,767 characters, the Windows limit, https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw) with a message suggesting `/filelist`. Done when: an over-length argument list is refused with the message.
+- [ ] Add `/ini=<folder>` and `--settings <folder>` pointing the settings store (`D01 T02 §2`) at another folder for the run. Done when: a test runs with a temp folder and asserts the settings file written there.
+- [ ] Add `/silent`: error dialogs are suppressed, errors go to the log and the exit code. Done when: a failing fake run with `/silent` shows no dialog (asserted through the dialog host) and exits non-zero.
+- [ ] Add the suite switches `--script <file.csx>` (through §4, trust applies), `--action "<set>/<action>"` (through §1 on the opened files), `--batch <profile>`, `--droplet <file>` (both consumed by §9), and `--headless` (no main window). Done when: tests run each against a fake app and assert the effect.
+- [ ] Forward switches to a running instance through `D01 T02 §3` when the app is single-instance and the switch is marked forwardable, and run headless switches in a new process otherwise. Done when: a test with a fake running instance asserts the forwarded arguments.
+- [ ] Add `SendToShortcutWriter` creating a Windows Send To shortcut (`%APPDATA%\Microsoft\Windows\SendTo\`) for an app with chosen switches, through `IShellLinkW` (https://learn.microsoft.com/windows/win32/api/shobjidl_core/nn-shobjidl_core-ishelllinkw). Done when: a test writes a shortcut to a temp folder and reads back its target and arguments.
+- [ ] Generate `docs/user/photon/command-line.md` from the registry of every app through `SwitchReferenceWriter` (a test writes it, and `SwitchReferenceDriftTests` fails when the committed page differs). Done when: the page lists every switch with its description and example, and the drift test passes.
+- [ ] Log one Information line per headless run with the switches (values of `--script` and file paths reduced to file names) and the exit code. Done when: a test sink asserts the line.
+- [ ] Commit: `"core: one command-line grammar, switch registry, and exit codes for every app"`
+
+**Test checkpoint:** Unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.CommandLine"` exits 0, with every switch form parsed, unknown switches refused with the nearest match, the exit codes asserted, and the generated reference page equal to the committed one. Cheaper substitute that fails: each app parsing `args` by hand, which the shared registry test and the generated page catch.
+
+## 9. The Suite Batch Runner and Droplets
+
+Photoshop's Batch and droplets, Affinity's batch jobs, Illustrator's batch, and IrfanView's `/convert` all run a recorded action over many files. Lumen already plans the engine for its core batch tools (`D04 T11 §1`, `D04 T11 §2`), and the operator decided on 2026-09-27 that those tools stay Lumen's and are reused, so on this second consumer the job engine core (`BatchJob`, the `IBatchOperation` runner with its dry run and journal, and `ActivityManager`) and `TokenEngine` move to `Photon.Core`, Lumen repointing and its operations staying in Lumen. This section adds the action operation, the suite Batch dialog, and droplets: a droplet is a `.photon-droplet` file plus a Windows shortcut that runs the app with `--droplet`, never a generated executable (the signing and antivirus concerns behind backlog B-049 stay out). Catalog: none of its own; `D02 T19 §3`, `D03 T22 §5`, and `D04 T17 §1` own the batch rows. -> SOURCE: parity-suite-batch
+
+**Fidelity:** Photon.UI Batch dialog -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/photon-ui/batch-dialog/.
+**Design:** docs/design/components/Dialog/README.md, docs/design/components/ComboBox/README.md, docs/design/components/TextBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/RadioButton/README.md, docs/design/components/ListTree/README.md, docs/design/components/Progress/README.md, docs/design/components/Toast/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both
+**Job:** a user can run an action over many files, see every output before anything is written, and repeat it from a desktop shortcut. Consumer: the batch runner reads the dialog's options; the written droplet is read by `--droplet`.
+**Treatment:** Photoshop's Batch dialog: Play (set and action), Source (folder with Include Subfolders, opened files, a file list; Override Action "Open" Commands; Suppress File Open Options Dialogs; Suppress Color Profile Warnings), Destination (None, Save and Close, Folder; Override Action "Save As" Commands; file naming from tokens with a preview), Errors (Stop for Errors, Log Errors to File), a dry-run list, and Create Droplet. Cheaper substitute that fails the checkpoint: running the action in a loop with no dry run and no error log, which the dry-run and log tests catch.
+**Chrome:** consume the moved `BatchJob`, `ActivityManager`, and `TokenEngine`, §1's player, §8's switches, `AtomicFileWriter`, and the suite toast. Do not add a second job engine or token engine.
+
+**Requires:** display-session -- the Batch dialog captures and the droplet run need an interactive desktop
+
+**Freeze check:** Outputs are new files through `AtomicFileWriter` unless Save and Close was chosen, in which case each document is replaced atomically; killing a run leaves every source byte-identical or fully replaced, never partial (a kill test asserts it); Lumen runs keep Lumen's originals policy (`OriginalWritePolicy` of `D04 T11 §1`), so a Lumen source is written only with its opt-in on and a verified backup. Fixture source: `tests/fixtures/core/batch/` (created by this section).
+
+- [ ] Move `BatchJob`, the `IBatchOperation` runner with its dry run and journal, and `ActivityManager` from `src/Lumen/Photon.Lumen.Core/Batch/` and `src/Lumen/Photon.Lumen.Core/Activity/` to `src/Photon.Core/Batch/` with `git mv`, leaving Lumen's operations in Lumen and repointing it. Done when: `grep -rn "class BatchJob\|class ActivityManager" src` prints one path each, under `src/Photon.Core/`, and Lumen's batch tests pass.
+- [ ] Move `TokenEngine` from `src/Lumen/Photon.Lumen.Core/Tokens/` to `src/Photon.Core/Tokens/`, repointing Lumen. Done when: `grep -rn "class TokenEngine" src` prints one path under `src/Photon.Core/` and Lumen's token tests pass.
+- [ ] Add `ActionBatchOperation` in `src/Photon.Core/Batch/` opening each file through the app's `IBatchDocumentHost`, playing §1's action headless, and handing the result to the destination step. Done when: `ActionBatchOperationTests` run a fake action over three fixtures and assert three outputs.
+- [ ] Add the source options: folder with subfolders, the app's opened documents, and a file list; Override Open commands (the action's open steps skipped) and Suppress open-options and color-profile dialogs (their defaults used, logged). Done when: tests assert each source and the skipped open step.
+- [ ] Add the destination options: None (documents left open), Save and Close (saved over the source through `AtomicFileWriter`), and Folder with Override Save As commands and token naming with a sequence number and the original name. Done when: tests assert each destination and the token-built names.
+- [ ] Add the dry run: before anything is written the runner lists every input, its output path, and conflicts (existing target, two inputs to one name), and the dialog shows it for confirmation. Done when: `BatchDryRunTests` assert the listed conflicts and that nothing is written before confirmation.
+- [ ] Add error handling: Stop for Errors, or Log Errors to File (`<destination>\batch-errors.log` with file, step, and message) and continue, with exit code 5 for a partial failure. Done when: a fixture with one corrupt file logs one line and the others succeed.
+- [ ] Report progress through the moved `ActivityManager` with Cancel, and notify completion with a toast with counts and an Open folder action. Done when: a test cancels mid-run and asserts no partial output file.
+- [ ] Add `src/Photon.UI/Batch/BatchDialog.xaml` and `BatchDialogViewModel` with the Treatment's groups, the naming preview, and the dry-run list, saving the last options per app (`Photon.Batch.LastOptions.<App>`). Done when: `BatchDialogViewModelTests` assert every binding and the naming preview for a token pattern.
+- [ ] Add saved batch profiles (`Photon.Batch.Profiles`) used by `--batch <profile>`. Done when: a headless run by profile name produces the same outputs as the dialog run.
+- [ ] Add `DropletWriter` writing a `.photon-droplet` (the action, the batch options, the app, schema version) and a `.lnk` targeting the app with `--droplet "<file>"`, through `IShellLinkW`. Done when: a test writes both to a temp folder and reads back the shortcut's target and arguments.
+- [ ] Run a droplet: `--droplet <file> <paths...>` runs the batch over the dropped paths (files and folders), headless with a progress window, and refuses by name a droplet whose schema is newer than the app or whose action set no longer exists. Done when: a driven run drops three fixtures on a droplet shortcut with the outputs and log lines quoted, and tests assert both refusal messages.
+- [ ] Log one Information line per run start, per output written (file name only), and per run end with counts and milliseconds. Done when: a test sink asserts the lines.
+- [ ] Commit fixtures under `tests/fixtures/core/batch/` (a folder tree with a corrupt file and a name collision). Done when: the fixture `README.md` names each case.
+- [ ] Write `docs/user/photon/batch.md`: the Batch dialog, profiles, droplets, the dry run, and the error log. Done when: every option in the Treatment is documented.
+- [ ] Commit captures under `docs/captures/photon-ui/batch-dialog/` (the dialog, the dry-run list, the completion toast). Done when: the three captures exist.
+- [ ] Commit: `"core: the suite batch runner on the moved Lumen engine, and droplets"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Batch|FullyQualifiedName~BatchDialog|FullyQualifiedName~Droplet"` exits 0, with the dry run listing conflicts before any write, the kill test leaving every source byte-identical, and Lumen's batch tests passing on the moved engine; a driven droplet run over three fixtures is quoted with the captures committed. Cheaper substitute that fails: a second batch loop beside Lumen's engine, which the one-definition greps catch, or a run with no dry run, which the dry-run test catches.
+
+## Verification
+
+- [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
+- [ ] `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Automation|FullyQualifiedName~Photon.Core.Tests.Scripting|FullyQualifiedName~Photon.Core.Tests.CommandLine|FullyQualifiedName~Photon.Core.Tests.Batch|FullyQualifiedName~Extension|FullyQualifiedName~AutomationServer"` exits 0
+- [ ] `grep -rn "class ScriptEngine\|class BatchJob\|class ActivityManager\|class TokenEngine" src` prints one path each, all under `src/Photon.Core/`
+- [ ] With no settings changed, no automation pipe exists while an app runs (`[System.IO.Directory]::GetFiles("\\.\pipe\")` lists no `photon-` pipe), proving the server is off by default
+- [ ] `docs/dev/decisions.md` holds the C# scripting, AvalonEdit, and ModelContextProtocol rows with their GPL-3.0 checks
+- [ ] `docs/user/photon/command-line.md` equals its generated form
+- [ ] `python scripts/todo-graph.py validate` clean

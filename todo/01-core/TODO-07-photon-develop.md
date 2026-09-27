@@ -74,7 +74,12 @@ track: C7
 - -> XREF: D04 T08 §8 -- Lumen parity metadata cites §6: the XMP packet core D04 T08 §8 and D04 T08 §9 write through
 - -> XREF: D04 T12 §2 -- Lumen parity output cites §1: the SDR tone map D04 T12 §2's gain-map base rendition uses; §6: the XMP develop settings D04 T12 §13 embeds into rendered outputs
 - -> XREF: D04 T13 §7 -- Lumen parity formats cites §6: the XMP packet core D04 T13 §7 embeds develop settings with
-- [`todo/backlog.md`](../backlog.md) -- B-033 (a GPU develop path) names §1 as the CPU engine it accelerates; the former B-028 to B-031 (Lumen's local adjustments, detail, lens corrections, and color grading) became the Lumen parity sections `D04 T09 §9`, `D04 T09 §5`, `D04 T09 §6`, and `D04 T09 §4` over this file's §4, §3, and §2 at the Lumen integration of 2026-09-27
+- -> XREF: D03 T02 §5 -- Imago's ComputeSharp compositing path, whose device selection, device-loss handling, and fallback §10 moves to `src/Photon.Core/Gpu/`
+- -> XREF: D04 T09 §5 -- Lumen's detail panel, whose preview §12 moves onto the GPU path
+- -> XREF: D03 T15 §1 -- Imago's Camera Raw filter, whose preview §12 moves onto the GPU path
+- -> XREF: D04 T14 §5 -- Lumen's performance preferences, whose GPU switches §10 and §12 wire to `Photon.Gpu.*`
+- -> XREF: D03 T20 §5 -- Imago's performance preferences, whose GPU switch §10 wires to `Photon.Gpu.Enabled`
+- The GPU develop path, formerly backlog B-033, was promoted by the operator on 2026-09-27 (the backlog work deferred to after the first release planned as real sections so no feature is "left behind") into §10 to §12, which accelerate §1 to §9 with CPU parity; the former B-028 to B-031 (Lumen's local adjustments, detail, lens corrections, and color grading) became the Lumen parity sections `D04 T09 §9`, `D04 T09 §5`, `D04 T09 §6`, and `D04 T09 §4` over this file's §4, §3, and §2 at the Lumen integration of 2026-09-27
 
 ## Outcome
 
@@ -84,6 +89,7 @@ track: C7
 - Develop masks, spots, and geometry are stored in normalized image coordinates, so a mask, spot, or crop rendered at two resolutions agrees within 1/255.
 - Camera Raw `crs` XMP presets read into settings and write back with every unmapped field preserved, and Photon's own settings round-trip losslessly as `photon-develop:` XMP.
 - Imago's Camera Raw filter consumes this engine now; Lumen's develop module is recorded as its planned second consumer in `src/Photon.Core/Develop/README.md`.
+- Every develop stage and the masking engine run on a DirectX 12 GPU through ComputeSharp within 1/255 of the CPU path, falling back to the CPU with a stated reason where no device exists, and the preview and export budgets are measured on both paths and recorded.
 
 **Adjacency:** list=applicable @ D01 T07 §6; document=not-applicable (the engine prints nothing; Imago prints through D03 T18 §6 and Lumen exports through D04 T02 §6); settings=applicable @ D01 T02 §2; reporting=applicable @ D01 T07 §1; notifications=applicable @ D01 T07 §1; permissions=applicable @ D01 T07 §6; audit=applicable @ D01 T07 §1; exchange=applicable @ D01 T07 §6; reverse=applicable @ D01 T07 §6
 
@@ -102,6 +108,9 @@ track: C7
 |   7   |   §7    | The tone equalizer stage | §1, D03 T11 §11 |  [ ]   |
 |   8   |   §8    | Soft focus, glow, and skin tune stages | §1, §4, D01 T06 §12 |  [ ]   |
 |   9   |   §9    | Develop LUTs, blend modes, and looks | §1, D03 T11 §4, D03 T02 §4 |  [ ]   |
+|  10   |   §10   | The GPU compute device in Photon.Core | §1, D03 T02 §5 |  [ ]   |
+|  11   |   §11   | Develop stages on the GPU with CPU parity | §10, §2, §3 |  [ ]   |
+|  12   |   §12   | GPU masks, the extended stages, and measured budgets | §11, §4, §7, §8, §9, D04 T09 §5, D03 T15 §1 |  [ ]   |
 
 ---
 
@@ -136,7 +145,7 @@ Camera Raw's filter, Affinity's Develop studio, and Lumen's develop module all n
 - [ ] Add `src/Photon.Core/Develop/AutoTone.cs` (IP-1401): `Compute(Histogram)` from `D01 T03 §4` percentiles (0.05 and 99.95 percent clip, midtone to 18 percent gray, shadows and highlights from tail mass) plus auto white balance by gray-world blended with white-patch, returning settings deltas, never pixels, and using no model. Done when: `AutoToneTests` on three committed fixtures return deltas within the recorded expected ranges and a test asserts the method returns a `DevelopSettings` value.
 - [ ] Add `src/Photon.Core/Develop/DevelopHistogram.cs`: RGB and luminance, 256 bins, on the output-referred preview, plus shadow and highlight clipping masks and clipped-pixel percentages, the data D03 T15 §1 and Lumen's panel draw. Done when: a test on a synthetic ramp with clipped ends reports the expected bin counts and clip percentages.
 - [ ] Add a SIMD path with `System.Runtime.Intrinsics` beside a scalar reference for every §1 stage. Done when: `DevelopPipelineTests.SimdEqualsScalar` runs both on 100 random tiles per stage and asserts agreement within 1e-5.
-- [ ] Add `tests/Photon.Core.Tests/Develop/Budget/DevelopBudgetTests.cs` (`[Trait("Category", "Budget")]`): pooled tiles give zero allocations per tile after warm-up, a 2560 by 1440 preview from a 24-megapixel source through this section's stages renders under 60 ms, and a full-resolution 24-megapixel render under 3 s on the reference machine. Done when: the test passes and prints the measured bytes and milliseconds; the GPU path stays backlog B-033.
+- [ ] Add `tests/Photon.Core.Tests/Develop/Budget/DevelopBudgetTests.cs` (`[Trait("Category", "Budget")]`): pooled tiles give zero allocations per tile after warm-up, a 2560 by 1440 preview from a 24-megapixel source through this section's stages renders under 60 ms, and a full-resolution 24-megapixel render under 3 s on the reference machine. Done when: the test passes and prints the measured bytes and milliseconds; the GPU path is §10 to §12.
 - [ ] Commit fixtures under `tests/fixtures/develop/` (a gray card, three auto-tone scenes, exposure and curve inputs) with `reference.txt` naming `darktable-cli` 5.0 and the exact command for each golden. Done when: every folder carries its golden and `reference.txt`.
 - [ ] Write `docs/dev/develop-engine.md`: the process model, stage order, working space, and the rule that any output change at default settings bumps `ProcessVersion`. Done when: the page lists every stage with its order and the rule is stated with this section's ref.
 - [ ] Log one Serilog Information line per full-resolution render as the engine's audit trail (`Develop render {Width}x{Height} stages {Stages} settings {SettingsHash} in {ElapsedMs} ms`). Done when: a Serilog test logger asserts the line and its properties.
@@ -378,6 +387,71 @@ ACDSee's develop Color LUTs and Effects apply a 3D LUT or a photographic look at
 
 **Test checkpoint:** Format fidelity proof and unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~LookStageTests|FullyQualifiedName~MissingLutTests|FullyQualifiedName~LutReferenceTests|FullyQualifiedName~LookDefinitionTests|FullyQualifiedName~BlendModeFidelityTests"` exits 0: the identity LUT is the identity within 1/65535, amount 0 is the identity, the committed `.cube` matches OpenColorIO 2.4 `ocioconvert` within 1/255, every blend mode matches its Imago golden within 1/255, and a missing LUT is named and bypassed. Cheaper substitute that fails: a second `.cube` parser inside `Develop/`, which the `LUT_3D_SIZE` grep and the move grep for `ColorDodge` catch.
 
+## 10. The GPU Compute Device in Photon.Core
+
+Imago already composites on the GPU through ComputeSharp (`D03 T02 §5`), with its device selection, device-loss handling, and CPU fallback inside `Photon.Imago.Rendering`. The develop engine is the second consumer of that plumbing, so it moves to `src/Photon.Core/Gpu/` here rather than being copied, and gains the two harnesses every GPU stage in §11 and §12 is held to: a parity assertion within 1/255 against the CPU path and a budget measurement on both paths. ComputeSharp (MIT, already in `Directory.Packages.props`) runs HLSL compute shaders written in C# on DirectX 12 (https://github.com/Sergio0694/ComputeSharp); a machine without a suitable device keeps working on the CPU path with the reason stated. This section and §11 and §12 are the GPU develop path the operator promoted from backlog B-033 on 2026-09-27 (the work deferred to after the first release planned as real sections so no feature is "left behind"); the engine's CPU contract (§1) is unchanged. Catalog: none of its own (the develop rows stay with §1 to §9; `D04 T14 §5`'s LP-1111 preference governs the switch). -> SOURCE: lumen-roadmap-gpu
+
+**Fidelity:** no surface of its own (the GPU switches are on the performance preference pages of `D04 T14 §5` and `D03 T20 §5`)
+
+- [ ] Record in `docs/dev/decisions.md` that the GPU develop path uses ComputeSharp (MIT) on DirectX 12 compute, with the CPU path the reference and the fallback, and that no second GPU library is added. Done when: the row names ComputeSharp's license URL and this section.
+- [ ] Move `GpuCompositor`'s device selection, device-loss handling, and fallback from `src/Imago/Photon.Imago.Rendering/` into `src/Photon.Core/Gpu/GpuDevice.cs` (the `GraphicsDevice` choice through `GraphicsDevice.EnumerateDevices()`, adapter name and LUID, dedicated memory, `IsDoublePrecisionSupportAvailable`), repointing Imago's compositor to consume it and moving the ComputeSharp reference to `Photon.Core`. Done when: `grep -rn "EnumerateDevices" src` prints one path under `src/Photon.Core/Gpu/` and Imago's `GpuParityTests` pass unchanged.
+- [ ] Add `src/Photon.Core/Gpu/GpuAvailability.cs` returning `Available(adapter)` or `Unavailable(reason)` (no DirectX 12 device, feature level too low, software adapter only, disabled by setting, remote session), probed once per process and cached. Done when: `GpuAvailabilityTests` over fake enumerations return each reason.
+- [ ] Add the settings `Photon.Gpu.Enabled` (default true) and `Photon.Gpu.Adapter` (Auto or an adapter LUID) in the suite store (`D01 T02 §2`), read by `GpuDevice`, with Imago's `Imago.Rendering.UseGpu` migrated to `Photon.Gpu.Enabled` once. Done when: a test asserts the migration reads the old key once and the new key thereafter.
+- [ ] Handle device loss (`DXGI_ERROR_DEVICE_REMOVED` surfaced by ComputeSharp) by disposing every GPU resource, logging one Warning with the adapter and reason, and finishing the current render on the CPU path. Done when: a test with a fake device that throws device-removed mid-render completes the render on the CPU and asserts the log line.
+- [ ] Add `src/Photon.Core/Gpu/GpuTileTransfer.cs`: pooled `ReadWriteTexture2D<Float4>` and `UploadTexture2D` buffers for the float RGBA tiles of `D01 T03 §1`, batched uploads of dirty tiles, and readback only at the end of a stage chain. Done when: `GpuTileTransferTests` round-trip 100 random tiles bit-exactly and assert zero managed allocations per tile after warm-up.
+- [ ] Add `src/Photon.Core/Gpu/Testing/GpuParityAssert.cs`: run a stage on the CPU and GPU paths over the same tiles and assert every channel within 1/255 after the output transform (and within 1e-3 in linear float), printing the worst pixel and value on failure. Done when: a self-test with a deliberately off-by-2/255 kernel fails and a correct one passes.
+- [ ] Mark GPU tests `[Trait("Requires", "gpu")]` and skip them with the `GpuAvailability` reason on machines without a device, never silently passing. Done when: running the suite with `Photon.Gpu.Enabled` false reports each GPU test as skipped with its reason.
+- [ ] Add `src/Photon.Core/Gpu/Testing/GpuBudget.cs` measuring warm renders on both paths (median of 5 after one warm-up) under `[Trait("Category", "Budget")]`, and recording results to `docs/dev/performance.md` through a `--record` switch of the budget runner. Done when: a run prints both medians and writes the table.
+- [ ] Log one Serilog Information line per process naming the chosen device (`GPU {Adapter} {DedicatedMb} MB feature level {Level}` or `GPU unavailable: {Reason}`). Done when: a Serilog test logger asserts both forms.
+- [ ] Write `docs/dev/gpu.md`: the device model, the fallback rule, the parity tolerance, and how to add a GPU stage. Done when: the page states each and names this section.
+- [ ] Commit: `"core: the shared GPU device, fallback, and parity and budget harnesses"`
+
+**Test checkpoint:** Unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Gpu|FullyQualifiedName~GpuParityTests"` exits 0 on the development machine (adapter named in the quote), with Imago's compositing parity unchanged after the move, the device-loss test finishing on the CPU, and the GPU tests reporting skipped with a reason when `Photon.Gpu.Enabled` is false. Cheaper substitute that fails: a second device-selection class inside the develop engine, which the one-path grep catches.
+
+## 11. Develop Stages on the GPU with CPU Parity
+
+With the device and harnesses of §10 in place, every stage of §1 to §3 gets a ComputeSharp kernel that reproduces its CPU reference within 1/255, and a `GpuDevelopPipeline` chains them on the device with one upload and one readback per render. The CPU path stays the definition: a kernel that disagrees with it is the defect, never the reference. Local-neighborhood stages (clarity, texture, dehaze, highlights and shadows, sharpening, and noise reduction) need their filters on the GPU too, including the guided filter `D03 T10 §6` owns on the CPU. Catalog: none of its own. -> SOURCE: lumen-roadmap-gpu-stages
+
+**Fidelity:** no surface of its own (the develop panels of `D03 T15 §1` and `D04 T02 §3` render the same settings either way)
+
+- [ ] Add `src/Photon.Core/Develop/Gpu/GpuDevelopPipeline.cs`: upload the source tile set once, run each non-identity stage's kernel in pipeline order, read back once, and fall back per render to `DevelopPipeline` when `GpuAvailability` is unavailable; a stage without a kernel forces the CPU path for that render with a Debug line naming the stage. Done when: `GpuDevelopPipelineTests` assert one upload and one readback per render and the fallback for a stage without a kernel.
+- [ ] Add the white balance and input linearization kernel (camera matrix, Bradford adaptation) in `src/Photon.Core/Develop/Gpu/Kernels/WhiteBalanceKernel.cs` as a `readonly partial struct` implementing `IComputeShader`. Done when: `GpuParityAssert` passes against `WhiteBalanceStage` over the develop fixtures.
+- [ ] Add the exposure, contrast, whites, and blacks kernel. Done when: parity passes against `LightStage` with highlights and shadows at zero.
+- [ ] Add a GPU guided filter (box sums through prefix sums in group-shared memory) matching `D03 T10 §6`'s `GuidedFilter`, and the highlights and shadows kernel over it. Done when: parity passes against `LightStage` with highlights and shadows at their extremes, at full size and at one quarter.
+- [ ] Add the tone curve and base tone curve kernel evaluating `ToneCurve` as a 4,096-entry LUT texture with linear interpolation, and the profile kernel with a 33-cubed 3D LUT texture and tetrahedral interpolation. Done when: parity passes against `ToneCurveStage` and `DevelopProfile` at amounts 0, 100, and 200 percent.
+- [ ] Add the texture, clarity, and dehaze kernels (the dark-channel prior of He, Sun, and Tang 2011 over the GPU guided filter). Done when: parity passes against §2's stages.
+- [ ] Add the color mixer (HSL on OkLCh), color grading (shadows, midtones, highlights, global, blending, balance), and calibration kernels. Done when: parity passes against §2's color stages across the full hue circle.
+- [ ] Add the sharpening (amount, radius, detail, masking) and luminance and color noise reduction kernels. Done when: parity passes against §3's detail stages.
+- [ ] Add the grain kernel (seeded by `CounterRng` of `D01 T03 §1`, so GPU and CPU grain are identical per pixel) and the post-crop vignette kernel. Done when: parity passes against §3's effect stages, bit-exactly for grain.
+- [ ] Add the lens distortion, chromatic aberration, and vignette-removal kernel as an inverse-map resample with the same filter as `D01 T03 §2` `LensCorrector`. Done when: parity passes against §3's lens stage on the lensfun fixtures.
+- [ ] Add the output transform kernel (the working space to the output profile through a 3D LUT built from `D01 T04 §1`). Done when: parity passes end to end at default settings (identity within 1/255).
+- [ ] Add `GpuDevelopParityTests` running every §1 to §3 fixture end to end on both paths with random settings drawn from `DevelopParameterSchema` (seeded, 200 cases). Done when: every case is within 1/255 and the worst case is printed.
+- [ ] Commit: `"core: develop stages on the GPU with CPU parity"`
+
+**Test checkpoint:** Unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~GpuDevelopPipelineTests|FullyQualifiedName~GpuDevelopParityTests"` exits 0 on a DirectX 12 machine (adapter named), with every stage and 200 random end-to-end settings within 1/255 of the CPU path (worst case quoted), and reports skipped with the reason on a machine without a device. Cheaper substitute that fails: a GPU path with its own approximations of the curves and filters, which the per-stage parity assertions catch.
+
+## 12. GPU Masks, the Extended Stages, and Measured Budgets
+
+Local adjustments are where a develop preview gets slow: every mask is a full-resolution coverage buffer carrying its own adjustment set. This section puts the masking engine (§4) and the extended stages (§7 tone equalizer, §8 soft focus, glow, and skin tune, §9 LUTs, blend modes, and looks) on the GPU, switches the two previews that feel the cost first (Lumen's detail panel, `D04 T09 §5`, and Imago's Camera Raw filter, `D03 T15 §1`) to the GPU pipeline, and measures the preview and export budgets on both paths on the reference machine, recording them and gating regressions. B-033 waited for a measurement showing a budget broken; the operator promoted it on 2026-09-27, so the measurement is now this section's output rather than its trigger. Catalog: none of its own. -> SOURCE: lumen-roadmap-gpu-budgets
+
+**Fidelity:** no surface of its own (the GPU switches already sit on the performance pages of `D04 T14 §5` and `D03 T20 §5`; this section wires their keys to `Photon.Gpu.Enabled` and `Photon.Gpu.Adapter`)
+
+- [ ] Add mask coverage kernels for the §4 components (linear and radial gradients, brush strokes rasterized from their normalized stroke data, luminance, color, and depth ranges, and bitmap components) combined with add, subtract, and intersect. Done when: `GpuParityAssert` passes against the §4 mask engine for every component kind and combination over the masking fixtures at two resolutions.
+- [ ] Add the per-mask local adjustment pass applying each mask's settings through the §11 kernels weighted by coverage. Done when: parity passes against the CPU local adjustment path with five overlapping masks.
+- [ ] Add the §7 tone equalizer kernel (the exposure-band mask over the GPU guided filter). Done when: parity passes against the tone equalizer stage.
+- [ ] Add the §8 soft focus, glow, and skin tune kernels. Done when: parity passes against §8's stages.
+- [ ] Add the §9 develop LUT, blend mode, and look kernels, reusing the 3D LUT texture path of §11. Done when: parity passes against §9's stages for every blend mode.
+- [ ] Switch Lumen's detail panel preview (`D04 T09 §5`) to `GpuDevelopPipeline` when available, keeping the CPU path as the fallback. Done when: a Lumen test asserts the GPU path is chosen with a fake available device and the CPU path otherwise, with identical settings producing previews within 1/255.
+- [ ] Switch Imago's Camera Raw filter preview and full-resolution apply (`D03 T15 §1`) to `GpuDevelopPipeline` when available. Done when: an Imago test asserts the path choice and the applied smart filter result within 1/255 of the CPU result.
+- [ ] Wire Lumen's GPU acceleration preference (auto, custom, off, GPU preview generation) of `D04 T14 §5` and Imago's GPU switch of `D03 T20 §5` to `Photon.Gpu.Enabled` and `Photon.Gpu.Adapter`, so both apps and the develop engine read one setting. Done when: toggling the preference in each app changes the path chosen on the next render, asserted by a test in each app.
+- [ ] Measure on the reference machine, CPU and GPU, the median of 5 warm renders for a 2560 by 1440 preview of a 24-megapixel source with §1 to §3 at non-default settings, the same with five masks, and a full-resolution 24-megapixel export, and record them in `docs/dev/performance.md` with the machine's CPU, GPU, and driver. Done when: the table has both paths for each scenario with the measured values.
+- [ ] Add `DevelopGpuBudgetTests` (`[Trait("Category", "Budget")]`) failing when a GPU median regresses more than 20 percent over the recorded baseline, or when the GPU path is slower than the CPU path on the reference machine for any scenario. Done when: the test passes against the recorded table and fails against a deliberately slowed kernel.
+- [ ] Extend §1's render log line with the path (`Develop render ... on {Path} {Adapter}`). Done when: a Serilog test logger asserts the path property.
+- [ ] Update `docs/dev/develop-engine.md` with the GPU path, the fallback rule, and the budget table link. Done when: the page names §10 to §12 and links the table.
+- [ ] Commit: `"core: GPU masks and extended develop stages with measured budgets in Lumen and Imago"`
+
+**Test checkpoint:** Unit test and budget run: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Develop.Gpu|FullyQualifiedName~DevelopGpuBudgetTests"` exits 0 on the reference machine (adapter and driver named), every mask component and extended stage within 1/255 of the CPU path, the recorded CPU and GPU medians quoted from `docs/dev/performance.md`, and the Lumen and Imago path-choice tests passing. Cheaper substitute that fails: masks rendered on the CPU and composited on the GPU, which the budget table shows no faster and the path-choice test flags.
+
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
@@ -386,4 +460,6 @@ ACDSee's develop Color LUTs and Effects apply a 3D LUT or a photographic look at
 - [ ] `grep -rn "System.Windows\|Photon.Imago\|Photon.Lumen" src/Photon.Core/Develop` prints nothing
 - [ ] `grep -rn "class LensfunDatabase\|class SeamlessBlender\|class RedEyeDetector" src` prints one path each, all under `src/Photon.Core/`
 - [ ] The engine's second consumer (Lumen, `D04 T02 §2`) is recorded in `src/Photon.Core/Develop/README.md` rather than claimed as present
+- [ ] `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Gpu"` passes on a DirectX 12 machine (adapter named) with every stage within 1/255 of the CPU path, and `docs/dev/performance.md` records the CPU and GPU budgets
+- [ ] `grep -rn "class GpuDevice" src` prints one path, under `src/Photon.Core/Gpu/`
 - [ ] `python scripts/todo-graph.py validate` clean

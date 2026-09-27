@@ -10,7 +10,7 @@ track: R1
 
 # TODO-01 -- Distribution: Clean-Machine Proof, Signing, arm64, Updates, winget, and the Suite Bundle
 
-> **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Photon Graphics Suite (`photon-v1.0.0`) without any app's version moving.
+> **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Photon Graphics Suite (`photon-v1.0.0`, then `photon-v1.1.0` after the post-release phases 42 to 45) without any app's version moving.
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `nodus-v*`, `imago-v*`, `lumen-v*`, and `photon-v*` tags. A local Nodus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Nodus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Nodus and Imago publishes and names Nodus's executable `Bezier.Desktop.exe`. **Corrected 2026-09-27:** by operator decision that day, binaries are distributed only from rizonesoft.com: `release.yml` uploads the installer, the portable ZIP, and `SHA256SUMS` to S3-compatible storage served as `download.rizonesoft.com` (`<slug>/<version>/<file>`, slug `nodus`, `imago`, `lumen`, or `photon`) with a hash-pinned rclone, writes the update feed `update/<slug>.json` (stable) or `update/<slug>-prerelease.json` last, and creates a GitHub release with no attached files whose body (from `scripts/release-manifest.ps1`) carries the CHANGELOG notes, Download links, the SHA-256 table, and the tag's source link; a tag release fails when the storage secrets are missing, and the storage itself is the operator's step `D99 T01 §8`. Every section below that said a GitHub release carries assets now reads the files from `download.rizonesoft.com`.
@@ -39,6 +39,10 @@ track: R1
 - -> XREF: D03 T21 §1 -- the Imago parity releases cites §1: the clean-machine procedure every release runs
 - -> XREF: D04 T14 §6 -- Lumen parity workspace cites §1: the installer and portable ZIP whose switches D04 T14 §6 documents; §3: the win-arm64 builds D04 T14 §7's platform page states; §4: the opt-in update check D04 T14 §7 consumes
 - -> XREF: D04 T15 §1 -- the Lumen parity releases cites §1: the clean-machine procedure every release runs
+- -> XREF: D03 T21 §15 -- Imago 1.3.0, the Imago version §7's bundle carries
+- -> XREF: D01 T10 §1 -- the suite automation system that starts after §6's first bundle and that §7's bundle installs once for all three apps
+- -> XREF: D01 T11 §1 -- the suite media stack that starts after §6's first bundle and that §7's bundle installs once
+- -> XREF: D01 T12 §1 -- the on-device model runtime that starts after §6's first bundle and that §7's bundle installs once, with no model weight in any package
 
 ## Outcome
 
@@ -48,6 +52,7 @@ track: R1
 - Each app's Help, Check for Updates compares its version with its update feed on `download.rizonesoft.com` (`update/<slug>.json`, plus `update/<slug>-prerelease.json` when prereleases are included) and offers the product page, with a setting to check on startup.
 - winget manifests for each released app point at `download.rizonesoft.com` installer URLs, are submitted, and install the app.
 - `photon-v1.0.0` publishes the suite installer and ZIP on `download.rizonesoft.com`, carrying Nodus, Imago, and Lumen at their current versions.
+- `photon-v1.1.0` publishes the second bundle carrying Nodus 1.2.0, Imago 1.3.0, and Lumen 1.4.0 at their own versions.
 
 **Adjacency:** list=not-applicable (no browsable records); document=not-applicable (release notes are the changelog's); settings=applicable @ D05 T01 §4; reporting=not-applicable (no summaries); notifications=applicable; permissions=applicable; audit=applicable; exchange=not-applicable (no user formats); reverse=applicable
 
@@ -63,6 +68,7 @@ track: R1
 |   4   |   §4    | The update check                                         | D01 T02 §2, D02 T05 §4                     |  [ ]   |
 |   5   |   §5    | winget manifests                                         | D02 T05 §4, D03 T06 §3, D04 T02 §8         |  [ ]   |
 |   6   |   §6    | The suite bundle: photon-v1.0.0                          | §4, D02 T05 §4, D03 T06 §3, D04 T02 §8, D06 T01 §4 |  [ ]   |
+|   7   |   §7    | The suite bundle: photon-v1.1.0 | §6, D02 T17 §12, D03 T21 §15, D04 T15 §14 |  [ ]   |
 
 ---
 
@@ -150,9 +156,12 @@ The suite bundle packages all three apps in one installer and one ZIP without ch
 
 **Needs:** Clean Windows machine (no .NET SDK)
 
+**Corrected 2026-09-27:** added the backlog review before the tag (operator decision 2026-09-27, "Release-time backlog gate", with "No drop without operator approval"; `todo/README.md`, The budget and the backlog): every backlog entry, whatever its app, is promoted into a section or deferred by the operator in words recorded on the entry as a `reviewed: photon-v1.0.0` field, and `validate` refuses this section's stamp while one is unreviewed (`release-backlog-unreviewed`).
+
 - [ ] `installer/Suite.iss` requires Lumen when Lumen ships (mirroring the Nodus and Imago checks) and its component list names each app with its own version from its latest tag. Done when: the suite installer's component page shows three apps with their versions.
 - [ ] A `photon-v1.0.0` section in `CHANGELOG.md` listing the app versions the bundle carries. Done when: it exists.
 - [ ] Run the clean-machine procedure for the suite installer: install all three, uninstall one component, confirm the others still run and no standalone install's registry keys were touched. Done when: every step passes (quoted).
+- [ ] Run the backlog review for `photon-v1.0.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry, whatever its `app:` (a suite release reviews the whole backlog), either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: photon-v1.0.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: photon-v1.0.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: photon-v1.0.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
 - [ ] Push `photon-v1.0.0`; verify the workflow, the files under `https://download.rizonesoft.com/photon/1.0.0/`, `SHA256SUMS`, and the feed `update/photon.json` (**Corrected 2026-09-27:** said the assets, which are no longer attached to the GitHub release). Done when: all pass (URLs and hashes quoted).
 - [ ] Commit: `"release: the Photon Graphics Suite 1.0.0 bundle"`
 
@@ -160,10 +169,31 @@ The suite bundle packages all three apps in one installer and one ZIP without ch
 
 **Test checkpoint:** `gh release view photon-v1.0.0 --json assets,body` shows no assets and a body linking the suite installer, ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/photon/1.0.0/`, whose downloads match their hashes; the clean-machine run shows three apps installed side by side with their own versions in their About dialogs. Cheaper substitute that fails: a bundle that re-versions every app to 1.0.0, which the About dialogs catch.
 
+## 7. The Suite Bundle: photon-v1.1.0
+
+The second suite bundle carries the apps at the versions the post-release phases ship: Nodus 1.2.0 (`D02 T17 §12`, Phase 42), Imago 1.3.0 (`D03 T21 §15`, Phase 44), and Lumen 1.4.0 (`D04 T15 §14`, Phase 45), after the operator planned the work deferred "after the first release" (suite automation, video and audio, animation, on-device models, the GPU develop path, and Lumen's remaining formats) as real sections on 2026-09-27 because features must not be left behind. Like `§6` it changes no app's version: the tag `photon-v1.1.0` is the bundle's version, and each app keeps its own tag and About version. It also proves the shared pieces those phases added to `Photon.Core` and `Photon.UI` (the automation system of `D01 T10`, the media stack of `D01 T11`, the on-device model runtime of `D01 T12`) install once side by side without one app's uninstall breaking another. -> SOURCE: parity-suite-release-1.1.0
+
+**Needs:** Clean Windows machine (no .NET SDK)
+
+**Requires:** display-session -- the suite installer's component page and the app launches need an interactive desktop
+
+- [ ] Update `installer/Suite.iss` so its component list names Nodus 1.2.0, Imago 1.3.0, and Lumen 1.4.0 with each version read from the app's latest tag. Done when: the suite installer's component page shows the three apps with those versions (capture committed under `docs/captures/suite/release-1.1.0/`).
+- [ ] Add a `photon-v1.1.0` section to `CHANGELOG.md` listing the app versions the bundle carries and linking each app's own release notes. Done when: it exists and names all three versions.
+- [ ] Build `pwsh scripts/package.ps1 -Suite -Version 1.1.0`. Done when: the suite installer, the suite ZIP, and `SHA256SUMS` exist under `artifacts/dist/`, and the ZIP carries no FFmpeg, GDAL, or `.onnx` file (file list quoted).
+- [ ] Run the clean-machine procedure of `§1` for the suite installer: upgrade over `photon-v1.0.0`, confirm each app's About version, run one recorded action in each app, play a video fixture in Imago and Lumen, uninstall one component, and confirm the other two still start and run their automation and media features. Done when: every step passes (quoted).
+- [ ] Confirm no standalone install's registry keys were touched by the suite install or the component uninstall. Done when: the before-and-after registry export diff is quoted with no change under the standalone apps' keys.
+- [ ] Run the backlog review for `photon-v1.1.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry, whatever its `app:` (a suite release reviews the whole backlog), either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: photon-v1.1.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: photon-v1.1.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: photon-v1.1.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
+- [ ] Push the tag `photon-v1.1.0`; verify the workflow, the files under `https://download.rizonesoft.com/photon/1.1.0/`, `SHA256SUMS`, and the feed `update/photon.json`. Done when: all pass (URLs and hashes quoted).
+- [ ] Confirm with `git tag --points-at HEAD` that only `photon-v1.1.0` points at the release commit and no app tag moved. Done when: the output is quoted.
+- [ ] Commit: `"release: the Photon Graphics Suite 1.1.0 bundle"`
+
+**Test checkpoint:** Driven run with evidence: `gh release view photon-v1.1.0 --json assets,body` shows no assets and a body linking the suite installer, ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/photon/1.1.0/`, whose downloads match their hashes; the clean-machine run shows Nodus 1.2.0, Imago 1.3.0, and Lumen 1.4.0 installed side by side with their own versions in their About dialogs, and the two remaining apps still run after one component's uninstall. Cheaper substitute that fails: a bundle that re-versions every app to 1.1.0, which the About dialogs catch.
+
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0
 - [ ] Every app release since this file shipped has a quoted clean-machine run
 - [ ] `signtool verify /pa` passes on every published file once signing is configured
+- [ ] `gh release list` shows `photon-v1.0.0` and `photon-v1.1.0`, each carrying the app versions its `CHANGELOG.md` section names
 - [ ] No GitHub release carries an attached installer or ZIP (`gh release view <tag> --json assets` for each release)
 - [ ] `python scripts/todo-graph.py validate` clean

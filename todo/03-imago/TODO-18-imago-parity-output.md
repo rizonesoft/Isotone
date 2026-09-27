@@ -76,6 +76,8 @@ track: I18
 - -> XREF: D03 T20 §5 -- preference pages that list the `Imago.Print.*` keys
 - -> XREF: D04 T07 §7 -- Lumen parity import cites §6: the `Photon.UI/Print/` print dialog frame D04 T07 §7's Copy Shop prints through
 - -> XREF: D04 T12 §4 -- Lumen parity output cites §6: the print dialog frame in `Photon.UI/Print/` that D04 T12 §4 consumes through its `IPrintPageSource` seam; §7: the contact-sheet engine D04 T12 §6 moves to `Photon.Core/Print/ContactSheets/`, and the PDF presentation builder D04 T12 §11 reuses
+- -> XREF: D03 T22 §5 -- Imago batch and the Image Processor cite §1: the writers batch saves use; §9: the Export studio the asset generation hook of D03 T22 §4 drives
+- -> XREF: D03 T23 §5 -- Imago video and animation cites §2: Save for Web, which D03 T23 §5 gives animation controls
 
 ## Outcome
 

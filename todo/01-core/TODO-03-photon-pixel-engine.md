@@ -57,6 +57,7 @@ track: C3
 - -> XREF: D04 T11 §5 -- the Lumen batch tools cites §2: resampling filters D04 T11 §5 calls; §3: palette quantization for D04 T11 §7's color depth; §4: tonal kernels D04 T11 §6 and D04 T11 §7 call; §5: color kernels D04 T11 §7 calls; §6: noise and sharpen kernels D04 T11 §7 calls
 - -> XREF: D04 T12 §1 -- Lumen parity output cites §2: the resamplers export and print expose
 - -> XREF: D04 T13 §1 -- Lumen parity formats cites §2: resampling behind D04 T13 §1's scaled-decode fallback
+- -> XREF: D01 T11 §1 -- decoded video frames arrive as PixelBuffer<T> and float tiles
 
 ## Outcome
 

@@ -84,6 +84,8 @@ track: L4
 - -> XREF: D04 T15 §1 -- Lumen 0.2.0 releases this file's Phase 30 sections
 - -> XREF: D04 T15 §2 -- Lumen 0.3.0 releases this file's Phase 31 sections
 - -> XREF: D04 T10 §12 -- Lumen AI cites §9: the Lumen Viewer's information tools, where D04 T10 §12 shows faces
+- -> XREF: D01 T11 §1 -- moves SlideshowAudioPlayer's Media Foundation plumbing to src/Photon.Core/Media/
+- -> XREF: D04 T16 §2 -- video and audio playback in the viewer extends §10's frame navigation; D04 T16 §3 replaces §10's disabled frame-extraction entries
 
 ## Outcome
 
@@ -142,7 +144,7 @@ IrfanView opens an image before the user notices a window because it is a tiny n
 - [ ] Write `ViewerProgram.Main` in `src/Lumen/Photon.Lumen.Viewer/ViewerProgram.cs` (`[STAThread]`, no `App.xaml` `StartupUri`): parse the arguments with `ViewerArguments.Parse`, start `ViewerDecodeService.DecodeForScreenAsync(path)` on the thread pool, then construct the WPF `Application` and `ViewerWindow`. Done when: the startup trace shows the decode starting before the window is created. Cheaper substitute: a `StartupUri` window that decodes in `Loaded`.
 - [ ] Show the first frame in `ViewerWindow` as soon as the screen-size decode completes, with the theme background before it. Done when: the trace's first-rendered-frame event carries the image's pixel size.
 - [ ] Build dialog services lazily in `src/Lumen/Photon.Lumen.Viewer/Composition/ViewerServices.cs` on the first dialog or settings open. Done when: `Microsoft.Extensions.DependencyInjection` is absent from the first-paint allow-list below.
-- [ ] Add `ViewerArguments` in `src/Lumen/Photon.Lumen.Core/Viewer/ViewerArguments.cs`: one or several file paths (quoted, with spaces), the `--startup-trace` switch, and unknown switches ignored with one Warning log line; command-line automation beyond opening files stays backlog B-041 (LP-0008). Done when: `ViewerArgumentsTests` cover paths with spaces, three files, and an unknown switch.
+- [ ] Add `ViewerArguments` in `src/Lumen/Photon.Lumen.Core/Viewer/ViewerArguments.cs`: one or several file paths (quoted, with spaces), the `--startup-trace` switch, and unknown switches ignored with one Warning log line; command-line automation beyond opening files is `D04 T17 §3` (LP-0008). Done when: `ViewerArgumentsTests` cover paths with spaces, three files, and an unknown switch.
 - [ ] Add the `--startup-trace` switch writing process start (`Process.StartTime`), window created, and the first `CompositionTarget.Rendering` with the image to `%LOCALAPPDATA%\Rizonesoft\Lumen\logs\viewer-startup.jsonl`. Done when: one launch appends one line with the three timestamps and the decoder name.
 - [ ] Commit fixtures under `tests/fixtures/lumen/viewer/startup/`: a 24-megapixel JPEG and a CR3 with an embedded preview, both CC0 with their sources in `SOURCES.md`. Done when: both files and `SOURCES.md` are committed.
 - [ ] Write `docs/dev/lumen/viewer-budgets.md`: the reference machine (CPU, RAM, disk, Windows build), the budgets (cold 450 ms, warm 250 ms, resident hand-off 100 ms from §17, next image 50 ms cached and 150 ms uncached and RAW embedded preview 200 ms from §2, working set 200 MB), how cold is produced (the standby list emptied with Sysinternals RAMMap `-Es`), and why WPF sets the floor. Done when: the page states every budget and the measurement method.
@@ -413,7 +415,7 @@ IrfanView's quick slideshow plays a folder or a hand-picked list with music in s
 
 ## 10. Multi-page and animated images in the viewer
 
-Scanned documents and animations are pages and frames, not one picture. This section pages through multi-page TIFF, PDF, ICO, and DjVu files with page thumbnails and plays animated GIF, APNG, WebP, AVIF, ANI, and MNG files with frame stepping and speed, and can play a multi-page file as an animation. Viewing only: frame extraction and animation authoring stay backlog B-044, and the menu says so. Catalog: LP-0059 to LP-0061, LP-0114, LP-0972 (5 features). -> SOURCE: parity-lumen-viewer-pages
+Scanned documents and animations are pages and frames, not one picture. This section pages through multi-page TIFF, PDF, ICO, and DjVu files with page thumbnails and plays animated GIF, APNG, WebP, AVIF, ANI, and MNG files with frame stepping and speed, and can play a multi-page file as an animation. Viewing only: frame extraction is `D04 T16 §3` and animation authoring is Imago's (`D03 T23 §5`), and the menu says so. Catalog: LP-0059 to LP-0061, LP-0114, LP-0972 (5 features). -> SOURCE: parity-lumen-viewer-pages
 
 **Fidelity:** new build, no baseline; captured to docs/captures/lumen/viewer-pages/.
 **Design:** docs/design/components/Slider/README.md, docs/design/components/Button/README.md, docs/design/components/Menu/README.md, new surface: docs/design/components/LumenViewer/README.md -- states: all in spec -- themes: all four -- density: both
@@ -430,7 +432,7 @@ Scanned documents and animations are pages and frames, not one picture. This sec
 - [ ] Add playback speed 0.25x to 4x and the toolbar controls (LP-0060). Done when: a 4x setting halves then halves again the measured frame interval in a test with a fake clock.
 - [ ] Add animation on or off and "show the first frame only" (LP-0114) as `Lumen.Viewer.Animate`. Done when: the setting off shows frame one and the toolbar play starts it.
 - [ ] Add Play Pages as Animation (LP-0061) with a chosen delay. Done when: the TIFF fixture's pages advance at the delay in a test with a fake clock.
-- [ ] Say in the Image menu that frame extraction and animation authoring are planned in backlog B-044. Done when: the disabled entries' tooltips name B-044.
+- [ ] Say in the Image menu that frame extraction is planned in `D04 T16 §3` and animation authoring in Imago (`D03 T23 §5`). Done when: the disabled entries' tooltips name `D04 T16 §3` and `D03 T23 §5`.
 - [ ] Commit fixtures under `tests/fixtures/lumen/viewer/pages/`: a three-page TIFF, a four-page PDF, a multi-size ICO, a two-page DjVu, and GIF, APNG, animated WebP, animated AVIF, ANI, and MNG files, with per-frame goldens exported by ImageMagick 7.1 (version in `VERSION.txt`). Done when: the fixtures, goldens, and version file are committed.
 - [ ] Add `PageNavigatorTests` and `AnimationPlayerTests` in `tests/Photon.Lumen.Tests/Viewer/`. Done when: both classes pass.
 - [ ] Add the pages and animation section to `docs/user/lumen/viewer.md` and commit captures under `docs/captures/lumen/viewer-pages/`. Done when: the page and captures exist.

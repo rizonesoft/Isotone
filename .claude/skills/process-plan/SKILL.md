@@ -44,7 +44,7 @@ Record these lines **in the run's findings file**, not as the turn's last words:
 2. Plan currency: the `--check` result.
 3. Ready rows: count and first ref per phase.
 4. Blocked rows: count and what blocks them.
-5. Budget: sections and discovered sections per phase, discovered sections per run against the per-run cap, and the backlog against its cap. Phases have no ceiling. A budget, origin, or run-cap FATAL is fixed like any other before shipping (merge, supersede, or backlog; only the operator raises a cap).
+5. Budget: sections and discovered sections per phase, discovered sections per run (provenance), and the backlog's entry count. Nothing is capped (operator decision 2026-09-27). A budget, origin, backlog, or release-gate FATAL (`backlog-dropped`, `release-backlog-review-missing`, `release-backlog-unreviewed`) is fixed like any other before shipping: restore a dropped entry or record the operator's approval, and run a release's backlog review before its stamp.
 6. The phase being started, and why it is first.
 
 If no phase has a ready row, every remaining `[ ]` row is blocked or runnable-elsewhere in this context. Report them and stop. That is a genuine halt, and it is the only one this skill has.
