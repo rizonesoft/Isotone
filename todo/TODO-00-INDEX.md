@@ -41,7 +41,7 @@ The Phase column is the coarse domain grouping, not an executable schedule. Curr
 | ---- | ------ | ----- |
 | [TODO-01](./00-workspace/TODO-01-dev-automation.md) | 00-workspace | Dev-Automation Wiring |
 | [TODO-02](./00-workspace/TODO-02-build-and-test-debt.md) | 00-workspace | Build and Test Debt from the Import |
-| [TODO-03](./00-workspace/TODO-03-repo-layout.md) | 00-workspace | Repository Layout and Visual Baselines |
+| [TODO-03](./00-workspace/TODO-03-repo-layout.md) | 00-workspace | Repository Layout, Visual Baselines, and App Icon Export |
 | [TODO-01](./02-nodus/TODO-01-nodus-structure.md) | 02-nodus | Nodus Layout, Names, and Composition Root |
 | [TODO-01](./03-imago/TODO-01-imago-structure.md) | 03-imago | Imago Layout, Names, the Snapshot Port, and WPF-UI Removal |
 

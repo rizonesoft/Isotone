@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="imago-a-bg" cx="0.3" cy="0.22" r="0.95">
+      <stop offset="0" stop-color="#1E2130"/>
+      <stop offset="0.6" stop-color="#0D0E14"/>
+      <stop offset="1" stop-color="#07080B"/>
+    </radialGradient>
+    <radialGradient id="imago-a-halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F5923E" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#F5923E" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="imago-a-spec" x1="8" y1="0" x2="248" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF4D6D"/>
+      <stop offset="0.17" stop-color="#FF9A3C"/>
+      <stop offset="0.33" stop-color="#FFD84A"/>
+      <stop offset="0.5" stop-color="#4CC47A"/>
+      <stop offset="0.67" stop-color="#29C5E6"/>
+      <stop offset="0.83" stop-color="#5B7CFF"/>
+      <stop offset="1" stop-color="#B45CFF"/>
+    </linearGradient>
+    <clipPath id="imago-a-clip">
+      <rect x="8" y="8" width="240" height="240" rx="48"/>
+    </clipPath>
+    <linearGradient id="imago-a-ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFC98F"/>
+      <stop offset="0.55" stop-color="#F5923E"/>
+      <stop offset="1" stop-color="#F5923E"/>
+    </linearGradient>
+    <filter id="imago-a-glow" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#imago-a-bg)"/>
+  <g clip-path="url(#imago-a-clip)">
+    <circle cx="128" cy="128" r="112" fill="url(#imago-a-halo)"/>
+    <path d="M-4 214C60 182 110 246 172 214S236 176 262 186" fill="none" stroke="url(#imago-a-spec)" stroke-width="3" stroke-opacity=".75"/>
+    <path d="M-4 224C64 196 116 252 176 222S238 190 262 198" fill="none" stroke="url(#imago-a-spec)" stroke-width="1.6" stroke-opacity=".45"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="206" cy="50" r="1.6" opacity=".8"/>
+    <circle cx="46" cy="44" r="1.2" opacity=".55"/>
+    <circle cx="222" cy="112" r="1" opacity=".5"/>
+    <circle cx="34" cy="120" r="1" opacity=".4"/>
+  </g>
+  <rect x="9" y="9" width="238" height="238" rx="47" fill="none" stroke="#FFFFFF" stroke-opacity=".1" stroke-width="2"/>
+  <g filter="url(#imago-a-glow)">
+    <rect x="40" y="186" width="16" height="16" rx="1.5" fill="#FFD84A"/>
+    <rect x="66" y="210" width="12" height="12" rx="1.5" fill="#FFB347"/>
+    <rect x="34.5" y="158.5" width="11" height="11" rx="1.5" fill="#F5923E"/>
+    <rect x="29.5" y="215.5" width="9" height="9" rx="1.5" fill="#FFD84A"/>
+    <rect x="94" y="218" width="8" height="8" rx="1.5" fill="#FF7A59"/>
+    <rect x="54.5" y="138.5" width="7" height="7" rx="1.5" fill="#FFE08A"/>
+    <g fill="none" stroke="url(#imago-a-ink)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+      <g transform="translate(78 180) rotate(45) scale(0.94)" stroke-width="10.64">
+        <path d="M0 0C17 -7 28 -25 23 -48L-23 -48C-28 -22 -15 -6 0 0Z"/>
+        <rect x="-21" y="-78" width="42" height="26" rx="4"/>
+        <path d="M-15 -84L15 -84L9 -182Q0 -200 -9 -182Z"/>
+      </g>
+    </g>
+  </g>
+  <g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(78 180) rotate(45) scale(0.94)" stroke-width="3.19">
+      <path d="M0 0C17 -7 28 -25 23 -48L-23 -48C-28 -22 -15 -6 0 0Z"/>
+      <rect x="-21" y="-78" width="42" height="26" rx="4"/>
+      <path d="M-15 -84L15 -84L9 -182Q0 -200 -9 -182Z"/>
+    </g>
+  </g>
+</svg>

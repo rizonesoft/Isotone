@@ -14,11 +14,12 @@ track: L1
 > **Goal:** Lumen exists as the suite's third standalone app: it builds, installs, and starts like Nodus and Imago; it imports a folder of photos into a SQLite catalog without ever writing an original (the guard is safe by default: an original is written only when the user later opts in through `D04 T11 §1`, which this file never does); it decodes camera RAW through a library chosen by recorded decision; and it shows the library as a fast, sortable, filterable grid with a loupe view, ratings, flags, color labels, keywords, and collections, with metadata optionally mirrored to XMP sidecars.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** Lumen has no code. `src/Lumen.UI/TODO.md`, the only file it had, was a list of intentions (RAW formats CR2, NEF, ARW, DNG; exposure, white balance, curves; batch; collections and smart collections; "send to Imago") naming no library, database, or metadata choice; it was mined into this file and removed on 2026-09-26. `scripts/apps.psd1` declares Lumen with `Project = 'src/Lumen/Lumen.UI/Lumen.UI.csproj'` and `Shipping = $false`, and `installer/Lumen.iss` refuses to compile unless `/DLumenShipping` is defined. `resources/icons/lens.png` (512 by 512, an aperture illustration) is the candidate icon art. `standards/lumen.md` states the contract: originals are never written, the catalog is SQLite with forward-only migrations, the develop pipeline is float32 linear-light.
+> **Current state (verified 2026-09-26):** Lumen has no code. `src/Lumen.UI/TODO.md`, the only file it had, was a list of intentions (RAW formats CR2, NEF, ARW, DNG; exposure, white balance, curves; batch; collections and smart collections; "send to Imago") naming no library, database, or metadata choice; it was mined into this file and removed on 2026-09-26. `scripts/apps.psd1` declares Lumen with `Project = 'src/Lumen/Lumen.UI/Lumen.UI.csproj'` and `Shipping = $false`, and `installer/Lumen.iss` refuses to compile unless `/DLumenShipping` is defined. `resources/icons/lens.png` (512 by 512, an aperture illustration) is the candidate icon art. **Corrected 2026-09-27:** the operator chose project-created SVG icons that day (Direction C, `resources/icons/README.md`): Lumen's is the aperture in viewfinder brackets in green, `resources/icons/lumen/lumen.svg` with hand-tuned `lumen-16.svg`, `-24.svg`, `-32.svg`, and the `lumen-splash.svg` neon art, licensed GPL-3.0 with the repository. `lens.png` was removed the same day, and `D00 T03 §3` (Phase 1) generates `resources/icons/lumen/lumen.ico` and `PNG/lumen_*.png`, the ICO `installer/Lumen.iss` already names. `standards/lumen.md` states the contract: originals are never written, the catalog is SQLite with forward-only migrations, the develop pipeline is float32 linear-light.
 <!-- claim: absent src/Lumen -->
 <!-- claim: count "Shipping  = \$false" scripts/apps.psd1 = 1 -->
 <!-- claim: count "LumenShipping" installer/Lumen.iss = 3 -->
-<!-- claim: exists resources/icons/lens.png -->
+<!-- claim: absent resources/icons/lens.png -->
+<!-- claim: exists resources/icons/lumen/lumen.svg -->
 <!-- claim: exists standards/lumen.md -->
 
 ## Inputs
@@ -31,6 +32,7 @@ track: L1
 - -> XREF: D04 T02 §1 -- the edit stack that stores develop settings in §5's catalog
 - -> XREF: D03 T07 §11 -- moves §4's decoder adapter to `Photon.Core` when Imago imports RAW
 - -> XREF: D05 T01 §6 -- the suite bundle that ships Lumen beside Nodus and Imago
+- -> XREF: D00 T03 §3 -- the app icon raster export (`resources/icons/lumen/lumen.ico`, `PNG/lumen_*.png`, and the splash PNGs §2 wires in)
 - -> XREF: D01 T07 §1 -- the suite develop engine cites §4: the RAW decoder supplies linear camera RGB and its matrix through D01 T07 §1's `IDevelopSource`; §11: Lumen's XMP sidecars consume D01 T07 §6's XMP core
 - -> XREF: D03 T17 §10 -- Imago parity formats cites §11: Lumen's sidecars consume D03 T17 §10's EXIF and IPTC code
 - -> XREF: D04 T04 §2 -- the Lumen Viewer cites §4: the RAW decoder and embedded previews D04 T04 §2 consumes; §8: the library grid D04 T04 §1 opens photos from and the `T` key filters until browse mode ships; §11: the XMP sidecars D04 T04 §9 and D04 T04 §16 write ratings and orientation into
@@ -89,7 +91,7 @@ From documentation, to be confirmed and extended by driven runs in §1 (each row
 | Order | Section | Deliverable                                              | Depends On                     | Status |
 | :---: | :-----: | -------------------------------------------------------- | ------------------------------ | :----: |
 |   1   |   §1    | The competitor survey, driven                            | --                             |  [ ]   |
-|   2   |   §2    | Create the Lumen app                                     | D01 T01 §3, D01 T02 §3         |  [ ]   |
+|   2   |   §2    | Create the Lumen app                                     | D01 T01 §3, D01 T02 §3, D00 T03 §3 |  [ ]   |
 |   3   |   §3    | The RAW decoder decision                                 | §1, D00 T02 §5                 |  [ ]   |
 |   4   |   §4    | RAW decode with fidelity fixtures                        | §2, §3                         |  [ ]   |
 |   5   |   §5    | The catalog database                                     | §2                             |  [ ]   |
@@ -131,7 +133,7 @@ Lumen needs the same spine as the other two: projects in the suite layout, a com
 - [ ] Create `src/Lumen/Photon.Lumen.Core/Photon.Lumen.Core.csproj` (`net11.0`), `src/Lumen/Photon.Lumen.Desktop/Photon.Lumen.Desktop.csproj` (`net11.0-windows10.0.26100.0` with `TargetPlatformMinVersion` 10.0.17763.0, WPF; **Corrected 2026-09-26:** said `net10.0` and `net10.0-windows`, the suite moved to .NET 11, `AssemblyName` Lumen), `src/Lumen/Directory.Build.props` (MinVer prefix `lumen-v`, `Product` Lumen), and `tests/Photon.Lumen.Tests`, all in `Photon.slnx`. Done when: `dotnet build Photon.slnx -c Release` builds them.
 - [ ] The composition root with `UsePhotonLogging("Lumen")`, the settings store, and single instance. Done when: a launch logs its startup line to `%LOCALAPPDATA%\Rizonesoft\Lumen\logs\`.
 - [ ] The shell window and empty state per Treatment. Done when: a capture is committed.
-- [ ] The Lumen icon from `resources/icons/lens.png` into `resources/icons/lumen/` (sizes as for Nodus), with its source and license status recorded in `resources/icons/README.md` pending operator confirmation (`D99 T01 §4`). Done when: `Lumen.exe` shows it.
+- [ ] The Lumen icon from `resources/icons/lens.png` into `resources/icons/lumen/` (sizes as for Nodus), with its source and license status recorded in `resources/icons/README.md` pending operator confirmation (`D99 T01 §4`) (**Corrected 2026-09-27:** `lens.png` is gone; the icon is the generated `resources/icons/lumen/lumen.ico` and `PNG/lumen_32.png` from `D00 T03 §3`, and the README already records its source and GPL-3.0 license, so this item sets `ApplicationIcon` to that ICO (linked, not copied) and the window icon to that PNG, and renders or re-exports nothing). Done when: `Lumen.exe` shows it.
 - [ ] Set `Project` to `src/Lumen/Photon.Lumen.Desktop/Photon.Lumen.Desktop.csproj` and `Shipping = $true` in `scripts/apps.psd1`, and remove the `/DLumenShipping` guard from `installer/Lumen.iss`. Done when: `pwsh scripts/package.ps1 -App Lumen -Version 0.0.1-dev` produces an installer and a ZIP.
 - [ ] Update `AGENTS.md`, `docs/dev/architecture.md`, and `docs/dev/build.md` to show Lumen as existing. Done when: no file says Lumen has no code.
 - [ ] Commit: `"lumen: create the app on the suite spine"`

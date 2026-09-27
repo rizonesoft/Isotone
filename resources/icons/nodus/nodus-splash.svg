@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="nodus-a-bg" cx="0.3" cy="0.22" r="0.95">
+      <stop offset="0" stop-color="#1E2130"/>
+      <stop offset="0.6" stop-color="#0D0E14"/>
+      <stop offset="1" stop-color="#07080B"/>
+    </radialGradient>
+    <radialGradient id="nodus-a-halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#29C5E6" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#29C5E6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="nodus-a-spec" x1="8" y1="0" x2="248" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF4D6D"/>
+      <stop offset="0.17" stop-color="#FF9A3C"/>
+      <stop offset="0.33" stop-color="#FFD84A"/>
+      <stop offset="0.5" stop-color="#4CC47A"/>
+      <stop offset="0.67" stop-color="#29C5E6"/>
+      <stop offset="0.83" stop-color="#5B7CFF"/>
+      <stop offset="1" stop-color="#B45CFF"/>
+    </linearGradient>
+    <clipPath id="nodus-a-clip">
+      <rect x="8" y="8" width="240" height="240" rx="48"/>
+    </clipPath>
+    <linearGradient id="nodus-a-ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8BE6F7"/>
+      <stop offset="0.55" stop-color="#29C5E6"/>
+      <stop offset="1" stop-color="#29C5E6"/>
+    </linearGradient>
+    <filter id="nodus-a-glow" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#nodus-a-bg)"/>
+  <g clip-path="url(#nodus-a-clip)">
+    <circle cx="128" cy="128" r="112" fill="url(#nodus-a-halo)"/>
+    <path d="M-4 214C60 182 110 246 172 214S236 176 262 186" fill="none" stroke="url(#nodus-a-spec)" stroke-width="3" stroke-opacity=".75"/>
+    <path d="M-4 224C64 196 116 252 176 222S238 190 262 198" fill="none" stroke="url(#nodus-a-spec)" stroke-width="1.6" stroke-opacity=".45"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="206" cy="50" r="1.6" opacity=".8"/>
+    <circle cx="46" cy="44" r="1.2" opacity=".55"/>
+    <circle cx="222" cy="112" r="1" opacity=".5"/>
+    <circle cx="34" cy="120" r="1" opacity=".4"/>
+  </g>
+  <rect x="9" y="9" width="238" height="238" rx="47" fill="none" stroke="#FFFFFF" stroke-opacity=".1" stroke-width="2"/>
+  <g filter="url(#nodus-a-glow)">
+    <g fill="none" stroke="url(#nodus-a-ink)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M70 62C42 121 58 183 104 183"/>
+      <path d="M58 183L150 183"/>
+      <g transform="translate(104 183) rotate(45) scale(1)" stroke-width="10">
+        <path d="M0 0L34 -70L34 -96L-34 -96L-34 -70Z"/>
+        <path d="M0 -12V-44"/>
+        <circle cx="0" cy="-54" r="10"/>
+        <rect x="-27" y="-125" width="54" height="23" rx="4"/>
+      </g>
+      <circle cx="58" cy="183" r="8"/>
+      <circle cx="150" cy="183" r="8"/>
+      <circle cx="70" cy="62" r="8"/>
+      <rect x="96" y="175" width="16" height="16" rx="2"/>
+    </g>
+  </g>
+  <g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M70 62C42 121 58 183 104 183"/>
+    <path d="M58 183L150 183"/>
+    <g transform="translate(104 183) rotate(45) scale(1)" stroke-width="3">
+      <path d="M0 0L34 -70L34 -96L-34 -96L-34 -70Z"/>
+      <path d="M0 -12V-44"/>
+      <circle cx="0" cy="-54" r="10"/>
+      <rect x="-27" y="-125" width="54" height="23" rx="4"/>
+    </g>
+    <circle cx="58" cy="183" r="8"/>
+    <circle cx="150" cy="183" r="8"/>
+    <circle cx="70" cy="62" r="8"/>
+    <rect x="96" y="175" width="16" height="16" rx="2"/>
+  </g>
+</svg>

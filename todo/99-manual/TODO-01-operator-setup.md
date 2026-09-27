@@ -12,10 +12,11 @@ depends_on: []
 > **Goal:** The steps no agent session can perform are done by the operator from exact instructions: the repository's About bar, topics, and social preview are set; `main` is protected by the real required checks; a code-signing certificate exists and is available to the packaging scripts without entering the repository; the licenses of the app icon art are confirmed; and each app's accent color is chosen.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The repository is `github.com/rizonesoft/Photon` with default settings as far as this plan knows. `resources/brand/social-preview.jpg` exists for the social preview. The CI checks are named `build` (workflow `build.yml`) and `plan-gates` (workflow `plan.yml`). There is no code-signing certificate (operator statement, 2026-09-26). The app icon candidates `resources/icons/art-and-design.png` (Imago) and `resources/icons/lens.png` (Lumen) arrived with the initial commit with no recorded source or license. The design contract in `standards/shared.md` leaves each app's accent color to the operator. Until `D00 T01 §2` ships, these rows cannot carry the `**Requires:** operator` mark; they depend on that section so no runner takes them before it does. **Corrected 2026-09-27:** the operator answered three of these rows that day: the social preview is uploaded (§1), the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (§4), and the accents are chosen and recorded in `standards/shared.md` (§5); what each section still owes is its record and its verification, and every row still flips only through a review stamp.
+> **Current state (verified 2026-09-26):** The repository is `github.com/rizonesoft/Photon` with default settings as far as this plan knows. `resources/brand/social-preview.jpg` exists for the social preview. The CI checks are named `build` (workflow `build.yml`) and `plan-gates` (workflow `plan.yml`). There is no code-signing certificate (operator statement, 2026-09-26). The app icon candidates `resources/icons/art-and-design.png` (Imago) and `resources/icons/lens.png` (Lumen) arrived with the initial commit with no recorded source or license. The design contract in `standards/shared.md` leaves each app's accent color to the operator. Until `D00 T01 §2` ships, these rows cannot carry the `**Requires:** operator` mark; they depend on that section so no runner takes them before it does. **Corrected 2026-09-27:** the operator answered three of these rows that day: the social preview is uploaded (§1), the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (§4), and the accents are chosen and recorded in `standards/shared.md` (§5); what each section still owes is its record and its verification, and every row still flips only through a review stamp. **Corrected 2026-09-27, later the same day:** the §4 answer is superseded. The operator chose project-created icons (Direction C, "C it is"), so `resources/icons/art-and-design.png`, `resources/icons/lens.png`, and `resources/icons/nodus_512.png` were removed, and `resources/icons/README.md` records every app icon as created for the project on 2026-09-27 and licensed GPL-3.0 with the repository, with no third-party art.
 <!-- claim: exists resources/brand/social-preview.jpg -->
-<!-- claim: exists resources/icons/art-and-design.png -->
-<!-- claim: exists resources/icons/lens.png -->
+<!-- claim: absent resources/icons/art-and-design.png -->
+<!-- claim: absent resources/icons/lens.png -->
+<!-- claim: exists resources/icons/README.md -->
 
 ## Inputs
 
@@ -24,6 +25,7 @@ depends_on: []
 - [`standards/release.md`](../../standards/release.md) -- the signing policy §3 satisfies
 - -> XREF: D00 T01 §2 -- adds the `operator` requirement these rows carry once it ships
 - -> XREF: D05 T01 §2 -- the signing plumbing that consumes §3's certificate
+- -> XREF: D00 T03 §3 -- the app icon raster export (generates the rasters of the project-created icons whose license §4 confirms)
 
 ## Outcome
 
@@ -103,10 +105,12 @@ Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is writte
 
 **Corrected 2026-09-27:** the operator answered this row: the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (2026-09-27), and both stay as the Imago and Lumen icons. Finding a source or replacing the art is no longer needed, and no third-party attribution applies; what is left is recording the statement where the Outcome says it lives.
 
-- [ ] Write `resources/icons/README.md` with one row per app icon: Nodus (`resources/icons/nodus/` and `nodus_512.png`, its source as recorded in git history), Imago (`art-and-design.png`), and Lumen (`lens.png`), the last two stating "the operator holds the rights (operator statement 2026-09-27); no attribution required". Done when: the README has the three rows and says no attribution is required for the two operator-owned files.
+**Corrected 2026-09-27, later the same day:** superseded. The operator then chose new icons for all three apps (Direction C, "C it is"), drawn for the project as SVG under `resources/icons/<app>/`; `art-and-design.png`, `lens.png`, and `nodus_512.png` were removed, and `resources/icons/README.md` was written with the icon set, its construction rules, and its license: created for the project on 2026-09-27, GPL-3.0 with the repository, no third-party art, no attribution owed. The rasters the apps ship are generated from those SVGs by `D00 T03 §3`. No stock-art question is left; what this row still owes is the operator's confirmation that the README's license statement is right, checked by the agent below.
+
+- [ ] Write `resources/icons/README.md` with one row per app icon: Nodus (`resources/icons/nodus/` and `nodus_512.png`, its source as recorded in git history), Imago (`art-and-design.png`), and Lumen (`lens.png`), the last two stating "the operator holds the rights (operator statement 2026-09-27); no attribution required" (**Corrected 2026-09-27:** the README now exists and names project-created icons for all three apps; this item confirms its License section states created for the project on 2026-09-27, GPL-3.0 with the repository, and no third-party art, and that every file the export in `D00 T03 §3` produces comes from an SVG it lists). Done when: the README has the three rows and says no attribution is required for the two operator-owned files (**Corrected 2026-09-27:** read as: the README covers Nodus, Imago, and Lumen and says no attribution is owed).
 - [ ] Commit: `"docs: confirm the app icon licenses"` -- ticked as in §1.
 
-**Test checkpoint:** `resources/icons/README.md` has a license row for Nodus, Imago, and Lumen with a source URL or an ownership statement. Cheaper substitute that fails: "found on the internet".
+**Test checkpoint:** `resources/icons/README.md` has a license row for Nodus, Imago, and Lumen with a source URL or an ownership statement (**Corrected 2026-09-27:** its License section covers all three apps' SVGs with a project-created, GPL-3.0 statement). Cheaper substitute that fails: "found on the internet".
 
 ## 5. Choose Each App's Accent Color
 

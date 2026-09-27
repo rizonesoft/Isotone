@@ -34,6 +34,7 @@ track: N2
 - -> XREF: D02 T08 §10 -- Pathfinder and the shape builder on §5's booleans; `D02 T08 §12` and `§14` extend §4's align, arrange, and transform commands
 - -> XREF: D02 T10 §4 -- the type sections that register their shortcuts in §8's keymap
 - -> XREF: D02 T16 §3 -- the toolbars, menus, and shortcut sets that read §8's one keymap
+- -> XREF: D00 T03 §3 -- the app icon raster export (the generated Nodus PNGs and splash PNGs §2's splash logo uses)
 
 ## Outcome
 
@@ -53,7 +54,7 @@ track: N2
 | Order | Section | Deliverable                                          | Depends On                 | Status |
 | :---: | :-----: | ---------------------------------------------------- | -------------------------- | :----: |
 |   1   |   §1    | The triage record and the delete group               | D02 T01 §1                 |  [ ]   |
-|   2   |   §2    | One SVG render path                                  | §1                         |  [ ]   |
+|   2   |   §2    | One SVG render path                                  | §1, D00 T03 §3             |  [ ]   |
 |   3   |   §3    | Selection has one owner                              | §1, D02 T01 §2             |  [ ]   |
 |   4   |   §4    | Arrange, align, distribute, rotate, and flip         | §3, D02 T03 §2             |  [ ]   |
 |   5   |   §5    | Boolean path operations on SKPath.Op                 | §3, D02 T01 §6             |  [ ]   |
@@ -97,6 +98,8 @@ Orphan code costs twice: it reads as a feature that exists, and it has to be kep
 Three SVG stacks are referenced and one is used. The live path is `SvgImporter` (in `SvgParser.cs`) building the `VectorDocument`, rendered by `SkiaRenderer`. SharpVectors is used only by `SvgVisualEditor.cs`, which nothing calls; Svg.Skia is referenced and used by nothing.
 
 **Corrected 2026-09-26:** the SharpVectors evidence was incomplete. Besides `SvgVisualEditor.cs`, `Views/SplashWindow.xaml` uses it (`xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"`, one `svgc:SvgViewbox` drawing `Resources/Icons/Bezier.svg`); a `.cs`-only grep misses it, and removing the package fails the build with `MC3074`. the 2026-09-26 toolchain upgrade (one `build:` commit: .NET 11 RC, SkiaSharp 4, xUnit v3, AwesomeAssertions, Inno Setup 7, package prune) removed Svg.Skia and deleted the unreferenced `SvgVisualEditor.cs`, and kept SharpVectors.Wpf 1.8.6 for the splash. What is left here: replace the splash logo with a render path the suite owns (a `DrawingImage`/`Path` resource converted from `Bezier.svg`, or the PNG already in `Resources/Icons`), then drop SharpVectors. Keeping them costs installer size, a second pinned SkiaSharp consumer (Svg.Skia 4.9.1 is the reason SkiaSharp is held at 3.x), and a false impression of two renderers. **Decision (from this evidence): drop both.** The fidelity oracle for SVG is Inkscape (`standards/nodus.md`), not a second in-app renderer.
+
+**Corrected 2026-09-27:** the Nodus icon is now the operator's Direction C design (`resources/icons/README.md`), and `D00 T03 §3` generates its PNGs, including `resources/icons/nodus/PNG/nodus_256.png` and the neon splash art as `PNG/nodus_splash_256.png` and `nodus_splash_512.png`. The splash logo replacement below takes one of those generated PNGs (the splash art, since the splash is what it was drawn for) rather than exporting a PNG of its own or converting `Bezier.svg`; the splash capture then differs from the baseline only in the logo, which the commit body names.
 
 - [ ] Replace the `svgc:SvgViewbox` in `SplashWindow.xaml` with a XAML vector resource (or the existing `Bezier_32.png` scaled from a larger PNG export) that renders the same logo at 80 by 80. Done when: `grep -rn -i sharpvectors src` prints nothing and the splash capture matches the baseline.
 - [ ] Delete `SvgCanvasRenderer.cs` and `SvgOptimizerService.cs` (**Corrected 2026-09-26:** `SvgVisualEditor.cs` was already deleted out of band) (confirm with `grep -rlw` that nothing references each first; if `ExportService` needs optimization, it keeps its own `ExportSvgOptimized`). Done when: the three files are gone and the build is green.
