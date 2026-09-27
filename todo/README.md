@@ -438,10 +438,12 @@ python scripts/todo-graph.py query budget       # sections and discovered sectio
 python scripts/todo-graph.py query backlog      # every backlog entry: id, date, app, title, needs
 python scripts/todo-graph.py query growth --since <ref> [--check]   # sections and backlog entries added or removed since a commit; --check exits 1 when the discovered ones pass the per-run cap
 python scripts/todo-graph.py render             # mermaid dependency graph
-python scripts/todo-graph.py plan --sync        # re-derive the checkboxes AND re-align every table
+python scripts/todo-graph.py plan --sync        # re-derive the checkboxes AND re-align every table (except one under <!-- no-align -->)
 python scripts/todo-graph.py plan --check       # fail if the boxes are stale or a section has no row
 python scripts/todo-graph.py resolve 'D03 T01 §3'   # ref -> file, section, deps, status
 ```
+
+A table whose preceding line is `<!-- no-align -->` (blank lines between are fine) is left exactly as written, so wide prose tables such as the plan's acceptance bar wrap naturally instead of being padded to their longest cell; `plan --check` never fails on alignment either way.
 
 The scripts are stdlib-only by design: no install step stands between a fresh clone and validating the plan. On Windows, `python` is the interpreter; use `python3` where that is what your shell has.
 

@@ -4037,6 +4037,9 @@ def _split_row(line: str) -> list[str] | None:
     return cells
 
 
+NO_ALIGN_MARKER = "<!-- no-align -->"
+
+
 def _align_tables(text: str) -> str:
     """Pad every markdown table's columns to a common width.
 
@@ -4057,6 +4060,15 @@ def _align_tables(text: str) -> str:
         while j < len(lines) and lines[j].strip().startswith("|"):
             block.append(lines[j])
             j += 1
+
+        # A `<!-- no-align -->` comment on the line before a table (blank lines
+        # between allowed) opts it out: wide prose tables such as the acceptance
+        # bar read better wrapping naturally than padded to their longest cell.
+        prev = next((o for o in reversed(out) if o.strip()), "")
+        if prev.strip() == NO_ALIGN_MARKER:
+            out.extend(block)
+            i = j
+            continue
 
         rows = [_split_row(b) for b in block]
         # A table needs a header, a separator, and consistent arity. Anything
@@ -7718,6 +7730,12 @@ track: Z1
             _select_current_phase_id([{"id": 0, "done": 2, "total": 2, "complete": True}]),
             None,
         )
+
+        # --- a <!-- no-align --> table is left exactly as written ---
+        _raw = "<!-- no-align -->\n\n| Aim | Owned by |\n| --- | --- |\n| a long aim | `D00 T01 §1` |\n\n| a | b |\n| - | - |\n| x | yy |\n"
+        _al = _align_tables(_raw)
+        check("a no-align table keeps its rows verbatim", "| a long aim | `D00 T01 §1` |" in _al, True)
+        check("a table without the marker is still aligned", "| x   | yy  |" in _al or "| x | yy |" not in _al, True)
 
         # --- table alignment rewrites the plan file, so it must round-trip ---
         aligned = _align_tables(plan.read_text(encoding="utf-8"))
