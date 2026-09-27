@@ -2042,7 +2042,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1849 | OpenRaster ORA open and export | -- | -- | GP-4627, GP-4852 | format | shipped-scope D03 T04 §4 | .imago uses the ORA layout |
 | IP-1850 | Recovery auto-save | PS-B-0942 | -- | -- | core | shipped-scope D03 T04 §6 |  |
 | IP-1851 | Autosave and file recovery interval | PS-B-1249 | AF-2679 | -- | core | shipped-scope D03 T04 §6 |  |
-| IP-1852 | Affinity .af, .afphoto, .afdesign, .afpub reading | -- | AF-2593, AF-2594 | -- | format | backlog B-045 |  |
+| IP-1852 | Affinity .af, .afphoto, .afdesign, .afpub reading | -- | AF-2593, AF-2594 | -- | format | backlog B-045 | the operator declined reverse engineering Affinity files on 2026-09-27 (clean-room analysis is approved only for discontinued formats) |
 | IP-1853 | Browse in Bridge and close and go to Bridge | PS-B-0890, PS-B-0894 | -- | -- | core | other-app: Lumen browsing and catalog |  |
 | IP-1854 | CAD, Freehand, InDesign, Publisher, and office document import | -- | AF-2631, AF-2632, AF-2633, AF-2634, AF-2635 | -- | format | other-app: Nodus vector and page layout imports |  |
 | IP-1855 | Capture One .af round trip | -- | AF-2639, AF-2645 | -- | format | other-app: none third-party Capture One integration |  |

@@ -15,7 +15,7 @@ Settings, logs, the catalog, and the preview cache live under `%LOCALAPPDATA%\Ri
 
 ## The original-file guard
 
-**Lumen never writes an original image unless the user opts in**, and then only with a verified backup. Originals are safe by default with opt-in writes (operator decision 2026-09-27, "Safe by default, opt-in writes"). This is a frozen behavior from the day the import path ships:
+**Lumen never writes an original image unless the user opts in**; a verified backup is taken by default before every in-place write (an optional backup copy: the user may turn it off only through a second confirmation). Originals are safe by default with opt-in writes (operator decision 2026-09-27, "Safe by default, opt-in writes"). This is a frozen behavior from the day the import path ships:
 
 - Import reads originals; it copies them only when the user chose "copy", and a copy is verified by hash before the import records it.
 - Edits are data: a develop setting stack stored in the catalog (and in an XMP sidecar when the user enables sidecars). Rendering applies the stack to a decoded original in memory.

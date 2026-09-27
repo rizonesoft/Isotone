@@ -38,7 +38,7 @@ track: L4
 - IrfanView 4.76 (`i_view64.exe`, driven for behavior and key parity, version recorded in each section's stamp) and ACDSee Photo Studio Ultimate 2027 View mode and Quick View (from its user guide)
 - Microsoft Learn: "Default Programs" and "Registering an Application for Use in Windows" (`Capabilities`, `RegisteredApplications`, `OpenWithProgids`), `IDesktopWallpaper`, `IFileOperation`, `Shell_NotifyIconW`, `SHChangeNotify`, `SetThreadExecutionState`, and `Windows.Media.Ocr` -- the platform APIs §3, §6, §8, §9, and §17 call
 - The IJG `jpegtran` lossless transform (libjpeg-turbo 3.1, IJG, BSD-3-Clause, and zlib licenses) -- the reference and golden producer for §16
-- ZXing.Net 0.16 (Apache-2.0) and NAudio 2.2 (MIT) -- the dependencies §9 and §8 add, each recorded in `docs/dev/decisions.md` by the section that adds it
+- ZXing.Net 0.16 (Apache-2.0) and Vortice.MediaFoundation (the Media Foundation bindings of Vortice.Windows, MIT, approved by the operator 2026-09-27) -- the dependencies §9 and §8 add, each recorded in `docs/dev/decisions.md` by the section that adds it; NAudio was not approved for Lumen (operator decision 2026-09-27)
 - -> XREF: D04 T02 §8 -- Lumen 0.1.0 ships before every section here
 - -> XREF: D01 T02 §3 -- single instance and file-open forwarding for §1, §17, and the hand-off to Lumen
 - -> XREF: D01 T02 §5 -- the atomic writer §6's Save As and §13's tile export write through
@@ -70,6 +70,7 @@ track: L4
 - -> XREF: D04 T11 §8 -- the text and watermark engine §13 uses
 - -> XREF: D04 T11 §10 -- the batch dialog the viewer and §3's Explorer verbs open
 - -> XREF: D04 T12 §4 -- printing a selection or the current image goes through Lumen's print module
+- -> XREF: D04 T12 §8 -- Lumen parity output cites §8: the `SlideshowAudioPlayer` D04 T12 §8 reuses for slideshow music
 - -> XREF: D04 T13 §1 -- the codec registry and its screen-size decode capability
 - -> XREF: D04 T13 §2 -- the modern formats §2 displays
 - -> XREF: D04 T13 §3 -- the format families §3 registers
@@ -344,7 +345,7 @@ IrfanView's quick slideshow plays a folder or a hand-picked list with music in s
 **Fidelity:** new build, no baseline; captured to docs/captures/lumen/viewer-slideshow/.
 **Job:** a user plays a folder or a hand-picked list with music in seconds. Consumer: none: this surface is the consumer of §5's list and §7's fullscreen renderer.
 **Treatment:** `W` opens the Slideshow dialog (a list with add, add all, remove, sort, insert position, per-image duration and caption, timing, loop, random, music, window or fullscreen), Play starts, and the Image Advance keys work during play. Cheaper substitute that fails the checkpoint: a timer over the folder with no list.
-**Chrome:** consume §7's fullscreen renderer, NAudio 2.2 (MIT) over Media Foundation for music, and the `Photon.UI` dialog styles. Do not add a second fullscreen window.
+**Chrome:** consume §7's fullscreen renderer, Windows Media Foundation through Vortice.MediaFoundation (MIT) for music, and the `Photon.UI` dialog styles. Do not add a second fullscreen window.
 
 **Requires:** display-session -- playback is driven on screen
 
@@ -354,7 +355,7 @@ IrfanView's quick slideshow plays a folder or a hand-picked list with music in s
 - [ ] Add Image Advance (LP-0089): next, previous, pause, forward, reverse, or random sequence, repeat, and delay. Done when: `QuickSlideshowListTests.RandomWithoutRepeats` covers every item once per cycle.
 - [ ] Add the playback rules (LP-0095): loop, close after last, skip unreadable files, advance by timer or key, random without repeats with history, and pause. Done when: an unreadable file in the list is skipped with one Warning log line and the show continues.
 - [ ] Add the orientation filter (LP-0100): all, landscape only, or portrait only. Done when: the tests assert the filtered sequence on mixed fixtures.
-- [ ] Add background music (LP-0096) through NAudio 2.2 (MIT) over Media Foundation: audio entries in the list or a looped MP3, recorded as a dependency row in `docs/dev/decisions.md` with its license. Done when: a driven show plays and loops an MP3 fixture (log line per track start).
+- [ ] Add background music (LP-0096) through Windows Media Foundation: `SlideshowAudioPlayer` in `src/Lumen/Photon.Lumen.Core/Audio/` over the Media Engine (`IMFMediaEngine`) through Vortice.MediaFoundation (part of Vortice.Windows, MIT, approved by the operator 2026-09-27 in place of NAudio, which was not approved for Lumen; Vortice.Windows is already in `Directory.Packages.props` from `D03 T15 §4`), playing MP3, AAC, and WAV with loop, track advance, and a fade out through the engine's volume, for audio entries in the list or a looped MP3, with a `docs/dev/decisions.md` row recording the package and its license. Done when: `SlideshowAudioPlayerTests` with a fake engine assert track order, looping, and the final fade, and a driven show plays and loops an MP3 fixture (log line per track start).
 - [ ] Add presentation (LP-0097): fullscreen through §7 or a window with position and size, and hide cursor. Done when: a window show at a set size and position is captured.
 - [ ] Keep the system awake during a show with `SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED)` and release it at the end (LP-0091). Done when: `powercfg /requests` lists LumenViewer during a show and not after (quoted).
 - [ ] Add in-show actions (LP-0099): zoom, scroll, delete to the Recycle Bin through §6, copy, and animated images playing through §10's player once it ships. Done when: a driven delete during a show removes the file and the show continues.

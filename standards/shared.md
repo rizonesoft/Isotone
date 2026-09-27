@@ -82,7 +82,7 @@ Every service a view model or tool uses is registered in the app's composition r
 - **Saves are atomic:** write a temporary file in the target folder, flush, then replace. Killing the process mid-save leaves the original byte-identical.
 - Autosave writes to the app's data folder, never over the user's file. Recovery offers what it found and deletes nothing without asking.
 - A read-only file, a locked folder, or a full disk is refused with a message naming the file and the reason; the document stays open and dirty.
-- Lumen never writes an original image unless the user opts in, and then only with a verified backup. See [`lumen.md`](lumen.md).
+- Lumen never writes an original image unless the user opts in; a verified backup is taken by default. See [`lumen.md`](lumen.md).
 - Settings live in `%LOCALAPPDATA%\Rizonesoft\<App>\settings.json`, written atomically through the `Photon.Core` settings store. Every setting has a default, a consumer, and a log line when it changes.
 
 ## Performance
@@ -116,7 +116,15 @@ The suite is a neutral dark UI so the artwork carries the color. One grey ramp, 
 | `Subtext0` | `#B0B0B0` | Secondary text, captions |
 | `Text` | `#E0E0E0` | Primary text |
 
-These are Nodus's values as imported (`MainWindowView.xaml`, "Convert all app colors to pure greys"). Imago still carries Catppuccin Mocha with an orange accent; the shared theme section in `todo/01-core/` replaces it. Each app may name one accent color for focus and selection; until the operator chooses them, the accent is `Subtext0`. Status colors (error, warning, success) are named once in the theme and used only for status, never for decoration.
+These are Nodus's values as imported (`MainWindowView.xaml`, "Convert all app colors to pure greys"). Imago still carries Catppuccin Mocha with an orange accent; the shared theme section in `todo/01-core/` replaces it. Each app names one accent color for focus and selection, chosen by the operator on 2026-09-27 from each app's icon and tuned for contrast in the dark theme and in a light one (ratios per WCAG 2.x relative luminance, at least 4.5:1 against the surface they sit on):
+
+| App | Accent | Dark-theme value | Ratio against `Base` `#1A1A1A` | Light-theme value | Ratio against `#FFFFFF` |
+| --- | ------ | ---------------- | ------------------------------ | ----------------- | ----------------------- |
+| Nodus | Cyan (the pen nib) | `#29C5E6` | 8.47:1 | `#00758C` | 5.35:1 |
+| Imago | Orange (the paintbrush) | `#F5923E` | 7.51:1 | `#B04F00` | 5.30:1 |
+| Lumen | Green (the aperture) | `#4CC47A` | 7.86:1 | `#1B7A3D` | 5.39:1 |
+
+The theme names each as `Accent` in that app's resources; the suite ships the dark theme, and the light-theme values are the ones any light theme or light surface uses. Status colors (error, warning, success) are named once in the theme and used only for status, never for decoration.
 
 ### Type and spacing
 

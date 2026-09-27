@@ -2597,25 +2597,25 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2374 | Macintosh PICT import and export | AI-1024 | CD-2600 | format | plan D02 T18 §5 | legacy format |
 | NP-2375 | SWF (Flash) export | AI-1025 | CD-2618 | format | plan D02 T18 §1 | deprecated format |
 | NP-2376 | Microsoft Publisher (PUB) import | -- | CD-2585 | format | plan D02 T18 §2 |  |
-| NP-2377 | Corel DESIGNER and Micrografx Designer import | -- | CD-2586 | format | plan D02 T18 §4 |  |
+| NP-2377 | Corel DESIGNER and Micrografx Designer import | -- | CD-2586 | format | plan D02 T18 §4 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
 | NP-2378 | Visio (VSD) import | -- | CD-2622 | format | plan D02 T18 §2 |  |
 | NP-2379 | WordPerfect document text import and export | -- | CD-2625 | format | plan D02 T18 §7 |  |
-| NP-2380 | Corel ArtShow (CPX) import | -- | CD-2633 | format | plan D02 T18 §4 |  |
-| NP-2381 | Corel Presentations (SHW) import | -- | CD-2634 | format | plan D02 T18 §4 |  |
-| NP-2382 | Corel R.A.V.E. (CLK) import | -- | CD-2635 | format | plan D02 T18 §4 |  |
-| NP-2383 | Frame Vector Metafile (FMV) import and export | -- | CD-2641 | format | plan D02 T18 §6 |  |
+| NP-2380 | Corel ArtShow (CPX) import | -- | CD-2633 | format | plan D02 T18 §4 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
+| NP-2381 | Corel Presentations (SHW) import | -- | CD-2634 | format | plan D02 T18 §4 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
+| NP-2382 | Corel R.A.V.E. (CLK) import | -- | CD-2635 | format | plan D02 T18 §4 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
+| NP-2383 | Frame Vector Metafile (FMV) import and export | -- | CD-2641 | format | plan D02 T18 §6 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
 | NP-2384 | GEM Paint and GEM File import and export | -- | CD-2642 | format | plan D02 T18 §6 |  |
-| NP-2385 | Lotus PIC import | -- | CD-2644 | format | plan D02 T18 §6 |  |
+| NP-2385 | Lotus PIC import | -- | CD-2644 | format | plan D02 T18 §6 | read from its published description; clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format where the description leaves gaps |
 | NP-2386 | OS/2 MET metafile import and export | -- | CD-2647 | format | plan D02 T18 §5 |  |
-| NP-2387 | Picture Publisher 4 (PP4) import | -- | CD-2648 | format | plan D02 T18 §4 |  |
+| NP-2387 | Picture Publisher 4 (PP4) import | -- | CD-2648 | format | plan D02 T18 §4 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
 | NP-2388 | PowerPoint (PPT) import | -- | CD-2650 | format | plan D02 T18 §3 |  |
-| NP-2389 | NAPLPS (NAP) metafile import | -- | CD-2651 | format | plan D02 T18 §6 |  |
+| NP-2389 | NAPLPS (NAP) metafile import | -- | CD-2651 | format | plan D02 T18 §6 | read from its published description; clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format where the description leaves gaps |
 | NP-2390 | Legacy spreadsheet and word processor import (WB, WK, WSD) | -- | CD-2655 | format | plan D02 T18 §7 |  |
 | NP-2391 | DCS (Desktop Color Separation) import and export | AI-0948 | CD-2638 | print | plan D02 T18 §8 |  |
-| NP-2392 | Corel PHOTO-PAINT (CPT) import and export | -- | CD-2580 | format | plan D02 T18 §8 |  |
+| NP-2392 | Corel PHOTO-PAINT (CPT) import and export | -- | CD-2580 | format | plan D02 T18 §8 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
 | NP-2393 | Kodak Photo CD (PCD) import | -- | CD-2599 | format | plan D02 T18 §8 |  |
-| NP-2394 | Corel Painter (RIF) import | -- | CD-2614 | format | plan D02 T18 §8 |  |
-| NP-2395 | Wavelet Compressed Bitmap (WI) import and export | -- | CD-2628 | format | plan D02 T18 §8 |  |
+| NP-2394 | Corel Painter (RIF) import | -- | CD-2614 | format | plan D02 T18 §8 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
+| NP-2395 | Wavelet Compressed Bitmap (WI) import and export | -- | CD-2628 | format | plan D02 T18 §8 | clean-room analysis of sample files approved by the operator 2026-09-27 for this discontinued format |
 | NP-2396 | CALS Compressed Bitmap (CAL) import and export | -- | CD-2632 | format | plan D02 T18 §8 |  |
 | NP-2397 | Windows icon (ICO, EXE resource) import and export | -- | CD-2639 | format | plan D02 T18 §8 |  |
 | NP-2398 | FlashPix (FPX) import | -- | CD-2640 | format | plan D02 T18 §8 |  |

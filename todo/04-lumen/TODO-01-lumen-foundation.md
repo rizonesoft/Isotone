@@ -51,7 +51,7 @@ track: L1
 
 **Audience:** enthusiast and working photographers who today use Lightroom Classic, darktable, or a file browser plus an editor.
 
-**Non-goals for this file:** tethered capture; cloud sync; face recognition; maps and GPS editing; printing, books, and slideshows; video; plugins. None is a promise of this file. Since the Lumen parity decision of 2026-09-27: tethered capture is backlog B-048 (watched-folder auto import, `D04 T07 §5`, covers the workflow); face recognition (`D04 T10 §2`, `§3`), maps and GPS editing (`D04 T08 §6`, `§7`), and printing, books, and slideshows (`D04 T12`) are planned Lumen parity sections; cloud sync stays excluded; video is B-043; third-party filter plug-ins run on the suite plug-in host (`D01 T09`, consumed by `D04 T04 §15` and `D04 T11 §7`) and scripting is B-041.
+**Non-goals for this file:** tethered capture; cloud sync; face recognition; maps and GPS editing; printing, books, and slideshows; video; plugins. None is a promise of this file. Since the Lumen parity decision of 2026-09-27: tethered capture is backlog B-048 (watched-folder auto import, `D04 T07 §5`, covers the workflow); face detection and naming (`D04 T10 §2`, `§3`; face recognition is backlog B-052 since the operator's decision of 2026-09-27), maps and GPS editing (`D04 T08 §6`, `§7`), and printing, books, and slideshows (`D04 T12`) are planned Lumen parity sections; cloud sync stays excluded; video is B-043; third-party filter plug-ins run on the suite plug-in host (`D01 T09`, consumed by `D04 T04 §15` and `D04 T11 §7`) and scripting is B-041.
 
 **Working name and one-line purpose:** Lumen, "the darkroom and library for your photos" (quoted by the About dialog, the installer, and the user guide).
 

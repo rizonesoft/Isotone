@@ -47,11 +47,11 @@ track: W2
 - `docs/dev/decisions.md` exists and records the assertion library, with its license.
 - Every test project runs on xUnit v3 (`xunit.v3.mtp-off`, VSTest), in its final place after the renames.
 - `global.json` pins a released .NET 11 SDK (11.0.1xx GA), and every Microsoft.Extensions.* package matches its runtime.
-- A `nodus-v0.1.0-alpha.1` prerelease exists on GitHub with an installer, a portable ZIP, and a `SHA256SUMS` that matches them.
+- `release.yml` has a draft mode, and a `nodus-v0.1.0-alpha.1` draft release was built by it with an installer, a portable ZIP, and a `SHA256SUMS` that matches them, inspected, and deleted, so no public prerelease or tag remains (operator decision 2026-09-27).
 
 **Adjacency:** all=not-applicable (build configuration, test hygiene, and the release pipeline's first run: no user-facing records, settings, or documents)
 
-**Adjacency rationale:** The only user-visible artifact is the dry-run prerelease, which exists to prove the pipeline; the apps' own release sections own what users see.
+**Adjacency rationale:** The only artifact is the dry-run draft release, visible to maintainers only and deleted after inspection, which exists to prove the pipeline; the apps' own release sections own what users see.
 
 ## Implementation Order
 
@@ -63,7 +63,7 @@ track: W2
 |   4   |   §4    | Prune packages no code uses                          | --                            |  [ ]   |
 |   5   |   §5    | The assertion library decision and the decision log  | --                            |  [ ]   |
 |   6   |   §6    | xUnit v3                                             | §5, D02 T01 §1, D03 T01 §1    |  [ ]   |
-|   7   |   §7    | Release pipeline dry run on a prerelease tag         | D00 T01 §5                    |  [ ]   |
+|   7   |   §7    | Release pipeline dry run as a draft release          | D00 T01 §5                    |  [ ]   |
 |   8   |   §8    | Pin the .NET 11 GA SDK                               | --                            |  [ ]   |
 
 ---
@@ -121,12 +121,12 @@ A package reference is a dependency decision, a license to comply with, and byte
 
 ## 5. The Assertion Library Decision and the Decision Log
 
-FluentAssertions 8 is licensed by Xceed under a community license that is free for non-commercial use; this suite is GPL-3.0 open source, but "non-commercial" is a restriction a GPL distributor cannot pass on, and a contributor at a company may not qualify. The options are pinning 7.x (Apache-2.0, frozen), switching to AwesomeAssertions (the Apache-2.0 community fork of 7.x, API compatible), or plain xUnit `Assert`. **Justified default: AwesomeAssertions**, because it keeps the five Imago test files' syntax and receives fixes; the cost of changing later is one namespace per file. This section also creates the decision log every later "decide with evidence" section writes to.
+FluentAssertions 8 is licensed by Xceed under a community license that is free for non-commercial use; this suite is GPL-3.0 open source, but "non-commercial" is a restriction a GPL distributor cannot pass on, and a contributor at a company may not qualify. The options are pinning 7.x (Apache-2.0, frozen), switching to AwesomeAssertions (the Apache-2.0 community fork of 7.x, API compatible), or plain xUnit `Assert`. **Justified default: AwesomeAssertions**, because it keeps the five Imago test files' syntax and receives fixes; the cost of changing later is one namespace per file. Operator decision 2026-09-27: keep AwesomeAssertions; the choice is confirmed, not a default awaiting review, and the decision record says so. This section also creates the decision log every later "decide with evidence" section writes to.
 
 **Corrected 2026-09-26:** the package switch was done out of band by the 2026-09-26 toolchain upgrade (one `build:` commit: .NET 11 RC, SkiaSharp 4, xUnit v3, AwesomeAssertions, Inno Setup 7, package prune) (AwesomeAssertions 9.6.0, five `using AwesomeAssertions;`, Imago tests 41 before and after), and `docs/dev/build.md` and `standards/testing.md` already name it. What remains is the decision record itself and verifying the switch.
 
 - [ ] Create `docs/dev/decisions.md` with a short header (what a decision record holds: date, question, options with licenses, evidence, choice, cost of change, owner section) and link it from `docs/dev/architecture.md`. Done when: the file exists and the architecture page links it.
-- [ ] Record the assertion-library decision as the first entry, citing each option's license text URL and the Xceed license terms. Done when: the entry names the choice and its cost of change.
+- [ ] Record the assertion-library decision as the first entry, citing each option's license text URL and the Xceed license terms, with AwesomeAssertions as the choice confirmed by the operator 2026-09-27. Done when: the entry names the choice, the confirmation, and its cost of change.
 - [ ] Verify `FluentAssertions` is replaced by `AwesomeAssertions` in `Directory.Packages.props`, the two Imago test projects, and the five test files (switched out of band). Done when: `grep -rn "FluentAssertions" src tests Directory.Packages.props` finds nothing.
 - [ ] Confirm the package table and the license note in `docs/dev/build.md` and `standards/testing.md` name AwesomeAssertions and point at the decision record. Done when: both files link `docs/dev/decisions.md`.
 - [ ] Commit: `"test: record the assertion library decision and move to AwesomeAssertions"`
@@ -147,23 +147,26 @@ xUnit v3 is a separate package family (`xunit.v3`), runs tests as executables, a
 
 **Test checkpoint:** `dotnet test Photon.slnx -c Release` exits 0 with the same total test count as before the migration and a `.trx` under `artifacts/TestResults`; `grep -rn '"xunit"' Directory.Packages.props` finds no v2 entry. Cheaper substitute that fails: leaving v2 and pinning it forever.
 
-## 7. Release Pipeline Dry Run on a Prerelease Tag
+## 7. Release Pipeline Dry Run as a Draft Release
 
-`release.yml` resolves the app from the tag prefix, runs the tests, packages, writes `SHA256SUMS`, and creates the GitHub release. It has never run. A prerelease tag proves the whole chain on a real runner without claiming a product release; the tag is a hyphenated version, so the workflow marks it prerelease and MinVer versions later commits above it.
+`release.yml` resolves the app from the tag prefix, runs the tests, packages, writes `SHA256SUMS`, and creates the GitHub release. It has never run. Operator decision 2026-09-27: the dry run for `nodus-v0.1.0-alpha.1` runs as a **draft** GitHub release, never a public prerelease, and the draft is deleted after inspection. **Corrected 2026-09-27:** this section said the tag is pushed and the workflow publishes a public prerelease that stays on the Releases page; the operator chose a draft instead. So `release.yml` first gains a draft mode: a `workflow_dispatch` trigger with a required `tag` input and a `draft` input (default true) that runs the same tag resolution step as a tag push (the app from the prefix, the version from the rest) on the dispatched commit and passes `--draft --target <sha>` to `gh release create`. A draft release does not create its tag until it is published, so the dry run leaves no public release, no tag, and no version MinVer would build later commits above; the push trigger keeps publishing real releases unchanged.
 
 **Needs:** Windows host (build/test)
 
+- [ ] Add the draft mode to `.github/workflows/release.yml`: a `workflow_dispatch` trigger with inputs `tag` (required, validated against the `nodus-v*`, `imago-v*`, `lumen-v*`, and `photon-v*` patterns) and `draft` (boolean, default true); the tag resolution step reads the input on a dispatch and the pushed ref otherwise, so both paths share one resolution; a dispatched run with `draft: true` adds `--draft --target ${{ github.sha }}` to `gh release create`; the header comment and `standards/release.md` describe the mode. Done when: `actionlint` (version quoted) reports nothing on the file, and a review of the diff shows one resolution step used by both triggers.
 - [ ] Run `pwsh scripts/package.ps1 -App Nodus -Version 0.1.0-alpha.1` locally first. Done when: `artifacts/dist/` holds the Setup exe and the portable ZIP.
-- [ ] Add a `nodus-v0.1.0-alpha.1` heading to `CHANGELOG.md` under Nodus with one line: "Pipeline dry run of the imported Bezier code; not a product release." Done when: the heading exists, so the workflow lifts real notes.
-- [ ] Push the tag `nodus-v0.1.0-alpha.1` on the commit that carries the changelog. Done when: `gh run list --workflow release.yml --limit 1 --json conclusion` prints `success`; a red run is fixed and re-tagged as `-alpha.2`, never force-moved.
-- [ ] Download the release assets with `gh release download nodus-v0.1.0-alpha.1 -D build/release-dry-run` and verify `SHA256SUMS` with `Get-FileHash`. Done when: every listed hash matches.
+- [ ] Add a `nodus-v0.1.0-alpha.1` heading to `CHANGELOG.md` under Nodus with one line: "Pipeline dry run of the imported Bezier code as a draft release, deleted after inspection; never published." Done when: the heading exists, so the workflow lifts real notes.
+- [ ] Dispatch the draft run on the commit that carries the changelog: `gh workflow run release.yml --ref main -f tag=nodus-v0.1.0-alpha.1 -f draft=true`, without pushing the tag. Done when: `gh run list --workflow release.yml --limit 1 --json conclusion,event` prints `success` and `workflow_dispatch`; a red run is fixed, its draft (if any) deleted, and the run dispatched again, and no tag is ever pushed for the dry run.
+- [ ] Inspect the draft: `gh release view nodus-v0.1.0-alpha.1 --json isDraft,isPrerelease,assets` shows `isDraft: true`, `isPrerelease: true`, and three assets, and `git ls-remote --tags origin nodus-v0.1.0-alpha.1` prints nothing. Done when: both outputs are quoted.
+- [ ] Download the draft's assets with `gh release download nodus-v0.1.0-alpha.1 -D build/release-dry-run` and verify `SHA256SUMS` with `Get-FileHash`. Done when: every listed hash matches.
 - [ ] Install the downloaded Setup exe silently per-user (`/VERYSILENT /CURRENTUSER`), launch the installed app, and uninstall it (`unins000.exe /VERYSILENT`). Done when: the app starts, and after uninstall its folder under `%LOCALAPPDATA%\Programs` is gone.
-- [ ] Record the run URL, asset sizes, and hashes in the "Publishing and packaging" part of `docs/dev/build.md`. Done when: the record cites the run URL.
-- [ ] Commit: `"release: dry-run the release pipeline with nodus-v0.1.0-alpha.1"`
+- [ ] Delete the draft after inspection: `gh release delete nodus-v0.1.0-alpha.1 --yes --cleanup-tag`. Done when: `gh release view nodus-v0.1.0-alpha.1` fails with "release not found" and `git ls-remote --tags origin nodus-v0.1.0-alpha.1` prints nothing (both quoted).
+- [ ] Record the run URL, asset sizes, hashes, and the deletion in the "Publishing and packaging" part of `docs/dev/build.md`. Done when: the record cites the run URL and states the draft was deleted.
+- [ ] Commit: `"release: dry-run the release pipeline as a draft nodus-v0.1.0-alpha.1"`
 
 **Requires:** display-session -- launching the installed app to prove it starts needs an interactive desktop
 
-**Test checkpoint:** `gh release view nodus-v0.1.0-alpha.1 --json isPrerelease,assets` shows `isPrerelease: true` and three assets; `Get-FileHash` of each downloaded asset matches its `SHA256SUMS` line; the silent install and uninstall both exit 0. Cheaper substitute that fails: a `workflow_dispatch` run that never exercises the tag-prefix resolution.
+**Test checkpoint:** `gh release view nodus-v0.1.0-alpha.1 --json isDraft,isPrerelease,assets` showed `isDraft: true` and three assets before deletion and fails with "release not found" after it; `Get-FileHash` of each downloaded asset matched its `SHA256SUMS` line; the silent install and uninstall both exited 0; `git ls-remote --tags origin nodus-v0.1.0-alpha.1` printed nothing throughout. Cheaper substitute that fails: a public prerelease from a pushed tag, which the operator refused and which the `isDraft` and `ls-remote` checks catch; and a dispatch path with its own tag parsing, which the one-resolution-step review catches.
 
 ## 8. Pin the .NET 11 GA SDK
 
