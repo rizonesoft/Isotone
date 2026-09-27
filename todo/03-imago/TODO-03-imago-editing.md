@@ -69,7 +69,8 @@ track: I3
 
 `DocumentService` pretends. This section makes documents real: an `ImagoDocument` per tab, created from the New dialog or opened by a codec (the codecs arrive in `D03 T04`; until then New is the only source), with dirty tracking and a close prompt. -> SOURCE: legacy-imago-3.1
 
-**Fidelity:** Imago main window with document tabs -- docs/captures/imago/main-window/; the New dialog is new build, no baseline, captured to docs/captures/imago/new-document/.
+**Fidelity:** Imago document tabs and the New document dialog -- docs/design/components/ (DocumentTabs, Dialog, TextBox, NumberBox, ComboBox, Button) and the Imago (raster) region of docs/design/shell-layout.md, per standards/design-contract.md; goldens under docs/captures/golden/imago/main-window/, docs/captures/golden/imago/new-document/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/DocumentTabs/README.md, docs/design/components/Dialog/README.md, docs/design/components/TextBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Button/README.md, docs/design/shell-layout.md#imago-raster -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can create documents, switch between them in tabs, and never lose unsaved work by closing. Consumer: every tool and panel, which act on the active document.
 **Treatment:** AvalonDock document tabs; File, New dialog with presets (screen sizes, print sizes at 300 ppi, square), width and height with units (px, in, cm, mm), resolution, 8 or 16 bit, background (white, transparent, background color); tab header `name*` when dirty; closing a dirty tab or exiting prompts Save, Don't Save, Cancel naming each dirty document; the status strip shows size, bit depth, and zoom. Cheaper substitute that fails the checkpoint: one document at a time.
 **Chrome:** consume AvalonDock with the theme, the settings store (last New values), and `DialogService`.
@@ -88,7 +89,8 @@ track: I3
 
 Imago's `CommandHistory` moves onto the suite `UndoHistory` in `D01 T02 §4`; this section makes every Imago edit go through it and shows it. Raster edits record tile snapshots (only the tiles a stroke touched), so undo is exact and memory stays bounded. -> SOURCE: legacy-imago-1.4
 
-**Fidelity:** History panel -- new build, no baseline; captured to docs/captures/imago/history/.
+**Fidelity:** Imago History panel -- docs/design/components/ (Panel, ListTree) and the Imago (raster) region of docs/design/shell-layout.md, per standards/design-contract.md; goldens under docs/captures/golden/imago/history/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/Panel/README.md, docs/design/components/ListTree/README.md, docs/design/shell-layout.md#imago-raster -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can undo and redo any edit and jump back to any step in the History panel. Consumer: every editing command and tool.
 **Treatment:** `TileSnapshotCommand` records before-tiles for the tiles an edit touched; Edit, Undo and Redo (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Alt+Z steps back); a History panel lists steps with names ("Brush Stroke", "New Layer") and clicking a step reverts to it; the history limit is the setting `Imago.History.Limit` (default 100). Cheaper substitute that fails the checkpoint: full-document snapshots per step.
 **Chrome:** consume `Photon.Core` `UndoHistory` and the theme. Do not keep a second history type.
@@ -107,7 +109,8 @@ Imago's `CommandHistory` moves onto the suite `UndoHistory` in `D01 T02 §4`; th
 
 Layers are the core of raster editing, and the model supports them fully; nothing shows them. The panel lists layers top-first with thumbnails and exposes every layer command, each an undo step. -> SOURCE: legacy-imago-3.2-3.3
 
-**Fidelity:** Layers panel -- new build, no baseline; captured to docs/captures/imago/layers/.
+**Fidelity:** Imago Layers panel -- docs/design/components/ (Panel, LayersRow, ComboBox, Slider, NumberBox, Menu, Icons), per standards/design-contract.md; goldens under docs/captures/golden/imago/layers/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/Panel/README.md, docs/design/components/LayersRow/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Slider/README.md, docs/design/components/NumberBox/README.md, docs/design/components/Menu/README.md, docs/design/components/Icons/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can create, find, reorder, hide, lock, rename, blend, merge, and flatten layers. Consumer: the document and the render graph.
 **Treatment:** a list with 40 px thumbnails (rendered from mip tiles, updated after edits), visibility and lock toggles, inline rename, drag reorder, a blend-mode combo and opacity slider for the selected layer, and buttons for new, duplicate, delete, and group; Layer menu commands (new, duplicate, delete, merge down, flatten) wired to the same commands. Cheaper substitute that fails the checkpoint: a list without thumbnails or blend controls.
 **Chrome:** consume the shared icon catalog, the theme, and the render graph. Do not build a second list control style.
@@ -125,7 +128,8 @@ Layers are the core of raster editing, and the model supports them fully; nothin
 
 Imago has no tool abstraction. Every later tool needs one: activation by rail click or shortcut, a cursor, an options bar, pointer handling in document coordinates with pressure where available, and an overlay. The first three tools prove it. -> SOURCE: legacy-imago-4.1
 
-**Fidelity:** Imago tool rail and options bar -- docs/captures/imago/main-window/.
+**Fidelity:** Imago tool rail and options bar for Move, Hand, and Zoom -- docs/design/components/ (ToolRail, OptionsBar, Canvas, Tooltip) and the Imago (raster) region of docs/design/shell-layout.md, per standards/design-contract.md; goldens under docs/captures/golden/imago/main-window/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/ToolRail/README.md, docs/design/components/OptionsBar/README.md, docs/design/components/Canvas/README.md, docs/design/components/Tooltip/README.md, docs/design/shell-layout.md#imago-raster -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can pick a tool, see its options, and use it on the canvas. Consumer: the canvas input pipeline.
 **Treatment:** `ImagoToolBase` in `Photon.Imago.Core/Tools/` with pointer events in document coordinates (including `StylusPoint` pressure), a cursor, an options view model, and an overlay; a `ToolManager` with keyboard switching (V move, H hand, Z zoom, and Space for temporary hand); options persisted per tool in settings. Cheaper substitute that fails the checkpoint: tool logic in the canvas code-behind.
 **Chrome:** consume the keymap pattern Nodus uses (a keymap table the shortcuts dialog reads) and the theme.
@@ -143,7 +147,8 @@ Imago has no tool abstraction. Every later tool needs one: activation by rail cl
 
 `Selection`, `SelectionTools`, and `QuickMask` exist in the model; no tool makes a selection. -> SOURCE: legacy-imago-4.2
 
-**Fidelity:** Imago canvas with marching ants -- docs/captures/imago/main-window/.
+**Fidelity:** Imago selection tools and marching ants -- docs/design/components/ (ToolRail, OptionsBar, Canvas, Menu), per standards/design-contract.md; goldens under docs/captures/golden/imago/main-window/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/ToolRail/README.md, docs/design/components/OptionsBar/README.md, docs/design/components/Canvas/README.md, docs/design/components/Menu/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can select regions by rectangle, ellipse, or freehand lasso, add, subtract, and intersect selections, feather them, and have edits respect them. Consumer: every painting, fill, filter, and transform command.
 **Treatment:** rectangular and elliptical marquee (Shift square, Alt from center), lasso and polygonal lasso; Shift adds, Alt subtracts, Shift+Alt intersects; Select, All, Deselect, Inverse, Feather; marching ants drawn on the overlay; the selection is an 8-bit mask in tiles. Cheaper substitute that fails the checkpoint: selections as rectangles only.
 **Chrome:** consume `Selection` in `Photon.Imago.Core` and the overlay layer.
@@ -161,7 +166,8 @@ Imago has no tool abstraction. Every later tool needs one: activation by rail cl
 
 Painting is the first thing a raster editor is judged on: a round brush with size, hardness, opacity, and flow, spacing that stays smooth at speed, pressure from a pen, and an eraser. -> SOURCE: legacy-imago-4.3-4.4
 
-**Fidelity:** Imago canvas and brush options bar -- docs/captures/imago/main-window/.
+**Fidelity:** Imago brush options bar and brush cursor on the canvas -- docs/design/components/ (OptionsBar, ToolRail, Canvas, Slider, NumberBox), per standards/design-contract.md; goldens under docs/captures/golden/imago/main-window/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/OptionsBar/README.md, docs/design/components/ToolRail/README.md, docs/design/components/Canvas/README.md, docs/design/components/Slider/README.md, docs/design/components/NumberBox/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can paint and erase smooth strokes with a mouse or a pen. Consumer: the active layer's tiles.
 **Treatment:** dabs stamped along a spline-interpolated path at a spacing percentage, each dab a precomputed hardness falloff, blended into tiles with opacity and flow, pressure mapped to size and opacity when a stylus reports it; `[` and `]` resize; the eraser writes alpha (or background color on a locked-transparency layer); one undo step per stroke. Cheaper substitute that fails the checkpoint: drawing WPF line segments.
 **Chrome:** consume the tool system, `TileSnapshotCommand`, and the color panel.
@@ -178,7 +184,8 @@ Painting is the first thing a raster editor is judged on: a round brush with siz
 
 Resizing, rotating, and cropping are daily operations; the Image menu's size, rotate, and flip commands only log. -> SOURCE: legacy-imago-4.5-3.4
 
-**Fidelity:** Transform handles and the Image Size and Canvas Size dialogs -- docs/captures/imago/main-window/ for handles; the dialogs are new build, no baseline, captured to docs/captures/imago/image-size/ and docs/captures/imago/canvas-size/.
+**Fidelity:** Imago transform handles and the Image Size and Canvas Size dialogs -- docs/design/components/ (Canvas, Dialog, NumberBox, ComboBox, Checkbox, Button), per standards/design-contract.md; goldens under docs/captures/golden/imago/main-window/, docs/captures/golden/imago/image-size/, docs/captures/golden/imago/canvas-size/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/Canvas/README.md, docs/design/components/Dialog/README.md, docs/design/components/NumberBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can free-transform a layer or selection, crop, resample the image, change the canvas, and rotate or flip the whole image. Consumer: the document.
 **Treatment:** Edit, Free Transform (Ctrl+T) with scale, rotate, and move handles, Enter commits one undo step with bicubic resampling; crop tool with a rule-of-thirds overlay and delete or hide cropped pixels; Image Size (resample methods: nearest, bilinear, bicubic, Lanczos) and Canvas Size (anchor grid) dialogs; Image, Rotate 90, 180, and Flip wired. Cheaper substitute that fails the checkpoint: transforms that preview with WPF render transforms and never resample pixels.
 **Chrome:** consume the tool system, the history, and `DialogService`.
@@ -196,7 +203,8 @@ Resizing, rotating, and cropping are daily operations; the Image menu's size, ro
 
 The remaining basic tools and the color panel every painting tool reads. -> SOURCE: legacy-imago-4.3
 
-**Fidelity:** Color panel -- new build, no baseline; captured to docs/captures/imago/color/.
+**Fidelity:** Imago Color panel, color chips, and fill and gradient options -- docs/design/components/ (Panel, Swatches, Slider, OptionsBar, ToolRail, TextBox), per standards/design-contract.md; goldens under docs/captures/golden/imago/color/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/Panel/README.md, docs/design/components/Swatches/README.md, docs/design/components/Slider/README.md, docs/design/components/OptionsBar/README.md, docs/design/components/ToolRail/README.md, docs/design/components/TextBox/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can pick colors, fill regions, draw gradients, and sample colors from the image. Consumer: brush, fill, and gradient tools.
 **Treatment:** a color panel with foreground and background swatches, swap (X) and reset (D), an HSV square and hue strip, RGB and hex fields; paint bucket with tolerance and contiguous options; linear and radial gradient tool from foreground to background with dithering; eyedropper with sample size (point, 3 by 3, 5 by 5) and current layer or composite. Cheaper substitute that fails the checkpoint: the Windows color dialog.
 **Chrome:** consume the theme and the color picker Nodus builds in `D02 T09 §2` (`Photon.Nodus.Desktop/Controls/ColorPicker/`), which this section moves to `Photon.UI` as its second consumer; do not build a second picker in Imago.

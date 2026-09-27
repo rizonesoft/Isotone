@@ -125,6 +125,7 @@ From documentation, to be confirmed and extended by driven runs in §1 (each row
 Lumen needs the same spine as the other two: projects in the suite layout, a composition root on `Photon.Core` logging and settings, single instance, the `Photon.UI` theme, splash, and exception window, an About dialog, and a working publish and installer. It ships nothing useful yet; it proves Lumen builds, installs, and starts. -> SOURCE: lumen-notes-structure
 
 **Fidelity:** Lumen main window shell -- new build, no baseline; follows the window anatomy in `docs/design/shell-layout.md` (**Corrected 2026-09-27:** said `standards/shared.md`) and is captured to docs/captures/lumen/main-window/.
+**Design:** docs/design/components/WindowChrome/README.md, docs/design/components/Menu/README.md, docs/design/shell-layout.md#lumen-darkroom-and-photo-manager, docs/design/shell-layout.md#regions, docs/design/shell-layout.md#splash-and-home, docs/design/components/Splash/README.md, docs/design/components/Button/README.md, docs/design/components/StatusBar/README.md, docs/design/components/Dialog/README.md, docs/design/components/Icons/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can install Lumen, start it, and see an empty library with an Import button. Consumer: every later Lumen section.
 **Treatment:** a main window with the module switcher (Library, Develop) at the top, a left panel (folders, collections), the center grid area with the empty state "Your library is empty. Import a folder of photos to begin." and an Import button, a right panel (metadata), and a status strip; Help, About Lumen through `Photon.UI`. Cheaper substitute that fails the checkpoint: a blank window.
 **Chrome:** consume `Photon.UI` (theme, splash, exception window, About and shortcuts dialogs, icon catalog) and `Photon.Core` (logging, settings, single instance). Do not copy any of them.
@@ -189,12 +190,14 @@ Import is where trust is won or lost: it must never touch an original, must say 
 **Freeze check:** Import opens originals read-only; "Add" records paths without copying; "Copy" copies to the chosen folder through a temp name, verifies the copy's SHA-256 against the source, then renames, and only then records it; a failure mid-copy leaves the source untouched and no partial file in that folder; every original's hash and last-write time are unchanged after import. Fixture source: `tests/fixtures/lumen/import/` (a folder of small JPEGs and the DNG, with a nested folder and a duplicate).
 
 **Fidelity:** Import dialog -- new build, no baseline; captured to docs/captures/lumen/import/.
+**Design:** docs/design/components/Dialog/README.md, docs/design/components/Progress/README.md, docs/design/components/Toast/README.md, docs/design/components/Button/README.md, docs/design/components/RadioButton/README.md, docs/design/components/Checkbox/README.md, new surface: docs/design/components/LumenImport/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can bring a card or folder into the library by adding in place or copying, see how many files and how much space before starting, and keep working while it runs. Consumer: the catalog and the grid.
 **Treatment:** an Import dialog with the source (folder picker, removable drives listed first), mode (Add or Copy), target folder and folder pattern for Copy (`yyyy/yyyy-MM-dd`), include subfolders, skip duplicates (by hash), and a preview count ("1,204 photos, 38.2 GB; 12 duplicates will be skipped"); import runs in the background with progress in the status strip, Cancel, and a completion summary (imported, skipped, failed with reasons). Cheaper substitute that fails the checkpoint: a synchronous import that freezes the window.
 **Chrome:** consume the catalog, `IRawDecoder` for metadata, MetadataExtractor (Apache-2.0) for EXIF and XMP in JPEGs and RAWs (dependency recorded), and the theme.
 
 **Requires:** display-session -- driving the import dialog needs an interactive desktop
 
+- [ ] Write the design spec `docs/design/components/LumenImport/README.md` and `preview.html` (the import window: sources, add or copy mode, the dry-run counts, background progress, and the summary; anatomy, every state, tokens, sizes) before building; Done when: the spec exists and the design page rebuild passes.
 - [ ] `ImportPlanner` (scan, hash, duplicate detection, counts) and `ImportRunner` (add or copy with verification, cancellation, per-file failure records). Done when: `ImportTests` cover add, copy, duplicate skip, a locked source file, a read-only target folder (refused by name), and cancel mid-copy leaving no partial file.
 - [ ] Metadata extraction into the catalog (capture time, camera, lens, dimensions, existing XMP rating and keywords). Done when: tests assert extracted fields for fixtures.
 - [ ] The dialog, background progress, and summary. Done when: a driven import of the fixture folder shows the summary (capture).
@@ -219,13 +222,15 @@ A library is only as fast as its thumbnails. RAW files carry embedded JPEG previ
 
 The grid is where a photographer spends most of their time. It must scroll 50,000 photos smoothly, sort and filter instantly, and be driven entirely from the keyboard. -> SOURCE: lumen-notes-library-grid
 
-**Fidelity:** Lumen library grid -- docs/captures/lumen/main-window/ (the shell from §2).
+**Fidelity:** Lumen library grid -- docs/design/ (the specs on the Design line below) per standards/design-contract.md; goldens under docs/captures/golden/lumen/library-grid/. **Corrected 2026-09-27:** cited docs/captures/lumen/main-window/ (the shell from §2) as the source; the captures under docs/captures/lumen/ are a before record, never the fidelity source.
+**Design:** docs/design/shell-layout.md#lumen-darkroom-and-photo-manager, docs/design/components/ListTree/README.md, docs/design/components/TextBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Slider/README.md, docs/design/components/Icons/README.md, new surface: docs/design/components/LumenGrid/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can browse, sort, filter, and select photos across the whole library. Consumer: the loupe, metadata edits, develop, and export.
 **Treatment:** a virtualized grid (`VirtualizingWrapPanel` or a custom virtualizing panel) with adjustable thumbnail size, badges for rating, flag, label, and edited state; sort by capture time, import time, file name, rating; a filter bar (text, rating at least N, flag, label, camera, lens, date range, folder); multi-select with Shift and Ctrl; arrow keys move; the left panel lists folders and collections with counts. Cheaper substitute that fails the checkpoint: a `ListBox` of all images without virtualization.
 **Chrome:** consume the preview cache, the theme, and the icon catalog.
 
 **Requires:** display-session -- measuring grid scrolling needs an interactive desktop
 
+- [ ] Write the design spec `docs/design/components/LumenGrid/README.md` and `preview.html` (the thumbnail grid: cells, rating, flag, label, edited and stack badges, selection, thumbnail size, the filter bar, and the empty states; anatomy, every state, tokens, sizes) before building; Done when: the spec exists and the design page rebuild passes.
 - [ ] `LibraryViewModel` with sort, filter, and selection over catalog queries (indexed columns for each sort and filter). Done when: `LibraryViewModelTests` cover each filter against a seeded catalog.
 - [ ] The virtualizing grid and badges. Done when: a capture shows badges.
 - [ ] Measure scrolling a generated 50,000-image catalog (thumbnails from a small set, reused). Done when: median frame time under 16 ms and filter response under 200 ms (both quoted with the machine).
@@ -239,12 +244,16 @@ The grid is where a photographer spends most of their time. It must scroll 50,00
 Culling needs a big view of one photo, a side-by-side compare, and a filmstrip to move through the selection. -> SOURCE: lumen-notes-library-loupe
 
 **Fidelity:** Loupe and compare views -- new build, no baseline; captured to docs/captures/lumen/loupe/ and docs/captures/lumen/compare/.
+**Design:** docs/design/shell-layout.md#lumen-darkroom-and-photo-manager, docs/design/components/Canvas/README.md, new surface: docs/design/components/LumenLoupe/README.md, new surface: docs/design/components/LumenCompare/README.md, new surface: docs/design/components/LumenFilmstrip/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can view a photo large, zoom to 100 percent to check focus, compare two candidates, and move through photos with the keyboard. Consumer: culling (ratings and flags from §11).
 **Treatment:** E opens the loupe with the standard preview, Z toggles 100 percent at the clicked point (decoded on demand), C compares two selected photos with synchronized zoom, arrow keys move through the filmstrip at the bottom, G returns to the grid. Cheaper substitute that fails the checkpoint: opening the file in an external viewer.
 **Chrome:** consume the preview cache, the decoder for 100 percent views, and the keymap pattern.
 
 **Requires:** display-session -- the loupe needs an interactive desktop
 
+- [ ] Write the design spec `docs/design/components/LumenLoupe/README.md` and `preview.html` (the loupe: fit and 100 percent views, zoom state, and info overlays; anatomy, every state, tokens, sizes) before building; Done when: the spec exists and the design page rebuild passes.
+- [ ] Write the design spec `docs/design/components/LumenCompare/README.md` and `preview.html` (the compare view: two candidates with synchronized zoom and pan; anatomy, every state, tokens, sizes) before building; Done when: the spec exists and the design page rebuild passes.
+- [ ] Write the design spec `docs/design/components/LumenFilmstrip/README.md` and `preview.html` (the filmstrip: the 96px strip above the status bar, its cells and selection; anatomy, every state, tokens, sizes) before building; Done when: the spec exists and the design page rebuild passes.
 - [ ] Loupe with fit and 100 percent zoom. Done when: 100 percent on the DNG shows full resolution within 1 second (quoted).
 - [ ] Compare view with synchronized zoom and pan, and the filmstrip. Done when: a driven compare is captured.
 - [ ] Commit: `"lumen: loupe, compare, and filmstrip views"`
@@ -256,6 +265,7 @@ Culling needs a big view of one photo, a side-by-side compare, and a filmstrip t
 Finding photos later depends on keywords and collections; smart collections save a filter so it stays current. -> SOURCE: lumen-notes-library-collections
 
 **Fidelity:** Keywords panel and collections list -- new build, no baseline; captured to docs/captures/lumen/keywords/ and docs/captures/lumen/collections/.
+**Design:** docs/design/components/Panel/README.md, docs/design/components/ListTree/README.md, docs/design/components/TextBox/README.md, docs/design/components/Dialog/README.md, docs/design/components/ContextMenu/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can tag photos with keywords, group them in collections, and save filters as smart collections that update themselves. Consumer: the grid's filters and the export batch.
 **Treatment:** a keyword panel with autocomplete and a hierarchy (`Places > France > Paris`); collections (manual, drag photos in) and smart collections (a saved filter-bar state with rules joined by all or any); counts per collection and a library statistics summary (photos per year, per camera, rated share) in the left panel's header menu; every change undoable. Cheaper substitute that fails the checkpoint: keywords as free text in a comment field.
 **Chrome:** consume the catalog, the filter bar from §8, and the history.
@@ -277,7 +287,8 @@ Culling is ratings (0 to 5), flags (pick, reject, none), and color labels, set f
 
 **Freeze check:** Metadata changes write only the catalog and, when `Lumen.Metadata.WriteSidecars` is on, `<name>.xmp` beside the original through an atomic write; the original's bytes and last-write time are unchanged; an existing sidecar from another tool is read, merged (Lumen's fields updated, unknown fields preserved), and written back atomically. Fixture source: `tests/fixtures/lumen/xmp/` (a JPEG and the DNG with darktable- and Lightroom-style sidecars).
 
-**Fidelity:** Grid and loupe with the metadata panel -- docs/captures/lumen/main-window/.
+**Fidelity:** Grid and loupe with the metadata panel -- docs/design/ (the specs on the Design line below) per standards/design-contract.md; goldens under docs/captures/golden/lumen/metadata-panel/. **Corrected 2026-09-27:** cited docs/captures/lumen/main-window/ as the source; the captures under docs/captures/lumen/ are a before record, never the fidelity source.
+**Design:** docs/design/shell-layout.md#lumen-darkroom-and-photo-manager, docs/design/components/Panel/README.md, docs/design/components/Icons/README.md, docs/design/components/ContextMenu/README.md, docs/design/components/Menu/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can cull fast from the keyboard and have ratings and keywords readable by other tools. Consumer: the grid filters, smart collections, and other applications reading XMP.
 **Treatment:** 0-5 set rating, P, X, U set flags, 6-9 set labels, with auto-advance (Caps Lock or a setting), each an undo step logged; Metadata, Write to Sidecars and Read from Sidecars, plus the automatic setting (default off, stated on first use). Cheaper substitute that fails the checkpoint: writing XMP into the original JPEG.
 **Chrome:** consume the catalog, the history, `AtomicFileWriter`, and an XMP writer (a small writer over `System.Xml`, or a recorded library decision).

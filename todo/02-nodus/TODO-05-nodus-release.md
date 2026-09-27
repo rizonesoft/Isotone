@@ -59,7 +59,9 @@ track: N5
 
 A user reporting a bug needs the exact version; a GPL-3.0 application must make its license and its components' licenses reachable. Only Nodus needs this dialog now, so it is built in Nodus; `D01 T01 §4` moves it to `Photon.UI` when Imago needs one.
 
-**Fidelity:** About dialog -- new build, no baseline; captured to docs/captures/nodus/about/.
+**Fidelity:** About dialog -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/about/.
+**Design:** docs/design/components/Dialog/README.md#about-dialog, docs/design/components/AppIcon/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: About dialog -- new build, no baseline; captured to docs/captures/nodus/about/. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a user can see exactly which Nodus they run and under what license, and copy the version for a bug report. Consumer: the user and bug reports.
 **Treatment:** a fixed-size dialog with the Nodus icon, name, version (informational version including the commit), "Copy version info" (version, commit, .NET runtime, Windows build), license line with a link opening the GPL-3.0 text, a credits list (package, version, license, link) generated at build time from the packages the app references, and repository and issue links. Cheaper substitute that fails the checkpoint: a `MessageBox` with a version string.
 
@@ -81,7 +83,9 @@ A user reporting a bug needs the exact version; a GPL-3.0 application must make 
 
 The keymap (`D02 T02 §8`) is the single source of shortcuts; this dialog presents it, so it can never disagree with the app. Built in Nodus now, moved to `Photon.UI` by `D01 T01 §4`.
 
-**Fidelity:** Keyboard shortcuts dialog -- new build, no baseline; captured to docs/captures/nodus/shortcuts/.
+**Fidelity:** Keyboard shortcuts dialog -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/shortcuts/.
+**Design:** docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/TextBox/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Keyboard shortcuts dialog -- new build, no baseline; captured to docs/captures/nodus/shortcuts/. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a user can find the shortcut for any command by searching its name. Consumer: the user.
 **Treatment:** a resizable dialog with a search box (filters as you type, by command or gesture), a grouped list (File, Edit, View, Object, Path, Tools), and "Print" (renders the list to the Windows print dialog); read-only in 0.1.0 (remapping is `D02 T06 §13`). Cheaper substitute that fails the checkpoint: a static image or a hardcoded table.
 **Chrome:** consume the theme and the keymap. Do not keep a second list of shortcuts.
@@ -99,7 +103,9 @@ The keymap (`D02 T02 §8`) is the single source of shortcuts; this dialog presen
 
 Every Help item must work or name its owner (the rule `D02 T03 §5` enforces). Documentation opens the user guide on GitHub (the guide ships in the repository; a hosted site is `D06 T02 §3`).
 
-**Fidelity:** Nodus main window, Help menu -- docs/captures/nodus/main-window/. Items in order: Documentation (F1), Keyboard Shortcuts (Ctrl+/), Check for Updates, separator, About Nodus.
+**Fidelity:** Nodus main window, Help menu -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/main-window/. Items in order: Documentation (F1), Keyboard Shortcuts (Ctrl+/), Check for Updates, separator, About Nodus.
+**Design:** docs/design/components/Menu/README.md, docs/design/shell-layout.md#nodus-vector -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Nodus main window, Help menu -- docs/captures/nodus/main-window/. Items in order: Documentation (F1), Keyboard Shortcuts (Ctrl+/), Check for Updates, separator, About Nodus. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a user can reach help, shortcuts, and version information from one menu. Consumer: the user.
 **Treatment:** Documentation opens `https://github.com/rizonesoft/Photon/blob/main/docs/user/nodus/README.md` in the default browser; Keyboard Shortcuts and About open §2 and §1; Check for Updates is disabled with the tooltip `Planned: D05 T01 §4`. Cheaper substitute that fails the checkpoint: a Help menu with items that set status text.
 **Chrome:** consume the keymap for gestures and `PlannedCommands` for the disabled item. Do not add a second help system.

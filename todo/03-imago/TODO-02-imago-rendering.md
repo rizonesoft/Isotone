@@ -72,7 +72,8 @@ track: I2
 
 The ported `ImageCanvas` pans and zooms a bitmap. It must show the document composite at any zoom without rendering the whole image: only visible tiles, at a mip level suited to the zoom, re-rendered only when dirty. -> SOURCE: legacy-imago-2.1-2.5
 
-**Fidelity:** Imago main window canvas -- docs/captures/imago/main-window/ (the canvas capture from `D03 T01 §2`).
+**Fidelity:** Imago canvas viewport on the tiled document -- docs/design/components/ (Canvas, ScrollBar) and the Imago (raster) region of docs/design/shell-layout.md, per standards/design-contract.md; goldens under docs/captures/golden/imago/main-window/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/Canvas/README.md, docs/design/shell-layout.md#imago-raster, docs/design/components/ScrollBar/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can pan and zoom a 100-megapixel image smoothly and read the zoom, cursor position, and memory in the status strip. Consumer: every Imago editing surface.
 **Treatment:** `ImageCanvas` hosts an `SKElement` (or `SKGLElement` when available) and draws visible tiles from a per-zoom mip cache (levels at powers of two, built lazily per tile), with nearest-neighbor sampling above 100 percent and a pixel grid above 800 percent; the status strip shows zoom, cursor pixel, and cache memory. Cheaper substitute that fails the checkpoint: rendering the whole composite into one `WriteableBitmap` per frame.
 **Chrome:** consume the ported `ImageCanvas`, `Ruler`, `CanvasContainer`, `RenderContext`, and the theme. Do not add a second canvas control.

@@ -242,11 +242,11 @@ Parity starts where every later feature stands. This phase fixes how live object
 | [ ] | `D02 T07 §1`  | The live-object contract in the nodus namespace                    |  20   |
 | [ ] | `D02 T07 §2`  | Spatial index, culling, and dirty-region rendering                 |  19   |
 | [ ] | `D02 T07 §3`  | Pages and artboards: one model, panel, and commands                |  22   |
-| [ ] | `D02 T07 §4`  | Multipage views, page background, page numbers, navigation         |  23   |
+| [ ] | `D02 T07 §4`  | Multipage views, page background, page numbers, navigation         |  24   |
 | [ ] | `D02 T07 §5`  | Layers, master layers, lock and hide, the Objects panel            |  23   |
 | [ ] | `D02 T07 §6`  | Selection: Select menu, Select Same, wand, lasso, saved selections |  19   |
-| [ ] | `D02 T07 §7`  | Isolation mode and focus mode                                      |  11   |
-| [ ] | `D02 T07 §8`  | The Properties panel and the contextual property bar               |  14   |
+| [ ] | `D02 T07 §7`  | Isolation mode and focus mode                                      |  12   |
+| [ ] | `D02 T07 §8`  | The Properties panel and the contextual property bar               |  15   |
 | [ ] | `D02 T07 §9`  | Rulers, units, drawing scale, and grids                            |  13   |
 | [ ] | `D02 T07 §10` | Guides, the Guides panel, the measure tool, the Info panel         |  15   |
 | [ ] | `D02 T07 §11` | Snapping modes, smart guides, dynamic and alignment guides         |  19   |
@@ -291,10 +291,10 @@ Appearance comes next because every effect and every format carries it. `Photon.
 | [ ] | `D02 T09 §1`  | The color model: RGB, CMYK, HSB, Lab, grayscale, spot, global, and tints                                     |  13   |
 | [ ] | `D02 T09 §2`  | The Color panel, color picker, recent colors, and eyedroppers                                                |  17   |
 | [ ] | `D02 T09 §3`  | The Swatches panel, document palette, and color groups                                                       |  14   |
-| [ ] | `D02 T09 §4`  | The palette bar, palette editor, color libraries, and palette files                                          |  18   |
-| [ ] | `D02 T09 §5`  | Color styles, harmonies, and the color guide                                                                 |  15   |
-| [ ] | `D02 T09 §6`  | Recolor Artwork, Edit Colors, and find and replace color                                                     |  14   |
-| [ ] | `D02 T09 §7`  | The gradient model: linear, radial, conical, rectangular, stops, repeat, and interpolation                   |  14   |
+| [ ] | `D02 T09 §4`  | The palette bar, palette editor, color libraries, and palette files                                          |  19   |
+| [ ] | `D02 T09 §5`  | Color styles, harmonies, and the color guide                                                                 |  16   |
+| [ ] | `D02 T09 §6`  | Recolor Artwork, Edit Colors, and find and replace color                                                     |  15   |
+| [ ] | `D02 T09 §7`  | The gradient model: linear, radial, conical, rectangular, stops, repeat, and interpolation                   |  15   |
 | [ ] | `D02 T09 §8`  | The gradient tool, interactive fill, stroke gradients, and freeform gradients                                |  15   |
 | [ ] | `D02 T09 §9`  | Gradient mesh and mesh fill                                                                                  |  13   |
 | [ ] | `D02 T09 §10` | Pattern fills and pattern editing                                                                            |  12   |
@@ -324,7 +324,7 @@ Type is its own discipline, so it gets its own phase: HarfBuzz shaping with bidi
 | [ ] | `D02 T10 §3`  | Fonts: the font list, filters, live preview, and the Font Sampler                      |  15   |
 | [ ] | `D02 T10 §16` | Missing fonts: substitution, Find Font, and font embedding                             |  15   |
 | [ ] | `D02 T10 §4`  | Character formatting                                                                   |  18   |
-| [ ] | `D02 T10 §5`  | OpenType features, glyphs, variable fonts, and glyph snapping                          |  26   |
+| [ ] | `D02 T10 §5`  | OpenType features, glyphs, variable fonts, and glyph snapping                          |  27   |
 | [ ] | `D02 T10 §6`  | Paragraph formatting, composers, justification, and hyphenation                        |  19   |
 | [ ] | `D02 T10 §7`  | Tabs, drop caps, and bullets and numbering                                             |  15   |
 | [ ] | `D02 T10 §8`  | Area text frames, columns, threading, and text wrap                                    |  21   |
@@ -334,7 +334,7 @@ Type is its own discipline, so it gets its own phase: HarfBuzz shaping with bidi
 | [ ] | `D02 T10 §12` | Character, paragraph, and frame styles                                                 |  13   |
 | [ ] | `D02 T10 §13` | Writing tools, and text import and export                                              |  25   |
 | [ ] | `D02 T10 §14` | Tables                                                                                 |  22   |
-| [ ] | `D02 T10 §15` | Graphs                                                                                 |  17   |
+| [ ] | `D02 T10 §15` | Graphs                                                                                 |  18   |
 | [ ] | `D02 T17 §4`  | Nodus 0.5.0 (Phase 7)                                                                  |  12   |
 
 ### Phase 8 -- Nodus parity V: interactive and live effects
@@ -351,12 +351,12 @@ Effects sit on the Appearance stack and the live-object contract, both shipped b
 | [ ] | `D02 T11 §6`  | The distort tool and Distort & Transform effects                                             |  14   |
 | [ ] | `D02 T11 §7`  | Drop, inner, perspective, and block shadows                                                  |  17   |
 | [ ] | `D02 T11 §8`  | Glows, feather, scribble, round corners, and bevels                                          |  14   |
-| [ ] | `D02 T11 §9`  | 3D extrude and revolve: geometry, lighting, bevels, and vanishing points                     |  18   |
+| [ ] | `D02 T11 §9`  | 3D extrude and revolve: geometry, lighting, bevels, and vanishing points                     |  19   |
 | [ ] | `D02 T11 §10` | 3D and Materials: inflate, plane, materials, mapped art, ray-traced rendering, and 3D export |  25   |
 | [ ] | `D02 T11 §11` | Lenses                                                                                       |  15   |
 | [ ] | `D02 T11 §12` | PowerClip frames                                                                             |  15   |
 | [ ] | `D02 T11 §13` | Symmetry drawing mode                                                                        |  14   |
-| [ ] | `D02 T11 §14` | The perspective grid and drawing planes                                                      |  15   |
+| [ ] | `D02 T11 §14` | The perspective grid and drawing planes                                                      |  16   |
 | [ ] | `D02 T11 §15` | Perspective objects and the Add Perspective effect                                           |  17   |
 | [ ] | `D02 T11 §16` | Puppet warp                                                                                  |  13   |
 | [ ] | `D02 T11 §17` | Live Paint and smart fill                                                                    |  15   |
@@ -390,7 +390,7 @@ Bitmaps arrive once vectors are complete. `Photon.Core` gains the pixel engine t
 | [ ] | `D01 T09 §3`  | Format and acquire plug-ins                                                                |   8   |
 | [ ] | `D01 T09 §4`  | The plug-in manager in Photon.UI                                                           |  13   |
 | [ ] | `D02 T12 §10` | Third-party plug-in filters in Nodus                                                       |  13   |
-| [ ] | `D02 T12 §3`  | Adjustments in Nodus: the Image Adjustment Lab and adjustment presets                      |  17   |
+| [ ] | `D02 T12 §3`  | Adjustments in Nodus: the Image Adjustment Lab and adjustment presets                      |  18   |
 | [ ] | `D02 T12 §4`  | The tracing engine: outline tracing, color quantization, and stacking                      |  15   |
 | [ ] | `D02 T12 §5`  | Centerline tracing, the Image Trace panel, and PowerTRACE                                  |  19   |
 | [ ] | `D02 T12 §6`  | Photo artwork: Pointillizer, PhotoCocktail, Object Mosaic, and mockups                     |  17   |
@@ -406,7 +406,7 @@ Output comes after everything it has to print exists. Bitmap color modes finish 
 | :-: | ------------- | -------------------------------------------------------------------------------- | :---: |
 | [ ] | `D01 T04 §3`  | Bitmap color modes, duotone, and multichannel, with the Nodus Duotone dialog     |  18   |
 | [ ] | `D02 T13 §1`  | Document color settings: profiles, policies, assign, convert, and embed          |  20   |
-| [ ] | `D02 T13 §2`  | The print dialog: printers, range, copies, placement, scaling, and preview       |  20   |
+| [ ] | `D02 T13 §2`  | The print dialog: printers, range, copies, placement, scaling, and preview       |  21   |
 | [ ] | `D02 T13 §3`  | Print tiling, print styles, print to file, and print summaries                   |  11   |
 | [ ] | `D02 T13 §4`  | Printer's marks and bleed                                                        |  14   |
 | [ ] | `D02 T13 §5`  | Separations, halftone screens, and the ink manager                               |  16   |
@@ -445,7 +445,7 @@ Formats come after the object model they must carry is complete, so each reader 
 | [ ] | `D02 T14 §13` | Photoshop PSD import and export                                             |  12   |
 | [ ] | `D02 T14 §14` | Office and text documents, Export For Office, and font export               |  16   |
 | [ ] | `D02 T14 §15` | Export for Screens, asset export, and the export list                       |  20   |
-| [ ] | `D02 T14 §16` | Export for Web: optimized preview and web formats                           |  15   |
+| [ ] | `D02 T14 §16` | Export for Web: optimized preview and web formats                           |  16   |
 | [ ] | `D02 T14 §17` | Slices, image maps, hyperlinks, rollovers, and SVG interactivity            |  20   |
 | [ ] | `D02 T14 §18` | Pixel-perfect drawing, pixel preview, and object hinting                    |  12   |
 | [ ] | `D02 T14 §19` | Clipboard formats, OLE objects, placing multiple files, and scanner acquire |  17   |
@@ -467,7 +467,7 @@ The AI features are Nodus's own and come after the object model, formats, and tr
 | [ ] | `D02 T15 §3`  | Generate patterns and fill shapes                                             |  11   |
 | [ ] | `D02 T15 §4`  | Generative expand and print bleed                                             |  10   |
 | [ ] | `D02 T15 §5`  | AI recolor and palettes from the brand kit                                    |   9   |
-| [ ] | `D02 T15 §6`  | The AI assistant: prompt to edit with undoable commands                       |  15   |
+| [ ] | `D02 T15 §6`  | The AI assistant: prompt to edit with undoable commands                       |  16   |
 | [ ] | `D02 T15 §7`  | AI text: rewrite, translate, proofread, fit, and retype                       |  12   |
 | [ ] | `D02 T15 §8`  | AI images: generate, remix, and reference images                              |  11   |
 | [ ] | `D02 T15 §9`  | AI image cleanup: remove background, upscale, repair, and art style           |  10   |
@@ -481,7 +481,7 @@ The last parity phase first reads and writes the legacy formats the operator ask
 
 |  ✔  | Section       | Deliverable                                                                                                         | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD                                                                           |   4   |
+| [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD                                                                           |   5   |
 | [ ] | `D02 T06 §13` | Preferences and shortcut remapping                                                                                  |   4   |
 | [ ] | `D02 T16 §1`  | Workspaces: presets, save, reset, import, and export                                                                |  16   |
 | [ ] | `D02 T16 §2`  | Toolbox, toolbars, property bar, and status bar customization                                                       |  17   |
@@ -549,7 +549,7 @@ Imago becomes a complete first release: the suite undo history and the atomic do
 | [ ] | `D03 T04 §5` | PSD import                                        |   5   |
 | [ ] | `D03 T04 §6` | Autosave and crash recovery                       |   4   |
 | [ ] | `D03 T05 §1` | The filter pipeline                               |   4   |
-| [ ] | `D03 T05 §2` | Core adjustments                                  |   4   |
+| [ ] | `D03 T05 §2` | Core adjustments                                  |   6   |
 | [ ] | `D03 T05 §3` | Blur and sharpen                                  |   5   |
 | [ ] | `D03 T06 §1` | About, shortcuts, and help in Imago               |   3   |
 | [ ] | `D03 T06 §2` | Every Imago menu command works or names its owner |   3   |
@@ -571,7 +571,7 @@ Parity starts where every later feature stands. This phase fixes how live conten
 | [ ] | `D03 T08 §4`  | Rulers, units, and guides                                               |  16   |
 | [ ] | `D03 T08 §14` | Grids, axis grids, and snapping on the shared core                      |  14   |
 | [ ] | `D03 T08 §5`  | Measure, protractor, count, and notes                                   |  19   |
-| [ ] | `D03 T08 §11` | Info, histogram, sample points, and scopes                              |  23   |
+| [ ] | `D03 T08 §11` | Info, histogram, sample points, and scopes                              |  24   |
 | [ ] | `D03 T08 §6`  | History extensions: snapshots, non-linear history, and saved history    |  21   |
 | [ ] | `D03 T08 §7`  | The Image menu: canvas, rotation, trim, reveal, and resampling          |  25   |
 | [ ] | `D03 T08 §8`  | Clipboard and paste variants                                            |  19   |
@@ -597,7 +597,7 @@ With layers and masks in place, selection catches up: soft and saved selections,
 | [ ] | `D03 T10 §4`  | Color Range and tonal selection                                                  |  17   |
 | [ ] | `D03 T10 §6`  | The local segmentation engine and Focus Area                                     |  16   |
 | [ ] | `D03 T10 §5`  | Quick selection, selection brush, foreground select, and intelligent scissors    |  13   |
-| [ ] | `D03 T10 §7`  | Select and Mask and refine selection                                             |  21   |
+| [ ] | `D03 T10 §7`  | Select and Mask and refine selection                                             |  22   |
 | [ ] | `D03 T10 §8`  | Modify and transform selection                                                   |  15   |
 | [ ] | `D03 T10 §9`  | Select menu extensions                                                           |  10   |
 | [ ] | `D03 T10 §10` | The Channels panel, spot channels, and quick mask options                        |  21   |
@@ -644,7 +644,7 @@ Painting is judged on its brush engine, so it gets its own phase: tips, smoothin
 | [ ] | `D03 T12 §6`  | Mixer brush, smudge, and color replacement                  |  12   |
 | [ ] | `D03 T12 §7`  | Erasers                                                     |  11   |
 | [ ] | `D03 T12 §8`  | Fill and stroke                                             |  18   |
-| [ ] | `D03 T12 §9`  | Gradients and the gradient editor                           |  24   |
+| [ ] | `D03 T12 §9`  | Gradients and the gradient editor                           |  25   |
 | [ ] | `D03 T12 §10` | Patterns                                                    |  17   |
 | [ ] | `D03 T12 §11` | Symmetry painting                                           |  11   |
 | [ ] | `D03 T21 §4`  | Imago 0.5.0 (Phase 19)                                      |  14   |
@@ -664,7 +664,7 @@ Retouching builds on painting: clone and the clone source panel, healing, patch,
 | [ ] | `D03 T13 §6`  | Warp and mesh warp                                |  13   |
 | [ ] | `D03 T13 §7`  | Puppet warp, cage transform, and pins             |  14   |
 | [ ] | `D03 T13 §8`  | Perspective warp                                  |  11   |
-| [ ] | `D03 T13 §9`  | Liquify                                           |  18   |
+| [ ] | `D03 T13 §9`  | Liquify                                           |  19   |
 | [ ] | `D03 T13 §10` | Frequency separation and retouching workflows     |  11   |
 | [ ] | `D03 T21 §5`  | Imago 0.6.0 (Phase 20)                            |  14   |
 
@@ -725,7 +725,7 @@ Photography gets its own phase. `Photon.Core` gains the scene-referred develop e
 | [ ] | `D01 T07 §5`  | Spot removal, red eye, and pet eye                                                          |  13   |
 | [ ] | `D01 T07 §6`  | Presets, snapshots, and XMP settings exchange                                               |  16   |
 | [ ] | `D01 T07 §7`  | The tone equalizer stage                                                                    |  18   |
-| [ ] | `D03 T15 §1`  | The Camera Raw filter dialog                                                                |  15   |
+| [ ] | `D03 T15 §1`  | The Camera Raw filter dialog                                                                |  16   |
 | [ ] | `D03 T15 §13` | Camera Raw reports, overlays, view tools, workflow, presets, and Render to DNG              |  14   |
 | [ ] | `D03 T15 §12` | The Develop studio and RAW layers                                                           |  20   |
 | [ ] | `D03 T15 §2`  | Develop masking and local adjustments surface                                               |  14   |
@@ -811,7 +811,7 @@ The AI features are Imago's own and come after the layers, masks, selections, re
 | [ ] | `D03 T19 §14` | Depth, portrait blur, and relighting                                 |  15   |
 | [ ] | `D03 T19 §8`  | Upscale and enhance                                                  |  18   |
 | [ ] | `D03 T19 §9`  | Distraction and object removal                                       |  15   |
-| [ ] | `D03 T19 §10` | The Imago assistant: prompt to edit                                  |  15   |
+| [ ] | `D03 T19 §10` | The Imago assistant: prompt to edit                                  |  16   |
 | [ ] | `D03 T19 §11` | AI type and faces                                                    |  15   |
 | [ ] | `D03 T19 §12` | Sky replacement                                                      |  12   |
 | [ ] | `D03 T19 §13` | The suite pipeline and the brand kit in Imago                        |  15   |
@@ -850,10 +850,10 @@ Lumen is planned from nothing with `plan-new-feature` rigor and built on the spi
 | [ ] | `D04 T01 §3` | The RAW decoder decision          |   4   |
 | [ ] | `D04 T01 §4` | RAW decode with fidelity fixtures |   5   |
 | [ ] | `D04 T01 §5` | The catalog database              |   5   |
-| [ ] | `D04 T01 §6` | Import                            |   6   |
+| [ ] | `D04 T01 §6` | Import                            |   7   |
 | [ ] | `D04 T01 §7` | Thumbnails and the preview cache  |   4   |
-| [ ] | `D04 T01 §8` | The library grid                  |   5   |
-| [ ] | `D04 T01 §9` | Loupe, compare, and filmstrip     |   3   |
+| [ ] | `D04 T01 §8` | The library grid                  |   6   |
+| [ ] | `D04 T01 §9` | Loupe, compare, and filmstrip     |   6   |
 
 ### Phase 29 -- Lumen 0.1.0: develop, export, Edit in Imago, release
 
@@ -865,8 +865,8 @@ Lumen becomes a complete first release: keywords, collections, culling, and XMP 
 | [ ] | `D04 T01 §11` | Ratings, flags, labels, and XMP sidecars         |   4   |
 | [ ] | `D04 T02 §1`  | The edit stack                                   |   4   |
 | [ ] | `D04 T02 §2`  | The develop pipeline on the suite develop engine |   6   |
-| [ ] | `D04 T02 §3`  | The develop panel                                |   4   |
-| [ ] | `D04 T02 §4`  | Crop and straighten                              |   3   |
+| [ ] | `D04 T02 §3`  | The develop panel                                |   5   |
+| [ ] | `D04 T02 §4`  | Crop and straighten                              |   4   |
 | [ ] | `D04 T02 §5`  | Presets, copy and paste settings, and sync       |   3   |
 | [ ] | `D04 T02 §6`  | Export                                           |   4   |
 | [ ] | `D06 T01 §3`  | The Lumen user guide                             |   4   |
@@ -885,17 +885,17 @@ The first pillar comes first. Imago's codec readers move to `Photon.Core/Formats
 | [ ] | `D04 T13 §8`  | Rare and historical raster formats                                                    |  21   |
 | [ ] | `D04 T13 §4`  | Documents and multi-page formats                                                      |  18   |
 | [ ] | `D04 T13 §5`  | RAW coverage and RAW+JPEG pairs                                                       |  16   |
-| [ ] | `D04 T04 §1`  | The Lumen Viewer: a second executable with a startup budget and the hand-off to Lumen |  21   |
-| [ ] | `D04 T04 §17` | Resident quick-start mode                                                             |  10   |
-| [ ] | `D04 T04 §2`  | The viewer decode path: screen-size decode, prefetch, and display color               |  16   |
+| [ ] | `D04 T04 §1`  | The Lumen Viewer: a second executable with a startup budget and the hand-off to Lumen |  22   |
+| [ ] | `D04 T04 §17` | Resident quick-start mode                                                             |  11   |
+| [ ] | `D04 T04 §2`  | The viewer decode path: screen-size decode, prefetch, and display color               |  17   |
 | [ ] | `D04 T04 §3`  | Default viewer registration and shell integration                                     |  16   |
-| [ ] | `D04 T04 §4`  | Zoom, fit, pan, magnifier, and navigator                                              |  15   |
-| [ ] | `D04 T04 §5`  | Browsing a folder in the viewer                                                       |  15   |
-| [ ] | `D04 T04 §14` | Viewer window and display options                                                     |  15   |
+| [ ] | `D04 T04 §4`  | Zoom, fit, pan, magnifier, and navigator                                              |  16   |
+| [ ] | `D04 T04 §5`  | Browsing a folder in the viewer                                                       |  16   |
+| [ ] | `D04 T04 §14` | Viewer window and display options                                                     |  16   |
 | [ ] | `D04 T04 §6`  | File operations and hand-offs in the viewer                                           |  18   |
-| [ ] | `D04 T04 §9`  | Image information, histogram, and viewer tools                                        |  16   |
-| [ ] | `D04 T04 §10` | Multi-page and animated images in the viewer                                          |  11   |
-| [ ] | `D04 T04 §7`  | Fullscreen and presentation                                                           |  14   |
+| [ ] | `D04 T04 §9`  | Image information, histogram, and viewer tools                                        |  17   |
+| [ ] | `D04 T04 §10` | Multi-page and animated images in the viewer                                          |  12   |
+| [ ] | `D04 T04 §7`  | Fullscreen and presentation                                                           |  15   |
 | [ ] | `D04 T04 §8`  | Quick slideshow in the viewer                                                         |  14   |
 | [ ] | `D04 T15 §1`  | Lumen 0.2.0 (Phase 30)                                                                |  16   |
 
@@ -916,13 +916,13 @@ The third pillar follows, because the viewer's quick edits run its operations. L
 | [ ] | `D04 T11 §7`  | The batch edit pipeline                                                          |  22   |
 | [ ] | `D04 T13 §7`  | The DNG writer                                                                   |  16   |
 | [ ] | `D04 T11 §9`  | Batch develop and batch export                                                   |  10   |
-| [ ] | `D04 T11 §10` | The batch dialog: file lists, profiles, and running from Explorer and the viewer |  13   |
+| [ ] | `D04 T11 §10` | The batch dialog: file lists, profiles, and running from Explorer and the viewer |  14   |
 | [ ] | `D04 T04 §11` | Quick edits I: rotate, flip, select, crop, resize, and canvas                    |  19   |
 | [ ] | `D04 T04 §16` | Lossless JPEG transforms to new files, or in place on opt-in                     |  12   |
 | [ ] | `D04 T04 §12` | Quick edits II: color corrections, color depth, and palettes                     |  14   |
 | [ ] | `D04 T04 §15` | Quick edits III: the effects browser and viewer effects                          |  14   |
 | [ ] | `D04 T04 §13` | Quick edits IV: text, watermarks, borders, and combining images                  |  13   |
-| [ ] | `D04 T04 §18` | Captions and info text through the token engine                                  |  10   |
+| [ ] | `D04 T04 §18` | Captions and info text through the token engine                                  |  11   |
 | [ ] | `D04 T15 §2`  | Lumen 0.3.0 (Phase 31)                                                           |  16   |
 
 ### Phase 32 -- Lumen parity III: browse without importing
@@ -934,13 +934,13 @@ The second pillar: any folder opens in Lumen without an import, with browsed pho
 | [ ] | `D04 T05 §1`  | The browse model: folders without import, browsed and library photos |  17   |
 | [ ] | `D04 T05 §2`  | The background indexer                                               |  15   |
 | [ ] | `D04 T05 §3`  | The folder tree, favorites, address bar, tabs, and home page         |  14   |
-| [ ] | `D04 T05 §4`  | File list views, thumbnails, and the preview pane                    |  14   |
+| [ ] | `D04 T05 §4`  | File list views, thumbnails, and the preview pane                    |  15   |
 | [ ] | `D04 T05 §5`  | Sort, group, filter, and select in browse                            |   9   |
 | [ ] | `D04 T05 §6`  | File operations: copy, move, rename, delete, and undo                |  19   |
-| [ ] | `D04 T05 §7`  | Info palette, properties, and compare images                         |   9   |
+| [ ] | `D04 T05 §7`  | Info palette, properties, and compare images                         |  10   |
 | [ ] | `D04 T05 §8`  | Image basket and selective browsing                                  |   9   |
 | [ ] | `D04 T05 §9`  | The private folder                                                   |   9   |
-| [ ] | `D04 T05 §10` | Calendar and timeline browsing                                       |   9   |
+| [ ] | `D04 T05 §10` | Calendar and timeline browsing                                       |  10   |
 | [ ] | `D04 T05 §11` | Duplicate finder                                                     |   9   |
 | [ ] | `D04 T05 §12` | Archives and folder sync                                             |  12   |
 | [ ] | `D04 T15 §3`  | Lumen 0.4.0 (Phase 32)                                               |  15   |
@@ -951,7 +951,7 @@ Lightroom's and ACDSee's library catches up over both browsed and imported photo
 
 |  ✔  | Section       | Deliverable                                                                                    | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D04 T06 §1`  | Library view extensions: cell styles, overlays, survey, and a second window                    |  18   |
+| [ ] | `D04 T06 §1`  | Library view extensions: cell styles, overlays, survey, and a second window                    |  22   |
 | [ ] | `D04 T06 §2`  | Culling extensions: label sets, flag and rating cycles, tagging, and auto advance              |  16   |
 | [ ] | `D04 T06 §3`  | Stacks, versions, and virtual copies                                                           |  13   |
 | [ ] | `D04 T06 §4`  | The filter bar extended: text, attributes, metadata columns, and presets                       |  15   |
@@ -961,8 +961,8 @@ Lightroom's and ACDSee's library catches up over both browsed and imported photo
 | [ ] | `D04 T06 §8`  | Folders and catalog panels: synchronize, relocate, missing photos, and offline volumes         |  17   |
 | [ ] | `D04 T06 §9`  | Catalog backup and maintenance                                                                 |  15   |
 | [ ] | `D04 T06 §10` | Multiple catalogs, catalog settings, and preview management                                    |  16   |
-| [ ] | `D04 T06 §11` | Smart previews and offline editing                                                             |  10   |
-| [ ] | `D04 T06 §12` | The dashboard and library statistics                                                           |  10   |
+| [ ] | `D04 T06 §11` | Smart previews and offline editing                                                             |  11   |
+| [ ] | `D04 T06 §12` | The dashboard and library statistics                                                           |  11   |
 | [ ] | `D04 T06 §13` | Painter and Quick Develop                                                                      |  11   |
 | [ ] | `D04 T15 §4`  | Lumen 0.5.0 (Phase 33)                                                                         |  15   |
 
@@ -979,7 +979,7 @@ Metadata comes before the import extensions that apply it: every EXIF, IPTC, and
 | [ ] | `D04 T08 §3` | Metadata presets and synchronizing metadata                                         |  11   |
 | [ ] | `D04 T08 §4` | Capture time editing                                                                |  12   |
 | [ ] | `D04 T08 §5` | Keyword extensions                                                                  |  17   |
-| [ ] | `D04 T07 §1` | The import window extended                                                          |  15   |
+| [ ] | `D04 T07 §1` | The import window extended                                                          |  16   |
 | [ ] | `D04 T07 §2` | File handling on import: previews, backup copies, renaming, and destination folders |  16   |
 | [ ] | `D04 T07 §3` | Apply during import and import presets                                              |  13   |
 | [ ] | `D04 T07 §4` | Phones and cameras over Windows Portable Devices                                    |  12   |
@@ -987,8 +987,8 @@ Metadata comes before the import extensions that apply it: every EXIF, IPTC, and
 | [ ] | `D04 T07 §6` | Convert to DNG                                                                      |  10   |
 | [ ] | `D04 T07 §7` | Scanning and Copy Shop                                                              |  13   |
 | [ ] | `D04 T07 §8` | Screen capture                                                                      |  12   |
-| [ ] | `D04 T08 §6` | The map view and places                                                             |  19   |
-| [ ] | `D04 T08 §7` | Track logs, geotagging, and offline reverse geocoding                               |  12   |
+| [ ] | `D04 T08 §6` | The map view and places                                                             |  20   |
+| [ ] | `D04 T08 §7` | Track logs, geotagging, and offline reverse geocoding                               |  13   |
 | [ ] | `D04 T15 §5` | Lumen 0.6.0 (Phase 34)                                                              |  15   |
 
 ### Phase 35 -- Lumen parity VI: develop I, the panels
@@ -997,15 +997,15 @@ Develop's panels reach Lightroom and ACDSee on the suite develop engine: the ext
 
 |  ✔  | Section       | Deliverable                                                                                  | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D04 T09 §1`  | The develop workspace extended: tool strip, views, reference, and overlays                   |  20   |
+| [ ] | `D04 T09 §1`  | The develop workspace extended: tool strip, views, reference, and overlays                   |  21   |
 | [ ] | `D04 T09 §2`  | History, snapshots, and the before state                                                     |  13   |
 | [ ] | `D04 T09 §17` | Saving develop results: leaving develop, new files, sidecars, and opt-in writes to originals |  17   |
 | [ ] | `D04 T09 §3`  | Profiles, white balance, presence, and HDR editing                                           |  14   |
-| [ ] | `D04 T09 §4`  | Tone curve, color mixer, point color, color grading, and ACDSee color panels                 |  16   |
+| [ ] | `D04 T09 §4`  | Tone curve, color mixer, point color, color grading, and ACDSee color panels                 |  17   |
 | [ ] | `D04 T09 §5`  | Detail: sharpening and noise reduction                                                       |  10   |
 | [ ] | `D04 T09 §6`  | Lens corrections, DNG opcodes, and flat-field                                                |  15   |
 | [ ] | `D04 T09 §7`  | Transform, Upright, calibration, and process versions                                        |  12   |
-| [ ] | `D04 T09 §8`  | Effects and crop extensions                                                                  |   8   |
+| [ ] | `D04 T09 §8`  | Effects and crop extensions                                                                  |   9   |
 | [ ] | `D04 T09 §10` | Remove, heal, clone, and red eye                                                             |  12   |
 | [ ] | `D04 T09 §11` | Presets and defaults extended                                                                |  18   |
 | [ ] | `D04 T09 §12` | Sync, copy and paste, and auto sync extended                                                 |  12   |
@@ -1017,7 +1017,7 @@ Local work and the stages only ACDSee has: masking with brushes, gradients, rang
 
 |  ✔  | Section       | Deliverable                                                   | Items |
 | :-: | ------------- | ------------------------------------------------------------- | :---: |
-| [ ] | `D04 T09 §9`  | Masking: brushes, gradients, range masks, and pixel targeting |  20   |
+| [ ] | `D04 T09 §9`  | Masking: brushes, gradients, range masks, and pixel targeting |  21   |
 | [ ] | `D01 T07 §8`  | Soft focus, glow, and skin tune stages                        |  15   |
 | [ ] | `D01 T07 §9`  | Develop LUTs, blend modes, and looks                          |  15   |
 | [ ] | `D04 T09 §13` | Light EQ, soft focus, and skin tune                           |  10   |
@@ -1039,7 +1039,7 @@ AI comes after the library, metadata, and develop surfaces it feeds. Lumen maps 
 | [ ] | `D04 T10 §4`  | AI keywords, captions, alt text, and OCR                                   |  14   |
 | [ ] | `D04 T10 §5`  | Similar photos and visual duplicates                                       |  15   |
 | [ ] | `D04 T10 §6`  | Assisted culling                                                           |  12   |
-| [ ] | `D04 T10 §7`  | AI masks in develop                                                        |  14   |
+| [ ] | `D04 T10 §7`  | AI masks in develop                                                        |  15   |
 | [ ] | `D04 T10 §8`  | Enhance: denoise, raw details, and super resolution                        |  16   |
 | [ ] | `D04 T10 §9`  | Generative and distraction removal                                         |  10   |
 | [ ] | `D04 T10 §10` | Lens blur and depth                                                        |  12   |
@@ -1056,13 +1056,13 @@ Output catches up with Lightroom's modules and ACDSee's creation tools: the exte
 | [ ] | `D04 T12 §13` | Export presets, metadata, watermarks, and post-processing         |  19   |
 | [ ] | `D04 T12 §2`  | Export formats and DNG output                                     |  12   |
 | [ ] | `D04 T12 §3`  | Publish to local folders                                          |  11   |
-| [ ] | `D04 T12 §4`  | Print I: the print module, page setup, and the print job          |  16   |
-| [ ] | `D04 T12 §5`  | Print II: packages, overlays, templates, and document printing    |  16   |
+| [ ] | `D04 T12 §4`  | Print I: the print module, page setup, and the print job          |  17   |
+| [ ] | `D04 T12 §5`  | Print II: packages, overlays, templates, and document printing    |  17   |
 | [ ] | `D04 T12 §6`  | Contact sheets                                                    |  14   |
-| [ ] | `D04 T12 §7`  | Slideshow I: templates, layout, overlays, and titles              |  13   |
-| [ ] | `D04 T12 §8`  | Slideshow II: playback, music, transitions, and export            |  15   |
-| [ ] | `D04 T12 §9`  | Web galleries                                                     |  16   |
-| [ ] | `D04 T12 §10` | Books                                                             |  13   |
+| [ ] | `D04 T12 §7`  | Slideshow I: templates, layout, overlays, and titles              |  14   |
+| [ ] | `D04 T12 §8`  | Slideshow II: playback, music, transitions, and export            |  16   |
+| [ ] | `D04 T12 §9`  | Web galleries                                                     |  17   |
+| [ ] | `D04 T12 §10` | Books                                                             |  14   |
 | [ ] | `D04 T12 §11` | PDF and PowerPoint creation                                       |  14   |
 | [ ] | `D04 T12 §12` | Email and local sharing                                           |  11   |
 | [ ] | `D04 T15 §9`  | Lumen 0.10.0 (Phase 38)                                           |  15   |
@@ -1109,7 +1109,7 @@ After the suite release (Phase 40), Imago opens camera RAW files through the dec
 | :-: | ------------- | ----------------------------------------------- | :---: |
 | [ ] | `D03 T07 §11` | RAW import through the shared decoder           |   4   |
 | [ ] | `D02 T18 §9`  | GIMP XCF import in Nodus on the shared XCF core |   9   |
-| [ ] | `D02 T18 §10` | Camera RAW import and the RAW Lab               |  13   |
+| [ ] | `D02 T18 §10` | Camera RAW import and the RAW Lab               |  14   |
 | [ ] | `D02 T17 §11` | Nodus 1.1.0 (Phase 41)                          |  13   |
 
 ### Phase 99 -- Manual: operator-only steps

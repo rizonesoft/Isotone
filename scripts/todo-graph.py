@@ -5810,10 +5810,12 @@ def design_findings(todos: list[Todo]) -> list[tuple[str, str]]:
             if parsed.get("new") and ref in sections:
                 items = " ".join(text for _done, text in sections[ref][2].items)
                 for path in parsed["new"]:
+                    # A spec that exists already reads as "extend this spec": the first
+                    # section to ship writes it, later sections that named it extend it,
+                    # so one section shipping never invalidates the others.
                     if (design_root() / path).is_file():
-                        out.append(("design-malformed",
-                                    f"{d['where']}: `new surface: {path}` names a spec that exists now; cite it directly"))
-                    elif path not in items:
+                        continue
+                    if path not in items:
                         out.append(("design-malformed",
                                     f"{d['where']}: `new surface: {path}` needs a checklist item in the same section "
                                     "that adds that spec to docs/design first (design-first rule)"))
@@ -10651,7 +10653,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("design: new surface with its design-first item is clean", _dclasses(), [])
             _dwrite(s1=_dsection(1, _dsurf, _dnew.replace("Foo", "Button"),
                                  extra_items="- [ ] Add `docs/design/components/Button/README.md`.\n"))
-            check("design: new surface naming a spec that exists is design-malformed", _dclasses(), ["design-malformed"])
+            check("design: new surface naming a spec that exists reads as extend and is clean", _dclasses(), [])
             # deviations and the release gate
             _ddev = ("**Design deviation:** opened 2026-09-27 -- spec: docs/design/components/Button/README.md#states "
                      "-- reason: the WPF hover state cannot be forced offscreen yet -- follow-up: D96 T01 §3 (fix code)")

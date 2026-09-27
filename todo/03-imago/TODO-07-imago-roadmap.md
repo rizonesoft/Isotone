@@ -95,7 +95,8 @@ Every Imago surface keyboard- and screen-reader-operable and translatable. -> SO
 
 Saved panel layouts, a Preferences dialog over every Imago setting, and shortcut remapping. -> SOURCE: legacy-imago-6.2-6.6
 
-**Fidelity:** Preferences dialog -- new build, no baseline; captured to docs/captures/imago/preferences/.
+**Fidelity:** Imago Preferences dialog, workspaces, and panels -- docs/design/components/ (Dialog, Tabs, Panel, ToggleSwitch, ComboBox, Checkbox, NumberBox) and the Imago (raster) region of docs/design/shell-layout.md, per standards/design-contract.md; goldens under docs/captures/golden/imago/preferences/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/Dialog/README.md, docs/design/components/Tabs/README.md, docs/design/components/Panel/README.md, docs/design/components/ToggleSwitch/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/NumberBox/README.md, docs/design/shell-layout.md#imago-raster -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can arrange panels, save workspaces, and change every setting and shortcut in one place. Consumer: every setting's consumer.
 **Treatment:** Window, Workspace (save, switch, reset); Preferences categories bound to the settings store, applying on OK with Cancel reverting and Reset to Defaults restoring every value; shortcut remapping on the keymap. If Nodus's Preferences dialog frame (`D02 T06 §13`) fits, it moves to `Photon.UI` and both apps use it. Cheaper substitute that fails the checkpoint: settings without a surface.
 **Chrome:** consume the settings store, the keymap, and AvalonDock.
