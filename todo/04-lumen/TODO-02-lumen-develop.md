@@ -106,12 +106,14 @@ The pipeline turns a decoded RAW (or a JPEG converted to linear) plus `DevelopSe
 The develop module is where the pipeline meets the photographer: the photo large in the center, controls on the right in the order the competitors agree on, a live histogram, and before and after. -> SOURCE: lumen-notes-develop-panel
 
 **Fidelity:** Lumen develop module -- new build, no baseline; follows the window anatomy in `docs/design/shell-layout.md` (**Corrected 2026-09-27:** said `standards/shared.md`) and the control order recorded in `docs/dev/lumen/competitor-survey.md`, captured to docs/captures/lumen/develop/.
+**Design:** docs/design/shell-layout.md#lumen-darkroom-and-photo-manager, docs/design/components/Panel/README.md, docs/design/components/Slider/README.md, docs/design/components/NumberBox/README.md, docs/design/components/ListTree/README.md, docs/design/components/ToolRail/README.md, new surface: docs/design/components/LumenDevelop/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can adjust a photo's tone and color with immediate visual feedback and compare against the original. Consumer: the edit stack and the pipeline.
 **Treatment:** a histogram (RGB and luminance, clipping indicators toggled by J); Basic panel (white balance presets, temperature, tint, exposure, contrast, highlights, shadows, whites, blacks, vibrance, saturation); Tone Curve (parametric and point); a History list and Snapshots; before and after with \ (toggle) and Y (side by side); double-click a slider resets it; Alt-drag on exposure or blacks shows clipping; every slider keyboard adjustable. Cheaper substitute that fails the checkpoint: sliders that apply only on release with no live preview.
 **Chrome:** consume the histogram control from Imago moved to `Photon.UI` (filed through `add-todo` when this section starts, since two apps then need it), the theme, and the keymap pattern.
 
 **Requires:** display-session -- the develop module needs an interactive desktop
 
+- [ ] Write the design spec `docs/design/components/LumenDevelop/README.md` and `preview.html` (the develop module: histogram, panel sections, history, snapshots, and before and after; anatomy, every state, tokens, sizes) before building; Done when: the spec exists and the design page rebuild passes.
 - [ ] `DevelopViewModel` binding every control to `DevelopSettings` through the edit stack, with preview requests debounced and cancelled on change. Done when: `DevelopViewModelTests` cover reset, merge, and cancellation.
 - [ ] The module view with histogram, panels, history, snapshots, and before and after. Done when: captures of each are committed.
 - [ ] Update the Lumen user guide's develop page. Done when: every control is described.
@@ -124,12 +126,14 @@ The develop module is where the pipeline meets the photographer: the photo large
 Crop, aspect ratios, and straightening are develop settings like any other: stored in the stack, applied at render, never cutting the original. -> SOURCE: lumen-notes-develop-crop
 
 **Fidelity:** Crop overlay -- new build, no baseline; captured to docs/captures/lumen/crop/.
+**Design:** docs/design/components/Canvas/README.md, docs/design/components/ToolRail/README.md, docs/design/components/Panel/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Slider/README.md, docs/design/components/NumberBox/README.md, new surface: docs/design/components/LumenCrop/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can crop to an aspect ratio and level the horizon, and undo it any time. Consumer: the pipeline and export.
 **Treatment:** R enters crop with a rule-of-thirds overlay, aspect presets (original, 1:1, 4:3, 3:2, 16:9, custom), X swaps orientation, an angle slider and a straighten tool (draw along the horizon), Enter commits one step. Cheaper substitute that fails the checkpoint: a crop that resamples the stored preview.
 **Chrome:** consume the edit stack and the develop module.
 
 **Requires:** display-session -- the crop overlay needs an interactive desktop
 
+- [ ] Write the design spec `docs/design/components/LumenCrop/README.md` and `preview.html` (the crop overlay and straighten tool: frame, handles, grid, angle readout; anatomy, every state, tokens, sizes) before building; Done when: the spec exists and the design page rebuild passes.
 - [ ] Crop and rotation parameters in `DevelopSettings` and the pipeline (applied after demosaic, bicubic resampling). Done when: a test asserts output dimensions for each aspect preset.
 - [ ] The crop overlay and straighten tool. Done when: a driven straighten of a tilted fixture yields a level horizon within 0.2 degrees.
 - [ ] Commit: `"lumen: non-destructive crop and straighten"`
@@ -141,6 +145,7 @@ Crop, aspect ratios, and straightening are develop settings like any other: stor
 Batch work is half of Lumen's job: apply a look to hundreds of photos, copy one photo's white balance to its neighbors, and save favorite settings as presets. -> SOURCE: lumen-notes-develop-batch
 
 **Fidelity:** Presets panel and the Copy Settings dialog -- new build, no baseline; captured to docs/captures/lumen/presets/.
+**Design:** docs/design/components/Panel/README.md, docs/design/components/ListTree/README.md, docs/design/components/Dialog/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can apply saved or copied settings to many photos in one action and undo it. Consumer: the edit stacks of the selected photos.
 **Treatment:** a Presets panel (user presets in the suite-wide develop presets folder shared with Imago, `D01 T07 §6`, with a hover preview on the current photo); Ctrl+Shift+C opens a checklist of settings groups to copy, Ctrl+Shift+V pastes to the selection; Sync applies the active photo's chosen groups to the selection; each batch is one undo step across all photos. Cheaper substitute that fails the checkpoint: presets that overwrite every setting.
 **Chrome:** consume the edit stack, the grid selection, and the settings store.
@@ -158,6 +163,7 @@ Batch work is half of Lumen's job: apply a look to hundreds of photos, copy one 
 Export is how developed photos leave Lumen: rendered at full resolution through the same pipeline, resized, sharpened for their destination, tagged with a color space, written atomically, in the background. -> SOURCE: lumen-notes-export
 
 **Fidelity:** Export dialog -- new build, no baseline; captured to docs/captures/lumen/export/.
+**Design:** docs/design/components/Dialog/README.md, docs/design/components/TextBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/RadioButton/README.md, docs/design/components/Progress/README.md, docs/design/components/Toast/README.md, docs/design/components/Button/README.md, docs/design/components/ListTree/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can export a selection to files ready for the web, print, or another editor, and keep working meanwhile. Consumer: the exported files.
 **Treatment:** an Export dialog with target folder and subfolder, file naming template (`{date}-{name}-{seq}`), format (JPEG quality, TIFF 8 or 16 bit with compression, PNG), resize (long edge, short edge, megapixels, percentage; don't enlarge), output sharpening (screen, matte paper, glossy paper; low, standard, high), color space, metadata (all, copyright only, none; remove location), and saved export presets; exports run in the background with progress, Cancel, and a completion notification listing failures with reasons; an existing file is never overwritten without choosing Overwrite, Skip, or Unique name. Cheaper substitute that fails the checkpoint: exporting the cached preview JPEG.
 **Chrome:** consume the pipeline, `AtomicFileWriter`, the settings store, and the theme.
@@ -177,7 +183,8 @@ Lumen is the bridge from the camera to Imago, and the suite's rule is that no ap
 
 **Corrected 2026-09-26:** Nodus's suite pipeline (`D02 T15 §11`) ships first and adds `src/Photon.Core/Suite/SuiteAppLocator.cs`, which reads a suite app's App Paths entry (`HKCU`, then `HKLM`) and verifies the exe exists. This section consumes it to locate Imago instead of writing its own App Paths lookup; the Treatment below keeps the same registry keys.
 
-**Fidelity:** Photo, Edit In menu -- docs/captures/lumen/develop/.
+**Fidelity:** Photo, Edit In menu -- docs/design/ (the specs on the Design line below) per standards/design-contract.md; goldens under docs/captures/golden/lumen/edit-in/. **Corrected 2026-09-27:** cited docs/captures/lumen/develop/ as the source; the captures under docs/captures/lumen/ are a before record, never the fidelity source.
+**Design:** docs/design/components/Menu/README.md, docs/design/components/ContextMenu/README.md, docs/design/components/Icons/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can take a developed photo into Imago for pixel work and see the result back in the library. Consumer: Imago (through the file) and the catalog.
 **Treatment:** Photo, Edit In, Imago (Ctrl+E) renders a 16-bit ProPhoto or Adobe RGB TIFF (a setting) named `<name>-Edit.tif` beside the original's folder in Lumen's working location, locates Imago through its App Paths registry entry (`HKCU` then `HKLM\Software\Microsoft\Windows\CurrentVersion\App Paths\Imago.exe`, written by the Imago installer), starts it with the path, and adds the TIFF to the catalog stacked with the original; when the file changes on disk the thumbnail refreshes. When Imago is not found, the menu item is disabled with the tooltip "Install Imago to edit photos in it." Cheaper substitute that fails the checkpoint: referencing Imago's assemblies.
 **Chrome:** consume the export runner, a `FileSystemWatcher`, and the catalog's stacking.

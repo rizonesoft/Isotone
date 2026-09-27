@@ -8,7 +8,7 @@ Operator decisions of 2026-09-27 behind it: pixel perfect means "Exact tokens + 
 
 - `docs/design/` is the source. `tokens.json` holds every value, `components/<Comp>/README.md` and its `preview.html` specify each control, `shell-layout.md` specifies the window anatomy and its regions, and `app-icons.md` the app icons. The WPF code implements them 1:1.
 - A change to how something looks goes to `docs/design/` first, in its own commit or at the head of the section's range, with the design page regenerated (`python scripts/build-design-site.py`, `docs/design/EDITING.md`). Code then follows the new spec. Code never leads the design, and a surface is never "tuned" in XAML to a value the spec does not name.
-- A surface that has no spec yet gets one before it is built: the section names it as `new surface: docs/design/<path>.md` on its `**Design:**` line and carries the checklist item that adds that README (and its preview card) to `docs/design/` before any XAML is written.
+- A surface that has no spec yet gets one before it is built: the section names it as `new surface: docs/design/<path>.md` on its `**Design:**` line and carries the checklist item that adds that README (and its preview card) to `docs/design/` before any XAML is written. A spec two apps need is one shared spec with no app prefix (for example `CurveEditor`, `GradientEditor`, `AssistantPanel`); the earliest section writes it and later sections extend it.
 - The captures of the imported apps under `docs/captures/<app>/` (`D00 T03 §2`) are a "before" record of the legacy surfaces. They are never a fidelity source: a surface is compared with the design, not with what Bezier or the old Imago looked like.
 
 ## 2. What fidelity means

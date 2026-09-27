@@ -64,7 +64,9 @@ track: N6
 
 The pen and node tools draw and move nodes; real path work also needs continuing an open path, joining two end points, breaking at a node, reversing direction, simplifying a noisy path, and converting a stroke to its outline. `PathOperationsService` has signatures for several; `SKPath` supplies the geometry. -> SOURCE: legacy-nodus-3.3-3.4
 
-**Fidelity:** Nodus canvas and Path menu -- docs/captures/nodus/main-window/.
+**Fidelity:** Nodus canvas and Path menu -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/main-window/.
+**Design:** docs/design/components/Canvas/README.md, docs/design/components/Menu/README.md, docs/design/components/OptionsBar/README.md, docs/design/shell-layout.md#nodus-vector -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Nodus canvas and Path menu -- docs/captures/nodus/main-window/. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a designer can repair and refine paths node by node. Consumer: the document.
 **Treatment:** pen continues an open path when started on its end node; Path, Join (two selected end nodes), Break at Node, Reverse, Close, Simplify (tolerance slider with live preview), and Stroke to Path (via `SKPaint.GetFillPath`), each one undo step. Cheaper substitute that fails the checkpoint: operations that rebuild the whole path and lose node types.
 **Chrome:** consume the node tool, `PathOperationsService`, and the history.
@@ -82,7 +84,9 @@ The pen and node tools draw and move nodes; real path work also needs continuing
 
 Point text exists. Layouts need text flowing inside a shape, text following a curve, and text converted to outlines for hand-off. -> SOURCE: legacy-nodus-3.5
 
-**Fidelity:** Nodus canvas, text tool -- docs/captures/nodus/main-window/.
+**Fidelity:** Nodus canvas, text tool -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/main-window/.
+**Design:** docs/design/components/Canvas/README.md, docs/design/components/OptionsBar/README.md, docs/design/components/ToolRail/README.md, docs/design/shell-layout.md#nodus-vector -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Nodus canvas, text tool -- docs/captures/nodus/main-window/. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a designer can flow text in a shape, set text along a path, and outline text. Consumer: the document and the SVG writer.
 **Treatment:** dragging the text tool makes an area text box (SVG 2 `shape-inside` written with a `<foreignObject>`-free fallback of positioned `<tspan>` lines); clicking a path with the text tool attaches text with `<textPath>`; Path, Text to Path outlines glyphs through `SKFont.GetTextPath`. Cheaper substitute that fails the checkpoint: rasterized text.
 **Chrome:** consume the text tool and `SkiaRenderer`'s font cache.
@@ -100,7 +104,9 @@ Point text exists. Layouts need text flowing inside a shape, text following a cu
 
 Nodus opens one document at a time; the history and selection are app singletons. Multiple documents need per-document scopes, tabs with dirty markers, and dock layouts that persist. The layers panel shows nested groups as one row. -> SOURCE: legacy-nodus-2.4-2.9
 
-**Fidelity:** Nodus main window with document tabs -- docs/captures/nodus/main-window/.
+**Fidelity:** Nodus main window with document tabs -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/main-window/.
+**Design:** docs/design/components/DocumentTabs/README.md, docs/design/components/Panel/README.md, docs/design/components/LayersRow/README.md, docs/design/components/ListTree/README.md, docs/design/shell-layout.md#nodus-vector -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Nodus main window with document tabs -- docs/captures/nodus/main-window/. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a designer can work on several documents at once, each with its own undo and selection, and keep a panel layout. Consumer: every service scoped per document.
 **Treatment:** AvalonDock document tabs with `name*` for dirty; a DI scope per document owning its history, selection, and tool state; Window, Save Layout and Reset Layout persisted to the app-data folder; the layers panel becomes a tree with expandable groups. Cheaper substitute that fails the checkpoint: tabs sharing one history.
 **Chrome:** consume AvalonDock with the suite theme and the `Photon.Core` single-instance service for opening files into new tabs.
@@ -120,7 +126,9 @@ Nodus opens one document at a time; the history and selection are app singletons
 
 `SymbolLibraryService` and `AssetLibraryService` exist and are deferred here by the triage. Symbols (reusable definitions with instances) are how designers keep icon sets consistent; the asset library holds reusable artwork across documents. -> SOURCE: legacy-nodus-4.5-10.5
 
-**Fidelity:** Symbols and Assets panels -- new build, no baseline; captured to docs/captures/nodus/symbols/ and docs/captures/nodus/assets/.
+**Fidelity:** Symbols and Assets panels -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/symbols/, docs/captures/golden/nodus/assets/.
+**Design:** docs/design/components/Panel/README.md, docs/design/components/ListTree/README.md, docs/design/components/TextBox/README.md, docs/design/components/Icons/README.md -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Symbols and Assets panels -- new build, no baseline; captured to docs/captures/nodus/symbols/ and docs/captures/nodus/assets/. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a designer can make a symbol from a selection, place instances, edit the master and see every instance update, and store artwork in a searchable library. Consumer: the document (`<symbol>`/`<use>` in SVG) and the app-data library folder.
 **Treatment:** symbols map to SVG `<symbol>` and `<use>`; the asset library is a folder of SVG files under the app-data folder with a searchable grid, drag onto canvas, and favorites; the services lose their "Deferred" markers. Cheaper substitute that fails the checkpoint: symbols that copy geometry into each instance.
 **Chrome:** consume the deferred services, the icon catalog, and the theme.
@@ -137,13 +145,16 @@ Nodus opens one document at a time; the history and selection are app singletons
 
 `CommandPaletteService`, `CanvasHUDService`, and `PresetService` are deferred here. A command palette (Ctrl+K) makes every command reachable by name; the HUD shows live dimensions and angles while dragging. **Imago second consumer (2026-09-26):** the command index built here moves to `Photon.UI/Workspace/CommandIndex.cs` in `D03 T20 §3`, the command palette consuming it unchanged. -> SOURCE: legacy-nodus-5.3-5.4
 
-**Fidelity:** Command palette overlay and canvas HUD -- new build, no baseline; captured to docs/captures/nodus/command-palette/ and docs/captures/nodus/hud/.
+**Fidelity:** Command palette overlay and canvas HUD -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/command-palette/, docs/captures/golden/nodus/hud/.
+**Design:** docs/design/components/Canvas/README.md, docs/design/components/TextBox/README.md, docs/design/components/ListTree/README.md, new surface: docs/design/components/CommandPalette/README.md -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Command palette overlay and canvas HUD -- new build, no baseline; captured to docs/captures/nodus/command-palette/ and docs/captures/nodus/hud/. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a user can run any command by typing its name, and see exact values while dragging. Consumer: the keymap's commands; the tools.
 **Treatment:** Ctrl+K opens a filtered list of every keymap command with its gesture, fuzzy-matched, Enter runs; the HUD draws width, height, angle, and distance near the cursor during drags, respecting the unit setting. Cheaper substitute that fails the checkpoint: a palette with its own command list.
 **Chrome:** consume the keymap, the overlay layer, and the theme.
 
 **Requires:** display-session -- the overlay and HUD need an interactive desktop
 
+- [ ] Write the design spec `docs/design/components/CommandPalette/README.md` and its `docs/design/components/CommandPalette/preview.html` card (anatomy, every state, tokens, sizes) before any XAML is written, and regenerate the design page. Done when: the spec exists and `python scripts/build-design-site.py --check` passes.
 - [ ] Wire `CommandPaletteService` to the keymap. Done when: every keymap command is findable by name in a test.
 - [ ] Wire `CanvasHUDService` into the select and shape tools. Done when: a capture shows the HUD during a resize.
 - [ ] Decide `PresetService`'s fate (wire into tool presets or delete) and record it in the triage document. Done when: the service is wired or gone.
@@ -155,7 +166,9 @@ Nodus opens one document at a time; the history and selection are app singletons
 
 Settings accumulate across sections (snapping, autosave, export defaults, units) with no surface except their menus. A Preferences dialog makes each reachable, and the shortcuts dialog gains remapping. -> SOURCE: legacy-nodus-11-5.5
 
-**Fidelity:** Preferences dialog -- new build, no baseline; captured to docs/captures/nodus/preferences/.
+**Fidelity:** Preferences dialog -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/preferences/.
+**Design:** docs/design/components/Dialog/README.md, docs/design/components/Tabs/README.md, docs/design/components/ListTree/README.md, docs/design/components/TextBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/ToggleSwitch/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Preferences dialog -- new build, no baseline; captured to docs/captures/nodus/preferences/. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a user can change every Nodus setting in one place and remap shortcuts, with conflicts refused. Consumer: every setting's named consumer.
 **Treatment:** a categorized dialog (General, Units, Canvas, Snapping, Autosave, Export, Shortcuts) bound to `NodusSettings`, applying on OK with Cancel reverting; the Shortcuts page edits the keymap with conflict detection and reset to defaults, stored in settings. Cheaper substitute that fails the checkpoint: a JSON file the user edits by hand.
 **Chrome:** consume the settings store, the keymap, and the theme; share nothing with Imago until Imago builds its own preferences (then file a `Photon.UI` move).
@@ -173,7 +186,9 @@ Settings accumulate across sections (snapping, autosave, export defaults, units)
 
 `ImportService`, `ExportDialogService`, and `CodeEditorService` are deferred here. Designers need placing raster images, importing EMF and PDF artwork, and exporting WebP, ICO, optimized SVG, and XAML or code snippets, with presets. -> SOURCE: legacy-nodus-10.2-10.4
 
-**Fidelity:** Export dialog -- docs/captures/nodus/export-raster/ (from `D02 T04 §3`), extended.
+**Fidelity:** Export dialog -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/nodus/export-raster/.
+**Design:** docs/design/components/Dialog/README.md, docs/design/components/ComboBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Button/README.md, docs/design/components/Progress/README.md -- states: all in spec -- themes: all four -- density: both
+**Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Export dialog -- docs/captures/nodus/export-raster/ (from `D02 T04 §3`), extended. The source is now the design named on the Design line; the captures under `docs/captures/nodus/` are before records only, and the approved renders land under `docs/captures/golden/nodus/`.
 **Job:** a designer can place images and export to every format a hand-off needs, from one dialog with presets. Consumer: the exported files and other applications.
 **Treatment:** File, Place for PNG, JPEG, and WebP (embedded as data URIs or linked); one export dialog over every format with saved presets; XAML export enabled (removing its planned entry); each reader and writer with a fidelity fixture. Cheaper substitute that fails the checkpoint: one dialog per format.
 **Chrome:** consume the deferred services, `AtomicFileWriter`, and the export sections' renderers.

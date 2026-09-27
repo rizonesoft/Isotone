@@ -52,7 +52,8 @@ track: I6
 
 `D01 T01 §4` moves Nodus's About and shortcuts dialogs to `Photon.UI` and wires them into Imago's Help menu; this section completes Imago's Help menu around them: Documentation opens the Imago guide, and Check for Updates is disabled with a tooltip naming `D05 T01 §4`.
 
-**Fidelity:** Imago Help menu and the shared dialogs -- docs/captures/imago/about/ and docs/captures/imago/shortcuts/ (from `D01 T01 §4`).
+**Fidelity:** Imago Help menu, About, and Shortcuts dialogs -- docs/design/components/ (Menu, Dialog, ListTree, AppIcon, TextBox), per standards/design-contract.md; goldens under docs/captures/golden/imago/about/, docs/captures/golden/imago/shortcuts/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/Menu/README.md, docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/AppIcon/README.md, docs/design/components/TextBox/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** an Imago user can reach help, shortcuts, and version information. Consumer: the user.
 **Treatment:** Help, Documentation (F1) opens `https://github.com/rizonesoft/Photon/blob/main/docs/user/imago/README.md`; Keyboard Shortcuts shows the Imago keymap (`D03 T03 §4`); About shows Imago's identity and generated credits; Check for Updates disabled with `Planned: D05 T01 §4`. Cheaper substitute that fails the checkpoint: log-only Help commands.
 **Chrome:** consume `Photon.UI` `AboutDialog` and `ShortcutsDialog`, `AppIdentity`, and a credits list generated the way Nodus's is. Do not copy the dialogs.
@@ -69,7 +70,8 @@ track: I6
 
 The surface-completeness rule applies to Imago's menus as it did to Nodus's (`D02 T03 §5`): a shipped menu item either works or is disabled with a tooltip naming a resolvable section.
 
-**Fidelity:** Imago main window, every menu -- docs/captures/imago/main-window/.
+**Fidelity:** Imago menu bar and every menu -- docs/design/components/ (Menu, WindowChrome, Tooltip) and the Imago (raster) region of docs/design/shell-layout.md, per standards/design-contract.md; goldens under docs/captures/golden/imago/main-window/. **Corrected 2026-09-27:** this line cited `docs/captures/imago/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
+**Design:** docs/design/components/Menu/README.md, docs/design/components/WindowChrome/README.md, docs/design/components/Tooltip/README.md, docs/design/shell-layout.md#imago-raster -- states: all in spec -- themes: all four -- density: both
 **Job:** an Imago user never clicks a menu item that silently does nothing. Consumer: the user.
 **Treatment:** a `PlannedCommands` table and an Imago `MenuAuditTests` enumerating every `MenuItem`, as in Nodus. Cheaper substitute that fails the checkpoint: hiding unfinished items.
 **Chrome:** consume the pattern Nodus built; if the helper is identical, move it to `Photon.UI` in this section and have both apps consume it.
