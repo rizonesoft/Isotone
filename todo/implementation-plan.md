@@ -727,9 +727,9 @@ Photography gets its own phase. `Photon.Core` gains the scene-referred develop e
 | [ ] | `D01 T07 §5`  | Spot removal, red eye, and pet eye                                                          |  13   |
 | [ ] | `D01 T07 §6`  | Presets, snapshots, and XMP settings exchange                                               |  16   |
 | [ ] | `D01 T07 §7`  | The tone equalizer stage                                                                    |  18   |
-| [ ] | `D03 T15 §1`  | The Camera Raw filter dialog                                                                |  16   |
+| [ ] | `D03 T15 §1`  | The Camera Raw filter dialog                                                                |  17   |
 | [ ] | `D03 T15 §13` | Camera Raw reports, overlays, view tools, workflow, presets, and Render to DNG              |  14   |
-| [ ] | `D03 T15 §12` | The Develop studio and RAW layers                                                           |  20   |
+| [ ] | `D03 T15 §12` | The Develop studio and RAW layers                                                           |  21   |
 | [ ] | `D03 T15 §2`  | Develop masking and local adjustments surface                                               |  14   |
 | [ ] | `D03 T15 §4`  | 32-bit HDR editing and HDR display                                                          |  19   |
 | [ ] | `D03 T15 §3`  | Tone mapping and HDR Toning                                                                 |  20   |
@@ -867,7 +867,7 @@ Lumen becomes a complete first release: keywords, collections, culling, and XMP 
 | [ ] | `D04 T01 §11` | Ratings, flags, labels, and XMP sidecars         |   4   |
 | [ ] | `D04 T02 §1`  | The edit stack                                   |   4   |
 | [ ] | `D04 T02 §2`  | The develop pipeline on the suite develop engine |   6   |
-| [ ] | `D04 T02 §3`  | The develop panel                                |   5   |
+| [ ] | `D04 T02 §3`  | The develop panel                                |   6   |
 | [ ] | `D04 T02 §4`  | Crop and straighten                              |   4   |
 | [ ] | `D04 T02 §5`  | Presets, copy and paste settings, and sync       |   3   |
 | [ ] | `D04 T02 §6`  | Export                                           |   4   |
@@ -999,15 +999,15 @@ Develop's panels reach Lightroom and ACDSee on the suite develop engine: the ext
 
 |  ✔  | Section       | Deliverable                                                                                  | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D04 T09 §1`  | The develop workspace extended: tool strip, views, reference, and overlays                   |  21   |
+| [ ] | `D04 T09 §1`  | The develop workspace extended: tool strip, views, reference, and overlays                   |  22   |
 | [ ] | `D04 T09 §2`  | History, snapshots, and the before state                                                     |  13   |
 | [ ] | `D04 T09 §17` | Saving develop results: leaving develop, new files, sidecars, and opt-in writes to originals |  17   |
-| [ ] | `D04 T09 §3`  | Profiles, white balance, presence, and HDR editing                                           |  14   |
-| [ ] | `D04 T09 §4`  | Tone curve, color mixer, point color, color grading, and ACDSee color panels                 |  17   |
-| [ ] | `D04 T09 §5`  | Detail: sharpening and noise reduction                                                       |  10   |
-| [ ] | `D04 T09 §6`  | Lens corrections, DNG opcodes, and flat-field                                                |  15   |
-| [ ] | `D04 T09 §7`  | Transform, Upright, calibration, and process versions                                        |  12   |
-| [ ] | `D04 T09 §8`  | Effects and crop extensions                                                                  |   9   |
+| [ ] | `D04 T09 §3`  | Profiles, white balance, presence, and HDR editing                                           |  15   |
+| [ ] | `D04 T09 §4`  | Tone curve, color mixer, point color, color grading, and ACDSee color panels                 |  18   |
+| [ ] | `D04 T09 §5`  | Detail: sharpening and noise reduction                                                       |  11   |
+| [ ] | `D04 T09 §6`  | Lens corrections, DNG opcodes, and flat-field                                                |  16   |
+| [ ] | `D04 T09 §7`  | Transform, Upright, calibration, and process versions                                        |  13   |
+| [ ] | `D04 T09 §8`  | Effects and crop extensions                                                                  |  10   |
 | [ ] | `D04 T09 §10` | Remove, heal, clone, and red eye                                                             |  12   |
 | [ ] | `D04 T09 §11` | Presets and defaults extended                                                                |  18   |
 | [ ] | `D04 T09 §12` | Sync, copy and paste, and auto sync extended                                                 |  12   |
@@ -1111,7 +1111,7 @@ After the suite release (Phase 40), Imago opens camera RAW files through the dec
 | :-: | ------------- | ----------------------------------------------- | :---: |
 | [ ] | `D03 T07 §11` | RAW import through the shared decoder           |   4   |
 | [ ] | `D02 T18 §9`  | GIMP XCF import in Nodus on the shared XCF core |   9   |
-| [ ] | `D02 T18 §10` | Camera RAW import and the RAW Lab               |  14   |
+| [ ] | `D02 T18 §10` | Camera RAW import and the RAW Lab               |  15   |
 | [ ] | `D02 T17 §11` | Nodus 1.1.0 (Phase 41)                          |  13   |
 
 ### Phase 99 -- Manual: operator-only steps
