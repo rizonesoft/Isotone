@@ -53,6 +53,10 @@ track: C3
 - -> XREF: D03 T17 §8 -- Imago parity formats cites §2: mipmap and export resampling in D03 T17 §8; §3: indexed quantization for GIF and palette formats in D03 T17 §8
 - -> XREF: D03 T18 §1 -- Imago parity export, color management, and print cites §2: export resamplers; §3: palette quantization for PNG-8 and GIF
 - -> XREF: D03 T19 §8 -- Imago AI cites §2: the Lanczos resampler for local fitting and the upscale fallback; §6: classical scratch, dust, and JPEG artifact passes in restoration and super zoom
+- -> XREF: D04 T04 §4 -- the Lumen Viewer cites §2: resampling and rotation for D04 T04 §4, D04 T04 §11, and D04 T04 §14; §3: quantization and dithering for D04 T04 §12; §4: tonal adjustments and `ToneCurve` for D04 T04 §12 and D04 T04 §15; §6: blur, sharpen, and noise effects the D04 T04 §15 browser lists; §7: distort effects the D04 T04 §15 browser lists
+- -> XREF: D04 T11 §5 -- the Lumen batch tools cites §2: resampling filters D04 T11 §5 calls; §3: palette quantization for D04 T11 §7's color depth; §4: tonal kernels D04 T11 §6 and D04 T11 §7 call; §5: color kernels D04 T11 §7 calls; §6: noise and sharpen kernels D04 T11 §7 calls
+- -> XREF: D04 T12 §1 -- Lumen parity output cites §2: the resamplers export and print expose
+- -> XREF: D04 T13 §1 -- Lumen parity formats cites §2: resampling behind D04 T13 §1's scaled-decode fallback
 
 ## Outcome
 

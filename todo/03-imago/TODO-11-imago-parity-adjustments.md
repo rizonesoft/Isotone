@@ -77,6 +77,7 @@ track: I11
 - -> XREF: D03 T19 §10 -- the Imago assistant, which builds its edits as §1's adjustment layers and sits beside §2's classical auto corrections
 - -> XREF: D03 T19 §13 -- the brand kit palettes in Imago that join §10's swatch scopes
 - -> XREF: D03 T20 §7 -- the presets manager listing adjustment presets, LUTs, and palettes
+- -> XREF: D04 T04 §15 -- the Lumen Viewer cites §4: the LUT readers and color lookup behind D04 T04 §15's film simulation
 
 ## Outcome
 

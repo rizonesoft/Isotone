@@ -54,6 +54,8 @@ track: N15
 - -> XREF: D03 T05 §1 -- Imago's filter pipeline, the cleanup target of the hand-off
 - -> XREF: D04 T02 §7 -- Lumen's Edit in Imago, which uses the same App Paths lookup §11 moves to `Photon.Core`
 - -> XREF: D03 T19 §11 -- Imago AI cites §1: the Nodus precedent for the AI menu and provenance panel whose shared parts stay in `Photon.UI`; §7: the `FontMatcher` D03 T19 §11 moves to `Photon.Core/Text/` as its second consumer; §11: `SuiteAppLocator`, the hand-off folder, and sidecar provenance D03 T19 §13 consumes
+- -> XREF: D04 T12 §13 -- Lumen parity output cites §11: `SuiteAppLocator`, used by D04 T12 §13's Open in Imago post-processing action
+- -> XREF: D04 T14 §9 -- Lumen parity workspace cites §11: `SuiteAppLocator`, which D04 T14 §9 consumes for Imago
 
 ## Outcome
 

@@ -11,7 +11,7 @@ track: L1
 
 # TODO-01 -- Lumen: App Spine, Library, and RAW Decode
 
-> **Goal:** Lumen exists as the suite's third standalone app: it builds, installs, and starts like Nodus and Imago; it imports a folder of photos into a SQLite catalog without ever writing an original; it decodes camera RAW through a library chosen by recorded decision; and it shows the library as a fast, sortable, filterable grid with a loupe view, ratings, flags, color labels, keywords, and collections, with metadata optionally mirrored to XMP sidecars.
+> **Goal:** Lumen exists as the suite's third standalone app: it builds, installs, and starts like Nodus and Imago; it imports a folder of photos into a SQLite catalog without ever writing an original (the guard is safe by default: an original is written only when the user later opts in through `D04 T11 §1`, which this file never does); it decodes camera RAW through a library chosen by recorded decision; and it shows the library as a fast, sortable, filterable grid with a loupe view, ratings, flags, color labels, keywords, and collections, with metadata optionally mirrored to XMP sidecars.
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Lumen has no code. `src/Lumen.UI/TODO.md`, the only file it had, was a list of intentions (RAW formats CR2, NEF, ARW, DNG; exposure, white balance, curves; batch; collections and smart collections; "send to Imago") naming no library, database, or metadata choice; it was mined into this file and removed on 2026-09-26. `scripts/apps.psd1` declares Lumen with `Project = 'src/Lumen/Lumen.UI/Lumen.UI.csproj'` and `Shipping = $false`, and `installer/Lumen.iss` refuses to compile unless `/DLumenShipping` is defined. `resources/icons/lens.png` (512 by 512, an aperture illustration) is the candidate icon art. `standards/lumen.md` states the contract: originals are never written, the catalog is SQLite with forward-only migrations, the develop pipeline is float32 linear-light.
@@ -33,6 +33,17 @@ track: L1
 - -> XREF: D05 T01 §6 -- the suite bundle that ships Lumen beside Nodus and Imago
 - -> XREF: D01 T07 §1 -- the suite develop engine cites §4: the RAW decoder supplies linear camera RGB and its matrix through D01 T07 §1's `IDevelopSource`; §11: Lumen's XMP sidecars consume D01 T07 §6's XMP core
 - -> XREF: D03 T17 §10 -- Imago parity formats cites §11: Lumen's sidecars consume D03 T17 §10's EXIF and IPTC code
+- -> XREF: D04 T04 §2 -- the Lumen Viewer cites §4: the RAW decoder and embedded previews D04 T04 §2 consumes; §8: the library grid D04 T04 §1 opens photos from and the `T` key filters until browse mode ships; §11: the XMP sidecars D04 T04 §9 and D04 T04 §16 write ratings and orientation into
+- -> XREF: D04 T05 §1 -- Lumen browse without importing cites §5: the catalog D04 T05 §1 adds its origin column and browse-folder table to; §7: the preview cache D04 T05 §2 feeds and D04 T05 §4 reads; §8: the library grid whose views, badges, and sort D04 T05 §4 and D04 T05 §5 extend; §9: compare, which D04 T05 §7 extends to four images; §11: sidecars that travel in D04 T05 §6
+- -> XREF: D04 T06 §10 -- Lumen parity library cites §5: the catalog every section migrates forward; §7: the preview cache D04 T06 §10 manages and D04 T06 §11 extends; §8: the grid, sort, and filter bar D04 T06 §1 and D04 T06 §4 extend; §9: the loupe, compare, and filmstrip D04 T06 §1 extends; §10: keywords, collections, smart collections, and statistics D04 T06 §5 and D04 T06 §12 extend; §11: culling keys, auto advance, and the XMP sidecar D04 T06 §2 extends
+- -> XREF: D04 T07 §2 -- Lumen parity import cites §6: the import planner and runner every section extends, and the Freeze check this file keeps; §7: previews built on import (D04 T07 §2)
+- -> XREF: D04 T08 §1 -- Lumen parity metadata cites §6: metadata read on import, which D04 T08 §1 widens; §8: the grid badges D04 T08 §1's status badge and D04 T08 §8's pending overlay join; §10: the keyword hierarchy D04 T08 §5 extends; §11: the `XmpSidecar` writer D04 T08 §8 extends into the one metadata writer
+- -> XREF: D04 T09 §1 -- Lumen parity develop cites §9: loupe, zoom, and filmstrip, which D04 T09 §1 extends; §11: XMP sidecars and their automatic-write setting, which D04 T09 §17 mirrors develop settings through
+- -> XREF: D04 T10 §6 -- Lumen AI cites §6: import, which D04 T10 §6 and D04 T10 §12 hook for analysis and face-data import; §10: the keyword hierarchy person keywords join (D04 T10 §3); §11: culling commands D04 T10 §6 applies
+- -> XREF: D04 T11 §1 -- the Lumen batch tools cites §7: previews and the preview cache D04 T11 §1's idle jobs and D04 T11 §4's thumbnail export read; §11: sidecars D04 T11 §3 renames and D04 T11 §5's orientation writes
+- -> XREF: D04 T12 §3 -- Lumen parity output cites §10: the collections D04 T12 §3 publishes and D04 T12 §7, D04 T12 §10 save as slideshow and book collections
+- -> XREF: D04 T13 §5 -- Lumen parity formats cites §4: the RAW decoder D04 T13 §5 extends and D04 T13 §7 writes DNG from; §6: the import dialog that offers D04 T13 §5's RAW+JPEG pair choice
+- -> XREF: D04 T14 §1 -- Lumen parity workspace cites §2: the shell, splash, and About D04 T14 §1 and D04 T14 §7 extend; §7: the preview cache D04 T14 §5 sizes and purges
 
 ## Job and non-goals
 
@@ -40,7 +51,7 @@ track: L1
 
 **Audience:** enthusiast and working photographers who today use Lightroom Classic, darktable, or a file browser plus an editor.
 
-**Non-goals for this file:** tethered capture; cloud sync; face recognition; maps and GPS editing; printing, books, and slideshows; video; plugins. Each is at most a backlog candidate (`todo/backlog.md`), not a promise.
+**Non-goals for this file:** tethered capture; cloud sync; face recognition; maps and GPS editing; printing, books, and slideshows; video; plugins. None is a promise of this file. Since the Lumen parity decision of 2026-09-27: tethered capture is backlog B-048 (watched-folder auto import, `D04 T07 §5`, covers the workflow); face recognition (`D04 T10 §2`, `§3`), maps and GPS editing (`D04 T08 §6`, `§7`), and printing, books, and slideshows (`D04 T12`) are planned Lumen parity sections; cloud sync stays excluded; video is B-043; third-party filter plug-ins run on the suite plug-in host (`D01 T09`, consumed by `D04 T04 §15` and `D04 T11 §7`) and scripting is B-041.
 
 **Working name and one-line purpose:** Lumen, "the darkroom and library for your photos" (quoted by the About dialog, the installer, and the user guide).
 
@@ -69,7 +80,7 @@ From documentation, to be confirmed and extended by driven runs in §1 (each row
 - Ratings, flags, labels, keywords, and collections are stored in the catalog, undoable, searchable, and optionally mirrored to `.xmp` sidecars.
 - `todo/README.md` lists Lumen's original-file guard in the frozen set.
 
-**Adjacency:** list=applicable @ D04 T01 §8; document=not-applicable (contact sheets and prints wait in the backlog as B-035); settings=applicable @ D04 T01 §2; reporting=applicable @ D04 T01 §10; notifications=applicable; permissions=applicable; audit=applicable; exchange=applicable; reverse=applicable
+**Adjacency:** list=applicable @ D04 T01 §8; document=not-applicable (contact sheets and prints are the Lumen parity sections D04 T12 §4 to §6); settings=applicable @ D04 T01 §2; reporting=applicable @ D04 T01 §10; notifications=applicable; permissions=applicable; audit=applicable; exchange=applicable; reverse=applicable
 
 **Adjacency rationale:** The grid is the list; import progress and its completion summary are the notifications; a read-only card or an unreadable file is the refusal case; library statistics per collection are reporting; every metadata change logs, undoes, and exchanges through XMP sidecars.
 
@@ -168,6 +179,8 @@ The catalog is a user document: losing it loses every rating and edit. SQLite th
 
 Import is where trust is won or lost: it must never touch an original, must say what it will do before it does it, and must survive a card pulled mid-copy. This section adds Lumen's original-file guard to the frozen set.
 
+**Corrected 2026-09-27:** the original-file guard this section adds to the frozen set is the one `standards/lumen.md` states after the operator's 2026-09-27 decision ("Safe by default, opt-in writes"): Lumen never writes an original unless the user opts in, and then only through `D04 T11 §1`'s `InPlaceWriter` after a verified backup. This section builds no opt-in, so its freeze check holds unchanged, read as "with every `Lumen.Originals.*` opt-in at its default"; import's opt-in embedding into verified copies is `D04 T07 §3` over `D04 T08 §9`.
+
 **Freeze check:** Import opens originals read-only; "Add" records paths without copying; "Copy" copies to the chosen folder through a temp name, verifies the copy's SHA-256 against the source, then renames, and only then records it; a failure mid-copy leaves the source untouched and no partial file in that folder; every original's hash and last-write time are unchanged after import. Fixture source: `tests/fixtures/lumen/import/` (a folder of small JPEGs and the DNG, with a nested folder and a duplicate).
 
 **Fidelity:** Import dialog -- new build, no baseline; captured to docs/captures/lumen/import/.
@@ -254,6 +267,8 @@ Finding photos later depends on keywords and collections; smart collections save
 ## 11. Ratings, Flags, Labels, and XMP Sidecars
 
 Culling is ratings (0 to 5), flags (pick, reject, none), and color labels, set from the keyboard with auto-advance, stored in the catalog, and optionally written to `.xmp` sidecars so other tools see them. Sidecars sit beside originals and never replace them. -> SOURCE: lumen-notes-library-metadata
+
+**Corrected 2026-09-27:** the Lumen parity files extend this section's `XmpSidecar` rather than replace it: `D04 T08 §8`'s `MetadataWriter` is its successor as the one metadata write path (whole-folder writes, embed pending, descript.ion, exported copies), and `D04 T08 §9` adds the opt-in embedding into supported originals; the automatic sidecar setting stays off by default as here (the parity files keep that interpretation), and this section's freeze check holds with every `Lumen.Originals.*` opt-in at its default.
 
 **Freeze check:** Metadata changes write only the catalog and, when `Lumen.Metadata.WriteSidecars` is on, `<name>.xmp` beside the original through an atomic write; the original's bytes and last-write time are unchanged; an existing sidecar from another tool is read, merged (Lumen's fields updated, unknown fields preserved), and written back atomically. Fixture source: `tests/fixtures/lumen/xmp/` (a JPEG and the DNG with darktable- and Lightroom-style sidecars).
 

@@ -52,6 +52,12 @@ track: C2
 - -> XREF: D03 T09 §1 -- Imago parity layers cites §4: the suite history every command there records into; §5: the atomic writer the frozen `.imago` save path goes through
 - -> XREF: D03 T17 §1 -- Imago parity formats cites §3: single-instance file-open forwarding D03 T17 §1 routes through; §5: the atomic writer every writer there saves through
 - -> XREF: D03 T20 §1 -- Imago parity workspace cites §2: the settings store every preference writes through
+- -> XREF: D04 T04 §1 -- the Lumen Viewer cites §3: single instance and file-open forwarding for D04 T04 §1, D04 T04 §17, and the hand-off to Lumen; §5: the atomic writer D04 T04 §6's Save As and D04 T04 §13's tile export write through
+- -> XREF: D04 T05 §1 -- Lumen browse without importing cites §4: the suite history every browse action records its undo step in; §5: the atomic writer for sidecars, vault files, and archives
+- -> XREF: D04 T08 §1 -- Lumen parity metadata cites §5: the atomic writer every sidecar write goes through
+- -> XREF: D04 T11 §10 -- the Lumen batch tools cites §3: single-instance forwarding the Explorer verb and the viewer's `B` key use in D04 T11 §10; §4: the suite history that records batch develop and orientation as undo steps; §5: the atomic writer every output and every in-place replace uses
+- -> XREF: D04 T13 §1 -- Lumen parity formats cites §4: the suite history the extension fix records its undo step in; §5: the atomic writer every writer here saves through
+- -> XREF: D04 T14 §6 -- Lumen parity workspace cites §2: the settings store D04 T14 §6 extends with portable and deployment modes
 
 ## Outcome
 

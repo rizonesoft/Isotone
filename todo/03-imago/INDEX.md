@@ -1,8 +1,8 @@
 # 03 Imago
 
-> **Phases 1, 14, 15, 16 to 27, and 31**
+> **Phases 1, 14, 15, 16 to 27, and 41**
 
-Imago, the raster editor, imported under `src/Imago/`. Its rename runs early beside Nodus's; its foundation (the snapshot port, WPF-UI removal, tiles, and rendering) starts after Nodus ships 1.0.0, followed by editing, file I/O, filters, and `imago-v0.1.0`. On 2026-09-26 the operator decided Imago gets every Photoshop feature and those of two other popular raster editors (Affinity Photo and GIMP 3): the catalog in [`../../docs/parity/imago-parity.md`](../../docs/parity/imago-parity.md) routes each one to a section, and TODO-08 to TODO-21 run it in twelve parity phases (16 to 27), each ending in a release from `imago-v0.2.0` to `imago-v1.0.0`. TODO-07 keeps four legacy deferral owners at their addresses: its filter catalog runs in Phase 21, its workspaces and its accessibility audit in Phase 27, and its RAW import in Phase 31 once Lumen's decoder is shared. Ideas that are not sections wait in [`../backlog.md`](../backlog.md) and are promoted only through `add-todo`.
+Imago, the raster editor, imported under `src/Imago/`. Its rename runs early beside Nodus's; its foundation (the snapshot port, WPF-UI removal, tiles, and rendering) starts after Nodus ships 1.0.0, followed by editing, file I/O, filters, and `imago-v0.1.0`. On 2026-09-26 the operator decided Imago gets every Photoshop feature and those of two other popular raster editors (Affinity Photo and GIMP 3): the catalog in [`../../docs/parity/imago-parity.md`](../../docs/parity/imago-parity.md) routes each one to a section, and TODO-08 to TODO-21 run it in twelve parity phases (16 to 27), each ending in a release from `imago-v0.2.0` to `imago-v1.0.0`. TODO-07 keeps four legacy deferral owners at their addresses: its filter catalog runs in Phase 21, its workspaces and its accessibility audit in Phase 27, and its RAW import in Phase 41 once Lumen's decoder is shared. Ideas that are not sections wait in [`../backlog.md`](../backlog.md) and are promoted only through `add-todo`.
 
 ## TODOs
 

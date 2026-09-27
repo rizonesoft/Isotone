@@ -82,7 +82,7 @@ Every service a view model or tool uses is registered in the app's composition r
 - **Saves are atomic:** write a temporary file in the target folder, flush, then replace. Killing the process mid-save leaves the original byte-identical.
 - Autosave writes to the app's data folder, never over the user's file. Recovery offers what it found and deletes nothing without asking.
 - A read-only file, a locked folder, or a full disk is refused with a message naming the file and the reason; the document stays open and dirty.
-- Lumen never writes an original image. See [`lumen.md`](lumen.md).
+- Lumen never writes an original image unless the user opts in, and then only with a verified backup. See [`lumen.md`](lumen.md).
 - Settings live in `%LOCALAPPDATA%\Rizonesoft\<App>\settings.json`, written atomically through the `Photon.Core` settings store. Every setting has a default, a consumer, and a log line when it changes.
 
 ## Performance

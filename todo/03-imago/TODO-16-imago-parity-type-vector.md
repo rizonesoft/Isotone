@@ -85,6 +85,9 @@ track: I16
 - -> XREF: D03 T12 §11 -- symmetry from a path, which §5 enables
 - -> XREF: D03 T13 §11 -- the Path transform target §5 enables
 - -> XREF: D03 T14 §9 -- the Slide label and Filmstrip numbering fields §1 enables
+- -> XREF: D04 T11 §8 -- the Lumen batch tools cites §1: the shared text engine D04 T11 §8 shapes overlay text with
+- -> XREF: D04 T12 §1 -- Lumen parity output cites §1: the suite text engine for slideshow and book text
+- -> XREF: D04 T13 §8 -- Lumen parity formats cites §1: the shared text engine D04 T13 §8 renders font sample sheets and D04 T13 §4 renders text files through
 
 ## Outcome
 

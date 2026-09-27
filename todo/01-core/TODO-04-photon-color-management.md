@@ -48,6 +48,12 @@ track: C4
 - -> XREF: D03 T15 §1 -- Imago parity photo (Camera Raw and merges) cites §2: working-space and output transforms into and out of the develop space
 - -> XREF: D03 T17 §12 -- Imago parity formats cites §1: profiles for every reader and writer, and the monitor profile D03 T17 §12 tags screenshots with; §3: CMYK, Lab, and duotone buffers for PSD, TIFF, JPEG, and JPEG XL
 - -> XREF: D03 T18 §4 -- Imago parity export, color management, and print cites §1: profiles and transforms D03 T18 §4 consumes; §2: intents, proofing transforms, and gamut checks D03 T18 §4 and D03 T18 §5 consume; §3: CMYK, Lab, and multichannel conversions for Convert to Profile
+- -> XREF: D04 T04 §2 -- the Lumen Viewer cites §1: display color transforms for D04 T04 §2
+- -> XREF: D04 T09 §15 -- Lumen parity develop cites §2: proofing transforms and gamut checks for D04 T09 §15
+- -> XREF: D04 T11 §4 -- the Lumen batch tools cites §1: ICC conversion for D04 T11 §4 and D04 T11 §6; §2: rendering intents and black point compensation for D04 T11 §6
+- -> XREF: D04 T12 §1 -- Lumen parity output cites §1: ICC transforms for export spaces and printer profiles; §2: rendering intents, proofing transforms, and the gamut warning in print
+- -> XREF: D04 T13 §1 -- Lumen parity formats cites §1: ICC conversion for CMYK JPEG and profile carry-over
+- -> XREF: D04 T14 §5 -- Lumen parity workspace cites §1: display color management D04 T14 §5 configures
 
 ## Outcome
 

@@ -333,6 +333,8 @@ Today's undo is two linear lists that die with the process. `D01 T02 §4` moves 
 
 The Image menu of `D03 T03 §7` covers Image Size, Canvas Size, 90-degree rotation, and flips. This section completes it with the Photoshop, Affinity, and GIMP canvas commands (relative Canvas Size with offsets, arbitrary rotation, crop to selection, trim, zealous crop, reveal all, fit and clip canvas, slice using guides), an extended Image Size with Print Size, and the shared `Resampler` of `D01 T03 §2` extended in place with every competitor method, Preserve Details, and pixel-art scalers. It must not add a second resampler in Imago. It serves the acceptance-bar aim "Imago covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog". Catalog: IP-0142 to IP-0163 (22 features).
 
+**Corrected 2026-09-27:** Lumen's Enhance (`D04 T10 §8`) is the second consumer of `DetailPreservingUpscaler`, so if it lives under `src/Imago/` by then, `D04 T10 §8` moves it to `src/Photon.Core/Imaging/` and Imago repoints.
+
 **Fidelity:** docs/captures/imago/image-size/ and docs/captures/imago/canvas-size/ (baselines from `D03 T03 §7`); new captures to docs/captures/imago/image-menu/.
 **Job:** a user can resize, resample, rotate, trim, and reshape the canvas with the exact method and units the job needs and see the result before committing. Consumer: the document, through one `TileSnapshotCommand` per command.
 **Treatment:** extended Image Size and Canvas Size dialogs with a 1:1 preview pane, Print Size and Rotate Canvas dialogs, and Image menu commands. Cheaper substitute that fails the checkpoint: resampling through `SKBitmap.Resize`, which has no NoHalo or Lanczos goldens.
