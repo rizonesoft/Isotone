@@ -29,12 +29,12 @@ Drop-down menus from the menu bar inside the title bar. Highlighted items use th
 - Down and Up move the highlight and wrap; Home and End jump; letters jump by access key, then by first letter.
 - Right opens a submenu, Left closes it (or moves to the previous menu title from a top-level menu).
 - Enter or Space runs the item; Escape closes one level; Alt closes all.
-- Shortcut text uses Windows naming: Ctrl, Shift, Alt, then the key (`Shift+Ctrl+Z` in Photoshop order is acceptable across the suite as long as one order is used everywhere; Photon uses Shift+Ctrl+key).
+- Shortcut text uses Windows naming: Ctrl, Shift, Alt, then the key (`Shift+Ctrl+Z` in Photoshop order is acceptable across the suite as long as one order is used everywhere; Isotone uses Shift+Ctrl+key).
 
 ## WPF
 
-- `Menu` and `MenuItem` restyled in `Photon.UI/Themes/Controls/Menu.xaml`. The `MenuItem` template is a 4-column `Grid` with `SharedSizeGroup`s (`Icon`, `Label`, `Gesture`, `Arrow`) and parts `PART_Popup` and `PART_SubmenuPopup` (a `Popup` with `AllowsTransparency` so the shadow and radius render).
+- `Menu` and `MenuItem` restyled in `Isotone.UI/Themes/Controls/Menu.xaml`. The `MenuItem` template is a 4-column `Grid` with `SharedSizeGroup`s (`Icon`, `Label`, `Gesture`, `Arrow`) and parts `PART_Popup` and `PART_SubmenuPopup` (a `Popup` with `AllowsTransparency` so the shadow and radius render).
 - Triggers: `Role` (TopLevelHeader, TopLevelItem, SubmenuHeader, SubmenuItem), `IsHighlighted`, `IsChecked`, `IsEnabled`, `IsSubmenuOpen`.
 - `InputGestureText` feeds the shortcut column; commands carry their `KeyGesture` so the text never drifts.
-- Radio items: `IsCheckable` plus an attached `Photon.MenuItem.Group`, drawing the dot instead of the check.
+- Radio items: `IsCheckable` plus an attached `Isotone.MenuItem.Group`, drawing the dot instead of the check.
 - `Separator` keyed `MenuItem.SeparatorStyleKey`.

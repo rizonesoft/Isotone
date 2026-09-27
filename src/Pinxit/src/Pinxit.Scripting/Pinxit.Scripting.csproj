@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RootNamespace>Pinxit.Scripting</RootNamespace>
+    <AssemblyName>Pinxit.Scripting</AssemblyName>
+    <Description>Roslyn-based scripting engine for Pinxit automation</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" />
+    <PackageReference Include="Serilog" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pinxit.Core\Pinxit.Core.csproj" />
+    <ProjectReference Include="..\Pinxit.Plugins.Abstractions\Pinxit.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

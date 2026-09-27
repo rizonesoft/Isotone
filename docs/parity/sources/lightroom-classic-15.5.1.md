@@ -1,11 +1,11 @@
-# Lightroom Classic feature inventory (parity reference for Lumen)
+# Lightroom Classic feature inventory (parity reference for Albumen)
 
-> **Provenance note (2026-09-27):** verbatim copy of the Adobe Lightroom Classic 15.5.1 inventory (bug-fix update of 2026-08-31 on the 15.5 feature release of 2026-08-04) compiled for the Lumen parity plan, rows `LR-0001` to `LR-1857`, under its original title: Adobe Lightroom Classic feature inventory (Lumen parity). The ids are stable and each is placed in exactly one row of [`../lumen-parity.md`](../lumen-parity.md). Do not renumber; a future Lightroom Classic version appends new ids after LR-1857 (see [`../README.md`](../README.md)).
+> **Provenance note (2026-09-27):** verbatim copy of the Adobe Lightroom Classic 15.5.1 inventory (bug-fix update of 2026-08-31 on the 15.5 feature release of 2026-08-04) compiled for the Albumen parity plan, rows `LR-0001` to `LR-1857`, under its original title: Adobe Lightroom Classic feature inventory (Albumen parity). The ids are stable and each is placed in exactly one row of [`../albumen-parity.md`](../albumen-parity.md). Do not renumber; a future Lightroom Classic version appends new ids after LR-1857 (see [`../README.md`](../README.md)).
 
 > **Access limits:** helpx.adobe.com answers HTTP 403 to scripted fetches, so pages were read live through a real browser session (about 28 page loads, paced under the CDN rate limit). Most option-level rows (menus, panels, dialogs, preferences, catalog settings, keyboard shortcuts) therefore come from documented product knowledge of Lightroom Classic 13 to 15, each citing the nearest page of the live help navigation tree rather than a page read word for word; option spellings may differ slightly from the shipping UI. The rows read live are listed in the method section below.
 
 - Product: Adobe Lightroom Classic, version 15.5.1 (bug-fix update released 2026-08-31) on the 15.5 feature release of 2026-08-04; the Adobe release notes page lists 15.5 as the newest feature release, last updated 2026-08-04. Inventory date: 2026-09-27.
-- Target: Lumen, a GPL open-source digital darkroom and photo manager (WPF, Windows). Windows menu and key names are used throughout (Ctrl, Alt, Edit > Preferences).
+- Target: Albumen, a GPL open-source digital darkroom and photo manager (WPF, Windows). Windows menu and key names are used throughout (Ctrl, Alt, Edit > Preferences).
 - Rows: 1857 across 33 areas. IDs LR-0001 onward are sequential and unique.
 - Category values: core (catalog, library, develop and output behaviour), ai (machine learning or generative), cloud (Adobe account, sync, online services), automation (plug-ins, SDK, presets that batch work, watched folders, auto actions), print (Print module and print-bound output), format (file formats and codecs).
 - Kind values: module, tool, tool-option, command, panel, panel-option, dialog-option, filter, preference, format, behavior.

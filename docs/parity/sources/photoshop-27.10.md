@@ -1,10 +1,10 @@
-# Adobe Photoshop feature inventory (parity reference for Imago)
+# Adobe Photoshop feature inventory (parity reference for Pinxit)
 
-> **Provenance note (2026-09-26):** verbatim copy of the two-part Adobe Photoshop 27.10 inventory compiled for the Imago parity plan, Part 1 (rows `PS-A-0001` to `PS-A-1750`) followed by Part 2 (rows `PS-B-0001` to `PS-B-1426`, including Camera Raw 18.6). The only edit is that each part's title is demoted to a second-level heading so the file has one title. The ids are stable and each is placed in exactly one row of [`../imago-parity.md`](../imago-parity.md). Do not renumber; a future Photoshop version appends new ids after the last id of the matching part (see [`../README.md`](../README.md)).
+> **Provenance note (2026-09-26):** verbatim copy of the two-part Adobe Photoshop 27.10 inventory compiled for the Pinxit parity plan, Part 1 (rows `PS-A-0001` to `PS-A-1750`) followed by Part 2 (rows `PS-B-0001` to `PS-B-1426`, including Camera Raw 18.6). The only edit is that each part's title is demoted to a second-level heading so the file has one title. The ids are stable and each is placed in exactly one row of [`../pinxit-parity.md`](../pinxit-parity.md). Do not renumber; a future Photoshop version appends new ids after the last id of the matching part (see [`../README.md`](../README.md)).
 
 > **Access limits:** helpx.adobe.com refuses non-browser fetches (HTTP 403), so pages were read through a real browser session; after about 30 page loads Adobe's CDN (Akamai) returned Access Denied for the rest of the session. Rows for long-standing dialogs and option-level detail (Layer Style, Levels, Curves, Brush Settings, Select and Mask, Content-Aware Fill, Image Size, most Filter dialogs, Preferences pages) therefore come from documented product knowledge, each citing the nearest User Guide page for its surface. Check option wording against the running application before treating such a row as a specification.
 
-## Adobe Photoshop feature inventory, Part 1 of 2 (for Imago parity)
+## Adobe Photoshop feature inventory, Part 1 of 2 (for Pinxit parity)
 
 - Product: Adobe Photoshop on desktop (Photoshop 2026 family)
 - Version inventoried: 27.10 (August 2026 release). Release notes page last updated Aug 28, 2026; no newer GA build listed as of 2026-09-26. Prior 2026-cycle builds: 27.9.1 (Jul 2026), 27.8 (Jun 2026), 27.7 (May 2026), 27.6 (Apr 2026), 27.5 (Mar 2026), 27.4 (Feb 2026), 27.3 and 27.3.1 (Jan 2026), 27.2 (Dec 2025), 27.1 (Nov 2025), 27.0 (Oct 2025). Current LTS: 26.11.7.
@@ -2290,7 +2290,7 @@
 | K02 View menu | 43 |
 | TOTAL | 1750 |
 
-## Adobe Photoshop feature inventory, part 2 of 2 (for Imago parity)
+## Adobe Photoshop feature inventory, part 2 of 2 (for Pinxit parity)
 
 - Product: Adobe Photoshop on desktop (Photoshop 2026 release line)
 - Current version: 27.10, released August 2026 (release notes page last updated Aug 28, 2026). No September 2026 release is listed as of 2026-09-26. The current LTS build is 26.11.7.
@@ -2316,7 +2316,7 @@
 - helpx.adobe.com blocks WebFetch and curl, so pages were read in a real Chrome session. Seven pages were read in full this way: release notes, What's new, Generative AI overview, Filter effects reference, Neural Filters list, Preferences, and Camera Raw what's new. WebSearch covered release-level details for 27.0 to 27.8.
 - Rows outside those pages come from long-standing, documented Photoshop behavior and dialog layouts. Their Source cells use the matching legacy User Guide URL (helpx.adobe.com/photoshop/using/...). These URLs redirect to the new /photoshop/desktop/ help tree, but not every one was opened on its own. Check option wording against the running app before treating a row as a spec.
 - The Preferences category list matches the Jul 2026 help page: General, Interface, Workspace, Notifications, Tools, History & Content Credentials, File Handling, Export, Performance, Image Processing, Scratch Disks, Cursors, Transparency & Gamut, Units & Rulers, Guides, Grid & Slices, Plug-ins, Type, Enhanced Controls, Technology Previews. The 3D category was removed with 3D. Product Improvement is listed under General. The individual options inside each category are not listed on that page and come from product knowledge. The contents of Notifications and Enhanced Controls are not documented in detail.
-- Removed features, such as legacy 3D and Digimarc, are included and marked removed so Imago can skip them on purpose.
+- Removed features, such as legacy 3D and Digimarc, are included and marked removed so Pinxit can skip them on purpose.
 - Kind values: tool, command, panel, panel-option, filter, filter-option, dialog-option, format, format-option, preference, behavior. Category values: core, ai, cloud, automation, video, 3d, print, format.
 
 ## Filter menu: top level, Smart Filters and Filter Gallery

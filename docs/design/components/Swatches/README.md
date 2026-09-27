@@ -23,4 +23,4 @@ The grid is one tab stop; arrows move; Enter sets the foreground color, Alt+Ente
 
 ## WPF
 
-`ListBox` with a `WrapPanel` items host and `ListBoxItem` style `Photon.Swatch`; chips are `Photon.ColorChips` (`Control` with `Foreground`/`Background` color DPs, `PART_Swap`, `PART_Reset`). Color field: `Photon.ColorField` rendering the gradient with two `LinearGradientBrush`es in a `Grid`; hue: `Photon.GradientSlider`. Swatch colors are document content and are not theme resources.
+`ListBox` with a `WrapPanel` items host and `ListBoxItem` style `Isotone.Swatch`; chips are `Isotone.ColorChips` (`Control` with `Foreground`/`Background` color DPs, `PART_Swap`, `PART_Reset`). Color field: `Isotone.ColorField` rendering the gradient with two `LinearGradientBrush`es in a `Grid`; hue: `Isotone.GradientSlider`. Swatch colors are document content and are not theme resources.

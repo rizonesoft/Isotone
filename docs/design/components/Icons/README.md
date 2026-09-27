@@ -18,4 +18,4 @@ The preview renders every icon the system currently documents. Names are the cat
 
 ## WPF
 
-`Photon.UI.Icons`: an `IconCatalog` singleton loaded from `icons.json` (name to path data, source-generated JSON context), a `Photon.Icon` control (`Path` with `Stretch="Uniform"` inside a 24-unit `Viewbox`, `StrokeThickness` scaled so 1.5 at 24 stays 1.5 device-independent pixels at 16 and 20, `StrokeStartLineCap`/`EndLineCap`/`LineJoin` round), and a markup extension `{ph:Icon brush}`. `Foreground` drives the stroke through `TemplateBinding`.
+`Isotone.UI.Icons`: an `IconCatalog` singleton loaded from `icons.json` (name to path data, source-generated JSON context), a `Isotone.Icon` control (`Path` with `Stretch="Uniform"` inside a 24-unit `Viewbox`, `StrokeThickness` scaled so 1.5 at 24 stays 1.5 device-independent pixels at 16 and 20, `StrokeStartLineCap`/`EndLineCap`/`LineJoin` round), and a markup extension `{ph:Icon brush}`. `Foreground` drives the stroke through `TemplateBinding`.

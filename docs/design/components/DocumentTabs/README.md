@@ -27,4 +27,4 @@ Ctrl+Tab and Ctrl+Shift+Tab cycle documents; Ctrl+W or Ctrl+F4 closes; with a ta
 
 ## WPF
 
-`TabControl` over the documents collection (or AvalonDock `LayoutDocumentPane` with the Photon theme), `TabItem` style `Photon.DocumentTab`. Template parts: `Border PART_Chrome`, `Rectangle PART_Indicator` (visible when `IsSelected`), `TextBlock` with a middle-ellipsis converter, `Button PART_Close` bound to `CloseDocumentCommand`. Middle-click closes.
+`TabControl` over the documents collection (or AvalonDock `LayoutDocumentPane` with the Isotone theme), `TabItem` style `Isotone.DocumentTab`. Template parts: `Border PART_Chrome`, `Rectangle PART_Indicator` (visible when `IsSelected`), `TextBlock` with a middle-ellipsis converter, `Button PART_Close` bound to `CloseDocumentCommand`. Middle-click closes.

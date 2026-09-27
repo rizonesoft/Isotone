@@ -182,7 +182,7 @@ class Edge:
     """Headless Edge with one page, driven over CDP."""
 
     def __init__(self, exe: str):
-        self.profile = tempfile.mkdtemp(prefix="photon-design-ref-")
+        self.profile = tempfile.mkdtemp(prefix="isotone-design-ref-")
         self.proc = subprocess.Popen(
             [exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run",
              "--no-default-browser-check", "--force-device-scale-factor=1", "--remote-debugging-port=0",
@@ -301,7 +301,7 @@ def write_report(rows: list[tuple[str, str, str, Path | None]]) -> Path:
                 wpf_html = (f'<img src="{html.escape(os.path.relpath(wpf, OUT).replace(os.sep, "/"))}" alt="WPF render">'
                             f'<p class="src">{html.escape(wpf.relative_to(ROOT).as_posix())}</p>')
             else:
-                wpf_html = '<p class="none">no WPF render yet (tests/Photon.UI.VisualTests writes build/wpf-renders/)</p>'
+                wpf_html = '<p class="none">no WPF render yet (tests/Isotone.UI.VisualTests writes build/wpf-renders/)</p>'
             parts.append(f'<div class="pair"><h3>{theme} / {density}</h3><div class="cols">'
                          f'<figure><figcaption>Design reference</figcaption>{ref_html}</figure>'
                          f'<figure><figcaption>WPF</figcaption>{wpf_html}</figure></div></div>')

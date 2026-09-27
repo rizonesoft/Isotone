@@ -22,7 +22,7 @@ The `state-line` border keeps the checked box visible in Medium Gray, where the 
 
 ## Highlight color
 
-Checked boxes follow Preferences > Interface > Highlight color: Blue (default), Photon orange (`state-orange` with a near-black check in the dark themes), or the Windows accent. The preview shows all three.
+Checked boxes follow Preferences > Interface > Highlight color: Blue (default), Isotone orange (`state-orange` with a near-black check in the dark themes), or the Windows accent. The preview shows all three.
 
 ## Keyboard
 
@@ -30,4 +30,4 @@ Space toggles; indeterminate is reachable only when the checkbox represents a mi
 
 ## WPF
 
-`CheckBox` style `Photon.CheckBox` (implicit). Template: `Grid` with `Border PART_Box` (`CornerRadius` 2), `Path PART_Check` and `Rectangle PART_Indeterminate`, `ContentPresenter` with `Margin="8,0,0,0"`. `IsThreeState` only for mixed selections. Visual states `CheckStates` (Checked, Unchecked, Indeterminate) plus `CommonStates` and `FocusStates`; transitions `duration-fast`.
+`CheckBox` style `Isotone.CheckBox` (implicit). Template: `Grid` with `Border PART_Box` (`CornerRadius` 2), `Path PART_Check` and `Rectangle PART_Indeterminate`, `ContentPresenter` with `Margin="8,0,0,0"`. `IsThreeState` only for mixed selections. Visual states `CheckStates` (Checked, Unchecked, Indeterminate) plus `CommonStates` and `FocusStates`; transitions `duration-fast`.

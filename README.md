@@ -8,7 +8,7 @@
   </picture>
 </a>
 
-<h1>Photon Graphics Suite</h1>
+<h1>Isotone Graphics Suite</h1>
 
 <p>Three native Windows creative apps, one shared core: a vector editor, a raster editor, and a digital darkroom.<br>Free, open source, and yours to keep.</p>
 
@@ -25,18 +25,18 @@
 
 <br>
 
-<img src="resources/brand/photon-banner.jpg" alt="Photon: a neon paintbrush, a vector pen nib with Bezier handles, and a camera aperture in a viewfinder frame, joined by ribbons of light above the Photon wordmark" width="820">
+<img src="resources/brand/isotone-banner.jpg" alt="Isotone: a neon paintbrush, a vector pen nib with Bezier handles, and a camera aperture in a viewfinder frame, joined by ribbons of light above the Isotone wordmark" width="820">
 
 </div>
 
-**Design:** [Photon Interface design system: themes, controls, and app icons](https://rizonesoft.github.io/Photon/design/), a live page generated from [`docs/design/`](docs/design/README.md).
+**Design:** [Isotone Interface design system: themes, controls, and app icons](https://rizonesoft.github.io/Photon/design/), a live page generated from [`docs/design/`](docs/design/README.md).
 
 > [!NOTE]
-> **Status: pre-alpha.** There is no release yet. Nodus (the vector editor) edits real SVG files today; Imago has its domain model and application shell; Lumen is planned. Everything below marks what works and what is still on the roadmap. Star or watch the repository to hear about the first preview.
+> **Status: pre-alpha.** There is no release yet. Stilus (the vector editor) edits real SVG files today; Pinxit has its domain model and application shell; Albumen is planned. Everything below marks what works and what is still on the roadmap. Star or watch the repository to hear about the first preview.
 
 ## Contents
 
-- [Why Photon](#why-photon)
+- [Why Isotone](#why-isotone)
 - [The suite](#the-suite)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -48,9 +48,9 @@
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
 
-## Why Photon
+## Why Isotone
 
-Professional graphics software has drifted toward subscriptions, sign-ins, and cloud lock-in. Photon goes the other way.
+Professional graphics software has drifted toward subscriptions, sign-ins, and cloud lock-in. Isotone goes the other way.
 
 - **Own your tools.** No account, no subscription, no telemetry required to open a file.
 - **Native and fast.** Built for Windows on .NET 11, WPF, and SkiaSharp, with startup time and responsiveness treated as features.
@@ -63,22 +63,22 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
 <table>
   <tr>
     <th width="33%">
-      <img src="resources/icons/nodus/nodus.svg" alt="" width="56"><br>
-      Rizonesoft Nodus
+      <img src="resources/icons/stilus/stilus.svg" alt="" width="56"><br>
+      Rizonesoft Stilus
     </th>
     <th width="33%">
-      <img src="resources/icons/imago/imago.svg" alt="" width="56"><br>
-      Rizonesoft Imago
+      <img src="resources/icons/pinxit/pinxit.svg" alt="" width="56"><br>
+      Rizonesoft Pinxit
     </th>
     <th width="33%">
-      <img src="resources/icons/lumen/lumen.svg" alt="" width="56"><br>
-      Rizonesoft Lumen
+      <img src="resources/icons/albumen/albumen.svg" alt="" width="56"><br>
+      Rizonesoft Albumen
     </th>
   </tr>
   <tr>
-    <td><img src="resources/screens/web/nodus.jpg" alt="Nodus brand art: a neon vector pen nib with Bezier handles above the Nodus wordmark"></td>
-    <td><img src="resources/screens/web/imago.jpg" alt="Imago brand art: a neon paintbrush scattering pixels above the Imago wordmark"></td>
-    <td><img src="resources/screens/web/lumen.jpg" alt="Lumen brand art: a neon camera aperture inside a viewfinder frame above the Lumen wordmark"></td>
+    <td><img src="resources/screens/web/stilus.jpg" alt="Stilus brand art: a neon vector pen nib with Bezier handles above the Stilus wordmark"></td>
+    <td><img src="resources/screens/web/pinxit.jpg" alt="Pinxit brand art: a neon paintbrush scattering pixels above the Pinxit wordmark"></td>
+    <td><img src="resources/screens/web/albumen.jpg" alt="Albumen brand art: a neon camera aperture inside a viewfinder frame above the Albumen wordmark"></td>
   </tr>
   <tr>
     <td><strong>Vector editor.</strong> Structure and design: precision illustration, typography, logos, scalable graphics. An Illustrator alternative.</td>
@@ -88,7 +88,7 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
   <tr>
     <td>Targets <code>.svg</code>, <code>.eps</code>, <code>.ai</code>, <code>.pdf</code></td>
     <td>Targets <code>.psd</code>, <code>.png</code>, <code>.tiff</code>, <code>.jpg</code></td>
-    <td>Camera RAW in, hands off to Imago</td>
+    <td>Camera RAW in, hands off to Pinxit</td>
   </tr>
   <tr>
     <td>🟢 <strong>Working prototype</strong><br>SVG editing works today</td>
@@ -103,9 +103,9 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
 
 Legend: ✅ works today · 🚧 in progress · 📋 planned
 
-### Nodus (vector)
+### Stilus (vector)
 
-Nodus began life as the Bezier project and was imported here with its full history. It is the most complete app in the suite.
+Stilus began life as the Bezier project and was imported here with its full history. It is the most complete app in the suite.
 
 | Area | Status | Notes |
 | ---- | :----: | ----- |
@@ -117,9 +117,9 @@ Nodus began life as the Bezier project and was imported here with its full histo
 | Alignment and snapping | ✅ | Align selections, snap while drawing |
 | Raw SVG view | ✅ | Inspect and edit the markup directly |
 | EPS, AI, and PDF import and export | 📋 | Target formats, not yet implemented |
-| Move to shared Photon.Core | 📋 | Rendering and file I/O to migrate into the core |
+| Move to shared Isotone.Core | 📋 | Rendering and file I/O to migrate into the core |
 
-### Imago (raster)
+### Pinxit (raster)
 
 | Area | Status | Notes |
 | ---- | :----: | ----- |
@@ -131,48 +131,48 @@ Nodus began life as the Bezier project and was imported here with its full histo
 | PNG, JPEG, TIFF, PSD | 📋 | Target formats |
 | Plugins and scripting | 📋 | Plugin abstractions exist; runtime to come |
 
-### Lumen (darkroom)
+### Albumen (darkroom)
 
 | Area | Status | Notes |
 | ---- | :----: | ----- |
 | RAW decoding and development | 📋 | Non-destructive processing |
 | Library and catalog | 📋 | Import, browse, rate, tag |
 | Batch adjustments | 📋 | Apply settings across a selection |
-| Edit in Imago | 📋 | Send a developed image straight to Imago |
+| Edit in Pinxit | 📋 | Send a developed image straight to Pinxit |
 
 ## Architecture
 
-Photon follows one rule: **develop together, distribute separately.** All three apps live in one repository and one solution so shared code can be refactored in a single change and debugged end to end. Each app is still compiled into its own self-contained directory with its own copy of the core, so updating Imago can never break an installed Nodus.
+Isotone follows one rule: **develop together, distribute separately.** All three apps live in one repository and one solution so shared code can be refactored in a single change and debugged end to end. Each app is still compiled into its own self-contained directory with its own copy of the core, so updating Pinxit can never break an installed Stilus.
 
 ```mermaid
 flowchart TB
-    subgraph repo["One repository, one solution: Photon.slnx"]
-        core["Photon.Core<br/>rendering, file I/O,<br/>color science, plugins"]
-        nodus["Nodus<br/>vector editor"]
-        imago["Imago<br/>raster editor"]
-        lumen["Lumen<br/>darkroom and library"]
-        core --> nodus
-        core --> imago
-        core --> lumen
+    subgraph repo["One repository, one solution: Isotone.slnx"]
+        core["Isotone.Core<br/>rendering, file I/O,<br/>color science, plugins"]
+        stilus["Stilus<br/>vector editor"]
+        pinxit["Pinxit<br/>raster editor"]
+        albumen["Albumen<br/>darkroom and library"]
+        core --> stilus
+        core --> pinxit
+        core --> albumen
     end
-    nodus --> nsetup["Nodus installer<br/>and portable ZIP"]
-    imago --> isetup["Imago installer<br/>and portable ZIP"]
-    lumen --> lsetup["Lumen installer<br/>and portable ZIP"]
-    nsetup --> suite["Photon suite installer"]
+    stilus --> nsetup["Stilus installer<br/>and portable ZIP"]
+    pinxit --> isetup["Pinxit installer<br/>and portable ZIP"]
+    albumen --> lsetup["Albumen installer<br/>and portable ZIP"]
+    nsetup --> suite["Isotone suite installer"]
     isetup --> suite
     lsetup --> suite
 
     classDef planned stroke-dasharray: 5 5
-    class core,lumen,lsetup planned
+    class core,albumen,lsetup planned
 ```
 
-<sub>Dashed boxes are planned. Today Nodus lives in <code>src/Nodus/</code> and Imago in <code>src/Imago/</code>; shared code moves into Photon.Core as the apps converge.</sub>
+<sub>Dashed boxes are planned. Today Stilus lives in <code>src/Stilus/</code> and Pinxit in <code>src/Pinxit/</code>; shared code moves into Isotone.Core as the apps converge.</sub>
 
 **Shared core responsibilities (planned):**
 
 - **Rendering pipeline:** high-performance 2D drawing primitives on SkiaSharp.
 - **File I/O:** one place for complex format readers and writers.
-- **Color science:** shared color management so a color looks the same in Nodus, Imago, and Lumen.
+- **Color science:** shared color management so a color looks the same in Stilus, Pinxit, and Albumen.
 - **Plugin system:** a common interface so filters and brushes can work across apps.
 
 <details>
@@ -197,9 +197,9 @@ flowchart TB
 
 | Path | What it holds |
 | ---- | ------------- |
-| `src/Nodus/` | The Nodus vector editor (imported from the Bezier project) |
-| `src/Imago/` | The Imago raster editor |
-| `src/Lumen/` | Lumen (planned) |
+| `src/Stilus/` | The Stilus vector editor (imported from the Bezier project) |
+| `src/Pinxit/` | The Pinxit raster editor |
+| `src/Albumen/` | Albumen (planned) |
 | `docs/` | User and developer documentation ([index](docs/README.md)) |
 | `todo/` | The development plan and TODO tree ([implementation plan](todo/implementation-plan.md)) |
 | `installer/` | Inno Setup scripts, one per app plus the suite |
@@ -214,7 +214,7 @@ flowchart TB
 > [!IMPORTANT]
 > No builds have been published yet. This section describes how releases will ship.
 
-**Download from [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-download).** Installers and portable ZIPs are published only there, served from `download.rizonesoft.com`, never attached to GitHub. Each [GitHub release](https://github.com/rizonesoft/Photon/releases) carries the release notes, the source code of that tag, the SHA-256 checksums, and links to the files on `download.rizonesoft.com`, so you can check what you downloaded. Once the first release exists, its files live at `https://download.rizonesoft.com/<app>/<version>/` (for example `https://download.rizonesoft.com/nodus/0.1.0/`).
+**Download from [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-download).** Installers and portable ZIPs are published only there, served from `download.rizonesoft.com`, never attached to GitHub. Each [GitHub release](https://github.com/rizonesoft/Photon/releases) carries the release notes, the source code of that tag, the SHA-256 checksums, and links to the files on `download.rizonesoft.com`, so you can check what you downloaded. Once the first release exists, its files live at `https://download.rizonesoft.com/<app>/<version>/` (for example `https://download.rizonesoft.com/stilus/0.1.0/`).
 
 Every app ships on its own, in two forms:
 
@@ -222,7 +222,7 @@ Every app ships on its own, in two forms:
 | ---- | -------- | ----- |
 | **Installer** (`.exe`, Inno Setup) | Most people | Start menu entry and a clean uninstall |
 | **Portable ZIP** | Locked-down machines, trying it out | Unzip and run, no installer needed |
-| **Suite installer** | Getting everything at once | One Photon Graphics Suite installer with a component per app (Nodus and Imago today) |
+| **Suite installer** | Getting everything at once | One Isotone Graphics Suite installer with a component per app (Stilus and Pinxit today) |
 
 **Per-user or all-users.** The installer asks at startup. A per-user install needs no administrator rights and lands in your profile; an all-users install needs elevation and lands in Program Files.
 
@@ -247,18 +247,18 @@ Every app ships on its own, in two forms:
 
 ```powershell
 git clone https://github.com/rizonesoft/Photon.git
-cd Photon
+cd Isotone
 
 pwsh tools/provision.ps1          # install the pinned .NET SDK and tools
-dotnet build Photon.slnx          # build every app
+dotnet build Isotone.slnx          # build every app
 pwsh scripts/check-all.ps1        # run every gate: build, tests, analyzers, plan checks
-pwsh scripts/package.ps1 -App Nodus   # produce the Nodus installer and portable ZIP
+pwsh scripts/package.ps1 -App Stilus   # produce the Stilus installer and portable ZIP
 ```
 
-To run Nodus straight from source:
+To run Stilus straight from source:
 
 ```powershell
-dotnet run --project src/Nodus/Bezier.Desktop
+dotnet run --project src/Stilus/Bezier.Desktop
 ```
 
 Full details, including troubleshooting and CI, live in [docs/dev/build.md](docs/dev/build.md).
@@ -269,10 +269,10 @@ Each app is versioned independently with [Semantic Versioning](https://semver.or
 
 | Tag | Releases |
 | --- | -------- |
-| `nodus-vX.Y.Z` | Nodus |
-| `imago-vX.Y.Z` | Imago |
-| `lumen-vX.Y.Z` | Lumen |
-| `photon-vX.Y.Z` | The suite installer |
+| `stilus-vX.Y.Z` | Stilus |
+| `pinxit-vX.Y.Z` | Pinxit |
+| `albumen-vX.Y.Z` | Albumen |
+| `isotone-vX.Y.Z` | The suite installer |
 
 Pushing a tag builds and packages that app's installer and portable ZIP, uploads them to `download.rizonesoft.com`, and publishes a GitHub release with the notes, checksums, and download links. Changes are recorded per app in [CHANGELOG.md](CHANGELOG.md). See [docs/dev/versioning.md](docs/dev/versioning.md) for the full scheme.
 
@@ -281,14 +281,14 @@ Pushing a tag builds and packages that app's installer and portable ZIP, uploads
 Development is driven by a TODO tree in [`todo/`](todo/), with the ordered plan in [todo/implementation-plan.md](todo/implementation-plan.md). In broad strokes:
 
 1. **Foundation:** one solution, shared build infrastructure, CI, installers, and release automation.
-2. **Nodus preview:** stabilize the vector editor and ship the first public build.
-3. **Nodus parity:** bring Nodus to parity with Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2), every feature of both, in ten releases from 0.2.0 to 1.0.0. The [parity catalog](docs/parity/nodus-parity.md) routes each of their 4,335 inventory rows to a planned section, an existing one, the backlog, an exclusion (scripting, cloud services), or another Photon app. Nodus AI runs on OpenRouter with your own API key (BYOK), sends nothing without an explicit action, and rests on three pillars: results are editable, undoable vector objects; brand kits and hand-offs work across the suite; and every AI action is recorded so it can be re-run, compared, and reverted.
-4. **Photon.Core:** the shared library grows the pixel engine, color management, and the AI core with the Nodus parity work, the pixel engine extensions and the develop engine with the Imago parity work, and takes rendering, file I/O, and other code as a second app needs it.
-5. **Imago preview:** canvas, layers, core tools, and PNG, JPEG, and TIFF support in `imago-v0.1.0`.
-6. **Imago parity:** bring Imago to parity with Adobe Photoshop 27.10 (with Camera Raw 18.6) and two other popular raster editors, Affinity by Canva 3.3 (Affinity Photo) and GIMP 3.2.6, every feature of all three, in twelve releases from 0.2.0 to 1.0.0 (Phases 16 to 27 of the plan). The [Imago parity catalog](docs/parity/imago-parity.md) routes each of their 10,829 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services, platform-only and vendor-removed features), or another Photon app. Imago AI rests on the same three pillars as Nodus AI. Scripting and macros (one suite-wide system), batch processing, video, and animation are deferred to after the first release.
-7. **Lumen preview:** library, RAW development on the suite develop engine, and the Edit in Imago handoff in `lumen-v0.1.0`.
-8. **Lumen parity:** bring Lumen to parity with Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76, in ten releases from 0.2.0 to 1.0.0 (Phases 30 to 39 of the plan), on three pillars: a fast default image viewer (`LumenViewer.exe`, opening any image from Explorer within a recorded startup budget), browsing any folder without importing it, and batch rename, convert, resize, edit, develop, and export as core tools. The [Lumen parity catalog](docs/parity/lumen-parity.md) routes each of their 8,919 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services), or another Photon app (ACDSee's layered Edit mode goes to Imago). Originals are safe by default: Lumen writes into an original only when you opt in, and then only after a verified backup. Faces are recognized on your machine and never sent anywhere; tethered capture is replaced by watched-folder import for now.
-9. **Distribution:** signing, win-arm64, winget, and the first suite bundle, `photon-v1.0.0`.
+2. **Stilus preview:** stabilize the vector editor and ship the first public build.
+3. **Stilus parity:** bring Stilus to parity with Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2), every feature of both, in ten releases from 0.2.0 to 1.0.0. The [parity catalog](docs/parity/stilus-parity.md) routes each of their 4,335 inventory rows to a planned section, an existing one, the backlog, an exclusion (scripting, cloud services), or another Isotone app. Stilus AI runs on OpenRouter with your own API key (BYOK), sends nothing without an explicit action, and rests on three pillars: results are editable, undoable vector objects; brand kits and hand-offs work across the suite; and every AI action is recorded so it can be re-run, compared, and reverted.
+4. **Isotone.Core:** the shared library grows the pixel engine, color management, and the AI core with the Stilus parity work, the pixel engine extensions and the develop engine with the Pinxit parity work, and takes rendering, file I/O, and other code as a second app needs it.
+5. **Pinxit preview:** canvas, layers, core tools, and PNG, JPEG, and TIFF support in `pinxit-v0.1.0`.
+6. **Pinxit parity:** bring Pinxit to parity with Adobe Photoshop 27.10 (with Camera Raw 18.6) and two other popular raster editors, Affinity by Canva 3.3 (Affinity Photo) and GIMP 3.2.6, every feature of all three, in twelve releases from 0.2.0 to 1.0.0 (Phases 16 to 27 of the plan). The [Pinxit parity catalog](docs/parity/pinxit-parity.md) routes each of their 10,829 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services, platform-only and vendor-removed features), or another Isotone app. Pinxit AI rests on the same three pillars as Stilus AI. Scripting and macros (one suite-wide system), batch processing, video, and animation are deferred to after the first release.
+7. **Albumen preview:** library, RAW development on the suite develop engine, and the Edit in Pinxit handoff in `albumen-v0.1.0`.
+8. **Albumen parity:** bring Albumen to parity with Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76, in ten releases from 0.2.0 to 1.0.0 (Phases 30 to 39 of the plan), on three pillars: a fast default image viewer (`AlbumenViewer.exe`, opening any image from Explorer within a recorded startup budget), browsing any folder without importing it, and batch rename, convert, resize, edit, develop, and export as core tools. The [Albumen parity catalog](docs/parity/albumen-parity.md) routes each of their 8,919 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services), or another Isotone app (ACDSee's layered Edit mode goes to Pinxit). Originals are safe by default: Albumen writes into an original only when you opt in, and then only after a verified backup. Faces are recognized on your machine and never sent anywhere; tethered capture is replaced by watched-folder import for now.
+9. **Distribution:** signing, win-arm64, winget, and the first suite bundle, `isotone-v1.0.0`.
 
 The plan file is the source of truth; this list is a summary and may lag behind it.
 
@@ -302,7 +302,7 @@ Contributions are welcome, from bug reports to pull requests.
 - Ask questions and share ideas in [Discussions](https://github.com/rizonesoft/Photon/discussions).
 - Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 - Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
-- UI work follows [standards/ui.md](standards/ui.md) and the [Photon Interface design system page](https://rizonesoft.github.io/Photon/design/) (source: [`docs/design/`](docs/design/README.md)).
+- UI work follows [standards/ui.md](standards/ui.md) and the [Isotone Interface design system page](https://rizonesoft.github.io/Photon/design/) (source: [`docs/design/`](docs/design/README.md)).
 
 More documentation: [docs/](docs/README.md) · [user guides](docs/user/README.md) · [developer guides](docs/dev/README.md).
 
@@ -312,16 +312,16 @@ Copyright (C) 2025-2026 Rizonetech (Pty) Ltd
 
 Rizonesoft is a brand of Rizonetech (Pty) Ltd.
 
-The Photon Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text. The GPL covers the code; the names "Rizonesoft", "Photon Graphics Suite", "Nodus", "Imago", and "Lumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, covered by the [trademark policy](TRADEMARKS.md).
+The Isotone Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text. The GPL covers the code; the names "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Pinxit", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, covered by the [trademark policy](TRADEMARKS.md).
 
-Nodus and Imago were previously published under the MIT License as separate projects by the same author. Both are now part of this repository and are licensed under GPL-3.0.
+Stilus and Pinxit were previously published under the MIT License as separate projects by the same author. Both are now part of this repository and are licensed under GPL-3.0.
 
 ## Acknowledgements
 
-Photon stands on the shoulders of excellent open source work:
+Isotone stands on the shoulders of excellent open source work:
 
 - [SkiaSharp](https://github.com/mono/SkiaSharp) and [Skia](https://skia.org/) for 2D rendering
-- [SharpVectors](https://github.com/ElinamLLC/SharpVectors) for the Nodus splash logo
+- [SharpVectors](https://github.com/ElinamLLC/SharpVectors) for the Stilus splash logo
 - [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) for MVVM source generators
 - [Serilog](https://serilog.net/) for structured logging
 - [AvalonDock](https://github.com/Dirkster99/AvalonDock) for docking panels

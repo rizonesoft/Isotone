@@ -1,0 +1,30 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="nuget.config" />
+    <File Path="tests/Isotone.runsettings" />
+  </Folder>
+  <Folder Name="/Pinxit/">
+    <Project Path="src/Pinxit/src/Pinxit.Core/Pinxit.Core.csproj" />
+    <Project Path="src/Pinxit/src/Pinxit.FileFormats/Pinxit.FileFormats.csproj" />
+    <Project Path="src/Pinxit/src/Pinxit.Plugins.Abstractions/Pinxit.Plugins.Abstractions.csproj" />
+    <Project Path="src/Pinxit/src/Pinxit.Rendering/Pinxit.Rendering.csproj" />
+    <Project Path="src/Pinxit/src/Pinxit.Scripting/Pinxit.Scripting.csproj" />
+    <Project Path="src/Pinxit/src/Pinxit.UI/Pinxit.UI.csproj" />
+  </Folder>
+  <Folder Name="/Pinxit/tests/">
+    <Project Path="src/Pinxit/tests/Pinxit.Core.Tests/Pinxit.Core.Tests.csproj" />
+    <Project Path="src/Pinxit/tests/Pinxit.Rendering.Tests/Pinxit.Rendering.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Stilus/">
+    <Project Path="src/Stilus/Bezier.Core/Bezier.Core.csproj" />
+    <Project Path="src/Stilus/Bezier.Desktop/Bezier.Desktop.csproj" />
+  </Folder>
+  <Folder Name="/Stilus/tests/">
+    <Project Path="src/Stilus/Bezier.Tests/Bezier.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,6 +1,6 @@
 # Stop hook for the Claude process-plan campaign (Resolute D00 T04 section 32, ported
-# from ScratchPad's 0da6bd2; ported to Photon 2026-09-26, where the
-# "D00 T04 section N" notes below are Resolute provenance, not Photon
+# from ScratchPad's 0da6bd2; ported to Isotone 2026-09-26, where the
+# "D00 T04 section N" notes below are Resolute provenance, not Isotone
 # sections). Blocks the campaign session's end of turn
 # while its run is open, and lets go when the run is finished, parked,
 # out of runnable work, or stalled. Only the session named in the guard

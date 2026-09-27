@@ -16,4 +16,4 @@ The tab row is one tab stop; Left and Right move and select (automatic activatio
 
 ## WPF
 
-`TabControl` styles `Photon.PanelTabControl` and `Photon.DialogTabControl`; `TabItem` templates with `Border PART_Chrome` and, for dialog tabs, `Rectangle PART_Underline` visible on `IsSelected`. `TabStripPlacement="Top"`, `KeyboardNavigation.TabNavigation="Once"` on the header panel.
+`TabControl` styles `Isotone.PanelTabControl` and `Isotone.DialogTabControl`; `TabItem` templates with `Border PART_Chrome` and, for dialog tabs, `Rectangle PART_Underline` visible on `IsSelected`. `TabStripPlacement="Top"`, `KeyboardNavigation.TabNavigation="Once"` on the header panel.

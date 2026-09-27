@@ -22,4 +22,4 @@ Left and Down decrease, Right and Up increase by SmallChange (1); Page keys by L
 
 ## WPF
 
-`Slider` style `Photon.Slider`: `Track PART_Track` with `RepeatButton`s (`DecreaseRepeatButton` draws the fill, `IncreaseRepeatButton` the track) and a `Thumb` template (`Ellipse`). `IsMoveToPointEnabled="True"` (click jumps, Photoshop behavior). Gradient slider: `Photon.GradientSlider` with a `Brush Ramp` property and a `Polygon` thumb. Pair with a NumberBox bound two-way to the same `Value`.
+`Slider` style `Isotone.Slider`: `Track PART_Track` with `RepeatButton`s (`DecreaseRepeatButton` draws the fill, `IncreaseRepeatButton` the track) and a `Thumb` template (`Ellipse`). `IsMoveToPointEnabled="True"` (click jumps, Photoshop behavior). Gradient slider: `Isotone.GradientSlider` with a `Brush Ramp` property and a `Polygon` thumb. Pair with a NumberBox bound two-way to the same `Value`.

@@ -1,10 +1,10 @@
-Photon Interface is the desktop UI of the Photon Graphics Suite: Nodus (vector), Imago (raster) and Lumen (darkroom and photo manager), built in WPF for Windows 11. It is deliberately familiar to Photoshop users and grows out of Bezier, the Nodus prototype: its 2px corners, hairline dividers, glowing checked tools, rich tooltips, scrubbable number boxes and dense status bar all carry over.
+Isotone Interface is the desktop UI of the Isotone Graphics Suite: Stilus (vector), Pinxit (raster) and Albumen (darkroom and photo manager), built in WPF for Windows 11. It is deliberately familiar to Photoshop users and grows out of Bezier, the Stilus prototype: its 2px corners, hairline dividers, glowing checked tools, rich tooltips, scrubbable number boxes and dense status bar all carry over.
 
 ## Principles
 
 1. **Content first.** The image or artwork is the brightest, most colorful thing on screen. Chrome is neutral grey and recedes; color in the chrome means state, identity or status, never decoration.
 2. **Photoshop-familiar.** Same window anatomy (menu bar in the title bar, options bar, tool rail on the left, document tabs, docked panels on the right, status bar), same shortcuts, same brightness themes, same blue highlight, same compact density. A Photoshop user should find every tool where their hands expect it.
-3. **Suite-consistent.** Nodus, Imago and Lumen share every token, control and layout rule. The only visible difference between them is the app accent in the title-bar mark, the splash, and the one primary button of a view.
+3. **Suite-consistent.** Stilus, Pinxit and Albumen share every token, control and layout rule. The only visible difference between them is the app accent in the title-bar mark, the splash, and the one primary button of a view.
 4. **Dense, not cramped.** 24px controls and 12px text by default, on a 4px grid, with a Comfortable density for larger or touch-adjacent screens.
 5. **Every state drawn.** Hover, pressed, checked, disabled and keyboard focus are designed for every control; nothing falls back to stock WPF.
 
@@ -38,14 +38,14 @@ Two kinds of color appear in chrome, and they never swap roles.
 
 **State** is the Highlight color, the same in every app: selection, keyboard focus, checked checkboxes and radios, the active tool, the highlighted menu item, slider fills, selected rows, drop targets, links. Tokens: `state` (solid fill that carries `state-on` text), `state-hover`, `state-pressed`, `state-on`, `state-subtle` (selected rows), `state-tint` (translucent checked-tool fill), `state-line` (marks that need 3:1: active tool border, slider fill, underline of the selected tab), `state-text` (links), and `focus-ring` (an alias of `state-line`).
 
-**App accent** is identity only: Nodus cyan `accent-nodus`, Imago orange `accent-imago`, Lumen green `accent-lumen` (lighter values in the three dark themes, darker in Light). It appears on the title-bar app mark, the splash and its launch progress, and the single primary button of a view, with its label in `accent-<app>-on`. It never marks selection, focus or a checked state.
+**App accent** is identity only: Stilus cyan `accent-stilus`, Pinxit orange `accent-pinxit`, Albumen green `accent-albumen` (lighter values in the three dark themes, darker in Light). It appears on the title-bar app mark, the splash and its launch progress, and the single primary button of a view, with its label in `accent-<app>-on`. It never marks selection, focus or a checked state.
 
 Examples:
 
-- The selected layer in Imago is `state-subtle`; the dialog's OK button in the same window is `accent-imago`.
+- The selected layer in Pinxit is `state-subtle`; the dialog's OK button in the same window is `accent-pinxit`.
 - The active Brush tool shows `state-tint`, a 1px `state-line` border and `glow-state`, in all three apps.
 - The highlighted item in a menu is `state` with `state-on` text; the menu bar's app mark beside it is `accent-<app>`.
-- Lumen's Import button is `accent-lumen`; the photos it selects in the grid are outlined in `state-line`.
+- Albumen's Import button is `accent-albumen`; the photos it selects in the grid are outlined in `state-line`.
 
 ### Highlight color option
 
@@ -54,13 +54,13 @@ Preferences > Interface > Highlight color offers three values. Every `state*` to
 | Option | Values | Why |
 | --- | --- | --- |
 | **Blue (default)** | the `state*` tokens (#1473E6 family, tuned per theme) | Neutral on photographs and illustrations (few images are dominated by this blue); no clash with warning amber; the safest choice beside error red for color-blind users; clean in the Light theme; matches Photoshop, so it reads as "selected" without learning. |
-| **Photon orange** | the `state-orange*` tokens (Bezier's #FF6B35, darker in Light) | Photon's Bezier heritage. The dark themes set near-black text on it (`state-orange-on`). |
+| **Isotone orange** | the `state-orange*` tokens (Bezier's #FF6B35, darker in Light) | Isotone's Bezier heritage. The dark themes set near-black text on it (`state-orange-on`). |
 | **Windows accent color** | derived from `UISettings` Accent and AccentLight1-3 / AccentDark1-3, contrast-adjusted per theme | Matches the rest of the user's Windows. Falls back to Blue when unavailable. |
 
 The Highlight card documents the Windows accent mapping and the WPF swap. Two cautions come with the orange option:
 
-- **Imago's identity orange sits close to Photon orange.** `accent-imago` #F5923E and `state-orange` #FF6B35 differ by only 1.1 to 1.2:1 in lightness, so they cannot be told apart by lightness. Roles keep them apart: with the orange option, Imago's primary button keeps the identity orange while selected rows use `state-orange-subtle` (a brown tint at least 3:1 away from the button in every theme) and focus uses `state-orange-line`. Blue stays Imago's recommended Highlight.
-- **Warning amber against Photon orange.** `status-warning` (amber, #F2C14E in Dark) is 1.6 to 1.9:1 lighter than `state-orange` in the dark themes and differs in hue in Light (1.25:1). Warnings always carry the `alert` icon and a word, so they never depend on that difference.
+- **Pinxit's identity orange sits close to Isotone orange.** `accent-pinxit` #F5923E and `state-orange` #FF6B35 differ by only 1.1 to 1.2:1 in lightness, so they cannot be told apart by lightness. Roles keep them apart: with the orange option, Pinxit's primary button keeps the identity orange while selected rows use `state-orange-subtle` (a brown tint at least 3:1 away from the button in every theme) and focus uses `state-orange-line`. Blue stays Pinxit's recommended Highlight.
+- **Warning amber against Isotone orange.** `status-warning` (amber, #F2C14E in Dark) is 1.6 to 1.9:1 lighter than `state-orange` in the dark themes and differs in hue in Light (1.25:1). Warnings always carry the `alert` icon and a word, so they never depend on that difference.
 
 ### Status colors
 
@@ -145,7 +145,7 @@ When Windows "Animation effects" is off (`SystemParameters.ClientAreaAnimation` 
 
 One family: Lucide geometry (ISC), in the shared icon catalog as path data. 24 viewBox, `icon-stroke` 1.5px at `icon-sm` 16px (menus, panels, options bar, rows, buttons) and `icon-md` 20px (tool rail), round caps and joins, strokes only. Icons are `icon` at rest, `text-primary` when hovered or active, `state-on` on a `state` fill, `text-disabled` when disabled. FluentIcons.Wpf, which Bezier mixed in, leaves the suite; the caption buttons draw `minus`, `maximize`, `restore` and `x` from the same catalog at stroke 1. Emoji are never icons.
 
-This UI icon catalog (Lucide-style strokes) is separate from the app icons. The app icons of Nodus, Imago and Lumen are Direction C, the suite tile: a shared graphite tile, the spectrum band along its foot and the app's accent glyph. They are drawn from their own SVG files, never from the catalog, and they appear in the taskbar, Start menu, installer, file associations, About dialog and the title-bar app mark (the hand-tuned `-16` file); the splash is the Suite card, which carries the master icon at 136 px (see the Splash component guide). Sizes, construction, colors and rules are in the App icons section, and the files are in the App icons asset group.
+This UI icon catalog (Lucide-style strokes) is separate from the app icons. The app icons of Stilus, Pinxit and Albumen are Direction C, the suite tile: a shared graphite tile, the spectrum band along its foot and the app's accent glyph. They are drawn from their own SVG files, never from the catalog, and they appear in the taskbar, Start menu, installer, file associations, About dialog and the title-bar app mark (the hand-tuned `-16` file); the splash is the Suite card, which carries the master icon at 136 px (see the Splash component guide). Sizes, construction, colors and rules are in the App icons section, and the files are in the App icons asset group.
 
 ## Accessibility
 
@@ -167,7 +167,7 @@ Every text token is checked (WCAG 2.x) against every ground its usage note names
 | `border-control` on `surface-panel` | 3.5 | 3.4 | 3.0 | 3.7 |
 | `state-orange-on` on `state-orange` | 6.5 | 6.5 | 7.1 | 5.7 |
 | `state-orange-line` on `surface-panel` | 5.0 | 5.9 | 4.6 | 3.9 |
-| `accent-imago-on` on `accent-imago` | 7.9 | 7.9 | 7.9 | 5.3 |
+| `accent-pinxit-on` on `accent-pinxit` | 7.9 | 7.9 | 7.9 | 5.3 |
 | `status-error` on `surface-panel` | 5.1 | 6.1 | 4.7 | 4.7 |
 
 `text-disabled` sits near 2.3 to 2.6:1 on purpose (WCAG exempts inactive controls). The `state` fill itself is a surface, not a mark: in Medium Gray it is only 1.4:1 against the panel, so every checked control also draws a `state-line` border.
@@ -178,7 +178,7 @@ One focus ring (`focus-ring`, 2px, 1px outside; inset on rows), shown for keyboa
 
 ### Windows high contrast
 
-When `SystemParameters.HighContrast` is true, Photon.UI loads `Themes/HighContrast.xaml`, which maps tokens to system colors instead of the four themes:
+When `SystemParameters.HighContrast` is true, Isotone.UI loads `Themes/HighContrast.xaml`, which maps tokens to system colors instead of the four themes:
 
 | Tokens | SystemColors |
 | --- | --- |
@@ -199,10 +199,10 @@ Every size token is in device-independent pixels. The UI is checked at 100, 150 
 
 ## WPF implementation
 
-`Photon.UI` carries the system as resources:
+`Isotone.UI` carries the system as resources:
 
 ```
-Photon.UI/
+Isotone.UI/
   Themes/
     (all generated from docs/design/tokens.json by scripts/generate-theme.py; never hand-edited)
     Tokens.xaml            sizes, spacing, radii, durations, font families (single values)
@@ -212,7 +212,7 @@ Photon.UI/
     Light.xaml
     HighContrast.xaml      token keys mapped to SystemColors
     Highlight.Blue.xaml    Highlight overlay: Blue (default, maps state keys to the blue set)
-    Highlight.Orange.xaml  Highlight overlay: Photon orange (maps state keys to state-orange)
+    Highlight.Orange.xaml  Highlight overlay: Isotone orange (maps state keys to state-orange)
     Density.Compact.xaml   neutral size keys pointed at the -compact values (default)
     Density.Comfortable.xaml neutral size keys pointed at the -comfortable values
     Controls/*.xaml        one dictionary per control family (Button.xaml, Menu.xaml, NumberBox.xaml...)
@@ -222,17 +222,17 @@ Photon.UI/
 - **Brush keys are token names**: `<SolidColorBrush x:Key="surface-panel" Color="#323232"/>`. Size tokens are `sys:Double` (`control-h-compact`), radii are `CornerRadius` (`radius-sm`), spacing is `Thickness` or `sys:Double`, durations are `Duration` (`duration-fast`), `ease-out` is a `CubicEase` with `EasingMode="EaseOut"`.
 - **Always `DynamicResource`** for colors, so a theme or Highlight change restyles open windows without a restart. `StaticResource` is fine for sizes.
 - `ThemeService` swaps the brightness dictionary in `Application.Resources.MergedDictionaries` (index 1); `HighlightService` swaps the Highlight overlay after it (`Highlight.Blue.xaml`, `Highlight.Orange.xaml`, or a dictionary built at runtime from the Windows accent); `DensityService` swaps `Density.Compact.xaml` or `Density.Comfortable.xaml`, which point the neutral keys (`control-h`, `row-h`, `menu-row-h`...) at the `-compact` or `-comfortable` values.
-- Each app sets `Photon.App.Accent`, `AccentHover` and `AccentOn` to its `accent-<app>` brushes once at startup.
-- Implicit styles cover every stock control a surface uses (Button, ToggleButton, RepeatButton, CheckBox, RadioButton, TextBox, PasswordBox, ComboBox, ListBox, ListView, TreeView, TabControl, Menu, ContextMenu, ToolTip, ScrollBar, ScrollViewer, Slider, ProgressBar, StatusBar, Expander, GridSplitter); `FocusVisualStyle` is `{x:Null}` everywhere and templates draw the Photon focus ring.
-- AvalonDock gets a Photon theme built from the same keys. No WPF-UI or other control framework.
+- Each app sets `Isotone.App.Accent`, `AccentHover` and `AccentOn` to its `accent-<app>` brushes once at startup.
+- Implicit styles cover every stock control a surface uses (Button, ToggleButton, RepeatButton, CheckBox, RadioButton, TextBox, PasswordBox, ComboBox, ListBox, ListView, TreeView, TabControl, Menu, ContextMenu, ToolTip, ScrollBar, ScrollViewer, Slider, ProgressBar, StatusBar, Expander, GridSplitter); `FocusVisualStyle` is `{x:Null}` everywhere and templates draw the Isotone focus ring.
+- AvalonDock gets a Isotone theme built from the same keys. No WPF-UI or other control framework.
 - A surface never hardcodes a color, size or spacing that a token names; `tokens.json` in this system is the source for the XAML dictionaries.
 
 ## What changed from Bezier
 
-| Bezier (Nodus prototype) | Photon Interface |
+| Bezier (Stilus prototype) | Isotone Interface |
 | --- | --- |
-| One pure-grey dark palette, inline in `MainWindowView.xaml` | Four brightness themes from one token set, in `Photon.UI` dictionaries |
-| Accent broken: grey #808080 with #FF6B35 orange leftovers | Blue Highlight color by default, Photon orange (#FF6B35, tuned) and Windows accent as options; per-app identity accents kept separate |
+| One pure-grey dark palette, inline in `MainWindowView.xaml` | Four brightness themes from one token set, in `Isotone.UI` dictionaries |
+| Accent broken: grey #808080 with #FF6B35 orange leftovers | Blue Highlight color by default, Isotone orange (#FF6B35, tuned) and Windows accent as options; per-app identity accents kept separate |
 | Title bar doubled: OS chrome plus a fake bar with emoji caption buttons | One custom title bar through WindowChrome: app mark, menu bar inside it, 46 x 32 caption buttons with a red close |
 | Two icon families (FluentIcons.Wpf and Lucide-style, stroke 2) | One Lucide catalog, stroke 1.5 at 16 and 20px |
 | Stock Menu, ContextMenu, ScrollBar, TextBox, ComboBox, Slider, TabControl, ListBox, TreeView | Every control styled, with hover, pressed, disabled and focus states |

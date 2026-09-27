@@ -13,11 +13,11 @@ body:
     attributes:
       label: App
       options:
-        - Nodus (vector editor)
-        - Imago (raster editor)
-        - Lumen (darkroom and library)
+        - Stilus (vector editor)
+        - Pinxit (raster editor)
+        - Albumen (darkroom and library)
         - Installer or portable ZIP
-        - Whole suite or Photon.Core
+        - Whole suite or Isotone.Core
         - Other
     validations:
       required: true

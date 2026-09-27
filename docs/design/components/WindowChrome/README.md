@@ -1,6 +1,6 @@
 # Window chrome
 
-The custom title bar every Photon document window draws: app mark in the app accent, the menu bar inside the title bar (as Photoshop does), a drag area, and the three Windows 11 caption buttons. There is one title bar per window; the OS frame is removed, never doubled.
+The custom title bar every Isotone document window draws: app mark in the app accent, the menu bar inside the title bar (as Photoshop does), a drag area, and the three Windows 11 caption buttons. There is one title bar per window; the OS frame is removed, never doubled.
 
 ## Anatomy
 
@@ -31,7 +31,7 @@ The document name is not repeated in the title bar: the document tabs carry it. 
 
 - `Window` with `WindowChrome` (`CaptionHeight` = 32, `ResizeBorderThickness` = 6, `GlassFrameThickness` = 0 on Windows 10, -1 to keep the Windows 11 rounded corners and snap shadow, `UseAeroCaptionButtons` = False).
 - Every interactive element in the bar sets `WindowChrome.IsHitTestVisibleInChrome="True"`.
-- Caption buttons are `Button`s styled `Photon.CaptionButton` / `Photon.CaptionCloseButton`; the maximize button returns `HTMAXBUTTON` from a `WM_NCHITTEST` hook so Windows 11 Snap Layouts open on hover.
+- Caption buttons are `Button`s styled `Isotone.CaptionButton` / `Isotone.CaptionCloseButton`; the maximize button returns `HTMAXBUTTON` from a `WM_NCHITTEST` hook so Windows 11 Snap Layouts open on hover.
 - `AutomationProperties.Name`: "Minimize", "Maximize" / "Restore", "Close".
 - Brushes: `{DynamicResource frame}`, `{DynamicResource caption-close-hover}` and so on: brush keys are token names.
 - Watch `IsActive` with a `DataTrigger` for the inactive state.

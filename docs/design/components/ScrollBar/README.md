@@ -19,4 +19,4 @@ Scroll bars are not tab stops; the scrolled control handles arrows, Page Up/Down
 
 ## WPF
 
-`ScrollBar` and `ScrollViewer` styles `Photon.ScrollBar` / `Photon.ScrollViewer` (implicit): the `ScrollViewer` template overlays `PART_VerticalScrollBar` and `PART_HorizontalScrollBar` in the same `Grid` cell as `ScrollContentPresenter`. The bar's template: `Track PART_Track` with a `Thumb` (`Border` with `CornerRadius`) and `RepeatButton` arrows collapsed until `IsMouseOver`. Read `UISettings.AutoHideScrollBars` for the fade.
+`ScrollBar` and `ScrollViewer` styles `Isotone.ScrollBar` / `Isotone.ScrollViewer` (implicit): the `ScrollViewer` template overlays `PART_VerticalScrollBar` and `PART_HorizontalScrollBar` in the same `Grid` cell as `ScrollContentPresenter`. The bar's template: `Track PART_Track` with a `Thumb` (`Border` with `CornerRadius`) and `RepeatButton` arrows collapsed until `IsMouseOver`. Read `UISettings.AutoHideScrollBars` for the fade.

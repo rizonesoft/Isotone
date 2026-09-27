@@ -4,8 +4,8 @@ How the suite proves its work. The five proofs a TODO checkpoint may cite are de
 
 ## Test projects
 
-- xUnit v3 through the `xunit.v3.mtp-off` package with `xunit.runner.visualstudio` and `Microsoft.NET.Test.Sdk`, so `dotnet test` runs on VSTest and honors `tests/Photon.runsettings` (the plain `xunit.v3` package turns on Microsoft.Testing.Platform, which the .NET 10+ SDK refuses under VSTest). Test projects set `OutputType` `Exe`. One test project per production assembly or app `Core`, under `tests/` once the layout restructure lands (`tests/Photon.Nodus.Tests`, `tests/Photon.Imago.Core.Tests`, and so on). Today they sit inside each app folder.
-- Every test runs through `dotnet test Photon.slnx`. A test that needs something the CI runner lacks (a display, a GPU, a network) is marked with a trait (`[Trait("Requires", "display")]`) and skipped with a reason, never left to fail.
+- xUnit v3 through the `xunit.v3.mtp-off` package with `xunit.runner.visualstudio` and `Microsoft.NET.Test.Sdk`, so `dotnet test` runs on VSTest and honors `tests/Isotone.runsettings` (the plain `xunit.v3` package turns on Microsoft.Testing.Platform, which the .NET 10+ SDK refuses under VSTest). Test projects set `OutputType` `Exe`. One test project per production assembly or app `Core`, under `tests/` once the layout restructure lands (`tests/Isotone.Stilus.Tests`, `tests/Isotone.Pinxit.Core.Tests`, and so on). Today they sit inside each app folder.
+- Every test runs through `dotnet test Isotone.slnx`. A test that needs something the CI runner lacks (a display, a GPU, a network) is marked with a trait (`[Trait("Requires", "display")]`) and skipped with a reason, never left to fail.
 - Assertions: plain xUnit `Assert`, or AwesomeAssertions (Apache-2.0, the community fork of FluentAssertions 7; FluentAssertions 8 carries the Xceed commercial license). One assertion library in the whole suite; the decision record is owed to `docs/dev/decisions.md` by `D00 T02 §5`.
 
 ## Naming and shape
@@ -18,7 +18,7 @@ How the suite proves its work. The five proofs a TODO checkpoint may cite are de
 
 - Fixtures live under `tests/fixtures/<app>/<format>/`, committed, small, and licensed for redistribution (the source and license are recorded in a `README.md` beside them).
 - A format reader or writer owes a round trip: open the fixture, save, reopen, and compare against the original or a golden, element by element for vector documents and pixel by pixel within a stated tolerance for raster and RAW output. Goldens produced by a reference implementation record its name and version beside them.
-- Fidelity tests carry `[Trait("Category", "Fidelity")]` so `dotnet test Photon.slnx --filter "Category=Fidelity"` runs them all.
+- Fidelity tests carry `[Trait("Category", "Fidelity")]` so `dotnet test Isotone.slnx --filter "Category=Fidelity"` runs them all.
 - Large corpora (RAW sample sets) are not committed: a script downloads a pinned list with SHA-256 checks into `build/fixtures/`, and at least one small fixture per format is committed so the proof runs on every clone.
 
 ## Failure paths
@@ -31,7 +31,7 @@ Until a UI test suite exists, a surface is proven by the launch smoke in the gat
 
 ## The quarantine
 
-`tests/Photon.runsettings` holds a `TestCaseFilter` that excludes known-failing legacy tests. It is debt: each entry is listed in `docs/dev/build.md`, owned by a TODO section, and removed in the change that fixes its test. Adding an entry needs a TODO section that owns its removal.
+`tests/Isotone.runsettings` holds a `TestCaseFilter` that excludes known-failing legacy tests. It is debt: each entry is listed in `docs/dev/build.md`, owned by a TODO section, and removed in the change that fixes its test. Adding an entry needs a TODO section that owns its removal.
 
 ## Coverage
 

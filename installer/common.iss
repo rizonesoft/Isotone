@@ -1,6 +1,6 @@
-; Photon Graphics Suite: shared Inno Setup definitions (Inno Setup 7.1 or newer).
+; Isotone Graphics Suite: shared Inno Setup definitions (Inno Setup 7.1 or newer).
 ;
-; Each app script (Nodus.iss, Imago.iss, Lumen.iss) defines the app identity,
+; Each app script (Stilus.iss, Pinxit.iss, Albumen.iss) defines the app identity,
 ; then includes this file. scripts/package.ps1 passes the build inputs:
 ;   /DAppVersion=1.2.3[-pre]     SemVer shown to users (default 0.0.0-dev)
 ;   /DAppFileVersion=1.2.3.45    four-part Win32 version (default 0.0.0.0)
@@ -132,9 +132,9 @@ Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; F
 // wizard pages, so they skip it. Event attributes keep this composable with any
 // InitializeWizard or ShouldSkipPage an including script adds.
 var
-  PhotonWin10Page: TOutputMsgWizardPage;
+  IsotoneWin10Page: TOutputMsgWizardPage;
 
-function PhotonIsWindows10: Boolean;
+function IsotoneIsWindows10: Boolean;
 var
   Version: TWindowsVersion;
 begin
@@ -143,9 +143,9 @@ begin
 end;
 
 <event('InitializeWizard')>
-procedure PhotonInitializeWizard;
+procedure IsotoneInitializeWizard;
 begin
-  PhotonWin10Page := CreateOutputMsgPage(wpWelcome,
+  IsotoneWin10Page := CreateOutputMsgPage(wpWelcome,
     'Windows 10 is not officially supported',
     '{#AppName} is built for Windows 11.',
     'Windows 10 is not officially supported by .NET 11, which {#AppName} is built on. ' +
@@ -154,7 +154,7 @@ begin
 end;
 
 <event('ShouldSkipPage')>
-function PhotonShouldSkipPage(PageID: Integer): Boolean;
+function IsotoneShouldSkipPage(PageID: Integer): Boolean;
 begin
-  Result := (PhotonWin10Page <> nil) and (PageID = PhotonWin10Page.ID) and not PhotonIsWindows10;
+  Result := (IsotoneWin10Page <> nil) and (PageID = IsotoneWin10Page.ID) and not IsotoneIsWindows10;
 end;

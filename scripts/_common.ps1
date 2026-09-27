@@ -3,7 +3,7 @@ Set-StrictMode -Version Latest
 
 $script:RepoRoot = Split-Path -Parent $PSScriptRoot
 $script:Apps = Import-PowerShellDataFile (Join-Path $PSScriptRoot 'apps.psd1')
-$script:Solution = Join-Path $script:RepoRoot 'Photon.slnx'
+$script:Solution = Join-Path $script:RepoRoot 'Isotone.slnx'
 
 function Write-Step([string]$Message) {
   Write-Host "==> $Message" -ForegroundColor Cyan

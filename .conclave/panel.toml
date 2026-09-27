@@ -11,7 +11,7 @@
 # Re-pinning a reviewer is an edit here plus a fresh echo probe date on
 # the model entry; nothing else in the tree changes.
 #
-# Operator decision (Resolute 2026-09-25, adopted for Photon): every
+# Operator decision (Resolute 2026-09-25, adopted for Isotone): every
 # review slot runs GPT-6 Astra through codex (bulk at medium, every other
 # slot at high), and there are no fallback slots. A failed round stops
 # for the operator.
@@ -96,7 +96,7 @@ model = "gpt-6-astra"
 effort = "high"
 timeout = 900
 
-# The architecture gate after panel close (shared Photon.Core contracts,
+# The architecture gate after panel close (shared Isotone.Core contracts,
 # document and settings storage, plugin and extension seams, file
 # format readers and writers, undo history). Blocking, GPT like the
 # sign-off.

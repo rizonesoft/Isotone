@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""todo-graph -- build, validate, query, and render the Photon TODO graph.
+"""todo-graph -- build, validate, query, and render the Isotone TODO graph.
 
 Markdown under todo/ is canonical. This script parses it into a derived cache
 (build/todo-cache.json), checks the graph's integrity, and answers questions the
@@ -22,10 +22,10 @@ Format spec: todo/README.md
 Ported machinery: the review-record subsystem (Requires/Context, the run and
 plan-health/summary queries, stamp-field parsing for Plan review/Reopened and
 Duration ranges, and their validators) arrived from ScratchPad on 2026-09-19,
-and the whole tool arrived in Photon from Resolute on 2026-09-26. Section and
+and the whole tool arrived in Isotone from Resolute on 2026-09-26. Section and
 item numbers in comments (D00 T01 §N, D00 T04 §N) are ScratchPad's or
 Resolute's, kept so the rationale trail survives the port: they are
-provenance, never live references into Photon's tree.
+provenance, never live references into Isotone's tree.
 
 A campaign may edit this file when the inflight section already names it
 (Build order or dirty list). That is planned section work, not a mid-run
@@ -988,7 +988,7 @@ SEVERITY_MAP: dict[str, str] = {
     # (it pushes an app tag) without its `Run the backlog review for
     # `<tag>`` checklist item.
     "release-backlog-review-missing": "fatal",
-    # a stamped release section whose app (or, for a suite `photon-v`
+    # a stamped release section whose app (or, for a suite `isotone-v`
     # release, the whole backlog) still has an entry, added on or before
     # the stamp, with no `reviewed: <tag> ...` field for that tag.
     "release-backlog-unreviewed": "fatal",
@@ -4998,9 +4998,9 @@ BACKLOG_REMOVED_RE = re.compile(
 )
 BACKLOG_REMOVED_ATTEMPT_RE = re.compile(r"^\s*[-*+]\s+B-\d")
 BACKLOG_REMOVED_GRAMMAR = '`- B-NNN <source> -- removed YYYY-MM-DD -- operator: "<the operator\'s words>"`'
-# The release tags an app release pushes; `photon` is the suite release.
-RELEASE_APPS = ("nodus", "imago", "lumen", "photon")
-RELEASE_TAG_PATTERN = r"(?:nodus|imago|lumen|photon)-v\d+\.\d+\.\d+"
+# The release tags an app release pushes; `isotone` is the suite release.
+RELEASE_APPS = ("stilus", "pinxit", "albumen", "isotone")
+RELEASE_TAG_PATTERN = r"(?:stilus|pinxit|albumen|isotone)-v\d+\.\d+\.\d+"
 # A release's backlog review, one `reviewed:` field per release per entry:
 # `reviewed: <tag> <YYYY-MM-DD> promoted DNN TNN §N` (part of it became that
 # section) or `reviewed: <tag> <YYYY-MM-DD> deferred by operator: "<words>"`.
@@ -5592,10 +5592,10 @@ def release_sections(todos: list[Todo]) -> list[dict]:
 
 
 def _release_scope(entry: dict, app: str) -> bool:
-    """Whether a release of `app` reviews this entry: a suite (`photon`)
+    """Whether a release of `app` reviews this entry: a suite (`isotone`)
     release reviews every entry; an app release reviews that app's entries,
     the suite-wide ones, and any entry with no `app:` field."""
-    if app == "photon":
+    if app == "isotone":
         return True
     entry_app = entry["fields"].get("app", "suite").strip().lower()
     return entry_app in (app, "suite")
@@ -5809,10 +5809,10 @@ DESIGN_STATE_RE = re.compile(r"^[a-z][a-z0-9+/-]*(?: [a-z0-9+/-]+){0,3}$")
 DESIGN_NA_RE = re.compile(r"^n/a \((?P<reason>[^()]{3,})\)$")
 DESIGN_BASELINE_NAME = ".design-baseline"
 DESIGN_BASELINE_REF_RE = re.compile(r"^D\d{2} T\d{2} §\d+$")
-# The checklist item that ships an app release: pushing its tag (`photon` is
+# The checklist item that ships an app release: pushing its tag (`isotone` is
 # the suite release, which no design deviation gates but the backlog gate does).
-RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<tag>(?P<app>nodus|imago|lumen|photon)-v\d+\.\d+\.\d+)`")
-DESIGN_DOMAIN_APPS = {"01": ("nodus", "imago", "lumen"), "02": ("nodus",), "03": ("imago",), "04": ("lumen",)}
+RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<tag>(?P<app>stilus|pinxit|albumen|isotone)-v\d+\.\d+\.\d+)`")
+DESIGN_DOMAIN_APPS = {"01": ("stilus", "pinxit", "albumen"), "02": ("stilus",), "03": ("pinxit",), "04": ("albumen",)}
 
 
 def design_root() -> Path:
@@ -10701,17 +10701,17 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("no drop: a HEAD without the file skips the rule", _gclasses(), [])
             _gbacklog(_gok)
             # Release reviews on entries.
-            _grev = ' -- reviewed: nodus-v0.2.0 2026-09-28 deferred by operator: "after the next release"'
+            _grev = ' -- reviewed: stilus-v0.2.0 2026-09-28 deferred by operator: "after the next release"'
             _gbacklog(_gok.replace("promote when: asked\n- [B-002]", "promote when: asked" + _grev + "\n- [B-002]"))
             check("review: a deferred-by-operator review is clean and read",
-                  (_gclasses(), [r["tag"] for r in load_backlog()[0][0]["reviews"]]), ([], ["nodus-v0.2.0"]))
+                  (_gclasses(), [r["tag"] for r in load_backlog()[0][0]["reviews"]]), ([], ["stilus-v0.2.0"]))
             _gbacklog(_gok.replace("promote when: asked\n- [B-002]",
-                                   "promote when: asked -- reviewed: nodus-v0.2.0 2026-09-28 promoted D95 T01 §3"
-                                   + _grev.replace("nodus-v0.2.0", "photon-v1.0.0") + "\n- [B-002]"))
+                                   "promote when: asked -- reviewed: stilus-v0.2.0 2026-09-28 promoted D95 T01 §3"
+                                   + _grev.replace("stilus-v0.2.0", "isotone-v1.0.0") + "\n- [B-002]"))
             check("review: a promoted review plus a second release's review are clean", _gclasses(), [])
             for _bad, _why in (
                 (_grev.replace('"after the next release"', "after the next release"), "unquoted words"),
-                (_grev.replace("nodus-v0.2.0", "nodus-0.2.0"), "a tag without its v"),
+                (_grev.replace("stilus-v0.2.0", "stilus-0.2.0"), "a tag without its v"),
                 (_grev.replace("deferred by operator", "deferred"), "a deferral without the operator"),
                 (_grev.replace("2026-09-28", "2026-02-30"), "an impossible date"),
                 (_grev + _grev, "the same release twice"),
@@ -10719,7 +10719,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 _gbacklog(_gok.replace("promote when: asked\n- [B-002]", "promote when: asked" + _bad + "\n- [B-002]"))
                 check(f"review: {_why} is backlog-malformed", _gclasses(), ["backlog-malformed"])
             _gbacklog(_gok.replace("promote when: asked\n- [B-002]",
-                                   "promote when: asked -- reviewed: nodus-v0.2.0 2026-09-28 promoted D95 T01 §9\n- [B-002]"))
+                                   "promote when: asked -- reviewed: stilus-v0.2.0 2026-09-28 promoted D95 T01 §9\n- [B-002]"))
             check("review: a promotion naming no live section is backlog-malformed",
                   (_gclasses(), any("D95 T01 §9" in m for m in _gmsgs())), (["backlog-malformed"], True))
             _ghead = _gok.replace("promote when: asked\n- [B-002]", "promote when: asked" + _grev + "\n- [B-002]")
@@ -10730,13 +10730,13 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _gbacklog(_ghead.replace("after the next release", "after the release"))
             check("review: rewording a review HEAD holds is backlog-review-rewritten",
                   _gclasses(), ["backlog-review-rewritten"])
-            _gbacklog(_ghead.replace(_grev, _grev + _grev.replace("nodus-v0.2.0", "nodus-v0.3.0")))
+            _gbacklog(_ghead.replace(_grev, _grev + _grev.replace("stilus-v0.2.0", "stilus-v0.3.0")))
             check("review: appending a review is clean", _gclasses(), [])
             globals()["_backlog_committed_text"] = lambda: None
             _gbacklog(_gok)
             # The release-time backlog gate.
-            _gpush = "- [ ] Push the tag `nodus-v0.2.0`. Done when: green.\n"
-            _gitem = "- [ ] Run the backlog review for `nodus-v0.2.0`: promote or record deferrals. Done when: done.\n"
+            _gpush = "- [ ] Push the tag `stilus-v0.2.0`. Done when: green.\n"
+            _gitem = "- [ ] Run the backlog review for `stilus-v0.2.0`: promote or record deferrals. Done when: done.\n"
 
             def _grelease(items: str, stamp: str | None = None, tag_items: bool = True) -> str:
                 text = _gtodo([1, 2, 3]).replace("- [ ] Do thing 2\n", "- [ ] Do thing 2\n" + items)
@@ -10748,16 +10748,16 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
 
             gfile.write_text(_grelease(_gpush), encoding="utf-8")
             check("release gate: a release section without its backlog review item is release-backlog-review-missing",
-                  (_gclasses(), any("pushes `nodus-v0.2.0`" in m for m in _gmsgs()), [r["tag"] for r in release_sections(load_todos())]),
-                  (["release-backlog-review-missing"], True, ["nodus-v0.2.0"]))
-            gfile.write_text(_grelease(_gpush + _gitem.replace("nodus-v0.2.0", "nodus-v0.1.0")), encoding="utf-8")
+                  (_gclasses(), any("pushes `stilus-v0.2.0`" in m for m in _gmsgs()), [r["tag"] for r in release_sections(load_todos())]),
+                  (["release-backlog-review-missing"], True, ["stilus-v0.2.0"]))
+            gfile.write_text(_grelease(_gpush + _gitem.replace("stilus-v0.2.0", "stilus-v0.1.0")), encoding="utf-8")
             check("release gate: a review item for another tag does not count", _gclasses(), ["release-backlog-review-missing"])
             gfile.write_text(_grelease(_gpush + _gitem), encoding="utf-8")
             check("release gate: an open release section with its review item is clean", _gclasses(), [])
             gfile.write_text(_grelease(_gpush + _gitem, stamp="2026-09-28"), encoding="utf-8")
             check("release gate: the fixture release parses as stamped",
                   [r["stamped_on"] for r in release_sections(load_todos())], ["2026-09-28"])
-            check("release gate: a stamped Nodus release with an unreviewed suite entry is release-backlog-unreviewed",
+            check("release gate: a stamped Stilus release with an unreviewed suite entry is release-backlog-unreviewed",
                   (_gclasses(), any("B-002" in m and "B-001" not in m for m in _gmsgs())),
                   (["release-backlog-unreviewed"], True))
             _gbacklog(_gok.replace("promote when: asked\n", "promote when: asked" + _grev + "\n"))
@@ -10765,14 +10765,14 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _gbacklog(_gok.replace("- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-26",
                                    "- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-29"))
             check("release gate: an entry added after the stamp is not owed a review", _gclasses(), [])
-            _gbacklog(_gok.replace("-- app: fixture", "-- app: nodus"))
+            _gbacklog(_gok.replace("-- app: fixture", "-- app: stilus"))
             check("release gate: an app entry is owed its app's review",
                   (_gclasses(), any("B-001, B-002" in m for m in _gmsgs())), (["release-backlog-unreviewed"], True))
-            _gbacklog(_gok.replace("-- app: fixture", "-- app: imago").replace(
+            _gbacklog(_gok.replace("-- app: fixture", "-- app: pinxit").replace(
                 "- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-26",
-                "- [B-002] Second idea -- app: imago -- source: fixture-idea-2 -- added: 2026-09-26"))
-            check("release gate: another app's entries are out of a Nodus release's scope", _gclasses(), [])
-            gfile.write_text(_grelease((_gpush + _gitem).replace("nodus-v0.2.0", "photon-v1.0.0"), stamp="2026-09-28"),
+                "- [B-002] Second idea -- app: pinxit -- source: fixture-idea-2 -- added: 2026-09-26"))
+            check("release gate: another app's entries are out of a Stilus release's scope", _gclasses(), [])
+            gfile.write_text(_grelease((_gpush + _gitem).replace("stilus-v0.2.0", "isotone-v1.0.0"), stamp="2026-09-28"),
                              encoding="utf-8")
             check("release gate: a suite release reviews every entry, whatever its app",
                   (_gclasses(), any("B-001, B-002" in m for m in _gmsgs())), (["release-backlog-unreviewed"], True))
@@ -10934,12 +10934,12 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             encoding="utf-8",
         )
         (droot / "docs" / "design" / "shell-layout.md").write_text(
-            "# Shell layout\n\n## Regions\n\n### Nodus (vector)\n\n## Regions\n\n<a id=\"title-bar\"></a>\n",
+            "# Shell layout\n\n## Regions\n\n### Stilus (vector)\n\n## Regions\n\n<a id=\"title-bar\"></a>\n",
             encoding="utf-8",
         )
         (droot / "standards").mkdir(parents=True)
         (droot / "standards" / "ui.md").write_text("# UI Standard\n\n## Focus\n\nOne ring.\n", encoding="utf-8")
-        _dok = ("**Design:** docs/design/components/Button/README.md#states, docs/design/shell-layout.md#nodus-vector "
+        _dok = ("**Design:** docs/design/components/Button/README.md#states, docs/design/shell-layout.md#stilus-vector "
                 "-- states: all in spec -- themes: all four -- density: both")
 
         def _dsection(n: int, fidelity: str = "", design: str = "", extra_items: str = "",
@@ -10997,12 +10997,12 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                                                  "design-deviation-open-at-release")],
                   ["fatal"] * 6)
             check("design: github_slug drops punctuation and keeps hyphens",
-                  (github_slug("Nodus (vector)"), github_slug("`WPF` mapping"), github_slug("Splash and Home"),
+                  (github_slug("Stilus (vector)"), github_slug("`WPF` mapping"), github_slug("Splash and Home"),
                    github_slug("Anatomy and sizes")),
-                  ("nodus-vector", "wpf-mapping", "splash-and-home", "anatomy-and-sizes"))
+                  ("stilus-vector", "wpf-mapping", "splash-and-home", "anatomy-and-sizes"))
             check("design: markdown_anchors suffixes duplicates, skips fences, reads HTML ids",
                   sorted(markdown_anchors(droot / "docs" / "design" / "shell-layout.md")),
-                  ["nodus-vector", "regions", "regions-1", "shell-layout", "title-bar"])
+                  ["regions", "regions-1", "shell-layout", "stilus-vector", "title-bar"])
             check("design: a fenced heading is no anchor",
                   "not-a-heading" in markdown_anchors(droot / "docs" / "design" / "components" / "Button" / "README.md"),
                   False)
@@ -11110,7 +11110,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _dwrite(s1=_dsection(1, _dsurf, _dok + "\n" + _ddev.replace("2026-09-27", "2026-13-40")))
             check("design: a deviation with an impossible date is design-malformed", _dclasses(), ["design-malformed"])
             # A release section (it pushes a tag) stamped after the deviation opened.
-            _drel = _dsection(2, _dnone, extra_items="- [x] Push the tag `nodus-v0.1.0`. Done when: green.\n")
+            _drel = _dsection(2, _dnone, extra_items="- [x] Push the tag `stilus-v0.1.0`. Done when: green.\n")
             _dstamped = _dtodo([_dsection(1, _dsurf, _dok + "\n" + _ddev), _drel, _dsection(3, _dsurf, _dok)], [1, 2, 3])
             _dstamped = _dstamped.replace("| 2 | §2 | Thing 2 | -- | [ ] |", "| 2 | §2 | Thing 2 | -- | [x] |")
             _dstamped = _dstamped.replace(
@@ -11127,7 +11127,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             dfile = dtodo / "02-design" / "TODO-01-design.md"
             dfile.write_text(_dstamped.replace("domain: 96-design", "domain: 02-design")
                              .replace("D96 T01", "D02 T01"), encoding="utf-8")
-            check("design: an open Nodus deviation beside a Nodus release stamped after it opened is FATAL",
+            check("design: an open Stilus deviation beside a Stilus release stamped after it opened is FATAL",
                   _dclasses(), ["design-deviation-open-at-release"])
             dfile.write_text(_dstamped.replace("domain: 96-design", "domain: 02-design")
                              .replace("D96 T01", "D02 T01").replace("2026-09-28", "2026-09-26"), encoding="utf-8")

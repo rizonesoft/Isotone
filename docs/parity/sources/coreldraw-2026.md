@@ -1,6 +1,6 @@
-# CorelDRAW feature inventory (parity reference for Nodus)
+# CorelDRAW feature inventory (parity reference for Stilus)
 
-> **Provenance note (2026-09-26):** verbatim copy of the CorelDRAW Graphics Suite 2026 (v27.2) inventory compiled for the Nodus parity plan. The CD-### ids are stable and each is placed in exactly one row of [`../nodus-parity.md`](../nodus-parity.md). Do not renumber; a future CorelDRAW version appends new ids after CD-3041 (see [`../README.md`](../README.md)).
+> **Provenance note (2026-09-26):** verbatim copy of the CorelDRAW Graphics Suite 2026 (v27.2) inventory compiled for the Stilus parity plan. The CD-### ids are stable and each is placed in exactly one row of [`../stilus-parity.md`](../stilus-parity.md). Do not renumber; a future CorelDRAW version appends new ids after CD-3041 (see [`../README.md`](../README.md)).
 
 - **Product:** CorelDRAW Graphics Suite 2026 (CorelDRAW 2026), internal version 27.x, Windows.
 - **Latest version as of 2026-09-26:** September 2026 Update, v27.2. The updates page dates it 2026-09-14 and the press release is dated 2026-09-15.

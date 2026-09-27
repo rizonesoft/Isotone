@@ -67,6 +67,6 @@ A surface with no spec yet writes `new surface: docs/design/components/<Name>/RE
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
-- [ ] `dotnet test Photon.slnx` exits 0 with this file's test classes reporting
+- [ ] `dotnet test Isotone.slnx` exits 0 with this file's test classes reporting
 - [ ] CHANGEME: file-level checks this file owes as a whole (fidelity round trips, captures refreshed, clean-machine publish)
 - [ ] `python scripts/todo-graph.py validate` clean

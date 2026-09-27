@@ -1,6 +1,6 @@
 # Building, packaging, and CI
 
-How the Photon Graphics Suite builds from the repository root: one solution, one build configuration, one package version list.
+How the Isotone Graphics Suite builds from the repository root: one solution, one build configuration, one package version list.
 
 ## Toolchain
 
@@ -25,14 +25,14 @@ Repairs: downloads the pinned SDK into `.tools/dotnet-win-x64` (SHA512 verified)
 | File | Role |
 | ---- | ---- |
 | `global.json` | SDK pin. |
-| `Photon.slnx` | Every project: Nodus, Imago, and their tests. |
+| `Isotone.slnx` | Every project: Stilus, Pinxit, and their tests. |
 | `Directory.Build.props` | Shared settings: nullable, implicit usings, `LangVersion` latest (no project overrides it), deterministic, SourceLink, strict analyzers, `UseArtifactsOutput`, company and copyright, repository URL, MinVer. |
 | `Directory.Build.targets` | Four-part `FileVersion` (see [versioning](versioning.md)). |
 | `Directory.Packages.props` | Central package management: every package version, once. |
 | `nuget.config` | nuget.org only, with package source mapping. |
 | `.editorconfig` | Formatting, naming, and analyzer severities for the whole tree. |
-| `tests/Photon.runsettings` | Test results location and the test quarantine list. |
-| `src/Nodus/Directory.Build.props`, `src/Imago/Directory.Build.props` | Thin overlays: import the root file, set the app's MinVer tag prefix and product name, and hold the legacy relaxations listed below. |
+| `tests/Isotone.runsettings` | Test results location and the test quarantine list. |
+| `src/Stilus/Directory.Build.props`, `src/Pinxit/Directory.Build.props` | Thin overlays: import the root file, set the app's MinVer tag prefix and product name, and hold the legacy relaxations listed below. |
 
 Nothing else configures the build. The nested `global.json`, `Directory.Packages.props`, `nuget.config`, `.editorconfig`, `.gitignore`, `.gitattributes`, legacy `.sln` files, and per-app CI workflows from the imports were removed.
 
@@ -54,14 +54,14 @@ The repository-root `build/` folder is a gitignored scratch area used by the Cla
 ## Everyday commands
 
 ```powershell
-dotnet build Photon.slnx                     # Debug build of everything
-dotnet test Photon.slnx                      # all tests
-pwsh scripts/build.ps1 -Config Release       # same, scripted (-App Nodus|Imago, -Test)
+dotnet build Isotone.slnx                     # Debug build of everything
+dotnet test Isotone.slnx                      # all tests
+pwsh scripts/build.ps1 -Config Release       # same, scripted (-App Stilus|Pinxit, -Test)
 pwsh scripts/check-all.ps1                   # every gate (below)
-pwsh scripts/publish.ps1 -App Nodus          # self-contained publish
-pwsh scripts/package.ps1 -App Nodus          # installer and portable ZIP
+pwsh scripts/publish.ps1 -App Stilus          # self-contained publish
+pwsh scripts/package.ps1 -App Stilus          # installer and portable ZIP
 pwsh scripts/package.ps1 -Suite              # suite installer and ZIP
-pwsh scripts/release-manifest.ps1 -Slug nodus -Name Nodus -Version 0.1.0 -Tag nodus-v0.1.0   # release body and update feed from artifacts/dist (release.yml runs it)
+pwsh scripts/release-manifest.ps1 -Slug stilus -Name Stilus -Version 0.1.0 -Tag stilus-v0.1.0   # release body and update feed from artifacts/dist (release.yml runs it)
 ```
 
 `scripts/apps.psd1` is the app manifest the scripts read: project path, exe name, tag prefix, installer script, and whether the app ships.
@@ -70,8 +70,8 @@ pwsh scripts/release-manifest.ps1 -Slug nodus -Name Nodus -Version 0.1.0 -Tag no
 
 Runs, in order, and reports a table at the end (exit 1 if any gate failed):
 
-1. `dotnet build Photon.slnx -c Debug` and `-c Release` (skip with `-SkipBuild`)
-2. `dotnet test Photon.slnx -c <Config>` (default Release)
+1. `dotnet build Isotone.slnx -c Debug` and `-c Release` (skip with `-SkipBuild`)
+2. `dotnet test Isotone.slnx -c <Config>` (default Release)
 3. `python scripts/todo-graph.py self-test`
 4. `python scripts/todo-graph.py validate`
 5. `python scripts/todo-graph.py plan --check`
@@ -91,31 +91,31 @@ A Python gate whose script is missing is skipped with a warning rather than fail
 - `<App>-<version>-win-x64-Setup.exe` (Inno Setup, `installer/<App>.iss`)
 - `<App>-<version>-win-x64-Portable.zip`
 
-`scripts/package.ps1 -Suite` publishes every shipping app and produces `Photon-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, the Photon Graphics Suite installer, one component per shipping app) and `Photon-<version>-win-x64-Portable.zip` (one folder per app). The suite version comes from `photon-v*` tags, and every app inside it carries that version.
+`scripts/package.ps1 -Suite` publishes every shipping app and produces `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, the Isotone Graphics Suite installer, one component per shipping app) and `Isotone-<version>-win-x64-Portable.zip` (one folder per app). The suite version comes from `isotone-v*` tags, and every app inside it carries that version.
 
-**Per-app and suite releases are independent.** A `nodus-v*` or `imago-v*` tag runs `package.ps1 -App <App>` and ships only that app's installer and ZIP; it never builds or needs the suite installer. A `photon-v*` tag runs `package.ps1 -Suite` and ships only the suite installer and ZIP. Either way the files are uploaded to `download.rizonesoft.com` (`<slug>/<version>/`), never attached to the GitHub release; [versioning.md](versioning.md) has the layout, the update feed, and the repository settings.
+**Per-app and suite releases are independent.** A `stilus-v*` or `pinxit-v*` tag runs `package.ps1 -App <App>` and ships only that app's installer and ZIP; it never builds or needs the suite installer. A `isotone-v*` tag runs `package.ps1 -Suite` and ships only the suite installer and ZIP. Either way the files are uploaded to `download.rizonesoft.com` (`<slug>/<version>/`), never attached to the GitHub release; [versioning.md](versioning.md) has the layout, the update feed, and the repository settings.
 
 ### Installers
 
 `installer/common.iss` holds the shared defines and `[Setup]` directives. Each app script defines its name, exe, AppId GUID, and icon, then includes it.
 
 - Per-user by default (`PrivilegesRequired=lowest`); the privileges dialog offers an all-users install.
-- Each app has its own AppId and its own install folder (`{autopf}\<App>`). The suite has its own AppId, installs each app into its own subfolder of `{autopf}\Photon Graphics Suite`, and uses its own ProgIDs, so it never shares folders or registry keys with the standalone installers.
+- Each app has its own AppId and its own install folder (`{autopf}\<App>`). The suite has its own AppId, installs each app into its own subfolder of `{autopf}\Isotone Graphics Suite`, and uses its own ProgIDs, so it never shares folders or registry keys with the standalone installers.
 - Built with Inno Setup 7: a 64-bit Setup program (`SetupArchitecture=x64`) that installs in 64-bit mode (`ArchitecturesAllowed` and `ArchitecturesInstallIn64BitMode` `x64compatible`), modern wizard following the system light or dark theme (`WizardStyle=modern dynamic`), LZMA2 max solid compression, uninstaller, Start menu shortcut, optional desktop icon. Inno 7's changed defaults are accepted: `AppVerName` is set explicitly to `<App> <version>` (now also the default), `TimeStampsInUTC=yes`, `WizardSizePercent=120,120`, Segoe UI 9 pt. None of the removed directives (`WizardResizable`, `WindowVisible`, `EnableFsRedirection`) is used.
 - Supported OS: Windows 11. `MinVersion=10.0.17763` still lets Windows 10 (1809 or later) install; on build < 22000 the wizard shows one non-blocking page saying Windows 10 is not officially supported by .NET 11 and the app may work but is untested. Silent installs (`/SILENT`, `/VERYSILENT`) show no wizard pages, so they skip it. The page lives in `common.iss` `[Code]` with `InitializeWizard` and `ShouldSkipPage` event attributes.
-- File associations are opt-in tasks: Nodus `.svg`; Imago `.png`, `.jpg`/`.jpeg`, `.psd`.
+- File associations are opt-in tasks: Stilus `.svg`; Pinxit `.png`, `.jpg`/`.jpeg`, `.psd`.
 - Version from `/DAppVersion` (SemVer) and `/DAppFileVersion` (four-part), passed by `package.ps1`.
-- `Lumen.iss` refuses to compile unless `/DLumenShipping` is defined; `apps.psd1` marks Lumen as not shipping, so `publish.ps1` and `package.ps1` refuse it too.
+- `Albumen.iss` refuses to compile unless `/DAlbumenShipping` is defined; `apps.psd1` marks Albumen as not shipping, so `publish.ps1` and `package.ps1` refuse it too.
 
 Verified locally on 2026-09-26 with Inno Setup 7.1.0 and the .NET 11 RC SDK (version `0.0.0-alpha.0.9`):
 
 | Output | Setup.exe | Portable ZIP | Published |
 | ------ | --------- | ------------ | --------- |
-| Nodus | 66.0 MB | 93.1 MB | 233.0 MB |
-| Imago | 73.5 MB | 103.4 MB | 259.1 MB |
-| Suite (`Photon-...`) | 136.4 MB | 196.5 MB | both apps |
+| Stilus | 66.0 MB | 93.1 MB | 233.0 MB |
+| Pinxit | 73.5 MB | 103.4 MB | 259.1 MB |
+| Suite (`Isotone-...`) | 136.4 MB | 196.5 MB | both apps |
 
-Every Setup.exe is a PE32+ AMD64 image. The Nodus installer installs silently per-user (`/VERYSILENT /CURRENTUSER`; its log reports `Inno Setup version 7.1.0 (64-bit)` and `64-bit install mode: Yes`), registers its uninstaller under HKCU, launches, and uninstalls cleanly. Before the upgrade (Inno 6, .NET 10) Nodus was 63.1 MB, 86.1 MB, and 201.7 MB.
+Every Setup.exe is a PE32+ AMD64 image. The Stilus installer installs silently per-user (`/VERYSILENT /CURRENTUSER`; its log reports `Inno Setup version 7.1.0 (64-bit)` and `64-bit install mode: Yes`), registers its uninstaller under HKCU, launches, and uninstalls cleanly. Before the upgrade (Inno 6, .NET 10) Stilus was 63.1 MB, 86.1 MB, and 201.7 MB.
 
 ## CI
 
@@ -123,29 +123,29 @@ Every Setup.exe is a PE32+ AMD64 image. The Nodus installer installs silently pe
 | -------- | ------- | ------------ |
 | `.github/workflows/build.yml` | push and PR to `main` | windows-2025: SDK from `global.json` (`actions/setup-dotnet` installs the exact prerelease version it names), restore, Release build, test, upload TRX results. |
 | `.github/workflows/plan.yml` (`plan-gates`) | changes to `scripts/`, `todo/`, `docs/reviews/`, `.claude/`, `.conclave/`, hooks, `AGENTS.md` | ubuntu-26.04: `todo-graph.py self-test`, `validate`, `plan --sync` followed by a clean `git status`, `campaign_guard.py --self-test`, and commit-hook integrity (mode 100755, LF blob, eol attribute). |
-| `.github/workflows/release.yml` | tags `nodus-v*`, `imago-v*`, `lumen-v*`, `photon-v*`; manual dispatch with `tag` and `draft` inputs (the draft dry run) | Resolves the app from the tag prefix (`photon-v*` is the suite), fails a tag release whose distribution storage secrets are missing (a draft skips the upload with a notice instead), installs Inno Setup 7.1.0 from the official release with a pinned SHA256 unless `Program Files\Inno Setup 7` exists (the image's Inno Setup 6 is never used), runs the tests, runs `package.ps1` (with `PHOTON_SITE_URL` as the installer's publisher URL), writes `SHA256SUMS`, writes the release body and update feed (`scripts/release-manifest.ps1`), uploads the files to `download.rizonesoft.com` with a hash-pinned rclone and checks each public URL, creates the GitHub release with no attached files (the body: the CHANGELOG section whose heading names the tag, Download links, the SHA-256 table, and the source link; prerelease when the version has a hyphen), and writes the update feed last. |
+| `.github/workflows/release.yml` | tags `stilus-v*`, `pinxit-v*`, `albumen-v*`, `isotone-v*`; manual dispatch with `tag` and `draft` inputs (the draft dry run) | Resolves the app from the tag prefix (`isotone-v*` is the suite), fails a tag release whose distribution storage secrets are missing (a draft skips the upload with a notice instead), installs Inno Setup 7.1.0 from the official release with a pinned SHA256 unless `Program Files\Inno Setup 7` exists (the image's Inno Setup 6 is never used), runs the tests, runs `package.ps1` (with `ISOTONE_SITE_URL` as the installer's publisher URL), writes `SHA256SUMS`, writes the release body and update feed (`scripts/release-manifest.ps1`), uploads the files to `download.rizonesoft.com` with a hash-pinned rclone and checks each public URL, creates the GitHub release with no attached files (the body: the CHANGELOG section whose heading names the tag, Download links, the SHA-256 table, and the source link; prerelease when the version has a hyphen), and writes the update feed last. |
 | `.github/dependabot.yml` | weekly | NuGet (grouped) and GitHub Actions (grouped). |
 
 Every action is pinned by full commit SHA with the tag in a trailing comment.
 
 ## Package versions
 
-Checked against nuget.org on 2026-09-26 (`dotnet list Photon.slnx package --outdated --include-prerelease`). Every package is on its latest stable release, except where the table says why:
+Checked against nuget.org on 2026-09-26 (`dotnet list Isotone.slnx package --outdated --include-prerelease`). Every package is on its latest stable release, except where the table says why:
 
 | Package | Pinned | Why |
 | ------- | ------ | --- |
 | Microsoft.Extensions.DependencyInjection, .Hosting | 11.0.0-rc.1.26425.128 | Match the .NET 11 RC runtime of the pinned SDK. They move to 11.0.x stable with the GA SDK pin (`D00 T02 §8`). |
 | SkiaSharp, SkiaSharp.Views.WPF | 4.152.1 | Latest stable; 4.153 and 4.154 are previews. |
-| xunit.v3.mtp-off | 4.0.1 | xUnit v3 without Microsoft.Testing.Platform. The plain `xunit.v3` 4.x package brings `xunit.v3.mtp-v2`, and the .NET 10+ SDK then refuses VSTest `dotnet test` ("Testing with VSTest target is no longer supported by Microsoft.Testing.Platform"). The mtp-off flavor keeps `dotnet test` on VSTest through `xunit.runner.visualstudio` 4.0.0, so `tests/Photon.runsettings` (results folder, quarantine filter) still applies. Test projects set `OutputType` `Exe`. |
+| xunit.v3.mtp-off | 4.0.1 | xUnit v3 without Microsoft.Testing.Platform. The plain `xunit.v3` 4.x package brings `xunit.v3.mtp-v2`, and the .NET 10+ SDK then refuses VSTest `dotnet test` ("Testing with VSTest target is no longer supported by Microsoft.Testing.Platform"). The mtp-off flavor keeps `dotnet test` on VSTest through `xunit.runner.visualstudio` 4.0.0, so `tests/Isotone.runsettings` (results folder, quarantine filter) still applies. Test projects set `OutputType` `Exe`. |
 | AwesomeAssertions | 9.6.0 | Replaces FluentAssertions 8 (Xceed commercial license); Apache-2.0 fork of FluentAssertions 7 with the same API. The decision record is owed by `D00 T02 §5`. |
 | Serilog.Extensions.Logging, .Hosting | 10.0.0 | Latest stable; they depend on Microsoft.Extensions.* abstractions, which central transitive pinning lifts to 11.0.0-rc.1. |
 | Dirkster.AvalonDock (+ Themes.VS2013) | 5.0.0 | Latest stable; 5.0.1 is a preview. |
-| SharpVectors.Wpf | 1.8.6 | Latest. Used only by the Nodus splash logo (`SplashWindow.xaml`, `svgc:SvgViewbox`); `D02 T02 §2` replaces it and drops the package. |
-| WPF-UI | 4.3.0 | Latest. Imago only; removal is planned. |
+| SharpVectors.Wpf | 1.8.6 | Latest. Used only by the Stilus splash logo (`SplashWindow.xaml`, `svgc:SvgViewbox`); `D02 T02 §2` replaces it and drops the package. |
+| WPF-UI | 4.3.0 | Latest. Pinxit only; removal is planned. |
 
 The rest are latest stable: MinVer 8.0.0, FluentIcons.Wpf 2.1.341, CommunityToolkit.Mvvm 8.4.2, ComputeSharp 3.2.0, Microsoft.CodeAnalysis.CSharp(.Scripting) 5.9.0, Serilog 4.4.0, Serilog.Sinks.File 7.0.0, Serilog.Sinks.Debug 3.0.0, Microsoft.NET.Test.Sdk 18.10.1, xunit.runner.visualstudio 4.0.0, coverlet.collector 10.0.1, Moq 4.21.0.
 
-Removed on 2026-09-26 because no code used them (evidence: no type or namespace from the package in any `.cs` or `.xaml` file): ReactiveUI.WPF, SharpDX.DirectInput, SixLabors.ImageSharp, SixLabors.ImageSharp.Drawing (Imago); Newtonsoft.Json, AvalonEdit (with its unused `VsCodeDarkXml.xshd`), Svg.Skia (Nodus). `ComputeSharp` and `SkiaSharp.Views.WPF` in `Imago.Rendering` are also unused today but stay for the planned rendering work (`D03 T02 §2`, `D03 T02 §5`).
+Removed on 2026-09-26 because no code used them (evidence: no type or namespace from the package in any `.cs` or `.xaml` file): ReactiveUI.WPF, SharpDX.DirectInput, SixLabors.ImageSharp, SixLabors.ImageSharp.Drawing (Pinxit); Newtonsoft.Json, AvalonEdit (with its unused `VsCodeDarkXml.xshd`), Svg.Skia (Stilus). `ComputeSharp` and `SkiaSharp.Views.WPF` in `Pinxit.Rendering` are also unused today but stay for the planned rendering work (`D03 T02 §2`, `D03 T02 §5`).
 
 ### The SkiaSharp 4 migration
 
@@ -157,7 +157,7 @@ SkiaSharp.Views.WPF 4 has a `net10.0-windows10.0.19041` dependency group (OpenTK
 
 The imported trees build under the root configuration with the relaxations below. Each one is debt and should have a TODO. Nothing else is relaxed.
 
-### Nodus (`src/Nodus/Directory.Build.props`)
+### Stilus (`src/Stilus/Directory.Build.props`)
 
 - `TreatWarningsAsErrors=false`: warnings stay visible but do not fail the build.
 - `EnforceCodeStyleInBuild=false`: `.editorconfig` IDE rules are not enforced in build.
@@ -174,16 +174,16 @@ Warning load under the root analyzers (clean Release build on the .NET 11 RC SDK
 | CA1806 | 4 | Ignored method results |
 | other | 20 | CA1720, CA1304, CA1868, CA2008, CA1869, CA1861 (2 each); CS8602, CS0675, CA1830, CA1852, CS0219, CS9191, CA1001, CS8625 (1 each) |
 
-### Imago (`src/Imago/Directory.Build.props`)
+### Pinxit (`src/Pinxit/Directory.Build.props`)
 
 The full root configuration applies (warnings are errors, code style enforced), except these diagnostics, which stay warnings via `WarningsNotAsErrors`:
 
-- `IDE0005`: unnecessary using directives (6 sites, for example `Imago.Core/GlobalUsings.cs`, `Imago.UI/GlobalUsings.cs`).
+- `IDE0005`: unnecessary using directives (6 sites, for example `Pinxit.Core/GlobalUsings.cs`, `Pinxit.UI/GlobalUsings.cs`).
 - `CS0618`: obsolete API use (1 site: WPF-UI `IContentDialogService.SetDialogHost` in `Views/MainWindow.xaml.cs`).
 
-`NU1701` left the list on 2026-09-26: SkiaSharp.Views.WPF 4 on the Windows SDK TFM restores OpenTK 4 for .NET. The .NET 11 SDK also enforces `IDE1006` naming in the WPF markup-compile pass and adds `IDE0054` and `IDE0330`; the handful of Imago sites they found were fixed, and `.editorconfig` gained a private-constants naming rule because the new Roslyn matches `const` fields against `required_modifiers = static`.
+`NU1701` left the list on 2026-09-26: SkiaSharp.Views.WPF 4 on the Windows SDK TFM restores OpenTK 4 for .NET. The .NET 11 SDK also enforces `IDE1006` naming in the WPF markup-compile pass and adds `IDE0054` and `IDE0330`; the handful of Pinxit sites they found were fixed, and `.editorconfig` gained a private-constants naming rule because the new Roslyn matches `const` fields against `required_modifiers = static`.
 
-### Test quarantine (`tests/Photon.runsettings`)
+### Test quarantine (`tests/Isotone.runsettings`)
 
 These legacy tests are excluded through `TestCaseFilter`. Remove each entry in the same change that fixes its test.
 
@@ -195,12 +195,12 @@ These legacy tests are excluded through `TestCaseFilter`. Remove each entry in t
 
 ### Other known debt
 
-- Projects and namespaces still use the `Bezier.*` names, and the Nodus exe is `Bezier.Desktop.exe` (the installers refer to it by that name).
-- The legacy layout remains: `src/Nodus/Bezier.*` and `src/Imago/src/*`, `src/Imago/tests/*`.
-- Imago still depends on WPF-UI (`FluentWindow`, `TitleBar`, `wpfui:MenuItem`, `SymbolIcon`, the theme dictionaries, and `DialogService`). Removing it is not a trivial change.
-- Imago has no icon yet: `src/Imago/src/Imago.UI/Assets/imago-icon.png` is an empty file, and `installer/Imago.iss` points at `resources/icons/imago/imago.ico`, which does not exist yet. The icon design is chosen and its SVG sources are committed (`resources/icons/README.md`); `D00 T03 §3` generates `imago.ico` and the PNGs for all three apps from those SVGs, and `D03 T01 §4` wires Imago's into the executable.
+- Projects and namespaces still use the `Bezier.*` names, and the Stilus exe is `Bezier.Desktop.exe` (the installers refer to it by that name).
+- The legacy layout remains: `src/Stilus/Bezier.*` and `src/Pinxit/src/*`, `src/Pinxit/tests/*`.
+- Pinxit still depends on WPF-UI (`FluentWindow`, `TitleBar`, `wpfui:MenuItem`, `SymbolIcon`, the theme dictionaries, and `DialogService`). Removing it is not a trivial change.
+- Pinxit has no icon yet: `src/Pinxit/src/Pinxit.UI/Assets/pinxit-icon.png` is an empty file, and `installer/Pinxit.iss` points at `resources/icons/pinxit/pinxit.ico`, which does not exist yet. The icon design is chosen and its SVG sources are committed (`resources/icons/README.md`); `D00 T03 §3` generates `pinxit.ico` and the PNGs for all three apps from those SVGs, and `D03 T01 §4` wires Pinxit's into the executable.
 - Only x64 is published. There is no win-arm64 publish or installer yet.
 - Code is not signed (installers and binaries).
 - The SDK is the .NET 11 release candidate (`11.0.100-rc.1.26425.128`) and Microsoft.Extensions.* are `11.0.0-rc.1`; `D00 T02 §8` pins GA when it ships (November 2026), and the first product release waits for it.
-- SharpVectors.Wpf ships only for the Nodus splash logo; `D02 T02 §2` replaces the `SvgViewbox` and drops it.
+- SharpVectors.Wpf ships only for the Stilus splash logo; `D02 T02 §2` replaces the `SvgViewbox` and drops it.
 - The WPF temporary projects leave `*_wpftmp` folders under `artifacts/bin/`. They are harmless, but noisy.

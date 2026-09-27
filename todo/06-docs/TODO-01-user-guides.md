@@ -13,29 +13,29 @@ track: D1
 > **Goal:** Each app ships with a user guide that covers every surface it ships, written for someone who has never used it, with captures from the real app, and the suite has one install and troubleshooting guide covering installers, portable ZIPs, install scope, logs, and bug reports.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** `docs/user/README.md` lists four getting-started guides (installing the suite, Nodus, Imago, Lumen) and two help guides (troubleshooting, keyboard shortcuts), all marked planned; no guide page exists. UI sections in the app domains are required to update their app's guide in the same commit, so the guides grow with the apps; this file owns each guide's structure, its first complete pass before a release, and the suite-wide pages.
+> **Current state (verified 2026-09-26):** `docs/user/README.md` lists four getting-started guides (installing the suite, Stilus, Pinxit, Albumen) and two help guides (troubleshooting, keyboard shortcuts), all marked planned; no guide page exists. UI sections in the app domains are required to update their app's guide in the same commit, so the guides grow with the apps; this file owns each guide's structure, its first complete pass before a release, and the suite-wide pages.
 <!-- claim: count "\*planned\*" docs/user/README.md = 6 -->
-<!-- claim: absent docs/user/nodus -->
+<!-- claim: absent docs/user/stilus -->
 
 ## Inputs
 
 - [`docs/user/README.md`](../../docs/user/README.md) -- the index each guide is linked from
 - The captures under `docs/captures/<app>/` -- the images the guides use
-- -> XREF: D02 T05 §4 -- the Nodus release that needs §1
-- -> XREF: D03 T06 §3 -- the Imago release that needs §2
-- -> XREF: D04 T02 §8 -- the Lumen release that needs §3
+- -> XREF: D02 T05 §4 -- the Stilus release that needs §1
+- -> XREF: D03 T06 §3 -- the Pinxit release that needs §2
+- -> XREF: D04 T02 §8 -- the Albumen release that needs §3
 - -> XREF: D05 T01 §1 -- the clean-machine procedure whose install steps §4 documents for users
-- -> XREF: D02 T17 §1 -- the Nodus parity releases, each of which extends §1's user guide
-- -> XREF: D03 T21 §1 -- the Imago parity releases cites §2: the Imago user guide each release extends
-- -> XREF: D04 T09 §1 -- Lumen parity develop cites §3: the Lumen user guide every UI section here updates
-- -> XREF: D04 T10 §1 -- Lumen AI cites §3: the Lumen user guide every UI section here updates
-- -> XREF: D04 T12 §1 -- Lumen parity output cites §3: the Lumen user guide pages each section adds
-- -> XREF: D04 T14 §7 -- Lumen parity workspace cites §3: the Lumen user guide that D04 T14 §7 links and every section extends
-- -> XREF: D04 T15 §1 -- the Lumen parity releases cites §3: the Lumen user guide each release extends
+- -> XREF: D02 T17 §1 -- the Stilus parity releases, each of which extends §1's user guide
+- -> XREF: D03 T21 §1 -- the Pinxit parity releases cites §2: the Pinxit user guide each release extends
+- -> XREF: D04 T09 §1 -- Albumen parity develop cites §3: the Albumen user guide every UI section here updates
+- -> XREF: D04 T10 §1 -- Albumen AI cites §3: the Albumen user guide every UI section here updates
+- -> XREF: D04 T12 §1 -- Albumen parity output cites §3: the Albumen user guide pages each section adds
+- -> XREF: D04 T14 §7 -- Albumen parity workspace cites §3: the Albumen user guide that D04 T14 §7 links and every section extends
+- -> XREF: D04 T15 §1 -- the Albumen parity releases cites §3: the Albumen user guide each release extends
 
 ## Outcome
 
-- `docs/user/nodus/`, `docs/user/imago/`, and `docs/user/lumen/` each hold a getting-started page and one page per surface, every page linked from its app's `README.md` and from `docs/user/README.md`.
+- `docs/user/stilus/`, `docs/user/pinxit/`, and `docs/user/albumen/` each hold a getting-started page and one page per surface, every page linked from its app's `README.md` and from `docs/user/README.md`.
 - `docs/user/install.md` and `docs/user/troubleshooting.md` cover installers, portable use, install scope, file associations, logs, and reporting a bug.
 - A link check over `docs/user/` passes.
 
@@ -47,45 +47,45 @@ track: D1
 
 | Order | Section | Deliverable                        | Depends On     | Status |
 | :---: | :-----: | ---------------------------------- | -------------- | :----: |
-|   1   |   §1    | The Nodus user guide               | D02 T03 §5     |  [ ]   |
-|   2   |   §2    | The Imago user guide               | D03 T06 §2     |  [ ]   |
-|   3   |   §3    | The Lumen user guide               | D04 T02 §6     |  [ ]   |
+|   1   |   §1    | The Stilus user guide               | D02 T03 §5     |  [ ]   |
+|   2   |   §2    | The Pinxit user guide               | D03 T06 §2     |  [ ]   |
+|   3   |   §3    | The Albumen user guide               | D04 T02 §6     |  [ ]   |
 |   4   |   §4    | Install and troubleshooting guides | D05 T01 §1     |  [ ]   |
 
 ---
 
-## 1. The Nodus User Guide
+## 1. The Stilus User Guide
 
-Nodus 0.1.0 ships every menu command working or labeled with its planned section (`D02 T03 §5`). The guide covers what works, in the order a new user meets it, and says plainly what is planned.
+Stilus 0.1.0 ships every menu command working or labeled with its planned section (`D02 T03 §5`). The guide covers what works, in the order a new user meets it, and says plainly what is planned.
 
-- [ ] `docs/user/nodus/README.md` (getting started: the window, drawing a first shape, saving an SVG) and one page per surface: tools, selection and transform, arrange and align, paths and boolean operations, layers panel, editing and clipboard, documents (save, recent files, recovery), export (PNG, JPEG, PDF), keyboard shortcuts (generated from the keymap by a small script, `scripts/keymap-doc.ps1`, so it cannot drift). Done when: each page exists with at least one capture from `docs/captures/nodus/`.
+- [ ] `docs/user/stilus/README.md` (getting started: the window, drawing a first shape, saving an SVG) and one page per surface: tools, selection and transform, arrange and align, paths and boolean operations, layers panel, editing and clipboard, documents (save, recent files, recovery), export (PNG, JPEG, PDF), keyboard shortcuts (generated from the keymap by a small script, `scripts/keymap-doc.ps1`, so it cannot drift). Done when: each page exists with at least one capture from `docs/captures/stilus/`.
 - [ ] Each disabled "Planned" command is listed on a "What's coming" page with its section ref. Done when: the list matches `PlannedCommands.cs` (compared by the checkpoint).
 - [ ] Link the guide from `docs/user/README.md`, replacing the planned row. Done when: the row links the guide.
-- [ ] Commit: `"docs: the Nodus user guide for 0.1.0"`
+- [ ] Commit: `"docs: the Stilus user guide for 0.1.0"`
 
-**Test checkpoint:** a link check over `docs/user/nodus/` (a PowerShell loop over relative links with `Test-Path`, output quoted) finds no dead link; the shortcuts page regenerated by `scripts/keymap-doc.ps1` produces no diff; every command in the menu audit appears on a page (a script comparing names, output quoted). Cheaper substitute that fails: a single page with a feature list.
+**Test checkpoint:** a link check over `docs/user/stilus/` (a PowerShell loop over relative links with `Test-Path`, output quoted) finds no dead link; the shortcuts page regenerated by `scripts/keymap-doc.ps1` produces no diff; every command in the menu audit appears on a page (a script comparing names, output quoted). Cheaper substitute that fails: a single page with a feature list.
 
-## 2. The Imago User Guide
+## 2. The Pinxit User Guide
 
-The same structure for Imago 0.1.0: getting started, then a page per surface.
+The same structure for Pinxit 0.1.0: getting started, then a page per surface.
 
-- [ ] `docs/user/imago/README.md` and pages for documents and tabs, the canvas and navigation, layers, selections, painting, transform and crop, color and fill, adjustments and filters, file formats (what each keeps and what it flattens), history, and keyboard shortcuts (generated). Done when: each page has captures from `docs/captures/imago/`.
-- [ ] A "What's coming" page from Imago's planned commands. Done when: it matches the planned table.
+- [ ] `docs/user/pinxit/README.md` and pages for documents and tabs, the canvas and navigation, layers, selections, painting, transform and crop, color and fill, adjustments and filters, file formats (what each keeps and what it flattens), history, and keyboard shortcuts (generated). Done when: each page has captures from `docs/captures/pinxit/`.
+- [ ] A "What's coming" page from Pinxit's planned commands. Done when: it matches the planned table.
 - [ ] Link from `docs/user/README.md`. Done when: the row links the guide.
-- [ ] Commit: `"docs: the Imago user guide for 0.1.0"`
+- [ ] Commit: `"docs: the Pinxit user guide for 0.1.0"`
 
-**Test checkpoint:** the link check over `docs/user/imago/` finds no dead link and the generated shortcuts page has no diff (outputs quoted). Cheaper substitute that fails: pages without captures.
+**Test checkpoint:** the link check over `docs/user/pinxit/` finds no dead link and the generated shortcuts page has no diff (outputs quoted). Cheaper substitute that fails: pages without captures.
 
-## 3. The Lumen User Guide
+## 3. The Albumen User Guide
 
-Lumen's guide leads with the promise users need most: Lumen never changes your original files, and here is how to check.
+Albumen's guide leads with the promise users need most: Albumen never changes your original files, and here is how to check.
 
-- [ ] `docs/user/lumen/README.md` and pages for importing (add versus copy), the library and culling, keywords and collections, developing, crop, presets and sync, exporting, Edit in Imago, sidecars and working with other apps, the catalog and backups, and keyboard shortcuts (generated). Done when: each page has captures from `docs/captures/lumen/`.
+- [ ] `docs/user/albumen/README.md` and pages for importing (add versus copy), the library and culling, keywords and collections, developing, crop, presets and sync, exporting, Edit in Pinxit, sidecars and working with other apps, the catalog and backups, and keyboard shortcuts (generated). Done when: each page has captures from `docs/captures/albumen/`.
 - [ ] A page "Your originals are safe" explaining the guard, sidecars, and how to verify with a hash. Done when: it exists and is linked first.
 - [ ] Link from `docs/user/README.md`. Done when: the row links the guide.
-- [ ] Commit: `"docs: the Lumen user guide for 0.1.0"`
+- [ ] Commit: `"docs: the Albumen user guide for 0.1.0"`
 
-**Test checkpoint:** the link check over `docs/user/lumen/` finds no dead link (output quoted). Cheaper substitute that fails: a guide without the originals page.
+**Test checkpoint:** the link check over `docs/user/albumen/` finds no dead link (output quoted). Cheaper substitute that fails: a guide without the originals page.
 
 ## 4. Install and Troubleshooting Guides
 

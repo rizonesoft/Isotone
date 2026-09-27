@@ -1,11 +1,11 @@
 # UI Standard
 
-Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. It is the binding summary of the Photon Interface design system in [`docs/design/`](../docs/design/README.md), which holds the full specification: the tokens, one README per component, the shell layout, and the app icon guide. The system is browsable as a live page, with every component preview in all four themes, at https://rizonesoft.github.io/Photon/design/ (generated into `docs/design/index.html` by `scripts/build-design-site.py`; edit the sources, never the page). Where this file and `docs/design/` disagree, `docs/design/` wins and this file is corrected in the same commit. How the code is held to the design (fidelity, goldens, deviations, the gates, and the definition of done for a UI section) is the binding [`design-contract.md`](design-contract.md). The captures of the imported apps under `docs/captures/<app>/` are a before record only; the review reference is the design itself and the approved goldens under `docs/captures/golden/`.
+Every user-facing surface of Stilus, Pinxit, and Albumen answers to this standard. It is the binding summary of the Isotone Interface design system in [`docs/design/`](../docs/design/README.md), which holds the full specification: the tokens, one README per component, the shell layout, and the app icon guide. The system is browsable as a live page, with every component preview in all four themes, at https://rizonesoft.github.io/Photon/design/ (generated into `docs/design/index.html` by `scripts/build-design-site.py`; edit the sources, never the page). Where this file and `docs/design/` disagree, `docs/design/` wins and this file is corrected in the same commit. How the code is held to the design (fidelity, goldens, deviations, the gates, and the definition of done for a UI section) is the binding [`design-contract.md`](design-contract.md). The captures of the imported apps under `docs/captures/<app>/` are a before record only; the review reference is the design itself and the approved goldens under `docs/captures/golden/`.
 
 ## The source of truth
 
 - `docs/design/tokens.json` is the one source for every color, size, spacing, radius, shadow, duration, and type style. A value that is not a token is not part of the system.
-- The WPF resource dictionaries in `src/Photon.UI/Themes/` are generated from `tokens.json` by a committed generator; never hand-edit generated XAML. Change the token, regenerate, and commit both together; the drift check (`D01 T01 §3`) fails when they disagree.
+- The WPF resource dictionaries in `src/Isotone.UI/Themes/` are generated from `tokens.json` by a committed generator; never hand-edit generated XAML. Change the token, regenerate, and commit both together; the drift check (`D01 T01 §3`) fails when they disagree.
 - `docs/design/` is the only home of the design system; its public view is https://rizonesoft.github.io/Photon/design/, generated from it. Edit the sources and regenerate the page as [`docs/design/EDITING.md`](../docs/design/EDITING.md) describes.
 - A surface never hardcodes a color, size, or spacing value that a token names.
 
@@ -18,15 +18,15 @@ Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. I
 ## State color (Highlight) and app accent
 
 - The state color, called the Highlight color, marks selection, keyboard focus, checked checkboxes and radios, the active tool, the highlighted menu item, slider fills, selected rows, drop targets, and links. Its tokens are `state`, `state-hover`, `state-pressed`, `state-on`, `state-subtle`, `state-tint`, `state-line`, `state-text`, and `focus-ring` (an alias of `state-line`); `handle-stroke` and `glow-state` follow it.
-- The Highlight color is a user choice in Preferences > Interface > Highlight color: Blue (default, `#1473E6` family, tuned per theme), Photon orange (the `state-orange*` tokens, Bezier's `#FF6B35`), or the Windows accent color.
+- The Highlight color is a user choice in Preferences > Interface > Highlight color: Blue (default, `#1473E6` family, tuned per theme), Isotone orange (the `state-orange*` tokens, Bezier's `#FF6B35`), or the Windows accent color.
 - The choice switches at runtime without a restart. The Windows accent option reads `UISettings` (Accent, AccentLight1-3, AccentDark1-3), follows `UISettings.ColorValuesChanged`, contrast-adjusts each derived value per theme until it meets the targets below, and falls back to Blue with a Warning log line when no accent is available. The mapping is in [`docs/design/components/Highlight/README.md`](../docs/design/components/Highlight/README.md).
 - The app accent is identity only: it appears on the title-bar app mark, the splash and its launch progress, and the single primary button of a view, with its label in `accent-<app>-on`. It never marks selection, focus, or a checked state, and a Highlight color never stands in for it.
 
 | App | Accent | Dark, Darkest, Medium Gray | Light |
 | --- | --- | --- | --- |
-| Nodus | Cyan, `accent-nodus` | `#29C5E6` | `#00758C` |
-| Imago | Orange, `accent-imago` | `#F5923E` | `#B04F00` |
-| Lumen | Green, `accent-lumen` | `#4CC47A` | `#1B7A3D` |
+| Stilus | Cyan, `accent-stilus` | `#29C5E6` | `#00758C` |
+| Pinxit | Orange, `accent-pinxit` | `#F5923E` | `#B04F00` |
+| Albumen | Green, `accent-albumen` | `#4CC47A` | `#1B7A3D` |
 
 - The values above are copied from `tokens.json` for reading; `tokens.json` is authoritative, with the `-hover` and `-on` companions of each accent.
 
@@ -58,7 +58,7 @@ Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. I
 ## Focus
 
 - One focus ring: 2 px `focus-ring`, drawn 1 px outside buttons and boxes, inset on rows, tabs, and menu titles, and as a colored border plus 1 px inner line on fields, so a field does not grow.
-- The ring shows for keyboard focus only, never for mouse focus, and is never removed. `FocusVisualStyle` is `{x:Null}` in every Photon style; templates draw the ring. The spec is [`docs/design/components/FocusRing/README.md`](../docs/design/components/FocusRing/README.md).
+- The ring shows for keyboard focus only, never for mouse focus, and is never removed. `FocusVisualStyle` is `{x:Null}` in every Isotone style; templates draw the ring. The spec is [`docs/design/components/FocusRing/README.md`](../docs/design/components/FocusRing/README.md).
 
 ## Icons
 
@@ -88,7 +88,7 @@ Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. I
 
 ## WPF mapping
 
-- `Photon.UI` carries one `ResourceDictionary` per brightness theme (`Themes/Darkest.xaml`, `Dark.xaml`, `MediumGray.xaml`, `Light.xaml`), a high-contrast dictionary, `Highlight.Blue.xaml` and `Highlight.Orange.xaml` plus a runtime Windows-accent dictionary, and `Density.Compact.xaml` and `Density.Comfortable.xaml`, all generated from `tokens.json`. These file names are the operator's (2026-09-27); the WPF section of `docs/design/README.md` and the Highlight card carry them too.
+- `Isotone.UI` carries one `ResourceDictionary` per brightness theme (`Themes/Darkest.xaml`, `Dark.xaml`, `MediumGray.xaml`, `Light.xaml`), a high-contrast dictionary, `Highlight.Blue.xaml` and `Highlight.Orange.xaml` plus a runtime Windows-accent dictionary, and `Density.Compact.xaml` and `Density.Comfortable.xaml`, all generated from `tokens.json`. These file names are the operator's (2026-09-27); the WPF section of `docs/design/README.md` and the Highlight card carry them too.
 - Resource keys are token names: `<SolidColorBrush x:Key="surface-panel" .../>`, sizes as `sys:Double`, radii as `CornerRadius`, durations as `Duration`, `ease-out` as a `CubicEase` with `EasingMode="EaseOut"`.
 - Colors are always consumed through `DynamicResource`, so a theme, Highlight, or density switch restyles open windows without a restart; `StaticResource` is fine for fixed sizes.
 - The theme service swaps the brightness dictionary; the highlight service swaps the Highlight dictionary merged after it; the density service swaps the density dictionary that points the neutral keys at the `-compact` or `-comfortable` values. Each app sets its accent brushes once at startup.

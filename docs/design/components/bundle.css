@@ -1,4 +1,4 @@
-/* Photon Interface: shared component styles for the previews. Every color, size and radius is a token.
+/* Isotone Interface: shared component styles for the previews. Every color, size and radius is a token.
    Static state classes (.is-hover, .is-pressed, .is-focus, .is-disabled, .is-checked, .is-mixed, .is-selected, .is-open)
    mirror the WPF visual states so a preview can show them side by side; the live pseudo-classes work too. */
 
@@ -18,9 +18,9 @@
   --ph-status: var(--statusbar-h-compact);
   --ph-layer: var(--layer-row-h-compact);
   --ph-swatch: var(--swatch-compact);
-  --ph-accent: var(--accent-imago);
-  --ph-accent-hover: var(--accent-imago-hover);
-  --ph-accent-on: var(--accent-imago-on);
+  --ph-accent: var(--accent-pinxit);
+  --ph-accent-hover: var(--accent-pinxit-hover);
+  --ph-accent-on: var(--accent-pinxit-on);
 }
 .ph-comfortable {
   --ph-ctl: var(--control-h-comfortable);
@@ -41,9 +41,9 @@
   font-size: var(--ph-fs);
   line-height: var(--ph-lh);
 }
-.app-nodus { --ph-accent: var(--accent-nodus); --ph-accent-hover: var(--accent-nodus-hover); --ph-accent-on: var(--accent-nodus-on); }
-.app-imago { --ph-accent: var(--accent-imago); --ph-accent-hover: var(--accent-imago-hover); --ph-accent-on: var(--accent-imago-on); }
-.app-lumen { --ph-accent: var(--accent-lumen); --ph-accent-hover: var(--accent-lumen-hover); --ph-accent-on: var(--accent-lumen-on); }
+.app-stilus { --ph-accent: var(--accent-stilus); --ph-accent-hover: var(--accent-stilus-hover); --ph-accent-on: var(--accent-stilus-on); }
+.app-pinxit { --ph-accent: var(--accent-pinxit); --ph-accent-hover: var(--accent-pinxit-hover); --ph-accent-on: var(--accent-pinxit-on); }
+.app-albumen { --ph-accent: var(--accent-albumen); --ph-accent-hover: var(--accent-albumen-hover); --ph-accent-on: var(--accent-albumen-on); }
 
 /* Highlight color options. Blue is the tokens' own value; these remap the state set in a subtree. */
 .hl-orange {

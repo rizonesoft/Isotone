@@ -16,4 +16,4 @@ The group is one tab stop landing on the selected item; arrow keys move and sele
 
 ## WPF
 
-`RadioButton` style `Photon.RadioButton`: `Ellipse PART_Ring`, `Ellipse PART_Dot`; group with `GroupName` or a shared parent; put the set in a `StackPanel` with `KeyboardNavigation.DirectionalNavigation="Cycle"` and `TabNavigation="Once"`. Tool rail buttons are RadioButtons with a different style (see Tool rail).
+`RadioButton` style `Isotone.RadioButton`: `Ellipse PART_Ring`, `Ellipse PART_Dot`; group with `GroupName` or a shared parent; put the set in a `StackPanel` with `KeyboardNavigation.DirectionalNavigation="Cycle"` and `TabNavigation="Once"`. Tool rail buttons are RadioButtons with a different style (see Tool rail).

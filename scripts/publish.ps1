@@ -9,13 +9,13 @@
   app's closure, including shared libraries, carries the app's version. -Version
   overrides MinVer (MinVerVersionOverride) for re-builds of a known version.
 .EXAMPLE
-  pwsh scripts/publish.ps1 -App Nodus
-  pwsh scripts/publish.ps1 -App Imago -Runtime win-arm64
+  pwsh scripts/publish.ps1 -App Stilus
+  pwsh scripts/publish.ps1 -App Pinxit -Runtime win-arm64
 #>
 [CmdletBinding()]
 param(
   [Parameter(Mandatory)]
-  [ValidateSet('Nodus', 'Imago', 'Lumen')]
+  [ValidateSet('Stilus', 'Pinxit', 'Albumen')]
   [string]$App,
   [string]$Runtime = 'win-x64',
   [ValidateSet('Debug', 'Release')]

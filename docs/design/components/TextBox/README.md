@@ -26,4 +26,4 @@ Standard edit keys; Enter commits (in the options bar and panels also returns fo
 
 ## WPF
 
-`TextBox` style `Photon.TextBox` (implicit): `Border PART_Chrome`, `ScrollViewer PART_ContentHost`, `TextBlock PART_Placeholder` (visible when `Text` is empty), `SelectionBrush="{DynamicResource state}"`, `SelectionTextBrush="{DynamicResource state-on}"`, `CaretBrush="{DynamicResource text-primary}"`. Errors come from `INotifyDataErrorInfo`; `Validation.ErrorTemplate` is replaced by the helper line.
+`TextBox` style `Isotone.TextBox` (implicit): `Border PART_Chrome`, `ScrollViewer PART_ContentHost`, `TextBlock PART_Placeholder` (visible when `Text` is empty), `SelectionBrush="{DynamicResource state}"`, `SelectionTextBrush="{DynamicResource state-on}"`, `CaretBrush="{DynamicResource text-primary}"`. Errors come from `INotifyDataErrorInfo`; `Validation.ErrorTemplate` is replaced by the helper line.

@@ -1,6 +1,6 @@
 # Viewing the previews locally
 
-Each `components/<Comp>/preview.html` is a fragment the design page renders as a card. The page injects three things the file does not load itself: `tokens.css` (every token in `tokens.json` as a CSS custom property, one block per brightness theme selected by `data-theme`), `components/bundle.css` (the shared component and `.pv` preview styles), and `components/bundle.js` (`window.Photon`, the icon catalog and the scrub helper).
+Each `components/<Comp>/preview.html` is a fragment the design page renders as a card. The page injects three things the file does not load itself: `tokens.css` (every token in `tokens.json` as a CSS custom property, one block per brightness theme selected by `data-theme`), `components/bundle.css` (the shared component and `.pv` preview styles), and `components/bundle.js` (`window.Isotone`, the icon catalog and the scrub helper).
 
 Opened straight from disk, a preview therefore shows unstyled markup. To see the previews as designed, open `docs/design/index.html` (straight from disk works: it fetches nothing) or its published copy at https://rizonesoft.github.io/Photon/design/, which render every card with the Theme, Highlight and Density switches.
 

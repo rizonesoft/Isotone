@@ -61,7 +61,7 @@ A run without a guard dies silently when the session stalls, so starting the fir
 
 Start it in this order:
 
-1. Reconcile first: `CronList`, then `python scripts/campaign_guard.py reconcile --session $CLAUDE_CODE_SESSION_ID --jobs <every job id whose prompt contains Claude run-guard heartbeat for Photon, comma-separated>`, and do what it prints: `CronDelete` an orphan or stale job, and start nothing when another session owns the guard. A crash between creating a job and acquiring a guard is repaired here, before a second one is made.
+1. Reconcile first: `CronList`, then `python scripts/campaign_guard.py reconcile --session $CLAUDE_CODE_SESSION_ID --jobs <every job id whose prompt contains Claude run-guard heartbeat for Isotone, comma-separated>`, and do what it prints: `CronDelete` an orphan or stale job, and start nothing when another session owns the guard. A crash between creating a job and acquiring a guard is repaired here, before a second one is made.
 2. Mint a generation: `python scripts/campaign_guard.py mint-generation`. `CronCreate` with cron `3-59/5 * * * *`, recurring true, and the canonical prompt below with `<N>`, `<run file>`, and `<generation>` filled in.
 3. Acquire the guard: `python scripts/campaign_guard.py acquire --session $CLAUDE_CODE_SESSION_ID --phase <N> --run-file <run file> --cron-id <job id> --generation <generation>` writes `build/claude-campaign-guard.json` (gitignored; `runner`, `workspace`, `phase`, the repo-relative `run_file`, `session_id`, `cron_id`, `generation`, `job_created_at`, and `run_id`, the identity every terminal marker of this run carries, kept across re-points and handovers of the same run). It creates the guard exclusively and refuses one another session holds, so two sessions never share a run; the owning session re-points its own guard with the same command, and taking over another session's live guard needs the operator's `--handover <reason>`, recorded in the guard. Every guard change holds an interprocess lock, so no two changes interleave, and a fresh guard resets the breaker state under that lock. A refused `acquire` means another session owns the run: `CronDelete` the job step 2 just created, start nothing, and report the owner.
 4. Record the session id, the job id, the generation, and the guard write in the run file's Critical events.
@@ -85,7 +85,7 @@ Claude Code is the only runner (`AGENTS.md`, operator decision). No other harnes
 Canonical prompt:
 
 ```text
-Claude run-guard heartbeat for Photon Phase <N> (run file <run file>, generation <generation>). This session went idle while a campaign run may still be open. Check, then act, in this turn.
+Claude run-guard heartbeat for Isotone Phase <N> (run file <run file>, generation <generation>). This session went idle while a campaign run may still be open. Check, then act, in this turn.
 
 1. Run `python scripts/campaign_guard.py whoami --session $CLAUDE_CODE_SESSION_ID --generation <generation>`. It prints OWNER with the run's id (`OWNER run=<run id>`) when this job is the run's. If it prints NOT THE OWNER or NOT THE CURRENT JOB, this job is not the run's: CronDelete this job, read and change nothing else, and reply with that line. If it prints MALFORMED GUARD, run step 2, report the malformed guard to the operator, and stop.
 2. Run `python scripts/campaign_guard.py hook-error --session $CLAUDE_CODE_SESSION_ID`. If it prints a line, the Stop hook failed open: append that line to <run file>'s Critical events, then run the same command with `--ack "<that line>"` to clear it.

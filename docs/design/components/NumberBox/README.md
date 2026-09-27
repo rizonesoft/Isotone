@@ -29,4 +29,4 @@ Up and Down step by 1 (Shift 10, Alt 0.1); Page Up and Down by 10; Enter commits
 
 ## WPF
 
-`Photon.UI.Controls.NumberBox` (`Control`, from Bezier CompactNumberBox) with dependency properties `Value`, `Minimum`, `Maximum`, `SmallChange`, `LargeChange`, `Decimals`, `Label`, `Unit`, `ShowSpinners`, `ShowGrip`. Template parts: `PART_ScrubZone` (`Cursor="SizeWE"`, handles `PreviewMouseLeftButtonDown` and `CaptureMouse`), `PART_TextBox`, `PART_Up` / `PART_Down` (`RepeatButton`). Visual states `CommonStates`, `FocusStates`, `ValidationStates` (Valid, OutOfRange), `ScrubStates` (Idle, Scrubbing).
+`Isotone.UI.Controls.NumberBox` (`Control`, from Bezier CompactNumberBox) with dependency properties `Value`, `Minimum`, `Maximum`, `SmallChange`, `LargeChange`, `Decimals`, `Label`, `Unit`, `ShowSpinners`, `ShowGrip`. Template parts: `PART_ScrubZone` (`Cursor="SizeWE"`, handles `PreviewMouseLeftButtonDown` and `CaptureMouse`), `PART_TextBox`, `PART_Up` / `PART_Down` (`RepeatButton`). Visual states `CommonStates`, `FocusStates`, `ValidationStates` (Valid, OutOfRange), `ScrubStates` (Idle, Scrubbing).

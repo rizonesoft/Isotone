@@ -34,7 +34,7 @@ For a code TODO that means the **full** sweep, not the filtered runs individual 
 
 ```powershell
 pwsh scripts/check-all.ps1             # Debug and Release build, tests, TODO gates
-dotnet test Photon.slnx                # the whole suite, once, unfiltered
+dotnet test Isotone.slnx                # the whole suite, once, unfiltered
 ```
 
 plus the file's other Verification items (fidelity round trips re-run against their committed fixtures, captures refreshed, a clean-machine publish check where the file owes one), each executed, none trimmed (in sweep-only mode: executed where the shipped rows allow, otherwise recorded not-yet-runnable with its owner).

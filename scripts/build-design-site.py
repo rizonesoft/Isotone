@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Photon Interface design system page from docs/design/.
+"""Build the Isotone Interface design system page from docs/design/.
 
 Writes ONE self-contained page, docs/design/index.html, the repository's own
 view of the design system (operator decision 2026-09-27: "why don't
@@ -46,7 +46,7 @@ COMPONENTS = DESIGN / "components"
 ICONS = ROOT / "resources" / "icons"
 OUT = DESIGN / "index.html"
 
-APPS = ["nodus", "imago", "lumen"]
+APPS = ["stilus", "pinxit", "albumen"]
 GROUP_ORDER = ["Foundations", "Actions", "Inputs", "Navigation", "Data", "Shell", "Feedback", "Canvas"]
 PROSE_SECTIONS = [("shell-layout.md", "shell"), ("app-icons.md", "icons")]
 REPO_BLOB = "https://github.com/rizonesoft/Photon/blob/main/docs/design/"
@@ -622,7 +622,7 @@ BRIDGE = r"""(function () {
 
 JS = r"""(function () {
   'use strict';
-  var KEY = 'photon-design-site';
+  var KEY = 'isotone-design-site';
   var OPTS = { theme: ['dark', 'darkest', 'medium', 'light'], highlight: ['blue', 'orange', 'windows'], density: ['compact', 'comfortable'] };
   var state = { theme: 'dark', highlight: 'blue', density: 'compact' };
   var data = JSON.parse(document.getElementById('s-data').textContent);
@@ -793,7 +793,7 @@ def build() -> str:
     ov_heads: list = []
     brand = markdown(read_text(DESIGN / "README.md"), "ov", ov_heads)
     cover_html = f'<div class="s-cover">{stage(cover)}</div>' if cover else ""
-    body.append(f'<section class="s-sec" id="overview" aria-labelledby="overview-h"><h2 id="overview-h">Photon Interface</h2>{cover_html}<div class="s-panel s-prose">{brand}</div></section>')
+    body.append(f'<section class="s-sec" id="overview" aria-labelledby="overview-h"><h2 id="overview-h">Isotone Interface</h2>{cover_html}<div class="s-panel s-prose">{brand}</div></section>')
     nav.append('<h2>Overview</h2><ul><li><a href="#overview">Brand book</a><ul>' + "".join(f'<li><a href="#{hid}">{esc(t)}</a></li>' for lvl, hid, t in ov_heads if lvl == 2) + "</ul></li></ul>")
 
     # Foundations
@@ -849,7 +849,7 @@ def build() -> str:
     }
 
     switches = (seg("theme", "Theme", [("dark", "Dark"), ("darkest", "Darkest"), ("medium", "Medium Gray"), ("light", "Light")])
-                + seg("highlight", "Highlight", [("blue", "Blue"), ("orange", "Photon orange"), ("windows", "Windows accent")])
+                + seg("highlight", "Highlight", [("blue", "Blue"), ("orange", "Isotone orange"), ("windows", "Windows accent")])
                 + seg("density", "Density", [("compact", "Compact"), ("comfortable", "Comfortable")]))
 
     page = f"""<!doctype html>
@@ -857,10 +857,10 @@ def build() -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Photon Interface, the design system of the Photon Graphics Suite (Nodus, Imago, Lumen): themes, tokens, controls, and app icons.">
+<meta name="description" content="Isotone Interface, the design system of the Isotone Graphics Suite (Stilus, Pinxit, Albumen): themes, tokens, controls, and app icons.">
 <meta name="theme-color" content="#282828">
 <meta name="generator" content="scripts/build-design-site.py">
-<title>Photon Interface</title>
+<title>Isotone Interface</title>
 <!-- Generated from docs/design/ by scripts/build-design-site.py. Do not edit: change the sources and regenerate. -->
 <style id="s-tokens">
 {tokens_css}</style>
@@ -872,7 +872,7 @@ def build() -> str:
 <a class="s-skip" href="#s-main">Skip to content</a>
 <header class="s-top">
 <button class="s-menu-btn" type="button" aria-controls="s-nav" aria-expanded="false" aria-label="Sections"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-<div class="s-brand"><span class="s-band" aria-hidden="true"></span><strong>Photon Interface</strong><span>Design system of Nodus, Imago and Lumen</span></div>
+<div class="s-brand"><span class="s-band" aria-hidden="true"></span><strong>Isotone Interface</strong><span>Design system of Stilus, Pinxit and Albumen</span></div>
 <button class="s-sw-btn" type="button" aria-controls="s-switches" aria-expanded="false">Display</button>
 <div class="s-switches" id="s-switches" role="group" aria-label="Preview settings">{switches}</div>
 </header>

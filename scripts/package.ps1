@@ -4,23 +4,23 @@
   Publishes and packages an app (or the whole suite) into artifacts/dist/.
 .DESCRIPTION
   Per app (-App):   <App>-<version>-<rid>-Setup.exe and <App>-<version>-<rid>-Portable.zip
-  Suite (-Suite):   Photon-<version>-<rid>-Setup.exe and Photon-<version>-<rid>-Portable.zip
+  Suite (-Suite):   Isotone-<version>-<rid>-Setup.exe and Isotone-<version>-<rid>-Portable.zip
                     (one component / folder per shipping app)
-  -Version defaults to the MinVer version for the app's tag prefix (photon-v for
+  -Version defaults to the MinVer version for the app's tag prefix (isotone-v for
   the suite). The installer gets /DAppVersion=<SemVer> and /DAppFileVersion=
   <Major.Minor.Patch.RunNumber>. -SkipPublish reuses artifacts/publish as-is.
-  When $env:PHOTON_SITE_URL is set (the release workflow passes the repository
+  When $env:ISOTONE_SITE_URL is set (the release workflow passes the repository
   variable), it becomes the installer's publisher and updates URL (/DPublisherUrl);
   otherwise installer/common.iss uses https://www.rizonesoft.com/.
 .EXAMPLE
-  pwsh scripts/package.ps1 -App Nodus
-  pwsh scripts/package.ps1 -App Imago -Version 0.2.0
+  pwsh scripts/package.ps1 -App Stilus
+  pwsh scripts/package.ps1 -App Pinxit -Version 0.2.0
   pwsh scripts/package.ps1 -Suite -Version 1.0.0
 #>
 [CmdletBinding(DefaultParameterSetName = 'App')]
 param(
   [Parameter(Mandatory, ParameterSetName = 'App')]
-  [ValidateSet('Nodus', 'Imago', 'Lumen')]
+  [ValidateSet('Stilus', 'Pinxit', 'Albumen')]
   [string]$App,
   [Parameter(Mandatory, ParameterSetName = 'Suite')]
   [switch]$Suite,
@@ -51,7 +51,7 @@ function Invoke-Iscc([string]$Script, [string]$SemVer, [string[]]$Extra = @()) {
     "/DRuntime=$Runtime",
     "/DOutputDir=$dist"
   )
-  if ($env:PHOTON_SITE_URL) { $isccArgs += "/DPublisherUrl=$($env:PHOTON_SITE_URL)" }
+  if ($env:ISOTONE_SITE_URL) { $isccArgs += "/DPublisherUrl=$($env:ISOTONE_SITE_URL)" }
   $isccArgs = $isccArgs + $Extra + @((Join-Path $RepoRoot $Script))
   Write-Step "ISCC $Script ($SemVer, file $fileVersion)"
   Invoke-Native $iscc @isccArgs
@@ -60,18 +60,18 @@ function Invoke-Iscc([string]$Script, [string]$SemVer, [string[]]$Extra = @()) {
 $produced = @()
 if ($Suite) {
   $shipping = Get-ShippingApps
-  if (-not $Version) { $Version = Get-AppVersion -Project $Apps[$shipping[0]].Project -TagPrefix 'photon-v' }
+  if (-not $Version) { $Version = Get-AppVersion -Project $Apps[$shipping[0]].Project -TagPrefix 'isotone-v' }
   foreach ($a in $shipping) {
     if (-not $SkipPublish) { & "$PSScriptRoot/publish.ps1" -App $a -Runtime $Runtime -Version $Version }
   }
   Invoke-Iscc 'installer/Suite.iss' $Version
-  $produced += Join-Path $dist "Photon-$Version-$Runtime-Setup.exe"
+  $produced += Join-Path $dist "Isotone-$Version-$Runtime-Setup.exe"
   if (-not $NoZip) {
-    $stage = Join-Path $RepoRoot "artifacts/publish/Photon/$Runtime"
+    $stage = Join-Path $RepoRoot "artifacts/publish/Isotone/$Runtime"
     if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
     New-Item -ItemType Directory -Force -Path $stage | Out-Null
     foreach ($a in $shipping) { Copy-Item -Recurse (Join-Path $RepoRoot "artifacts/publish/$a/$Runtime") (Join-Path $stage $a) }
-    $zip = Join-Path $dist "Photon-$Version-$Runtime-Portable.zip"
+    $zip = Join-Path $dist "Isotone-$Version-$Runtime-Portable.zip"
     Write-Step "zip $zip"
     New-PortableZip $stage $zip
     $produced += $zip

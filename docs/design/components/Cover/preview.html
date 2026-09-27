@@ -3,9 +3,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Photon Interface</title>
+<title>Isotone Interface</title>
 <style>
-  /* Cover: an Imago document window in the current brightness theme, built only from tokens and bundle.css.
+  /* Cover: an Pinxit document window in the current brightness theme, built only from tokens and bundle.css.
      Regions: title bar 32 (menu bar inside), options bar 32, tool rail 40, document tab 28, rulers 18, canvas, right dock 280, status bar 22. */
   html, body { margin: 0; height: 100%; overflow: hidden; }
   body { background: var(--frame); }
@@ -37,9 +37,9 @@
 </style>
 </head>
 <body>
-<div class="win app-imago">
+<div class="win app-pinxit">
   <div class="ph-titlebar">
-    <div class="ph-appmark"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Imago"><defs><linearGradient id="imago-c-s16-spec" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF4D6D"/><stop offset="0.17" stop-color="#FF9A3C"/><stop offset="0.33" stop-color="#FFD84A"/><stop offset="0.5" stop-color="#4CC47A"/><stop offset="0.67" stop-color="#29C5E6"/><stop offset="0.83" stop-color="#5B7CFF"/><stop offset="1" stop-color="#B45CFF"/></linearGradient><clipPath id="imago-c-s16-clip"><rect x="0" y="0" width="16" height="16" rx="3"/></clipPath></defs><rect x="0" y="0" width="16" height="16" rx="3" fill="#2B2C31"/><rect x="0" y="14" width="16" height="2" fill="url(#imago-c-s16-spec)" clip-path="url(#imago-c-s16-clip)"/><path d="M8.53 4.73L10.27 6.47L12.64 3.36L11.64 2.36Z" fill="#F5923E"/><path d="M6.92 5.84L9.16 8.08L10.27 6.96L8.04 4.73Z" fill="#FFFFFF"/><path d="M5.3 9.7L8.01 9.61L9.09 8.52L6.48 5.91L5.39 6.99Z" fill="#FFD84A"/><rect x="2" y="11" width="2" height="2" fill="#FFD84A"/><rect x="3" y="7" width="1" height="1" fill="#FFD84A"/></svg></div>
+    <div class="ph-appmark"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Pinxit"><defs><linearGradient id="pinxit-c-s16-spec" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF4D6D"/><stop offset="0.17" stop-color="#FF9A3C"/><stop offset="0.33" stop-color="#FFD84A"/><stop offset="0.5" stop-color="#4CC47A"/><stop offset="0.67" stop-color="#29C5E6"/><stop offset="0.83" stop-color="#5B7CFF"/><stop offset="1" stop-color="#B45CFF"/></linearGradient><clipPath id="pinxit-c-s16-clip"><rect x="0" y="0" width="16" height="16" rx="3"/></clipPath></defs><rect x="0" y="0" width="16" height="16" rx="3" fill="#2B2C31"/><rect x="0" y="14" width="16" height="2" fill="url(#pinxit-c-s16-spec)" clip-path="url(#pinxit-c-s16-clip)"/><path d="M8.53 4.73L10.27 6.47L12.64 3.36L11.64 2.36Z" fill="#F5923E"/><path d="M6.92 5.84L9.16 8.08L10.27 6.96L8.04 4.73Z" fill="#FFFFFF"/><path d="M5.3 9.7L8.01 9.61L9.09 8.52L6.48 5.91L5.39 6.99Z" fill="#FFD84A"/><rect x="2" y="11" width="2" height="2" fill="#FFD84A"/><rect x="3" y="7" width="1" height="1" fill="#FFD84A"/></svg></div>
     <div class="ph-menubar"><div class="ph-mb">File</div><div class="ph-mb">Edit</div><div class="ph-mb">Image</div><div class="ph-mb">Layer</div><div class="ph-mb">Select</div><div class="ph-mb">Filter</div><div class="ph-mb">View</div><div class="ph-mb">Window</div><div class="ph-mb">Help</div></div>
     <div class="drag"></div>
     <div class="ph-caps"><span class="ph-cap"><i data-i="minus" data-s="14" data-w="1"></i></span><span class="ph-cap"><i data-i="maximize" data-s="14" data-w="1"></i></span><span class="ph-cap close"><i data-i="x" data-s="14" data-w="1"></i></span></div>
@@ -106,7 +106,7 @@
   </div>
 </div>
 <script>
-if (window.Photon) Photon.hydrate(document);
+if (window.Isotone) Isotone.hydrate(document);
 </script>
 </body>
 </html>

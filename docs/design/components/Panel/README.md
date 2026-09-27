@@ -27,4 +27,4 @@ F6 reaches the dock; Ctrl+Tab inside a panel group moves between tabs; section h
 
 ## WPF
 
-AvalonDock (`LayoutAnchorablePane`) with a Photon theme dictionary replacing `AnchorablePaneTitle` and `AnchorablePaneTabPanel` templates; outside AvalonDock, `Photon.PanelHost` (`TabControl` + `ItemsControl`). Section: `Expander` styled `Photon.SectionExpander` (Bezier CollapsibleHeader), header template with a rotating 12px chevron (`duration-standard`, `ease-out`). Property rows: `Grid` with `ColumnDefinition Width="60"` shared by `Grid.IsSharedSizeScope`.
+AvalonDock (`LayoutAnchorablePane`) with a Isotone theme dictionary replacing `AnchorablePaneTitle` and `AnchorablePaneTabPanel` templates; outside AvalonDock, `Isotone.PanelHost` (`TabControl` + `ItemsControl`). Section: `Expander` styled `Isotone.SectionExpander` (Bezier CollapsibleHeader), header template with a rotating 12px chevron (`duration-standard`, `ease-out`). Property rows: `Grid` with `ColumnDefinition Width="60"` shared by `Grid.IsSharedSizeScope`.

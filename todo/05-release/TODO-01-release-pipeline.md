@@ -10,13 +10,13 @@ track: R1
 
 # TODO-01 -- Distribution: Clean-Machine Proof, Signing, arm64, Updates, winget, and the Suite Bundle
 
-> **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Photon Graphics Suite (`photon-v1.0.0`, then `photon-v1.1.0` after the post-release phases 42 to 45) without any app's version moving.
+> **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Isotone Graphics Suite (`isotone-v1.0.0`, then `isotone-v1.1.0` after the post-release phases 42 to 45) without any app's version moving.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `nodus-v*`, `imago-v*`, `lumen-v*`, and `photon-v*` tags. A local Nodus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Nodus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Nodus and Imago publishes and names Nodus's executable `Bezier.Desktop.exe`. **Corrected 2026-09-27:** by operator decision that day, binaries are distributed only from rizonesoft.com: `release.yml` uploads the installer, the portable ZIP, and `SHA256SUMS` to S3-compatible storage served as `download.rizonesoft.com` (`<slug>/<version>/<file>`, slug `nodus`, `imago`, `lumen`, or `photon`) with a hash-pinned rclone, writes the update feed `update/<slug>.json` (stable) or `update/<slug>-prerelease.json` last, and creates a GitHub release with no attached files whose body (from `scripts/release-manifest.ps1`) carries the CHANGELOG notes, Download links, the SHA-256 table, and the tag's source link; a tag release fails when the storage secrets are missing, and the storage itself is the operator's step `D99 T01 §8`. Every section below that said a GitHub release carries assets now reads the files from `download.rizonesoft.com`.
+> **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `stilus-v*`, `pinxit-v*`, `albumen-v*`, and `isotone-v*` tags. A local Stilus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Stilus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Stilus and Pinxit publishes and names Stilus's executable `Bezier.Desktop.exe`. **Corrected 2026-09-27:** by operator decision that day, binaries are distributed only from rizonesoft.com: `release.yml` uploads the installer, the portable ZIP, and `SHA256SUMS` to S3-compatible storage served as `download.rizonesoft.com` (`<slug>/<version>/<file>`, slug `stilus`, `pinxit`, `albumen`, or `isotone`) with a hash-pinned rclone, writes the update feed `update/<slug>.json` (stable) or `update/<slug>-prerelease.json` last, and creates a GitHub release with no attached files whose body (from `scripts/release-manifest.ps1`) carries the CHANGELOG notes, Download links, the SHA-256 table, and the tag's source link; a tag release fails when the storage secrets are missing, and the storage itself is the operator's step `D99 T01 §8`. Every section below that said a GitHub release carries assets now reads the files from `download.rizonesoft.com`.
 <!-- claim: count "ArchitecturesAllowed=x64compatible" installer/common.iss = 1 -->
 <!-- claim: exists installer/Suite.iss -->
-<!-- claim: count "photon-v\*" .github/workflows/release.yml = 1 -->
+<!-- claim: count "isotone-v\*" .github/workflows/release.yml = 1 -->
 <!-- claim: count "signtool" scripts/package.ps1 = 0 -->
 <!-- claim: exists scripts/release-manifest.ps1 -->
 <!-- claim: count "gh release upload" .github/workflows/release.yml = 0 -->
@@ -26,33 +26,33 @@ track: R1
 - [`standards/release.md`](../../standards/release.md) -- versions, artifacts, signing policy, and the release checklist
 - [`docs/dev/build.md`](../../docs/dev/build.md), [`docs/dev/versioning.md`](../../docs/dev/versioning.md) -- how the scripts and tags work
 - [`scripts/package.ps1`](../../scripts/package.ps1), [`scripts/publish.ps1`](../../scripts/publish.ps1), [`installer/`](../../installer/common.iss), [`.github/workflows/release.yml`](../../.github/workflows/release.yml) -- what this file extends
-- -> XREF: D01 T02 §4 -- the update check lands in `Photon.Core` beside the other shared services (§4 here owns it)
-- -> XREF: D02 T05 §4 -- the Nodus release that runs §1's procedure first
-- -> XREF: D03 T06 §3 -- the Imago release that runs §1's procedure
-- -> XREF: D04 T01 §2 -- Lumen's app creation that makes it a shipping app for §6
+- -> XREF: D01 T02 §4 -- the update check lands in `Isotone.Core` beside the other shared services (§4 here owns it)
+- -> XREF: D02 T05 §4 -- the Stilus release that runs §1's procedure first
+- -> XREF: D03 T06 §3 -- the Pinxit release that runs §1's procedure
+- -> XREF: D04 T01 §2 -- Albumen's app creation that makes it a shipping app for §6
 - -> XREF: D99 T01 §3 -- the operator step that supplies the certificate §2 needs
 - -> XREF: D99 T01 §8 -- the operator step that provisions `download.rizonesoft.com` and the storage secrets every release here uploads to (§3, §5, §6) and the feed §4 reads
-- -> XREF: D99 T01 §9 -- the product page URLs (`PHOTON_SITE_URL`) §4's result dialog and §5's manifests link
+- -> XREF: D99 T01 §9 -- the product page URLs (`ISOTONE_SITE_URL`) §4's result dialog and §5's manifests link
 - -> XREF: D06 T01 §4 -- the install guide that documents what §1 proves
-- -> XREF: D02 T17 §1 -- the Nodus parity releases that run §1's clean-machine procedure
-- -> XREF: D03 T20 §8 -- Imago parity workspace cites §4: the opt-in `UpdateChecker` D03 T20 §8 consumes
-- -> XREF: D03 T21 §1 -- the Imago parity releases cites §1: the clean-machine procedure every release runs
-- -> XREF: D04 T14 §6 -- Lumen parity workspace cites §1: the installer and portable ZIP whose switches D04 T14 §6 documents; §3: the win-arm64 builds D04 T14 §7's platform page states; §4: the opt-in update check D04 T14 §7 consumes
-- -> XREF: D04 T15 §1 -- the Lumen parity releases cites §1: the clean-machine procedure every release runs
-- -> XREF: D03 T21 §15 -- Imago 1.3.0, the Imago version §7's bundle carries
+- -> XREF: D02 T17 §1 -- the Stilus parity releases that run §1's clean-machine procedure
+- -> XREF: D03 T20 §8 -- Pinxit parity workspace cites §4: the opt-in `UpdateChecker` D03 T20 §8 consumes
+- -> XREF: D03 T21 §1 -- the Pinxit parity releases cites §1: the clean-machine procedure every release runs
+- -> XREF: D04 T14 §6 -- Albumen parity workspace cites §1: the installer and portable ZIP whose switches D04 T14 §6 documents; §3: the win-arm64 builds D04 T14 §7's platform page states; §4: the opt-in update check D04 T14 §7 consumes
+- -> XREF: D04 T15 §1 -- the Albumen parity releases cites §1: the clean-machine procedure every release runs
+- -> XREF: D03 T21 §15 -- Pinxit 1.3.0, the Pinxit version §7's bundle carries
 - -> XREF: D01 T10 §1 -- the suite automation system that starts after §6's first bundle and that §7's bundle installs once for all three apps
 - -> XREF: D01 T11 §1 -- the suite media stack that starts after §6's first bundle and that §7's bundle installs once
 - -> XREF: D01 T12 §1 -- the on-device model runtime that starts after §6's first bundle and that §7's bundle installs once, with no model weight in any package
 
 ## Outcome
 
-- `docs/dev/clean-machine.md` is the procedure every app release runs, and Nodus 0.1.0 is its first quoted run.
+- `docs/dev/clean-machine.md` is the procedure every app release runs, and Stilus 0.1.0 is its first quoted run.
 - With a certificate supplied from outside the repository, every executable, DLL we build, installer, and uninstaller is Authenticode-signed with a timestamp, and `signtool verify /pa` passes on each.
 - `win-arm64` installers and ZIPs are produced per app and uploaded by the release workflow to `download.rizonesoft.com`.
 - Each app's Help, Check for Updates compares its version with its update feed on `download.rizonesoft.com` (`update/<slug>.json`, plus `update/<slug>-prerelease.json` when prereleases are included) and offers the product page, with a setting to check on startup.
 - winget manifests for each released app point at `download.rizonesoft.com` installer URLs, are submitted, and install the app.
-- `photon-v1.0.0` publishes the suite installer and ZIP on `download.rizonesoft.com`, carrying Nodus, Imago, and Lumen at their current versions.
-- `photon-v1.1.0` publishes the second bundle carrying Nodus 1.2.0, Imago 1.3.0, and Lumen 1.4.0 at their own versions.
+- `isotone-v1.0.0` publishes the suite installer and ZIP on `download.rizonesoft.com`, carrying Stilus, Pinxit, and Albumen at their current versions.
+- `isotone-v1.1.0` publishes the second bundle carrying Stilus 1.2.0, Pinxit 1.3.0, and Albumen 1.4.0 at their own versions.
 
 **Adjacency:** list=not-applicable (no browsable records); document=not-applicable (release notes are the changelog's); settings=applicable @ D05 T01 §4; reporting=not-applicable (no summaries); notifications=applicable; permissions=applicable; audit=applicable; exchange=not-applicable (no user formats); reverse=applicable
 
@@ -67,8 +67,8 @@ track: R1
 |   3   |   §3    | win-arm64 publish and installers                         | D02 T05 §4                                 |  [ ]   |
 |   4   |   §4    | The update check                                         | D01 T02 §2, D02 T05 §4                     |  [ ]   |
 |   5   |   §5    | winget manifests                                         | D02 T05 §4, D03 T06 §3, D04 T02 §8         |  [ ]   |
-|   6   |   §6    | The suite bundle: photon-v1.0.0                          | §4, D02 T05 §4, D03 T06 §3, D04 T02 §8, D06 T01 §4 |  [ ]   |
-|   7   |   §7    | The suite bundle: photon-v1.1.0 | §6, D02 T17 §12, D03 T21 §15, D04 T15 §14 |  [ ]   |
+|   6   |   §6    | The suite bundle: isotone-v1.0.0                          | §4, D02 T05 §4, D03 T06 §3, D04 T02 §8, D06 T01 §4 |  [ ]   |
+|   7   |   §7    | The suite bundle: isotone-v1.1.0 | §6, D02 T17 §12, D03 T21 §15, D04 T15 §14 |  [ ]   |
 
 ---
 
@@ -79,8 +79,8 @@ A developer machine has the .NET SDK and runtimes, so a self-contained publish t
 **Needs:** Clean Windows machine (no .NET SDK)
 
 - [ ] Write `docs/dev/clean-machine.md`: how to get a clean Windows 11 machine (Windows Sandbox with a `.wsb` file mapping `artifacts/dist` read-only, committed as `tools/sandbox/clean-machine.wsb`), and the steps: confirm `dotnet --list-runtimes` fails, install per-user silently, launch, open a fixture, save, close, check the log for errors, uninstall, confirm the install folder and Start menu entry are gone; repeat all-users (elevated) and confirm a non-elevated all-users install is refused with the Inno Setup message; upgrade over the previous release and confirm settings survive; on Windows 10 22H2 (optional, best-effort), confirm the interactive installer shows the "not officially supported" notice and a `/VERYSILENT` install does not. Done when: the page and the `.wsb` file exist.
-- [ ] Run the procedure for Nodus on the current build and quote each step. Done when: every step passes, or each failure is filed through `add-todo` with its owner.
-- [ ] Commit: `"release: a written clean-machine install procedure, run for Nodus"`
+- [ ] Run the procedure for Stilus on the current build and quote each step. Done when: every step passes, or each failure is filed through `add-todo` with its owner.
+- [ ] Commit: `"release: a written clean-machine install procedure, run for Stilus"`
 
 **Requires:** display-session -- the Windows Sandbox session and the installer UI need an interactive desktop
 
@@ -92,7 +92,7 @@ Unsigned installers trigger SmartScreen warnings and cannot build reputation. Th
 
 **Needs:** Signing certificate (release)
 
-- [ ] `scripts/sign.ps1` signs a list of files with `signtool sign /fd SHA256 /tr <RFC 3161 timestamp URL> /td SHA256`, reading the certificate from the Windows certificate store by thumbprint (`PHOTON_SIGN_THUMBPRINT`) or from a cloud signing service's CLI, never from a file path in the repository. Done when: the script refuses to run without the environment variable and prints no secret.
+- [ ] `scripts/sign.ps1` signs a list of files with `signtool sign /fd SHA256 /tr <RFC 3161 timestamp URL> /td SHA256`, reading the certificate from the Windows certificate store by thumbprint (`ISOTONE_SIGN_THUMBPRINT`) or from a cloud signing service's CLI, never from a file path in the repository. Done when: the script refuses to run without the environment variable and prints no secret.
 - [ ] `scripts/package.ps1` signs the app's own executables and DLLs after publish and the installer and uninstaller through Inno Setup's `SignTool` directive in `installer/common.iss`, only when signing is configured. Done when: an unsigned build still works without the variable.
 - [ ] `release.yml` signs when the repository secret is configured (the certificate stays in the signing service or an encrypted secret; the workflow never echoes it). Done when: a dry run on a prerelease tag produces signed assets.
 - [ ] `signtool verify /pa /all` on every signed file is part of the release checklist in `standards/release.md`. Done when: the checklist line exists.
@@ -106,7 +106,7 @@ Windows on Arm machines run x64 apps under emulation, slowly. .NET 11 and WPF su
 
 **Needs:** Windows host (build/test)
 
-- [ ] `installer/common.iss` sets `ArchitecturesAllowed` and `ArchitecturesInstallIn64BitMode` from the `Runtime` define (`x64compatible` or `arm64`). Done when: `pwsh scripts/package.ps1 -App Nodus -Runtime win-arm64` produces an arm64 installer.
+- [ ] `installer/common.iss` sets `ArchitecturesAllowed` and `ArchitecturesInstallIn64BitMode` from the `Runtime` define (`x64compatible` or `arm64`). Done when: `pwsh scripts/package.ps1 -App Stilus -Runtime win-arm64` produces an arm64 installer.
 - [ ] Every native dependency ships an arm64 asset (SkiaSharp, the RAW decoder, ComputeSharp's DirectX runtime); any that does not is named with its fallback. Done when: the publish folder for each app lists arm64 native DLLs (quoted).
 - [ ] `release.yml` builds both runtimes and uploads both sets of files to `download.rizonesoft.com/<slug>/<version>/` with `SHA256SUMS` covering all, `scripts/release-manifest.ps1` listing both in the release body and the feed's `files` (**Corrected 2026-09-27:** said uploads both sets of assets to the GitHub release, which carries no binaries since the operator's distribution decision). Done when: a prerelease tag's download folder holds six files per app and its release body links all six.
 - [ ] A launch on arm64 hardware (or an arm64 VM), or, if none is available, the gap recorded with an owner through `add-todo`. Done when: one or the other is quoted.
@@ -117,15 +117,15 @@ Windows on Arm machines run x64 apps under emulation, slowly. .NET 11 and WPF su
 
 ## 4. The Update Check
 
-Users should learn a new version exists without the app phoning home silently. Each app reads its own update feed, only when the user asks or has allowed a startup check, and offers the product page; it never downloads or installs by itself. Every app needs it, so it lives in `Photon.Core`.
+Users should learn a new version exists without the app phoning home silently. Each app reads its own update feed, only when the user asks or has allowed a startup check, and offers the product page; it never downloads or installs by itself. Every app needs it, so it lives in `Isotone.Core`.
 
 **Corrected 2026-09-27:** said each app asks the GitHub releases API for the latest release with its tag prefix and offers the release page. Operator decision 2026-09-27: binaries ship only from rizonesoft.com, so the check reads the feed `release.yml` writes to `https://download.rizonesoft.com/update/<slug>.json` (latest stable) and, with prereleases included, `update/<slug>-prerelease.json`, taking the higher SemVer of the two; the feed's fields are in `docs/dev/versioning.md` (`version`, `url`, `sha256`, `notes`, `page`, `date`). The base URL is one setting with the default `https://download.rizonesoft.com`, never typed at a call site.
 
-**Fidelity:** Help, Check for Updates and its result dialog -- new build, no baseline; captured to docs/captures/nodus/update-check/ (and the Imago and Lumen equivalents).
+**Fidelity:** Help, Check for Updates and its result dialog -- new build, no baseline; captured to docs/captures/stilus/update-check/ (and the Pinxit and Albumen equivalents).
 **Design:** docs/design/components/Menu/README.md, docs/design/components/Dialog/README.md, docs/design/components/Button/README.md, docs/design/components/Checkbox/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a user can find out whether a newer release of the app they run exists and open its download page. Consumer: the user.
-**Treatment:** `UpdateChecker` in `Photon.Core/Updates/` reads `https://download.rizonesoft.com/update/<slug>.json` (and `<slug>-prerelease.json` when prereleases are included) over HTTPS with a user agent naming the app and version, refuses a feed whose `app` is not its own, and compares SemVer; the result dialog says "You have the latest version (x)." or "Nodus y is available (you have x). What's new: ..." linking the feed's `notes`, with Open Download Page opening the feed's `page` (the product page, `https://www.rizonesoft.com/` until `D99 T01 §9` decides per-app pages) with `?utm_source=app&utm_medium=update-check`; a setting `Updates.CheckOnStartup` (default off, offered once on first run) and `Updates.IncludePrereleases` (default off); network failure says "Could not check for updates: <reason>." and logs a Warning. Cheaper substitute that fails the checkpoint: comparing version strings as text.
-**Chrome:** consume `Photon.Core` settings and logging, the `Photon.UI` dialog shell, and the theme. Do not add a per-app update client.
+**Treatment:** `UpdateChecker` in `Isotone.Core/Updates/` reads `https://download.rizonesoft.com/update/<slug>.json` (and `<slug>-prerelease.json` when prereleases are included) over HTTPS with a user agent naming the app and version, refuses a feed whose `app` is not its own, and compares SemVer; the result dialog says "You have the latest version (x)." or "Stilus y is available (you have x). What's new: ..." linking the feed's `notes`, with Open Download Page opening the feed's `page` (the product page, `https://www.rizonesoft.com/` until `D99 T01 §9` decides per-app pages) with `?utm_source=app&utm_medium=update-check`; a setting `Updates.CheckOnStartup` (default off, offered once on first run) and `Updates.IncludePrereleases` (default off); network failure says "Could not check for updates: <reason>." and logs a Warning. Cheaper substitute that fails the checkpoint: comparing version strings as text.
+**Chrome:** consume `Isotone.Core` settings and logging, the `Isotone.UI` dialog shell, and the theme. Do not add a per-app update client.
 
 **Requires:** display-session -- the update dialog needs an interactive desktop
 
@@ -134,7 +134,7 @@ Users should learn a new version exists without the app phoning home silently. E
 - [ ] The two settings and the first-run offer. Done when: the startup check runs only when enabled (test).
 - [ ] Commit: `"core: an opt-in update check against each app's update feed"`
 
-**Test checkpoint:** `dotnet test Photon.slnx` exits 0 with `UpdateCheckerTests` reporting all six cases; a driven check from Nodus against the live feed `https://download.rizonesoft.com/update/nodus.json` shows the correct result for the running version (capture and log line). Cheaper substitute that fails: text comparison, which `0.10.0` versus `0.9.0` catches.
+**Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `UpdateCheckerTests` reporting all six cases; a driven check from Stilus against the live feed `https://download.rizonesoft.com/update/stilus.json` shows the correct result for the running version (capture and log line). Cheaper substitute that fails: text comparison, which `0.10.0` versus `0.9.0` catches.
 
 ## 5. winget Manifests
 
@@ -142,58 +142,58 @@ winget is how many Windows users install software. Each released app gets a mani
 
 **Needs:** Windows host (build/test)
 
-- [ ] Author manifests with `wingetcreate new` for `Rizonesoft.Nodus`, `Rizonesoft.Imago`, and `Rizonesoft.Lumen` (installer URL on `download.rizonesoft.com` and its SHA-256 from the release's `SHA256SUMS`, `InstallerType: inno`, `Scope: user` and `machine` entries, license GPL-3.0, publisher Rizonesoft, `PublisherUrl` and `PackageUrl` from `PHOTON_SITE_URL`, `Copyright: Copyright (C) 2025-2026 Rizonetech (Pty) Ltd`), keeping copies under `installer/winget/`. Done when: `winget validate` passes on each.
+- [ ] Author manifests with `wingetcreate new` for `Rizonesoft.Stilus`, `Rizonesoft.Pinxit`, and `Rizonesoft.Albumen` (installer URL on `download.rizonesoft.com` and its SHA-256 from the release's `SHA256SUMS`, `InstallerType: inno`, `Scope: user` and `machine` entries, license GPL-3.0, publisher Rizonesoft, `PublisherUrl` and `PackageUrl` from `ISOTONE_SITE_URL`, `Copyright: Copyright (C) 2025-2026 Rizonetech (Pty) Ltd`), keeping copies under `installer/winget/`. Done when: `winget validate` passes on each.
 - [ ] `winget install --manifest installer/winget/<App>` installs each app locally. Done when: each installs and starts (quoted).
 - [ ] Submit the manifests with `wingetcreate submit` (the operator's GitHub account authorizes the fork; this runs with `gh` credentials the agent has, or is handed to the operator if not). Done when: the pull requests are open (URLs quoted), or the handoff is recorded as a `D99` row.
 - [ ] A release step (script or workflow job) updates the manifests on each new app release with `wingetcreate update`, reading the installer URL and hash from the update feed. Done when: it is documented in `docs/dev/build.md`.
-- [ ] Commit: `"release: winget manifests for Nodus, Imago, and Lumen"`
+- [ ] Commit: `"release: winget manifests for Stilus, Pinxit, and Albumen"`
 
 **Test checkpoint:** `winget validate` exits 0 for each manifest and every `InstallerUrl` starts with `https://download.rizonesoft.com/`; `winget install --manifest` installs each app (quoted); the submission PR URLs are quoted. Cheaper substitute that fails: manifests never validated.
 
-## 6. The Suite Bundle: photon-v1.0.0
+## 6. The Suite Bundle: isotone-v1.0.0
 
-The suite bundle packages all three apps in one installer and one ZIP without changing any app's version. It runs once each app has shipped its first release. The tag `photon-v1.0.0` marks the first bundle; its version is the bundle's, not an app's.
+The suite bundle packages all three apps in one installer and one ZIP without changing any app's version. It runs once each app has shipped its first release. The tag `isotone-v1.0.0` marks the first bundle; its version is the bundle's, not an app's.
 
 **Needs:** Clean Windows machine (no .NET SDK)
 
-**Corrected 2026-09-27:** added the backlog review before the tag (operator decision 2026-09-27, "Release-time backlog gate", with "No drop without operator approval"; `todo/README.md`, The budget and the backlog): every backlog entry, whatever its app, is promoted into a section or deferred by the operator in words recorded on the entry as a `reviewed: photon-v1.0.0` field, and `validate` refuses this section's stamp while one is unreviewed (`release-backlog-unreviewed`).
+**Corrected 2026-09-27:** added the backlog review before the tag (operator decision 2026-09-27, "Release-time backlog gate", with "No drop without operator approval"; `todo/README.md`, The budget and the backlog): every backlog entry, whatever its app, is promoted into a section or deferred by the operator in words recorded on the entry as a `reviewed: isotone-v1.0.0` field, and `validate` refuses this section's stamp while one is unreviewed (`release-backlog-unreviewed`).
 
-- [ ] `installer/Suite.iss` requires Lumen when Lumen ships (mirroring the Nodus and Imago checks) and its component list names each app with its own version from its latest tag. Done when: the suite installer's component page shows three apps with their versions.
-- [ ] A `photon-v1.0.0` section in `CHANGELOG.md` listing the app versions the bundle carries. Done when: it exists.
+- [ ] `installer/Suite.iss` requires Albumen when Albumen ships (mirroring the Stilus and Pinxit checks) and its component list names each app with its own version from its latest tag. Done when: the suite installer's component page shows three apps with their versions.
+- [ ] A `isotone-v1.0.0` section in `CHANGELOG.md` listing the app versions the bundle carries. Done when: it exists.
 - [ ] Run the clean-machine procedure for the suite installer: install all three, uninstall one component, confirm the others still run and no standalone install's registry keys were touched. Done when: every step passes (quoted).
-- [ ] Run the backlog review for `photon-v1.0.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry, whatever its `app:` (a suite release reviews the whole backlog), either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: photon-v1.0.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: photon-v1.0.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: photon-v1.0.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
-- [ ] Push `photon-v1.0.0`; verify the workflow, the files under `https://download.rizonesoft.com/photon/1.0.0/`, `SHA256SUMS`, and the feed `update/photon.json` (**Corrected 2026-09-27:** said the assets, which are no longer attached to the GitHub release). Done when: all pass (URLs and hashes quoted).
-- [ ] Commit: `"release: the Photon Graphics Suite 1.0.0 bundle"`
+- [ ] Run the backlog review for `isotone-v1.0.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry, whatever its `app:` (a suite release reviews the whole backlog), either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: isotone-v1.0.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: isotone-v1.0.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: isotone-v1.0.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
+- [ ] Push `isotone-v1.0.0`; verify the workflow, the files under `https://download.rizonesoft.com/isotone/1.0.0/`, `SHA256SUMS`, and the feed `update/isotone.json` (**Corrected 2026-09-27:** said the assets, which are no longer attached to the GitHub release). Done when: all pass (URLs and hashes quoted).
+- [ ] Commit: `"release: the Isotone Graphics Suite 1.0.0 bundle"`
 
 **Requires:** display-session -- the suite installer's component page and the app launches need an interactive desktop
 
-**Test checkpoint:** `gh release view photon-v1.0.0 --json assets,body` shows no assets and a body linking the suite installer, ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/photon/1.0.0/`, whose downloads match their hashes; the clean-machine run shows three apps installed side by side with their own versions in their About dialogs. Cheaper substitute that fails: a bundle that re-versions every app to 1.0.0, which the About dialogs catch.
+**Test checkpoint:** `gh release view isotone-v1.0.0 --json assets,body` shows no assets and a body linking the suite installer, ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/isotone/1.0.0/`, whose downloads match their hashes; the clean-machine run shows three apps installed side by side with their own versions in their About dialogs. Cheaper substitute that fails: a bundle that re-versions every app to 1.0.0, which the About dialogs catch.
 
-## 7. The Suite Bundle: photon-v1.1.0
+## 7. The Suite Bundle: isotone-v1.1.0
 
-The second suite bundle carries the apps at the versions the post-release phases ship: Nodus 1.2.0 (`D02 T17 §12`, Phase 42), Imago 1.3.0 (`D03 T21 §15`, Phase 44), and Lumen 1.4.0 (`D04 T15 §14`, Phase 45), after the operator planned the work deferred "after the first release" (suite automation, video and audio, animation, on-device models, the GPU develop path, and Lumen's remaining formats) as real sections on 2026-09-27 because features must not be left behind. Like `§6` it changes no app's version: the tag `photon-v1.1.0` is the bundle's version, and each app keeps its own tag and About version. It also proves the shared pieces those phases added to `Photon.Core` and `Photon.UI` (the automation system of `D01 T10`, the media stack of `D01 T11`, the on-device model runtime of `D01 T12`) install once side by side without one app's uninstall breaking another. -> SOURCE: parity-suite-release-1.1.0
+The second suite bundle carries the apps at the versions the post-release phases ship: Stilus 1.2.0 (`D02 T17 §12`, Phase 42), Pinxit 1.3.0 (`D03 T21 §15`, Phase 44), and Albumen 1.4.0 (`D04 T15 §14`, Phase 45), after the operator planned the work deferred "after the first release" (suite automation, video and audio, animation, on-device models, the GPU develop path, and Albumen's remaining formats) as real sections on 2026-09-27 because features must not be left behind. Like `§6` it changes no app's version: the tag `isotone-v1.1.0` is the bundle's version, and each app keeps its own tag and About version. It also proves the shared pieces those phases added to `Isotone.Core` and `Isotone.UI` (the automation system of `D01 T10`, the media stack of `D01 T11`, the on-device model runtime of `D01 T12`) install once side by side without one app's uninstall breaking another. -> SOURCE: parity-suite-release-1.1.0
 
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- the suite installer's component page and the app launches need an interactive desktop
 
-- [ ] Update `installer/Suite.iss` so its component list names Nodus 1.2.0, Imago 1.3.0, and Lumen 1.4.0 with each version read from the app's latest tag. Done when: the suite installer's component page shows the three apps with those versions (capture committed under `docs/captures/suite/release-1.1.0/`).
-- [ ] Add a `photon-v1.1.0` section to `CHANGELOG.md` listing the app versions the bundle carries and linking each app's own release notes. Done when: it exists and names all three versions.
+- [ ] Update `installer/Suite.iss` so its component list names Stilus 1.2.0, Pinxit 1.3.0, and Albumen 1.4.0 with each version read from the app's latest tag. Done when: the suite installer's component page shows the three apps with those versions (capture committed under `docs/captures/suite/release-1.1.0/`).
+- [ ] Add a `isotone-v1.1.0` section to `CHANGELOG.md` listing the app versions the bundle carries and linking each app's own release notes. Done when: it exists and names all three versions.
 - [ ] Build `pwsh scripts/package.ps1 -Suite -Version 1.1.0`. Done when: the suite installer, the suite ZIP, and `SHA256SUMS` exist under `artifacts/dist/`, and the ZIP carries no FFmpeg, GDAL, or `.onnx` file (file list quoted).
-- [ ] Run the clean-machine procedure of `§1` for the suite installer: upgrade over `photon-v1.0.0`, confirm each app's About version, run one recorded action in each app, play a video fixture in Imago and Lumen, uninstall one component, and confirm the other two still start and run their automation and media features. Done when: every step passes (quoted).
+- [ ] Run the clean-machine procedure of `§1` for the suite installer: upgrade over `isotone-v1.0.0`, confirm each app's About version, run one recorded action in each app, play a video fixture in Pinxit and Albumen, uninstall one component, and confirm the other two still start and run their automation and media features. Done when: every step passes (quoted).
 - [ ] Confirm no standalone install's registry keys were touched by the suite install or the component uninstall. Done when: the before-and-after registry export diff is quoted with no change under the standalone apps' keys.
-- [ ] Run the backlog review for `photon-v1.1.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry, whatever its `app:` (a suite release reviews the whole backlog), either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: photon-v1.1.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: photon-v1.1.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: photon-v1.1.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
-- [ ] Push the tag `photon-v1.1.0`; verify the workflow, the files under `https://download.rizonesoft.com/photon/1.1.0/`, `SHA256SUMS`, and the feed `update/photon.json`. Done when: all pass (URLs and hashes quoted).
-- [ ] Confirm with `git tag --points-at HEAD` that only `photon-v1.1.0` points at the release commit and no app tag moved. Done when: the output is quoted.
-- [ ] Commit: `"release: the Photon Graphics Suite 1.1.0 bundle"`
+- [ ] Run the backlog review for `isotone-v1.1.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry, whatever its `app:` (a suite release reviews the whole backlog), either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: isotone-v1.1.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: isotone-v1.1.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: isotone-v1.1.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
+- [ ] Push the tag `isotone-v1.1.0`; verify the workflow, the files under `https://download.rizonesoft.com/isotone/1.1.0/`, `SHA256SUMS`, and the feed `update/isotone.json`. Done when: all pass (URLs and hashes quoted).
+- [ ] Confirm with `git tag --points-at HEAD` that only `isotone-v1.1.0` points at the release commit and no app tag moved. Done when: the output is quoted.
+- [ ] Commit: `"release: the Isotone Graphics Suite 1.1.0 bundle"`
 
-**Test checkpoint:** Driven run with evidence: `gh release view photon-v1.1.0 --json assets,body` shows no assets and a body linking the suite installer, ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/photon/1.1.0/`, whose downloads match their hashes; the clean-machine run shows Nodus 1.2.0, Imago 1.3.0, and Lumen 1.4.0 installed side by side with their own versions in their About dialogs, and the two remaining apps still run after one component's uninstall. Cheaper substitute that fails: a bundle that re-versions every app to 1.1.0, which the About dialogs catch.
+**Test checkpoint:** Driven run with evidence: `gh release view isotone-v1.1.0 --json assets,body` shows no assets and a body linking the suite installer, ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/isotone/1.1.0/`, whose downloads match their hashes; the clean-machine run shows Stilus 1.2.0, Pinxit 1.3.0, and Albumen 1.4.0 installed side by side with their own versions in their About dialogs, and the two remaining apps still run after one component's uninstall. Cheaper substitute that fails: a bundle that re-versions every app to 1.1.0, which the About dialogs catch.
 
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0
 - [ ] Every app release since this file shipped has a quoted clean-machine run
 - [ ] `signtool verify /pa` passes on every published file once signing is configured
-- [ ] `gh release list` shows `photon-v1.0.0` and `photon-v1.1.0`, each carrying the app versions its `CHANGELOG.md` section names
+- [ ] `gh release list` shows `isotone-v1.0.0` and `isotone-v1.1.0`, each carrying the app versions its `CHANGELOG.md` section names
 - [ ] No GitHub release carries an attached installer or ZIP (`gh release view <tag> --json assets` for each release)
 - [ ] `python scripts/todo-graph.py validate` clean

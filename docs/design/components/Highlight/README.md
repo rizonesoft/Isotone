@@ -7,7 +7,7 @@ The state color (selection, focus, checked controls, active tool, highlighted me
 | Option | Source | Notes |
 | --- | --- | --- |
 | Blue (default) | the `state*` tokens | Photoshop-like; neutral on photographs, never confused with warning amber or error red |
-| Photon orange | the `state-orange*` tokens (Bezier #FF6B35) | the dark themes put near-black text on orange (`state-orange-on`); Light uses a darker orange with white |
+| Isotone orange | the `state-orange*` tokens (Bezier #FF6B35) | the dark themes put near-black text on orange (`state-orange-on`); Light uses a darker orange with white |
 | Windows accent color | `UISettings.GetColorValue` Accent, AccentLight1-3, AccentDark1-3 | contrast-adjusted per theme; the preview uses the Windows default #0078D4 as the example |
 
 Each option supplies the whole set: `state`, `state-hover`, `state-pressed`, `state-on`, `state-subtle`, `state-tint`, `state-line`, `state-text`, plus `focus-ring`, `handle-stroke` and `glow-state`, which follow.
@@ -27,4 +27,4 @@ After mapping, each value is checked against the same pairs as the blue set (4.5
 
 ## WPF
 
-The four brightness dictionaries hold the blue values. A fifth merged dictionary, the Highlight overlay, is swapped at runtime by `HighlightService`: `Highlight.Blue.xaml` for Blue, `Highlight.Orange.xaml` (each `state` key mapped to its `state-orange` brush) for Photon orange, and for Windows accent a dictionary of brushes computed from `Windows.UI.ViewManagement.UISettings` (WinRT projection, available with the `net11.0-windows10.0.26100.0` target). The service subscribes to `UISettings.ColorValuesChanged` (raised on a worker thread: marshal to the dispatcher) and rebuilds the dictionary live. If the call throws or returns no accent, it falls back to Blue and logs a Warning. `SystemParameters.WindowGlassColor` is not used: it reports the glass color, not the accent. Every consumer uses `DynamicResource`, so swapping the dictionary restyles open windows without a restart.
+The four brightness dictionaries hold the blue values. A fifth merged dictionary, the Highlight overlay, is swapped at runtime by `HighlightService`: `Highlight.Blue.xaml` for Blue, `Highlight.Orange.xaml` (each `state` key mapped to its `state-orange` brush) for Isotone orange, and for Windows accent a dictionary of brushes computed from `Windows.UI.ViewManagement.UISettings` (WinRT projection, available with the `net11.0-windows10.0.26100.0` target). The service subscribes to `UISettings.ColorValuesChanged` (raised on a worker thread: marshal to the dispatcher) and rebuilds the dictionary live. If the call throws or returns no accent, it falls back to Blue and logs a Warning. `SystemParameters.WindowGlassColor` is not used: it reports the glass color, not the accent. Every consumer uses `DynamicResource`, so swapping the dictionary restyles open windows without a restart.

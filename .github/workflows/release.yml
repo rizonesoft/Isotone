@@ -1,24 +1,24 @@
 name: release
 
 # Tag-driven releases. The tag prefix picks what ships:
-#   nodus-v1.2.3  -> Nodus      imago-v1.2.3 -> Imago
-#   lumen-v1.2.3  -> Lumen (refused by package.ps1 until Lumen ships)
-#   photon-v1.2.3 -> the Photon Graphics Suite bundle (all shipping apps)
+#   stilus-v1.2.3  -> Stilus      pinxit-v1.2.3 -> Pinxit
+#   albumen-v1.2.3  -> Albumen (refused by package.ps1 until Albumen ships)
+#   isotone-v1.2.3 -> the Isotone Graphics Suite bundle (all shipping apps)
 # A version with a hyphen (1.2.3-beta.1) is published as a prerelease.
 #
 # Distribution (operator decision 2026-09-27): binaries ship ONLY from rizonesoft.com.
 # The installer, the portable ZIP, and SHA256SUMS are uploaded to S3-compatible object
 # storage served as download.rizonesoft.com, at <base>/<slug>/<version>/<file> (slug:
-# nodus, imago, lumen, or photon for the suite), and the update feed is written to
+# stilus, pinxit, albumen, or isotone for the suite), and the update feed is written to
 # <base>/update/<slug>.json (stable) or <base>/update/<slug>-prerelease.json. The GitHub
 # release carries no binaries: its body is generated (the CHANGELOG section, Download
 # links, the SHA-256 table, and the source link), and GitHub adds its source archives.
 #
 # Storage settings (Settings, Secrets and variables, Actions):
-#   secrets    PHOTON_DL_S3_ENDPOINT, PHOTON_DL_S3_BUCKET,
-#              PHOTON_DL_S3_ACCESS_KEY_ID, PHOTON_DL_S3_SECRET_ACCESS_KEY
-#   variables  PHOTON_DL_BASE_URL (default https://download.rizonesoft.com)
-#              PHOTON_SITE_URL    (default https://www.rizonesoft.com/)
+#   secrets    ISOTONE_DL_S3_ENDPOINT, ISOTONE_DL_S3_BUCKET,
+#              ISOTONE_DL_S3_ACCESS_KEY_ID, ISOTONE_DL_S3_SECRET_ACCESS_KEY
+#   variables  ISOTONE_DL_BASE_URL (default https://download.rizonesoft.com)
+#              ISOTONE_SITE_URL    (default https://www.rizonesoft.com/)
 # A tag release FAILS before building when a secret is missing, so no release is ever
 # published without its downloads.
 #
@@ -27,19 +27,19 @@ name: release
 # under drafts/ (drafts/<slug>/<version>/, drafts/update/) so the live files and feeds
 # are never touched. Without the storage secrets a draft skips the upload with a notice
 # and its files stay in the dist-<tag> workflow artifact.
-#   gh workflow run release.yml --ref main -f tag=nodus-v0.1.0-alpha.1 -f draft=true
+#   gh workflow run release.yml --ref main -f tag=stilus-v0.1.0-alpha.1 -f draft=true
 
 on:
   push:
     tags:
-      - 'nodus-v*'
-      - 'imago-v*'
-      - 'lumen-v*'
-      - 'photon-v*'
+      - 'stilus-v*'
+      - 'pinxit-v*'
+      - 'albumen-v*'
+      - 'isotone-v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag, <app>-v<SemVer> (nodus-v, imago-v, lumen-v, photon-v); not pushed for a draft'
+        description: 'Release tag, <app>-v<SemVer> (stilus-v, pinxit-v, albumen-v, isotone-v); not pushed for a draft'
         required: true
         type: string
       draft:
@@ -69,8 +69,8 @@ env:
   # SHA256SUMS, verified 2026-09-27).
   RCLONE_VERSION: '1.75.1'
   RCLONE_SHA256: '200eb602c126d82aa38b51e0f6b9ae837473ff99b51278d3f6f837574c494d6e'
-  PHOTON_DL_BASE_URL: ${{ vars.PHOTON_DL_BASE_URL || 'https://download.rizonesoft.com' }}
-  PHOTON_SITE_URL: ${{ vars.PHOTON_SITE_URL || 'https://www.rizonesoft.com/' }}
+  ISOTONE_DL_BASE_URL: ${{ vars.ISOTONE_DL_BASE_URL || 'https://download.rizonesoft.com' }}
+  ISOTONE_SITE_URL: ${{ vars.ISOTONE_SITE_URL || 'https://www.rizonesoft.com/' }}
 
 jobs:
   release:
@@ -94,12 +94,12 @@ jobs:
           # One resolution for both triggers: the dispatched tag input or the pushed tag.
           $dispatch = $env:EVENT -eq 'workflow_dispatch'
           $tag = if ($dispatch) { $env:INPUT_TAG.Trim() } else { $env:REF_NAME }
-          if ($tag -notmatch '^(nodus|imago|lumen|photon)-v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
+          if ($tag -notmatch '^(stilus|pinxit|albumen|isotone)-v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
             throw "Tag '$tag' is not <app>-v<SemVer>"
           }
           $prefix = $Matches[1]; $version = $Matches[2]
-          $app = @{ nodus = 'Nodus'; imago = 'Imago'; lumen = 'Lumen'; photon = 'Suite' }[$prefix]
-          $name = if ($app -eq 'Suite') { 'Photon Graphics Suite' } else { $app }
+          $app = @{ stilus = 'Stilus'; pinxit = 'Pinxit'; albumen = 'Albumen'; isotone = 'Suite' }[$prefix]
+          $name = if ($app -eq 'Suite') { 'Isotone Graphics Suite' } else { $app }
           $title = "$name $version"
           $draft = $dispatch -and $env:INPUT_DRAFT -eq 'true'
           "tag=$tag" >> $env:GITHUB_OUTPUT
@@ -117,27 +117,27 @@ jobs:
         id: storage
         env:
           # Only whether each secret is set reaches this step, never its value.
-          HAS_ENDPOINT: ${{ secrets.PHOTON_DL_S3_ENDPOINT != '' }}
-          HAS_BUCKET: ${{ secrets.PHOTON_DL_S3_BUCKET != '' }}
-          HAS_KEY_ID: ${{ secrets.PHOTON_DL_S3_ACCESS_KEY_ID != '' }}
-          HAS_SECRET: ${{ secrets.PHOTON_DL_S3_SECRET_ACCESS_KEY != '' }}
+          HAS_ENDPOINT: ${{ secrets.ISOTONE_DL_S3_ENDPOINT != '' }}
+          HAS_BUCKET: ${{ secrets.ISOTONE_DL_S3_BUCKET != '' }}
+          HAS_KEY_ID: ${{ secrets.ISOTONE_DL_S3_ACCESS_KEY_ID != '' }}
+          HAS_SECRET: ${{ secrets.ISOTONE_DL_S3_SECRET_ACCESS_KEY != '' }}
           DRAFT: ${{ steps.tag.outputs.draft }}
         run: |
           $missing = @()
-          if ($env:HAS_ENDPOINT -ne 'true') { $missing += 'PHOTON_DL_S3_ENDPOINT' }
-          if ($env:HAS_BUCKET -ne 'true') { $missing += 'PHOTON_DL_S3_BUCKET' }
-          if ($env:HAS_KEY_ID -ne 'true') { $missing += 'PHOTON_DL_S3_ACCESS_KEY_ID' }
-          if ($env:HAS_SECRET -ne 'true') { $missing += 'PHOTON_DL_S3_SECRET_ACCESS_KEY' }
+          if ($env:HAS_ENDPOINT -ne 'true') { $missing += 'ISOTONE_DL_S3_ENDPOINT' }
+          if ($env:HAS_BUCKET -ne 'true') { $missing += 'ISOTONE_DL_S3_BUCKET' }
+          if ($env:HAS_KEY_ID -ne 'true') { $missing += 'ISOTONE_DL_S3_ACCESS_KEY_ID' }
+          if ($env:HAS_SECRET -ne 'true') { $missing += 'ISOTONE_DL_S3_SECRET_ACCESS_KEY' }
           if ($missing.Count -eq 0) {
             "upload=true" >> $env:GITHUB_OUTPUT
-            Write-Host "Storage configured; downloads go to $env:PHOTON_DL_BASE_URL"
+            Write-Host "Storage configured; downloads go to $env:ISOTONE_DL_BASE_URL"
           } elseif ($env:DRAFT -eq 'true') {
             "upload=false" >> $env:GITHUB_OUTPUT
-            $msg = "Draft dry run: the upload to $env:PHOTON_DL_BASE_URL is SKIPPED because these secrets are not set: $($missing -join ', '). The files stay in the workflow artifact."
+            $msg = "Draft dry run: the upload to $env:ISOTONE_DL_BASE_URL is SKIPPED because these secrets are not set: $($missing -join ', '). The files stay in the workflow artifact."
             Write-Host "::notice title=Upload skipped::$msg"
             "> [!NOTE]`n> $msg" >> $env:GITHUB_STEP_SUMMARY
           } else {
-            Write-Host "::error title=Distribution storage not configured::A release publishes its binaries only on $env:PHOTON_DL_BASE_URL, and these secrets are not set: $($missing -join ', '). Refusing to publish a release without downloads."
+            Write-Host "::error title=Distribution storage not configured::A release publishes its binaries only on $env:ISOTONE_DL_BASE_URL, and these secrets are not set: $($missing -join ', '). Refusing to publish a release without downloads."
             exit 1
           }
       - name: Set up .NET (global.json)
@@ -165,10 +165,10 @@ jobs:
           Write-Host "Using $iscc (Inno Setup 7)"
           exit 0
       - name: Test
-        run: dotnet test Photon.slnx -c Release
+        run: dotnet test Isotone.slnx -c Release
       - name: Package
         run: |
-          # package.ps1 passes PHOTON_SITE_URL to the installer as its publisher URL.
+          # package.ps1 passes ISOTONE_SITE_URL to the installer as its publisher URL.
           $app = '${{ steps.tag.outputs.app }}'
           $version = '${{ steps.tag.outputs.version }}'
           if ($app -eq 'Suite') { ./scripts/package.ps1 -Suite -Version $version }
@@ -184,7 +184,7 @@ jobs:
       - name: Release notes, body, and update feed
         run: |
           # The CHANGELOG release heading names the tag (for example
-          # "## [nodus-v0.1.0] - 2026-10-01"); take that section up to the next
+          # "## [stilus-v0.1.0] - 2026-10-01"); take that section up to the next
           # "## " heading. release-manifest.ps1 adds the Download links, the SHA-256
           # table, and the source link, and writes the update feed.
           $tag = '${{ steps.tag.outputs.tag }}'
@@ -204,7 +204,7 @@ jobs:
             }
           }
           ./scripts/release-manifest.ps1 -Slug '${{ steps.tag.outputs.slug }}' -Name '${{ steps.tag.outputs.name }}' `
-            -Version '${{ steps.tag.outputs.version }}' -Tag $tag -BaseUrl $env:PHOTON_DL_BASE_URL -SiteUrl $env:PHOTON_SITE_URL `
+            -Version '${{ steps.tag.outputs.version }}' -Tag $tag -BaseUrl $env:ISOTONE_DL_BASE_URL -SiteUrl $env:ISOTONE_SITE_URL `
             -KeyPrefix '${{ steps.tag.outputs.keyprefix }}' -NotesFile $notesFile -OutDir artifacts/release `
             -Repository '${{ github.repository }}' -Uploaded:([bool]('${{ steps.storage.outputs.upload }}' -eq 'true'))
       - name: Install rclone
@@ -227,11 +227,11 @@ jobs:
           # rclone reads the remote "dl" from these variables; nothing is on a command line.
           RCLONE_CONFIG_DL_TYPE: s3
           RCLONE_CONFIG_DL_PROVIDER: Other
-          RCLONE_CONFIG_DL_ENDPOINT: ${{ secrets.PHOTON_DL_S3_ENDPOINT }}
-          RCLONE_CONFIG_DL_ACCESS_KEY_ID: ${{ secrets.PHOTON_DL_S3_ACCESS_KEY_ID }}
-          RCLONE_CONFIG_DL_SECRET_ACCESS_KEY: ${{ secrets.PHOTON_DL_S3_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_DL_ENDPOINT: ${{ secrets.ISOTONE_DL_S3_ENDPOINT }}
+          RCLONE_CONFIG_DL_ACCESS_KEY_ID: ${{ secrets.ISOTONE_DL_S3_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_DL_SECRET_ACCESS_KEY: ${{ secrets.ISOTONE_DL_S3_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_DL_NO_CHECK_BUCKET: 'true'
-          BUCKET: ${{ secrets.PHOTON_DL_S3_BUCKET }}
+          BUCKET: ${{ secrets.ISOTONE_DL_S3_BUCKET }}
         run: |
           $dest = "dl:$env:BUCKET/${{ steps.tag.outputs.keyprefix }}${{ steps.tag.outputs.slug }}/${{ steps.tag.outputs.version }}"
           # --immutable refuses to replace a published file with different bytes.
@@ -274,17 +274,17 @@ jobs:
         env:
           RCLONE_CONFIG_DL_TYPE: s3
           RCLONE_CONFIG_DL_PROVIDER: Other
-          RCLONE_CONFIG_DL_ENDPOINT: ${{ secrets.PHOTON_DL_S3_ENDPOINT }}
-          RCLONE_CONFIG_DL_ACCESS_KEY_ID: ${{ secrets.PHOTON_DL_S3_ACCESS_KEY_ID }}
-          RCLONE_CONFIG_DL_SECRET_ACCESS_KEY: ${{ secrets.PHOTON_DL_S3_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_DL_ENDPOINT: ${{ secrets.ISOTONE_DL_S3_ENDPOINT }}
+          RCLONE_CONFIG_DL_ACCESS_KEY_ID: ${{ secrets.ISOTONE_DL_S3_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_DL_SECRET_ACCESS_KEY: ${{ secrets.ISOTONE_DL_S3_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_DL_NO_CHECK_BUCKET: 'true'
-          BUCKET: ${{ secrets.PHOTON_DL_S3_BUCKET }}
+          BUCKET: ${{ secrets.ISOTONE_DL_S3_BUCKET }}
         run: |
           # Last, so the feed never names a release whose files or notes are missing.
           $dest = "dl:$env:BUCKET/${{ steps.tag.outputs.keyprefix }}update"
           & $env:RCLONE copy artifacts/release/update $dest --header-upload 'Cache-Control: public, max-age=300' --stats-one-line -v
           if ($LASTEXITCODE -ne 0) { throw "rclone copy of the update feed failed ($LASTEXITCODE)" }
-          Get-ChildItem artifacts/release/update -File | ForEach-Object { Write-Host "Feed: $env:PHOTON_DL_BASE_URL/${{ steps.tag.outputs.keyprefix }}update/$($_.Name)" }
+          Get-ChildItem artifacts/release/update -File | ForEach-Object { Write-Host "Feed: $env:ISOTONE_DL_BASE_URL/${{ steps.tag.outputs.keyprefix }}update/$($_.Name)" }
       - name: Upload dist as workflow artifact
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

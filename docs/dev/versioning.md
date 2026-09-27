@@ -6,17 +6,17 @@ The suite's apps version and release independently from one repository. Versions
 
 | Tag | Versions | Built by `release.yml` as (uploaded to `download.rizonesoft.com`) |
 | --- | -------- | ---------------------------- |
-| `nodus-v1.2.3` | Nodus projects (`src/Nodus/**`) | `Nodus-1.2.3-win-x64-Setup.exe`, `Nodus-1.2.3-win-x64-Portable.zip` |
-| `imago-v1.2.3` | Imago projects (`src/Imago/**`) | `Imago-1.2.3-win-x64-Setup.exe`, `Imago-1.2.3-win-x64-Portable.zip` |
-| `lumen-v1.2.3` | Lumen (planned) | Refused until Lumen ships (`scripts/apps.psd1`, `installer/Lumen.iss`) |
-| `photon-v1.2.3` | Suite bundle | `Photon-1.2.3-win-x64-Setup.exe`, `Photon-1.2.3-win-x64-Portable.zip` |
+| `stilus-v1.2.3` | Stilus projects (`src/Stilus/**`) | `Stilus-1.2.3-win-x64-Setup.exe`, `Stilus-1.2.3-win-x64-Portable.zip` |
+| `pinxit-v1.2.3` | Pinxit projects (`src/Pinxit/**`) | `Pinxit-1.2.3-win-x64-Setup.exe`, `Pinxit-1.2.3-win-x64-Portable.zip` |
+| `albumen-v1.2.3` | Albumen (planned) | Refused until Albumen ships (`scripts/apps.psd1`, `installer/Albumen.iss`) |
+| `isotone-v1.2.3` | Suite bundle | `Isotone-1.2.3-win-x64-Setup.exe`, `Isotone-1.2.3-win-x64-Portable.zip` |
 
-Each app's overlay (`src/<App>/Directory.Build.props`) sets `MinVerTagPrefix`. MinVer only considers tags with that prefix, so a `nodus-v` tag never moves Imago's version.
+Each app's overlay (`src/<App>/Directory.Build.props`) sets `MinVerTagPrefix`. MinVer only considers tags with that prefix, so a `stilus-v` tag never moves Pinxit's version.
 
 ## How a version is computed
 
-- **On a tagged commit:** the tag's version, for example `nodus-v1.2.3` gives `1.2.3`.
-- **After a tag:** the next patch as a prerelease with the commit height, for example `1.2.4-alpha.0.5` five commits after `nodus-v1.2.3`.
+- **On a tagged commit:** the tag's version, for example `stilus-v1.2.3` gives `1.2.3`.
+- **After a tag:** the next patch as a prerelease with the commit height, for example `1.2.4-alpha.0.5` five commits after `stilus-v1.2.3`.
 - **With no tag for that prefix:** `0.0.0-alpha.0.N`, where N is the commit height.
 - **Build metadata:** the commit SHA, for example `0.0.0-alpha.0.2+2e87a3d...`. It appears in `ProductVersion` / `InformationalVersion`.
 
@@ -33,36 +33,36 @@ Assembly attributes:
 To check what a project would get:
 
 ```powershell
-dotnet msbuild src/Nodus/Bezier.Desktop/Bezier.Desktop.csproj -t:MinVer -getProperty:MinVerVersion
+dotnet msbuild src/Stilus/Bezier.Desktop/Bezier.Desktop.csproj -t:MinVer -getProperty:MinVerVersion
 ```
 
 ## Shared libraries
 
-Shared code (a future `src/Photon.Core`, or anything else without an app overlay) defaults to the `photon-v` prefix. When an app is published, a shared library takes the version of that app:
+Shared code (a future `src/Isotone.Core`, or anything else without an app overlay) defaults to the `isotone-v` prefix. When an app is published, a shared library takes the version of that app:
 
 - `scripts/publish.ps1` passes `-p:MinVerTagPrefix=<app>-v` on the command line.
 - A command-line property is a **global property**, which overrides the value set in any project file.
 - Every project in the app's closure, shared libraries included, is therefore versioned from the app's tags.
 - `-Version x.y.z` (or `package.ps1 -Version`) passes `MinVerVersionOverride` in the same way.
 
-So `Photon.Core.dll` inside the Nodus 1.2.3 installer reports 1.2.3, and inside Imago 0.4.0 it reports 0.4.0. In a plain `dotnet build Photon.slnx`, shared libraries carry the `photon-v` version.
+So `Isotone.Core.dll` inside the Stilus 1.2.3 installer reports 1.2.3, and inside Pinxit 0.4.0 it reports 0.4.0. In a plain `dotnet build Isotone.slnx`, shared libraries carry the `isotone-v` version.
 
-The suite bundle (`package.ps1 -Suite`) passes the `photon-v` version to every app's publish. All binaries in a suite installer therefore carry the suite version.
+The suite bundle (`package.ps1 -Suite`) passes the `isotone-v` version to every app's publish. All binaries in a suite installer therefore carry the suite version.
 
 ## Suite and per-app releases
 
-Per-app tags (`nodus-v*`, `imago-v*`) release one app: `release.yml` runs `package.ps1 -App <App>` and publishes only that app's installer, portable ZIP, and `SHA256SUMS` (to `download.rizonesoft.com`, never attached to the GitHub release). It never builds or needs the suite installer. A `photon-v*` tag releases the Photon Graphics Suite: `package.ps1 -Suite` builds `Photon-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, one component per shipping app) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
+Per-app tags (`stilus-v*`, `pinxit-v*`) release one app: `release.yml` runs `package.ps1 -App <App>` and publishes only that app's installer, portable ZIP, and `SHA256SUMS` (to `download.rizonesoft.com`, never attached to the GitHub release). It never builds or needs the suite installer. A `isotone-v*` tag releases the Isotone Graphics Suite: `package.ps1 -Suite` builds `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, one component per shipping app) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
 
 The toolchain is not a version input: moving the SDK pin (today the .NET 11 release candidate, GA through `D00 T02 §8`) changes no app's version. Only tags do.
 
 ## Cutting a release
 
-1. Add a CHANGELOG section whose heading names the tag, for example `## [nodus-v0.2.0] - 2026-10-01`. The release workflow uses that section as the top of the release body. Without one, the body says so and links the commits of the tag.
+1. Add a CHANGELOG section whose heading names the tag, for example `## [stilus-v0.2.0] - 2026-10-01`. The release workflow uses that section as the top of the release body. Without one, the body says so and links the commits of the tag.
 2. Tag the commit on `main` and push the tag:
 
    ```powershell
-   git tag nodus-v0.2.0
-   git push origin nodus-v0.2.0
+   git tag stilus-v0.2.0
+   git push origin stilus-v0.2.0
    ```
 
 3. `.github/workflows/release.yml` then:
@@ -84,10 +84,10 @@ Operator decision 2026-09-27: binaries are distributed only from rizonesoft.com.
 
 | What | Where |
 | ---- | ----- |
-| Release files | `https://download.rizonesoft.com/<slug>/<version>/<file>`, slug `nodus`, `imago`, `lumen`, or `photon` (the suite), for example `https://download.rizonesoft.com/nodus/0.1.0/Nodus-0.1.0-win-x64-Setup.exe` |
+| Release files | `https://download.rizonesoft.com/<slug>/<version>/<file>`, slug `stilus`, `pinxit`, `albumen`, or `isotone` (the suite), for example `https://download.rizonesoft.com/stilus/0.1.0/Stilus-0.1.0-win-x64-Setup.exe` |
 | Checksums | `https://download.rizonesoft.com/<slug>/<version>/SHA256SUMS`, and the same table in the GitHub release body |
 | Update feed | `https://download.rizonesoft.com/update/<slug>.json` for the latest stable release, `update/<slug>-prerelease.json` for the latest prerelease |
-| Product page | one value, `PHOTON_SITE_URL` (default `https://www.rizonesoft.com/`), with `?utm_source=github&utm_medium=<place>` on links from GitHub |
+| Product page | one value, `ISOTONE_SITE_URL` (default `https://www.rizonesoft.com/`), with `?utm_source=github&utm_medium=<place>` on links from GitHub |
 | Draft dry runs | under `drafts/` (`drafts/<slug>/<version>/`, `drafts/update/`), never the live paths |
 
 The feed is JSON: `schema` (1), `app`, `name`, `version`, `prerelease`, `date`, `tag`, `url` (the x64 installer), `sha256`, `size`, `notes` (the GitHub release page), `page` (the product page), `source` (the tag on GitHub), `sha256sums`, and `files` (every file with its `name`, `kind`, `runtime`, `url`, `sha256`, and `size`). A published file is never replaced: the upload runs with `--immutable`, so re-running a release with different bytes fails instead of changing a download people already verified.
@@ -96,21 +96,21 @@ The workflow reads these repository settings (Settings, Secrets and variables, A
 
 | Name | Kind | Meaning |
 | ---- | ---- | ------- |
-| `PHOTON_DL_S3_ENDPOINT` | secret | The S3 API endpoint of the storage provider |
-| `PHOTON_DL_S3_BUCKET` | secret | The bucket behind `download.rizonesoft.com` |
-| `PHOTON_DL_S3_ACCESS_KEY_ID` | secret | An access key limited to that bucket |
-| `PHOTON_DL_S3_SECRET_ACCESS_KEY` | secret | Its secret |
-| `PHOTON_DL_BASE_URL` | variable | The public base URL (default `https://download.rizonesoft.com`) |
-| `PHOTON_SITE_URL` | variable | The product page (default `https://www.rizonesoft.com/`), also the installer's publisher URL |
+| `ISOTONE_DL_S3_ENDPOINT` | secret | The S3 API endpoint of the storage provider |
+| `ISOTONE_DL_S3_BUCKET` | secret | The bucket behind `download.rizonesoft.com` |
+| `ISOTONE_DL_S3_ACCESS_KEY_ID` | secret | An access key limited to that bucket |
+| `ISOTONE_DL_S3_SECRET_ACCESS_KEY` | secret | Its secret |
+| `ISOTONE_DL_BASE_URL` | variable | The public base URL (default `https://download.rizonesoft.com`) |
+| `ISOTONE_SITE_URL` | variable | The product page (default `https://www.rizonesoft.com/`), also the installer's publisher URL |
 
 A pushed tag with any secret missing fails at its second step, before anything is built, so no release is ever published without its downloads. The upload tool is rclone (MIT), fetched from its official release and checked against a pinned SHA-256 (`RCLONE_VERSION` and `RCLONE_SHA256` in the workflow); the secrets reach rclone only as environment variables, never on a command line or in a log.
 
 ## The draft dry run
 
-`release.yml` also runs from a manual dispatch with a `tag` input and `draft` (default true), the mode `D00 T02 §7` uses for `nodus-v0.1.0-alpha.1`:
+`release.yml` also runs from a manual dispatch with a `tag` input and `draft` (default true), the mode `D00 T02 §7` uses for `stilus-v0.1.0-alpha.1`:
 
 ```powershell
-gh workflow run release.yml --ref main -f tag=nodus-v0.1.0-alpha.1 -f draft=true
+gh workflow run release.yml --ref main -f tag=stilus-v0.1.0-alpha.1 -f draft=true
 ```
 
 The tag is not pushed: the draft release targets the dispatched commit, and a draft creates no tag until it is published. With the storage configured, the files and the feed go under `drafts/`; without it, the run skips the upload with a notice in its summary, and the files are only in the run's `dist-<tag>` workflow artifact (`gh run download <run id> -n dist-<tag>`). Delete the draft after inspection (`gh release delete <tag> --yes --cleanup-tag`) and remove its `drafts/` folder from the bucket.
@@ -120,7 +120,7 @@ Only annotated or lightweight tags that match `<prefix>-v<SemVer>` are accepted.
 ## Local packaging of a specific version
 
 ```powershell
-pwsh scripts/package.ps1 -App Imago -Version 0.2.0
+pwsh scripts/package.ps1 -App Pinxit -Version 0.2.0
 pwsh scripts/package.ps1 -Suite -Version 1.0.0
 ```
 

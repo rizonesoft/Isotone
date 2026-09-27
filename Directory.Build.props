@@ -1,6 +1,6 @@
 <Project>
   <!--
-    Photon Graphics Suite: the one shared build configuration.
+    Isotone Graphics Suite: the one shared build configuration.
     Every project under this tree imports this file. App folders may add a thin
     Directory.Build.props overlay that imports this one first and only sets the
     app's MinVer tag prefix, product name, and (for legacy code) documented
@@ -36,7 +36,7 @@
 
   <!-- Tests: one settings file (results location plus the quarantine list). -->
   <PropertyGroup>
-    <RunSettingsFilePath>$(MSBuildThisFileDirectory)tests/Photon.runsettings</RunSettingsFilePath>
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)tests/Isotone.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <!-- Identity. The copyright holder is Rizonetech (Pty) Ltd; Rizonesoft is its brand and
@@ -44,7 +44,7 @@
   <PropertyGroup>
     <Company>Rizonetech (Pty) Ltd</Company>
     <Authors>Rizonesoft</Authors>
-    <Product Condition="'$(Product)' == ''">Photon Graphics Suite</Product>
+    <Product Condition="'$(Product)' == ''">Isotone Graphics Suite</Product>
     <Copyright>Copyright (C) 2025-2026 Rizonetech (Pty) Ltd</Copyright>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
@@ -63,19 +63,19 @@
 
   <!--
     Versioning: MinVer derives the version from git tags. Each app overlay sets
-    MinVerTagPrefix (nodus-v, imago-v, lumen-v). Anything without an overlay
-    (shared libraries such as a future Photon.Core) falls back to photon-v, and
+    MinVerTagPrefix (stilus-v, pinxit-v, albumen-v). Anything without an overlay
+    (shared libraries such as a future Isotone.Core) falls back to isotone-v, and
     scripts/publish.ps1 passes -p:MinVerTagPrefix=<app>-v as a global property so
     a shared library always carries the version of the app being published.
   -->
   <PropertyGroup>
-    <MinVerTagPrefix Condition="'$(MinVerTagPrefix)' == ''">photon-v</MinVerTagPrefix>
+    <MinVerTagPrefix Condition="'$(MinVerTagPrefix)' == ''">isotone-v</MinVerTagPrefix>
     <MinVerDefaultPreReleaseIdentifiers>alpha.0</MinVerDefaultPreReleaseIdentifiers>
     <MinVerAutoIncrement>patch</MinVerAutoIncrement>
     <MinVerVerbosity>minimal</MinVerVerbosity>
     <!-- Fourth FileVersion part: the CI run number (0 for local builds). -->
-    <PhotonBuildNumber Condition="'$(PhotonBuildNumber)' == '' and '$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</PhotonBuildNumber>
-    <PhotonBuildNumber Condition="'$(PhotonBuildNumber)' == ''">0</PhotonBuildNumber>
+    <IsotoneBuildNumber Condition="'$(IsotoneBuildNumber)' == '' and '$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</IsotoneBuildNumber>
+    <IsotoneBuildNumber Condition="'$(IsotoneBuildNumber)' == ''">0</IsotoneBuildNumber>
   </PropertyGroup>
 
   <ItemGroup>

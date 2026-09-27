@@ -27,4 +27,4 @@ The bar is not in the tab order; its commands exist in menus. Screen readers get
 
 ## WPF
 
-`StatusBar` restyled as `Photon.StatusBar` with `StatusBarItem`s and `Separator` keyed `StatusBar.SeparatorStyleKey` (1 x 12). Coordinates: `TextBlock` with `FontFamily="{DynamicResource font-mono}"` and `Typography.NumeralAlignment="Tabular"`. `AutomationProperties.LiveSetting="Polite"` on the status word.
+`StatusBar` restyled as `Isotone.StatusBar` with `StatusBarItem`s and `Separator` keyed `StatusBar.SeparatorStyleKey` (1 x 12). Coordinates: `TextBlock` with `FontFamily="{DynamicResource font-mono}"` and `Typography.NumeralAlignment="Tabular"`. `AutomationProperties.LiveSetting="Polite"` on the status word.
