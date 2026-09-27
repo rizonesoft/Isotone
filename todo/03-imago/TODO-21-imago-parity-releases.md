@@ -40,7 +40,7 @@ track: I21
 
 ## Outcome
 
-- Twelve published GitHub releases, `imago-v0.2.0` to `imago-v1.0.0`, each with an installer, a portable ZIP, and `SHA256SUMS` that match the downloads, and each proven on a clean Windows 11 machine with no .NET SDK.
+- Twelve published GitHub releases, `imago-v0.2.0` to `imago-v1.0.0`, each linking an installer, a portable ZIP, and `SHA256SUMS` on `download.rizonesoft.com` that match the downloads (no files attached to the GitHub release, operator decision 2026-09-27), and each proven on a clean Windows 11 machine with no .NET SDK.
 - At each tag, every catalog row planned to that phase resolves to a stamped section, or was rerouted in the catalog with its reason in the release commit.
 - Each release's `CHANGELOG.md` section names the `IP-` ranges it shipped by catalog area, and the Imago user guide has a page for every surface the phase added.
 - A document saved by each release opens in the previous release with its new live content degraded to the rendered PNG fallback, never lost.
@@ -80,6 +80,8 @@ track: I21
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
 
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.2.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
+
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 16` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 16 section resolves to a stamped section.
 - [ ] Reroute in `docs/parity/imago-parity.md` any Phase 16 row that cannot ship, to a later section or to the backlog through `add-todo`, updating the catalog's Totals table and giving the reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 (no `parity-*` finding) and the parity query shows no Phase 16 row pointing at an unshipped section.
@@ -91,11 +93,11 @@ track: I21
 - [ ] Drive one action per new Phase 16 surface on the installed build and commit the captures under `docs/captures/imago/release-0.2.0/`. Done when: every Phase 16 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.1.0` and record how the `imago:` document block (guides, grids, notes, sample points, snapshots, saved history, view points), the layer kinds, masks, and blend modes this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.2.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.2.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.2.0 as the current Imago release and only `imago-v0.2.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.2.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.2.0/`; `gh release view imago-v0.2.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 16` output is quoted with zero Phase 16 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.2.0/`; `gh release view imago-v0.2.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.2.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 16` output is quoted with zero Phase 16 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 2. Imago 0.3.0 (Phase 17)
 
@@ -106,6 +108,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.3.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 17` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 17 section resolves to a stamped section.
@@ -118,11 +122,11 @@ track: I21
 - [ ] Drive one action per new Phase 17 surface on the installed build and commit the captures under `docs/captures/imago/release-0.3.0/`. Done when: every Phase 17 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.2.0` and record how the saved selections, alpha and spot channels, layer styles, embedded and linked smart objects, layer comps, and artboards this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.3.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.3.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.3.0 as the current Imago release and only `imago-v0.3.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.3.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.3.0/`; `gh release view imago-v0.3.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 17` output is quoted with zero Phase 17 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.3.0/`; `gh release view imago-v0.3.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.3.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 17` output is quoted with zero Phase 17 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 3. Imago 0.4.0 (Phase 18)
 
@@ -133,6 +137,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.4.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 18` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 18 section resolves to a stamped section.
@@ -145,11 +151,11 @@ track: I21
 - [ ] Drive one action per new Phase 18 surface on the installed build and commit the captures under `docs/captures/imago/release-0.4.0/`. Done when: every Phase 18 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.3.0` and record how the adjustment layers, image modes, and swatch documents this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.4.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.4.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.4.0 as the current Imago release and only `imago-v0.4.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.4.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.4.0/`; `gh release view imago-v0.4.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 18` output is quoted with zero Phase 18 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.4.0/`; `gh release view imago-v0.4.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.4.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 18` output is quoted with zero Phase 18 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 4. Imago 0.5.0 (Phase 19)
 
@@ -160,6 +166,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.5.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 19` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 19 section resolves to a stamped section.
@@ -172,11 +180,11 @@ track: I21
 - [ ] Drive one action per new Phase 19 surface on the installed build and commit the captures under `docs/captures/imago/release-0.5.0/`. Done when: every Phase 19 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.4.0` and record how the gradient and pattern fill layers, brush presets, and symmetry settings this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.5.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.5.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.5.0 as the current Imago release and only `imago-v0.5.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.5.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.5.0/`; `gh release view imago-v0.5.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 19` output is quoted with zero Phase 19 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.5.0/`; `gh release view imago-v0.5.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.5.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 19` output is quoted with zero Phase 19 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 5. Imago 0.6.0 (Phase 20)
 
@@ -187,6 +195,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.6.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 20` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 20 section resolves to a stamped section.
@@ -199,11 +209,11 @@ track: I21
 - [ ] Drive one action per new Phase 20 surface on the installed build and commit the captures under `docs/captures/imago/release-0.6.0/`. Done when: every Phase 20 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.5.0` and record how the live transforms, warps, and clone-source settings this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.6.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.6.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.6.0 as the current Imago release and only `imago-v0.6.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.6.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.6.0/`; `gh release view imago-v0.6.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 20` output is quoted with zero Phase 20 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.6.0/`; `gh release view imago-v0.6.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.6.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 20` output is quoted with zero Phase 20 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 6. Imago 0.7.0 (Phase 21)
 
@@ -214,6 +224,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.7.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 21` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 21 section resolves to a stamped section.
@@ -226,11 +238,11 @@ track: I21
 - [ ] Drive one action per new Phase 21 surface on the installed build and commit the captures under `docs/captures/imago/release-0.7.0/`. Done when: every Phase 21 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.6.0` and record how the smart filters and live filter layers this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.7.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.7.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.7.0 as the current Imago release and only `imago-v0.7.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.7.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.7.0/`; `gh release view imago-v0.7.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 21` output is quoted with zero Phase 21 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.7.0/`; `gh release view imago-v0.7.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.7.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 21` output is quoted with zero Phase 21 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 7. Imago 0.8.0 (Phase 22)
 
@@ -241,6 +253,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.8.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 22` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 22 section resolves to a stamped section.
@@ -253,11 +267,11 @@ track: I21
 - [ ] Drive one action per new Phase 22 surface on the installed build and commit the captures under `docs/captures/imago/release-0.8.0/`. Done when: every Phase 22 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.7.0` and record how the render, light, stylize, artistic, and generic filters this phase added to live filter layers degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.8.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.8.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.8.0 as the current Imago release and only `imago-v0.8.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.8.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.8.0/`; `gh release view imago-v0.8.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 22` output is quoted with zero Phase 22 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.8.0/`; `gh release view imago-v0.8.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.8.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 22` output is quoted with zero Phase 22 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 8. Imago 0.9.0 (Phase 23)
 
@@ -268,6 +282,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.9.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 23` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 23 section resolves to a stamped section.
@@ -280,11 +296,11 @@ track: I21
 - [ ] Drive one action per new Phase 23 surface on the installed build and commit the captures under `docs/captures/imago/release-0.9.0/`. Done when: every Phase 23 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.8.0` and record how the Camera Raw smart filters, 32-bit documents, and image-stack smart objects this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.9.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.9.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.9.0 as the current Imago release and only `imago-v0.9.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.9.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.9.0/`; `gh release view imago-v0.9.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 23` output is quoted with zero Phase 23 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.9.0/`; `gh release view imago-v0.9.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.9.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 23` output is quoted with zero Phase 23 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 9. Imago 0.10.0 (Phase 24)
 
@@ -295,6 +311,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.10.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 24` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 24 section resolves to a stamped section.
@@ -307,11 +325,11 @@ track: I21
 - [ ] Drive one action per new Phase 24 surface on the installed build and commit the captures under `docs/captures/imago/release-0.10.0/`. Done when: every Phase 24 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.9.0` and record how the text layers, paths, shape and vector layers, and frames this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.10.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.10.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.10.0 as the current Imago release and only `imago-v0.10.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.10.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.10.0/`; `gh release view imago-v0.10.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 24` output is quoted with zero Phase 24 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.10.0/`; `gh release view imago-v0.10.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.10.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 24` output is quoted with zero Phase 24 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 10. Imago 0.11.0 (Phase 25)
 
@@ -322,6 +340,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.11.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 25` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 25 section resolves to a stamped section.
@@ -334,11 +354,11 @@ track: I21
 - [ ] Drive one action per new Phase 25 surface on the installed build and commit the captures under `docs/captures/imago/release-0.11.0/`. Done when: every Phase 25 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.10.0` and record how the slices, metadata, and proof settings this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.11.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.11.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.11.0 as the current Imago release and only `imago-v0.11.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.11.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.11.0/`; `gh release view imago-v0.11.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 25` output is quoted with zero Phase 25 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.11.0/`; `gh release view imago-v0.11.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.11.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 25` output is quoted with zero Phase 25 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 11. Imago 0.12.0 (Phase 26)
 
@@ -349,6 +369,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.12.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 26` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 26 section resolves to a stamped section.
@@ -361,11 +383,11 @@ track: I21
 - [ ] Drive one action per new Phase 26 surface on the installed build and commit the captures under `docs/captures/imago/release-0.12.0/`. Done when: every Phase 26 UI section has one capture there and the Serilog log of the session shows 0 `[ERR]` lines.
 - [ ] Open a document saved by this release in `imago-v0.11.0` and record how the AI provenance records and the generated layer groups and masks this phase added degrade there. Done when: every new live layer renders as its PNG fallback per `D03 T08 §1`, no layer is lost, and the layer counts before and after are quoted.
 - [ ] Push the tag `imago-v0.12.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 0.12.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 0.12.0 as the current Imago release and only `imago-v0.12.0` points at the release commit.
 - [ ] Commit: `"release: Imago 0.12.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.12.0/`; `gh release view imago-v0.12.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 26` output is quoted with zero Phase 26 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-0.12.0/`; `gh release view imago-v0.12.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.12.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 26` output is quoted with zero Phase 26 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## 12. Imago 1.0.0 (Phase 27): the parity catalog complete
 
@@ -376,6 +398,8 @@ track: I21
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/1.0.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog imago --phase 27` (from `D00 T01 §7`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 27 section resolves to a stamped section.
@@ -391,16 +415,16 @@ track: I21
 - [ ] Confirm the accessibility and localization audit is stamped with `python scripts/todo-graph.py resolve 'D03 T07 §16'`. Done when: it exits 3 (shipped), so no parity surface ships unaudited.
 - [ ] State in `README.md` and in `docs/user/imago/README.md` that Imago covers the Photoshop 27.10, Affinity 3.3, and GIMP 3.2.6 parity catalog, linking `docs/parity/imago-parity.md` and its excluded, other-app, and backlog rows. Done when: both paragraphs and the links exist.
 - [ ] Push the tag `imago-v1.0.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable app starts and opens a fixture.
 - [ ] Update `README.md`'s Imago status line to 1.0.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `lumen-v*` tag moved. Done when: the README names 1.0.0 as the current Imago release and only `imago-v1.0.0` points at the release commit.
 - [ ] Run `pwsh scripts/perf-gate.ps1` (from `D03 T07 §18`) on the release build and quote its table. Done when: every scenario is within its budget and no scenario regresses more than the gate's tolerance over the committed baseline.
 - [ ] Commit: `"release: Imago 1.0.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-1.0.0/`; `gh release view imago-v1.0.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 27` output is quoted with zero Phase 27 rows pointing at an unshipped section. The whole-catalog `query parity --catalog imago` output reports zero unshipped `plan` rows across Phases 16 to 27. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/imago/release-1.0.0/`; `gh release view imago-v1.0.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/1.0.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog imago --phase 27` output is quoted with zero Phase 27 rows pointing at an unshipped section. The whole-catalog `query parity --catalog imago` output reports zero unshipped `plan` rows across Phases 16 to 27. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log, or with catalog rows still planned to unshipped sections.
 
 ## Verification
 
-- [ ] `gh release list` shows `imago-v0.2.0` to `imago-v1.0.0`, none a prerelease, each with installer, ZIP, and checksums that match
+- [ ] `gh release list` shows `imago-v0.2.0` to `imago-v1.0.0`, none a prerelease, each with no attached files and a body linking the installer, ZIP, and checksums on `download.rizonesoft.com` that match
 - [ ] `python scripts/todo-graph.py query parity --catalog imago` reports zero `plan` rows whose section is unshipped across Phases 16 to 27
 - [ ] `CHANGELOG.md` has an Imago section headed by each of the twelve tags
 - [ ] `docs/captures/imago/release-<version>/` exists for each of the twelve versions

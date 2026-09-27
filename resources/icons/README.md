@@ -40,6 +40,8 @@ Raster output (PNG sizes and the multi-resolution `<app>.ico`) is generated from
 
 Every file in this folder was created for the Photon project on 2026-09-27 and is licensed under GPL-3.0, with the rest of the repository (see `LICENSE`). No third-party art, stock illustration, or font is used in any of them, so no attribution is owed.
 
+Copyright (C) 2025-2026 Rizonetech (Pty) Ltd. Rizonesoft is a brand of Rizonetech (Pty) Ltd. The GPL covers the files as artwork; the app icons also identify the official apps and are trademarks of Rizonetech (Pty) Ltd, so a modified version you distribute uses its own icons (see [`TRADEMARKS.md`](../../TRADEMARKS.md)).
+
 ## Old files and their status
 
 - `nodus/nodus.ico` and `nodus/PNG/nodus_{16,24,32,48,64,72,128,256,512}.png` are the old Nodus design, from before the Direction C decision. They stay until the export in `D00 T03 §3` regenerates them from the new SVGs, because `installer/Nodus.iss` and `installer/Suite.iss` reference `nodus/nodus.ico`. The export overwrites them in place under the same names.

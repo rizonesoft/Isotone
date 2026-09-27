@@ -47,7 +47,7 @@ track: L15
 
 ## Outcome
 
-- Ten published GitHub releases, `lumen-v0.2.0` to `lumen-v1.0.0`, each with an installer, a portable ZIP carrying `Lumen.exe` and `LumenViewer.exe`, and `SHA256SUMS` that match the downloads, and each proven on a clean Windows 11 machine with no .NET SDK.
+- Ten published GitHub releases, `lumen-v0.2.0` to `lumen-v1.0.0`, each linking an installer, a portable ZIP carrying `Lumen.exe` and `LumenViewer.exe`, and `SHA256SUMS` on `download.rizonesoft.com` that match the downloads (no files attached to the GitHub release, operator decision 2026-09-27), and each proven on a clean Windows 11 machine with no .NET SDK.
 - At each tag, every catalog row planned to that phase resolves to a stamped section, or was rerouted in the catalog with its reason in the release commit.
 - Each release's installed build leaves every original byte-identical with the opt-in writes at their defaults, and quotes the viewer (and, from 0.4.0, browse) budgets within their recorded limits.
 - Each release's `CHANGELOG.md` section names the `LP-` ranges it shipped by catalog area, and the Lumen user guide has a page for every surface the phase added.
@@ -85,6 +85,8 @@ track: L15
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
 
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.2.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
+
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 30` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 30 section resolves to a stamped section.
 - [ ] Reroute in `docs/parity/lumen-parity.md` any Phase 30 row that cannot ship, to a later section or to the backlog through `add-todo`, updating the catalog's Totals table and Areas counts and giving the reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 (no `parity-*` finding) and the parity query shows no Phase 30 row pointing at an unshipped section.
@@ -98,11 +100,11 @@ track: L15
 - [ ] Quote the viewer's startup budget from `docs/dev/lumen/viewer-budgets.md` (cold, warm, resident, next image, RAW preview, working set) measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] Confirm `LumenViewer.exe` is in the installer and the portable ZIP, register it through the installer task "Register Lumen Viewer for image types", set it in Default Apps, and open a `.heic` and a `.cr3` by double-click in Explorer. Done when: both files open in Lumen Viewer (captures) and the uninstall's `--unregister` leaves no `RegisteredApplications` value (reg query quoted).
 - [ ] Push the tag `lumen-v0.2.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.2.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.2.0 as the current Lumen release and only `lumen-v0.2.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.2.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.2.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.2.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 30` output is quoted with zero Phase 30 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.2.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.2.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.2.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 30` output is quoted with zero Phase 30 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 2. Lumen 0.3.0 (Phase 31)
 
@@ -113,6 +115,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.3.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 31` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 31 section resolves to a stamped section.
@@ -127,11 +131,11 @@ track: L15
 - [ ] Quote the viewer's startup budget from `docs/dev/lumen/viewer-budgets.md` measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] On the installed build, prove the opt-in writes this phase introduces (`D04 T11 §1`): turn on `Lumen.Originals.InPlace.Save` and save a viewer quick edit over a copied fixture (`D04 T04 §11`), turn on `Lumen.Originals.InPlace.Rotate` and rotate a copied JPEG losslessly in place (`D04 T04 §16`), then run Restore Original from Backup on both. Done when: each backup's SHA-256 equals the pre-write hash, the rotated file's DCT coefficients equal the jpegtran golden, each restore returns the pre-write hash, and the log lines are quoted.
 - [ ] Push the tag `lumen-v0.3.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.3.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.3.0 as the current Lumen release and only `lumen-v0.3.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.3.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.3.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.3.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 31` output is quoted with zero Phase 31 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.3.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.3.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.3.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 31` output is quoted with zero Phase 31 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 3. Lumen 0.4.0 (Phase 32)
 
@@ -142,6 +146,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.4.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 32` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 32 section resolves to a stamped section.
@@ -155,11 +161,11 @@ track: L15
 - [ ] Re-run the original-file guard on the installed build with every `Lumen.Originals.*` setting at its default: browsing an unimported folder, background indexing, file operations with undo, the private folder, and archives, plus every earlier workflow, over a copied fixture folder, and quote the before-and-after SHA-256 and last-write table of every original. Done when: every original is unchanged.
 - [ ] Quote the viewer's startup budget and the browse budget from `docs/dev/lumen/browse-budgets.md` (`D04 T05 §2`) measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] Push the tag `lumen-v0.4.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.4.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.4.0 as the current Lumen release and only `lumen-v0.4.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.4.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.4.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.4.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 32` output is quoted with zero Phase 32 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.4.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.4.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.4.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 32` output is quoted with zero Phase 32 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 4. Lumen 0.5.0 (Phase 33)
 
@@ -170,6 +176,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.5.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 33` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 33 section resolves to a stamped section.
@@ -183,11 +191,11 @@ track: L15
 - [ ] Re-run the original-file guard on the installed build with every `Lumen.Originals.*` setting at its default: stacks, collections, search, catalog backup and maintenance, and smart previews, plus every earlier workflow, over a copied fixture folder, and quote the before-and-after SHA-256 and last-write table of every original. Done when: every original is unchanged.
 - [ ] Quote the viewer's startup budget and the browse budget measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] Push the tag `lumen-v0.5.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.5.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.5.0 as the current Lumen release and only `lumen-v0.5.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.5.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.5.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.5.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 33` output is quoted with zero Phase 33 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.5.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.5.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.5.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 33` output is quoted with zero Phase 33 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 5. Lumen 0.6.0 (Phase 34)
 
@@ -198,6 +206,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.6.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 34` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 34 section resolves to a stamped section.
@@ -211,11 +221,11 @@ track: L15
 - [ ] Re-run the original-file guard on the installed build with every `Lumen.Originals.*` setting at its default: metadata edits written to sidecars, an import with a preset, a watched-folder auto import, a DNG conversion, and a map placement, plus every earlier workflow, over a copied fixture folder, and quote the before-and-after SHA-256 and last-write table of every original. Done when: every original is unchanged.
 - [ ] Quote the viewer's startup budget and the browse budget measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] Push the tag `lumen-v0.6.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.6.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.6.0 as the current Lumen release and only `lumen-v0.6.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.6.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.6.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.6.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 34` output is quoted with zero Phase 34 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.6.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.6.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.6.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 34` output is quoted with zero Phase 34 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 6. Lumen 0.7.0 (Phase 35)
 
@@ -226,6 +236,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.7.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 35` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 35 section resolves to a stamped section.
@@ -239,11 +251,11 @@ track: L15
 - [ ] Re-run the original-file guard on the installed build with every `Lumen.Originals.*` setting at its default: a develop session across every panel with presets and sync, plus every earlier workflow, over a copied fixture folder, and quote the before-and-after SHA-256 and last-write table of every original. Done when: every original is unchanged.
 - [ ] Quote the viewer's startup budget and the browse budget measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] Push the tag `lumen-v0.7.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.7.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.7.0 as the current Lumen release and only `lumen-v0.7.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.7.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.7.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.7.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 35` output is quoted with zero Phase 35 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.7.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.7.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.7.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 35` output is quoted with zero Phase 35 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 7. Lumen 0.8.0 (Phase 36)
 
@@ -254,6 +266,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.8.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 36` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 36 section resolves to a stamped section.
@@ -267,11 +281,11 @@ track: L15
 - [ ] Re-run the original-file guard on the installed build with every `Lumen.Originals.*` setting at its default: masked develops, the new develop stages, soft proofing, and an HDR and a panorama merge writing new files, plus every earlier workflow, over a copied fixture folder, and quote the before-and-after SHA-256 and last-write table of every original. Done when: every original is unchanged.
 - [ ] Quote the viewer's startup budget and the browse budget measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] Push the tag `lumen-v0.8.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.8.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.8.0 as the current Lumen release and only `lumen-v0.8.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.8.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.8.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.8.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 36` output is quoted with zero Phase 36 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.8.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.8.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.8.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 36` output is quoted with zero Phase 36 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 8. Lumen 0.9.0 (Phase 37)
 
@@ -282,6 +296,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.9.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 37` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 37 section resolves to a stamped section.
@@ -296,11 +312,11 @@ track: L15
 - [ ] Re-run the original-file guard on the installed build with every `Lumen.Originals.*` setting at its default: face detection through the vision model and face naming from recorded responses (operator decision 2026-09-27; recognition is backlog B-052), AI keywords from recorded responses, similar-photo search, and AI masks, plus every earlier workflow, over a copied fixture folder, and quote the before-and-after SHA-256 and last-write table of every original. Done when: every original is unchanged.
 - [ ] Quote the viewer's startup budget and the browse budget measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] Push the tag `lumen-v0.9.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.9.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.9.0 as the current Lumen release and only `lumen-v0.9.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.9.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.9.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.9.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 37` output is quoted with zero Phase 37 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.9.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.9.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.9.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 37` output is quoted with zero Phase 37 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 9. Lumen 0.10.0 (Phase 38)
 
@@ -311,6 +327,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/0.10.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 38` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 38 section resolves to a stamped section.
@@ -324,11 +342,11 @@ track: L15
 - [ ] Re-run the original-file guard on the installed build with every `Lumen.Originals.*` setting at its default: exports with presets and watermarks, print to JPEG, a contact sheet, a slideshow PDF, a web gallery, and a book PDF, plus every earlier workflow, over a copied fixture folder, and quote the before-and-after SHA-256 and last-write table of every original. Done when: every original is unchanged.
 - [ ] Quote the viewer's startup budget and the browse budget measured on the installed build on the reference machine. Done when: every figure is within its recorded budget; a figure over budget blocks the tag.
 - [ ] Push the tag `lumen-v0.10.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 0.10.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 0.10.0 as the current Lumen release and only `lumen-v0.10.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 0.10.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.10.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.10.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 38` output is quoted with zero Phase 38 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-0.10.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v0.10.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/0.10.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 38` output is quoted with zero Phase 38 rows pointing at an unshipped section. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 
 ## 10. Lumen 1.0.0 (Phase 39): the parity catalog complete
 
@@ -339,6 +357,8 @@ track: L15
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed Lumen and Lumen Viewer on the clean machine and driving each new surface needs an interactive desktop
+
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/lumen/1.0.0/` and writes the feed `update/lumen.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` and the gate table is quoted in the stamp.
 - [ ] Run `python scripts/todo-graph.py query parity --catalog lumen --phase 39` (from `D00 T01 §8`) and quote its report. Done when: every catalog row whose status is `plan <ref>` for a Phase 39 section resolves to a stamped section.
@@ -355,14 +375,14 @@ track: L15
 - [ ] Confirm the accessibility and localization audit is stamped with `python scripts/todo-graph.py resolve 'D04 T02 §9'`. Done when: it exits 3 (shipped), so no parity surface ships unaudited.
 - [ ] State in `README.md` and in `docs/user/lumen/README.md` that Lumen covers the Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76 parity catalog, linking `docs/parity/lumen-parity.md` and its excluded, other-app, and backlog rows. Done when: both paragraphs and the links exist.
 - [ ] Push the tag `lumen-v1.0.0`. Done when: the `release` workflow run is `success` (URL quoted).
-- [ ] Download the release assets, verify `SHA256SUMS` with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
+- [ ] Download the release files from `download.rizonesoft.com` (the links in the release body), verify `SHA256SUMS` and the body's SHA-256 table with `Get-FileHash`, and run the portable ZIP from an empty folder. Done when: the hashes match and the portable Lumen and Lumen Viewer both start and open a fixture.
 - [ ] Update `README.md`'s Lumen status line to 1.0.0 and confirm with `git tag --points-at HEAD` that no `nodus-v*` or `imago-v*` tag moved. Done when: the README names 1.0.0 as the current Lumen release and only `lumen-v1.0.0` points at the release commit.
 - [ ] Commit: `"release: Lumen 1.0.0"`
 
-**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-1.0.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v1.0.0 --json isPrerelease,assets` shows `isPrerelease: false` and three assets; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 39` output is quoted with zero Phase 39 rows pointing at an unshipped section. The whole-catalog `query parity --catalog lumen` output reports zero unshipped `plan` rows across Phases 30 to 39 and zero `parity-ip-route-dead` findings. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
+**Test checkpoint:** Driven run with evidence: the clean-machine install log is quoted step by step with the smoke captures under `docs/captures/lumen/release-1.0.0/`; the unchanged-originals SHA-256 table from the installed build is quoted with every original unchanged; `gh release view lumen-v1.0.0 --json isPrerelease,assets,body` shows `isPrerelease: false`, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/lumen/1.0.0/`; `Get-FileHash` of the downloaded installer matches `SHA256SUMS`; and the `python scripts/todo-graph.py query parity --catalog lumen --phase 39` output is quoted with zero Phase 39 rows pointing at an unshipped section. The whole-catalog `query parity --catalog lumen` output reports zero unshipped `plan` rows across Phases 30 to 39 and zero `parity-ip-route-dead` findings. Cheaper substitute that fails: tagging from a developer machine without the clean-machine log and the installed-build hash table, or with catalog rows still planned to unshipped sections.
 ## Verification
 
-- [ ] `gh release list` shows `lumen-v0.2.0` to `lumen-v1.0.0`, none a prerelease, each with installer, ZIP, and checksums that match
+- [ ] `gh release list` shows `lumen-v0.2.0` to `lumen-v1.0.0`, none a prerelease, each with no attached files and a body linking the installer, ZIP, and checksums on `download.rizonesoft.com` that match
 - [ ] `python scripts/todo-graph.py query parity --catalog lumen` reports zero `plan` rows whose section is unshipped across Phases 30 to 39
 - [ ] `CHANGELOG.md` has a Lumen section headed by each of the ten tags
 - [ ] `docs/captures/lumen/release-<version>/` exists for each of the ten versions, and each release's stamp quotes its unchanged-originals hash table

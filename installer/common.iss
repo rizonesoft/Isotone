@@ -12,8 +12,15 @@
 ; Optional: AppDescription, AppSourceDir (default artifacts\publish\<AppName>\win-x64)
 
 #define RepoRoot AddBackslash(SourcePath) + ".."
+; Rizonesoft is a brand of Rizonetech (Pty) Ltd, the copyright holder. The publisher
+; users see stays Rizonesoft. PublisherUrl is the one product page value (the per-app
+; pages on rizonesoft.com are not decided yet); package.ps1 or CI may pass /DPublisherUrl=...
 #define Publisher "Rizonesoft"
-#define PublisherUrl "https://www.rizonesoft.com"
+#ifndef PublisherUrl
+  #define PublisherUrl "https://www.rizonesoft.com/"
+#endif
+#define Company "Rizonetech (Pty) Ltd"
+#define Copyright "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd"
 #define RepoUrl "https://github.com/rizonesoft/Photon"
 
 #ifndef AppVersion
@@ -33,11 +40,14 @@
 AppPublisher={#Publisher}
 AppPublisherURL={#PublisherUrl}
 AppSupportURL={#RepoUrl}/issues
-AppUpdatesURL={#RepoUrl}/releases
+; Binaries are distributed only from rizonesoft.com (download.rizonesoft.com), never
+; from GitHub releases, so updates point at the product page.
+AppUpdatesURL={#PublisherUrl}
 AppVersion={#AppVersion}
 VersionInfoVersion={#AppFileVersion}
-VersionInfoCompany={#Publisher}
-VersionInfoCopyright=Copyright (c) Rizonesoft
+VersionInfoCompany={#Company}
+AppCopyright={#Copyright}
+VersionInfoCopyright={#Copyright}
 ; Per-user by default; the dialog offers an all-users install.
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog

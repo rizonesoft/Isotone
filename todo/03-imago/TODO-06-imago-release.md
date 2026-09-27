@@ -32,7 +32,7 @@ track: I6
 
 - Help, About Imago and Help, Keyboard Shortcuts show the shared dialogs with Imago's identity, credits, and keymap; Help, Documentation opens the Imago guide.
 - A `MenuAuditTests` for Imago proves every menu item works or names a resolvable section.
-- `imago-v0.1.0` is a published GitHub release that passes the checklist in `standards/release.md`.
+- `imago-v0.1.0` is a published GitHub release, its files served from `https://download.rizonesoft.com/imago/0.1.0/` and linked from its body, that passes the checklist in `standards/release.md`.
 
 **Adjacency:** list=applicable @ D03 T06 §1; document=not-applicable (nothing printed here); settings=not-applicable (no new settings); reporting=applicable; notifications=not-applicable (no long operations); permissions=not-applicable (nothing written); audit=not-applicable (no document changes); exchange=not-applicable (no formats); reverse=not-applicable (no edits)
 
@@ -88,17 +88,19 @@ Imago's first release, following `standards/release.md` exactly as Nodus's did.
 
 **Needs:** Clean Windows machine (no .NET SDK)
 
+**Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.1.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
+
 - [ ] `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Write the `imago-v0.1.0` section of `CHANGELOG.md`. Done when: it lists every user-visible change since the import.
 - [ ] Confirm the user guide covers every shipped surface. Done when: no surface lacks a page.
 - [ ] Package locally and run the clean-machine procedure from `D05 T01 §1` (install per-user and all-users, open each fixture format, save, uninstall; file associations opt-in). Done when: every step passes and is quoted.
-- [ ] Push `imago-v0.1.0`; verify the workflow, the assets, and `SHA256SUMS`; run the portable ZIP from an empty folder. Done when: all pass (URLs and hashes quoted).
+- [ ] Push `imago-v0.1.0`; verify the workflow, the files and `SHA256SUMS` on `download.rizonesoft.com`, and the update feed; run the portable ZIP from an empty folder. Done when: all pass (URLs and hashes quoted).
 - [ ] Update `README.md`'s Imago status line. Done when: it names 0.1.0.
 - [ ] Commit: `"release: Imago 0.1.0"`
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
 
-**Test checkpoint:** `gh release view imago-v0.1.0 --json isPrerelease,assets` shows a non-prerelease with three assets; every checklist line has quoted evidence; the downloaded installer's hash matches `SHA256SUMS`. Cheaper substitute that fails: tagging without the clean-machine run.
+**Test checkpoint:** `gh release view imago-v0.1.0 --json isPrerelease,assets,body` shows a non-prerelease, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/imago/0.1.0/`; every checklist line has quoted evidence; the downloaded installer's hash matches `SHA256SUMS`. Cheaper substitute that fails: tagging without the clean-machine run.
 
 ## Verification
 

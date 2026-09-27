@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://www.rizonesoft.com">
+<a href="https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-logo">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="resources/brand/rizonesoft-logo-light.svg">
     <source media="(prefers-color-scheme: light)" srcset="resources/brand/rizonesoft-logo-dark.svg">
@@ -16,6 +16,7 @@
 [![Plan](https://github.com/rizonesoft/Photon/actions/workflows/plan.yml/badge.svg)](https://github.com/rizonesoft/Photon/actions/workflows/plan.yml)
 [![Release](https://github.com/rizonesoft/Photon/actions/workflows/release.yml/badge.svg)](https://github.com/rizonesoft/Photon/actions/workflows/release.yml)
 [![Latest release](https://img.shields.io/github/v/release/rizonesoft/Photon?include_prereleases&sort=semver&label=release)](https://github.com/rizonesoft/Photon/releases)
+[![Download](https://img.shields.io/badge/download-rizonesoft.com-2EA043)](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-badge)
 <br>
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![.NET 11 RC](https://img.shields.io/badge/.NET-11.0.100--rc.1-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/11.0)
@@ -211,7 +212,9 @@ flowchart TB
 ## Download and install
 
 > [!IMPORTANT]
-> No builds have been published yet. This section describes how releases will ship; the first preview will appear on the [Releases](https://github.com/rizonesoft/Photon/releases) page.
+> No builds have been published yet. This section describes how releases will ship.
+
+**Download from [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-download).** Installers and portable ZIPs are published only there, served from `download.rizonesoft.com`, never attached to GitHub. Each [GitHub release](https://github.com/rizonesoft/Photon/releases) carries the release notes, the source code of that tag, the SHA-256 checksums, and links to the files on `download.rizonesoft.com`, so you can check what you downloaded. Once the first release exists, its files live at `https://download.rizonesoft.com/<app>/<version>/` (for example `https://download.rizonesoft.com/nodus/0.1.0/`).
 
 Every app ships on its own, in two forms:
 
@@ -227,7 +230,7 @@ Every app ships on its own, in two forms:
 
 **Requirements:** Windows 11 (23H2 or later), 64-bit (x64). Windows 10 22H2 may work but is unsupported: .NET 11 does not support consumer Windows 10, and the installer says so before it continues.
 
-**Package managers:** winget packages are planned after the first stable release.
+**Package managers:** winget packages are planned after the first stable release; their manifests will point at `download.rizonesoft.com`.
 
 ## Build from source
 
@@ -271,7 +274,7 @@ Each app is versioned independently with [Semantic Versioning](https://semver.or
 | `lumen-vX.Y.Z` | Lumen |
 | `photon-vX.Y.Z` | The suite installer |
 
-Pushing a tag builds, packages, and publishes that app's installer and portable ZIP. Changes are recorded per app in [CHANGELOG.md](CHANGELOG.md). See [docs/dev/versioning.md](docs/dev/versioning.md) for the full scheme.
+Pushing a tag builds and packages that app's installer and portable ZIP, uploads them to `download.rizonesoft.com`, and publishes a GitHub release with the notes, checksums, and download links. Changes are recorded per app in [CHANGELOG.md](CHANGELOG.md). See [docs/dev/versioning.md](docs/dev/versioning.md) for the full scheme.
 
 ## Roadmap
 
@@ -294,6 +297,7 @@ The plan file is the source of truth; this list is a summary and may lag behind 
 Contributions are welcome, from bug reports to pull requests.
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, commit style, and sign-off terms.
+- The names and icons are covered by the [trademark policy](TRADEMARKS.md): a modified version you distribute needs its own name and icons.
 - Report bugs and request features through [Issues](https://github.com/rizonesoft/Photon/issues/new/choose).
 - Ask questions and share ideas in [Discussions](https://github.com/rizonesoft/Photon/discussions).
 - Report security problems privately, as described in [SECURITY.md](SECURITY.md).
@@ -304,9 +308,11 @@ More documentation: [docs/](docs/README.md) · [user guides](docs/user/README.md
 
 ## License
 
-Copyright (C) 2025-2026 Rizonesoft
+Copyright (C) 2025-2026 Rizonetech (Pty) Ltd
 
-The Photon Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text.
+Rizonesoft is a brand of Rizonetech (Pty) Ltd.
+
+The Photon Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text. The GPL covers the code; the names "Rizonesoft", "Photon Graphics Suite", "Nodus", "Imago", and "Lumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, covered by the [trademark policy](TRADEMARKS.md).
 
 Nodus and Imago were previously published under the MIT License as separate projects by the same author. Both are now part of this repository and are licensed under GPL-3.0.
 
@@ -324,5 +330,5 @@ Photon stands on the shoulders of excellent open source work:
 - [xUnit](https://xunit.net/) and [AwesomeAssertions](https://awesomeassertions.org/) for testing
 
 <div align="center">
-<sub>Made in the open by <a href="https://www.rizonesoft.com">Rizonesoft</a>.</sub>
+<sub>Made in the open by <a href="https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-footer">Rizonesoft</a>, a brand of Rizonetech (Pty) Ltd.</sub>
 </div>

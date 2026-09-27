@@ -41,4 +41,4 @@ This is a small open source project, so timelines are goals rather than guarante
 
 ## Code signing
 
-Release binaries are not code-signed yet. Only download builds from this repository's [Releases](https://github.com/rizonesoft/Photon/releases) page or from [rizonesoft.com](https://www.rizonesoft.com).
+Release binaries are not code-signed yet. Official builds are published only on [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=security), served from `download.rizonesoft.com`; GitHub releases carry no installers. Check a download against the SHA-256 table in the matching [GitHub release](https://github.com/rizonesoft/Photon/releases) (or the `SHA256SUMS` file beside it) before you run it, and treat a Photon installer offered anywhere else as untrusted.

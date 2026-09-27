@@ -13,6 +13,7 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Se
 - [Commit messages](#commit-messages)
 - [Pull requests](#pull-requests)
 - [Licensing and sign-off](#licensing-and-sign-off)
+- [Names and icons](#names-and-icons)
 
 ## Ways to contribute
 
@@ -102,7 +103,9 @@ Do not bump version numbers; versions come from Git tags (see [docs/dev/versioni
 
 ## Licensing and sign-off
 
-The Photon Graphics Suite is licensed under the [GNU General Public License v3.0](LICENSE). By contributing, you agree that your contribution is licensed under GPL-3.0 as well.
+The Photon Graphics Suite is licensed under the [GNU General Public License v3.0](LICENSE). The project copyright is held by Rizonetech (Pty) Ltd ("Copyright (C) 2025-2026 Rizonetech (Pty) Ltd"); Rizonesoft is a brand of Rizonetech (Pty) Ltd.
+
+You keep the copyright of your own contributions. By contributing, you license your contribution under GPL-3.0, the same license as the rest of the project, and certify the DCO below; you do not assign your copyright to anyone. There is no contributor license agreement today; if one is ever introduced it will be announced here before it applies, and it will not apply to contributions made before it.
 
 We use the [Developer Certificate of Origin](https://developercertificate.org/) (DCO) instead of a contributor license agreement. The DCO is a short statement that you wrote the change, or otherwise have the right to submit it under the project's license. You certify it by adding a sign-off line to every commit:
 
@@ -113,3 +116,7 @@ Signed-off-by: Your Name <you@example.com>
 Git adds it for you with `git commit -s`. The name and email must match the commit author. Pull requests with unsigned commits cannot be merged; fix them with `git rebase --signoff main` and force-push your branch.
 
 Do not submit code copied from projects with incompatible licenses, or from any source you are not sure about. When you include third-party code under a GPL-compatible license, keep its copyright notice and mention it in the pull request.
+
+## Names and icons
+
+The GPL covers the code, not the names and logos. "Rizonesoft", "Photon Graphics Suite", "Nodus", "Imago", and "Lumen" and the app icons are trademarks of Rizonetech (Pty) Ltd; the [trademark policy](TRADEMARKS.md) explains what you may do with them. In short: contributing to this repository is always fine, but a fork or modified build that you distribute needs its own name and icons.

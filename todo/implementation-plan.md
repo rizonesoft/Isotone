@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Nodus, Imago, and Lumen and the first Photon Graphics Suite bundle.
 
-> **Progress:** **0 of 683 sections complete (0%).** 683 sections (0 discovered); backlog 14 of 500. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 688 sections complete (0%).** 688 sections (0 discovered); backlog 14 of 500. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -39,7 +39,7 @@ The finished suite is **three standalone creative applications that behave like 
 | Aim                                                                                                                                                                                                              | Owned by                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Every clone refuses a broken plan                                                                                                                                                                                | `D00 T01 §1` (hook) · `D00 T01 §5` (CI read back)                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Operator-only work never stalls a runner                                                                                                                                                                         | `D00 T01 §2` · `D99 T01 §1`-`§5`                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Operator-only work never stalls a runner                                                                                                                                                                         | `D00 T01 §2` · `D99 T01 §1`-`§10`                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | The review panel works before the first stamp                                                                                                                                                                    | `D00 T01 §4`                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | No quarantined test, no excused warning                                                                                                                                                                          | `D00 T02 §1` · `D00 T02 §2` · `D02 T01 §7`                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | No dependency without a reason and a license                                                                                                                                                                     | `D00 T02 §4` · `D00 T02 §5` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` · `D04 T10 §2` · `D04 T08 §6` · `D04 T08 §7` · `D04 T13 §4` · `D04 T07 §7` · `D04 T12 §8` · `D04 T12 §9` · `D04 T12 §11` · `D00 T03 §3` |
@@ -125,6 +125,14 @@ There is none. `D05 T01 §2` carries `**Needs:** Signing certificate (release)` 
 ### 6. The operator's GitHub session
 
 Repository settings and branch protection (`D99 T01 §1`, `§2`) need the owner's logged-in browser. The agent's `gh` credentials push, tag, and create releases; they do not change repository settings.
+
+### 7. The download storage and the product page
+
+Binaries ship only from rizonesoft.com, through S3-compatible storage behind `download.rizonesoft.com` (operator decision 2026-09-27); GitHub releases carry notes, checksums, and links, never the files. `release.yml` refuses a tag release until the four `PHOTON_DL_S3_*` secrets exist, which the operator provides through `D99 T01 §8`; the first release, `D02 T05 §4`, depends on that row. A draft dry run (`D00 T02 §7`) works without them and skips the upload with a notice. The product page is one value, `PHOTON_SITE_URL` (default `https://www.rizonesoft.com/`), decided through `D99 T01 §9`.
+
+### 8. Ownership
+
+The copyright holder is Rizonetech (Pty) Ltd and Rizonesoft is its brand; the repository says so, and the signed assignment from Derick Payne (`D99 T01 §6`), the trademark clearance and filing (`D99 T01 §7`), and the contributor agreement decision (`D99 T01 §10`, before any outside pull request is merged) are the operator's legal steps.
 
 ---
 
@@ -213,14 +221,14 @@ With its foundation sound, Nodus becomes a complete first release: `Photon.UI` t
 | [ ] | `D02 T04 §5` | Recent files, autosave, and crash recovery                      |   7   |
 | [ ] | `D02 T04 §6` | Open from the command line and the .svg association             |   4   |
 | [ ] | `D02 T03 §5` | Every menu command works or names its owner                     |   5   |
-| [ ] | `D02 T05 §1` | The About dialog                                                |   5   |
+| [ ] | `D02 T05 §1` | The About dialog                                                |   6   |
 | [ ] | `D02 T05 §2` | The keyboard shortcuts dialog                                   |   4   |
 | [ ] | `D02 T05 §3` | The Help menu                                                   |   3   |
 | [ ] | `D06 T01 §1` | The Nodus user guide                                            |   4   |
 | [ ] | `D06 T02 §1` | The architecture page matches the tree                          |   4   |
 | [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                                          |   6   |
 | [ ] | `D05 T01 §1` | The clean-machine install procedure                             |   3   |
-| [ ] | `D02 T05 §4` | Nodus 0.1.0                                                     |   8   |
+| [ ] | `D02 T05 §4` | Nodus 0.1.0                                                     |  10   |
 
 ### Phase 4 -- Nodus parity I: document model, pages, layers, selection, and view
 
@@ -1104,12 +1112,17 @@ After the suite release (Phase 40), Imago opens camera RAW files through the dec
 
 ### Phase 99 -- Manual: operator-only steps
 
-No agent runner takes rows from this phase. Each row is a click path, a purchase, or a taste call the operator performs from the steps in `todo/99-manual/`; an agent verifies the public proof afterward and review stamps the evidence like any other row. Until `D00 T01 §2` ships, the rows are held back by their dependency on it; after it ships, each carries `**Requires:** operator`, so `query ready` lists them as runnable elsewhere and runners skip them.
+No agent runner takes rows from this phase. Each row is a click path, a purchase, or a taste call the operator performs from the steps in `todo/99-manual/`; an agent verifies the public proof afterward and review stamps the evidence like any other row. Until `D00 T01 §2` ships, the rows are held back by their dependency on it; after it ships, each carries `**Requires:** operator`, so `query ready` lists them as runnable elsewhere and runners skip them. The operator works them alongside the numbered phases, not after them: `D02 T05 §4` (Nodus 0.1.0, Phase 3) depends on the download storage of `D99 T01 §8`, because a tag release fails by design until its secrets exist (operator decisions 2026-09-27 on ownership and distribution added `D99 T01 §6` to `§10`).
 
-|  ✔  | Section      | Deliverable                                | Items |
-| :-: | ------------ | ------------------------------------------ | :---: |
-| [ ] | `D99 T01 §1` | About bar, topics, and social preview      |   5   |
-| [ ] | `D99 T01 §2` | Branch protection with the required checks |   3   |
-| [ ] | `D99 T01 §3` | A code-signing certificate                 |   4   |
-| [ ] | `D99 T01 §4` | Confirm the icon art licenses              |   2   |
-| [ ] | `D99 T01 §5` | Choose each app's accent color             |   2   |
+|  ✔  | Section       | Deliverable                                  | Items |
+| :-: | ------------- | -------------------------------------------- | :---: |
+| [ ] | `D99 T01 §1`  | About bar, topics, and social preview        |   5   |
+| [ ] | `D99 T01 §2`  | Branch protection with the required checks   |   3   |
+| [ ] | `D99 T01 §3`  | A code-signing certificate                   |   4   |
+| [ ] | `D99 T01 §4`  | Confirm the icon art licenses                |   2   |
+| [ ] | `D99 T01 §5`  | Choose each app's accent color               |   2   |
+| [ ] | `D99 T01 §6`  | Assign the copyright to Rizonetech (Pty) Ltd |   5   |
+| [ ] | `D99 T01 §7`  | Trademark clearance and CIPC filing          |   5   |
+| [ ] | `D99 T01 §8`  | Download storage and the release secrets     |   6   |
+| [ ] | `D99 T01 §9`  | Decide the product page URLs                 |   4   |
+| [ ] | `D99 T01 §10` | Decide on a CLA before outside contributions |   4   |

@@ -20,7 +20,7 @@ All positions are in DIPs on the 640 x 360 card, origin top left; text positions
 | Status line | x 230, baseline 272 | Segoe UI Variable Text 12px regular, #A3A4AA, one line, trimmed with an ellipsis |
 | Progress track | 340 x 3 at x 230, y 284, radius 1.5 | #3A3B41 |
 | Progress fill | from x 230, same height and radius | `accent-<app>` |
-| Copyright | right edge x 610, baseline 312 | 11px regular, #6E6F75: "© 2026 Rizonesoft · Free and open source (GPL-3.0)" |
+| Copyright | right edge x 610, baseline 312 | 11px regular, #6E6F75: "© 2026 Rizonetech (Pty) Ltd · Free and open source (GPL-3.0)" |
 | Spectrum band | path `M0 340C140 330 250 352 380 341S560 326 640 332V360H0Z`, clipped to the card | horizontal gradient x 0 to 640, the seven suite stops of the app icons |
 | Band crest | the same curve as a stroke, 1.5px | white at 35 percent |
 | Border glow | a highlight travelling around the card edge, 1.5px | `accent-<app>` |

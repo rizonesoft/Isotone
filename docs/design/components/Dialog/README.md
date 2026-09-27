@@ -21,6 +21,20 @@ A modal window for a focused task (Image Size, Export, Preferences, confirmation
 - Dialogs that preview changes show a Preview checkbox and apply live to the canvas.
 - Open with a `duration-slow` pop from scale 0.95 and fade; close in `duration-fast`; none when animations are off.
 
+## About dialog
+
+Help, About <App> is a Dialog with the app icon master at 128px (`docs/design/app-icons.md`), the app name in `dialog-title`, and these lines in `body`, top to bottom, with no other legal text:
+
+- "Version 0.1.0 (commit 2e87a3d)": the informational version with the short commit, and a "Copy version info" button.
+- "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd": the copyright holder is the company, never the brand.
+- "Rizonesoft is a brand of Rizonetech (Pty) Ltd.": the publisher users see stays Rizonesoft.
+- "Licensed under the GNU General Public License v3.0" with a link opening the license text shipped with the app.
+- "Source code: https://github.com/rizonesoft/Photon/tree/<tag>": the GPL source offer, a link to the exact tag the build came from (`nodus-v0.1.0`); a build with no tag links the commit instead.
+- The product page link: one configured value, `https://www.rizonesoft.com/` until the per-app pages are decided, never a hardcoded per-app URL.
+- The credits list (package, version, license, link) and the repository and issue links.
+
+The footer has one button, Close, which is the default and the cancel button. Nodus, Imago, and Lumen show the same dialog from `Photon.UI`, filled from the app's identity.
+
 ## Keyboard
 
 Focus starts on the first field (or the primary button for confirmations). Tab order follows reading order and wraps inside the dialog. Enter activates the default button unless focus is in a multi-line field; Escape cancels; Alt+underlined letter jumps to a labeled control.
