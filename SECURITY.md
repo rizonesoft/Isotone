@@ -18,8 +18,8 @@ The Isotone Graphics Suite is in pre-alpha and has no published release yet. Onc
 
 Report them privately through GitHub's private vulnerability reporting:
 
-1. Open the [Security tab](https://github.com/rizonesoft/Photon/security) of this repository.
-2. Choose **Report a vulnerability** ([direct link](https://github.com/rizonesoft/Photon/security/advisories/new)).
+1. Open the [Security tab](https://github.com/rizonesoft/Isotone/security) of this repository.
+2. Choose **Report a vulnerability** ([direct link](https://github.com/rizonesoft/Isotone/security/advisories/new)).
 3. Fill in the advisory form.
 
 Helpful details to include:
@@ -41,4 +41,4 @@ This is a small open source project, so timelines are goals rather than guarante
 
 ## Code signing
 
-Release binaries are not code-signed yet. Official builds are published only on [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=security), served from `download.rizonesoft.com`; GitHub releases carry no installers. Check a download against the SHA-256 table in the matching [GitHub release](https://github.com/rizonesoft/Photon/releases) (or the `SHA256SUMS` file beside it) before you run it, and treat a Isotone installer offered anywhere else as untrusted.
+Release binaries are not code-signed yet. Official builds are published only on [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=security), served from `download.rizonesoft.com`; GitHub releases carry no installers. Check a download against the SHA-256 table in the matching [GitHub release](https://github.com/rizonesoft/Isotone/releases) (or the `SHA256SUMS` file beside it) before you run it, and treat a Isotone installer offered anywhere else as untrusted.

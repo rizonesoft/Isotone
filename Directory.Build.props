@@ -48,8 +48,8 @@
     <Copyright>Copyright (C) 2025-2026 Rizonetech (Pty) Ltd</Copyright>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/rizonesoft/Photon</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/rizonesoft/Photon</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/rizonesoft/Isotone</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rizonesoft/Isotone</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

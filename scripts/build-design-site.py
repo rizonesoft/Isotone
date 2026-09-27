@@ -5,7 +5,7 @@ Writes ONE self-contained page, docs/design/index.html, the repository's own
 view of the design system (operator decision 2026-09-27: "why don't
 we create an html view the same as the artifact in the repo"). It is
 published on GitHub Pages by .github/workflows/pages.yml at
-https://rizonesoft.github.io/Photon/design/.
+https://rizonesoft.github.io/Isotone/design/.
 
 The page embeds:
   * tokens.css, generated from docs/design/tokens.json with the artifact
@@ -49,7 +49,7 @@ OUT = DESIGN / "index.html"
 APPS = ["stilus", "pinxit", "albumen"]
 GROUP_ORDER = ["Foundations", "Actions", "Inputs", "Navigation", "Data", "Shell", "Feedback", "Canvas"]
 PROSE_SECTIONS = [("shell-layout.md", "shell"), ("app-icons.md", "icons")]
-REPO_BLOB = "https://github.com/rizonesoft/Photon/blob/main/docs/design/"
+REPO_BLOB = "https://github.com/rizonesoft/Isotone/blob/main/docs/design/"
 
 
 # ---------------------------------------------------------------- helpers
@@ -838,8 +838,8 @@ def build() -> str:
     comp_html.append("</section>")
     body.extend(comp_html)
 
-    body.append('<footer class="s-foot"><p>Generated from <a href="https://github.com/rizonesoft/Photon/tree/main/docs/design"><code>docs/design/</code></a> by <code>scripts/build-design-site.py</code>. '
-                'Edit the sources, never this page. The UI standard is <a href="https://github.com/rizonesoft/Photon/blob/main/standards/ui.md"><code>standards/ui.md</code></a>.</p></footer>')
+    body.append('<footer class="s-foot"><p>Generated from <a href="https://github.com/rizonesoft/Isotone/tree/main/docs/design"><code>docs/design/</code></a> by <code>scripts/build-design-site.py</code>. '
+                'Edit the sources, never this page. The UI standard is <a href="https://github.com/rizonesoft/Isotone/blob/main/standards/ui.md"><code>standards/ui.md</code></a>.</p></footer>')
 
     data = {
         "css": read_text(COMPONENTS / "bundle.css"),

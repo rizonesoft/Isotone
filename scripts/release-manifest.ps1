@@ -34,7 +34,7 @@ param(
   [string]$Dist,
   [string]$NotesFile,
   [string]$OutDir,
-  [string]$Repository = 'rizonesoft/Photon',
+  [string]$Repository = 'rizonesoft/Isotone',
   # False when the files were not uploaded (a draft without storage configured):
   # the body then says so instead of offering links that do not resolve.
   [bool]$Uploaded = $true

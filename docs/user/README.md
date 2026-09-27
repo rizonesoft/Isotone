@@ -22,7 +22,7 @@ Until these exist, the [README](../../README.md#download-and-install) explains h
 | Troubleshooting: common problems, where logs live, how to report a bug | *planned* |
 | Keyboard shortcuts per app | *planned* |
 
-Found a problem now? Open a [bug report](https://github.com/rizonesoft/Photon/issues/new?template=bug_report.yml) or ask in [Discussions](https://github.com/rizonesoft/Photon/discussions).
+Found a problem now? Open a [bug report](https://github.com/rizonesoft/Isotone/issues/new?template=bug_report.yml) or ask in [Discussions](https://github.com/rizonesoft/Isotone/discussions).
 
 ## For writers
 
