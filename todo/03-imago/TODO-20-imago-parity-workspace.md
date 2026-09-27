@@ -78,6 +78,7 @@ track: I20
 - -> XREF: D01 T02 §2 -- the settings store every preference writes through
 - -> XREF: D03 T13 §10 -- Imago parity retouching and transform cites §1: the retouching studio preset D03 T13 §10 defines; §3: the GIMP shortcut set D03 T13 §11's tool shortcuts join
 - -> XREF: D03 T14 §1 -- Imago parity filters cites §3: command search lists filters; §4: the Preferences control for showing all gallery groups
+- -> XREF: D04 T14 §1 -- Lumen parity workspace cites §1: the `Photon.UI/Workspace/` frame, panes, and saved workspaces D04 T14 §1 and D04 T14 §2 consume; §2: the toolbar customization frame D04 T14 §2 consumes; §3: menus, shortcut sets, and command search D04 T14 §3 consumes; §4: `PreferenceKeyRegistry` and `WarningRegistry`, moved to the shared libraries, which D04 T14 §4 consumes; §6: touch and pen input handling D04 T14 §2 reuses; §8: `SystemInfoReport` and the help plumbing D04 T14 §7 consumes; §9: interface appearance and language switching D04 T14 §7 and D04 T14 §8 follow
 
 ## Outcome
 

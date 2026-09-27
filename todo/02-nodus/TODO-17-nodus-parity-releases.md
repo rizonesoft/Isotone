@@ -10,7 +10,7 @@ track: N17
 
 # TODO-17 -- Nodus Parity Releases: 0.2.0 to 1.0.0
 
-> **Goal:** Each parity phase ends in a real, independently installable Nodus release: every section of the phase stamped, every catalog row the phase plans reconciled against its section's stamp, the changelog and user guide current, the installer proven on a clean machine, and a `nodus-v*` tag whose GitHub release carries verified assets; `nodus-v1.0.0` declares parity with the catalog complete for every row planned in Phases 4 to 13, and `nodus-v1.1.0` (Phase 31) ships the two capabilities that wait on other apps' code: GIMP XCF import on Imago's XCF reader and camera RAW import on the shared RAW decoder (operator decision 2026-09-27, "Group 1: plan them all").
+> **Goal:** Each parity phase ends in a real, independently installable Nodus release: every section of the phase stamped, every catalog row the phase plans reconciled against its section's stamp, the changelog and user guide current, the installer proven on a clean machine, and a `nodus-v*` tag whose GitHub release carries verified assets; `nodus-v1.0.0` declares parity with the catalog complete for every row planned in Phases 4 to 13, and `nodus-v1.1.0` (Phase 41) ships the two capabilities that wait on other apps' code: GIMP XCF import on Imago's XCF reader and camera RAW import on the shared RAW decoder (operator decision 2026-09-27, "Group 1: plan them all").
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The release checklist every section here runs is `standards/release.md` (seven lines, each quoted from a real run). The previous release section is `D02 T05 §4` (Nodus 0.1.0), which has not shipped: no `nodus-v*` tag exists yet. The catalog the releases reconcile exists at `docs/parity/nodus-parity.md` (2,802 features, 2,680 of them planned to sections since the operator's 2026-09-27 promotions), but the parity query every release quotes does not exist until `D00 T01 §6` ships it (`scripts/todo-parity.py` is absent). The Nodus user guide folder `docs/user/nodus/` does not exist yet; `D06 T01 §1` creates it.
@@ -40,7 +40,7 @@ track: N17
 - Each release's `CHANGELOG.md` section names the `NP-` ranges it shipped, and the Nodus user guide has a page for every surface the phase added.
 - A document saved by each release opens in the previous release with its new live objects degraded to their expanded fallback geometry, never lost.
 - `nodus-v1.0.0` carries the parity query's evidence that zero planned rows remain unshipped across Phases 4 to 13.
-- `nodus-v1.1.0` releases Phase 31's Nodus rows (`D02 T18 §9`, `D02 T18 §10`), after which zero Nodus catalog rows are planned to an unshipped section.
+- `nodus-v1.1.0` releases Phase 41's Nodus rows (`D02 T18 §9`, `D02 T18 §10`), after which zero Nodus catalog rows are planned to an unshipped section.
 
 **Adjacency:** list=not-applicable (a release section adds no browsable records); document=not-applicable (the printed and exported documents are owned by D02 T13 and D02 T14; a release only re-proves them on the installed build); settings=not-applicable (no new settings); reporting=applicable @ D02 T17 §1; notifications=not-applicable (no long operation of its own); permissions=not-applicable (nothing written but release assets); audit=applicable @ D02 T17 §1; exchange=applicable @ D02 T17 §1; reverse=not-applicable (a release reverses nothing; a bad release is superseded by the next patch tag)
 
@@ -60,7 +60,7 @@ track: N17
 |   8   |  §8    | Nodus 0.9.0 (Phase 11) | §7, D02 T14 §1, D02 T14 §2, D02 T14 §3, D02 T14 §4, D02 T14 §5, D02 T14 §6, D02 T14 §7, D02 T14 §8, D02 T14 §9, D02 T14 §10, D02 T14 §11, D02 T14 §12, D02 T14 §13, D02 T14 §14, D02 T14 §15, D02 T14 §16, D02 T14 §17, D02 T14 §18, D02 T14 §19 |  [ ]   |
 |   9   |  §9    | Nodus 0.10.0 (Phase 12) | §8, D01 T05 §1, D01 T05 §2, D01 T05 §3, D01 T05 §4, D01 T05 §5, D02 T15 §1, D02 T15 §2, D02 T15 §3, D02 T15 §4, D02 T15 §5, D02 T15 §6, D02 T15 §7, D02 T15 §8, D02 T15 §9, D02 T15 §10, D02 T15 §11 |  [ ]   |
 |  10   |  §10   | Nodus 1.0.0 (Phase 13) | §9, D02 T06 §12, D02 T06 §13, D02 T06 §17, D02 T16 §1, D02 T16 §2, D02 T16 §3, D02 T16 §4, D02 T16 §5, D02 T16 §6, D02 T16 §7, D02 T16 §8, D02 T16 §9, D02 T16 §10, D02 T16 §11, D01 T08 §1, D01 T08 §2, D01 T08 §3, D01 T08 §4, D01 T08 §5, D02 T18 §1, D02 T18 §2, D02 T18 §3, D02 T18 §4, D02 T18 §5, D02 T18 §6, D02 T18 §7, D02 T18 §8 |  [ ]   |
-|  11   |  §11   | Nodus 1.1.0 (Phase 31) | §10, D02 T18 §9, D02 T18 §10 |  [ ]   |
+|  11   |  §11   | Nodus 1.1.0 (Phase 41) | §10, D02 T18 §9, D02 T18 §10 |  [ ]   |
 
 ---
 
@@ -298,15 +298,15 @@ track: N17
 
 ## 11. Nodus 1.1.0
 
-`nodus-v1.1.0` releases Phase 31's Nodus rows: GIMP XCF import (`D02 T18 §9`), which waits on Imago's XCF reader (`D03 T17 §4`), and camera RAW import with the RAW Lab (`D02 T18 §10`), which waits on the RAW decoder `D03 T07 §11` moves to `Photon.Core` and on the suite develop engine. Both were planned by the operator's decision of 2026-09-27 ("Group 1: plan them all") and cannot ship before 1.0.0 without copying another app's code. It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, reconciles the phase's catalog rows against their sections' stamps, and proves a document saved by this release opens in 1.0.0 with its imported RAW and XCF content as plain bitmap objects. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit with its reason, never left pointing at an unshipped section. The release owns no catalog rows of its own.
+`nodus-v1.1.0` releases Phase 41's Nodus rows: GIMP XCF import (`D02 T18 §9`), which waits on Imago's XCF reader (`D03 T17 §4`), and camera RAW import with the RAW Lab (`D02 T18 §10`), which waits on the RAW decoder `D03 T07 §11` moves to `Photon.Core` and on the suite develop engine. Both were planned by the operator's decision of 2026-09-27 ("Group 1: plan them all") and cannot ship before 1.0.0 without copying another app's code. It follows the checklist in `standards/release.md` exactly, as `D02 T05 §4` did for 0.1.0, quoting each line's evidence, reconciles the phase's catalog rows against their sections' stamps, and proves a document saved by this release opens in 1.0.0 with its imported RAW and XCF content as plain bitmap objects. A catalog row that cannot ship is rerouted in `docs/parity/nodus-parity.md` in this commit with its reason, never left pointing at an unshipped section. The release owns no catalog rows of its own.
 
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
 
 - [ ] Run `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
-- [ ] Run `python scripts/todo-graph.py query parity --phase 31` (from `D00 T01 §6`) and quote its report. Done when: every Nodus catalog row whose status is `plan <ref>` for a Phase 31 section resolves to a stamped section.
-- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 31 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 31 Nodus row pointing at an unshipped section.
+- [ ] Run `python scripts/todo-graph.py query parity --phase 41` (from `D00 T01 §6`) and quote its report. Done when: every Nodus catalog row whose status is `plan <ref>` for a Phase 41 section resolves to a stamped section.
+- [ ] Reroute in `docs/parity/nodus-parity.md` any Phase 41 row that cannot ship, to a later section or to the backlog through `add-todo`, with its reason in this commit. Done when: `python scripts/todo-graph.py validate` exits 0 and the parity query shows no Phase 41 Nodus row pointing at an unshipped section.
 - [ ] Write the `nodus-v1.1.0` section of `CHANGELOG.md` (Added, Changed, Fixed) from the `D02 T18 §9` and `D02 T18 §10` commits, naming the `NP-` rows shipped (NP-2399, NP-2403 to NP-2406). Done when: the section exists, names the release date, and lists both sections' user-visible changes.
 - [ ] Confirm the Nodus user guide under `docs/user/nodus/` has pages for XCF import and the RAW Lab and that every Help menu link resolves. Done when: both pages exist and are linked (list quoted).
 - [ ] Build `pwsh scripts/package.ps1 -App Nodus -Version 1.1.0`. Done when: the installer, the portable ZIP, and `SHA256SUMS` exist under `artifacts/dist/`.

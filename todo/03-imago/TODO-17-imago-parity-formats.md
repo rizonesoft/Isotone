@@ -100,6 +100,13 @@ track: I17
 - -> XREF: D01 T08 §3 -- the ICO and CUR codec (moved from `D02 T14 §12`) §8 registers
 - -> XREF: D02 T18 §8 -- Nodus's DCS reader and writer, which §9 moves to `Photon.Core` beside the EPS writer
 - -> XREF: D02 T18 §9 -- Nodus's XCF import, which moves §4's decoding core to `Photon.Core`
+- -> XREF: D04 T05 §12 -- Lumen browse without importing cites §12: the SharpCompress archive opener D04 T05 §12 moves to `Photon.Core/Formats/Archives/`
+- -> XREF: D04 T06 §7 -- Lumen parity library cites §10: the EXIF, IPTC, and XMP readers in `Photon.Core/Metadata/` D04 T06 §7's disk search reads through
+- -> XREF: D04 T07 §7 -- Lumen parity import cites §12: the WIA acquire service D04 T07 §7 consumes and the screenshot code D04 T07 §8 moves to `Photon.Core/Capture/`
+- -> XREF: D04 T08 §1 -- Lumen parity metadata cites §10: the EXIF, IPTC IIM, and XMP readers and writers in `Photon.Core/Metadata/` D04 T08 §1, D04 T08 §8, and D04 T08 §9 consume
+- -> XREF: D04 T11 §2 -- the Lumen batch tools cites §10: the EXIF and IPTC readers D04 T11 §2's tokens evaluate through
+- -> XREF: D04 T12 §2 -- Lumen parity output cites §2: the PSD writer D04 T12 §2's flattened PSD and PSB export uses; §7: the suite PDF writer in `Photon.Core/Pdf/` for books, contact sheets, slideshows, and Create PDF; §12: the FluentFTP client D04 T12 §9 moves to `Photon.Core/Net/Ftp/`
+- -> XREF: D04 T13 §1 -- Lumen parity formats cites §1: the `FormatRegistry` D04 T13 §1 moves from Imago's format project to `Photon.Core/Formats/`; §5: the modern web codecs D04 T13 §2 registers after the move and whose writers D04 T13 §6 moves; §6: HDR, scientific, DICOM, and raw-data codecs D04 T13 §2, D04 T13 §3, and D04 T13 §8 consume; §7: PDFium, SVG, metafile, and the Ghostscript runner D04 T13 §4 moves or consumes; §8: legacy raster codecs D04 T13 §3 and D04 T13 §8 register, and whose writers D04 T13 §6 moves; §9: legacy raster codecs II (ILBM, PSP, SFW, PVR) D04 T13 §3 and D04 T13 §8 register; §11: the JPEG, PNG, and TIFF option records D04 T13 §6 moves to `Photon.Core/Formats/Options/`; §2: PSD structure writing D04 T13 §3 uses for flattened PSD write; §3: PSD read fidelity D04 T13 §3 uses for the composite read; §4: the XCF reader D04 T13 §3 uses for the flattened read
 
 ## Outcome
 
@@ -140,6 +147,8 @@ track: I17
 
 Every later section adds a codec, and without one registry each would add its own filter string and menu entry, which is how today's dialogs came to list WebP with no codec behind it. This section builds the `FormatRegistry` every codec registers with and generates the File menu, the dialogs' filters, and the format matrix from it, then adds the commands the competitors have around opening and saving: vector routing, Open As, open as smart object or layers, Revert, Close Others and All, and Save a Copy with content options. Placing, export and overwrite semantics, PDF notes import, Load Files into Stack, and watermark placement are §15's, split from this section on 2026-09-27 (operator decision to split the packed sections). The open document is never written by any of these except an explicit save. Catalog: IP-1704 to IP-1716 (13 features: open including vector files, drag to open, revert, close and close all, the open dialog, Open As, open as smart object or layers, shell open and drag to place, close others, Save a Copy, save content options, the format list and matrix, and revert as GIMP's row).
 
+**Corrected 2026-09-27:** Lumen is the second consumer of the `FormatRegistry` and the option-page descriptor shell built here: `D04 T13 §1` moves the registry, `IImageReader`, `IImageWriter`, and the registered readers to `src/Photon.Core/Formats/`, and `D04 T13 §6` moves the writers, the option records, and the shell (as `SaveOptionsPanel` in `src/Photon.UI/Formats/`); Imago repoints. Build them here where the section says.
+
 **Fidelity:** `docs/captures/imago/main-window/` for the File menu, extended; new build, no baseline for the format matrix and Save a Copy dialogs, captured to `docs/captures/imago/file-menu/`.
 **Job:** a user gets any file in as a document, layer, or smart object and gets copies out without disturbing the open document. Consumer: the document tabs, the Layers panel, and the file on disk.
 **Treatment:** File menu commands, the Windows common file dialog with a filter per registered format, a Save a Copy dialog with content options, a format matrix dialog with a customize list, and one combined save prompt for Close All. Cheaper substitute that fails the checkpoint: hard-coded filter strings.
@@ -176,6 +185,8 @@ Every later section adds a codec, and without one registry each would add its ow
 ## 12. Create from Clipboard, Screenshots, Scanners, URLs, and Archives
 
 Users start documents from whatever is at hand: the clipboard, a screenshot, a scanner, a URL, or a compressed archive. This section adds those sources on top of §1's registry, moving Nodus's WIA acquire service (`D02 T14 §19`) into `Photon.Core` as its second consumer, and it touches the network only when the user asks for a URL. Catalog: IP-1722 to IP-1731 (10 features: drops on the document tab bar, archives, Open Location, WIA acquire, new from clipboard, screenshots, copy image location and show in Explorer, the document history dialog, send by email, and document history multi-select).
+
+**Corrected 2026-09-27:** Lumen is the second consumer of four pieces built here, each moved by the Lumen section that needs it: the archive opener to `src/Photon.Core/Formats/Archives/` (`D04 T05 §12`), WIA acquisition (`D04 T07 §7`), screenshot capture to `src/Photon.Core/Capture/` (`D04 T07 §8`), and the FluentFTP client wrapper to `src/Photon.Core/Net/Ftp/` (`D04 T12 §9`); Imago repoints each time.
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/acquire/`.
 **Job:** a user starts a document from whatever is at hand without saving an intermediate file. Consumer: the new document tab.
@@ -420,6 +431,8 @@ VFX, astronomy, and medical users bring formats where every bit and every channe
 ## 7. Document Formats: PDF Import, Photoshop PDF, and PDF Export
 
 Print shops receive PDF, and designers bring PDF to rasterize. Imago rasterizes PDF with PDFium (the reference rasterizer; Nodus's PdfPig path builds vector objects, a different job) and writes Photoshop PDF on the PDF, PostScript, metafile, and printer-marks code Nodus built (`D02 T13 §4`, `D02 T13 §10`, `D02 T13 §14` to `D02 T13 §16`, `D02 T14 §9`, `D02 T14 §11`), each moved into `Photon.Core` here as its second consumer. This section also enables the PDF half of §1's vector routing and the PDF page picker §15 deferred to it. PostScript, EPS, AI, SVG, and metafiles are §16's, split from this section on 2026-09-27 (operator decision to split the packed sections) along the seam the design named. Catalog: IP-1772, IP-1773, IP-1775 to IP-1780, IP-1786 to IP-1792, and IP-1795 (16 features: PDF import options and import, Photoshop PDF save, the PDF presets manager, PDF compression, PDF output color, PDF security, PDF export options, PDF export compatibility and PDF/X, PDF export color and spots, optional content layers, fonts and links, printer marks, passwords and permissions, the rasterization policy, and the presets manager as Affinity's row).
+
+**Corrected 2026-09-27:** Lumen's document formats (`D04 T13 §4`) move whatever of this section's PDFium, SVG, and EMF and WMF readers still lives in Imago to `src/Photon.Core/Formats/Pdf/` and `src/Photon.Core/Formats/Vector/`; Imago repoints.
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/pdf-import/` and `docs/captures/imago/pdf-export/`.
 **Job:** a user rasterizes PDF pages in and sends print-ready PDF out. Consumer: print shops, PDF readers, and preflight tools.

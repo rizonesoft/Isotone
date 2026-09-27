@@ -23,6 +23,7 @@ track: D2
 - [`docs/dev/architecture.md`](../../docs/dev/architecture.md), [`docs/dev/README.md`](../../docs/dev/README.md) -- what §1 keeps true
 - [`README.md`](../../README.md) -- the screenshots §2 replaces (the repository face's owner reviews the change)
 - -> XREF: D01 T01 §2 -- the Photon.UI work whose landing §1 documents
+- -> XREF: D04 T14 §7 -- Lumen parity workspace cites §3: the published guide site D04 T14 §7 opens
 
 ## Outcome
 

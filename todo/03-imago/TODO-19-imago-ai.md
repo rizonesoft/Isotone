@@ -76,6 +76,7 @@ track: I19
 - -> XREF: D01 T07 §4 -- the mask component kinds §15 adds AI masks to
 - -> XREF: D03 T20 §1 -- the Contextual Task Bar and Properties pages that read the AI quick-action registry
 - -> XREF: D03 T20 §8 -- the Discover panel that lists AI quick actions beside the Ask panel
+- -> XREF: D04 T10 §8 -- Lumen AI cites §2: the image-generation adapter D04 T10 §8 moves to `Photon.Core`; §6: the locate schema and `VisionLocator` D04 T10 §7 moves; §8: the upscale service D04 T10 §8 moves; §9: the distraction finder D04 T10 §9 moves; §14: the depth estimator D04 T10 §10 moves; §15: the `AiMaskComponent` kind D04 T10 §7 stores its masks in
 
 ## Outcome
 
@@ -155,6 +156,8 @@ This section gives Imago's AI one front door and makes the reproducibility pilla
 ## 2. The Image-Generation Adapter
 
 Every generative feature in Imago shares one adapter so every result is handled the same honest, non-destructive way: a region, mask, and prompt become model requests (masked crop with context padding, size fitting to the model's caps, tiling with overlap), results composite back through the mask with a feathered seam and a color match, seed honesty is recorded, refusals are mapped, and results land as a group with variations as hidden siblings in one of five output targets. The smart-filter target adds an `<imago:filter kind="ai">` entry to the saved document, so this section carries a freeze check. It must never paste a model image over a layer. Admission: the acceptance-bar aim "AI results in Imago are new layers and masks, undoable, and reproducible". Catalog: IP-2000 to IP-2002 (3 features: IP-2000 AI result output targets, IP-2001 generation resolution handling and upscale to the selection, IP-2002 generation variations).
+
+**Corrected 2026-09-27:** Lumen's Enhance (`D04 T10 §8`) is the second consumer of `GenerationRequestBuilder`, `GenerationCompositor`, and `ImageModelCaps`, so it moves them from `src/Imago/Photon.Imago.Core/AI/` to `src/Photon.Core/AI/Images/`; Imago repoints.
 
 **Freeze check:** The `<imago:filter kind="ai" v="1">` entry is written only through the atomic `.imago` writer of `D03 T04 §4` over the `D01 T02 §5` atomic writer, with its rendered PNG fallback per `D03 T08 §1`; a document with no AI smart filter saves byte-identical to the pre-change save (hash comparison in `AiFilterSerializationTests.NoFilter_ByteIdentical`); killing the process mid-save leaves the original byte-identical. Fixture source: `tests/fixtures/imago/ai/ai-filter.imago` (created by this section).
 
@@ -277,6 +280,8 @@ A user creates a raster image from a prompt with a content type, style presets, 
 
 Vision models are good at finding objects and poor at pixel-exact masks, so this section asks the model only for boxes, points, and labels as JSON and lets the local `D03 T10 §6` engine (GrabCut and guided-filter matting) make the mask; the same engine runs alone in Local mode with no network. It builds Select Subject, Select Sky, Select People with parts, the Object Selection tool, and the object finder. The depth estimator and Select Sampled Depth (IP-2021, IP-2033) live in §14, where the catalog routes them. It must never ask an image model to paint a mask. Admission: the acceptance-bar aim "AI results in Imago are new layers and masks, undoable, and reproducible". Catalog: IP-2019 to IP-2020, IP-2022 to IP-2032 (13 features: IP-2019 select subject with local or online processing, IP-2020 object selection tool hover or box, IP-2022 object selection modes, sample all layers, and Select and Mask entry, IP-2023 rectangle and lasso modes, IP-2024 object subtract, IP-2025 hard or soft edges, IP-2026 multi-part objects, IP-2027 object finder, IP-2028 select subject from menu, options bar, and Select and Mask, IP-2029 processing mode fast local or detailed, IP-2030 select sky, IP-2031 select people and parts, IP-2032 hair refinement and object-aware refine).
 
+**Corrected 2026-09-27:** Lumen's AI develop masks (`D04 T10 §7`) are the second consumer of the `locate.v1.json` schema and `VisionLocator`, so they move to `src/Photon.Core/AI/Vision/` with the segmentation engine of `D03 T10 §6`; Imago repoints.
+
 **Fidelity:** extends the selection tools -- docs/captures/imago/selection-tools/ (from `D03 T10 §5`); new captures to docs/captures/imago/object-selection/.
 **Job:** a user can select a subject, the sky, people and their parts, or any object with one click or a box, with pixel-accurate edges. Consumer: the `D03 T10 §1` selection model and layer masks.
 **Treatment:** `Select, Subject`, `Select, Sky`, `Select, People` with part checkboxes, the Object Selection tool (W group) with Mode Rectangle or Lasso, Object Finder hover highlight with Refresh and Show All Objects, Sample All Layers, Hard Edge, a Select and Mask entry, and a Local or Detailed processing combo. Cheaper substitute that fails the checkpoint: asking an image model to paint a mask, which misses edges and cannot run offline.
@@ -342,6 +347,8 @@ Photoshop's Neural Filters and their Affinity and GIMP counterparts become one I
 
 Generative upscale, super zoom, super resolve, AI noise reduction, motion blur reduction, SDR to HDR, and the develop enhancements all enlarge or clean an image while keeping the original, tile large outputs through §2, and offer the classical fallback by name beside every AI path. It must never present Lanczos as AI. Admission: the acceptance-bar aim "Imago covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog". Catalog: IP-2066 to IP-2079 (14 features: IP-2066 generative upscale 2x and 4x, IP-2067 super zoom, IP-2068 super resolve layer and generated result, IP-2069 super resolve document, IP-2070 AI noise reduction live filter and brush, IP-2071 GIMP third-party AI plug-in equivalents, IP-2072 generative upscale and Preserve Details 2.0, IP-2073 Super Zoom detail enhance and JPEG artifact removal, IP-2074 motion blur reduction, IP-2075 SDR to HDR expansion, IP-2076 AI denoise in develop, IP-2077 AI raw detail enhancement, IP-2078 super resolution 2x in develop, IP-2079 mixed light correction and motion blur reduction in RAW).
 
+**Corrected 2026-09-27:** Lumen's super resolution (`D04 T10 §8`) is the second consumer of `UpscaleService`, so it moves it to `src/Photon.Core/AI/Images/`; Imago repoints.
+
 **Fidelity:** new build, no baseline; captured to docs/captures/imago/upscale/ and docs/captures/imago/ai-denoise/.
 **Job:** a user can enlarge or clean an image with AI and keep the original. Consumer: the document's layer stack, canvas size, and provenance store.
 **Treatment:** an Upscale dialog (2x or 4x, Faithful or Creative, model, scale document to fit), Super Zoom (crop then enlarge with detail, artifact, noise, sharpen, and face options), `Image, Super Resolve Document` (percentage), AI Denoise (luma and chroma strength, as a live filter or a brush), Reduce Motion Blur, SDR to HDR, and an Enhance section in the develop surfaces. Cheaper substitute that fails the checkpoint: Lanczos labeled AI.
@@ -373,6 +380,8 @@ Generative upscale, super zoom, super resolve, AI noise reduction, motion blur r
 ## 9. Distraction and Object Removal
 
 A user finds and removes distractions or the background in one pass and reviews each change before anything is filled: the vision model locates candidates, the local engine masks them, and each accepted item is filled classically or generatively on a new layer. The same section owns generating a new background behind a subject (the catalog routes IP-2017 and IP-2018 here), because it shares the subject mask and the fill-on-a-new-layer path. Nothing here deletes pixels: background removal is a layer mask. Admission: the acceptance-bar aim "AI results in Imago are new layers and masks, undoable, and reproducible". Catalog: IP-2017 to IP-2018, IP-2080 to IP-2089 (12 features: IP-2017 generate background behind a subject, IP-2018 generate background, IP-2080 find distractions people, wires and cables, IP-2081 remove background to a layer mask, IP-2082 reflection removal, IP-2083 generative remove in develop with variations, IP-2084 detect objects for removal, IP-2085 distraction removal people and dust, IP-2086 reflection removal, IP-2087 blemish removal by type and prominence, IP-2088 find distractions with review, IP-2089 remove background).
+
+**Corrected 2026-09-27:** Lumen's distraction removal (`D04 T10 §9`) is the second consumer of `DistractionFinder`, so it moves to `src/Photon.Core/AI/Removal/`; Imago repoints.
 
 **Fidelity:** new build, no baseline; captured to docs/captures/imago/find-distractions/ and docs/captures/imago/remove-background/.
 **Job:** a user can find and remove distractions or the background in one pass and review each change. Consumer: the document's layer stack, layer masks, and provenance store.
@@ -519,6 +528,8 @@ The suite works as one pipeline without any app depending on another at runtime:
 ## 14. Depth, Portrait Blur, and Relighting
 
 There is no depth sensor, so every depth feature here uses an estimated depth map built from a vision model's layered description plus the local engine's segments, and says "estimated, not measured" everywhere it appears. This section owns the depth estimator and Select Sampled Depth (moved here from §6, where the catalog routes IP-2021 and IP-2033), Detect Depth with normals, depth and portrait blur through the `D01 T06 §3` lens blur kernel, portrait lighting, and mixed light correction. Admission: the acceptance-bar aim "Imago covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog". Catalog: IP-2021, IP-2033, IP-2058 to IP-2065 (10 features: IP-2021 select sampled depth, IP-2033 select sampled depth tool and command, IP-2058 portrait lighting virtual lights, IP-2059 depth blur and portrait blur, IP-2060 detect depth into a depth map layer, IP-2061 portrait blur, IP-2062 depth and normals maps, IP-2063 mixed light correction, IP-2064 portrait lighting with point or spot light, IP-2065 lens blur by estimated depth with bokeh shapes).
+
+**Corrected 2026-09-27:** Lumen's lens blur (`D04 T10 §10`) is the second consumer of `DepthEstimator`, so it moves to `src/Photon.Core/AI/Depth/`; Imago repoints.
 
 **Fidelity:** new build, no baseline; captured to docs/captures/imago/depth-blur/ and docs/captures/imago/portrait-lighting/.
 **Job:** a user can blur a background by distance, select by depth, and relight a portrait while seeing that the depth is an estimate. Consumer: the document's layer stack, selections, and smart filters.

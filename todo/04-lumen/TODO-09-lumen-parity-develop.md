@@ -1,0 +1,601 @@
+---
+schema_version: 1
+id: lumen-parity-develop
+domain: 04-lumen
+status: draft
+title: "TODO-09 -- Lumen Parity: Develop"
+depends_on: []
+frozen: true
+track: L9
+---
+
+# TODO-09 -- Lumen Parity: Develop
+
+> **Goal:** Lumen's develop module reaches Lightroom Classic and ACDSee Develop parity on the suite develop engine: the workspace (tool strip, before and after and reference views, pixel readouts, overlays, panel organization), history and snapshots, saving develop results as data, as new files, or (only when the user opts in) into the original, profiles and white balance, presence, the tone curve, color mixer, point color, color grading and ACDSee's Color EQ, color wheel, tone wheels, and split tone, detail, lens corrections with DNG opcodes and flat-field, Upright, transform, calibration and process versions, effects and crop extensions, masking with brushes, gradients, range masks and pixel targeting, remove, heal, clone and red eye, preset and default management, sync and auto sync, the ACDSee extras (Light EQ, soft focus, skin tune, develop LUTs, blend modes, and effects), soft proofing, and photo merges (HDR, panorama, HDR panorama, focus stacking). Every panel is a surface over `Photon.Core/Develop/` (`D01 T07`) and stores its values in Lumen's edit stack (`D04 T02 §1`); no develop stage is implemented under `src/Lumen/` (the grep of `D04 T02 §2` stays green), the ACDSee-only stages are added to the suite engine by `D01 T07 §7` to `§9`, and the merge engines, the HDR display path, and the content-aware fill core move from Imago to `Photon.Core` and `Photon.UI` on this second consumer. Originals are safe by default (operator decision 2026-09-27, "Safe by default, opt-in writes"): develop results live in the catalog and the XMP sidecar or become new files, and only the opt-in in-place policy of `D04 T11 §1` lets the user write a develop result into an original, through the suite atomic writer with an optional verified backup.
+
+> [!IMPORTANT]
+> **Current state (verified 2026-09-27):** Lumen has no source tree (`src/Lumen/` is absent), so every Lumen path below is a target path `D04 T01 §2` creates (`src/Lumen/Photon.Lumen.Core/`, `src/Lumen/Photon.Lumen.Desktop/`, `tests/Photon.Lumen.Tests/`). `src/Photon.Core/` is absent too, so the develop engine this file surfaces is planned, not built: `todo/01-core/TODO-07-photon-develop.md` holds nine sections, §7 to §9 added with this file for the ACDSee stages. Lumen's develop file `todo/04-lumen/TODO-02-lumen-develop.md` already owns the edit stack, the pipeline hookup, the develop panel, crop, presets, export, Edit in Imago, the 0.1.0 release, and accessibility in nine sections, which this file extends and never repeats. No lens database reader and no OpenCV binding exist anywhere in the repository yet (`D03 T14 §6` and `D03 T15 §5` add them in Imago's parity phases, before this file runs). `standards/lumen.md` states the original-file guard as safe by default with the 2026-09-27 opt-in writes (recorded in the standard at the Lumen integration), which this file's §17 consumes through `D04 T11 §1`.
+<!-- claim: absent src/Lumen -->
+<!-- claim: absent src/Photon.Core -->
+<!-- claim: count "^## \d+\. " todo/01-core/TODO-07-photon-develop.md = 9 -->
+<!-- claim: count "^## \d+\. " todo/04-lumen/TODO-02-lumen-develop.md = 9 -->
+<!-- claim: count "lensfun|Lensfun" src/**/*.cs = 0 -->
+<!-- claim: count "OpenCvSharp" Directory.Packages.props = 0 -->
+<!-- claim: count "Lumen never writes an original image" standards/lumen.md = 1 -->
+
+## Inputs
+
+- [`standards/lumen.md`](../../standards/lumen.md) -- float32 linear light, one output transform, previews and exports agree, the original-file guard this file's §17 relaxes only behind the opt-in policy of `D04 T11 §1`
+- [`standards/shared.md`](../../standards/shared.md) -- the design contract, settings with named consumers, one Information log line per document change, atomic writes
+- [`standards/testing.md`](../../standards/testing.md) -- fixtures, goldens, and driven-run evidence
+- [`docs/parity/lumen-parity.md`](../../docs/parity/lumen-parity.md) -- the catalog rows LP-0290, LP-0556 to LP-0603, LP-0616 to LP-0664, LP-0667 to LP-0692, LP-0976, and LP-0977 this file owns (per-section lists in each context paragraph)
+- [`docs/parity/lumen-section-design.md`](../../docs/parity/lumen-section-design.md) -- the blueprint for this file and "The original-file guard holds everywhere"
+- Adobe DNG Specification 1.7.1.0 -- the opcodes `WarpRectilinear`, `FixVignetteRadial`, and `GainMap` for §6, and linear DNG output for §6 and §16
+- Adobe XMP Camera Raw settings namespace (`http://ns.adobe.com/camera-raw-settings/1.0/`) -- presets and settings files for §11 and §17
+- Lightroom Classic 15.5.1 and ACDSee Photo Studio Ultimate 2027 Develop -- behavior references, driven with versions recorded in `docs/dev/lumen/competitor-survey.md`
+- darktable 5.0 `darktable-cli`, exiftool 13, and the Adobe DNG SDK `dng_validate` -- reference tools, versions recorded beside each fixture
+- -> XREF: D04 T02 §1 -- the edit stack every panel writes, extended by §2 with the before pointer
+- -> XREF: D04 T02 §2 -- the pipeline hookup and output transform §3 extends
+- -> XREF: D04 T02 §3 -- the develop module §1 extends
+- -> XREF: D04 T02 §4 -- crop, which §8 extends
+- -> XREF: D04 T02 §5 -- presets and sync, which §11 and §12 extend
+- -> XREF: D04 T02 §6 -- `ExportRunner`, which §17's commit and save-as render through
+- -> XREF: D04 T02 §8 -- Lumen 0.1.0, which ships before every section here
+- -> XREF: D04 T01 §9 -- loupe, zoom, and filmstrip, which §1 extends
+- -> XREF: D04 T01 §11 -- XMP sidecars and `Lumen.Metadata.WriteSidecars`, which §17 mirrors develop settings through
+- -> XREF: D01 T07 §1 -- settings, pipeline, profiles, auto tone, and process versions for §1, §3, and §7
+- -> XREF: D01 T07 §2 -- presence, color mixer, point color, grading, and calibration for §3, §4, and §7
+- -> XREF: D01 T07 §3 -- detail, lens, geometry, vignette, and grain for §5 to §8
+- -> XREF: D01 T07 §4 -- the masking engine §9 surfaces
+- -> XREF: D01 T07 §5 -- spots, red eye, and pet eye for §10
+- -> XREF: D01 T07 §6 -- presets, snapshots, clipboard, and XMP exchange for §2, §11, §12, and §17
+- -> XREF: D01 T07 §7 -- the tone equalizer stage §13 surfaces
+- -> XREF: D01 T07 §8 -- the soft focus and skin tune stages §13 surfaces
+- -> XREF: D01 T07 §9 -- the look stage §14 surfaces
+- -> XREF: D01 T04 §2 -- proofing transforms and gamut checks for §15
+- -> XREF: D03 T14 §6 -- the lensfun and LCP readers §6 reads through
+- -> XREF: D03 T15 §4 -- the HDR display path §3 moves to `Photon.UI` and consumes
+- -> XREF: D03 T15 §5 -- the alignment engine §16 moves to `Photon.Core/Photo/`
+- -> XREF: D03 T15 §6 -- Merge to HDR, moved by §16
+- -> XREF: D03 T15 §7 -- Panorama, moved by §16
+- -> XREF: D03 T15 §9 -- Focus merge, moved by §16
+- -> XREF: D03 T13 §3 -- the PatchMatch completion solver, built in `Photon.Core` from the start, that §10's Remove mode reaches through `D01 T07 §5`
+- -> XREF: D04 T04 §2 -- the Lumen Viewer's display path, where §6's Auto Lens and §13's Light EQ previews hook in
+- -> XREF: D04 T06 §3 -- stacks and virtual copies for §15's proof copy and the new files of §6, §16, and §17
+- -> XREF: D04 T08 §8 -- `MetadataWriter`, the one path §17's sidecar mirroring and Write Develop Settings to File take
+- -> XREF: D04 T08 §9 -- embedding into originals, which §17 reaches only when `Lumen.Originals.InPlace.EmbedMetadata` is on
+- -> XREF: D04 T10 §7 -- AI masks that join §9's mask list
+- -> XREF: D04 T10 §8 -- Enhance, which extends §5's detail panel
+- -> XREF: D04 T10 §9 -- generative remove, which joins §10's tool
+- -> XREF: D04 T10 §10 -- lens blur, the tool strip entry §1 reserves
+- -> XREF: D04 T10 §11 -- AI auto settings beside §3's classical auto
+- -> XREF: D04 T11 §1 -- the background job engine §16's merges run on, and `OriginalGuard`, `OriginalWritePolicy`, and `InPlaceWriter`, the one opt-in path §17 writes an original through
+- -> XREF: D04 T11 §9 -- batch develop, which applies §11's presets
+- -> XREF: D04 T12 §13 -- export presets, which reuse §17's save-a-copy renderer
+- -> XREF: D04 T13 §7 -- the DNG writer §6's flat-field and §16's merges write through
+- -> XREF: D06 T01 §3 -- the Lumen user guide every UI section here updates
+- -> XREF: D04 T14 §10 -- Lumen parity workspace cites §17: develop's Save to Original, enabled by the same `Save` key
+
+## Outcome
+
+- Every develop control Lightroom Classic 15.5.1 and ACDSee 2027 Develop offer is present in Lumen, each rendering through `Photon.Core/Develop/`; a grep for an `IDevelopStage` implementation under `src/Lumen/` finds nothing.
+- Every develop change is one edit-stack step with a log line; history, snapshots, the before state, and restore to original are undoable, and batch applications (presets, sync, restore) are one undo step each.
+- By default no develop command opens an original for writing, proven by the unchanged-originals test over every command in this file; with `Lumen.Originals.InPlace.Save` or `EmbedMetadata` on, writes into originals go only through `D04 T11 §1`'s `InPlaceWriter` or `D04 T08 §9` with a hash-verified backup unless the user turned backups off, and RAW files are never written.
+- Masks, spots, crops, and merges are resolution-independent: preview and export agree within 1/255.
+- Presets, settings files, and profiles exchange with Lightroom through `crs` XMP, DCP, CUBE, and 3DL; merges and flat-field corrections write new DNG or TIFF files stacked with their sources.
+- Imago's alignment, HDR, panorama, and focus-merge engines, its HDR display path, and its content-aware fill core live once in `Photon.Core` or `Photon.UI`, consumed by both apps.
+
+**Adjacency:** list=applicable @ D04 T09 §11; document=applicable @ D04 T09 §17; settings=applicable @ D04 T09 §11; reporting=applicable @ D04 T09 §1; notifications=applicable @ D04 T09 §16; permissions=applicable @ D04 T09 §17; audit=applicable @ D04 T09 §2; exchange=applicable @ D04 T09 §11; reverse=applicable @ D04 T09 §2
+
+**Adjacency rationale:** The lists are the presets panel with groups and filters (§11), history and snapshots (§2), the mask list (§9), the LUT list (§14), and the merge image list (§16). The documents a user carries are the rendered copies of §17 (commit, save as, save a copy) and the merge outputs of §16. Every panel option is a `Lumen.Develop.*` or `Lumen.Viewer.*` key with a default and a named consumer; develop defaults per camera, serial, and ISO live in §11. Reporting is the histogram, camera info, and pixel readouts of §1 and the gamut warnings of §15. Background saving, merge progress and completion, and outdated-preset and missing-LUT notices reach the status strip. Read-only preset folders, missing DCP or LUT files, offline originals, RAW files offered to "Save to Original", a locked original, and an unwritable backup folder are refused by name (§17 owns the original-write refusals). Audit is one Serilog Information line per committed develop step, save, preset import, merge, and write into an original. Exchange is `crs` XMP presets and settings files, DCP profiles, CUBE and 3DL LUTs, and DNG output. The reverse is the edit stack: every panel change is a step, restore to original is one undoable command, and an opt-in bake into an original undoes from its verified backup (§17).
+
+## Implementation Order
+
+| Order | Section | Deliverable | Depends On | Status |
+| :---: | :-----: | ----------- | ---------- | :----: |
+|   1   |   §1    | The develop workspace extended: tool strip, views, reference, and overlays | D04 T02 §8 |  [ ]   |
+|   2   |   §2    | History, snapshots, and the before state | §1 |  [ ]   |
+|   3   |   §17   | Saving develop results: leaving develop, new files, sidecars, and opt-in writes to originals | §2, D04 T02 §6, D04 T06 §3, D04 T11 §1, D04 T08 §9 |  [ ]   |
+|   4   |   §3    | Profiles, white balance, presence, and HDR editing | §1 |  [ ]   |
+|   5   |   §4    | Tone curve, color mixer, point color, color grading, and ACDSee color panels | §3 |  [ ]   |
+|   6   |   §5    | Detail: sharpening and noise reduction | §1 |  [ ]   |
+|   7   |   §6    | Lens corrections, DNG opcodes, and flat-field | §1, D03 T14 §6, D04 T13 §7 |  [ ]   |
+|   8   |   §7    | Transform, Upright, calibration, and process versions | §6 |  [ ]   |
+|   9   |   §8    | Effects and crop extensions | §1 |  [ ]   |
+|  10   |   §10   | Remove, heal, clone, and red eye | §1, D03 T13 §3 |  [ ]   |
+|  11   |   §11   | Presets and defaults extended | §3 |  [ ]   |
+|  12   |   §12   | Sync, copy and paste, and auto sync extended | §11 |  [ ]   |
+|  13   |   §9    | Masking: brushes, gradients, range masks, and pixel targeting | §4 |  [ ]   |
+|  14   |   §13   | Light EQ, soft focus, and skin tune | §9, D01 T07 §7, D01 T07 §8 |  [ ]   |
+|  15   |   §14   | Color LUTs, develop blend modes, and develop effects | §9, D01 T07 §9 |  [ ]   |
+|  16   |   §15   | Soft proofing | §1, D04 T06 §3 |  [ ]   |
+|  17   |   §16   | Photo merge: HDR, panorama, and focus stacking | §17, D03 T15 §7, D03 T15 §9, D04 T13 §7, D04 T11 §1 |  [ ]   |
+
+---
+
+## 1. The Develop Workspace Extended: Tool Strip, Views, Reference, and Overlays
+
+Lumen 0.1.0's develop module (`D04 T02 §3`) has a histogram, the Basic panel, a tone curve, history, and a single before and after toggle. Lightroom and ACDSee photographers judge an edit against the original or a reference photo at any zoom, read pixel values, drag tone regions on the histogram, and organize a long panel stack; this section adds those views and the tool strip every later section's tools hang from, without touching the pipeline. Catalog: LP-0290, LP-0556 to LP-0568 (14 features). -> SOURCE: parity-lumen-develop-workspace
+
+**Fidelity:** Lumen develop module -- docs/captures/lumen/develop/ (the `D04 T02 §3` baseline); new captures to docs/captures/lumen/develop-views/. Control order, spacing, and terminology follow the baseline and `standards/shared.md`'s window anatomy.
+**Job:** a photographer can judge an edit against the original or a reference photo at any zoom, read exact pixel values, and reach every tool and panel from the keyboard. Consumer: the edit stack (histogram drags) and the per-session view state.
+**Treatment:** Lightroom's tool strip under the histogram (crop, remove, red eye, masking, lens blur), before and after cycling with Y, Alt+Y, and Shift+Y, a reference view with Shift+R, pixel readouts under the histogram, zoom presets and a navigator, grid, guide, and layout-image overlays, and ACDSee's tabbed panes as an alternative panel layout. Cheaper substitute that fails the checkpoint: a single before and after toggle, which `BeforeAfterLayoutTests` catch.
+**Chrome:** extend `D04 T02 §3`'s module and `D04 T01 §9`'s loupe and zoom state; consume the histogram control `D04 T02 §3` moved to `Photon.UI`, the theme, the icon catalog, and the library collections list of `D04 T01 §10`. Do not build a second zoom model or a second histogram.
+
+**Requires:** display-session -- the develop views, overlays, and captures need an interactive desktop
+
+- [ ] Add `DevelopToolStrip` in `src/Lumen/Photon.Lumen.Desktop/Develop/Tools/` with modes Crop (R), Remove (Q), Red Eye, Masking (Shift+W), and Lens Blur, each an `IDevelopToolMode` with `Enter` and `Exit`; Lens Blur stays disabled with the tooltip "Planned: D04 T10 §10" until that section ships (LP-0558). Done when: `DevelopToolStripTests` assert exactly one mode is active, each key enters its mode, and Esc exits to the loupe.
+- [ ] Add `BeforeAfterLayout` (LeftRight, LeftRightSplit, TopBottom, TopBottomSplit, Split with a draggable divider) in `src/Lumen/Photon.Lumen.Desktop/Develop/Views/` with Y cycling, Alt+Y top and bottom, Shift+Y split, the divider position stored normalized per session, and the last layout in `Lumen.Develop.BeforeAfterLayout` (LP-0559). Done when: `BeforeAfterLayoutTests` cycle every layout, assert the setting readback after restart, and assert the before side renders the edit stack's before state. Cheaper substitute: a toggle between two images.
+- [ ] Add `ReferenceViewModel`: a locked reference photo set by dragging from the filmstrip or by Set as Reference, shown left and right or top and bottom with Shift+R, rendered from the `D04 T01 §7` preview cache and never through the develop pipeline, kept for the session (LP-0290, LP-0560). Done when: `ReferenceViewTests` assert the reference comes from the preview cache (a counting fake pipeline records zero renders) and survives switching the active photo.
+- [ ] Add `HistogramDragMapper` in `src/Lumen/Photon.Lumen.Core/Develop/`: dragging on the histogram maps the pointer's x to blacks, shadows, exposure, highlights, or whites and issues one `D04 T02 §1` edit-stack step per drag (LP-0556). Done when: `HistogramDragMappingTests` assert a drag in each region yields one step on the right parameter and none on the others.
+- [ ] Add the camera info line under the histogram (ISO, lens, focal length, aperture, shutter) read from the catalog's EXIF columns, blank fields omitted (LP-0556). Done when: a view-model test binds the line for a fixture and omits a missing lens.
+- [ ] Add `PixelReadout`, reporting the value under the pointer as RGB percent in linear ProPhoto, 0 to 255 in the output space, or Lab, with original and edited values from `DevelopPipeline` probes, mode in `Lumen.Develop.Readout` (LP-0557). Done when: `PixelReadoutTests` read a known pixel of a synthetic fixture in all three modes within 0.5 units.
+- [ ] Add zoom presets Fit, Fill, 1:1, 2:1 to 11:1, and 1:4 to 1:2, a zoom slider, and a navigator panel with a draggable viewport rectangle, extending `D04 T01 §9`'s zoom state rather than adding a second one (LP-0561). Done when: `ZoomPresetTests` assert every preset's scale and the navigator rectangle matches the visible region.
+- [ ] Add the alignment grid (size and opacity), guides, and pin and overlay visibility (Auto, Always, Never, Selected) in `src/Lumen/Photon.Lumen.Desktop/Develop/Overlays/`, each option a `Lumen.Develop.Overlay.*` key (LP-0565). Done when: `OverlayOptionsTests` read back every key after a restart.
+- [ ] Add the layout image overlay: a user PNG laid over the photo with opacity and matte, refused by name when unreadable, kept per session (LP-0565). Done when: a test loads a fixture PNG and a truncated one is refused with a message naming it.
+- [ ] Add the loupe info overlay (two configurable lines of fields, toggled with I) and loupe messages such as "Loading" (LP-0562). Done when: a view-model test asserts the configured fields render for a fixture and the setting reads back.
+- [ ] Add panel organization in `src/Lumen/Photon.Lumen.Desktop/Develop/Panels/`: stacked or ACDSee-style tabbed layout (`Lumen.Develop.PanelLayout`), solo mode with Alt-click, expand and collapse all, changed-tab markers, and Basic slider cycling with period and comma plus plus and minus to adjust (LP-0566). Done when: `PanelLayoutTests` assert solo keeps one panel open, a changed setting marks its tab, and cycling visits every Basic slider in order.
+- [ ] Add the per-panel eye toggle: the preview renders with that panel's settings group at defaults while the edit stack stays unchanged (LP-0566). Done when: `PanelBypassTests` assert the preview settings differ, the stack's current settings are unchanged, and no step is written.
+- [ ] Add detachable panes: any panel group floats in its own tool window whose position is remembered per monitor (LP-0566). Done when: a driven run detaches the Tone Curve panel, restarts, and the capture shows it restored.
+- [ ] Add `ScrubbyNumberBox` in `src/Lumen/Photon.Lumen.Desktop/Controls/`: dragging the label changes the value one step per 2 px, Shift for ten steps, Alt for fine steps, and double-click resets (LP-0564). Done when: `ScrubbyNumberBoxTests` assert each modifier's step size and the reset. Note in the class comment that it moves to `Photon.UI` when a second app needs it.
+- [ ] Add the optional undo and redo buttons at the top of the develop tools pane (`Lumen.Develop.ShowUndoButtons`, default off) (LP-0568). Done when: a test asserts the setting shows the buttons and each calls the edit stack.
+- [ ] Add the Collections panel inside develop, reusing the `D04 T01 §10` collections list control (LP-0563). Done when: a test asserts selecting a collection filters the develop filmstrip.
+- [ ] Add the develop filmstrip previous and next (Ctrl+Left, Ctrl+Right) and F for fullscreen develop (LP-0567). Done when: a view-model test steps through three photos and toggles fullscreen.
+- [ ] Update `docs/user/lumen/develop.md` with the tool strip, every view, readouts, overlays, and panel organization. Done when: every control on this section's surfaces is described.
+- [ ] Commit captures of every before and after layout, the reference view, the readouts, each overlay, and the tabbed layout under `docs/captures/lumen/develop-views/`. Done when: the folder holds one capture per view named after it.
+- [ ] Commit: `"lumen: develop workspace views, reference, overlays, and panel organization"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Lumen.Tests.Develop"` exits 0 with `DevelopToolStripTests`, `BeforeAfterLayoutTests`, `ReferenceViewTests`, `HistogramDragMappingTests`, `PixelReadoutTests`, `ZoomPresetTests`, `PanelLayoutTests`, and `PanelBypassTests` reporting; a driven session cycles every before and after layout, sets a reference photo, drags the histogram's shadows region (one `Develop {Photo}: Shadows` log line quoted), and commits the captures. Cheaper substitute that fails: a static before and after toggle, which `BeforeAfterLayoutTests` catch.
+
+## 2. History, Snapshots, and the Before State
+
+`D04 T02 §1`'s edit stack records every step and named snapshots; Lightroom and ACDSee photographers also set what "before" means, preview a step or snapshot by hovering, manage snapshots as named states, clear history, and reset one panel to its saved, default, or last-used values. Everything here is catalog data: no command in this section touches a file on disk. Saving, committing, and writing results are §17. Catalog: LP-0569 to LP-0574, LP-0577, LP-0583 (8 features). -> SOURCE: parity-lumen-develop-history
+
+**Fidelity:** Lumen develop module -- docs/captures/lumen/develop/ (the `D04 T02 §3` baseline); new captures to docs/captures/lumen/develop-history/.
+**Job:** a photographer can step back through any edit, compare any two states, and manage named snapshots per photo. Consumer: the edit stack and the before and after views of §1.
+**Treatment:** History and Snapshots panels with hover preview (Shift pauses it), a before-state menu (Copy After to Before, Copy Before to After, Swap, Set Before from a step or snapshot), a snapshots toolbar in the loupe and develop, per-group reset menus, Clear History, and Undo All. Cheaper substitute that fails the checkpoint: a before state fixed to the import settings, which `BeforeStateTests` catch.
+**Chrome:** extend `D04 T02 §1`'s `EditStack` and `D04 T02 §3`'s panels; consume `D01 T07 §6`'s `DevelopSnapshot`, `DevelopClipboard`, and `DevelopPresetStore`. Do not build a second snapshot store.
+
+**Requires:** display-session -- hover previews and the snapshot toolbar need an interactive desktop
+
+- [ ] Add `EditStack.BeforePointer` in `src/Lumen/Photon.Lumen.Core/Develop/EditStack.cs`: the settings the before view shows, defaulting to the photo's first step, persisted in the catalog with the stack (LP-0569). Done when: `BeforeStateTests.PersistsAcrossReopen` sets it, reopens the catalog, and reads it back.
+- [ ] Add the before-state commands Copy After to Before, Copy Before to After, Swap, and Set Before from Step or Snapshot, each one undoable step (LP-0569). Done when: `BeforeStateTests` execute and undo each and assert the before and current settings at every step.
+- [ ] Add hover preview: hovering a history step or snapshot renders it into the loupe from the cached demosaic, leaving restores the current render, and holding Shift pauses the live preview (LP-0570). Done when: `HoverPreviewTests` assert one render request with the hovered settings and none while Shift is held.
+- [ ] Add snapshot management over `D01 T07 §6` `DevelopSnapshot`: update with current settings, rename, delete, and create from a history step's context menu (LP-0571). Done when: `SnapshotManagementTests` cover each command and assert each is one undoable step.
+- [ ] Add the snapshots toolbar in the `D04 T01 §9` loupe and in develop: a list of the photo's snapshots where choosing one applies it as one step (LP-0574). Done when: a view-model test applies a snapshot from the loupe toolbar and the stack gains one step.
+- [ ] Add snapshot preview in the loupe from a snapshot badge's hover and the Return to Last Used Settings command, which applies the settings current at the end of the photo's previous develop session (LP-0583). Done when: a test ends a session, edits again, returns, and the settings equal the earlier session's end.
+- [ ] Add Clear History (keeps snapshots and collapses the steps into one base step at the current settings) with a confirmation naming the step count, and Undo All (jump to the first step as one step) (LP-0572). Done when: `ClearHistoryTests` assert snapshots survive, the confirmation text, and that Undo All is itself undoable.
+- [ ] Add the per-group reset and settings menu: reset the group to last saved, default, or last used; save the group as a preset through `DevelopPresetStore` (listed by §11); copy and paste the group through `DevelopClipboard` (LP-0573). Done when: `GroupResetTests` assert each reset changes only that group and a saved group preset lists in the store.
+- [ ] Add the developed and snapshot badges on grid thumbnails (through `D04 T01 §8`'s badge slots) and in the loupe status bar: developed when the current settings differ from the photo's defaults, snapshot when the photo has at least one snapshot (LP-0577, LP-0583). Done when: `DevelopBadgeTests` assert both states for a developed, an undeveloped, and a snapshotted fixture.
+- [ ] Log one Serilog Information line per before-state, snapshot, clear-history, and group-reset command (`Develop {Photo}: {Command}`). Done when: a test logger asserts one line per command.
+- [ ] Update `docs/user/lumen/develop.md` with the before state, hover preview, snapshots, clear history, and per-group reset. Done when: every command is described.
+- [ ] Commit captures of the History and Snapshots panels, the before-state menu, and the badges under `docs/captures/lumen/develop-history/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: develop history, snapshots, and the before state"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~BeforeStateTests|FullyQualifiedName~HoverPreviewTests|FullyQualifiedName~SnapshotManagementTests|FullyQualifiedName~ClearHistoryTests|FullyQualifiedName~GroupResetTests|FullyQualifiedName~DevelopBadgeTests"` exits 0; a driven session sets the before state from a snapshot, hovers three history steps, clears history, and resets the Tone Curve group, with the log lines quoted and captures committed. Cheaper substitute that fails: a before state fixed to the import settings, which `BeforeStateTests` catch.
+
+## 3. Profiles, White Balance, Presence, and HDR Editing
+
+The Basic panel from 0.1.0 has white balance presets, temperature, tint, and the tone sliders. Lightroom adds a profile browser with favorites and a creative amount, a white balance picker with a loupe, texture, clarity, and dehaze, per-slider auto, an output space choice for RAW, and HDR editing on HDR displays. The profiles, auto tone, and presence stages are the engine's (`D01 T07 §1`, `§2`); the HDR swap chain Imago built (`D03 T15 §4`) moves to `Photon.UI` here, since Lumen is its second consumer and may not reference Imago. Catalog: LP-0616 to LP-0622 (7 features). -> SOURCE: parity-lumen-develop-basic
+
+**Fidelity:** Lumen develop module -- docs/captures/lumen/develop/ (the `D04 T02 §3` baseline); new captures to docs/captures/lumen/profile-browser/ and docs/captures/lumen/hdr-edit/.
+**Job:** a photographer can pick a starting look, neutralize color from a gray point, set presence, and edit HDR photos on an HDR display without leaving the Basic panel. Consumer: the edit stack's `DevelopSettings`.
+**Treatment:** Lightroom's profile browser opened from the profile row (groups, favorites, grid and list, hover preview, amount), a white balance eyedropper (W) with a magnifying loupe and neutral-pixel highlight, strength, texture, clarity, and dehaze sliders, Auto and Shift-double-click per-slider auto, an output space row, and an HDR toggle with Visualize HDR and an SDR preview. Cheaper substitute that fails the checkpoint: a fixed profile list with no import, which `ProfileImportTests` catch.
+**Chrome:** extend `D04 T02 §3`'s Basic panel; consume `D01 T07 §1`'s `DevelopProfileCatalog`, `DcpReader`, and `AutoTone`, `D01 T07 §2`'s presence stages, the generated sliders of `DevelopParameterSchema`, and the moved HDR presenter. Do not add a Lumen profile store.
+
+**Requires:** display-session -- the profile browser, the picker, and HDR presentation need an interactive desktop
+
+- [ ] Move first: `HdrSwapChainHost` from `src/Imago/Photon.Imago.Rendering/Hdr/` to `src/Photon.UI/Hdr/` and `FloatDisplayTransform` to `src/Photon.Core/Color/Hdr/`, with their tests and the Vortice.Windows reference moving to the projects that now need it; Imago repoints, and `D03 T15 §4` gets a **Corrected 2026-09-27** note naming this section. Done when: `grep -rn "class HdrSwapChainHost\|class FloatDisplayTransform" src` prints one path each, outside `src/Imago/`, and Imago's HDR display tests pass.
+- [ ] Add the profile browser in `src/Lumen/Photon.Lumen.Desktop/Develop/Profiles/` listing `DevelopProfileCatalog` by group with grid and list views and hover preview from the cached demosaic, favorites through the engine's `Photon.Develop.Profiles.Favorites` key (shared with Imago, never a Lumen copy) (LP-0618). Done when: `ProfileBrowserViewModelTests` assert grouping, a favorite added in Lumen appears in the catalog's favorites, and hover renders once per profile.
+- [ ] Add the creative profile amount slider (0 to 200 percent) bound to the profile amount of `D01 T07 §1` (LP-0618). Done when: a test asserts the slider writes one merged step per scrub.
+- [ ] Add profile import: DCP files through `D01 T07 §1`'s `DcpReader` and LUT-based profiles through `D03 T11 §4`'s readers in `src/Photon.Core/Imaging/Luts/`, copied into the suite profile folder; an unreadable file is refused by name; no Adobe or camera-matching profile is bundled (LP-0618). Done when: `ProfileImportTests` import a test DCP and a `.cube` profile and refuse a truncated DCP by name.
+- [ ] Add the Treatment switch (Color, Black and White, V key) that changes the treatment group and switches the color mixer to its black and white mix (LP-0617). Done when: a test asserts V toggles treatment as one step and the mixer view follows.
+- [ ] Add the white balance picker (W): a 9 by 9 pixel loupe with an RGB readout following the pointer, sampling through `WhiteBalance.FromSample`, and a strength slider (0 to 100 percent) blending from the as-shot to the picked balance (LP-0619). Done when: `WhiteBalancePickerTests` pick the committed gray card and the render is neutral within Delta E 2000 2, and strength 50 lands halfway in temperature and tint.
+- [ ] Add the neutral-pixel highlight overlay while the picker is active: pixels whose chroma is under a threshold are tinted, so the user sees candidate grays (LP-0619). Done when: a test on a synthetic chart flags exactly the neutral patches.
+- [ ] Bind texture, clarity, and dehaze sliders to `D01 T07 §2` through the generated schema sliders (LP-0620). Done when: a view-model test asserts each slider writes its setting and nothing else.
+- [ ] Add Auto (tone and white balance) through `D01 T07 §1`'s `AutoTone` as one step, per-slider auto on Shift-double-click, and a tooltip on Auto naming `D04 T10 §11` for AI auto settings (LP-0621). Done when: `AutoToneSurfaceTests` assert Auto writes one step equal to the engine's deltas and a per-slider auto changes one setting.
+- [ ] Add the output color space for RAW: `Lumen.Develop.OutputSpace` (sRGB, Display P3, Adobe RGB, ProPhoto) as the default with a per-photo override, extending `D04 T02 §2`'s output transform with the profile embedded on export (LP-0622). Done when: a test asserts a per-photo override wins over the default and an export embeds the chosen profile.
+- [ ] Add HDR editing: an HDR toggle rendering through the moved `HdrSwapChainHost` when the display reports HDR (`IDXGIOutput6::GetDesc1`), Visualize HDR ranges, the HDR limit, an SDR preview with rendition settings, and the extended histogram and curve range; on an SDR display the toggle renders a tone-mapped preview and says so (LP-0616). Done when: `DevelopHdrSettingsTests` assert HDR off renders identically to 0.1.0 and the SDR fallback message appears with a fake SDR display.
+- [ ] Update `docs/user/lumen/develop.md` with profiles, import, treatment, the picker, presence, auto, output space, and HDR editing. Done when: every control is described.
+- [ ] Commit captures of the profile browser, the picker loupe, and the HDR toggle (on an HDR display when available, otherwise the SDR fallback, stated) under `docs/captures/lumen/profile-browser/` and `docs/captures/lumen/hdr-edit/`. Done when: the folders hold them.
+- [ ] Commit: `"lumen: profile browser, white balance picker, presence, and HDR editing"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~ProfileBrowserViewModelTests|FullyQualifiedName~ProfileImportTests|FullyQualifiedName~WhiteBalancePickerTests|FullyQualifiedName~AutoToneSurfaceTests|FullyQualifiedName~DevelopHdrSettingsTests"` exits 0; a driven session imports a test DCP, applies it at 50 percent, picks white balance on the gray card, and toggles HDR, with captures committed; `grep -rn "class HdrSwapChainHost" src` prints one path. Cheaper substitute that fails: profiles hard-coded in the app, which `ProfileImportTests` catch.
+
+## 4. Tone Curve, Color Mixer, Point Color, Color Grading, and ACDSee Color Panels
+
+Lumen's color surfaces reach Lightroom and ACDSee: per-channel curves with presets and the targeted adjustment tool, the eight-band color mixer and black and white mix, point color, three-way color grading, and ACDSee's Color EQ, color wheel, tone wheels, advanced black and white, and split tone. ACDSee's controls are alternative views of the same `DevelopSettings` groups, mapped in one documented table, never a second settings record; the one engine addition, a per-band contrast parameter in the color mixer for Color EQ, is engine code in `src/Photon.Core/`. Catalog: LP-0584, LP-0623 to LP-0631 (10 features). -> SOURCE: lumen-roadmap-color
+
+**Fidelity:** Lumen develop module -- docs/captures/lumen/develop/ (the `D04 T02 §3` baseline); new captures to docs/captures/lumen/color/.
+**Job:** a photographer can shift specific colors and tones precisely, by slider or by dragging on the photo. Consumer: the edit stack's `DevelopSettings`.
+**Treatment:** Lightroom's Tone Curve, Color Mixer, Point Color, and Color Grading panels, with ACDSee's Color EQ, color wheel, tone wheels, advanced black and white, and split tone offered as an alternative panel style over the same settings; the targeted adjustment tool drags on the photo. Cheaper substitute that fails the checkpoint: ACDSee controls stored in a second settings record, which `AcdseeColorMappingTests` refuse.
+**Chrome:** consume `D01 T07 §1` curves, `D01 T07 §2` mixer, point color, and grading, `D01 T07 §6` presets for curve presets, and the generated schema sliders. Do not add a curve evaluator in Lumen.
+
+**Requires:** display-session -- the color panels and the targeted tool need an interactive desktop
+
+- [ ] Add the Tone Curve panel extensions: RGB, red, green, and blue point curves, a point readout, click-to-add from the image, black, midtone, and white points with auto, the camera or standard base curve from `BaseToneCurve`, refine saturation, and clipping display (LP-0623). Done when: `ToneCurvePanelTests` assert each control writes its setting and a click on the image adds a point at the clicked luminance.
+- [ ] Add curve presets (Linear, Medium Contrast, Strong Contrast, and user curves) saved as tone-curve-only presets through `DevelopPresetStore` and exchanged as XMP (LP-0623). Done when: a test saves a user curve, reloads it, and exports and reimports it as XMP equal.
+- [ ] Add `TargetedAdjustment` in `src/Lumen/Photon.Lumen.Core/Develop/`: a drag on the photo maps to the curve region (Ctrl+Alt+Shift+T) or the mixer hue, saturation, or luminance band (Ctrl+Alt+Shift+H, S, L) under the pointer, one step per drag (LP-0584). Done when: `TargetedAdjustmentTests` drag on a sky-blue pixel and only the blue band's luminance changes, as one step.
+- [ ] Add the Color Mixer panel: HSL and per-color modes over the eight bands with an All view (LP-0624). Done when: `ColorPanelsViewModelTests` assert each band slider writes one setting.
+- [ ] Add the black and white mix with auto mix, and ACDSee's advanced black and white mapped in `AcdseeMapping`: contrast onto the light stage's contrast and colorization onto a global color grading hue and saturation (LP-0625). Done when: a test asserts auto mix writes the engine's weights and colorization changes only the global grading wheel.
+- [ ] Add the Point Color panel: sampled swatches from an eyedropper, hue, saturation, and luminance shift, variance, range refinement, visualize range, and use inside masks through §9's local point color (LP-0626). Done when: a test samples a swatch and asserts visualize range renders a separate buffer that never enters the stack.
+- [ ] Add the Color Grading panel: shadows, midtones, highlights, and global wheels, single-wheel views, luminance, blending, balance, and fine control with Ctrl (LP-0627). Done when: a test asserts Ctrl-drag moves the hue a tenth as far as a plain drag.
+- [ ] Add a per-band contrast parameter (`BandContrast`) to `ColorMixerSettings` in `src/Photon.Core/Develop/Color/ColorMixer.cs` (engine code, never under `src/Lumen/`), identity at zero, with its schema descriptor and a **Corrected 2026-09-27** note in `D01 T07 §2` naming this section. Done when: `ColorMixerTests.BandContrastIdentity` holds within 1/65535 and a nonzero value changes only pixels inside that band's falloff.
+- [ ] Add `src/Lumen/Photon.Lumen.Core/Develop/AcdseeMapping.cs` with Color EQ (saturation, brightness, hue, and contrast per color in its high-quality and standard modes, the modes mapped to the mixer's falloff width) onto the mixer (LP-0628), documented as a table in `docs/dev/lumen/acdsee-develop-mapping.md`. Done when: the page lists every Color EQ control with its engine setting.
+- [ ] Map ACDSee's color wheel (targeted hue range with saturation range, invert, mask preview, smoothness, several wheels) onto point color swatches (LP-0629). Done when: `AcdseeColorMappingTests.ColorWheel` asserts each control writes only its mapped point color field.
+- [ ] Map ACDSee's tone wheels (shadow, midtone, and highlight tint with eyedroppers, saturation, and brightness) onto color grading (LP-0630). Done when: `AcdseeColorMappingTests.ToneWheels` asserts each control writes only its mapped grading field.
+- [ ] Map ACDSee's split tone (highlight and shadow hue and saturation with balance) onto color grading's highlights, shadows, and balance (LP-0631). Done when: `AcdseeColorMappingTests.SplitTone` asserts a split tone renders within 1/255 of the equivalent grading.
+- [ ] Add the panel style switch `Lumen.Develop.ColorPanelStyle` (Lightroom or ACDSee) showing either set of panels over the same settings. Done when: a test sets a value in one style, switches, and the other style shows the mapped value; a grep finds no second color settings record under `src/Lumen/`.
+- [ ] Update `docs/user/lumen/develop.md` with every color panel, the targeted tool, and the ACDSee style. Done when: every control is described.
+- [ ] Commit captures of each panel in both styles under `docs/captures/lumen/color/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: tone curve, color mixer, point color, color grading, and ACDSee color panels"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~ToneCurvePanelTests|FullyQualifiedName~TargetedAdjustmentTests|FullyQualifiedName~ColorPanelsViewModelTests|FullyQualifiedName~AcdseeColorMappingTests|FullyQualifiedName~ColorMixerTests"` exits 0; a driven session drags the targeted tool on a sky (one step logged), switches to the ACDSee style, and captures each panel. Cheaper substitute that fails: a second ACDSee settings record, which `AcdseeColorMappingTests` and the grep refuse.
+
+## 5. Detail: Sharpening and Noise Reduction
+
+The Detail panel is where a high-ISO photographer decides whether a photo holds up at 100 percent, so it needs a 1:1 preview window and Alt-drag mask views as well as sliders. Sharpening and classical noise reduction are `D01 T07 §3`'s stages; ACDSee's threshold, strength, and tonal and frequency ranges map onto the same stages, and where a stage lacks a range weight the parameter is added to the engine, not to Lumen. A machine-learning denoiser stays backlog B-046; the Enhance dialog is `D04 T10 §8`. Catalog: LP-0632 to LP-0634 (3 features). -> SOURCE: lumen-roadmap-detail
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/detail/.
+**Job:** a photographer can sharpen edges and suppress noise while judging the result at 1:1. Consumer: the edit stack's `DevelopSettings`.
+**Treatment:** Lightroom's Detail panel with the preview window and its target, Alt-drag on amount, radius, detail, and masking showing the grayscale mask or radius view, and ACDSee's threshold, strength, and range controls in the same panel. Cheaper substitute that fails the checkpoint: sliders judged on a fit-size preview only, which `DetailPreviewTests` guard.
+**Chrome:** consume `D01 T07 §3`'s `SharpenStage` and `NoiseReductionStage` and their mask view output, and the generated schema sliders. No detail stage in Lumen.
+
+**Requires:** display-session -- the detail preview window and Alt-drag views need an interactive desktop
+
+- [ ] Add the Detail panel in `src/Lumen/Photon.Lumen.Desktop/Develop/Detail/` binding sharpening amount, radius, detail, and masking to `SharpenStage`, with ACDSee's threshold mapped onto the stage's masking threshold in `AcdseeMapping` (LP-0632). Done when: `DetailPanelViewModelTests` assert each slider writes its setting and the threshold writes the mapped one.
+- [ ] Add the Alt-drag views: masking shows the edge mask and amount, radius, and detail show the luminance-only radius view, rendered from the stage's mask view output as a separate buffer (LP-0632). Done when: a test asserts the Alt view buffer is separate and the develop render is unchanged by it.
+- [ ] Add the detail zoom preview: a 256 by 256 pixel 1:1 window with a movable target, dragged in the window or set by clicking the photo, rendering the full-resolution pipeline for its crop only through `DevelopPipeline`'s region render (LP-0633). Done when: `DetailPreviewTests.CropEqualsFull` asserts the crop render equals the same pixels of a full render within 1/255.
+- [ ] Bind noise reduction luminance, detail, and contrast, and color, detail, and smoothness to `NoiseReductionStage`, and map ACDSee's strength onto the luminance amount (LP-0634). Done when: a view-model test asserts each control writes one setting.
+- [ ] Add ACDSee's tonal range and frequency range as parameters of `NoiseReductionStage` in `src/Photon.Core/Develop/Detail/NoiseReductionStage.cs` (engine code) where the stage lacks them, identity at full range, with schema descriptors and a **Corrected 2026-09-27** note in `D01 T07 §3` naming this section (LP-0634). Done when: `SharpenAndNoiseTests.TonalRangeLimits` asserts pixels outside the tonal range keep their noise variance within 2 percent.
+- [ ] Follow the photo's process version for legacy compatibility: a photo on an older `ProcessVersion` shows "Legacy noise reduction (process <n>)" and renders through the engine's version switch until updated in §7 (LP-0634). Done when: a test renders an old-version fixture and the label and render match the older version.
+- [ ] Add a tooltip on the noise reduction header naming the Enhance dialog (`D04 T10 §8`) and backlog B-046 for a machine-learning denoiser. Done when: a view-model test reads the tooltip text.
+- [ ] Update `docs/user/lumen/develop.md` with the Detail panel, the preview window, and the Alt views. Done when: every control is described.
+- [ ] Commit captures of the panel, the preview window, and the masking Alt view on a high-ISO fixture under `docs/captures/lumen/detail/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: detail panel with sharpening, noise reduction, and a 1:1 preview"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~DetailPanelViewModelTests|FullyQualifiedName~DetailPreviewTests|FullyQualifiedName~SharpenAndNoiseTests"` exits 0, with `DetailPreviewTests.CropEqualsFull` within 1/255; a driven session on a high-ISO fixture shows the masking Alt view and the detail window, captured. Cheaper substitute that fails: judging on the fit-size preview, which `CropEqualsFull` guards.
+
+## 6. Lens Corrections, DNG Opcodes, and Flat-Field
+
+Lens corrections remove distortion, vignetting, and fringing with one click from the EXIF-matched profile and fix what profiles miss by hand. The lensfun database, matcher, LCP reader, and defringe effect are `D03 T14 §6`'s in `Photon.Core/Lens/`, and the correction stages are `D01 T07 §3`'s; this section adds Lumen's user profile folder, lens defaults, the opcodes a DNG carries (applied inside the engine's one composed inverse map so the image is still resampled once), ACDSee's Auto Lens preview in the Lumen Viewer, and flat-field correction, which writes a new DNG. Catalog: LP-0647 to LP-0653, LP-0976 (8 features). -> SOURCE: lumen-roadmap-lens
+
+**Freeze check:** Flat-field correction writes only `<name>-flatfield.dng` beside the original through the `D04 T13 §7` DNG writer over `AtomicFileWriter`; `FlatFieldTests` assert the target and reference originals' SHA-256 and last-write times are unchanged, and the unchanged-originals test of `D04 T02 §1` passes over every command here. Fixture source: `tests/fixtures/lumen/develop/flatfield/`.
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/lens/.
+**Job:** a photographer can remove distortion, vignetting, and fringing with one click and fix what profiles miss by hand. Consumer: the edit stack's `DevelopSettings` and, for flat-field, a new DNG in the catalog.
+**Treatment:** Lightroom's Lens Corrections panel with Profile and Manual tabs, a fringe picker, an "Applied from file" row for DNG opcodes, a flat-field dialog, and ACDSee's Auto Lens toggle in the viewer. Cheaper substitute that fails the checkpoint: manual sliders only, which `LensPanelViewModelTests.AutoMatch` catches.
+**Chrome:** consume `D03 T14 §6`'s `LensfunDatabase`, `LensMatcher`, and `LcpReader`, `D01 T07 §3`'s `ILensProfileSource`, lens, CA, defringe, and composed-map stages, the `D04 T13 §7` DNG writer, and `D04 T06 §3` stacks. Do not add a second lens reader.
+
+**Requires:** display-session -- the lens panel, the fringe picker, and the viewer toggle need an interactive desktop
+
+- [ ] Add the Profile tab in `src/Lumen/Photon.Lumen.Desktop/Develop/Lens/`: enable, auto match through `LensMatcher` from the catalog's EXIF, custom make, model, and profile pickers, and distortion and vignetting amounts (LP-0648). Done when: `LensPanelViewModelTests.AutoMatch` picks the expected profile for three committed EXIF records.
+- [ ] Register Lumen's user profile folder (`%LOCALAPPDATA%\Rizonesoft\Lumen\LensProfiles\`) with `ILensProfileSource` for imported LCP files, an unreadable file refused by name (LP-0648). Done when: a test imports a test LCP, lists it beside the bundled profiles, and refuses a malformed one by path.
+- [ ] Add saved lens defaults per lens and mapped defaults with auto-apply on a photo's first develop, stored in `Lumen.Develop.LensDefaults` (LP-0648). Done when: `LensDefaultsTests` assert a saved default applies to a new photo from the same lens and not to another.
+- [ ] Show the lensfun attribution (data CC BY-SA 3.0) in Lumen's About dialog, read from `src/Photon.Core/Lens/README.md`'s attribution block rather than restated. Done when: a test asserts the About text contains the attribution string from that file.
+- [ ] Add chromatic aberration removal by profile or automatic, and ACDSee's red and cyan and blue and yellow shifts mapped onto the manual lateral CA scale of `ChromaticAberration` (LP-0647, LP-0650). Done when: a test asserts each ACDSee shift writes only its mapped scale.
+- [ ] Add defringe with purple and green amount and hue, the fringe picker (the engine's eyedropper helper returning a hue range), and ACDSee's defringe strength, radius, and color mapped onto the same stage (LP-0650). Done when: a test picks a synthetic purple fringe and the returned range covers its hue.
+- [ ] Add the Manual tab: distortion with constrain crop, lens vignetting amount and midpoint, and ACDSee's vignette correction strength and radius mapped onto them (LP-0649). Done when: a view-model test asserts each control's setting and mapping.
+- [ ] Add `src/Photon.Core/Develop/Optics/DngOpcodes.cs` (engine code, since Imago develops DNGs through the same engine): parse `OpcodeList1` to `OpcodeList3` bytes the decoder passes on `RawDevelopSource`, apply `GainMap` and `FixVignetteRadial` as a gain before the profile corrections, and add `WarpRectilinear` as a term of `ComposedInverseMap` so the image is still resampled once (LP-0653, LP-0976). Done when: `DngOpcodeTests` correct the committed opcode fixture within 1/255 of Adobe DNG SDK `dng_validate` output (version recorded) and the counting `Resampler` still records one call.
+- [ ] Show opcode corrections in the panel as "Applied from file" with a switch to disable them per photo (LP-0653). Done when: a view-model test asserts the row for an opcode fixture and its absence for a plain raw.
+- [ ] Add Auto Lens in the Lumen Viewer (`D04 T04 §2`'s display path): a preview-only toggle rendering viewer images through a lens-correction-only settings record, restored at startup from `Lumen.Viewer.AutoLens` and never saved to any photo (LP-0652). Done when: a test asserts the toggle renders through the lens stage, writes no edit-stack step, and reads back after restart.
+- [ ] Add `FlatFieldCorrector` in `src/Lumen/Photon.Lumen.Core/Develop/FlatField/`: choose a reference frame of a uniform surface, compute a per-channel gain map smoothed to a low-pass surface, and apply it to one or many target raws of the same lens and aperture (LP-0651). Done when: `FlatFieldTests.Uniformity` corrects a committed vignetted uniform fixture to within 2 percent corner-to-center.
+- [ ] Write each flat-field result as `<name>-flatfield.dng` through `D04 T13 §7`, cataloged and stacked with its original through `D04 T06 §3`, the original untouched (LP-0651). Done when: `FlatFieldTests.NewFileOnly` asserts the new file exists, is stacked, and the original's hash is unchanged.
+- [ ] Update `docs/user/lumen/develop.md` with lens corrections, opcodes, flat-field, and Auto Lens. Done when: every control is described.
+- [ ] Commit captures of both tabs, the fringe picker, and the flat-field dialog under `docs/captures/lumen/lens/`, with the opcode and flat-field fixtures in `tests/fixtures/lumen/develop/` and their `reference.txt`. Done when: the folders hold them.
+- [ ] Commit: `"lumen: lens corrections, DNG opcodes, Auto Lens, and flat-field"`
+
+**Test checkpoint:** Format fidelity proof plus unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~LensPanelViewModelTests|FullyQualifiedName~LensDefaultsTests|FullyQualifiedName~DngOpcodeTests|FullyQualifiedName~FlatFieldTests"` exits 0, with the committed opcode fixture within 1/255 of `dng_validate` output and the flat-field originals' hashes unchanged; a driven session applies a profile from EXIF to a wide-angle fixture, captured. Cheaper substitute that fails: ignoring embedded opcodes, which `DngOpcodeTests` catch.
+
+## 7. Transform, Upright, Calibration, and Process Versions
+
+An architecture photographer straightens converging lines and expects old edits to keep rendering as they did. Upright, guided upright, and manual geometry are `D01 T07 §3`'s, calibration is `D01 T07 §2`'s, and `ProcessVersion` is `D01 T07 §1`'s; this section surfaces them, adds the shear parameter the engine's homography lacks, maps ACDSee's perspective filter onto the same parameters, and makes process updates explicit. Catalog: LP-0585, LP-0654 to LP-0659, LP-0977 (8 features). -> SOURCE: parity-lumen-develop-transform
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/transform/.
+**Job:** a photographer can straighten converging lines and keep old edits rendering exactly as before until they choose to update. Consumer: the edit stack's `DevelopSettings`.
+**Treatment:** Lightroom's Transform panel with Upright buttons and the Guided tool (Shift+T) with a loupe, transform sliders, rotate and nudge commands, the Calibration panel, and a process version row with Update to Current and a before and after preview; ACDSee's Perspective controls as the alternative style. Cheaper substitute that fails the checkpoint: silently upgrading old photos, which `ProcessVersionUpdateTests` catch.
+**Chrome:** consume `D01 T07 §3` `Upright` and manual geometry, `D01 T07 §2` calibration, and `D01 T07 §1` `ProcessVersion`. No geometry math in Lumen.
+
+**Requires:** display-session -- guided upright and the transform overlays need an interactive desktop
+
+- [ ] Add the Upright buttons Off, Auto, Level, Vertical, and Full with Reanalyze, and Shift-click cycling, over `D01 T07 §3`'s `Upright` (LP-0654). Done when: `UprightSurfaceTests` assert each button writes its mode as one step and Reanalyze reruns the detection.
+- [ ] Add the Guided Upright tool (Shift+T): up to four guides drawn on the photo in normalized coordinates, with a loupe while dragging, applied live (LP-0655). Done when: a test draws two guides on a synthetic facade and the verticals come out within 0.2 degrees.
+- [ ] Add transform sliders vertical, horizontal, rotate, aspect, scale, offset X and Y, and constrain crop (LP-0656). Done when: `TransformPanelViewModelTests` assert each slider writes its setting.
+- [ ] Add shear (horizontal and vertical) to the manual geometry homography in `src/Photon.Core/Develop/Geometry/` (engine code) with a schema descriptor and a **Corrected 2026-09-27** note in `D01 T07 §3` naming this section (LP-0656). Done when: `ManualGeometryTests.Shear` maps a synthetic square to the expected parallelogram within 0.5 px and zero shear is the identity.
+- [ ] Map ACDSee's Perspective controls (vertical, horizontal, rotation, skew, aspect, scale) onto the same parameters in `AcdseeMapping` (LP-0659). Done when: `AcdseeGeometryMappingTests` assert each control writes only its mapped parameter.
+- [ ] Add Rotate 90 left and right (Ctrl+[ and Ctrl+]) and nudge by 5 degrees as crop-angle steps (LP-0658). Done when: a test asserts four rotations return to the start and each is one step.
+- [ ] Add the Calibration panel: shadows tint and red, green, and blue primary hue and saturation (LP-0657). Done when: a view-model test asserts each slider writes its setting.
+- [ ] Add the process version row: the photo's `ProcessVersion`, a version picker, and Update to Current as one undoable step with a before and after preview dialog, available on a selection as one batch step (LP-0585). Done when: `ProcessVersionUpdateTests` update 10 photos in one step and undo restores every version.
+- [ ] Keep older versions rendering bit-identically: photos cataloged with an older `ProcessVersion` render through the engine's version switch and are never upgraded without the command (LP-0977). Done when: `ProcessVersionUpdateTests.OldVersionUnchanged` renders an old-version fixture byte-identical to its committed golden until updated.
+- [ ] Update `docs/user/lumen/develop.md` with Upright, guided upright, transform, calibration, and process versions. Done when: every control is described.
+- [ ] Commit captures of the Transform panel, a guided upright session, and the process update dialog under `docs/captures/lumen/transform/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: upright, transform, calibration, and process versions"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~UprightSurfaceTests|FullyQualifiedName~TransformPanelViewModelTests|FullyQualifiedName~ManualGeometryTests|FullyQualifiedName~AcdseeGeometryMappingTests|FullyQualifiedName~ProcessVersionUpdateTests"` exits 0; a driven guided upright on a building fixture is captured. Cheaper substitute that fails: silently upgrading old photos, which `OldVersionUnchanged` catches.
+
+## 8. Effects and Crop Extensions
+
+Crop from 0.1.0 (`D04 T02 §4`) has aspect presets, straighten, and a thirds overlay. Photographers who print crop to exact sizes along a golden spiral and finish with vignette and grain; this section extends crop with custom ratios, every guide overlay, and exact sizes with units and resolution, and adds the Effects panel over the engine's post-crop vignette and grain. Catalog: LP-0660 to LP-0664 (5 features). -> SOURCE: parity-lumen-develop-effects
+
+**Fidelity:** Lumen crop overlay -- docs/captures/lumen/crop/ (the `D04 T02 §4` baseline); new captures to docs/captures/lumen/effects/ and docs/captures/lumen/crop-overlays/.
+**Job:** a photographer can crop to an exact print size along any composition guide and finish with vignette and grain. Consumer: the edit stack's crop and effects settings.
+**Treatment:** Lightroom's Effects panel and crop overlay cycling with O and Shift+O, ACDSee's exact crop fields with units and resolution. Cheaper substitute that fails the checkpoint: overlays drawn with no exact size, which `ExactCropSizeTests` catch.
+**Chrome:** extend `D04 T02 §4`'s crop tool; consume `D01 T07 §3`'s `CropSettings`, post-crop vignette, and grain. No crop math in Lumen beyond unit conversion.
+
+**Requires:** display-session -- the crop overlays need an interactive desktop
+
+- [ ] Add the post-crop vignette controls: style (highlight priority, color priority, paint overlay), amount, midpoint, roundness, feather, and highlights (LP-0660). Done when: `EffectsPanelViewModelTests` assert each control writes its setting.
+- [ ] Add grain amount, size, and roughness, with ACDSee's smoothing mapped onto roughness in `AcdseeMapping` (LP-0661). Done when: a test asserts the mapping and that grain renders byte-identically for the same seed.
+- [ ] Add custom aspect ratios stored in `Lumen.Develop.Crop.CustomRatios`, previous ratio, Alt-drag from center, auto straighten, constrain to image, reset, and crop to original (LP-0662). Done when: `CropExtensionTests` assert a custom ratio persists across restart and constrain to image never leaves a transparent corner.
+- [ ] Add `CropOverlayGeometry` in `src/Lumen/Photon.Lumen.Core/Develop/Crop/`: thirds, grid, diagonal, triangle, golden ratio, golden spiral, and aspect frames, with O cycling, Shift+O rotating the spiral and triangle, a show mode (always, auto, never), and outside opacity (LP-0663). Done when: `CropOverlayGeometryTests` assert the golden ratio lines at 0.382 and 0.618 of the crop and four rotations of the spiral.
+- [ ] Add exact crop size: width and height in px, cm, or in with a resolution, a constrain list with defaults, maximize, rotate crop, arrow-key resize, and preview cropped (LP-0664). Done when: `ExactCropSizeTests` assert a 10 by 15 cm request at 300 ppi yields 1181 by 1772 px.
+- [ ] Update `docs/user/lumen/develop.md` with the Effects panel and every crop extension. Done when: every control is described.
+- [ ] Commit captures of each overlay and the exact size fields under `docs/captures/lumen/crop-overlays/`, and the Effects panel under `docs/captures/lumen/effects/`. Done when: the folders hold them.
+- [ ] Commit: `"lumen: crop overlays, exact crop size, vignette, and grain"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~EffectsPanelViewModelTests|FullyQualifiedName~CropExtensionTests|FullyQualifiedName~CropOverlayGeometryTests|FullyQualifiedName~ExactCropSizeTests"` exits 0; captures of each overlay are committed. Cheaper substitute that fails: overlays drawn with no exact size, which `ExactCropSizeTests` catch.
+
+## 9. Masking: Brushes, Gradients, Range Masks, and Pixel Targeting
+
+Local work is where most develop time goes: brushing a sky darker, a radial on a face, a luminance range on the shadows, and ACDSee's pixel targeting, which restricts an adjustment by tone and color. The masking engine (`D01 T07 §4`) stores every mask as geometry and parameters in normalized coordinates and runs the global stage code under a per-pixel weight; this section is its Lumen surface. Where Lumen's local adjustment set or refinement needs a parameter the engine lacks (vibrance, a local curve, a local color mixer, and grain; edge shift), it is added to the engine, never to Lumen, and ACDSee's smart brushing and pixel targeting map onto the engine's existing range components. AI mask kinds join from `D04 T10 §7`, and depth ranges from `D04 T10 §10`. Catalog: LP-0667 to LP-0682 (16 features). -> SOURCE: lumen-roadmap-local
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/masking/.
+**Job:** a photographer can adjust only the sky, a face, or the shadows with masks they can refine, reuse, and copy to other photos. Consumer: the edit stack's `DevelopSettings.Masks`.
+**Treatment:** Lightroom's Masking panel (Shift+W) with the create menu, component add, subtract, and intersect, the overlay color and modes, and brush, gradient, and range tools; ACDSee's pixel targeting as a tab of the same panel. Cheaper substitute that fails the checkpoint: masks rasterized at preview resolution, which `MaskResolutionIndependenceTests` catch.
+**Chrome:** consume `D01 T07 §4`'s `DevelopMask`, components, `MaskCombiner`, `MaskRasterizer`, and `LocalAdjustmentSet`, `D01 T07 §6` mask presets, and the generated local schema sliders. No mask math in Lumen.
+
+**Requires:** display-session -- painting and dragging masks needs an interactive desktop
+
+- [ ] Add the Masking panel in `src/Lumen/Photon.Lumen.Desktop/Develop/Masking/` (Shift+W) with a create menu (Brush, Linear Gradient, Radial Gradient, Color Range, Luminance Range), its Depth Range entry disabled with the tooltip "Planned: D04 T10 §10" and its AI entries disabled with "Planned: D04 T10 §7" until those sections ship (LP-0668). Done when: `MaskPanelViewModelTests` create each available kind as one step and read each disabled entry's tooltip.
+- [ ] Add vibrance, a local tone curve, a local color mixer (for ACDSee's local Color EQ), and grain to `LocalAdjustmentSet` in `src/Photon.Core/Develop/Masking/LocalAdjustmentSet.cs` (engine code, reusing the global stages under the weight), with local schema descriptors and a **Corrected 2026-09-27** note in `D01 T07 §4` naming this section (LP-0679). Done when: `LocalAdjustmentTests` assert each new field under a full mask equals its global stage within 1e-5.
+- [ ] Add the local adjustment sliders generated from the local schema: amount, temperature, tint, tone, presence, hue, saturation, vibrance, color tint, color EQ, curve, point color, sharpness, noise, moire, defringe, and grain, with ACDSee's fill light mapped onto local shadows in `AcdseeMapping` (LP-0679). Done when: a view-model test asserts one control per local descriptor and the fill light mapping.
+- [ ] Add the brush tool: A and B brushes and an eraser, each with size, feather, flow, and density, pen pressure through WPF stylus input, Shift for straight lines, faster brushing (a reduced preview while the stroke is live), and Alt-click to delete a stroke (LP-0669). Done when: `BrushToolTests` assert each brush keeps its own settings, a Shift-click pair makes a straight stroke, and pressure scales dab size.
+- [ ] Add auto mask and ACDSee's smart brushing by color, brightness, or both with a tolerance: the stroke is intersected with a color or luminance range component sampled at the stroke start, using the engine's existing components (LP-0670). Done when: `SmartBrushTests` assert a smart stroke over a hard edge leaks under 1 percent across it and the stored mask holds a stroke and a range component, not a bitmap.
+- [ ] Add the linear gradient with guides and a 45 degree lock (Shift) and the radial gradient with feather, roundness (squareness), a circle constraint (Shift), invert, and expand to image (Ctrl+double-click) (LP-0671, LP-0672). Done when: `GradientToolTests` assert the lock angles and that expand to image covers the frame.
+- [ ] Add brush editing of gradients (brush add and subtract strokes combined with the gradient component) and Convert Gradient to Brush Mask (LP-0673). Done when: a test converts a gradient and its coverage is unchanged within 1/255 while the mask is now labeled a brush mask.
+- [ ] Add the color range and luminance range tools with refine, smoothness, a luminance map view, and add detail (LP-0674). Done when: a test samples a range from the image and the refine slider narrows coverage monotonically.
+- [ ] Add set operations: add, subtract, and intersect components, invert, duplicate and invert, duplicate, rename, hide, delete, enable, and clear all, up to 24 masks with a message at the limit, and dragging a component between masks (LP-0675). Done when: `MaskSetOperationTests` assert each operation is one step and the 25th mask is refused with the message.
+- [ ] Add Delete Empty Masks as a command and on leaving the masking tool (LP-0667). Done when: a test creates an empty mask, leaves the tool, and the mask is gone in one undoable step.
+- [ ] Add edge shift (grow or shrink coverage) beside feather to the engine's mask refinement in `src/Photon.Core/Develop/Masking/` (engine code), with a **Corrected 2026-09-27** note in `D01 T07 §4`, and surface both as refine controls (LP-0676). Done when: a test asserts edge shift 0 is the identity and a positive shift widens coverage by the set fraction within 1 px at two render scales.
+- [ ] Add the masks panel options: dock or float, auto hide, and component badges (pins) on the photo (LP-0677). Done when: a view-model test reads back the dock and auto-hide settings after restart.
+- [ ] Add the mask overlay: show overlay (O) with a color picker and opacity, modes (color overlay, color overlay on black and white, image on black and white, image on black, image on white, white on black) cycled with Alt+O, pin visibility (always, selected, never), and hover to reveal strokes (LP-0678). Done when: `MaskOverlayTests` render each mode as a separate buffer that never enters the develop render.
+- [ ] Add local adjustment presets through `D01 T07 §6` mask presets, listed in the panel with save, apply, and delete (LP-0680). Done when: a test saves a preset from a mask and applies it to a new mask with equal adjustments.
+- [ ] Add copy, paste, and duplicate of masks between photos in normalized coordinates, rotated for orientation differences, each paste one step (LP-0681). Done when: a test pastes a radial mask from a landscape to a portrait photo and its center lands on the same subject point.
+- [ ] Add ACDSee's pixel targeting tab: a tone grabber (click the image to target that tone band), color wheels, invert, smoothness, add detail, a skin targeting preset (the engine's skin hue range), and saved presets, each mapped onto the engine's luminance and color range components in `AcdseeMapping` (LP-0682). Done when: `PixelTargetingMappingTests` assert each control writes only its mapped range field and the tone grabber targets the clicked luminance.
+- [ ] Prove resolution independence of every mask kind: preview and export masks agree within 1/255 after resampling. Done when: `MaskResolutionIndependenceTests` pass for brush, gradients, ranges, and pixel targeting.
+- [ ] Update `docs/user/lumen/develop.md` with the masking panel, tools, operations, overlay, presets, and pixel targeting. Done when: every control is described.
+- [ ] Commit captures of the panel, each tool, each overlay mode, and the pixel targeting tab under `docs/captures/lumen/masking/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: masking with brushes, gradients, range masks, and pixel targeting"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~MaskPanelViewModelTests|FullyQualifiedName~LocalAdjustmentTests|FullyQualifiedName~BrushToolTests|FullyQualifiedName~SmartBrushTests|FullyQualifiedName~MaskSetOperationTests|FullyQualifiedName~MaskOverlayTests|FullyQualifiedName~PixelTargetingMappingTests|FullyQualifiedName~MaskResolutionIndependenceTests"` exits 0; a driven session brushes a sky mask, subtracts a luminance range, and exports, with the preview and the export compared and captures committed. Cheaper substitute that fails: preview-resolution bitmaps, which `MaskResolutionIndependenceTests` catch.
+
+## 10. Remove, Heal, Clone, and Red Eye
+
+The Remove tool removes dust and blemishes with heal, clone, and content-aware modes, and red eye and pet eye are fixed in develop; all of it is develop data from `D01 T07 §5`, stored in normalized coordinates. The engine reaches the content-aware fill through `D01 T07 §5`'s default provider over the PatchMatch completion solver `D03 T13 §3` builds in `src/Photon.Core/Imaging/ContentAware/`, which also serves §16's panorama edge fill. The generative variant is `D04 T10 §9`. Catalog: LP-0683 to LP-0686 (4 features). -> SOURCE: parity-lumen-develop-remove
+
+**Corrected 2026-09-27:** at authoring this section moved the PatchMatch solver out of Imago as its second consumer; the Lumen integration has `D03 T13 §3` build it in `Photon.Core` from the start (the develop engine's Remove mode is already a shared consumer), so this section consumes it and moves nothing.
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/remove/.
+**Job:** a photographer can remove dust and blemishes and fix red eye without leaving develop. Consumer: the edit stack's `DevelopSettings.Spots`.
+**Treatment:** Lightroom's Remove tool (Q) with Heal, Clone, and Remove mode buttons, size, feather, and opacity, source handles with refresh (slash), brushed spots, Visualize Spots (A), tool overlay modes (H), and the red eye tool with a pet eye mode. Cheaper substitute that fails the checkpoint: clone only, which `RemoveToolViewModelTests` catch.
+**Chrome:** consume `D01 T07 §5`'s `SpotOperation`, `SpotStage`, `RedEye`, and `IContentAwareFillProvider`, and the moved content-aware solver. No healing math in Lumen.
+
+**Requires:** display-session -- the remove and red eye tools need an interactive desktop
+
+- [ ] Confirm the PatchMatch completion solver is the one `D03 T13 §3` built in `src/Photon.Core/Imaging/ContentAware/` and that `D01 T07 §5` registers it as the default content-aware provider Lumen's Remove mode reaches; nothing moves here. Done when: `grep -rn "class PatchMatch" src` prints one path, under `src/Photon.Core/`, and `ContentAwareProviderTests` resolve that provider in Lumen's composition root.
+- [ ] Register the moved solver as Lumen's `IContentAwareFillProvider` in the Lumen composition root (LP-0684). Done when: `ContentAwareProviderTests` assert Remove mode in Lumen calls the provider and the result carries no "Remove used Heal" note.
+- [ ] Add the Remove tool panel in `src/Lumen/Photon.Lumen.Desktop/Develop/Remove/`: Heal, Clone, and Remove mode buttons, size, feather, and opacity, and switching the mode of a selected spot (LP-0683, LP-0684). Done when: `RemoveToolViewModelTests` create a spot in each mode and switch one spot's mode as one step.
+- [ ] Add source handling: automatic source pick through the engine, refresh with the slash key, dragging the source handle, and a skip-auto-fill option that waits for the user to place the source (LP-0683). Done when: a test asserts refresh picks a different source and a dragged source survives a re-render.
+- [ ] Add brushed spots: dragging paints a stroke-shaped spot stored as a `D01 T07 §5` brush path in normalized coordinates (LP-0683). Done when: a test paints a stroke and the stored spot holds vector points, not a bitmap.
+- [ ] Add Visualize Spots (A) with a threshold slider over the engine's edge-map view output, and tool overlay modes (always, selected, never, H cycles) (LP-0685). Done when: a test asserts the visualize buffer is separate and the develop render is unchanged by it.
+- [ ] Add the red eye tool with red eye and pet eye modes: pupil size, darken, and catchlight for pet eye (LP-0686). Done when: `RedEyeSurfaceTests` fix the committed red-eye fixture with pupil red under 2 percent and the pet-eye fixture with one catchlight.
+- [ ] Add a tooltip on the Remove tool's generative option naming `D04 T10 §9`, disabled until that section ships. Done when: a view-model test reads the tooltip and the disabled state.
+- [ ] Prove resolution independence: a spot renders the same at two scales within 1/255. Done when: `SpotResolutionIndependenceTests` pass for heal, clone, and remove spots.
+- [ ] Update `docs/user/lumen/develop.md` with the Remove tool, Visualize Spots, and red eye. Done when: every control is described.
+- [ ] Commit captures of each mode on a sensor-dust fixture and the red eye tool under `docs/captures/lumen/remove/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: remove, heal, clone, content-aware, visualize spots, and red eye"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~RemoveToolViewModelTests|FullyQualifiedName~ContentAwareProviderTests|FullyQualifiedName~SpotResolutionIndependenceTests|FullyQualifiedName~RedEyeSurfaceTests"` exits 0 and `grep -rn "class PatchMatch" src` prints one path; a driven dust-removal session on a sensor-dust fixture is captured. Cheaper substitute that fails: pixel patches stored as bitmaps, which `SpotResolutionIndependenceTests` catch.
+
+## 11. Presets and Defaults Extended
+
+`D04 T02 §5` gave Lumen presets, copy and paste, and sync; photographers with hundreds of presets need groups, a settings checklist, an amount, stacking, import and export in Lightroom's formats, visibility filters, and defaults that open each camera with the right settings. Presets, amounts, `crs` exchange, and raw defaults are `D01 T07 §6`'s; this section is their Lumen surface, extends the raw-defaults key with serial and ISO in the engine, and adds per-photo settings files, which write beside the photo and never into it. Catalog: LP-0586 to LP-0595 (10 features). -> SOURCE: parity-lumen-develop-presets
+
+**Freeze check:** Exporting settings files writes `<name>.xmp` only in the chosen folder through `AtomicFileWriter`; when that folder is the photo's own, the file is merged into the photo's sidecar through the `D04 T01 §11` sidecar writer, keeping every other namespace; no preset, default, or settings-file command opens an original for writing, and `SettingsFileTests` assert every fixture original's SHA-256 is unchanged. Fixture source: `tests/fixtures/lumen/import/`.
+
+**Fidelity:** Lumen presets panel -- docs/captures/lumen/presets/ (the `D04 T02 §5` baseline); new captures to docs/captures/lumen/presets-manage/.
+**Job:** a photographer can organize hundreds of presets, apply them at any strength, and have each camera open with the right defaults. Consumer: `DevelopPresetStore`, the raw defaults, and the edit stack.
+**Treatment:** Lightroom's Presets panel with an Amount slider and groups, the New Preset checklist dialog, the Manage Presets dialog, import and export with a tree selection, and a Raw Defaults preferences page. Cheaper substitute that fails the checkpoint: presets as a flat unordered list with global defaults only, which `RawDefaultsResolutionTests` catch.
+**Chrome:** extend `D04 T02 §5`'s presets panel; consume `D01 T07 §6`'s `DevelopPreset`, `DevelopPresetStore`, `CrsSettingsMap`, and raw defaults, and the `D04 T01 §11` sidecar writer. No second preset store.
+
+**Requires:** display-session -- the preset dialogs and preferences page need an interactive desktop
+
+- [ ] Add the presets panel tree with groups and categories, a filter-by-name box, and a Last Used Preset entry (LP-0588, LP-0590, LP-0594). Done when: `PresetPanelViewModelTests` filter a fixture store by substring and show the last used preset first.
+- [ ] Add the New Preset dialog with a per-group settings checklist, Select All and Check None, and global, panel, and group scopes (LP-0588, LP-0594). Done when: `PresetScopeTests` save a group-scoped preset and applying it changes only that group.
+- [ ] Add Update with Current Settings, rename, delete, move between groups, and the Manage Presets dialog that shows or hides groups (LP-0588). Done when: a test covers each command and a hidden group stays hidden after restart.
+- [ ] Add the Amount slider (0 to 200 percent) with hover preview through `DevelopPreset`'s amount (LP-0587). Done when: `PresetAmountStackingTests.Amount` asserts 50 percent halves each delta.
+- [ ] Add preset stacking: several presets applied as consecutive steps with a stack list showing each applied preset and its amount (LP-0587). Done when: `PresetAmountStackingTests.Stack` applies two presets and the list and the steps match.
+- [ ] Add import and export: `crs` XMP through `CrsSettingsMap`, ZIP bundles, and Lumen JSON, with a tree selection, and an import report naming the fields with no Photon equivalent (LP-0589). Done when: `PresetImportReportTests` import a committed `crs` ZIP and the report lists its unmapped fields.
+- [ ] Add visibility options: show partially compatible presets (for example RAW-only presets on a JPEG, marked), hide incompatible ones, and Restore Built-in Presets (LP-0590). Done when: a test lists a RAW-only preset as partial on a JPEG and restoring built-ins brings back a deleted one.
+- [ ] Add Store Presets with This Catalog (`Lumen.Develop.StorePresetsWithCatalog`) and the presets folder shown in preferences, both read by `DevelopPresetStore` (LP-0590, LP-0592). Done when: a test switches the option and the store lists presets from the catalog folder.
+- [ ] Add Lumen's bundled preset sets (film, cinematic, moody, matte, and black and white) as JSON in `src/Lumen/Photon.Lumen.Core/Develop/Presets/Builtin/`, authored in the repository under the project's GPL-3.0, beside the engine's built-in looks, with no Adobe or ACDSee preset content (LP-0591). Done when: a test loads every bundled preset and renders the committed fixture without error.
+- [ ] Extend the engine's raw defaults key with an optional serial number and ISO in `src/Photon.Core/Develop/Presets/` (engine code), resolving serial before model and ISO before model alone before global, with a **Corrected 2026-09-27** note in `D01 T07 §6` naming this section (LP-0586, LP-0592). Done when: `RawDefaultsResolutionTests` assert serial beats model plus ISO beats model beats global.
+- [ ] Add the develop defaults commands: Reset to Lumen Default, Set Default Settings (global, per camera model, serial, or ISO), and Save New Sharpening and Noise Defaults (LP-0586). Done when: a test sets a per-model default and a new photo from that model opens with it.
+- [ ] Add the Raw Defaults preferences page: the master default (Lumen default, camera settings, or a preset) and the per-camera override list with add, edit, and remove (LP-0592). Done when: a view-model test adds an override and reads it back after restart.
+- [ ] Add applying presets from the filmstrip context menu, the library grid's context menu, and the loupe, each application over a selection one batch undo step (LP-0593). Done when: a test applies a preset to 20 photos and one undo reverts all 20.
+- [ ] Add per-photo settings files: Export Develop Settings writes `<name>.xmp` (`crs:` and `photon-develop:`) into a chosen folder, and Import Develop Settings reads files matching the selected photos by name, as one batch step (LP-0595). Done when: `SettingsFileTests` export and reimport five photos' settings equal, and the originals' hashes are unchanged.
+- [ ] Log one Serilog Information line per preset import, export, and batch application. Done when: a test logger asserts each line.
+- [ ] Update `docs/user/lumen/develop.md` with preset management, amount, stacking, import and export, defaults, and settings files. Done when: every control is described.
+- [ ] Commit captures of the panel, the New Preset and Manage Presets dialogs, and the Raw Defaults page under `docs/captures/lumen/presets-manage/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: preset management, amount, import and export, raw defaults, and settings files"`
+
+**Test checkpoint:** Format fidelity proof plus unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~PresetPanelViewModelTests|FullyQualifiedName~PresetScopeTests|FullyQualifiedName~PresetAmountStackingTests|FullyQualifiedName~PresetImportReportTests|FullyQualifiedName~RawDefaultsResolutionTests|FullyQualifiedName~SettingsFileTests"` exits 0, with the committed `crs` ZIP's presets reading into settings and exported settings files reimporting equal; a driven session imports the ZIP and applies one preset at 50 percent to 20 photos as one undo step. Cheaper substitute that fails: global defaults only, which `RawDefaultsResolutionTests` catch.
+
+## 12. Sync, Copy and Paste, and Auto Sync Extended
+
+One edit is usually meant for a whole shoot. `D04 T02 §5` syncs settings through a dialog; Lightroom adds Previous, saved copy subsets, sync without a dialog, Auto Sync, Match Total Exposures, and snapshot sync, and ACDSee adds a develop settings summary. Masks, spots, and crops are normalized, so a paste onto a photo of other dimensions or orientation lands in the same place. Catalog: LP-0596 to LP-0601 (6 features). -> SOURCE: parity-lumen-develop-sync
+
+**Fidelity:** Lumen presets panel -- docs/captures/lumen/presets/ (the `D04 T02 §5` baseline); new captures to docs/captures/lumen/sync/.
+**Job:** a photographer can carry one edit across a shoot in the fewest keystrokes. Consumer: the edit stacks of the target photos.
+**Treatment:** Lightroom's Sync button with the Auto Sync switch, Ctrl+Alt+V paste from previous with the Previous button, Ctrl+Alt+S sync without the dialog, saved copy subsets, Match Total Exposures, Sync Snapshots, and ACDSee's develop settings summary pane. Cheaper substitute that fails the checkpoint: per-photo undo for a batch, which the one-batch-step assertions catch.
+**Chrome:** extend `D04 T02 §5`; consume `D01 T07 §6`'s `DevelopClipboard` and `DevelopSnapshot`. No second clipboard.
+
+**Requires:** display-session -- auto sync and the summary pane need an interactive desktop
+
+- [ ] Add Sync Snapshots: for the selected photos, update the snapshots of a chosen name with the synced subset of the active photo's settings, as one batch step (LP-0596). Done when: `SyncSnapshotsTests` assert every target's snapshot of that name changes and undo restores all.
+- [ ] Add Paste from Previous (Ctrl+Alt+V) and the Previous button, pasting the settings of the previously selected photo (LP-0597). Done when: a test selects A then B, pastes from previous, and B equals A in the pasted groups.
+- [ ] Add saved copy subsets in `Lumen.Develop.CopySubsets` and a Modified Only option that copies only groups differing from defaults (LP-0598). Done when: `CopySubsetTests` save a subset, reload it after restart, and Modified Only skips unchanged groups.
+- [ ] Add Sync without the dialog (Ctrl+Alt+S) using the last subset, as one batch step (LP-0599). Done when: a test syncs 10 photos in one step.
+- [ ] Add Auto Sync: while on, each gesture on the active photo is mirrored to every selected photo as one batch step per gesture (LP-0599). Done when: `AutoSyncTests` scrub exposure on the active photo with 50 selected and the log shows one batch step.
+- [ ] Add Match Total Exposures: adjust exposure of the selected photos so ISO times shutter times aperture times exposure matches the active photo, as one batch step (LP-0599). Done when: `MatchTotalExposuresTests` assert the computed exposures for three fixtures with known EXIF within 0.01 EV.
+- [ ] Add develop settings commands to the library and loupe menus: copy, paste, paste from previous, and restore to original (LP-0600). Done when: a test invokes each from the library context and the targets change as expected.
+- [ ] Add the develop settings summary pane: the photo's non-default settings grouped by panel, updating live (LP-0600). Done when: a view-model test lists exactly the changed settings of a fixture.
+- [ ] Scale pasted masks, spots, and crops: normalized coordinates rotated for orientation differences, positions kept for aspect differences (LP-0601). Done when: `PasteScalingTests` paste a radial mask and a spot from a 3:2 landscape to a 4:5 portrait and a square photo, and each lands on the same subject point within 1 percent of the frame.
+- [ ] Update `docs/user/lumen/develop.md` with every sync command and the summary pane. Done when: every control is described.
+- [ ] Commit captures of the sync dialog with subsets, the Auto Sync switch, and the summary pane under `docs/captures/lumen/sync/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: auto sync, previous, copy subsets, match exposures, and the settings summary"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~SyncSnapshotsTests|FullyQualifiedName~CopySubsetTests|FullyQualifiedName~AutoSyncTests|FullyQualifiedName~MatchTotalExposuresTests|FullyQualifiedName~PasteScalingTests"` exits 0; a driven Auto Sync over 50 photos logs one batch step, quoted. Cheaper substitute that fails: per-photo undo, which the one-batch-step assertion catches.
+
+## 13. Light EQ, Soft Focus, and Skin Tune
+
+ACDSee users brighten shadows and tame highlights by tone band with Light EQ, soften portraits with Soft Focus, and smooth skin with Skin Tune, and expect Light EQ's instant view in the viewer. The stages are the suite's (`D01 T07 §7`, `§8`); this section is their Lumen surface, including the viewer previews, which render through the stage and never save. Catalog: LP-0635 to LP-0639 (5 features). -> SOURCE: parity-lumen-develop-lighteq
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/light-eq/.
+**Job:** an ACDSee user can brighten and darken by tone band, soften a portrait, and smooth skin as they did before, and preview Light EQ in the viewer. Consumer: the edit stack's `DevelopSettings` (panels) and nothing (viewer previews).
+**Treatment:** ACDSee's Light EQ panel with its 1-Step, Basic, Standard, and Advanced modes and Auto, the band graph, clicking or wheeling on the image to lift the band under the pointer; the Soft Focus and Skin Tune panels; in the Lumen Viewer, the Light EQ instant view and the Auto Light EQ toggle. Cheaper substitute that fails the checkpoint: Light EQ as a curves preset, which `LightEqPanelViewModelTests` refuse.
+**Chrome:** consume `D01 T07 §7`'s `ToneEqualizerModes`, `ToneEqualizerGraph`, `AutoToneEqualizer`, and `BandAt`, `D01 T07 §8`'s settings, §9's mask list, and `D04 T04 §2`'s viewer display path. One `DevelopSettings` record.
+
+**Requires:** display-session -- on-image Light EQ and the viewer previews need an interactive desktop
+
+- [ ] Add the Light EQ panel in `src/Lumen/Photon.Lumen.Desktop/Develop/LightEq/` with 1-Step, Basic (brighten, darken, contrast), Standard (nine band sliders), and Advanced (a curve with amplitude) modes and Auto, every mode writing through `ToneEqualizerModes` (LP-0637). Done when: `LightEqPanelViewModelTests.ModeMapping` asserts each mode writes the band offsets the engine maps and switching modes keeps the render.
+- [ ] Draw the band graph from `ToneEqualizerGraph`: the gain curve, the luminance histogram, and band markers, updated live (LP-0637). Done when: a view-model test asserts the drawn points equal the graph data for a fixture.
+- [ ] Add on-image adjustment: a click lifts and a wheel step raises or lowers the band `BandAt` names under the pointer, merged into one step per gesture by the edit stack's merge window (LP-0637). Done when: `LightEqPanelViewModelTests.ClickLiftsBand` clicks a shadow pixel and only the shadow band changes, as one step.
+- [ ] Add the Light EQ instant view in the Lumen Viewer: while its key is held, the viewer shows the photo with auto Light EQ applied through the stage, preview only (LP-0636). Done when: `ViewerLightEqPreviewTests` assert the held key renders through `ToneEqualizerStage` and no catalog or edit-stack write happens.
+- [ ] Add the Auto Light EQ preview toggle in the Lumen Viewer, restored at startup from `Lumen.Viewer.AutoLightEq`, preview only (LP-0635). Done when: a test asserts the toggle reads back after restart and writes no edit-stack step.
+- [ ] Add the Soft Focus panel: strength, brightness, contrast, and tonal width (LP-0638). Done when: `SoftFocusSkinSurfaceTests` assert each slider writes its setting.
+- [ ] Add the Skin Tune panel: smoothing, glow, radius, skin targeting, and a Limit to Mask picker listing §9's masks and writing `SkinTuneSettings.MaskId` (LP-0639). Done when: a test picks a mask and the setting holds its id; deleting that mask shows the engine's fallback note in the panel.
+- [ ] Update `docs/user/lumen/develop.md` with Light EQ, the viewer previews, Soft Focus, and Skin Tune. Done when: every control is described.
+- [ ] Commit captures of each Light EQ mode on a backlit fixture, Soft Focus, Skin Tune, and the viewer instant view under `docs/captures/lumen/light-eq/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: Light EQ, soft focus, and skin tune panels with viewer previews"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~LightEqPanelViewModelTests|FullyQualifiedName~ViewerLightEqPreviewTests|FullyQualifiedName~SoftFocusSkinSurfaceTests"` exits 0; a driven Light EQ session on a backlit fixture clicks the shadows (one step logged) and is captured. Cheaper substitute that fails: a curves preset, which `ModeMapping` refuses because a curve cannot express the band offsets.
+
+## 14. Color LUTs, Develop Blend Modes, and Develop Effects
+
+ACDSee's develop Color LUTs and Effects apply a film LUT or a look at partial strength with a blend mode, non-destructively. The look stage, the LUT readers, and the built-in looks are the suite's (`D01 T07 §9`); this section is the Lumen surface: the LUT list with import and re-linking, the blend and opacity controls, and the effects list. Catalog: LP-0640 to LP-0642 (3 features). -> SOURCE: parity-lumen-develop-looks
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/develop-effects/.
+**Job:** a photographer can apply a film LUT or a look at partial strength with a blend mode and change it later. Consumer: the edit stack's `LookSettings`.
+**Treatment:** ACDSee's Color LUTs and Effects groups in the develop Tune tab: a LUT list with import, remove, refresh, and hover preview, a look layer list with amount, opacity, and blend mode, and the effects (photo looks, color overlay, gradient map, cross process). Cheaper substitute that fails the checkpoint: LUTs baked into an exported copy, which `DevelopLookSurfaceTests` refuse.
+**Chrome:** consume `D01 T07 §9`'s `LookStage`, `LutReference`, `ILutSource`, and `LookDefinition`, and `D03 T11 §4`'s LUT readers. No LUT parser in Lumen.
+
+**Requires:** display-session -- the LUT list and effects need an interactive desktop
+
+- [ ] Add the LUT list in `src/Lumen/Photon.Lumen.Desktop/Develop/Looks/` over the folders in `Lumen.Develop.LutFolders` (the suite LUT folder by default), with refresh and hover preview (LP-0642). Done when: `DevelopLutListTests` list the fixture folder's LUTs and hover renders once per LUT.
+- [ ] Add Import LUT: validate through `D03 T11 §4`'s readers, then copy the `.cube` or `.3dl` into the suite LUT folder; an unreadable file is refused by name and nothing is copied (LP-0642). Done when: `DevelopLutListTests.ImportRefusesUnreadable` refuses the truncated fixture by name and imports the good one.
+- [ ] Add Remove LUT (the file moves to the Recycle Bin after a confirmation naming the photos that use it) (LP-0642). Done when: a test asserts the confirmation lists the using photos and the file lands in the Recycle Bin.
+- [ ] Add applying a LUT from the list as a new look layer with amount (0 to 200 percent) (LP-0642). Done when: a test applies a LUT at 60 percent as one step.
+- [ ] Add the look layer list: reorder, enable, and delete layers, each with opacity and a blend mode picker listing every mode `D01 T07 §9` offers (LP-0641). Done when: a view-model test reorders two layers as one step and the picker lists every mode.
+- [ ] Add the effects list: Lumen's built-in photo looks, color overlay (color and blend mode), gradient map (a stop list with color and position rows over `GradientDefinition`), and cross process, each added as a look layer (LP-0640). Done when: `DevelopLookSurfaceTests` add each effect and the render changes while the original photo is untouched and no file is written.
+- [ ] Show a missing LUT by name on its layer with a Locate button that re-links by hash through `LutReference` (LP-0642). Done when: a test moves a LUT, relocates it, and the layer renders again.
+- [ ] Update `docs/user/lumen/develop.md` with Color LUTs, blend modes, and effects. Done when: every control is described.
+- [ ] Commit captures of the LUT list, a CUBE LUT at 60 percent with soft light, and each effect under `docs/captures/lumen/develop-effects/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: develop LUTs, blend modes, and effects"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~DevelopLutListTests|FullyQualifiedName~DevelopLookSurfaceTests"` exits 0; a driven session applies a CUBE LUT at 60 percent with soft light, captured. Cheaper substitute that fails: baking LUTs into exports, which `DevelopLookSurfaceTests` refuse by asserting no file is written.
+
+## 15. Soft Proofing
+
+A photographer who prints or publishes needs to see how the output profile will render the photo and fix out-of-gamut colors first. Proofing transforms and gamut checks are `D01 T04 §2`'s; this section adds the soft proofing toggle and panel, per-photo proof settings that never change a render or an export, gamut warning overlays, and proof copies as virtual copies (`D04 T06 §3`). Catalog: LP-0602, LP-0603 (2 features). -> SOURCE: parity-lumen-develop-proof
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/soft-proof/.
+**Job:** a photographer can see how a print or web export will look and fix out-of-gamut colors before exporting. Consumer: the preview only, and a virtual copy for Create Proof Copy.
+**Treatment:** Lightroom's S toggle and Soft Proofing panel (profile, intent, simulate paper and ink, proof background), monitor and destination gamut warning buttons, and Create Proof Copy. Cheaper substitute that fails the checkpoint: a preview with no gamut warning, which `GamutWarningOverlayTests` catch.
+**Chrome:** consume `D01 T04 §1`'s installed profile list and `D01 T04 §2`'s proofing transforms and gamut checks, and `D04 T06 §3` virtual copies. No color transform in Lumen.
+
+**Requires:** display-session -- soft proofing needs an interactive desktop
+
+- [ ] Add the Soft Proofing toggle (S) and panel in `src/Lumen/Photon.Lumen.Desktop/Develop/Proofing/`: the proof profile from `D01 T04 §1`'s installed profiles plus sRGB, Display P3, and Adobe RGB, perceptual or relative intent, simulate paper and ink, and the proof background color (LP-0602, LP-0603). Done when: `SoftProofSettingsTests` assert each control writes its proof setting.
+- [ ] Store proof settings per photo in the catalog as view state, never in `DevelopSettings`, so a proof never changes a render or an export (LP-0602). Done when: `SoftProofSettingsTests.ExportUnchanged` exports a photo with proofing on and off and the files are byte-identical.
+- [ ] Render the proof preview through `D01 T04 §2`'s proofing transform after the pipeline's output transform, with the before view showing the unproofed render (LP-0603). Done when: a test asserts the proof preview differs from the unproofed one for a saturated fixture and the before view equals the unproofed render.
+- [ ] Add the monitor gamut warning (blue) and destination gamut warning (red) overlays from `D01 T04 §2`'s gamut checks, each toggled by its button (LP-0602). Done when: `GamutWarningOverlayTests` flag the expected pixels of a saturated fixture for a CMYK profile.
+- [ ] Add Create Proof Copy: a virtual copy through `D04 T06 §3` named after the profile, whose edits are made while proofing (LP-0602). Done when: a test creates a proof copy and the new virtual copy carries the profile name and the original's settings.
+- [ ] Update `docs/user/lumen/develop.md` with soft proofing. Done when: every control is described.
+- [ ] Commit captures of the panel, both gamut warnings, and a proof copy under `docs/captures/lumen/soft-proof/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: soft proofing with gamut warnings and proof copies"`
+
+**Test checkpoint:** Unit test plus driven run with evidence: `dotnet test Photon.slnx --filter "FullyQualifiedName~SoftProofSettingsTests|FullyQualifiedName~GamutWarningOverlayTests"` exits 0, with exports byte-identical with proofing on and off; a driven proof against a user-installed printer profile is captured. Cheaper substitute that fails: no gamut overlay, which `GamutWarningOverlayTests` catch.
+
+## 16. Photo Merge: HDR, Panorama, and Focus Stacking
+
+Lightroom's Photo Merge and ACDSee's Photomerge merge brackets or a sweep into one editable, raw-like file without leaving the library. Imago built the alignment, HDR merge, panorama, and focus-merge engines in `src/Imago/Photon.Imago.Core/Photo/` on OpenCvSharp4 (`D03 T15 §5` to `§7`, `§9`) and recorded that they move to `Photon.Core` when Lumen's merge (backlog B-032, promoted here) arrives; the first item does that move, because Lumen may never reference Imago. Merges run as background jobs and write new DNG or TIFF files stacked with their sources. Catalog: LP-0687 to LP-0692 (6 features). -> SOURCE: lumen-roadmap-merge
+
+**Freeze check:** Merges only read their sources and write new files (`<first>-HDR.dng`, `<first>-Pano.dng`, `<first>-Focus.tif` and the like) through the `D04 T13 §7` DNG writer or the TIFF writer over `AtomicFileWriter`; `MergeOriginalsUnchangedTests` assert every source's SHA-256 and last-write time are unchanged after each merge kind, including a cancelled merge, which leaves no partial output. Fixture source: `tests/fixtures/lumen/develop/merge/`.
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/photo-merge/.
+**Job:** a photographer can merge brackets or a sweep into one editable file without leaving Lumen. Consumer: the catalog, which stacks the new file with its sources.
+**Treatment:** Photo, Photo Merge: HDR (Ctrl+H), Panorama (Ctrl+M), HDR Panorama, and Focus Stack preview dialogs with options and Merge, Shift variants that merge headless with the last settings, and ACDSee's Photomerge hub listing the images, output format, location, and metadata retention. Cheaper substitute that fails the checkpoint: sending the sources to Imago to merge, which breaks the no-runtime-dependency rule and which `PhotoCoreArchitectureTests` and the move grep catch.
+**Chrome:** consume the moved engines, `D04 T13 §7`'s DNG writer, `D04 T11 §1`'s background jobs, `D04 T06 §3` stacks, and §10's moved content-aware solver for filling panorama edges. No merge engine in Lumen.
+
+**Requires:** display-session -- the merge dialogs need an interactive desktop
+
+- [ ] Move first: `ImageAligner`, `MatBridge`, `HdrMerger`, `PanoramaStitcher`, and `FocusMerger`, and any type in `src/Imago/Photon.Imago.Core/Photo/` they reference (such as `AutoBlender`), to `src/Photon.Core/Photo/` with their tests to `tests/Photon.Core.Tests/Photo/`, the OpenCvSharp4 (Apache-2.0) references moving with them; Imago's dialogs repoint, and `D03 T15 §5`, `§6`, `§7`, and `§9` get **Corrected 2026-09-27** notes naming this section. Done when: `grep -rn "class PanoramaStitcher\|class HdrMerger\|class FocusMerger\|class ImageAligner" src` prints only paths under `src/Photon.Core/` and the moved Imago goldens pass from `Photon.Core.Tests`.
+- [ ] Add `PhotoCoreArchitectureTests`: no type under `src/Photon.Core/Photo/` references an Imago or WPF type. Done when: the test passes and fails on a planted reference.
+- [ ] Add `MergeJob` in `src/Lumen/Photon.Lumen.Core/Merge/` on `D04 T11 §1`'s job engine: sources developed to linear working-space renders at neutral settings through `RawDevelopSource`, progress, cancel, and one Serilog Information line per merge naming its kind, sources, and output. Done when: `MergeJobTests` cancel a merge and assert no output file and the log line on success.
+- [ ] Add the HDR merge dialog (Ctrl+H) and headless variant (Ctrl+Shift+H): auto align, auto settings, deghost none, low, medium, or high with a deghost overlay, stack with sources, and floating-point DNG output (16-bit or 32-bit float) (LP-0687). Done when: `LumenHdrMergeTests` merge the committed synthetic bracket within the tolerance of the Imago `D03 T15 §6` golden.
+- [ ] Add the panorama dialog (Ctrl+M) and headless variant: spherical, cylindrical, perspective, and auto projection, boundary warp, fill edges through the content-aware solver moved by §10, auto crop, auto settings, several outputs, vignette compensation, and the size limit stated (LP-0688). Done when: `LumenPanoramaTests` stitch the committed three-frame sweep within the Imago `D03 T15 §7` golden's tolerance and fill edges leaves no transparent pixel.
+- [ ] Add HDR panorama in one step: brackets grouped by capture time and exposure, merged per position, then stitched (LP-0689). Done when: a test groups a six-frame fixture into two positions and outputs one DNG.
+- [ ] Add focus stacking: all or selected images, auto align, an image-count limit, sources kept stacked (LP-0692). Done when: `FocusStackTests` merge the committed focus fixture within the Imago `D03 T15 §9` golden's tolerance.
+- [ ] Add the Photomerge hub: the image list with add and remove, output format (DNG or 16-bit TIFF), location (beside the first source or a chosen folder), and metadata retention (from the first source, none, or merged) (LP-0691). Done when: a view-model test asserts each option reaches `MergeJob`.
+- [ ] Answer "merge in the editor" by merging in Lumen and offering Edit in Imago (`D04 T02 §7`) on the result afterwards (LP-0690). Done when: a test asserts the post-merge command is present and disabled with its reason when Imago is absent.
+- [ ] Name, catalog, and stack outputs: `<first>-HDR.dng`, `<first>-Pano.dng`, `<first>-HDR-Pano.dng`, `<first>-Focus.tif`, uniquified on conflict, imported into the catalog and stacked with the sources through `D04 T06 §3` (LP-0687, LP-0688, LP-0691). Done when: `MergeOriginalsUnchangedTests` assert each output's name, its stack, and the sources' unchanged hashes.
+- [ ] Notify completion through the status strip and the suite toast notification with the output name and a Reveal command. Done when: a test asserts the toast text on a finished merge.
+- [ ] Update `docs/user/lumen/photo-merge.md` with every merge kind, the hub, and headless merges. Done when: every control is described.
+- [ ] Commit captures of each dialog and the hub under `docs/captures/lumen/photo-merge/`, and the merge fixtures in `tests/fixtures/lumen/develop/merge/` with `reference.txt`. Done when: the folders hold them.
+- [ ] Commit: `"lumen: HDR, panorama, and focus merges on the engines moved to Photon.Core"`
+
+**Test checkpoint:** Format fidelity proof plus unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Core.Tests.Photo|FullyQualifiedName~PhotoCoreArchitectureTests|FullyQualifiedName~MergeJobTests|FullyQualifiedName~LumenHdrMergeTests|FullyQualifiedName~LumenPanoramaTests|FullyQualifiedName~FocusStackTests|FullyQualifiedName~MergeOriginalsUnchangedTests"` exits 0: the moved Imago goldens pass from `Photon.Core.Tests.Photo`, Lumen's merges match them within tolerance, and every source is unchanged; a driven merge of the committed bracket writes a DNG stacked with its sources, captured. Cheaper substitute that fails: a copied engine in Lumen, which the move grep and `PhotoCoreArchitectureTests` catch.
+
+## 17. Saving Develop Results: Leaving Develop, New Files, Sidecars, and Opt-In Writes to Originals
+
+Split from §2 at authoring (2026-09-27) so history stays apart from what reaches disk. ACDSee asks whether to Save, Discard, or keep editing when leaving develop, can commit an edit as the file, and saves copies; Lightroom mirrors develop settings to XMP and can save them into JPEG, TIFF, and DNG files. The operator decided on 2026-09-27 that originals are "Safe by default, opt-in writes": by default every command here writes the catalog, the XMP sidecar, or a new file and never an original. The opt-in is the one Lumen policy `D04 T11 §1` builds (`OriginalGuard`, `OriginalWritePolicy`, `InPlaceWriter`, a verified backup, a first-use confirmation, and a restore journal) and this section adds no second one: baking a develop result into a JPEG, TIFF, or PNG original needs `Lumen.Originals.InPlace.Save`, and embedding develop settings into a JPEG, TIFF, or DNG goes through `D04 T08 §8`'s `MetadataWriter`, which embeds only when `Lumen.Originals.InPlace.EmbedMetadata` is on (`D04 T08 §9`). This changes a frozen behavior (the original-file guard of `standards/lumen.md`); the TODO records the operator's approval, it does not grant it. Catalog: LP-0575, LP-0576, LP-0578 to LP-0582 (7 features). -> SOURCE: parity-lumen-develop-save
+
+**Freeze check:** With every `Lumen.Originals.InPlace.*` key off (the default) no command in this section opens an original for writing: the unchanged-originals test of `D04 T02 §1` runs every command here over `tests/fixtures/lumen/import/` and asserts every SHA-256 and last-write time is unchanged. With `Lumen.Originals.InPlace.Save` on, Save to Original writes only through `D04 T11 §1`'s `InPlaceWriter` (a backup verified by SHA-256 when `Lumen.Originals.BackupBeforeInPlace` is on, then `AtomicFileWriter`, then a reread); a failure injected after the backup or after the temp write leaves the original or the new file whole with the backup intact; RAW files are never written. Approval: operator decision 2026-09-27, "Safe by default, opt-in writes". Fixture source: temp copies of `tests/fixtures/lumen/import/`.
+
+**Fidelity:** new build, no baseline; captured to docs/captures/lumen/develop-save/.
+**Job:** a photographer can leave develop knowing exactly what was saved, render copies, and, only if they turned the opt-in on, write a result into the original with a backup. Consumer: the catalog, the XMP sidecar, a new file, or (opt-in) the original and its backup.
+**Treatment:** ACDSee's Done, Save, Discard, and Cancel on leaving develop; Commit as New File, Save As, and Save a Copy; Copy Developed Image; Write Develop Settings to File; and, behind `Lumen.Originals.InPlace.Save`, Save to Original with `D04 T11 §1`'s first-use confirmation naming the backup folder, plus Restore Original from Backup. Cheaper substitute that fails the checkpoint: a Save that writes into the original with the opt-in off, which the unchanged-originals test refuses.
+**Chrome:** extend `D04 T02 §1`'s edit stack; render through `D04 T02 §6`'s `ExportRunner`; write originals only through `D04 T11 §1`'s `OriginalGuard`, `OriginalWritePolicy`, and `InPlaceWriter` and metadata only through `D04 T08 §8`'s `MetadataWriter`; stack through `D04 T06 §3`. Do not add a second write policy, backup copier, sidecar writer, or atomic writer.
+
+**Requires:** display-session -- the leave-develop prompt and the save dialogs need an interactive desktop
+
+- [ ] Add `DevelopSessionExit` in `src/Lumen/Photon.Lumen.Core/Develop/`: leaving develop with unsaved steps prompts Done (keep in the catalog), Save (commit to the catalog and, through `MetadataWriter`, the sidecar), Discard (drop steps since the last save), or Cancel (Esc, stay), with an option to stop asking (LP-0576). Done when: `DevelopSaveSemanticsTests` assert each choice's stack and sidecar state.
+- [ ] Add automatic saving when switching photos (`Lumen.Develop.AutoSaveOnSwitch`, default on) through a background save queue so RAW switching never waits on it, with one log line per save (LP-0580). Done when: a test switches through 10 photos, every save completes, and the switch path never awaits the queue.
+- [ ] Add Restore to Original for one or many photos: develop settings return to the photo defaults as one batch undo step, history kept, the file untouched (LP-0575). Done when: `RestoreToOriginalTests` restore 20 photos in one step, undo it, and assert the originals' hashes are unchanged.
+- [ ] Add Commit as New File: render through `ExportRunner` to `<name>-developed.<ext>` beside the original (template `Lumen.Develop.CommitNameTemplate`), in the original's format for rendered files and 16-bit TIFF for RAW, with metadata, catalog information, and embedded profile, cataloged and stacked with the original (LP-0578). Done when: `CommitAsNewFileTests` assert the new file, its stack, and the original's unchanged hash.
+- [ ] Add Save As and Save a Copy: format, quality, bit depth, color space and embedded profile, and whether to keep metadata, catalog information, and develop settings (as XMP in the copy through `D04 T08 §8`'s `ExportMetadataEmbedder`), with name conflicts refused or uniquified by choice (LP-0579). Done when: `SaveAsTests` write each format from a fixture and read back the chosen metadata.
+- [ ] Add Copy Developed Image to the clipboard as a 16-bit PNG and a DIB (LP-0581). Done when: a test reads both formats from the clipboard and their dimensions match the render.
+- [ ] Mirror develop settings to the sidecar: `D01 T07 §6`'s `photon-develop:` and `crs:` packets written through `D04 T08 §8`'s `MetadataWriter` when `Lumen.Metadata.WriteSidecars` is on, other namespaces kept, never an `[Originals]` folder (LP-0582). Done when: `SidecarMirrorTests` write a sidecar, exiftool 13 reads the `crs:` fields back, and an unknown namespace in the prior sidecar survives.
+- [ ] Add Write Develop Settings to File (Lightroom's Save Metadata to File for develop settings) through `MetadataWriter`: the sidecar by default, embedded into a supported JPEG, TIFF, or DNG original only when `Lumen.Originals.InPlace.EmbedMetadata` is on, and then only through `D04 T08 §9`'s metadata-only rewriters and `EmbedVerifier` (never a re-encode), with the command naming the current target (LP-0582). Done when: `EmbedDevelopSettingsTests` assert the sidecar holds the `crs:` fields and the original's hash is unchanged with the setting off, and exiftool 13 reads them from a temp JPEG copy with it on.
+- [ ] Add Save to Original (ACDSee's develop Save), enabled only when `OriginalWritePolicy` allows `Save` (`Lumen.Originals.InPlace.Save`) and otherwise disabled with the tooltip "Turn on in-place saving in Preferences, Originals": render at full resolution in the original's format, bit depth, and embedded profile, copy every EXIF, IPTC, XMP, and ICC block, replace through `InPlaceWriter.Replace` after `D04 T11 §1`'s first-use confirmation, reset the settings to the defaults with a "Baked into original" step, and rebuild the previews (LP-0578). Done when: `SaveToOriginalTests` bake a temp JPEG and TIFF copy with the key on and match a Save As render within 1/255, and assert the command is disabled with the key off.
+- [ ] Refuse RAW files for Save to Original with "Lumen cannot write pixels into a raw file; use Save As", and refuse through `OriginalGuard` by name a read-only or locked original, an offline volume, and an unwritable backup folder when backups are on, writing nothing. Done when: `SaveToOriginalTests.Refusals` assert each message for a DNG, a CR2, a read-only JPEG, and an unwritable backup folder, and that nothing was written.
+- [ ] Undo a bake from its backup: undoing "Baked into original" restores the original through `D04 T11 §1`'s restore journal and restores the settings; with backups off the confirmation says the bake cannot be undone and the step is marked irreversible. Done when: `SaveToOriginalTests.UndoRestoresBackup` asserts the original's hash returns to its pre-bake value.
+- [ ] Offer Restore Original from Backup (`D04 T11 §1`'s journal) in the develop Photo menu for photos with a journaled bake. Done when: a view-model test lists a baked fixture's backup and the command restores it.
+- [ ] Route every write target in this section through `OriginalGuard.AssertWritable` with the matching `OriginalWriteKind`, so no type added here opens a file for writing directly. Done when: `DevelopWriteGuardTests` run each command with a recording guard and a grep finds no `FileMode.Create` or `File.WriteAll` under `src/Lumen/Photon.Lumen.Core/Develop/`.
+- [ ] Extend the unchanged-originals test of `D04 T02 §1` to run every command in this section with every `Lumen.Originals.InPlace.*` key off, and with `Save` on to assert only the targeted temp copy changed. Done when: both runs pass over the import fixtures.
+- [ ] Update `docs/user/lumen/develop.md` with saving, leaving develop, new files, and sidecars, linking `docs/user/lumen/originals.md` (from `D04 T11 §1`) for Save to Original and stating the default, the backup, and the RAW refusal. Done when: every command and setting is described.
+- [ ] Commit captures of the leave-develop prompt, the Save As dialog, and the Save to Original confirmation under `docs/captures/lumen/develop-save/`. Done when: the folder holds them.
+- [ ] Commit: `"lumen: develop save semantics, new files, sidecars, and opt-in save to original"`
+
+**Test checkpoint:** Format fidelity proof plus unit test: `dotnet test Photon.slnx --filter "FullyQualifiedName~DevelopSaveSemanticsTests|FullyQualifiedName~RestoreToOriginalTests|FullyQualifiedName~CommitAsNewFileTests|FullyQualifiedName~SaveAsTests|FullyQualifiedName~SidecarMirrorTests|FullyQualifiedName~EmbedDevelopSettingsTests|FullyQualifiedName~SaveToOriginalTests|FullyQualifiedName~DevelopWriteGuardTests"` exits 0: with every in-place key off every fixture original is byte-identical after every command; with `Lumen.Originals.InPlace.Save` on a baked temp JPEG matches a Save As render within 1/255, its backup verifies, and its undo restores the pre-bake hash; a driven session edits, discards, saves, commits a copy, and restores to original, with log lines quoted. Cheaper substitute that fails: a Save that writes into the JPEG with the opt-in off, which the unchanged-originals test catches.
+
+## Verification
+
+- [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
+- [ ] `dotnet test Photon.slnx --filter "FullyQualifiedName~Photon.Lumen.Tests.Develop|FullyQualifiedName~Photon.Core.Tests.Develop|FullyQualifiedName~Photon.Core.Tests.Photo"` exits 0 with every test class named in this file reporting
+- [ ] `grep -rn ": IDevelopStage" src/Lumen` prints nothing: every develop stage lives in `src/Photon.Core/Develop/`
+- [ ] `grep -rn "class PanoramaStitcher\|class HdrMerger\|class FocusMerger\|class PatchMatch\|class HdrSwapChainHost" src` prints one path each, none under `src/Imago/` or `src/Lumen/`
+- [ ] The unchanged-originals test passes over every command in this file with every `Lumen.Originals.InPlace.*` key off, and `DevelopWriteGuardTests` pass
+- [ ] Every UI section's captures exist under `docs/captures/lumen/` and `docs/user/lumen/develop.md` and `docs/user/lumen/photo-merge.md` describe every control
+- [ ] `python scripts/todo-graph.py validate` clean

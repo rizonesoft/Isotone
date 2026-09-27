@@ -27,6 +27,11 @@ track: D1
 - -> XREF: D05 T01 §1 -- the clean-machine procedure whose install steps §4 documents for users
 - -> XREF: D02 T17 §1 -- the Nodus parity releases, each of which extends §1's user guide
 - -> XREF: D03 T21 §1 -- the Imago parity releases cites §2: the Imago user guide each release extends
+- -> XREF: D04 T09 §1 -- Lumen parity develop cites §3: the Lumen user guide every UI section here updates
+- -> XREF: D04 T10 §1 -- Lumen AI cites §3: the Lumen user guide every UI section here updates
+- -> XREF: D04 T12 §1 -- Lumen parity output cites §3: the Lumen user guide pages each section adds
+- -> XREF: D04 T14 §7 -- Lumen parity workspace cites §3: the Lumen user guide that D04 T14 §7 links and every section extends
+- -> XREF: D04 T15 §1 -- the Lumen parity releases cites §3: the Lumen user guide each release extends
 
 ## Outcome
 

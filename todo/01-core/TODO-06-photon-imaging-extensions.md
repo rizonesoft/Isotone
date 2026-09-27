@@ -69,6 +69,8 @@ track: C6
 - -> XREF: D03 T19 §14 -- depth blur runs §3's `LensBlur` with an estimated depth map
 - -> XREF: D01 T07 §2 -- the develop engine consumes §4's clarity and texture instead of building its own
 - -> XREF: D01 T07 §3 -- the develop engine consumes §5's denoise and §6's lens models instead of building its own
+- -> XREF: D04 T04 §2 -- the Lumen Viewer cites §5: JPEG artifact reduction for D04 T04 §2's deblocking
+- -> XREF: D04 T11 §7 -- the Lumen batch tools cites §1: the effect registry D04 T11 §7's filters and frame effects list
 
 ## Outcome
 

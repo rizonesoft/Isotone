@@ -33,6 +33,8 @@ track: R1
 - -> XREF: D02 T17 §1 -- the Nodus parity releases that run §1's clean-machine procedure
 - -> XREF: D03 T20 §8 -- Imago parity workspace cites §4: the opt-in `UpdateChecker` D03 T20 §8 consumes
 - -> XREF: D03 T21 §1 -- the Imago parity releases cites §1: the clean-machine procedure every release runs
+- -> XREF: D04 T14 §6 -- Lumen parity workspace cites §1: the installer and portable ZIP whose switches D04 T14 §6 documents; §3: the win-arm64 builds D04 T14 §7's platform page states; §4: the opt-in update check D04 T14 §7 consumes
+- -> XREF: D04 T15 §1 -- the Lumen parity releases cites §1: the clean-machine procedure every release runs
 
 ## Outcome
 

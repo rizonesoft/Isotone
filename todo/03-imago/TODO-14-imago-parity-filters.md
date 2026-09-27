@@ -79,6 +79,7 @@ track: I14
 - -> XREF: D03 T20 §3 -- command search lists filters
 - -> XREF: D03 T20 §4 -- the Preferences control for showing all gallery groups
 - -> XREF: D01 T07 §3 -- the develop engine consumes §6's lens database and defringe rather than its own
+- -> XREF: D04 T09 §6 -- Lumen parity develop cites §6: the lensfun and LCP readers D04 T09 §6 reads through
 
 ## Outcome
 

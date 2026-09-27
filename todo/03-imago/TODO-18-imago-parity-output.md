@@ -74,6 +74,8 @@ track: I18
 - -> XREF: D03 T20 §1 -- registers §9's Export studio as a workspace preset
 - -> XREF: D03 T20 §4 -- preference pages that list the `Imago.Color.*` and `Imago.Export.*` keys
 - -> XREF: D03 T20 §5 -- preference pages that list the `Imago.Print.*` keys
+- -> XREF: D04 T07 §7 -- Lumen parity import cites §6: the `Photon.UI/Print/` print dialog frame D04 T07 §7's Copy Shop prints through
+- -> XREF: D04 T12 §4 -- Lumen parity output cites §6: the print dialog frame in `Photon.UI/Print/` that D04 T12 §4 consumes through its `IPrintPageSource` seam; §7: the contact-sheet engine D04 T12 §6 moves to `Photon.Core/Print/ContactSheets/`, and the PDF presentation builder D04 T12 §11 reuses
 
 ## Outcome
 
@@ -308,6 +310,8 @@ Photographers print, and Imago cannot print at all today. This section builds Fi
 ## 7. Print Output Extras, Contact Sheets, PDF Presentation, and Preflight
 
 Prepress users send correct separations and check a file before it leaves, and photographers build contact sheets and presentations. This section adds spot and overprint global colors, transfer functions, halftone screens, separations with spot plates, a preflight panel with custom rules, PDF Presentation, and Contact Sheet, on the separation, halftone, ink, and preflight engines Nodus built (`D02 T13 §5`, `D02 T13 §9`), moved into `Photon.Core` here, and on the `D03 T17 §7` PDF and EPS writers. Catalog: IP-1982 to IP-1988 (7 features: spot and overprint global colors, transfer functions, halftone screens per ink, separations with spot plates, the preflight panel with custom rules, PDF Presentation, and Contact Sheet).
+
+**Corrected 2026-09-27:** Lumen's contact sheets (`D04 T12 §6`) move this section's contact-sheet builder, layout, and caption model to `src/Photon.Core/Print/ContactSheets/`, and Lumen's PDF creation (`D04 T12 §11`) moves the PDF presentation builder to `src/Photon.Core/Pdf/Presentation/` if it is still in Imago; Imago repoints.
 
 **Fidelity:** new build, no baseline; captured to `docs/captures/imago/separations/`, `docs/captures/imago/preflight/`, `docs/captures/imago/contact-sheet/`, and `docs/captures/imago/pdf-presentation/`.
 **Job:** a prepress user sends correct separations and checks a file before it leaves; a photographer builds contact sheets and presentations. Consumer: the printer or plate files, the preflight report, and the generated PDF and sheets.

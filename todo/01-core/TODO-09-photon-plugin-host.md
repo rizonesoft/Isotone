@@ -30,7 +30,9 @@ track: C9
 - -> XREF: D02 T12 §10 -- Nodus's Bitmaps, Plug-ins menu and effect-stack entries consume §2 and §4
 - -> XREF: D03 T14 §11 -- Imago's plug-in filters, format and acquire plug-ins, and plug-in preferences consume §2, §3, and §4
 - -> XREF: D03 T14 §13 -- Imago's G'MIC collection runs its native core in §1's host process
-- Prose references (no XREF because the target files are not edited here): `D01 T02 §1` (the project, app-data paths, and logging), `D01 T02 §2` (the settings store), `D01 T01 §1` and `D01 T01 §3` (the icon catalog and theme resources the manager uses), `D01 T03 §1` (`PixelBuffer<TPixel>` and tiles), `D01 T04 §1` (the gray, CMYK, and Lab conversions plug-ins may request); Lumen's viewer effects and batch edit become hosts through this file when the Lumen integration repoints its former B-012 rows here
+- -> XREF: D04 T04 §15 -- Lumen's viewer effects browser and plug-in folders consume §2 and §4, and Lumen's publish carries §1's host (the former B-012 rows LP-1157, LP-1159, and LP-1224)
+- -> XREF: D04 T11 §7 -- Lumen's batch edit pipeline runs §2's filters as a batch step with stored parameters (LP-1160)
+- Prose references (no XREF because the target files are not edited here): `D01 T02 §1` (the project, app-data paths, and logging), `D01 T02 §2` (the settings store), `D01 T01 §1` and `D01 T01 §3` (the icon catalog and theme resources the manager uses), `D01 T03 §1` (`PixelBuffer<TPixel>` and tiles), `D01 T04 §1` (the gray, CMYK, and Lab conversions plug-ins may request)
 
 ## Outcome
 
@@ -78,7 +80,7 @@ Photoshop plug-ins are native DLLs written against a 1990s callback ABI; loaded 
 
 ## 2. 8BF Filter Plug-ins: Discovery, the Filter Record, Suites, and Repeat Parameters
 
-The filter plug-in is what users mean by "a Photoshop plug-in": an 8BF DLL with a PiPL resource, called through `filterSelectorAbout`, `Parameters`, `Prepare`, `Start`, `Continue`, and `Finish` with a filter record full of callbacks. This section implements discovery and that record inside the host process, ported in structure from PSFilterPdn (MIT), so any consumer asks the client to run a filter on a region of pixels with an optional selection mask and gets pixels back. Filter Factory filters are ordinary 8BF files and run the same way. Owns no catalog rows (NP-2027 sits on `D02 T12 §10`; IP-1033, IP-2250, and IP-2251 on `D03 T14 §11`).
+The filter plug-in is what users mean by "a Photoshop plug-in": an 8BF DLL with a PiPL resource, called through `filterSelectorAbout`, `Parameters`, `Prepare`, `Start`, `Continue`, and `Finish` with a filter record full of callbacks. This section implements discovery and that record inside the host process, ported in structure from PSFilterPdn (MIT), so any consumer asks the client to run a filter on a region of pixels with an optional selection mask and gets pixels back. Filter Factory filters are ordinary 8BF files and run the same way. Owns no catalog rows (NP-2027 sits on `D02 T12 §10`; IP-1033, IP-2250, and IP-2251 on `D03 T14 §11`; Lumen's LP-1157, LP-1159, and LP-1224 on `D04 T04 §15` and LP-1160 on `D04 T11 §7`).
 
 **Fidelity:** no surface of its own (the plug-in's own dialog is the plug-in's; menus belong to D02 T12 §10 and D03 T14 §11)
 

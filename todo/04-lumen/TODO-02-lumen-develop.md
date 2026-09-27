@@ -11,7 +11,7 @@ track: L2
 
 # TODO-02 -- Lumen: Non-Destructive Develop, Export, 0.1.0, and Accessibility
 
-> **Goal:** A Lumen user develops RAW and JPEG photos non-destructively (white balance, exposure, contrast, highlights and shadows, whites and blacks, tone curve, vibrance and saturation, crop and straighten), copies settings across a batch, exports finished files with size, format, color space, and metadata choices, hands a photo to Imago when Imago is installed, and gets all of it as `lumen-v0.1.0`, with the original never written; after the release, every Lumen surface works by keyboard and screen reader and is translatable.
+> **Goal:** A Lumen user develops RAW and JPEG photos non-destructively (white balance, exposure, contrast, highlights and shadows, whites and blacks, tone curve, vibrance and saturation, crop and straighten), copies settings across a batch, exports finished files with size, format, color space, and metadata choices, hands a photo to Imago when Imago is installed, and gets all of it as `lumen-v0.1.0`, with the original never written (the opt-in in-place writes of the Lumen parity phases arrive later with `D04 T11 §1`); and once the Lumen parity surfaces exist, every Lumen surface works by keyboard and screen reader and is translatable (§9, relocated to Phase 39).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Nothing exists: no develop code, no pipeline, no export. The Lumen notes removed on 2026-09-26 asked for "RAW processing and non-destructive editing", "batch adjustments and presets", and "Edit In (send to Imago)" with no technical choices. `standards/lumen.md` sets the contract this file builds to: edits are data in the catalog, the pipeline is float32 linear-light with one output transform at the end, previews and exports of the same settings agree within a stated tolerance, and "Edit in Imago" never loads Imago's assemblies. **Corrected 2026-09-26:** this file planned its own develop stages in `Photon.Lumen.Core/Develop/Pipeline/`; the Imago parity plan builds the suite develop engine in `Photon.Core/Develop/` (`D01 T07`, Phase 23) before Lumen starts, so §1 stores its `DevelopSettings`, §2 renders through its pipeline, and §5 uses its presets and clipboard, and Lumen keeps its own edit stack, panels, preview cache, and export.
@@ -30,6 +30,17 @@ track: L2
 - -> XREF: D02 T15 §11 -- the `SuiteAppLocator` in `Photon.Core/Suite/` that §7 consumes for its App Paths lookup
 - -> XREF: D01 T07 §1 -- the suite develop engine cites §1: Lumen's edit stack stores D01 T07 §1's `DevelopSettings`; §2: Lumen's pipeline section, rewritten at integration to consume D01 T07 §1 to D01 T07 §3; §5: Lumen's presets, copy and paste, and sync consume D01 T07 §6
 - -> XREF: D03 T19 §13 -- Imago AI cites §7: Lumen's Edit in Imago, which D03 T19 §13 receives
+- -> XREF: D04 T04 §9 -- the Lumen Viewer cites §8: Lumen 0.1.0 ships before every section here; §3: the histogram control D04 T04 §9 hosts; §7: Edit in Imago from the viewer (D04 T04 §1)
+- -> XREF: D04 T05 §4 -- Lumen browse without importing cites §3: the histogram control D04 T05 §4 and D04 T05 §7 reuse
+- -> XREF: D04 T06 §3 -- Lumen parity library cites §8: Lumen 0.1.0 ships before every section here; §1: the edit stack virtual copies (D04 T06 §3) and Quick Develop (D04 T06 §13) write; §5: develop presets the Painter and Quick Develop apply (D04 T06 §13); §7: the basic stacks D04 T06 §3 extends
+- -> XREF: D04 T07 §3 -- Lumen parity import cites §8: Lumen 0.1.0 ships before every section here; §5: develop presets applied during import (D04 T07 §3)
+- -> XREF: D04 T08 §7 -- Lumen parity metadata cites §8: Lumen 0.1.0 ships before every section here; §6: export metadata choices and remove location, which D04 T08 §7's private locations extend
+- -> XREF: D04 T09 §2 -- Lumen parity develop cites §1: the edit stack every panel writes, extended by D04 T09 §2 with the before pointer; §2: the pipeline hookup and output transform D04 T09 §3 extends; §3: the develop module D04 T09 §1 extends; §4: crop, which D04 T09 §8 extends; §5: presets and sync, which D04 T09 §11 and D04 T09 §12 extend; §6: `ExportRunner`, which D04 T09 §17's commit and save-as render through; §8: Lumen 0.1.0, which ships before every section here
+- -> XREF: D04 T11 §9 -- the Lumen batch tools cites §5: develop presets D04 T11 §9 applies; §6: the export runner and naming template D04 T11 §2 and D04 T11 §9 extend
+- -> XREF: D04 T12 §1 -- Lumen parity output cites §6: the export runner, dialog, and presets that D04 T12 §1, D04 T12 §2, and D04 T12 §13 extend; §7: stacking of exported files beside the original, reused by D04 T12 §13; §8: Lumen 0.1.0, which every section here follows
+- -> XREF: D04 T13 §3 -- Lumen parity formats cites §7: Edit in Imago, named by D04 T13 §3's layered-file notice
+- -> XREF: D04 T14 §9 -- Lumen parity workspace cites §7: `EditInService`, which D04 T14 §9 extends to other editors; §9: the accessibility and localization audit that runs after this file and checks keyboard reachability against D04 T14 §3's keymap
+- -> XREF: D04 T15 §1 -- the Lumen parity releases cites §8: the 0.1.0 release procedure every section repeats; D04 T15 §1 follows it; §9: the accessibility and localization audit D04 T15 §10 depends on, so 1.0.0 ships no unaudited surface
 
 ## Outcome
 
@@ -40,7 +51,7 @@ track: L2
 - Export writes JPEG, TIFF (8 or 16 bit), and PNG with resize, sharpening for screen or print, color space (sRGB, Display P3, Adobe RGB), metadata choices, and file naming, in the background with progress.
 - "Edit in Imago" renders a 16-bit TIFF, opens it in Imago when installed, and stacks the result beside the original; when Imago is absent the command is disabled with a tooltip saying so.
 - `lumen-v0.1.0` is a published release that passes `standards/release.md`.
-- Every Lumen surface passes an Accessibility Insights audit and every string is localizable (§9, relocated on 2026-09-26 from the retired Lumen roadmap file, whose other sections wait in `todo/backlog.md` as B-028 to B-036).
+- Every Lumen surface passes an Accessibility Insights audit and every string is localizable (§9, relocated on 2026-09-26 from the retired Lumen roadmap file and moved on 2026-09-27 into Phase 39, last before Lumen 1.0.0, so it audits every Lumen parity surface; the roadmap file's other sections became Lumen parity sections, and only its GPU develop path waits in `todo/backlog.md` as B-033).
 
 **Adjacency:** list=not-applicable (the grid in D04 T01 §8 is the list); document=applicable @ D04 T02 §6; settings=applicable @ D04 T02 §5; reporting=applicable; notifications=applicable; permissions=applicable; audit=applicable; exchange=applicable; reverse=applicable @ D04 T02 §1
 
@@ -58,7 +69,7 @@ track: L2
 |   6   |   §6    | Export                                            | §2, D04 T01 §10                                              |  [ ]   |
 |   7   |   §7    | Edit in Imago                                     | §6, D03 T06 §3, D02 T15 §11                                  |  [ ]   |
 |   8   |   §8    | Lumen 0.1.0                                       | §4, §5, §7, D04 T01 §11, D06 T01 §3, D05 T01 §1              |  [ ]   |
-|   9   |   §9    | Accessibility and localization                    | §8                                                           |  [ ]   |
+|   9   |   §9    | Accessibility and localization                    | §8, D04 T14 §9, D04 T14 §10, D04 T12 §12, D04 T12 §13 |  [ ]   |
 
 ---
 
@@ -66,7 +77,9 @@ track: L2
 
 Non-destructive means edits are data. Each photo has an edit stack in the catalog: an ordered list of versioned settings changes, with snapshots and a pointer to the current step. Rendering reads the settings at the current step; nothing reads or writes the original except the decoder, read-only. -> SOURCE: lumen-notes-develop-stack
 
-**Freeze check:** No develop, undo, snapshot, preset, or sync operation opens an original for writing; a test runs a full session (develop, undo, snapshot, sync to ten photos, export) over the import fixtures and asserts every original's SHA-256 and last-write time are unchanged. Fixture source: `tests/fixtures/lumen/import/`.
+**Corrected 2026-09-27:** the operator's 2026-09-27 decision ("Safe by default, opt-in writes") makes this section's full-session unchanged-originals test the baseline every Lumen parity section extends with its own commands, always run with every `Lumen.Originals.*` opt-in at its default; the opt-in paths themselves (`D04 T11 §1`, `D04 T08 §9`, `D04 T09 §17`) prove their writes against their own fixtures and never weaken this test.
+
+**Freeze check:** With every `Lumen.Originals.*` opt-in at its default (off), no develop, undo, snapshot, preset, or sync operation opens an original for writing; a test runs a full session (develop, undo, snapshot, sync to ten photos, export) over the import fixtures and asserts every original's SHA-256 and last-write time are unchanged. Fixture source: `tests/fixtures/lumen/import/`.
 
 - [ ] `EditStack` (append, undo, redo, jump to step, named snapshots, reset) in `Photon.Lumen.Core/Develop/` over the suite `DevelopSettings` record (`D01 T07 §1`, immutable, versioned, with identity defaults), persisted in the catalog through the record's JSON context. Done when: `EditStackTests` cover each operation and survive a catalog reopen. **Corrected 2026-09-26:** said Lumen defines its own `DevelopSettings`; the suite develop engine owns the record now.
 - [ ] Settings changes from sliders merge within a 1-second window into one step (as Nodus's property edits do). Done when: a scrub test yields one step.
@@ -200,6 +213,8 @@ Lumen's first release, following `standards/release.md` as Nodus and Imago did, 
 
 Every Lumen surface keyboard- and screen-reader-operable and translatable: the acceptance bar's "It works without a mouse or eyes" row names this section for Lumen. Relocated on 2026-09-26 from the retired Lumen roadmap file when the plan was bounded; it runs after the release like the Nodus and Imago accessibility sections. -> SOURCE: lumen-roadmap-a11y
 
+**Corrected 2026-09-27:** moved at the Lumen integration from old Phase 32 (Lumen after 0.1.0) to Phase 39, after the Lumen workspace and preferences (`D04 T14`) and the output surfaces (`D04 T12`) and last before Lumen 1.0.0 (`D04 T15 §10`), so the audit covers every Lumen parity surface, including the Lumen Viewer, rather than the 0.1.0 surfaces alone; it now depends on `D04 T14 §9` and `§10` and `D04 T12 §12` and `§13`, and its keyboard reachability is checked against `D04 T14 §3`'s keymap.
+
 - [ ] Accessibility Insights audit (version quoted) with every failure fixed. Done when: the committed report shows none.
 - [ ] Strings in `.resx` with a pseudo-locale build. Done when: the capture shows no untransformed string.
 - [ ] Commit: `"lumen: accessibility fixes and localizable strings"`
@@ -212,6 +227,6 @@ Every Lumen surface keyboard- and screen-reader-operable and translatable: the a
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
 - [ ] `dotnet test Photon.slnx --filter "Category=Fidelity"` passes the pipeline and export goldens
-- [ ] The freeze check of §1 passes over a full session
+- [ ] The freeze check of §1 passes over a full session with every `Lumen.Originals.*` opt-in at its default
 - [ ] The `lumen-v0.1.0` release exists with matching checksums
 - [ ] `python scripts/todo-graph.py validate` clean

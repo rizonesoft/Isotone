@@ -63,6 +63,7 @@ track: I12
 - -> XREF: D01 T03 §3 -- ordered and error-diffusion dither for gradients
 - -> XREF: D01 T06 §13 -- moves §9's `GradientEvaluator` into `Photon.Core` as the gradient render ops' second consumer
 - -> XREF: D03 T14 §1 -- Imago parity filters cites §1: the brush engine behind the filter brush; §9: gradients for the flare editor and the generated gradient picker
+- -> XREF: D04 T13 §3 -- Lumen parity formats cites §3: the ABR tip reader D04 T13 §3 moves to `Photon.Core/Formats/Abr/`
 
 ## Outcome
 
@@ -163,6 +164,8 @@ A brush responds to the pen or it is not a painting brush. This section adds pen
 ## 3. Brush Presets, Libraries, and Tool Presets
 
 Painters bring their brush sets from the app they came from. This section adds the brush preset format and one generic resource library that §4, §9, and §10 reuse, the Brushes and Brush Settings panels, recent brushes, ABR import and export with an import report, Affinity brush exchange, GIMP's GBR, GIH, and VBR brushes with the parametric editor, clipboard brushes, dynamics presets, and tool presets with their panel. Catalog: IP-0766 to IP-0787 (22 features).
+
+**Corrected 2026-09-27:** Lumen browses ABR files as images (`D04 T13 §3`), so it moves this section's ABR tip reader to `src/Photon.Core/Formats/Abr/`; Imago's brush import repoints.
 
 **Fidelity:** new build, no baseline; captured to docs/captures/imago/brush-library/ (Brushes panel grid and list, Brush Settings, the import report, the parametric editor, the Tool Presets panel).
 **Job:** a painter can bring their brush sets from any of the three apps, find a brush fast, and save tool setups. Consumer: the active paint tool's brush and options.

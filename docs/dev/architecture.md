@@ -39,6 +39,7 @@ src/
   Lumen/
     Photon.Lumen.Core/          catalog, import, RAW decode, develop pipeline
     Photon.Lumen.Desktop/       WPF app, AssemblyName Lumen (Lumen.exe)
+    Photon.Lumen.Viewer/        fast default viewer, AssemblyName LumenViewer (LumenViewer.exe), shipped only inside the Lumen install
 tests/
   Photon.Core.Tests/  Photon.UI.Tests/  Photon.Nodus.Tests/
   Photon.Imago.Core.Tests/  Photon.Imago.Rendering.Tests/  Photon.Lumen.Tests/

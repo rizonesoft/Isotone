@@ -236,7 +236,7 @@ For the whole file at a glance, read the Implementation Order table: `[x]` canno
 
 ## Frozen behavior
 
-Some behaviors are dangerous to get wrong because they write somebody's work: saving over a user's document, autosave and crash recovery, and anything that touches an original image in Lumen's library (non-destructive editing means the original is never written). A writer that computes the wrong bytes there does not fail a test, it destroys a user's file.
+Some behaviors are dangerous to get wrong because they write somebody's work: saving over a user's document, autosave and crash recovery, and anything that touches an original image in Lumen's library (non-destructive editing means an original is never written unless the user opts in, operator decision 2026-09-27: "Safe by default, opt-in writes"). A writer that computes the wrong bytes there does not fail a test, it destroys a user's file.
 
 Any TODO touching one sets `frozen: true` in frontmatter, and every section that changes a frozen behavior carries a freeze check alongside its test checkpoint:
 
@@ -246,7 +246,7 @@ Any TODO touching one sets `frozen: true` in frontmatter, and every section that
 
 Restructuring frozen code is allowed. Changing what it *writes* requires operator approval: the TODO records the approval, it does not grant it.
 
-The frozen set as of this file is empty, because none of those paths has shipped under this plan yet. A behavior joins the set by being listed here and setting the flag in the same commit; the document save path of each app, autosave and recovery, and Lumen's original-file guard are expected to join as they ship.
+The frozen set as of this file is empty, because none of those paths has shipped under this plan yet. A behavior joins the set by being listed here and setting the flag in the same commit; the document save path of each app, autosave and recovery, and Lumen's original-file guard are expected to join as they ship. Lumen's guard joins as `standards/lumen.md` states it: safe by default, with four in-place opt-ins (`Lumen.Originals.InPlace.EmbedMetadata`, `.Rotate`, `.Save`, and `.Convert`), all off by default, owned by one policy and writer (`D04 T11 §1`), embedding metadata only through the metadata-only rewriters of `D04 T08 §9`, and set on the Originals preferences group (`D04 T14 §10`); every in-place write takes a verified backup first unless the user confirmed turning backups off, and every freeze check that proves originals unchanged runs with every `Lumen.Originals.*` opt-in at its default.
 
 ## Surface fidelity
 
