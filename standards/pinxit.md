@@ -1,6 +1,6 @@
 # Pinxit Standards
 
-Pinxit is the suite's raster editor. This file adds to [`shared.md`](shared.md) and never contradicts it. It replaces the imported `src/Pinxit/STANDARDS.md`, whose naming, async, and documentation rules now live in `shared.md`, and whose ReactiveUI section is retired: Pinxit uses CommunityToolkit.Mvvm like every other app.
+Pinxit is the suite's raster editor. This file adds to [`shared.md`](shared.md) and never contradicts it. It replaces the imported `src/Imago/STANDARDS.md` (its path before the 2026-09-27 rename), whose naming, async, and documentation rules now live in `shared.md`, and whose ReactiveUI section is retired: Pinxit uses CommunityToolkit.Mvvm like every other app.
 
 ## Projects
 

@@ -39,7 +39,7 @@ The copyright holder is Rizonetech (Pty) Ltd: "Copyright (C) 2025-2026 Rizonetec
 
 Self-contained .NET: no runtime prerequisite on the target machine. x64 today; win-arm64 is planned (`todo/05-release/`). Installers are built with Inno Setup 7 as 64-bit Setup programs (`SetupArchitecture=x64`).
 
-The suite installer (`Isotone-<version>-win-x64-Setup.exe`, `installer/Suite.iss`, one component per shipping app) is built only from a `isotone-v*` tag or `scripts/package.ps1 -Suite`; a per-app release never needs it.
+The suite installer (`Isotone-<version>-win-x64-Setup.exe`, `installer/Suite.iss`, one component per shipping app) is built only from an `isotone-v*` tag or `scripts/package.ps1 -Suite`; a per-app release never needs it.
 
 **Supported OS:** Windows 11 (23H2 or later), x64. Windows 10 22H2 is best-effort: .NET 11 supports only the Windows 10 LTSC and IoT editions, so the apps may run on consumer Windows 10 but are untested there. Builds keep `TargetPlatformMinVersion` 10.0.17763.0 and installers keep `MinVersion=10.0.17763`, so Windows 10 is never blocked; the interactive installer shows a non-blocking notice on Windows 10 (build < 22000), which silent installs skip.
 

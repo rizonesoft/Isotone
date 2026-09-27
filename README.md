@@ -78,14 +78,14 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
     </th>
   </tr>
   <tr>
-    <td><img src="resources/screens/web/stilus.jpg" alt="Stilus brand art: a neon vector pen nib with Bezier handles above the Stilus wordmark"></td>
-    <td><img src="resources/screens/web/pinxit.jpg" alt="Pinxit brand art: a neon paintbrush scattering pixels above the Pinxit wordmark"></td>
-    <td><img src="resources/screens/web/albumen.jpg" alt="Albumen brand art: a neon camera aperture inside a viewfinder frame above the Albumen wordmark"></td>
+    <td><img src="resources/icons/stilus/stilus-splash.svg" alt="The Stilus splash card: the Stilus icon, the name Stilus, and the line Vector editor"></td>
+    <td><img src="resources/icons/pinxit/pinxit-splash.svg" alt="The Pinxit splash card: the Pinxit icon, the name Pinxit, and its role line"></td>
+    <td><img src="resources/icons/albumen/albumen-splash.svg" alt="The Albumen splash card: the Albumen icon, the name Albumen, and the line Digital darkroom and photo manager"></td>
   </tr>
   <tr>
     <td><strong>Vector editor.</strong> Structure and design: precision illustration, typography, logos, scalable graphics. An Illustrator alternative.</td>
     <td><strong>Raster editor.</strong> Creation and manipulation: painting, retouching, layer composition, pixel-level editing. A Photoshop alternative.</td>
-    <td><strong>Digital darkroom and asset manager.</strong> RAW development, non-destructive edits, batch adjustments, library management. A Lightroom alternative.</td>
+    <td><strong>Digital darkroom and asset manager.</strong> RAW development, non-destructive edits, batch adjustments, library management. A Lightroom, ACDSee, and IrfanView alternative: a fast image viewer, browsing without importing, and batch tools.</td>
   </tr>
   <tr>
     <td>Targets <code>.svg</code>, <code>.eps</code>, <code>.ai</code>, <code>.pdf</code></td>
@@ -99,7 +99,7 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
   </tr>
 </table>
 
-<sub>The images above are brand artwork, not screenshots. Real screenshots arrive with the first preview builds.</sub>
+<sub>The cards above are the apps' splash designs, not screenshots. Real screenshots arrive with the first preview builds.</sub>
 
 ## Features
 
@@ -141,6 +141,9 @@ Stilus began life as the Bezier project and was imported here with its full hist
 | Library and catalog | 📋 | Import, browse, rate, tag |
 | Batch adjustments | 📋 | Apply settings across a selection |
 | Edit in Pinxit | 📋 | Send a developed image straight to Pinxit |
+| Fast image viewer | 📋 | `AlbumenViewer.exe`, the default viewer for any image |
+| Browse without importing | 📋 | Open any folder, no import step |
+| Batch tools | 📋 | Rename, convert, resize, and develop in bulk |
 
 ## Architecture
 
@@ -183,7 +186,7 @@ flowchart TB
 | Piece | Choice |
 | ----- | ------ |
 | Runtime | .NET 11 (SDK pinned to 11.0.100-rc.1 until .NET 11 ships in November 2026) |
-| UI | WPF with standard controls (no third-party UI framework) |
+| UI | WPF with standard controls and custom theming; no third-party UI framework once Pinxit's WPF-UI leaves (planned, `D03 T01`) |
 | Rendering | SkiaSharp |
 | MVVM | CommunityToolkit.Mvvm |
 | Logging | Serilog |
@@ -291,6 +294,7 @@ Development is driven by a TODO tree in [`todo/`](todo/), with the ordered plan 
 7. **Albumen preview:** library, RAW development on the suite develop engine, and the Edit in Pinxit handoff in `albumen-v0.1.0`.
 8. **Albumen parity:** bring Albumen to parity with Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76, in ten releases from 0.2.0 to 1.0.0 (Phases 30 to 39 of the plan), on three pillars: a fast default image viewer (`AlbumenViewer.exe`, opening any image from Explorer within a recorded startup budget), browsing any folder without importing it, and batch rename, convert, resize, edit, develop, and export as core tools. The [Albumen parity catalog](docs/parity/albumen-parity.md) routes each of their 8,919 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services), or another Isotone app (ACDSee's layered Edit mode goes to Pinxit). Originals are safe by default: Albumen writes into an original only when you opt in, and then only after a verified backup. Faces are recognized on your machine and never sent anywhere; tethered capture is replaced by watched-folder import for now.
 9. **Distribution:** signing, win-arm64, winget, and the first suite bundle, `isotone-v1.0.0`.
+10. **After the first release:** RAW and XCF imports on the shared decoders, suite automation (actions, C# scripts, the command line, batch), video and audio with animation, on-device models and the GPU develop path, and Albumen's remaining formats, bundled as `isotone-v1.1.0`.
 
 The plan file is the source of truth; this list is a summary and may lag behind it.
 
@@ -316,7 +320,7 @@ Rizonesoft is a brand of Rizonetech (Pty) Ltd.
 
 The Isotone Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text. The GPL covers the code; the names "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Pinxit", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, covered by the [trademark policy](TRADEMARKS.md).
 
-Stilus and Pinxit were previously published under the MIT License as separate projects by the same author. Both are now part of this repository and are licensed under GPL-3.0.
+Stilus and Pinxit were previously published under the MIT License as separate projects by the same author, under the names Bezier and Imago. Both are now part of this repository and are licensed under GPL-3.0.
 
 ## Acknowledgements
 

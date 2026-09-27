@@ -27,4 +27,4 @@ The document area: the pasteboard around the image or artboard, rulers, guides, 
 
 ## WPF
 
-The canvas is SkiaSharp (`SKElement` / `SKGLElement`); read these colors from the theme once per theme change into `SKColor` fields (a `Isotone.UI.CanvasPalette` singleton), never per frame. Rulers are WPF `FrameworkElement`s with `OnRender` and `GuidelineSet`s for crisp 1px lines at every scale. The surround color is a document setting defaulting to `canvas-surround`.
+The canvas is SkiaSharp (`SKElement` / `SKGLElement`); read these colors from the theme once per theme change into `SKColor` fields (an `Isotone.UI.CanvasPalette` singleton), never per frame. Rulers are WPF `FrameworkElement`s with `OnRender` and `GuidelineSet`s for crisp 1px lines at every scale. The surround color is a document setting defaulting to `canvas-surround`.

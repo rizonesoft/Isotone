@@ -290,7 +290,7 @@ A surface that cannot match its spec now says so, directly under its Design line
 **Design deviation:** opened YYYY-MM-DD -- spec: <design ref> -- reason: <why the code cannot match now> -- follow-up: DNN TNN §N (fix design|fix code)
 ```
 
-The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Stilus, Pinxit, or Albumen file (a `Isotone.UI` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
+The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Stilus, Pinxit, or Albumen file (an `Isotone.UI` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
 
 ### Gates and goldens
 
@@ -530,7 +530,7 @@ Everything else (a competitor feature, a premium win, a nice-to-have from a revi
 - [ ] Run the backlog review for `<app>-vX.Y.Z`: ...
 ```
 
-or `validate` fails with `release-backlog-review-missing`. Running it means walking every backlog entry whose `app:` is that app or `suite` (every entry, for a `isotone` release) and, for each, either promoting it into a section (through `add-todo`; a full promotion deletes the entry) or asking the operator whether it may wait and recording the answer on the entry:
+or `validate` fails with `release-backlog-review-missing`. Running it means walking every backlog entry whose `app:` is that app or `suite` (every entry, for an `isotone` release) and, for each, either promoting it into a section (through `add-todo`; a full promotion deletes the entry) or asking the operator whether it may wait and recording the answer on the entry:
 
 ```
 -- reviewed: <app>-vX.Y.Z YYYY-MM-DD promoted DNN TNN §N

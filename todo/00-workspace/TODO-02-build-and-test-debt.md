@@ -47,7 +47,7 @@ track: W2
 - `docs/dev/decisions.md` exists and records the assertion library, with its license.
 - Every test project runs on xUnit v3 (`xunit.v3.mtp-off`, VSTest), in its final place after the renames.
 - `global.json` pins a released .NET 11 SDK (11.0.1xx GA), and every Microsoft.Extensions.* package matches its runtime.
-- `release.yml` has a draft mode, and a `stilus-v0.1.0-alpha.1` draft release was built by it with an installer, a portable ZIP, and a `SHA256SUMS` that matches them, inspected, and deleted, so no public prerelease or tag remains (operator decision 2026-09-27).
+- `release.yml` has a draft mode, and a `stilus-v0.1.0-alpha.1` draft release was built by it with an installer, a portable ZIP, and a `SHA256SUMS` that matches them, inspected, and deleted (**Corrected 2026-09-28:** read as: the draft release's body links them, kept in the `dist-<tag>` workflow artifact or under `drafts/` on `download.rizonesoft.com` once `D99 T01 §8` is done, and carries no attached files), so no public prerelease or tag remains (operator decision 2026-09-27).
 
 **Adjacency:** all=not-applicable (build configuration, test hygiene, and the release pipeline's first run: no user-facing records, settings, or documents)
 
@@ -83,6 +83,8 @@ A quarantine is debt with a collector, and this section is the collector. Both f
 ## 2. Pinxit Diagnostics to Zero
 
 Pinxit already builds with warnings as errors and code style enforced, except for three diagnostics kept as warnings. Two of them (`IDE0005` unnecessary usings, 12 sites; `CS0618` obsolete APIs, 2 sites) are cheap to clear now. `NU1701` comes from SkiaSharp.Views.WPF 3.x pulling .NET Framework OpenTK packages and leaves with the SkiaSharp 4 migration (`D02 T01 §6`), so it stays. **Corrected 2026-09-26:** the 2026-09-26 toolchain upgrade (one `build:` commit: .NET 11 RC, SkiaSharp 4, xUnit v3, AwesomeAssertions, Inno Setup 7, package prune) already removed `NU1701` from the props file (it no longer fires) and fixed the new .NET 11 SDK diagnostics in Pinxit (`IDE0054`, `IDE0330`, and three `IDE1006` names); the `CS0618` count is now 1 (WPF-UI `IContentDialogService.SetDialogHost` in `Views/MainWindow.xaml.cs`), so this section ends with no excused diagnostic at all.
+
+**Corrected 2026-09-28:** `docs/dev/build.md` counts 6 `IDE0005` sites after the toolchain upgrade against the 12 above; the section re-counts from the build output rather than trusting either figure.
 
 - [ ] Remove every unnecessary `using` the `IDE0005` warnings name, starting with `src/Pinxit/src/Pinxit.Core/GlobalUsings.cs` and `src/Pinxit/src/Pinxit.UI/GlobalUsings.cs`. Done when: `dotnet build Isotone.slnx -c Release -v q 2>&1 | grep -c IDE0005` prints 0.
 - [ ] Replace the two obsolete API calls `CS0618` names with their documented replacements (cite the replacement's Microsoft Learn or package doc URL in the commit body). Done when: the build reports no `CS0618` under `src/Pinxit/`.

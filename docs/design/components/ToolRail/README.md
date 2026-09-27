@@ -42,5 +42,5 @@ After `tooltip-delay` (400ms) the Tooltip component opens right of the button: t
 
 - `ItemsControl` of `RadioButton`s with `GroupName="Tools"` styled `Isotone.ToolButton` (from Bezier's ActiveToolButton). Template parts: `Border PART_Chrome` (fill, border, `DropShadowEffect` with `ShadowDepth` 0 for the glow), `Path PART_Icon`, `Path PART_GroupTriangle` (visible when `Isotone.Tool.HasGroup`).
 - Visual states: `CommonStates` (Normal, MouseOver, Pressed, Disabled), `CheckStates` (Checked, Unchecked), `FocusStates`.
-- `ToolTipService.InitialShowDelay` = 400, `BetweenShowDelay` = 0, `ToolTip` = a `Isotone.RichToolTip`.
+- `ToolTipService.InitialShowDelay` = 400, `BetweenShowDelay` = 0, `ToolTip` = an `Isotone.RichToolTip`.
 - `AutomationProperties.Name` = "Brush Tool (B)".

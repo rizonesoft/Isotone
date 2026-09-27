@@ -37,7 +37,7 @@ track: C9
 
 ## Outcome
 
-- A third-party 8BF filter runs on a Stilus bitmap object and an Pinxit layer through the same host, with its own dialog, its progress, Cancel, and its parameters remembered for Repeat.
+- A third-party 8BF filter runs on a Stilus bitmap object and a Pinxit layer through the same host, with its own dialog, its progress, Cancel, and its parameters remembered for Repeat.
 - Every plug-in runs out of process; killing the host or a plug-in crash mid-filter leaves the app running and the document unchanged, and the plug-in is disabled with a message naming it.
 - Format and acquire plug-ins open, save, and import through the host, with saves written by the consuming app's atomic writer.
 - One plug-in manager in `Isotone.UI` shows folders, detected plug-ins with their support status, and About Plug-ins in every app that hosts.
@@ -141,7 +141,7 @@ Every competitor has a place to point at plug-in folders and see what loaded: Ph
 - [ ] Add `src/Isotone.UI/Plugins/PluginManagerView.xaml` in the house style as a page the consumers embed in their preferences, reachable by keyboard with automation names on every control. Done when: an automation-tree test finds every control by name and the capture shows the page in both themes.
 - [ ] Add `PluginFailureNotice`, the one message every consumer shows when a plug-in fails ("<plug-in> stopped responding and was disabled. Your document was not changed."), with a link to the manager. Done when: a view-model test asserts the text names the plug-in and the link opens the manager page.
 - [ ] Log one Serilog Information line per folder change, enable, disable, and rescan. Done when: a test asserts each line.
-- [ ] Commit captures under `docs/captures/stilus/plugin-manager/` (folders, the detected list with each status, the restart banner, and an About box) and write `docs/user/shared/plugins.md` that each app's user guide links to. Done when: every control appears in a capture and the page documents it.
+- [ ] Commit captures under `docs/captures/isotone-ui/plugin-manager/` (folders, the detected list with each status, the restart banner, and an About box) and write `docs/user/isotone/plugins.md` (**Corrected 2026-09-28:** the suite user pages live in `docs/user/isotone/`, and Isotone.UI captures under `docs/captures/isotone-ui/`) that each app's user guide links to. Done when: every control appears in a capture and the page documents it.
 - [ ] Commit: `"ui: the shared plug-in manager"`
 
 **Test checkpoint:** Driven run with evidence and unit test: `dotnet test Isotone.slnx --filter "FullyQualifiedName~PluginManager"` exits 0; in a driven run of the built manager page, adding the fixtures folder lists every test plug-in with its expected status, disabling and re-enabling the crashing filter round-trips through settings (readback quoted), and the About box capture is committed under `docs/captures/stilus/plugin-manager/`. Cheaper substitute that fails: a folder text box with no detected list, which cannot show the unsupported reasons the filter test asserts.

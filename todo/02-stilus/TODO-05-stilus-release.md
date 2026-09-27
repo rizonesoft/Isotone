@@ -51,7 +51,7 @@ track: N5
 |   1   |   §1    | The About dialog                       | D02 T03 §2                                                                              |  [ ]   |
 |   2   |   §2    | The keyboard shortcuts dialog          | D02 T02 §8                                                                              |  [ ]   |
 |   3   |   §3    | The Help menu                          | §1, §2                                                                                  |  [ ]   |
-|   4   |   §4    | Stilus 0.1.0                            | §3, D02 T01 §7, D02 T03 §5, D02 T04 §6, D01 T01 §3, D06 T01 §1, D05 T01 §1, D00 T02 §7, D00 T02 §8, D99 T01 §8 |  [ ]   |
+|   4   |   §4    | Stilus 0.1.0                            | §3, D02 T01 §7, D02 T03 §5, D02 T04 §6, D01 T01 §3, D06 T01 §1, D05 T01 §1, D00 T02 §7, D00 T02 §8, D99 T01 §8, D05 T01 §8, D02 T02 §7 |  [ ]   |
 
 ---
 
@@ -122,6 +122,8 @@ Every Help item must work or name its owner (the rule `D02 T03 §5` enforces). D
 
 The first real release proves the whole product path for one app: every gate green, the changelog and guide current, the installer clean on a machine that has never seen .NET, and the tag producing a verified GitHub release. It follows the checklist in `standards/release.md` exactly, quoting each line's evidence. It builds on the .NET 11 GA SDK (`D00 T02 §8`), never on the release candidate the toolchain upgrade of 2026-09-26 pinned. The clean machine is Windows 11 (the supported OS); an extra Windows 10 22H2 smoke is optional and best-effort, its failures recorded rather than blocking.
 
+**Groomed 2026-09-28:** added `D02 T02 §7` to the dependencies, the one Phase 3 Stilus section the release did not reach through its dependencies.
+
 **Needs:** Clean Windows machine (no .NET SDK)
 
 **Corrected 2026-09-27:** added the backlog review before the tag (operator decision 2026-09-27, "Release-time backlog gate", with "No drop without operator approval"; `todo/README.md`, The budget and the backlog): every backlog entry for Stilus or the suite is promoted into a section or deferred by the operator in words recorded on the entry as a `reviewed: stilus-v0.1.0` field, and `validate` refuses this section's stamp while one is unreviewed (`release-backlog-unreviewed`).
@@ -145,6 +147,6 @@ The first real release proves the whole product path for one app: every gate gre
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0 at the tagged commit
-- [ ] The `stilus-v0.1.0` release exists with installer, ZIP, and checksums that match
+- [ ] The `stilus-v0.1.0` GitHub release exists with no attached files, and the installer, ZIP, and `SHA256SUMS` it links on `https://download.rizonesoft.com/stilus/0.1.0/` match (**Corrected 2026-09-28:** said the release carries the installer and ZIP; binaries ship only from rizonesoft.com)
 - [ ] Every Help item works or names its owner
 - [ ] `python scripts/todo-graph.py validate` clean

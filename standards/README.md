@@ -13,4 +13,4 @@ The standards every change in the Isotone Graphics Suite answers to. [`AGENTS.md
 | [`testing.md`](testing.md) | Test projects, naming, fixtures, fidelity proofs, the quarantine |
 | [`release.md`](release.md) | Versions, tags, changelogs, installers, the release checklist |
 
-The legacy per-app standards (`src/Stilus/STANDARDS.md`, `src/Pinxit/STANDARDS.md`) were merged into these files on 2026-09-26 and removed; git history keeps them.
+The legacy per-app standards (`src/Nodus/STANDARDS.md`, `src/Imago/STANDARDS.md`, their paths before the 2026-09-27 rename) were merged into these files on 2026-09-26 and removed; git history keeps them.

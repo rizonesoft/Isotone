@@ -13,7 +13,7 @@ track: R1
 > **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Isotone Graphics Suite (`isotone-v1.0.0`, then `isotone-v1.1.0` after the post-release phases 42 to 45) without any app's version moving.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `stilus-v*`, `pinxit-v*`, `albumen-v*`, and `isotone-v*` tags. A local Stilus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Stilus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Stilus and Pinxit publishes and names Stilus's executable `Bezier.Desktop.exe`. **Corrected 2026-09-27:** by operator decision that day, binaries are distributed only from rizonesoft.com: `release.yml` uploads the installer, the portable ZIP, and `SHA256SUMS` to S3-compatible storage served as `download.rizonesoft.com` (`<slug>/<version>/<file>`, slug `stilus`, `pinxit`, `albumen`, or `isotone`) with a hash-pinned rclone, writes the update feed `update/<slug>.json` (stable) or `update/<slug>-prerelease.json` last, and creates a GitHub release with no attached files whose body (from `scripts/release-manifest.ps1`) carries the CHANGELOG notes, Download links, the SHA-256 table, and the tag's source link; a tag release fails when the storage secrets are missing, and the storage itself is the operator's step `D99 T01 §8`. Every section below that said a GitHub release carries assets now reads the files from `download.rizonesoft.com`.
+> **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `stilus-v*`, `pinxit-v*`, `albumen-v*`, and `isotone-v*` tags. A local Stilus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Stilus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Stilus and Pinxit publishes and names Stilus's executable `Bezier.Desktop.exe`. **Corrected 2026-09-27:** by operator decision that day, binaries are distributed only from rizonesoft.com: `release.yml` uploads the installer, the portable ZIP, and `SHA256SUMS` to S3-compatible storage served as `download.rizonesoft.com` (`<slug>/<version>/<file>`, slug `stilus`, `pinxit`, `albumen`, or `isotone`) with a hash-pinned rclone, writes the update feed `update/<slug>.json` (stable) or `update/<slug>-prerelease.json` last, and creates a GitHub release with no attached files whose body (from `scripts/release-manifest.ps1`) carries the CHANGELOG notes, Download links, the SHA-256 table, and the tag's source link; a tag release fails when the storage secrets are missing, and the storage itself is the operator's step `D99 T01 §8`. Every section below that said a GitHub release carries assets now reads the files from `download.rizonesoft.com`. **Corrected 2026-09-28:** 63.1 MB was the pre-upgrade size; after the 2026-09-26 upgrade the Stilus installer is 66.0 MB (`docs/dev/build.md`); and only `release.yml` has never run, while `build` and `plan-gates` have run green since 2026-09-26.
 <!-- claim: count "ArchitecturesAllowed=x64compatible" installer/common.iss = 1 -->
 <!-- claim: exists installer/Suite.iss -->
 <!-- claim: count "isotone-v\*" .github/workflows/release.yml = 1 -->
@@ -26,7 +26,7 @@ track: R1
 - [`standards/release.md`](../../standards/release.md) -- versions, artifacts, signing policy, and the release checklist
 - [`docs/dev/build.md`](../../docs/dev/build.md), [`docs/dev/versioning.md`](../../docs/dev/versioning.md) -- how the scripts and tags work
 - [`scripts/package.ps1`](../../scripts/package.ps1), [`scripts/publish.ps1`](../../scripts/publish.ps1), [`installer/`](../../installer/common.iss), [`.github/workflows/release.yml`](../../.github/workflows/release.yml) -- what this file extends
-- -> XREF: D01 T02 §4 -- the update check lands in `Isotone.Core` beside the other shared services (§4 here owns it)
+- -> XREF: D01 T02 §2 -- the settings store that `Updates.CheckOnStartup` and `Updates.IncludePrereleases` (§4) persist through; §4 here owns the update check itself
 - -> XREF: D02 T05 §4 -- the Stilus release that runs §1's procedure first
 - -> XREF: D03 T06 §3 -- the Pinxit release that runs §1's procedure
 - -> XREF: D04 T01 §2 -- Albumen's app creation that makes it a shipping app for §6
@@ -54,7 +54,7 @@ track: R1
 - `isotone-v1.0.0` publishes the suite installer and ZIP on `download.rizonesoft.com`, carrying Stilus, Pinxit, and Albumen at their current versions.
 - `isotone-v1.1.0` publishes the second bundle carrying Stilus 1.2.0, Pinxit 1.3.0, and Albumen 1.4.0 at their own versions.
 
-**Adjacency:** list=not-applicable (no browsable records); document=not-applicable (release notes are the changelog's); settings=applicable @ D05 T01 §4; reporting=not-applicable (no summaries); notifications=applicable; permissions=applicable; audit=applicable; exchange=not-applicable (no user formats); reverse=applicable
+**Adjacency:** list=not-applicable (no browsable records); document=not-applicable (release notes are the changelog's); settings=applicable @ D05 T01 §4; reporting=not-applicable (no summaries); notifications=applicable @ D05 T01 §4; permissions=applicable @ D05 T01 §1; audit=not-applicable (release evidence is the changelog and the workflow log); exchange=not-applicable (no user formats); reverse=applicable @ D05 T01 §1
 
 **Adjacency rationale:** The update check is a setting and a notification; install scope (per-user versus all-users) is the permission surface, proven on refusal (all-users without elevation); uninstall is the reverse of install; each release records its evidence in the changelog and the workflow run.
 
@@ -69,6 +69,7 @@ track: R1
 |   5   |   §5    | winget manifests                                         | D02 T05 §4, D03 T06 §3, D04 T02 §8         |  [ ]   |
 |   6   |   §6    | The suite bundle: isotone-v1.0.0                          | §4, D02 T05 §4, D03 T06 §3, D04 T02 §8, D06 T01 §4 |  [ ]   |
 |   7   |   §7    | The suite bundle: isotone-v1.1.0 | §6, D02 T17 §12, D03 T21 §15, D04 T15 §14 |  [ ]   |
+|   8   |   §8    | Third-party notices in every package | D00 T02 §7 |  [ ]   |
 
 ---
 
@@ -159,10 +160,11 @@ The suite bundle packages all three apps in one installer and one ZIP without ch
 **Corrected 2026-09-27:** added the backlog review before the tag (operator decision 2026-09-27, "Release-time backlog gate", with "No drop without operator approval"; `todo/README.md`, The budget and the backlog): every backlog entry, whatever its app, is promoted into a section or deferred by the operator in words recorded on the entry as a `reviewed: isotone-v1.0.0` field, and `validate` refuses this section's stamp while one is unreviewed (`release-backlog-unreviewed`).
 
 - [ ] `installer/Suite.iss` requires Albumen when Albumen ships (mirroring the Stilus and Pinxit checks) and its component list names each app with its own version from its latest tag. Done when: the suite installer's component page shows three apps with their versions.
-- [ ] A `isotone-v1.0.0` section in `CHANGELOG.md` listing the app versions the bundle carries. Done when: it exists.
+- [ ] An `isotone-v1.0.0` section in `CHANGELOG.md` listing the app versions the bundle carries. Done when: it exists.
 - [ ] Run the clean-machine procedure for the suite installer: install all three, uninstall one component, confirm the others still run and no standalone install's registry keys were touched. Done when: every step passes (quoted).
 - [ ] Run the backlog review for `isotone-v1.0.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry, whatever its `app:` (a suite release reviews the whole backlog), either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: isotone-v1.0.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: isotone-v1.0.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: isotone-v1.0.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
 - [ ] Push `isotone-v1.0.0`; verify the workflow, the files under `https://download.rizonesoft.com/isotone/1.0.0/`, `SHA256SUMS`, and the feed `update/isotone.json` (**Corrected 2026-09-27:** said the assets, which are no longer attached to the GitHub release). Done when: all pass (URLs and hashes quoted).
+- [ ] `installer/Suite.iss`'s `albumen` component carries `AlbumenViewer.exe` and offers the same unchecked "Register Albumen Viewer for image types" task (install runs `--register`, uninstall `--unregister`), registering under the suite's own ProgIDs so a standalone Albumen install's associations are untouched (**Groomed 2026-09-28:** the suite bundle defined only `Albumen.exe`). Done when: the clean-machine run opens a `.heic` from Explorer in the viewer after the suite install, and the standalone install's registry keys are unchanged (export diff quoted).
 - [ ] Commit: `"release: the Isotone Graphics Suite 1.0.0 bundle"`
 
 **Requires:** display-session -- the suite installer's component page and the app launches need an interactive desktop
@@ -178,7 +180,7 @@ The second suite bundle carries the apps at the versions the post-release phases
 **Requires:** display-session -- the suite installer's component page and the app launches need an interactive desktop
 
 - [ ] Update `installer/Suite.iss` so its component list names Stilus 1.2.0, Pinxit 1.3.0, and Albumen 1.4.0 with each version read from the app's latest tag. Done when: the suite installer's component page shows the three apps with those versions (capture committed under `docs/captures/suite/release-1.1.0/`).
-- [ ] Add a `isotone-v1.1.0` section to `CHANGELOG.md` listing the app versions the bundle carries and linking each app's own release notes. Done when: it exists and names all three versions.
+- [ ] Add an `isotone-v1.1.0` section to `CHANGELOG.md` listing the app versions the bundle carries and linking each app's own release notes. Done when: it exists and names all three versions.
 - [ ] Build `pwsh scripts/package.ps1 -Suite -Version 1.1.0`. Done when: the suite installer, the suite ZIP, and `SHA256SUMS` exist under `artifacts/dist/`, and the ZIP carries no FFmpeg, GDAL, or `.onnx` file (file list quoted).
 - [ ] Run the clean-machine procedure of `§1` for the suite installer: upgrade over `isotone-v1.0.0`, confirm each app's About version, run one recorded action in each app, play a video fixture in Pinxit and Albumen, uninstall one component, and confirm the other two still start and run their automation and media features. Done when: every step passes (quoted).
 - [ ] Confirm no standalone install's registry keys were touched by the suite install or the component uninstall. Done when: the before-and-after registry export diff is quoted with no change under the standalone apps' keys.
@@ -188,6 +190,24 @@ The second suite bundle carries the apps at the versions the post-release phases
 - [ ] Commit: `"release: the Isotone Graphics Suite 1.1.0 bundle"`
 
 **Test checkpoint:** Driven run with evidence: `gh release view isotone-v1.1.0 --json assets,body` shows no assets and a body linking the suite installer, ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/isotone/1.1.0/`, whose downloads match their hashes; the clean-machine run shows Stilus 1.2.0, Pinxit 1.3.0, and Albumen 1.4.0 installed side by side with their own versions in their About dialogs, and the two remaining apps still run after one component's uninstall. Cheaper substitute that fails: a bundle that re-versions every app to 1.1.0, which the About dialogs catch.
+
+## 8. Third-Party Notices in Every Package
+
+**Origin:** discovered run=d1b2e37f2025 2026-09-28 -- groom-plan gap scan
+
+Every installer and ZIP already ships third-party code that asks for attribution with the binaries (SkiaSharp and CommunityToolkit under MIT, Serilog under Apache-2.0, AvalonDock under MS-PL, SharpVectors under BSD), yet no notices file exists and nothing ships one: `installer/common.iss` packs only `LICENSE`, and no script copies notices into a publish folder. Sections that add dependencies append to a notices file at two different paths (the root `THIRD-PARTY-NOTICES` in `D02 T10`, `D03 T11`, and `D03 T12`; `src/Isotone.Core/THIRD-PARTY-NOTICES.md` in `D01 T04` and `D03 T17`). This is a defect in shipped work and a prerequisite of the first release, `D02 T05 §4`, so it is filed as a section: one canonical file, checked against the packages, in every package.
+
+**Fidelity:** no surface of its own -- a notices file, a check script, and packaging wiring; the About dialog link is the About sections' own surface.
+
+**Needs:** Windows host (build/test)
+
+- [ ] Add `THIRD-PARTY-NOTICES.md` at the repository root with one entry per shipped package and bundled data set: name, version, license, copyright, and the license text or its canonical URL. Done when: every `PackageVersion` in `Directory.Packages.props` that a shipping project references has an entry.
+- [ ] Add `scripts/notices.py` (stdlib) whose `--check` fails when a package a shipping project references has no entry, or an entry names a package no project references, and run it in `scripts/check-all.ps1` and `build.yml`. Done when: adding a probe `PackageReference` without an entry fails the check naming it, and the tree passes (both quoted).
+- [ ] Make `scripts/publish.ps1` copy `THIRD-PARTY-NOTICES.md` beside `LICENSE` into every publish folder, so each installer and portable ZIP carries it. Done when: `artifacts/dist/` for Stilus contains the file inside the ZIP and the installed folder (listing quoted).
+- [ ] Rewrite the plan's references to the two other paths (`THIRD-PARTY-NOTICES` and `src/Isotone.Core/THIRD-PARTY-NOTICES.md`) to the one root file. Done when: `grep -rn "THIRD-PARTY-NOTICES" todo | grep -v "THIRD-PARTY-NOTICES.md"` and `grep -rn "Isotone.Core/THIRD-PARTY" todo` print nothing outside this section.
+- [ ] Commit: `"release: one third-party notices file, checked and shipped in every package"`
+
+**Test checkpoint:** Unit test and driven run: `python scripts/notices.py --check` exits 0 on the tree and exits 1 naming a probe package added without an entry (quoted, then reverted); `pwsh scripts/package.ps1 -App Stilus` produces a ZIP whose listing includes `THIRD-PARTY-NOTICES.md` (quoted). Cheaper substitute that fails: a notices file in the repository that no package carries.
 
 ## Verification
 

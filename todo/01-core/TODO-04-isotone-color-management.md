@@ -73,7 +73,7 @@ track: C4
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms | D01 T02 §1 |  [ ]   |
 |   2   |   §2    | Rendering intents, black point compensation, proofing transforms, and gamut checks | §1 |  [ ]   |
-|   3   |   §3    | Bitmap color modes, duotone, and multichannel, with the Stilus Duotone dialog | §2, D01 T03 §3 |  [ ]   |
+|   3   |   §3    | Bitmap color modes, duotone, and multichannel, with the Stilus Duotone dialog | §2, D01 T03 §3, D02 T09 §2, D02 T12 §9 |  [ ]   |
 
 ---
 
@@ -86,7 +86,7 @@ The suite needs one color engine, and it needs it before Stilus's color model (`
 **Needs:** Windows host (build/test)
 
 - [ ] Add a decision row to `docs/dev/decisions.md`: lcms2 (MIT, GPL-3.0 compatible, ICC v4, proofing, K-preserving intents) against Windows WCS (`mscms.dll`, no package, weaker v4 support, no K-preserving intents), with license URLs, a coverage table, the cost of changing (one wrapper class), and the justified default lcms2. Done when: the row names both candidates, both licenses, and this section's ref.
-- [ ] Build lcms2 2.16 or later for `win-x64` and `win-arm64` with `build/native/lcms2/build.ps1`, recording the source tarball SHA-256 and compiler version in `build/native/lcms2/SOURCE.txt`, and commit the binaries under `src/Isotone.Core/runtimes/<rid>/native/lcms2.dll`. Done when: both DLLs exist and `SOURCE.txt` names the upstream tag and hash. Cheaper substitute: an unpinned DLL copied from another product, which the hash record rejects.
+- [ ] Build lcms2 2.16 or later for `win-x64` and `win-arm64` with `tools/native/lcms2/build.ps1`, recording the source tarball SHA-256 and compiler version in `tools/native/lcms2/SOURCE.txt`, and commit the binaries under `src/Isotone.Core/runtimes/<rid>/native/lcms2.dll`. Done when: both DLLs exist and `SOURCE.txt` names the upstream tag and hash. Cheaper substitute: an unpinned DLL copied from another product, which the hash record rejects. (**Corrected 2026-09-28:** `build/` is gitignored, so the build script and its provenance record are committed under `tools/native/`, with intermediate output under `build/native/`.)
 - [ ] Pack the natives from `src/Isotone.Core/Isotone.Core.csproj` (`<None Include="runtimes/**" Pack="true" CopyToOutputDirectory="PreserveNewest" />`) and add lcms2's MIT license text to `src/Isotone.Core/THIRD-PARTY-NOTICES.md`. Done when: `dotnet publish` of Stilus for `win-x64` places `lcms2.dll` beside `Stilus.exe` and the notice file names lcms2.
 - [ ] Add `src/Isotone.Core/Color/Native/Lcms2.cs`: `[LibraryImport("lcms2")]` bindings for `cmsOpenProfileFromMem`, `cmsCloseProfile`, `cmsCreateTransform`, `cmsDoTransform`, `cmsDeleteTransform`, `cmsGetColorSpace`, `cmsGetDeviceClass`, `cmsGetProfileVersion`, `cmsGetProfileInfoUTF8`, `cmsCreate_sRGBProfile`, `cmsCreateLab4Profile`, and `cmsCreateGrayProfile`. Done when: the file compiles with `AllowUnsafeBlocks` off and the analyzers report no marshalling warning. Source: lcms2 2.16 API reference, section 3.
 - [ ] Add `SafeProfileHandle` and `SafeTransformHandle` (`SafeHandle` subclasses releasing through `cmsCloseProfile` and `cmsDeleteTransform`) in `src/Isotone.Core/Color/Native/`. Done when: `NativeHandleTests` create and dispose 10,000 transforms without the process private bytes growing more than 5 MB.
@@ -134,6 +134,8 @@ A value that converts is not yet a value that prints as intended: print designer
 ## 3. Bitmap Color Modes: Grayscale, Lab, CMYK, Duotone, and Multichannel
 
 Placed bitmaps in a print document need the same color modes the press uses: grayscale, Lab, CMYK, duotone with spot inks, and multichannel plates. This section converts `D01 T03 §3`'s pixel buffers between modes through the §1 and §2 engine, adds the duotone and multichannel models and renderer, reads Photoshop `.ado` ink files, and gives Stilus a Duotone dialog. It runs in Phase 10 after the pixel engine ships. `D02 T12 §1`'s Lab, CMYK, and duotone mode commands wait for this section by name. Catalog: NP-2082 to NP-2085 (4 features: NP-2082 Duotone types: monotone to quadtone, NP-2083 Duotone ink tone curves, NP-2084 Duotone save and load inks, NP-2085 Duotone overprint colors).
+
+**Corrected 2026-09-28:** the mode commands moved to `D02 T12 §9` when `D02 T12 §1` was split; this section enables §9's disabled Lab, CMYK, and Duotone items and extends §9's mode command rather than adding a second one.
 
 **Fidelity:** new build, no baseline; captured to docs/captures/stilus/duotone/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/ComboBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/Swatches/README.md, docs/design/components/Button/README.md, docs/design/components/Menu/README.md -- states: all in spec -- themes: all four -- density: both

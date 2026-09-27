@@ -44,7 +44,7 @@ track: N4
 - `Stilus.exe path.svg` opens the file, and a second launch hands the path to the running instance.
 - `todo/README.md` lists Stilus's save path and autosave in the frozen set.
 
-**Adjacency:** list=applicable @ D02 T04 §5; document=applicable @ D02 T04 §4; settings=applicable @ D02 T04 §5; reporting=not-applicable (document info is the status strip's); notifications=applicable; permissions=applicable; audit=applicable @ D02 T04 §1; exchange=applicable @ D02 T04 §2; reverse=applicable @ D02 T04 §5
+**Adjacency:** list=applicable @ D02 T04 §5; document=applicable @ D02 T04 §4; settings=applicable @ D02 T04 §5; reporting=not-applicable (document info is the status strip's); notifications=applicable @ D02 T04 §3; permissions=applicable @ D02 T04 §1; audit=applicable @ D02 T04 §1; exchange=applicable @ D02 T04 §2; reverse=applicable @ D02 T04 §5
 
 **Adjacency rationale:** Recent files are the list of documents; PDF export is the carried document; the autosave interval is a setting; long exports show progress; a read-only target is the refusal case; every save logs a line; SVG is the exchange format; recovery is the reverse of a crash.
 
@@ -83,6 +83,7 @@ Saving over a user's file is the most dangerous thing Stilus does. Today it writ
 - [ ] The title binds to name and dirty state; the prompt guards New, Open, Close, Exit, and `Window.Closing`. Done when: a driven run of each path on a dirty document shows the prompt, and Cancel keeps the document.
 - [ ] Log `Saved {Path} ({Bytes} bytes, {ElapsedMs} ms)` and `Save of {Path} failed: {Reason}`. Done when: both appear on a driven run with a read-only target.
 - [ ] Add "Stilus document save path" to the frozen set paragraph in `todo/README.md`. Done when: the paragraph names it with this section's ref.
+- [ ] After the replace, read the saved file back through `SvgImporter` and compare element count and ids with the document; a mismatch shows "Saved <name>, but reading it back failed: <reason>. The document stays open and unsaved." and leaves `IsDirty` true (**Groomed 2026-09-28:** AGENTS.md requires readback). Done when: `AtomicSaveReadbackTests` pass with a writer hook that corrupts the temp file and assert the message, the dirty flag, and a `Save readback of {Path} failed` Warning line.
 - [ ] Commit: `"stilus: atomic save, dirty tracking, and the unsaved-changes prompt"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `AtomicFileWriterTests` and `DirtyTrackingTests` reporting; the interrupted-write test asserts the fixture's SHA-256 is unchanged; a driven run saves over a read-only copy of `tests/fixtures/stilus/svg/bezier-sample.svg`, sees the refusal message, and the log line is quoted; closing a dirty window shows the prompt (capture committed). Cheaper substitute that fails: writing to a `.bak` first, which the interrupted-write hash assertion catches.
@@ -117,6 +118,7 @@ Raster export is how most vector work leaves the editor. `SkiaRenderer` already 
 - [ ] Wire `ExportPng` and `ExportJpeg`; long renders show progress and can be cancelled (the partial file is never written). Done when: a cancel test asserts no file exists.
 - [ ] Log `Exported {Format} {Path} ({Width}x{Height})`. Done when: the line appears on a driven run.
 - [ ] Update the Stilus user guide export page. Done when: the page documents every option.
+- [ ] Refuse a read-only or locked export target with "Could not export <name>: <reason>." and leave it byte-identical (**Groomed 2026-09-28:**). Done when: `RasterExporterTests.ReadOnlyTarget_Refuses` asserts the message and hash.
 - [ ] Commit: `"stilus: PNG and JPEG export through the Skia renderer"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `RasterExporterTests` reporting per-fixture pixel comparisons; a driven export of `bezier-sample.svg` at 2x produces a PNG of exactly twice the document size (quote the dimensions from the file header) with a transparent background; capture of the dialog committed. Cheaper substitute that fails: exporting the visible canvas.
@@ -137,6 +139,7 @@ PDF is the document a designer sends to a printer or a client. SkiaSharp's `SKDo
 - [ ] Add `PdfExporter` using `SKDocument.CreatePdf` with `SKDocumentPdfMetadata` (Title from the file name, Creator "Stilus <version>"). Done when: `PdfExporterTests` export the text fixture and assert the PDF contains the text as a text object (the string appears in the decompressed content stream, parsed with a minimal reader in the test) and that page size equals the artboard size in points.
 - [ ] Wire `ExportPdf` through the same options pattern as §3 (artboards: all or current). Done when: a two-artboard document exports two pages.
 - [ ] Update the Stilus user guide export page. Done when: PDF is documented.
+- [ ] Log `Exported PDF {Path} ({Pages} pages)` and refuse a read-only, locked, or full-disk target with "Could not export <name>: <reason>." leaving any existing file byte-identical; a cancelled export writes nothing (**Groomed 2026-09-28:**). Done when: `PdfExporterTests` assert the line, the refusal, and the unchanged SHA-256 of a read-only target.
 - [ ] Commit: `"stilus: vector PDF export with one page per artboard"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `PdfExporterTests` reporting; a driven export opened in a PDF viewer shows vector edges at 800 percent zoom and selectable text (capture committed); the page size read from the file matches. Cheaper substitute that fails: rasterizing to PDF.
@@ -156,7 +159,7 @@ A designer who loses an hour to a crash stops using the app. Autosave writes a r
 
 **Requires:** display-session -- the kill-and-recover drive needs an interactive desktop
 
-- [ ] Move `FileOperationsService`'s recent-file list onto `StilusSettings` (`Stilus.RecentFiles`, max 10) and its draft folder onto `AppDataPaths.Recovery`. Done when: `grep -n "LocalApplicationData" src/Stilus` prints nothing.
+- [ ] Move `FileOperationsService`'s recent-file list onto `StilusSettings` (`Stilus.RecentFiles`, max 10) and its draft folder onto `AppDataPaths.Recovery`. Done when: `grep -n "LocalApplicationData" src/Stilus` prints nothing (**Corrected 2026-09-28:** `AssetLibraryService`, deferred to `D02 T06 §11`, also reads `LocalApplicationData`; this section routes its default folder through `AppDataPaths` too, so the grep holds).
 - [ ] Wire File, Open Recent (with Clear Recent) and add each opened or saved file to the list. Done when: `RecentFilesTests` cover ordering, the cap, and missing files.
 - [ ] Add `AutosaveService` (timer, dirty documents only, `AtomicFileWriter`, a session marker file deleted on clean exit) and the `Stilus.Autosave.IntervalMinutes` setting (default 2). Done when: `AutosaveServiceTests` cover interval, clean-document skip, and draft deletion after save.
 - [ ] Add the recovery dialog shown at startup when a stale session marker and drafts exist. Done when: a driven kill-and-restart offers the draft and Recover opens it dirty and untitled-with-original-name.
@@ -173,6 +176,7 @@ The installer offers an `.svg` association that starts `Stilus.exe "%1"`; today 
 - [ ] `App.OnStartup` reads `e.Args`; each existing `.svg` path opens (the first into the startup document, further ones as the multi-document work allows: until tabs exist, the first opens and the rest are listed in a message naming `D02 T06 §7`). Done when: `Stilus.exe tests\fixtures\stilus\svg\bezier-sample.svg` opens the sample.
 - [ ] Use `Isotone.Core` single instance: a second launch forwards its paths and exits; the running window activates and opens the first path through the dirty prompt. Done when: a driven second launch opens the file in the first window and only one `Stilus` process remains.
 - [ ] A path that does not exist or is not SVG shows "Stilus cannot open <path>: <reason>." and logs a Warning. Done when: a driven launch with a `.txt` path shows the message.
+- [ ] File, Open refuses a malformed, locked, or non-SVG file with the same "Stilus cannot open <path>: <reason>." message and a Warning line, leaving the current document untouched (**Groomed 2026-09-28:** the dialog path caught everything into a bare message box). Done when: `OpenFailureTests` cover a truncated SVG, a locked file, and a PNG renamed `.svg`.
 - [ ] Commit: `"stilus: open files from the command line and the .svg association"`
 
 **Requires:** display-session -- the driven second-launch run needs an interactive desktop
