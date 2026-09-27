@@ -25,7 +25,9 @@
 
 <br>
 
-<img src="resources/brand/isotone-cover.png" alt="Isotone Interface: the Pinxit window in the Dark theme, with the menu in the title bar, the brush options bar, the tool rail, document tabs over a harbor-at-dusk image, the Properties and Layers panels, and the status bar" width="820">
+<img src="resources/brand/isotone-cover.png" alt="Design concept, not the current interface: the planned Pinxit window in the Dark theme, with the menu in the title bar, the brush options bar, the tool rail, document tabs over a harbor-at-dusk image, the Properties and Layers panels, and the status bar" width="820">
+
+<sub><i>Design concept, not a screenshot: the target interface from the Isotone Interface design system. The apps do not look like this yet; each surface is built to this design as its plan section ships.</i></sub>
 
 </div>
 
