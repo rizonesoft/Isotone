@@ -73,6 +73,7 @@ track: N7
 - -> XREF: D02 T12 §1 -- bitmap objects, whose FX stacks, live traces, and mockups persist through §1
 - -> XREF: D03 T08 §4 -- Imago parity document and view cites §9: `UnitConverter`, moved to `Photon.Core` by D03 T08 §4; §11: the snapping core, moved to `Photon.Core` by D03 T08 §4
 - -> XREF: D03 T20 §1 -- Imago parity workspace cites §8: `CompactNumberBox`, `UnitExpression`, and the contextual task bar host
+- -> XREF: D01 T01 §5 -- the implicit field styles, focus tracker, and focus ring §8's `CompactNumberBox` template draws with
 
 ## Outcome
 
@@ -100,7 +101,7 @@ track: N7
 |   5   |   §5    | Layers, master layers, lock and hide, the Objects panel | §3, D02 T06 §7 |  [ ]   |
 |   6   |   §6    | Selection: Select menu, Select Same, wand, lasso, saved selections | D02 T05 §4 |  [ ]   |
 |   7   |   §7    | Isolation mode and focus mode | §5 |  [ ]   |
-|   8   |   §8    | The Properties panel and the contextual property bar | D02 T05 §4 |  [ ]   |
+|   8   |   §8    | The Properties panel and the contextual property bar | D02 T05 §4, D01 T01 §5 |  [ ]   |
 |   9   |   §9    | Rulers, units, drawing scale, and grids | §3 |  [ ]   |
 |  10   |   §10   | Guides, the Guides panel, the measure tool, the Info panel | §9 |  [ ]   |
 |  11   |   §11   | Snapping modes, smart guides, dynamic and alignment guides | §10, D02 T02 §7 |  [ ]   |
@@ -354,6 +355,7 @@ Illustrator's Control panel and Properties panel and CorelDRAW's property bar an
 **Treatment:** templates keyed by tool and selection kind. Cheaper substitute that fails the checkpoint: one static toolbar with disabled boxes.
 **Chrome:** consume the `CompactNumberBox` control (moved to `Photon.UI` when Imago needs it), the theme, and `D02 T03 §4` property commands. Do not add a second numeric box.
 **Corrected 2026-09-27:** the specs are `docs/design/components/NumberBox/README.md` (the scrub label, units column, focus border) and `docs/design/components/OptionsBar/README.md` for the contextual property bar.
+**Corrected 2026-09-27:** `CompactNumberBox`'s template draws its field states (rest, hover, focus border plus inner line, disabled, error) from the implicit TextBox styles and `Photon.Focus.IsKeyboardInitiated` of `D01 T01 §5`, and the property bar's combo boxes and toggles use the same dictionaries; the control adds only the scrub label and the units column.
 
 **Requires:** display-session -- template switching and field entry need an interactive desktop
 

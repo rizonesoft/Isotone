@@ -45,6 +45,7 @@ track: L1
 - -> XREF: D04 T11 §1 -- the Lumen batch tools cites §7: previews and the preview cache D04 T11 §1's idle jobs and D04 T11 §4's thumbnail export read; §11: sidecars D04 T11 §3 renames and D04 T11 §5's orientation writes
 - -> XREF: D04 T12 §3 -- Lumen parity output cites §10: the collections D04 T12 §3 publishes and D04 T12 §7, D04 T12 §10 save as slideshow and book collections
 - -> XREF: D04 T13 §5 -- Lumen parity formats cites §4: the RAW decoder D04 T13 §5 extends and D04 T13 §7 writes DNG from; §6: the import dialog that offers D04 T13 §5's RAW+JPEG pair choice
+- -> XREF: D01 T01 §8 -- the shared window chrome (with `D01 T01 §7`'s `PhotonWindow`), document tabs, dock theme, and status bar §2's shell is built on
 - -> XREF: D04 T14 §1 -- Lumen parity workspace cites §2: the shell, splash, and About D04 T14 §1 and D04 T14 §7 extend; §7: the preview cache D04 T14 §5 sizes and purges
 
 ## Job and non-goals
@@ -91,7 +92,7 @@ From documentation, to be confirmed and extended by driven runs in §1 (each row
 | Order | Section | Deliverable                                              | Depends On                     | Status |
 | :---: | :-----: | -------------------------------------------------------- | ------------------------------ | :----: |
 |   1   |   §1    | The competitor survey, driven                            | --                             |  [ ]   |
-|   2   |   §2    | Create the Lumen app                                     | D01 T01 §3, D01 T02 §3, D00 T03 §3 |  [ ]   |
+|   2   |   §2    | Create the Lumen app                                     | D01 T01 §3, D01 T02 §3, D00 T03 §3, D01 T01 §8 |  [ ]   |
 |   3   |   §3    | The RAW decoder decision                                 | §1, D00 T02 §5                 |  [ ]   |
 |   4   |   §4    | RAW decode with fidelity fixtures                        | §2, §3                         |  [ ]   |
 |   5   |   §5    | The catalog database                                     | §2                             |  [ ]   |
@@ -128,6 +129,7 @@ Lumen needs the same spine as the other two: projects in the suite layout, a com
 **Treatment:** a main window with the module switcher (Library, Develop) at the top, a left panel (folders, collections), the center grid area with the empty state "Your library is empty. Import a folder of photos to begin." and an Import button, a right panel (metadata), and a status strip; Help, About Lumen through `Photon.UI`. Cheaper substitute that fails the checkpoint: a blank window.
 **Chrome:** consume `Photon.UI` (theme, splash, exception window, About and shortcuts dialogs, icon catalog) and `Photon.Core` (logging, settings, single instance). Do not copy any of them.
 **Corrected 2026-09-27:** the specs are `docs/design/shell-layout.md` (Lumen: Library and Develop as tabs in the title bar area after the menus, left dock, filmstrip, Home), `docs/design/components/WindowChrome/README.md`, and `docs/design/components/StatusBar/README.md`; the Import button is the view's one primary button in `accent-lumen`.
+**Corrected 2026-09-27:** the shell window is `D01 T01 §7`'s `PhotonWindow` (the Lumen mark, the menu bar in the title bar, Snap Layouts) with the Library and Develop tabs after the menus in its title bar, docked panels on `D01 T01 §8`'s AvalonDock theme, and the status strip as `PhotonStatusBar`; every control uses the implicit styles of `D01 T01 §5` and `D01 T01 §6`.
 
 **Requires:** display-session -- launching the new app needs an interactive desktop
 

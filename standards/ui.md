@@ -1,6 +1,6 @@
 # UI Standard
 
-Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. It is the binding summary of the Photon Interface design system in [`docs/design/`](../docs/design/README.md), which holds the full specification: the tokens, one README per component, the shell layout, and the app icon guide. Where this file and `docs/design/` disagree, `docs/design/` wins and this file is corrected in the same commit. The captures under `docs/captures/<app>/` are the visual reference for review; where a capture and the design system disagree, the design system wins.
+Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. It is the binding summary of the Photon Interface design system in [`docs/design/`](../docs/design/README.md), which holds the full specification: the tokens, one README per component, the shell layout, and the app icon guide. The system is browsable as a live page, with every component preview in all four themes, at https://rizonesoft.github.io/Photon/design/ (generated into `docs/design/index.html` by `scripts/build-design-site.py`; edit the sources, never the page). Where this file and `docs/design/` disagree, `docs/design/` wins and this file is corrected in the same commit. The captures under `docs/captures/<app>/` are the visual reference for review; where a capture and the design system disagree, the design system wins.
 
 ## The source of truth
 
@@ -82,7 +82,7 @@ Every user-facing surface of Nodus, Imago, and Lumen answers to this standard. I
 
 ## WPF mapping
 
-- `Photon.UI` carries one `ResourceDictionary` per brightness theme (`Themes/Darkest.xaml`, `Dark.xaml`, `MediumGray.xaml`, `Light.xaml`), a high-contrast dictionary, `Highlight.Blue.xaml` and `Highlight.Orange.xaml` plus a runtime Windows-accent dictionary, and `Density.Compact.xaml` and `Density.Comfortable.xaml`, all generated from `tokens.json`. These file names are the operator's (2026-09-27) and supersede the `Medium.xaml` and single `Highlight.xaml` named in the WPF section of `docs/design/README.md`, which is corrected at the next design change and republish.
+- `Photon.UI` carries one `ResourceDictionary` per brightness theme (`Themes/Darkest.xaml`, `Dark.xaml`, `MediumGray.xaml`, `Light.xaml`), a high-contrast dictionary, `Highlight.Blue.xaml` and `Highlight.Orange.xaml` plus a runtime Windows-accent dictionary, and `Density.Compact.xaml` and `Density.Comfortable.xaml`, all generated from `tokens.json`. These file names are the operator's (2026-09-27); the WPF section of `docs/design/README.md` and the Highlight card carry them too.
 - Resource keys are token names: `<SolidColorBrush x:Key="surface-panel" .../>`, sizes as `sys:Double`, radii as `CornerRadius`, durations as `Duration`, `ease-out` as a `CubicEase` with `EasingMode="EaseOut"`.
 - Colors are always consumed through `DynamicResource`, so a theme, Highlight, or density switch restyles open windows without a restart; `StaticResource` is fine for fixed sizes.
 - The theme service swaps the brightness dictionary; the highlight service swaps the Highlight dictionary merged after it; the density service swaps the density dictionary that points the neutral keys at the `-compact` or `-comfortable` values. Each app sets its accent brushes once at startup.

@@ -34,6 +34,7 @@ track: N6
 - -> XREF: D02 T15 §6 -- the assistant's tool catalog that reads §12's command index, and the AI Preferences page §13 hosts
 - -> XREF: D02 T16 §1 -- workspaces, the command index, menus, and preference pages that extend §7, §12, and §13; §17 audits every parity surface
 - -> XREF: D03 T20 §1 -- Imago parity workspace cites §12: the command index command search reads
+- -> XREF: D01 T01 §8 -- the Photon AvalonDock theme and `Photon.DocumentTab` §7's first `DockingManager` uses
 
 ## Outcome
 
@@ -50,7 +51,7 @@ track: N6
 | :---: | :-----: | -------------------------------------------------------- | ----------- | :----: |
 | 1 | §2 | Path editing: continue, join, break, reverse, simplify   | D02 T05 §4  |  [ ]   |
 | 2 | §3 | Text: area text, text on path, text to path             | D02 T05 §4  |  [ ]   |
-| 3 | §7 | Documents in tabs, saved layouts, nested layers          | D02 T05 §4  |  [ ]   |
+| 3 | §7 | Documents in tabs, saved layouts, nested layers          | D02 T05 §4, D01 T01 §8 |  [ ]   |
 | 4 | §11 | Symbols and the asset library                            | §7          |  [ ]   |
 | 5 | §12 | The command palette and the on-canvas HUD                | D02 T05 §4  |  [ ]   |
 | 6 | §13 | Preferences and shortcut remapping                       | D02 T05 §4  |  [ ]   |
@@ -103,6 +104,7 @@ Nodus opens one document at a time; the history and selection are app singletons
 **Job:** a designer can work on several documents at once, each with its own undo and selection, and keep a panel layout. Consumer: every service scoped per document.
 **Treatment:** AvalonDock document tabs with `name*` for dirty; a DI scope per document owning its history, selection, and tool state; Window, Save Layout and Reset Layout persisted to the app-data folder; the layers panel becomes a tree with expandable groups. Cheaper substitute that fails the checkpoint: tabs sharing one history.
 **Chrome:** consume AvalonDock with the suite theme and the `Photon.Core` single-instance service for opening files into new tabs.
+**Corrected 2026-09-27:** "the suite theme" for AvalonDock is `D01 T01 §8`'s `PhotonDockTheme` and `Photon.DocumentTab` (label format `name.ext @ zoom (mode/depth)` with ` *` when unsaved, middle-ellipsis, middle-click close); this section wires Nodus's documents into them and styles no tab of its own.
 
 **Requires:** display-session -- tabbed documents need an interactive desktop
 

@@ -41,6 +41,7 @@ track: L14
 - -> XREF: D03 T20 §9 -- interface appearance and language switching §7 and §8 follow
 - -> XREF: D01 T02 §2 -- the settings store §6 extends with portable and deployment modes
 - -> XREF: D01 T01 §3 -- the suite theme §8 consumes
+- -> XREF: D01 T01 §8 -- the shared dock theme, menus (`D01 T01 §6`), and title bar (`D01 T01 §7`) §2's toolbars, menus, and panes are drawn with
 - -> XREF: D01 T01 §4 -- the shared About and shortcuts dialog §3 and §7 consume
 - -> XREF: D01 T04 §1 -- display color management §5 configures
 - -> XREF: D05 T01 §1 -- the installer and portable ZIP whose switches §6 documents
@@ -133,6 +134,7 @@ A user arranges Lumen for their screens and hands and gets it back next time. Th
 **Treatment:** a Customize Toolbar dialog, a Favorites menu, Window, Workspaces and Window, Panes menus, a docking compass, and a Tablet Mode dialog. Cheaper substitute that fails the checkpoint: saving only the window size.
 **Chrome:** consume the `Photon.UI/Workspace/` toolbar, menu, and docking frames of `D03 T20 §1` and `D03 T20 §2`, and the touch handling of `D03 T20 §6`. Do not add a second layout serializer.
 **Corrected 2026-09-27:** the specs are `docs/design/components/Menu/README.md`, `docs/design/components/ToolRail/README.md`, `docs/design/components/StatusBar/README.md`, and `docs/design/components/WindowChrome/README.md`.
+**Corrected 2026-09-27:** menus, toolbars, docked and floating panes, and the title bar are drawn by `Photon.UI`'s implicit styles (`D01 T01 §6`), `PhotonWindow` (`D01 T01 §7`), and the Photon AvalonDock theme (`D01 T01 §8`); customization changes their content and layout, not their look.
 
 **Requires:** display-session -- docking, a second monitor, and touch need an interactive desktop
 

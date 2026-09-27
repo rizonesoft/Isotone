@@ -1,0 +1,72 @@
+name: design-pages
+
+# Publishes the Photon Interface design system page on GitHub Pages
+# (operator decision 2026-09-27: "Yes, publish on GitHub Pages").
+# docs/design/index.html is generated from docs/design/ and resources/icons/
+# by scripts/build-design-site.py and committed; this workflow fails when the
+# committed page has drifted from its sources, then deploys it at
+# https://rizonesoft.github.io/Photon/design/ with a root page that redirects
+# there.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/design/**'
+      - 'resources/icons/**'
+      - 'scripts/build-design-site.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the committed page against its sources
+        run: python3 scripts/build-design-site.py --check
+      - name: Assemble the site
+        run: |
+          mkdir -p _site/design
+          python3 scripts/build-design-site.py --out _site/design/index.html
+          cat > _site/index.html <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+          <meta charset="utf-8">
+          <title>Photon Interface</title>
+          <meta http-equiv="refresh" content="0; url=design/">
+          <link rel="canonical" href="design/">
+          </head>
+          <body>
+          <p><a href="design/">Photon Interface design system</a></p>
+          </body>
+          </html>
+          EOF
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}design/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
