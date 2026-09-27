@@ -36,7 +36,7 @@ A surface is faithful when all of these hold, in every theme and density its spe
 - `**Design deviation:** opened YYYY-MM-DD -- spec: <design ref, e.g. docs/design/components/Button/README.md#states> -- reason: <why the code cannot match now> -- follow-up: DNN TNN §N (fix design|fix code)`
 - The follow-up section either changes the design (the spec was wrong or impractical) or fixes the code; it names the deviation in its own checklist. A deviation is open until the follow-up's row is `[x]`.
 - `python scripts/todo-graph.py validate` parses every deviation: a malformed line, a dead spec ref, or a follow-up that names no section is FATAL, and `python scripts/todo-graph.py query design` counts them, open and closed.
-- A deviation must be closed before its app's release: an open deviation in a Stilus, Pinxit, or Albumen file (a `Isotone.UI` deviation counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day the deviation opened is FATAL (`design-deviation-open-at-release`). `review-todo-section` refuses a stamp while the section's own deviations are unexplained.
+- A deviation must be closed before its app's release: an open deviation in a Stilus, Pinxit, or Albumen file (an `Isotone.UI` deviation counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day the deviation opened is FATAL (`design-deviation-open-at-release`). `review-todo-section` refuses a stamp while the section's own deviations are unexplained.
 
 ## 5. Enforcement
 

@@ -25,7 +25,7 @@ track: N3
 - [`standards/shared.md`](../../standards/shared.md) -- every edit is an undo step; view models over 400 lines split; logic out of code-behind
 - [`standards/stilus.md`](../../standards/stilus.md) -- a drag records one command on mouse-up with start and end state
 - `src/Stilus/Isotone.Stilus.Core/Commands/` (after `D02 T01 §1`) -- the commands §1 and §4 record
-- `docs/captures/stilus/main-window/` -- the baseline the split must not change
+- `docs/captures/stilus/main-window/` -- the before record of the imported window (**Corrected 2026-09-28:** said the baseline the split must not change; the split is held to the goldens under `docs/captures/golden/stilus/main-window/`)
 - -> XREF: D02 T02 §4 -- the arrange and align commands §5's sweep accounts for
 - -> XREF: D01 T02 §4 -- the suite history that absorbs this file's commands once Pinxit needs it
 - -> XREF: D02 T04 §1 -- the dirty prompt and atomic save that §5's Close command uses
@@ -41,7 +41,7 @@ track: N3
 - Every property edit in the context toolbar and properties panel is one undo step, and consecutive nudges of one field merge into one.
 - A test enumerates every bound menu command and asserts it is either wired or disabled with a tooltip naming a resolvable section.
 
-**Adjacency:** list=not-applicable (lists are the layers panel's, D02 T02 §6); document=not-applicable (no printed output); settings=not-applicable (no new settings); reporting=not-applicable (no summaries); notifications=not-applicable (no long operations); permissions=not-applicable (the clipboard can be locked by another process; §3 refuses with a message, which is its own item); audit=applicable; exchange=applicable; reverse=applicable @ D02 T03 §1
+**Adjacency:** list=not-applicable (lists are the layers panel's, D02 T02 §6); document=not-applicable (no printed output); settings=not-applicable (no new settings); reporting=not-applicable (no summaries); notifications=not-applicable (no long operations); permissions=not-applicable (the clipboard can be locked by another process; §3 refuses with a message, which is its own item); audit=applicable; exchange=applicable @ D02 T03 §3; reverse=applicable @ D02 T03 §1
 
 **Adjacency rationale:** This file is the reverse adjacency for Stilus: every edit gains an undo. The clipboard is an exchange surface (SVG on the Windows clipboard), and each recorded command logs its line.
 
@@ -61,6 +61,8 @@ track: N3
 
 `SelectTool` applies resize and rotation transforms live while dragging and records nothing when the drag ends, so undo silently skips the most common edits a user makes. The commands exist; the tool must capture each element's state when the drag starts and record one command on mouse-up.
 
+- [ ] Add `HistoryManager.Record(IEditorCommand)` pushing an already-applied command onto the undo stack without executing it (clearing redo and trimming like `ExecuteCommand`) (**Groomed 2026-09-28:** the section relied on a record-only path the history lacks). Done when: `HistoryManagerTests.Record_DoesNotExecute` asserts the command's `Execute` was not called and `Undo` reverses it.
+- [ ] Add `CompositeCommand` (a named list executed in order and undone in reverse as one entry) to `Isotone.Stilus.Core/Commands/`; `D02 T02 §4` reuses it (**Groomed 2026-09-28:**). Done when: `CompositeCommandTests` prove reverse-order undo.
 - [ ] On resize and rotate drag start, `SelectTool` captures each selected element's pre-drag geometry (bounds and transform matrix) in `_originalElementBounds` or a new per-element snapshot. Done when: the snapshot is taken in `OnMouseDown` for both modes.
 - [ ] On mouse-up in `SelectMode.Resizing`, record one `ResizeCommand` covering every selected element (a `CompositeCommand` for more than one) through the history's "already applied" path (record without re-executing). Done when: the `// TODO: Add ResizeCommand` line is gone.
 - [ ] The same for `SelectMode.Rotating` with `RotateCommand`. Done when: the `// TODO: Add RotateCommand` line is gone.
@@ -124,6 +126,7 @@ Typing a width into the context toolbar or dragging a number box writes straight
 - [ ] `PropertyChangeCommand` records element, property name, old value, and new value, and supports merging with a following command on the same element and property within 1 second (`TryMerge`). Done when: `PropertyChangeCommandTests` cover execute, undo, redo, and merge (also the first test the class has ever had).
 - [ ] Route every setter in the context toolbar and properties panel that writes the model (document width and height, element X, Y, width, height, rotation, opacity, fill, stroke, stroke width, corner radius, name) through the command. Done when: `grep -n "Document.Width = \|Document.Height = " src/Stilus/Isotone.Stilus.Desktop/ViewModels` prints nothing outside the command path.
 - [ ] Each committed property command logs one Information line (`Set {Property} on {Element} from {Old} to {New}`); merged edits log once. Done when: a test logger asserts one line for a merged scrub.
+- [ ] `HistoryManager.ExecuteCommand` offers each new command to the top of the undo stack through `TryMerge` before pushing it (**Groomed 2026-09-28:** nothing called `TryMerge`). Done when: `HistoryManagerTests.MergesConsecutivePropertyEdits` asserts one undo entry after ten scrub steps within 1 second.
 - [ ] Commit: `"stilus: every property edit is one undo step"`
 
 **Requires:** display-session -- the driven scrub-then-undo run on the number box needs an interactive desktop

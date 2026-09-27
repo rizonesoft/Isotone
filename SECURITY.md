@@ -41,4 +41,4 @@ This is a small open source project, so timelines are goals rather than guarante
 
 ## Code signing
 
-Release binaries are not code-signed yet. Official builds are published only on [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=security), served from `download.rizonesoft.com`; GitHub releases carry no installers. Check a download against the SHA-256 table in the matching [GitHub release](https://github.com/rizonesoft/Isotone/releases) (or the `SHA256SUMS` file beside it) before you run it, and treat a Isotone installer offered anywhere else as untrusted.
+Release binaries are not code-signed yet. Official builds are published only on [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=security), served from `download.rizonesoft.com`; GitHub releases carry no installers. Check a download against the SHA-256 table in the matching [GitHub release](https://github.com/rizonesoft/Isotone/releases) (or the `SHA256SUMS` file beside it) before you run it, and treat an Isotone installer offered anywhere else as untrusted.

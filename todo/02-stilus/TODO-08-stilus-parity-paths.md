@@ -312,7 +312,7 @@ Path repair and subdivision commands, each one history entry with a preview in i
 - [ ] Add Clean Up: remove stray points, unpainted objects, and empty text paths, reporting the counts on the status strip. Done when: `CleanUpTests` assert each count and the status line.
 - [ ] Add the Join Curves panel `src/Stilus/Isotone.Stilus.Desktop/Views/Panels/JoinCurvesPanel.xaml` with gap tolerance and modes extend to intersection, chamfer, fillet with radius, and Bezier connection. Done when: `JoinCurvesTests` cover each mode and the panel is captured.
 - [ ] Add extend curve to close, joining two selected end nodes with a straight segment. Done when: the result is one closed path.
-- [ ] Copy paths between documents as SVG fragments on the clipboard in the suite clipboard format from `D02 T03 §3` (Photoshop path export is Pinxit's side). Done when: a path copied in one document pastes with equal geometry in another.
+- [ ] Copy paths between documents as SVG fragments on the clipboard as `image/svg+xml` and the `Stilus.Elements` format from `D02 T03 §3` (**Corrected 2026-09-28:** said the suite clipboard format, which does not exist) (Photoshop path export is Pinxit's side). Done when: a path copied in one document pastes with equal geometry in another.
 - [ ] Add a Path Commands page to `docs/user/stilus/`. Done when: every command and dialog is listed.
 - [ ] Commit: `"stilus: offset path, average and join, simplify options, split into grid, clean up, and the Join Curves panel"`
 

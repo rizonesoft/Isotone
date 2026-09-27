@@ -52,7 +52,7 @@ Namespaces follow the project names: `Isotone.Stilus.*`, `Isotone.Pinxit.*`, `Is
 
 ### Isotone.Core
 
-A UI-agnostic class library. It holds only behavior that **two apps need now**; one app's need stays in that app with a note naming the day it would move, and a `Isotone.Core` type that only one app consumes is a defect. The plan moves these in as the second consumer arrives:
+A UI-agnostic class library. It holds only behavior that **two apps need now**; one app's need stays in that app with a note naming the day it would move, and an `Isotone.Core` type that only one app consumes is a defect. The plan moves these in as the second consumer arrives:
 
 - App-data paths and the Serilog bootstrap (both apps log today, differently).
 - The settings store: atomic JSON settings with defaults and a readback.

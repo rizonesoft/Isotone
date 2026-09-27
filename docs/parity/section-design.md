@@ -852,7 +852,7 @@ Findings the per-file design agents reported that cross file boundaries; the int
 
 #### §1. The live-object contract: parameters in the stilus namespace with an expanded SVG fallback
 
-- **Deliverable:** A `Isotone.Stilus.Core/Live/` contract that every live feature implements: parameters written in the `stilus:` SVG namespace beside expanded plain-SVG geometry, restored as live objects on reopen, unknown data preserved, and one generic Expand command.
+- **Deliverable:** An `Isotone.Stilus.Core/Live/` contract that every live feature implements: parameters written in the `stilus:` SVG namespace beside expanded plain-SVG geometry, restored as live objects on reopen, unknown data preserved, and one generic Expand command.
 - **Depends On:** D02 T05 §4
 - **Phase:** 4
 - **Surface:** Object, Expand dialog only. Fidelity: new build, no baseline; captured to docs/captures/stilus/expand/. Job: a designer can turn any live object into plain paths and undo it. Treatment: a modal with Object, Fill, Stroke checkboxes and a Gradient radio pair (Gradient Mesh disabled with a tooltip naming D02 T09 §9, Specify N objects), one history entry "Expand". Cheaper substitute that fails: Expand that only ungroups the fallback. Chrome: consume `Isotone.UI` dialog styles and the suite history; do not add a second serializer.

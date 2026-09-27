@@ -41,7 +41,7 @@ track: N6
 - Every section below ships with its surface, its commands with undo, its settings, its log lines, its user-guide page, and its tests, like the 0.1.0 sections before it.
 - No deferred service from the triage remains unwired when this file closes, and no disabled or planned Stilus command names a section of this file that has not shipped.
 
-**Adjacency:** list=applicable @ D02 T06 §11; document=not-applicable (printing and prepress are owned by D02 T13 §2 and the rest of that file); settings=applicable @ D02 T06 §13; reporting=not-applicable (measurement and the Info panel are owned by D02 T07 §10; document info lives in the status strip, D02 T03 §5); notifications=applicable; permissions=not-applicable (file refusals are owned by the save and export sections in D02 T04); audit=applicable; exchange=applicable @ D02 T06 §14; reverse=applicable
+**Adjacency:** list=applicable @ D02 T06 §11; document=not-applicable (printing and prepress are owned by D02 T13 §2 and the rest of that file); settings=applicable @ D02 T06 §13; reporting=not-applicable (measurement and the Info panel are owned by D02 T07 §10; document info lives in the status strip, D02 T03 §5); notifications=applicable @ D02 T04 §3; permissions=not-applicable (file refusals are owned by the save and export sections in D02 T04); audit=applicable; exchange=applicable @ D02 T06 §14; reverse=applicable
 
 **Adjacency rationale:** The asset library is the browsable list; the Preferences dialog is the settings surface; long exports notify through the status strip; every edit in every section is a logged, undoable command.
 
@@ -96,6 +96,8 @@ Point text exists. Layouts need text flowing inside a shape, text following a cu
 - [ ] Area text layout with wrapping and alignment, round-tripped through SVG. Done when: a fixture renders line breaks identically after reopen.
 - [ ] Text on path with start offset, round-tripped as `<textPath>`. Done when: Inkscape renders the saved file with text on the curve.
 - [ ] Text to Path, enabling the planned menu item. Done when: the outlined glyph count matches the character count for a Latin sample.
+- [ ] Creating area text, attaching text to a path, and Text to Path are each one history entry with one Information log line (**Groomed 2026-09-28:** the file's Outcome promises undo and log lines). Done when: tests undo each and a test logger asserts one line per action.
+- [ ] Update `docs/user/stilus/` with area text, text on a path, and Text to Path (**Groomed 2026-09-28:**). Done when: the page documents all three.
 - [ ] Commit: `"stilus: area text, text on a path, and text to outlines"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with text fidelity fixtures reporting; the three driven cases are captured. Cheaper substitute that fails: text to path that returns a bitmap.
@@ -118,6 +120,8 @@ Stilus opens one document at a time; the history and selection are app singleton
 - [ ] Document tabs with dirty prompts per tab and on exit (listing every dirty document). Done when: a driven exit with two dirty tabs shows one prompt naming both.
 - [ ] Saved and reset layouts. Done when: a layout survives a restart.
 - [ ] Layers tree with nested groups. Done when: a nested fixture shows its hierarchy.
+- [ ] Command-line paths and second-launch forwarded paths (`D02 T04 §6`) open each in its own tab, replacing the "listed in a message" fallback (**Groomed 2026-09-28:** `D02 T04 §6` defers this here). Done when: a driven launch with three fixture paths opens three tabs and a second launch adds a fourth in the running window.
+- [ ] Autosave (`D02 T04 §5`) writes one recovery draft per dirty tab and the recovery prompt lists each (**Groomed 2026-09-28:**). Done when: a kill-and-restart with two dirty tabs offers two drafts.
 - [ ] Commit: `"stilus: multiple documents in tabs with per-document undo and saved layouts"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the scope tests reporting; the driven multi-document run is captured. Cheaper substitute that fails: a second window per document.
@@ -171,7 +175,7 @@ Settings accumulate across sections (snapping, autosave, export defaults, units)
 **Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Preferences dialog -- new build, no baseline; captured to docs/captures/stilus/preferences/. The source is now the design named on the Design line; the captures under `docs/captures/stilus/` are before records only, and the approved renders land under `docs/captures/golden/stilus/`.
 **Job:** a user can change every Stilus setting in one place and remap shortcuts, with conflicts refused. Consumer: every setting's named consumer.
 **Treatment:** a categorized dialog (General, Units, Canvas, Snapping, Autosave, Export, Shortcuts) bound to `StilusSettings`, applying on OK with Cancel reverting; the Shortcuts page edits the keymap with conflict detection and reset to defaults, stored in settings. Cheaper substitute that fails the checkpoint: a JSON file the user edits by hand.
-**Chrome:** consume the settings store, the keymap, and the theme; share nothing with Pinxit until Pinxit builds its own preferences (then file a `Isotone.UI` move).
+**Chrome:** consume the settings store, the keymap, and the theme; share nothing with Pinxit until Pinxit builds its own preferences (then file an `Isotone.UI` move).
 
 **Requires:** display-session -- the dialog needs an interactive desktop
 
@@ -186,6 +190,8 @@ Settings accumulate across sections (snapping, autosave, export defaults, units)
 
 `ImportService`, `ExportDialogService`, and `CodeEditorService` are deferred here. Designers need placing raster images, importing EMF and PDF artwork, and exporting WebP, ICO, optimized SVG, and XAML or code snippets, with presets. -> SOURCE: legacy-stilus-10.2-10.4
 
+**Groomed 2026-09-28:** EMF and PDF import are owned by `D02 T14 §11` and `D02 T14 §2`; this section places PNG, JPEG, and WebP only.
+
 **Fidelity:** Export dialog -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/stilus/export-raster/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/ComboBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Button/README.md, docs/design/components/Progress/README.md -- states: all in spec -- themes: all four -- density: both
 **Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Export dialog -- docs/captures/stilus/export-raster/ (from `D02 T04 §3`), extended. The source is now the design named on the Design line; the captures under `docs/captures/stilus/` are before records only, and the approved renders land under `docs/captures/golden/stilus/`.
@@ -198,6 +204,8 @@ Settings accumulate across sections (snapping, autosave, export defaults, units)
 - [ ] Wire `ImportService` for placed images with fidelity fixtures. Done when: placed images round-trip.
 - [ ] Wire `ExportDialogService` into one dialog with presets; add WebP, ICO, optimized SVG, and XAML writers, each with a fixture. Done when: every writer passes its fidelity test.
 - [ ] Decide `CodeEditorService` (an SVG source view) against its need, record it in the triage, and wire or delete it. Done when: the service is wired or gone.
+- [ ] File, Place is one undoable command with a `Placed {Path} ({Width}x{Height})` log line; an unreadable, unsupported, or locked file is refused by name ("Stilus cannot place <file>: <reason>.") and the document is unchanged (**Groomed 2026-09-28:**). Done when: `PlaceImageTests` cover undo, a truncated PNG, and a locked file.
+- [ ] Update the Stilus user guide place and export pages (**Groomed 2026-09-28:**). Done when: every format and option is documented.
 - [ ] Commit: `"stilus: placed images, more export formats, and one export dialog"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx --filter "Category=Fidelity"` passes every new format fixture; `MenuAuditTests` passes with XAML export enabled. Cheaper substitute that fails: formats without fixtures.

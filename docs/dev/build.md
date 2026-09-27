@@ -79,6 +79,9 @@ Runs, in order, and reports a table at the end (exit 1 if any gate failed):
 7. `python scripts/todo-findings.py --check`
 8. `python scripts/todo-runs.py --check`
 9. `python scripts/campaign_guard.py --self-test`
+10. `python scripts/build-design-site.py --check`
+11. `python scripts/design-lint.py --self-test`
+12. `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json`
 
 A Python gate whose script is missing is skipped with a warning rather than failed.
 
@@ -93,7 +96,7 @@ A Python gate whose script is missing is skipped with a warning rather than fail
 
 `scripts/package.ps1 -Suite` publishes every shipping app and produces `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, the Isotone Graphics Suite installer, one component per shipping app) and `Isotone-<version>-win-x64-Portable.zip` (one folder per app). The suite version comes from `isotone-v*` tags, and every app inside it carries that version.
 
-**Per-app and suite releases are independent.** A `stilus-v*` or `pinxit-v*` tag runs `package.ps1 -App <App>` and ships only that app's installer and ZIP; it never builds or needs the suite installer. A `isotone-v*` tag runs `package.ps1 -Suite` and ships only the suite installer and ZIP. Either way the files are uploaded to `download.rizonesoft.com` (`<slug>/<version>/`), never attached to the GitHub release; [versioning.md](versioning.md) has the layout, the update feed, and the repository settings.
+**Per-app and suite releases are independent.** A `stilus-v*` or `pinxit-v*` tag runs `package.ps1 -App <App>` and ships only that app's installer and ZIP; it never builds or needs the suite installer. An `isotone-v*` tag runs `package.ps1 -Suite` and ships only the suite installer and ZIP. Either way the files are uploaded to `download.rizonesoft.com` (`<slug>/<version>/`), never attached to the GitHub release; [versioning.md](versioning.md) has the layout, the update feed, and the repository settings.
 
 ### Installers
 
@@ -121,8 +124,9 @@ Every Setup.exe is a PE32+ AMD64 image. The Stilus installer installs silently p
 
 | Workflow | Trigger | What it does |
 | -------- | ------- | ------------ |
-| `.github/workflows/build.yml` | push and PR to `main` | windows-2025: SDK from `global.json` (`actions/setup-dotnet` installs the exact prerelease version it names), restore, Release build, test, upload TRX results. |
-| `.github/workflows/plan.yml` (`plan-gates`) | changes to `scripts/`, `todo/`, `docs/reviews/`, `.claude/`, `.conclave/`, hooks, `AGENTS.md` | ubuntu-26.04: `todo-graph.py self-test`, `validate`, `plan --sync` followed by a clean `git status`, `campaign_guard.py --self-test`, and commit-hook integrity (mode 100755, LF blob, eol attribute). |
+| `.github/workflows/build.yml` | push and PR to `main` | windows-2025: SDK from `global.json` (`actions/setup-dotnet` installs the exact prerelease version it names), job `build-windows`: restore, Release build, test, upload TRX results, the design-lint self-test and baseline gates, and the optional design reference renders. |
+| `.github/workflows/plan.yml` (`plan-gates`) | changes to `scripts/`, `todo/`, `docs/reviews/`, `.claude/`, `.conclave/`, hooks, `AGENTS.md` | ubuntu-26.04: `todo-graph.py self-test`, `validate`, `plan --sync` followed by a clean `git status`, `campaign_guard.py --self-test`, and commit-hook integrity (mode 100755, LF blob, eol attribute), plus the design-lint self-test and the design page check (job `plan-gates`); job `campaign-guard` runs the guard self-test on windows-2025. The path list also covers `docs/design/**` and `resources/icons/**`. |
+| `.github/workflows/pages.yml` (`design-pages`) | changes to `docs/design/`, `resources/icons/`, `scripts/build-design-site.py` | ubuntu-26.04: checks the committed design page against its sources and deploys it to https://rizonesoft.github.io/Isotone/design/. |
 | `.github/workflows/release.yml` | tags `stilus-v*`, `pinxit-v*`, `albumen-v*`, `isotone-v*`; manual dispatch with `tag` and `draft` inputs (the draft dry run) | Resolves the app from the tag prefix (`isotone-v*` is the suite), fails a tag release whose distribution storage secrets are missing (a draft skips the upload with a notice instead), installs Inno Setup 7.1.0 from the official release with a pinned SHA256 unless `Program Files\Inno Setup 7` exists (the image's Inno Setup 6 is never used), runs the tests, runs `package.ps1` (with `ISOTONE_SITE_URL` as the installer's publisher URL), writes `SHA256SUMS`, writes the release body and update feed (`scripts/release-manifest.ps1`), uploads the files to `download.rizonesoft.com` with a hash-pinned rclone and checks each public URL, creates the GitHub release with no attached files (the body: the CHANGELOG section whose heading names the tag, Download links, the SHA-256 table, and the source link; prerelease when the version has a hyphen), and writes the update feed last. |
 | `.github/dependabot.yml` | weekly | NuGet (grouped) and GitHub Actions (grouped). |
 

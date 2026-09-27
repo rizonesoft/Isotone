@@ -40,7 +40,7 @@ depends_on: []
 - A code-signing certificate is installed where `scripts/sign.ps1` can use it by thumbprint, or a cloud signing account is configured, and nothing about it is in the repository.
 - `resources/icons/README.md` records a confirmed license for every icon the apps ship.
 - The design contract names each app's accent color.
-- A signed assignment vests the copyright in Bezier (Stilus), Pinxit, Isotone, and all prior work of Derick Payne in them in Rizonetech (Pty) Ltd, and `docs/dev/decisions.md` records its date (never the document).
+- A signed assignment vests the copyright in Bezier (now Stilus), Imago (now Pinxit), Photon (now Isotone), and all prior work of Derick Payne in them in Rizonetech (Pty) Ltd, and `docs/dev/decisions.md` records its date (never the document).
 - The trademark search results are recorded, and the cleared names are filed with CIPC with their application numbers recorded.
 - `download.rizonesoft.com` serves files from S3-compatible storage over HTTPS, and the four `ISOTONE_DL_S3_*` secrets exist, so `release.yml` can publish.
 - The product page URLs are decided and `ISOTONE_SITE_URL` is set.
@@ -71,6 +71,8 @@ depends_on: []
 
 The About bar is the repository's first impression and the social preview is its face in every link. Both need the owner's logged-in session.
 
+**Groomed 2026-09-28:** the operator set the description, the ten topics (dotnet, gpl3, graphics, image-editor, photo-editor, raster-graphics, skiasharp, vector-graphics, windows, wpf), and the homepage https://rizonesoft.github.io/Isotone/ on 2026-09-27, and removed the custom social preview (`usesCustomOpenGraphImage: false`, read 2026-09-28); what is left is the agent verification, reading "all eight topics" as the ten above, which become the `docs/facts.json` values of `D00 T01 §10`. Whether the homepage stays the design page or becomes `ISOTONE_SITE_URL` is decided in §9.
+
 -> XREF: D00 T01 §10 -- the drift gates: once they ship, the description and topics are the values in `docs/facts.json`, applied with `python scripts/drift-check.py --sync-github` and checked in CI
 
 **Corrected 2026-09-27:** the operator uploaded the social preview (`resources/brand/social-preview.jpg`) on 2026-09-27, so its item is now a verification of the upload rather than the click path; the description and topics are still owed.
@@ -84,18 +86,20 @@ The About bar is the repository's first impression and the social preview is its
   2. In **Topics**, add: `graphics`, `vector-editor`, `image-editor`, `raw-processing`, `wpf`, `dotnet`, `windows`, `open-source`.
   3. Click **Save changes**.
 - [ ] Remove the neon social preview uploaded on 2026-09-27 (it spells the retired Photon name), or replace it with a new Isotone image committed under `resources/brand/` first (**Corrected 2026-09-27:** said confirm that the upload is `resources/brand/social-preview.jpg`, which the operator removed with the neon banners). Done when: **Settings**, **Social preview** at `https://github.com/rizonesoft/Isotone/settings` shows no image or the committed replacement, and a logged-out link unfurl shows the same (capture).
-- [ ] Agent verification: the agent reads `gh repo view rizonesoft/Isotone --json description,repositoryTopics` and quotes it. Done when: the description and all eight topics are quoted.
+- [ ] Agent verification: the agent reads `gh repo view rizonesoft/Isotone --json description,repositoryTopics` and quotes it. Done when: the description and all ten topics are quoted.
 - [ ] Commit: `"docs: record the repository About bar setup"` -- the operator ticks the items above in the GitHub web editor; the agent verifies, ticks its item, and commits.
 
-**Test checkpoint:** `gh repo view rizonesoft/Isotone --json description,repositoryTopics` returns the description and the eight topics; a logged-out browser shows the social preview in a link unfurl (capture). Cheaper substitute that fails: trusting the settings form without reloading the public page.
+**Test checkpoint:** `gh repo view rizonesoft/Isotone --json description,repositoryTopics` returns the description and the ten topics; a logged-out browser shows the social preview in a link unfurl (capture). Cheaper substitute that fails: trusting the settings form without reloading the public page.
 
 ## 2. Branch Protection with the Required Checks
 
 A protected `main` keeps a red build from landing. The checks must be the real job names from the workflows, which exist only after `D00 T01 §5` has run them once.
 
+**Corrected 2026-09-28:** said the checks are `build` and `plan-gates`: `build` is the workflow, its job and check run is `build-windows`, and `plan.yml` also runs `campaign-guard`. Because `plan.yml` is path-filtered, requiring `plan-gates` blocks a pull request that touches none of its paths; drop the path filter from its `pull_request` trigger in the same change (owned by `D00 T01 §5`) or leave `plan-gates` out of the required set.
+
 - [ ] Protect `main`. Done when: the rule lists both checks.
   1. Open `https://github.com/rizonesoft/Isotone/settings/rules` (or **Settings**, **Branches**), click **New branch ruleset** (or **Add branch protection rule**).
-  2. Target `main`; enable **Require status checks to pass**; search and add `build` and `plan-gates`.
+  2. Target `main`; enable **Require status checks to pass**; search and add `build-windows`, `plan-gates`, and `campaign-guard` (the job names GitHub reports as check runs); add the Repository admin role to the ruleset's bypass list (bypass mode: always) so the single writer's direct pushes to `main` are not refused before CI has run.
   3. Enable **Block force pushes**; leave **Require a pull request** off (the single-writer workflow commits to `main` directly; revisit if contributors join).
   4. Save.
 - [ ] Agent verification: `gh api repos/rizonesoft/Isotone/rules/branches/main` lists the required checks. Done when: the output is quoted.
@@ -107,6 +111,8 @@ A protected `main` keeps a red build from landing. The checks must be the real j
 
 Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is written to use a certificate by thumbprint from the Windows certificate store or a cloud signing service, and never a file in the repository. Obtaining one is a purchase and an identity check only the operator can do.
 
+**Groomed 2026-09-28:** the operator's part is done when the certificate lists in the store or the cloud CLI signs a test file; the `sign.ps1` verification moves to `D05 T01 §2`'s checkpoint, which already quotes `signtool verify /pa`.
+
 - [ ] Choose a route and record the choice (not the secret) in `docs/dev/decisions.md`. Done when: the entry names the route and its yearly cost.
   1. Options: an OV or EV code-signing certificate from a certificate authority (hardware token or cloud key storage), Azure Trusted Signing (Microsoft's managed service), or SignPath's free program for open-source projects (check its current eligibility terms).
   2. Complete the vendor's identity validation for Rizonesoft.
@@ -115,11 +121,13 @@ Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is writte
 - [ ] Agent verification: after `D05 T01 §2` ships, a signed test file passes `signtool verify /pa`. Done when: the output is quoted.
 - [ ] Commit: `"docs: record the code-signing route"` -- ticked as in §1.
 
-**Test checkpoint:** `signtool verify /pa` passes on a file signed through `scripts/sign.ps1` (quoted), and `git grep -n "BEGIN CERTIFICATE\|\.pfx"` finds nothing in the repository. Cheaper substitute that fails: a self-signed certificate.
+**Test checkpoint:** `signtool sign` (or the cloud CLI) signs a scratch file and `signtool verify /pa` passes on it (quoted), and `git grep -n "BEGIN CERTIFICATE\|\.pfx"` finds nothing in the repository. Cheaper substitute that fails: a self-signed certificate.
 
 ## 4. Confirm the Icon Art Licenses
 
 `resources/icons/art-and-design.png` (planned as Pinxit's icon) and `resources/icons/lens.png` (planned as Albumen's) look like stock illustrations. Shipping them inside an installer requires a license that allows redistribution in a GPL-3.0 application, with attribution if the license asks for it.
+
+**Groomed 2026-09-28:** effectively answered: the only open step is one operator sentence confirming the License section of `resources/icons/README.md`; the stock-art paragraph and the three-row item are historical.
 
 **Corrected 2026-09-27:** the operator answered this row: the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (2026-09-27), and both stay as the Pinxit and Albumen icons. Finding a source or replacing the art is no longer needed, and no third-party attribution applies; what is left is recording the statement where the Outcome says it lives.
 
@@ -134,6 +142,8 @@ Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is writte
 
 The design contract gives the suite one neutral grey ramp and lets each app name one accent for focus and selection. Until chosen, the accent is a grey. This is a taste decision.
 
+**Groomed 2026-09-28:** the ratios, computed from `tokens.json` with the WCAG 2.x formula, are 9.03 and 5.35 (Stilus), 7.87 and 5.30 (Pinxit), 8.29 and 5.39 (Albumen), dark-family and Light; the item needs only the WebAIM confirmation quoted. `ThemeTokensTests` belongs to `D01 T01 §3` and is not a dependency of this row, so the checkpoint no longer cites it.
+
 **Corrected 2026-09-27:** the operator chose the accents on 2026-09-27: Stilus cyan (the pen nib), Pinxit orange (the paintbrush), and Albumen green (the aperture), tuned for contrast in light and dark themes. The values and their ratios are recorded in `standards/shared.md`'s Color section (dark `#29C5E6`, `#F5923E`, `#4CC47A` against `Base`; light `#00758C`, `#B04F00`, `#1B7A3D` against white). What is left is an independent check of the ratios.
 
 **Corrected 2026-09-27:** the design system import (`standards/ui.md`, `docs/design/`) makes the app accent identity only (title-bar mark, splash, the one primary button); selection and focus use the Highlight color (`state*` tokens, Blue by default). The accent values are the `accent-<app>` tokens in `docs/design/tokens.json` (one value for Dark, Darkest, and Medium Gray, one for Light), the same hex values as before; the check below measures each `-on` label against its accent fill, not the accent against the retired `Base` `#1A1A1A`.
@@ -141,15 +151,17 @@ The design contract gives the suite one neutral grey ramp and lets each app name
 - [ ] Check each accent in `docs/design/tokens.json` with WebAIM's contrast checker (https://webaim.org/resources/contrastchecker/): the label `accent-<app>-on` against the fill `accent-<app>` (the primary button) in each of the four themes, at least 4.5:1 (**Corrected 2026-09-27:** said the dark-theme value against `Base` `#1A1A1A` and the light-theme value against `#FFFFFF` from `standards/shared.md`'s accent table, which the design system import retired). Done when: the ratios the checker reports are quoted and each is at least 4.5:1.
 - [ ] Commit: `"docs: verify each app's accent color"` -- the agent quotes the ratios; the operator's choice is already recorded.
 
-**Test checkpoint:** `docs/design/tokens.json` names three accents whose `-on` labels contrast at least 4.5:1 with them in all four themes, `standards/ui.md` quotes the same hex values, and `ThemeTokensTests` (from `D01 T01 §3`) passes on the dictionaries generated from those tokens. Cheaper substitute that fails: an accent chosen without a contrast check.
+**Test checkpoint:** `docs/design/tokens.json` names three accents whose `-on` labels contrast at least 4.5:1 with them in all four themes, `standards/ui.md` quotes the same hex values. Cheaper substitute that fails: an accent chosen without a contrast check.
 
 ## 6. Assign the Copyright to Rizonetech (Pty) Ltd
 
-Operator decision 2026-09-27: the copyright holder is Rizonetech (Pty) Ltd, the operator's company, and Rizonesoft is its brand. The repository already says so, but the work was written by Derick Payne personally (Bezier, now Stilus; Pinxit; and Isotone, including the MIT-licensed releases Bezier and Pinxit published before the monorepo), so the company holds the copyright only once a written assignment says it does. This is a legal document only the operator can sign. Advice: have a South African intellectual property attorney draft or review it; South African copyright law (the Copyright Act 98 of 1978) expects an assignment in writing signed by the assignor, and the attorney confirms the form.
+Operator decision 2026-09-27: the copyright holder is Rizonetech (Pty) Ltd, the operator's company, and Rizonesoft is its brand. The repository already says so, but the work was written by Derick Payne personally (Bezier, now Stilus; Imago, now Pinxit; and Photon, now Isotone, including the MIT-licensed releases Bezier and Imago published before the monorepo), so the company holds the copyright only once a written assignment says it does. This is a legal document only the operator can sign. Advice: have a South African intellectual property attorney draft or review it; South African copyright law (the Copyright Act 98 of 1978) expects an assignment in writing signed by the assignor, and the attorney confirms the form.
 
-- [ ] Consult a South African IP attorney about the assignment: its scope (all copyright in Bezier, Pinxit, Isotone, and all prior work in their histories, code, documentation, and art, including the earlier MIT-licensed releases), the waiver of moral rights where the law allows, and whether anything else the operator wrote should be included. Done when: the operator has the attorney's draft or approval.
+**Corrected 2026-09-28:** the 2026-09-27 rename had replaced Imago and Photon with Pinxit and Isotone in this row; the deed names the works as they were published (Bezier, Imago, Photon) with their current names.
+
+- [ ] Consult a South African IP attorney about the assignment: its scope (all copyright in Bezier (now Stilus), Imago (now Pinxit), Photon (now Isotone), and all prior work in their histories, code, documentation, and art, including the earlier MIT-licensed releases), the waiver of moral rights where the law allows, and whether anything else the operator wrote should be included. Done when: the operator has the attorney's draft or approval.
 - [ ] Sign the deed of assignment from Derick Payne (assignor) to Rizonetech (Pty) Ltd (assignee), signed on the company's behalf by an authorised director, and keep it with the company's records, never in the repository. Done when: the operator states the signing date.
-- [ ] Record the fact, not the document, in `docs/dev/decisions.md`: "Copyright in Bezier (Stilus), Pinxit, Isotone, and all prior work of Derick Payne in them assigned to Rizonetech (Pty) Ltd on <date>; the deed is held by the company." Done when: the entry exists.
+- [ ] Record the fact, not the document, in `docs/dev/decisions.md`: "Copyright in Bezier (now Stilus), Imago (now Pinxit), Photon (now Isotone), and all prior work of Derick Payne in them assigned to Rizonetech (Pty) Ltd on <date>; the deed is held by the company." Done when: the entry exists.
 - [ ] Agent verification: `git grep -n "Copyright (C)" -- ':!LICENSE' ':!docs/parity'` lists only the "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd" wording, and `git grep -n -E "Copyright \(C\) [0-9-]+ Rizonesoft|© [0-9]+ Rizonesoft"` prints nothing. Done when: both outputs are quoted.
 - [ ] Commit: `"docs: record the copyright assignment to Rizonetech (Pty) Ltd"` -- ticked as in §1.
 
@@ -157,7 +169,7 @@ Operator decision 2026-09-27: the copyright holder is Rizonetech (Pty) Ltd, the 
 
 ## 7. Trademark Clearance and CIPC Filing
 
-`TRADEMARKS.md` says "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Pinxit", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, without claiming registration. Before relying on the names (and before the first release makes them public), the operator clears them against existing marks and files the ones that clear. "Pinxit", "Albumen", and "Stilus" are common words and may already be registered for software, so a conflict may mean renaming an app, which is far cheaper before its first release than after.
+`TRADEMARKS.md` says "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Pinxit", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, without claiming registration. Before relying on the names (and before the first release makes them public), the operator clears them against existing marks and files the ones that clear. The 2026-09-27 pre-screen below cleared the new names only provisionally, so a conflict found in the full search may still mean renaming an app, which is far cheaper before its first release than after. **Corrected 2026-09-28:** the common-words sentence described the retired names (Imago, Lumen, Nodus) and was carried into the new names by the rename.
 
 **Corrected 2026-09-27:** the agent's first-pass screen (WIPO Global Brand Database, classes 9 and 42, plus a web search for software already using each name) found live software marks or same-category products for Photon (Exit Games; Photon Studio), Lumen (Lumen Technologies in 15+ countries; two photo apps), and Imago (Monotype in the UK and EU; Nuvio Imago), so the operator renamed the suite and apps ("doit, let's replace all 4 names"). The new names screened as follows: Isotone, no live class 9 or 42 mark; Pinxit, no class 9 mark; Albumen, only food and pharmaceutical marks; Stilus, one live class 9 registration in Spain (a private individual, 2011) that the operator accepted and the attorney should weigh. Rizonesoft has no mark anywhere. The screen is not a clearance: the CIPC register, similar spellings, and unregistered use still need the searches below.
 
@@ -200,6 +212,7 @@ Contributors keep the copyright of their contributions and license them under GP
 - [ ] Decide between keeping the DCO only, a CLA granting Rizonetech (Pty) Ltd a broad license to contributions (for example modelled on the Apache Individual CLA), or a copyright assignment agreement. Done when: `docs/dev/decisions.md` records the choice, the reason, and the attorney's view.
 - [ ] If a CLA or an assignment is chosen, the agent files the work through `add-todo`: the agreement text in the repository, a check that refuses an unsigned pull request, and the `CONTRIBUTING.md` section announcing it before it applies. Done when: the filing exists, or the DCO-only decision is recorded and `CONTRIBUTING.md` needs no change.
 - [ ] Until this row is stamped, no pull request authored by anyone but the operator is merged. Done when: `gh pr list --state merged --json author` shows only the operator's account since 2026-09-27 (quoted at stamping).
+- [ ] If the decision keeps the DCO, add a `dco` job to `build.yml` (`pull_request` only) that fails when any commit in the pull request lacks a `Signed-off-by:` matching its author, and add it to the required checks of §2 when the first outside pull request arrives (**Groomed 2026-09-28:** `CONTRIBUTING.md` says unsigned pull requests cannot be merged, and nothing checks it). Done when: a probe pull request with an unsigned commit fails the job (run URL quoted).
 - [ ] Commit: `"docs: record the contributor agreement decision"` -- ticked as in §1.
 
 **Test checkpoint:** the decision is recorded in `docs/dev/decisions.md`, and `CONTRIBUTING.md`'s Licensing and sign-off section matches it (DCO only, or the agreement with its check). Cheaper substitute that fails: accepting outside code first and deciding later, which cannot be undone for code already merged.

@@ -69,7 +69,7 @@ track: N18
 |   6   |   §6    | GEM, Frame Vector Metafile, Lotus PIC, and NAPLPS | §5, D01 T08 §1 |  [ ]   |
 |   7   |   §7    | WordPerfect, Quattro Pro, Lotus 1-2-3, and WordStar | §1, D02 T10 §13, D02 T10 §14, D02 T14 §14 |  [ ]   |
 |   8   |   §8    | Legacy raster import and export in Stilus | D01 T08 §1, D01 T08 §2, D01 T08 §3, D01 T08 §5, D02 T14 §9, D02 T14 §12, D02 T12 §1 |  [ ]   |
-|   9   |   §9    | GIMP XCF import in Stilus on the shared XCF core | §8, D03 T17 §4, D03 T17 §12, D02 T07 §5 |  [ ]   |
+|   9   |   §9    | GIMP XCF import in Stilus on the shared XCF core | §8, D03 T17 §4, D03 T17 §12, D02 T07 §5, D03 T17 §14 |  [ ]   |
 |  10   |   §10   | Camera RAW import and the RAW Lab | D03 T07 §11, D01 T07 §1, D01 T07 §3, D02 T12 §1 |  [ ]   |
 
 ---
@@ -329,6 +329,8 @@ CorelDRAW places and exports a long tail of raster formats (CD-2638 to CD-2656 a
 ## 9. GIMP XCF Import in Stilus on the Shared XCF Core
 
 CorelDRAW imports GIMP's XCF with its layers (CD-2643). Pinxit already reads XCF (`D03 T17 §4`); a second reader in Stilus would be a copy, so this section moves the format-level decoding core (the header, the property lists, the layer and group tree, tiles, RLE and zlib compression, every precision, layer masks, and the mode ids) from `src/Pinxit/Isotone.Pinxit.FileFormats/Xcf/` to `src/Isotone.Core/Formats/Xcf/`, leaving Pinxit's mapping onto its document model (text, link and vector layers, live filters) in Pinxit, and then imports XCF in Stilus with each layer as a bitmap object in a group tree that mirrors GIMP's, masks applied as opacity masks where Stilus has them, and text, link, vector, and filter layers imported as their pixels with a report line. It runs after Pinxit's reader has shipped. Catalog: NP-2399 (1 feature: GIMP XCF import with layers).
+
+**Groomed 2026-09-28:** added `D03 T17 §14` to the dependencies, whose writer tests the move must keep green.
 
 **Fidelity:** GIMP XCF Import in Stilus on the Shared XCF Core -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/stilus/raster-import/, docs/captures/golden/stilus/legacy-raster/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/Toast/README.md -- states: all in spec -- themes: all four -- density: both

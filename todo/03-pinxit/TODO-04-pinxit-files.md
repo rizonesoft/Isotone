@@ -46,7 +46,7 @@ track: I4
 - Autosave writes recovery drafts in the native format; a crash offers them on the next start.
 - `todo/README.md` lists Pinxit's save path and autosave in the frozen set.
 
-**Adjacency:** list=not-applicable (recent files are listed by §2's File menu, which is the same list pattern Stilus uses); document=not-applicable (printing is a roadmap item); settings=applicable; reporting=not-applicable (no summaries); notifications=applicable; permissions=applicable; audit=applicable; exchange=applicable @ D03 T04 §5; reverse=applicable @ D03 T04 §6
+**Adjacency:** list=not-applicable (recent files are listed by §2's File menu, which is the same list pattern Stilus uses); document=not-applicable (printing is a roadmap item); settings=applicable @ D03 T04 §2; reporting=not-applicable (no summaries); notifications=applicable @ D03 T17 §1; permissions=applicable @ D03 T04 §2; audit=applicable @ D03 T17 §1; exchange=applicable @ D03 T04 §5; reverse=applicable @ D03 T04 §6
 
 **Adjacency rationale:** JPEG quality and recent files are settings; saves of large files show progress; read-only targets are refused; every open and save logs; PSD is the foreign exchange format; recovery reverses a crash.
 
@@ -69,7 +69,7 @@ Pinxit needs decoders and encoders for PNG, JPEG, TIFF, and PSD, with 16-bit and
 
 **Corrected 2026-09-26:** the Stilus parity plan runs before Pinxit's foundation, so Stilus builds its raster codecs first: `D02 T14 §12` adds a `WicCodec` over WPF's `BitmapDecoder` and `BitmapEncoder` (plus own TGA and PCX codecs), and `D02 T14 §13` adds a `PsdReader` against Adobe's specification. This decision therefore also records whether Pinxit picks the same WIC stack; if it does, the Stilus `WicCodec` moves to `Isotone.Core` (the shared-once rule) and Pinxit consumes it rather than writing a second WIC wrapper, and the PSD choice is the reader `D02 T14 §13` built (see §5).
 
-- [ ] For each candidate, record license (with the license text URL), GPL-3.0 compatibility, format coverage including 16-bit and ICC support, installed size, and a decode-time measurement of the same 24-megapixel PNG and JPEG (a small benchmark in `tests/Isotone.Pinxit.Benchmarks`). Done when: `docs/dev/decisions.md` carries the table with every cell filled.
+- [ ] For each candidate, record license (with the license text URL), GPL-3.0 compatibility, format coverage including 16-bit and ICC support, installed size, and a decode-time measurement of the same 24-megapixel PNG and JPEG (a small benchmark in `tests/Isotone.Pinxit.Benchmarks`; **Groomed 2026-09-28:** `D03 T02 §1` creates that project, and if this section runs first it creates it the same way). Done when: `docs/dev/decisions.md` carries the table with every cell filled.
 - [ ] Decide per format and record the choice, the evidence, and the cost of change, including whether the WIC choice reuses the Stilus `WicCodec` from `D02 T14 §12` (moved to `Isotone.Core`) and that PSD uses the `D02 T14 §13` reader. Done when: the decision entry names a codec for PNG, JPEG, TIFF, and PSD, and names the shared Stilus codec it moves or the reason it does not.
 - [ ] Add any chosen package to `Directory.Packages.props` with its license noted in the package table of `docs/dev/build.md`. Done when: restore is green, or the entry says no package was needed.
 - [ ] Commit: `"pinxit: decide the codecs with licenses and measurements"`
@@ -96,6 +96,7 @@ The two formats most images arrive in. Opening creates a one-layer document at t
 - [ ] Wire File, Open (also from the command line and the single-instance forwarder), Save, Save As, and recent files; the flatten and bit-depth notices. Done when: a driven save of a two-layer document to PNG shows the notice.
 - [ ] Unsupported or corrupt files show "Pinxit cannot open <name>: <reason>." and log a Warning; nothing is left half-open. Done when: truncated-file tests pass for both formats.
 - [ ] Add "Pinxit document save path" to the frozen set in `todo/README.md`. Done when: the paragraph names it with this section's ref.
+- [ ] A save to a read-only, locked, or missing-folder target shows "Pinxit could not save <name>: <reason>." with the document still open and dirty, logs one Warning, and leaves the target byte-identical; every successful open and save logs one Information line (path, format, bit depth, layer count, bytes) and re-reads the written file's header to confirm format and dimensions before clearing the dirty flag (**Groomed 2026-09-28:** the Freeze check and the Adjacency rationale require it, and no item built it). Done when: `PinxitSaveRefusalTests` cover the three refusals over `tests/fixtures/save-over/` and a test logger asserts the open and save lines.
 - [ ] Commit: `"pinxit: open and save PNG and JPEG with profiles and fidelity proofs"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx --filter "Category=Fidelity"` prints a result per PNG and JPEG fixture, all within their stated tolerances; the interrupted-save test leaves the fixture's hash unchanged; a driven open, edit, save, and reopen of the 16-bit PNG keeps 16 bits (quote the IHDR bit depth read from the saved file). Cheaper substitute that fails: saving 16-bit documents as 8-bit PNG, which the IHDR check catches.
@@ -107,6 +108,7 @@ TIFF is the exchange format of print and of Albumen's "Edit in Pinxit" hand-off 
 - [ ] Add `TiffFormat` (chosen codec) with 8 and 16 bit, uncompressed, LZW, and Deflate, single page; multi-page files open their first page with a notice naming the page count. Done when: tests cover each variant.
 - [ ] Fixtures under `tests/fixtures/pinxit/tiff/` with a README, and fidelity tests: round trip pixel-exact for each compression. Done when: every fixture passes.
 - [ ] A TIFF with layers from Photoshop (layer data in the ImageSourceData tag) opens its composite with a notice that layers were not read (PSD is the layered path). Done when: a fixture proves the notice.
+- [ ] TIFF saves go through the §2 save path: the refusal, the log line, and the readback (**Groomed 2026-09-28**). Done when: `PinxitSaveRefusalTests` gains a TIFF case.
 - [ ] Commit: `"pinxit: open and save 8 and 16 bit TIFF"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx --filter "Category=Fidelity"` passes every TIFF fixture pixel-exact; the Photoshop-layered fixture opens with its notice logged. Cheaper substitute that fails: 8-bit only.
@@ -121,6 +123,7 @@ A document with layers needs a format that keeps them. The native format is a ZI
 - [ ] Round-trip tests for every layer type the editor makes (raster at 8 and 16 bit, group, with masks, every blend mode, hidden, locked, opacity). Done when: `NativeFormatFidelityTests` pass pixel-exact and property-exact.
 - [ ] An OpenRaster compatibility test: open a saved file with GIMP in batch mode (`gimp-console` with a Script-Fu export of the composite, version recorded) and compare the composite within 1/255. Done when: the test runs where GIMP is installed and skips with a reason elsewhere, and the result is quoted here.
 - [ ] Forward compatibility: a file with a newer schema version opens read-only with a notice; unknown extension elements are preserved on save. Done when: a fixture with an unknown element round-trips it.
+- [ ] Native-format saves go through the §2 save path: the refusal, the log line, and the readback (**Groomed 2026-09-28**). Done when: `PinxitSaveRefusalTests` gains a native-format case.
 - [ ] Commit: `"pinxit: a native layered format on the OpenRaster layout"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx --filter "Category=Fidelity"` passes every native fixture; the GIMP comparison result is quoted with GIMP's version; the interrupted-save test leaves the previous file's hash unchanged. Cheaper substitute that fails: a private binary format, which no other application can check.
@@ -156,6 +159,7 @@ Autosave writes recovery drafts of dirty documents in the native format to the a
 - [ ] `PinxitAutosaveService` with snapshot, interval, and marker. Done when: tests cover interval, clean-document skip, and deletion after save.
 - [ ] The recovery prompt at startup. Done when: a driven kill-and-restart offers the draft and Recover restores all layers (layer count and a pixel hash quoted).
 - [ ] Add "Pinxit autosave and recovery" to the frozen set in `todo/README.md`. Done when: the paragraph names it.
+- [ ] Remove `Isotone.Pinxit.Core/History/HistoryPersistence.cs` (an unused, non-atomic `File.WriteAllText` recovery timer under `%LOCALAPPDATA%\Pinxit\recovery`) or fold what it records into `PinxitAutosaveService`, so one recovery store remains (**Groomed 2026-09-28:** found with no owner). Done when: `grep -rn "class HistoryPersistence" src` prints nothing and the decision is in the commit body.
 - [ ] Commit: `"pinxit: autosave drafts and crash recovery"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the autosave tests reporting; the driven kill-and-restart recovers the document with identical layers, and the original file's hash is unchanged. Cheaper substitute that fails: autosaving over the document.

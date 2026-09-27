@@ -1,6 +1,6 @@
 # 00 Workspace
 
-> **Phase 0**
+> **Phases 0 to 3**
 
 Toolchain, solution, gates, CI, and the TODO system every later domain leans on. Nothing here ships to a user; everything later depends on it being boring and green.
 

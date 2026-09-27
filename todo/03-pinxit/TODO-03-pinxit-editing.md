@@ -46,7 +46,7 @@ track: I3
 - A tool abstraction drives move, hand, zoom, rectangular and elliptical marquee, lasso, brush, eraser, transform, crop, fill, gradient, and eyedropper, each with its options bar, cursor, and shortcut.
 - A color panel holds foreground and background colors with a picker, hex entry, and swap.
 
-**Adjacency:** list=applicable @ D03 T03 §3; document=not-applicable (printing arrives with the Pinxit parity phases in D03 T18 §6); settings=applicable; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are TODO-04's); audit=applicable @ D03 T03 §2; exchange=not-applicable (formats are TODO-04's); reverse=applicable @ D03 T03 §2
+**Adjacency:** list=applicable @ D03 T03 §3; document=not-applicable (printing arrives with the Pinxit parity phases in D03 T18 §6); settings=applicable; reporting=applicable @ D03 T03 §1; notifications=applicable @ D03 T08 §7; permissions=not-applicable (file refusals are TODO-04's); audit=applicable @ D03 T03 §2; exchange=not-applicable (formats are TODO-04's); reverse=applicable @ D03 T03 §2
 
 **Adjacency rationale:** The layers panel is the browsable list; tool options persist as settings; document info and the long-operation progress live in the status strip that §1 builds; the History panel is both audit and reverse.
 
@@ -119,7 +119,7 @@ Layers are the core of raster editing, and the model supports them fully; nothin
 
 - [ ] `LayersPanelViewModel` with commands for every layer operation, each an undoable command. Done when: `LayersPanelViewModelTests` cover each and its undo.
 - [ ] The panel view with thumbnails, toggles, rename, drag reorder, blend mode, and opacity (keyboard reachable, automation names). Done when: a driven pass exercises each.
-- [ ] Wire the Layer menu commands (removing their log-only bodies). Done when: `grep -n "_logger.Information(\"Opening" src/Pinxit/Isotone.Pinxit.Desktop/ViewModels/MainWindowViewModel.cs` shows no layer command.
+- [ ] Wire the Layer menu commands (removing their log-only bodies). Done when: `grep -nE "\"(Creating new layer|Duplicate layer requested|Delete layer requested|Merge down requested|Flatten image requested)\"" src/Pinxit/Isotone.Pinxit.Desktop/ViewModels/MainWindowViewModel.cs` prints nothing (**Corrected 2026-09-28:** the old grep for "Opening" passed without any change, because the layer stubs log these strings).
 - [ ] Commit: `"pinxit: a layers panel with thumbnails, blend modes, and opacity"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `LayersPanelViewModelTests` reporting; a driven run adds three layers, sets one to Multiply at 50 percent, merges down, and undoes each step (log lines quoted, capture committed). Cheaper substitute that fails: layer commands that log only.
@@ -158,6 +158,7 @@ Pinxit has no tool abstraction. Every later tool needs one: activation by rail c
 - [ ] Marquee and lasso tools producing `Selection` masks with modifiers. Done when: tests assert mask coverage for each shape and each combine mode.
 - [ ] Select menu commands and feather. Done when: tests cover inverse and a 4 px feather profile.
 - [ ] Marching ants overlay. Done when: a capture shows it at 100 and 400 percent.
+- [ ] Every selection change (marquee, lasso, Select All, Deselect, Inverse, Feather) is one `UndoHistory` step restoring the previous mask (**Groomed 2026-09-28:** the Outcome promises every edit is one history step). Done when: `SelectionHistoryTests` undo and redo each.
 - [ ] Commit: `"pinxit: marquee and lasso selections with combine modes"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the selection tests reporting; a driven fill inside an elliptical selection leaves pixels outside it unchanged (hash of an outside region quoted). Cheaper substitute that fails: rectangle-only selection.
@@ -176,6 +177,7 @@ Painting is the first thing a raster editor is judged on: a round brush with siz
 
 - [ ] `BrushEngine` in `Isotone.Pinxit.Core/Painting/` with dab generation, spacing, and blending, allocation-free per dab. Done when: tests assert a straight stroke's coverage profile and a benchmark shows 0 B per dab.
 - [ ] Brush and eraser tools with options (size 1 to 5,000 px, hardness, opacity, flow, spacing, pressure toggles) persisted in settings. Done when: options survive a restart.
+- [ ] Each brush or eraser stroke commits one `TileSnapshotCommand` covering only the touched tiles (**Groomed 2026-09-28:** the Treatment names one undo step per stroke and no item proved it). Done when: a test strokes across two tiles, undoes, and asserts byte-identical tiles and one history entry.
 - [ ] Commit: `"pinxit: a smooth brush and eraser with pen pressure"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the brush tests reporting; a recorded stroke fixture replayed through the engine matches its golden within 1/255 (test quoted); a driven stroke with a pen shows width variation (capture). Cheaper substitute that fails: WPF polylines.

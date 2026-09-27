@@ -2,11 +2,11 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Pinxit, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **0 of 751 sections complete (0%).** 751 sections (0 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 752 sections complete (0%).** 752 sections (1 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
-Seeded 2026-09-26 from the imported Bezier and Pinxit code, their legacy roadmaps (kept in [`../docs/legacy/`](../docs/legacy/README.md)), the Isotone planning notes, and the operator's decisions recorded in [`../AGENTS.md`](../AGENTS.md).
+Seeded 2026-09-26 from the imported Bezier and Imago code (now Stilus and Pinxit), their legacy roadmaps (kept in [`../docs/legacy/`](../docs/legacy/README.md)), the Photon planning notes (now Isotone), and the operator's decisions recorded in [`../AGENTS.md`](../AGENTS.md).
 
 **How to use this.** The front door is the `process-plan` skill. It audits, then runs `process-phase` on the first phase that has a ready row, then the next ready phase after that closeout or park. One row is `process-todo-section` then `review-todo-section`. Do not invent a side loop.
 
@@ -99,7 +99,7 @@ Nothing in this plan has been built, but the tree is not empty.
 
 **After the first release** is planned, not built: on 2026-09-27 the operator worried "features will be left behind" and chose to plan the work once deferred to after the first release as real sections rather than backlog entries. Phases 42 to 45 run it after the suite bundle and the shared-decoder imports: suite automation (actions, C# scripting, the automation and MCP servers, extensions, the command line, and batch with droplets), video and audio with frame animation, on-device models beside the OpenRouter default with the GPU develop path, and Albumen's remaining formats (SWF, an optional user-installed GDAL for ECW, MrSID, JPM, and MRC, and clean-room analysis of four undocumented layered formats), each phase ending in app releases and the last in `isotone-v1.1.0`; Albumen's CAD and plotter drawings land earlier, in Phase 30, on Stilus's readers moved to `Isotone.Core`.
 
-**The workspace** has a pinned SDK, one solution, one build configuration, scripts, installers, and CI workflows written on 2026-09-26 and not yet committed or run on GitHub.
+**The workspace** has a pinned SDK, one solution, one build configuration, scripts, installers, and CI workflows written on 2026-09-26, committed and running green on GitHub since that day (the first recorded runs are `D00 T01 §5`'s to cite).
 
 Every open section is in scope and appears in exactly one phase. A dependency may park a row; it does not remove it. Completion-first: a row flips only whole, and debt always names its collector.
 
@@ -176,9 +176,9 @@ Every later section names files, so both imported apps move into the suite layou
 
 |  ✔  | Section      | Deliverable                                      | Items |
 | :-: | ------------ | ------------------------------------------------ | :---: |
-| [ ] | `D00 T03 §3` | Export the app icon rasters from the SVG sources |  13   |
-| [ ] | `D02 T01 §1` | Rename Bezier to Isotone.Stilus                  |   9   |
-| [ ] | `D03 T01 §1` | Restructure and rename Pinxit to Isotone.Pinxit  |   6   |
+| [ ] | `D00 T03 §3` | Export the app icon rasters from the SVG sources |  14   |
+| [ ] | `D02 T01 §1` | Rename Bezier to Isotone.Stilus                  |  10   |
+| [ ] | `D03 T01 §1` | Restructure and rename Pinxit to Isotone.Pinxit  |   7   |
 | [ ] | `D03 T01 §4` | The Pinxit icon                                  |   5   |
 
 ### Phase 2 -- Stilus foundation: composition, hygiene, triage, correctness
@@ -188,7 +188,7 @@ Stilus goes first among the apps. This phase gives it a real composition root on
 |  ✔  | Section      | Deliverable                                         | Items |
 | :-: | ------------ | --------------------------------------------------- | :---: |
 | [ ] | `D01 T02 §1` | Create Isotone.Core with app-data paths and logging |   7   |
-| [ ] | `D01 T02 §2` | The settings store                                  |   5   |
+| [ ] | `D01 T02 §2` | The settings store                                  |   6   |
 | [ ] | `D02 T01 §2` | Composition root on the Generic Host                |   5   |
 | [ ] | `D02 T01 §3` | The debug console reads the Serilog pipeline        |   5   |
 | [ ] | `D02 T01 §4` | Culture-safe formatting and comparisons             |   5   |
@@ -198,9 +198,9 @@ Stilus goes first among the apps. This phase gives it a real composition root on
 | [ ] | `D02 T01 §6` | SkiaSharp 4                                         |   6   |
 | [ ] | `D02 T01 §7` | Warnings are errors in Stilus                       |   4   |
 | [ ] | `D02 T02 §3` | Selection has one owner                             |   5   |
-| [ ] | `D02 T03 §1` | Undo for resize and rotate                          |   6   |
+| [ ] | `D02 T03 §1` | Undo for resize and rotate                          |   8   |
 | [ ] | `D02 T03 §2` | Split the main window view model                    |   7   |
-| [ ] | `D02 T04 §1` | Atomic save and dirty tracking                      |   8   |
+| [ ] | `D02 T04 §1` | Atomic save and dirty tracking                      |   9   |
 | [ ] | `D02 T04 §2` | SVG round-trip fidelity fixtures                    |   5   |
 | [ ] | `D00 T02 §6` | xUnit v3                                            |   5   |
 
@@ -210,14 +210,14 @@ With its foundation sound, Stilus becomes a complete first release: `Isotone.UI`
 
 |  ✔  | Section      | Deliverable                                                     | Items |
 | :-: | ------------ | --------------------------------------------------------------- | :---: |
-| [ ] | `D01 T01 §1` | Create Isotone.UI with the icon catalog                         |   8   |
+| [ ] | `D01 T01 §1` | Create Isotone.UI with the icon catalog                         |   9   |
 | [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Isotone.UI           |   8   |
 | [ ] | `D01 T01 §3` | The suite theme resources                                       |  19   |
 | [ ] | `D01 T01 §9` | The visual regression harness and goldens                       |  13   |
 | [ ] | `D01 T01 §5` | Implicit control styles: buttons and inputs                     |  24   |
-| [ ] | `D01 T01 §6` | Implicit control styles: navigation, data, menus, and feedback  |  25   |
+| [ ] | `D01 T01 §6` | Implicit control styles: navigation, data, menus, and feedback  |  27   |
 | [ ] | `D01 T01 §7` | Shared window chrome: title bar and caption buttons             |  16   |
-| [ ] | `D01 T01 §8` | Shared window chrome: document tabs, dock theme, and status bar |  19   |
+| [ ] | `D01 T01 §8` | Shared window chrome: document tabs, dock theme, and status bar |  20   |
 | [ ] | `D01 T02 §3` | Single instance and file-open forwarding                        |   4   |
 | [ ] | `D02 T02 §4` | Arrange, align, distribute, rotate, and flip                    |   8   |
 | [ ] | `D02 T02 §5` | Boolean path operations on SKPath.Op                            |   5   |
@@ -225,19 +225,20 @@ With its foundation sound, Stilus becomes a complete first release: `Isotone.UI`
 | [ ] | `D02 T02 §7` | Snapping on SnapManager                                         |   5   |
 | [ ] | `D02 T02 §8` | One keymap on ShortcutManager                                   |   4   |
 | [ ] | `D02 T03 §3` | Clipboard and the Edit menu                                     |   6   |
-| [ ] | `D02 T03 §4` | Property edits are undo steps                                   |   4   |
-| [ ] | `D02 T04 §3` | PNG and JPEG export                                             |   6   |
-| [ ] | `D02 T04 §4` | PDF export                                                      |   4   |
+| [ ] | `D02 T03 §4` | Property edits are undo steps                                   |   5   |
+| [ ] | `D02 T04 §3` | PNG and JPEG export                                             |   7   |
+| [ ] | `D02 T04 §4` | PDF export                                                      |   5   |
 | [ ] | `D02 T04 §5` | Recent files, autosave, and crash recovery                      |   7   |
-| [ ] | `D02 T04 §6` | Open from the command line and the .svg association             |   4   |
+| [ ] | `D02 T04 §6` | Open from the command line and the .svg association             |   5   |
 | [ ] | `D02 T03 §5` | Every menu command works or names its owner                     |   5   |
 | [ ] | `D02 T05 §1` | The About dialog                                                |   6   |
 | [ ] | `D02 T05 §2` | The keyboard shortcuts dialog                                   |   4   |
 | [ ] | `D02 T05 §3` | The Help menu                                                   |   3   |
 | [ ] | `D06 T01 §1` | The Stilus user guide                                           |   4   |
-| [ ] | `D06 T02 §1` | The architecture page matches the tree                          |   4   |
+| [ ] | `D06 T02 §1` | The architecture page matches the tree                          |   5   |
 | [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                                          |   6   |
 | [ ] | `D05 T01 §1` | The clean-machine install procedure                             |   3   |
+| [ ] | `D05 T01 §8` | Third-party notices in every package                            |   5   |
 | [ ] | `D02 T05 §4` | Stilus 0.1.0                                                    |  11   |
 
 ### Phase 4 -- Stilus parity I: document model, pages, layers, selection, and view
@@ -246,7 +247,7 @@ Parity starts where every later feature stands. This phase fixes how live object
 
 |  ✔  | Section       | Deliverable                                                        | Items |
 | :-: | ------------- | ------------------------------------------------------------------ | :---: |
-| [ ] | `D02 T06 §7`  | Documents in tabs, saved layouts, nested layers                    |   5   |
+| [ ] | `D02 T06 §7`  | Documents in tabs, saved layouts, nested layers                    |   7   |
 | [ ] | `D02 T07 §1`  | The live-object contract in the stilus namespace                   |  20   |
 | [ ] | `D02 T07 §2`  | Spatial index, culling, and dirty-region rendering                 |  19   |
 | [ ] | `D02 T07 §3`  | Pages and artboards: one model, panel, and commands                |  22   |
@@ -312,7 +313,7 @@ Appearance comes next because every effect and every format carries it. `Isotone
 | [ ] | `D02 T09 §14` | The Appearance panel: stacked fills, strokes, and effects                                                    |  14   |
 | [ ] | `D02 T09 §15` | Graphic styles, object styles, style sets, and default properties                                            |  15   |
 | [ ] | `D02 T09 §16` | The brush engine, art brushes, and pattern brushes                                                           |  14   |
-| [ ] | `D02 T09 §17` | Scatter, sprayer, and calligraphic brushes, the paintbrush, and the blob brush                               |  14   |
+| [ ] | `D02 T09 §17` | Scatter, sprayer, and calligraphic brushes, the paintbrush, and the blob brush                               |  15   |
 | [ ] | `D02 T09 §18` | Bristle and painterly brushes, and brush libraries                                                           |  19   |
 | [ ] | `D02 T09 §19` | Opacity and blend modes                                                                                      |  11   |
 | [ ] | `D02 T09 §20` | Opacity masks, fountain and pattern transparency, knockout, and feather                                      |  14   |
@@ -326,7 +327,7 @@ Type is its own discipline, so it gets its own phase: HarfBuzz shaping with bidi
 
 |  ✔  | Section       | Deliverable                                                                            | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D02 T06 §3`  | Text: area text, text on path, text to path                                            |   4   |
+| [ ] | `D02 T06 §3`  | Text: area text, text on path, text to path                                            |   6   |
 | [ ] | `D02 T10 §1`  | The text shaping engine: HarfBuzzSharp, bidi, script runs, and font fallback           |  23   |
 | [ ] | `D02 T10 §2`  | The rich text model and text objects: point, area, path, and vertical                  |  24   |
 | [ ] | `D02 T10 §3`  | Fonts: the font list, filters, live preview, and the Font Sampler                      |  15   |
@@ -378,7 +379,7 @@ Bitmaps arrive once vectors are complete. `Isotone.Core` gains the pixel engine 
 
 |  ✔  | Section       | Deliverable                                                                                | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------ | :---: |
-| [ ] | `D02 T06 §14` | More formats and the export dialog                                                         |   4   |
+| [ ] | `D02 T06 §14` | More formats and the export dialog                                                         |   6   |
 | [ ] | `D01 T03 §1`  | Pixel buffers, the effect contract, and the golden harness                                 |  20   |
 | [ ] | `D01 T03 §2`  | Resampling, rotation, straighten, perspective, and lens correction                         |  14   |
 | [ ] | `D01 T03 §3`  | Palette quantization and dithering                                                         |  16   |
@@ -402,8 +403,8 @@ Bitmaps arrive once vectors are complete. `Isotone.Core` gains the pixel engine 
 | [ ] | `D02 T12 §4`  | The tracing engine: outline tracing, color quantization, and stacking                      |  15   |
 | [ ] | `D02 T12 §5`  | Centerline tracing, the Image Trace panel, and PowerTRACE                                  |  19   |
 | [ ] | `D02 T12 §6`  | Photo artwork: Pointillizer, PhotoCocktail, Object Mosaic, and mockups                     |  17   |
-| [ ] | `D02 T12 §7`  | The Links panel and linked sources                                                         |  20   |
-| [ ] | `D02 T12 §8`  | SVG filter effects                                                                         |  13   |
+| [ ] | `D02 T12 §7`  | The Links panel and linked sources                                                         |  21   |
+| [ ] | `D02 T12 §8`  | SVG filter effects                                                                         |  14   |
 | [ ] | `D02 T17 §6`  | Stilus 0.7.0 (Phase 9)                                                                     |  13   |
 
 ### Phase 10 -- Stilus parity VII: color management, print, prepress, and PDF
@@ -446,14 +447,14 @@ Formats come after the object model they must carry is complete, so each reader 
 | [ ] | `D02 T14 §6`  | CorelDRAW import: containers, pages, layers, and objects                    |  14   |
 | [ ] | `D02 T14 §7`  | CorelDRAW import: fills, outlines, text, effects, and bitmaps; CMX          |  10   |
 | [ ] | `D02 T14 §8`  | CorelDRAW CDR and CMX export                                                |  12   |
-| [ ] | `D02 T14 §9`  | EPS and PostScript import and export                                        |  15   |
-| [ ] | `D02 T14 §10` | DXF and DWG import and export                                               |  12   |
-| [ ] | `D02 T14 §11` | EMF, WMF, CGM, HPGL, and WPG                                                |  12   |
-| [ ] | `D02 T14 §12` | Raster formats: import and export through WIC                               |  25   |
-| [ ] | `D02 T14 §13` | Photoshop PSD import and export                                             |  12   |
+| [ ] | `D02 T14 §9`  | EPS and PostScript import and export                                        |  16   |
+| [ ] | `D02 T14 §10` | DXF and DWG import and export                                               |  13   |
+| [ ] | `D02 T14 §11` | EMF, WMF, CGM, HPGL, and WPG                                                |  13   |
+| [ ] | `D02 T14 §12` | Raster formats: import and export through WIC                               |  26   |
+| [ ] | `D02 T14 §13` | Photoshop PSD import and export                                             |  13   |
 | [ ] | `D02 T14 §14` | Office and text documents, Export For Office, and font export               |  16   |
-| [ ] | `D02 T14 §15` | Export for Screens, asset export, and the export list                       |  20   |
-| [ ] | `D02 T14 §16` | Export for Web: optimized preview and web formats                           |  16   |
+| [ ] | `D02 T14 §15` | Export for Screens, asset export, and the export list                       |  21   |
+| [ ] | `D02 T14 §16` | Export for Web: optimized preview and web formats                           |  17   |
 | [ ] | `D02 T14 §17` | Slices, image maps, hyperlinks, rollovers, and SVG interactivity            |  20   |
 | [ ] | `D02 T14 §18` | Pixel-perfect drawing, pixel preview, and object hinting                    |  12   |
 | [ ] | `D02 T14 §19` | Clipboard formats, OLE objects, placing multiple files, and scanner acquire |  17   |
@@ -480,7 +481,7 @@ The AI features are Stilus's own and come after the object model, formats, and t
 | [ ] | `D02 T15 §8`  | AI images: generate, remix, and reference images                                |  11   |
 | [ ] | `D02 T15 §9`  | AI image cleanup: remove background, upscale, repair, and art style             |  10   |
 | [ ] | `D02 T15 §10` | Concept to vector: sketches and images to structured vectors                    |  11   |
-| [ ] | `D02 T15 §11` | The suite pipeline: Albumen to Pinxit to Stilus hand-offs and shared brand kits |  15   |
+| [ ] | `D02 T15 §11` | The suite pipeline: Albumen to Pinxit to Stilus hand-offs and shared brand kits |  16   |
 | [ ] | `D02 T17 §9`  | Stilus 0.10.0 (Phase 12)                                                        |  13   |
 
 ### Phase 13 -- Stilus parity IX: legacy formats, workspace, customization, preferences, and Stilus 1.0.0
@@ -494,7 +495,7 @@ The last parity phase first reads and writes the legacy formats the operator ask
 | [ ] | `D02 T16 §1`  | Workspaces: presets, save, reset, import, and export                                                                |  16   |
 | [ ] | `D02 T16 §2`  | Toolbox, toolbars, property bar, and status bar customization                                                       |  17   |
 | [ ] | `D02 T16 §3`  | Menus, context menus, command search, and shortcut sets                                                             |  17   |
-| [ ] | `D02 T16 §4`  | Preferences: general, selection and nodes, display, and units                                                       |  16   |
+| [ ] | `D02 T16 §4`  | Preferences: general, selection and nodes, display, and units                                                       |  17   |
 | [ ] | `D02 T16 §5`  | Preferences: files, backup, performance, GPU, and warnings                                                          |  16   |
 | [ ] | `D02 T16 §6`  | UI appearance, scaling, and diagnostics                                                                             |  16   |
 | [ ] | `D02 T16 §7`  | The welcome screen and the navigator                                                                                |  14   |
@@ -524,10 +525,10 @@ Pinxit starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity p
 
 |  ✔  | Section      | Deliverable                                       | Items |
 | :-: | ------------ | ------------------------------------------------- | :---: |
-| [ ] | `D03 T01 §2` | Port the snapshot canvas, ruler, and container    |   7   |
+| [ ] | `D03 T01 §2` | Port the snapshot canvas, ruler, and container    |   8   |
 | [ ] | `D03 T01 §3` | WPF-UI out of Pinxit                              |   7   |
 | [ ] | `D03 T01 §5` | Composition root on Isotone.Core                  |   4   |
-| [ ] | `D03 T02 §1` | The tiled image store                             |   5   |
+| [ ] | `D03 T02 §1` | The tiled image store                             |   6   |
 | [ ] | `D03 T02 §2` | The viewport on the tiled document                |   6   |
 | [ ] | `D03 T02 §3` | The render graph composites layers                |   4   |
 | [ ] | `D03 T02 §4` | Blend modes with golden tests                     |   4   |
@@ -547,15 +548,15 @@ Pinxit becomes a complete first release: the suite undo history and the atomic d
 | [ ] | `D03 T03 §2` | Every edit in the suite history                    |   5   |
 | [ ] | `D03 T03 §3` | The layers panel                                   |   4   |
 | [ ] | `D03 T03 §4` | The tool system: move, hand, and zoom              |   4   |
-| [ ] | `D03 T03 §5` | Selection tools                                    |   4   |
-| [ ] | `D03 T03 §6` | Brush and eraser                                   |   3   |
+| [ ] | `D03 T03 §5` | Selection tools                                    |   5   |
+| [ ] | `D03 T03 §6` | Brush and eraser                                   |   4   |
 | [ ] | `D03 T03 §7` | Transform, crop, image size, and canvas size       |   4   |
 | [ ] | `D03 T03 §8` | Fill, gradient, eyedropper, and the color panel    |   4   |
-| [ ] | `D03 T04 §2` | PNG and JPEG open and save                         |   7   |
-| [ ] | `D03 T04 §3` | TIFF open and save                                 |   4   |
-| [ ] | `D03 T04 §4` | The native layered format                          |   5   |
+| [ ] | `D03 T04 §2` | PNG and JPEG open and save                         |   8   |
+| [ ] | `D03 T04 §3` | TIFF open and save                                 |   5   |
+| [ ] | `D03 T04 §4` | The native layered format                          |   6   |
 | [ ] | `D03 T04 §5` | PSD import                                         |   5   |
-| [ ] | `D03 T04 §6` | Autosave and crash recovery                        |   4   |
+| [ ] | `D03 T04 §6` | Autosave and crash recovery                        |   5   |
 | [ ] | `D03 T05 §1` | The filter pipeline                                |   4   |
 | [ ] | `D03 T05 §2` | Core adjustments                                   |   6   |
 | [ ] | `D03 T05 §3` | Blur and sharpen                                   |   5   |
@@ -822,7 +823,7 @@ The AI features are Pinxit's own and come after the layers, masks, selections, r
 | [ ] | `D03 T19 §10` | The Pinxit assistant: prompt to edit                                 |  16   |
 | [ ] | `D03 T19 §11` | AI type and faces                                                    |  15   |
 | [ ] | `D03 T19 §12` | Sky replacement                                                      |  12   |
-| [ ] | `D03 T19 §13` | The suite pipeline and the brand kit in Pinxit                       |  15   |
+| [ ] | `D03 T19 §13` | The suite pipeline and the brand kit in Pinxit                       |  17   |
 | [ ] | `D03 T21 §11` | Pinxit 0.12.0 (Phase 26)                                             |  15   |
 
 ### Phase 27 -- Pinxit parity XI: workspace, customization, preferences, and Pinxit 1.0.0
@@ -854,7 +855,7 @@ Albumen is planned from nothing with `plan-new-feature` rigor and built on the s
 |  ✔  | Section      | Deliverable                       | Items |
 | :-: | ------------ | --------------------------------- | :---: |
 | [ ] | `D04 T01 §1` | The competitor survey, driven     |   4   |
-| [ ] | `D04 T01 §2` | Create the Albumen app            |   7   |
+| [ ] | `D04 T01 §2` | Create the Albumen app            |   8   |
 | [ ] | `D04 T01 §3` | The RAW decoder decision          |   4   |
 | [ ] | `D04 T01 §4` | RAW decode with fidelity fixtures |   5   |
 | [ ] | `D04 T01 §5` | The catalog database              |   5   |
@@ -892,17 +893,17 @@ The first pillar comes first. CAD and plotter drawings (DXF, DWG, HPGL, and CGM,
 | [ ] | `D04 T13 §3`  | Common legacy and special raster formats                                                  |  18   |
 | [ ] | `D04 T13 §8`  | Rare and historical raster formats                                                        |  21   |
 | [ ] | `D04 T13 §9`  | CAD and plotter drawings: DXF, DWG, HPGL, and CGM                                         |  16   |
-| [ ] | `D04 T13 §4`  | Documents and multi-page formats                                                          |  18   |
+| [ ] | `D04 T13 §4`  | Documents and multi-page formats                                                          |  19   |
 | [ ] | `D04 T13 §5`  | RAW coverage and RAW+JPEG pairs                                                           |  16   |
 | [ ] | `D04 T04 §1`  | The Albumen Viewer: a second executable with a startup budget and the hand-off to Albumen |  22   |
-| [ ] | `D04 T04 §17` | Resident quick-start mode                                                                 |  11   |
+| [ ] | `D04 T04 §17` | Resident quick-start mode                                                                 |  12   |
 | [ ] | `D04 T04 §2`  | The viewer decode path: screen-size decode, prefetch, and display color                   |  17   |
 | [ ] | `D04 T04 §3`  | Default viewer registration and shell integration                                         |  16   |
 | [ ] | `D04 T04 §4`  | Zoom, fit, pan, magnifier, and navigator                                                  |  16   |
 | [ ] | `D04 T04 §5`  | Browsing a folder in the viewer                                                           |  16   |
 | [ ] | `D04 T04 §14` | Viewer window and display options                                                         |  16   |
 | [ ] | `D04 T04 §6`  | File operations and hand-offs in the viewer                                               |  18   |
-| [ ] | `D04 T04 §9`  | Image information, histogram, and viewer tools                                            |  17   |
+| [ ] | `D04 T04 §9`  | Image information, histogram, and viewer tools                                            |  18   |
 | [ ] | `D04 T04 §10` | Multi-page and animated images in the viewer                                              |  12   |
 | [ ] | `D04 T04 §7`  | Fullscreen and presentation                                                               |  15   |
 | [ ] | `D04 T04 §8`  | Quick slideshow in the viewer                                                             |  14   |
@@ -941,11 +942,11 @@ The second pillar: any folder opens in Albumen without an import, with browsed p
 |  ✔  | Section       | Deliverable                                                          | Items |
 | :-: | ------------- | -------------------------------------------------------------------- | :---: |
 | [ ] | `D04 T05 §1`  | The browse model: folders without import, browsed and library photos |  17   |
-| [ ] | `D04 T05 §2`  | The background indexer                                               |  15   |
+| [ ] | `D04 T05 §2`  | The background indexer                                               |  16   |
 | [ ] | `D04 T05 §3`  | The folder tree, favorites, address bar, tabs, and home page         |  14   |
 | [ ] | `D04 T05 §4`  | File list views, thumbnails, and the preview pane                    |  15   |
 | [ ] | `D04 T05 §5`  | Sort, group, filter, and select in browse                            |   9   |
-| [ ] | `D04 T05 §6`  | File operations: copy, move, rename, delete, and undo                |  19   |
+| [ ] | `D04 T05 §6`  | File operations: copy, move, rename, delete, and undo                |  20   |
 | [ ] | `D04 T05 §7`  | Info palette, properties, and compare images                         |  10   |
 | [ ] | `D04 T05 §8`  | Image basket and selective browsing                                  |   9   |
 | [ ] | `D04 T05 §9`  | The private folder                                                   |   9   |
@@ -960,7 +961,7 @@ Lightroom's and ACDSee's library catches up over both browsed and imported photo
 
 |  ✔  | Section       | Deliverable                                                                                    | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D04 T06 §1`  | Library view extensions: cell styles, overlays, survey, and a second window                    |  22   |
+| [ ] | `D04 T06 §1`  | Library view extensions: cell styles, overlays, survey, and a second window                    |  21   |
 | [ ] | `D04 T06 §2`  | Culling extensions: label sets, flag and rating cycles, tagging, and auto advance              |  16   |
 | [ ] | `D04 T06 §3`  | Stacks, versions, and virtual copies                                                           |  13   |
 | [ ] | `D04 T06 §4`  | The filter bar extended: text, attributes, metadata columns, and presets                       |  15   |
@@ -968,7 +969,7 @@ Lightroom's and ACDSee's library catches up over both browsed and imported photo
 | [ ] | `D04 T06 §6`  | Categories and auto categories                                                                 |  13   |
 | [ ] | `D04 T06 §7`  | Quick search and advanced search                                                               |  16   |
 | [ ] | `D04 T06 §8`  | Folders and catalog panels: synchronize, relocate, missing photos, and offline volumes         |  17   |
-| [ ] | `D04 T06 §9`  | Catalog backup and maintenance                                                                 |  15   |
+| [ ] | `D04 T06 §9`  | Catalog backup and maintenance                                                                 |  16   |
 | [ ] | `D04 T06 §10` | Multiple catalogs, catalog settings, and preview management                                    |  16   |
 | [ ] | `D04 T06 §11` | Smart previews and offline editing                                                             |  11   |
 | [ ] | `D04 T06 §12` | The dashboard and library statistics                                                           |  11   |
@@ -1009,7 +1010,7 @@ Develop's panels reach Lightroom and ACDSee on the suite develop engine: the ext
 | [ ] | `D04 T09 §1`  | The develop workspace extended: tool strip, views, reference, and overlays                   |  22   |
 | [ ] | `D04 T09 §2`  | History, snapshots, and the before state                                                     |  13   |
 | [ ] | `D04 T09 §17` | Saving develop results: leaving develop, new files, sidecars, and opt-in writes to originals |  17   |
-| [ ] | `D04 T09 §3`  | Profiles, white balance, presence, and HDR editing                                           |  15   |
+| [ ] | `D04 T09 §3`  | Profiles, white balance, presence, and HDR editing                                           |  16   |
 | [ ] | `D04 T09 §4`  | Tone curve, color mixer, point color, color grading, and ACDSee color panels                 |  18   |
 | [ ] | `D04 T09 §5`  | Detail: sharpening and noise reduction                                                       |  11   |
 | [ ] | `D04 T09 §6`  | Lens corrections, DNG opcodes, and flat-field                                                |  16   |
@@ -1092,7 +1093,7 @@ The last parity phase customizes and audits the whole surface once it exists: mo
 | [ ] | `D05 T01 §4`  | The update check                                                                  |   4   |
 | [ ] | `D04 T14 §7`  | Help, learning, languages, and updates                                            |  13   |
 | [ ] | `D04 T14 §8`  | Themes and appearance                                                             |   8   |
-| [ ] | `D04 T14 §9`  | External editors                                                                  |  13   |
+| [ ] | `D04 T14 §9`  | External editors                                                                  |  15   |
 | [ ] | `D04 T02 §9`  | Accessibility and localization                                                    |   3   |
 | [ ] | `D04 T15 §10` | Albumen 1.0.0 (Phase 39): the parity catalog complete                             |  19   |
 
@@ -1106,7 +1107,7 @@ With all three apps released, Albumen at its parity release 1.0.0 (Phase 39), di
 | [ ] | `D05 T01 §3` | win-arm64 publish and installers    |   5   |
 | [ ] | `D05 T01 §5` | winget manifests                    |   5   |
 | [ ] | `D06 T01 §4` | Install and troubleshooting guides  |   4   |
-| [ ] | `D05 T01 §6` | The suite bundle: isotone-v1.0.0    |   6   |
+| [ ] | `D05 T01 §6` | The suite bundle: isotone-v1.0.0    |   7   |
 | [ ] | `D06 T02 §2` | README images from real captures    |   3   |
 | [ ] | `D06 T02 §3` | The user guides as a published site |   4   |
 
@@ -1127,7 +1128,7 @@ With every app released, the suite bundled (Phase 40), and the shared-decoder im
 
 |  ✔  | Section       | Deliverable                                                         | Items |
 | :-: | ------------- | ------------------------------------------------------------------- | :---: |
-| [ ] | `D01 T10 §1`  | The action model, the recorder, and playback                        |  17   |
+| [ ] | `D01 T10 §1`  | The action model, the recorder, and playback                        |  18   |
 | [ ] | `D01 T10 §2`  | The Actions panel in Isotone.UI                                     |  15   |
 | [ ] | `D01 T10 §3`  | Action files and the action library                                 |  16   |
 | [ ] | `D01 T10 §4`  | The scripting host                                                  |  18   |
@@ -1150,7 +1151,7 @@ With every app released, the suite bundled (Phase 40), and the shared-decoder im
 | [ ] | `D04 T17 §1`  | Recorded actions in Albumen                                         |  16   |
 | [ ] | `D04 T17 §2`  | Albumen extension points                                            |  14   |
 | [ ] | `D04 T17 §3`  | The Albumen command line                                            |  15   |
-| [ ] | `D04 T15 §11` | Albumen 1.1.0 (Phase 42)                                            |  18   |
+| [ ] | `D04 T15 §11` | Albumen 1.1.0 (Phase 42)                                            |  19   |
 
 ### Phase 43 -- Video, audio, and animation after the first release
 
@@ -1175,7 +1176,7 @@ Video, audio, and frame animation were deferred with automation and are planned 
 | [ ] | `D04 T16 §4`  | Media mode                                                |  14   |
 | [ ] | `D04 T16 §5`  | Image audio                                               |  14   |
 | [ ] | `D04 T16 §6`  | Video in slideshows and slideshow video export            |  12   |
-| [ ] | `D04 T15 §12` | Albumen 1.2.0 (Phase 43)                                  |  18   |
+| [ ] | `D04 T15 §12` | Albumen 1.2.0 (Phase 43)                                  |  19   |
 
 ### Phase 44 -- On-device models and the GPU develop path
 
@@ -1194,7 +1195,7 @@ Two accelerations wait for the apps to be complete (operator decision 2026-09-27
 | [ ] | `D03 T19 §17` | On-device photo models: motion blur reduction, mixed light, and SDR to HDR  |  13   |
 | [ ] | `D03 T21 §15` | Pinxit 1.3.0 (Phase 44)                                                     |  19   |
 | [ ] | `D04 T10 §13` | On-device models in Albumen: offline denoise, keywords, and similarity      |  16   |
-| [ ] | `D04 T15 §13` | Albumen 1.3.0 (Phase 44)                                                    |  18   |
+| [ ] | `D04 T15 §13` | Albumen 1.3.0 (Phase 44)                                                    |  19   |
 
 ### Phase 45 -- Albumen's remaining formats and the Isotone suite 1.1.0
 
@@ -1205,7 +1206,7 @@ The last formats IrfanView and ACDSee open that had no GPL-compatible reader are
 | [ ] | `D04 T13 §10` | Flash SWF: the first frame through an own parser                                   |  15   |
 | [ ] | `D04 T13 §11` | ECW, MrSID, JPM, and MRC through an optional GDAL                                  |  16   |
 | [ ] | `D04 T13 §12` | Artweaver, BodyPaint 3D, Gemstone GSD, and ACDSee ACDC through clean-room analysis |  17   |
-| [ ] | `D04 T15 §14` | Albumen 1.4.0 (Phase 45)                                                           |  18   |
+| [ ] | `D04 T15 §14` | Albumen 1.4.0 (Phase 45)                                                           |  19   |
 | [ ] | `D05 T01 §7`  | The suite bundle: isotone-v1.1.0                                                   |   9   |
 
 ### Phase 99 -- Manual: operator-only steps
@@ -1223,4 +1224,4 @@ No agent runner takes rows from this phase. Each row is a click path, a purchase
 | [ ] | `D99 T01 §7`  | Trademark clearance and CIPC filing          |   5   |
 | [ ] | `D99 T01 §8`  | Download storage and the release secrets     |   6   |
 | [ ] | `D99 T01 §9`  | Decide the product page URLs                 |   4   |
-| [ ] | `D99 T01 §10` | Decide on a CLA before outside contributions |   4   |
+| [ ] | `D99 T01 §10` | Decide on a CLA before outside contributions |   5   |

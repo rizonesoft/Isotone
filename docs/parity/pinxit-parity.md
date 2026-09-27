@@ -2206,7 +2206,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 
 | ID | Feature | Photoshop | Affinity | GIMP | Category | Status | Notes |
 | -- | ------- | --------- | -------- | ---- | -------- | ------ | ----- |
-| IP-1990 | AI workspace and menu: featured AI tools list, toggles, stacking several AI filters | PS-B-0429, PS-B-0435 | AF-0006, AF-2107 | -- | ai | plan D03 T19 §1 | Canva AI Studio maps to an Pinxit AI workspace preset and the AI menu |
+| IP-1990 | AI workspace and menu: featured AI tools list, toggles, stacking several AI filters | PS-B-0429, PS-B-0435 | AF-0006, AF-2107 | -- | ai | plan D03 T19 §1 | Canva AI Studio maps to a Pinxit AI workspace preset and the AI menu |
 | IP-1991 | Per-task AI model choice including partner image models | PS-B-0600, PS-B-0601, PS-B-0602, PS-B-0603, PS-B-0604, PS-B-0617 | AF-2127 | -- | ai | plan D03 T19 §1 | Firefly, Gemini, FLUX, Premium and Ultra tiers map to OpenRouter models the user picks per task |
 | IP-1992 | AI usage and cost display | PS-B-0605 | AF-2109, AF-2110, AF-2111, AF-2120 | -- | ai | plan D03 T19 §1 | Credits and allowances become OpenRouter token and image cost on the user's own key |
 | IP-1993 | AI network requirement and send gate | PS-B-0436 | AF-2113 | -- | ai | plan D03 T19 §1 | Every AI call goes online through D01 T05 §4 send gate with preview; offline shows a clear notice |

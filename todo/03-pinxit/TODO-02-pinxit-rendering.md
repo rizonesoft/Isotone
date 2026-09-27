@@ -41,7 +41,7 @@ track: I2
 - A render graph composites layers in order with opacity, visibility, and every blend mode the Compositing and Blending specification defines, each proven against a golden image.
 - A ComputeSharp compositing path matches the CPU path within 1/255 per channel, and a machine without a DirectX 12 device falls back to the CPU with one Warning log line.
 
-**Adjacency:** list=not-applicable (no browsable records); document=not-applicable (printing is a roadmap item); settings=applicable; reporting=applicable; notifications=not-applicable (rendering is continuous, not a job); permissions=not-applicable (no files written); audit=not-applicable (no user action changes a document here); exchange=not-applicable (codecs are TODO-04's); reverse=not-applicable (no edits)
+**Adjacency:** list=not-applicable (no browsable records); document=not-applicable (printing is a roadmap item); settings=applicable @ D03 T02 §1; reporting=applicable @ D03 T02 §2; notifications=not-applicable (rendering is continuous, not a job); permissions=not-applicable (no files written); audit=not-applicable (no user action changes a document here); exchange=not-applicable (codecs are TODO-04's); reverse=not-applicable (no edits)
 
 **Adjacency rationale:** The GPU on/off switch and the tile cache size are settings; the status strip's zoom, position, and memory readouts are the reporting surface.
 
@@ -61,6 +61,7 @@ track: I2
 
 `standards/pinxit.md` says pixel data lives in tiles and nothing holds a whole-image buffer. The tile types exist; no layer uses them. This section makes `RasterLayer` tile-backed so every later feature (painting, filters, compositing, codecs) works a tile at a time. -> SOURCE: legacy-pinxit-1.2
 
+- [ ] Create `tests/Isotone.Pinxit.Benchmarks` (console, run in Release only, in `Isotone.slnx`, excluded from `dotnet test`) and add `BenchmarkDotNet` to `Directory.Packages.props`, recording its MIT license and the reason (allocation and timing measurement for `D03 T02 §1`, `D03 T04 §1`, and `D03 T07 §18`) in `docs/dev/build.md`'s package table (**Groomed 2026-09-28:** those sections add benchmarks to a project no section created, and a dependency is a decision). Done when: `dotnet run -c Release --project tests/Isotone.Pinxit.Benchmarks -- --list flat` prints the benchmarks.
 - [ ] `RasterLayer` owns a sparse tile grid (`TileGrid` in `Isotone.Pinxit.Core/Tiles/`): tiles are created on first write, an unwritten tile reads as transparent, and bounds are the document size. Done when: `TileGridTests` cover read of an unwritten tile, write across a tile boundary, and bounds clipping.
 - [ ] Support 8-bit and 16-bit per channel tiles (`BitDepth` exists in `Isotone.Pinxit.Core/Documents/`), premultiplied RGBA. Done when: tests round-trip a gradient through both depths.
 - [ ] Add region read and write APIs (`CopyRegion(Rect, Span<T>)`, `WriteRegion`) that walk tiles without allocating per call. Done when: a BenchmarkDotNet run in `tests/Isotone.Pinxit.Benchmarks` shows 0 bytes allocated per call (quoted).

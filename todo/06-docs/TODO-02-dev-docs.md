@@ -13,10 +13,10 @@ track: D2
 > **Goal:** A contributor can understand the suite from the developer docs alone, and they stay true: the architecture page matches the tree after each restructure, the README shows the real apps, and the user guides are published as a browsable site.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** `docs/dev/architecture.md` was written on 2026-09-26 from the old `Description.md` (removed the same day) and describes the target layout, not the current one: `src/Isotone.Core/`, `src/Isotone.UI/`, and `src/Albumen/` do not exist yet. `docs/dev/` also holds `build.md`, `versioning.md`, and `README.md`. The README's screenshots come from `resources/screens/web/`, which are concept renders rather than captures of the built apps. There is no published site; the guides render only on GitHub.
+> **Current state (verified 2026-09-26):** `docs/dev/architecture.md` was written on 2026-09-26 from the old `Description.md` (removed the same day) and describes the target layout, not the current one: `src/Isotone.Core/`, `src/Isotone.UI/`, and `src/Albumen/` do not exist yet. `docs/dev/` also holds `build.md`, `versioning.md`, and `README.md`. The README's screenshots come from `resources/screens/web/`, which are concept renders rather than captures of the built apps. There is no published site; the guides render only on GitHub. **Corrected 2026-09-28:** the README leads with `resources/brand/isotone-cover.png` (labelled a design concept) and its per-app row shows the splash cards; the neon art under `resources/screens/` was removed on 2026-09-28 with the other neon brand images (operator: "Remove the neon banners"), so §2 writes its captures into a new `resources/screens/web/`. GitHub Pages already serves the design system from `.github/workflows/pages.yml` (https://rizonesoft.github.io/Isotone/design/, the root redirecting there), so the guides join that one site rather than a second one.
 <!-- claim: exists docs/dev/architecture.md -->
 <!-- claim: absent src/Isotone.UI -->
-<!-- claim: exists resources/screens/web/stilus.jpg -->
+<!-- claim: exists resources/brand/isotone-cover.png -->
 
 ## Inputs
 
@@ -52,6 +52,7 @@ Once Stilus is restructured and the two shared libraries exist, the architecture
 - [ ] Add `scripts/project-graph.ps1` that reads every `.csproj` in `Isotone.slnx` and emits a Mermaid graph of project references into `docs/dev/architecture.md` between marker comments. Done when: running it twice produces no diff.
 - [ ] Rewrite the layout section as current fact, keeping planned parts (Albumen before `D04 T01 §2`) marked planned. Done when: every path in the page exists or is marked planned.
 - [ ] Add a check to `scripts/check-all.ps1` that fails when the generated graph is stale. Done when: adding a project reference without regenerating fails the check.
+- [ ] Write `docs/dev/debugging.md` (each app's log path under `%LOCALAPPDATA%\Rizonesoft\<App>\logs\`, the debug window, the exception report) and remove its Planned entry from `docs/dev/README.md` (**Groomed 2026-09-28:** the page was listed as planned with no owner). Done when: every path it names exists after a Debug run (quoted).
 - [ ] Commit: `"docs: an architecture page generated from the project files"`
 
 **Test checkpoint:** `pwsh scripts/project-graph.ps1` followed by `git diff --exit-code docs/dev/architecture.md` exits 0; after adding a dummy reference in a scratch branch, `pwsh scripts/check-all.ps1` fails on the stale graph. Cheaper substitute that fails: a hand-drawn diagram.
@@ -72,13 +73,13 @@ The README shows concept renders. Once the apps are released, the images should 
 Help, Documentation links to GitHub's Markdown view today. A small static site built from `docs/user/` reads better and can be searched.
 
 - [ ] Choose the site generator by recorded decision (a static generator run in CI with a license compatible with the repository, for example MkDocs with the Material theme, or plain GitHub Pages Jekyll) in `docs/dev/decisions.md`. Done when: the entry exists.
-- [ ] Add a `docs.yml` workflow that builds the site from `docs/user/` and deploys to GitHub Pages on changes to `docs/user/`. Done when: a push produces a green run and a live site (URL quoted).
+- [ ] Extend `.github/workflows/pages.yml` to build the guides from `docs/user/` into `_site/guide/` beside `_site/design/`, add `docs/user/**` to its path triggers, and make `_site/index.html` a landing page linking both instead of a redirect (**Corrected 2026-09-28:** said add a separate `docs.yml`; a repository has one Pages site, so a second deploying workflow would overwrite the design page). Done when: a push produces a green `design-pages` run and https://rizonesoft.github.io/Isotone/guide/ and .../design/ both return 200 (quoted).
 - [ ] Point each app's Help, Documentation at its section of the site. Done when: each app opens the site URL (driven, log line quoted).
 - [ ] Commit: `"docs: publish the user guides as a site"`
 
 **Requires:** display-session -- confirming each app's Help link opens the site needs an interactive desktop
 
-**Test checkpoint:** the `docs.yml` run is `success` and the site URL returns 200 for each app's guide (quoted `Invoke-WebRequest` status codes). Cheaper substitute that fails: linking to raw Markdown.
+**Test checkpoint:** the `pages.yml` run is `success` and the site URL returns 200 for each app's guide (quoted `Invoke-WebRequest` status codes). Cheaper substitute that fails: linking to raw Markdown.
 
 ## Verification
 

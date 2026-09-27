@@ -76,9 +76,9 @@ Photoshop's Actions panel and Affinity's Macros panel are how retouchers repeat 
 
 **Fidelity:** Pinxit Actions panel and macro library -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/pinxit/ActionsPanel/.
 **Design:** new surface: docs/design/components/ActionsPanel/README.md, docs/design/components/Panel/README.md, docs/design/components/ListTree/README.md, docs/design/components/Button/README.md, docs/design/components/Dialog/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** an Pinxit user records edits once and replays them on other images, with branches and prompts where the image differs. Consumer: `ActionPlayer` replaying into Pinxit's history, and the batch runner of §5.
+**Job:** a Pinxit user records edits once and replays them on other images, with branches and prompts where the image differs. Consumer: `ActionPlayer` replaying into Pinxit's history, and the batch runner of §5.
 **Treatment:** the suite Actions panel docked in Pinxit in list and button modes, Photoshop's Insert Conditional dialog, Affinity's exposed-parameter prompt at play, and the macro library view with categories and search. Cheaper substitute that fails the checkpoint: replaying recorded mouse positions, which the different-size-document playback test catches.
-**Chrome:** consume `ActionRecorder`, `ActionPlayer`, `ActionsPanelView`, `ActionLibraryView`, `AtnImporter`, `CommandIndex`, and `UndoHistory`. Do not build an Pinxit-only recorder.
+**Chrome:** consume `ActionRecorder`, `ActionPlayer`, `ActionsPanelView`, `ActionLibraryView`, `AtnImporter`, `CommandIndex`, and `UndoHistory`. Do not build a Pinxit-only recorder.
 
 **Requires:** display-session -- recording on the canvas and the panel captures need an interactive desktop
 
@@ -110,9 +110,9 @@ Photoshop runs ExtendScript and UXP scripts from File, Scripts and runs scripts 
 
 **Fidelity:** Pinxit Scripts menu, Script Events Manager, and the scripting workspace -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/pinxit/scripts/.
 **Design:** new surface: docs/design/components/ScriptEditor/README.md, docs/design/components/Menu/README.md, docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Toast/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** an Pinxit user runs and writes scripts, and has scripts run when documents open or save. Consumer: `ScriptHost` running the script, `ScriptEventBus` dispatching events, and the document the script edits.
+**Job:** a Pinxit user runs and writes scripts, and has scripts run when documents open or save. Consumer: `ScriptHost` running the script, `ScriptEventBus` dispatching events, and the document the script edits.
 **Treatment:** File, Scripts (listed scripts, Browse, Script Events Manager), Photoshop's Script Events Manager dialog (event, script or action, add, remove, done), and a Scripting workspace preset with the editor, console, and reference docked. Cheaper substitute that fails the checkpoint: a Run Script file picker only, which the event test catches.
-**Chrome:** consume `ScriptHost`, `ScriptMenuBuilder`, `ScriptEventBus`, `ScriptEditorView`, the trust store, and the assistant of `D03 T19 §10`. Do not add an Pinxit script runner.
+**Chrome:** consume `ScriptHost`, `ScriptMenuBuilder`, `ScriptEventBus`, `ScriptEditorView`, the trust store, and the assistant of `D03 T19 §10`. Do not add a Pinxit script runner.
 
 **Requires:** display-session -- the Scripts menu, the events dialog, and the workspace captures need an interactive desktop
 
@@ -139,7 +139,7 @@ GIMP describes everything it can do in a procedure database, browsed by name, de
 
 **Fidelity:** Pinxit Procedure Browser, Plug-in Browser, GEGL Graph dialog, and generated procedure dialogs -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/pinxit/procedures/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/TextBox/README.md, docs/design/components/Tabs/README.md, docs/design/components/NumberBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Checkbox/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** an Pinxit user or extension author finds any procedure by what it does and runs it with a generated dialog. Consumer: `ProcedureRegistry` consumers (menus, scripts, the MCP server) and the dialogs it generates.
+**Job:** a Pinxit user or extension author finds any procedure by what it does and runs it with a generated dialog. Consumer: `ProcedureRegistry` consumers (menus, scripts, the MCP server) and the dialogs it generates.
 **Treatment:** GIMP's Procedure Browser (search by name, description, help, author, copyright, date, type; parameter and return tables), the Plug-in Browser (list and tree views of menu locations), the GEGL Graph dialog (a text pipeline with a live preview), and auto dialogs for declared parameters. Cheaper substitute that fails the checkpoint: a static help page of commands, which the registry-count test catches.
 **Chrome:** consume `ProcedureRegistry`, `ScriptHost`, `ScriptEditorView`'s console, `AutomationServer`, `ExtensionHost`, the `D03 T14 §8` operation registry, and the `D03 T14 §12` filter module loader. Do not add a second filter registry.
 
@@ -170,9 +170,9 @@ Photoshop's UXP panels, Generator, and remote connections, and Affinity's MCP se
 
 **Fidelity:** Pinxit MCP permissions page and extension panels -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/pinxit/extensions/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/ToggleSwitch/README.md, docs/design/components/Panel/README.md, docs/design/components/Toast/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** an Pinxit user lets a trusted AI agent or extension work on the open document, and sees and revokes what it may do. Consumer: MCP clients and extensions reading tool results, and the document they edit.
+**Job:** a Pinxit user lets a trusted AI agent or extension work on the open document, and sees and revokes what it may do. Consumer: MCP clients and extensions reading tool results, and the document they edit.
 **Treatment:** Edit, Preferences, Automation with the server switch and the five permission switches, the per-session approval prompt naming the client and category, and extension panels docked like built-in panels. Cheaper substitute that fails the checkpoint: a server with no permission categories, which the denied-category test catches.
-**Chrome:** consume `AutomationServer`, `McpBridge`, the permissions page of `D01 T10 §6`, `ExtensionHost`, and the dock of `D01 T01 §8`. Do not add an Pinxit server or loader.
+**Chrome:** consume `AutomationServer`, `McpBridge`, the permissions page of `D01 T10 §6`, `ExtensionHost`, and the dock of `D01 T01 §8`. Do not add a Pinxit server or loader.
 
 **Requires:** display-session -- the approval prompt, the permissions page, and the extension panel captures need an interactive desktop
 
@@ -197,9 +197,9 @@ Photoshop's File, Automate, Batch and droplets, its Image Processor script, Affi
 
 **Fidelity:** Pinxit Batch options, Image Processor, and batch progress -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/pinxit/batch/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/TextBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/RadioButton/README.md, docs/design/components/Progress/README.md, docs/design/components/Toast/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** an Pinxit user processes a folder of images through an action or a conversion without opening each one. Consumer: the written files and the batch report.
+**Job:** a Pinxit user processes a folder of images through an action or a conversion without opening each one. Consumer: the written files and the batch report.
 **Treatment:** File, Automate (Batch, Create Droplet, and the non-batch items that open their own sections' dialogs) and File, Scripts, Image Processor with Photoshop's four numbered groups; the progress panel lists files, status, and elapsed time with Cancel. Cheaper substitute that fails the checkpoint: a sequential loop opening each file in a window, which the headless test catches.
-**Chrome:** consume `BatchRunner`, `ActionBatchOperation`, `BatchDialogView`, `DropletWriter`, `CommandLineParser`, `TokenEngine`, the `D03 T18 §1` writers, and the develop engine for RAW. Do not add an Pinxit batch engine.
+**Chrome:** consume `BatchRunner`, `ActionBatchOperation`, `BatchDialogView`, `DropletWriter`, `CommandLineParser`, `TokenEngine`, the `D03 T18 §1` writers, and the develop engine for RAW. Do not add a Pinxit batch engine.
 
 **Requires:** display-session -- the dialogs and progress captures need an interactive desktop
 
@@ -228,7 +228,7 @@ Photoshop's data-driven graphics bind layers to variables (visibility, text repl
 
 **Fidelity:** Pinxit Variables dialog (Define and Data Sets pages) -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/pinxit/variables/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/TextBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/RadioButton/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** an Pinxit user produces one image per row of a spreadsheet from a layered template. Consumer: the exported files and the `.pinxit` document that stores the variables.
+**Job:** a Pinxit user produces one image per row of a spreadsheet from a layered template. Consumer: the exported files and the `.pinxit` document that stores the variables.
 **Treatment:** Image, Variables, Define (layer, variable kind, name, pixel replacement method and alignment) and Data Sets (set picker with previous and next, per-variable values, import, export, apply), with File, Export, Data Sets as Files. Cheaper substitute that fails the checkpoint: a find-and-replace of text layers, which the pixel-replacement test catches.
 **Chrome:** consume the text layers of `D03 T16 §1`, the layer model of `D03 T09 §1`, `BatchRunner`, `TokenEngine`, and the `D03 T18 §1` writers. Do not add a second export loop.
 

@@ -37,7 +37,7 @@ track: I5
 - Gaussian blur, box blur, and unsharp mask match reference goldens within stated tolerances; the remaining filter menu items are disabled with tooltips naming their roadmap section.
 - The filter pipeline is the internal contract `IFilterPlugin` will expose to plugins later.
 
-**Adjacency:** list=not-applicable (no browsable records); document=not-applicable (no printed output); settings=applicable @ D03 T05 §1; reporting=applicable; notifications=applicable; permissions=not-applicable (no files written); audit=applicable; exchange=not-applicable (no formats); reverse=applicable @ D03 T05 §1
+**Adjacency:** list=not-applicable (no browsable records); document=not-applicable (no printed output); settings=applicable @ D03 T05 §1; reporting=applicable @ D03 T05 §2; notifications=applicable @ D03 T05 §1; permissions=not-applicable (no files written); audit=applicable @ D03 T05 §1; exchange=not-applicable (no formats); reverse=applicable @ D03 T05 §1
 
 **Adjacency rationale:** Last-used filter parameters persist as settings; the levels and curves histograms are the reporting surface; progress and completion show in the status strip; every applied filter logs and undoes.
 

@@ -635,6 +635,7 @@ Natural strokes need the stylus. This section extends §16's engine with scatter
 - [ ] Record the stylus trace fixture from a real pen device with its device name in the folder README. Done when: the README names the device and date.
 - [ ] Commit `tests/fixtures/stilus/svg/scatter-calligraphic.svg` with its Inkscape 1.4 fallback golden. Done when: the fixture README lists it.
 - [ ] Update `docs/user/stilus/brushes.md` with scatter, calligraphic, image, expression, Paintbrush, and Blob Brush. Done when: every option is documented.
+- [ ] Each Paintbrush, Blob Brush, sprayer, and calligraphic stroke is one history entry (a Blob Brush merge included) with one Information line (**Groomed 2026-09-28:**). Done when: tests undo each and restore the pre-stroke document exactly.
 - [ ] Commit: `"stilus: scatter, calligraphic, image, and expression brushes, the Paintbrush, and the Blob Brush"`
 
 **Test checkpoint:** Unit test and format fidelity proof: `dotnet test Isotone.slnx --filter "FullyQualifiedName~ScatterBrush|FullyQualifiedName~StylusInput|FullyQualifiedName~BlobBrush|FullyQualifiedName~CalligraphicBrush|FullyQualifiedName~PaintbrushTool"` exits 0 over the committed recorded stylus trace (`tests/fixtures/stilus/input-traces/stylus-trace.json`) asserting widths and unions, and `tests/fixtures/stilus/svg/scatter-calligraphic.svg` round-trips element by element. Cheaper substitute that fails: ignoring pressure, which the trace width assertions reject.
@@ -801,7 +802,7 @@ Spraying many symbol instances and then sculpting them as one set is Illustrator
 
 - [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
 - [ ] `dotnet test Isotone.slnx --filter "Category=Fidelity"` passes every SVG, palette, fill, style, and brush fixture this file adds, with each Inkscape, Krita, or GIMP golden's version recorded
-- [ ] Every capture named in a Fidelity line exists under `docs/captures/stilus/`, and every user guide page named in a section exists under `docs/user/stilus/`
+- [ ] Every capture named in a Fidelity line exists under `docs/captures/stilus/`, and every user guide page named in a section exists under `docs/user/stilus/` **Corrected 2026-09-28:** every golden named in a Fidelity line exists under `docs/captures/golden/stilus/` (approved through review); driven-run captures under `docs/captures/stilus/` stay proof 4 evidence only.
 - [ ] No licensed color book, PANTONE data, Adobe Substance material, or Corel content ships in the app resources (a resources README audit)
 - [ ] B-003 and B-010 are gone from `todo/backlog.md`, and §3 and §16 carry their source keys
 - [ ] The picker is still Stilus-local, or it moved to `Isotone.UI` in the same commit as `D03 T03 §8`

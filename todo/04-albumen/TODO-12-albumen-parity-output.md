@@ -29,7 +29,7 @@ track: L12
 - Lightroom Classic 15.5.1 help: Export, Publish Services, Print, Slideshow, Web, and Book modules; ACDSee Photo Studio Ultimate 2027 guide: Print, Contact Sheet, Slideshow, Create PDF, Create PPT, HTML Album, Send Email; IrfanView 4.76 help: Print dialog, Create Contact Sheet, HTML export, Save as PDF, Send by email
 - PDF 1.7 (ISO 32000-1) with PdfPig as the read-back oracle and qpdf `--check`; ECMA-376 (Office Open XML) with the DocumentFormat.OpenXml `OpenXmlValidator`; the W3C Nu HTML Checker (`vnu.jar`) as the HTML oracle; exiftool 13 for metadata read-back; Adobe DNG SDK `dng_validate` as an oracle only
 - Microsoft Learn: IMAPI2 (`IDiscMaster2`, `IDiscFormat2Data`), Simple MAPI `MAPISendMailW`, `System.Net.Mail.SmtpClient`, `ProtectedData` (DPAPI)
-- [`todo/backlog.md`](../backlog.md) -- B-035 (`albumen-roadmap-print`) is promoted into §4 and leaves the backlog in the integration commit; B-049 (self-running slideshows) stays deferred, and the former B-043 (video) is `D04 T16`
+- [`todo/backlog.md`](../backlog.md) -- B-035 (`albumen-roadmap-print`) is promoted into §4 (**Corrected 2026-09-28:** it left the backlog in the 2026-09-27 integration); B-049 (self-running slideshows) stays deferred, and the former B-043 (video) is `D04 T16`
 - -> XREF: D04 T02 §6 -- the export runner, dialog, and presets that §1, §2, and §13 extend
 - -> XREF: D04 T02 §7 -- stacking of exported files beside the original, reused by §13
 - -> XREF: D04 T02 §8 -- Albumen 0.1.0, which every section here follows
@@ -77,7 +77,7 @@ track: L12
 
 **Adjacency:** list=applicable @ D04 T12 §13; document=applicable @ D04 T12 §4; settings=applicable @ D04 T12 §1; reporting=applicable @ D04 T12 §13; notifications=applicable @ D04 T12 §13; permissions=applicable @ D04 T12 §1; audit=applicable @ D04 T12 §1; exchange=applicable @ D04 T12 §2; reverse=applicable @ D04 T12 §3
 
-**Adjacency rationale:** The lists are export presets (§13), print templates (§5), slideshow templates (§7), web templates (§9), published collections (§3), and book pages (§10), each with add, update, remove, import, and export. Exports, prints (§4, §5), PDFs and PPTX files (§11), galleries (§9), and books (§10) are the documents users carry. Every option is a `Albumen.Output.*` key or a saved preset read by its runner (§1 and every section after it). Reporting is the export summary and AI results warning (§13), the publish state counts (§3), and the print preview (§4). Background export, publish, upload, and burn jobs report through the Activity Manager of `D04 T11 §1` with a completion notification (§13, §3, §9). Read-only destinations, an original's own path, missing printers, missing mail clients, and failed FTP logins are refused by name (§1, §4, §12, §9). One Serilog Information line per export, print job, publish, upload, email, and generated document is the audit trail (§1 onward). Exchange is PDF, PPTX, HTML, JPEG, DNG, AVIF, JPEG XL, PSD, and template import and export (§2, §9, §11). A cancelled output leaves no partial file, republish replaces only published copies (§3), and nothing an output does touches an original.
+**Adjacency rationale:** The lists are export presets (§13), print templates (§5), slideshow templates (§7), web templates (§9), published collections (§3), and book pages (§10), each with add, update, remove, import, and export. Exports, prints (§4, §5), PDFs and PPTX files (§11), galleries (§9), and books (§10) are the documents users carry. Every option is an `Albumen.Output.*` key or a saved preset read by its runner (§1 and every section after it). Reporting is the export summary and AI results warning (§13), the publish state counts (§3), and the print preview (§4). Background export, publish, upload, and burn jobs report through the Activity Manager of `D04 T11 §1` with a completion notification (§13, §3, §9). Read-only destinations, an original's own path, missing printers, missing mail clients, and failed FTP logins are refused by name (§1, §4, §12, §9). One Serilog Information line per export, print job, publish, upload, email, and generated document is the audit trail (§1 onward). Exchange is PDF, PPTX, HTML, JPEG, DNG, AVIF, JPEG XL, PSD, and template import and export (§2, §9, §11). A cancelled output leaves no partial file, republish replaces only published copies (§3), and nothing an output does touches an original.
 
 ## Implementation Order
 
@@ -95,7 +95,7 @@ track: L12
 |  10   |   §9    | Web galleries | D04 T11 §2 |  [ ]   |
 |  11   |   §10   | Books | §4 |  [ ]   |
 |  12   |   §11   | PDF and PowerPoint creation | §4 |  [ ]   |
-|  13   |   §12   | Email and local sharing | §1 |  [ ]   |
+|  13   |   §12   | Email and local sharing | §1, §9 |  [ ]   |
 
 ---
 
@@ -450,7 +450,7 @@ A user emails a few photos at a sensible size without leaving Albumen, or sends 
 
 **Requires:** display-session -- the mail client hand-off needs an interactive desktop
 
-**Freeze check:** Attachments are rendered as new files into a Albumen temp folder under `%LOCALAPPDATA%\Rizonesoft\Albumen\Temp\Email\`, never beside or over an original; the cleanup deletes only files in that folder that the email job itself created. Fixture source: `tests/fixtures/albumen/export/`.
+**Freeze check:** Attachments are rendered as new files into an Albumen temp folder under `%LOCALAPPDATA%\Rizonesoft\Albumen\Temp\Email\`, never beside or over an original; the cleanup deletes only files in that folder that the email job itself created. Fixture source: `tests/fixtures/albumen/export/`.
 
 - [ ] Add `src/Albumen/Isotone.Albumen.Core/Output/Share/EmailAttachmentPlanner.cs` (LP-0869): long edge and total size limits met by downscaling through §1, and convert to JPEG. Done when: `EmailAttachmentPlannerTests` meet a 5 MB total for ten 24-megapixel photos. Cheaper substitute: attaching originals, which the size-limit test catches.
 - [ ] Add `MapiSender` calling `MAPISendMailW` with the attachments and `MAPI_DIALOG` so the user's client opens the message (LP-0867, LP-0868, LP-0971). Done when: `MapiSenderTests` with a fake MAPI entry point assert the attachment paths and recipients.

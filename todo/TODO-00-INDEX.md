@@ -22,14 +22,14 @@ Domains are numbered in **allocation order**. `DNN TNN §N` cross-references enc
 
 | No. | Domain | Phase | Purpose |
 | :-: | ------ | :---: | ------- |
-| 00 | [Workspace](./00-workspace/INDEX.md) | 0, 2 | Toolchain, solution, gates, CI, the TODO system, import debt, and visual baselines. |
+| 00 | [Workspace](./00-workspace/INDEX.md) | 0-3 | Toolchain, solution, gates, CI, the TODO system, import debt, and visual baselines. |
 | 01 | [Core](./01-core/INDEX.md) | 2, 3, 6, 9, 10, 12, 13, 15, 21-23, 36, 42-44 | `Isotone.Core` (non-UI services) and `Isotone.UI` (the WPF house style), each filled only when two apps need it, plus the pixel engine, color management, and the AI core the operator placed there for the Stilus parity phases, and the pixel engine extensions and the develop engine the Pinxit parity phases add, and the suite automation, media, on-device model, and GPU develop systems of the post-release phases. |
 | 02 | [Stilus](./02-stilus/INDEX.md) | 1, 2, 3, 4-13, 41, 42 | The vector editor: rename, foundation, 0.1.0, then parity with Illustrator 30.8 and CorelDRAW 2026 through 1.0.0, then imports on shared decoders and automation after the first release. |
 | 03 | [Pinxit](./03-pinxit/INDEX.md) | 1, 14, 15, 16-27, 41, 42-44 | The raster editor: rename, WPF-UI removal, rendering, 0.1.0, then parity with Photoshop 27.10, Affinity 3.3, and GIMP 3.2.6 through 1.0.0, then RAW import once Albumen's decoder is shared, then automation, video and animation, and on-device models after the first release. |
 | 04 | [Albumen](./04-albumen/INDEX.md) | 28-39, 42-45 | The darkroom and photo library: planned from nothing, 0.1.0, then parity with Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76 through 1.0.0 (a fast default viewer, browsing without importing, batch tools), ending with accessibility, then automation, video and audio, on-device models, and the remaining formats after the first release. |
 | 05 | [Release](./05-release/INDEX.md) | 3, 39, 40, 45 | Clean-machine proof, signing, arm64, the update check, winget, and the suite bundle. |
 | 06 | [Docs](./06-docs/INDEX.md) | 3, 15, 29, 40 | User guides, developer docs that stay true to the tree, and the documentation site. |
-| 99 | [Manual](./99-manual/INDEX.md) | 99 | Operator-only steps: repository settings, the signing certificate, icon licenses, accent colors. |
+| 99 | [Manual](./99-manual/INDEX.md) | 99 | Operator-only steps: repository settings, the signing certificate, the icon license and accent confirmations, the copyright assignment, trademarks, the CLA decision, download storage, and the product pages. |
 
 `99-manual` is numbered apart from the allocation sequence on purpose, as ScratchPad's is: it is the operator's phase, not a build area, and a new build domain still appends after `06`.
 

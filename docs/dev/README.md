@@ -28,7 +28,7 @@ pwsh scripts/package.ps1 -App Stilus   # installer and portable ZIP for one app
 - **Stilus** lives in `src/Stilus/` (projects still named `Bezier.*` from its origin until `D02 T01 §1`). Standards: [`standards/stilus.md`](../../standards/stilus.md).
 - **Pinxit** lives in `src/Pinxit/`. Standards: [`standards/pinxit.md`](../../standards/pinxit.md).
 - **Albumen** is planned and will live in `src/Albumen/`. Standards: [`standards/albumen.md`](../../standards/albumen.md).
-- The original Bezier and Pinxit roadmaps are kept for reference in [`docs/legacy/`](../legacy/README.md).
+- The original Bezier and Imago roadmaps (the apps now named Stilus and Pinxit) are kept for reference in [`docs/legacy/`](../legacy/README.md).
 
 ## Planned
 

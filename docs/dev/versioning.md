@@ -51,7 +51,7 @@ The suite bundle (`package.ps1 -Suite`) passes the `isotone-v` version to every 
 
 ## Suite and per-app releases
 
-Per-app tags (`stilus-v*`, `pinxit-v*`) release one app: `release.yml` runs `package.ps1 -App <App>` and publishes only that app's installer, portable ZIP, and `SHA256SUMS` (to `download.rizonesoft.com`, never attached to the GitHub release). It never builds or needs the suite installer. A `isotone-v*` tag releases the Isotone Graphics Suite: `package.ps1 -Suite` builds `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, one component per shipping app) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
+Per-app tags (`stilus-v*`, `pinxit-v*`) release one app: `release.yml` runs `package.ps1 -App <App>` and publishes only that app's installer, portable ZIP, and `SHA256SUMS` (to `download.rizonesoft.com`, never attached to the GitHub release). It never builds or needs the suite installer. An `isotone-v*` tag releases the Isotone Graphics Suite: `package.ps1 -Suite` builds `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, one component per shipping app) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
 
 The toolchain is not a version input: moving the SDK pin (today the .NET 11 release candidate, GA through `D00 T02 §8`) changes no app's version. Only tags do.
 

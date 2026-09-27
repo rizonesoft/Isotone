@@ -2,15 +2,15 @@
 
 Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, merged into Stilus features, each with exactly one status. The sources are [`sources/illustrator-30.8.md`](sources/illustrator-30.8.md) and [`sources/coreldraw-2026.md`](sources/coreldraw-2026.md); the status grammar and the update rules are in [`README.md`](README.md); the sections that own `plan` rows are designed in [`section-design.md`](section-design.md).
 
-**Totals (2026-09-26):** 2,802 features covering 1,294 Illustrator rows and 3,041 CorelDRAW rows (4,335 in all); every source id appears in exactly one row. Updated 2026-09-26 (Pinxit parity decision): the eleven automation rows moved from `excluded` to the suite-wide backlog entries B-041 (scripting and macros) and B-042 (batch processing), deferred to after the first release rather than excluded. Updated 2026-09-27 (operator decision "Group 1: plan them all"): the 37 rows that pointed at B-012 and B-037 to B-040 are planned (legacy formats and camera RAW in `D02 T18`, 3D in PDF in `D02 T13 §17`, third-party plug-in filters in `D02 T12 §10`). Updated 2026-09-27 (operator decision to plan the work deferred to after the first release as real sections, because the operator worried "features will be left behind"): the eleven automation rows are planned in `D02 T19` (the Stilus object model, actions, scripts, and batch) on the suite automation of `D01 T10`, released as `stilus-v1.2.0` in Phase 42.
+**Totals (2026-09-26):** 2,802 features covering 1,294 Illustrator rows and 3,041 CorelDRAW rows (4,335 in all); every source id appears in exactly one row. Updated 2026-09-26 (Pinxit parity decision): the eleven automation rows moved from `excluded` to the suite-wide backlog entries B-041 (scripting and macros) and B-042 (batch processing), deferred to after the first release rather than excluded. Updated 2026-09-27 (operator decision "Group 1: plan them all"): the 37 rows that pointed at B-012 and B-037 to B-040 are planned (legacy formats and camera RAW in `D02 T18`, 3D in PDF in `D02 T13 §17`, third-party plug-in filters in `D02 T12 §10`). Updated 2026-09-27 (operator decision to plan the work deferred to after the first release as real sections, because the operator worried "features will be left behind"): the eleven automation rows are planned in `D02 T19` (the Stilus object model, actions, scripts, and batch) on the suite automation of `D01 T10`, released as `stilus-v1.2.0` in Phase 42. Updated 2026-09-28 (groom): NP-2790, the double-click that opens a bitmap in Pinxit, is planned in `D02 T12 §7`, since the gesture happens in Stilus.
 
 | Status | Features | Source rows |
 | ------ | -------: | ----------: |
-| `plan` | 2,691 | 4,062 |
+| `plan` | 2,692 | 4,063 |
 | `shipped-scope` | 69 | 150 |
 | `backlog` | 0 | 0 |
 | `excluded` | 24 | 105 |
-| `other-app` | 18 | 18 |
+| `other-app` | 17 | 17 |
 | **Total** | **2,802** | **4,335** |
 
 ## Areas
@@ -3050,9 +3050,9 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2787 | Glass effect on an editable area | -- | CD-2119 | companion | other-app: Pinxit PHOTO-PAINT effect needing an editable area or mask is raster editing, Pinxit's job |  |
 | NP-2788 | Mask-edge emboss effect (The Boss) | -- | CD-2123 | companion | other-app: Pinxit PHOTO-PAINT effect needing an editable area or mask is raster editing, Pinxit's job |  |
 | NP-2789 | Bokeh blur outside an editable area | -- | CD-2147 | companion | other-app: Pinxit PHOTO-PAINT effect needing an editable area or mask is raster editing, Pinxit's job |  |
-| NP-2790 | Double-click bitmap to edit in raster editor | -- | CD-2888 | companion | other-app: Pinxit double-click round-trip editing of bitmaps in a raster editor is Pinxit's job |  |
+| NP-2790 | Double-click bitmap to edit in raster editor | -- | CD-2888 | companion | plan D02 T12 §7 | the double-click gesture is Stilus's; editing the pixels is Pinxit's |
 | NP-2791 | Standalone font manager | -- | CD-3030 | companion | other-app: none standalone font manager outside the suite's scope |  |
-| NP-2792 | Round-trip bitmap editing in a raster editor | -- | CD-3031 | companion | other-app: Pinxit Corel PHOTO-PAINT bitmap round-trip editing is Pinxit's job |  |
+| NP-2792 | Round-trip bitmap editing in a raster editor | -- | CD-3031 | companion | other-app: Pinxit the Stilus side is NP-1823 (`D02 T12 §7`); editing the pixels is Pinxit's |  |
 | NP-2793 | Raster image editor | -- | CD-3032 | companion | other-app: Pinxit Corel PHOTO-PAINT raster editing is Pinxit's job |  |
 | NP-2794 | Mask from subject | -- | CD-3033 | companion | other-app: Pinxit PHOTO-PAINT subject masking is Pinxit's job |  |
 | NP-2795 | Quick AI image generation in the raster editor | -- | CD-3034 | companion | other-app: Pinxit PHOTO-PAINT AI image generation is Pinxit's job |  |

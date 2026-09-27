@@ -38,7 +38,7 @@ track: I7
 - Every disabled "Planned" menu item from 0.1.0 that names a section of this file is working when this file closes.
 - Pinxit meets a written, measured performance budget on a 100-megapixel, 50-layer document (open, paint, composite, filter, save, memory, cold start), and a gate fails on regression.
 
-**Adjacency:** list=applicable; document=not-applicable (printing arrives with the Pinxit parity phases in D03 T18 §6); settings=applicable @ D03 T07 §17; reporting=applicable; notifications=applicable; permissions=not-applicable (file refusals are owned by the format sections in D03 T04); audit=applicable; exchange=applicable; reverse=applicable @ D03 T07 §17
+**Adjacency:** list=applicable; document=not-applicable (printing arrives with the Pinxit parity phases in D03 T18 §6); settings=applicable @ D03 T07 §17; reporting=applicable; notifications=applicable @ D03 T05 §1; permissions=not-applicable (file refusals are owned by the format sections in D03 T04); audit=applicable; exchange=applicable; reverse=applicable @ D03 T07 §17
 
 **Adjacency rationale:** The workspace and Preferences work is the settings and list surface; filter parity and RAW open results are reporting; long filters and RAW opens notify through the status strip; every edit is logged and undoable.
 
@@ -76,7 +76,7 @@ Albumen decodes RAW (`D04 T01 §4`). The day Pinxit imports RAW, the decoder ada
 - [ ] Enable `File, Open RAW into Develop` and RAW layer sources, removing the `Planned: D03 T07 §11` entry `D03 T15 §12` registered in `PlannedCommands`, and register camera RAW with the focus-merge and astro frame loaders that refuse it by name until now (`D03 T15 §9`, `D03 T15 §10`). Done when: `MenuAuditTests` pass with no item planned to this section and a test loads a camera RAW fixture as a focus-merge source.
 - [ ] Commit: `"core: share the RAW decoder; Pinxit opens RAW files"`
 
-**Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the moved decoder tests, an Pinxit RAW open test through the Develop studio, and `MenuAuditTests` reporting; `grep -rn "class .*RawDecoder" src` prints one path under `src/Isotone.Core/`. Cheaper substitute that fails: Pinxit referencing Albumen's assembly.
+**Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the moved decoder tests, a Pinxit RAW open test through the Develop studio, and `MenuAuditTests` reporting; `grep -rn "class .*RawDecoder" src` prints one path under `src/Isotone.Core/`. Cheaper substitute that fails: Pinxit referencing Albumen's assembly.
 
 ## 16. Accessibility and Localization
 
@@ -104,7 +104,7 @@ Saved panel layouts, a Preferences dialog over every Pinxit setting, and shortcu
 **Requires:** display-session -- the dialog needs an interactive desktop
 
 - [ ] Workspaces and Preferences with a test that every setting key has a control, Cancel reverting an edit, and Reset to Defaults restoring every value. Done when: the tests pass.
-- [ ] Enable File, Preferences and remove its planned entry. Done when: `MenuAuditTests` passes.
+- [ ] Enable Edit, Preferences and remove its planned entry (**Corrected 2026-09-28:** said File, Preferences; `MainWindow.xaml` puts `_Preferences...` under `_Edit`). Done when: `MenuAuditTests` passes.
 - [ ] Commit: `"pinxit: workspaces and a Preferences dialog"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the preferences tests reporting. Cheaper substitute that fails: hand-edited JSON.

@@ -224,7 +224,7 @@ Isotone.UI/
 - `ThemeService` swaps the brightness dictionary in `Application.Resources.MergedDictionaries` (index 1); `HighlightService` swaps the Highlight overlay after it (`Highlight.Blue.xaml`, `Highlight.Orange.xaml`, or a dictionary built at runtime from the Windows accent); `DensityService` swaps `Density.Compact.xaml` or `Density.Comfortable.xaml`, which point the neutral keys (`control-h`, `row-h`, `menu-row-h`...) at the `-compact` or `-comfortable` values.
 - Each app sets `Isotone.App.Accent`, `AccentHover` and `AccentOn` to its `accent-<app>` brushes once at startup.
 - Implicit styles cover every stock control a surface uses (Button, ToggleButton, RepeatButton, CheckBox, RadioButton, TextBox, PasswordBox, ComboBox, ListBox, ListView, TreeView, TabControl, Menu, ContextMenu, ToolTip, ScrollBar, ScrollViewer, Slider, ProgressBar, StatusBar, Expander, GridSplitter); `FocusVisualStyle` is `{x:Null}` everywhere and templates draw the Isotone focus ring.
-- AvalonDock gets a Isotone theme built from the same keys. No WPF-UI or other control framework.
+- AvalonDock gets an Isotone theme built from the same keys. No WPF-UI or other control framework.
 - A surface never hardcodes a color, size or spacing that a token names; `tokens.json` in this system is the source for the XAML dictionaries.
 
 ## What changed from Bezier

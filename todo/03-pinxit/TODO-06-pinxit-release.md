@@ -34,7 +34,7 @@ track: I6
 - A `MenuAuditTests` for Pinxit proves every menu item works or names a resolvable section.
 - `pinxit-v0.1.0` is a published GitHub release, its files served from `https://download.rizonesoft.com/pinxit/0.1.0/` and linked from its body, that passes the checklist in `standards/release.md`.
 
-**Adjacency:** list=applicable @ D03 T06 §1; document=not-applicable (nothing printed here); settings=not-applicable (no new settings); reporting=applicable; notifications=not-applicable (no long operations); permissions=not-applicable (nothing written); audit=not-applicable (no document changes); exchange=not-applicable (no formats); reverse=not-applicable (no edits)
+**Adjacency:** list=applicable @ D03 T06 §1; document=not-applicable (nothing printed here); settings=not-applicable (no new settings); reporting=applicable @ D03 T06 §1; notifications=not-applicable (no long operations); permissions=not-applicable (nothing written); audit=not-applicable (no document changes); exchange=not-applicable (no formats); reverse=not-applicable (no edits)
 
 **Adjacency rationale:** The shortcuts dialog is the searchable list and the About dialog is the app's report about itself, both shared with Stilus through `Isotone.UI`.
 
@@ -54,7 +54,7 @@ track: I6
 
 **Fidelity:** Pinxit Help menu, About, and Shortcuts dialogs -- docs/design/components/ (Menu, Dialog, ListTree, AppIcon, TextBox), per standards/design-contract.md; goldens under docs/captures/golden/pinxit/about/, docs/captures/golden/pinxit/shortcuts/. **Corrected 2026-09-27:** this line cited `docs/captures/pinxit/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
 **Design:** docs/design/components/Menu/README.md, docs/design/components/Dialog/README.md, docs/design/components/ListTree/README.md, docs/design/components/AppIcon/README.md, docs/design/components/TextBox/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** an Pinxit user can reach help, shortcuts, and version information. Consumer: the user.
+**Job:** a Pinxit user can reach help, shortcuts, and version information. Consumer: the user.
 **Treatment:** Help, Documentation (F1) opens `https://github.com/rizonesoft/Isotone/blob/main/docs/user/pinxit/README.md`; Keyboard Shortcuts shows the Pinxit keymap (`D03 T03 §4`); About shows Pinxit's identity and generated credits; Check for Updates disabled with `Planned: D05 T01 §4`. Cheaper substitute that fails the checkpoint: log-only Help commands.
 **Chrome:** consume `Isotone.UI` `AboutDialog` and `ShortcutsDialog`, `AppIdentity`, and a credits list generated the way Stilus's is. Do not copy the dialogs.
 
@@ -72,13 +72,13 @@ The surface-completeness rule applies to Pinxit's menus as it did to Stilus's (`
 
 **Fidelity:** Pinxit menu bar and every menu -- docs/design/components/ (Menu, WindowChrome, Tooltip) and the Pinxit (raster) region of docs/design/shell-layout.md, per standards/design-contract.md; goldens under docs/captures/golden/pinxit/main-window/. **Corrected 2026-09-27:** this line cited `docs/captures/pinxit/` folders as the baseline or capture target; the design is the source and approved renders land as goldens (standards/design-contract.md), and a legacy capture is a before record only, never the thing to match.
 **Design:** docs/design/components/Menu/README.md, docs/design/components/WindowChrome/README.md, docs/design/components/Tooltip/README.md, docs/design/shell-layout.md#pinxit-raster -- states: all in spec -- themes: all four -- density: both
-**Job:** an Pinxit user never clicks a menu item that silently does nothing. Consumer: the user.
-**Treatment:** a `PlannedCommands` table and an Pinxit `MenuAuditTests` enumerating every `MenuItem`, as in Stilus. Cheaper substitute that fails the checkpoint: hiding unfinished items.
+**Job:** a Pinxit user never clicks a menu item that silently does nothing. Consumer: the user.
+**Treatment:** a `PlannedCommands` table and a Pinxit `MenuAuditTests` enumerating every `MenuItem`, as in Stilus. Cheaper substitute that fails the checkpoint: hiding unfinished items.
 **Chrome:** consume the pattern Stilus built; if the helper is identical, move it to `Isotone.UI` in this section and have both apps consume it.
 
 **Requires:** display-session -- the driven pass over every menu item needs an interactive desktop
 
-- [ ] Classify every remaining log-only command (Preferences, Export, Cut, Copy, Paste, and any the audit finds) as wired here or planned with a section (clipboard is small enough to wire now through the Windows clipboard as PNG plus an internal format). Done when: `grep -n "_logger.Information(\"Opening" src/Pinxit/Isotone.Pinxit.Desktop/ViewModels` finds no command whose whole body logs.
+- [ ] Classify every remaining log-only command (Preferences, Export, Cut, Copy, Paste, and any the audit finds) as wired here or planned with a section (clipboard is small enough to wire now through the Windows clipboard as PNG plus an internal format). Done when: `grep -nE "\"(Opening |[A-Za-z ]+ requested|[A-Za-z ]+ dialog for)" src/Pinxit/Isotone.Pinxit.Desktop/ViewModels` finds no command whose whole body logs (**Corrected 2026-09-28:** the old grep missed the Cut, Copy, Paste, Export, and Save As stubs).
 - [ ] Add `MenuAuditTests` for Pinxit. Done when: it fails on a stub without a planned tooltip.
 - [ ] Commit: `"pinxit: every menu command works or names the section that builds it"`
 
