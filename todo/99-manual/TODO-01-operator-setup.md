@@ -71,6 +71,8 @@ depends_on: []
 
 The About bar is the repository's first impression and the social preview is its face in every link. Both need the owner's logged-in session.
 
+-> XREF: D00 T01 §10 -- the drift gates: once they ship, the description and topics are the values in `docs/facts.json`, applied with `python scripts/drift-check.py --sync-github` and checked in CI
+
 **Corrected 2026-09-27:** the operator uploaded the social preview (`resources/brand/social-preview.jpg`) on 2026-09-27, so its item is now a verification of the upload rather than the click path; the description and topics are still owed.
 
 - [ ] Set the description. Done when: the repository page shows it under the name.
