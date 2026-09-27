@@ -20,4 +20,4 @@ One keyboard focus indicator for the whole suite: a 2px solid `focus-ring` strok
 
 ## WPF
 
-Set `FocusVisualStyle="{x:Null}"` in every Photon style and draw the ring in the template (`Border PART_FocusRing`, `Margin="-3"`, `BorderThickness="2"`, `CornerRadius` = element radius + 2), shown by a trigger on `IsKeyboardFocused` (`IsKeyboardFocusWithin` for composite controls) combined with the attached `Photon.Focus.IsKeyboardInitiated`, which tracks the last input device through `InputManager.Current.PreNotifyInput`.
+Set `FocusVisualStyle="{x:Null}"` in every Isotone style and draw the ring in the template (`Border PART_FocusRing`, `Margin="-3"`, `BorderThickness="2"`, `CornerRadius` = element radius + 2), shown by a trigger on `IsKeyboardFocused` (`IsKeyboardFocusWithin` for composite controls) combined with the attached `Isotone.Focus.IsKeyboardInitiated`, which tracks the last input device through `InputManager.Current.PreNotifyInput`.

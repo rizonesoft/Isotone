@@ -1,6 +1,6 @@
 # Layers row
 
-The Layers panel row (Imago; Nodus uses the same row for objects): visibility eye, thumbnail, optional linked mask, name, trailing badges, over the blend mode and opacity controls.
+The Layers panel row (Pinxit; Stilus uses the same row for objects): visibility eye, thumbnail, optional linked mask, name, trailing badges, over the blend mode and opacity controls.
 
 ## Anatomy
 
@@ -29,4 +29,4 @@ Alt+[ and Alt+] move the selection down and up; Ctrl+[ and Ctrl+] move the layer
 
 ## WPF
 
-`ListBox` (or `TreeView` for groups) with `ItemTemplate` `Photon.LayerRowTemplate`: a `Grid` with columns 28 | Auto | Auto | * | Auto. The thumbnail is an `Image` over a `DrawingBrush` checkerboard (`TileMode="Tile"`, `Viewport="0,0,8,8"` absolute). Thumbnails render off the UI thread at the row's device pixel size. The eye is a `ToggleButton` with `Focusable` true and `AutomationProperties.Name` "Show layer" / "Hide layer".
+`ListBox` (or `TreeView` for groups) with `ItemTemplate` `Isotone.LayerRowTemplate`: a `Grid` with columns 28 | Auto | Auto | * | Auto. The thumbnail is an `Image` over a `DrawingBrush` checkerboard (`TileMode="Tile"`, `Viewport="0,0,8,8"` absolute). Thumbnails render off the UI thread at the row's device pixel size. The eye is a `ToggleButton` with `Focusable` true and `AutomationProperties.Name` "Show layer" / "Hide layer".

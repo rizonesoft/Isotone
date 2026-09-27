@@ -11,10 +11,10 @@
 
 ## App or area
 
-- [ ] Nodus
-- [ ] Imago
-- [ ] Lumen
-- [ ] Photon.Core
+- [ ] Stilus
+- [ ] Pinxit
+- [ ] Albumen
+- [ ] Isotone.Core
 - [ ] Installer or packaging
 - [ ] CI, build, or tooling
 - [ ] Documentation

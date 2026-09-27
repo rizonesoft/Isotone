@@ -46,7 +46,7 @@ Pay special attention to:
 
 - "Nothing exists yet" claims that are no longer true.
 - Counts and versions quoted confidently (these age fastest): SDK, package, and target framework versions especially.
-- Paths under `src/Nodus/` and `src/Imago/` that the imports and renames moved.
+- Paths under `src/Stilus/` and `src/Pinxit/` that the imports and renames moved.
 - Deferrals whose descriptions drifted while their owners stayed open.
 - XREFs whose targets moved or shipped (reciprocity still holds, or the line is corrected).
 - **Design lines** (`standards/design-contract.md`): every open section whose Fidelity line names a surface carries a live `**Design:**` line (`python scripts/todo-graph.py query design` counts them; `validate` fails a dead ref). For each section still listed in `todo/.design-baseline`, write its Design line from the specs its surface needs (component READMEs under `docs/design/components/`, `docs/design/shell-layout.md` region anchors, `standards/ui.md` anchors), rewrite any Fidelity line that still names an old-app capture under `docs/captures/<app>/` as its source so it names the design and its golden folder, and shrink the baseline in the same commit with `python scripts/todo-graph.py design-baseline`; the baseline never grows. A surface no spec covers gets `new surface: docs/design/<path>.md` plus the item that writes that spec first. Record each with `**Groomed YYYY-MM-DD:**`.
@@ -54,13 +54,13 @@ Pay special attention to:
 
 ### 3. Gap scan
 
-Read the plan as the user will use each finished app, domain by domain, and ask what has no owner: surfaces, commands, handoffs between apps (Lumen to Imago, Imago to Nodus), error paths, settings without consumers, writes without readback. File each gap with `add-todo` (evidence, owner, dependency), which applies the admission test and stamps the Origin line: a gap becomes a section (or an item on an open section that can hold it) when it is a defect in shipped or in-flight work, something an acceptance-bar aim requires, or a prerequisite of a planned row. Nice-to-haves go to the backlog, where they are kept. Place any new rows in their phases and sync the plan.
+Read the plan as the user will use each finished app, domain by domain, and ask what has no owner: surfaces, commands, handoffs between apps (Albumen to Pinxit, Pinxit to Stilus), error paths, settings without consumers, writes without readback. File each gap with `add-todo` (evidence, owner, dependency), which applies the admission test and stamps the Origin line: a gap becomes a section (or an item on an open section that can hold it) when it is a defect in shipped or in-flight work, something an acceptance-bar aim requires, or a prerequisite of a planned row. Nice-to-haves go to the backlog, where they are kept. Place any new rows in their phases and sync the plan.
 
 Check the Adjacency declarations while here: `python scripts/todo-graph.py query adjacency` advisories that name real gaps become sections; ones that are already covered get their anchors sharpened.
 
 ### 4. Complete-feature pass
 
-For every UI surface in the plan, confirm the feature is whole: list, find, create, edit, delete (or the honest not-applicable), settings with consumers, refusal paths exercised (read-only file, locked file, unsupported format), undo for every edit, and the reverse of every create. For every write to a user's document or library, confirm the atomic save, the readback, the recovery path, and the log line. For every type in `Photon.Core`, confirm at least two apps consume it, and for every pattern duplicated across two apps, confirm a section moves it into `Photon.Core`. File what is missing through `add-todo` (these usually pass the admission test, because the acceptance bar names undo, atomic saves, and shared code), preferring an item on the owning section to a new section; do not redesign what exists.
+For every UI surface in the plan, confirm the feature is whole: list, find, create, edit, delete (or the honest not-applicable), settings with consumers, refusal paths exercised (read-only file, locked file, unsupported format), undo for every edit, and the reverse of every create. For every write to a user's document or library, confirm the atomic save, the readback, the recovery path, and the log line. For every type in `Isotone.Core`, confirm at least two apps consume it, and for every pattern duplicated across two apps, confirm a section moves it into `Isotone.Core`. File what is missing through `add-todo` (these usually pass the admission test, because the acceptance bar names undo, atomic saves, and shared code), preferring an item on the owning section to a new section; do not redesign what exists.
 
 ### 5. Backlog triage
 

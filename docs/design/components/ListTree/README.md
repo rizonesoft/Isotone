@@ -1,6 +1,6 @@
 # List and tree
 
-Rows for lists and trees in panels and dialogs: Lumen's folders and collections, Nodus's object tree, History, Presets.
+Rows for lists and trees in panels and dialogs: Albumen's folders and collections, Stilus's object tree, History, Presets.
 
 ## Anatomy
 
@@ -29,4 +29,4 @@ Up and Down move; Shift extends; Ctrl+Space toggles; Right expands then moves to
 
 ## WPF
 
-`ListBox`, `ListView` and `TreeView` styles `Photon.ListBox`, `Photon.TreeView` with item containers `Photon.ListRow` / `Photon.TreeRow`. The tree row template draws full-width highlights (a `Grid` spanning the row with the indent inside, not WPF's default indented highlight). Triggers use `IsSelected` plus `Selector.IsSelectionActive` for the unfocused color. Drag feedback via an `Adorner` (`Photon.DropIndicatorAdorner`). Always `VirtualizingPanel.IsVirtualizing="True"` and `VirtualizationMode="Recycling"` for libraries of 50,000 photos.
+`ListBox`, `ListView` and `TreeView` styles `Isotone.ListBox`, `Isotone.TreeView` with item containers `Isotone.ListRow` / `Isotone.TreeRow`. The tree row template draws full-width highlights (a `Grid` spanning the row with the indent inside, not WPF's default indented highlight). Triggers use `IsSelected` plus `Selector.IsSelectionActive` for the unfocused color. Drag feedback via an `Adorner` (`Isotone.DropIndicatorAdorner`). Always `VirtualizingPanel.IsVirtualizing="True"` and `VirtualizationMode="Recycling"` for libraries of 50,000 photos.

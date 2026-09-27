@@ -25,4 +25,4 @@ Not focusable; Cancel is. Screen readers get the value through UIA `RangeValue` 
 
 ## WPF
 
-`ProgressBar` style `Photon.ProgressBar` (parts `PART_Track`, `PART_Indicator`, and `PART_GlowRect` repurposed as the indeterminate segment); `Photon.ProgressRing` (`Control` drawing an `ArcSegment` `Path` with a `RotateTransform` storyboard, stopped when `SystemParameters.ClientAreaAnimation` is false).
+`ProgressBar` style `Isotone.ProgressBar` (parts `PART_Track`, `PART_Indicator`, and `PART_GlowRect` repurposed as the indeterminate segment); `Isotone.ProgressRing` (`Control` drawing an `ArcSegment` `Path` with a `RotateTransform` storyboard, stopped when `SystemParameters.ClientAreaAnimation` is false).

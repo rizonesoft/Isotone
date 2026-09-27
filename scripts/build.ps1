@@ -1,20 +1,20 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-  Builds the suite (Photon.slnx) or a single app.
+  Builds the suite (Isotone.slnx) or a single app.
 .DESCRIPTION
-  -App All (default) builds every project in Photon.slnx. -App Nodus|Imago|Lumen
+  -App All (default) builds every project in Isotone.slnx. -App Stilus|Pinxit|Albumen
   builds that app's startup project and its project references. Output lands in
   artifacts/bin/<Project>/<config>/ (UseArtifactsOutput, see Directory.Build.props).
 .EXAMPLE
   pwsh scripts/build.ps1
-  pwsh scripts/build.ps1 -Config Debug -App Nodus
+  pwsh scripts/build.ps1 -Config Debug -App Stilus
 #>
 [CmdletBinding()]
 param(
   [ValidateSet('Debug', 'Release')]
   [string]$Config = 'Release',
-  [ValidateSet('All', 'Nodus', 'Imago', 'Lumen')]
+  [ValidateSet('All', 'Stilus', 'Pinxit', 'Albumen')]
   [string]$App = 'All',
   [switch]$Test
 )

@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Nodus, Imago, Lumen, or an installer does not work as expected.
+description: Something in Stilus, Pinxit, Albumen, or an installer does not work as expected.
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -14,9 +14,9 @@ body:
       label: App
       description: Which part of the suite is affected?
       options:
-        - Nodus (vector editor)
-        - Imago (raster editor)
-        - Lumen (darkroom and library)
+        - Stilus (vector editor)
+        - Pinxit (raster editor)
+        - Albumen (darkroom and library)
         - Installer or portable ZIP
         - Other
     validations:
@@ -26,7 +26,7 @@ body:
     attributes:
       label: Version
       description: From Help > About, the installer file name, or the commit hash if you built from source.
-      placeholder: "e.g. nodus-v0.1.0, or commit 2e87a3d"
+      placeholder: "e.g. stilus-v0.1.0, or commit 2e87a3d"
     validations:
       required: true
   - type: dropdown
@@ -45,7 +45,7 @@ body:
     id: windows
     attributes:
       label: Windows version
-      description: Press Win+R and type `winver`. Photon supports Windows 11; Windows 10 22H2 is best-effort.
+      description: Press Win+R and type `winver`. Isotone supports Windows 11; Windows 10 22H2 is best-effort.
       options:
         - Windows 11 25H2
         - Windows 11 24H2
@@ -96,7 +96,7 @@ body:
     attributes:
       label: Logs
       description: |
-        Paste relevant log output or crash details. Logs live under `%LOCALAPPDATA%\<App>\logs` (for example `%LOCALAPPDATA%\Imago\logs`). Nodus also shows logs in its debug window.
+        Paste relevant log output or crash details. Logs live under `%LOCALAPPDATA%\<App>\logs` (for example `%LOCALAPPDATA%\Pinxit\logs`). Stilus also shows logs in its debug window.
         Remove anything personal before pasting.
       render: text
   - type: checkboxes

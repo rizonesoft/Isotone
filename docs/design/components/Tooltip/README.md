@@ -25,4 +25,4 @@ Keyboard focus shows the tooltip after the same delay; Escape dismisses. Screen 
 
 ## WPF
 
-`ToolTip` style `Photon.ToolTip` (implicit, `HasDropShadow` false, template draws the shadow) and `Photon.RichToolTip` content: a `StackPanel` with `Title`, `Shortcut` and `Description` bound from a `ToolTipInfo` record on the command. `ToolTipService.InitialShowDelay="400"`, `BetweenShowDelay="0"`, `ShowOnDisabled="True"`.
+`ToolTip` style `Isotone.ToolTip` (implicit, `HasDropShadow` false, template draws the shadow) and `Isotone.RichToolTip` content: a `StackPanel` with `Title`, `Shortcut` and `Description` bound from a `ToolTipInfo` record on the command. `ToolTipService.InitialShowDelay="400"`, `BetweenShowDelay="0"`, `ShowOnDisabled="True"`.

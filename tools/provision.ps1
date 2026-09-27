@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Verifies and repairs the developer toolchain for the Photon Graphics Suite.
+  Verifies and repairs the developer toolchain for the Isotone Graphics Suite.
 .DESCRIPTION
   Legs:
     sdk     the .NET SDK pinned in global.json (exact version, rollForward disable;
@@ -58,7 +58,7 @@ function Test-SdkLeg {
 function Install-Sdk {
   $version = Get-PinnedSdkVersion
   $base = "https://builds.dotnet.microsoft.com/dotnet/Sdk/$version/dotnet-sdk-$version-$Rid"
-  $work = Join-Path ([IO.Path]::GetTempPath()) ('photon-sdk-' + [Guid]::NewGuid().ToString('N'))
+  $work = Join-Path ([IO.Path]::GetTempPath()) ('isotone-sdk-' + [Guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $work | Out-Null
   try {
     $zip = Join-Path $work 'sdk.zip'

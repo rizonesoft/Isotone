@@ -1,6 +1,6 @@
 # App icons
 
-Nodus, Imago and Lumen share one app icon system: Direction C, the suite tile, chosen on 2026-09-27. The splash is the Suite card (operator decision 2026-09-27), a 640 x 360 graphite card that carries the master icon; its spec is the Splash component guide. Direction A, the neon art, is retired and no longer in the repository.
+Stilus, Pinxit and Albumen share one app icon system: Direction C, the suite tile, chosen on 2026-09-27. The splash is the Suite card (operator decision 2026-09-27), a 640 x 360 graphite card that carries the master icon; its spec is the Splash component guide. Direction A, the neon art, is retired and no longer in the repository.
 
 The app icons are separate from the UI icon catalog: catalog icons are Lucide-style strokes that draw commands and tools in the chrome, while app icons are full-color files that identify an app to Windows and to the person using it.
 
@@ -9,8 +9,8 @@ The app icons are separate from the UI icon catalog: catalog icons are Lucide-st
 Every icon is built from three layers, and each layer has one job.
 
 - **Graphite tile.** The same dark rounded square for every app, so the three read as one suite in a taskbar or a Start menu folder.
-- **Spectrum band.** A wave of the seven suite colors along the foot of the tile: the Photon signature, identical in every app.
-- **Accent glyph.** The app's own mark in its accent color: a pen nib on an anchor path for Nodus (`accent-nodus` cyan), a paintbrush with scattered pixels for Imago (`accent-imago` orange), an aperture inside viewfinder corners for Lumen (`accent-lumen` green).
+- **Spectrum band.** A wave of the seven suite colors along the foot of the tile: the Isotone signature, identical in every app.
+- **Accent glyph.** The app's own mark in its accent color: a pen nib on an anchor path for Stilus (`accent-stilus` cyan), a paintbrush with scattered pixels for Pinxit (`accent-pinxit` orange), an aperture inside viewfinder corners for Albumen (`accent-albumen` green).
 
 The glyph is the only thing that changes between apps; the tile and band never do.
 
@@ -27,9 +27,9 @@ The glyph is the only thing that changes between apps; the tile and band never d
 
 The glyph is centred at (128, 116), not at the tile centre, so it sits optically in the middle of the graphite area above the band.
 
-Optical balancing makes the three glyphs look the same size although their shapes differ: relative to the original drawings, the Nodus line glyph is scaled up 25 percent (group scale 1.125), Imago 10 percent (0.990) and Lumen 8 percent (0.972). Nodus gets the most because a thin line drawing reads smallest.
+Optical balancing makes the three glyphs look the same size although their shapes differ: relative to the original drawings, the Stilus line glyph is scaled up 25 percent (group scale 1.125), Pinxit 10 percent (0.990) and Albumen 8 percent (0.972). Stilus gets the most because a thin line drawing reads smallest.
 
-Each master keeps its gradient and clip ids prefixed with the app (`nodus-c-bg`, `imago-c-spec`...) so several icons can be inlined in one document without collisions.
+Each master keeps its gradient and clip ids prefixed with the app (`stilus-c-bg`, `pinxit-c-spec`...) so several icons can be inlined in one document without collisions.
 
 ## Size ladder: which file at which size
 
@@ -46,9 +46,9 @@ Sizes in between are rendered from the next smaller file's grid only when it is 
 
 At taskbar and title-bar sizes an icon is recognized by its silhouette, so the small variants carry the app's main object alone, enlarged to fill the space above the band (operator decision, 2026-09-27: less detail at 32, 24 and 16).
 
-- Nodus: the pen nib alone (no Bezier curve, handle, or anchor nodes). The breather hole stays at 24 and 32; at 16 the nib is solid with only the slit.
-- Imago: the paintbrush alone (no pixel squares). The light ferrule band stays at every size, since it is what makes the shape read as a brush.
-- Lumen: the six-blade aperture alone (no viewfinder corners); at 16 the blade separators are heavier so the blades stay distinct.
+- Stilus: the pen nib alone (no Bezier curve, handle, or anchor nodes). The breather hole stays at 24 and 32; at 16 the nib is solid with only the slit.
+- Pinxit: the paintbrush alone (no pixel squares). The light ferrule band stays at every size, since it is what makes the shape read as a brush.
+- Albumen: the six-blade aperture alone (no viewfinder corners); at 16 the blade separators are heavier so the blades stay distinct.
 - The glyph is scaled to fill a box inset from the tile (1.5 px at 16, 2.6 px at 24, 3.2 px at 32) and centered above the band.
 - The tile keeps the master's graphite gradient with a smaller corner radius (3, 4, 6), and the spectrum band is a straight bar 2, 2.5, and 3.5 px tall, clipped to the tile corners; the inner highlight and the band crest are dropped.
 - The variants are generated from the masters' glyph shapes by `scripts/generate-small-icons.py`, so a change to a master glyph carries through; regenerate them after editing a master.
@@ -61,9 +61,9 @@ At taskbar and title-bar sizes an icon is recognized by its silhouette, so the s
 | Tile (master) | vertical gradient #34353B (top) to #1E1F23 (bottom) |
 | Tile (16 to 32) | flat #2B2C31 |
 | Spectrum band | stops at 0, 0.17, 0.33, 0.5, 0.67, 0.83 and 1: #FF4D6D, #FF9A3C, #FFD84A, #4CC47A, #29C5E6, #5B7CFF, #B45CFF |
-| Nodus glyph | `accent-nodus` #29C5E6, light facet #8BE6F7, ferrule #1597BA, anchors white (48 px and up) |
-| Imago glyph | `accent-imago` #F5923E, highlight #FFC98F, tuft to #FFE08A, pixels #FFD84A and warm neighbours |
-| Lumen glyph | `accent-lumen` #4CC47A, light blades #9BE8B6, dark body #1B7A3D and #0B3A1C, viewfinder white |
+| Stilus glyph | `accent-stilus` #29C5E6, light facet #8BE6F7, ferrule #1597BA, anchors white (48 px and up) |
+| Pinxit glyph | `accent-pinxit` #F5923E, highlight #FFC98F, tuft to #FFE08A, pixels #FFD84A and warm neighbours |
+| Albumen glyph | `accent-albumen` #4CC47A, light blades #9BE8B6, dark body #1B7A3D and #0B3A1C, viewfinder white |
 
 The accents are the dark-theme values of the `accent-<app>` tokens; the icon keeps them in every theme, because it is an image on its own tile, not chrome.
 

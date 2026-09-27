@@ -13,17 +13,17 @@ track: D2
 > **Goal:** A contributor can understand the suite from the developer docs alone, and they stay true: the architecture page matches the tree after each restructure, the README shows the real apps, and the user guides are published as a browsable site.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** `docs/dev/architecture.md` was written on 2026-09-26 from the old `Description.md` (removed the same day) and describes the target layout, not the current one: `src/Photon.Core/`, `src/Photon.UI/`, and `src/Lumen/` do not exist yet. `docs/dev/` also holds `build.md`, `versioning.md`, and `README.md`. The README's screenshots come from `resources/screens/web/`, which are concept renders rather than captures of the built apps. There is no published site; the guides render only on GitHub.
+> **Current state (verified 2026-09-26):** `docs/dev/architecture.md` was written on 2026-09-26 from the old `Description.md` (removed the same day) and describes the target layout, not the current one: `src/Isotone.Core/`, `src/Isotone.UI/`, and `src/Albumen/` do not exist yet. `docs/dev/` also holds `build.md`, `versioning.md`, and `README.md`. The README's screenshots come from `resources/screens/web/`, which are concept renders rather than captures of the built apps. There is no published site; the guides render only on GitHub.
 <!-- claim: exists docs/dev/architecture.md -->
-<!-- claim: absent src/Photon.UI -->
-<!-- claim: exists resources/screens/web/nodus.jpg -->
+<!-- claim: absent src/Isotone.UI -->
+<!-- claim: exists resources/screens/web/stilus.jpg -->
 
 ## Inputs
 
 - [`docs/dev/architecture.md`](../../docs/dev/architecture.md), [`docs/dev/README.md`](../../docs/dev/README.md) -- what §1 keeps true
 - [`README.md`](../../README.md) -- the screenshots §2 replaces (the repository face's owner reviews the change)
-- -> XREF: D01 T01 §2 -- the Photon.UI work whose landing §1 documents
-- -> XREF: D04 T14 §7 -- Lumen parity workspace cites §3: the published guide site D04 T14 §7 opens
+- -> XREF: D01 T01 §2 -- the Isotone.UI work whose landing §1 documents
+- -> XREF: D04 T14 §7 -- Albumen parity workspace cites §3: the published guide site D04 T14 §7 opens
 
 ## Outcome
 
@@ -47,10 +47,10 @@ track: D2
 
 ## 1. The Architecture Page Matches the Tree
 
-Once Nodus is restructured and the two shared libraries exist, the architecture page's "target layout" becomes the actual layout. A hand-drawn dependency picture drifts; one generated from the project files does not.
+Once Stilus is restructured and the two shared libraries exist, the architecture page's "target layout" becomes the actual layout. A hand-drawn dependency picture drifts; one generated from the project files does not.
 
-- [ ] Add `scripts/project-graph.ps1` that reads every `.csproj` in `Photon.slnx` and emits a Mermaid graph of project references into `docs/dev/architecture.md` between marker comments. Done when: running it twice produces no diff.
-- [ ] Rewrite the layout section as current fact, keeping planned parts (Lumen before `D04 T01 §2`) marked planned. Done when: every path in the page exists or is marked planned.
+- [ ] Add `scripts/project-graph.ps1` that reads every `.csproj` in `Isotone.slnx` and emits a Mermaid graph of project references into `docs/dev/architecture.md` between marker comments. Done when: running it twice produces no diff.
+- [ ] Rewrite the layout section as current fact, keeping planned parts (Albumen before `D04 T01 §2`) marked planned. Done when: every path in the page exists or is marked planned.
 - [ ] Add a check to `scripts/check-all.ps1` that fails when the generated graph is stale. Done when: adding a project reference without regenerating fails the check.
 - [ ] Commit: `"docs: an architecture page generated from the project files"`
 

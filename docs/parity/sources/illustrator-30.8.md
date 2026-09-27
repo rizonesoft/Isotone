@@ -1,6 +1,6 @@
-# Adobe Illustrator feature inventory (parity reference for Nodus)
+# Adobe Illustrator feature inventory (parity reference for Stilus)
 
-> **Provenance note (2026-09-26):** verbatim copy of the Adobe Illustrator 30.8 inventory compiled for the Nodus parity plan. The AI-#### ids are stable and each is placed in exactly one row of [`../nodus-parity.md`](../nodus-parity.md). Do not renumber; a future Illustrator version appends new ids after AI-1294 (see [`../README.md`](../README.md)).
+> **Provenance note (2026-09-26):** verbatim copy of the Adobe Illustrator 30.8 inventory compiled for the Stilus parity plan. The AI-#### ids are stable and each is placed in exactly one row of [`../stilus-parity.md`](../stilus-parity.md). Do not renumber; a future Illustrator version appends new ids after AI-1294 (see [`../README.md`](../README.md)).
 
 - **Product:** Adobe Illustrator 2026 on desktop
 - **Latest version:** 30.8 (August 2026 release; release notes page last updated Aug 31, 2026). Current LTS: 29.8.7 (May 2026).

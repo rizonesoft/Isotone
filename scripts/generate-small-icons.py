@@ -1,6 +1,6 @@
 """Generate the 16, 24 and 32 px app icon variants from the master SVGs.
 
-Each variant carries the main glyph alone (Nodus nib, Imago brush, Lumen aperture),
+Each variant carries the main glyph alone (Stilus nib, Pinxit brush, Albumen aperture),
 scaled to fill the space above the spectrum band (operator decision 2026-09-27).
 Usage: python scripts/generate-small-icons.py --in-place   (rewrites resources/icons/<app>/<app>-{16,24,32}.svg)
 Requires resvg-py and Pillow (see scripts/requirements-icons.txt once D00 T03 §3 ships).
@@ -18,15 +18,15 @@ def defs(app):
     return '<defs>'+''.join(keep)+'</defs>'
 def frag(app, sz):
     m=master(app)
-    if app=='nodus':
+    if app=='stilus':
         g=re.search(r'<g transform="translate\(104 183\) rotate\(45\) scale\(1\)">.*?</g>',m,re.S).group(0)
         if sz==16:  # solid nib: drop the keyhole, keep a slit
             g=g.replace(' fill-rule="evenodd"','').replace('ZM-3.5 -43.57A11 11 0 1 1 3.5 -43.57L1.2 -10L-1.2 -10Z','Z')
             g=g.replace('</g>','<path d="M0 -6V-58" stroke="#1E1F23" stroke-width="9" stroke-linecap="round"/></g>')
         return g
-    if app=='imago':
+    if app=='pinxit':
         return re.search(r'<g transform="translate\(78 180\) rotate\(45\) scale\(0.94\)">.*?</g>',m,re.S).group(0)
-    if app=='lumen':
+    if app=='albumen':
         body=m[m.index('<circle cx="128" cy="128" r="57"'):m.index('</g>\n</svg>') if '</g>\n</svg>' in m else m.rindex('</g>')]
         body=body.split('<circle cx="123" cy="122"')[0]  # drop the highlight dot
         if sz==16: body=body.replace('stroke-width="4"','stroke-width="7"')
@@ -63,7 +63,7 @@ import sys
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit('usage: generate-small-icons.py --in-place | <out-dir>')
-    for app in ['nodus', 'imago', 'lumen']:
+    for app in ['stilus', 'pinxit', 'albumen']:
         out = os.path.join(R, app) if sys.argv[1] == '--in-place' else sys.argv[1]
         for sz in (16, 24, 32):
             with open(os.path.join(out, f'{app}-{sz}.svg'), 'w', encoding='utf-8', newline='\n') as f:

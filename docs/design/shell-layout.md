@@ -1,6 +1,6 @@
 # Shell layout
 
-Every Photon document window has the same anatomy, top to bottom and left to right. A feature adds to it; it never invents a second one. Sizes are Compact, with Comfortable in parentheses.
+Every Isotone document window has the same anatomy, top to bottom and left to right. A feature adds to it; it never invents a second one. Sizes are Compact, with Comfortable in parentheses.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────────────────┐
@@ -46,7 +46,7 @@ Minimum window size 1024 x 640; default 1400 x 900 (Bezier's), restored per app 
 
 ## Per app
 
-### Nodus (vector)
+### Stilus (vector)
 
 - Menus: File, Edit, Object, Path, Type, Select, View, Window, Help.
 - Tool rail: Selection, Direct Selection, Pen (group: Pen, Add Anchor, Delete Anchor, Convert), Type, Rectangle (group: shapes), Line, Pencil, Eyedropper, Artboard, Hand, Zoom; fill and stroke chips replace foreground/background.
@@ -54,21 +54,21 @@ Minimum window size 1024 x 640; default 1400 x 900 (Bezier's), restored per app 
 - Dock: Properties (Appearance, Transform), Layers (object tree), Artboards, Swatches, History.
 - Canvas: white `artboard` pages on `canvas-surround`; smart guides in `guide-smart`.
 
-### Imago (raster)
+### Pinxit (raster)
 
 - Menus: File, Edit, Image, Layer, Select, Filter, View, Window, Help.
 - Tool rail in Photoshop's order: Move, Marquee, Lasso, Quick Selection / Magic Wand, Crop, Eyedropper | Healing, Brush, Clone Stamp, History Brush, Eraser, Gradient / Paint Bucket, Blur, Dodge | Pen, Type, Path Selection, Shape | Hand, Zoom | color chips, Quick Mask.
 - Dock (Photoshop's default arrangement): Color / Swatches, Properties / Adjustments, Layers / Channels / Paths, History.
 - Canvas: transparency shows the checkerboard at `checker-tile` 8px.
 
-The previous Imago layout (Layers on the left, Properties on the right) moves to this single right dock.
+The previous Pinxit layout (Layers on the left, Properties on the right) moves to this single right dock.
 
-### Lumen (darkroom and photo manager)
+### Albumen (darkroom and photo manager)
 
 - Two workspaces switched by tabs in the title bar area after the menus: **Library** and **Develop** (Lightroom Classic's modules), each keeping the same regions.
 - Library: left dock (folders and collections, a List and tree) instead of the tool rail; grid of thumbnails in the canvas region on `canvas-surround`; right dock with Metadata and Keywords; a filmstrip 96px tall above the status bar on `frame`.
 - Develop: tool rail with Crop, Spot Removal, Red Eye, Masking, Before/After; right dock with the Histogram and the develop panels as sections (Basic, Tone Curve, HSL, Detail, Lens, Effects) using Sliders paired with NumberBoxes.
-- Selected thumbnails use a 2px `state-line` outline and `state-subtle` cell fill; the Import button is Lumen's primary (`accent-lumen`).
+- Selected thumbnails use a 2px `state-line` outline and `state-subtle` cell fill; the Import button is Albumen's primary (`accent-albumen`).
 
 ## Splash and Home
 
@@ -85,7 +85,7 @@ The previous Imago layout (Layers on the left, Properties on the right) moves to
 | Icon | the Direction C master at 136 x 136, x 56, y 92, over a radial halo of `accent-<app>` at 20 percent (centre 128, 160, radius 150) |
 | App name | Segoe UI Variable Display 46px semibold, letter spacing -0.5px, #F4F4F5, x 228, baseline 148 |
 | Role | 16px regular #B7B8BD, baseline 178 ("Vector editor", "Raster and photo editor", "Digital darkroom and photo manager") |
-| Suite and version | 13px regular #8C8D93, baseline 212: "Photon Graphics Suite · Version 0.1.0", the dot in #6C6D73 |
+| Suite and version | 13px regular #8C8D93, baseline 212: "Isotone Graphics Suite · Version 0.1.0", the dot in #6C6D73 |
 | Status | Segoe UI Variable Text 12px #A3A4AA, baseline 272, live from startup ("Loading tools…", "Loading brushes…", "Opening the catalog…") |
 | Progress | 340 x 3 track #3A3B41 at x 230, y 284, radius 1.5; fill `accent-<app>`, determinate, advanced by the startup steps |
 | Copyright | 11px #6E6F75, right-aligned at x 610, baseline 312: "© 2026 Rizonetech (Pty) Ltd · Free and open source (GPL-3.0)" |

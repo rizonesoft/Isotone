@@ -22,4 +22,4 @@ Alt+Down or F4 opens; Up and Down change the value without opening (blend modes 
 
 ## WPF
 
-`ComboBox` style `Photon.ComboBox` (implicit) with parts `PART_EditableTextBox`, `PART_Popup` (`AllowsTransparency`), `ToggleButton` for the drop part; `ComboBoxItem` style shares the MenuItem look. `IsEditable` switches the template via a trigger. `VirtualizingStackPanel` for long lists (fonts).
+`ComboBox` style `Isotone.ComboBox` (implicit) with parts `PART_EditableTextBox`, `PART_Popup` (`AllowsTransparency`), `ToggleButton` for the drop part; `ComboBoxItem` style shares the MenuItem look. `IsEditable` switches the template via a trigger. `VirtualizingStackPanel` for long lists (fonts).

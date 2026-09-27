@@ -1,6 +1,6 @@
 # Splash
 
-The Suite card: the window each app shows while it starts (operator decision 2026-09-27). A graphite card with the app icon on a soft accent halo, the app name, its role, the suite and version line, a live status line and launch progress, and the spectrum band as a gentle wave along the bottom edge. It is the same card in Nodus, Imago and Lumen; only the icon, the accent, the name, the role and the status text differ.
+The Suite card: the window each app shows while it starts (operator decision 2026-09-27). A graphite card with the app icon on a soft accent halo, the app name, its role, the suite and version line, a live status line and launch progress, and the spectrum band as a gentle wave along the bottom edge. It is the same card in Stilus, Pinxit and Albumen; only the icon, the accent, the name, the role and the status text differ.
 
 The reference design is `resources/icons/<app>/<app>-splash.svg` (640 x 360), also used as a marketing image. In the app the card is built in XAML to this spec, never shown as a picture, so the version, the status and the progress are live.
 
@@ -16,7 +16,7 @@ All positions are in DIPs on the 640 x 360 card, origin top left; text positions
 | App icon | 136 x 136 at x 56, y 92 | the Direction C master `<app>.svg` (or its generated `PNG/<app>_256.png`), as is |
 | App name | x 228, baseline 148 | Segoe UI Variable Display 46px semibold (600), letter spacing -0.5px, #F4F4F5 |
 | Role | x 230, baseline 178 | 16px regular, #B7B8BD: "Vector editor", "Raster and photo editor", "Digital darkroom and photo manager" |
-| Suite and version | x 230, baseline 212 | 13px regular, #8C8D93: "Photon Graphics Suite · Version 0.1.0", the middle dot in #6C6D73 |
+| Suite and version | x 230, baseline 212 | 13px regular, #8C8D93: "Isotone Graphics Suite · Version 0.1.0", the middle dot in #6C6D73 |
 | Status line | x 230, baseline 272 | Segoe UI Variable Text 12px regular, #A3A4AA, one line, trimmed with an ellipsis |
 | Progress track | 340 x 3 at x 230, y 284, radius 1.5 | #3A3B41 |
 | Progress fill | from x 230, same height and radius | `accent-<app>` |
@@ -29,7 +29,7 @@ Layout grid: a left column for the icon (x 56 to 192, centred on y 160) and a te
 
 ## Colors
 
-- The accent is `accent-<app>` (Nodus #29C5E6, Imago #F5923E, Lumen #4CC47A), the dark-theme value in every theme: the card is always graphite.
+- The accent is `accent-<app>` (Stilus #29C5E6, Pinxit #F5923E, Albumen #4CC47A), the dark-theme value in every theme: the card is always graphite.
 - The card greys (#303136, #1A1B1E, #F4F4F5, #B7B8BD, #8C8D93, #6C6D73, #A3A4AA, #3A3B41, #6E6F75) have no token: they are the splash's own palette, matched to the app icon tile. The card looks the same in every brightness theme, like the app icon.
 - Spectrum stops at 0, 0.167, 0.333, 0.5, 0.667, 0.833 and 1: #FF4D6D, #FF9A3C, #FFD84A, #4CC47A, #29C5E6, #5B7CFF, #B45CFF.
 - High contrast: the card fill is the system Window color, every text and the 1px border the system WindowText color, the progress fill the system Highlight color; the halo, the band crest and the glow are dropped; the icon and the band stay, as images.
@@ -53,8 +53,8 @@ Layout grid: a left column for the icon (x 56 to 192, centred on y 160) and a te
 
 ## Keyboard
 
-Not focusable and takes no input. Screen readers get the window name ("Nodus is starting"), the status line as a polite live region, and the progress through UIA `RangeValue`.
+Not focusable and takes no input. Screen readers get the window name ("Stilus is starting"), the status line as a polite live region, and the progress through UIA `RangeValue`.
 
 ## WPF
 
-`Photon.UI` `SplashWindow` (`WindowStyle="None"`, `AllowsTransparency="True"`, `ShowInTaskbar="False"`, `Topmost="True"`, `ResizeMode="NoResize"`), a 640 x 360 `Grid` clipped to a radius 8 `RectangleGeometry`, drawn from an `AppIdentity` (name, role, version, icon, accent). The card greys are named brushes in the window's own resources, not in the theme dictionaries. The icon is an `Image` of the app's generated `PNG/<app>_256.png` (or a `DrawingImage` of the master) at 136 x 136 with `RenderOptions.BitmapScalingMode="HighQuality"`; the band is a `Path` with the geometry above and a `LinearGradientBrush` in absolute units. The progress is a `ProgressBar` restyled to the 3px track. The glow is `BorderGlowAnimator` on a 1.5px `Rectangle` stroke with `RadiusX`/`RadiusY` 8. The check is a capture of the running window at 100 percent, compared against the render of `<app>-splash.svg` at 640 x 360: same positions and colors, apart from the live status text and progress.
+`Isotone.UI` `SplashWindow` (`WindowStyle="None"`, `AllowsTransparency="True"`, `ShowInTaskbar="False"`, `Topmost="True"`, `ResizeMode="NoResize"`), a 640 x 360 `Grid` clipped to a radius 8 `RectangleGeometry`, drawn from an `AppIdentity` (name, role, version, icon, accent). The card greys are named brushes in the window's own resources, not in the theme dictionaries. The icon is an `Image` of the app's generated `PNG/<app>_256.png` (or a `DrawingImage` of the master) at 136 x 136 with `RenderOptions.BitmapScalingMode="HighQuality"`; the band is a `Path` with the geometry above and a `LinearGradientBrush` in absolute units. The progress is a `ProgressBar` restyled to the 3px track. The glow is `BorderGlowAnimator` on a 1.5px `Rectangle` stroke with `RadiusX`/`RadiusY` 8. The check is a capture of the running window at 100 percent, compared against the render of `<app>-splash.svg` at 640 x 360: same positions and colors, apart from the live status text and progress.

@@ -1,18 +1,18 @@
 # App Icons
 
-The icons of the three Photon apps: Nodus, Imago, and Lumen. The design is Direction C, "Suite tile" (operator decision 2026-09-27, "C it is"): one shared graphite rounded tile with a spectrum band at its foot, and a bold glyph in the app's accent color above the band. The splash is the Suite card (operator decision 2026-09-27): a 640 by 360 graphite card carrying the master icon, the app name and the live startup status, with the spectrum band as a wave along its bottom edge. Direction A, the earlier neon line art, is retired and is no longer in the repository.
+The icons of the three Isotone apps: Stilus, Pinxit, and Albumen. The design is Direction C, "Suite tile" (operator decision 2026-09-27, "C it is"): one shared graphite rounded tile with a spectrum band at its foot, and a bold glyph in the app's accent color above the band. The splash is the Suite card (operator decision 2026-09-27): a 640 by 360 graphite card carrying the master icon, the app name and the live startup status, with the spectrum band as a wave along its bottom edge. Direction A, the earlier neon line art, is retired and is no longer in the repository.
 
 | App | Glyph | Accent |
 | --- | ----- | ------ |
-| Nodus | A pen nib with a Bezier handle | Cyan `#29C5E6` |
-| Imago | A paintbrush with pixel squares | Orange `#F5923E` |
-| Lumen | A camera aperture inside viewfinder brackets | Green `#4CC47A` |
+| Stilus | A pen nib with a Bezier handle | Cyan `#29C5E6` |
+| Pinxit | A paintbrush with pixel squares | Orange `#F5923E` |
+| Albumen | A camera aperture inside viewfinder brackets | Green `#4CC47A` |
 
 The accents are the ones `standards/shared.md` names for each app.
 
 ## Files per app
 
-Each app has one folder, `resources/icons/<app>/`, where `<app>` is `nodus`, `imago`, or `lumen`.
+Each app has one folder, `resources/icons/<app>/`, where `<app>` is `stilus`, `pinxit`, or `albumen`.
 
 | File | Used for |
 | ---- | -------- |
@@ -31,20 +31,20 @@ Raster output (PNG sizes and the multi-resolution `<app>.ico`) is generated from
 - Master: `viewBox="0 0 256 256"`. The tile is a rounded rectangle at x and y 8 to 248 (240 by 240) with `rx="48"`, filled with a top-to-bottom graphite gradient (`#34353B` to `#1E1F23`), with a faint inner stroke.
 - The spectrum band sits at the foot of the tile, clipped by the tile's rounded corners, running red, orange, yellow, green, cyan, blue, violet from left to right. It is identical in all three apps, so the icons read as one family.
 - The glyph sits in the box above the band, centered horizontally, drawn in the app accent with a lighter tint of it for highlights and white for handles and details. It is enlarged for the 48 to 256 px sizes, so it fills most of the space above the band.
-- Small variants (16, 24, 32) carry the main object alone, enlarged: the Nodus nib without curve or nodes, the Imago brush without pixel squares, the Lumen aperture without viewfinder corners (operator decision 2026-09-27). The tile keeps the graphite gradient with a smaller corner radius (the full 16 by 16 square with `rx="3"`, then 1 to 23 with `rx="4"`, and 1 to 31 with `rx="6"`), and the band is a straight bar 2, 2.5, and 3.5 px tall. They are generated from the masters by `scripts/generate-small-icons.py` (resvg-py and Pillow); regenerate them after changing a master glyph.
-- Every gradient and clip-path id is prefixed with the app and the direction, plus the size on small variants (`nodus-c-spec`, `nodus-c-s16-spec`, `nodus-sp-halo`), so the files can be inlined together in one document without id collisions.
+- Small variants (16, 24, 32) carry the main object alone, enlarged: the Stilus nib without curve or nodes, the Pinxit brush without pixel squares, the Albumen aperture without viewfinder corners (operator decision 2026-09-27). The tile keeps the graphite gradient with a smaller corner radius (the full 16 by 16 square with `rx="3"`, then 1 to 23 with `rx="4"`, and 1 to 31 with `rx="6"`), and the band is a straight bar 2, 2.5, and 3.5 px tall. They are generated from the masters by `scripts/generate-small-icons.py` (resvg-py and Pillow); regenerate them after changing a master glyph.
+- Every gradient and clip-path id is prefixed with the app and the direction, plus the size on small variants (`stilus-c-spec`, `stilus-c-s16-spec`, `stilus-sp-halo`), so the files can be inlined together in one document without id collisions.
 - Colors are literal hex values. The icon SVGs use no text, fonts, filters, or external references.
-- The splash SVGs (`viewBox="0 0 640 360"`) embed the app's master icon as a nested `<svg>` at 136 px (x 56, y 92) and set their text in Segoe UI Variable Display and Text, so a faithful render needs those fonts (installed on Windows 11). Their own ids are prefixed `<app>-sp-` (`nodus-sp-bg`, `nodus-sp-halo`, `nodus-sp-spec`); the nested icon keeps the master's ids, identical definitions, so a splash can be inlined beside its master. They use no filters.
+- The splash SVGs (`viewBox="0 0 640 360"`) embed the app's master icon as a nested `<svg>` at 136 px (x 56, y 92) and set their text in Segoe UI Variable Display and Text, so a faithful render needs those fonts (installed on Windows 11). Their own ids are prefixed `<app>-sp-` (`stilus-sp-bg`, `stilus-sp-halo`, `stilus-sp-spec`); the nested icon keeps the master's ids, identical definitions, so a splash can be inlined beside its master. They use no filters.
 
 ## License
 
-Every file in this folder was created for the Photon project on 2026-09-27 and is licensed under GPL-3.0, with the rest of the repository (see `LICENSE`). No third-party art, stock illustration, or font is used in any of them, so no attribution is owed.
+Every file in this folder was created for the Isotone project on 2026-09-27 and is licensed under GPL-3.0, with the rest of the repository (see `LICENSE`). No third-party art, stock illustration, or font is used in any of them, so no attribution is owed.
 
 Copyright (C) 2025-2026 Rizonetech (Pty) Ltd. Rizonesoft is a brand of Rizonetech (Pty) Ltd. The GPL covers the files as artwork; the app icons also identify the official apps and are trademarks of Rizonetech (Pty) Ltd, so a modified version you distribute uses its own icons (see [`TRADEMARKS.md`](../../TRADEMARKS.md)).
 
 ## Old files and their status
 
-- `nodus/nodus.ico` and `nodus/PNG/nodus_{16,24,32,48,64,72,128,256,512}.png` are the old Nodus design, from before the Direction C decision. They stay until the export in `D00 T03 §3` regenerates them from the new SVGs, because `installer/Nodus.iss` and `installer/Suite.iss` reference `nodus/nodus.ico`. The export overwrites them in place under the same names.
-- `nodus/nodus.svg` was the old Nodus master and now holds the Direction C master.
-- `imago/imago.ico` and `lumen/lumen.ico` do not exist yet; `installer/Imago.iss` and `installer/Lumen.iss` already point at those paths, and `D00 T03 §3` creates both.
-- `nodus_512.png`, `art-and-design.png`, and `lens.png`, the earlier candidate art in this folder, were removed on 2026-09-27: the project-created icons above supersede them.
+- `stilus/stilus.ico` and `stilus/PNG/stilus_{16,24,32,48,64,72,128,256,512}.png` are the old Stilus design, from before the Direction C decision. They stay until the export in `D00 T03 §3` regenerates them from the new SVGs, because `installer/Stilus.iss` and `installer/Suite.iss` reference `stilus/stilus.ico`. The export overwrites them in place under the same names.
+- `stilus/stilus.svg` was the old Stilus master and now holds the Direction C master.
+- `pinxit/pinxit.ico` and `albumen/albumen.ico` do not exist yet; `installer/Pinxit.iss` and `installer/Albumen.iss` already point at those paths, and `D00 T03 §3` creates both.
+- `stilus_512.png`, `art-and-design.png`, and `lens.png`, the earlier candidate art in this folder, were removed on 2026-09-27: the project-created icons above supersede them.

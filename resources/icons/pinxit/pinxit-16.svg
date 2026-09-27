@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+<defs>
+<linearGradient id="pinxit-c-s16-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34353B"/><stop offset="1" stop-color="#1E1F23"/></linearGradient>
+<linearGradient id="pinxit-c-s16-spec" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.000" stop-color="#FF4D6D"/><stop offset="0.167" stop-color="#FF9A3C"/><stop offset="0.333" stop-color="#FFD84A"/><stop offset="0.500" stop-color="#4CC47A"/><stop offset="0.667" stop-color="#29C5E6"/><stop offset="0.833" stop-color="#5B7CFF"/><stop offset="1.000" stop-color="#B45CFF"/></linearGradient>
+<clipPath id="pinxit-c-s16-clip"><rect x="0" y="0" width="16" height="16" rx="3"/></clipPath>
+<linearGradient id="pinxit-c-s16-hdl" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFC98F"/>
+      <stop offset="0.5" stop-color="#FFC98F"/>
+      <stop offset="0.5" stop-color="#F5923E"/>
+      <stop offset="1" stop-color="#F5923E"/>
+    </linearGradient><linearGradient id="pinxit-c-s16-fer" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F2F2F2"/>
+      <stop offset="0.5" stop-color="#F2F2F2"/>
+      <stop offset="0.5" stop-color="#BFC3C9"/>
+      <stop offset="1" stop-color="#BFC3C9"/>
+    </linearGradient><linearGradient id="pinxit-c-s16-tuft" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#FFE08A"/>
+      <stop offset="1" stop-color="#F5923E"/>
+    </linearGradient>
+</defs>
+<rect x="0" y="0" width="16" height="16" rx="3" fill="url(#pinxit-c-s16-tile)"/>
+<rect x="0" y="14" width="16" height="2" fill="url(#pinxit-c-s16-spec)" clip-path="url(#pinxit-c-s16-clip)"/>
+<g transform="translate(8.000 7.150) scale(0.0859) translate(-140.75 -117.25)"><g transform="translate(78 180) rotate(45) scale(0.94)">
+      <path d="M-15 -84L15 -84L9 -182Q0 -200 -9 -182Z" fill="url(#pinxit-c-s16-hdl)"/>
+      <rect x="-21" y="-78" width="42" height="26" rx="5" fill="url(#pinxit-c-s16-fer)"/>
+      <path d="M0 0C17 -7 28 -25 23 -48L-23 -48C-28 -22 -15 -6 0 0Z" fill="url(#pinxit-c-s16-tuft)"/>
+    </g></g>
+</svg>

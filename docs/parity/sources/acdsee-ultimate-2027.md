@@ -1,12 +1,12 @@
-# ACDSee Photo Studio Ultimate feature inventory (parity reference for Lumen)
+# ACDSee Photo Studio Ultimate feature inventory (parity reference for Albumen)
 
-> **Provenance note (2026-09-27):** verbatim copy of the ACDSee Photo Studio Ultimate 2027 (build 20.0.0.4660, released 2026-09-16) inventory compiled for the Lumen parity plan, rows `AC-0001` to `AC-5182`, under its original title: ACDSee Photo Studio Ultimate 2027: exhaustive feature inventory (Lumen parity input). The ids are stable and each is placed in exactly one row of [`../lumen-parity.md`](../lumen-parity.md); the Edit-mode rows (layered pixel editing) are routed there to Imago. Do not renumber; a future ACDSee version appends new ids after AC-5182 (see [`../README.md`](../README.md)).
+> **Provenance note (2026-09-27):** verbatim copy of the ACDSee Photo Studio Ultimate 2027 (build 20.0.0.4660, released 2026-09-16) inventory compiled for the Albumen parity plan, rows `AC-0001` to `AC-5182`, under its original title: ACDSee Photo Studio Ultimate 2027: exhaustive feature inventory (Albumen parity input). The ids are stable and each is placed in exactly one row of [`../albumen-parity.md`](../albumen-parity.md); the Edit-mode rows (layered pixel editing) are routed there to Pinxit. Do not renumber; a future ACDSee version appends new ids after AC-5182 (see [`../README.md`](../README.md)).
 
 > **Access:** the full 867-page user guide PDF was read in full (pdftotext, 13 page ranges); guide pages 291 to 293 (Catalog Files) and 691 are mostly images, so those rows are thin, and the plug-ins support page returned 404, so plug-in formats other than GSD are not enumerated. About 45 Edit-mode special-effect descriptions and some shortcut pairings from misaligned PDF tables come from product knowledge while still citing the guide page that names them.
 
 - Product: ACDSee Photo Studio Ultimate 2027 (product code ACUW20EN), build 20.0.0.4660, released 2026/09/16 (release notes date). This is the latest version as of 2026-09-27. It replaces Ultimate 2026 (ACUW19, September 2025).
 - Inventory date: 2026-09-27
-- Target: Lumen (GPL, WPF, Windows photo manager and digital darkroom). Layered pixel editing rows (Edit mode layers, adjustment layers, masks, layer effects, selections, drawing tools, special effects) are listed in full but are meant to be routed to Imago.
+- Target: Albumen (GPL, WPF, Windows photo manager and digital darkroom). Layered pixel editing rows (Edit mode layers, adjustment layers, masks, layer effects, selections, drawing tools, special effects) are listed in full but are meant to be routed to Pinxit.
 
 ## Sources
 

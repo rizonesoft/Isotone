@@ -1,0 +1,20 @@
+<Project>
+  <!-- Stilus overlay: imports the root build configuration, then sets app identity. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <MinVerTagPrefix>stilus-v</MinVerTagPrefix>
+    <Product>Stilus</Product>
+    <IsotoneApp>Stilus</IsotoneApp>
+  </PropertyGroup>
+
+  <!--
+    LEGACY DEBT (imported Bezier code): analyzer relaxations so the imported tree
+    builds under the root configuration without source churn. Every item here is
+    listed in docs/dev/build.md and must be retired by a TODO.
+  -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>

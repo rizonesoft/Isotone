@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RootNamespace>Pinxit.Plugins</RootNamespace>
+    <AssemblyName>Pinxit.Plugins.Abstractions</AssemblyName>
+    <Description>Plugin interfaces and abstractions for Pinxit extensibility</Description>
+    <NoWarn>$(NoWarn);CA1720</NoWarn>
+  </PropertyGroup>
+
+</Project>

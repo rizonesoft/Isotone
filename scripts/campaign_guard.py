@@ -354,7 +354,7 @@ def _pending_jobs(root: str) -> list[dict]:
         return []
     except (OSError, ValueError):
         raise GuardError("the pending-cancellation record is unreadable: list the jobs and delete any "
-                         "Photon heartbeat by hand")
+                         "Isotone heartbeat by hand")
     if isinstance(doc, dict):
         doc = [doc]
     return [j for j in doc if isinstance(j, dict)] if isinstance(doc, list) else []

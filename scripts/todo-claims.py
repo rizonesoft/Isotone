@@ -11,9 +11,9 @@ That is the gap this closes. A TODO states what it measured; this re-measures it
 A claim is an HTML comment, so it is invisible in rendered Markdown and inert to every
 other parser that reads these files:
 
-    <!-- claim: exists src/Nodus/Bezier.sln -->
-    <!-- claim: absent src/Photon.Core/Photon.Core.csproj -->
-    <!-- claim: lines src/Nodus/Bezier.Core/Bezier.Core.csproj = 9 -->
+    <!-- claim: exists src/Stilus/Bezier.sln -->
+    <!-- claim: absent src/Isotone.Core/Isotone.Core.csproj -->
+    <!-- claim: lines src/Stilus/Bezier.Core/Bezier.Core.csproj = 9 -->
     <!-- claim: count "UseWPF" src/*/*/*.csproj = 4 -->
 
 A claim must be written on ONE line. The pattern may contain `\\n` as two characters,
@@ -63,7 +63,7 @@ CITED_PATH_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./\-]*[A-Za-z0-9_/])`")
 # commit, and the check refuses to let it fall. It is deliberately set to what
 # was MEASURED, not to what would be nice: a floor above the real number fails
 # on day one and gets deleted rather than met. Resolute measured 3 of 20 on
-# 2026-09-17 (its D00 T04 §1); Photon re-measured at the port, 2026-09-26, when
+# 2026-09-17 (its D00 T04 §1); Isotone re-measured at the port, 2026-09-26, when
 # the tree held one `Current state` block and it carried a claim.
 COVERAGE_FLOOR = 1
 DEFAULT_ROOT = "todo"

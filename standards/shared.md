@@ -1,17 +1,17 @@
 # Shared Standards
 
-Cross-cutting standards for every app in the Photon Graphics Suite (Nodus, Imago, Lumen) and for `Photon.Core` and `Photon.UI`. App files ([`nodus.md`](nodus.md), [`imago.md`](imago.md), [`lumen.md`](lumen.md)) add to this file and never contradict it. [`AGENTS.md`](../AGENTS.md) holds the binding decisions; this file spells them out.
+Cross-cutting standards for every app in the Isotone Graphics Suite (Stilus, Pinxit, Albumen) and for `Isotone.Core` and `Isotone.UI`. App files ([`stilus.md`](stilus.md), [`pinxit.md`](pinxit.md), [`albumen.md`](albumen.md)) add to this file and never contradict it. [`AGENTS.md`](../AGENTS.md) holds the binding decisions; this file spells them out.
 
 ## The stack
 
 | Concern | Choice | Notes |
 | ------- | ------ | ----- |
-| Runtime | .NET 11, C# `latest` | SDK pinned by `global.json`; every project builds from `Photon.slnx`. WPF projects target `net11.0-windows10.0.26100.0` with `TargetPlatformMinVersion` 10.0.17763.0; non-UI projects target `net11.0` |
+| Runtime | .NET 11, C# `latest` | SDK pinned by `global.json`; every project builds from `Isotone.slnx`. WPF projects target `net11.0-windows10.0.26100.0` with `TargetPlatformMinVersion` 10.0.17763.0; non-UI projects target `net11.0` |
 | UI | WPF, standard controls, custom theming | **No WPF-UI** and no other UI framework: a WPF-UI reference is a defect |
 | MVVM | CommunityToolkit.Mvvm | `ObservableObject`, `[ObservableProperty]`, `[RelayCommand]`, `IMessenger` where messaging is genuinely needed. **No ReactiveUI.** `Ioc.Default` is not used: composition goes through Microsoft DI |
 | Composition | Microsoft.Extensions.DependencyInjection, one Generic Host per app | One composition root per app; constructor injection; no static service locator (`App.Services`, `Foo.Instance`) |
-| Logging | Serilog | Configured once per app through `Photon.Core` |
-| Rendering | SkiaSharp (all apps), ComputeSharp (Imago GPU path) | |
+| Logging | Serilog | Configured once per app through `Isotone.Core` |
+| Rendering | SkiaSharp (all apps), ComputeSharp (Pinxit GPU path) | |
 | Tests | xUnit v3, AwesomeAssertions | See [`testing.md`](testing.md) |
 | JSON | System.Text.Json with source-generated contexts | Newtonsoft.Json is not used |
 
@@ -20,7 +20,7 @@ Cross-cutting standards for every app in the Photon Graphics Suite (Nodus, Imago
 ## Where code lives
 
 - App logic lives in the app's `Core` project; its WPF project holds views, view models, and view-only services. A `Core` project never references WPF.
-- **Shared code moves to `Photon.Core` (non-UI) or `Photon.UI` (WPF) only when two apps need it now.** One app's need stays in that app with a comment naming the day it would move. A second copy of a behavior in a second app is a defect; so is a shared type only one app consumes.
+- **Shared code moves to `Isotone.Core` (non-UI) or `Isotone.UI` (WPF) only when two apps need it now.** One app's need stays in that app with a comment naming the day it would move. A second copy of a behavior in a second app is a defect; so is a shared type only one app consumes.
 - An app never references another app's projects, and never assumes another app is installed at runtime.
 
 ## C# style
@@ -35,7 +35,7 @@ Cross-cutting standards for every app in the Photon Graphics Suite (Nodus, Imago
 - Async: no `async void` outside event handlers, no `.Result` or `.Wait()`, `ConfigureAwait(false)` in library code, a `CancellationToken` on anything that can take longer than a second.
 - Culture: every number or date formatted for a file, a log property, or a comparison passes `CultureInfo.InvariantCulture`; text shown to a user uses the current culture. String comparisons name a `StringComparison`.
 - No magic numbers: a threshold, size, or duration is a named constant or a setting.
-- XML documentation on every public type and member of `Photon.Core`, `Photon.UI`, and each app's `Core` project.
+- XML documentation on every public type and member of `Isotone.Core`, `Isotone.UI`, and each app's `Core` project.
 
 ## MVVM
 
@@ -56,7 +56,7 @@ Every service a view model or tool uses is registered in the app's composition r
 
 ## Logging
 
-- Serilog, configured once per app through `Photon.Core`. Files go to `%LOCALAPPDATA%\Rizonesoft\<App>\logs\<app>-<date>.log`, rolled daily, 7 files kept, 10 MB per file. The `Debug` sink is on in Debug builds.
+- Serilog, configured once per app through `Isotone.Core`. Files go to `%LOCALAPPDATA%\Rizonesoft\<App>\logs\<app>-<date>.log`, rolled daily, 7 files kept, 10 MB per file. The `Debug` sink is on in Debug builds.
 - Never under `artifacts/` or `build/`: those are build output, and an installed app has neither.
 - Structured templates, never interpolation: `Log.Information("Saved {Path} in {ElapsedMs} ms", path, ms)`.
 - **One Information line per user action that changes a document or a setting**, naming the action and its target. This is the audit trail the adjacency contract calls `audit`.
@@ -82,8 +82,8 @@ Every service a view model or tool uses is registered in the app's composition r
 - **Saves are atomic:** write a temporary file in the target folder, flush, then replace. Killing the process mid-save leaves the original byte-identical.
 - Autosave writes to the app's data folder, never over the user's file. Recovery offers what it found and deletes nothing without asking.
 - A read-only file, a locked folder, or a full disk is refused with a message naming the file and the reason; the document stays open and dirty.
-- Lumen never writes an original image unless the user opts in; a verified backup is taken by default. See [`lumen.md`](lumen.md).
-- Settings live in `%LOCALAPPDATA%\Rizonesoft\<App>\settings.json`, written atomically through the `Photon.Core` settings store. Every setting has a default, a consumer, and a log line when it changes.
+- Albumen never writes an original image unless the user opts in; a verified backup is taken by default. See [`albumen.md`](albumen.md).
+- Settings live in `%LOCALAPPDATA%\Rizonesoft\<App>\settings.json`, written atomically through the `Isotone.Core` settings store. Every setting has a default, a consumer, and a log line when it changes.
 
 ## Performance
 
@@ -98,7 +98,7 @@ Conventional Commits: `<type>(<scope>): <description>`, imperative, types `feat`
 
 ## The design contract
 
-Every user-facing surface answers to the UI standard in [`ui.md`](ui.md), the binding summary of the Photon Interface design system in [`docs/design/`](../docs/design/README.md): four brightness themes, the Highlight color for state and the app accent for identity only, type, spacing and density, focus, icons, window anatomy, accessibility, and the WPF mapping. `docs/design/tokens.json` is the source of every value, and the theme dictionaries in `Photon.UI` are generated from it; no surface hardcodes a color, size, or spacing value a token names. The captures under `docs/captures/<app>/` are its visual reference; where a capture and the design system disagree, the design system wins.
+Every user-facing surface answers to the UI standard in [`ui.md`](ui.md), the binding summary of the Isotone Interface design system in [`docs/design/`](../docs/design/README.md): four brightness themes, the Highlight color for state and the app accent for identity only, type, spacing and density, focus, icons, window anatomy, accessibility, and the WPF mapping. `docs/design/tokens.json` is the source of every value, and the theme dictionaries in `Isotone.UI` are generated from it; no surface hardcodes a color, size, or spacing value a token names. The captures under `docs/captures/<app>/` are its visual reference; where a capture and the design system disagree, the design system wins.
 
 Two behavior rules every surface also follows:
 

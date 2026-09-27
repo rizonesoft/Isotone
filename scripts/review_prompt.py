@@ -2,8 +2,8 @@
 
 Ported from ScratchPad (there D00 T01 §17): the section and item numbers in
 the comments below are that section's, kept so the rationale trail survives
-the port, then carried from Resolute into Photon on 2026-09-26.
-Photon's `review-todo-section` skill is the caller.
+the port, then carried from Resolute into Isotone on 2026-09-26.
+Isotone's `review-todo-section` skill is the caller.
 
 Prompts are ephemeral `/tmp` files, but the rules that build them are
 checked-in code so a fixture can prove them: delimiter tags are unique per
@@ -4610,8 +4610,8 @@ def _self_test() -> int:
         # dead oid, a dead line, a dead section, a missing file, a
         # spaced pathline ghost, a rooted missing file, and a dead
         # full ref, beside passing twins (a live range, a live file,
-        # a live section, a live ref (Photon port: Resolute's live
-        # spaced cites rode its frozen au3 tree, which Photon lacks, so
+        # a live section, a live ref (Isotone port: Resolute's live
+        # spaced cites rode its frozen au3 tree, which Isotone lacks, so
         # that twin is dropped; the live ref is the workspace domain's
         # first section and the live range two import commits), a bare spaced ghost that stays silent
         # by the recall limit, and the sweep's prose spans: commands,

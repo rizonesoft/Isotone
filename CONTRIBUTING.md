@@ -1,6 +1,6 @@
-# Contributing to the Photon Graphics Suite
+# Contributing to the Isotone Graphics Suite
 
-Thank you for helping build Photon. This guide covers how work is organized, how to build and test, and what a pull request needs before it can merge.
+Thank you for helping build Isotone. This guide covers how work is organized, how to build and test, and what a pull request needs before it can merge.
 
 By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems go through the private process in [SECURITY.md](SECURITY.md), never through public issues.
 
@@ -42,12 +42,12 @@ You need Windows 11 (x64; Windows 10 22H2 may work but is unsupported), [PowerSh
 
 ```powershell
 git clone https://github.com/rizonesoft/Photon.git
-cd Photon
+cd Isotone
 
 pwsh tools/provision.ps1              # install the pinned SDK and tools
-dotnet build Photon.slnx              # build everything
+dotnet build Isotone.slnx              # build everything
 pwsh scripts/check-all.ps1            # run every gate: build, tests, analyzers, plan checks
-pwsh scripts/package.ps1 -App Nodus   # optional: build an installer and portable ZIP
+pwsh scripts/package.ps1 -App Stilus   # optional: build an installer and portable ZIP
 ```
 
 `scripts/check-all.ps1` is the same gate CI runs. If it is green locally, CI should be green too. See [docs/dev/build.md](docs/dev/build.md) for details and troubleshooting.
@@ -57,11 +57,11 @@ pwsh scripts/package.ps1 -App Nodus   # optional: build an installer and portabl
 - **Formatting** is defined by [`.editorconfig`](.editorconfig) at the repository root. Your editor and `dotnet format` both honor it; please do not reformat unrelated code.
 - **No new warnings.** Keep the build and analyzer output clean; fix a warning rather than suppress it.
 - **Modern C#:** file-scoped namespaces, primary constructors where they help, `var` when the type is obvious, nullable reference types enabled.
-- **Separation:** domain logic stays out of the UI layer. Core projects (`*.Core`, and later `Photon.Core`) must not reference WPF.
+- **Separation:** domain logic stays out of the UI layer. Core projects (`*.Core`, and later `Isotone.Core`) must not reference WPF.
 - **MVVM** with CommunityToolkit.Mvvm; no third-party UI frameworks. Standard WPF controls only.
 - **Tests:** new behavior comes with tests (xUnit). Bug fixes come with a test that fails before the fix.
 - **Docs:** user-visible changes update the matching guide under [`docs/user/`](docs/user/README.md); architectural changes update [`docs/dev/`](docs/dev/README.md).
-- Coding standards live in [`standards/`](standards/): `shared.md` for suite-wide rules plus one file per app (`nodus.md`, `imago.md`, `lumen.md`).
+- Coding standards live in [`standards/`](standards/): `shared.md` for suite-wide rules plus one file per app (`stilus.md`, `pinxit.md`, `albumen.md`).
 
 ## Commit messages
 
@@ -76,20 +76,20 @@ Signed-off-by: Your Name <you@example.com>
 ```
 
 - **Types:** `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
-- **Scopes:** the app or area, such as `nodus`, `imago`, `lumen`, `core`, `installer`, `ci`, `docs`.
+- **Scopes:** the app or area, such as `stilus`, `pinxit`, `albumen`, `core`, `installer`, `ci`, `docs`.
 - Keep the summary under about 72 characters, in the imperative mood ("add", not "added").
 
 Examples:
 
 ```text
-feat(nodus): add corner radius to rectangle tool
-fix(imago): keep layer order when undoing a merge
+feat(stilus): add corner radius to rectangle tool
+fix(pinxit): keep layer order when undoing a merge
 ci: cache NuGet packages in build workflow
 ```
 
 ## Pull requests
 
-1. Fork the repository and branch from `main` (`feat/nodus-corner-radius`, `fix/imago-merge-undo`).
+1. Fork the repository and branch from `main` (`feat/stilus-corner-radius`, `fix/pinxit-merge-undo`).
 2. Keep each pull request focused on one change.
 3. Fill in the pull request template: the plan reference, what changed, and how you tested it.
 4. Before requesting review, make sure that:
@@ -103,7 +103,7 @@ Do not bump version numbers; versions come from Git tags (see [docs/dev/versioni
 
 ## Licensing and sign-off
 
-The Photon Graphics Suite is licensed under the [GNU General Public License v3.0](LICENSE). The project copyright is held by Rizonetech (Pty) Ltd ("Copyright (C) 2025-2026 Rizonetech (Pty) Ltd"); Rizonesoft is a brand of Rizonetech (Pty) Ltd.
+The Isotone Graphics Suite is licensed under the [GNU General Public License v3.0](LICENSE). The project copyright is held by Rizonetech (Pty) Ltd ("Copyright (C) 2025-2026 Rizonetech (Pty) Ltd"); Rizonesoft is a brand of Rizonetech (Pty) Ltd.
 
 You keep the copyright of your own contributions. By contributing, you license your contribution under GPL-3.0, the same license as the rest of the project, and certify the DCO below; you do not assign your copyright to anyone. There is no contributor license agreement today; if one is ever introduced it will be announced here before it applies, and it will not apply to contributions made before it.
 
@@ -119,4 +119,4 @@ Do not submit code copied from projects with incompatible licenses, or from any 
 
 ## Names and icons
 
-The GPL covers the code, not the names and logos. "Rizonesoft", "Photon Graphics Suite", "Nodus", "Imago", and "Lumen" and the app icons are trademarks of Rizonetech (Pty) Ltd; the [trademark policy](TRADEMARKS.md) explains what you may do with them. In short: contributing to this repository is always fine, but a fork or modified build that you distribute needs its own name and icons.
+The GPL covers the code, not the names and logos. "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Pinxit", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd; the [trademark policy](TRADEMARKS.md) explains what you may do with them. In short: contributing to this repository is always fine, but a fork or modified build that you distribute needs its own name and icons.

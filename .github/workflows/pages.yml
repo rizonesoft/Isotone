@@ -1,6 +1,6 @@
 name: design-pages
 
-# Publishes the Photon Interface design system page on GitHub Pages
+# Publishes the Isotone Interface design system page on GitHub Pages
 # (operator decision 2026-09-27: "Yes, publish on GitHub Pages").
 # docs/design/index.html is generated from docs/design/ and resources/icons/
 # by scripts/build-design-site.py and committed; this workflow fails when the
@@ -42,12 +42,12 @@ jobs:
           <html lang="en">
           <head>
           <meta charset="utf-8">
-          <title>Photon Interface</title>
+          <title>Isotone Interface</title>
           <meta http-equiv="refresh" content="0; url=design/">
           <link rel="canonical" href="design/">
           </head>
           <body>
-          <p><a href="design/">Photon Interface design system</a></p>
+          <p><a href="design/">Isotone Interface design system</a></p>
           </body>
           </html>
           EOF

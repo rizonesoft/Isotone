@@ -4,7 +4,7 @@
 standards/design-contract.md (operator decisions 2026-09-27) makes
 docs/design/ the source every surface implements 1:1: every color, size,
 radius, spacing, font, and duration comes from docs/design/tokens.json
-through the Photon.UI dictionaries, colors through DynamicResource. This
+through the Isotone.UI dictionaries, colors through DynamicResource. This
 script reads (never edits) src/**/*.xaml and src/**/*.cs of every UI
 project (a csproj with <UseWPF>true</UseWPF> that is not a test project)
 and reports each departure as
@@ -27,7 +27,7 @@ Rules (error unless marked warn):
                          property): colors are DynamicResource so a theme,
                          Highlight, or density switch restyles live
   non-token-color        a color or brush resource key that is not a color
-                         token of docs/design/tokens.json (nor Photon.App.*)
+                         token of docs/design/tokens.json (nor Isotone.App.*)
   unknown-resource-key   (warn) a resource key defined nowhere: not a token,
                          not a neutral density key, not an x:Key in any
                          scanned XAML, not added from C#. App-local style,
@@ -320,7 +320,7 @@ class Context:
                     self.cs_defined.add(m.group("a") or m.group("b"))
 
     def is_colorish(self, key: str, prop: str | None) -> bool:
-        if key in self.color_tokens or key.startswith("Photon.App."):
+        if key in self.color_tokens or key.startswith("Isotone.App."):
             return True
         kind = self.defined.get(key, "")
         if kind in ("Color", "SolidColorBrush", "LinearGradientBrush", "RadialGradientBrush", "Brush", "DrawingBrush"):
@@ -333,7 +333,7 @@ class Context:
 
     def known(self, key: str) -> bool:
         return (key in self.color_tokens or key in self.other_tokens or key in self.defined
-                or key in self.cs_defined or key.startswith("Photon."))
+                or key in self.cs_defined or key.startswith("Isotone."))
 
 
 def _generated(raw: str) -> bool:
@@ -379,7 +379,7 @@ def scan_xaml(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
                 if kind == "StaticResource" and colorish:
                     add(off, "static-color-resource",
                         f"`{{StaticResource {key}}}` on `{eff_prop}` freezes a color; use DynamicResource")
-                if colorish and key not in ctx.color_tokens and not key.startswith("Photon.App."):
+                if colorish and key not in ctx.color_tokens and not key.startswith("Isotone.App."):
                     add(off, "non-token-color",
                         f"`{key}` is a color or brush key that is not a color token of docs/design/tokens.json")
                 elif not ctx.known(key):

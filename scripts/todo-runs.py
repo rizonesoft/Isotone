@@ -1250,7 +1250,7 @@ refuted: 0
     tmp = Path(tempfile.mkdtemp(prefix="todo-runs-"))
     other = tmp / "other-records.md"
     other.write_text(good, encoding="utf-8")
-    # Photon port: the round trip reads a fixture ledger, never the live
+    # Isotone port: the round trip reads a fixture ledger, never the live
     # docs/reviews tree, whose findings are this repository's own.
     fixture_ledger = ([TF.Finding("D00 T01 §1", None, 1, "F1", "s", "record", "fixed",
                                   source="independent", severity="minor"),
@@ -1517,7 +1517,7 @@ refuted: 0
     real_collect = TF.collect
     real_files = _review_files
     real_review_path = _review_path
-    # Photon port: the codex run's review file is a fixture, never the
+    # Isotone port: the codex run's review file is a fixture, never the
     # live docs/reviews tree, which holds this repository's own records.
     stub_review = tmp / "D00-T01-s1.md"
     stub_review.write_text("# review fixture\n", encoding="utf-8")

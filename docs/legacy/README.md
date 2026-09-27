@@ -4,8 +4,8 @@ These are the roadmaps the two imported applications carried before they joined 
 
 | File | Came from | What it was |
 | ---- | --------- | ----------- |
-| [`nodus-roadmap.md`](nodus-roadmap.md) | `src/Nodus/TODO.md` (Bezier, last edited 2025-12-15) | 26 phases (0 to 25), roughly 2,200 open and 420 checked items |
-| [`imago-roadmap.md`](imago-roadmap.md) | `src/Imago/TODO.md` (Imago, "Last Updated: December 2024") | 12 phases (0 to 11), 385 open and 102 checked items |
+| [`stilus-roadmap.md`](stilus-roadmap.md) | `src/Nodus/TODO.md` (Bezier, last edited 2025-12-15) | 26 phases (0 to 25), roughly 2,200 open and 420 checked items |
+| [`pinxit-roadmap.md`](pinxit-roadmap.md) | `src/Imago/TODO.md` (Imago, "Last Updated: December 2024") | 12 phases (0 to 11), 385 open and 102 checked items |
 
 ## How they were mined
 

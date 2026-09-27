@@ -19,7 +19,7 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 
 ## In scope
 
-- The pinned .NET SDK, `Photon.slnx`, and one-command build, test, publish, and package scripts
+- The pinned .NET SDK, `Isotone.slnx`, and one-command build, test, publish, and package scripts
 - Warnings as errors, analyzers, and one command that runs every gate (`scripts/check-all.ps1`)
 - CI workflows, the commit hook, and the provisioning script
 - The checks that keep the plan honest about itself: the TODO graph, claims, the findings ledger, and the campaign guard
@@ -27,7 +27,7 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 
 ## Out of scope
 
-- `Photon.Core` and the apps (01 to 04)
+- `Isotone.Core` and the apps (01 to 04)
 - Release packaging and signing (05), which consumes the build this domain writes
 - Developer and user documentation content (06)
 

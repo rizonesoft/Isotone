@@ -19,9 +19,9 @@
     <PackageVersion Include="Dirkster.AvalonDock" Version="5.0.0" />
     <PackageVersion Include="Dirkster.AvalonDock.Themes.VS2013" Version="5.0.0" />
     <PackageVersion Include="FluentIcons.Wpf" Version="2.1.341" />
-    <!-- Nodus splash logo only (SplashWindow.xaml svgc:SvgViewbox); retired by D02 T02 §2. -->
+    <!-- Stilus splash logo only (SplashWindow.xaml svgc:SvgViewbox); retired by D02 T02 §2. -->
     <PackageVersion Include="SharpVectors.Wpf" Version="1.8.6" />
-    <!-- Imago only; removal is planned (Nodus already dropped it). -->
+    <!-- Pinxit only; removal is planned (Stilus already dropped it). -->
     <PackageVersion Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
 
@@ -56,7 +56,7 @@
   <ItemGroup Label="Testing">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <!-- mtp-off: the xunit.v3 flavor without Microsoft.Testing.Platform, so dotnet test
-         stays on VSTest (xunit.runner.visualstudio) and honors tests/Photon.runsettings. -->
+         stays on VSTest (xunit.runner.visualstudio) and honors tests/Isotone.runsettings. -->
     <PackageVersion Include="xunit.v3.mtp-off" Version="4.0.1" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />

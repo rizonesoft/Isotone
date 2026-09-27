@@ -1,19 +1,19 @@
 # User Guides
 
-Guides for people using the Photon Graphics Suite. The suite is pre-alpha and has no release yet, so most guides are planned; each one lands alongside the first preview of its app.
+Guides for people using the Isotone Graphics Suite. The suite is pre-alpha and has no release yet, so most guides are planned; each one lands alongside the first preview of its app.
 
 ## Getting started
 
 | Guide | App | Status |
 | ----- | --- | ------ |
 | Installing the suite: installers, portable ZIPs, per-user and all-users installs | All | *planned* |
-| Getting started with Nodus: canvas, tools, layers, saving SVG | Nodus (vector) | *planned*, first in line |
-| Getting started with Imago: documents, layers, painting, export | Imago (raster) | *planned* |
-| Getting started with Lumen: importing, developing RAW files, Edit in Imago | Lumen (darkroom) | *planned* |
+| Getting started with Stilus: canvas, tools, layers, saving SVG | Stilus (vector) | *planned*, first in line |
+| Getting started with Pinxit: documents, layers, painting, export | Pinxit (raster) | *planned* |
+| Getting started with Albumen: importing, developing RAW files, Edit in Pinxit | Albumen (darkroom) | *planned* |
 
 **Requirements:** Windows 11 (23H2 or later), 64-bit. Windows 10 22H2 may work but is unsupported: .NET 11, which the apps are built on, does not support consumer Windows 10, and the installer shows a notice there before continuing.
 
-Until these exist, the [README](../../README.md#download-and-install) explains how releases will ship, and [Build from source](../../README.md#build-from-source) shows how to run Nodus today.
+Until these exist, the [README](../../README.md#download-and-install) explains how releases will ship, and [Build from source](../../README.md#build-from-source) shows how to run Stilus today.
 
 ## Help
 

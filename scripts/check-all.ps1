@@ -3,8 +3,8 @@
 .SYNOPSIS
   Runs every local gate: build (Debug and Release), tests, and the plan tooling.
 .DESCRIPTION
-  1. dotnet build Photon.slnx -c Debug and -c Release (skipped with -SkipBuild)
-  2. dotnet test Photon.slnx (-Config, default Release)
+  1. dotnet build Isotone.slnx -c Debug and -c Release (skipped with -SkipBuild)
+  2. dotnet test Isotone.slnx (-Config, default Release)
   3. python scripts/todo-graph.py self-test
   4. python scripts/todo-graph.py validate
   5. python scripts/todo-graph.py plan --check

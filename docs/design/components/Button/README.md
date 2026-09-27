@@ -15,7 +15,7 @@ Command buttons: default, primary (the app accent, once per view), subtle, icon-
 
 ## Rules
 
-- One primary button per view: the dialog's commit button, the Home screen's New, Lumen's Import. It is the only place chrome shows the app accent beside the title-bar mark.
+- One primary button per view: the dialog's commit button, the Home screen's New, Albumen's Import. It is the only place chrome shows the app accent beside the title-bar mark.
 - Labels are verbs in title case in menus and sentence case on buttons: "Save a copy", "Export". OK and Cancel stay short.
 - Icon-only buttons always have a tooltip naming the command and shortcut and an `AutomationProperties.Name`.
 - Destructive commands are default buttons with a verb that says what goes ("Delete 12 photos"), never red fills.
@@ -30,4 +30,4 @@ Tab to focus; Enter and Space activate. In dialogs the primary button is `IsDefa
 
 ## WPF
 
-Styles `Photon.Button` (implicit), `Photon.PrimaryButton`, `Photon.SubtleButton`, `Photon.IconButton`, `Photon.SplitButton` (a `Control` with `PART_Main` and `PART_Drop` + `ContextMenu`), and `ToggleButton` style `Photon.ToggleIconButton`. Template: `Border PART_Chrome` with `CornerRadius="{StaticResource radius-sm}"`, `ContentPresenter`; states via `VisualStateManager` `CommonStates` and `FocusStates` (a separate `Border PART_FocusRing` 1px outside, visible on `IsKeyboardFocused`, never on mouse focus). `FocusVisualStyle="{x:Null}"` so the default dotted rectangle never shows. The primary style binds its brushes to `Photon.App.Accent`, set once per app.
+Styles `Isotone.Button` (implicit), `Isotone.PrimaryButton`, `Isotone.SubtleButton`, `Isotone.IconButton`, `Isotone.SplitButton` (a `Control` with `PART_Main` and `PART_Drop` + `ContextMenu`), and `ToggleButton` style `Isotone.ToggleIconButton`. Template: `Border PART_Chrome` with `CornerRadius="{StaticResource radius-sm}"`, `ContentPresenter`; states via `VisualStateManager` `CommonStates` and `FocusStates` (a separate `Border PART_FocusRing` 1px outside, visible on `IsKeyboardFocused`, never on mouse focus). `FocusVisualStyle="{x:Null}"` so the default dotted rectangle never shows. The primary style binds its brushes to `Isotone.App.Accent`, set once per app.

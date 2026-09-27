@@ -1,4 +1,4 @@
-/* Photon Interface preview helpers. One classic script: window.Photon.
+/* Isotone Interface preview helpers. One classic script: window.Isotone.
    Icons are the suite's single family (Lucide geometry, ISC license): 24 viewBox, stroke 1.5, round caps and joins, no fills. */
 (function () {
   var P = {
@@ -110,5 +110,5 @@
       });
     })(labels[i]);
   }
-  window.Photon = { icons: Object.keys(P), svg: svg, hydrate: hydrate };
+  window.Isotone = { icons: Object.keys(P), svg: svg, hydrate: hydrate };
 })();

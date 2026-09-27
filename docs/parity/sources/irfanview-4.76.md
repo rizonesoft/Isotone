@@ -1,6 +1,6 @@
-# IrfanView feature inventory (parity reference for Lumen)
+# IrfanView feature inventory (parity reference for Albumen)
 
-> **Provenance note (2026-09-27):** verbatim copy of the IrfanView 4.76 x64 inventory (released 2026-09-18, with the official PlugIns package 4.76) compiled for the Lumen parity plan, rows `IV-0001` to `IV-1880`, under its original title: IrfanView feature inventory (for Lumen parity). The ids are stable and each is placed in exactly one row of [`../lumen-parity.md`](../lumen-parity.md). Do not renumber; a future IrfanView version appends new ids after IV-1880 (see [`../README.md`](../README.md)).
+> **Provenance note (2026-09-27):** verbatim copy of the IrfanView 4.76 x64 inventory (released 2026-09-18, with the official PlugIns package 4.76) compiled for the Albumen parity plan, rows `IV-0001` to `IV-1880`, under its original title: IrfanView feature inventory (for Albumen parity). The ids are stable and each is placed in exactly one row of [`../albumen-parity.md`](../albumen-parity.md). Do not renumber; a future IrfanView version appends new ids after IV-1880 (see [`../README.md`](../README.md)).
 
 > **Access:** no limits applied. The official 4.76 x64 ZIP was downloaded and its SHA-256 checked against the published value; the bundled help file (140 topics) was decompiled and read in full with the bundled command-line, plug-in, and change notes. 61 rows marked (PK) in their Source column come partly from product knowledge because the help does not spell out every value of those dialogs.
 

@@ -5,10 +5,10 @@
     CI build carries a unique, monotonic Win32 file version. Values above 65535
     wrap (Win32 version parts are 16-bit).
   -->
-  <Target Name="PhotonFileVersion" AfterTargets="MinVer" Condition="'$(MinVerMajor)' != ''">
+  <Target Name="IsotoneFileVersion" AfterTargets="MinVer" Condition="'$(MinVerMajor)' != ''">
     <PropertyGroup>
-      <_PhotonBuildPart>$([MSBuild]::Modulo($(PhotonBuildNumber), 65536))</_PhotonBuildPart>
-      <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(_PhotonBuildPart)</FileVersion>
+      <_IsotoneBuildPart>$([MSBuild]::Modulo($(IsotoneBuildNumber), 65536))</_IsotoneBuildPart>
+      <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(_IsotoneBuildPart)</FileVersion>
     </PropertyGroup>
   </Target>
 </Project>

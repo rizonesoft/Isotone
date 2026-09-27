@@ -1,6 +1,6 @@
 # TODO System -- Format Spec
 
-The `todo/` tree is the live execution plan for the Photon Graphics Suite: Nodus (vector), Imago (raster), Lumen (darkroom), and the shared `Photon.Core` they consume. Markdown is canonical; the graph cache is a derived read-only projection rebuilt by `scripts/todo-graph.py`.
+The `todo/` tree is the live execution plan for the Isotone Graphics Suite: Stilus (vector), Pinxit (raster), Albumen (darkroom), and the shared `Isotone.Core` they consume. Markdown is canonical; the graph cache is a derived read-only projection rebuilt by `scripts/todo-graph.py`.
 
 One rule governs everything below: **a TODO section must be implementable by someone with zero conversation context.** A fresh session starts with none, and a session that hits the usage limit resumes cold. If a section only makes sense to someone who was in the room, it is not done.
 
@@ -27,7 +27,7 @@ todo/
 
 Domains are flat-numbered and ordered by allocation sequence. Each maps to a build area; the mapping lives in `TODO-00-INDEX.md` and in each domain's `INDEX.md`. The tooling reads domain names from the tree and never hardcodes them: a directory `NN-kebab-name/` holding an `INDEX.md` is a domain. Numbers are stable addresses: a new domain appends after the last one, because `DNN` cross-references encode them.
 
-The domains are `00-workspace` (toolchain, gates, CI, this system), `01-core` (`Photon.Core` and `Photon.UI`, only what two apps need), `02-nodus`, `03-imago`, `04-lumen`, `05-release` (per-app packaging, signing, tags, and the suite bundle), `06-docs` (developer and user documentation), and `99-manual` (operator-only rows, numbered apart from the allocation sequence as ScratchPad's is). `TODO-00-INDEX.md` is the authority for which exist today.
+The domains are `00-workspace` (toolchain, gates, CI, this system), `01-core` (`Isotone.Core` and `Isotone.UI`, only what two apps need), `02-stilus`, `03-pinxit`, `04-albumen`, `05-release` (per-app packaging, signing, tags, and the suite bundle), `06-docs` (developer and user documentation), and `99-manual` (operator-only rows, numbered apart from the allocation sequence as ScratchPad's is). `TODO-00-INDEX.md` is the authority for which exist today.
 
 **Naming:** `TODO-NN-short-name.md`, where `NN` is the next free number *within that domain*. Numbers are local to the domain and never reused. Renaming a file is safe: the stable `id` in frontmatter is what cross-references resolve against.
 
@@ -38,8 +38,8 @@ Every TODO file opens with YAML frontmatter. Five required fields, four optional
 ```yaml
 ---
 schema_version: 1
-id: nodus-path-editing               # stable, kebab-case, globally unique, survives renames
-domain: 02-nodus                     # must match the containing directory
+id: stilus-path-editing               # stable, kebab-case, globally unique, survives renames
+domain: 02-stilus                     # must match the containing directory
 status: draft                        # draft | active | blocked | done | superseded
 title: "TODO-01 -- Path Editing"
 depends_on: []                       # optional -- whole-TODO edges; prefer section edges
@@ -67,9 +67,9 @@ superseded_by: other-todo-id         # optional -- set with status: superseded
 
 ## Inputs
 
-- [`src/Nodus/Bezier.Core/Bezier.Core.csproj`](…) -- exists; §2 renames it
+- [`src/Stilus/Bezier.Core/Bezier.Core.csproj`](…) -- exists; §2 renames it
 - [`standards/shared.md`](…) -- the shared conventions this file builds to
-- -> XREF: [`03-imago/TODO-01 §4`](…) -- consumes the gate this section builds
+- -> XREF: [`03-pinxit/TODO-01 §4`](…) -- consumes the gate this section builds
 
 ## Outcome
 
@@ -93,11 +93,11 @@ superseded_by: other-todo-id         # optional -- set with status: superseded
 
 One paragraph of context: why this section exists and what it must not break.
 
-- [ ] `global.json` pins the .NET SDK and `Photon.slnx` lists every project. Done when: `dotnet --version` in the repo root prints the pinned version and `dotnet build Photon.slnx` exits 0. Cheaper substitute: one solution per app with no shared pin.
+- [ ] `global.json` pins the .NET SDK and `Isotone.slnx` lists every project. Done when: `dotnet --version` in the repo root prints the pinned version and `dotnet build Isotone.slnx` exits 0. Cheaper substitute: one solution per app with no shared pin.
 - [ ] Another concrete item. Max 30 per section. See Work items below.
 - [ ] Commit: `"workspace: pin the .NET SDK and build every app from one solution"`
 
-**Test checkpoint:** `dotnet build Photon.slnx -c Release` exits 0 on a configured machine; editing `global.json` to an absent SDK version makes it exit non-zero naming the version.
+**Test checkpoint:** `dotnet build Isotone.slnx -c Release` exits 0 on a configured machine; editing `global.json` to an absent SDK version makes it exit non-zero naming the version.
 
 > **Verified:** 2026-09-26 | §1 | build 0 · SDK 10.0.x · negative probe exit 1
 
@@ -129,19 +129,19 @@ Every `## N.` body section has exactly one table row, and every row has exactly 
 
 Never a bare number, and never a cross-TODO reference without a section. `D03 T01` alone is not a dependency: it is a vague gesture at one.
 
-**Cross-references are bidirectional.** If this file's Inputs point at `D03 T01 §4`, then `03-imago/TODO-01-….md` must point back at this file. One-sided XREFs are broken XREFs, and the validator flags them FATAL.
+**Cross-references are bidirectional.** If this file's Inputs point at `D03 T01 §4`, then `03-pinxit/TODO-01-….md` must point back at this file. One-sided XREFs are broken XREFs, and the validator flags them FATAL.
 
 Skills under `.claude/skills/` may cite only full `DNN TNN §N` refs, and only to live sections: `validate` fails a skill that cites a short form or a dead section.
 
 ## Proof: what a Test checkpoint may cite
 
-Photon is C# on .NET 10, WPF on Windows, built with `dotnet` from one solution (`Photon.slnx`) and tested with xUnit. A checkpoint cites one or more of these five, and **it must be able to fail**:
+Isotone is C# on .NET 10, WPF on Windows, built with `dotnet` from one solution (`Isotone.slnx`) and tested with xUnit. A checkpoint cites one or more of these five, and **it must be able to fail**:
 
 | Proof | What it is | What it cannot prove |
 | ----- | ---------- | -------------------- |
-| **Builds clean** | The touched projects build Debug and Release with warnings as errors and the analyzers the build enables (`dotnet build Photon.slnx -c Debug` and `-c Release`). The baseline gate every code section owes. | That the code does the right thing. It is a compile gate, nothing more. |
+| **Builds clean** | The touched projects build Debug and Release with warnings as errors and the analyzers the build enables (`dotnet build Isotone.slnx -c Debug` and `-c Release`). The baseline gate every code section owes. | That the code does the right thing. It is a compile gate, nothing more. |
 | **Static analysis clean** | The Roslyn analyzers configured for the solution report nothing new on the touched projects, and `dotnet format --verify-no-changes` over them is clean. | Runtime behavior. Clean analysis over wrong logic is still wrong logic. |
-| **Unit test** | An xUnit test asserting a named behavior, run with `dotnet test Photon.slnx --filter <name>`. Cite the test name. | Anything on the rendered surface. A unit test over a UI section is a supplement, not a substitute. |
+| **Unit test** | An xUnit test asserting a named behavior, run with `dotnet test Isotone.slnx --filter <name>`. Cite the test name. | Anything on the rendered surface. A unit test over a UI section is a supplement, not a substitute. |
 | **Driven run with evidence** | Launch the built app, drive the surface, and record the observable result: a Serilog log line, a settings value read back, a saved file inspected, or a capture committed under `docs/captures/<app>/`. | Repeatability. A driven run is evidence of one run, so the section says what was driven and what it produced. |
 | **Format fidelity proof** | A committed fixture file is opened, saved, and reopened, and the result is compared against the original or a golden output: element by element for vector documents, pixel by pixel within a stated tolerance for raster and RAW output. **Every file-format reader or writer owes this one.** | Anything about a surface. Fidelity proves bytes and pixels, not the experience of producing them. |
 
@@ -168,7 +168,7 @@ One paragraph of context, then the checklist.
 
 > **Verified:** 2026-09-26 | §3 | build clean Debug+Release · analyzers 0 new · 24 blend-mode tests pass · golden diff max 0.4/255
 > **Deferred:** per-layer blend in the export dialog -> XREF: D03 T02 §6 (item: "…") -- needs the export pipeline first
-> **Review:** round 1, fingerprint `a3f91c2e5b04` -- `adversarial` approve · `consistency` approve · `integration` needs-attention (1). Raw findings: docs/reviews/03-imago/D03-T01-s3.md
+> **Review:** round 1, fingerprint `a3f91c2e5b04` -- `adversarial` approve · `consistency` approve · `integration` needs-attention (1). Raw findings: docs/reviews/03-pinxit/D03-T01-s3.md
 > **Plan review:** gpt high, no findings (run 20260926-D03-T01-S3-gpt)
 > **CRUD:** applicable | driven run: set a layer to Multiply, save, reopen, mode survived
 > **Implementer:** assistant name (model-id)
@@ -237,7 +237,7 @@ For the whole file at a glance, read the Implementation Order table: `[x]` canno
 
 ## Frozen behavior
 
-Some behaviors are dangerous to get wrong because they write somebody's work: saving over a user's document, autosave and crash recovery, and anything that touches an original image in Lumen's library (non-destructive editing means an original is never written unless the user opts in, operator decision 2026-09-27: "Safe by default, opt-in writes"). A writer that computes the wrong bytes there does not fail a test, it destroys a user's file.
+Some behaviors are dangerous to get wrong because they write somebody's work: saving over a user's document, autosave and crash recovery, and anything that touches an original image in Albumen's library (non-destructive editing means an original is never written unless the user opts in, operator decision 2026-09-27: "Safe by default, opt-in writes"). A writer that computes the wrong bytes there does not fail a test, it destroys a user's file.
 
 Any TODO touching one sets `frozen: true` in frontmatter, and every section that changes a frozen behavior carries a freeze check alongside its test checkpoint:
 
@@ -247,20 +247,20 @@ Any TODO touching one sets `frozen: true` in frontmatter, and every section that
 
 Restructuring frozen code is allowed. Changing what it *writes* requires operator approval: the TODO records the approval, it does not grant it.
 
-The frozen set as of this file is empty, because none of those paths has shipped under this plan yet. A behavior joins the set by being listed here and setting the flag in the same commit; the document save path of each app, autosave and recovery, and Lumen's original-file guard are expected to join as they ship. Lumen's guard joins as `standards/lumen.md` states it: safe by default, with four in-place opt-ins (`Lumen.Originals.InPlace.EmbedMetadata`, `.Rotate`, `.Save`, and `.Convert`), all off by default, owned by one policy and writer (`D04 T11 §1`), embedding metadata only through the metadata-only rewriters of `D04 T08 §9`, and set on the Originals preferences group (`D04 T14 §10`); every in-place write takes a verified backup first unless the user confirmed turning backups off, and every freeze check that proves originals unchanged runs with every `Lumen.Originals.*` opt-in at its default.
+The frozen set as of this file is empty, because none of those paths has shipped under this plan yet. A behavior joins the set by being listed here and setting the flag in the same commit; the document save path of each app, autosave and recovery, and Albumen's original-file guard are expected to join as they ship. Albumen's guard joins as `standards/albumen.md` states it: safe by default, with four in-place opt-ins (`Albumen.Originals.InPlace.EmbedMetadata`, `.Rotate`, `.Save`, and `.Convert`), all off by default, owned by one policy and writer (`D04 T11 §1`), embedding metadata only through the metadata-only rewriters of `D04 T08 §9`, and set on the Originals preferences group (`D04 T14 §10`); every in-place write takes a verified backup first unless the user confirmed turning backups off, and every freeze check that proves originals unchanged runs with every `Albumen.Originals.*` opt-in at its default.
 
 ## Surface fidelity
 
-The freeze check has a visual twin. Photon is not a clone of somebody else's product, so fidelity here means **the design**: the Photon Interface design system in `docs/design/` is the source, and each surface implements it 1:1. The binding rules are [`standards/design-contract.md`](../standards/design-contract.md) (operator decisions 2026-09-27: pixel perfect is "Exact tokens + ±1 DIP geometry + approved goldens"; legacy code is "Record existing violations, fail new ones"; goldens are signed off by the review panel only). A section never restates a rule from the contract, it points at it.
+The freeze check has a visual twin. Isotone is not a clone of somebody else's product, so fidelity here means **the design**: the Isotone Interface design system in `docs/design/` is the source, and each surface implements it 1:1. The binding rules are [`standards/design-contract.md`](../standards/design-contract.md) (operator decisions 2026-09-27: pixel perfect is "Exact tokens + ±1 DIP geometry + approved goldens"; legacy code is "Record existing violations, fail new ones"; goldens are signed off by the review panel only). A section never restates a rule from the contract, it points at it.
 
 **Every section that builds or changes a user-facing surface carries a `Fidelity:` line** naming the surface, the design it answers to, and the golden folder its approved renders land in:
 
 ```
-**Fidelity:** Photon.UI buttons and inputs -- docs/design/components/ (Button, Checkbox, TextBox cards) per standards/design-contract.md; goldens under docs/captures/golden/photon-ui/.
-**Fidelity:** Nodus main window chrome -- docs/design/shell-layout.md (Regions) and docs/design/components/WindowChrome/; goldens under docs/captures/golden/nodus/main-window/.
+**Fidelity:** Isotone.UI buttons and inputs -- docs/design/components/ (Button, Checkbox, TextBox cards) per standards/design-contract.md; goldens under docs/captures/golden/isotone-ui/.
+**Fidelity:** Stilus main window chrome -- docs/design/shell-layout.md (Regions) and docs/design/components/WindowChrome/; goldens under docs/captures/golden/stilus/main-window/.
 ```
 
-The captures of the imported apps under `docs/captures/<app>/` (recorded by `D00 T03 §2`) are a **before** record of the legacy surfaces, useful to show what changed. They are never the fidelity source: a surface is compared with the design and its approved goldens, not with what Bezier or the old Imago looked like, and a section never cites them as the thing to match.
+The captures of the imported apps under `docs/captures/<app>/` (recorded by `D00 T03 §2`) are a **before** record of the legacy surfaces, useful to show what changed. They are never the fidelity source: a surface is compared with the design and its approved goldens, not with what Bezier or the old Pinxit looked like, and a section never cites them as the thing to match.
 
 ### The Design line
 
@@ -270,10 +270,10 @@ The same sections carry one more line, the machine-checked half of the Fidelity 
 **Design:** <ref>[, <ref>...] -- states: <all in spec | state, state, ...> -- themes: <all four | n/a (<reason>)> -- density: <both | n/a (<reason>)>
 ```
 
-- A `<ref>` is a repository-relative path, optionally in backticks, one of: a file under `docs/design/` (`docs/design/components/Button/README.md`, `docs/design/tokens.json`), optionally with a heading anchor (`docs/design/components/Button/README.md#states`); a shell-layout region by its heading anchor (`docs/design/shell-layout.md#regions`, `#nodus-vector`, `#splash-and-home`); or a UI-standard rule by its heading anchor (`standards/ui.md#focus`), where the anchor is required. Anchors are GitHub's: the heading lower-cased, punctuation other than hyphens dropped, spaces turned into hyphens, a repeated heading suffixed `-1`, `-2`.
+- A `<ref>` is a repository-relative path, optionally in backticks, one of: a file under `docs/design/` (`docs/design/components/Button/README.md`, `docs/design/tokens.json`), optionally with a heading anchor (`docs/design/components/Button/README.md#states`); a shell-layout region by its heading anchor (`docs/design/shell-layout.md#regions`, `#stilus-vector`, `#splash-and-home`); or a UI-standard rule by its heading anchor (`standards/ui.md#focus`), where the anchor is required. Anchors are GitHub's: the heading lower-cased, punctuation other than hyphens dropped, spaces turned into hyphens, a repeated heading suffixed `-1`, `-2`.
 - `new surface: docs/design/<path>.md` names a spec that does not exist yet. It is allowed only together with a checklist item in the same section that adds that spec to `docs/design/` (with its preview card, the page regenerated) before any XAML is written. Several sections may name the same new spec: the first to ship writes it, and once it exists the others read `new surface:` as "extend this spec" (they add their states and parts to it before building), so one section shipping never invalidates another. A shipped section's stamp cites the spec directly.
 - `states:` is `all in spec` (every state the cited component READMEs list) or a comma list of lower-case state names (`rest, hover, pressed, focus, disabled`).
-- `themes:` is `all four` (Darkest, Dark, Medium Gray, Light, each with the Blue and Photon orange Highlight) or `n/a (<reason>)` for a surface the spec draws the same in every theme (the splash card). `density:` is `both` (Compact and Comfortable) or `n/a (<reason>)` for a fixed-size surface.
+- `themes:` is `all four` (Darkest, Dark, Medium Gray, Light, each with the Blue and Isotone orange Highlight) or `n/a (<reason>)` for a surface the spec draws the same in every theme (the splash card). `density:` is `both` (Compact and Comfortable) or `n/a (<reason>)` for a fixed-size surface.
 - One line per section, directly under the Fidelity line, with every ref comma-separated. Example:
 
 ```
@@ -290,11 +290,11 @@ A surface that cannot match its spec now says so, directly under its Design line
 **Design deviation:** opened YYYY-MM-DD -- spec: <design ref> -- reason: <why the code cannot match now> -- follow-up: DNN TNN §N (fix design|fix code)
 ```
 
-The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Nodus, Imago, or Lumen file (a `Photon.UI` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
+The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Stilus, Pinxit, or Albumen file (a `Isotone.UI` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
 
 ### Gates and goldens
 
-`scripts/design-lint.py` fails any new literal color, size, font family, `StaticResource` color, non-token color key, WPF-UI or FluentIcons use, emoji glyph, or system backdrop in the UI sources; the violations of 2026-09-27 are recorded in `docs/design/.lint-baseline.json`, which passes them, fails new ones, and fails a recorded one that no longer occurs until the baseline shrinks. The commit hook, `scripts/check-all.ps1`, and the `build` workflow run it. The visual harness (`tests/Photon.UI.VisualTests`, `D01 T01 §9`) renders each control and surface per state, theme, Highlight, density, and scale into `build/wpf-renders/`; `python scripts/render-design-reference.py` renders the design's own previews into `build/design-reference/` with a side-by-side report; `review-todo-section` compares the two in its `design-fidelity` lens and alone approves the goldens under `docs/captures/golden/<area>/`, which CI then pixel-diffs against.
+`scripts/design-lint.py` fails any new literal color, size, font family, `StaticResource` color, non-token color key, WPF-UI or FluentIcons use, emoji glyph, or system backdrop in the UI sources; the violations of 2026-09-27 are recorded in `docs/design/.lint-baseline.json`, which passes them, fails new ones, and fails a recorded one that no longer occurs until the baseline shrinks. The commit hook, `scripts/check-all.ps1`, and the `build` workflow run it. The visual harness (`tests/Isotone.UI.VisualTests`, `D01 T01 §9`) renders each control and surface per state, theme, Highlight, density, and scale into `build/wpf-renders/`; `python scripts/render-design-reference.py` renders the design's own previews into `build/design-reference/` with a side-by-side report; `review-todo-section` compares the two in its `design-fidelity` lens and alone approves the goldens under `docs/captures/golden/<area>/`, which CI then pixel-diffs against.
 
 **The same sections carry the documentation duty:** shipping or changing a user-facing surface updates that app's user guide under `docs/user/` in the same commit; review checks it before stamping. `process-todo-section` refuses to build a surface whose Design line does not validate, or whose spec is named `new surface:` without the item that writes it first: building from a one-line description freezes a guess instead of the design. `review-todo-section` compares the rendered surface against the design reference renders and the approved goldens before stamping. A genuinely new surface with no spec yet says `new surface:` on its Design line, so silence is never ambiguous.
 
@@ -314,10 +314,10 @@ Every section that builds or changes a user-facing surface carries three blocks 
 ```
 **Job:** <the user> can <the verb this surface exists for>. Consumer: <what reads the write, or "none: this surface is the consumer">.
 **Treatment:** <the asked treatment, named so a substitute can fail>. Cheaper substitute that fails the checkpoint: <the wrong thing>.
-**Chrome:** consume <named shared styles, controls, or services from the app's theme or Photon.Core>. Do not invent a second <pattern>.
+**Chrome:** consume <named shared styles, controls, or services from the app's theme or Isotone.Core>. Do not invent a second <pattern>.
 ```
 
-`Chrome:` is load-bearing in this repo. Three apps grow side by side, and the failure mode is an app growing its own color picker, its own undo stack, or its own settings writer when another app already has one that belongs in `Photon.Core`. A second implementation of a shared control is a defect, not a shortcut; equally, code moves into `Photon.Core` only when a second app needs it.
+`Chrome:` is load-bearing in this repo. Three apps grow side by side, and the failure mode is an app growing its own color picker, its own undo stack, or its own settings writer when another app already has one that belongs in `Isotone.Core`. A second implementation of a shared control is a defect, not a shortcut; equally, code moves into `Isotone.Core` only when a second app needs it.
 
 A section whose Fidelity line says the work has no surface of its own ("no surface of its own", "not a surface", "the library is not a surface") skips these three and the Design line.
 
@@ -358,7 +358,7 @@ Size a section by what holds together, not by a number. Two forces pull in oppos
 - **Too large** exhausts a fresh worker's context halfway through, and gives review more surface than it can cover well in one pass.
 - **Too small** multiplies cost. A section is the unit the review contract prices, so three thin sections cost three review cycles where one coherent section costs one.
 
-Split where the work genuinely divides: a different app, a different project, a dependency boundary, `Photon.Core` separate from the app that consumes it. Split at **authoring** time, not during implementation: splitting mid-flight costs a wasted context.
+Split where the work genuinely divides: a different app, a different project, a dependency boundary, `Isotone.Core` separate from the app that consumes it. Split at **authoring** time, not during implementation: splitting mid-flight costs a wasted context.
 
 This guidance is not derived from measurement. `python scripts/todo-graph.py query calibration` compares each stamped section's item count against what it actually cost, and refuses to quote a correlation until enough sections have stamped; when it stops refusing, this paragraph is the thing to revisit.
 
@@ -393,7 +393,7 @@ A section that only names an outcome ("clean up the canvas") leaves a cold agent
 Each checklist item except `Commit:` is a **micro-step**. Required on new work:
 
 1. **One action.** One file, class, method, command, or control. If you need "and then" to describe it, it is two items, or one item with numbered sub-steps.
-2. **A named path** in backticks (`src/Photon.Core/Undo/UndoStack.cs`, `LayerViewModel.MergeDown()`, `dotnet test`). A verb with no object ("improve logging") is not an item.
+2. **A named path** in backticks (`src/Isotone.Core/Undo/UndoStack.cs`, `LayerViewModel.MergeDown()`, `dotnet test`). A verb with no object ("improve logging") is not an item.
 3. **Done when.** The observable end state in the same bullet. Example: "Done when: reopening the saved file restores every layer's blend mode, and the round-trip test asserts it."
 4. **The cheaper substitute** on any UI or write item, so the Test checkpoint can fail on it.
 5. **A source cite** when behavior is copied: a file and line, an existing app that already does it, a Microsoft Learn URL for a WPF or .NET API, or the format specification for a reader or writer.
@@ -496,7 +496,7 @@ The live values must equal the latest entry's `snapshot` (`budget-unrecorded-cha
 - [B-NNN] <title> -- source: <key> -- added: YYYY-MM-DD -- why deferred: <text> -- promote when: <text>
 ```
 
-with optional `app:` (`nodus`, `imago`, `lumen`, or `suite`; no field reads as `suite`), `summary:`, and `needs:` fields (`needs:` cites full `DNN TNN §N` refs to live sections, or other backlog ids), and the repeatable `merged:` and `reviewed:` fields below. `source` is one key token: a legacy key, a finding ID, or the `-> SOURCE:` key the section would carry, so a scan that runs twice finds its own entry. Ids are taken in order and never reused. `validate` refuses a malformed line, a line that reads as a section, a dead or short ref, a duplicate id or source, and an entry whose source a live section already carries. `query backlog` lists it.
+with optional `app:` (`stilus`, `pinxit`, `albumen`, or `suite`; no field reads as `suite`), `summary:`, and `needs:` fields (`needs:` cites full `DNN TNN §N` refs to live sections, or other backlog ids), and the repeatable `merged:` and `reviewed:` fields below. `source` is one key token: a legacy key, a finding ID, or the `-> SOURCE:` key the section would carry, so a scan that runs twice finds its own entry. Ids are taken in order and never reused. `validate` refuses a malformed line, a line that reads as a section, a dead or short ref, a duplicate id or source, and an entry whose source a live section already carries. `query backlog` lists it.
 
 **The admission test** applies to discovered work only. A campaign files a discovered section only when the work is one of:
 
@@ -524,13 +524,13 @@ Everything else (a competitor feature, a premium win, a nice-to-have from a revi
 
    A record's id and source are never reused, and the record itself is never deleted (deleting it is `backlog-dropped` too). No skill removes an entry on its own judgement that it is stale; it asks the operator.
 
-**The release-time backlog gate.** Every release section (one whose checklist pushes an app tag, ``Push the tag `<app>-vX.Y.Z` ``, the same test `design-deviation-open-at-release` uses; `photon-vX.Y.Z` is the suite release) carries the item
+**The release-time backlog gate.** Every release section (one whose checklist pushes an app tag, ``Push the tag `<app>-vX.Y.Z` ``, the same test `design-deviation-open-at-release` uses; `isotone-vX.Y.Z` is the suite release) carries the item
 
 ```
 - [ ] Run the backlog review for `<app>-vX.Y.Z`: ...
 ```
 
-or `validate` fails with `release-backlog-review-missing`. Running it means walking every backlog entry whose `app:` is that app or `suite` (every entry, for a `photon` release) and, for each, either promoting it into a section (through `add-todo`; a full promotion deletes the entry) or asking the operator whether it may wait and recording the answer on the entry:
+or `validate` fails with `release-backlog-review-missing`. Running it means walking every backlog entry whose `app:` is that app or `suite` (every entry, for a `isotone` release) and, for each, either promoting it into a section (through `add-todo`; a full promotion deletes the entry) or asking the operator whether it may wait and recording the answer on the entry:
 
 ```
 -- reviewed: <app>-vX.Y.Z YYYY-MM-DD promoted DNN TNN §N
@@ -603,7 +603,7 @@ or `validate` fails with `release-backlog-review-missing`. Running it means walk
 | `backlog-dropped` | FATAL | A source key HEAD's backlog holds (an entry, a merge marker, or a removal record) that the working file no longer accounts for: not carried by a live section's `-> SOURCE:` line, a surviving entry's merge marker, or an operator removal record. Nothing leaves the backlog without the operator's approval. |
 | `backlog-review-rewritten` | FATAL | A `reviewed:` field HEAD's entry carries that the working entry lost or changed: a release's backlog review is append-only. |
 | `release-backlog-review-missing` | FATAL | A release section (it pushes an app tag) without its ``Run the backlog review for `<tag>` `` checklist item. |
-| `release-backlog-unreviewed` | FATAL | A release section stamped `[x]` while a backlog entry in its scope (its app or `suite`; every entry for `photon`), added on or before the stamp, has no `reviewed:` field for that tag. |
+| `release-backlog-unreviewed` | FATAL | A release section stamped `[x]` while a backlog entry in its scope (its app or `suite`; every entry for `isotone`), added on or before the stamp, has no `reviewed:` field for that tag. |
 | `design-missing` | FATAL | A section whose Fidelity line names a surface carries no `**Design:**` line and is not listed in `todo/.design-baseline`: a surface built from a guess instead of the spec it implements 1:1. |
 | `design-malformed` | FATAL | A `**Design:**` or `**Design deviation:**` line outside its grammar (near misses included), a second Design line in one section, a line outside a numbered section, or `new surface:` without the item that adds the spec to `docs/design/` first. |
 | `design-dead-ref` | FATAL | A Design ref whose file does not exist or whose anchor matches no heading (slugged GitHub-style) or HTML id, or a deviation whose follow-up names no live section. |

@@ -16,7 +16,7 @@ The context toolbar under the title bar that shows the active tool's settings (P
 ## Rules
 
 - Content changes with the tool; order: preset, size and shape, blending (Mode, Opacity, Flow), then toggles. Keep Photoshop's order so muscle memory transfers.
-- In Nodus with a selection the bar shows the selection's X, Y, W and H (Bezier's document W/H when nothing is selected).
+- In Stilus with a selection the bar shows the selection's X, Y, W and H (Bezier's document W/H when nothing is selected).
 - Controls that do not apply are disabled with a reason tooltip, never hidden, so the bar does not jump.
 - The hint bar is one line naming the tool and its modifier keys; View > Show Hints hides it.
 - Overflow: controls at the right collapse into a trailing `ellipsis` button menu.
@@ -27,4 +27,4 @@ The bar is a toolbar: F6 cycles focus between rail, options bar, canvas and dock
 
 ## WPF
 
-`ToolBar` is not used (its overflow chrome fights the design); the bar is a `DockPanel` with an `ItemsControl` whose `DataTemplateSelector` picks the tool's options view. Style key `Photon.OptionsBar`; separators `Photon.ToolbarSeparator`. The hint bar is `Photon.HintBar` bound to the tool's `Hint` string.
+`ToolBar` is not used (its overflow chrome fights the design); the bar is a `DockPanel` with an `ItemsControl` whose `DataTemplateSelector` picks the tool's options view. Style key `Isotone.OptionsBar`; separators `Isotone.ToolbarSeparator`. The hint bar is `Isotone.HintBar` bound to the tool's `Hint` string.

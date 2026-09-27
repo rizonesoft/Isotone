@@ -1,6 +1,6 @@
 name: build
 
-# Builds and tests the whole suite (Photon.slnx) on every push and pull request
+# Builds and tests the whole suite (Isotone.slnx) on every push and pull request
 # to main. The SDK comes from global.json (exact pin, rollForward disable).
 
 on:
@@ -50,12 +50,12 @@ jobs:
           key: nuget-v1-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
           restore-keys: nuget-v1-${{ runner.os }}-
       - name: Restore
-        run: dotnet restore Photon.slnx
+        run: dotnet restore Isotone.slnx
       - name: Build (Release)
-        run: dotnet build Photon.slnx -c Release --no-restore
+        run: dotnet build Isotone.slnx -c Release --no-restore
       - name: Test (Release)
         run: >-
-          dotnet test Photon.slnx -c Release --no-build
+          dotnet test Isotone.slnx -c Release --no-build
           --logger "trx"
           --results-directory "${{ github.workspace }}/artifacts/TestResults"
       - name: Upload test results

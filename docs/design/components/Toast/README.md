@@ -35,4 +35,4 @@ Toasts are announced through a live region (assertive for errors, polite otherwi
 
 ## WPF
 
-`Photon.ToastHost` (an `ItemsControl` in an adorner layer over the window) with `Photon.Toast` items and `Photon.InfoBar` (`Control` with `Severity`, `Title`, `Message`, `ActionCommand`, `IsClosable`). `AutomationProperties.LiveSetting` per severity.
+`Isotone.ToastHost` (an `ItemsControl` in an adorner layer over the window) with `Isotone.Toast` items and `Isotone.InfoBar` (`Control` with `Severity`, `Title`, `Message`, `ActionCommand`, `IsClosable`). `AutomationProperties.LiveSetting` per severity.
