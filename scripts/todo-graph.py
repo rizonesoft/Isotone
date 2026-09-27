@@ -10,7 +10,7 @@ markdown cannot answer by grep -- what is ready, what is blocked, and on what.
     python scripts/todo-graph.py self-test
     python scripts/todo-graph.py query ready|blocked|stats|deferred|frozen|findings|surfaces
     python scripts/todo-graph.py query budget|backlog
-    python scripts/todo-graph.py query growth --since <ref> [--check]
+    python scripts/todo-graph.py query growth --since <ref>
     python scripts/todo-graph.py render > docs-graph.md
     python scripts/todo-graph.py plan [--check]
     python scripts/todo-graph.py classify 'D00 T01 §11' 'D02 T01 §13'
@@ -960,24 +960,38 @@ SEVERITY_MAP: dict[str, str] = {
     "budget-unrecorded-change": "fatal",
     # a `**Origin:**` line outside the grammar (`**Origin:** discovered
     # run=<12 hex> <YYYY-MM-DD>`), outside a numbered section, or twice in
-    # one section: the per-run cap counts these lines, so a malformed one is
-    # a section the cap cannot see.
+    # one section: the Origin line is the provenance record of a section a
+    # campaign filed on its own, so a malformed one is a discovery nobody
+    # can report or audit. (No cap counts these lines since 2026-09-27.)
     "origin-malformed": "fatal",
-    # more sections carrying one campaign run id than
-    # `per_run_discovered_sections`: the stateless form of the per-run cap,
-    # checked without git. Overflow merges into an open section or goes to
-    # the backlog.
-    "run-cap-exceeded": "fatal",
     # a backlog line outside the one-line entry grammar, one that reads as
-    # a section (a checkbox, a numbered heading, a stamp), or one citing a
-    # dead or short section ref: the backlog is a list, never runnable.
+    # a section (a checkbox, a numbered heading, a stamp), one citing a
+    # dead or short section ref, a malformed merge marker, `reviewed:`
+    # field, or operator removal record: the backlog is a list, never
+    # runnable, and every record in it is machine-read.
     "backlog-malformed": "fatal",
-    # a backlog id or source key used twice, or a source key a live section
+    # a backlog id or source key used twice (entries, merge markers, and
+    # removal records share one namespace), or a source key a live section
     # already carries: one real-world thing, one home.
     "backlog-duplicate": "fatal",
-    # more backlog entries than `backlog_cap`: triage (merge, drop, promote)
-    # before adding, never a raised cap on the side.
-    "backlog-over-cap": "fatal",
+    # No drop without operator approval (operator 2026-09-27: "the cap is
+    # worrying me, because I'm worried features will be left behind."): a
+    # source key HEAD's backlog holds (an entry, a merge marker, or a
+    # removal record) that the working file no longer accounts for through
+    # a live section's `-> SOURCE:` line (promotion), a surviving entry's
+    # merge marker, or an operator removal record.
+    "backlog-dropped": "fatal",
+    # a `reviewed:` field HEAD's entry carries that the working entry lost
+    # or changed: a release's backlog review is append-only evidence.
+    "backlog-review-rewritten": "fatal",
+    # Release-time backlog gate (operator 2026-09-27): a release section
+    # (it pushes an app tag) without its `Run the backlog review for
+    # `<tag>`` checklist item.
+    "release-backlog-review-missing": "fatal",
+    # a stamped release section whose app (or, for a suite `photon-v`
+    # release, the whole backlog) still has an entry, added on or before
+    # the stamp, with no `reviewed: <tag> ...` field for that tag.
+    "release-backlog-unreviewed": "fatal",
     # THE DESIGN CONTRACT (standards/design-contract.md, operator 2026-09-27).
     # A surface section without its `**Design:**` line, outside the baseline
     # of 2026-09-27: a surface built from a guess instead of the spec.
@@ -2209,8 +2223,7 @@ def cmd_query(args) -> int:
         if summary is not None:
             print(
                 f"budget           {summary['sections']} sections ({summary['discovered']} discovered); "
-                f"backlog {summary['backlog']} of {summary['backlog_cap']}; "
-                f"at most {summary['per_run_discovered_sections']} discovered sections per run"
+                f"backlog {summary['backlog']} entries; no caps"
             )
         return 0
 
@@ -2220,30 +2233,24 @@ def cmd_query(args) -> int:
             _b, problems = load_budget()
             print("no usable todo/budget.json" + (f": {problems[0]}" if problems else ""))
             return 1
-        cap = summary["per_run_discovered_sections"]
         print(
             f"budget  {summary['sections']} sections ({summary['discovered']} discovered); "
-            f"backlog {summary['backlog']} of {summary['backlog_cap']}; per run at most {cap} "
-            "discovered sections. Operator-directed sections are never capped."
+            f"backlog {summary['backlog']} entries. Nothing is capped: not operator-directed "
+            "sections, not discovered sections, not the backlog."
         )
         print(f"\n  {'phase':>5}  {'sections':>8}  {'discovered':>10}  title")
         for row in summary["phases"]:
             print(f"  {row['phase']:>5}  {row['sections']:>8}  {row['discovered']:>10}  {row['title']}")
-        over = summary["backlog"] > summary["backlog_cap"]
         if summary["runs"]:
-            print("\ndiscovered sections per campaign run:")
+            print("\ndiscovered sections per campaign run (provenance, no cap):")
             for run, n in sorted(summary["runs"].items(), key=lambda kv: (-kv[1], kv[0])):
-                flag = "  OVER THE PER-RUN CAP" if n > cap else ""
-                over = over or n > cap
-                print(f"  run={run}  {n} of {cap}{flag}")
+                print(f"  run={run}  {n}")
         latest = summary["history"][-1]
         print(
             f"\nhistory {len(summary['history'])} entr{'y' if len(summary['history']) == 1 else 'ies'}; "
             f"latest {latest['date']} approved by {latest['approved_by']}: {latest['change']}"
         )
-        if over:
-            print("\nOVER A CAP: `python scripts/todo-graph.py validate` names the breach.")
-        return 1 if over else 0
+        return 0
 
     if what == "backlog":
         loaded = load_backlog()
@@ -2256,9 +2263,7 @@ def cmd_query(args) -> int:
             app = f.get("app", "-")
             needs = f"  needs: {f['needs']}" if "needs" in f else ""
             print(f"{entry['id']:<6} {f.get('added', '?'):<10}  {app:<6}  {entry['title']}{needs}")
-        summary = budget_summary(todos)
-        cap = f" of {summary['backlog_cap']}" if summary is not None else ""
-        print(f"\n{len(entries)}{cap} backlog entr{'y' if len(entries) == 1 else 'ies'}"
+        print(f"\n{len(entries)} backlog entr{'y' if len(entries) == 1 else 'ies'}"
               + (f"; {len(problems)} malformed (see validate)" if problems else ""))
         return 0
 
@@ -2285,20 +2290,17 @@ def cmd_query(args) -> int:
             print(f"  - backlog {bid}  {titles.get(bid, '')}")
         added, removed = len(report["sections_added"]), len(report["sections_removed"])
         discovered = len(report["discovered_added"])
-        summary = budget_summary(todos)
-        cap = summary["per_run_discovered_sections"] if summary is not None else None
+        runs: dict[str, int] = {}
+        for run in report["discovered_added"].values():
+            runs[run] = runs.get(run, 0) + 1
         print(
-            f"sections: +{added} -{removed} (net {added - removed:+d}), {discovered} discovered; "
-            f"backlog: +{len(report['backlog_added'])} -{len(report['backlog_removed'])}"
-            + (f"; per-run cap: {discovered} of {cap} discovered sections" if cap is not None else "")
+            f"sections: +{added} -{removed} (net {added - removed:+d}), {discovered} discovered"
+            + (f" ({', '.join(f'run={r} {n}' for r, n in sorted(runs.items()))})" if runs else "")
+            + f"; backlog: +{len(report['backlog_added'])} -{len(report['backlog_removed'])}; no caps"
         )
-        if getattr(args, "check", False) and cap is not None and discovered > cap:
-            print(
-                f"OVER THE PER-RUN CAP: {discovered} discovered sections since {since}, cap {cap}. "
-                "Merge further discoveries into open sections as items or file them in "
-                "todo/backlog.md, and record each overflow in the run file."
-            )
-            return 1
+        # `--check` stays accepted for old invocations. Nothing is capped
+        # since 2026-09-27, and an entry dropped without a trace is
+        # `validate`'s backlog-dropped, so growth reports and never fails.
         return 0
 
     if what == "deferred":
@@ -4935,28 +4937,35 @@ def cmd_progress(args: argparse.Namespace) -> int:
 
 # ------------------------------------------------------------ budget + backlog
 #
-# The plan must not grow unconditionally (operator 2026-09-26), and planning
-# the operator asks for is never capped (operator 2026-09-27: "Why is there a
+# The plan must not grow unconditionally (operator 2026-09-26), planning the
+# operator asks for is never capped (operator 2026-09-27: "Why is there a
 # phase limit on planning, should the limit not only be on new sections beign
-# created automatically, but even then that shoiuld not be a small limit").
-# The 2026-09-26 design capped every phase and the whole tree, which bounded
-# the operator's own planning as hard as a campaign's discoveries. Now only
-# the second is bounded:
+# created automatically, but even then that shoiuld not be a small limit"),
+# and later the same day the operator removed the remaining caps: "the cap is
+# worrying me, because I'm worried features will be left behind." The
+# safeguards chosen instead are "No drop without operator approval", "Remove
+# the backlog cap", "Release-time backlog gate", and "Remove the 15-per-run
+# cap too". So nothing here counts against a limit any more; what is checked
+# is provenance and loss:
 #
 #   Origin line       a section a campaign files on its own (a gap audit, a
 #                     research or plan-review finding, a groom gap scan, an
 #                     adjacent defect) carries `**Origin:** discovered
 #                     run=<run id> <YYYY-MM-DD>`. No line means the operator
-#                     directed it, and nothing caps that.
-#   todo/budget.json  `per_run_discovered_sections`: the most discovered
-#                     sections one run may add (checked statelessly, per run
-#                     id, and against git by `query growth --check`), and
-#                     `backlog_cap`. The live values must equal the latest
-#                     `history` entry's snapshot, the history is append-only
-#                     against the committed file, and a raise carries
-#                     `approved_by: operator` plus the operator's quoted words.
+#                     directed it. The line is provenance for reporting
+#                     (`query growth`, `query budget`); no cap counts it.
+#   todo/budget.json  schema 3: the history of the budget decisions, append-
+#                     only against the committed file. The live
+#                     `backlog_cap` and `per_run_discovered_sections` are
+#                     null (no cap), equal to the latest snapshot; a schema 1
+#                     or 2 snapshot stays readable as history.
 #   todo/backlog.md   one line per deferred idea, never runnable, never in
-#                     the plan, never counted by plan parity, capped.
+#                     the plan, never counted by plan parity, never capped.
+#                     An entry leaves only by promotion (a live section
+#                     carries its source key), by merge (the survivor keeps
+#                     ``merged: `<key>` ``), or with an operator removal
+#                     record; each release reviews its app's entries
+#                     (`reviewed:` fields) before its section stamps.
 #
 # All of it is validated FATAL, so the commit hook and CI refuse a breach.
 
@@ -4967,11 +4976,47 @@ BACKLOG_ITEMISH_RE = re.compile(r"^\s*[-*+]\s+\[")
 BACKLOG_CHECKBOX_RE = re.compile(r"^\s*[-*+]\s+\[[ xX/]\]")
 BACKLOG_FIELDS_REQUIRED = ("source", "added", "why deferred", "promote when")
 BACKLOG_FIELDS_OPTIONAL = ("app", "summary", "needs")
+# Fields an entry may carry more than once, in the order they were added:
+# a merge marker per absorbed entry, a review per release.
+BACKLOG_FIELDS_REPEATABLE = ("merged", "reviewed")
 BACKLOG_FIELD_SEP = " -- "
 BACKLOG_SOURCE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@+-]*$")
 # Text that makes a line read as a section or a stamp rather than a list entry.
 BACKLOG_SECTION_MARKS = ("**Verified:**", "**Test checkpoint:**", "-> XREF:", "**Deferred:**")
-BUDGET_SCHEMA_VERSION = 2
+# The merge marker: a surviving entry keeps the source key of every entry
+# folded into it, in its summary or as its own `merged:` field, optionally
+# followed by ` (B-NNN, YYYY-MM-DD)`. The backticks delimit the key.
+BACKLOG_MERGED_RE = re.compile(r"(?<![A-Za-z])merged: `(?P<key>[^`\s]+)`")
+BACKLOG_MERGED_ATTEMPT_RE = re.compile(r"(?<![A-Za-z])merged:", re.IGNORECASE)
+BACKLOG_MERGED_GRAMMAR = "``merged: `<source-key>` `` (optionally followed by ` (B-NNN, YYYY-MM-DD)`)"
+# The operator removal records: the only way an entry leaves the backlog
+# without a promotion or a merge. One line each under the heading below.
+BACKLOG_REMOVED_HEADING = "## Removed with operator approval"
+BACKLOG_REMOVED_RE = re.compile(
+    r"^- (?P<id>B-\d{3,}) (?P<source>\S+) -- removed (?P<day>\d{4}-\d{2}-\d{2}) "
+    r"-- operator: (?P<words>[\"“][^\"”]{3,}[\"”])\s*$"
+)
+BACKLOG_REMOVED_ATTEMPT_RE = re.compile(r"^\s*[-*+]\s+B-\d")
+BACKLOG_REMOVED_GRAMMAR = '`- B-NNN <source> -- removed YYYY-MM-DD -- operator: "<the operator\'s words>"`'
+# The release tags an app release pushes; `photon` is the suite release.
+RELEASE_APPS = ("nodus", "imago", "lumen", "photon")
+RELEASE_TAG_PATTERN = r"(?:nodus|imago|lumen|photon)-v\d+\.\d+\.\d+"
+# A release's backlog review, one `reviewed:` field per release per entry:
+# `reviewed: <tag> <YYYY-MM-DD> promoted DNN TNN §N` (part of it became that
+# section) or `reviewed: <tag> <YYYY-MM-DD> deferred by operator: "<words>"`.
+BACKLOG_REVIEWED_RE = re.compile(
+    r"^(?P<tag>" + RELEASE_TAG_PATTERN + r") (?P<day>\d{4}-\d{2}-\d{2}) "
+    r"(?:promoted (?P<ref>D\d{2} T\d{2} §\d+)|deferred by operator: (?P<words>[\"“][^\"”]{3,}[\"”]))$"
+)
+BACKLOG_REVIEWED_GRAMMAR = (
+    '`reviewed: <app>-vX.Y.Z YYYY-MM-DD promoted DNN TNN §N` or '
+    '`reviewed: <app>-vX.Y.Z YYYY-MM-DD deferred by operator: "<the operator\'s words>"`'
+)
+# The checklist item every release section carries (the release gate).
+RELEASE_REVIEW_ITEM_RE = re.compile(r"\bbacklog review for `(?P<tag>" + RELEASE_TAG_PATTERN + r")`", re.IGNORECASE)
+# Release sections stamped before the gate existed are not rewritten.
+RELEASE_REVIEW_SINCE = "2026-09-27"
+BUDGET_SCHEMA_VERSION = 3
 BUDGET_TOP_KEYS = ("schema_version", "note", "backlog_cap", "per_run_discovered_sections", "history")
 BUDGET_ENTRY_KEYS = ("date", "change", "reason", "approved_by", "snapshot")
 BUDGET_SNAPSHOT_KEYS = ("backlog_cap", "per_run_discovered_sections")
@@ -5008,7 +5053,7 @@ def _live_tree() -> bool:
     """True for the checkout's own todo/ (or the hook's staged copy of it).
 
     Fixture trees in the self-test may omit budget.json and backlog.md; the
-    real tree may not, or deleting the file would switch the budget off.
+    real tree may not, or deleting the file would switch the checks off.
     """
     try:
         return TODO_DIR.resolve() == (REPO / "todo").resolve()
@@ -5026,11 +5071,27 @@ def _valid_day(value: object) -> bool:
     return True
 
 
+def _snapshot_generation(snap: object) -> int | None:
+    """1 for a schema 1 snapshot (ceilings), 2 for whole-number caps, 3 for
+    no caps (both keys present and null); None for any other shape."""
+    if not isinstance(snap, dict):
+        return None
+    if "ceilings" in snap:
+        return 1
+    if all(k in snap and snap[k] is None for k in BUDGET_SNAPSHOT_KEYS):
+        return 3
+    if all(type(snap.get(k)) is int and snap.get(k) >= 0 for k in BUDGET_SNAPSHOT_KEYS):
+        return 2
+    return None
+
+
 def _snapshot_problems(snap: object, where: str, legacy_ok: bool = False) -> list[str]:
     """Problems with one history snapshot, or with the live top level.
 
-    `legacy_ok` admits a schema 1 history snapshot: ceilings plus
-    `per_run_new_sections`. The live values and every new entry use schema 2.
+    `legacy_ok` admits a history snapshot of schema 1 (ceilings plus
+    `per_run_new_sections`) or schema 2 (whole-number caps). The live values
+    and every entry from the first schema 3 one on carry both caps as null,
+    meaning no cap (operator 2026-09-27).
     """
     if not isinstance(snap, dict):
         return [f"{where} is not a JSON object"]
@@ -5041,21 +5102,33 @@ def _snapshot_problems(snap: object, where: str, legacy_ok: bool = False) -> lis
         for key in snap:
             if key not in keys:
                 out.append(f"{where} has an unknown key `{key}` (allowed: {', '.join(keys)})")
-    if legacy and not isinstance(snap.get("ceilings"), dict):
-        out.append(f"{where}.ceilings must be an object of phase number to ceiling")
+    if legacy:
+        if not isinstance(snap.get("ceilings"), dict):
+            out.append(f"{where}.ceilings must be an object of phase number to ceiling")
+        for key in keys:
+            if key == "ceilings":
+                continue
+            value = snap.get(key)
+            if type(value) is not int or value < 0:
+                out.append(f"{where}.{key} must be a whole number >= 0, not {value!r}")
+        return out
+    if legacy_ok and _snapshot_generation(snap) == 2:
+        return out
     for key in keys:
-        if key == "ceilings":
-            continue
-        value = snap.get(key)
-        if type(value) is not int or value < 0:
-            out.append(f"{where}.{key} must be a whole number >= 0, not {value!r}")
+        if key not in snap or snap[key] is not None:
+            out.append(
+                f"{where}.{key} must be null (no cap), not {snap.get(key, 'missing')!r}: the operator "
+                "removed the per-run and backlog caps on 2026-09-27 (\"the cap is worrying me, because "
+                "I'm worried features will be left behind.\")"
+            )
     return out
 
 
 def _snapshot(obj: dict) -> dict:
-    """The caps a snapshot (or the live file) sets, schema 1 read as schema 2."""
+    """The caps a snapshot (or the live file) sets, schema 1 read as schema 2;
+    None is no cap."""
     per_run = obj.get("per_run_discovered_sections")
-    if per_run is None:
+    if per_run is None and "per_run_new_sections" in obj:
         per_run = obj.get("per_run_new_sections")
     return {"backlog_cap": obj.get("backlog_cap"), "per_run_discovered_sections": per_run}
 
@@ -5087,7 +5160,7 @@ def load_budget() -> tuple[dict | None, list[str]]:
         problems.append("todo/budget.json needs a non-empty `history` list; the first entry records the setup")
     else:
         last_day = ""
-        seen_current = False
+        last_gen = 0
         for i, entry in enumerate(history, start=1):
             where = f"todo/budget.json history entry {i}"
             if not isinstance(entry, dict):
@@ -5108,27 +5181,37 @@ def load_budget() -> tuple[dict | None, list[str]]:
                 if not isinstance(value, str) or not value.strip():
                     problems.append(f"{where} needs a non-empty `{key}`")
             snap = entry.get("snapshot")
-            is_legacy = isinstance(snap, dict) and "ceilings" in snap
-            if is_legacy and seen_current:
+            gen = _snapshot_generation(snap)
+            if gen is not None and gen < last_gen:
                 problems.append(
-                    f"{where} writes a schema 1 snapshot (with `ceilings`) after a schema 2 one; "
-                    "new entries carry `backlog_cap` and `per_run_discovered_sections` only"
+                    f"{where} writes a schema {gen} snapshot after a schema {last_gen} one; history only "
+                    "moves forward, and new entries carry schema 3 snapshots (both caps null)"
                 )
-            problems += _snapshot_problems(snap, f"{where}.snapshot", legacy_ok=not seen_current)
-            seen_current = seen_current or (isinstance(snap, dict) and not is_legacy)
-        if not seen_current:
+                continue
+            problems += _snapshot_problems(snap, f"{where}.snapshot", legacy_ok=last_gen < 3)
+            if gen is not None:
+                last_gen = gen
+        if last_gen < 3:
             problems.append(
-                "todo/budget.json history holds only schema 1 snapshots; append an entry whose "
-                "snapshot carries the live `backlog_cap` and `per_run_discovered_sections`"
+                "todo/budget.json history holds no schema 3 snapshot; append an entry whose "
+                "snapshot carries `backlog_cap: null` and `per_run_discovered_sections: null`"
             )
     return (None if problems else data), problems
 
 
-def _budget_raises(prev: dict, cur: dict) -> list[str]:
+def _budget_raises(prev: dict | None, cur: dict) -> list[str]:
+    """What an entry raised: every key on the first entry (it sets the budget
+    up), then any cap that rose, None (no cap) being the highest."""
     raised: list[str] = []
     for key in BUDGET_SNAPSHOT_KEYS:
-        if prev[key] is None or cur[key] > prev[key]:
-            raised.append(f"{key} {'none' if prev[key] is None else prev[key]} -> {cur[key]}")
+        after = cur[key]
+        shown = "none (no cap)" if after is None else str(after)
+        if prev is None:
+            raised.append(f"{key} unset -> {shown}")
+            continue
+        before = prev[key]
+        if before is not None and (after is None or after > before):
+            raised.append(f"{key} {before} -> {shown}")
     return raised
 
 
@@ -5154,10 +5237,10 @@ def _budget_history_problems(budget: dict) -> list[str]:
         if live[key] != latest[key]:
             out.append(
                 f"todo/budget.json `{key}` differs from the latest history snapshot "
-                f"({latest[key]} -> {live[key]}). A cap changes only by appending a history "
+                f"({latest[key]} -> {live[key]}). A budget value changes only by appending a history "
                 "entry whose snapshot carries the new values; a raise needs the operator's quoted words."
             )
-    prev = {"backlog_cap": None, "per_run_discovered_sections": None}
+    prev: dict | None = None
     for i, entry in enumerate(history, start=1):
         cur = _snapshot(entry["snapshot"])
         raised = _budget_raises(prev, cur)
@@ -5168,7 +5251,7 @@ def _budget_history_problems(budget: dict) -> list[str]:
                     f"todo/budget.json history entry {i} ({entry['date']}) raises "
                     f"{'; '.join(raised)} without the operator's approval: a raise needs "
                     "`approved_by: operator` and the operator's explicit words quoted in "
-                    "`reason`. Skills never raise a cap; they merge, supersede, or backlog."
+                    "`reason`. Skills never change the budget on their own."
                 )
         prev = cur
     committed_text = _budget_committed_text()
@@ -5284,24 +5367,33 @@ def section_origins(todos: list[Todo]) -> tuple[dict[str, dict], list[str]]:
     return origins, problems
 
 
-def parse_backlog(text: str) -> tuple[list[dict], list[tuple[str, str]]]:
-    """(entries, problems) for todo/backlog.md.
+def parse_backlog_full(text: str) -> tuple[list[dict], list[dict], list[tuple[str, str]]]:
+    """(entries, removals, problems) for todo/backlog.md.
 
     One entry per line: `- [B-NNN] <title> -- source: <key> -- added:
     <YYYY-MM-DD> -- why deferred: <text> -- promote when: <text>`, optionally
-    with `app:`, `summary:`, and `needs:` fields. Fenced blocks are skipped.
+    with `app:`, `summary:`, and `needs:` fields and the repeatable `merged:`
+    and `reviewed:` fields. Merge markers (``merged: `<key>` ``) are read
+    anywhere in the line. Under `## Removed with operator approval`, each
+    list line is an operator removal record. Fenced blocks are skipped.
     """
     entries: list[dict] = []
+    removals: list[dict] = []
     problems: list[tuple[str, str]] = []
     raw = text.splitlines()
     try:
         kept, _ = _fenced_flags(raw)  # True = outside every fence
     except Exception:
         kept = [True] * len(raw)
+    in_removed = False
     for lineno, line in enumerate(raw, start=1):
         if lineno - 1 < len(kept) and not kept[lineno - 1]:
             continue
         where = f"todo/backlog.md:{lineno}"
+        if line.startswith("## "):
+            in_removed = line.rstrip() == BACKLOG_REMOVED_HEADING
+            if not BODY_RE.match(line):
+                continue
         if (
             BODY_RE.match(line)
             or ROW_RE.match(line)
@@ -5315,9 +5407,38 @@ def parse_backlog(text: str) -> tuple[list[dict], list[tuple[str, str]]]:
                 "runnable: promote an entry through add-todo, which writes the real section.",
             ))
             continue
+        if in_removed:
+            if not re.match(r"^\s*[-*+]\s", line):
+                continue  # prose under the heading
+            rm = BACKLOG_REMOVED_RE.match(line)
+            bad: list[str] = []
+            if not rm:
+                problems.append((
+                    "backlog-malformed",
+                    f"{where} is not an operator removal record: write {BACKLOG_REMOVED_GRAMMAR}, "
+                    "quoting the operator's own words (an entry never sits under this heading).",
+                ))
+                continue
+            if not BACKLOG_SOURCE_RE.match(rm.group("source")):
+                bad.append(f"`{rm.group('source')}` is not one source key token")
+            if not _valid_day(rm.group("day")):
+                bad.append(f"removed {rm.group('day')} is not a real date")
+            if bad:
+                problems.append(("backlog-malformed", f"{where} removal record {rm.group('id')}: {'; '.join(bad)}"))
+            removals.append({
+                "id": rm.group("id"), "source": rm.group("source"), "day": rm.group("day"),
+                "words": rm.group("words"), "line": lineno,
+            })
+            continue
         m = BACKLOG_ENTRY_RE.match(line)
         if not m:
-            if BACKLOG_ITEMISH_RE.match(line) or line.lstrip().startswith("- [B-"):
+            if BACKLOG_REMOVED_RE.match(line) or BACKLOG_REMOVED_ATTEMPT_RE.match(line):
+                problems.append((
+                    "backlog-malformed",
+                    f"{where} reads as an operator removal record outside `{BACKLOG_REMOVED_HEADING}`; "
+                    "records go under that heading at the end of the file.",
+                ))
+            elif BACKLOG_ITEMISH_RE.match(line) or line.lstrip().startswith("- [B-"):
                 problems.append((
                     "backlog-malformed",
                     f"{where} is not a backlog entry: write `- [B-NNN] <title> -- source: <key> "
@@ -5327,18 +5448,33 @@ def parse_backlog(text: str) -> tuple[list[dict], list[tuple[str, str]]]:
         parts = m.group("rest").split(BACKLOG_FIELD_SEP)
         title = parts[0].strip()
         fields: dict[str, str] = {}
-        bad: list[str] = []
-        if not title or title.split(":", 1)[0].strip() in BACKLOG_FIELDS_REQUIRED + BACKLOG_FIELDS_OPTIONAL:
+        reviews: list[dict] = []
+        bad = []
+        known = BACKLOG_FIELDS_REQUIRED + BACKLOG_FIELDS_OPTIONAL + BACKLOG_FIELDS_REPEATABLE
+        if not title or title.split(":", 1)[0].strip() in known:
             bad.append("no title before the first field")
         for seg in parts[1:]:
             key, sep, value = seg.partition(":")
             key, value = key.strip(), value.strip()
-            if not sep or key not in BACKLOG_FIELDS_REQUIRED + BACKLOG_FIELDS_OPTIONAL:
+            if not sep or key not in known:
                 bad.append(f"unknown field `{seg.strip()[:40]}`")
-            elif key in fields:
-                bad.append(f"`{key}:` twice")
             elif not value:
                 bad.append(f"empty `{key}:`")
+            elif key == "reviewed":
+                rv = BACKLOG_REVIEWED_RE.match(value)
+                if not rv:
+                    bad.append(f"`reviewed: {value[:60]}` is outside the grammar {BACKLOG_REVIEWED_GRAMMAR}")
+                elif not _valid_day(rv.group("day")):
+                    bad.append(f"`reviewed:` date {rv.group('day')} is not a real day")
+                elif any(r["tag"] == rv.group("tag") for r in reviews):
+                    bad.append(f"`reviewed: {rv.group('tag')}` twice; one review per release")
+                else:
+                    reviews.append({"tag": rv.group("tag"), "day": rv.group("day"), "ref": rv.group("ref"),
+                                    "words": rv.group("words"), "raw": value})
+            elif key == "merged":
+                pass  # read by the marker scan below
+            elif key in fields:
+                bad.append(f"`{key}:` twice")
             else:
                 fields[key] = value
         for key in BACKLOG_FIELDS_REQUIRED:
@@ -5348,20 +5484,56 @@ def parse_backlog(text: str) -> tuple[list[dict], list[tuple[str, str]]]:
             bad.append(f"`added:` is not a real YYYY-MM-DD date ({fields['added']})")
         if "source" in fields and not BACKLOG_SOURCE_RE.match(fields["source"]):
             bad.append(f"`source:` must be one key token (a legacy key, a finding ID, or a SOURCE key), not `{fields['source']}`")
+        merged: list[str] = []
+        body = m.group("rest")
+        for attempt in BACKLOG_MERGED_ATTEMPT_RE.finditer(body):
+            mm = BACKLOG_MERGED_RE.match(body, attempt.start())
+            if not mm:
+                bad.append(f"a merge marker outside the grammar {BACKLOG_MERGED_GRAMMAR}")
+            elif not BACKLOG_SOURCE_RE.match(mm.group("key")):
+                bad.append(f"merge marker `{mm.group('key')}` is not one source key token")
+            else:
+                merged.append(mm.group("key"))
         if bad:
             problems.append(("backlog-malformed", f"{where} [{m.group('id')}] is malformed: {'; '.join(bad)}"))
-        entries.append({"id": m.group("id"), "title": title, "fields": fields, "line": lineno, "text": line})
+        entries.append({
+            "id": m.group("id"), "title": title, "fields": fields, "line": lineno, "text": line,
+            "merged": merged, "reviews": reviews,
+        })
+    return entries, removals, problems
+
+
+def parse_backlog(text: str) -> tuple[list[dict], list[tuple[str, str]]]:
+    """(entries, problems) for todo/backlog.md; see `parse_backlog_full`."""
+    entries, _removals, problems = parse_backlog_full(text)
     return entries, problems
 
 
-def load_backlog() -> tuple[list[dict], list[tuple[str, str]]] | None:
+def load_backlog_full() -> tuple[list[dict], list[dict], list[tuple[str, str]]] | None:
     path = backlog_path()
     if not path.exists():
         return None
     try:
-        return parse_backlog(path.read_text(encoding="utf-8"))
+        return parse_backlog_full(path.read_text(encoding="utf-8"))
     except OSError as error:
-        return [], [("backlog-malformed", f"todo/backlog.md cannot be read: {error}")]
+        return [], [], [("backlog-malformed", f"todo/backlog.md cannot be read: {error}")]
+
+
+def load_backlog() -> tuple[list[dict], list[tuple[str, str]]] | None:
+    loaded = load_backlog_full()
+    if loaded is None:
+        return None
+    return loaded[0], loaded[2]
+
+
+def _backlog_committed_text() -> str | None:
+    """backlog.md as HEAD has it, for the no-drop rule and the append-only
+    `reviewed:` fields. Live tree only; None when unprovable (no git, no
+    commit, no file at HEAD), which skips both rules. The self-test patches
+    this name."""
+    if not _live_tree():
+        return None
+    return git_file_at("HEAD", "todo/backlog.md")
 
 
 def _section_refs(todos: list[Todo]) -> dict[str, str]:
@@ -5394,8 +5566,43 @@ def _section_sources(todos: list[Todo]) -> dict[str, str]:
     return found
 
 
+def release_sections(todos: list[Todo]) -> list[dict]:
+    """Every release section: one whose checklist pushes an app tag
+    (`Push the tag `<app>-vX.Y.Z``), with its tag, app, stamp, and whether it
+    carries its `Run the backlog review for `<tag>`` item."""
+    out: list[dict] = []
+    for t in todos:
+        for num, s in t.sections.items():
+            tag = None
+            for _done, text in s.items:
+                rm = RELEASE_ITEM_RE.match(text)
+                if rm:
+                    tag = rm.group("tag")
+                    break
+            if tag is None:
+                continue
+            reviews = {m.group("tag") for _d, text in s.items for m in RELEASE_REVIEW_ITEM_RE.finditer(text)}
+            out.append({
+                "ref": f"D{t.domain.split('-')[0]} T{t.number} §{num}",
+                "path": t.path, "line": s.line, "tag": tag, "app": tag.split("-v", 1)[0],
+                "stamped_on": s.stamped_on if s.status == "x" else None,
+                "has_review_item": tag in reviews,
+            })
+    return out
+
+
+def _release_scope(entry: dict, app: str) -> bool:
+    """Whether a release of `app` reviews this entry: a suite (`photon`)
+    release reviews every entry; an app release reviews that app's entries,
+    the suite-wide ones, and any entry with no `app:` field."""
+    if app == "photon":
+        return True
+    entry_app = entry["fields"].get("app", "suite").strip().lower()
+    return entry_app in (app, "suite")
+
+
 def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
-    """Every budget, origin, and backlog breach as (severity class, message)."""
+    """Every budget, origin, backlog, and release-gate breach as (severity class, message)."""
     out: list[tuple[str, str]] = []
     live = _live_tree()
     budget: dict | None = None
@@ -5403,7 +5610,7 @@ def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
         if live:
             out.append((
                 "budget-malformed",
-                "todo/budget.json is missing, so nothing bounds campaign discovery. Restore it "
+                "todo/budget.json is missing, so the budget decisions have no record. Restore it "
                 "from git; the format is in todo/README.md under \"The budget and the backlog\".",
             ))
     else:
@@ -5411,23 +5618,9 @@ def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
         out += [("budget-malformed", p) for p in problems]
     if budget is not None:
         out += [("budget-unrecorded-change", p) for p in _budget_history_problems(budget)]
-    origins, origin_problems = section_origins(todos)
+    _origins, origin_problems = section_origins(todos)
     out += [("origin-malformed", p) for p in origin_problems]
-    if budget is not None:
-        cap = budget["per_run_discovered_sections"]
-        per_run: dict[str, list[str]] = {}
-        for ref, origin in origins.items():
-            per_run.setdefault(origin["run"], []).append(ref)
-        for run, refs in sorted(per_run.items()):
-            if len(refs) > cap:
-                out.append((
-                    "run-cap-exceeded",
-                    f"Campaign run {run} filed {len(refs)} discovered sections, over "
-                    f"`per_run_discovered_sections` {cap} in todo/budget.json ({', '.join(refs[:4])}"
-                    f"{', ...' if len(refs) > 4 else ''}). Merge the overflow into open sections as "
-                    "items or move it to todo/backlog.md, and record each overflow in the run file.",
-                ))
-    loaded = load_backlog()
+    loaded = load_backlog_full()
     if loaded is None:
         if live:
             out.append((
@@ -5436,28 +5629,28 @@ def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
                 "file with no entries, not no file.",
             ))
         return out
-    entries, problems = loaded
+    entries, removals, problems = loaded
     out += problems
     refs = _section_refs(todos)
     sources = _section_sources(todos)
-    seen_ids: dict[str, int] = {}
+    seen_ids: dict[str, str] = {}
     seen_sources: dict[str, str] = {}
     for entry in entries:
         where = f"todo/backlog.md:{entry['line']} [{entry['id']}]"
         if entry["id"] in seen_ids:
             out.append((
                 "backlog-duplicate",
-                f"{where} reuses the id on line {seen_ids[entry['id']]}. Ids are never reused: "
+                f"{where} reuses the id on {seen_ids[entry['id']]}. Ids are never reused: "
                 "take the next free number.",
             ))
-        seen_ids.setdefault(entry["id"], entry["line"])
+        seen_ids.setdefault(entry["id"], f"line {entry['line']}")
         source = entry["fields"].get("source", "").lower()
         if source:
             if source in seen_sources:
                 out.append((
                     "backlog-duplicate",
                     f"{where} carries `source: {source}`, already on {seen_sources[source]}. One "
-                    "real-world thing, one entry: merge them.",
+                    "real-world thing, one entry: merge them, keeping a merge marker.",
                 ))
             seen_sources.setdefault(source, entry["id"])
             if source in sources:
@@ -5482,13 +5675,100 @@ def budget_findings(todos: list[Todo]) -> list[tuple[str, str]]:
                     f"{where} cites the short form `{m.group(0)}`. The backlog has no home "
                     "file, so it cites full `DNN TNN §N` refs only.",
                 ))
-    if budget is not None and len(entries) > budget["backlog_cap"]:
-        out.append((
-            "backlog-over-cap",
-            f"todo/backlog.md holds {len(entries)} entries, over `backlog_cap` "
-            f"{budget['backlog_cap']}. Triage first (groom-plan): merge duplicates, drop stale "
-            "entries with a reason, promote what has come due.",
-        ))
+    # Merge markers and removal records share the source namespace: a key
+    # kept by a marker or a record is not also a live entry's source.
+    for entry in entries:
+        for key in entry["merged"]:
+            k = key.lower()
+            if k in seen_sources:
+                out.append((
+                    "backlog-duplicate",
+                    f"todo/backlog.md:{entry['line']} [{entry['id']}] keeps ``merged: `{key}` `` while "
+                    f"{seen_sources[k]} still carries that source: a merge deletes the absorbed entry.",
+                ))
+    for rec in removals:
+        where = f"todo/backlog.md:{rec['line']} (removal record {rec['id']})"
+        if rec["id"] in seen_ids:
+            out.append((
+                "backlog-duplicate",
+                f"{where} names an id that is also on {seen_ids[rec['id']]}: a removed entry is gone, "
+                "and its id is never reused.",
+            ))
+        seen_ids.setdefault(rec["id"], f"line {rec['line']}")
+        if rec["source"].lower() in seen_sources:
+            out.append((
+                "backlog-duplicate",
+                f"{where} names `{rec['source']}`, still the source of {seen_sources[rec['source'].lower()]}: "
+                "remove the entry, or remove the record.",
+            ))
+    # No drop without operator approval: every source key HEAD's backlog
+    # holds is still accounted for.
+    committed = _backlog_committed_text()
+    if committed is not None:
+        head_entries, head_removals, _head_problems = parse_backlog_full(committed)
+        accounted = set(sources)
+        for e in entries:
+            if e["fields"].get("source"):
+                accounted.add(e["fields"]["source"].lower())
+            accounted.update(k.lower() for k in e["merged"])
+        accounted.update(r["source"].lower() for r in removals)
+        held: list[tuple[str, str]] = []
+        for e in head_entries:
+            if e["fields"].get("source"):
+                held.append((e["fields"]["source"], f"entry {e['id']} ({e['title']})"))
+            held.extend((k, f"the merge marker on {e['id']}") for k in e["merged"])
+        held.extend((r["source"], f"the operator removal record for {r['id']}") for r in head_removals)
+        for key, what in held:
+            if key.lower() not in accounted:
+                out.append((
+                    "backlog-dropped",
+                    f"todo/backlog.md drops `{key}`, which HEAD holds as {what}. Nothing leaves the "
+                    "backlog without a trace: promote it (a live section carries `-> SOURCE: "
+                    f"{key}`), merge it (a surviving entry keeps ``merged: `{key}` ``), or record the "
+                    f"operator's approval under `{BACKLOG_REMOVED_HEADING}` as {BACKLOG_REMOVED_GRAMMAR}.",
+                ))
+        # `reviewed:` fields are append-only evidence.
+        now_by_id = {e["id"]: e for e in entries}
+        for e in head_entries:
+            cur = now_by_id.get(e["id"])
+            if cur is None:
+                continue
+            kept = {r["raw"] for r in cur["reviews"]}
+            for r in e["reviews"]:
+                if r["raw"] not in kept:
+                    out.append((
+                        "backlog-review-rewritten",
+                        f"todo/backlog.md [{e['id']}] no longer carries `reviewed: {r['raw']}`, which HEAD "
+                        "has. A release's backlog review is append-only: restore the field as it was.",
+                    ))
+    # The release-time backlog gate.
+    for rel in release_sections(todos):
+        where = f"{rel['path']}:{rel['line']} ({rel['ref']})"
+        stamped = rel["stamped_on"]
+        if not rel["has_review_item"] and not (stamped is not None and stamped < RELEASE_REVIEW_SINCE):
+            out.append((
+                "release-backlog-review-missing",
+                f"{where} pushes `{rel['tag']}` but has no checklist item running the backlog review "
+                f"for it: add `- [ ] Run the backlog review for `{rel['tag']}`: ...` (todo/README.md, "
+                "The budget and the backlog).",
+            ))
+        if stamped is None or stamped < RELEASE_REVIEW_SINCE:
+            continue
+        missing = [
+            e["id"] for e in entries
+            if _release_scope(e, rel["app"])
+            and e["fields"].get("added", "") <= stamped
+            and not any(r["tag"] == rel["tag"] for r in e["reviews"])
+        ]
+        if missing:
+            out.append((
+                "release-backlog-unreviewed",
+                f"{where} is stamped {stamped} for `{rel['tag']}` while {len(missing)} backlog "
+                f"entr{'y' if len(missing) == 1 else 'ies'} in its scope carr{'ies' if len(missing) == 1 else 'y'} "
+                f"no review for it ({', '.join(missing[:6])}{', ...' if len(missing) > 6 else ''}). Promote "
+                f"each into a section, or record the operator's deferral: `reviewed: {rel['tag']} "
+                "<YYYY-MM-DD> deferred by operator: \"<words>\"`.",
+            ))
     return out
 
 
@@ -5529,8 +5809,9 @@ DESIGN_STATE_RE = re.compile(r"^[a-z][a-z0-9+/-]*(?: [a-z0-9+/-]+){0,3}$")
 DESIGN_NA_RE = re.compile(r"^n/a \((?P<reason>[^()]{3,})\)$")
 DESIGN_BASELINE_NAME = ".design-baseline"
 DESIGN_BASELINE_REF_RE = re.compile(r"^D\d{2} T\d{2} §\d+$")
-# The checklist item that ships an app release: pushing its tag.
-RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<app>nodus|imago|lumen)-v\d+\.\d+\.\d+`")
+# The checklist item that ships an app release: pushing its tag (`photon` is
+# the suite release, which no design deviation gates but the backlog gate does).
+RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<tag>(?P<app>nodus|imago|lumen|photon)-v\d+\.\d+\.\d+)`")
 DESIGN_DOMAIN_APPS = {"01": ("nodus", "imago", "lumen"), "02": ("nodus",), "03": ("imago",), "04": ("lumen",)}
 
 
@@ -5922,10 +6203,11 @@ def cmd_design_baseline(args) -> int:
 
 
 def budget_summary(todos: list[Todo]) -> dict | None:
-    """Section, discovery, and backlog use for the Progress line and the queries.
+    """Section, discovery, and backlog counts for the Progress line and the queries.
 
-    None without a usable budget. Phases carry no ceiling: the counts are
-    for reading, and only discovered sections per run and the backlog are capped.
+    None without a usable budget. Nothing is capped (operator 2026-09-27):
+    the counts are for reading, and discovered sections are reported by the
+    run that filed them.
     """
     budget, _problems = load_budget()
     if budget is None:
@@ -5950,8 +6232,6 @@ def budget_summary(todos: list[Todo]) -> dict | None:
         "sections": sum(len(t.sections) for t in todos),
         "discovered": len(origins),
         "backlog": backlog_n,
-        "backlog_cap": budget["backlog_cap"],
-        "per_run_discovered_sections": budget["per_run_discovered_sections"],
         "phases": rows,
         "runs": runs,
         "history": budget["history"],
@@ -5965,7 +6245,7 @@ def budget_progress_text(todos: list[Todo]) -> str:
         return ""
     return (
         f" {summary['sections']} sections ({summary['discovered']} discovered); "
-        f"backlog {summary['backlog']} of {summary['backlog_cap']}."
+        f"backlog {summary['backlog']} entr{'y' if summary['backlog'] == 1 else 'ies'}."
     )
 
 
@@ -6021,9 +6301,9 @@ def _tree_at(ref: str) -> tuple[dict[str, str], dict[str, str]] | None:
 def growth_report(ref: str, todos: list[Todo]) -> dict | None:
     """Sections and backlog entries added and removed since `ref`.
 
-    `discovered_added` is the added sections that carry an Origin line now:
-    the per-run cap counts only those. An operator-directed section (no
-    Origin line) is listed and never counted.
+    `discovered_added` is the added sections that carry an Origin line now,
+    reported with their run for provenance. An operator-directed section (no
+    Origin line) is listed without one. Nothing is capped.
     """
     then = _tree_at(ref)
     if then is None:
@@ -10136,9 +10416,9 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
 
         # --- the budget, origins, and the backlog (operator 2026-09-26, 09-27) --
         # Its own tree, so the arithmetic is exact: three sections in two
-        # phases, one TODO file, one INDEX, two backlog entries. Operator
-        # planning is never capped; only discovered sections per run and the
-        # backlog are.
+        # phases, one TODO file, one INDEX, two backlog entries. Nothing is
+        # capped (operator 2026-09-27); the backlog loses nothing without a
+        # trace, and a release reviews its app's entries before it stamps.
         import io as _gio
         import contextlib as _gctx
         groot = root / "budget-fixture"
@@ -10187,18 +10467,19 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             encoding="utf-8",
         )
 
-        def _gsnap(cap: int = 2, per_run: int = 1) -> dict:
+        def _gsnap(cap=None, per_run=None) -> dict:
             return {"backlog_cap": cap, "per_run_discovered_sections": per_run}
 
-        def _gbudget(cap: int = 2, per_run: int = 1, history=None, live=None) -> None:
-            snap = _gsnap(cap, per_run)
-            data = dict(live if live is not None else snap)
-            data.setdefault("schema_version", 2)
-            data["history"] = history if history is not None else [{
-                "date": "2026-09-27", "change": "fixture setup",
-                "reason": "operator said \"set the fixture budget\"",
-                "approved_by": "operator", "snapshot": snap,
-            }]
+        _gsetup = {
+            "date": "2026-09-27", "change": "fixture setup: no caps",
+            "reason": "operator said \"no caps for the fixture\"",
+            "approved_by": "operator", "snapshot": _gsnap(),
+        }
+
+        def _gbudget(history=None, live=None) -> None:
+            data = dict(live if live is not None else _gsnap())
+            data.setdefault("schema_version", 3)
+            data["history"] = history if history is not None else [_gsetup]
             (gtodo / "budget.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
 
         _gok = (
@@ -10208,6 +10489,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             "- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-26 "
             "-- why deferred: nice to have -- promote when: asked\n"
         )
+        _gremoved = "\n" + BACKLOG_REMOVED_HEADING + "\n\nProse about removals.\n\n"
 
         def _gbacklog(text: str) -> None:
             (gtodo / "backlog.md").write_text(text, encoding="utf-8")
@@ -10227,36 +10509,52 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
 
         saved_g = (TODO_DIR, PLAN, PROGRESS_JSON, OPERATOR_JSON)
         _real_committed = globals()["_budget_committed_text"]
+        _real_bcommitted = globals()["_backlog_committed_text"]
         try:
             TODO_DIR, PLAN = gtodo, gplan
             PROGRESS_JSON = groot / "build" / "progress.json"
             OPERATOR_JSON = groot / "build" / "operator.json"
-            check("budget: every budget, origin, and backlog class is FATAL",
-                  [SEVERITY_MAP.get(c) for c in ("budget-malformed", "budget-unrecorded-change",
-                                                 "origin-malformed", "run-cap-exceeded", "backlog-malformed",
-                                                 "backlog-duplicate", "backlog-over-cap")],
-                  ["fatal"] * 7)
-            check("budget: the phase and total ceiling classes are gone",
-                  [c for c in ("budget-over-phase", "budget-over-total") if c in SEVERITY_MAP], [])
+            _gall = ("budget-malformed", "budget-unrecorded-change", "origin-malformed", "backlog-malformed",
+                     "backlog-duplicate", "backlog-dropped", "backlog-review-rewritten",
+                     "release-backlog-review-missing", "release-backlog-unreviewed")
+            check("budget: every budget, origin, backlog, and release-gate class is FATAL",
+                  [SEVERITY_MAP.get(c) for c in _gall], ["fatal"] * len(_gall))
+            check("budget: the ceiling and cap classes are gone (operator 2026-09-27)",
+                  [c for c in ("budget-over-phase", "budget-over-total", "run-cap-exceeded", "backlog-over-cap")
+                   if c in SEVERITY_MAP], [])
             check("budget: a fixture tree without the files is silent", _gclasses(), [])
             _gbudget()
             _gbacklog(_gok)
             check("budget: a clean tree is clean", _gclasses(), [])
             check("budget: phase counts read rows per phase",
                   {k: v["count"] for k, v in plan_phase_counts().items()}, {"0": 2, "1": 1})
-            # Operator planning is never capped: any number of sections with no
-            # Origin line, in any phase, is clean.
+            # Nothing is capped: forty operator sections, or forty discovered
+            # sections from one run, are clean.
             gfile.write_text(_gtodo(list(range(1, 41))), encoding="utf-8")
-            check("budget: forty operator-directed sections under a per-run cap of 1 are clean", _gclasses(), [])
+            check("budget: forty operator-directed sections are clean", _gclasses(), [])
+            gfile.write_text(_gtodo(list(range(1, 41)), {n: _gorigin() for n in range(1, 41)}), encoding="utf-8")
+            check("no cap: forty discovered sections from one run are clean (the 15-per-run cap is gone)",
+                  _gclasses(), [])
+            check("no cap: the forty still read as discovered by their run",
+                  budget_summary(load_todos())["runs"], {_run_a: 40})
             gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
+            _gbacklog(_gmany(600))
+            check("no cap: 600 backlog entries are clean (the backlog cap is gone)", _gclasses(), [])
+            _gbacklog(_gok)
             _gbudget(live={"ceilings": {"0": 2, "1": 1}, **_gsnap()})
             check("budget: a phase ceiling in budget.json is budget-malformed",
                   (_gclasses(), any("ceilings" in m and "never capped" in m for m in _gmsgs())),
                   (["budget-malformed"], True))
-            _gbudget(live={"schema_version": 1, **_gsnap()})
-            check("budget: schema_version 1 is budget-malformed", _gclasses(), ["budget-malformed"])
+            _gbudget(live={"schema_version": 2, **_gsnap()})
+            check("budget: schema_version 2 is budget-malformed", _gclasses(), ["budget-malformed"])
+            for _key, _snap in (("backlog_cap", _gsnap(cap=500)), ("per_run_discovered_sections", _gsnap(per_run=15))):
+                _gbudget(live=_snap, history=[dict(_gsetup, snapshot=_snap)])
+                check(f"no cap: a whole-number live {_key} is budget-malformed",
+                      (_gclasses(), any(f"{_key} must be null" in m for m in _gmsgs())), (["budget-malformed"], True))
+            _gbudget(live={"schema_version": 3, "history": [_gsetup], "per_run_discovered_sections": None})
+            check("no cap: a live file missing a null cap key is budget-malformed", _gclasses(), ["budget-malformed"])
             _gbudget()
-            # Origin lines.
+            # Origin lines: provenance, still validated.
             gfile.write_text(_gtodo([1, 2, 3], {1: _gorigin()}), encoding="utf-8")
             check("origin: a well-formed Origin line is clean and read",
                   (_gclasses(), section_origins(load_todos())[0].get("D95 T01 §1", {}).get("run")),
@@ -10285,40 +10583,15 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                   (_gclasses(), any("outside a numbered section" in m for m in _gmsgs())), (["origin-malformed"], True))
             gfile.write_text(_gtodo([1, 2, 3], {2: "```\n**Origin:** anything at all\n```"}), encoding="utf-8")
             check("origin: a fenced Origin line is inert", (_gclasses(), section_origins(load_todos())[0]), ([], {}))
-            # The per-run cap, checked statelessly per run id.
-            _gbudget(cap=2, per_run=15)
-            gfile.write_text(_gtodo(list(range(1, 16)), {n: _gorigin() for n in range(1, 16)}), encoding="utf-8")
-            check("run cap: 15 discovered sections from one run are clean", _gclasses(), [])
-            gfile.write_text(_gtodo(list(range(1, 17)), {n: _gorigin() for n in range(1, 17)}), encoding="utf-8")
-            check("run cap: 16 discovered sections from one run is run-cap-exceeded",
-                  (_gclasses(), any(f"run {_run_a} filed 16 discovered sections" in m and "15" in m for m in _gmsgs())),
-                  (["run-cap-exceeded"], True))
+            gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
             vbuf = _gio.StringIO()
+            _gbacklog(_gok.replace("[B-002]", "[B-001]"))
             with _gctx.redirect_stdout(vbuf), _gctx.redirect_stderr(_gio.StringIO()):
                 vcode = cmd_validate(None)
-            check("run cap: validate prints the breach as FATAL and exits 1",
-                  (vcode, any(l.startswith("FATAL") and "filed 16 discovered sections" in l
-                              for l in vbuf.getvalue().splitlines())),
+            check("backlog: validate prints a backlog breach as FATAL and exits 1",
+                  (vcode, any(l.startswith("FATAL") and "reuses the id" in l for l in vbuf.getvalue().splitlines())),
                   (1, True))
-            gfile.write_text(
-                _gtodo(list(range(1, 17)), {n: _gorigin(_run_a if n <= 15 else _run_b) for n in range(1, 17)}),
-                encoding="utf-8",
-            )
-            check("run cap: 15 from one run and 1 from another are clean (the cap is per run)", _gclasses(), [])
-            gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
-            _gbudget()
-            # The backlog cap.
-            _gbudget(cap=1)
-            check("budget: a backlog over its cap is backlog-over-cap", _gclasses(), ["backlog-over-cap"])
-            _gbudget(cap=500)
-            _gbacklog(_gmany(500))
-            check("budget: 500 backlog entries at a cap of 500 are clean", _gclasses(), [])
-            _gbacklog(_gmany(501))
-            check("budget: 501 backlog entries at a cap of 500 is backlog-over-cap",
-                  (_gclasses(), any("holds 501 entries" in m and "`backlog_cap` 500" in m for m in _gmsgs())),
-                  (["backlog-over-cap"], True))
-            _gbudget()
-            _gbacklog(_gok.replace("[B-002]", "[B-001]"))
+            # The entry grammar.
             check("budget: a duplicate backlog id is backlog-duplicate", _gclasses(), ["backlog-duplicate"])
             _gbacklog(_gok.replace("fixture-idea-2", "fixture-idea-1"))
             check("budget: a duplicate backlog source is backlog-duplicate", _gclasses(), ["backlog-duplicate"])
@@ -10348,62 +10621,211 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("budget: a short section ref in an entry is backlog-malformed", _gclasses(), ["backlog-malformed"])
             _gbacklog("```\n- [B-009] quoted in a fence -- source: q\n```\n" + _gok)
             check("budget: fenced lines are not entries", (_gclasses(), len(load_backlog()[0])), ([], 2))
+            # The merge marker.
+            _gmerged = _gok.replace("-- why deferred: nice to have -- promote when: asked\n- [B-002]",
+                                    "-- summary: one idea (merged: `fixture-old` (B-007, 2026-09-27)) "
+                                    "-- why deferred: nice to have -- promote when: asked\n- [B-002]", 1)
+            _gbacklog(_gmerged)
+            check("merge: a merge marker in the summary is clean and read",
+                  (_gclasses(), load_backlog()[0][0]["merged"]), ([], ["fixture-old"]))
+            _gbacklog(_gok.replace("-- promote when: asked\n- [B-002]",
+                                   "-- promote when: asked -- merged: `fixture-old` -- merged: `fixture-older`\n- [B-002]"))
+            check("merge: repeated `merged:` fields are clean and read",
+                  (_gclasses(), load_backlog()[0][0]["merged"]), ([], ["fixture-old", "fixture-older"]))
+            _gbacklog(_gmerged.replace("merged: `fixture-old`", "merged: fixture-old"))
+            check("merge: a marker without backticks is backlog-malformed",
+                  (_gclasses(), any("merge marker outside the grammar" in m for m in _gmsgs())),
+                  (["backlog-malformed"], True))
+            _gbacklog(_gmerged.replace("merged: `fixture-old`", "merged: `fixture-idea-2`"))
+            check("merge: a marker naming a live entry's source is backlog-duplicate",
+                  (_gclasses(), any("a merge deletes the absorbed entry" in m for m in _gmsgs())),
+                  (["backlog-duplicate"], True))
+            # Operator removal records.
+            _grec = '- B-003 fixture-gone -- removed 2026-09-27 -- operator: "drop the fixture idea"\n'
+            _gbacklog(_gok + _gremoved + _grec)
+            check("removal: a well-formed record under its heading is clean and read",
+                  (_gclasses(), [(r["id"], r["source"]) for r in load_backlog_full()[1]]),
+                  ([], [("B-003", "fixture-gone")]))
+            for _bad, _why in (
+                (_grec.replace('"drop the fixture idea"', "drop the fixture idea"), "unquoted operator words"),
+                (_grec.replace("2026-09-27", "2026-13-40"), "an impossible date"),
+                (_grec.replace("-- removed", "-- dropped"), "a verb other than removed"),
+                (_grec.replace("B-003 ", "[B-003] "), "a bracketed id"),
+                (_grec.replace('"drop the fixture idea"', '"ok"'), "words under three characters"),
+            ):
+                _gbacklog(_gok + _gremoved + _bad)
+                check(f"removal: {_why} is backlog-malformed", _gclasses(), ["backlog-malformed"])
+            _gbacklog(_gok + _grec)
+            check("removal: a record outside its heading is backlog-malformed",
+                  (_gclasses(), any("outside `## Removed with operator approval`" in m for m in _gmsgs())),
+                  (["backlog-malformed"], True))
+            _gbacklog(_gok + _gremoved + _grec.replace("B-003", "B-002"))
+            check("removal: a record for an id still live is backlog-duplicate", _gclasses(), ["backlog-duplicate"])
+            _gbacklog(_gok + _gremoved + _grec.replace("fixture-gone", "fixture-idea-2").replace("B-003", "B-004"))
+            check("removal: a record naming a live entry's source is backlog-duplicate", _gclasses(), ["backlog-duplicate"])
+            # No drop without operator approval, against HEAD's backlog.
+            _ghead = _gok
+            globals()["_backlog_committed_text"] = lambda: _ghead
+            _gonly1 = _gok.split("- [B-002]")[0]
             _gbacklog(_gok)
-            # Caps move only through history.
-            _gbudget(live=_gsnap(cap=5))
-            check("budget: a backlog cap changed without a history entry is budget-unrecorded-change",
-                  (_gclasses(), any("`backlog_cap` differs" in m and "2 -> 5" in m for m in _gmsgs())),
-                  (["budget-unrecorded-change"], True))
-            _gbudget(live=_gsnap(per_run=4))
-            check("budget: a per-run cap changed without a history entry is budget-unrecorded-change",
-                  _gclasses(), ["budget-unrecorded-change"])
-            _h1 = {"date": "2026-09-27", "change": "setup", "reason": "operator said \"set it\"",
+            check("no drop: an unchanged backlog is clean", _gclasses(), [])
+            _gbacklog(_gonly1)
+            check("no drop: an entry deleted without a trace is backlog-dropped",
+                  (_gclasses(), any("drops `fixture-idea-2`" in m and "entry B-002" in m for m in _gmsgs())),
+                  (["backlog-dropped"], True))
+            gfile.write_text(_gtodo([1, 2, 3]).replace("-> SOURCE: fixture-src-1", "-> SOURCE: fixture-idea-2"),
+                             encoding="utf-8")
+            check("no drop: a promoted entry (a live section carries its source) is clean", _gclasses(), [])
+            gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
+            _gbacklog(_gonly1.replace("-- promote when: asked\n", "-- promote when: asked -- merged: `fixture-idea-2`\n"))
+            check("no drop: a merged entry (the survivor keeps its marker) is clean", _gclasses(), [])
+            _gbacklog(_gonly1 + _gremoved + '- B-002 fixture-idea-2 -- removed 2026-09-27 -- operator: "drop it"\n')
+            check("no drop: an entry removed with an operator record is clean", _gclasses(), [])
+            _gbacklog(_gonly1 + _gremoved + '- B-002 fixture-other -- removed 2026-09-27 -- operator: "drop it"\n')
+            check("no drop: a record naming another source does not cover the drop", _gclasses(), ["backlog-dropped"])
+            _ghead = _gonly1.replace("-- promote when: asked\n", "-- promote when: asked -- merged: `fixture-idea-2`\n")
+            _gbacklog(_gonly1)
+            check("no drop: removing a merge marker HEAD holds is backlog-dropped",
+                  (_gclasses(), any("the merge marker on B-001" in m for m in _gmsgs())), (["backlog-dropped"], True))
+            _ghead = _gonly1 + _gremoved + '- B-002 fixture-idea-2 -- removed 2026-09-27 -- operator: "drop it"\n'
+            _gbacklog(_gonly1 + _gremoved)
+            check("no drop: deleting an operator removal record HEAD holds is backlog-dropped",
+                  (_gclasses(), any("the operator removal record for B-002" in m for m in _gmsgs())),
+                  (["backlog-dropped"], True))
+            _ghead = _gok
+            _gbacklog(_gok.replace("- [B-002]", "- [B-003] New idea -- source: fixture-idea-3 -- added: 2026-09-27 "
+                                   "-- why deferred: a -- promote when: b\n- [B-002]"))
+            check("no drop: adding an entry is clean", _gclasses(), [])
+            globals()["_backlog_committed_text"] = lambda: None
+            _gbacklog(_gonly1)
+            check("no drop: a HEAD without the file skips the rule", _gclasses(), [])
+            _gbacklog(_gok)
+            # Release reviews on entries.
+            _grev = ' -- reviewed: nodus-v0.2.0 2026-09-28 deferred by operator: "after the next release"'
+            _gbacklog(_gok.replace("promote when: asked\n- [B-002]", "promote when: asked" + _grev + "\n- [B-002]"))
+            check("review: a deferred-by-operator review is clean and read",
+                  (_gclasses(), [r["tag"] for r in load_backlog()[0][0]["reviews"]]), ([], ["nodus-v0.2.0"]))
+            _gbacklog(_gok.replace("promote when: asked\n- [B-002]",
+                                   "promote when: asked -- reviewed: nodus-v0.2.0 2026-09-28 promoted D95 T01 §3"
+                                   + _grev.replace("nodus-v0.2.0", "photon-v1.0.0") + "\n- [B-002]"))
+            check("review: a promoted review plus a second release's review are clean", _gclasses(), [])
+            for _bad, _why in (
+                (_grev.replace('"after the next release"', "after the next release"), "unquoted words"),
+                (_grev.replace("nodus-v0.2.0", "nodus-0.2.0"), "a tag without its v"),
+                (_grev.replace("deferred by operator", "deferred"), "a deferral without the operator"),
+                (_grev.replace("2026-09-28", "2026-02-30"), "an impossible date"),
+                (_grev + _grev, "the same release twice"),
+            ):
+                _gbacklog(_gok.replace("promote when: asked\n- [B-002]", "promote when: asked" + _bad + "\n- [B-002]"))
+                check(f"review: {_why} is backlog-malformed", _gclasses(), ["backlog-malformed"])
+            _gbacklog(_gok.replace("promote when: asked\n- [B-002]",
+                                   "promote when: asked -- reviewed: nodus-v0.2.0 2026-09-28 promoted D95 T01 §9\n- [B-002]"))
+            check("review: a promotion naming no live section is backlog-malformed",
+                  (_gclasses(), any("D95 T01 §9" in m for m in _gmsgs())), (["backlog-malformed"], True))
+            _ghead = _gok.replace("promote when: asked\n- [B-002]", "promote when: asked" + _grev + "\n- [B-002]")
+            globals()["_backlog_committed_text"] = lambda: _ghead
+            _gbacklog(_gok)
+            check("review: dropping a review HEAD holds is backlog-review-rewritten",
+                  _gclasses(), ["backlog-review-rewritten"])
+            _gbacklog(_ghead.replace("after the next release", "after the release"))
+            check("review: rewording a review HEAD holds is backlog-review-rewritten",
+                  _gclasses(), ["backlog-review-rewritten"])
+            _gbacklog(_ghead.replace(_grev, _grev + _grev.replace("nodus-v0.2.0", "nodus-v0.3.0")))
+            check("review: appending a review is clean", _gclasses(), [])
+            globals()["_backlog_committed_text"] = lambda: None
+            _gbacklog(_gok)
+            # The release-time backlog gate.
+            _gpush = "- [ ] Push the tag `nodus-v0.2.0`. Done when: green.\n"
+            _gitem = "- [ ] Run the backlog review for `nodus-v0.2.0`: promote or record deferrals. Done when: done.\n"
+
+            def _grelease(items: str, stamp: str | None = None, tag_items: bool = True) -> str:
+                text = _gtodo([1, 2, 3]).replace("- [ ] Do thing 2\n", "- [ ] Do thing 2\n" + items)
+                if stamp:
+                    text = text.replace("| 2 | §2 | Thing 2 | -- | [ ] |", "| 2 | §2 | Thing 2 | -- | [x] |")
+                    text = text.replace("**Test checkpoint:** `true`\n\n## 3.",
+                                        f"**Test checkpoint:** `true`\n\n> **Verified:** {stamp} | §2 | fixture\n\n## 3.")
+                return text
+
+            gfile.write_text(_grelease(_gpush), encoding="utf-8")
+            check("release gate: a release section without its backlog review item is release-backlog-review-missing",
+                  (_gclasses(), any("pushes `nodus-v0.2.0`" in m for m in _gmsgs()), [r["tag"] for r in release_sections(load_todos())]),
+                  (["release-backlog-review-missing"], True, ["nodus-v0.2.0"]))
+            gfile.write_text(_grelease(_gpush + _gitem.replace("nodus-v0.2.0", "nodus-v0.1.0")), encoding="utf-8")
+            check("release gate: a review item for another tag does not count", _gclasses(), ["release-backlog-review-missing"])
+            gfile.write_text(_grelease(_gpush + _gitem), encoding="utf-8")
+            check("release gate: an open release section with its review item is clean", _gclasses(), [])
+            gfile.write_text(_grelease(_gpush + _gitem, stamp="2026-09-28"), encoding="utf-8")
+            check("release gate: the fixture release parses as stamped",
+                  [r["stamped_on"] for r in release_sections(load_todos())], ["2026-09-28"])
+            check("release gate: a stamped Nodus release with an unreviewed suite entry is release-backlog-unreviewed",
+                  (_gclasses(), any("B-002" in m and "B-001" not in m for m in _gmsgs())),
+                  (["release-backlog-unreviewed"], True))
+            _gbacklog(_gok.replace("promote when: asked\n", "promote when: asked" + _grev + "\n"))
+            check("release gate: every in-scope entry reviewed for the tag is clean", _gclasses(), [])
+            _gbacklog(_gok.replace("- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-26",
+                                   "- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-29"))
+            check("release gate: an entry added after the stamp is not owed a review", _gclasses(), [])
+            _gbacklog(_gok.replace("-- app: fixture", "-- app: nodus"))
+            check("release gate: an app entry is owed its app's review",
+                  (_gclasses(), any("B-001, B-002" in m for m in _gmsgs())), (["release-backlog-unreviewed"], True))
+            _gbacklog(_gok.replace("-- app: fixture", "-- app: imago").replace(
+                "- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-26",
+                "- [B-002] Second idea -- app: imago -- source: fixture-idea-2 -- added: 2026-09-26"))
+            check("release gate: another app's entries are out of a Nodus release's scope", _gclasses(), [])
+            gfile.write_text(_grelease((_gpush + _gitem).replace("nodus-v0.2.0", "photon-v1.0.0"), stamp="2026-09-28"),
+                             encoding="utf-8")
+            check("release gate: a suite release reviews every entry, whatever its app",
+                  (_gclasses(), any("B-001, B-002" in m for m in _gmsgs())), (["release-backlog-unreviewed"], True))
+            _gbacklog(_gok)
+            gfile.write_text(_grelease(_gpush, stamp="2026-09-20"), encoding="utf-8")
+            check("release gate: a release stamped before the gate existed is not rewritten", _gclasses(), [])
+            gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
+            # Budget history.
+            _h2 = {"date": "2026-09-27", "change": "old caps", "reason": "operator said \"cap it\"",
+                   "approved_by": "operator", "snapshot": {"backlog_cap": 500, "per_run_discovered_sections": 15}}
+            _h3 = {"date": "2026-09-27", "change": "remove the caps",
+                   "reason": "operator: \"the cap is worrying me, because I'm worried features will be left behind.\"",
                    "approved_by": "operator", "snapshot": _gsnap()}
-            for _key, _snap in (("backlog_cap", _gsnap(cap=3)), ("per_run_discovered_sections", _gsnap(per_run=3))):
-                _h2 = {"date": "2026-09-28", "change": f"raise {_key}", "reason": "more room needed",
-                       "approved_by": "add-todo", "snapshot": _snap}
-                _gbudget(live=_snap, history=[_h1, _h2])
-                check(f"budget: a {_key} raise a skill approved is budget-unrecorded-change",
-                      (_gclasses(), any("history entry 2" in m and _key in m and "without the operator's approval" in m
-                                        for m in _gmsgs())),
-                      (["budget-unrecorded-change"], True))
-                _gbudget(live=_snap, history=[_h1, dict(_h2, approved_by="operator")])
-                check(f"budget: an operator {_key} raise without quoted words is budget-unrecorded-change",
-                      _gclasses(), ["budget-unrecorded-change"])
-                _gbudget(live=_snap, history=[_h1, dict(_h2, approved_by="operator", reason="operator: \"raise it to 3\"")])
-                check(f"budget: an operator {_key} raise with quoted words is clean", _gclasses(), [])
-            _h3 = {"date": "2026-09-29", "change": "lower the per-run cap", "reason": "fewer discoveries",
-                   "approved_by": "groom-plan", "snapshot": _gsnap(per_run=0)}
-            _gbudget(per_run=0, history=[_h1, _h3])
-            check("budget: lowering a cap needs a history entry, not the operator", _gclasses(), [])
-            _gbudget(history=[dict(_h1, date="2026-09-28"), dict(_h1, date="2026-09-27")])
-            check("budget: history out of date order is budget-malformed", _gclasses(), ["budget-malformed"])
-            # Schema 1 history stays readable: its ceilings are ignored and its
-            # per_run_new_sections reads as the per-run cap.
+            _gbudget(history=[_h2, _h3])
+            check("budget: a schema 2 entry followed by an operator-approved schema 3 entry is clean", _gclasses(), [])
+            _gbudget(history=[_h2, dict(_h3, approved_by="groom-plan")])
+            check("budget: removing the caps without the operator is budget-unrecorded-change",
+                  (_gclasses(), any("history entry 2" in m and "none (no cap)" in m for m in _gmsgs())),
+                  (["budget-unrecorded-change"], True))
+            _gbudget(history=[_h2, dict(_h3, reason="the operator wanted it")])
+            check("budget: removing the caps without the operator's quoted words is budget-unrecorded-change",
+                  _gclasses(), ["budget-unrecorded-change"])
+            _gbudget(history=[_h3, dict(_h2, date="2026-09-28")])
+            check("budget: a schema 2 entry after a schema 3 one is budget-malformed",
+                  (_gclasses(), any("schema 2 snapshot after a schema 3" in m for m in _gmsgs())),
+                  (["budget-malformed"], True))
+            _gbudget(history=[_h2])
+            check("budget: a history with no schema 3 entry is budget-malformed",
+                  (_gclasses(), any("no schema 3 snapshot" in m for m in _gmsgs())), (["budget-malformed"], True))
+            _gbudget(history=[_h2, dict(_h3, snapshot={"backlog_cap": None, "per_run_discovered_sections": 15})])
+            check("budget: a snapshot with one null and one number is budget-malformed", _gclasses(), ["budget-malformed"])
             _legacy = {"date": "2026-09-26", "change": "old ceilings", "reason": "operator said \"bound it\"",
                        "approved_by": "operator",
                        "snapshot": {"ceilings": {"0": 2, "1": 1}, "backlog_cap": 2, "per_run_new_sections": 1}}
-            _gbudget(history=[_legacy, _h1])
-            check("budget: a schema 1 entry followed by a schema 2 entry is clean", _gclasses(), [])
-            _gbudget(per_run=15, cap=500, history=[_legacy, dict(_h1, snapshot=_gsnap(500, 15), reason="a skill wanted room")])
-            check("budget: raising the legacy per-run cap without quoted words is budget-unrecorded-change",
+            _gbudget(history=[_legacy, _h2, _h3])
+            check("budget: schema 1, 2, and 3 entries in order are clean (old entries stay readable)", _gclasses(), [])
+            _gbudget(history=[_legacy, dict(_h2, reason="a skill wanted room"), _h3])
+            check("budget: an old raise without quoted words is still budget-unrecorded-change",
                   (_gclasses(), any("per_run_discovered_sections 1 -> 15" in m for m in _gmsgs())),
                   (["budget-unrecorded-change"], True))
-            _gbudget(history=[_h1, dict(_legacy, date="2026-09-28")])
-            check("budget: a schema 1 entry after a schema 2 one is budget-malformed", _gclasses(), ["budget-malformed"])
-            _gbudget(history=[_legacy])
-            check("budget: a history of only schema 1 entries is budget-malformed", _gclasses(), ["budget-malformed"])
+            _gbudget(history=[_h3, dict(_legacy, date="2026-09-28")])
+            check("budget: a schema 1 entry after a schema 3 one is budget-malformed", _gclasses(), ["budget-malformed"])
+            _gbudget(history=[dict(_gsetup, date="2026-09-28"), dict(_gsetup, date="2026-09-27")])
+            check("budget: history out of date order is budget-malformed", _gclasses(), ["budget-malformed"])
             # Append-only against the committed file.
-            _gbudget(history=[_h1])
-            _committed = json.dumps({"history": [dict(_h1, change="the committed wording")]})
+            _gbudget(history=[_gsetup])
+            _committed = json.dumps({"history": [dict(_gsetup, change="the committed wording")]})
             globals()["_budget_committed_text"] = lambda: _committed
             check("budget: a history entry edited against HEAD is budget-unrecorded-change",
                   (_gclasses(), any("edited or removed" in m for m in _gmsgs())), (["budget-unrecorded-change"], True))
-            _committed = json.dumps({"history": [_h1]})
+            _committed = json.dumps({"history": [_gsetup]})
             globals()["_budget_committed_text"] = lambda: _committed
-            _h2 = {"date": "2026-09-28", "change": "raise", "reason": "operator: \"raise it\"",
-                   "approved_by": "operator", "snapshot": _gsnap(cap=3)}
-            _gbudget(cap=3, history=[_h1, _h2])
+            _gbudget(history=[_gsetup, dict(_gsetup, change="a note", reason="a note")])
             check("budget: appending to the committed history is clean", _gclasses(), [])
             _gbudget(history=[])
             check("budget: removing every history entry is budget-malformed", _gclasses(), ["budget-malformed"])
@@ -10412,28 +10834,28 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("budget: an unparseable budget.json is budget-malformed", _gclasses(), ["budget-malformed"])
             _gbudget()
             # The Progress line carries the section count, the discovered
-            # count, and backlog use, and --check compares it.
+            # count, and the backlog count, and --check compares it.
             with _gctx.redirect_stdout(_gio.StringIO()), _gctx.redirect_stderr(_gio.StringIO()):
                 cmd_plan(argparse.Namespace(check=False))
                 rc_clean = cmd_plan(argparse.Namespace(check=True))
-            check("budget: the synced Progress line reports sections, discoveries, and backlog use",
-                  "3 sections (0 discovered); backlog 2 of 2." in gplan.read_text(encoding="utf-8"), True)
-            check("budget: the synced Progress line names no ceiling", "Budget:" in gplan.read_text(encoding="utf-8"), False)
+            check("budget: the synced Progress line reports sections, discoveries, and backlog entries",
+                  "3 sections (0 discovered); backlog 2 entries." in gplan.read_text(encoding="utf-8"), True)
+            check("budget: the synced Progress line names no ceiling or cap",
+                  ("Budget:" in gplan.read_text(encoding="utf-8"), " of 2." in gplan.read_text(encoding="utf-8")),
+                  (False, False))
             check("budget: plan --check is clean after the sync", rc_clean, 0)
             _gbacklog(_gok.replace("- [B-002]", "- [B-000] Zeroth -- source: z0 -- added: 2026-09-26 -- why deferred: a -- promote when: b\n- [B-002]"))
-            _gbudget(cap=3)
             with _gctx.redirect_stdout(_gio.StringIO()), _gctx.redirect_stderr(_gio.StringIO()):
                 rc_stale = cmd_plan(argparse.Namespace(check=True))
-            check("budget: plan --check refuses a Progress line whose backlog use moved", rc_stale, 1)
+            check("budget: plan --check refuses a Progress line whose backlog count moved", rc_stale, 1)
             _gbacklog(_gok)
-            _gbudget()
             gfile.write_text(_gtodo([1, 2, 3], {3: _gorigin()}), encoding="utf-8")
             with _gctx.redirect_stdout(_gio.StringIO()), _gctx.redirect_stderr(_gio.StringIO()):
                 rc_stale = cmd_plan(argparse.Namespace(check=True))
                 cmd_plan(argparse.Namespace(check=False))
             check("budget: plan --check refuses a Progress line whose discovered count moved", rc_stale, 1)
             check("budget: the resynced Progress line counts the discovered section",
-                  "3 sections (1 discovered); backlog 2 of 2." in gplan.read_text(encoding="utf-8"), True)
+                  "3 sections (1 discovered); backlog 2 entries." in gplan.read_text(encoding="utf-8"), True)
 
             def _gquery(what: str, **kw) -> tuple[int, str]:
                 buf = _gio.StringIO()
@@ -10442,21 +10864,21 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 return code, buf.getvalue()
 
             code, out = _gquery("budget")
-            check("budget: query budget prints each phase's sections and discovered sections, no ceiling",
+            check("budget: query budget prints each phase's sections and discovered sections, no ceiling or cap",
                   (code, "3 sections (1 discovered)" in out,
                    re.search(r"^\s+0\s+2\s+0\s+Budget fixture$", out, re.M) is not None,
                    re.search(r"^\s+1\s+1\s+1\s+Second fixture$", out, re.M) is not None,
-                   f"run={_run_a}  1 of 1" in out, "ceiling" in out),
-                  (0, True, True, True, True, False))
+                   re.search(rf"^\s+run={_run_a}\s+1$", out, re.M) is not None, "ceiling" in out, " of " in out),
+                  (0, True, True, True, True, False, False))
             code, out = _gquery("stats")
             check("budget: query stats carries the budget line",
-                  "budget           3 sections (1 discovered); backlog 2 of 2" in out, True)
+                  "budget           3 sections (1 discovered); backlog 2 entries; no caps" in out, True)
             code, out = _gquery("backlog")
-            check("budget: query backlog lists every entry and the cap",
-                  (code, "B-001" in out and "B-002" in out and "2 of 2 backlog entries" in out), (0, True))
+            check("budget: query backlog lists every entry and the count",
+                  (code, "B-001" in out and "B-002" in out and "\n2 backlog entries" in out), (0, True))
             gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
-            # Growth since a ref: a real git history in the fixture tree. Only
-            # sections that carry an Origin line count against the cap.
+            # Growth since a ref: a real git history in the fixture tree.
+            # Discovered sections are reported with their run; nothing caps them.
             _genv = ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
             subprocess.run(["git", "init", "-q"], cwd=groot, capture_output=True, text=True, timeout=60)
             subprocess.run(["git", "add", "todo"], cwd=groot, capture_output=True, text=True, timeout=60)
@@ -10465,32 +10887,32 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             gfile.write_text(_gtodo([1, 2, 3, 4], {4: _gorigin()}), encoding="utf-8")
             _gbacklog(_gok.replace("- [B-002]", "- [B-003]"))
             code, out = _gquery("growth", since="HEAD", check=True)
-            check("growth: counts one added discovered section and names it",
+            check("growth: counts one added discovered section and names it with its run",
                   (code, f"+ D95 T01 §4  Thing 4  [discovered run={_run_a}]" in out,
-                   "sections: +1 -0 (net +1), 1 discovered" in out),
+                   f"sections: +1 -0 (net +1), 1 discovered (run={_run_a} 1)" in out),
                   (0, True, True))
             check("growth: counts backlog entries added and removed",
-                  ("+ backlog B-003" in out, "- backlog B-002" in out, "backlog: +1 -1" in out), (True, True, True))
-            check("growth: reports use of the per-run cap", "per-run cap: 1 of 1 discovered sections" in out, True)
-            gfile.write_text(_gtodo([1, 2, 4, 5], {4: _gorigin(), 5: _gorigin()}), encoding="utf-8")
+                  ("+ backlog B-003" in out, "- backlog B-002" in out, "backlog: +1 -1; no caps" in out), (True, True, True))
+            check("growth: reports no per-run cap", "per-run cap" in out, False)
+            gfile.write_text(_gtodo(list(range(1, 25)), {n: _gorigin() for n in range(4, 25)}), encoding="utf-8")
             code, out = _gquery("growth", since="HEAD", check=True)
-            check("growth: --check exits 1 past the per-run cap and names the removal",
-                  (code, "- D95 T01 §3" in out, "sections: +2 -1 (net +1), 2 discovered" in out), (1, True, True))
+            check("growth: --check never fails on discovered sections (21 from one run exit 0)",
+                  (code, "sections: +21 -0 (net +21), 21 discovered" in out), (0, True))
+            gfile.write_text(_gtodo([1, 2, 4, 5], {4: _gorigin(), 5: _gorigin(_run_b)}), encoding="utf-8")
+            code, out = _gquery("growth", since="HEAD", check=False)
+            check("growth: names a removal and splits discoveries by run",
+                  (code, "- D95 T01 §3" in out, f"2 discovered (run={_run_a} 1, run={_run_b} 1)" in out), (0, True, True))
             gfile.write_text(_gtodo([1, 2, 3, 4, 5, 6]), encoding="utf-8")
             code, out = _gquery("growth", since="HEAD", check=True)
-            check("growth: --check ignores operator-directed sections",
-                  (code, "sections: +3 -0 (net +3), 0 discovered" in out, "0 of 1 discovered" in out),
-                  (0, True, True))
-            gfile.write_text(_gtodo([1, 2, 3, 4, 5, 6], {5: _gorigin()}), encoding="utf-8")
-            code, out = _gquery("growth", since="HEAD", check=True)
-            check("growth: --check counts only the discovered one among operator sections",
-                  (code, "sections: +3 -0 (net +3), 1 discovered" in out), (0, True))
+            check("growth: operator-directed sections carry no run",
+                  (code, "sections: +3 -0 (net +3), 0 discovered;" in out), (0, True))
             code, out = _gquery("growth", since="no-such-ref", check=False)
             check("growth: an unreadable ref exits 2", code, 2)
             code, out = _gquery("growth", since=None, check=False)
             check("growth: --since is required", code, 2)
         finally:
             globals()["_budget_committed_text"] = _real_committed
+            globals()["_backlog_committed_text"] = _real_bcommitted
             TODO_DIR, PLAN, PROGRESS_JSON, OPERATOR_JSON = saved_g
             _sh_g = __import__("shutil")
             _sh_g.rmtree(groot, ignore_errors=True)
@@ -10770,7 +11192,7 @@ def main() -> int:
     q.add_argument("--file", help="adjacency: exact repository-relative TODO path")
     q.add_argument("--at", help="adjacency: inspect an isolated historical commit")
     q.add_argument("--json", action="store_true", help="adjacency, plan-health: machine-readable report")
-    q.add_argument("--check", action="store_true", help="plan-health: exit 1 on actionable entries (covered escalations and bare partials pass; --fail-on gates presence); growth: exit 1 past the per-run cap")
+    q.add_argument("--check", action="store_true", help="plan-health: exit 1 on actionable entries (covered escalations and bare partials pass; --fail-on gates presence); growth: accepted and ignored (nothing is capped since 2026-09-27)")
     q.add_argument("--fail-on", metavar="DIMS", help="plan-health: comma-separated dimensions whose non-emptiness exits 1")
     q.add_argument("--require-owned", action="store_true", help="adjacency: refuse incomplete file ownership at closeout")
     q.add_argument("--require-conformance", action="store_true", help="adjacency: require non-vacuous tree-wide kind coverage")

@@ -82,6 +82,8 @@ track: I20
 - -> XREF: D03 T13 §10 -- Imago parity retouching and transform cites §1: the retouching studio preset D03 T13 §10 defines; §3: the GIMP shortcut set D03 T13 §11's tool shortcuts join
 - -> XREF: D03 T14 §1 -- Imago parity filters cites §3: command search lists filters; §4: the Preferences control for showing all gallery groups
 - -> XREF: D04 T14 §1 -- Lumen parity workspace cites §1: the `Photon.UI/Workspace/` frame, panes, and saved workspaces D04 T14 §1 and D04 T14 §2 consume; §2: the toolbar customization frame D04 T14 §2 consumes; §3: menus, shortcut sets, and command search D04 T14 §3 consumes; §4: `PreferenceKeyRegistry` and `WarningRegistry`, moved to the shared libraries, which D04 T14 §4 consumes; §6: touch and pen input handling D04 T14 §2 reuses; §8: `SystemInfoReport` and the help plumbing D04 T14 §7 consumes; §9: interface appearance and language switching D04 T14 §7 and D04 T14 §8 follow
+- -> XREF: D01 T10 §1 -- suite automation cites §3: CommandIndex, MenuDefinition, and ShortcutManager, which the recorder and the Scripts menu use
+- -> XREF: D01 T07 §12 -- wires §5's GPU switch to Photon.Gpu.Enabled
 
 ## Outcome
 
@@ -342,7 +344,7 @@ Presets are a professional's accumulated work. Each resource type already has it
 - [ ] Add `.imagopresets` packages (a ZIP with a manifest per type) written through the atomic writer, with Export Presets and Import Presets. Done when: `PresetPackageTests` export one preset of every type from `tests/fixtures/imago/presets/`, import into an empty profile, and compare each byte for byte or field by field.
 - [ ] Add Migrate Presets importing from an earlier Imago version's folder. Done when: a migration test imports a fixture version folder and lists every migrated preset.
 - [ ] Route competitor preset files (ABR, GRD, ASL, PAT, ACO, ASE, CSH) through each type's own importer from the Import command, bundling none. Done when: a test asserts each extension dispatches to its owning library's importer.
-- [ ] Add add-on packages: an `.imagopresets` with brushes, styles, palettes, and assets (macros excluded until B-041). Done when: a test imports a mixed add-on fixture and asserts each item lands in its library.
+- [ ] Add add-on packages: an `.imagopresets` with brushes, styles, palettes, and assets (macros excluded until `D03 T22 §1` adds action packages). Done when: a test imports a mixed add-on fixture and asserts each item lands in its library.
 - [ ] Add the Assets panel in `src/Imago/Photon.Imago.Desktop/Panels/AssetsPanel.xaml` with categories and subcategories, add from selection (layers become a stored asset), and drag or click to place as an embedded or linked smart object through `D03 T09 §9`. Done when: `AssetsLibraryTests` store a two-layer selection and place it back as a smart object with equal pixels.
 - [ ] Add `.imagoassets` import and export, and record in `docs/dev/decisions.md` that Affinity `.afassets` is not read because its layout is not published. Done when: an assets package round-trips with every asset equal and the decision row exists.
 - [ ] Add the Folders page: per resource type, the read-only system folder in the install directory and writable personal folders, add, reorder, and delete folders, and Open Lens Profiles Folder (the lensfun user database folder of `D01 T07 §3`) and Open Fonts Folder. Done when: a test reorders folders and asserts load order, and a read-only personal folder is refused by name.

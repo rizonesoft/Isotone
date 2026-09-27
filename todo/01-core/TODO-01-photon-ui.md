@@ -53,6 +53,8 @@ track: C1
 - -> XREF: D04 T14 §8 -- Lumen parity workspace cites §3: the suite theme D04 T14 §8 consumes; §4: the shared About and shortcuts dialog D04 T14 §3 and D04 T14 §7 consume
 - -> XREF: D02 T02 §2 -- builds the Suite card splash in Nodus that §2 moves into `Photon.UI`
 - -> XREF: D00 T03 §3 -- the app icon raster export (the `<app>_256.png` `AppIdentity.IconUri` names in §2, and the `<app>_splash_640.png` reference renders §2's captures are compared against)
+- -> XREF: D01 T10 §2 -- suite automation cites §3: the generated theme; §8: the dock the Actions panel and extension panels dock into
+- -> XREF: D01 T11 §4 -- the MediaTransport playbar consumes the generated theme and the visual harness
 
 ## Outcome
 

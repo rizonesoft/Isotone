@@ -33,6 +33,7 @@ track: C9
 - -> XREF: D04 T04 §15 -- Lumen's viewer effects browser and plug-in folders consume §2 and §4, and Lumen's publish carries §1's host (the former B-012 rows LP-1157, LP-1159, and LP-1224)
 - -> XREF: D04 T11 §7 -- Lumen's batch edit pipeline runs §2's filters as a batch step with stored parameters (LP-1160)
 - Prose references (no XREF because the target files are not edited here): `D01 T02 §1` (the project, app-data paths, and logging), `D01 T02 §2` (the settings store), `D01 T01 §1` and `D01 T01 §3` (the icon catalog and theme resources the manager uses), `D01 T03 §1` (`PixelBuffer<TPixel>` and tiles), `D01 T04 §1` (the gray, CMYK, and Lab conversions plug-ins may request)
+- -> XREF: D01 T10 §7 -- suite automation cites §4: the plug-in manager page D01 T10 §7 adds an Extensions tab to
 
 ## Outcome
 

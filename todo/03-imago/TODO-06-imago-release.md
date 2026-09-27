@@ -92,10 +92,13 @@ Imago's first release, following `standards/release.md` exactly as Nodus's did.
 
 **Corrected 2026-09-27:** binaries are distributed only from rizonesoft.com (operator decision 2026-09-27, `standards/release.md` Distribution): the tag's workflow uploads the installer, the portable ZIP, and `SHA256SUMS` to `https://download.rizonesoft.com/imago/0.1.0/` and writes the feed `update/imago.json`, and the GitHub release carries no attached files, only the notes, the SHA-256 table, the Download links, and the source link. So the download and checkpoint steps below read the files from `download.rizonesoft.com`, and a release cannot publish before the operator's storage step `D99 T01 §8` is done.
 
+**Corrected 2026-09-27:** added the backlog review before the tag (operator decision 2026-09-27, "Release-time backlog gate", with "No drop without operator approval"; `todo/README.md`, The budget and the backlog): every backlog entry for Imago or the suite is promoted into a section or deferred by the operator in words recorded on the entry as a `reviewed: imago-v0.1.0` field, and `validate` refuses this section's stamp while one is unreviewed (`release-backlog-unreviewed`).
+
 - [ ] `pwsh scripts/check-all.ps1` at the release commit. Done when: every gate is `PASS` (table quoted).
 - [ ] Write the `imago-v0.1.0` section of `CHANGELOG.md`. Done when: it lists every user-visible change since the import.
 - [ ] Confirm the user guide covers every shipped surface. Done when: no surface lacks a page.
 - [ ] Package locally and run the clean-machine procedure from `D05 T01 §1` (install per-user and all-users, open each fixture format, save, uninstall; file associations opt-in). Done when: every step passes and is quoted.
+- [ ] Run the backlog review for `imago-v0.1.0`: list the entries with `python scripts/todo-graph.py query backlog`, and for every entry whose `app:` is `imago` or `suite`, either promote it into a section through `add-todo` or ask the operator whether it may wait and append `-- reviewed: imago-v0.1.0 <YYYY-MM-DD> deferred by operator: "<their words>"` to the entry (`-- reviewed: imago-v0.1.0 <YYYY-MM-DD> promoted DNN TNN §N` when only part of it became a section). Done when: every in-scope entry is promoted or carries a `reviewed: imago-v0.1.0` field (list quoted), so the stamp passes `release-backlog-unreviewed`.
 - [ ] Push `imago-v0.1.0`; verify the workflow, the files and `SHA256SUMS` on `download.rizonesoft.com`, and the update feed; run the portable ZIP from an empty folder. Done when: all pass (URLs and hashes quoted).
 - [ ] Update `README.md`'s Imago status line. Done when: it names 0.1.0.
 - [ ] Commit: `"release: Imago 0.1.0"`

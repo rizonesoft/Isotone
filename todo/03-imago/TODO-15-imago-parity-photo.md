@@ -480,7 +480,7 @@ A scanner bed of several prints should become several straight images in one com
 - [ ] Rotate and crop each photo through the `D01 T03 §2` rotator with bicubic sampling into a new document named `<scan> (1)`, `<scan> (2)`, keeping resolution and profile; the source document is unchanged. Done when: tests assert names, resolution, profile, edges within 3 px of the truth, and the source tiles hash-equal.
 - [ ] With an active selection, process only the photo inside it. Done when: a test with a selection around one photo opens exactly one document.
 - [ ] Refuse by name when no photo is found ("No separate photos were found on <scan>"). Done when: a blank-bed test asserts the message and no new document.
-- [ ] Add the `File, Automate` submenu holding this command and Merge to HDR (§6) until batch processing (B-042) arrives, with progress through the shared surface. Done when: `MenuAuditTests` pass and a capture is committed.
+- [ ] Add the `File, Automate` submenu holding this command and Merge to HDR (§6) until batch processing (`D03 T22 §5`) extends it, with progress through the shared surface. Done when: `MenuAuditTests` pass and a capture is committed.
 - [ ] Log one Serilog Information line `Crop and Straighten Photos found {Count} photos in {Document}`. Done when: a test asserts the line through the test log capture.
 - [ ] Commit `tests/fixtures/imago/photo/scan-three.png` (suite-authored: three photos rotated by 4, -7, and 12 degrees on a textured bed) with its truth rectangles. Done when: the fixture and truth file exist.
 - [ ] Update `docs/user/imago/photo-merge.md` with Crop and Straighten Photos and the selection limit. Done when: the command is documented.

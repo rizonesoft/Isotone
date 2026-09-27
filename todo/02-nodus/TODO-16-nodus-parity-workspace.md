@@ -58,6 +58,7 @@ track: N16
 - -> XREF: D02 T09 §6 -- the color replace engine §10's Find and Replace consumes
 - -> XREF: D02 T15 §1 -- the AI usage indicator the application bar shows
 - -> XREF: D03 T20 §1 -- Imago parity workspace cites §1: the workspace frame it moves to `Photon.UI`; §2: the toolbar, toolbox, and status bar frame it moves; §3: the menu, context menu, and shortcut-set frame it moves; §4: `PreferenceKeyRegistry` and the coverage test moved to `Photon.Core/Settings/`; §5: `WarningRegistry` moved to `Photon.UI`; §6: brightness themes and `ThemeService` consumed, `SystemInfoReport`, `GpuDiagnostics`, and the UI-scale helpers moved; §7: the welcome frame moved to `Photon.UI/Welcome/`; §8: `PressureCurve` and the Surface Dial menu moved; §9: rich tooltips consumed
+- -> XREF: D02 T19 §1 -- Nodus automation adds Window, Actions, File, Scripts, and File, Automate to §3's menus and shortcut sets
 
 ## Outcome
 

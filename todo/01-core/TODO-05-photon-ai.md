@@ -45,6 +45,7 @@ track: C5
 - -> XREF: D03 T16 §4 -- Imago parity type and vectors cites §5: brand kit type styles shown in D03 T16 §4's styles panels
 - -> XREF: D03 T19 §1 -- Imago AI cites §1: the client, image generate and edit, structured output, and the recorded transport every test there runs over; §2: the key store and per-task model settings Imago extends; §3: the provenance record, store, re-run, and diff embedded in the `.imago` document; §4: the send gate, send preview, AI settings page, progress panel, and usage indicator; §5: the brand kit library and `BrandKitConstraint`
 - -> XREF: D04 T10 §1 -- Lumen AI cites §1: the client, structured output, image generation, and the recorded transport every test here runs over; §2: the DPAPI key store and per-task model settings; §3: the provenance record, re-run, and compare; §4: the send gate, send preview, AI settings page, progress panel, and usage indicator
+- -> XREF: D01 T12 §1 -- on-device models route beside the OpenRouter client, write the same provenance record, and embed the Model Manager in the AI settings page (D01 T12 §3)
 
 ## Outcome
 

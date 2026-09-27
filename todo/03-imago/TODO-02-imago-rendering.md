@@ -32,6 +32,7 @@ track: I2
 - -> XREF: D03 T15 §1 -- Imago parity photo (Camera Raw and merges) cites §5: the ComputeSharp path the float display transform runs in
 - -> XREF: D03 T18 §4 -- Imago parity export, color management, and print cites §2: the viewport display transform D03 T18 §10 and D03 T18 §5 drive; §3: blend gamma in the render graph from D03 T18 §4's advanced settings; §5: the GPU path with CPU parity for the display transform
 - -> XREF: D03 T20 §5 -- Imago parity workspace cites §1: the tile cache and swap D03 T20 §5 tunes; §5: the ComputeSharp GPU path D03 T20 §5 toggles
+- -> XREF: D01 T07 §10 -- moves §5's GPU device selection, device loss, and fallback to src/Photon.Core/Gpu/
 
 ## Outcome
 

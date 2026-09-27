@@ -1,6 +1,6 @@
 ---
 name: groom-plan
-description: Harden the todo tree for a weaker executor -- sequence check, drift sweep, gap scan, complete-feature pass, backlog triage -- within the per-run cap on discovered sections, without moving rows between phases, ticking boxes, or starting a campaign. Use before a long run, or when the plan feels stale.
+description: Harden the todo tree for a weaker executor -- sequence check, drift sweep, gap scan, complete-feature pass, backlog triage (promote or leave; never drop) -- without moving rows between phases, ticking boxes, or starting a campaign. Use before a long run, or when the plan feels stale.
 ---
 
 # Groom Plan
@@ -17,9 +17,9 @@ Read what it says about direction before acting on it. **A filing is not proof t
 
 The command proposes and cannot act: it opens no file for writing. Reordering happens here, by hand, with the addresses and cross-references kept consistent as below.
 
-Hardening the tree so a weaker executor can run it. Grooming adds prerequisites and fills gaps within the per-run cap; it never moves a row out of its phase, never ticks a box, never raises a cap, and never starts a campaign.
+Hardening the tree so a weaker executor can run it. Grooming adds prerequisites and fills gaps; it never moves a row out of its phase, never ticks a box, never deletes a backlog entry without a trace, never changes `todo/budget.json`, and never starts a campaign.
 
-Record the groom's start commit (`git rev-parse HEAD`) and a run id first (`python scripts/campaign_guard.py mint-generation`, or the campaign's `run_id` when a campaign runs the groom): a groom is a run for the per-run cap, so it files at most `per_run_discovered_sections` (15, `todo/budget.json`) sections of its own finding, each carrying `**Origin:** discovered run=<run id> <YYYY-MM-DD> -- groom-plan <step>` directly under its heading, checked with `python scripts/todo-graph.py query growth --since <start> --check` before each new section. Sections the operator asks for during a groom are operator-directed: no Origin line, no cap.
+Record the groom's start commit (`git rev-parse HEAD`) and a run id first (`python scripts/campaign_guard.py mint-generation`, or the campaign's `run_id` when a campaign runs the groom): every section the groom files of its own finding carries `**Origin:** discovered run=<run id> <YYYY-MM-DD> -- groom-plan <step>` directly under its heading, so the groom record and `python scripts/todo-graph.py query growth --since <start>` can show what it added. Nothing caps how many (operator decision 2026-09-27: "the cap is worrying me, because I'm worried features will be left behind."). Sections the operator asks for during a groom are operator-directed: no Origin line.
 
 ## Workflow
 
@@ -54,7 +54,7 @@ Pay special attention to:
 
 ### 3. Gap scan
 
-Read the plan as the user will use each finished app, domain by domain, and ask what has no owner: surfaces, commands, handoffs between apps (Lumen to Imago, Imago to Nodus), error paths, settings without consumers, writes without readback. File each gap with `add-todo` (evidence, owner, dependency), which applies the admission test and stamps the Origin line: a gap becomes a section only when it is a defect in shipped or in-flight work, something an acceptance-bar aim requires, or a prerequisite of a planned row, and the groom's cap has room. Nice-to-haves go to the backlog by default. Past the per-run cap, admission-test passes merge into existing sections as items or go to the backlog, and the groom record lists each overflow. Place any new rows in their phases and sync the plan.
+Read the plan as the user will use each finished app, domain by domain, and ask what has no owner: surfaces, commands, handoffs between apps (Lumen to Imago, Imago to Nodus), error paths, settings without consumers, writes without readback. File each gap with `add-todo` (evidence, owner, dependency), which applies the admission test and stamps the Origin line: a gap becomes a section (or an item on an open section that can hold it) when it is a defect in shipped or in-flight work, something an acceptance-bar aim requires, or a prerequisite of a planned row. Nice-to-haves go to the backlog, where they are kept. Place any new rows in their phases and sync the plan.
 
 Check the Adjacency declarations while here: `python scripts/todo-graph.py query adjacency` advisories that name real gaps become sections; ones that are already covered get their anchors sharpened.
 
@@ -69,15 +69,16 @@ python scripts/todo-graph.py query backlog
 python scripts/todo-graph.py query budget
 ```
 
-When the backlog is at or near `backlog_cap` (within 10 percent), or on any groom that finds it stale, triage it:
+The backlog has no cap, so triage is never about room. On every groom, walk it: each entry is either promoted or left, and nothing is dropped on the groom's own judgement (operator decision 2026-09-27, "No drop without operator approval"; `validate` fails an entry that leaves without a trace as `backlog-dropped`):
 
-- **Merge duplicates**: two entries for one real-world thing become one (keep the lower id; fold the other's text and `source` into the survivor's summary, since a second `source` field is refused).
-- **Drop stale entries**: an idea overtaken by shipped work, a decision, or a removed feature leaves the file, with one line of reason per dropped id in the commit message.
-- **Promote what has come due**: an entry whose `promote when` has come true and that passes the admission test is promoted through `add-todo` (the promoting commit writes the section, with its Origin line, and deletes the entry); it counts against the groom's cap. Never raise a cap to promote.
+- **Promote what has come due**: an entry whose `promote when` has come true and that passes the admission test is promoted through `add-todo` (the promoting commit writes the section, with its Origin line and the entry's `source` as its `-> SOURCE:` line, and deletes the entry).
+- **Leave the rest**: an entry not yet due stays as it is. Correct a drifted `needs:` ref or summary in place.
+- **Merge duplicates**: two entries for one real-world thing become one. Keep the lower id, fold the other's text into the survivor's summary, and keep the absorbed entry's key as a merge marker, ``merged: `<source-key>` (B-NNN, YYYY-MM-DD)``, in the survivor's summary or as its own `merged:` field. The marker stays for as long as the survivor lives; removing it later is `backlog-dropped` unless its key has since been promoted.
+- **Stale entries are the operator's call**: an idea that looks overtaken by shipped work, a decision, or a removed feature is listed in the groom record with the reason and put to the operator. Only when the operator approves in words does the entry leave: delete it and append `- B-NNN <source> -- removed YYYY-MM-DD -- operator: "<their words, verbatim>"` under `## Removed with operator approval` at the end of `todo/backlog.md`. Never paraphrase the words, and never delete a removal record.
 
 ### 6. Report and commit
 
-Write the groom record: what was sequenced, what drifted and was corrected, what gaps were filed and where they landed (sections versus backlog, and any overflow past the per-run cap), what the backlog triage merged, dropped, and promoted, the run id and its discovered count against the cap, and the size line the Progress block now shows. Commit as `todo: groom <scope> (<date>)` after a final `validate` plus `plan --sync` plus `plan --check`.
+Write the groom record: what was sequenced, what drifted and was corrected, what gaps were filed and where they landed (sections versus backlog), what the backlog triage promoted and merged (with each merge marker), which stale entries were put to the operator and what the operator said, the run id and the discovered sections it filed, and the size line the Progress block now shows. Commit as `todo: groom <scope> (<date>)` after a final `validate` plus `plan --sync` plus `plan --check`.
 
 ## Guardrails
 
@@ -85,6 +86,7 @@ Write the groom record: what was sequenced, what drifted and was corrected, what
 - Do not tick a box. Grooming never ships.
 - Do not start a campaign. Grooming prepares one.
 - Do not redesign sections. Harden them.
-- Do not raise a cap, and do not file discovered sections past the per-run cap or without their Origin line. Merge, supersede, or backlog.
+- Do not file a discovered section without its Origin line, and do not change `todo/budget.json`.
+- Do not delete a backlog entry, a merge marker, or a removal record except by promotion, by a merge that keeps the key, or with the operator's recorded words.
 - Do not leave the tree unvalidated. `validate` plus `plan --check` pass before the commit.
 - Do not add a ref to `todo/.design-baseline` or an entry to `docs/design/.lint-baseline.json`. Both only shrink.

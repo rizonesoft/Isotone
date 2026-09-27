@@ -66,6 +66,7 @@ track: L14
 - -> XREF: D06 T01 §3 -- the Lumen user guide that §7 links and every section extends
 - -> XREF: D06 T02 §3 -- the published guide site §7 opens
 - -> XREF: D04 T15 §10 -- Lumen 1.0.0, which follows this file
+- -> XREF: D01 T07 §12 -- wires §5's GPU acceleration preference to Photon.Gpu.Enabled and Photon.Gpu.Adapter
 
 ## Outcome
 
@@ -221,7 +222,7 @@ A user finds and changes any behavior in one place and can undo a bad change by 
 
 ## 5. Preferences II: Performance, Caches, Color Management, and Display
 
-A user trades speed for disk and sees accurate color on their monitor. This section adds the Performance and Color pages to §4's dialog: display color management through `D01 T04 §1` (monitor profile, default input profile for untagged images, managed thumbnails, profile details), GPU preferences and adapter selection (the GPU develop path itself stays backlog B-033 and the page says so), the develop and preview cache location, size, and purge, parallel preview generation and HDR display in the library, and a warning when the display is not true color. Catalog: LP-1110 to LP-1115 (6 features: display color management, the GPU preference, the develop cache, preview generation, GPU selection, and the true color warning). -> SOURCE: parity-lumen-preferences-performance
+A user trades speed for disk and sees accurate color on their monitor. This section adds the Performance and Color pages to §4's dialog: display color management through `D01 T04 §1` (monitor profile, default input profile for untagged images, managed thumbnails, profile details), GPU preferences and adapter selection (the GPU develop path itself is `D01 T07 §10` to `§12`, which wires its keys into this page), the develop and preview cache location, size, and purge, parallel preview generation and HDR display in the library, and a warning when the display is not true color. Catalog: LP-1110 to LP-1115 (6 features: display color management, the GPU preference, the develop cache, preview generation, GPU selection, and the true color warning). -> SOURCE: parity-lumen-preferences-performance
 
 **Fidelity:** Options dialog Performance and Color pages -- docs/design/ (the specs on the Design line below) per standards/design-contract.md; goldens under docs/captures/golden/lumen/preferences/. **Corrected 2026-09-27:** cited docs/captures/lumen/preferences/ as the source; the captures under docs/captures/lumen/ are a before record, never the fidelity source.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/Tabs/README.md, docs/design/components/ComboBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/Checkbox/README.md, docs/design/components/RadioButton/README.md, docs/design/components/Button/README.md, docs/design/components/Progress/README.md -- states: all in spec -- themes: all four -- density: both
@@ -233,7 +234,7 @@ A user trades speed for disk and sees accurate color on their monitor. This sect
 
 - [ ] Add the display color settings (LP-1110): the monitor profile per display read through `D01 T04 §1` (`WcsGetDefaultColorProfile`), the engine name, the default input profile for untagged images, the managed thumbnails toggle, and a profile details readout. Done when: `DisplayProfileSelectionTests` assert the per-display profile and the untagged default reach the display transform.
 - [ ] Refresh the display transform when a window moves to another monitor. Done when: a test with two fake monitors asserts the transform changes with the window.
-- [ ] Add the GPU preference (LP-1111): auto, custom, or off for display and preview work, and GPU preview generation, with a line stating the develop engine stays on the CPU until B-033 is promoted. Done when: a test asserts the preview generator reads the key and the page text names B-033. Cheaper substitute: a switch that changes nothing, which the consumer test catches.
+- [ ] Add the GPU preference (LP-1111): auto, custom, or off for display and preview work, and GPU preview generation, with a line stating the develop engine stays on the CPU until `D01 T07 §12` ships its GPU path. Done when: a test asserts the preview generator reads the key and the page text names `D01 T07 §12`. Cheaper substitute: a switch that changes nothing, which the consumer test catches.
 - [ ] Add adapter selection (LP-1114): automatic or a named adapter from DXGI enumeration. Done when: a test with a fake adapter list asserts the chosen adapter reaches the preview generator.
 - [ ] Add the develop cache page (LP-1112): location, maximum size, current usage, and Purge. Done when: `CachePurgeTests` assert purge frees the stated bytes and leaves the catalog intact.
 - [ ] Add the preview cache size and purge for `D04 T01 §7`'s cache on the same page. Done when: `CachePurgeTests` cover the preview cache.

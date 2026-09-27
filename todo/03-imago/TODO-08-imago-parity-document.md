@@ -89,6 +89,7 @@ track: I8
 - -> XREF: D03 T21 §1 -- Imago 0.2.0 releases this file and re-proves §1's fallback in the previous release
 - -> XREF: D03 T12 §5 -- Imago parity painting cites §6: snapshots as history brush sources; §1: the `imago:` contract fill, pattern, and symmetry elements register with
 - -> XREF: D03 T14 §1 -- Imago parity filters cites §1: the `imago:` contract for filter stacks, live filter layers, planes, and projections
+- -> XREF: D03 T23 §1 -- Imago video and animation cites §1: the imago: contract and PNG fallback video layers, timelines, and frames persist through; §6: the history timeline and frame edits record into; §8: the Purge commands D03 T23 §1 adds Video Cache to
 
 ## Outcome
 
@@ -403,7 +404,7 @@ Cut, Copy, and Paste only log today. This section builds one clipboard service t
 - [ ] Add the Paste Special dialog (IP-0174) listing the formats present (private layers, PNG, DIBV5, DIB, text, SVG, EMF) and pasting the chosen one. Done when: choosing DIB pastes without alpha as expected.
 - [ ] Disable the SVG and EMF entries and Prefer Metafile When Pasting (`Imago.Clipboard.PreferMetafile`, IP-0180) with a tooltip naming `D03 T17 §16` until its readers ship. Done when: the tooltip names the section and `python scripts/todo-graph.py resolve 'D03 T17 §16'` does not exit 1 or 2.
 - [ ] Register Paste without Formatting (IP-0179), pasting plain text into a text layer in edit mode, enabled by `D03 T16 §1` with a tooltip naming it until then. Done when: the item is disabled with the tooltip.
-- [ ] Add Edit, Purge (IP-0171): Clipboard, Histories (all documents, with a confirmation), and All; the video cache purge follows backlog B-043 and is absent. Done when: Purge Histories empties every open document's history after the confirmation.
+- [ ] Add Edit, Purge (IP-0171): Clipboard, Histories (all documents, with a confirmation), and All; the video cache purge is added by `D03 T23 §1` and is absent until then. Done when: Purge Histories empties every open document's history after the confirmation.
 - [ ] Name undo steps "Paste", "Paste in Place", "Paste Into", "Paste Outside", "Cut", and "Clear", with one Information line per paste (variant, format, and pixel size). Done when: a driven run logs one line per paste (quoted).
 - [ ] Add Clipboard, Paste Variants, and Buffers pages to `docs/user/imago/`. Done when: every command above is covered.
 - [ ] Commit: `"imago: clipboard, paste variants, and named buffers"`

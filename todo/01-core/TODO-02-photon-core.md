@@ -58,6 +58,9 @@ track: C2
 - -> XREF: D04 T11 §10 -- the Lumen batch tools cites §3: single-instance forwarding the Explorer verb and the viewer's `B` key use in D04 T11 §10; §4: the suite history that records batch develop and orientation as undo steps; §5: the atomic writer every output and every in-place replace uses
 - -> XREF: D04 T13 §1 -- Lumen parity formats cites §4: the suite history the extension fix records its undo step in; §5: the atomic writer every writer here saves through
 - -> XREF: D04 T14 §6 -- Lumen parity workspace cites §2: the settings store D04 T14 §6 extends with portable and deployment modes
+- -> XREF: D01 T10 §1 -- suite automation cites §4: UndoHistory transactions for playback and script runs; §3: single-instance forwarding of command-line switches
+- -> XREF: D01 T11 §1 -- the media layer logs, stores Photon.Media.* settings, and encodes through AtomicFileWriter here
+- -> XREF: D01 T12 §1 -- the on-device model runtime stores its backend, device, and models-folder settings here
 
 ## Outcome
 

@@ -1,8 +1,8 @@
 {
-  "schema_version": 2,
-  "note": "Bounds campaign discovery, never operator planning. per_run_discovered_sections: the most sections one campaign run may file on its own (each carries an `**Origin:** discovered run=<id> <YYYY-MM-DD>` line; a section with no Origin line is operator-directed and uncapped). backlog_cap: the most entries todo/backlog.md may hold. The live values must equal the latest history snapshot; history is append-only (entries 1 to 3 are schema 1 snapshots with the retired phase ceilings); a raise needs approved_by operator and the operator's words quoted in reason. Format and rules: todo/README.md, The budget and the backlog.",
-  "backlog_cap": 500,
-  "per_run_discovered_sections": 15,
+  "schema_version": 3,
+  "note": "Records the budget decisions; bounds nothing. Since 2026-09-27 nothing in the plan is capped: backlog_cap and per_run_discovered_sections are null (no cap). A section a campaign files on its own still carries an `**Origin:** discovered run=<id> <YYYY-MM-DD>` line, for provenance and reporting only. The live values must equal the latest history snapshot; history is append-only (entries 1 to 3 are schema 1 snapshots with the retired phase ceilings, entry 4 is the schema 2 snapshot with the retired caps); a raise, removing a cap included, needs approved_by operator and the operator's words quoted in reason. The safeguards that replaced the caps (no drop without operator approval, the release-time backlog gate) are checked on todo/backlog.md. Format and rules: todo/README.md, The budget and the backlog.",
+  "backlog_cap": null,
+  "per_run_discovered_sections": null,
   "history": [
     {
       "date": "2026-09-26",
@@ -117,6 +117,16 @@
       "snapshot": {
         "backlog_cap": 500,
         "per_run_discovered_sections": 15
+      }
+    },
+    {
+      "date": "2026-09-27",
+      "change": "Both remaining caps removed: per_run_discovered_sections 15 -> none and backlog_cap 500 -> none (schema 3: both null). Classes run-cap-exceeded and backlog-over-cap retired. Origin lines stay, for provenance and reporting only (query growth and query budget report discovered sections by run). In their place: no backlog entry leaves todo/backlog.md without a trace (promotion, a merge marker on the survivor, or an operator removal record; backlog-dropped), and every release section runs a backlog review for its app before it stamps (release-backlog-review-missing, release-backlog-unreviewed).",
+      "reason": "Operator decision 2026-09-27: \"the cap is worrying me, because I'm worried features will be left behind.\" The operator chose \"No drop without operator approval\", \"Remove the backlog cap\", \"Release-time backlog gate\", and \"Remove the 15-per-run cap too\".",
+      "approved_by": "operator",
+      "snapshot": {
+        "backlog_cap": null,
+        "per_run_discovered_sections": null
       }
     }
   ]

@@ -37,6 +37,7 @@ track: I1
 - -> XREF: D01 T01 §7 -- the shared `PhotonWindow` §3 hosts Imago's main window in
 - -> XREF: D03 T02 §2 -- the tiled viewport that builds on the canvas §2 ports
 - -> XREF: D03 T08 §4 -- Imago parity document and view cites §1: the rename the target paths assume; §2: the ported `Ruler` control D03 T08 §4 extends
+- -> XREF: D01 T10 §4 -- suite automation cites §1: the renamed Photon.Imago.Scripting, whose ScriptEngine D01 T10 §4 moves to Photon.Core
 
 ## Outcome
 

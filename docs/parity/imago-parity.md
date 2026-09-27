@@ -2,13 +2,13 @@
 
 Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affinity Photo), and GIMP 3.2.6 feature, merged into Imago features, each with exactly one status. The sources are [`sources/photoshop-27.10.md`](sources/photoshop-27.10.md), [`sources/affinity-3.3.md`](sources/affinity-3.3.md), and [`sources/gimp-3.2.6.md`](sources/gimp-3.2.6.md); the status grammar and the update rules are in [`README.md`](README.md); the sections that own `plan` rows are designed in [`imago-section-design.md`](imago-section-design.md).
 
-**Totals (2026-09-26, rows added 2026-09-27):** 2,385 features covering 3,176 Photoshop rows, 2,762 Affinity rows, and 4,891 GIMP rows (10,829 in all); every source id appears in exactly one row. The 18 rows IP-2368 to IP-2385 were added on 2026-09-27 for ACDSee Edit-mode capabilities that the Lumen catalog ([`lumen-parity.md`](lumen-parity.md)) routes to Imago and no Imago row covered; they carry no Photoshop, Affinity, or GIMP id. On 2026-09-27 the operator also directed the eight rows that pointed at B-012 and B-024, and the G'MIC row, into planned sections (`D03 T14 §11` to `§13` on the `D01 T09` plug-in host). GIMP's inventory lists one row per documented option, so its rows fold into features far more often than the other two.
+**Totals (2026-09-26, rows added 2026-09-27):** 2,385 features covering 3,176 Photoshop rows, 2,762 Affinity rows, and 4,891 GIMP rows (10,829 in all); every source id appears in exactly one row. The 18 rows IP-2368 to IP-2385 were added on 2026-09-27 for ACDSee Edit-mode capabilities that the Lumen catalog ([`lumen-parity.md`](lumen-parity.md)) routes to Imago and no Imago row covered; they carry no Photoshop, Affinity, or GIMP id. On 2026-09-27 the operator also directed the eight rows that pointed at B-012 and B-024, and the G'MIC row, into planned sections (`D03 T14 §11` to `§13` on the `D01 T09` plug-in host). Later on 2026-09-27 the operator decided to plan the work deferred to after the first release as real sections, because the operator worried "features will be left behind": the 86 rows that pointed at B-041 to B-044 and B-046 are planned in the post-release phases, scripting, actions, procedures, extensions, batch, and data sets in `D03 T22` (on the suite automation of `D01 T10`, Phase 42), video, the timeline, audio, and frame animation with animated formats in `D03 T23` (on the suite media stack of `D01 T11`, Phase 43), and the on-device models in `D03 T19 §16` and `§17` (on `D01 T12`, Phase 44); Content Credentials (B-047) and Affinity files (B-045) stay in the backlog. GIMP's inventory lists one row per documented option, so its rows fold into features far more often than the other two.
 
 | Status | Features | Source rows |
 | ------ | -------: | ----------: |
-| `plan` | 2,024 | 9,558 |
+| `plan` | 2,110 | 9,908 |
 | `shipped-scope` | 204 | 762 |
-| `backlog` | 92 | 361 |
+| `backlog` | 6 | 11 |
 | `excluded` | 54 | 129 |
 | `other-app` | 11 | 19 |
 | **Total** | **2,385** | **10,829** |
@@ -238,7 +238,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-0168 | Clear selection contents | PS-A-1230 | -- | GP-0879 | core | plan D03 T08 §8 |  |
 | IP-0169 | Named buffers: cut, copy, copy visible named | -- | -- | GP-3667, GP-3668, GP-3669, GP-3776, GP-3777, GP-3778, GP-3779 | core | plan D03 T08 §8 |  |
 | IP-0170 | Buffers panel: paste buffer variants, as new layer or image, delete | -- | -- | GP-3664, GP-3665, GP-3666, GP-3670, GP-3671, GP-3672, GP-3673, GP-3674, GP-3675, GP-3676, GP-3677, GP-3678, GP-3780 | core | plan D03 T08 §8 |  |
-| IP-0171 | Purge clipboard, histories, and all | PS-A-1252 | -- | -- | core | plan D03 T08 §8 | Video cache purge follows B-043 |
+| IP-0171 | Purge clipboard, histories, and all | PS-A-1252 | -- | -- | core | plan D03 T08 §8 | Video cache purge follows D03 T23 §1 |
 | IP-0172 | Copy merged | -- | AF-0894 | -- | core | plan D03 T08 §8 |  |
 | IP-0173 | Paste as new layer and paste inside | -- | AF-0956, AF-0957 | GP-0028 | core | plan D03 T08 §8 |  |
 | IP-0174 | Paste special by clipboard format | -- | AF-0960 | -- | core | plan D03 T08 §8 |  |
@@ -1247,7 +1247,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1103 | Add noise: amount, uniform or gaussian, monochromatic | PS-B-0225, PS-B-0226 | AF-1658, AF-1659, AF-1660, AF-1661, AF-1662, AF-1663 | -- | core | shipped-scope D03 T07 §3 |  |
 | IP-1104 | Dust and scratches with per-channel tolerance | PS-B-0228, PS-B-0229 | AF-1676, AF-1677, AF-1678, AF-1679, AF-1680 | -- | core | shipped-scope D03 T07 §3 | Affinity channel tolerance is one more option on the shipped filter |
 | IP-1105 | Smart sharpen: amount, radius, reduce noise | PS-B-0295, PS-B-0296 | -- | -- | core | shipped-scope D03 T07 §3 |  |
-| IP-1106 | Blur Gallery on video layers | PS-B-0200 | -- | -- | video | backlog B-043 |  |
+| IP-1106 | Blur Gallery on video layers | PS-B-0200 | -- | -- | video | plan D03 T23 §1 |  |
 
 ## Distort, map, and pixelate filters
 
@@ -1452,7 +1452,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1288 | Color overlay | -- | -- | GP-3364 | core | plan D01 T06 §13 |  |
 | IP-1289 | Antialias (Scale3X edge extrapolation) | -- | -- | GP-2378, GP-3347 | core | plan D01 T06 §13 | no section names Scale3X antialias; generic engine section |
 | IP-1290 | Normal map from height map | -- | -- | GP-3443 | core | plan D01 T06 §13 |  |
-| IP-1291 | Temporal blur (frame accumulation) | -- | -- | GP-3421 | core | backlog B-044 | frame accumulation only matters for frame sequences |
+| IP-1291 | Temporal blur (frame accumulation) | -- | -- | GP-3421 | core | plan D03 T23 §6 | frame accumulation only matters for frame sequences |
 | IP-1292 | Convolution matrix: 5x5 kernel, divisor, offset, channels, normalize, alpha weighting, border | -- | -- | GP-2483, GP-2484, GP-2485, GP-2486, GP-2487, GP-2488, GP-2489, GP-2490, GP-2491, GP-2492, GP-2493, GP-2494, GP-2495, GP-3371 | core | plan D01 T06 §13 | extends D01 T03 §11 custom convolution |
 | IP-1293 | Dilate | -- | -- | GP-2496 | core | plan D01 T06 §13 |  |
 | IP-1294 | Erode | -- | -- | GP-2507 | core | plan D01 T06 §13 |  |
@@ -1754,7 +1754,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1577 | Color map mono layers filter | -- | AF-2102 | -- | core | plan D03 T15 §14 |  |
 | IP-1578 | Astro filters: auto stretch and background gradient removal | -- | AF-2105 | -- | core | plan D03 T15 §14 |  |
 | IP-1579 | Crop and Straighten Photos | PS-B-0724 | -- | -- | automation | plan D03 T15 §11 |  |
-| IP-1580 | ML star and background separation | -- | AF-1858 | -- | ai | backlog B-046 | On-device star-removal model; classical separation in D03 T15 §10 |
+| IP-1580 | ML star and background separation | -- | AF-1858 | -- | ai | plan D03 T19 §16 | On-device star-removal model where one passes the model license check; the classical separation of D03 T15 §14 stays the default |
 | IP-1581 | macOS EDR preview options | -- | AF-1352, AF-1354, AF-1357 | -- | core | excluded: platform | macOS EDR only; Windows HDR counterpart planned |
 
 ## Type
@@ -1932,7 +1932,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1739 | PSD import options: smart objects as embedded documents, text as editable text | -- | AF-2601, AF-2603 | -- | format | plan D03 T17 §3 |  |
 | IP-1740 | PSD smart objects import as editable placed documents | -- | AF-0825 | -- | format | plan D03 T17 §3 |  |
 | IP-1741 | GIMP XCF read and write including compressed XCF and saved filter stacks | -- | -- | GP-0006, GP-4799, GP-4800 | format | plan D03 T17 §4 |  |
-| IP-1742 | WebP open and export: lossy, lossless, quality, alpha quality, source preset, sharp YUV, metadata | PS-B-0993, PS-B-0994 | AF-2618 | GP-4747, GP-4748, GP-4749, GP-4750, GP-4751, GP-4752, GP-4754, GP-4755, GP-4756, GP-4757, GP-4758, GP-4759, GP-4811 | format | plan D03 T17 §5 | animation in B-044 |
+| IP-1742 | WebP open and export: lossy, lossless, quality, alpha quality, source preset, sharp YUV, metadata | PS-B-0993, PS-B-0994 | AF-2618 | GP-4747, GP-4748, GP-4749, GP-4750, GP-4751, GP-4752, GP-4754, GP-4755, GP-4756, GP-4757, GP-4758, GP-4759, GP-4811 | format | plan D03 T17 §5 | animation in D03 T23 §5 |
 | IP-1743 | AVIF open and export: lossless, quality, pixel format, bit depth, HDR PQ and HLG, speed, metadata | PS-B-0995, PS-B-0996 | -- | GP-4497, GP-4498, GP-4499, GP-4500, GP-4501, GP-4502, GP-4503, GP-4504, GP-4505, GP-4506, GP-4507, GP-4508, GP-4812 | format | plan D03 T17 §5 |  |
 | IP-1744 | HEIF and HEIC open and export: quality, pixel format, bit depth, speed, depth map layer, metadata | PS-B-0997, PS-B-0998 | AF-2619 | GP-4509, GP-4510, GP-4511, GP-4512, GP-4513, GP-4514, GP-4515, GP-4516, GP-4517, GP-4518, GP-4519, GP-4520, GP-4813 | format | plan D03 T17 §5 |  |
 | IP-1745 | HEJ2 export: JPEG 2000 in HEIF with quality, pixel format, bit depth, metadata | -- | -- | GP-4521, GP-4522, GP-4523, GP-4524, GP-4525, GP-4526, GP-4527, GP-4528, GP-4529, GP-4530, GP-4531, GP-4532, GP-4814 | format | plan D03 T17 §5 |  |
@@ -1987,7 +1987,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1794 | WMF and EMF export with enhanced metafile and clip transparency | -- | AF-2563 | -- | format | plan D03 T17 §16 | skeleton lists WMF and EMF import only; export added here |
 | IP-1795 | PDF presets manager | PS-B-1196 | -- | -- | format | plan D03 T17 §7 |  |
 | IP-1796 | BMP open and export: RLE, color space info, 16, 24, 32 bit formats, OS/2, flip row order | PS-B-0999, PS-B-1000 | AF-2626 | GP-4356, GP-4357, GP-4358, GP-4359, GP-4360, GP-4361, GP-4362, GP-4363, GP-4364, GP-4365, GP-4824 | format | plan D03 T17 §8 |  |
-| IP-1797 | GIF single frame open and export: indexed conversion, interlace, comment | PS-B-0990, PS-B-0991, PS-B-0992 | AF-2617 | GP-4483, GP-4484, GP-4485, GP-4486, GP-4825 | format | plan D03 T17 §8 | animation in B-044 |
+| IP-1797 | GIF single frame open and export: indexed conversion, interlace, comment | PS-B-0990, PS-B-0991, PS-B-0992 | AF-2617 | GP-4483, GP-4484, GP-4485, GP-4486, GP-4825 | format | plan D03 T17 §8 | animation in D03 T23 §5 |
 | IP-1798 | ICO open and export: per-size save type, PNG compression | -- | -- | GP-4550, GP-4551, GP-4552, GP-4553, GP-4554, GP-4555, GP-4556, GP-4557, GP-4820 | format | plan D03 T17 §8 |  |
 | IP-1799 | CUR open and export: save type, PNG compression, hot spot | -- | -- | GP-4383, GP-4384, GP-4385, GP-4386, GP-4387, GP-4388, GP-4389, GP-4390, GP-4391, GP-4392, GP-4821 | format | plan D03 T17 §8 |  |
 | IP-1800 | ANI animated cursor open and export: name, author, delay, save type, hot spot | -- | -- | GP-4342, GP-4343, GP-4344, GP-4345, GP-4346, GP-4347, GP-4348, GP-4349, GP-4350, GP-4351, GP-4352, GP-4353, GP-4354, GP-4355, GP-4822 | format | plan D03 T17 §8 |  |
@@ -2215,7 +2215,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-1996 | Generation history for reuse and re-run | -- | AF-2132 | -- | ai | plan D03 T19 §1 | Provenance panel records prompt, model, parameters, seed per result |
 | IP-1997 | Generative AI on or off setting | PS-B-0589 | -- | -- | ai | plan D03 T19 §1 |  |
 | IP-1998 | AI quick actions and prompt entry in the Properties panel, Contextual Task Bar, and Discover panel | PS-A-1519, PS-A-1532, PS-B-0697, PS-B-1333, PS-B-1379 | -- | -- | ai | plan D03 T19 §1 | entries in the Properties panel now; the Contextual Task Bar hosts them from D03 T20 §1 |
-| IP-1999 | AI processing mode preferences for select subject and remove background | PS-B-1270, PS-B-1271 | -- | -- | ai | plan D03 T19 §1 | Imago routes through OpenRouter per task; on-device is B-046 |
+| IP-1999 | AI processing mode preferences for select subject and remove background | PS-B-1270, PS-B-1271 | -- | -- | ai | plan D03 T19 §1 | Imago routes through OpenRouter per task; on-device is D03 T19 §16 |
 | IP-2000 | AI result output: current layer, new layer, masked layer, smart filter, new document | PS-B-0431 | -- | -- | ai | plan D03 T19 §2 | Never overwrites pixels; current-layer output becomes a new layer above, one undo step |
 | IP-2001 | Generation resolution handling: output size fitting and upscale to the selection | PS-B-0606 | -- | -- | ai | plan D03 T19 §2 | Model output size caps; large areas tiled with context padding |
 | IP-2002 | Generation variations: thumbnails to switch, generate more, pick one as a layer | PS-B-0595 | AF-2130 | -- | ai | plan D03 T19 §2 | Variations kept as a layer group; seed not honored by every model |
@@ -2284,9 +2284,9 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-2065 | Lens blur by estimated depth with bokeh shapes and focal range | PS-B-0511 | -- | -- | ai | plan D03 T19 §14 | depth estimated, not measured, kernel D01 T06 §3 |
 | IP-2066 | Generative upscale 2x and 4x with faithful or creative model and scale document to fit | PS-B-0622, PS-B-0623, PS-B-0624 | AF-2150, AF-2151, AF-2152, AF-2153 | -- | ai | plan D03 T19 §8 | Topaz and Firefly map to OpenRouter models; tiled for large output |
 | IP-2067 | Super zoom: crop and enlarge with detail, artifact, noise, sharpen, face options | PS-B-0444, PS-B-0445 | -- | -- | ai | plan D03 T19 §8 |  |
-| IP-2068 | Super resolve layer and generated result | -- | AF-1534, AF-1535, AF-2131, AF-2146, AF-2147 | -- | ai | plan D03 T19 §8 | OpenRouter upscale; on-device variant is B-046 |
+| IP-2068 | Super resolve layer and generated result | -- | AF-1534, AF-1535, AF-2131, AF-2146, AF-2147 | -- | ai | plan D03 T19 §8 | OpenRouter upscale; on-device variant is D03 T19 §17 |
 | IP-2069 | Super resolve document with scale percentage | -- | AF-1536, AF-1537, AF-2148, AF-2149 | -- | ai | plan D03 T19 §8 | Text and vector layers resized natively, pixel layers upscaled |
-| IP-2070 | AI noise reduction with luma and chroma strength, live filter and brush forms | -- | AF-1689, AF-1690, AF-1691, AF-1692, AF-1693, AF-2161, AF-2162 | -- | ai | plan D03 T19 §8 | Image models may alter detail; classical D01 T06 §5 fallback; on-device model is B-046 |
+| IP-2070 | AI noise reduction with luma and chroma strength, live filter and brush forms | -- | AF-1689, AF-1690, AF-1691, AF-1692, AF-1693, AF-2161, AF-2162 | -- | ai | plan D03 T19 §8 | Image models may alter detail; classical D01 T06 §5 fallback; on-device model is D03 T19 §17 |
 | IP-2071 | GIMP third-party AI plug-in equivalents: generation, inpainting, super resolution, segmentation, denoise, colorize, background removal | -- | -- | GP-4889, GP-4890, GP-4891 | ai | plan D03 T19 §8 | GIMP ships none; Imago covers the jobs in D03 T19 §3, §5, §6, §7, §9 |
 | IP-2072 | Generative upscale and Preserve Details 2.0 | PS-A-1175, PS-A-1185 | -- | -- | ai | plan D03 T19 §8 | Model output size caps; large images tiled |
 | IP-2073 | Super Zoom enlargement with detail enhance and JPEG artifact removal | PS-A-1184 | -- | -- | ai | plan D03 T19 §8 |  |
@@ -2320,15 +2320,15 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-2101 | Sky brush and sky move tools | PS-B-0649 | -- | -- | ai | plan D03 T19 §12 |  |
 | IP-2102 | Sky replacement | PS-A-1246 | -- | -- | ai | plan D03 T19 §12 |  |
 | IP-2103 | Brand Kits panel: colors, fonts, logos | -- | AF-2505 | -- | cloud | plan D03 T19 §13 | suite brand kit from D01 T05 §5, no Canva sync |
-| IP-2104 | On-device ML model downloads, manager, and system requirements | PS-B-0430 | AF-1504, AF-2112, AF-2117, AF-2118 | -- | ai | backlog B-046 |  |
-| IP-2105 | Remove tool on-device model | PS-B-0632 | -- | -- | ai | backlog B-046 | OpenRouter path in D03 T19 §3 meanwhile |
-| IP-2106 | Motion blur reduction tool and filter | -- | AF-2163, AF-2164 | -- | ai | backlog B-046 | Classical shake reduction D01 T06 §4 covers the job meanwhile |
-| IP-2107 | Mixed light correction tool and filter | -- | AF-1744, AF-2165, AF-2166 | -- | ai | backlog B-046 | No reliable OpenRouter equivalent |
-| IP-2108 | SDR to HDR expansion tool and filter | -- | AF-1753, AF-2167, AF-2168 | -- | ai | backlog B-046 | Needs float output no hosted model returns |
-| IP-2109 | Normals from image (ML normal map) | -- | AF-2143 | -- | ai | backlog B-046 | Classical height-based normal map in D01 T06 §13 |
-| IP-2110 | Remove tool on-device model | PS-A-0236 | -- | -- | ai | backlog B-046 | Local model download; cloud path is D03 T19 §3 |
-| IP-2111 | Segmentation model download for object selection | -- | AF-0487 | -- | ai | backlog B-046 | Imago default is OpenRouter vision plus the local classical engine |
-| IP-2112 | On-device ML settings: inference device, segmentation and saliency models, model download and uninstall | -- | AF-2664, AF-2665, AF-2666, AF-2734 | -- | ai | backlog B-046 |  |
+| IP-2104 | On-device ML model downloads, manager, and system requirements | PS-B-0430 | AF-1504, AF-2112, AF-2117, AF-2118 | -- | ai | plan D03 T19 §16 |  |
+| IP-2105 | Remove tool on-device model | PS-B-0632 | -- | -- | ai | plan D03 T19 §16 | the OpenRouter path of D03 T19 §3 stays the default |
+| IP-2106 | Motion blur reduction tool and filter | -- | AF-2163, AF-2164 | -- | ai | plan D03 T19 §17 | the classical shake reduction of D01 T06 §4 stays the default |
+| IP-2107 | Mixed light correction tool and filter | -- | AF-1744, AF-2165, AF-2166 | -- | ai | plan D03 T19 §17 | No reliable OpenRouter equivalent |
+| IP-2108 | SDR to HDR expansion tool and filter | -- | AF-1753, AF-2167, AF-2168 | -- | ai | plan D03 T19 §17 | Needs float output no hosted model returns |
+| IP-2109 | Normals from image (ML normal map) | -- | AF-2143 | -- | ai | plan D03 T19 §16 | the classical height-based normal map of D01 T06 §13 stays the default |
+| IP-2110 | Remove tool on-device model | PS-A-0236 | -- | -- | ai | plan D03 T19 §16 | Local model download; cloud path is D03 T19 §3 |
+| IP-2111 | Segmentation model download for object selection | -- | AF-0487 | -- | ai | plan D03 T19 §16 | Imago default is OpenRouter vision plus the local classical engine |
+| IP-2112 | On-device ML settings: inference device, segmentation and saliency models, model download and uninstall | -- | AF-2664, AF-2665, AF-2666, AF-2734 | -- | ai | plan D03 T19 §16 |  |
 | IP-2113 | Content credentials on develop edits and exports | PS-B-0591 | -- | -- | ai | backlog B-047 | provenance still recorded via D01 T05 §3 |
 | IP-2369 | One-click masked background adjustments from an AI subject mask: black and white background (blur background is IP-2061) | -- | -- | -- | core | plan D03 T19 §15 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1284; AC-2825); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T19 §15 |
 | IP-2372 | Face edit framework: detect faces with landmark points, face selector, correctable points, symmetric left and right link, grouped sliders, presets | -- | -- | -- | core | plan D03 T19 §11 | Added 2026-09-27 for ACDSee Photo Studio Ultimate 2027 Edit mode, which the Lumen catalog routes here (LP-1372; AC-3141, AC-3142, AC-3158, AC-3194 to AC-3196, AC-3198); no Photoshop, Affinity, or GIMP row; planned as a checklist item in D03 T19 §11 |
@@ -2497,85 +2497,85 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-2254 | Manage installed plug-ins and About Plug-ins list | PS-B-0787, PS-B-1415 | -- | -- | automation | plan D03 T14 §11 | Imago-native plug-in manager |
 | IP-2255 | Extension modules manager | -- | -- | GP-0910 | core | plan D03 T14 §12 |  |
 | IP-2256 | Third-party engine operations appear as filters | -- | -- | GP-4884 | automation | plan D03 T14 §12 |  |
-| IP-2257 | Plug-in API messages only in interactive mode | -- | -- | GP-0106 | automation | backlog B-041 |  |
-| IP-2258 | Select subject recordable in macros | -- | AF-2122 | -- | automation | backlog B-041 | Shortcut binding via D03 T20 §3 |
-| IP-2259 | MCP server for external AI agents with file, network, script, AI tool, and local memory permissions | -- | AF-2171, AF-2172, AF-2173, AF-2174, AF-2175, AF-2176, AF-2177 | -- | automation | backlog B-041 |  |
-| IP-2260 | GEGL Graph filter (op pipeline text) | -- | -- | GP-2508, GP-2509 | automation | backlog B-041 | GEGL graph editing |
-| IP-2261 | Filters Development submenu | -- | -- | GP-3312 | automation | backlog B-041 |  |
-| IP-2262 | Scripts submenu | PS-B-0930 | -- | -- | automation | backlog B-041 |  |
-| IP-2263 | Macro files .afmacro and .afmacros | -- | AF-2638 | -- | automation | backlog B-041 |  |
-| IP-2264 | GEGL operations register into menus via metadata | -- | -- | GP-0008 | automation | backlog B-041 |  |
-| IP-2265 | Layer tagging recorded in macros | -- | AF-0924 | -- | automation | backlog B-041 |  |
-| IP-2266 | Multi-layer plug-in filter API | -- | -- | GP-0045 | automation | backlog B-041 |  |
-| IP-2267 | GIMP SDK for plug-in and filter builds | -- | -- | GP-0105 | automation | backlog B-041 |  |
-| IP-2268 | Actions panel: list and button modes, record, play, stop, new set and action, duplicate, delete, step and dialog toggles | PS-B-0663, PS-B-0664, PS-B-0665, PS-B-0666, PS-B-0667, PS-B-0668, PS-B-0669, PS-B-0670, PS-B-0671, PS-B-0672, PS-B-0673, PS-B-0674, PS-B-0675, PS-B-0676, PS-B-0677, PS-B-0678 | -- | -- | automation | backlog B-041 |  |
-| IP-2269 | Action step editing: record again, insert menu item, insert stop, insert path, action options | PS-B-0679, PS-B-0680, PS-B-0681, PS-B-0683, PS-B-0684 | -- | -- | automation | backlog B-041 |  |
-| IP-2270 | Action playback options, tool recording, relative values, and single history state playback | PS-B-0685, PS-B-0686, PS-B-0695, PS-B-0696 | -- | -- | automation | backlog B-041 |  |
-| IP-2271 | Action set files: load, replace, save ATN, clear, reset, built-in action sets | PS-B-0687, PS-B-0688, PS-B-0689, PS-B-0690, PS-B-0691, PS-B-0692 | -- | -- | automation | backlog B-041 |  |
-| IP-2272 | Macros: record, play, reset, step toggles, edit step settings, exposed parameters, recordable AI, LUT, and color tag steps | -- | AF-2181, AF-2182, AF-2183, AF-2184, AF-2185, AF-2186, AF-2187, AF-2190, AF-2191, AF-2208 | -- | automation | backlog B-041 |  |
-| IP-2273 | Macro library panel: categories, search, scaling and alignment on apply, import and export macro files | -- | AF-2188, AF-2189, AF-2192, AF-2193, AF-2194, AF-2195, AF-2196, AF-2197 | -- | automation | backlog B-041 |  |
-| IP-2274 | Script events manager: run scripts or actions on application events | PS-B-0768, PS-B-0769, PS-B-0770, PS-B-0771 | -- | -- | automation | backlog B-041 |  |
-| IP-2275 | Run a script file and a startup scripts folder listed in the Scripts menu | PS-B-0778, PS-B-0782 | -- | -- | automation | backlog B-041 |  |
-| IP-2276 | Scripting object model and low-level command descriptors with a command listener log | PS-B-0779, PS-B-0780, PS-B-0781 | -- | -- | automation | backlog B-041 | Imago equivalent of ExtendScript, Action Manager, ScriptListener |
-| IP-2277 | Modern script files and descriptor playback (UXP scripts, batchPlay) | PS-B-0783, PS-B-0784 | -- | -- | automation | backlog B-041 |  |
-| IP-2278 | JavaScript scripting workspace: scripts panel, run script, trusted scripts, scripts with their own UI, examples | -- | AF-0017, AF-2209, AF-2210, AF-2211, AF-2212, AF-2213, AF-2215 | -- | automation | backlog B-041 | Affinity Scripting Studio |
-| IP-2279 | AI-generated scripts from a natural-language request | -- | AF-2214 | -- | automation | backlog B-041 | would use the Imago assistant (D03 T19 §10) once scripting exists |
-| IP-2280 | Model Context Protocol server for external AI agents | -- | AF-2733 | -- | automation | backlog B-041 |  |
-| IP-2281 | Extension panels: plug-ins that add dockable panels, commands, and dialogs, with networking, developer mode, and a developer tool | PS-B-0785, PS-B-0788, PS-B-0789, PS-B-1295, PS-B-1296, PS-B-1297, PS-B-1329 | -- | -- | automation | backlog B-041 |  |
-| IP-2282 | Generator plug-in platform and remote connections | PS-B-0792, PS-B-1197, PS-B-1293, PS-B-1294 | -- | -- | automation | backlog B-041 | asset generation itself is D03 T18 §1 |
-| IP-2283 | Plug-in API: procedure-driven auto dialogs and bindings for Python, JavaScript, Lua, Vala, C | -- | -- | GP-0043, GP-0044, GP-4878, GP-4880, GP-4881 | automation | backlog B-041 |  |
-| IP-2284 | Script-Fu scripts registered as menu commands, refresh scripts, scripts applying engine filters | -- | -- | GP-0112, GP-3300, GP-4879, GP-4886 | automation | backlog B-041 |  |
-| IP-2285 | Script consoles for Python and Script-Fu with save, clear, and procedure browse | -- | -- | GP-3314, GP-3315, GP-3316, GP-3317, GP-3318, GP-3319, GP-3320, GP-3321, GP-3323, GP-3324, GP-3325, GP-3326 | automation | backlog B-041 |  |
-| IP-2286 | Script-Fu server: listen address, port, log file | -- | -- | GP-3322, GP-3327, GP-3328, GP-3329 | automation | backlog B-041 |  |
-| IP-2287 | Procedure database and procedure browser searchable by name, description, help, author, copyright, date, type | -- | -- | GP-3330, GP-3331, GP-3332, GP-3333, GP-3334, GP-3335, GP-3336, GP-3337, GP-4882 | automation | backlog B-041 |  |
-| IP-2288 | Plug-in browser | -- | -- | GP-3342 | automation | backlog B-041 |  |
-| IP-2289 | Demo plug-ins for plug-in authors | -- | -- | GP-4885 | automation | backlog B-041 |  |
-| IP-2290 | Automate submenu | PS-B-0929 | -- | -- | automation | backlog B-042 | non-batch items are planned in their own sections |
-| IP-2291 | Variable data sets import and export | PS-B-0913, PS-B-0931 | -- | -- | automation | backlog B-042 |  |
-| IP-2292 | Variables and data sets: define visibility, text, and pixel replacement variables, import CSV data sets, apply, export data sets as files | PS-A-1212, PS-A-1213, PS-A-1214, PS-A-1215, PS-A-1216, PS-B-0793, PS-B-0794, PS-B-0795, PS-B-0796, PS-B-0797, PS-B-0798, PS-B-0799 | -- | -- | automation | backlog B-042 |  |
-| IP-2293 | Conditional actions: if current document state then play or else play | PS-B-0682, PS-B-0693, PS-B-0694 | -- | -- | automation | backlog B-042 |  |
-| IP-2294 | Batch: run an action on a folder, opened files, or import with source, destination, naming, override, and error options | PS-B-0698, PS-B-0699, PS-B-0700, PS-B-0701, PS-B-0702, PS-B-0703, PS-B-0704, PS-B-0705, PS-B-0706, PS-B-0707, PS-B-0708, PS-B-0709 | -- | -- | automation | backlog B-042 |  |
-| IP-2295 | Droplets: save an action as a standalone processor for dropped files | PS-B-0710, PS-B-0711 | -- | -- | automation | backlog B-042 |  |
-| IP-2296 | Batch job: process many files including RAW with develop preset, parallel processing, destination, formats, resize, macros, and a progress panel | -- | AF-2198, AF-2199, AF-2200, AF-2201, AF-2202, AF-2203, AF-2204, AF-2205, AF-2206, AF-2207 | -- | automation | backlog B-042 |  |
-| IP-2297 | Image Processor: convert and resize folders to JPEG, PSD, TIFF with action, copyright, ICC, saved settings | PS-B-0753, PS-B-0754, PS-B-0755, PS-B-0756, PS-B-0757, PS-B-0758, PS-B-0759, PS-B-0760 | -- | -- | automation | backlog B-042 |  |
-| IP-2298 | Headless batch mode and command line scripting | -- | -- | GP-4883 | automation | backlog B-042 |  |
+| IP-2257 | Plug-in API messages only in interactive mode | -- | -- | GP-0106 | automation | plan D03 T22 §3 |  |
+| IP-2258 | Select subject recordable in macros | -- | AF-2122 | -- | automation | plan D03 T22 §1 | Shortcut binding via D03 T20 §3 |
+| IP-2259 | MCP server for external AI agents with file, network, script, AI tool, and local memory permissions | -- | AF-2171, AF-2172, AF-2173, AF-2174, AF-2175, AF-2176, AF-2177 | -- | automation | plan D03 T22 §4 |  |
+| IP-2260 | GEGL Graph filter (op pipeline text) | -- | -- | GP-2508, GP-2509 | automation | plan D03 T22 §3 | GEGL graph editing |
+| IP-2261 | Filters Development submenu | -- | -- | GP-3312 | automation | plan D03 T22 §2 |  |
+| IP-2262 | Scripts submenu | PS-B-0930 | -- | -- | automation | plan D03 T22 §2 |  |
+| IP-2263 | Macro files .afmacro and .afmacros | -- | AF-2638 | -- | automation | plan D03 T22 §1 | Photon action files do the job; Affinity's undocumented .afmacro format is not read (reverse engineering Affinity files declined 2026-09-27) |
+| IP-2264 | GEGL operations register into menus via metadata | -- | -- | GP-0008 | automation | plan D03 T22 §3 |  |
+| IP-2265 | Layer tagging recorded in macros | -- | AF-0924 | -- | automation | plan D03 T22 §1 |  |
+| IP-2266 | Multi-layer plug-in filter API | -- | -- | GP-0045 | automation | plan D03 T22 §3 |  |
+| IP-2267 | GIMP SDK for plug-in and filter builds | -- | -- | GP-0105 | automation | plan D03 T22 §3 |  |
+| IP-2268 | Actions panel: list and button modes, record, play, stop, new set and action, duplicate, delete, step and dialog toggles | PS-B-0663, PS-B-0664, PS-B-0665, PS-B-0666, PS-B-0667, PS-B-0668, PS-B-0669, PS-B-0670, PS-B-0671, PS-B-0672, PS-B-0673, PS-B-0674, PS-B-0675, PS-B-0676, PS-B-0677, PS-B-0678 | -- | -- | automation | plan D03 T22 §1 |  |
+| IP-2269 | Action step editing: record again, insert menu item, insert stop, insert path, action options | PS-B-0679, PS-B-0680, PS-B-0681, PS-B-0683, PS-B-0684 | -- | -- | automation | plan D03 T22 §1 |  |
+| IP-2270 | Action playback options, tool recording, relative values, and single history state playback | PS-B-0685, PS-B-0686, PS-B-0695, PS-B-0696 | -- | -- | automation | plan D03 T22 §1 |  |
+| IP-2271 | Action set files: load, replace, save ATN, clear, reset, built-in action sets | PS-B-0687, PS-B-0688, PS-B-0689, PS-B-0690, PS-B-0691, PS-B-0692 | -- | -- | automation | plan D03 T22 §1 | ATN import through the documented descriptor structure; actions save as Photon action files, and ATN is not written |
+| IP-2272 | Macros: record, play, reset, step toggles, edit step settings, exposed parameters, recordable AI, LUT, and color tag steps | -- | AF-2181, AF-2182, AF-2183, AF-2184, AF-2185, AF-2186, AF-2187, AF-2190, AF-2191, AF-2208 | -- | automation | plan D03 T22 §1 |  |
+| IP-2273 | Macro library panel: categories, search, scaling and alignment on apply, import and export macro files | -- | AF-2188, AF-2189, AF-2192, AF-2193, AF-2194, AF-2195, AF-2196, AF-2197 | -- | automation | plan D03 T22 §1 |  |
+| IP-2274 | Script events manager: run scripts or actions on application events | PS-B-0768, PS-B-0769, PS-B-0770, PS-B-0771 | -- | -- | automation | plan D03 T22 §2 |  |
+| IP-2275 | Run a script file and a startup scripts folder listed in the Scripts menu | PS-B-0778, PS-B-0782 | -- | -- | automation | plan D03 T22 §2 |  |
+| IP-2276 | Scripting object model and low-level command descriptors with a command listener log | PS-B-0779, PS-B-0780, PS-B-0781 | -- | -- | automation | plan D03 T22 §2 | Imago equivalent of ExtendScript, Action Manager, ScriptListener |
+| IP-2277 | Modern script files and descriptor playback (UXP scripts, batchPlay) | PS-B-0783, PS-B-0784 | -- | -- | automation | plan D03 T22 §2 |  |
+| IP-2278 | JavaScript scripting workspace: scripts panel, run script, trusted scripts, scripts with their own UI, examples | -- | AF-0017, AF-2209, AF-2210, AF-2211, AF-2212, AF-2213, AF-2215 | -- | automation | plan D03 T22 §2 | Affinity Scripting Studio |
+| IP-2279 | AI-generated scripts from a natural-language request | -- | AF-2214 | -- | automation | plan D03 T22 §2 | the Imago assistant (D03 T19 §10) writes the script into the editor; it never runs without the user |
+| IP-2280 | Model Context Protocol server for external AI agents | -- | AF-2733 | -- | automation | plan D03 T22 §4 |  |
+| IP-2281 | Extension panels: plug-ins that add dockable panels, commands, and dialogs, with networking, developer mode, and a developer tool | PS-B-0785, PS-B-0788, PS-B-0789, PS-B-1295, PS-B-1296, PS-B-1297, PS-B-1329 | -- | -- | automation | plan D03 T22 §4 |  |
+| IP-2282 | Generator plug-in platform and remote connections | PS-B-0792, PS-B-1197, PS-B-1293, PS-B-1294 | -- | -- | automation | plan D03 T22 §4 | asset generation itself is D03 T18 §1 |
+| IP-2283 | Plug-in API: procedure-driven auto dialogs and bindings for Python, JavaScript, Lua, Vala, C | -- | -- | GP-0043, GP-0044, GP-4878, GP-4880, GP-4881 | automation | plan D03 T22 §3 | C# through Roslyn is the one scripting language; other languages drive Imago through the automation server of D01 T10 §6 |
+| IP-2284 | Script-Fu scripts registered as menu commands, refresh scripts, scripts applying engine filters | -- | -- | GP-0112, GP-3300, GP-4879, GP-4886 | automation | plan D03 T22 §3 |  |
+| IP-2285 | Script consoles for Python and Script-Fu with save, clear, and procedure browse | -- | -- | GP-3314, GP-3315, GP-3316, GP-3317, GP-3318, GP-3319, GP-3320, GP-3321, GP-3323, GP-3324, GP-3325, GP-3326 | automation | plan D03 T22 §3 |  |
+| IP-2286 | Script-Fu server: listen address, port, log file | -- | -- | GP-3322, GP-3327, GP-3328, GP-3329 | automation | plan D03 T22 §3 | the automation server's per-user pipe; no network listener |
+| IP-2287 | Procedure database and procedure browser searchable by name, description, help, author, copyright, date, type | -- | -- | GP-3330, GP-3331, GP-3332, GP-3333, GP-3334, GP-3335, GP-3336, GP-3337, GP-4882 | automation | plan D03 T22 §3 |  |
+| IP-2288 | Plug-in browser | -- | -- | GP-3342 | automation | plan D03 T22 §3 |  |
+| IP-2289 | Demo plug-ins for plug-in authors | -- | -- | GP-4885 | automation | plan D03 T22 §3 |  |
+| IP-2290 | Automate submenu | PS-B-0929 | -- | -- | automation | plan D03 T22 §5 | non-batch items are planned in their own sections |
+| IP-2291 | Variable data sets import and export | PS-B-0913, PS-B-0931 | -- | -- | automation | plan D03 T22 §6 |  |
+| IP-2292 | Variables and data sets: define visibility, text, and pixel replacement variables, import CSV data sets, apply, export data sets as files | PS-A-1212, PS-A-1213, PS-A-1214, PS-A-1215, PS-A-1216, PS-B-0793, PS-B-0794, PS-B-0795, PS-B-0796, PS-B-0797, PS-B-0798, PS-B-0799 | -- | -- | automation | plan D03 T22 §6 |  |
+| IP-2293 | Conditional actions: if current document state then play or else play | PS-B-0682, PS-B-0693, PS-B-0694 | -- | -- | automation | plan D03 T22 §1 |  |
+| IP-2294 | Batch: run an action on a folder, opened files, or import with source, destination, naming, override, and error options | PS-B-0698, PS-B-0699, PS-B-0700, PS-B-0701, PS-B-0702, PS-B-0703, PS-B-0704, PS-B-0705, PS-B-0706, PS-B-0707, PS-B-0708, PS-B-0709 | -- | -- | automation | plan D03 T22 §5 |  |
+| IP-2295 | Droplets: save an action as a standalone processor for dropped files | PS-B-0710, PS-B-0711 | -- | -- | automation | plan D03 T22 §5 |  |
+| IP-2296 | Batch job: process many files including RAW with develop preset, parallel processing, destination, formats, resize, macros, and a progress panel | -- | AF-2198, AF-2199, AF-2200, AF-2201, AF-2202, AF-2203, AF-2204, AF-2205, AF-2206, AF-2207 | -- | automation | plan D03 T22 §5 |  |
+| IP-2297 | Image Processor: convert and resize folders to JPEG, PSD, TIFF with action, copyright, ICC, saved settings | PS-B-0753, PS-B-0754, PS-B-0755, PS-B-0756, PS-B-0757, PS-B-0758, PS-B-0759, PS-B-0760 | -- | -- | automation | plan D03 T22 §5 |  |
+| IP-2298 | Headless batch mode and command line scripting | -- | -- | GP-4883 | automation | plan D03 T22 §5 |  |
 
 ## Video and animation
 
 | ID | Feature | Photoshop | Affinity | GIMP | Category | Status | Notes |
 | -- | ------- | --------- | -------- | ---- | -------- | ------ | ----- |
-| IP-2299 | Render video | PS-B-0915 | -- | -- | video | backlog B-043 |  |
-| IP-2300 | Video files open and video frames to layers | PS-B-0932, PS-B-1033 | -- | -- | video | backlog B-043 |  |
-| IP-2301 | Video layers | PS-A-0664, PS-A-0692 | -- | -- | video | backlog B-043 |  |
-| IP-2302 | Clone source frame offset and lock frame | PS-A-0318 | -- | -- | video | backlog B-043 |  |
-| IP-2303 | Video timeline panel: tracks, add media, playhead and play controls, playback resolution and loop, zoom, work area, frame rate, shortcut keys, frame skipping, lock and hide tracks | PS-B-0800, PS-B-0801, PS-B-0803, PS-B-0804, PS-B-0806, PS-B-0809, PS-B-0810, PS-B-0811, PS-B-0812, PS-B-0814, PS-B-0822, PS-B-0823, PS-B-0824, PS-B-0827 | -- | -- | video | backlog B-043 |  |
-| IP-2304 | Timeline clip editing: split at playhead, duration and speed, transitions | PS-B-0807, PS-B-0808, PS-B-0815 | -- | -- | video | backlog B-043 |  |
-| IP-2305 | Timeline audio tracks: add audio, volume, fades, mute | PS-B-0805, PS-B-0813 | -- | -- | video | backlog B-043 |  |
-| IP-2306 | Timeline motion presets and property keyframes with linear or hold interpolation | PS-B-0816, PS-B-0817, PS-B-0818, PS-B-0819 | -- | -- | video | backlog B-043 |  |
-| IP-2307 | Timeline comments track and comment export | PS-B-0825, PS-B-0826 | -- | -- | video | backlog B-043 |  |
-| IP-2308 | Video layers: new from file, blank, insert, duplicate, delete, restore, reload frames, replace and interpret footage, show altered, rasterize | PS-B-0828, PS-B-0829, PS-B-0830, PS-B-0831, PS-B-0832, PS-B-0833, PS-B-0834, PS-B-0835, PS-B-0836, PS-B-0837, PS-B-0838, PS-B-0839 | -- | -- | video | backlog B-043 |  |
-| IP-2309 | Video preview on an external device | PS-B-0841 | -- | -- | video | backlog B-043 |  |
-| IP-2310 | Video frames to layers with range, every n frames, make frame animation | PS-B-0842, PS-B-0843 | -- | -- | video | backlog B-043 |  |
-| IP-2311 | Render video: encoder presets, size, frame rate, field order, image sequences, range, alpha, audio | PS-B-0844, PS-B-0845, PS-B-0846, PS-B-0847, PS-B-0848, PS-B-0849, PS-B-0850, PS-B-0851, PS-B-0853 | -- | -- | video | backlog B-043 |  |
-| IP-2312 | Animated GIF export: loop, repeats, delay, disposal | -- | -- | GP-4487, GP-4488, GP-4489, GP-4490, GP-4491, GP-4492, GP-4493, GP-4494 | video | backlog B-044 |  |
-| IP-2313 | Save for Web animation controls | PS-B-1082 | -- | -- | format | backlog B-044 |  |
-| IP-2314 | Layer as frame export modes: replace and combine | -- | -- | GP-4327, GP-4328 | format | backlog B-044 |  |
-| IP-2315 | Animated WebP export | -- | -- | GP-4753 | video | backlog B-044 |  |
-| IP-2316 | APNG open and export | -- | -- | GP-4806 | video | backlog B-044 |  |
-| IP-2317 | FLI and FLC animation open and export with frame range | -- | -- | GP-4479, GP-4480, GP-4481, GP-4849 | video | backlog B-044 |  |
-| IP-2318 | MNG animation export | -- | -- | GP-4626, GP-4850 | video | backlog B-044 |  |
-| IP-2319 | Warp transform animate to frames | -- | -- | GP-0772 | core | backlog B-044 |  |
-| IP-2320 | Frame animation panel: create, duplicate frames, delay, looping, new layer visible in all frames, propagate frame 1, unify buttons, reverse, delete, palette options | PS-B-0802, PS-B-0854, PS-B-0855, PS-B-0856, PS-B-0859, PS-B-0860, PS-B-0861, PS-B-0867, PS-B-0868, PS-B-0869 | -- | -- | video | backlog B-044 |  |
-| IP-2321 | Tween frames: position, opacity, effects | PS-B-0857, PS-B-0858 | -- | -- | video | backlog B-044 |  |
-| IP-2322 | Frames and layers: make frames from layers, flatten frames into layers, match layer across frames, new layer per frame | PS-B-0862, PS-B-0863, PS-B-0864, PS-B-0865 | -- | -- | video | backlog B-044 |  |
-| IP-2323 | Optimize and unoptimize animation for GIF: bounding box, redundant pixel removal, difference optimization | PS-B-0866 | -- | GP-1820, GP-1821 | video | backlog B-044 |  |
-| IP-2324 | Onion skin with frame count, spacing, opacity, blend mode settings | PS-B-0820, PS-B-0821 | -- | -- | video | backlog B-044 |  |
-| IP-2325 | Animation playback of a layered image: combine or replace layers, frame rate, speed, zoom, reload, detach, step and rewind controls | -- | -- | GP-1803, GP-1804, GP-1805, GP-1806, GP-1807, GP-1808, GP-1809, GP-1810, GP-1811, GP-1812, GP-1813, GP-1814, GP-1815, GP-1816, GP-1817, GP-1818, GP-1819 | video | backlog B-044 |  |
-| IP-2326 | Animation blend: intermediate frames, max blur radius, looped | -- | -- | GP-1822, GP-1823, GP-1824, GP-1825 | video | backlog B-044 |  |
-| IP-2327 | Animation burn-in: glow color, fadeout, corona, after glow, speed, prepare for GIF | -- | -- | GP-1826, GP-1827, GP-1828, GP-1829, GP-1830, GP-1831, GP-1832, GP-1833, GP-1834 | video | backlog B-044 |  |
-| IP-2328 | Animation rippling: strength, number of frames, edge behavior | -- | -- | GP-1835, GP-1836, GP-1837, GP-1838 | video | backlog B-044 |  |
-| IP-2329 | Animation spinning globe: frames, direction, transparent background, index colors, work on copy | -- | -- | GP-1839, GP-1840, GP-1841, GP-1842, GP-1843, GP-1844 | video | backlog B-044 |  |
-| IP-2330 | Animation waves: amplitude, wavelength, number of frames, invert direction | -- | -- | GP-1845, GP-1846, GP-1847, GP-1848, GP-1849 | video | backlog B-044 |  |
+| IP-2299 | Render video | PS-B-0915 | -- | -- | video | plan D03 T23 §3 |  |
+| IP-2300 | Video files open and video frames to layers | PS-B-0932, PS-B-1033 | -- | -- | video | plan D03 T23 §1 |  |
+| IP-2301 | Video layers | PS-A-0664, PS-A-0692 | -- | -- | video | plan D03 T23 §1 |  |
+| IP-2302 | Clone source frame offset and lock frame | PS-A-0318 | -- | -- | video | plan D03 T23 §1 |  |
+| IP-2303 | Video timeline panel: tracks, add media, playhead and play controls, playback resolution and loop, zoom, work area, frame rate, shortcut keys, frame skipping, lock and hide tracks | PS-B-0800, PS-B-0801, PS-B-0803, PS-B-0804, PS-B-0806, PS-B-0809, PS-B-0810, PS-B-0811, PS-B-0812, PS-B-0814, PS-B-0822, PS-B-0823, PS-B-0824, PS-B-0827 | -- | -- | video | plan D03 T23 §2 |  |
+| IP-2304 | Timeline clip editing: split at playhead, duration and speed, transitions | PS-B-0807, PS-B-0808, PS-B-0815 | -- | -- | video | plan D03 T23 §2 |  |
+| IP-2305 | Timeline audio tracks: add audio, volume, fades, mute | PS-B-0805, PS-B-0813 | -- | -- | video | plan D03 T23 §3 |  |
+| IP-2306 | Timeline motion presets and property keyframes with linear or hold interpolation | PS-B-0816, PS-B-0817, PS-B-0818, PS-B-0819 | -- | -- | video | plan D03 T23 §2 |  |
+| IP-2307 | Timeline comments track and comment export | PS-B-0825, PS-B-0826 | -- | -- | video | plan D03 T23 §2 |  |
+| IP-2308 | Video layers: new from file, blank, insert, duplicate, delete, restore, reload frames, replace and interpret footage, show altered, rasterize | PS-B-0828, PS-B-0829, PS-B-0830, PS-B-0831, PS-B-0832, PS-B-0833, PS-B-0834, PS-B-0835, PS-B-0836, PS-B-0837, PS-B-0838, PS-B-0839 | -- | -- | video | plan D03 T23 §1 |  |
+| IP-2309 | Video preview on an external device | PS-B-0841 | -- | -- | video | plan D03 T23 §2 |  |
+| IP-2310 | Video frames to layers with range, every n frames, make frame animation | PS-B-0842, PS-B-0843 | -- | -- | video | plan D03 T23 §4 |  |
+| IP-2311 | Render video: encoder presets, size, frame rate, field order, image sequences, range, alpha, audio | PS-B-0844, PS-B-0845, PS-B-0846, PS-B-0847, PS-B-0848, PS-B-0849, PS-B-0850, PS-B-0851, PS-B-0853 | -- | -- | video | plan D03 T23 §3 |  |
+| IP-2312 | Animated GIF export: loop, repeats, delay, disposal | -- | -- | GP-4487, GP-4488, GP-4489, GP-4490, GP-4491, GP-4492, GP-4493, GP-4494 | video | plan D03 T23 §5 |  |
+| IP-2313 | Save for Web animation controls | PS-B-1082 | -- | -- | format | plan D03 T23 §5 |  |
+| IP-2314 | Layer as frame export modes: replace and combine | -- | -- | GP-4327, GP-4328 | format | plan D03 T23 §5 |  |
+| IP-2315 | Animated WebP export | -- | -- | GP-4753 | video | plan D03 T23 §5 |  |
+| IP-2316 | APNG open and export | -- | -- | GP-4806 | video | plan D03 T23 §5 |  |
+| IP-2317 | FLI and FLC animation open and export with frame range | -- | -- | GP-4479, GP-4480, GP-4481, GP-4849 | video | plan D03 T23 §5 |  |
+| IP-2318 | MNG animation export | -- | -- | GP-4626, GP-4850 | video | plan D03 T23 §5 |  |
+| IP-2319 | Warp transform animate to frames | -- | -- | GP-0772 | core | plan D03 T23 §4 |  |
+| IP-2320 | Frame animation panel: create, duplicate frames, delay, looping, new layer visible in all frames, propagate frame 1, unify buttons, reverse, delete, palette options | PS-B-0802, PS-B-0854, PS-B-0855, PS-B-0856, PS-B-0859, PS-B-0860, PS-B-0861, PS-B-0867, PS-B-0868, PS-B-0869 | -- | -- | video | plan D03 T23 §4 |  |
+| IP-2321 | Tween frames: position, opacity, effects | PS-B-0857, PS-B-0858 | -- | -- | video | plan D03 T23 §4 |  |
+| IP-2322 | Frames and layers: make frames from layers, flatten frames into layers, match layer across frames, new layer per frame | PS-B-0862, PS-B-0863, PS-B-0864, PS-B-0865 | -- | -- | video | plan D03 T23 §4 |  |
+| IP-2323 | Optimize and unoptimize animation for GIF: bounding box, redundant pixel removal, difference optimization | PS-B-0866 | -- | GP-1820, GP-1821 | video | plan D03 T23 §5 |  |
+| IP-2324 | Onion skin with frame count, spacing, opacity, blend mode settings | PS-B-0820, PS-B-0821 | -- | -- | video | plan D03 T23 §4 |  |
+| IP-2325 | Animation playback of a layered image: combine or replace layers, frame rate, speed, zoom, reload, detach, step and rewind controls | -- | -- | GP-1803, GP-1804, GP-1805, GP-1806, GP-1807, GP-1808, GP-1809, GP-1810, GP-1811, GP-1812, GP-1813, GP-1814, GP-1815, GP-1816, GP-1817, GP-1818, GP-1819 | video | plan D03 T23 §4 |  |
+| IP-2326 | Animation blend: intermediate frames, max blur radius, looped | -- | -- | GP-1822, GP-1823, GP-1824, GP-1825 | video | plan D03 T23 §6 |  |
+| IP-2327 | Animation burn-in: glow color, fadeout, corona, after glow, speed, prepare for GIF | -- | -- | GP-1826, GP-1827, GP-1828, GP-1829, GP-1830, GP-1831, GP-1832, GP-1833, GP-1834 | video | plan D03 T23 §6 |  |
+| IP-2328 | Animation rippling: strength, number of frames, edge behavior | -- | -- | GP-1835, GP-1836, GP-1837, GP-1838 | video | plan D03 T23 §6 |  |
+| IP-2329 | Animation spinning globe: frames, direction, transparent background, index colors, work on copy | -- | -- | GP-1839, GP-1840, GP-1841, GP-1842, GP-1843, GP-1844 | video | plan D03 T23 §6 |  |
+| IP-2330 | Animation waves: amplitude, wavelength, number of frames, invert direction | -- | -- | GP-1845, GP-1846, GP-1847, GP-1848, GP-1849 | video | plan D03 T23 §6 |  |
 
 ## Cloud and collaboration
 

@@ -43,9 +43,9 @@ plus the file's other Verification items (fidelity round trips re-run against th
 
 Read the whole file with fresh eyes and check:
 
-- **Stubs and TODOs in the code.** Grep the touched source paths for `TODO`, `FIXME`, `HACK`, `XXX`, `NotImplementedException`, and any commented-out block left during the work. Each is either finished now, or filed through `add-todo`: an owning section and an XREF when it passes the admission test within the run's cap (with its Origin line when a campaign files it), otherwise a backlog entry and the stub removed.
+- **Stubs and TODOs in the code.** Grep the touched source paths for `TODO`, `FIXME`, `HACK`, `XXX`, `NotImplementedException`, and any commented-out block left during the work. Each is either finished now, or filed through `add-todo`: an owning section and an XREF when it passes the admission test (with its Origin line when a campaign files it), otherwise a backlog entry and the stub removed.
 - **Partial items.** Any checklist item ticked when only part shipped. Split it.
-- **Orphaned deferrals.** Every `Deferred:` line in every stamp must name a live owner. Confirm the target section still exists and is still open. A deferral pointing at a section that shipped without addressing it is a hole. A deferral never points at the backlog: an entry there has no owner, so work that must ship gets a section through `add-todo` (admission test, Origin line, and per-run cap for work a campaign found), and an idea that need not ship becomes a backlog entry with the deferral removed.
+- **Orphaned deferrals.** Every `Deferred:` line in every stamp must name a live owner. Confirm the target section still exists and is still open. A deferral pointing at a section that shipped without addressing it is a hole. A deferral never points at the backlog: an entry there has no owner, so work that must ship gets a section through `add-todo` (admission test and Origin line for work a campaign found), and an idea that need not ship becomes a backlog entry with the deferral removed.
 - **One-sided XREFs.** The validator warns on these; resolve rather than ignore.
 - **Integration reality.** Is the feature reachable from where a user would look for it? Present in the app's menu or tool rail, bound to its keyboard shortcut, reachable from the command it belongs to, and documented in the app's user guide under `docs/user/`? A surface nobody can navigate to is not done. A setting whose job is a write and that only displays is not done either: the user must be able to change the value, and a consumer must read it.
 - **Distribute separately.** Does each app that consumes this file's work still build, publish, and run on its own, with no runtime dependency on another app?
@@ -82,7 +82,7 @@ Tell the user plainly:
 
 - What now works, in their terms: not a list of section titles.
 - What was deferred and who owns it.
-- Anything found in the sweep that became a new TODO, section, or backlog entry, how many of the new sections are discovered (Origin line) and under which run id, and the budget line (`python scripts/todo-graph.py query budget`) after it.
+- Anything found in the sweep that became a new TODO, section, or backlog entry, how many of the new sections are discovered (Origin line) and under which run id, any backlog entry promoted or merged (with its merge marker), and the budget line (`python scripts/todo-graph.py query budget`) after it.
 - Any gate that did not run, and why.
 
 ## Guardrails

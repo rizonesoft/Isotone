@@ -88,6 +88,7 @@ track: I16
 - -> XREF: D04 T11 §8 -- the Lumen batch tools cites §1: the shared text engine D04 T11 §8 shapes overlay text with
 - -> XREF: D04 T12 §1 -- Lumen parity output cites §1: the suite text engine for slideshow and book text
 - -> XREF: D04 T13 §8 -- Lumen parity formats cites §1: the shared text engine D04 T13 §8 renders font sample sheets and D04 T13 §4 renders text files through
+- -> XREF: D03 T22 §6 -- Imago variables cites §1: text layers that text replacement variables bind to
 
 ## Outcome
 
