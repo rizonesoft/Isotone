@@ -4,9 +4,12 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="resources/brand/isotone-wordmark-on-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="resources/brand/isotone-wordmark-on-light.svg">
-    <img alt="Isotone Graphics Suite" src="resources/brand/isotone-wordmark-on-light.svg" width="320">
+    <img alt="Isotone Graphics Suite" src="resources/brand/isotone-wordmark-on-light.svg" width="270">
   </picture>
 </a>
+
+<br>
+<br>
 
 <p>Three native Windows creative apps, one shared core: a vector editor, a raster editor, and a digital darkroom.<br>Free, open source, and yours to keep.</p>
 
