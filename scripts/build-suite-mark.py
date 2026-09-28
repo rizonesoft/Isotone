@@ -126,9 +126,9 @@ def wordmark(ink, sub, x0=0.0, y0=0.0, align='center'):
     ldefs = f'<linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="1">{stops}</linearGradient>'
     lbody = f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="url(#{gid})"/>' 
     sx = x0 + (total_w - sw) / 2 if align == 'center' else x0 + 1
-    sd, _ = small.run(sub_text, 12, sx, base + 30, 4.5)
+    sd, _ = small.run(sub_text, 12, sx, base + 22, 4.5)
     frag = f'<defs>{ldefs}</defs><path d="{d}" fill="{ink}"/>{lbody}<path d="{sd}" fill="{sub}"/>'
-    return frag, total_w, top_pad + 44 + 30 + 6
+    return frag, total_w, top_pad + 44 + 22 + 6
 
 
 def write(rel, svg):
