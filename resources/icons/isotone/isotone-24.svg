@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<defs>
+<linearGradient id="isotone-c-s24-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34353B"/><stop offset="1" stop-color="#1E1F23"/></linearGradient>
+<linearGradient id="isotone-c-s24-spec" x1="1" y1="0" x2="23" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.000" stop-color="#FF4D6D"/><stop offset="0.167" stop-color="#FF9A3C"/><stop offset="0.333" stop-color="#FFD84A"/><stop offset="0.500" stop-color="#4CC47A"/><stop offset="0.667" stop-color="#29C5E6"/><stop offset="0.833" stop-color="#5B7CFF"/><stop offset="1.000" stop-color="#B45CFF"/></linearGradient>
+<clipPath id="isotone-c-s24-clip"><rect x="1" y="1" width="22" height="22" rx="4"/></clipPath>
+<clipPath id="isotone-c-s24-l0"><circle cx="128.00" cy="89.00" r="45.00"/></clipPath><clipPath id="isotone-c-s24-l1"><circle cx="106.35" cy="126.50" r="45.00"/></clipPath><clipPath id="isotone-c-s24-l2"><circle cx="149.65" cy="126.50" r="45.00"/></clipPath>
+</defs>
+<rect x="1" y="1" width="22" height="22" rx="4" fill="url(#isotone-c-s24-tile)"/>
+<rect x="1" y="20.5" width="22" height="2.5" fill="url(#isotone-c-s24-spec)" clip-path="url(#isotone-c-s24-clip)"/>
+<g transform="translate(12.000 11.010) scale(0.1162) translate(-128.00 -107.75)"><g id="isotone-glyph"><circle cx="128.00" cy="89.00" r="45.00" fill="#29C5E6"/><circle cx="106.35" cy="126.50" r="45.00" fill="#F5923E"/><circle cx="149.65" cy="126.50" r="45.00" fill="#4CC47A"/><g clip-path="url(#isotone-c-s24-l0)"><circle cx="106.35" cy="126.50" r="45.00" fill="#F7E6EC"/></g><g clip-path="url(#isotone-c-s24-l1)"><circle cx="149.65" cy="126.50" r="45.00" fill="#F8E69A"/></g><g clip-path="url(#isotone-c-s24-l0)"><circle cx="149.65" cy="126.50" r="45.00" fill="#69F2F2"/></g><g clip-path="url(#isotone-c-s24-l0)"><g clip-path="url(#isotone-c-s24-l1)"><circle cx="149.65" cy="126.50" r="45.00" fill="#F9F9F5"/></g></g></g></g>
+</svg>

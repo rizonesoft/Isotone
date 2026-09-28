@@ -2,13 +2,11 @@
 
 <a href="https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-logo">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="resources/brand/rizonesoft-logo-light.svg">
-    <source media="(prefers-color-scheme: light)" srcset="resources/brand/rizonesoft-logo-dark.svg">
-    <img alt="Rizonesoft" src="resources/brand/rizonesoft-logo-dark.svg" width="260">
+    <source media="(prefers-color-scheme: dark)" srcset="resources/brand/isotone-lockup-on-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="resources/brand/isotone-lockup-on-light.svg">
+    <img alt="Isotone Graphics Suite" src="resources/brand/isotone-lockup-on-light.svg" width="380">
   </picture>
 </a>
-
-<h1>Isotone Graphics Suite</h1>
 
 <p>Three native Windows creative apps, one shared core: a vector editor, a raster editor, and a digital darkroom.<br>Free, open source, and yours to keep.</p>
 

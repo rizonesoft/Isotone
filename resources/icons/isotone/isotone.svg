@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="isotone-c-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34353B"/><stop offset="1" stop-color="#1E1F23"/></linearGradient>
+    <linearGradient id="isotone-c-spec" x1="8" y1="0" x2="248" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.00" stop-color="#FF4D6D"/><stop offset="0.17" stop-color="#FF9A3C"/><stop offset="0.33" stop-color="#FFD84A"/><stop offset="0.50" stop-color="#4CC47A"/><stop offset="0.67" stop-color="#29C5E6"/><stop offset="0.83" stop-color="#5B7CFF"/><stop offset="1.00" stop-color="#B45CFF"/></linearGradient>
+    <clipPath id="isotone-c-clip"><rect x="8" y="8" width="240" height="240" rx="48"/></clipPath>
+    <clipPath id="isotone-c-l0"><circle cx="128.00" cy="89.00" r="45.00"/></clipPath><clipPath id="isotone-c-l1"><circle cx="106.35" cy="126.50" r="45.00"/></clipPath><clipPath id="isotone-c-l2"><circle cx="149.65" cy="126.50" r="45.00"/></clipPath>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#isotone-c-bg)"/>
+  <g clip-path="url(#isotone-c-clip)">
+    <path d="M0 226C64 214 120 238 176 226S236 212 256 216V256H0Z" fill="url(#isotone-c-spec)"/>
+    <path d="M0 226C64 214 120 238 176 226S236 212 256 216" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
+  </g>
+  <rect x="9" y="9" width="238" height="238" rx="47" fill="none" stroke="#FFFFFF" stroke-opacity=".09" stroke-width="2"/>
+  <g id="isotone-glyph"><circle cx="128.00" cy="89.00" r="45.00" fill="#29C5E6"/><circle cx="106.35" cy="126.50" r="45.00" fill="#F5923E"/><circle cx="149.65" cy="126.50" r="45.00" fill="#4CC47A"/><g clip-path="url(#isotone-c-l0)"><circle cx="106.35" cy="126.50" r="45.00" fill="#F7E6EC"/></g><g clip-path="url(#isotone-c-l1)"><circle cx="149.65" cy="126.50" r="45.00" fill="#F8E69A"/></g><g clip-path="url(#isotone-c-l0)"><circle cx="149.65" cy="126.50" r="45.00" fill="#69F2F2"/></g><g clip-path="url(#isotone-c-l0)"><g clip-path="url(#isotone-c-l1)"><circle cx="149.65" cy="126.50" r="45.00" fill="#F9F9F5"/></g></g></g>
+</svg>
