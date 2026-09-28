@@ -1,6 +1,6 @@
 # TODO System -- Format Spec
 
-The `todo/` tree is the live execution plan for the Isotone Graphics Suite: Stilus (vector), Pinxit (raster), Albumen (darkroom), and the shared `Isotone.Core` they consume. Markdown is canonical; the graph cache is a derived read-only projection rebuilt by `scripts/todo-graph.py`.
+The `todo/` tree is the live execution plan for the Isotone Graphics Suite: Stilus (vector), Gesso (raster), Albumen (darkroom), and the shared `Isotone.Core` they consume. Markdown is canonical; the graph cache is a derived read-only projection rebuilt by `scripts/todo-graph.py`.
 
 One rule governs everything below: **a TODO section must be implementable by someone with zero conversation context.** A fresh session starts with none, and a session that hits the usage limit resumes cold. If a section only makes sense to someone who was in the room, it is not done.
 
@@ -27,7 +27,7 @@ todo/
 
 Domains are flat-numbered and ordered by allocation sequence. Each maps to a build area; the mapping lives in `TODO-00-INDEX.md` and in each domain's `INDEX.md`. The tooling reads domain names from the tree and never hardcodes them: a directory `NN-kebab-name/` holding an `INDEX.md` is a domain. Numbers are stable addresses: a new domain appends after the last one, because `DNN` cross-references encode them.
 
-The domains are `00-workspace` (toolchain, gates, CI, this system), `01-core` (`Isotone.Core` and `Isotone.UI`, only what two apps need), `02-stilus`, `03-pinxit`, `04-albumen`, `05-release` (per-app packaging, signing, tags, and the suite bundle), `06-docs` (developer and user documentation), and `99-manual` (operator-only rows, numbered apart from the allocation sequence as ScratchPad's is). `TODO-00-INDEX.md` is the authority for which exist today.
+The domains are `00-workspace` (toolchain, gates, CI, this system), `01-core` (`Isotone.Core` and `Isotone.UI`, only what two apps need), `02-stilus`, `03-gesso`, `04-albumen`, `05-release` (per-app packaging, signing, tags, and the suite bundle), `06-docs` (developer and user documentation), and `99-manual` (operator-only rows, numbered apart from the allocation sequence as ScratchPad's is). `TODO-00-INDEX.md` is the authority for which exist today.
 
 **Naming:** `TODO-NN-short-name.md`, where `NN` is the next free number *within that domain*. Numbers are local to the domain and never reused. Renaming a file is safe: the stable `id` in frontmatter is what cross-references resolve against.
 
@@ -69,7 +69,7 @@ superseded_by: other-todo-id         # optional -- set with status: superseded
 
 - [`src/Stilus/Bezier.Core/Bezier.Core.csproj`](…) -- exists; §2 renames it
 - [`standards/shared.md`](…) -- the shared conventions this file builds to
-- -> XREF: [`03-pinxit/TODO-01 §4`](…) -- consumes the gate this section builds
+- -> XREF: [`03-gesso/TODO-01 §4`](…) -- consumes the gate this section builds
 
 ## Outcome
 
@@ -129,7 +129,7 @@ Every `## N.` body section has exactly one table row, and every row has exactly 
 
 Never a bare number, and never a cross-TODO reference without a section. `D03 T01` alone is not a dependency: it is a vague gesture at one.
 
-**Cross-references are bidirectional.** If this file's Inputs point at `D03 T01 §4`, then `03-pinxit/TODO-01-….md` must point back at this file. One-sided XREFs are broken XREFs, and the validator flags them FATAL.
+**Cross-references are bidirectional.** If this file's Inputs point at `D03 T01 §4`, then `03-gesso/TODO-01-….md` must point back at this file. One-sided XREFs are broken XREFs, and the validator flags them FATAL.
 
 Skills under `.claude/skills/` may cite only full `DNN TNN §N` refs, and only to live sections: `validate` fails a skill that cites a short form or a dead section.
 
@@ -168,7 +168,7 @@ One paragraph of context, then the checklist.
 
 > **Verified:** 2026-09-26 | §3 | build clean Debug+Release · analyzers 0 new · 24 blend-mode tests pass · golden diff max 0.4/255
 > **Deferred:** per-layer blend in the export dialog -> XREF: D03 T02 §6 (item: "…") -- needs the export pipeline first
-> **Review:** round 1, fingerprint `a3f91c2e5b04` -- `adversarial` approve · `consistency` approve · `integration` needs-attention (1). Raw findings: docs/reviews/03-pinxit/D03-T01-s3.md
+> **Review:** round 1, fingerprint `a3f91c2e5b04` -- `adversarial` approve · `consistency` approve · `integration` needs-attention (1). Raw findings: docs/reviews/03-gesso/D03-T01-s3.md
 > **Plan review:** gpt high, no findings (run 20260926-D03-T01-S3-gpt)
 > **CRUD:** applicable | driven run: set a layer to Multiply, save, reopen, mode survived
 > **Implementer:** assistant name (model-id)
@@ -260,7 +260,7 @@ The freeze check has a visual twin. Isotone is not a clone of somebody else's pr
 **Fidelity:** Stilus main window chrome -- docs/design/shell-layout.md (Regions) and docs/design/components/WindowChrome/; goldens under docs/captures/golden/stilus/main-window/.
 ```
 
-The captures of the imported apps under `docs/captures/<app>/` (recorded by `D00 T03 §2`) are a **before** record of the legacy surfaces, useful to show what changed. They are never the fidelity source: a surface is compared with the design and its approved goldens, not with what Bezier or the old Pinxit looked like, and a section never cites them as the thing to match.
+The captures of the imported apps under `docs/captures/<app>/` (recorded by `D00 T03 §2`) are a **before** record of the legacy surfaces, useful to show what changed. They are never the fidelity source: a surface is compared with the design and its approved goldens, not with what Bezier or the old Gesso looked like, and a section never cites them as the thing to match.
 
 ### The Design line
 
@@ -290,7 +290,7 @@ A surface that cannot match its spec now says so, directly under its Design line
 **Design deviation:** opened YYYY-MM-DD -- spec: <design ref> -- reason: <why the code cannot match now> -- follow-up: DNN TNN §N (fix design|fix code)
 ```
 
-The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Stilus, Pinxit, or Albumen file (an `Isotone.UI` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
+The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Stilus, Gesso, or Albumen file (an `Isotone.UI` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
 
 ### Gates and goldens
 
@@ -496,7 +496,7 @@ The live values must equal the latest entry's `snapshot` (`budget-unrecorded-cha
 - [B-NNN] <title> -- source: <key> -- added: YYYY-MM-DD -- why deferred: <text> -- promote when: <text>
 ```
 
-with optional `app:` (`stilus`, `pinxit`, `albumen`, or `suite`; no field reads as `suite`), `summary:`, and `needs:` fields (`needs:` cites full `DNN TNN §N` refs to live sections, or other backlog ids), and the repeatable `merged:` and `reviewed:` fields below. `source` is one key token: a legacy key, a finding ID, or the `-> SOURCE:` key the section would carry, so a scan that runs twice finds its own entry. Ids are taken in order and never reused. `validate` refuses a malformed line, a line that reads as a section, a dead or short ref, a duplicate id or source, and an entry whose source a live section already carries. `query backlog` lists it.
+with optional `app:` (`stilus`, `gesso`, `albumen`, or `suite`; no field reads as `suite`), `summary:`, and `needs:` fields (`needs:` cites full `DNN TNN §N` refs to live sections, or other backlog ids), and the repeatable `merged:` and `reviewed:` fields below. `source` is one key token: a legacy key, a finding ID, or the `-> SOURCE:` key the section would carry, so a scan that runs twice finds its own entry. Ids are taken in order and never reused. `validate` refuses a malformed line, a line that reads as a section, a dead or short ref, a duplicate id or source, and an entry whose source a live section already carries. `query backlog` lists it.
 
 **The admission test** applies to discovered work only. A campaign files a discovered section only when the work is one of:
 

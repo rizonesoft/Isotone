@@ -1,7 +1,7 @@
 name: release
 
 # Tag-driven releases. The tag prefix picks what ships:
-#   stilus-v1.2.3  -> Stilus      pinxit-v1.2.3 -> Pinxit
+#   stilus-v1.2.3  -> Stilus      gesso-v1.2.3 -> Gesso
 #   albumen-v1.2.3  -> Albumen (refused by package.ps1 until Albumen ships)
 #   isotone-v1.2.3 -> the Isotone Graphics Suite bundle (all shipping apps)
 # A version with a hyphen (1.2.3-beta.1) is published as a prerelease.
@@ -9,7 +9,7 @@ name: release
 # Distribution (operator decision 2026-09-27): binaries ship ONLY from rizonesoft.com.
 # The installer, the portable ZIP, and SHA256SUMS are uploaded to S3-compatible object
 # storage served as download.rizonesoft.com, at <base>/<slug>/<version>/<file> (slug:
-# stilus, pinxit, albumen, or isotone for the suite), and the update feed is written to
+# stilus, gesso, albumen, or isotone for the suite), and the update feed is written to
 # <base>/update/<slug>.json (stable) or <base>/update/<slug>-prerelease.json. The GitHub
 # release carries no binaries: its body is generated (the CHANGELOG section, Download
 # links, the SHA-256 table, and the source link), and GitHub adds its source archives.
@@ -33,13 +33,13 @@ on:
   push:
     tags:
       - 'stilus-v*'
-      - 'pinxit-v*'
+      - 'gesso-v*'
       - 'albumen-v*'
       - 'isotone-v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag, <app>-v<SemVer> (stilus-v, pinxit-v, albumen-v, isotone-v); not pushed for a draft'
+        description: 'Release tag, <app>-v<SemVer> (stilus-v, gesso-v, albumen-v, isotone-v); not pushed for a draft'
         required: true
         type: string
       draft:
@@ -94,11 +94,11 @@ jobs:
           # One resolution for both triggers: the dispatched tag input or the pushed tag.
           $dispatch = $env:EVENT -eq 'workflow_dispatch'
           $tag = if ($dispatch) { $env:INPUT_TAG.Trim() } else { $env:REF_NAME }
-          if ($tag -notmatch '^(stilus|pinxit|albumen|isotone)-v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
+          if ($tag -notmatch '^(stilus|gesso|albumen|isotone)-v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
             throw "Tag '$tag' is not <app>-v<SemVer>"
           }
           $prefix = $Matches[1]; $version = $Matches[2]
-          $app = @{ stilus = 'Stilus'; pinxit = 'Pinxit'; albumen = 'Albumen'; isotone = 'Suite' }[$prefix]
+          $app = @{ stilus = 'Stilus'; gesso = 'Gesso'; albumen = 'Albumen'; isotone = 'Suite' }[$prefix]
           $name = if ($app -eq 'Suite') { 'Isotone Graphics Suite' } else { $app }
           $title = "$name $version"
           $draft = $dispatch -and $env:INPUT_DRAFT -eq 'true'

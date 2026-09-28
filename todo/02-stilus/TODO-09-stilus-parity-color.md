@@ -45,7 +45,7 @@ track: N9
 - -> XREF: D01 T02 §4 -- the suite history every command in this file records into
 - -> XREF: D01 T01 §3 -- the suite theme §2 and §4 extend with swatch-well, checkerboard, and gamut-warning tokens
 - -> XREF: D02 T06 §11 -- symbols and the asset library that §21 and §22 extend
-- -> XREF: D03 T03 §8 -- Pinxit's color panel: the picker §2 builds moves to `Isotone.UI` the day that section needs it
+- -> XREF: D03 T03 §8 -- Gesso's color panel: the picker §2 builds moves to `Isotone.UI` the day that section needs it
 - -> XREF: D02 T07 §1 -- the live-object contract every live paint rides
 - -> XREF: D02 T07 §8 -- the Properties panel and property bar the color, fill, stroke, and transparency controls dock into
 - -> XREF: D02 T07 §6 -- Select Same, extended by §3's tint match
@@ -64,8 +64,8 @@ track: N9
 - -> XREF: D02 T15 §3 -- AI patterns and fills write through §10
 - -> XREF: D02 T15 §5 -- AI recolor results apply through §6
 - -> XREF: D02 T16 §10 -- Find and Replace objects consumes §6's `ColorReplaceService` and §12's `OutlineReplaceService`
-- -> XREF: D03 T09 §8 -- Pinxit parity layers cites §7: Stilus's gradient model, moved to `Isotone.Core` by D03 T09 §8
-- -> XREF: D03 T11 §10 -- Pinxit parity adjustments and color cites §4: the palette file readers D03 T11 §10 moves to `Isotone.Core`; §5: the harmony engine D03 T11 §9 moves to `Isotone.Core`
+- -> XREF: D03 T09 §8 -- Gesso parity layers cites §7: Stilus's gradient model, moved to `Isotone.Core` by D03 T09 §8
+- -> XREF: D03 T11 §10 -- Gesso parity adjustments and color cites §4: the palette file readers D03 T11 §10 moves to `Isotone.Core`; §5: the harmony engine D03 T11 §9 moves to `Isotone.Core`
 
 ## Outcome
 
@@ -136,7 +136,7 @@ Every later section in this file paints with a color, so the color must first st
 
 ## 2. The Color Panel, Color Picker, Recent Colors, and Eyedroppers
 
-A designer picks, mixes, samples, and applies color hundreds of times a session. This section replaces the static `#89B4FA` Fill placeholder with real fill and stroke wells, adds the Color panel with every model's sliders, one color picker dialog with viewers and palette modes, recent colors, the color and attributes eyedroppers, desktop sampling, and swatch drag-and-drop onto objects. The picker is Stilus-local and moves to `Isotone.UI` the day Pinxit's color panel (`D03 T03 §8`) needs it. Catalog: NP-0687 to NP-0712 (26 features: NP-0687 fill and stroke wells, NP-0688 toggle fill or stroke focus, NP-0689 Color panel, NP-0690 hex field and Copy Hex, NP-0691 invert and complement, NP-0692 out-of-gamut and web-safe warnings, NP-0693 create swatch from the panel, NP-0694 tandem sliders, NP-0695 recent colors, NP-0696 color picker dialog, NP-0697 picker loupe, NP-0698 eyedropper tool, NP-0699 eyedropper attribute choices, NP-0700 attributes eyedropper, NP-0701 shade pop-up, NP-0702 Ctrl+click mix, NP-0703 show color names, NP-0704 palettes mode, NP-0705 viewers mode, NP-0706 swap reference and new, NP-0707 eyedropper sample size, NP-0708 sample from the desktop, NP-0709 apply sampled color to fill or outline, NP-0710 add sampled color to a palette, NP-0711 drag swatches onto objects, NP-0712 hex on the status bar and in dialogs).
+A designer picks, mixes, samples, and applies color hundreds of times a session. This section replaces the static `#89B4FA` Fill placeholder with real fill and stroke wells, adds the Color panel with every model's sliders, one color picker dialog with viewers and palette modes, recent colors, the color and attributes eyedroppers, desktop sampling, and swatch drag-and-drop onto objects. The picker is Stilus-local and moves to `Isotone.UI` the day Gesso's color panel (`D03 T03 §8`) needs it. Catalog: NP-0687 to NP-0712 (26 features: NP-0687 fill and stroke wells, NP-0688 toggle fill or stroke focus, NP-0689 Color panel, NP-0690 hex field and Copy Hex, NP-0691 invert and complement, NP-0692 out-of-gamut and web-safe warnings, NP-0693 create swatch from the panel, NP-0694 tandem sliders, NP-0695 recent colors, NP-0696 color picker dialog, NP-0697 picker loupe, NP-0698 eyedropper tool, NP-0699 eyedropper attribute choices, NP-0700 attributes eyedropper, NP-0701 shade pop-up, NP-0702 Ctrl+click mix, NP-0703 show color names, NP-0704 palettes mode, NP-0705 viewers mode, NP-0706 swap reference and new, NP-0707 eyedropper sample size, NP-0708 sample from the desktop, NP-0709 apply sampled color to fill or outline, NP-0710 add sampled color to a palette, NP-0711 drag swatches onto objects, NP-0712 hex on the status bar and in dialogs).
 
 **Fidelity:** The Color Panel, Color Picker, Recent Colors, and Eyedroppers -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/stilus/color/.
 **Design:** docs/design/components/Panel/README.md, docs/design/components/Swatches/README.md, docs/design/components/Slider/README.md, docs/design/components/TextBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/Dialog/README.md, docs/design/components/Canvas/README.md -- states: all in spec -- themes: all four -- density: both

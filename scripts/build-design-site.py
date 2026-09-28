@@ -46,7 +46,7 @@ COMPONENTS = DESIGN / "components"
 ICONS = ROOT / "resources" / "icons"
 OUT = DESIGN / "index.html"
 
-APPS = ["stilus", "pinxit", "albumen"]
+APPS = ["stilus", "gesso", "albumen"]
 GROUP_ORDER = ["Foundations", "Actions", "Inputs", "Navigation", "Data", "Shell", "Feedback", "Canvas"]
 PROSE_SECTIONS = [("shell-layout.md", "shell"), ("app-icons.md", "icons")]
 REPO_BLOB = "https://github.com/rizonesoft/Isotone/blob/main/docs/design/"
@@ -857,7 +857,7 @@ def build() -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Isotone Interface, the design system of the Isotone Graphics Suite (Stilus, Pinxit, Albumen): themes, tokens, controls, and app icons.">
+<meta name="description" content="Isotone Interface, the design system of the Isotone Graphics Suite (Stilus, Gesso, Albumen): themes, tokens, controls, and app icons.">
 <meta name="theme-color" content="#282828">
 <meta name="generator" content="scripts/build-design-site.py">
 <title>Isotone Interface</title>
@@ -872,7 +872,7 @@ def build() -> str:
 <a class="s-skip" href="#s-main">Skip to content</a>
 <header class="s-top">
 <button class="s-menu-btn" type="button" aria-controls="s-nav" aria-expanded="false" aria-label="Sections"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-<div class="s-brand"><span class="s-band" aria-hidden="true"></span><strong>Isotone Interface</strong><span>Design system of Stilus, Pinxit and Albumen</span></div>
+<div class="s-brand"><span class="s-band" aria-hidden="true"></span><strong>Isotone Interface</strong><span>Design system of Stilus, Gesso and Albumen</span></div>
 <button class="s-sw-btn" type="button" aria-controls="s-switches" aria-expanded="false">Display</button>
 <div class="s-switches" id="s-switches" role="group" aria-label="Preview settings">{switches}</div>
 </header>

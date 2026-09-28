@@ -33,7 +33,7 @@ Help, About <App> is a Dialog with the app icon master at 128px (`docs/design/ap
 - The product page link: one configured value, `https://www.rizonesoft.com/` until the per-app pages are decided, never a hardcoded per-app URL.
 - The credits list (package, version, license, link) and the repository and issue links.
 
-The footer has one button, Close, which is the default and the cancel button. Stilus, Pinxit, and Albumen show the same dialog from `Isotone.UI`, filled from the app's identity.
+The footer has one button, Close, which is the default and the cancel button. Stilus, Gesso, and Albumen show the same dialog from `Isotone.UI`, filled from the app's identity.
 
 ## Keyboard
 

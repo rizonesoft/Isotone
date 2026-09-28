@@ -25,14 +25,14 @@ Repairs: downloads the pinned SDK into `.tools/dotnet-win-x64` (SHA512 verified)
 | File | Role |
 | ---- | ---- |
 | `global.json` | SDK pin. |
-| `Isotone.slnx` | Every project: Stilus, Pinxit, and their tests. |
+| `Isotone.slnx` | Every project: Stilus, Gesso, and their tests. |
 | `Directory.Build.props` | Shared settings: nullable, implicit usings, `LangVersion` latest (no project overrides it), deterministic, SourceLink, strict analyzers, `UseArtifactsOutput`, company and copyright, repository URL, MinVer. |
 | `Directory.Build.targets` | Four-part `FileVersion` (see [versioning](versioning.md)). |
 | `Directory.Packages.props` | Central package management: every package version, once. |
 | `nuget.config` | nuget.org only, with package source mapping. |
 | `.editorconfig` | Formatting, naming, and analyzer severities for the whole tree. |
 | `tests/Isotone.runsettings` | Test results location and the test quarantine list. |
-| `src/Stilus/Directory.Build.props`, `src/Pinxit/Directory.Build.props` | Thin overlays: import the root file, set the app's MinVer tag prefix and product name, and hold the legacy relaxations listed below. |
+| `src/Stilus/Directory.Build.props`, `src/Gesso/Directory.Build.props` | Thin overlays: import the root file, set the app's MinVer tag prefix and product name, and hold the legacy relaxations listed below. |
 
 Nothing else configures the build. The nested `global.json`, `Directory.Packages.props`, `nuget.config`, `.editorconfig`, `.gitignore`, `.gitattributes`, legacy `.sln` files, and per-app CI workflows from the imports were removed.
 
@@ -56,7 +56,7 @@ The repository-root `build/` folder is a gitignored scratch area used by the Cla
 ```powershell
 dotnet build Isotone.slnx                     # Debug build of everything
 dotnet test Isotone.slnx                      # all tests
-pwsh scripts/build.ps1 -Config Release       # same, scripted (-App Stilus|Pinxit, -Test)
+pwsh scripts/build.ps1 -Config Release       # same, scripted (-App Stilus|Gesso, -Test)
 pwsh scripts/check-all.ps1                   # every gate (below)
 pwsh scripts/publish.ps1 -App Stilus          # self-contained publish
 pwsh scripts/package.ps1 -App Stilus          # installer and portable ZIP
@@ -96,7 +96,7 @@ A Python gate whose script is missing is skipped with a warning rather than fail
 
 `scripts/package.ps1 -Suite` publishes every shipping app and produces `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, the Isotone Graphics Suite installer, one component per shipping app) and `Isotone-<version>-win-x64-Portable.zip` (one folder per app). The suite version comes from `isotone-v*` tags, and every app inside it carries that version.
 
-**Per-app and suite releases are independent.** A `stilus-v*` or `pinxit-v*` tag runs `package.ps1 -App <App>` and ships only that app's installer and ZIP; it never builds or needs the suite installer. An `isotone-v*` tag runs `package.ps1 -Suite` and ships only the suite installer and ZIP. Either way the files are uploaded to `download.rizonesoft.com` (`<slug>/<version>/`), never attached to the GitHub release; [versioning.md](versioning.md) has the layout, the update feed, and the repository settings.
+**Per-app and suite releases are independent.** A `stilus-v*` or `gesso-v*` tag runs `package.ps1 -App <App>` and ships only that app's installer and ZIP; it never builds or needs the suite installer. An `isotone-v*` tag runs `package.ps1 -Suite` and ships only the suite installer and ZIP. Either way the files are uploaded to `download.rizonesoft.com` (`<slug>/<version>/`), never attached to the GitHub release; [versioning.md](versioning.md) has the layout, the update feed, and the repository settings.
 
 ### Installers
 
@@ -106,7 +106,7 @@ A Python gate whose script is missing is skipped with a warning rather than fail
 - Each app has its own AppId and its own install folder (`{autopf}\<App>`). The suite has its own AppId, installs each app into its own subfolder of `{autopf}\Isotone Graphics Suite`, and uses its own ProgIDs, so it never shares folders or registry keys with the standalone installers.
 - Built with Inno Setup 7: a 64-bit Setup program (`SetupArchitecture=x64`) that installs in 64-bit mode (`ArchitecturesAllowed` and `ArchitecturesInstallIn64BitMode` `x64compatible`), modern wizard following the system light or dark theme (`WizardStyle=modern dynamic`), LZMA2 max solid compression, uninstaller, Start menu shortcut, optional desktop icon. Inno 7's changed defaults are accepted: `AppVerName` is set explicitly to `<App> <version>` (now also the default), `TimeStampsInUTC=yes`, `WizardSizePercent=120,120`, Segoe UI 9 pt. None of the removed directives (`WizardResizable`, `WindowVisible`, `EnableFsRedirection`) is used.
 - Supported OS: Windows 11. `MinVersion=10.0.17763` still lets Windows 10 (1809 or later) install; on build < 22000 the wizard shows one non-blocking page saying Windows 10 is not officially supported by .NET 11 and the app may work but is untested. Silent installs (`/SILENT`, `/VERYSILENT`) show no wizard pages, so they skip it. The page lives in `common.iss` `[Code]` with `InitializeWizard` and `ShouldSkipPage` event attributes.
-- File associations are opt-in tasks: Stilus `.svg`; Pinxit `.png`, `.jpg`/`.jpeg`, `.psd`.
+- File associations are opt-in tasks: Stilus `.svg`; Gesso `.png`, `.jpg`/`.jpeg`, `.psd`.
 - Version from `/DAppVersion` (SemVer) and `/DAppFileVersion` (four-part), passed by `package.ps1`.
 - `Albumen.iss` refuses to compile unless `/DAlbumenShipping` is defined; `apps.psd1` marks Albumen as not shipping, so `publish.ps1` and `package.ps1` refuse it too.
 
@@ -115,7 +115,7 @@ Verified locally on 2026-09-26 with Inno Setup 7.1.0 and the .NET 11 RC SDK (ver
 | Output | Setup.exe | Portable ZIP | Published |
 | ------ | --------- | ------------ | --------- |
 | Stilus | 66.0 MB | 93.1 MB | 233.0 MB |
-| Pinxit | 73.5 MB | 103.4 MB | 259.1 MB |
+| Gesso | 73.5 MB | 103.4 MB | 259.1 MB |
 | Suite (`Isotone-...`) | 136.4 MB | 196.5 MB | both apps |
 
 Every Setup.exe is a PE32+ AMD64 image. The Stilus installer installs silently per-user (`/VERYSILENT /CURRENTUSER`; its log reports `Inno Setup version 7.1.0 (64-bit)` and `64-bit install mode: Yes`), registers its uninstaller under HKCU, launches, and uninstalls cleanly. Before the upgrade (Inno 6, .NET 10) Stilus was 63.1 MB, 86.1 MB, and 201.7 MB.
@@ -127,7 +127,7 @@ Every Setup.exe is a PE32+ AMD64 image. The Stilus installer installs silently p
 | `.github/workflows/build.yml` | push and PR to `main` | windows-2025: SDK from `global.json` (`actions/setup-dotnet` installs the exact prerelease version it names), job `build-windows`: restore, Release build, test, upload TRX results, the design-lint self-test and baseline gates, and the optional design reference renders. |
 | `.github/workflows/plan.yml` (`plan-gates`) | changes to `scripts/`, `todo/`, `docs/reviews/`, `.claude/`, `.conclave/`, hooks, `AGENTS.md` | ubuntu-26.04: `todo-graph.py self-test`, `validate`, `plan --sync` followed by a clean `git status`, `campaign_guard.py --self-test`, and commit-hook integrity (mode 100755, LF blob, eol attribute), plus the design-lint self-test and the design page check (job `plan-gates`); job `campaign-guard` runs the guard self-test on windows-2025. The path list also covers `docs/design/**` and `resources/icons/**`. |
 | `.github/workflows/pages.yml` (`design-pages`) | changes to `docs/design/`, `resources/icons/`, `scripts/build-design-site.py` | ubuntu-26.04: checks the committed design page against its sources and deploys it to https://rizonesoft.github.io/Isotone/design/. |
-| `.github/workflows/release.yml` | tags `stilus-v*`, `pinxit-v*`, `albumen-v*`, `isotone-v*`; manual dispatch with `tag` and `draft` inputs (the draft dry run) | Resolves the app from the tag prefix (`isotone-v*` is the suite), fails a tag release whose distribution storage secrets are missing (a draft skips the upload with a notice instead), installs Inno Setup 7.1.0 from the official release with a pinned SHA256 unless `Program Files\Inno Setup 7` exists (the image's Inno Setup 6 is never used), runs the tests, runs `package.ps1` (with `ISOTONE_SITE_URL` as the installer's publisher URL), writes `SHA256SUMS`, writes the release body and update feed (`scripts/release-manifest.ps1`), uploads the files to `download.rizonesoft.com` with a hash-pinned rclone and checks each public URL, creates the GitHub release with no attached files (the body: the CHANGELOG section whose heading names the tag, Download links, the SHA-256 table, and the source link; prerelease when the version has a hyphen), and writes the update feed last. |
+| `.github/workflows/release.yml` | tags `stilus-v*`, `gesso-v*`, `albumen-v*`, `isotone-v*`; manual dispatch with `tag` and `draft` inputs (the draft dry run) | Resolves the app from the tag prefix (`isotone-v*` is the suite), fails a tag release whose distribution storage secrets are missing (a draft skips the upload with a notice instead), installs Inno Setup 7.1.0 from the official release with a pinned SHA256 unless `Program Files\Inno Setup 7` exists (the image's Inno Setup 6 is never used), runs the tests, runs `package.ps1` (with `ISOTONE_SITE_URL` as the installer's publisher URL), writes `SHA256SUMS`, writes the release body and update feed (`scripts/release-manifest.ps1`), uploads the files to `download.rizonesoft.com` with a hash-pinned rclone and checks each public URL, creates the GitHub release with no attached files (the body: the CHANGELOG section whose heading names the tag, Download links, the SHA-256 table, and the source link; prerelease when the version has a hyphen), and writes the update feed last. |
 | `.github/dependabot.yml` | weekly | NuGet (grouped) and GitHub Actions (grouped). |
 
 Every action is pinned by full commit SHA with the tag in a trailing comment.
@@ -145,11 +145,11 @@ Checked against nuget.org on 2026-09-26 (`dotnet list Isotone.slnx package --out
 | Serilog.Extensions.Logging, .Hosting | 10.0.0 | Latest stable; they depend on Microsoft.Extensions.* abstractions, which central transitive pinning lifts to 11.0.0-rc.1. |
 | Dirkster.AvalonDock (+ Themes.VS2013) | 5.0.0 | Latest stable; 5.0.1 is a preview. |
 | SharpVectors.Wpf | 1.8.6 | Latest. Used only by the Stilus splash logo (`SplashWindow.xaml`, `svgc:SvgViewbox`); `D02 T02 §2` replaces it and drops the package. |
-| WPF-UI | 4.3.0 | Latest. Pinxit only; removal is planned. |
+| WPF-UI | 4.3.0 | Latest. Gesso only; removal is planned. |
 
 The rest are latest stable: MinVer 8.0.0, FluentIcons.Wpf 2.1.341, CommunityToolkit.Mvvm 8.4.2, ComputeSharp 3.2.0, Microsoft.CodeAnalysis.CSharp(.Scripting) 5.9.0, Serilog 4.4.0, Serilog.Sinks.File 7.0.0, Serilog.Sinks.Debug 3.0.0, Microsoft.NET.Test.Sdk 18.10.1, xunit.runner.visualstudio 4.0.0, coverlet.collector 10.0.1, Moq 4.21.0.
 
-Removed on 2026-09-26 because no code used them (evidence: no type or namespace from the package in any `.cs` or `.xaml` file): ReactiveUI.WPF, SharpDX.DirectInput, SixLabors.ImageSharp, SixLabors.ImageSharp.Drawing (Pinxit); Newtonsoft.Json, AvalonEdit (with its unused `VsCodeDarkXml.xshd`), Svg.Skia (Stilus). `ComputeSharp` and `SkiaSharp.Views.WPF` in `Pinxit.Rendering` are also unused today but stay for the planned rendering work (`D03 T02 §2`, `D03 T02 §5`).
+Removed on 2026-09-26 because no code used them (evidence: no type or namespace from the package in any `.cs` or `.xaml` file): ReactiveUI.WPF, SharpDX.DirectInput, SixLabors.ImageSharp, SixLabors.ImageSharp.Drawing (Gesso); Newtonsoft.Json, AvalonEdit (with its unused `VsCodeDarkXml.xshd`), Svg.Skia (Stilus). `ComputeSharp` and `SkiaSharp.Views.WPF` in `Gesso.Rendering` are also unused today but stay for the planned rendering work (`D03 T02 §2`, `D03 T02 §5`).
 
 ### The SkiaSharp 4 migration
 
@@ -178,14 +178,14 @@ Warning load under the root analyzers (clean Release build on the .NET 11 RC SDK
 | CA1806 | 4 | Ignored method results |
 | other | 20 | CA1720, CA1304, CA1868, CA2008, CA1869, CA1861 (2 each); CS8602, CS0675, CA1830, CA1852, CS0219, CS9191, CA1001, CS8625 (1 each) |
 
-### Pinxit (`src/Pinxit/Directory.Build.props`)
+### Gesso (`src/Gesso/Directory.Build.props`)
 
 The full root configuration applies (warnings are errors, code style enforced), except these diagnostics, which stay warnings via `WarningsNotAsErrors`:
 
-- `IDE0005`: unnecessary using directives (6 sites, for example `Pinxit.Core/GlobalUsings.cs`, `Pinxit.UI/GlobalUsings.cs`).
+- `IDE0005`: unnecessary using directives (6 sites, for example `Gesso.Core/GlobalUsings.cs`, `Gesso.UI/GlobalUsings.cs`).
 - `CS0618`: obsolete API use (1 site: WPF-UI `IContentDialogService.SetDialogHost` in `Views/MainWindow.xaml.cs`).
 
-`NU1701` left the list on 2026-09-26: SkiaSharp.Views.WPF 4 on the Windows SDK TFM restores OpenTK 4 for .NET. The .NET 11 SDK also enforces `IDE1006` naming in the WPF markup-compile pass and adds `IDE0054` and `IDE0330`; the handful of Pinxit sites they found were fixed, and `.editorconfig` gained a private-constants naming rule because the new Roslyn matches `const` fields against `required_modifiers = static`.
+`NU1701` left the list on 2026-09-26: SkiaSharp.Views.WPF 4 on the Windows SDK TFM restores OpenTK 4 for .NET. The .NET 11 SDK also enforces `IDE1006` naming in the WPF markup-compile pass and adds `IDE0054` and `IDE0330`; the handful of Gesso sites they found were fixed, and `.editorconfig` gained a private-constants naming rule because the new Roslyn matches `const` fields against `required_modifiers = static`.
 
 ### Test quarantine (`tests/Isotone.runsettings`)
 
@@ -200,9 +200,9 @@ These legacy tests are excluded through `TestCaseFilter`. Remove each entry in t
 ### Other known debt
 
 - Projects and namespaces still use the `Bezier.*` names, and the Stilus exe is `Bezier.Desktop.exe` (the installers refer to it by that name).
-- The legacy layout remains: `src/Stilus/Bezier.*` and `src/Pinxit/src/*`, `src/Pinxit/tests/*`.
-- Pinxit still depends on WPF-UI (`FluentWindow`, `TitleBar`, `wpfui:MenuItem`, `SymbolIcon`, the theme dictionaries, and `DialogService`). Removing it is not a trivial change.
-- Pinxit has no icon yet: `src/Pinxit/src/Pinxit.UI/Assets/pinxit-icon.png` is an empty file, and `installer/Pinxit.iss` points at `resources/icons/pinxit/pinxit.ico`, which does not exist yet. The icon design is chosen and its SVG sources are committed (`resources/icons/README.md`); `D00 T03 §3` generates `pinxit.ico` and the PNGs for all three apps from those SVGs, and `D03 T01 §4` wires Pinxit's into the executable.
+- The legacy layout remains: `src/Stilus/Bezier.*` and `src/Gesso/src/*`, `src/Gesso/tests/*`.
+- Gesso still depends on WPF-UI (`FluentWindow`, `TitleBar`, `wpfui:MenuItem`, `SymbolIcon`, the theme dictionaries, and `DialogService`). Removing it is not a trivial change.
+- Gesso has no icon yet: `src/Gesso/src/Gesso.UI/Assets/gesso-icon.png` is an empty file, and `installer/Gesso.iss` points at `resources/icons/gesso/gesso.ico`, which does not exist yet. The icon design is chosen and its SVG sources are committed (`resources/icons/README.md`); `D00 T03 §3` generates `gesso.ico` and the PNGs for all three apps from those SVGs, and `D03 T01 §4` wires Gesso's into the executable.
 - Only x64 is published. There is no win-arm64 publish or installer yet.
 - Code is not signed (installers and binaries).
 - The SDK is the .NET 11 release candidate (`11.0.100-rc.1.26425.128`) and Microsoft.Extensions.* are `11.0.0-rc.1`; `D00 T02 §8` pins GA when it ships (November 2026), and the first product release waits for it.

@@ -7,11 +7,11 @@ The suite's apps version and release independently from one repository. Versions
 | Tag | Versions | Built by `release.yml` as (uploaded to `download.rizonesoft.com`) |
 | --- | -------- | ---------------------------- |
 | `stilus-v1.2.3` | Stilus projects (`src/Stilus/**`) | `Stilus-1.2.3-win-x64-Setup.exe`, `Stilus-1.2.3-win-x64-Portable.zip` |
-| `pinxit-v1.2.3` | Pinxit projects (`src/Pinxit/**`) | `Pinxit-1.2.3-win-x64-Setup.exe`, `Pinxit-1.2.3-win-x64-Portable.zip` |
+| `gesso-v1.2.3` | Gesso projects (`src/Gesso/**`) | `Gesso-1.2.3-win-x64-Setup.exe`, `Gesso-1.2.3-win-x64-Portable.zip` |
 | `albumen-v1.2.3` | Albumen (planned) | Refused until Albumen ships (`scripts/apps.psd1`, `installer/Albumen.iss`) |
 | `isotone-v1.2.3` | Suite bundle | `Isotone-1.2.3-win-x64-Setup.exe`, `Isotone-1.2.3-win-x64-Portable.zip` |
 
-Each app's overlay (`src/<App>/Directory.Build.props`) sets `MinVerTagPrefix`. MinVer only considers tags with that prefix, so a `stilus-v` tag never moves Pinxit's version.
+Each app's overlay (`src/<App>/Directory.Build.props`) sets `MinVerTagPrefix`. MinVer only considers tags with that prefix, so a `stilus-v` tag never moves Gesso's version.
 
 ## How a version is computed
 
@@ -45,13 +45,13 @@ Shared code (a future `src/Isotone.Core`, or anything else without an app overla
 - Every project in the app's closure, shared libraries included, is therefore versioned from the app's tags.
 - `-Version x.y.z` (or `package.ps1 -Version`) passes `MinVerVersionOverride` in the same way.
 
-So `Isotone.Core.dll` inside the Stilus 1.2.3 installer reports 1.2.3, and inside Pinxit 0.4.0 it reports 0.4.0. In a plain `dotnet build Isotone.slnx`, shared libraries carry the `isotone-v` version.
+So `Isotone.Core.dll` inside the Stilus 1.2.3 installer reports 1.2.3, and inside Gesso 0.4.0 it reports 0.4.0. In a plain `dotnet build Isotone.slnx`, shared libraries carry the `isotone-v` version.
 
 The suite bundle (`package.ps1 -Suite`) passes the `isotone-v` version to every app's publish. All binaries in a suite installer therefore carry the suite version.
 
 ## Suite and per-app releases
 
-Per-app tags (`stilus-v*`, `pinxit-v*`) release one app: `release.yml` runs `package.ps1 -App <App>` and publishes only that app's installer, portable ZIP, and `SHA256SUMS` (to `download.rizonesoft.com`, never attached to the GitHub release). It never builds or needs the suite installer. An `isotone-v*` tag releases the Isotone Graphics Suite: `package.ps1 -Suite` builds `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, one component per shipping app) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
+Per-app tags (`stilus-v*`, `gesso-v*`) release one app: `release.yml` runs `package.ps1 -App <App>` and publishes only that app's installer, portable ZIP, and `SHA256SUMS` (to `download.rizonesoft.com`, never attached to the GitHub release). It never builds or needs the suite installer. An `isotone-v*` tag releases the Isotone Graphics Suite: `package.ps1 -Suite` builds `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, one component per shipping app) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
 
 The toolchain is not a version input: moving the SDK pin (today the .NET 11 release candidate, GA through `D00 T02 §8`) changes no app's version. Only tags do.
 
@@ -84,7 +84,7 @@ Operator decision 2026-09-27: binaries are distributed only from rizonesoft.com.
 
 | What | Where |
 | ---- | ----- |
-| Release files | `https://download.rizonesoft.com/<slug>/<version>/<file>`, slug `stilus`, `pinxit`, `albumen`, or `isotone` (the suite), for example `https://download.rizonesoft.com/stilus/0.1.0/Stilus-0.1.0-win-x64-Setup.exe` |
+| Release files | `https://download.rizonesoft.com/<slug>/<version>/<file>`, slug `stilus`, `gesso`, `albumen`, or `isotone` (the suite), for example `https://download.rizonesoft.com/stilus/0.1.0/Stilus-0.1.0-win-x64-Setup.exe` |
 | Checksums | `https://download.rizonesoft.com/<slug>/<version>/SHA256SUMS`, and the same table in the GitHub release body |
 | Update feed | `https://download.rizonesoft.com/update/<slug>.json` for the latest stable release, `update/<slug>-prerelease.json` for the latest prerelease |
 | Product page | one value, `ISOTONE_SITE_URL` (default `https://www.rizonesoft.com/`), with `?utm_source=github&utm_medium=<place>` on links from GitHub |
@@ -120,7 +120,7 @@ Only annotated or lightweight tags that match `<prefix>-v<SemVer>` are accepted.
 ## Local packaging of a specific version
 
 ```powershell
-pwsh scripts/package.ps1 -App Pinxit -Version 0.2.0
+pwsh scripts/package.ps1 -App Gesso -Version 0.2.0
 pwsh scripts/package.ps1 -Suite -Version 1.0.0
 ```
 

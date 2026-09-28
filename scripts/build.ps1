@@ -3,7 +3,7 @@
 .SYNOPSIS
   Builds the suite (Isotone.slnx) or a single app.
 .DESCRIPTION
-  -App All (default) builds every project in Isotone.slnx. -App Stilus|Pinxit|Albumen
+  -App All (default) builds every project in Isotone.slnx. -App Stilus|Gesso|Albumen
   builds that app's startup project and its project references. Output lands in
   artifacts/bin/<Project>/<config>/ (UseArtifactsOutput, see Directory.Build.props).
 .EXAMPLE
@@ -14,7 +14,7 @@
 param(
   [ValidateSet('Debug', 'Release')]
   [string]$Config = 'Release',
-  [ValidateSet('All', 'Stilus', 'Pinxit', 'Albumen')]
+  [ValidateSet('All', 'Stilus', 'Gesso', 'Albumen')]
   [string]$App = 'All',
   [switch]$Test
 )

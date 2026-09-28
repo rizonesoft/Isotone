@@ -25,7 +25,7 @@
 
 <br>
 
-<img src="resources/brand/isotone-cover.png" alt="Design concept, not the current interface: the planned Pinxit window in the Dark theme, with the menu in the title bar, the brush options bar, the tool rail, document tabs over a harbor-at-dusk image, the Properties and Layers panels, and the status bar" width="820">
+<img src="resources/brand/isotone-cover.png" alt="Design concept, not the current interface: the planned Gesso window in the Dark theme, with the menu in the title bar, the brush options bar, the tool rail, document tabs over a harbor-at-dusk image, the Properties and Layers panels, and the status bar" width="820">
 
 <sub><i>Design concept, not a screenshot: the target interface from the Isotone Interface design system. The apps do not look like this yet; each surface is built to this design as its plan section ships.</i></sub>
 
@@ -34,7 +34,7 @@
 **Design:** [Isotone Interface design system: themes, controls, and app icons](https://rizonesoft.github.io/Isotone/design/), a live page generated from [`docs/design/`](docs/design/README.md).
 
 > [!NOTE]
-> **Status: pre-alpha.** There is no release yet. Stilus (the vector editor) edits real SVG files today; Pinxit has its domain model and application shell; Albumen is planned. Everything below marks what works and what is still on the roadmap. Star or watch the repository to hear about the first preview.
+> **Status: pre-alpha.** There is no release yet. Stilus (the vector editor) edits real SVG files today; Gesso has its domain model and application shell; Albumen is planned. Everything below marks what works and what is still on the roadmap. Star or watch the repository to hear about the first preview.
 
 ## Contents
 
@@ -69,8 +69,8 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
       Rizonesoft Stilus
     </th>
     <th width="33%">
-      <img src="resources/icons/pinxit/pinxit.svg" alt="" width="56"><br>
-      Rizonesoft Pinxit
+      <img src="resources/icons/gesso/gesso.svg" alt="" width="56"><br>
+      Rizonesoft Gesso
     </th>
     <th width="33%">
       <img src="resources/icons/albumen/albumen.svg" alt="" width="56"><br>
@@ -79,7 +79,7 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
   </tr>
   <tr>
     <td><img src="resources/icons/stilus/stilus-splash.svg" alt="The Stilus splash card: the Stilus icon, the name Stilus, and the line Vector editor"></td>
-    <td><img src="resources/icons/pinxit/pinxit-splash.svg" alt="The Pinxit splash card: the Pinxit icon, the name Pinxit, and its role line"></td>
+    <td><img src="resources/icons/gesso/gesso-splash.svg" alt="The Gesso splash card: the Gesso icon, the name Gesso, and the line Raster and photo editor"></td>
     <td><img src="resources/icons/albumen/albumen-splash.svg" alt="The Albumen splash card: the Albumen icon, the name Albumen, and the line Digital darkroom and photo manager"></td>
   </tr>
   <tr>
@@ -90,7 +90,7 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
   <tr>
     <td>Targets <code>.svg</code>, <code>.eps</code>, <code>.ai</code>, <code>.pdf</code></td>
     <td>Targets <code>.psd</code>, <code>.png</code>, <code>.tiff</code>, <code>.jpg</code></td>
-    <td>Camera RAW in, hands off to Pinxit</td>
+    <td>Camera RAW in, hands off to Gesso</td>
   </tr>
   <tr>
     <td>🟢 <strong>Working prototype</strong><br>SVG editing works today</td>
@@ -121,7 +121,7 @@ Stilus began life as the Bezier project and was imported here with its full hist
 | EPS, AI, and PDF import and export | 📋 | Target formats, not yet implemented |
 | Move to shared Isotone.Core | 📋 | Rendering and file I/O to migrate into the core |
 
-### Pinxit (raster)
+### Gesso (raster)
 
 | Area | Status | Notes |
 | ---- | :----: | ----- |
@@ -140,28 +140,28 @@ Stilus began life as the Bezier project and was imported here with its full hist
 | RAW decoding and development | 📋 | Non-destructive processing |
 | Library and catalog | 📋 | Import, browse, rate, tag |
 | Batch adjustments | 📋 | Apply settings across a selection |
-| Edit in Pinxit | 📋 | Send a developed image straight to Pinxit |
+| Edit in Gesso | 📋 | Send a developed image straight to Gesso |
 | Fast image viewer | 📋 | `AlbumenViewer.exe`, the default viewer for any image |
 | Browse without importing | 📋 | Open any folder, no import step |
 | Batch tools | 📋 | Rename, convert, resize, and develop in bulk |
 
 ## Architecture
 
-Isotone follows one rule: **develop together, distribute separately.** All three apps live in one repository and one solution so shared code can be refactored in a single change and debugged end to end. Each app is still compiled into its own self-contained directory with its own copy of the core, so updating Pinxit can never break an installed Stilus.
+Isotone follows one rule: **develop together, distribute separately.** All three apps live in one repository and one solution so shared code can be refactored in a single change and debugged end to end. Each app is still compiled into its own self-contained directory with its own copy of the core, so updating Gesso can never break an installed Stilus.
 
 ```mermaid
 flowchart TB
     subgraph repo["One repository, one solution: Isotone.slnx"]
         core["Isotone.Core<br/>rendering, file I/O,<br/>color science, plugins"]
         stilus["Stilus<br/>vector editor"]
-        pinxit["Pinxit<br/>raster editor"]
+        gesso["Gesso<br/>raster editor"]
         albumen["Albumen<br/>darkroom and library"]
         core --> stilus
-        core --> pinxit
+        core --> gesso
         core --> albumen
     end
     stilus --> nsetup["Stilus installer<br/>and portable ZIP"]
-    pinxit --> isetup["Pinxit installer<br/>and portable ZIP"]
+    gesso --> isetup["Gesso installer<br/>and portable ZIP"]
     albumen --> lsetup["Albumen installer<br/>and portable ZIP"]
     nsetup --> suite["Isotone suite installer"]
     isetup --> suite
@@ -171,13 +171,13 @@ flowchart TB
     class core,albumen,lsetup planned
 ```
 
-<sub>Dashed boxes are planned. Today Stilus lives in <code>src/Stilus/</code> and Pinxit in <code>src/Pinxit/</code>; shared code moves into Isotone.Core as the apps converge.</sub>
+<sub>Dashed boxes are planned. Today Stilus lives in <code>src/Stilus/</code> and Gesso in <code>src/Gesso/</code>; shared code moves into Isotone.Core as the apps converge.</sub>
 
 **Shared core responsibilities (planned):**
 
 - **Rendering pipeline:** high-performance 2D drawing primitives on SkiaSharp.
 - **File I/O:** one place for complex format readers and writers.
-- **Color science:** shared color management so a color looks the same in Stilus, Pinxit, and Albumen.
+- **Color science:** shared color management so a color looks the same in Stilus, Gesso, and Albumen.
 - **Plugin system:** a common interface so filters and brushes can work across apps.
 
 <details>
@@ -186,7 +186,7 @@ flowchart TB
 | Piece | Choice |
 | ----- | ------ |
 | Runtime | .NET 11 (SDK pinned to 11.0.100-rc.1 until .NET 11 ships in November 2026) |
-| UI | WPF with standard controls and custom theming; no third-party UI framework once Pinxit's WPF-UI leaves (planned, `D03 T01`) |
+| UI | WPF with standard controls and custom theming; no third-party UI framework once Gesso's WPF-UI leaves (planned, `D03 T01`) |
 | Rendering | SkiaSharp |
 | MVVM | CommunityToolkit.Mvvm |
 | Logging | Serilog |
@@ -203,7 +203,7 @@ flowchart TB
 | Path | What it holds |
 | ---- | ------------- |
 | `src/Stilus/` | The Stilus vector editor (imported from the Bezier project) |
-| `src/Pinxit/` | The Pinxit raster editor |
+| `src/Gesso/` | The Gesso raster editor |
 | `src/Albumen/` | Albumen (planned) |
 | `docs/` | User and developer documentation ([index](docs/README.md)) |
 | `todo/` | The development plan and TODO tree ([implementation plan](todo/implementation-plan.md)) |
@@ -227,7 +227,7 @@ Every app ships on its own, in two forms:
 | ---- | -------- | ----- |
 | **Installer** (`.exe`, Inno Setup) | Most people | Start menu entry and a clean uninstall |
 | **Portable ZIP** | Locked-down machines, trying it out | Unzip and run, no installer needed |
-| **Suite installer** | Getting everything at once | One Isotone Graphics Suite installer with a component per app (Stilus and Pinxit today) |
+| **Suite installer** | Getting everything at once | One Isotone Graphics Suite installer with a component per app (Stilus and Gesso today) |
 
 **Per-user or all-users.** The installer asks at startup. A per-user install needs no administrator rights and lands in your profile; an all-users install needs elevation and lands in Program Files.
 
@@ -275,7 +275,7 @@ Each app is versioned independently with [Semantic Versioning](https://semver.or
 | Tag | Releases |
 | --- | -------- |
 | `stilus-vX.Y.Z` | Stilus |
-| `pinxit-vX.Y.Z` | Pinxit |
+| `gesso-vX.Y.Z` | Gesso |
 | `albumen-vX.Y.Z` | Albumen |
 | `isotone-vX.Y.Z` | The suite installer |
 
@@ -288,11 +288,11 @@ Development is driven by a TODO tree in [`todo/`](todo/), with the ordered plan 
 1. **Foundation:** one solution, shared build infrastructure, CI, installers, and release automation.
 2. **Stilus preview:** stabilize the vector editor and ship the first public build.
 3. **Stilus parity:** bring Stilus to parity with Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2), every feature of both, in ten releases from 0.2.0 to 1.0.0. The [parity catalog](docs/parity/stilus-parity.md) routes each of their 4,335 inventory rows to a planned section, an existing one, the backlog, an exclusion (scripting, cloud services), or another Isotone app. Stilus AI runs on OpenRouter with your own API key (BYOK), sends nothing without an explicit action, and rests on three pillars: results are editable, undoable vector objects; brand kits and hand-offs work across the suite; and every AI action is recorded so it can be re-run, compared, and reverted.
-4. **Isotone.Core:** the shared library grows the pixel engine, color management, and the AI core with the Stilus parity work, the pixel engine extensions and the develop engine with the Pinxit parity work, and takes rendering, file I/O, and other code as a second app needs it.
-5. **Pinxit preview:** canvas, layers, core tools, and PNG, JPEG, and TIFF support in `pinxit-v0.1.0`.
-6. **Pinxit parity:** bring Pinxit to parity with Adobe Photoshop 27.10 (with Camera Raw 18.6) and two other popular raster editors, Affinity by Canva 3.3 (Affinity Photo) and GIMP 3.2.6, every feature of all three, in twelve releases from 0.2.0 to 1.0.0 (Phases 16 to 27 of the plan). The [Pinxit parity catalog](docs/parity/pinxit-parity.md) routes each of their 10,829 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services, platform-only and vendor-removed features), or another Isotone app. Pinxit AI rests on the same three pillars as Stilus AI. Scripting and macros (one suite-wide system), batch processing, video, and animation are deferred to after the first release.
-7. **Albumen preview:** library, RAW development on the suite develop engine, and the Edit in Pinxit handoff in `albumen-v0.1.0`.
-8. **Albumen parity:** bring Albumen to parity with Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76, in ten releases from 0.2.0 to 1.0.0 (Phases 30 to 39 of the plan), on three pillars: a fast default image viewer (`AlbumenViewer.exe`, opening any image from Explorer within a recorded startup budget), browsing any folder without importing it, and batch rename, convert, resize, edit, develop, and export as core tools. The [Albumen parity catalog](docs/parity/albumen-parity.md) routes each of their 8,919 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services), or another Isotone app (ACDSee's layered Edit mode goes to Pinxit). Originals are safe by default: Albumen writes into an original only when you opt in, and then only after a verified backup. Faces are recognized on your machine and never sent anywhere; tethered capture is replaced by watched-folder import for now.
+4. **Isotone.Core:** the shared library grows the pixel engine, color management, and the AI core with the Stilus parity work, the pixel engine extensions and the develop engine with the Gesso parity work, and takes rendering, file I/O, and other code as a second app needs it.
+5. **Gesso preview:** canvas, layers, core tools, and PNG, JPEG, and TIFF support in `gesso-v0.1.0`.
+6. **Gesso parity:** bring Gesso to parity with Adobe Photoshop 27.10 (with Camera Raw 18.6) and two other popular raster editors, Affinity by Canva 3.3 (Affinity Photo) and GIMP 3.2.6, every feature of all three, in twelve releases from 0.2.0 to 1.0.0 (Phases 16 to 27 of the plan). The [Gesso parity catalog](docs/parity/gesso-parity.md) routes each of their 10,829 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services, platform-only and vendor-removed features), or another Isotone app. Gesso AI rests on the same three pillars as Stilus AI. Scripting and macros (one suite-wide system), batch processing, video, and animation are deferred to after the first release.
+7. **Albumen preview:** library, RAW development on the suite develop engine, and the Edit in Gesso handoff in `albumen-v0.1.0`.
+8. **Albumen parity:** bring Albumen to parity with Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76, in ten releases from 0.2.0 to 1.0.0 (Phases 30 to 39 of the plan), on three pillars: a fast default image viewer (`AlbumenViewer.exe`, opening any image from Explorer within a recorded startup budget), browsing any folder without importing it, and batch rename, convert, resize, edit, develop, and export as core tools. The [Albumen parity catalog](docs/parity/albumen-parity.md) routes each of their 8,919 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services), or another Isotone app (ACDSee's layered Edit mode goes to Gesso). Originals are safe by default: Albumen writes into an original only when you opt in, and then only after a verified backup. Faces are recognized on your machine and never sent anywhere; tethered capture is replaced by watched-folder import for now.
 9. **Distribution:** signing, win-arm64, winget, and the first suite bundle, `isotone-v1.0.0`.
 10. **After the first release:** RAW and XCF imports on the shared decoders, suite automation (actions, C# scripts, the command line, batch), video and audio with animation, on-device models and the GPU develop path, and Albumen's remaining formats, bundled as `isotone-v1.1.0`.
 
@@ -318,9 +318,9 @@ Copyright (C) 2025-2026 Rizonetech (Pty) Ltd
 
 Rizonesoft is a brand of Rizonetech (Pty) Ltd.
 
-The Isotone Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text. The GPL covers the code; the names "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Pinxit", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, covered by the [trademark policy](TRADEMARKS.md).
+The Isotone Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text. The GPL covers the code; the names "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Gesso", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, covered by the [trademark policy](TRADEMARKS.md).
 
-Stilus and Pinxit were previously published under the MIT License as separate projects by the same author, under the names Bezier and Imago. Both are now part of this repository and are licensed under GPL-3.0.
+Stilus and Gesso were previously published under the MIT License as separate projects by the same author, under the names Bezier and Imago. Both are now part of this repository and are licensed under GPL-3.0.
 
 ## Acknowledgements
 

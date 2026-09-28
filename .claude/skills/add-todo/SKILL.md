@@ -5,7 +5,7 @@ description: Front door for new work -- search the tree and the backlog for an e
 
 # Add TODO
 
-New work enters through here. The failure this skill exists to prevent is the near-duplicate TODO in a second domain, which is worse than no entry: two owners, neither complete. In Isotone the classic shape is the same feature filed once under Stilus and once under Pinxit when it belongs in `Isotone.Core`, or filed in `Isotone.Core` when only one app needs it.
+New work enters through here. The failure this skill exists to prevent is the near-duplicate TODO in a second domain, which is worse than no entry: two owners, neither complete. In Isotone the classic shape is the same feature filed once under Stilus and once under Gesso when it belongs in `Isotone.Core`, or filed in `Isotone.Core` when only one app needs it.
 
 The second failure is lost work: a feature dropped because a cap had no room for it. The operator removed every cap on 2026-09-27 ("the cap is worrying me, because I'm worried features will be left behind."), so nothing here counts against a limit. Work a campaign discovers on its own still passes the admission test (it decides section or backlog, never keep or lose) and carries an Origin line so the operator can see which run filed it; a backlog entry is never deleted without a promotion, a merge marker, or the operator's recorded words. The rules are in `todo/README.md` under "The budget and the backlog".
 

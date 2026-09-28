@@ -1,10 +1,10 @@
-Isotone Interface is the desktop UI of the Isotone Graphics Suite: Stilus (vector), Pinxit (raster) and Albumen (darkroom and photo manager), built in WPF for Windows 11. It is deliberately familiar to Photoshop users and grows out of Bezier, the Stilus prototype: its 2px corners, hairline dividers, glowing checked tools, rich tooltips, scrubbable number boxes and dense status bar all carry over.
+Isotone Interface is the desktop UI of the Isotone Graphics Suite: Stilus (vector), Gesso (raster) and Albumen (darkroom and photo manager), built in WPF for Windows 11. It is deliberately familiar to Photoshop users and grows out of Bezier, the Stilus prototype: its 2px corners, hairline dividers, glowing checked tools, rich tooltips, scrubbable number boxes and dense status bar all carry over.
 
 ## Principles
 
 1. **Content first.** The image or artwork is the brightest, most colorful thing on screen. Chrome is neutral grey and recedes; color in the chrome means state, identity or status, never decoration.
 2. **Photoshop-familiar.** Same window anatomy (menu bar in the title bar, options bar, tool rail on the left, document tabs, docked panels on the right, status bar), same shortcuts, same brightness themes, same blue highlight, same compact density. A Photoshop user should find every tool where their hands expect it.
-3. **Suite-consistent.** Stilus, Pinxit and Albumen share every token, control and layout rule. The only visible difference between them is the app accent in the title-bar mark, the splash, and the one primary button of a view.
+3. **Suite-consistent.** Stilus, Gesso and Albumen share every token, control and layout rule. The only visible difference between them is the app accent in the title-bar mark, the splash, and the one primary button of a view.
 4. **Dense, not cramped.** 24px controls and 12px text by default, on a 4px grid, with a Comfortable density for larger or touch-adjacent screens.
 5. **Every state drawn.** Hover, pressed, checked, disabled and keyboard focus are designed for every control; nothing falls back to stock WPF.
 
@@ -38,11 +38,11 @@ Two kinds of color appear in chrome, and they never swap roles.
 
 **State** is the Highlight color, the same in every app: selection, keyboard focus, checked checkboxes and radios, the active tool, the highlighted menu item, slider fills, selected rows, drop targets, links. Tokens: `state` (solid fill that carries `state-on` text), `state-hover`, `state-pressed`, `state-on`, `state-subtle` (selected rows), `state-tint` (translucent checked-tool fill), `state-line` (marks that need 3:1: active tool border, slider fill, underline of the selected tab), `state-text` (links), and `focus-ring` (an alias of `state-line`).
 
-**App accent** is identity only: Stilus cyan `accent-stilus`, Pinxit orange `accent-pinxit`, Albumen green `accent-albumen` (lighter values in the three dark themes, darker in Light). It appears on the title-bar app mark, the splash and its launch progress, and the single primary button of a view, with its label in `accent-<app>-on`. It never marks selection, focus or a checked state.
+**App accent** is identity only: Stilus cyan `accent-stilus`, Gesso orange `accent-gesso`, Albumen green `accent-albumen` (lighter values in the three dark themes, darker in Light). It appears on the title-bar app mark, the splash and its launch progress, and the single primary button of a view, with its label in `accent-<app>-on`. It never marks selection, focus or a checked state.
 
 Examples:
 
-- The selected layer in Pinxit is `state-subtle`; the dialog's OK button in the same window is `accent-pinxit`.
+- The selected layer in Gesso is `state-subtle`; the dialog's OK button in the same window is `accent-gesso`.
 - The active Brush tool shows `state-tint`, a 1px `state-line` border and `glow-state`, in all three apps.
 - The highlighted item in a menu is `state` with `state-on` text; the menu bar's app mark beside it is `accent-<app>`.
 - Albumen's Import button is `accent-albumen`; the photos it selects in the grid are outlined in `state-line`.
@@ -59,7 +59,7 @@ Preferences > Interface > Highlight color offers three values. Every `state*` to
 
 The Highlight card documents the Windows accent mapping and the WPF swap. Two cautions come with the orange option:
 
-- **Pinxit's identity orange sits close to Isotone orange.** `accent-pinxit` #F5923E and `state-orange` #FF6B35 differ by only 1.1 to 1.2:1 in lightness, so they cannot be told apart by lightness. Roles keep them apart: with the orange option, Pinxit's primary button keeps the identity orange while selected rows use `state-orange-subtle` (a brown tint at least 3:1 away from the button in every theme) and focus uses `state-orange-line`. Blue stays Pinxit's recommended Highlight.
+- **Gesso's identity orange sits close to Isotone orange.** `accent-gesso` #F5923E and `state-orange` #FF6B35 differ by only 1.1 to 1.2:1 in lightness, so they cannot be told apart by lightness. Roles keep them apart: with the orange option, Gesso's primary button keeps the identity orange while selected rows use `state-orange-subtle` (a brown tint at least 3:1 away from the button in every theme) and focus uses `state-orange-line`. Blue stays Gesso's recommended Highlight.
 - **Warning amber against Isotone orange.** `status-warning` (amber, #F2C14E in Dark) is 1.6 to 1.9:1 lighter than `state-orange` in the dark themes and differs in hue in Light (1.25:1). Warnings always carry the `alert` icon and a word, so they never depend on that difference.
 
 ### Status colors
@@ -145,7 +145,7 @@ When Windows "Animation effects" is off (`SystemParameters.ClientAreaAnimation` 
 
 One family: Lucide geometry (ISC), in the shared icon catalog as path data. 24 viewBox, `icon-stroke` 1.5px at `icon-sm` 16px (menus, panels, options bar, rows, buttons) and `icon-md` 20px (tool rail), round caps and joins, strokes only. Icons are `icon` at rest, `text-primary` when hovered or active, `state-on` on a `state` fill, `text-disabled` when disabled. FluentIcons.Wpf, which Bezier mixed in, leaves the suite; the caption buttons draw `minus`, `maximize`, `restore` and `x` from the same catalog at stroke 1. Emoji are never icons.
 
-This UI icon catalog (Lucide-style strokes) is separate from the app icons. The app icons of Stilus, Pinxit and Albumen are Direction C, the suite tile: a shared graphite tile, the spectrum band along its foot and the app's accent glyph. They are drawn from their own SVG files, never from the catalog, and they appear in the taskbar, Start menu, installer, file associations, About dialog and the title-bar app mark (the hand-tuned `-16` file); the splash is the Suite card, which carries the master icon at 136 px (see the Splash component guide). Sizes, construction, colors and rules are in the App icons section, and the files are in the App icons asset group.
+This UI icon catalog (Lucide-style strokes) is separate from the app icons. The app icons of Stilus, Gesso and Albumen are Direction C, the suite tile: a shared graphite tile, the spectrum band along its foot and the app's accent glyph. They are drawn from their own SVG files, never from the catalog, and they appear in the taskbar, Start menu, installer, file associations, About dialog and the title-bar app mark (the hand-tuned `-16` file); the splash is the Suite card, which carries the master icon at 136 px (see the Splash component guide). Sizes, construction, colors and rules are in the App icons section, and the files are in the App icons asset group.
 
 ## Accessibility
 
@@ -167,7 +167,7 @@ Every text token is checked (WCAG 2.x) against every ground its usage note names
 | `border-control` on `surface-panel` | 3.5 | 3.4 | 3.0 | 3.7 |
 | `state-orange-on` on `state-orange` | 6.5 | 6.5 | 7.1 | 5.7 |
 | `state-orange-line` on `surface-panel` | 5.0 | 5.9 | 4.6 | 3.9 |
-| `accent-pinxit-on` on `accent-pinxit` | 7.9 | 7.9 | 7.9 | 5.3 |
+| `accent-gesso-on` on `accent-gesso` | 7.9 | 7.9 | 7.9 | 5.3 |
 | `status-error` on `surface-panel` | 5.1 | 6.1 | 4.7 | 4.7 |
 
 `text-disabled` sits near 2.3 to 2.6:1 on purpose (WCAG exempts inactive controls). The `state` fill itself is a surface, not a mark: in Medium Gray it is only 1.4:1 against the panel, so every checked control also draws a `state-line` border.

@@ -8,11 +8,11 @@
     Installer = 'installer/Stilus.iss'
     Shipping  = $true
   }
-  Pinxit = @{
-    Project   = 'src/Pinxit/src/Pinxit.UI/Pinxit.UI.csproj'
-    Exe       = 'Pinxit.exe'
-    TagPrefix = 'pinxit-v'
-    Installer = 'installer/Pinxit.iss'
+  Gesso = @{
+    Project   = 'src/Gesso/src/Gesso.UI/Gesso.UI.csproj'
+    Exe       = 'Gesso.exe'
+    TagPrefix = 'gesso-v'
+    Installer = 'installer/Gesso.iss'
     Shipping  = $true
   }
   Albumen = @{

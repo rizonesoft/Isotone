@@ -10,14 +10,14 @@ track: C3
 
 # TODO-03 -- Isotone.Core Pixel Engine: Buffers, Resampling, Adjustments, and Bitmap Effects
 
-> **Goal:** `Isotone.Core/Imaging/` holds one deterministic, golden-tested pixel engine in pure managed C# with `System.Numerics.Vector<T>` SIMD: tiled RGBA8, RGBA16, and float buffers with premultiplied alpha, one effect contract (parameter schema, seed, preview at scale, progress, cancellation, serializable description), resampling and geometric correction, palette quantization and dithering, the tonal and color adjustments, and every bitmap effect family both competitors ship (blur, sharpen, noise, distort, artistic, brush-stroke, sketch, texture, creative, camera, color-transform, edge, custom, pixelate, video). It lives in `Isotone.Core` by operator decision (2026-09-26) although Stilus (`D02 T12`) is its first consumer; Pinxit's filter pipeline (`D03 T05 §1`) is its planned second consumer, so nothing in it references WPF, a SkiaSharp view, or a Stilus type.
+> **Goal:** `Isotone.Core/Imaging/` holds one deterministic, golden-tested pixel engine in pure managed C# with `System.Numerics.Vector<T>` SIMD: tiled RGBA8, RGBA16, and float buffers with premultiplied alpha, one effect contract (parameter schema, seed, preview at scale, progress, cancellation, serializable description), resampling and geometric correction, palette quantization and dithering, the tonal and color adjustments, and every bitmap effect family both competitors ship (blur, sharpen, noise, distort, artistic, brush-stroke, sketch, texture, creative, camera, color-transform, edge, custom, pixelate, video). It lives in `Isotone.Core` by operator decision (2026-09-26) although Stilus (`D02 T12`) is its first consumer; Gesso's filter pipeline (`D03 T05 §1`) is its planned second consumer, so nothing in it references WPF, a SkiaSharp view, or a Stilus type.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` yet; `D01 T02 §1` creates the project and this file adds its `Imaging/` folder. Pinxit already tiles its raster layers at 256 by 256 (`TileSize = 256` in `src/Pinxit/src/Pinxit.Core/Tiles/Tile.cs`), the tile size this engine adopts so its second consumer needs no re-tiling. Pinxit has a filter plug-in contract (`src/Pinxit/src/Pinxit.Plugins.Abstractions/IFilterPlugin.cs`), and its filter commands in `src/Pinxit/src/Pinxit.UI/ViewModels/MainWindowViewModel.cs` only log that a dialog would open; `D03 T05 §1` routes them through this engine. Stilus's bitmap element `src/Stilus/Bezier.Core/Models/Elements/SvgImage.cs` (120 lines) holds encoded bytes only (`EmbeddedData`, `MimeType`) with no decoded pixel access, and `src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs` draws no `SvgImage` at all. There is no decisions log yet: the first section that records a decision creates `docs/dev/decisions.md`. **Corrected 2026-09-28:** `D00 T02 §5` (Phase 0) creates `docs/dev/decisions.md`; this file only adds rows.
+> **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` yet; `D01 T02 §1` creates the project and this file adds its `Imaging/` folder. Gesso already tiles its raster layers at 256 by 256 (`TileSize = 256` in `src/Gesso/src/Gesso.Core/Tiles/Tile.cs`), the tile size this engine adopts so its second consumer needs no re-tiling. Gesso has a filter plug-in contract (`src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`), and its filter commands in `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` only log that a dialog would open; `D03 T05 §1` routes them through this engine. Stilus's bitmap element `src/Stilus/Bezier.Core/Models/Elements/SvgImage.cs` (120 lines) holds encoded bytes only (`EmbeddedData`, `MimeType`) with no decoded pixel access, and `src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs` draws no `SvgImage` at all. There is no decisions log yet: the first section that records a decision creates `docs/dev/decisions.md`. **Corrected 2026-09-28:** `D00 T02 §5` (Phase 0) creates `docs/dev/decisions.md`; this file only adds rows.
 <!-- claim: absent src/Isotone.Core -->
-<!-- claim: count "TileSize = 256" src/Pinxit/src/Pinxit.Core/Tiles/Tile.cs = 1 -->
-<!-- claim: exists src/Pinxit/src/Pinxit.Plugins.Abstractions/IFilterPlugin.cs -->
-<!-- claim: count "Opening Gaussian Blur dialog" src/Pinxit/src/Pinxit.UI/ViewModels/MainWindowViewModel.cs = 1 -->
+<!-- claim: count "TileSize = 256" src/Gesso/src/Gesso.Core/Tiles/Tile.cs = 1 -->
+<!-- claim: exists src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs -->
+<!-- claim: count "Opening Gaussian Blur dialog" src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs = 1 -->
 <!-- claim: lines src/Stilus/Bezier.Core/Models/Elements/SvgImage.cs = 120 -->
 <!-- claim: count "SvgImage" src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs = 0 -->
 <!-- claim: absent docs/dev/decisions.md -->
@@ -25,7 +25,7 @@ track: C3
 ## Inputs
 
 - [`standards/shared.md`](../../standards/shared.md) -- logging, settings, performance budgets, and determinism rules the engine follows
-- [`standards/pinxit.md`](../../standards/pinxit.md) -- premultiplied RGBA tiles, SIMD with a scalar path the tests compare against, and the hot-path rules the second consumer already follows
+- [`standards/gesso.md`](../../standards/gesso.md) -- premultiplied RGBA tiles, SIMD with a scalar path the tests compare against, and the hot-path rules the second consumer already follows
 - [`docs/dev/architecture.md`](../../docs/dev/architecture.md) -- what lives in `Isotone.Core`
 - [`docs/parity/section-design.md`](../../docs/parity/section-design.md) -- the blueprint for this file; [`docs/parity/stilus-parity.md`](../../docs/parity/stilus-parity.md) -- the catalog rows each section owns
 - GIMP 3.0, libvips 8.16, and ImageMagick 7.1 -- golden reference implementations; the exact version and command are recorded beside each fixture
@@ -39,20 +39,20 @@ track: C3
 - -> XREF: D02 T13 §8 -- print as bitmap dithers 1-bit output through §3
 - -> XREF: D02 T14 §12 -- raster export quantizes PCX, PNG-8, and GIF through §3
 - -> XREF: D02 T15 §9 -- AI upscaling, which falls back to §2's local Lanczos resampler
-- -> XREF: D03 T05 §1 -- Pinxit's filter pipeline, the planned second consumer
+- -> XREF: D03 T05 §1 -- Gesso's filter pipeline, the planned second consumer
 - -> XREF: D01 T06 §14 -- the pixel engine extensions cites §1: the contract, registry, `EffectDescription`, `TileRunner`, and golden harness it extends, never duplicates; §2: the `Resampler`, `InverseMapper`, `PerspectiveCorrector`, and `LensCorrector` the distort and lens kernels sample through; §3: the `HalftoneScreen` and dither kernels D01 T06 §14 extends; §5: the `Vibrance` math D01 T06 §3's depth of field reuses; §6: Gaussian, motion, radial, zoom, rank filters, smart blur, unsharp, and noise that D01 T06 §2, D01 T06 §4, and D01 T06 §5 extend; §7: `InverseMapEffect`, `Displace`, `MeshWarp`, `Pixelate`, `Offset`, `Emboss`, and `DiffuseGlow` that D01 T06 §6, D01 T06 §7, D01 T06 §8, D01 T06 §11, D01 T06 §13, and D01 T06 §14 extend; §8: `StrokeField` and `StrokeRenderer` that D01 T06 §11 and D01 T06 §12 reuse; §10: `ReliefLighting`, `CellPartition`, and `Vignette` that D01 T06 §8, D01 T06 §9, and D01 T06 §14 reuse; §11: `LightingEffects`, `LensFlare`, `BumpMap`, `Mezzotint`, `ColorHalftone`, the edge kernels, `UserDefinedConvolution`, and `Diffuse`, extended there
 - -> XREF: D01 T07 §3 -- the suite develop engine cites §1: float tiles, the effect contract, the golden harness, and `CounterRng`; §2: `Resampler`, `LensCorrector`, and `PerspectiveCorrector`, which D01 T07 §3's geometry stage composes; §4: `Histogram`, `ToneCurve`, `TemperatureTint`, and white balance math D01 T07 §1 consumes; §5: `HslMath` and `Vibrance` formulas D01 T07 §2 evaluates on OkLCh; §6: `UnsharpMask`, `RemoveNoise`, and `AddNoise` D01 T07 §3 consumes
-- -> XREF: D03 T08 §7 -- Pinxit parity document and view cites §2: `Resampler`, `Rotator`, and `PerspectiveCorrector`, which D03 T08 §7 extends in place and D03 T08 §9 consumes; §4: `Histogram` for D03 T08 §11
-- -> XREF: D03 T09 §9 -- Pinxit parity layers cites §2: the resampler D03 T09 §9's smart objects resample their source with; §4: `ToneCurve` for contours and blend-range curves; §6: Gaussian blur for effects and live masks
-- -> XREF: D03 T10 §1 -- Pinxit parity selection and channels cites §2: the resampler D03 T10 §1 and D03 T10 §8 transform masks with; §4: the histogram percentiles D03 T10 §4's tonal ranges read
-- -> XREF: D03 T11 §5 -- Pinxit parity adjustments and color cites §3: the quantizer, dithering, and posterize behind indexed and bitmap modes and D03 T11 §5's dither; §4: the histogram, levels, tone curve, auto adjust, equalize, exposure, temperature, and white balance D03 T11 §2 extends; §5: hue saturation, color balance, vibrance, selective color, replace colors, desaturate, black and white, channel mixer, invert, and threshold D03 T11 §3 to D03 T11 §5 use; §11: photo filter, colorize, and sepia
-- -> XREF: D03 T12 §1 -- Pinxit parity painting cites §3: ordered and error-diffusion dither for gradients
-- -> XREF: D03 T13 §1 -- Pinxit parity retouching and transform cites §2: the resampler, inverse mapper, and perspective corrector D03 T13 §1, D03 T13 §5, D03 T13 §7, D03 T13 §8, and D03 T13 §11 sample through; §7: the `MeshWarp` and `Offset` D03 T13 §6 and D03 T13 §11 extend
-- -> XREF: D03 T14 §1 -- Pinxit parity filters cites §1: the registry, descriptions, and effects every surface runs
-- -> XREF: D03 T15 §1 -- Pinxit parity photo (Camera Raw and merges) cites §2: resampler and rotator for workflow size, alignment resampling, and scan straightening; §6: classical denoise pass on merged radiance
-- -> XREF: D03 T17 §8 -- Pinxit parity formats cites §2: mipmap and export resampling in D03 T17 §8; §3: indexed quantization for GIF and palette formats in D03 T17 §8
-- -> XREF: D03 T18 §1 -- Pinxit parity export, color management, and print cites §2: export resamplers; §3: palette quantization for PNG-8 and GIF
-- -> XREF: D03 T19 §8 -- Pinxit AI cites §2: the Lanczos resampler for local fitting and the upscale fallback; §6: classical scratch, dust, and JPEG artifact passes in restoration and super zoom
+- -> XREF: D03 T08 §7 -- Gesso parity document and view cites §2: `Resampler`, `Rotator`, and `PerspectiveCorrector`, which D03 T08 §7 extends in place and D03 T08 §9 consumes; §4: `Histogram` for D03 T08 §11
+- -> XREF: D03 T09 §9 -- Gesso parity layers cites §2: the resampler D03 T09 §9's smart objects resample their source with; §4: `ToneCurve` for contours and blend-range curves; §6: Gaussian blur for effects and live masks
+- -> XREF: D03 T10 §1 -- Gesso parity selection and channels cites §2: the resampler D03 T10 §1 and D03 T10 §8 transform masks with; §4: the histogram percentiles D03 T10 §4's tonal ranges read
+- -> XREF: D03 T11 §5 -- Gesso parity adjustments and color cites §3: the quantizer, dithering, and posterize behind indexed and bitmap modes and D03 T11 §5's dither; §4: the histogram, levels, tone curve, auto adjust, equalize, exposure, temperature, and white balance D03 T11 §2 extends; §5: hue saturation, color balance, vibrance, selective color, replace colors, desaturate, black and white, channel mixer, invert, and threshold D03 T11 §3 to D03 T11 §5 use; §11: photo filter, colorize, and sepia
+- -> XREF: D03 T12 §1 -- Gesso parity painting cites §3: ordered and error-diffusion dither for gradients
+- -> XREF: D03 T13 §1 -- Gesso parity retouching and transform cites §2: the resampler, inverse mapper, and perspective corrector D03 T13 §1, D03 T13 §5, D03 T13 §7, D03 T13 §8, and D03 T13 §11 sample through; §7: the `MeshWarp` and `Offset` D03 T13 §6 and D03 T13 §11 extend
+- -> XREF: D03 T14 §1 -- Gesso parity filters cites §1: the registry, descriptions, and effects every surface runs
+- -> XREF: D03 T15 §1 -- Gesso parity photo (Camera Raw and merges) cites §2: resampler and rotator for workflow size, alignment resampling, and scan straightening; §6: classical denoise pass on merged radiance
+- -> XREF: D03 T17 §8 -- Gesso parity formats cites §2: mipmap and export resampling in D03 T17 §8; §3: indexed quantization for GIF and palette formats in D03 T17 §8
+- -> XREF: D03 T18 §1 -- Gesso parity export, color management, and print cites §2: export resamplers; §3: palette quantization for PNG-8 and GIF
+- -> XREF: D03 T19 §8 -- Gesso AI cites §2: the Lanczos resampler for local fitting and the upscale fallback; §6: classical scratch, dust, and JPEG artifact passes in restoration and super zoom
 - -> XREF: D04 T04 §4 -- the Albumen Viewer cites §2: resampling and rotation for D04 T04 §4, D04 T04 §11, and D04 T04 §14; §3: quantization and dithering for D04 T04 §12; §4: tonal adjustments and `ToneCurve` for D04 T04 §12 and D04 T04 §15; §6: blur, sharpen, and noise effects the D04 T04 §15 browser lists; §7: distort effects the D04 T04 §15 browser lists
 - -> XREF: D04 T11 §5 -- the Albumen batch tools cites §2: resampling filters D04 T11 §5 calls; §3: palette quantization for D04 T11 §7's color depth; §4: tonal kernels D04 T11 §6 and D04 T11 §7 call; §5: color kernels D04 T11 §7 calls; §6: noise and sharpen kernels D04 T11 §7 calls
 - -> XREF: D04 T12 §1 -- Albumen parity output cites §2: the resamplers export and print expose
@@ -91,13 +91,13 @@ track: C3
 
 ## 1. Pixel Buffers, the Effect Contract, and the Golden Harness
 
-Every later section runs on the buffers, the effect contract, and the golden harness built here, so they are built once and proven before any effect lands. Buffers are premultiplied by default and tiled at Pinxit's 256-pixel tile size so the second consumer needs no re-tiling; the contract carries a seed, a preview scale, progress, and cancellation so every effect is deterministic and interruptible; the harness compares against reference goldens with a stated tolerance and writes a diff image on failure. Catalog: NP-1824 to NP-1826 (3 features: automatic conversion to RGB for RGB-only effects, manual bitmap inflation, and auto inflation for effects).
+Every later section runs on the buffers, the effect contract, and the golden harness built here, so they are built once and proven before any effect lands. Buffers are premultiplied by default and tiled at Gesso's 256-pixel tile size so the second consumer needs no re-tiling; the contract carries a seed, a preview scale, progress, and cancellation so every effect is deterministic and interruptible; the harness compares against reference goldens with a stated tolerance and writes a diff image on failure. Catalog: NP-1824 to NP-1826 (3 features: automatic conversion to RGB for RGB-only effects, manual bitmap inflation, and auto inflation for effects).
 
 **Fidelity:** no surface of its own (the Stilus effect surfaces are D02 T12 §2 and D02 T12 §3)
 
-- [ ] Add `src/Isotone.Core/Imaging/Pixels/Rgba8.cs`, `Rgba16.cs`, and `RgbaF.cs` as `readonly record struct` pixel types with explicit conversions between them. Done when: `PixelTypeTests` round-trip every 8-bit value through 16-bit and float and back unchanged. Source: `standards/pinxit.md` "Pixels" (8-bit, 16-bit, and a float path, conversions explicit and named).
+- [ ] Add `src/Isotone.Core/Imaging/Pixels/Rgba8.cs`, `Rgba16.cs`, and `RgbaF.cs` as `readonly record struct` pixel types with explicit conversions between them. Done when: `PixelTypeTests` round-trip every 8-bit value through 16-bit and float and back unchanged. Source: `standards/gesso.md` "Pixels" (8-bit, 16-bit, and a float path, conversions explicit and named).
 - [ ] Add `src/Isotone.Core/Imaging/PixelBuffer.cs`: `PixelBuffer<TPixel>` with width, height, stride, `Span<TPixel>` row access, a `IsPremultiplied` flag, and `Premultiply()` and `Unpremultiply()`; no SkiaSharp or WPF type in its public API. Done when: `PixelBufferTests` prove premultiply then unpremultiply returns the original within 1 of 255 for alpha above 0, and a public-API reflection test finds no `SkiaSharp` or `System.Windows` type.
-- [ ] Add `src/Isotone.Core/Imaging/TiledPixelBuffer.cs` with 256 by 256 tiles (the value of Pinxit's `Tile.TileSize`) and `TileCache` bounded by the setting `Isotone.Imaging.TileCacheMegabytes` (default 512) read through `ISettingsStore` from `D01 T02 §2`. Done when: `TileCacheTests` show the cache evicting least-recently-used tiles once the configured size is reached, and changing the setting changes the ceiling without a restart.
+- [ ] Add `src/Isotone.Core/Imaging/TiledPixelBuffer.cs` with 256 by 256 tiles (the value of Gesso's `Tile.TileSize`) and `TileCache` bounded by the setting `Isotone.Imaging.TileCacheMegabytes` (default 512) read through `ISettingsStore` from `D01 T02 §2`. Done when: `TileCacheTests` show the cache evicting least-recently-used tiles once the configured size is reached, and changing the setting changes the ceiling without a restart.
 - [ ] Add `src/Isotone.Core/Imaging/Effects/IPixelEffect.cs` with `Id`, `Version`, `Category`, `Schema`, `ExpandBounds(Rect)`, and `Apply(source, destination, parameters, EffectContext)`. Done when: the interface compiles with XML documentation on every member and a test effect (`InvertTestEffect`) implements it.
 - [ ] Add `src/Isotone.Core/Imaging/Effects/EffectParameterSchema.cs`: typed parameters (number with range, default, and unit; integer; boolean; enum; color as `RgbaF`; point; curve; buffer reference) with `Validate(parameters)`. Done when: `EffectParameterSchemaTests` reject an out-of-range value by name and fill a missing value with its default.
 - [ ] Add `src/Isotone.Core/Imaging/Effects/EffectContext.cs` carrying `Seed`, `PreviewScale`, `IProgress<EffectProgress>`, and `CancellationToken`, plus `CounterRng` (a counter-based random generator keyed by seed, tile, and pixel) so random effects are independent of tile order. Done when: `CounterRngTests` produce identical values for the same key regardless of call order.
@@ -113,14 +113,14 @@ Every later section runs on the buffers, the effect contract, and the golden har
 - [ ] Log one Serilog Information line per `Apply` as the engine's audit trail (`Applied {EffectId} v{Version} params {ParamHash} on {Pixels} px in {ElapsedMs} ms`) from `TileRunner`. Done when: a test with a Serilog test logger asserts the line and its properties.
 - [ ] Add the 100-megapixel budget test `tests/Isotone.Core.Tests/Imaging/Budget/LargeBufferBudgetTests.cs` (`[Trait("Category", "Budget")]`): a per-pixel effect on a 10,000 by 10,000 RGBA8 tiled buffer allocates less than one extra full-size buffer, measured with `GC.GetAllocatedBytesForCurrentThread`. Done when: the test passes and prints the measured bytes; a mutant that copies the whole buffer fails it.
 - [ ] Create `docs/dev/decisions.md` if absent and add the row "Pixel engine: pure managed C# with `System.Numerics.Vector<T>` SIMD in `Isotone.Core/Imaging/`, no native imaging dependency, GPL-3.0 clean" with the reasons (determinism, testability, second consumer). Done when: the row names this section.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's filter pipeline (`D03 T05 §1`) wraps `IPixelEffect` for its layers. Done when: the README names the consumer and the contract members it uses.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's filter pipeline (`D03 T05 §1`) wraps `IPixelEffect` for its layers. Done when: the README names the consumer and the contract members it uses.
 - [ ] Commit: `"core: pixel buffers, the effect contract, and the golden harness"`
 
 **Test checkpoint:** Unit test: `dotnet test Isotone.slnx` exits 0 with `PixelBufferTests`, `TileCacheTests`, `EffectContractTests` (including `CancelStopsWithinOneTile` and `DescriptionRoundTrip`), `BitmapInflationTests`, `ColorModeAdapterTests`, `SimdParityTests`, and `LargeBufferBudgetTests` reporting, with the measured allocation quoted. Cheaper substitute that fails: a single flat `byte[]` buffer with straight alpha and no cancellation, which the budget test and the cancellation test reject.
 
 ## 2. Resampling, Rotation, Straighten, Perspective, and Lens Correction
 
-Every bitmap object Stilus places will be resized, straightened, or corrected, and Pinxit's Image Size and rotate canvas commands need the same math. This section builds the geometric operations once, as separable resamplers and inverse-mapped transforms on premultiplied float rows, and proves them against libvips and ImageMagick. Catalog: NP-1727 to NP-1733 (7 features: resample interpolation, maintain aspect, maintain file size, resolution change, the GPU resampling decision, lens distortion correction, and perspective correction).
+Every bitmap object Stilus places will be resized, straightened, or corrected, and Gesso's Image Size and rotate canvas commands need the same math. This section builds the geometric operations once, as separable resamplers and inverse-mapped transforms on premultiplied float rows, and proves them against libvips and ImageMagick. Catalog: NP-1727 to NP-1733 (7 features: resample interpolation, maintain aspect, maintain file size, resolution change, the GPU resampling decision, lens distortion correction, and perspective correction).
 
 **Fidelity:** no surface of its own (the Resample and Straighten dialogs are D02 T12 §1)
 
@@ -136,7 +136,7 @@ Every bitmap object Stilus places will be resized, straightened, or corrected, a
 - [ ] Register `Resample`, `Rotate`, `CorrectPerspective`, and `CorrectLens` as effects in the `EffectRegistry` with schemas, so consumers can store them as `EffectDescription`. Done when: each round-trips through `DescriptionRoundTrip`.
 - [ ] Report progress and observe cancellation for every operation over 16 megapixels. Done when: a cancellation test on a 20-megapixel rotate stops within one tile.
 - [ ] Add a 100-megapixel Lanczos downsample budget case to `LargeBufferBudgetTests`. Done when: it stays under the §1 allocation ceiling.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's Image Size and rotate canvas commands reuse `Resampler` and `Rotator` through `D03 T05 §1`. Done when: the README lists them.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's Image Size and rotate canvas commands reuse `Resampler` and `Rotator` through `D03 T05 §1`. Done when: the README lists them.
 - [ ] Commit: `"core: resampling, rotation, perspective, and lens correction"`
 
 **Test checkpoint:** Format fidelity proof: `dotnet test Isotone.slnx` exits 0 with `ResamplerTests`, `RotatorTests`, `PerspectiveCorrectorTests`, and `LensCorrectorTests` comparing against the libvips 8.16 and ImageMagick 7.1 goldens in `tests/fixtures/imaging/resample/`, `rotate/`, `perspective/`, and `lens/` (maximum delta 2 of 255 for bicubic, quoted per fixture). Cheaper substitute that fails: delegating to `SKBitmap.Resize`, which has no Lanczos mode and misses the libvips golden.
@@ -161,7 +161,7 @@ Every bitmap object Stilus places will be resized, straightened, or corrected, a
 - [ ] Add `src/Isotone.Core/Imaging/Quantize/ColorReducer.cs`: `Reduce(buffer, maxColors, seed)` as the public entry point `D02 T12 §4` tracing and web export call. Done when: the same seed yields identical indexed output twice and the palette size never exceeds `maxColors`.
 - [ ] Register a `Posterize` effect (levels per channel 2 to 32) in the `EffectRegistry` (CD-2224). Done when: it matches a GIMP 3.0 posterize golden exactly for 4 and 8 levels.
 - [ ] Add a budget case: an optimized 256-color palette on a 24-megapixel image completes under 2 seconds with progress and cancellation. Done when: `QuantizeBudgetTests` quotes the time and a cancellation case stops within one tile.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's Indexed mode and posterize through `D03 T05 §1`. Done when: the README lists them.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's Indexed mode and posterize through `D03 T05 §1`. Done when: the README lists them.
 - [ ] Commit: `"core: palette quantization, dithering, and posterize"`
 
 **Test checkpoint:** Format fidelity proof and unit test: `dotnet test Isotone.slnx` exits 0 with `BilevelConverterTests`, `PaletteBuilderTests`, `PalettedConverterTests`, and `QuantizeBudgetTests` reporting, the Floyd-Steinberg, ordered, adaptive, and posterize outputs matching the ImageMagick 7.1 and GIMP 3.0 goldens in `tests/fixtures/imaging/quantize/`, and the palette-size, index-validity, and same-seed property tests passing. Cheaper substitute that fails: nearest-color mapping with no diffusion, which the Floyd-Steinberg golden rejects.
@@ -186,7 +186,7 @@ Tone is the first thing anybody corrects in a placed photo. This section builds 
 - [ ] Fuse every adjustment into one per-pixel lookup or 3x3 matrix where possible, using the §1 SIMD path. Done when: a budget test applies each adjustment to a 24-megapixel image under 150 ms and quotes the times.
 - [ ] Add `src/Isotone.Core/Imaging/Adjust/AdjustmentPreset.cs`: an ordered list of `EffectDescription` with JSON serialization, the data `D02 T12 §3` stores and applies. Done when: a three-adjustment preset round-trips byte-identically.
 - [ ] Register every adjustment in the `EffectRegistry` under the `Adjust` category. Done when: `EffectRegistryTests` list the nine features' adjustments.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's levels, curves, and brightness and contrast (`D03 T05 §2`) run on these types through `D03 T05 §1`. Done when: the README lists them.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's levels, curves, and brightness and contrast (`D03 T05 §2`) run on these types through `D03 T05 §1`. Done when: the README lists them.
 - [ ] Commit: `"core: histogram and tonal adjustments"`
 
 **Test checkpoint:** Format fidelity proof and unit test: `dotnet test Isotone.slnx` exits 0 with `HistogramTests`, `LevelsTests`, `ToneCurveTests`, `LightTests`, and `WhiteBalanceTests` reporting, levels and curves matching the GIMP 3.0 goldens in `tests/fixtures/imaging/adjust/` within 1 of 255, and the budget times quoted. Cheaper substitute that fails: a curve evaluated by linear interpolation between nodes, which the spline golden rejects.
@@ -210,7 +210,7 @@ Color correction completes the adjustment set. Each adjustment is a lookup or ma
 - [ ] Add `Invert` (CD-2223) and `Threshold` (level, plus a band mode with low and high) (CD-2225). Done when: invert twice is the identity and threshold output contains only black and white.
 - [ ] Fuse each adjustment into one lookup or matrix per pixel. Done when: the §4 budget test covers these adjustments and each stays under 150 ms on 24 megapixels.
 - [ ] Register every color adjustment in the `EffectRegistry` under the `Adjust` category. Done when: `EffectRegistryTests` list all eleven.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's hue and saturation adjustment (`D03 T05 §2`) through `D03 T05 §1`. Done when: the README lists it.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's hue and saturation adjustment (`D03 T05 §2`) through `D03 T05 §1`. Done when: the README lists it.
 - [ ] Commit: `"core: color adjustments"`
 
 **Test checkpoint:** Format fidelity proof and unit test: `dotnet test Isotone.slnx` exits 0 with `ColorAdjustTests` comparing hue-saturation, color balance, desaturate, and channel mixer against the GIMP 3.0 goldens in `tests/fixtures/imaging/color/` (tolerances quoted), snapshot goldens matching for vibrance, selective color, and black and white, and the property tests passing. Cheaper substitute that fails: a hue shift by rotating RGB channels, which the hue-saturation golden rejects.
@@ -236,7 +236,7 @@ Blur, sharpen, and noise are the most used effect families and the base several 
 - [ ] Add `LocalEqualization` (CLAHE with tile size and clip limit) (CD-2167). Done when: it matches a snapshot golden and the output histogram per tile respects the clip limit.
 - [ ] Add a budget test: Gaussian radius 50 on 24 megapixels under 400 ms. Done when: `BlurBudgetTests` quotes the time.
 - [ ] Add a cancellation test for every effect over one second on a 24-megapixel buffer. Done when: each stops within one tile.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's Blur and Sharpen menu (`D03 T05 §3`) routes its stub commands here through `D03 T05 §1`. Done when: the README lists the effects it wires.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's Blur and Sharpen menu (`D03 T05 §3`) routes its stub commands here through `D03 T05 §1`. Done when: the README lists the effects it wires.
 - [ ] Commit: `"core: blur, sharpen, and noise effects"`
 
 **Test checkpoint:** Format fidelity proof: `dotnet test Isotone.slnx` exits 0 with `BlurSharpenNoiseTests` comparing against the libvips 8.16, GIMP 3.0, and ImageMagick 7.1 goldens in `tests/fixtures/imaging/blur/`, `sharpen/`, and `noise/` with per-effect tolerances quoted, the seed-determinism tests for the noise generators passing, and `BlurBudgetTests` quoting its time. Cheaper substitute that fails: a box blur registered as Gaussian, which the libvips `gaussblur` golden rejects.
@@ -260,7 +260,7 @@ Distortions are all inverse maps: each effect supplies where an output pixel sam
 - [ ] Add `DiffuseGlow` (grain, glow amount, clear amount) combining seeded noise from `CounterRng` with a highlight blur from §6 (AI-0747). Done when: a snapshot golden matches and the output is seed-deterministic.
 - [ ] Add cell and streak operations `Blocks`, `Pixelate` (square, rectangular, circular), `Tile`, `WetPaint`, and `Wind` (strength, direction, opacity), with seeded randomness (CD-2185, CD-2189, CD-2193, CD-2194, CD-2196). Done when: pixelate cells are uniform in color and snapshot goldens match.
 - [ ] Register all 23 effects in the `EffectRegistry` under the `Distort` category and run the §1 property suite over them (bounds from `ExpandBounds`, seed determinism, transparent in stays transparent). Done when: `DistortTests` report the property suite per effect.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's Distort filter menu through `D03 T05 §1`. Done when: the README lists it.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's Distort filter menu through `D03 T05 §1`. Done when: the README lists it.
 - [ ] Commit: `"core: distort and 3D-style effects"`
 
 **Test checkpoint:** Format fidelity proof and unit test: `dotnet test Isotone.slnx` exits 0 with `DistortTests` comparing swirl, pinch, and ripple against the ImageMagick 7.1 goldens in `tests/fixtures/imaging/distort/`, every other effect against its committed snapshot golden, and the identity-at-zero and coverage property tests passing for all 23. Cheaper substitute that fails: forward-mapped distortion that leaves holes, which the identity and coverage tests reject.
@@ -285,14 +285,14 @@ Twenty-eight painterly and drawing-media effects have no open reference implemen
 - [ ] Run the §1 property suite (bounds, determinism by seed, alpha preservation, near-identity at minimum strength where defined) over every effect. Done when: `ArtisticTests` report it per effect.
 - [ ] Assert no two effects produce identical output on the same fixture and seed. Done when: a pairwise hash test passes across all 28.
 - [ ] Add budget tests: any effect on a 12-megapixel image under 3 seconds with progress and cancellation, and a preview at `PreviewScale` 0.25 under 250 ms for the gallery. Done when: `ArtisticBudgetTests` quote the worst times.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's Artistic filter menu through `D03 T05 §1`. Done when: the README lists it.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's Artistic filter menu through `D03 T05 §1`. Done when: the README lists it.
 - [ ] Commit: `"core: artistic and art-stroke effects"`
 
 **Test checkpoint:** Unit test with snapshot goldens: `dotnet test Isotone.slnx` exits 0 with `ArtisticTests` matching every committed snapshot in `tests/fixtures/imaging/artistic/`, the §1 property suite and the pairwise distinct-output test passing for all 28 effects, and `ArtisticBudgetTests` quoting times. Cheaper substitute that fails: one posterize relabeled per effect, which the pairwise distinct-output and seed-determinism tests expose.
 
 ## 9. Brush-Stroke and Sketch Effects
 
-The brush-stroke and sketch families reuse the §8 stroke field and renderer, and the sketch family is two-color: luminance maps onto a foreground and a background color that the consumer passes as RGBA values, never as references to a Stilus swatch, so Pinxit can pass its own. If §8 has not landed when this section runs, this section builds `StrokeField` and `StrokeRenderer` and §8 consumes them. Catalog: NP-1926 to NP-1946 (21 features: accented edges, angled strokes, crosshatch, dark strokes, ink outlines, spatter, sprayed strokes, sumi-e, bas relief, chalk and charcoal, chrome, graphic pen, halftone pattern, note paper, photocopy, plaster, reticulation, stamp, torn edges, water paper, and glowing edges).
+The brush-stroke and sketch families reuse the §8 stroke field and renderer, and the sketch family is two-color: luminance maps onto a foreground and a background color that the consumer passes as RGBA values, never as references to a Stilus swatch, so Gesso can pass its own. If §8 has not landed when this section runs, this section builds `StrokeField` and `StrokeRenderer` and §8 consumes them. Catalog: NP-1926 to NP-1946 (21 features: accented edges, angled strokes, crosshatch, dark strokes, ink outlines, spatter, sprayed strokes, sumi-e, bas relief, chalk and charcoal, chrome, graphic pen, halftone pattern, note paper, photocopy, plaster, reticulation, stamp, torn edges, water paper, and glowing edges).
 
 **Fidelity:** no surface of its own (the Effect Gallery is D02 T12 §2)
 
@@ -307,7 +307,7 @@ The brush-stroke and sketch families reuse the §8 stroke field and renderer, an
 - [ ] Commit snapshot goldens at two parameter sets per effect under `tests/fixtures/imaging/sketch/` and `tests/fixtures/imaging/brush-strokes/` with `reference.txt`. Done when: every effect folder has both goldens.
 - [ ] Run the §1 property suite over all 21 effects. Done when: `BrushSketchTests` report it per effect.
 - [ ] Assert color parameters are plain `RgbaF` values in every sketch schema. Done when: a reflection test finds no parameter typed as anything but `RgbaF` for colors.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's Brush Strokes and Sketch filter menus through `D03 T05 §1`. Done when: the README lists them.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's Brush Strokes and Sketch filter menus through `D03 T05 §1`. Done when: the README lists them.
 - [ ] Commit: `"core: brush-stroke and sketch effects"`
 
 **Test checkpoint:** Unit test with snapshot goldens: `dotnet test Isotone.slnx` exits 0 with `BrushSketchTests` matching every committed snapshot in `tests/fixtures/imaging/sketch/` and `brush-strokes/`, and the two-color property passing for the twelve sketch effects. Cheaper substitute that fails: a grayscale threshold registered as each sketch effect, which the two-color property with non-gray colors and the snapshot set reject.
@@ -331,7 +331,7 @@ Texture and creative effects share two primitives: relief lighting over a height
 - [ ] Add `BitmapBevel` (The Boss: width, height, smoothness, light direction and elevation, color) on the alpha edge through `ReliefLighting` (CD-2249). Done when: an opaque rectangle gains a lit and a shaded edge and its interior is unchanged.
 - [ ] Commit snapshot goldens at two parameter sets per effect under `tests/fixtures/imaging/texture/` with `reference.txt`, and assert no bundled image asset exists under `src/Isotone.Core/Imaging/`. Done when: every effect folder has both goldens and a test finds no `.png`, `.jpg`, or `.bmp` embedded resource in `Isotone.Core`.
 - [ ] Run the §1 property suite over all 27 effects. Done when: `TextureCreativeTests` report it per effect.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's Texture and Stylize filter menus through `D03 T05 §1`. Done when: the README lists them.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's Texture and Stylize filter menus through `D03 T05 §1`. Done when: the README lists them.
 - [ ] Commit: `"core: texture and creative effects"`
 
 **Test checkpoint:** Unit test with snapshot goldens: `dotnet test Isotone.slnx` exits 0 with `TextureCreativeTests` matching every committed snapshot in `tests/fixtures/imaging/texture/`, the cell-count and seed-stability property tests passing, and the no-bundled-image test passing. Cheaper substitute that fails: one tiled bitmap overlay for every texture effect, which the snapshot set and the no-bundled-image test expose.
@@ -356,7 +356,7 @@ The last families reuse what the earlier sections built: camera effects are §5 
 - [ ] Add `Deinterlace` (odd or even; duplicate or interpolate) (AI-0775, CD-2222). Done when: duplicate mode makes each odd row equal its even neighbor.
 - [ ] Add `NtscColors` (clamp YIQ saturation and luminance to broadcast-safe limits) (AI-0776). Done when: no output pixel exceeds the documented YIQ limits on a saturated fixture.
 - [ ] Register all 21 effects in the `EffectRegistry` with categories Camera, Color Transform, Contour, Custom, Pixelate, and Video, and run the §1 property suite and cancellation tests. Done when: `CameraColorEdgeTests` report the suite per effect.
-- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Pinxit's Render, Stylize, and Other filter menus through `D03 T05 §1`. Done when: the README lists them.
+- [ ] Record the second consumer in `src/Isotone.Core/Imaging/README.md`: Gesso's Render, Stylize, and Other filter menus through `D03 T05 §1`. Done when: the README lists them.
 - [ ] Commit: `"core: camera, color-transform, edge, custom, and video effects"`
 
 **Test checkpoint:** Format fidelity proof and unit test: `dotnet test Isotone.slnx` exits 0 with `CameraColorEdgeTests` comparing color halftone, solarize, edge detect, and the 5x5 user convolution against the GIMP 3.0 and ImageMagick 7.1 goldens in `tests/fixtures/imaging/camera/`, `edge/`, and `custom/`, snapshot goldens matching for the rest, and the property suite passing for all 21. Cheaper substitute that fails: a fixed 3x3 kernel for user-defined convolution, which the 5x5 golden rejects.
@@ -367,5 +367,5 @@ The last families reuse what the earlier sections built: camera effects are §5 
 - [ ] `dotnet test Isotone.slnx` exits 0 with every `tests/Isotone.Core.Tests/Imaging/` class reporting, including the budget tests with their times quoted
 - [ ] Every fixture folder under `tests/fixtures/imaging/` carries `reference.txt` naming its reference implementation and version, or saying it is a snapshot
 - [ ] `grep -rn "System.Windows\|SkiaSharp.Views\|Isotone.Stilus" src/Isotone.Core/Imaging` prints nothing
-- [ ] The engine has one consumer today (Stilus, `D02 T12`); its pending second consumer is Pinxit's filter pipeline (`D03 T05 §1`), recorded in `src/Isotone.Core/Imaging/README.md` rather than claimed as present
+- [ ] The engine has one consumer today (Stilus, `D02 T12`); its pending second consumer is Gesso's filter pipeline (`D03 T05 §1`), recorded in `src/Isotone.Core/Imaging/README.md` rather than claimed as present
 - [ ] `python scripts/todo-graph.py validate` clean

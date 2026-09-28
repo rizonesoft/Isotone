@@ -11,10 +11,10 @@ track: L2
 
 # TODO-02 -- Albumen: Non-Destructive Develop, Export, 0.1.0, and Accessibility
 
-> **Goal:** An Albumen user develops RAW and JPEG photos non-destructively (white balance, exposure, contrast, highlights and shadows, whites and blacks, tone curve, vibrance and saturation, crop and straighten), copies settings across a batch, exports finished files with size, format, color space, and metadata choices, hands a photo to Pinxit when Pinxit is installed, and gets all of it as `albumen-v0.1.0`, with the original never written (the opt-in in-place writes of the Albumen parity phases arrive later with `D04 T11 §1`); and once the Albumen parity surfaces exist, every Albumen surface works by keyboard and screen reader and is translatable (§9, relocated to Phase 39).
+> **Goal:** An Albumen user develops RAW and JPEG photos non-destructively (white balance, exposure, contrast, highlights and shadows, whites and blacks, tone curve, vibrance and saturation, crop and straighten), copies settings across a batch, exports finished files with size, format, color space, and metadata choices, hands a photo to Gesso when Gesso is installed, and gets all of it as `albumen-v0.1.0`, with the original never written (the opt-in in-place writes of the Albumen parity phases arrive later with `D04 T11 §1`); and once the Albumen parity surfaces exist, every Albumen surface works by keyboard and screen reader and is translatable (§9, relocated to Phase 39).
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** Nothing exists: no develop code, no pipeline, no export. The Albumen notes removed on 2026-09-26 asked for "RAW processing and non-destructive editing", "batch adjustments and presets", and "Edit In (send to Pinxit)" with no technical choices. `standards/albumen.md` sets the contract this file builds to: edits are data in the catalog, the pipeline is float32 linear-light with one output transform at the end, previews and exports of the same settings agree within a stated tolerance, and "Edit in Pinxit" never loads Pinxit's assemblies. **Corrected 2026-09-26:** this file planned its own develop stages in `Isotone.Albumen.Core/Develop/Pipeline/`; the Pinxit parity plan builds the suite develop engine in `Isotone.Core/Develop/` (`D01 T07`, Phase 23) before Albumen starts, so §1 stores its `DevelopSettings`, §2 renders through its pipeline, and §5 uses its presets and clipboard, and Albumen keeps its own edit stack, panels, preview cache, and export. **Corrected 2026-09-28:** the removed notes file was `src/Lumen.UI/TODO.md`, and its wording was "send to Imago" before the 2026-09-27 rename.
+> **Current state (verified 2026-09-26):** Nothing exists: no develop code, no pipeline, no export. The Albumen notes removed on 2026-09-26 asked for "RAW processing and non-destructive editing", "batch adjustments and presets", and "Edit In (send to Gesso)" with no technical choices. `standards/albumen.md` sets the contract this file builds to: edits are data in the catalog, the pipeline is float32 linear-light with one output transform at the end, previews and exports of the same settings agree within a stated tolerance, and "Edit in Gesso" never loads Gesso's assemblies. **Corrected 2026-09-26:** this file planned its own develop stages in `Isotone.Albumen.Core/Develop/Pipeline/`; the Gesso parity plan builds the suite develop engine in `Isotone.Core/Develop/` (`D01 T07`, Phase 23) before Albumen starts, so §1 stores its `DevelopSettings`, §2 renders through its pipeline, and §5 uses its presets and clipboard, and Albumen keeps its own edit stack, panels, preview cache, and export. **Corrected 2026-09-28:** the removed notes file was `src/Lumen.UI/TODO.md`, and its wording was "send to Imago" before the 2026-09-27 rename.
 <!-- claim: count "Float32 linear-light" standards/albumen.md = 1 -->
 <!-- claim: absent src/Albumen/Isotone.Albumen.Core/Develop -->
 
@@ -24,13 +24,13 @@ track: L2
 - The competitor survey (`docs/dev/albumen/competitor-survey.md`, from `D04 T01 §1`) -- the develop controls and their order in darktable and Lightroom Classic, which the develop panel matches where they agree
 - darktable and LibRaw's `dcraw_emu` -- reference renders for the pipeline goldens, versions recorded
 - -> XREF: D04 T01 §5 -- the catalog where §1 stores edit stacks
-- -> XREF: D03 T06 §3 -- the Pinxit release §7 hands photos to
+- -> XREF: D03 T06 §3 -- the Gesso release §7 hands photos to
 - -> XREF: D06 T01 §3 -- the Albumen user guide §8 requires
 - -> XREF: D01 T04 §1 -- the suite color engine §2's output transform consumes
 - -> XREF: D02 T15 §11 -- the `SuiteAppLocator` in `Isotone.Core/Suite/` that §7 consumes for its App Paths lookup
 - -> XREF: D01 T07 §1 -- the suite develop engine cites §1: Albumen's edit stack stores D01 T07 §1's `DevelopSettings`; §2: Albumen's pipeline section, rewritten at integration to consume D01 T07 §1 to D01 T07 §3; §5: Albumen's presets, copy and paste, and sync consume D01 T07 §6
-- -> XREF: D03 T19 §13 -- Pinxit AI cites §7: Albumen's Edit in Pinxit, which D03 T19 §13 receives
-- -> XREF: D04 T04 §9 -- the Albumen Viewer cites §8: Albumen 0.1.0 ships before every section here; §3: the histogram control D04 T04 §9 hosts; §7: Edit in Pinxit from the viewer (D04 T04 §1)
+- -> XREF: D03 T19 §13 -- Gesso AI cites §7: Albumen's Edit in Gesso, which D03 T19 §13 receives
+- -> XREF: D04 T04 §9 -- the Albumen Viewer cites §8: Albumen 0.1.0 ships before every section here; §3: the histogram control D04 T04 §9 hosts; §7: Edit in Gesso from the viewer (D04 T04 §1)
 - -> XREF: D04 T05 §4 -- Albumen browse without importing cites §3: the histogram control D04 T05 §4 and D04 T05 §7 reuse
 - -> XREF: D04 T06 §3 -- Albumen parity library cites §8: Albumen 0.1.0 ships before every section here; §1: the edit stack virtual copies (D04 T06 §3) and Quick Develop (D04 T06 §13) write; §5: develop presets the Painter and Quick Develop apply (D04 T06 §13); §7: the basic stacks D04 T06 §3 extends
 - -> XREF: D04 T07 §3 -- Albumen parity import cites §8: Albumen 0.1.0 ships before every section here; §5: develop presets applied during import (D04 T07 §3)
@@ -38,7 +38,7 @@ track: L2
 - -> XREF: D04 T09 §2 -- Albumen parity develop cites §1: the edit stack every panel writes, extended by D04 T09 §2 with the before pointer; §2: the pipeline hookup and output transform D04 T09 §3 extends; §3: the develop module D04 T09 §1 extends; §4: crop, which D04 T09 §8 extends; §5: presets and sync, which D04 T09 §11 and D04 T09 §12 extend; §6: `ExportRunner`, which D04 T09 §17's commit and save-as render through; §8: Albumen 0.1.0, which ships before every section here
 - -> XREF: D04 T11 §9 -- the Albumen batch tools cites §5: develop presets D04 T11 §9 applies; §6: the export runner and naming template D04 T11 §2 and D04 T11 §9 extend
 - -> XREF: D04 T12 §1 -- Albumen parity output cites §6: the export runner, dialog, and presets that D04 T12 §1, D04 T12 §2, and D04 T12 §13 extend; §7: stacking of exported files beside the original, reused by D04 T12 §13; §8: Albumen 0.1.0, which every section here follows
-- -> XREF: D04 T13 §3 -- Albumen parity formats cites §7: Edit in Pinxit, named by D04 T13 §3's layered-file notice
+- -> XREF: D04 T13 §3 -- Albumen parity formats cites §7: Edit in Gesso, named by D04 T13 §3's layered-file notice
 - -> XREF: D04 T14 §9 -- Albumen parity workspace cites §7: `EditInService`, which D04 T14 §9 extends to other editors; §9: the accessibility and localization audit that runs after this file and checks keyboard reachability against D04 T14 §3's keymap
 - -> XREF: D04 T15 §1 -- the Albumen parity releases cites §8: the 0.1.0 release procedure every section repeats; D04 T15 §1 follows it; §9: the accessibility and localization audit D04 T15 §10 depends on, so 1.0.0 ships no unaudited surface
 
@@ -49,13 +49,13 @@ track: L2
 - The develop panel shows a live histogram, before and after, and every control in the Treatment below, keyboard operable.
 - Presets, copy and paste settings, and sync apply develop settings to many photos at once, each undoable.
 - Export writes JPEG, TIFF (8 or 16 bit), and PNG with resize, sharpening for screen or print, color space (sRGB, Display P3, Adobe RGB), metadata choices, and file naming, in the background with progress.
-- "Edit in Pinxit" renders a 16-bit TIFF, opens it in Pinxit when installed, and stacks the result beside the original; when Pinxit is absent the command is disabled with a tooltip saying so.
+- "Edit in Gesso" renders a 16-bit TIFF, opens it in Gesso when installed, and stacks the result beside the original; when Gesso is absent the command is disabled with a tooltip saying so.
 - `albumen-v0.1.0` is a published release that passes `standards/release.md`.
 - Every Albumen surface passes an Accessibility Insights audit and every string is localizable (§9, relocated on 2026-09-26 from the retired Albumen roadmap file and moved on 2026-09-27 into Phase 39, last before Albumen 1.0.0, so it audits every Albumen parity surface; the roadmap file's other sections became Albumen parity sections, and its GPU develop path, once backlog B-033, is `D01 T07 §10` to `§12` since 2026-09-27).
 
 **Adjacency:** list=not-applicable (the grid in D04 T01 §8 is the list); document=applicable @ D04 T02 §6; settings=applicable @ D04 T02 §5; reporting=applicable; notifications=applicable @ D04 T02 §6; permissions=applicable @ D04 T02 §6; audit=applicable; exchange=applicable; reverse=applicable @ D04 T02 §1
 
-**Adjacency rationale:** Exports are the documents users carry; presets are settings; the histogram is the develop panel's report; export progress and completion notify; a read-only export folder is refused; the edit stack is both the audit and the reverse; the Pinxit hand-off is an exchange.
+**Adjacency rationale:** Exports are the documents users carry; presets are settings; the histogram is the develop panel's report; export progress and completion notify; a read-only export folder is refused; the edit stack is both the audit and the reverse; the Gesso hand-off is an exchange.
 
 ## Implementation Order
 
@@ -67,7 +67,7 @@ track: L2
 |   4   |   §4    | Crop and straighten                               | §3                                                           |  [ ]   |
 |   5   |   §5    | Presets, copy and paste settings, and sync        | §3, D01 T07 §6                                               |  [ ]   |
 |   6   |   §6    | Export                                            | §2, D04 T01 §10                                              |  [ ]   |
-|   7   |   §7    | Edit in Pinxit                                     | §6, D03 T06 §3, D02 T15 §11                                  |  [ ]   |
+|   7   |   §7    | Edit in Gesso                                     | §6, D03 T06 §3, D02 T15 §11                                  |  [ ]   |
 |   8   |   §8    | Albumen 0.1.0                                       | §4, §5, §7, D04 T01 §11, D06 T01 §3, D05 T01 §1              |  [ ]   |
 |   9   |   §9    | Accessibility and localization                    | §8, D04 T14 §9, D04 T14 §10, D04 T12 §12, D04 T12 §13 |  [ ]   |
 
@@ -90,7 +90,7 @@ Non-destructive means edits are data. Each photo has an edit stack in the catalo
 
 ## 2. The Develop Pipeline on the Suite Develop Engine
 
-The pipeline turns a decoded RAW (or a JPEG converted to linear) plus `DevelopSettings` into pixels: white balance, exposure, highlights and shadows, whites and blacks, contrast, tone curve, vibrance and saturation, then the output transform. Float32 linear light throughout, CPU with SIMD, tile-parallel, cancellable. **Corrected 2026-09-26:** this section planned to implement those stages in `Isotone.Albumen.Core/Develop/Pipeline/`; the suite develop engine (`D01 T07 §1` to `§3`, built in Phase 23 with Pinxit's Camera Raw filter as its first consumer) now owns the settings record, the pipeline, every stage, and the output transform through `D01 T04`, so Albumen consumes it and keeps what is Albumen's: feeding its decoder into the engine, choosing the output space, the preview cache, and the fidelity and budget proof on Albumen's corpus. -> SOURCE: albumen-notes-develop-pipeline
+The pipeline turns a decoded RAW (or a JPEG converted to linear) plus `DevelopSettings` into pixels: white balance, exposure, highlights and shadows, whites and blacks, contrast, tone curve, vibrance and saturation, then the output transform. Float32 linear light throughout, CPU with SIMD, tile-parallel, cancellable. **Corrected 2026-09-26:** this section planned to implement those stages in `Isotone.Albumen.Core/Develop/Pipeline/`; the suite develop engine (`D01 T07 §1` to `§3`, built in Phase 23 with Gesso's Camera Raw filter as its first consumer) now owns the settings record, the pipeline, every stage, and the output transform through `D01 T04`, so Albumen consumes it and keeps what is Albumen's: feeding its decoder into the engine, choosing the output space, the preview cache, and the fidelity and budget proof on Albumen's corpus. -> SOURCE: albumen-notes-develop-pipeline
 
 - [ ] Render through `DevelopPipeline` (`D01 T07 §1`) with the stages of `D01 T07 §1` to `§3`, feeding the decoder's output (`D04 T01 §4`) as a `RawDevelopSource` and JPEGs as a `LayerDevelopSource`; no develop stage is implemented in `Isotone.Albumen.Core`. Done when: a grep finds no `IDevelopStage` implementation under `src/Albumen/` and `AlbumenDevelopTests` render a corpus file through the shared pipeline.
 - [ ] Map the decoder's as-shot white balance and camera matrix into `WhiteBalanceSettings` and `RawDevelopSource`, and temperature and tint through the engine's Kelvin conversion. Done when: a gray-card fixture renders neutral within delta E 2 at its as-shot setting.
@@ -109,11 +109,11 @@ The develop module is where the pipeline meets the photographer: the photo large
 **Design:** docs/design/shell-layout.md#albumen-darkroom-and-photo-manager, docs/design/components/Panel/README.md, docs/design/components/Slider/README.md, docs/design/components/NumberBox/README.md, docs/design/components/ListTree/README.md, docs/design/components/ToolRail/README.md, new surface: docs/design/components/AlbumenDevelop/README.md, new surface: docs/design/components/DevelopPanels/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can adjust a photo's tone and color with immediate visual feedback and compare against the original. Consumer: the edit stack and the pipeline.
 **Treatment:** a histogram (RGB and luminance, clipping indicators toggled by J); Basic panel (white balance presets, temperature, tint, exposure, contrast, highlights, shadows, whites, blacks, vibrance, saturation); Tone Curve (parametric and point); a History list and Snapshots; before and after with \ (toggle) and Y (side by side); double-click a slider resets it; Alt-drag on exposure or blacks shows clipping; every slider keyboard adjustable. Cheaper substitute that fails the checkpoint: sliders that apply only on release with no live preview.
-**Chrome:** consume the histogram control from Pinxit moved to `Isotone.UI` (filed through `add-todo` when this section starts, since two apps then need it), the theme, and the keymap pattern.
+**Chrome:** consume the histogram control from Gesso moved to `Isotone.UI` (filed through `add-todo` when this section starts, since two apps then need it), the theme, and the keymap pattern.
 
 **Requires:** display-session -- the develop module needs an interactive desktop
 
-- [ ] Write or extend the shared develop-panel spec `docs/design/components/DevelopPanels/README.md` and its `preview.html` (histogram and clipping warnings, the Basic/Light, Tone Curve, Color Mixer and HSL, Point Color, Color Grading, Detail, Lens, Transform, Effects, and Calibration panels: anatomy, every state, tokens, sizes) before building; this one spec serves Pinxit Camera Raw, Albumen Develop, and Stilus RAW Lab (operator decision 2026-09-27), and the app layout spec covers only the window or module around the panels. Done when: the spec covers every panel this section uses and `python scripts/build-design-site.py --check` passes.
+- [ ] Write or extend the shared develop-panel spec `docs/design/components/DevelopPanels/README.md` and its `preview.html` (histogram and clipping warnings, the Basic/Light, Tone Curve, Color Mixer and HSL, Point Color, Color Grading, Detail, Lens, Transform, Effects, and Calibration panels: anatomy, every state, tokens, sizes) before building; this one spec serves Gesso Camera Raw, Albumen Develop, and Stilus RAW Lab (operator decision 2026-09-27), and the app layout spec covers only the window or module around the panels. Done when: the spec covers every panel this section uses and `python scripts/build-design-site.py --check` passes.
 - [ ] Write the design spec `docs/design/components/AlbumenDevelop/README.md` and `preview.html` (the develop module layout: history, snapshots, and before and after around the panels, which come from the shared `docs/design/components/DevelopPanels/README.md`; anatomy, every state, tokens, sizes) before building; Done when: the spec exists and the design page rebuild passes.
 - [ ] `DevelopViewModel` binding every control to `DevelopSettings` through the edit stack, with preview requests debounced and cancelled on change. Done when: `DevelopViewModelTests` cover reset, merge, and cancellation.
 - [ ] The module view with histogram, panels, history, snapshots, and before and after. Done when: captures of each are committed.
@@ -148,7 +148,7 @@ Batch work is half of Albumen's job: apply a look to hundreds of photos, copy on
 **Fidelity:** Presets panel and the Copy Settings dialog -- new build, no baseline; captured to docs/captures/albumen/presets/.
 **Design:** docs/design/components/Panel/README.md, docs/design/components/ListTree/README.md, docs/design/components/Dialog/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both
 **Job:** a photographer can apply saved or copied settings to many photos in one action and undo it. Consumer: the edit stacks of the selected photos.
-**Treatment:** a Presets panel (user presets in the suite-wide develop presets folder shared with Pinxit, `D01 T07 §6`, with a hover preview on the current photo); Ctrl+Shift+C opens a checklist of settings groups to copy, Ctrl+Shift+V pastes to the selection; Sync applies the active photo's chosen groups to the selection; each batch is one undo step across all photos. Cheaper substitute that fails the checkpoint: presets that overwrite every setting.
+**Treatment:** a Presets panel (user presets in the suite-wide develop presets folder shared with Gesso, `D01 T07 §6`, with a hover preview on the current photo); Ctrl+Shift+C opens a checklist of settings groups to copy, Ctrl+Shift+V pastes to the selection; Sync applies the active photo's chosen groups to the selection; each batch is one undo step across all photos. Cheaper substitute that fails the checkpoint: presets that overwrite every setting.
 **Chrome:** consume the edit stack, the grid selection, and the settings store.
 
 **Requires:** display-session -- the presets panel needs an interactive desktop
@@ -178,30 +178,30 @@ Export is how developed photos leave Albumen: rendered at full resolution throug
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `ExportTests` and the export fidelity test reporting; the 200-photo timing is quoted; the unchanged-originals assertion holds after export. Cheaper substitute that fails: exporting previews, which the fidelity comparison catches at full resolution.
 
-## 7. Edit in Pinxit
+## 7. Edit in Gesso
 
-Albumen is the bridge from the camera to Pinxit, and the suite's rule is that no app needs another at runtime. So the hand-off is over files: Albumen renders a 16-bit TIFF, asks Windows to open it with Pinxit if Pinxit is installed, and watches for the edited file to come back. -> SOURCE: albumen-notes-edit-in
+Albumen is the bridge from the camera to Gesso, and the suite's rule is that no app needs another at runtime. So the hand-off is over files: Albumen renders a 16-bit TIFF, asks Windows to open it with Gesso if Gesso is installed, and watches for the edited file to come back. -> SOURCE: albumen-notes-edit-in
 
-**Corrected 2026-09-26:** Stilus's suite pipeline (`D02 T15 §11`) ships first and adds `src/Isotone.Core/Suite/SuiteAppLocator.cs`, which reads a suite app's App Paths entry (`HKCU`, then `HKLM`) and verifies the exe exists. This section consumes it to locate Pinxit instead of writing its own App Paths lookup; the Treatment below keeps the same registry keys.
+**Corrected 2026-09-26:** Stilus's suite pipeline (`D02 T15 §11`) ships first and adds `src/Isotone.Core/Suite/SuiteAppLocator.cs`, which reads a suite app's App Paths entry (`HKCU`, then `HKLM`) and verifies the exe exists. This section consumes it to locate Gesso instead of writing its own App Paths lookup; the Treatment below keeps the same registry keys.
 
 **Fidelity:** Photo, Edit In menu -- docs/design/ (the specs on the Design line below) per standards/design-contract.md; goldens under docs/captures/golden/albumen/edit-in/. **Corrected 2026-09-27:** cited docs/captures/albumen/develop/ as the source; the captures under docs/captures/albumen/ are a before record, never the fidelity source.
 **Design:** docs/design/components/Menu/README.md, docs/design/components/ContextMenu/README.md, docs/design/components/Icons/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** a photographer can take a developed photo into Pinxit for pixel work and see the result back in the library. Consumer: Pinxit (through the file) and the catalog.
-**Treatment:** Photo, Edit In, Pinxit (Ctrl+E) renders a 16-bit ProPhoto or Adobe RGB TIFF (a setting) named `<name>-Edit.tif` beside the original's folder in Albumen's working location, locates Pinxit through its App Paths registry entry (`HKCU` then `HKLM\Software\Microsoft\Windows\CurrentVersion\App Paths\Pinxit.exe`, written by the Pinxit installer), starts it with the path, and adds the TIFF to the catalog stacked with the original; when the file changes on disk the thumbnail refreshes. When Pinxit is not found, the menu item is disabled with the tooltip "Install Pinxit to edit photos in it." Cheaper substitute that fails the checkpoint: referencing Pinxit's assemblies.
+**Job:** a photographer can take a developed photo into Gesso for pixel work and see the result back in the library. Consumer: Gesso (through the file) and the catalog.
+**Treatment:** Photo, Edit In, Gesso (Ctrl+E) renders a 16-bit ProPhoto or Adobe RGB TIFF (a setting) named `<name>-Edit.tif` beside the original's folder in Albumen's working location, locates Gesso through its App Paths registry entry (`HKCU` then `HKLM\Software\Microsoft\Windows\CurrentVersion\App Paths\Gesso.exe`, written by the Gesso installer), starts it with the path, and adds the TIFF to the catalog stacked with the original; when the file changes on disk the thumbnail refreshes. When Gesso is not found, the menu item is disabled with the tooltip "Install Gesso to edit photos in it." Cheaper substitute that fails the checkpoint: referencing Gesso's assemblies.
 **Chrome:** consume the export runner, a `FileSystemWatcher`, and the catalog's stacking.
 
 **Requires:** display-session -- the hand-off drive needs an interactive desktop
 
-- [ ] Confirm or add the App Paths entry in `installer/Pinxit.iss` (and document it in `docs/dev/build.md`). Done when: after installing Pinxit, `reg query` shows the entry.
+- [ ] Confirm or add the App Paths entry in `installer/Gesso.iss` (and document it in `docs/dev/build.md`). Done when: after installing Gesso, `reg query` shows the entry.
 - [ ] `EditInService` (render, locate through `Isotone.Core`'s `SuiteAppLocator` from `D02 T15 §11`, launch, stack, watch) with tests using a fake locator and launcher. Done when: tests cover found, not found, and the file-changed refresh, and `grep -rn "App Paths" src/Albumen` finds no second registry lookup.
 - [ ] Stacks in the catalog (a stack groups an original and its derivatives; the grid shows a stack badge and expands with S). Done when: the edited TIFF appears stacked.
-- [ ] Commit: `"albumen: Edit in Pinxit over files, never over assemblies"`
+- [ ] Commit: `"albumen: Edit in Gesso over files, never over assemblies"`
 
-**Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the `EditInService` tests reporting; on a machine with Pinxit installed, a driven Edit In opens the TIFF in Pinxit, a brush stroke saved in Pinxit refreshes the thumbnail in Albumen (captures); with Pinxit uninstalled, the item is disabled with its tooltip; `Isotone.Albumen.*.csproj` files reference no Pinxit project (grep quoted). Cheaper substitute that fails: a project reference to Pinxit.
+**Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the `EditInService` tests reporting; on a machine with Gesso installed, a driven Edit In opens the TIFF in Gesso, a brush stroke saved in Gesso refreshes the thumbnail in Albumen (captures); with Gesso uninstalled, the item is disabled with its tooltip; `Isotone.Albumen.*.csproj` files reference no Gesso project (grep quoted). Cheaper substitute that fails: a project reference to Gesso.
 
 ## 8. Albumen 0.1.0
 
-Albumen's first release, following `standards/release.md` as Stilus and Pinxit did, with the original-file guard proven once more on the installed build.
+Albumen's first release, following `standards/release.md` as Stilus and Gesso did, with the original-file guard proven once more on the installed build.
 
 **Needs:** Clean Windows machine (no .NET SDK)
 
@@ -224,7 +224,7 @@ Albumen's first release, following `standards/release.md` as Stilus and Pinxit d
 
 ## 9. Accessibility and Localization
 
-Every Albumen surface keyboard- and screen-reader-operable and translatable: the acceptance bar's "It works without a mouse or eyes" row names this section for Albumen. Relocated on 2026-09-26 from the retired Albumen roadmap file when the plan was bounded; it runs after the release like the Stilus and Pinxit accessibility sections. -> SOURCE: albumen-roadmap-a11y
+Every Albumen surface keyboard- and screen-reader-operable and translatable: the acceptance bar's "It works without a mouse or eyes" row names this section for Albumen. Relocated on 2026-09-26 from the retired Albumen roadmap file when the plan was bounded; it runs after the release like the Stilus and Gesso accessibility sections. -> SOURCE: albumen-roadmap-a11y
 
 **Corrected 2026-09-27:** moved at the Albumen integration from old Phase 32 (Albumen after 0.1.0) to Phase 39, after the Albumen workspace and preferences (`D04 T14`) and the output surfaces (`D04 T12`) and last before Albumen 1.0.0 (`D04 T15 §10`), so the audit covers every Albumen parity surface, including the Albumen Viewer, rather than the 0.1.0 surfaces alone; it now depends on `D04 T14 §9` and `§10` and `D04 T12 §12` and `§13`, and its keyboard reachability is checked against `D04 T14 §3`'s keymap.
 

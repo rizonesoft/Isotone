@@ -27,7 +27,7 @@ track: N4
 - [`standards/stilus.md`](../../standards/stilus.md) -- SVG is the native format; Inkscape is the fidelity reference
 - [`standards/testing.md`](../../standards/testing.md) -- fixtures, goldens, and the fidelity trait
 - [`todo/README.md`](../README.md) -- the frozen-behavior rules this file's save and autosave sections join
-- -> XREF: D01 T02 §5 -- moves this file's atomic writer to `Isotone.Core` when Pinxit's save needs it
+- -> XREF: D01 T02 §5 -- moves this file's atomic writer to `Isotone.Core` when Gesso's save needs it
 - -> XREF: D02 T03 §5 -- the menu sweep that needs Close and the exports wired
 - -> XREF: D02 T07 §1 -- the live-object contract whose fixtures extend §2's round trip; `D02 T07 §14` reuses §1's save and §5's recent files
 - -> XREF: D02 T13 §14 -- the PDF writer that replaces §4's `SKDocument` export, keeping `PdfExporterTests` as a regression

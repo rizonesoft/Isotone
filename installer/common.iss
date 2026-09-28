@@ -1,6 +1,6 @@
 ; Isotone Graphics Suite: shared Inno Setup definitions (Inno Setup 7.1 or newer).
 ;
-; Each app script (Stilus.iss, Pinxit.iss, Albumen.iss) defines the app identity,
+; Each app script (Stilus.iss, Gesso.iss, Albumen.iss) defines the app identity,
 ; then includes this file. scripts/package.ps1 passes the build inputs:
 ;   /DAppVersion=1.2.3[-pre]     SemVer shown to users (default 0.0.0-dev)
 ;   /DAppFileVersion=1.2.3.45    four-part Win32 version (default 0.0.0.0)

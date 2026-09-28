@@ -53,8 +53,8 @@ track: N8
 - -> XREF: D02 T14 §10 -- DXF dimensions from §15
 - -> XREF: D02 T16 §8 -- pen, touch, and dial input preferences over the stylus fields §3 adds
 - -> XREF: D02 T17 §2 -- Stilus 0.3.0 releases this file
-- -> XREF: D03 T09 §12 -- Pinxit parity layers cites §14: Stilus's align and distribute math, moved to `Isotone.Core` by D03 T09 §12
-- -> XREF: D03 T16 §6 -- Pinxit parity type and vectors cites §1: pen math D03 T16 §6 moves; §4: live-shape generators D03 T16 §7 moves; §6: node operations D03 T16 §6 moves; §7: curve actions D03 T16 §6 moves; §10: path geometry and booleans D03 T16 §5 moves
+- -> XREF: D03 T09 §12 -- Gesso parity layers cites §14: Stilus's align and distribute math, moved to `Isotone.Core` by D03 T09 §12
+- -> XREF: D03 T16 §6 -- Gesso parity type and vectors cites §1: pen math D03 T16 §6 moves; §4: live-shape generators D03 T16 §7 moves; §6: node operations D03 T16 §6 moves; §7: curve actions D03 T16 §6 moves; §10: path geometry and booleans D03 T16 §5 moves
 
 ## Outcome
 
@@ -312,7 +312,7 @@ Path repair and subdivision commands, each one history entry with a preview in i
 - [ ] Add Clean Up: remove stray points, unpainted objects, and empty text paths, reporting the counts on the status strip. Done when: `CleanUpTests` assert each count and the status line.
 - [ ] Add the Join Curves panel `src/Stilus/Isotone.Stilus.Desktop/Views/Panels/JoinCurvesPanel.xaml` with gap tolerance and modes extend to intersection, chamfer, fillet with radius, and Bezier connection. Done when: `JoinCurvesTests` cover each mode and the panel is captured.
 - [ ] Add extend curve to close, joining two selected end nodes with a straight segment. Done when: the result is one closed path.
-- [ ] Copy paths between documents as SVG fragments on the clipboard as `image/svg+xml` and the `Stilus.Elements` format from `D02 T03 §3` (**Corrected 2026-09-28:** said the suite clipboard format, which does not exist) (Photoshop path export is Pinxit's side). Done when: a path copied in one document pastes with equal geometry in another.
+- [ ] Copy paths between documents as SVG fragments on the clipboard as `image/svg+xml` and the `Stilus.Elements` format from `D02 T03 §3` (**Corrected 2026-09-28:** said the suite clipboard format, which does not exist) (Photoshop path export is Gesso's side). Done when: a path copied in one document pastes with equal geometry in another.
 - [ ] Add a Path Commands page to `docs/user/stilus/`. Done when: every command and dialog is listed.
 - [ ] Commit: `"stilus: offset path, average and join, simplify options, split into grid, clean up, and the Join Curves panel"`
 

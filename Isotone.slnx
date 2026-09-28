@@ -8,17 +8,17 @@
     <File Path="nuget.config" />
     <File Path="tests/Isotone.runsettings" />
   </Folder>
-  <Folder Name="/Pinxit/">
-    <Project Path="src/Pinxit/src/Pinxit.Core/Pinxit.Core.csproj" />
-    <Project Path="src/Pinxit/src/Pinxit.FileFormats/Pinxit.FileFormats.csproj" />
-    <Project Path="src/Pinxit/src/Pinxit.Plugins.Abstractions/Pinxit.Plugins.Abstractions.csproj" />
-    <Project Path="src/Pinxit/src/Pinxit.Rendering/Pinxit.Rendering.csproj" />
-    <Project Path="src/Pinxit/src/Pinxit.Scripting/Pinxit.Scripting.csproj" />
-    <Project Path="src/Pinxit/src/Pinxit.UI/Pinxit.UI.csproj" />
+  <Folder Name="/Gesso/">
+    <Project Path="src/Gesso/src/Gesso.Core/Gesso.Core.csproj" />
+    <Project Path="src/Gesso/src/Gesso.FileFormats/Gesso.FileFormats.csproj" />
+    <Project Path="src/Gesso/src/Gesso.Plugins.Abstractions/Gesso.Plugins.Abstractions.csproj" />
+    <Project Path="src/Gesso/src/Gesso.Rendering/Gesso.Rendering.csproj" />
+    <Project Path="src/Gesso/src/Gesso.Scripting/Gesso.Scripting.csproj" />
+    <Project Path="src/Gesso/src/Gesso.UI/Gesso.UI.csproj" />
   </Folder>
-  <Folder Name="/Pinxit/tests/">
-    <Project Path="src/Pinxit/tests/Pinxit.Core.Tests/Pinxit.Core.Tests.csproj" />
-    <Project Path="src/Pinxit/tests/Pinxit.Rendering.Tests/Pinxit.Rendering.Tests.csproj" />
+  <Folder Name="/Gesso/tests/">
+    <Project Path="src/Gesso/tests/Gesso.Core.Tests/Gesso.Core.Tests.csproj" />
+    <Project Path="src/Gesso/tests/Gesso.Rendering.Tests/Gesso.Rendering.Tests.csproj" />
   </Folder>
   <Folder Name="/Stilus/">
     <Project Path="src/Stilus/Bezier.Core/Bezier.Core.csproj" />

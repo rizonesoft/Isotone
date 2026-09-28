@@ -1,7 +1,7 @@
 # EditorConfig: Isotone Graphics Suite
 # https://editorconfig.org
 # One file for the whole repository. Merges the canonical ScratchPad layout rules
-# with Pinxit's detailed C# style and analyzer rules. Legacy overlays in
+# with Gesso's detailed C# style and analyzer rules. Legacy overlays in
 # src/*/Directory.Build.props decide whether style is enforced in build.
 
 root = true

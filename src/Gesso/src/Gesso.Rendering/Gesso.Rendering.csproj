@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>Gesso.Rendering</RootNamespace>
+    <AssemblyName>Gesso.Rendering</AssemblyName>
+    <Description>GPU-accelerated rendering engine using SkiaSharp and ComputeSharp</Description>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.Views.WPF" />
+    <PackageReference Include="ComputeSharp" />
+    <PackageReference Include="Serilog" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gesso.Core\Gesso.Core.csproj" />
+  </ItemGroup>
+
+</Project>

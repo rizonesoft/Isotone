@@ -54,14 +54,14 @@ Minimum window size 1024 x 640; default 1400 x 900 (Bezier's), restored per app 
 - Dock: Properties (Appearance, Transform), Layers (object tree), Artboards, Swatches, History.
 - Canvas: white `artboard` pages on `canvas-surround`; smart guides in `guide-smart`.
 
-### Pinxit (raster)
+### Gesso (raster)
 
 - Menus: File, Edit, Image, Layer, Select, Filter, View, Window, Help.
 - Tool rail in Photoshop's order: Move, Marquee, Lasso, Quick Selection / Magic Wand, Crop, Eyedropper | Healing, Brush, Clone Stamp, History Brush, Eraser, Gradient / Paint Bucket, Blur, Dodge | Pen, Type, Path Selection, Shape | Hand, Zoom | color chips, Quick Mask.
 - Dock (Photoshop's default arrangement): Color / Swatches, Properties / Adjustments, Layers / Channels / Paths, History.
 - Canvas: transparency shows the checkerboard at `checker-tile` 8px.
 
-The previous Pinxit layout (Layers on the left, Properties on the right) moves to this single right dock.
+The previous Gesso layout (Layers on the left, Properties on the right) moves to this single right dock.
 
 ### Albumen (darkroom and photo manager)
 

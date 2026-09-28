@@ -7,7 +7,7 @@ The Isotone Graphics Suite is in pre-alpha and has no published release yet. Onc
 | App | Supported |
 | --- | --------- |
 | Stilus, latest `stilus-v*` release | Yes |
-| Pinxit, latest `pinxit-v*` release | Yes |
+| Gesso, latest `gesso-v*` release | Yes |
 | Albumen, latest `albumen-v*` release | Yes |
 | Isotone suite installer, latest `isotone-v*` release | Yes |
 | Older releases and unreleased builds from `main` | Best effort |
@@ -24,7 +24,7 @@ Report them privately through GitHub's private vulnerability reporting:
 
 Helpful details to include:
 
-- The affected app (Stilus, Pinxit, Albumen, or the installer) and its version or commit
+- The affected app (Stilus, Gesso, Albumen, or the installer) and its version or commit
 - The type of issue, for example a crash or memory corruption when opening a crafted file, or an installer privilege problem
 - Steps to reproduce, and a sample file if the issue is triggered by opening one
 - The impact as you understand it

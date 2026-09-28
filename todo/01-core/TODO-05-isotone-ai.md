@@ -10,19 +10,19 @@ track: C5
 
 # TODO-05 -- Isotone.Core AI: OpenRouter Client, Keys, Consent, Provenance, and the Brand Kit
 
-> **Goal:** The AI plumbing every suite app needs exists once: an OpenRouter client (chat with JSON-schema structured output, image generation and editing, vision, streaming, the model catalog, and key usage), a bring-your-own key stored with DPAPI, a per-task model choice in settings, an explicit-send gate with a send preview, a provenance record every AI action writes into the document, and a suite brand kit of palettes and styles. It lives in `Isotone.Core` (`src/Isotone.Core/AI/`, `src/Isotone.Core/Brand/`) and `Isotone.UI` (`src/Isotone.UI/AI/`) by operator decision (2026-09-26), not in Stilus, so Pinxit and Albumen reuse the client, key store, consent gate, provenance, and brand kit instead of growing their own. Nothing leaves the machine without an explicit user action, and no key ever reaches `settings.json` or a log.
+> **Goal:** The AI plumbing every suite app needs exists once: an OpenRouter client (chat with JSON-schema structured output, image generation and editing, vision, streaming, the model catalog, and key usage), a bring-your-own key stored with DPAPI, a per-task model choice in settings, an explicit-send gate with a send preview, a provenance record every AI action writes into the document, and a suite brand kit of palettes and styles. It lives in `Isotone.Core` (`src/Isotone.Core/AI/`, `src/Isotone.Core/Brand/`) and `Isotone.UI` (`src/Isotone.UI/AI/`) by operator decision (2026-09-26), not in Stilus, so Gesso and Albumen reuse the client, key store, consent gate, provenance, and brand kit instead of growing their own. Nothing leaves the machine without an explicit user action, and no key ever reaches `settings.json` or a log.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` and no `src/Isotone.UI/` yet; `D01 T02 §1` and `D01 T01 §1` create them. No source file in the repository talks to OpenRouter or any HTTP AI endpoint: neither Stilus nor Pinxit contains an `HttpClient`, and nothing uses DPAPI (`ProtectedData`) for secrets. The Stilus SVG reader (`src/Stilus/Bezier.Core/Services/SvgParser.cs`) skips root `<metadata>` children, so a provenance record written there is lost on reopen until `D02 T07 §1` makes the reader keep it. Stilus's `ExportService` strips metadata by default (`RemoveMetadata = true`), which provenance export must respect as an explicit choice. Pinxit keeps its own `SettingsService` today (the store `D01 T02 §2` replaces), so AI settings go only through the shared store. Albumen has no source tree yet; its reuse of this file is a stated consumer, not a dependency.
+> **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` and no `src/Isotone.UI/` yet; `D01 T02 §1` and `D01 T01 §1` create them. No source file in the repository talks to OpenRouter or any HTTP AI endpoint: neither Stilus nor Gesso contains an `HttpClient`, and nothing uses DPAPI (`ProtectedData`) for secrets. The Stilus SVG reader (`src/Stilus/Bezier.Core/Services/SvgParser.cs`) skips root `<metadata>` children, so a provenance record written there is lost on reopen until `D02 T07 §1` makes the reader keep it. Stilus's `ExportService` strips metadata by default (`RemoveMetadata = true`), which provenance export must respect as an explicit choice. Gesso keeps its own `SettingsService` today (the store `D01 T02 §2` replaces), so AI settings go only through the shared store. Albumen has no source tree yet; its reuse of this file is a stated consumer, not a dependency.
 <!-- claim: absent src/Isotone.Core -->
 <!-- claim: absent src/Isotone.UI -->
 <!-- claim: count "OpenRouter" src/Stilus/**/*.cs = 0 -->
 <!-- claim: count "HttpClient" src/Stilus/**/*.cs = 0 -->
-<!-- claim: count "HttpClient" src/Pinxit/**/*.cs = 0 -->
+<!-- claim: count "HttpClient" src/Gesso/**/*.cs = 0 -->
 <!-- claim: count "ProtectedData" src/Stilus/**/*.cs = 0 -->
 <!-- claim: count "\"metadata\"" src/Stilus/Bezier.Core/Services/SvgParser.cs = 1 -->
 <!-- claim: count "public bool RemoveMetadata \{ get; set; \} = true;" src/Stilus/Bezier.Core/Services/ExportService.cs = 1 -->
-<!-- claim: exists src/Pinxit/src/Pinxit.UI/Services/SettingsService.cs -->
+<!-- claim: exists src/Gesso/src/Gesso.UI/Services/SettingsService.cs -->
 <!-- claim: absent src/Albumen -->
 
 ## Inputs
@@ -40,10 +40,10 @@ track: C5
 - -> XREF: D02 T15 §1 -- the first consumer: the Stilus AI menu and provenance panel
 - -> XREF: D02 T15 §5 -- the brand kit's first consumer: brand-constrained recolor
 - -> XREF: D02 T15 §11 -- the suite pipeline that carries provenance across app hand-offs and syncs brand kits
-- -> XREF: D03 T04 §2 -- Pinxit's save, a later consumer of provenance embedding
-- -> XREF: D03 T11 §10 -- Pinxit parity adjustments and color cites §5: brand kit palettes and the ASE reader and writer D03 T11 §10 reuses
-- -> XREF: D03 T16 §4 -- Pinxit parity type and vectors cites §5: brand kit type styles shown in D03 T16 §4's styles panels
-- -> XREF: D03 T19 §1 -- Pinxit AI cites §1: the client, image generate and edit, structured output, and the recorded transport every test there runs over; §2: the key store and per-task model settings Pinxit extends; §3: the provenance record, store, re-run, and diff embedded in the `.pinxit` document; §4: the send gate, send preview, AI settings page, progress panel, and usage indicator; §5: the brand kit library and `BrandKitConstraint`
+- -> XREF: D03 T04 §2 -- Gesso's save, a later consumer of provenance embedding
+- -> XREF: D03 T11 §10 -- Gesso parity adjustments and color cites §5: brand kit palettes and the ASE reader and writer D03 T11 §10 reuses
+- -> XREF: D03 T16 §4 -- Gesso parity type and vectors cites §5: brand kit type styles shown in D03 T16 §4's styles panels
+- -> XREF: D03 T19 §1 -- Gesso AI cites §1: the client, image generate and edit, structured output, and the recorded transport every test there runs over; §2: the key store and per-task model settings Gesso extends; §3: the provenance record, store, re-run, and diff embedded in the `.gesso` document; §4: the send gate, send preview, AI settings page, progress panel, and usage indicator; §5: the brand kit library and `BrandKitConstraint`
 - -> XREF: D04 T10 §1 -- Albumen AI cites §1: the client, structured output, image generation, and the recorded transport every test here runs over; §2: the DPAPI key store and per-task model settings; §3: the provenance record, re-run, and compare; §4: the send gate, send preview, AI settings page, progress panel, and usage indicator
 - -> XREF: D01 T12 §1 -- on-device models route beside the OpenRouter client, write the same provenance record, and embed the Model Manager in the AI settings page (D01 T12 §3)
 
@@ -75,7 +75,7 @@ track: C5
 
 ## 1. The OpenRouter Client: Chat, Structured Output, Images, Streaming, and the Model Catalog
 
-Every AI feature in the suite talks to one client, so Stilus, Pinxit, and Albumen never grow three HTTP stacks with three sets of error messages. The runtime is OpenRouter with the user's own key (bring your own key), reached over `HttpClient` with no vendor SDK. The client is library code with an interface apps and tests depend on; all tests run against a recorded-response `HttpMessageHandler`, never the network, and no test needs a live key. Catalog: NP-2478 (generation timeout, retries, and cancellation). Admission: the acceptance-bar aims "AI results are editable, undoable, and reproducible" and "Shared once, never copied" (operator decision placing the AI core in `Isotone.Core`).
+Every AI feature in the suite talks to one client, so Stilus, Gesso, and Albumen never grow three HTTP stacks with three sets of error messages. The runtime is OpenRouter with the user's own key (bring your own key), reached over `HttpClient` with no vendor SDK. The client is library code with an interface apps and tests depend on; all tests run against a recorded-response `HttpMessageHandler`, never the network, and no test needs a live key. Catalog: NP-2478 (generation timeout, retries, and cancellation). Admission: the acceptance-bar aims "AI results are editable, undoable, and reproducible" and "Shared once, never copied" (operator decision placing the AI core in `Isotone.Core`).
 
 **Fidelity:** no surface of its own (library code; the surfaces that present it are §4).
 
@@ -112,7 +112,7 @@ The user's OpenRouter key is a credential, and `AGENTS.md` says credentials neve
 
 - [ ] Add `System.Security.Cryptography.ProtectedData` (MIT) to `Directory.Packages.props` and `src/Isotone.Core/Isotone.Core.csproj`, with a `docs/dev/decisions.md` row (why DPAPI, the GPL-3.0 check, and the alternative considered: Windows Credential Manager). Done when: the build is green and the row names the Microsoft Learn URL.
 - [ ] Add `src/Isotone.Core/AI/AiKeyStore.cs` implementing `IAiKeyStore` plus `SetKeyAsync` and `RemoveKey`, writing `ProtectedData.Protect(bytes, entropy, DataProtectionScope.CurrentUser)` to `%LOCALAPPDATA%\Rizonesoft\Isotone\ai\openrouter.key` through the atomic writer, with a fixed per-suite entropy constant. Done when: `AiKeyStoreTests.RoundTrip` sets and reads a key and asserts the file bytes do not contain the key string in UTF-8 or UTF-16.
-- [ ] One key serves every suite app: the path is under `Isotone`, never under an app folder. Done when: a test resolves the path for app names Stilus, Pinxit, and Albumen and gets the same file.
+- [ ] One key serves every suite app: the path is under `Isotone`, never under an app folder. Done when: a test resolves the path for app names Stilus, Gesso, and Albumen and gets the same file.
 - [ ] The plaintext key is held only for the duration of one call (`GetKey` decrypts on demand; nothing caches it in a static or long-lived field). Done when: a reflection test asserts `AiKeyStore` has no string field after `SetKeyAsync` completes.
 - [ ] `KeyFingerprint` returns only the last 4 characters prefixed by an ellipsis, and is the only form ever displayed or logged. Done when: a test asserts a 40-character key yields a 5-character fingerprint.
 - [ ] A corrupt blob or one written by another Windows account (`CryptographicException`) is refused by name: "The saved key cannot be read on this account; enter it again". Done when: `AiKeyStoreTests.ForeignBlob_Refuses` writes random bytes to the key file and asserts the sentence and that `HasKey` becomes false.
@@ -144,7 +144,7 @@ Explainable and reproducible is one of the three AI pillars: every AI action rec
 - [ ] Adding and removing records are commands (`AddProvenanceCommand`, `RemoveProvenanceCommand`) implementing `IUndoableCommand` from the `D01 T02 §4` suite history (`src/Isotone.Core/History/`), so an undone generation also drops its record. Done when: a test executes, undoes, and redoes an add and asserts the store's contents at each step.
 - [ ] Add `ProvenanceRecord.ToRerun(bool sameSeed)` returning a `RerunRequest` that rebuilds the exact request (model, parameters, system prompt hash reference, seed or a new seed) with `ParentId` set. Done when: `RerunTests.SameSeed_EqualsOriginalRequest` compares the rebuilt request with the recorded fixture request field by field.
 - [ ] Add `ProvenanceDiff.Compare(a, b)` listing parameter, model, prompt, and seed differences as ordered `ProvenanceDifference` entries for the compare view. Done when: `ProvenanceDiffTests` assert the exact list for two fixture records that differ in seed and one parameter.
-- [ ] Hand-off rule: a record's `App` field is preserved and never rewritten by a consumer app, so a record written by Pinxit or Albumen survives a Stilus save (`D02 T15 §11` relies on it). Done when: a test reads a record with `App="pinxit"`, adds it to a store, serializes, and asserts `App` is unchanged.
+- [ ] Hand-off rule: a record's `App` field is preserved and never rewritten by a consumer app, so a record written by Gesso or Albumen survives a Stilus save (`D02 T15 §11` relies on it). Done when: a test reads a record with `App="gesso"`, adds it to a store, serializes, and asserts `App` is unchanged.
 - [ ] Commit the fixtures `tests/fixtures/isotone/provenance/v1-record.svg`, `v1-record.json`, and `v1-record-future.svg` with a README naming what each proves. Done when: the README lists each file.
 - [ ] Log `Provenance {Action} recorded {RecordId} ({ModelId}, seed {Seed})` when a record is added. Done when: a store test asserts the line through a captured sink.
 - [ ] Commit: `"core: the AI provenance record with SVG metadata and JSON forms, re-run, and compare"`
@@ -185,7 +185,7 @@ Nothing leaves the machine without an explicit user action, and the user sees ex
 
 ## 5. The Suite Brand Kit: Shared Palettes and Styles
 
-Suite-aware is the second AI pillar: a designer's brand colors, type styles, and logos are defined once and used by Stilus, Pinxit, and Albumen, and AI generation can be constrained to them. This section defines the brand kit file format and library in `Isotone.Core`, stored in a shared folder every app reads and watches, with Adobe Swatch Exchange import and export, and a constraint helper that turns a kit into a prompt fragment and a JSON-schema enum. It has no catalog rows of its own; `D02 T15 §5` and `D02 T15 §2` are its first consumers. No licensed color books are bundled: a kit holds only colors the user creates or imports.
+Suite-aware is the second AI pillar: a designer's brand colors, type styles, and logos are defined once and used by Stilus, Gesso, and Albumen, and AI generation can be constrained to them. This section defines the brand kit file format and library in `Isotone.Core`, stored in a shared folder every app reads and watches, with Adobe Swatch Exchange import and export, and a constraint helper that turns a kit into a prompt fragment and a JSON-schema enum. It has no catalog rows of its own; `D02 T15 §5` and `D02 T15 §2` are its first consumers. No licensed color books are bundled: a kit holds only colors the user creates or imports.
 
 **Fidelity:** no surface of its own (each app's swatch and AI panels present it; Stilus's is `D02 T15 §5`).
 
@@ -200,10 +200,10 @@ Suite-aware is the second AI pillar: a designer's brand colors, type styles, and
 - [ ] Add `BrandKitLibrary.ImportAse(path)` creating a kit from an ASE file (groups become palettes) and `ExportAse(kitId, path)` writing its palettes. Done when: importing and re-exporting the RGB fixture produces a file whose parse equals the original.
 - [ ] Add `src/Isotone.Core/Brand/BrandKitConstraint.cs` turning a kit into an AI prompt fragment (palette names, roles, type roles, rules) and a JSON-schema `enum` of allowed hex colors, so structured generation can only return kit colors. Done when: `BrandKitConstraintTests` assert the enum equals the kit's colors and that the §1 `JsonSchemaValidator` rejects a document with a non-kit color.
 - [ ] Settings: `brand.activeKitId` (per app, default none) and `brand.kitsFolder` (default the path above), each with its consumer named (`BrandKitLibrary` for the folder, each app's swatch and AI panels for the active kit). Done when: `BrandSettingsTests.Defaults` reads both keys from an empty store and gets the defaults.
-- [ ] A cross-app test proves the format is shared: a kit written with app name Stilus is listed and read by a library created with app name Pinxit. Done when: `BrandKitLibraryTests.CrossApp_ReadsSameKits` passes.
+- [ ] A cross-app test proves the format is shared: a kit written with app name Stilus is listed and read by a library created with app name Gesso. Done when: `BrandKitLibraryTests.CrossApp_ReadsSameKits` passes.
 - [ ] Commit: `"core: the suite brand kit with shared storage, ASE exchange, and AI constraints"`
 
-**Test checkpoint:** Format fidelity proof: `dotnet test Isotone.slnx --filter "FullyQualifiedName~Isotone.Core.Tests.Brand"` exits 0: each committed ASE fixture reads, writes, and rereads with every color, group, and spot flag equal, and matches the Inkscape and Krita golden parses; `BrandKitTests` round-trip `kit.json`; `BrandKitLibraryTests.CrossApp_ReadsSameKits` proves one format for the suite. Cheaper substitute that fails: a Stilus-only palette file, which Pinxit cannot read and the cross-app library test catches.
+**Test checkpoint:** Format fidelity proof: `dotnet test Isotone.slnx --filter "FullyQualifiedName~Isotone.Core.Tests.Brand"` exits 0: each committed ASE fixture reads, writes, and rereads with every color, group, and spot flag equal, and matches the Inkscape and Krita golden parses; `BrandKitTests` round-trip `kit.json`; `BrandKitLibraryTests.CrossApp_ReadsSameKits` proves one format for the suite. Cheaper substitute that fails: a Stilus-only palette file, which Gesso cannot read and the cross-app library test catches.
 
 ## Verification
 
@@ -211,5 +211,5 @@ Suite-aware is the second AI pillar: a designer's brand colors, type styles, and
 - [ ] `dotnet test Isotone.slnx --filter "FullyQualifiedName~Isotone.Core.Tests.AI|FullyQualifiedName~Isotone.Core.Tests.Brand|FullyQualifiedName~Isotone.UI.Tests.AI"` exits 0 with the network unavailable to the test host
 - [ ] No test in the solution reads an OpenRouter key from the environment or contacts `openrouter.ai`: `grep -rn "openrouter.ai" tests/` matches only fixture READMEs
 - [ ] The leak guard (`KeyLeakGuardTests`) passes and a manual scan of `%LOCALAPPDATA%\Rizonesoft\` after a driven session finds no key string
-- [ ] Pending second consumer recorded, not claimed: `D02 T15` is the first consumer of every type here; Pinxit AI (`D03 T19 §1`) and Albumen AI (`D04 T10 §1`) are the planned second consumers, and no `Isotone.Core.AI` type is duplicated in any app
+- [ ] Pending second consumer recorded, not claimed: `D02 T15` is the first consumer of every type here; Gesso AI (`D03 T19 §1`) and Albumen AI (`D04 T10 §1`) are the planned second consumers, and no `Isotone.Core.AI` type is duplicated in any app
 - [ ] `python scripts/todo-graph.py validate` clean

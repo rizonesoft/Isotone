@@ -44,4 +44,4 @@ The decoder library is a recorded decision (`docs/dev/decisions.md`) with its li
 
 ## Hand-offs
 
-"Edit in Pinxit" writes a rendered 16-bit TIFF beside the catalog's working folder, starts Pinxit when it is installed, and imports the edited result as a new version stacked with the original. When Pinxit is not installed, the command is disabled with a tooltip saying so. Albumen never loads Pinxit's assemblies.
+"Edit in Gesso" writes a rendered 16-bit TIFF beside the catalog's working folder, starts Gesso when it is installed, and imports the edited result as a new version stacked with the original. When Gesso is not installed, the command is disabled with a tooltip saying so. Albumen never loads Gesso's assemblies.

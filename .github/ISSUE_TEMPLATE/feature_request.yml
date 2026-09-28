@@ -14,7 +14,7 @@ body:
       label: App
       options:
         - Stilus (vector editor)
-        - Pinxit (raster editor)
+        - Gesso (raster editor)
         - Albumen (darkroom and library)
         - Installer or portable ZIP
         - Whole suite or Isotone.Core

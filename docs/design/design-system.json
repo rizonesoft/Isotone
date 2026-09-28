@@ -22,11 +22,11 @@
         "stilus-24.svg",
         "stilus-32.svg",
         "stilus-splash.svg",
-        "pinxit.svg",
-        "pinxit-16.svg",
-        "pinxit-24.svg",
-        "pinxit-32.svg",
-        "pinxit-splash.svg",
+        "gesso.svg",
+        "gesso-16.svg",
+        "gesso-24.svg",
+        "gesso-32.svg",
+        "gesso-splash.svg",
         "albumen.svg",
         "albumen-16.svg",
         "albumen-24.svg",
@@ -64,32 +64,32 @@
           "size": 4933,
           "type": "image/svg+xml"
         },
-        "pinxit.svg": {
-          "name": "pinxit.svg",
+        "gesso.svg": {
+          "name": "gesso.svg",
           "blob": "5d6e142a182698cca5e83803568974f0",
           "size": 3170,
           "type": "image/svg+xml"
         },
-        "pinxit-16.svg": {
-          "name": "pinxit-16.svg",
+        "gesso-16.svg": {
+          "name": "gesso-16.svg",
           "blob": "29e855414f9149085c647878e6ebe63f",
           "size": 1302,
           "type": "image/svg+xml"
         },
-        "pinxit-24.svg": {
-          "name": "pinxit-24.svg",
+        "gesso-24.svg": {
+          "name": "gesso-24.svg",
           "blob": "45de41eeb1f52234e344e9274efa341d",
           "size": 1387,
           "type": "image/svg+xml"
         },
-        "pinxit-32.svg": {
-          "name": "pinxit-32.svg",
+        "gesso-32.svg": {
+          "name": "gesso-32.svg",
           "blob": "a14a1e039a1fada439f61ccd1df55acc",
           "size": 1455,
           "type": "image/svg+xml"
         },
-        "pinxit-splash.svg": {
-          "name": "pinxit-splash.svg",
+        "gesso-splash.svg": {
+          "name": "gesso-splash.svg",
           "blob": "fd7fd384b9913ecaf1cfaef8fbc0a63f",
           "size": 5245,
           "type": "image/svg+xml"

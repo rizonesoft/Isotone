@@ -55,7 +55,7 @@ track: L4
 - -> XREF: D04 T01 §8 -- the library grid §1 opens photos from and the `T` key filters until browse mode ships
 - -> XREF: D04 T01 §11 -- the XMP sidecars §9 and §16 write ratings and orientation into
 - -> XREF: D04 T02 §3 -- the histogram control §9 hosts
-- -> XREF: D04 T02 §7 -- Edit in Pinxit from the viewer (§1)
+- -> XREF: D04 T02 §7 -- Edit in Gesso from the viewer (§1)
 - -> XREF: D04 T05 §1 -- browse mode, the target of the `T` key once it ships
 - -> XREF: D04 T05 §6 -- the rename journal §6's renames follow once it ships
 - -> XREF: D04 T08 §8 -- metadata writing into sidecars, and into originals only on the opt-in, which §9's metadata edits reach once it ships
@@ -131,8 +131,8 @@ IrfanView opens an image before the user notices a window because it is a tiny n
 
 **Fidelity:** new build, no baseline; captured to docs/captures/albumen/viewer/.
 **Design:** docs/design/components/WindowChrome/README.md, docs/design/components/Menu/README.md, docs/design/components/StatusBar/README.md, docs/design/components/Dialog/README.md, docs/design/components/Icons/README.md, new surface: docs/design/components/AlbumenViewer/README.md -- states: all in spec -- themes: all four -- density: both
-**Job:** a user double-clicks a photo in Explorer and sees it before they notice a window opening, and reaches the library, browse, develop, or Pinxit from it with one key. Consumer: none: this surface is the consumer of the codec registry, and `Albumen.exe` consumes the hand-off arguments.
-**Treatment:** a borderless-feeling window with the image, a slim bottom toolbar, and a status strip; `Esc` closes; `T` opens the folder in Albumen, `Ctrl+L` opens the photo in the library, `Ctrl+E` hands it to Pinxit. Cheaper substitute that fails the checkpoint: launching `Albumen.exe` with a loupe, which pays for the catalog and module shell and misses the budget.
+**Job:** a user double-clicks a photo in Explorer and sees it before they notice a window opening, and reaches the library, browse, develop, or Gesso from it with one key. Consumer: none: this surface is the consumer of the codec registry, and `Albumen.exe` consumes the hand-off arguments.
+**Treatment:** a borderless-feeling window with the image, a slim bottom toolbar, and a status strip; `Esc` closes; `T` opens the folder in Albumen, `Ctrl+L` opens the photo in the library, `Ctrl+E` hands it to Gesso. Cheaper substitute that fails the checkpoint: launching `Albumen.exe` with a loupe, which pays for the catalog and module shell and misses the budget.
 **Chrome:** consume the `Isotone.UI` theme and dialog styles and `Isotone.Core` settings, logging, and single instance. Do not build a dependency-injection container before the first paint.
 
 **Requires:** display-session -- the startup harness launches the published viewer and times its first rendered frame
@@ -154,7 +154,7 @@ IrfanView opens an image before the user notices a window because it is a tiny n
 - [ ] Add File, Open in New Window for the current file (LP-0004). Done when: the command opens a second window on the same image with its own folder position.
 - [ ] Implement exit behavior (LP-0006): `Esc` closes, `Albumen.Viewer.WarnOnEscExit` asks first, unsaved quick edits prompt Save As through §6, and `Albumen.Viewer.DoubleClickCloses` closes on a double-click of the image. Done when: each setting is read back from `settings.json` and changes the behavior in a driven run.
 - [ ] Add `ViewerHandoff` in `src/Albumen/Isotone.Albumen.Core/Viewer/ViewerHandoff.cs` starting or forwarding to `Albumen.exe` with `--browse <folder> --select <file>` on `T`; until `D04 T05 §1` ships, Albumen opens the library grid of `D04 T01 §8` filtered to that folder (LP-0001). Done when: a driven `T` selects the photo in Albumen (capture).
-- [ ] Map `Ctrl+L` to `--library <file>`, the Develop entry to `--develop <file>`, and `Ctrl+E` to `D04 T02 §7`'s Edit in Pinxit command, disabled with its tooltip when Pinxit is absent (LP-0001). Done when: `ViewerHandoffTests` assert each argument pair through a fake launcher.
+- [ ] Map `Ctrl+L` to `--library <file>`, the Develop entry to `--develop <file>`, and `Ctrl+E` to `D04 T02 §7`'s Edit in Gesso command, disabled with its tooltip when Gesso is absent (LP-0001). Done when: `ViewerHandoffTests` assert each argument pair through a fake launcher.
 - [ ] Teach `Albumen.exe` (`src/Albumen/Isotone.Albumen.Desktop/App.xaml.cs`) to accept `--browse`, `--select`, `--library`, and `--develop` directly and through its single-instance forward, and add `F3` in the grid and loupe to open the selected photo in the viewer (LP-0001). Done when: `ViewerHandoffTests` cover the forwarded case and a driven `F3` opens the viewer on the selection.
 - [ ] Log one Information line per open (`Viewer opened {Path} in {Ms} ms by {Decoder}`) and per hand-off (`Viewer handed {Path} to Albumen as {Mode}`). Done when: a test logger sees both.
 - [ ] Add `docs/user/albumen/viewer.md` (opening files, keys, hand-offs) and commit the captures under `docs/captures/albumen/viewer/`. Done when: the page names every key in the Treatment and the capture folder holds the window and a hand-off.
@@ -416,7 +416,7 @@ IrfanView's quick slideshow plays a folder or a hand-picked list with music in s
 
 ## 10. Multi-page and animated images in the viewer
 
-Scanned documents and animations are pages and frames, not one picture. This section pages through multi-page TIFF, PDF, ICO, and DjVu files with page thumbnails and plays animated GIF, APNG, WebP, AVIF, ANI, and MNG files with frame stepping and speed, and can play a multi-page file as an animation. Viewing only: frame extraction is `D04 T16 §3` and animation authoring is Pinxit's (`D03 T23 §5`), and the menu says so. Catalog: LP-0059 to LP-0061, LP-0114, LP-0972 (5 features). -> SOURCE: parity-albumen-viewer-pages
+Scanned documents and animations are pages and frames, not one picture. This section pages through multi-page TIFF, PDF, ICO, and DjVu files with page thumbnails and plays animated GIF, APNG, WebP, AVIF, ANI, and MNG files with frame stepping and speed, and can play a multi-page file as an animation. Viewing only: frame extraction is `D04 T16 §3` and animation authoring is Gesso's (`D03 T23 §5`), and the menu says so. Catalog: LP-0059 to LP-0061, LP-0114, LP-0972 (5 features). -> SOURCE: parity-albumen-viewer-pages
 
 **Fidelity:** new build, no baseline; captured to docs/captures/albumen/viewer-pages/.
 **Design:** docs/design/components/Slider/README.md, docs/design/components/Button/README.md, docs/design/components/Menu/README.md, new surface: docs/design/components/AlbumenViewer/README.md -- states: all in spec -- themes: all four -- density: both
@@ -433,7 +433,7 @@ Scanned documents and animations are pages and frames, not one picture. This sec
 - [ ] Add playback speed 0.25x to 4x and the toolbar controls (LP-0060). Done when: a 4x setting halves then halves again the measured frame interval in a test with a fake clock.
 - [ ] Add animation on or off and "show the first frame only" (LP-0114) as `Albumen.Viewer.Animate`. Done when: the setting off shows frame one and the toolbar play starts it.
 - [ ] Add Play Pages as Animation (LP-0061) with a chosen delay. Done when: the TIFF fixture's pages advance at the delay in a test with a fake clock.
-- [ ] Say in the Image menu that frame extraction is planned in `D04 T16 §3` and animation authoring in Pinxit (`D03 T23 §5`). Done when: the disabled entries' tooltips name `D04 T16 §3` and `D03 T23 §5`.
+- [ ] Say in the Image menu that frame extraction is planned in `D04 T16 §3` and animation authoring in Gesso (`D03 T23 §5`). Done when: the disabled entries' tooltips name `D04 T16 §3` and `D03 T23 §5`.
 - [ ] Commit fixtures under `tests/fixtures/albumen/viewer/pages/`: a three-page TIFF, a four-page PDF, a multi-size ICO, a two-page DjVu, and GIF, APNG, animated WebP, animated AVIF, ANI, and MNG files, with per-frame goldens exported by ImageMagick 7.1 (version in `VERSION.txt`). Done when: the fixtures, goldens, and version file are committed.
 - [ ] Add `PageNavigatorTests` and `AnimationPlayerTests` in `tests/Isotone.Albumen.Tests/Viewer/`. Done when: both classes pass.
 - [ ] Add the pages and animation section to `docs/user/albumen/viewer.md` and commit captures under `docs/captures/albumen/viewer-pages/`. Done when: the page and captures exist.
@@ -508,7 +508,7 @@ IrfanView's color commands are fast corrections and conversions: brightness and 
 
 ## 13. Quick edits IV: text, watermarks, borders, and combining images
 
-Captioning, branding, framing, and tiling a photo should not need an editor. This section adds inserted text with placeholders and effects, image watermarks, paste-in and paste-beside collages, color highlights, speech bubbles, borders and frames, shaped crops and shadows, combining images side by side, and exporting tiles, each through `D04 T11 §8`'s overlay engine and `D04 T11 §2`'s tokens, saved through §6 or as new files. Layered editing hands off to Pinxit. Catalog: LP-0147 to LP-0158 (12 features). -> SOURCE: parity-albumen-quick-edits-overlays
+Captioning, branding, framing, and tiling a photo should not need an editor. This section adds inserted text with placeholders and effects, image watermarks, paste-in and paste-beside collages, color highlights, speech bubbles, borders and frames, shaped crops and shadows, combining images side by side, and exporting tiles, each through `D04 T11 §8`'s overlay engine and `D04 T11 §2`'s tokens, saved through §6 or as new files. Layered editing hands off to Gesso. Catalog: LP-0147 to LP-0158 (12 features). -> SOURCE: parity-albumen-quick-edits-overlays
 
 **Fidelity:** new build, no baseline; captured to docs/captures/albumen/viewer-overlays/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/TextBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/NumberBox/README.md, docs/design/components/Swatches/README.md, docs/design/components/Slider/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both

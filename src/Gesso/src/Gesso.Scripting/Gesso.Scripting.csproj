@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RootNamespace>Gesso.Scripting</RootNamespace>
+    <AssemblyName>Gesso.Scripting</AssemblyName>
+    <Description>Roslyn-based scripting engine for Gesso automation</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" />
+    <PackageReference Include="Serilog" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gesso.Core\Gesso.Core.csproj" />
+    <ProjectReference Include="..\Gesso.Plugins.Abstractions\Gesso.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

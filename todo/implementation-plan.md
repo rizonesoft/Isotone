@@ -1,12 +1,12 @@
 # Isotone -- Implementation Plan to 100%
 
-The order to run every section in, from today to independently distributed releases of Stilus, Pinxit, and Albumen and the first Isotone Graphics Suite bundle.
+The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
 > **Progress:** **0 of 752 sections complete (0%).** 752 sections (1 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
-Seeded 2026-09-26 from the imported Bezier and Imago code (now Stilus and Pinxit), their legacy roadmaps (kept in [`../docs/legacy/`](../docs/legacy/README.md)), the Photon planning notes (now Isotone), and the operator's decisions recorded in [`../AGENTS.md`](../AGENTS.md).
+Seeded 2026-09-26 from the imported Bezier and Imago code (now Stilus and Gesso), their legacy roadmaps (kept in [`../docs/legacy/`](../docs/legacy/README.md)), the Photon planning notes (now Isotone), and the operator's decisions recorded in [`../AGENTS.md`](../AGENTS.md).
 
 **How to use this.** The front door is the `process-plan` skill. It audits, then runs `process-phase` on the first phase that has a ready row, then the next ready phase after that closeout or park. One row is `process-todo-section` then `review-todo-section`. Do not invent a side loop.
 
@@ -65,11 +65,11 @@ The finished suite is **three standalone creative applications that behave like 
 | Print and PDF output are prepress-grade | `D02 T13 §5` · `D02 T13 §7` · `D02 T13 §14` · `D02 T13 §15` |
 | AI results are editable, undoable, and reproducible | `D01 T05 §3` · `D02 T15 §1` · `D02 T15 §2` · `D02 T15 §6` · `D03 T19 §1` · `D03 T19 §2` · `D04 T10 §1` · `D04 T10 §4` · `D04 T10 §7` · `D01 T12 §1` · `D03 T19 §16` |
 | Nothing leaves the machine without an explicit user action | `D01 T05 §2` · `D01 T05 §4` · `D03 T19 §1` · `D04 T10 §1` · `D04 T08 §6` · `D01 T10 §6` · `D01 T12 §2` |
-| Pinxit covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog | `D00 T01 §7` (the catalog gate) · `D03 T21 §1`-`§12` (each release reconciles its phase) · `D03 T21 §13`-`§15` (automation, video and animation, and on-device models after the first release) |
-| Pinxit round-trips Photoshop documents: PSD and PSB open and save with layers, masks, adjustments, styles, text, and smart objects live | `D03 T17 §2` · `D03 T17 §13` · `D03 T17 §3` |
-| Pinxit opens and saves GIMP's XCF | `D03 T17 §4` · `D03 T17 §14` |
+| Gesso covers every Photoshop, Affinity Photo, and GIMP capability in its parity catalog | `D00 T01 §7` (the catalog gate) · `D03 T21 §1`-`§12` (each release reconciles its phase) · `D03 T21 §13`-`§15` (automation, video and animation, and on-device models after the first release) |
+| Gesso round-trips Photoshop documents: PSD and PSB open and save with layers, masks, adjustments, styles, text, and smart objects live | `D03 T17 §2` · `D03 T17 §13` · `D03 T17 §3` |
+| Gesso opens and saves GIMP's XCF | `D03 T17 §4` · `D03 T17 §14` |
 | Editing stays non-destructive: adjustment layers, smart and live filters, masks, and linked content never overwrite pixels until the user applies | `D03 T08 §1` · `D03 T09 §3` · `D03 T09 §9` · `D03 T11 §1` · `D03 T14 §1` |
-| AI results in Pinxit are new layers and masks, undoable, and reproducible | `D03 T19 §1` · `D03 T19 §2` · `D03 T19 §3` · `D03 T19 §6` |
+| AI results in Gesso are new layers and masks, undoable, and reproducible | `D03 T19 §1` · `D03 T19 §2` · `D03 T19 §3` · `D03 T19 §6` |
 | Albumen covers every Lightroom Classic, ACDSee Photo Studio Ultimate, and IrfanView capability in its parity catalog | `D00 T01 §8` (the catalog gate) · `D04 T15 §1`-`§10` (each release reconciles its phase) · `D04 T15 §11`-`§14` (automation, video and audio, on-device models, and the remaining formats after the first release) |
 | Any image opens instantly: the Albumen Viewer paints its first pixel within its recorded startup budgets (cold, warm, hand-off, and next image) and can be the Windows default viewer for every format Albumen reads | `D04 T04 §1` · `D04 T04 §2` · `D04 T04 §3` · `D04 T04 §17` · `D04 T13 §1` |
 | Any folder can be browsed without importing it, listed and indexed in the background within its recorded budgets | `D04 T05 §1` · `D04 T05 §2` · `D04 T05 §4` |
@@ -87,15 +87,15 @@ Nothing in this plan has been built, but the tree is not empty.
 
 **Stilus** (imported from Bezier with history under `src/Stilus/`, still named `Bezier.*`) is a working WPF vector editor: a SkiaSharp canvas, SVG import and export, select, pen, shape, text, zoom, and pan tools, an undo history, and 968 test methods. Measured on 2026-09-26, it is also mostly unwired: 25 of 31 Core services are referenced only by tests, 26 Object and Path menu commands only set status text, resize and rotate are not undoable, the composition root registers one type, it never writes a log file, and it builds with 334 warnings excused. Its legacy roadmap claims about 420 items done; many of those are code nobody can reach.
 
-**Pinxit** (imported under `src/Pinxit/`) has a sound core model (layers, masks, selections, tiles, color, history) with 41 test methods, a WPF shell still built on WPF-UI, a document service that pretends, and no rendering, tools, or codecs. A local branch carries a December 2025 snapshot with a canvas, ruler, and a WPF-UI-free main window that `D03 T01 §2` ports.
+**Gesso** (imported under `src/Gesso/`) has a sound core model (layers, masks, selections, tiles, color, history) with 41 test methods, a WPF shell still built on WPF-UI, a document service that pretends, and no rendering, tools, or codecs. A local branch carries a December 2025 snapshot with a canvas, ruler, and a WPF-UI-free main window that `D03 T01 §2` ports.
 
 **Albumen** has no code; it is planned in full in `todo/04-albumen/`.
 
-**Albumen parity** is planned, not built: on 2026-09-27 the operator decided Albumen gets the features of Lightroom Classic, ACDSee Photo Studio Ultimate, and IrfanView ("Now Lumen. I want features from Lightroom, but I've alwyas been loving ACDSee photo manager and IrfanView"), with three pillars: a fast default image viewer, browsing without importing, and batch tools as core Albumen features. The catalog in [`../docs/parity/albumen-parity.md`](../docs/parity/albumen-parity.md) routes each of their 8,919 inventory rows (Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, IrfanView 4.76) to a section, a backlog entry, an exclusion, or another app (ACDSee's layered Edit mode to named Pinxit rows), and Phases 30 to 39 run the sections between Albumen 0.1.0 and distribution. Originals stay safe by default with the operator's opt-in writes ("Safe by default, opt-in writes"); tethered capture (B-048), self-running slideshow executables and screen savers (B-049), and an Explorer preview handler (B-051) wait in the backlog.
+**Albumen parity** is planned, not built: on 2026-09-27 the operator decided Albumen gets the features of Lightroom Classic, ACDSee Photo Studio Ultimate, and IrfanView ("Now Lumen. I want features from Lightroom, but I've alwyas been loving ACDSee photo manager and IrfanView"), with three pillars: a fast default image viewer, browsing without importing, and batch tools as core Albumen features. The catalog in [`../docs/parity/albumen-parity.md`](../docs/parity/albumen-parity.md) routes each of their 8,919 inventory rows (Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, IrfanView 4.76) to a section, a backlog entry, an exclusion, or another app (ACDSee's layered Edit mode to named Gesso rows), and Phases 30 to 39 run the sections between Albumen 0.1.0 and distribution. Originals stay safe by default with the operator's opt-in writes ("Safe by default, opt-in writes"); tethered capture (B-048), self-running slideshow executables and screen savers (B-049), and an Explorer preview handler (B-051) wait in the backlog.
 
-**Stilus parity** is planned, not built: on 2026-09-26 the operator decided Stilus gets every CorelDRAW and every Illustrator feature, the catalog in [`../docs/parity/stilus-parity.md`](../docs/parity/stilus-parity.md) routes each of their 4,335 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 4 to 13 run the sections between Stilus 0.1.0 and Pinxit's foundation.
+**Stilus parity** is planned, not built: on 2026-09-26 the operator decided Stilus gets every CorelDRAW and every Illustrator feature, the catalog in [`../docs/parity/stilus-parity.md`](../docs/parity/stilus-parity.md) routes each of their 4,335 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 4 to 13 run the sections between Stilus 0.1.0 and Gesso's foundation.
 
-**Pinxit parity** is planned, not built: the same day the operator decided Pinxit gets every Photoshop feature and those of at least two other popular raster editors, chosen as Affinity Photo (Affinity 3.3) and GIMP 3.2.6; the catalog in [`../docs/parity/pinxit-parity.md`](../docs/parity/pinxit-parity.md) routes each of their 10,829 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 16 to 27 run the sections between Pinxit 0.1.0 and Albumen's foundation. Scripting, macros, batch processing, video, and animation run after the first release, in Phases 42 and 43, with scripting and macros as one suite-wide system.
+**Gesso parity** is planned, not built: the same day the operator decided Gesso gets every Photoshop feature and those of at least two other popular raster editors, chosen as Affinity Photo (Affinity 3.3) and GIMP 3.2.6; the catalog in [`../docs/parity/gesso-parity.md`](../docs/parity/gesso-parity.md) routes each of their 10,829 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 16 to 27 run the sections between Gesso 0.1.0 and Albumen's foundation. Scripting, macros, batch processing, video, and animation run after the first release, in Phases 42 and 43, with scripting and macros as one suite-wide system.
 
 **After the first release** is planned, not built: on 2026-09-27 the operator worried "features will be left behind" and chose to plan the work once deferred to after the first release as real sections rather than backlog entries. Phases 42 to 45 run it after the suite bundle and the shared-decoder imports: suite automation (actions, C# scripting, the automation and MCP servers, extensions, the command line, and batch with droplets), video and audio with frame animation, on-device models beside the OpenRouter default with the GPU develop path, and Albumen's remaining formats (SWF, an optional user-installed GDAL for ECW, MrSID, JPM, and MRC, and clean-room analysis of four undocumented layered formats), each phase ending in app releases and the last in `isotone-v1.1.0`; Albumen's CAD and plotter drawings land earlier, in Phase 30, on Stilus's readers moved to `Isotone.Core`.
 
@@ -147,7 +147,7 @@ The copyright holder is Rizonetech (Pty) Ltd and Rizonesoft is its brand; the re
 
 ### Phase 0 -- Workspace spine: gates, CI, import debt, and baselines
 
-Nothing in this plan can be proven until the gates run on every clone and every push, so this phase wires the commit hook, marks operator-only rows, raises the claims ratchet, proves the review panel, and reads back the first green CI runs. It also retires the import debt that belongs to the workspace (the test quarantine, Pinxit's excused diagnostics, unused packages, the assertion library's license), records before captures of the imported apps (a record of the legacy look, never a fidelity source), lands the design contract gates (the `**Design:**` line and its shrink-only baseline, design-lint over the UI sources, the design reference renders; operator decisions 2026-09-27) so every later UI section is held to `docs/design/`, and dry-runs the release pipeline as a draft release that is deleted after inspection (operator decision 2026-09-27). Every row here is ready on day one or depends only on another row here.
+Nothing in this plan can be proven until the gates run on every clone and every push, so this phase wires the commit hook, marks operator-only rows, raises the claims ratchet, proves the review panel, and reads back the first green CI runs. It also retires the import debt that belongs to the workspace (the test quarantine, Gesso's excused diagnostics, unused packages, the assertion library's license), records before captures of the imported apps (a record of the legacy look, never a fidelity source), lands the design contract gates (the `**Design:**` line and its shrink-only baseline, design-lint over the UI sources, the design reference renders; operator decisions 2026-09-27) so every later UI section is held to `docs/design/`, and dry-runs the release pipeline as a draft release that is deleted after inspection (operator decision 2026-09-27). Every row here is ready on day one or depends only on another row here.
 
 |  ✔  | Section       | Deliverable                                         | Items |
 | :-: | ------------- | --------------------------------------------------- | :---: |
@@ -156,15 +156,15 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T01 §3`  | Raise the claims coverage floor                     |   3   |
 | [ ] | `D00 T01 §4`  | Prove the review panel end to end                   |   5   |
 | [ ] | `D00 T01 §6`  | The parity catalog validator                        |  19   |
-| [ ] | `D00 T01 §7`  | The validator reads the Pinxit parity catalog       |  22   |
+| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog        |  22   |
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog      |  22   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine  |   5   |
-| [ ] | `D00 T02 §2`  | Pinxit diagnostics to zero                          |   4   |
+| [ ] | `D00 T02 §2`  | Gesso diagnostics to zero                           |   4   |
 | [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output              |   3   |
 | [ ] | `D00 T02 §4`  | Prune packages no code uses                         |   7   |
 | [ ] | `D00 T02 §5`  | The assertion library decision and the decision log |   5   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite    |   7   |
-| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Pinxit   |   7   |
+| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso    |   7   |
 | [ ] | `D00 T01 §9`  | The design contract gates                           |   9   |
 | [ ] | `D00 T01 §10` | The drift gates                                     |   7   |
 | [ ] | `D00 T01 §5`  | First push: CI green and read back                  |   5   |
@@ -172,18 +172,18 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 
 ### Phase 1 -- Suite layout and names
 
-Every later section names files, so both imported apps move into the suite layout and take their Isotone names before anything else is written against their paths: Bezier becomes `Isotone.Stilus` and ships `Stilus.exe`, Pinxit becomes `Isotone.Pinxit`, and Pinxit gets its icon. The icon rasters come first: the operator chose the icon design on 2026-09-27 (Direction C, SVG sources in `resources/icons/`), and `D00 T03 §3` generates every PNG and ICO for all three apps from those sources with a check that keeps them in step, so each rename wires the generated files instead of sourcing icon art of its own. The renames change names only, so they are cheap to review and keep git history intact.
+Every later section names files, so both imported apps move into the suite layout and take their Isotone names before anything else is written against their paths: Bezier becomes `Isotone.Stilus` and ships `Stilus.exe`, Gesso becomes `Isotone.Gesso`, and Gesso gets its icon. The icon rasters come first: the operator chose the icon design on 2026-09-27 (Direction C, SVG sources in `resources/icons/`), and `D00 T03 §3` generates every PNG and ICO for all three apps from those sources with a check that keeps them in step, so each rename wires the generated files instead of sourcing icon art of its own. The renames change names only, so they are cheap to review and keep git history intact.
 
 |  ✔  | Section      | Deliverable                                      | Items |
 | :-: | ------------ | ------------------------------------------------ | :---: |
 | [ ] | `D00 T03 §3` | Export the app icon rasters from the SVG sources |  14   |
 | [ ] | `D02 T01 §1` | Rename Bezier to Isotone.Stilus                  |  10   |
-| [ ] | `D03 T01 §1` | Restructure and rename Pinxit to Isotone.Pinxit  |   7   |
-| [ ] | `D03 T01 §4` | The Pinxit icon                                  |   5   |
+| [ ] | `D03 T01 §1` | Restructure and rename Gesso to Isotone.Gesso    |   7   |
+| [ ] | `D03 T01 §4` | The Gesso icon                                   |   5   |
 
 ### Phase 2 -- Stilus foundation: composition, hygiene, triage, correctness
 
-Stilus goes first among the apps. This phase gives it a real composition root on the Generic Host and the first `Isotone.Core` services (logging and settings, which Pinxit already needs, so the library is born with two consumers), clears the analyzer backlog through the SkiaSharp 4 migration until warnings are errors, triages the orphan services and the three SVG stacks down to one render path, puts selection under one owner, records resize and rotate as undo steps, splits the god view model, makes saving atomic, and proves the SVG round trip against fixtures. xUnit v3 lands here, after both renames moved the test projects.
+Stilus goes first among the apps. This phase gives it a real composition root on the Generic Host and the first `Isotone.Core` services (logging and settings, which Gesso already needs, so the library is born with two consumers), clears the analyzer backlog through the SkiaSharp 4 migration until warnings are errors, triages the orphan services and the three SVG stacks down to one render path, puts selection under one owner, records resize and rotate as undo steps, splits the god view model, makes saving atomic, and proves the SVG round trip against fixtures. xUnit v3 lands here, after both renames moved the test projects.
 
 |  ✔  | Section      | Deliverable                                         | Items |
 | :-: | ------------ | --------------------------------------------------- | :---: |
@@ -206,7 +206,7 @@ Stilus goes first among the apps. This phase gives it a real composition root on
 
 ### Phase 3 -- Stilus 0.1.0: shared UI, complete editing, documents, release
 
-With its foundation sound, Stilus becomes a complete first release: `Isotone.UI` takes the controls and windows Stilus and Pinxit duplicate, the suite theme, the visual regression harness whose review-approved goldens every control and chrome section then earns (`D01 T01 §9`), the implicit control styles, and the shared window chrome (title bar with Snap Layouts, document tabs, dock theme, status bar), single instance moves to `Isotone.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the SDK pin moves from the .NET 11 release candidate to GA (`D00 T02 §8`, which waits for the November 2026 GA and parks with that blocker named until then), the clean-machine procedure is proven on Windows 11, and `stilus-v0.1.0` ships.
+With its foundation sound, Stilus becomes a complete first release: `Isotone.UI` takes the controls and windows Stilus and Gesso duplicate, the suite theme, the visual regression harness whose review-approved goldens every control and chrome section then earns (`D01 T01 §9`), the implicit control styles, and the shared window chrome (title bar with Snap Layouts, document tabs, dock theme, status bar), single instance moves to `Isotone.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the SDK pin moves from the .NET 11 release candidate to GA (`D00 T02 §8`, which waits for the November 2026 GA and parks with that blocker named until then), the clean-machine procedure is proven on Windows 11, and `stilus-v0.1.0` ships.
 
 |  ✔  | Section      | Deliverable                                                     | Items |
 | :-: | ------------ | --------------------------------------------------------------- | :---: |
@@ -375,7 +375,7 @@ Effects sit on the Appearance stack and the live-object contract, both shipped b
 
 ### Phase 9 -- Stilus parity VI: bitmaps, tracing, and the shared pixel engine
 
-Bitmaps arrive once vectors are complete. `Isotone.Core` gains the pixel engine the operator placed there for the whole suite (buffers, resampling, dithering, adjustments, and every bitmap effect family), and Stilus gets bitmap objects, the non-destructive effect stack, the adjustment lab, tracing (Image Trace and PowerTRACE), photo-based artwork, the Links panel, and SVG filters. Placing images (`D02 T06 §14`) moves here first because bitmap objects need it. By operator decision (2026-09-27, "Group 1: plan them all"), `Isotone.Core` also gains the isolated plug-in host (`D01 T09`) that runs third-party Photoshop-compatible 8BF, format, and acquire plug-ins with its plug-in manager, and Stilus hosts 8BF filters in its effect stack (`D02 T12 §10`); Pinxit's consumers follow in Phases 21 and 22. It ends with `stilus-v0.7.0`.
+Bitmaps arrive once vectors are complete. `Isotone.Core` gains the pixel engine the operator placed there for the whole suite (buffers, resampling, dithering, adjustments, and every bitmap effect family), and Stilus gets bitmap objects, the non-destructive effect stack, the adjustment lab, tracing (Image Trace and PowerTRACE), photo-based artwork, the Links panel, and SVG filters. Placing images (`D02 T06 §14`) moves here first because bitmap objects need it. By operator decision (2026-09-27, "Group 1: plan them all"), `Isotone.Core` also gains the isolated plug-in host (`D01 T09`) that runs third-party Photoshop-compatible 8BF, format, and acquire plug-ins with its plug-in manager, and Stilus hosts 8BF filters in its effect stack (`D02 T12 §10`); Gesso's consumers follow in Phases 21 and 22. It ends with `stilus-v0.7.0`.
 
 |  ✔  | Section       | Deliverable                                                                                | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------ | :---: |
@@ -464,29 +464,29 @@ Formats come after the object model they must carry is complete, so each reader 
 
 The AI features are Stilus's own and come after the object model, formats, and tracing they produce and consume. `Isotone.Core` and `Isotone.UI` gain the shared AI core (OpenRouter with the user's own key, DPAPI key storage, the explicit-send gate, provenance, and the brand kit), then Stilus maps every competitor AI job to an editable, undoable, reproducible feature: vector generation, patterns and fills, expand and bleed, recolor, the assistant, text rewriting and retyping, image generation and cleanup, concept to vector, and the suite pipeline. It ends with `stilus-v0.10.0`.
 
-|  ✔  | Section       | Deliverable                                                                     | Items |
-| :-: | ------------- | ------------------------------------------------------------------------------- | :---: |
-| [ ] | `D01 T05 §1`  | The OpenRouter client: chat, structured output, images, streaming, and models   |  22   |
-| [ ] | `D01 T05 §2`  | API keys with DPAPI and the AI settings contract                                |  15   |
-| [ ] | `D01 T05 §3`  | The AI provenance record                                                        |  14   |
-| [ ] | `D01 T05 §4`  | The explicit-send gate and the shared AI surfaces in Isotone.UI                 |  17   |
-| [ ] | `D01 T05 §5`  | The suite brand kit: shared palettes and styles                                 |  13   |
-| [ ] | `D02 T15 §1`  | AI in Stilus: the AI menu, settings, usage, and the provenance panel            |  21   |
-| [ ] | `D02 T15 §2`  | Generate vector artwork from a prompt                                           |  18   |
-| [ ] | `D02 T15 §3`  | Generate patterns and fill shapes                                               |  11   |
-| [ ] | `D02 T15 §4`  | Generative expand and print bleed                                               |  10   |
-| [ ] | `D02 T15 §5`  | AI recolor and palettes from the brand kit                                      |   9   |
-| [ ] | `D02 T15 §6`  | The AI assistant: prompt to edit with undoable commands                         |  16   |
-| [ ] | `D02 T15 §7`  | AI text: rewrite, translate, proofread, fit, and retype                         |  12   |
-| [ ] | `D02 T15 §8`  | AI images: generate, remix, and reference images                                |  11   |
-| [ ] | `D02 T15 §9`  | AI image cleanup: remove background, upscale, repair, and art style             |  10   |
-| [ ] | `D02 T15 §10` | Concept to vector: sketches and images to structured vectors                    |  11   |
-| [ ] | `D02 T15 §11` | The suite pipeline: Albumen to Pinxit to Stilus hand-offs and shared brand kits |  16   |
-| [ ] | `D02 T17 §9`  | Stilus 0.10.0 (Phase 12)                                                        |  13   |
+|  ✔  | Section       | Deliverable                                                                    | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------ | :---: |
+| [ ] | `D01 T05 §1`  | The OpenRouter client: chat, structured output, images, streaming, and models  |  22   |
+| [ ] | `D01 T05 §2`  | API keys with DPAPI and the AI settings contract                               |  15   |
+| [ ] | `D01 T05 §3`  | The AI provenance record                                                       |  14   |
+| [ ] | `D01 T05 §4`  | The explicit-send gate and the shared AI surfaces in Isotone.UI                |  17   |
+| [ ] | `D01 T05 §5`  | The suite brand kit: shared palettes and styles                                |  13   |
+| [ ] | `D02 T15 §1`  | AI in Stilus: the AI menu, settings, usage, and the provenance panel           |  21   |
+| [ ] | `D02 T15 §2`  | Generate vector artwork from a prompt                                          |  18   |
+| [ ] | `D02 T15 §3`  | Generate patterns and fill shapes                                              |  11   |
+| [ ] | `D02 T15 §4`  | Generative expand and print bleed                                              |  10   |
+| [ ] | `D02 T15 §5`  | AI recolor and palettes from the brand kit                                     |   9   |
+| [ ] | `D02 T15 §6`  | The AI assistant: prompt to edit with undoable commands                        |  16   |
+| [ ] | `D02 T15 §7`  | AI text: rewrite, translate, proofread, fit, and retype                        |  12   |
+| [ ] | `D02 T15 §8`  | AI images: generate, remix, and reference images                               |  11   |
+| [ ] | `D02 T15 §9`  | AI image cleanup: remove background, upscale, repair, and art style            |  10   |
+| [ ] | `D02 T15 §10` | Concept to vector: sketches and images to structured vectors                   |  11   |
+| [ ] | `D02 T15 §11` | The suite pipeline: Albumen to Gesso to Stilus hand-offs and shared brand kits |  16   |
+| [ ] | `D02 T17 §9`  | Stilus 0.10.0 (Phase 12)                                                       |  13   |
 
 ### Phase 13 -- Stilus parity IX: legacy formats, workspace, customization, preferences, and Stilus 1.0.0
 
-The last parity phase first reads and writes the legacy formats the operator asked to plan on 2026-09-27 ("Group 1: plan them all"), which need the complete formats layer of Phase 11: `Isotone.Core` gains the legacy raster codecs Stilus consumes first and Pinxit and Albumen reuse (`D01 T08`), and Stilus imports FreeHand, Publisher, Visio, PowerPoint, the Corel and Micrografx legacy files, PICT, MET, GEM, and the other old metafiles and word-processing formats, and imports and exports the legacy rasters (`D02 T18 §1` to `§8`). It then customizes and audits the whole surface once it exists: the command palette and Preferences (`D02 T06 §12`, `§13`) move here, then workspaces, toolbars, menus and shortcut sets, the preference pages, UI appearance and diagnostics, the welcome screen and navigator, pen and touch input, hints and the project timer, object data and find and replace, QR codes and barcodes, and the accessibility and localization audit (`D02 T06 §17`) over every parity surface. It ends with `stilus-v1.0.0`, which declares the parity catalog complete.
+The last parity phase first reads and writes the legacy formats the operator asked to plan on 2026-09-27 ("Group 1: plan them all"), which need the complete formats layer of Phase 11: `Isotone.Core` gains the legacy raster codecs Stilus consumes first and Gesso and Albumen reuse (`D01 T08`), and Stilus imports FreeHand, Publisher, Visio, PowerPoint, the Corel and Micrografx legacy files, PICT, MET, GEM, and the other old metafiles and word-processing formats, and imports and exports the legacy rasters (`D02 T18 §1` to `§8`). It then customizes and audits the whole surface once it exists: the command palette and Preferences (`D02 T06 §12`, `§13`) move here, then workspaces, toolbars, menus and shortcut sets, the preference pages, UI appearance and diagnostics, the welcome screen and navigator, pen and touch input, hints and the project timer, object data and find and replace, QR codes and barcodes, and the accessibility and localization audit (`D02 T06 §17`) over every parity surface. It ends with `stilus-v1.0.0`, which declares the parity catalog complete.
 
 |  ✔  | Section       | Deliverable                                                                                                         | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------------------------------- | :---: |
@@ -519,14 +519,14 @@ The last parity phase first reads and writes the legacy formats the operator ask
 | [ ] | `D02 T06 §17` | Accessibility and localization                                                                                      |   4   |
 | [ ] | `D02 T17 §10` | Stilus 1.0.0 (Phase 13)                                                                                             |  15   |
 
-### Phase 14 -- Pinxit foundation: snapshot port, WPF-UI out, tiles, rendering
+### Phase 14 -- Gesso foundation: snapshot port, WPF-UI out, tiles, rendering
 
-Pinxit starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity phases. The December 2025 snapshot's canvas, ruler, and container are ported onto `main` and the branch deleted, WPF-UI leaves the suite for good, Pinxit starts through the shared logging and settings, its layers become tile-backed, the viewport renders the tiled composite at any zoom, the render graph composites every blend mode against reference goldens, and a ComputeSharp path matches the CPU. The codec decision is made here so file work can start the moment editing exists.
+Gesso starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity phases. The December 2025 snapshot's canvas, ruler, and container are ported onto `main` and the branch deleted, WPF-UI leaves the suite for good, Gesso starts through the shared logging and settings, its layers become tile-backed, the viewport renders the tiled composite at any zoom, the render graph composites every blend mode against reference goldens, and a ComputeSharp path matches the CPU. The codec decision is made here so file work can start the moment editing exists.
 
 |  ✔  | Section      | Deliverable                                       | Items |
 | :-: | ------------ | ------------------------------------------------- | :---: |
 | [ ] | `D03 T01 §2` | Port the snapshot canvas, ruler, and container    |   8   |
-| [ ] | `D03 T01 §3` | WPF-UI out of Pinxit                              |   7   |
+| [ ] | `D03 T01 §3` | WPF-UI out of Gesso                               |   7   |
 | [ ] | `D03 T01 §5` | Composition root on Isotone.Core                  |   4   |
 | [ ] | `D03 T02 §1` | The tiled image store                             |   6   |
 | [ ] | `D03 T02 §2` | The viewport on the tiled document                |   6   |
@@ -535,39 +535,39 @@ Pinxit starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity p
 | [ ] | `D03 T02 §5` | The ComputeSharp compositing path with CPU parity |   5   |
 | [ ] | `D03 T04 §1` | The codec decision                                |   4   |
 
-### Phase 15 -- Pinxit 0.1.0: editing, files, filters, release
+### Phase 15 -- Gesso 0.1.0: editing, files, filters, release
 
-Pinxit becomes a complete first release: the suite undo history and the atomic document writer move to `Isotone.Core` as Pinxit becomes their second consumer, the About and shortcuts dialogs move to `Isotone.UI`, documents open in tabs with every edit in the history, the layers panel and core tools work, PNG, JPEG, TIFF, the native layered format, and PSD import are proven by round trips, autosave and recovery work, the core adjustments and blurs match reference goldens, the user guide is written, and `pinxit-v0.1.0` ships.
+Gesso becomes a complete first release: the suite undo history and the atomic document writer move to `Isotone.Core` as Gesso becomes their second consumer, the About and shortcuts dialogs move to `Isotone.UI`, documents open in tabs with every edit in the history, the layers panel and core tools work, PNG, JPEG, TIFF, the native layered format, and PSD import are proven by round trips, autosave and recovery work, the core adjustments and blurs match reference goldens, the user guide is written, and `gesso-v0.1.0` ships.
 
-|  ✔  | Section      | Deliverable                                        | Items |
-| :-: | ------------ | -------------------------------------------------- | :---: |
-| [ ] | `D01 T02 §4` | One undo history for the suite                     |   5   |
-| [ ] | `D01 T02 §5` | The atomic document writer moves to Isotone.Core   |   4   |
-| [ ] | `D01 T01 §4` | About and shortcuts dialogs move to Isotone.UI     |   7   |
-| [ ] | `D03 T03 §1` | Documents in tabs with dirty tracking              |   5   |
-| [ ] | `D03 T03 §2` | Every edit in the suite history                    |   5   |
-| [ ] | `D03 T03 §3` | The layers panel                                   |   4   |
-| [ ] | `D03 T03 §4` | The tool system: move, hand, and zoom              |   4   |
-| [ ] | `D03 T03 §5` | Selection tools                                    |   5   |
-| [ ] | `D03 T03 §6` | Brush and eraser                                   |   4   |
-| [ ] | `D03 T03 §7` | Transform, crop, image size, and canvas size       |   4   |
-| [ ] | `D03 T03 §8` | Fill, gradient, eyedropper, and the color panel    |   4   |
-| [ ] | `D03 T04 §2` | PNG and JPEG open and save                         |   8   |
-| [ ] | `D03 T04 §3` | TIFF open and save                                 |   5   |
-| [ ] | `D03 T04 §4` | The native layered format                          |   6   |
-| [ ] | `D03 T04 §5` | PSD import                                         |   5   |
-| [ ] | `D03 T04 §6` | Autosave and crash recovery                        |   5   |
-| [ ] | `D03 T05 §1` | The filter pipeline                                |   4   |
-| [ ] | `D03 T05 §2` | Core adjustments                                   |   6   |
-| [ ] | `D03 T05 §3` | Blur and sharpen                                   |   5   |
-| [ ] | `D03 T06 §1` | About, shortcuts, and help in Pinxit               |   3   |
-| [ ] | `D03 T06 §2` | Every Pinxit menu command works or names its owner |   3   |
-| [ ] | `D06 T01 §2` | The Pinxit user guide                              |   4   |
-| [ ] | `D03 T06 §3` | Pinxit 0.1.0                                       |   8   |
+|  ✔  | Section      | Deliverable                                       | Items |
+| :-: | ------------ | ------------------------------------------------- | :---: |
+| [ ] | `D01 T02 §4` | One undo history for the suite                    |   5   |
+| [ ] | `D01 T02 §5` | The atomic document writer moves to Isotone.Core  |   4   |
+| [ ] | `D01 T01 §4` | About and shortcuts dialogs move to Isotone.UI    |   7   |
+| [ ] | `D03 T03 §1` | Documents in tabs with dirty tracking             |   5   |
+| [ ] | `D03 T03 §2` | Every edit in the suite history                   |   5   |
+| [ ] | `D03 T03 §3` | The layers panel                                  |   4   |
+| [ ] | `D03 T03 §4` | The tool system: move, hand, and zoom             |   4   |
+| [ ] | `D03 T03 §5` | Selection tools                                   |   5   |
+| [ ] | `D03 T03 §6` | Brush and eraser                                  |   4   |
+| [ ] | `D03 T03 §7` | Transform, crop, image size, and canvas size      |   4   |
+| [ ] | `D03 T03 §8` | Fill, gradient, eyedropper, and the color panel   |   4   |
+| [ ] | `D03 T04 §2` | PNG and JPEG open and save                        |   8   |
+| [ ] | `D03 T04 §3` | TIFF open and save                                |   5   |
+| [ ] | `D03 T04 §4` | The native layered format                         |   6   |
+| [ ] | `D03 T04 §5` | PSD import                                        |   5   |
+| [ ] | `D03 T04 §6` | Autosave and crash recovery                       |   5   |
+| [ ] | `D03 T05 §1` | The filter pipeline                               |   4   |
+| [ ] | `D03 T05 §2` | Core adjustments                                  |   6   |
+| [ ] | `D03 T05 §3` | Blur and sharpen                                  |   5   |
+| [ ] | `D03 T06 §1` | About, shortcuts, and help in Gesso               |   3   |
+| [ ] | `D03 T06 §2` | Every Gesso menu command works or names its owner |   3   |
+| [ ] | `D06 T01 §2` | The Gesso user guide                              |   4   |
+| [ ] | `D03 T06 §3` | Gesso 0.1.0                                       |   8   |
 
-### Phase 16 -- Pinxit parity I: document, canvas, view, history, and layers
+### Phase 16 -- Gesso parity I: document, canvas, view, history, and layers
 
-Parity starts where every later feature stands. This phase fixes how live content persists in `.pinxit` (the `pinxit:` namespace beside a rendered PNG fallback, so GIMP and Krita still open every file), completes the document model (8, 16, and 32-bit float, precision, pixel aspect), new-document presets and templates, every view (zoom, rotate, flip, screen modes, windows, view modes, display filters, the navigator), rulers, guides, grids, snapping, measurement, the info and histogram panels and scopes, snapshots and non-linear history, the Image menu, paste variants, and crop, then the layer model with every layer kind, the Layers panel and Layer menu, masks, clipping and vector masks, blending options with Blend If, and every blend mode the three competitors ship. It ends with `pinxit-v0.2.0`.
+Parity starts where every later feature stands. This phase fixes how live content persists in `.gesso` (the `gesso:` namespace beside a rendered PNG fallback, so GIMP and Krita still open every file), completes the document model (8, 16, and 32-bit float, precision, pixel aspect), new-document presets and templates, every view (zoom, rotate, flip, screen modes, windows, view modes, display filters, the navigator), rulers, guides, grids, snapping, measurement, the info and histogram panels and scopes, snapshots and non-linear history, the Image menu, paste variants, and crop, then the layer model with every layer kind, the Layers panel and Layer menu, masks, clipping and vector masks, blending options with Blend If, and every blend mode the three competitors ship. It ends with `gesso-v0.2.0`.
 
 |  ✔  | Section       | Deliverable                                                             | Items |
 | :-: | ------------- | ----------------------------------------------------------------------- | :---: |
@@ -592,11 +592,11 @@ Parity starts where every later feature stands. This phase fixes how live conten
 | [ ] | `D03 T09 §4`  | Clipping masks, child clipping, and vector masks                        |  15   |
 | [ ] | `D03 T09 §5`  | Blending options, Blend If, and blend ranges                            |  18   |
 | [ ] | `D03 T09 §6`  | GIMP, Affinity, and Porter-Duff blend modes                             |  18   |
-| [ ] | `D03 T21 §1`  | Pinxit 0.2.0 (Phase 16)                                                 |  15   |
+| [ ] | `D03 T21 §1`  | Gesso 0.2.0 (Phase 16)                                                  |  15   |
 
-### Phase 17 -- Pinxit parity II: selection, channels, styles, smart objects, and artboards
+### Phase 17 -- Gesso parity II: selection, channels, styles, smart objects, and artboards
 
-With layers and masks in place, selection catches up: soft and saved selections, every marquee and lasso, the magic wand and selection by color, Color Range, the local segmentation engine and Focus Area, quick selection, foreground select and intelligent scissors, Select and Mask, modify and transform selection, and the Channels panel with spot channels and quick mask. The same phase finishes the layer stack's richer content: layer styles, embedded and linked smart objects, layer comps, align and distribute, and artboards. It ends with `pinxit-v0.3.0`.
+With layers and masks in place, selection catches up: soft and saved selections, every marquee and lasso, the magic wand and selection by color, Color Range, the local segmentation engine and Focus Area, quick selection, foreground select and intelligent scissors, Select and Mask, modify and transform selection, and the Channels panel with spot channels and quick mask. The same phase finishes the layer stack's richer content: layer styles, embedded and linked smart objects, layer comps, align and distribute, and artboards. It ends with `gesso-v0.3.0`.
 
 |  ✔  | Section       | Deliverable                                                                      | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------- | :---: |
@@ -617,11 +617,11 @@ With layers and masks in place, selection catches up: soft and saved selections,
 | [ ] | `D03 T09 §11` | Layer comps and states                                                           |  13   |
 | [ ] | `D03 T09 §12` | Align, distribute, and move-tool extensions                                      |  16   |
 | [ ] | `D03 T09 §13` | Artboards with constraints                                                       |  16   |
-| [ ] | `D03 T21 §2`  | Pinxit 0.3.0 (Phase 17)                                                          |  15   |
+| [ ] | `D03 T21 §2`  | Gesso 0.3.0 (Phase 17)                                                           |  15   |
 
-### Phase 18 -- Pinxit parity III: adjustment layers, adjustments, modes, and color
+### Phase 18 -- Gesso parity III: adjustment layers, adjustments, modes, and color
 
-Adjustments become non-destructive layers over the suite pixel engine: every tonal and color adjustment of Photoshop, Affinity, and the GIMP Colors menu, auto corrections, analysis, every image mode and bit depth through the suite color engine, channel operations with Apply Image and Calculations, the color panels, pickers, samplers, and swatches with palette files and color libraries from user files. It ends with `pinxit-v0.4.0`.
+Adjustments become non-destructive layers over the suite pixel engine: every tonal and color adjustment of Photoshop, Affinity, and the GIMP Colors menu, auto corrections, analysis, every image mode and bit depth through the suite color engine, channel operations with Apply Image and Calculations, the color panels, pickers, samplers, and swatches with palette files and color libraries from user files. It ends with `gesso-v0.4.0`.
 
 |  ✔  | Section       | Deliverable                                                                                                | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------------------------------- | :---: |
@@ -637,11 +637,11 @@ Adjustments become non-destructive layers over the suite pixel engine: every ton
 | [ ] | `D03 T11 §8`  | Channel operations: split, merge, decompose, compose, apply image, calculations                            |  13   |
 | [ ] | `D03 T11 §9`  | Color panels, pickers, eyedroppers, and color samplers                                                     |  21   |
 | [ ] | `D03 T11 §10` | Swatches, palettes, and color libraries                                                                    |  20   |
-| [ ] | `D03 T21 §3`  | Pinxit 0.4.0 (Phase 18)                                                                                    |  15   |
+| [ ] | `D03 T21 §3`  | Gesso 0.4.0 (Phase 18)                                                                                     |  15   |
 
-### Phase 19 -- Pinxit parity IV: the brush engine, painting, fills, gradients, and patterns
+### Phase 19 -- Gesso parity IV: the brush engine, painting, fills, gradients, and patterns
 
-Painting is judged on its brush engine, so it gets its own phase: tips, smoothing, wet media, full dynamics, presets with ABR, Affinity, and GIMP brush import, MyPaint brushes, every painting tool, mixer and smudge, erasers, fill and stroke including GIMP's line-art fill, gradients with an on-canvas editor, patterns, and symmetry painting. It ends with `pinxit-v0.5.0`.
+Painting is judged on its brush engine, so it gets its own phase: tips, smoothing, wet media, full dynamics, presets with ABR, Affinity, and GIMP brush import, MyPaint brushes, every painting tool, mixer and smudge, erasers, fill and stroke including GIMP's line-art fill, gradients with an on-canvas editor, patterns, and symmetry painting. It ends with `gesso-v0.5.0`.
 
 |  ✔  | Section       | Deliverable                                                 | Items |
 | :-: | ------------- | ----------------------------------------------------------- | :---: |
@@ -656,11 +656,11 @@ Painting is judged on its brush engine, so it gets its own phase: tips, smoothin
 | [ ] | `D03 T12 §9`  | Gradients and the gradient editor                           |  25   |
 | [ ] | `D03 T12 §10` | Patterns                                                    |  17   |
 | [ ] | `D03 T12 §11` | Symmetry painting                                           |  11   |
-| [ ] | `D03 T21 §4`  | Pinxit 0.5.0 (Phase 19)                                     |  15   |
+| [ ] | `D03 T21 §4`  | Gesso 0.5.0 (Phase 19)                                      |  15   |
 
-### Phase 20 -- Pinxit parity V: retouching, content-aware tools, transform, warp, and liquify
+### Phase 20 -- Gesso parity V: retouching, content-aware tools, transform, warp, and liquify
 
-Retouching builds on painting: clone and the clone source panel, healing, patch, blemish and inpainting, the content-aware engine for fill, scale, and move, toning tools, every transform tool of the three apps, warp, puppet warp and cage, perspective warp, Liquify, and frequency separation. It ends with `pinxit-v0.6.0`.
+Retouching builds on painting: clone and the clone source panel, healing, patch, blemish and inpainting, the content-aware engine for fill, scale, and move, toning tools, every transform tool of the three apps, warp, puppet warp and cage, perspective warp, Liquify, and frequency separation. It ends with `gesso-v0.6.0`.
 
 |  ✔  | Section       | Deliverable                                       | Items |
 | :-: | ------------- | ------------------------------------------------- | :---: |
@@ -675,11 +675,11 @@ Retouching builds on painting: clone and the clone source panel, healing, patch,
 | [ ] | `D03 T13 §8`  | Perspective warp                                  |  11   |
 | [ ] | `D03 T13 §9`  | Liquify                                           |  19   |
 | [ ] | `D03 T13 §10` | Frequency separation and retouching workflows     |  11   |
-| [ ] | `D03 T21 §5`  | Pinxit 0.6.0 (Phase 20)                           |  15   |
+| [ ] | `D03 T21 §5`  | Gesso 0.6.0 (Phase 20)                            |  15   |
 
-### Phase 21 -- Pinxit parity VI: filters I, the filter surfaces and the engine extensions for blur, sharpen, noise, distort, and pixelate
+### Phase 21 -- Gesso parity VI: filters I, the filter surfaces and the engine extensions for blur, sharpen, noise, distort, and pixelate
 
-Filters come once the layer stack can host them non-destructively. The relocated filter-catalog section (`D03 T07 §3`) runs first, then `Isotone.Core` gains the engine extensions contract and the blur, lens-blur, sharpen, denoise, distort, map, and pixelate families, and Pinxit gets smart filters and live filter layers, the Filter menu with generated dialogs for every engine effect, the Filter Gallery, the Blur Gallery surface, Lens Correction and Adaptive Wide Angle, and Vanishing Point. Third-party Photoshop-compatible filter, format, and acquire plug-ins reach Pinxit's Filter menu through the `D01 T09` host (`D03 T14 §11`) once the Filter menu exists. It ends with `pinxit-v0.7.0`.
+Filters come once the layer stack can host them non-destructively. The relocated filter-catalog section (`D03 T07 §3`) runs first, then `Isotone.Core` gains the engine extensions contract and the blur, lens-blur, sharpen, denoise, distort, map, and pixelate families, and Gesso gets smart filters and live filter layers, the Filter menu with generated dialogs for every engine effect, the Filter Gallery, the Blur Gallery surface, Lens Correction and Adaptive Wide Angle, and Vanishing Point. Third-party Photoshop-compatible filter, format, and acquire plug-ins reach Gesso's Filter menu through the `D01 T09` host (`D03 T14 §11`) once the Filter menu exists. It ends with `gesso-v0.7.0`.
 
 |  ✔  | Section       | Deliverable                                                                                    | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------------------- | :---: |
@@ -694,16 +694,16 @@ Filters come once the layer stack can host them non-destructively. The relocated
 | [ ] | `D01 T06 §14` | Pixelate and halftone extensions                                                               |  12   |
 | [ ] | `D03 T14 §1`  | Smart filters, live filter layers, and non-destructive layer filters                           |  25   |
 | [ ] | `D03 T14 §2`  | The Filter menu, generated dialogs, presets, and Fade                                          |  22   |
-| [ ] | `D03 T14 §11` | Photoshop-compatible plug-in filters, formats, and acquire in Pinxit                           |  12   |
+| [ ] | `D03 T14 §11` | Photoshop-compatible plug-in filters, formats, and acquire in Gesso                            |  12   |
 | [ ] | `D03 T14 §3`  | The Filter Gallery                                                                             |   9   |
 | [ ] | `D03 T14 §4`  | The Blur Gallery surface                                                                       |  14   |
 | [ ] | `D03 T14 §6`  | Lens Correction and Adaptive Wide Angle                                                        |  22   |
 | [ ] | `D03 T14 §7`  | Vanishing Point and live projections                                                           |  14   |
-| [ ] | `D03 T21 §6`  | Pinxit 0.7.0 (Phase 21)                                                                        |  15   |
+| [ ] | `D03 T21 §6`  | Gesso 0.7.0 (Phase 21)                                                                         |  15   |
 
-### Phase 22 -- Pinxit parity VII: filters II, render, light, stylize, artistic, generic, and GEGL
+### Phase 22 -- Gesso parity VII: filters II, render, light, stylize, artistic, generic, and GEGL
 
-The second filter phase completes the long tail GIMP and GEGL bring: light and shadow, procedural noise, patterns and fractals, edges and stylize, the artistic set, generic and morphology filters, the lighting and flare surfaces, the GEGL operation tool and filter browser, GIMP's decor and combine effects as native commands, and Affinity's filter extras, then Pinxit's own managed extension modules (`D03 T14 §12`) and the G'MIC filter collection running in the plug-in host (`D03 T14 §13`), both planned by operator decision on 2026-09-27. It ends with `pinxit-v0.8.0`.
+The second filter phase completes the long tail GIMP and GEGL bring: light and shadow, procedural noise, patterns and fractals, edges and stylize, the artistic set, generic and morphology filters, the lighting and flare surfaces, the GEGL operation tool and filter browser, GIMP's decor and combine effects as native commands, and Affinity's filter extras, then Gesso's own managed extension modules (`D03 T14 §12`) and the G'MIC filter collection running in the plug-in host (`D03 T14 §13`), both planned by operator decision on 2026-09-27. It ends with `gesso-v0.8.0`.
 
 |  ✔  | Section       | Deliverable                                         | Items |
 | :-: | ------------- | --------------------------------------------------- | :---: |
@@ -717,13 +717,13 @@ The second filter phase completes the long tail GIMP and GEGL bring: light and s
 | [ ] | `D03 T14 §8`  | The GEGL operation tool and the filter browser      |   8   |
 | [ ] | `D03 T14 §9`  | GIMP decor and combine effects as native commands   |  16   |
 | [ ] | `D03 T14 §10` | Dedicated filter editors and Affinity filter extras |  17   |
-| [ ] | `D03 T14 §12` | Pinxit extension modules: managed filter plug-ins   |  10   |
+| [ ] | `D03 T14 §12` | Gesso extension modules: managed filter plug-ins    |  10   |
 | [ ] | `D03 T14 §13` | The G'MIC filter collection                         |  13   |
-| [ ] | `D03 T21 §7`  | Pinxit 0.8.0 (Phase 22)                             |  15   |
+| [ ] | `D03 T21 §7`  | Gesso 0.8.0 (Phase 22)                              |  15   |
 
-### Phase 23 -- Pinxit parity VIII: the develop engine, Camera Raw, HDR, panorama, stacks, and astrophotography
+### Phase 23 -- Gesso parity VIII: the develop engine, Camera Raw, HDR, panorama, stacks, and astrophotography
 
-Photography gets its own phase. `Isotone.Core` gains the scene-referred develop engine that Albumen will reuse, and Pinxit gets the Camera Raw filter and Affinity's Develop studio with local masks, 32-bit editing and HDR display, tone mapping, the alignment engine, Merge to HDR, panoramas, image stacks and auto-blend, focus merge, astrophotography stacking, and splitting scanned photos. RAW files themselves open once Albumen's decoder is shared (`D03 T07 §11`, Phase 31). It ends with `pinxit-v0.9.0`.
+Photography gets its own phase. `Isotone.Core` gains the scene-referred develop engine that Albumen will reuse, and Gesso gets the Camera Raw filter and Affinity's Develop studio with local masks, 32-bit editing and HDR display, tone mapping, the alignment engine, Merge to HDR, panoramas, image stacks and auto-blend, focus merge, astrophotography stacking, and splitting scanned photos. RAW files themselves open once Albumen's decoder is shared (`D03 T07 §11`, Phase 31). It ends with `gesso-v0.9.0`.
 
 |  ✔  | Section       | Deliverable                                                                                 | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------- | :---: |
@@ -748,11 +748,11 @@ Photography gets its own phase. `Isotone.Core` gains the scene-referred develop 
 | [ ] | `D03 T15 §10` | Astrophotography stacking                                                                   |  20   |
 | [ ] | `D03 T15 §14` | Astro filters: stretches, background extraction, calibration, color mapping, and separation |  10   |
 | [ ] | `D03 T15 §11` | Crop and straighten scanned photos                                                          |  10   |
-| [ ] | `D03 T21 §8`  | Pinxit 0.9.0 (Phase 23)                                                                     |  15   |
+| [ ] | `D03 T21 §8`  | Gesso 0.9.0 (Phase 23)                                                                      |  15   |
 
-### Phase 24 -- Pinxit parity IX: type, paths, shapes, and vectors
+### Phase 24 -- Gesso parity IX: type, paths, shapes, and vectors
 
-Type and vectors come after the layer stack and styles they live in. The suite text engine moves from Stilus to `Isotone.Core` as Pinxit becomes its second consumer, and Pinxit gets text layers, character and paragraph formatting, OpenType and glyphs, styles and text commands, paths with geometry shared with Stilus, every pen and shape tool, vector layers, frames, and SVG output. It ends with `pinxit-v0.10.0`.
+Type and vectors come after the layer stack and styles they live in. The suite text engine moves from Stilus to `Isotone.Core` as Gesso becomes its second consumer, and Gesso gets text layers, character and paragraph formatting, OpenType and glyphs, styles and text commands, paths with geometry shared with Stilus, every pen and shape tool, vector layers, frames, and SVG output. It ends with `gesso-v0.10.0`.
 
 |  ✔  | Section       | Deliverable                                                                            | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------------- | :---: |
@@ -767,11 +767,11 @@ Type and vectors come after the layer stack and styles they live in. The suite t
 | [ ] | `D03 T16 §7`  | Shape layers and shape tools                                                           |  21   |
 | [ ] | `D03 T16 §11` | Custom shapes, vector layers, and the Gfig job                                         |  11   |
 | [ ] | `D03 T16 §8`  | Frames and vector output                                                               |  15   |
-| [ ] | `D03 T21 §9`  | Pinxit 0.10.0 (Phase 24)                                                               |  15   |
+| [ ] | `D03 T21 §9`  | Gesso 0.10.0 (Phase 24)                                                                |  15   |
 
-### Phase 25 -- Pinxit parity X: formats, export, color management, and print
+### Phase 25 -- Gesso parity X: formats, export, color management, and print
 
-Formats come after the document model they must carry is complete, so each reader and writer maps onto real Pinxit content and owes a fidelity proof: the File menu, screenshots and scanners, PSD and PSB write with live content and full-fidelity read, XCF read and write, modern web formats, HDR and scientific formats, PDF, EPS, SVG, and metafiles, every common and legacy raster format, format options, and metadata; then export, Save for Web and slices, color settings and soft proofing, and print with its extras. It ends with `pinxit-v0.11.0`.
+Formats come after the document model they must carry is complete, so each reader and writer maps onto real Gesso content and owes a fidelity proof: the File menu, screenshots and scanners, PSD and PSB write with live content and full-fidelity read, XCF read and write, modern web formats, HDR and scientific formats, PDF, EPS, SVG, and metafiles, every common and legacy raster format, format options, and metadata; then export, Save for Web and slices, color settings and soft proofing, and print with its extras. It ends with `gesso-v0.11.0`.
 
 |  ✔  | Section       | Deliverable                                                                                   | Items |
 | :-: | ------------- | --------------------------------------------------------------------------------------------- | :---: |
@@ -801,15 +801,15 @@ Formats come after the document model they must carry is complete, so each reade
 | [ ] | `D03 T18 §5`  | Soft proofing and gamut warning                                                               |  15   |
 | [ ] | `D03 T18 §6`  | Print                                                                                         |  20   |
 | [ ] | `D03 T18 §7`  | Print output extras, contact sheets, PDF presentation, and preflight                          |  14   |
-| [ ] | `D03 T21 §10` | Pinxit 0.11.0 (Phase 25)                                                                      |  15   |
+| [ ] | `D03 T21 §10` | Gesso 0.11.0 (Phase 25)                                                                       |  15   |
 
-### Phase 26 -- Pinxit AI: editable, suite-aware, reproducible
+### Phase 26 -- Gesso AI: editable, suite-aware, reproducible
 
-The AI features are Pinxit's own and come after the layers, masks, selections, retouching, and formats they produce and consume. On the shared AI core, Pinxit maps every competitor AI job to a non-destructive, undoable, reproducible feature: the AI menu and provenance panel, the image-generation adapter, generative fill, remove, and expand, image generation, AI selection and masks, neural-filter equivalents, depth and relighting with honest limits, upscaling, distraction removal, the prompt-to-edit assistant, font matching and face landmarks, sky replacement, and the suite pipeline with the brand kit. It ends with `pinxit-v0.12.0`.
+The AI features are Gesso's own and come after the layers, masks, selections, retouching, and formats they produce and consume. On the shared AI core, Gesso maps every competitor AI job to a non-destructive, undoable, reproducible feature: the AI menu and provenance panel, the image-generation adapter, generative fill, remove, and expand, image generation, AI selection and masks, neural-filter equivalents, depth and relighting with honest limits, upscaling, distraction removal, the prompt-to-edit assistant, font matching and face landmarks, sky replacement, and the suite pipeline with the brand kit. It ends with `gesso-v0.12.0`.
 
 |  ✔  | Section       | Deliverable                                                          | Items |
 | :-: | ------------- | -------------------------------------------------------------------- | :---: |
-| [ ] | `D03 T19 §1`  | AI in Pinxit: the AI menu, settings, usage, and the provenance panel |  22   |
+| [ ] | `D03 T19 §1`  | AI in Gesso: the AI menu, settings, usage, and the provenance panel  |  22   |
 | [ ] | `D03 T19 §2`  | The image-generation adapter                                         |  17   |
 | [ ] | `D03 T19 §3`  | Generative fill and generative remove                                |  17   |
 | [ ] | `D03 T19 §4`  | Generative expand                                                    |  12   |
@@ -820,15 +820,15 @@ The AI features are Pinxit's own and come after the layers, masks, selections, r
 | [ ] | `D03 T19 §14` | Depth, portrait blur, and relighting                                 |  15   |
 | [ ] | `D03 T19 §8`  | Upscale and enhance                                                  |  18   |
 | [ ] | `D03 T19 §9`  | Distraction and object removal                                       |  15   |
-| [ ] | `D03 T19 §10` | The Pinxit assistant: prompt to edit                                 |  16   |
+| [ ] | `D03 T19 §10` | The Gesso assistant: prompt to edit                                  |  16   |
 | [ ] | `D03 T19 §11` | AI type and faces                                                    |  15   |
 | [ ] | `D03 T19 §12` | Sky replacement                                                      |  12   |
-| [ ] | `D03 T19 §13` | The suite pipeline and the brand kit in Pinxit                       |  17   |
-| [ ] | `D03 T21 §11` | Pinxit 0.12.0 (Phase 26)                                             |  15   |
+| [ ] | `D03 T19 §13` | The suite pipeline and the brand kit in Gesso                        |  17   |
+| [ ] | `D03 T21 §11` | Gesso 0.12.0 (Phase 26)                                              |  15   |
 
-### Phase 27 -- Pinxit parity XI: workspace, customization, preferences, and Pinxit 1.0.0
+### Phase 27 -- Gesso parity XI: workspace, customization, preferences, and Gesso 1.0.0
 
-The last parity phase customizes and audits the whole surface once it exists: workspaces and Preferences (`D03 T07 §17`) move here first, then workspace presets, the toolbar and options bar, menus, shortcuts, and command search, every preference page, interface appearance and language, pen and touch input, the presets manager and resource libraries, help and diagnostics, the measured performance work (`D03 T07 §18` to `§20`: a benchmark harness with a budget gate, memory, SIMD hot paths, and cold start, promoted from the backlog by operator decision on 2026-09-27), and the accessibility and localization audit (`D03 T07 §16`) over every parity surface. It ends with `pinxit-v1.0.0`, which declares the parity catalog complete.
+The last parity phase customizes and audits the whole surface once it exists: workspaces and Preferences (`D03 T07 §17`) move here first, then workspace presets, the toolbar and options bar, menus, shortcuts, and command search, every preference page, interface appearance and language, pen and touch input, the presets manager and resource libraries, help and diagnostics, the measured performance work (`D03 T07 §18` to `§20`: a benchmark harness with a budget gate, memory, SIMD hot paths, and cold start, promoted from the backlog by operator decision on 2026-09-27), and the accessibility and localization audit (`D03 T07 §16`) over every parity surface. It ends with `gesso-v1.0.0`, which declares the parity catalog complete.
 
 |  ✔  | Section       | Deliverable                                                                       | Items |
 | :-: | ------------- | --------------------------------------------------------------------------------- | :---: |
@@ -842,11 +842,11 @@ The last parity phase customizes and audits the whole surface once it exists: wo
 | [ ] | `D03 T20 §6`  | Pen, touch, and input devices                                                     |  16   |
 | [ ] | `D03 T20 §7`  | The presets manager and resource libraries                                        |  15   |
 | [ ] | `D03 T20 §8`  | Help, learning, and diagnostics                                                   |  20   |
-| [ ] | `D03 T07 §18` | Performance I: the benchmark harness and the Pinxit performance budget            |   9   |
+| [ ] | `D03 T07 §18` | Performance I: the benchmark harness and the Gesso performance budget             |   9   |
 | [ ] | `D03 T07 §19` | Performance II: memory: tile cache, compression, history, and large-document open |  10   |
 | [ ] | `D03 T07 §20` | Performance III: SIMD hot paths, parallel compositing, and cold start             |  10   |
 | [ ] | `D03 T07 §16` | Accessibility and localization                                                    |   4   |
-| [ ] | `D03 T21 §12` | Pinxit 1.0.0 (Phase 27): the parity catalog complete                              |  19   |
+| [ ] | `D03 T21 §12` | Gesso 1.0.0 (Phase 27): the parity catalog complete                               |  19   |
 
 ### Phase 28 -- Albumen foundation: spine, catalog, import, RAW, library
 
@@ -864,9 +864,9 @@ Albumen is planned from nothing with `plan-new-feature` rigor and built on the s
 | [ ] | `D04 T01 §8` | The library grid                  |   6   |
 | [ ] | `D04 T01 §9` | Loupe, compare, and filmstrip     |   6   |
 
-### Phase 29 -- Albumen 0.1.0: develop, export, Edit in Pinxit, release
+### Phase 29 -- Albumen 0.1.0: develop, export, Edit in Gesso, release
 
-Albumen becomes a complete first release: keywords, collections, culling, and XMP sidecars finish the library; the edit stack, the develop pipeline on the suite develop engine that Phase 23 builds (`D01 T07`), the develop panel, crop, presets, and export make it a darkroom; Edit in Pinxit hands photos to Pinxit over files, never over assemblies; the user guide is written; and `albumen-v0.1.0` ships with the original-file guard proven on the installed build. The Albumen parity phases (30 to 39) follow before distribution.
+Albumen becomes a complete first release: keywords, collections, culling, and XMP sidecars finish the library; the edit stack, the develop pipeline on the suite develop engine that Phase 23 builds (`D01 T07`), the develop panel, crop, presets, and export make it a darkroom; Edit in Gesso hands photos to Gesso over files, never over assemblies; the user guide is written; and `albumen-v0.1.0` ships with the original-file guard proven on the installed build. The Albumen parity phases (30 to 39) follow before distribution.
 
 |  ✔  | Section       | Deliverable                                      | Items |
 | :-: | ------------- | ------------------------------------------------ | :---: |
@@ -879,12 +879,12 @@ Albumen becomes a complete first release: keywords, collections, culling, and XM
 | [ ] | `D04 T02 §5`  | Presets, copy and paste settings, and sync       |   3   |
 | [ ] | `D04 T02 §6`  | Export                                           |   4   |
 | [ ] | `D06 T01 §3`  | The Albumen user guide                           |   4   |
-| [ ] | `D04 T02 §7`  | Edit in Pinxit                                   |   4   |
+| [ ] | `D04 T02 §7`  | Edit in Gesso                                    |   4   |
 | [ ] | `D04 T02 §8`  | Albumen 0.1.0                                    |   8   |
 
 ### Phase 30 -- Albumen parity I: shared formats and the fast default viewer
 
-The first pillar comes first. CAD and plotter drawings (DXF, DWG, HPGL, and CGM, the former backlog B-050 row LP-1053) join it on 2026-09-27, when the operator chose to plan the deferred work as real sections: Stilus's own readers (`D02 T14 §10` on ACadSharp, and `D02 T14 §11`) are ready since Phase 11, so they move to `Isotone.Core` here on Albumen as their second consumer (`D04 T13 §9`). Pinxit's codec readers move to `Isotone.Core/Formats/` as Albumen becomes their second consumer, Albumen reads every modern, HDR, legacy, rare, document, multi-page, and RAW format the three competitors open (the rare set through the shared `D01 T08` codecs), and the Albumen Viewer ships as a second executable with a recorded startup budget and an optional resident quick-start mode: screen-size decode with prefetch and display color, registration as a capable default viewer for every format it reads, zoom and display options, folder browsing, file operations and hand-offs, image information and viewer tools, multi-page and animated images, fullscreen, and the viewer's own slideshow, with the Albumen library one keystroke away. It ends with `albumen-v0.2.0`.
+The first pillar comes first. CAD and plotter drawings (DXF, DWG, HPGL, and CGM, the former backlog B-050 row LP-1053) join it on 2026-09-27, when the operator chose to plan the deferred work as real sections: Stilus's own readers (`D02 T14 §10` on ACadSharp, and `D02 T14 §11`) are ready since Phase 11, so they move to `Isotone.Core` here on Albumen as their second consumer (`D04 T13 §9`). Gesso's codec readers move to `Isotone.Core/Formats/` as Albumen becomes their second consumer, Albumen reads every modern, HDR, legacy, rare, document, multi-page, and RAW format the three competitors open (the rare set through the shared `D01 T08` codecs), and the Albumen Viewer ships as a second executable with a recorded startup budget and an optional resident quick-start mode: screen-size decode with prefetch and display color, registration as a capable default viewer for every format it reads, zoom and display options, folder browsing, file operations and hand-offs, image information and viewer tools, multi-page and animated images, fullscreen, and the viewer's own slideshow, with the Albumen library one keystroke away. It ends with `albumen-v0.2.0`.
 
 |  ✔  | Section       | Deliverable                                                                               | Items |
 | :-: | ------------- | ----------------------------------------------------------------------------------------- | :---: |
@@ -1023,7 +1023,7 @@ Develop's panels reach Lightroom and ACDSee on the suite develop engine: the ext
 
 ### Phase 36 -- Albumen parity VII: develop II, masking, ACDSee stages, soft proofing, and photo merge
 
-Local work and the stages only ACDSee has: masking with brushes, gradients, range masks, and pixel targeting; two new stages in the suite develop engine (soft focus and skin tune, and LUTs, blend modes, and looks), whose Albumen surfaces are soft focus, skin tune, color LUTs, and develop effects, beside the Light EQ panel over the tone equalizer stage that Phase 23 already built for Pinxit (`D01 T07 §7`); soft proofing; and photo merge, which moves Pinxit's alignment, HDR, panorama, and focus-merge engines to `Isotone.Core`. It ends with `albumen-v0.8.0`.
+Local work and the stages only ACDSee has: masking with brushes, gradients, range masks, and pixel targeting; two new stages in the suite develop engine (soft focus and skin tune, and LUTs, blend modes, and looks), whose Albumen surfaces are soft focus, skin tune, color LUTs, and develop effects, beside the Light EQ panel over the tone equalizer stage that Phase 23 already built for Gesso (`D01 T07 §7`); soft proofing; and photo merge, which moves Gesso's alignment, HDR, panorama, and focus-merge engines to `Isotone.Core`. It ends with `albumen-v0.8.0`.
 
 |  ✔  | Section       | Deliverable                                                   | Items |
 | :-: | ------------- | ------------------------------------------------------------- | :---: |
@@ -1111,9 +1111,9 @@ With all three apps released, Albumen at its parity release 1.0.0 (Phase 39), di
 | [ ] | `D06 T02 §2` | README images from real captures    |   3   |
 | [ ] | `D06 T02 §3` | The user guides as a published site |   4   |
 
-### Phase 41 -- Pinxit and Stilus after their releases: imports through shared decoders
+### Phase 41 -- Gesso and Stilus after their releases: imports through shared decoders
 
-After the suite release (Phase 40), Pinxit opens camera RAW files through the decoder Albumen shares once it moves to `Isotone.Core` (`D04 T01 §4`), developing them through the suite develop engine (`D01 T07 §1`) into Pinxit's Develop studio; until then the Camera Raw filter of Phase 23 works on open layers. Three of this phase's former rows moved into the Pinxit parity phases on 2026-09-26 without changing address: the filter catalog (`D03 T07 §3`) to Phase 21, and workspaces (`D03 T07 §17`) and the accessibility and localization audit (`D03 T07 §16`) to Phase 27. The legacy Pinxit roadmap's other entries were promoted into the parity phases or wait in [`backlog.md`](./backlog.md). Stilus follows on the same shared code (operator decision 2026-09-27, "Group 1: plan them all"): GIMP XCF import on the XCF core it moves out of Pinxit's reader (`D02 T18 §9`) and camera RAW import with the RAW Lab on the moved decoder and the develop engine (`D02 T18 §10`), released as `stilus-v1.1.0` (`D02 T17 §11`); neither can run before Stilus 1.0.0 without copying another app's code, so they wait here rather than in a new phase.
+After the suite release (Phase 40), Gesso opens camera RAW files through the decoder Albumen shares once it moves to `Isotone.Core` (`D04 T01 §4`), developing them through the suite develop engine (`D01 T07 §1`) into Gesso's Develop studio; until then the Camera Raw filter of Phase 23 works on open layers. Three of this phase's former rows moved into the Gesso parity phases on 2026-09-26 without changing address: the filter catalog (`D03 T07 §3`) to Phase 21, and workspaces (`D03 T07 §17`) and the accessibility and localization audit (`D03 T07 §16`) to Phase 27. The legacy Gesso roadmap's other entries were promoted into the parity phases or wait in [`backlog.md`](./backlog.md). Stilus follows on the same shared code (operator decision 2026-09-27, "Group 1: plan them all"): GIMP XCF import on the XCF core it moves out of Gesso's reader (`D02 T18 §9`) and camera RAW import with the RAW Lab on the moved decoder and the develop engine (`D02 T18 §10`), released as `stilus-v1.1.0` (`D02 T17 §11`); neither can run before Stilus 1.0.0 without copying another app's code, so they wait here rather than in a new phase.
 
 |  ✔  | Section       | Deliverable                                      | Items |
 | :-: | ------------- | ------------------------------------------------ | :---: |
@@ -1124,38 +1124,38 @@ After the suite release (Phase 40), Pinxit opens camera RAW files through the de
 
 ### Phase 42 -- Suite automation after the first release: actions, scripting, extensions, the command line, and batch
 
-With every app released, the suite bundled (Phase 40), and the shared-decoder imports shipped (Phase 41), the automation the operator deferred to after the first release on 2026-09-26 runs as real sections, because on 2026-09-27 the operator worried "features will be left behind" and chose to plan it rather than keep it in the backlog. It is one suite-wide system in `Isotone.Core` and `Isotone.UI` (`D01 T10`), built first because all three apps consume it: recorded actions with conditional steps and playback as one undo step, the Actions panel and action files (Photoshop ATN import; Isotone action files are the format), C# scripting through Roslyn (MIT, already referenced by Pinxit's scripting project; the one scripting language, chosen over Python through pythonnet and JavaScript through Jint or ClearScript, with every other language driving the apps through the automation server), the script editor and console, the automation server with the MCP server behind per-category permissions, the extension SDK beside the 8BF host of `D01 T09`, the command line, and the batch runner with droplets on Albumen's job engine moved to `Isotone.Core` (Albumen's own batch tools stay in `D04 T11`). Each app then gets its object model and automation surfaces (`D02 T19`, `D03 T22`, `D04 T17`), and the phase ends with `stilus-v1.2.0`, `pinxit-v1.1.0`, and `albumen-v1.1.0`.
+With every app released, the suite bundled (Phase 40), and the shared-decoder imports shipped (Phase 41), the automation the operator deferred to after the first release on 2026-09-26 runs as real sections, because on 2026-09-27 the operator worried "features will be left behind" and chose to plan it rather than keep it in the backlog. It is one suite-wide system in `Isotone.Core` and `Isotone.UI` (`D01 T10`), built first because all three apps consume it: recorded actions with conditional steps and playback as one undo step, the Actions panel and action files (Photoshop ATN import; Isotone action files are the format), C# scripting through Roslyn (MIT, already referenced by Gesso's scripting project; the one scripting language, chosen over Python through pythonnet and JavaScript through Jint or ClearScript, with every other language driving the apps through the automation server), the script editor and console, the automation server with the MCP server behind per-category permissions, the extension SDK beside the 8BF host of `D01 T09`, the command line, and the batch runner with droplets on Albumen's job engine moved to `Isotone.Core` (Albumen's own batch tools stay in `D04 T11`). Each app then gets its object model and automation surfaces (`D02 T19`, `D03 T22`, `D04 T17`), and the phase ends with `stilus-v1.2.0`, `gesso-v1.1.0`, and `albumen-v1.1.0`.
 
-|  ✔  | Section       | Deliverable                                                         | Items |
-| :-: | ------------- | ------------------------------------------------------------------- | :---: |
-| [ ] | `D01 T10 §1`  | The action model, the recorder, and playback                        |  18   |
-| [ ] | `D01 T10 §2`  | The Actions panel in Isotone.UI                                     |  15   |
-| [ ] | `D01 T10 §3`  | Action files and the action library                                 |  16   |
-| [ ] | `D01 T10 §4`  | The scripting host                                                  |  18   |
-| [ ] | `D01 T10 §5`  | The script editor and console                                       |  17   |
-| [ ] | `D01 T10 §6`  | The automation server and the MCP server                            |  15   |
-| [ ] | `D01 T10 §7`  | The extension SDK and the extension manager                         |  16   |
-| [ ] | `D01 T10 §8`  | The command line                                                    |  13   |
-| [ ] | `D01 T10 §9`  | The suite batch runner and droplets                                 |  17   |
-| [ ] | `D02 T19 §1`  | The Stilus object model and recordable commands                     |  15   |
-| [ ] | `D02 T19 §2`  | Scripts, extensions, and macros in Stilus documents                 |  14   |
-| [ ] | `D02 T19 §3`  | Batch processing and the command line in Stilus                     |  12   |
-| [ ] | `D02 T17 §12` | Stilus 1.2.0 (Phase 42)                                             |  16   |
-| [ ] | `D03 T22 §1`  | The Pinxit object model, recordable commands, and actions in Pinxit |  17   |
-| [ ] | `D03 T22 §2`  | Scripts in Pinxit                                                   |  14   |
-| [ ] | `D03 T22 §3`  | Procedures and plug-ins in Pinxit                                   |  16   |
-| [ ] | `D03 T22 §4`  | Extensions, the MCP server, and remote connections in Pinxit        |  12   |
-| [ ] | `D03 T22 §5`  | Batch, droplets, the Image Processor, and headless runs             |  14   |
-| [ ] | `D03 T22 §6`  | Variables and data sets                                             |  10   |
-| [ ] | `D03 T21 §13` | Pinxit 1.1.0 (Phase 42)                                             |  18   |
-| [ ] | `D04 T17 §1`  | Recorded actions in Albumen                                         |  16   |
-| [ ] | `D04 T17 §2`  | Albumen extension points                                            |  14   |
-| [ ] | `D04 T17 §3`  | The Albumen command line                                            |  15   |
-| [ ] | `D04 T15 §11` | Albumen 1.1.0 (Phase 42)                                            |  19   |
+|  ✔  | Section       | Deliverable                                                       | Items |
+| :-: | ------------- | ----------------------------------------------------------------- | :---: |
+| [ ] | `D01 T10 §1`  | The action model, the recorder, and playback                      |  18   |
+| [ ] | `D01 T10 §2`  | The Actions panel in Isotone.UI                                   |  15   |
+| [ ] | `D01 T10 §3`  | Action files and the action library                               |  16   |
+| [ ] | `D01 T10 §4`  | The scripting host                                                |  18   |
+| [ ] | `D01 T10 §5`  | The script editor and console                                     |  17   |
+| [ ] | `D01 T10 §6`  | The automation server and the MCP server                          |  15   |
+| [ ] | `D01 T10 §7`  | The extension SDK and the extension manager                       |  16   |
+| [ ] | `D01 T10 §8`  | The command line                                                  |  13   |
+| [ ] | `D01 T10 §9`  | The suite batch runner and droplets                               |  17   |
+| [ ] | `D02 T19 §1`  | The Stilus object model and recordable commands                   |  15   |
+| [ ] | `D02 T19 §2`  | Scripts, extensions, and macros in Stilus documents               |  14   |
+| [ ] | `D02 T19 §3`  | Batch processing and the command line in Stilus                   |  12   |
+| [ ] | `D02 T17 §12` | Stilus 1.2.0 (Phase 42)                                           |  16   |
+| [ ] | `D03 T22 §1`  | The Gesso object model, recordable commands, and actions in Gesso |  17   |
+| [ ] | `D03 T22 §2`  | Scripts in Gesso                                                  |  14   |
+| [ ] | `D03 T22 §3`  | Procedures and plug-ins in Gesso                                  |  16   |
+| [ ] | `D03 T22 §4`  | Extensions, the MCP server, and remote connections in Gesso       |  12   |
+| [ ] | `D03 T22 §5`  | Batch, droplets, the Image Processor, and headless runs           |  14   |
+| [ ] | `D03 T22 §6`  | Variables and data sets                                           |  10   |
+| [ ] | `D03 T21 §13` | Gesso 1.1.0 (Phase 42)                                            |  18   |
+| [ ] | `D04 T17 §1`  | Recorded actions in Albumen                                       |  16   |
+| [ ] | `D04 T17 §2`  | Albumen extension points                                          |  14   |
+| [ ] | `D04 T17 §3`  | The Albumen command line                                          |  15   |
+| [ ] | `D04 T15 §11` | Albumen 1.1.0 (Phase 42)                                          |  19   |
 
 ### Phase 43 -- Video, audio, and animation after the first release
 
-Video, audio, and frame animation were deferred with automation and are planned the same way (operator decision 2026-09-27, "features will be left behind"). The suite media stack comes first (`D01 T11`): Windows Media Foundation through Vortice.MediaFoundation (MIT, part of the Vortice.Windows family the operator approved on 2026-09-27) for decoding, encoding, and playback, XAudio2 through Vortice.XAudio2 for mixed audio, and an optional FFmpeg the user installs, run as an external process and never bundled or linked, for the containers Media Foundation cannot read (FLV among them), so either an LGPL or a GPL build is compatible and no patent-encumbered codec ships in Isotone's installers. Pinxit then gains video layers, the Timeline, audio tracks, Render Video, frame animation with onion skin and tweening, animated GIF, APNG, WebP, MNG, and FLI authoring, and the animation filters (`D03 T23`); Albumen gains video and audio in the library, browse, the viewer, Media mode, image audio, trimming and frame extraction, and video slideshows, always writing new files unless the originals opt-in is on (`D04 T16`). It ends with `pinxit-v1.2.0` and `albumen-v1.2.0`.
+Video, audio, and frame animation were deferred with automation and are planned the same way (operator decision 2026-09-27, "features will be left behind"). The suite media stack comes first (`D01 T11`): Windows Media Foundation through Vortice.MediaFoundation (MIT, part of the Vortice.Windows family the operator approved on 2026-09-27) for decoding, encoding, and playback, XAudio2 through Vortice.XAudio2 for mixed audio, and an optional FFmpeg the user installs, run as an external process and never bundled or linked, for the containers Media Foundation cannot read (FLV among them), so either an LGPL or a GPL build is compatible and no patent-encumbered codec ships in Isotone's installers. Gesso then gains video layers, the Timeline, audio tracks, Render Video, frame animation with onion skin and tweening, animated GIF, APNG, WebP, MNG, and FLI authoring, and the animation filters (`D03 T23`); Albumen gains video and audio in the library, browse, the viewer, Media mode, image audio, trimming and frame extraction, and video slideshows, always writing new files unless the originals opt-in is on (`D04 T16`). It ends with `gesso-v1.2.0` and `albumen-v1.2.0`.
 
 |  ✔  | Section       | Deliverable                                               | Items |
 | :-: | ------------- | --------------------------------------------------------- | :---: |
@@ -1169,7 +1169,7 @@ Video, audio, and frame animation were deferred with automation and are planned 
 | [ ] | `D03 T23 §4`  | Frame animation, onion skin, and tweening                 |  18   |
 | [ ] | `D03 T23 §5`  | Animated formats: GIF, APNG, WebP, MNG, and FLI authoring |  16   |
 | [ ] | `D03 T23 §6`  | Animation filters and temporal blur                       |  13   |
-| [ ] | `D03 T21 §14` | Pinxit 1.2.0 (Phase 43)                                   |  18   |
+| [ ] | `D03 T21 §14` | Gesso 1.2.0 (Phase 43)                                    |  18   |
 | [ ] | `D04 T16 §1`  | Video and audio in the library and browse                 |  14   |
 | [ ] | `D04 T16 §2`  | Video and audio playback in the viewer and the loupe      |  16   |
 | [ ] | `D04 T16 §3`  | Trim, poster frame, frame extraction, and video export    |  14   |
@@ -1180,26 +1180,26 @@ Video, audio, and frame animation were deferred with automation and are planned 
 
 ### Phase 44 -- On-device models and the GPU develop path
 
-Two accelerations wait for the apps to be complete (operator decision 2026-09-27, "features will be left behind"). On-device models (`D01 T12`) run through ONNX Runtime with the DirectML execution provider (MIT) and a CPU fallback, behind the same AI task seam as the OpenRouter path of `D01 T05`, which stays the default: a model catalog records each model's source, SHA-256, and license, accepts only permissive or GPL-compatible licenses, downloads only on an explicit user action, and tests run on tiny fixture models; Pinxit (`D03 T19 §16`, `§17`) and Albumen (`D04 T10 §13`) consume it. The GPU develop path (`D01 T07 §10` to `§12`) moves the ComputeSharp device of `D03 T02 §5` into `Isotone.Core` and runs every develop stage on the GPU with CPU parity within 1/255 and measured budgets. It ends with `pinxit-v1.3.0` and `albumen-v1.3.0`.
+Two accelerations wait for the apps to be complete (operator decision 2026-09-27, "features will be left behind"). On-device models (`D01 T12`) run through ONNX Runtime with the DirectML execution provider (MIT) and a CPU fallback, behind the same AI task seam as the OpenRouter path of `D01 T05`, which stays the default: a model catalog records each model's source, SHA-256, and license, accepts only permissive or GPL-compatible licenses, downloads only on an explicit user action, and tests run on tiny fixture models; Gesso (`D03 T19 §16`, `§17`) and Albumen (`D04 T10 §13`) consume it. The GPU develop path (`D01 T07 §10` to `§12`) moves the ComputeSharp device of `D03 T02 §5` into `Isotone.Core` and runs every develop stage on the GPU with CPU parity within 1/255 and measured budgets. It ends with `gesso-v1.3.0` and `albumen-v1.3.0`.
 
-|  ✔  | Section       | Deliverable                                                                 | Items |
-| :-: | ------------- | --------------------------------------------------------------------------- | :---: |
-| [ ] | `D01 T12 §1`  | The local inference runtime                                                 |  14   |
-| [ ] | `D01 T12 §2`  | The model catalog, downloads, and license records                           |  15   |
-| [ ] | `D01 T12 §3`  | The Model Manager surface in Isotone.UI                                     |  14   |
-| [ ] | `D01 T12 §4`  | Task adapters: segmentation, inpainting, upscaling, denoise, and depth      |  12   |
-| [ ] | `D01 T07 §10` | The GPU compute device in Isotone.Core                                      |  12   |
-| [ ] | `D01 T07 §11` | Develop stages on the GPU with CPU parity                                   |  13   |
-| [ ] | `D01 T07 §12` | GPU masks, the extended stages, and measured budgets                        |  13   |
-| [ ] | `D03 T19 §16` | On-device models in Pinxit: remove, selection, star separation, and normals |  17   |
-| [ ] | `D03 T19 §17` | On-device photo models: motion blur reduction, mixed light, and SDR to HDR  |  13   |
-| [ ] | `D03 T21 §15` | Pinxit 1.3.0 (Phase 44)                                                     |  19   |
-| [ ] | `D04 T10 §13` | On-device models in Albumen: offline denoise, keywords, and similarity      |  16   |
-| [ ] | `D04 T15 §13` | Albumen 1.3.0 (Phase 44)                                                    |  19   |
+|  ✔  | Section       | Deliverable                                                                | Items |
+| :-: | ------------- | -------------------------------------------------------------------------- | :---: |
+| [ ] | `D01 T12 §1`  | The local inference runtime                                                |  14   |
+| [ ] | `D01 T12 §2`  | The model catalog, downloads, and license records                          |  15   |
+| [ ] | `D01 T12 §3`  | The Model Manager surface in Isotone.UI                                    |  14   |
+| [ ] | `D01 T12 §4`  | Task adapters: segmentation, inpainting, upscaling, denoise, and depth     |  12   |
+| [ ] | `D01 T07 §10` | The GPU compute device in Isotone.Core                                     |  12   |
+| [ ] | `D01 T07 §11` | Develop stages on the GPU with CPU parity                                  |  13   |
+| [ ] | `D01 T07 §12` | GPU masks, the extended stages, and measured budgets                       |  13   |
+| [ ] | `D03 T19 §16` | On-device models in Gesso: remove, selection, star separation, and normals |  17   |
+| [ ] | `D03 T19 §17` | On-device photo models: motion blur reduction, mixed light, and SDR to HDR |  13   |
+| [ ] | `D03 T21 §15` | Gesso 1.3.0 (Phase 44)                                                     |  19   |
+| [ ] | `D04 T10 §13` | On-device models in Albumen: offline denoise, keywords, and similarity     |  16   |
+| [ ] | `D04 T15 §13` | Albumen 1.3.0 (Phase 44)                                                   |  19   |
 
 ### Phase 45 -- Albumen's remaining formats and the Isotone suite 1.1.0
 
-The last formats IrfanView and ACDSee open that had no GPL-compatible reader are planned by the routes the operator chose on 2026-09-27 ("features will be left behind"): Flash SWF's first frame through an own parser (FLV already plays through Phase 43's media stack), ECW, MrSID, JPM, and MRC through an optional GDAL the user installs with its driver plug-ins, run as an external process and never bundled (the Ghostscript pattern of `D02 T14 §9`), disabled and explained when absent, and the undocumented layered formats of Artweaver, BodyPaint 3D, Gemstone, and ACDSee through clean-room analysis of sample files (operator approval 2026-09-27), each with an exit that reroutes a format whose structure or driver cannot be established; CAD and plotter drawings already landed in Phase 30 (`D04 T13 §9`) on Stilus's moved readers. Albumen releases `albumen-v1.4.0`, and the second suite bundle, `isotone-v1.1.0`, carries Stilus 1.2.0, Pinxit 1.3.0, and Albumen 1.4.0 at their own versions.
+The last formats IrfanView and ACDSee open that had no GPL-compatible reader are planned by the routes the operator chose on 2026-09-27 ("features will be left behind"): Flash SWF's first frame through an own parser (FLV already plays through Phase 43's media stack), ECW, MrSID, JPM, and MRC through an optional GDAL the user installs with its driver plug-ins, run as an external process and never bundled (the Ghostscript pattern of `D02 T14 §9`), disabled and explained when absent, and the undocumented layered formats of Artweaver, BodyPaint 3D, Gemstone, and ACDSee through clean-room analysis of sample files (operator approval 2026-09-27), each with an exit that reroutes a format whose structure or driver cannot be established; CAD and plotter drawings already landed in Phase 30 (`D04 T13 §9`) on Stilus's moved readers. Albumen releases `albumen-v1.4.0`, and the second suite bundle, `isotone-v1.1.0`, carries Stilus 1.2.0, Gesso 1.3.0, and Albumen 1.4.0 at their own versions.
 
 |  ✔  | Section       | Deliverable                                                                        | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------- | :---: |

@@ -12,7 +12,7 @@
 ## App or area
 
 - [ ] Stilus
-- [ ] Pinxit
+- [ ] Gesso
 - [ ] Albumen
 - [ ] Isotone.Core
 - [ ] Installer or packaging

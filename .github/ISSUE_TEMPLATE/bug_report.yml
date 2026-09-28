@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Stilus, Pinxit, Albumen, or an installer does not work as expected.
+description: Something in Stilus, Gesso, Albumen, or an installer does not work as expected.
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -15,7 +15,7 @@ body:
       description: Which part of the suite is affected?
       options:
         - Stilus (vector editor)
-        - Pinxit (raster editor)
+        - Gesso (raster editor)
         - Albumen (darkroom and library)
         - Installer or portable ZIP
         - Other
@@ -96,7 +96,7 @@ body:
     attributes:
       label: Logs
       description: |
-        Paste relevant log output or crash details. Logs live under `%LOCALAPPDATA%\<App>\logs` (for example `%LOCALAPPDATA%\Pinxit\logs`). Stilus also shows logs in its debug window.
+        Paste relevant log output or crash details. Logs live under `%LOCALAPPDATA%\<App>\logs` (for example `%LOCALAPPDATA%\Gesso\logs`). Stilus also shows logs in its debug window.
         Remove anything personal before pasting.
       render: text
   - type: checkboxes

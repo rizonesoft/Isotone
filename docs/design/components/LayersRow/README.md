@@ -1,6 +1,6 @@
 # Layers row
 
-The Layers panel row (Pinxit; Stilus uses the same row for objects): visibility eye, thumbnail, optional linked mask, name, trailing badges, over the blend mode and opacity controls.
+The Layers panel row (Gesso; Stilus uses the same row for objects): visibility eye, thumbnail, optional linked mask, name, trailing badges, over the blend mode and opacity controls.
 
 ## Anatomy
 

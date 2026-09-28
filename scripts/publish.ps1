@@ -10,12 +10,12 @@
   overrides MinVer (MinVerVersionOverride) for re-builds of a known version.
 .EXAMPLE
   pwsh scripts/publish.ps1 -App Stilus
-  pwsh scripts/publish.ps1 -App Pinxit -Runtime win-arm64
+  pwsh scripts/publish.ps1 -App Gesso -Runtime win-arm64
 #>
 [CmdletBinding()]
 param(
   [Parameter(Mandatory)]
-  [ValidateSet('Stilus', 'Pinxit', 'Albumen')]
+  [ValidateSet('Stilus', 'Gesso', 'Albumen')]
   [string]$App,
   [string]$Runtime = 'win-x64',
   [ValidateSet('Debug', 'Release')]

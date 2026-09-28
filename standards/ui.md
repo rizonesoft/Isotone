@@ -1,6 +1,6 @@
 # UI Standard
 
-Every user-facing surface of Stilus, Pinxit, and Albumen answers to this standard. It is the binding summary of the Isotone Interface design system in [`docs/design/`](../docs/design/README.md), which holds the full specification: the tokens, one README per component, the shell layout, and the app icon guide. The system is browsable as a live page, with every component preview in all four themes, at https://rizonesoft.github.io/Isotone/design/ (generated into `docs/design/index.html` by `scripts/build-design-site.py`; edit the sources, never the page). Where this file and `docs/design/` disagree, `docs/design/` wins and this file is corrected in the same commit. How the code is held to the design (fidelity, goldens, deviations, the gates, and the definition of done for a UI section) is the binding [`design-contract.md`](design-contract.md). The captures of the imported apps under `docs/captures/<app>/` are a before record only; the review reference is the design itself and the approved goldens under `docs/captures/golden/`.
+Every user-facing surface of Stilus, Gesso, and Albumen answers to this standard. It is the binding summary of the Isotone Interface design system in [`docs/design/`](../docs/design/README.md), which holds the full specification: the tokens, one README per component, the shell layout, and the app icon guide. The system is browsable as a live page, with every component preview in all four themes, at https://rizonesoft.github.io/Isotone/design/ (generated into `docs/design/index.html` by `scripts/build-design-site.py`; edit the sources, never the page). Where this file and `docs/design/` disagree, `docs/design/` wins and this file is corrected in the same commit. How the code is held to the design (fidelity, goldens, deviations, the gates, and the definition of done for a UI section) is the binding [`design-contract.md`](design-contract.md). The captures of the imported apps under `docs/captures/<app>/` are a before record only; the review reference is the design itself and the approved goldens under `docs/captures/golden/`.
 
 ## The source of truth
 
@@ -25,7 +25,7 @@ Every user-facing surface of Stilus, Pinxit, and Albumen answers to this standar
 | App | Accent | Dark, Darkest, Medium Gray | Light |
 | --- | --- | --- | --- |
 | Stilus | Cyan, `accent-stilus` | `#29C5E6` | `#00758C` |
-| Pinxit | Orange, `accent-pinxit` | `#F5923E` | `#B04F00` |
+| Gesso | Orange, `accent-gesso` | `#F5923E` | `#B04F00` |
 | Albumen | Green, `accent-albumen` | `#4CC47A` | `#1B7A3D` |
 
 - The values above are copied from `tokens.json` for reading; `tokens.json` is authoritative, with the `-hover` and `-on` companions of each accent.

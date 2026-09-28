@@ -1,6 +1,6 @@
 # Shared Standards
 
-Cross-cutting standards for every app in the Isotone Graphics Suite (Stilus, Pinxit, Albumen) and for `Isotone.Core` and `Isotone.UI`. App files ([`stilus.md`](stilus.md), [`pinxit.md`](pinxit.md), [`albumen.md`](albumen.md)) add to this file and never contradict it. [`AGENTS.md`](../AGENTS.md) holds the binding decisions; this file spells them out.
+Cross-cutting standards for every app in the Isotone Graphics Suite (Stilus, Gesso, Albumen) and for `Isotone.Core` and `Isotone.UI`. App files ([`stilus.md`](stilus.md), [`gesso.md`](gesso.md), [`albumen.md`](albumen.md)) add to this file and never contradict it. [`AGENTS.md`](../AGENTS.md) holds the binding decisions; this file spells them out.
 
 ## The stack
 
@@ -11,7 +11,7 @@ Cross-cutting standards for every app in the Isotone Graphics Suite (Stilus, Pin
 | MVVM | CommunityToolkit.Mvvm | `ObservableObject`, `[ObservableProperty]`, `[RelayCommand]`, `IMessenger` where messaging is genuinely needed. **No ReactiveUI.** `Ioc.Default` is not used: composition goes through Microsoft DI |
 | Composition | Microsoft.Extensions.DependencyInjection, one Generic Host per app | One composition root per app; constructor injection; no static service locator (`App.Services`, `Foo.Instance`) |
 | Logging | Serilog | Configured once per app through `Isotone.Core` |
-| Rendering | SkiaSharp (all apps), ComputeSharp (Pinxit GPU path) | |
+| Rendering | SkiaSharp (all apps), ComputeSharp (Gesso GPU path) | |
 | Tests | xUnit v3, AwesomeAssertions | See [`testing.md`](testing.md) |
 | JSON | System.Text.Json with source-generated contexts | Newtonsoft.Json is not used |
 

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RootNamespace>Gesso.Plugins</RootNamespace>
+    <AssemblyName>Gesso.Plugins.Abstractions</AssemblyName>
+    <Description>Plugin interfaces and abstractions for Gesso extensibility</Description>
+    <NoWarn>$(NoWarn);CA1720</NoWarn>
+  </PropertyGroup>
+
+</Project>

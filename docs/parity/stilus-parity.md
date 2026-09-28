@@ -2,7 +2,7 @@
 
 Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, merged into Stilus features, each with exactly one status. The sources are [`sources/illustrator-30.8.md`](sources/illustrator-30.8.md) and [`sources/coreldraw-2026.md`](sources/coreldraw-2026.md); the status grammar and the update rules are in [`README.md`](README.md); the sections that own `plan` rows are designed in [`section-design.md`](section-design.md).
 
-**Totals (2026-09-26):** 2,802 features covering 1,294 Illustrator rows and 3,041 CorelDRAW rows (4,335 in all); every source id appears in exactly one row. Updated 2026-09-26 (Pinxit parity decision): the eleven automation rows moved from `excluded` to the suite-wide backlog entries B-041 (scripting and macros) and B-042 (batch processing), deferred to after the first release rather than excluded. Updated 2026-09-27 (operator decision "Group 1: plan them all"): the 37 rows that pointed at B-012 and B-037 to B-040 are planned (legacy formats and camera RAW in `D02 T18`, 3D in PDF in `D02 T13 §17`, third-party plug-in filters in `D02 T12 §10`). Updated 2026-09-27 (operator decision to plan the work deferred to after the first release as real sections, because the operator worried "features will be left behind"): the eleven automation rows are planned in `D02 T19` (the Stilus object model, actions, scripts, and batch) on the suite automation of `D01 T10`, released as `stilus-v1.2.0` in Phase 42. Updated 2026-09-28 (groom): NP-2790, the double-click that opens a bitmap in Pinxit, is planned in `D02 T12 §7`, since the gesture happens in Stilus.
+**Totals (2026-09-26):** 2,802 features covering 1,294 Illustrator rows and 3,041 CorelDRAW rows (4,335 in all); every source id appears in exactly one row. Updated 2026-09-26 (Gesso parity decision): the eleven automation rows moved from `excluded` to the suite-wide backlog entries B-041 (scripting and macros) and B-042 (batch processing), deferred to after the first release rather than excluded. Updated 2026-09-27 (operator decision "Group 1: plan them all"): the 37 rows that pointed at B-012 and B-037 to B-040 are planned (legacy formats and camera RAW in `D02 T18`, 3D in PDF in `D02 T13 §17`, third-party plug-in filters in `D02 T12 §10`). Updated 2026-09-27 (operator decision to plan the work deferred to after the first release as real sections, because the operator worried "features will be left behind"): the eleven automation rows are planned in `D02 T19` (the Stilus object model, actions, scripts, and batch) on the suite automation of `D01 T10`, released as `stilus-v1.2.0` in Phase 42. Updated 2026-09-28 (groom): NP-2790, the double-click that opens a bitmap in Gesso, is planned in `D02 T12 §7`, since the gesture happens in Stilus.
 
 | Status | Features | Source rows |
 | ------ | -------: | ----------: |
@@ -588,7 +588,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-0485 | Split Into Grid | AI-0157 | -- | core | plan D02 T08 §7 |  |
 | NP-0486 | Clean Up: stray points, unpainted objects, empty text | AI-0158 | -- | core | plan D02 T08 §7 |  |
 | NP-0487 | Refine path segments in place | AI-0168 | -- | core | plan D02 T08 §7 |  |
-| NP-0488 | Copy paths between documents and apps | AI-0169 | -- | core | plan D02 T08 §7 | pastes as SVG and editable paths; Photoshop shape layers are Pinxit's side |
+| NP-0488 | Copy paths between documents and apps | AI-0169 | -- | core | plan D02 T08 §7 | pastes as SVG and editable paths; Photoshop shape layers are Gesso's side |
 | NP-0489 | Join Curves panel with gap tolerance | -- | CD-675, CD-680, CD-699, CD-701 | core | plan D02 T08 §7 |  |
 | NP-0490 | Join Curves: extend to intersection | -- | CD-676 | core | plan D02 T08 §7 |  |
 | NP-0491 | Join Curves: chamfer | -- | CD-677 | core | plan D02 T08 §7 |  |
@@ -2013,7 +2013,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-1820 | Sources panel (linked sources and attribution) | -- | CD-580, CD-2484 | core | plan D02 T12 §7 |  |
 | NP-1821 | Linked documents and spreadsheet tables as sources | -- | CD-1686 | core | plan D02 T12 §7 | CDR sources read through the D02 T14 reader; XLS through NPOI |
 | NP-1822 | Place or import as a linked file | -- | CD-1967, CD-2463, CD-2473, CD-2485 | core | plan D02 T12 §7 |  |
-| NP-1823 | Edit bitmap in Pinxit and return on save | -- | CD-2073 | core | plan D02 T12 §7 | Pinxit stands in for PHOTO-PAINT |
+| NP-1823 | Edit bitmap in Gesso and return on save | -- | CD-2073 | core | plan D02 T12 §7 | Gesso stands in for PHOTO-PAINT |
 
 ## Raster effects and adjustments
 
@@ -2501,7 +2501,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2278 | Append [Converted] to the name on opening legacy .ai files | AI-1126 | -- | core | plan D02 T14 §4 | legacy PostScript AI and AIPrivateData parsed from the published AI File Format spec v7 |
 | NP-2279 | Save as .ai: version, range, PDF compatibility, embed ICC, compression, save each artboard, text as text or curves | AI-1005 | CD-2570 | format | plan D02 T14 §5 | PDF-based .ai written through the D02 T13 §14 PDF writer |
 | NP-2280 | Save down to legacy AI versions with a data-loss report | AI-1006 | -- | format | plan D02 T14 §5 | EPS-based AI 8 writer |
-| NP-2281 | Use Stilus artwork in other editors via .ai, PDF, and the clipboard | AI-1043 | -- | format | plan D02 T14 §5 | Photoshop smart-object paste is out of reach; Pinxit consumes the PDF and SVG flavors |
+| NP-2281 | Use Stilus artwork in other editors via .ai, PDF, and the clipboard | AI-1043 | -- | format | plan D02 T14 §5 | Photoshop smart-object paste is out of reach; Gesso consumes the PDF and SVG flavors |
 | NP-2282 | Legacy AI transparency handling: rasterize transparent areas or drop transparency | -- | CD-2571 | format | plan D02 T14 §5 |  |
 | NP-2283 | AI export conversion options: outlines to objects, complex fills, spot to CMYK, preview image, placed images linked or embedded | -- | CD-2572 | format | plan D02 T14 §5 |  |
 | NP-2284 | Conical and square gradients exported to AI as up to 256 bands | -- | CD-2573 | format | plan D02 T14 §5 |  |
@@ -2554,7 +2554,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2331 | PNG import with masks and transparency | -- | CD-2610 | format | plan D02 T14 §12 |  |
 | NP-2332 | Open and place PSD: layers to objects or flatten, layer comps, hidden layers, blend modes, spot channels | AI-0943, AI-1001 | CD-2612 | format | plan D02 T14 §13 | own reader against the published PSD spec |
 | NP-2333 | Place linked PSD with a chosen layer comp | AI-0944 | -- | format | plan D02 T14 §13 |  |
-| NP-2334 | Exchange paths and pixels with raster editors through the clipboard | AI-0952 | -- | format | plan D02 T14 §13 | Pinxit is the first partner |
+| NP-2334 | Exchange paths and pixels with raster editors through the clipboard | AI-0952 | -- | format | plan D02 T14 §13 | Gesso is the first partner |
 | NP-2335 | Export PSD: color model, resolution, flat or layered, anti-alias, embed ICC, spot channels | AI-1018 | CD-2613 | format | plan D02 T14 §13 | text rasterized; own writer |
 | NP-2336 | Import office and text documents: TXT, RTF, DOC, DOCX | AI-1003 | CD-2555 | format | plan D02 T14 §14 | DocumentFormat.OpenXml and NPOI; PUB, VSD, and PPT are D02 T18 §2 and §3; WPD is D02 T18 §7 |
 | NP-2337 | Export text as TXT | AI-1022 | -- | format | plan D02 T14 §14 |  |
@@ -2766,7 +2766,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | NP-2533 | Trace with AI background removal first | -- | CD-3021 | ai | plan D02 T15 §10 | the local tracer stays in D02 T12 §5 |
 | NP-2534 | AI-assisted trace preparation | -- | CD-3028 | ai | plan D02 T15 §10 | model proposes palette and cleanup; the potrace port does the tracing |
 | NP-2535 | Linked variations across documents | AI-1267 | -- | ai | plan D02 T15 §11 |  |
-| NP-2536 | Suite launcher and hand-offs to Pinxit and Albumen | -- | CD-172 | core | plan D02 T15 §11 | offered only when the app is installed, refused by name otherwise |
+| NP-2536 | Suite launcher and hand-offs to Gesso and Albumen | -- | CD-172 | core | plan D02 T15 §11 | offered only when the app is installed, refused by name otherwise |
 
 ## Workspace and UI
 
@@ -3046,16 +3046,16 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | ID | Feature | Illustrator | CorelDRAW | Category | Status | Notes |
 | -- | ------- | ----------- | --------- | -------- | ------ | ----- |
 | NP-2785 | Application launcher | -- | CD-049 | companion | other-app: none launcher for other Corel applications, plug-ins, and the Get More store is outside the suite's scope |  |
-| NP-2786 | Bevel effect on an editable area | -- | CD-2116 | companion | other-app: Pinxit PHOTO-PAINT effect needing an editable area or mask is raster editing, Pinxit's job |  |
-| NP-2787 | Glass effect on an editable area | -- | CD-2119 | companion | other-app: Pinxit PHOTO-PAINT effect needing an editable area or mask is raster editing, Pinxit's job |  |
-| NP-2788 | Mask-edge emboss effect (The Boss) | -- | CD-2123 | companion | other-app: Pinxit PHOTO-PAINT effect needing an editable area or mask is raster editing, Pinxit's job |  |
-| NP-2789 | Bokeh blur outside an editable area | -- | CD-2147 | companion | other-app: Pinxit PHOTO-PAINT effect needing an editable area or mask is raster editing, Pinxit's job |  |
-| NP-2790 | Double-click bitmap to edit in raster editor | -- | CD-2888 | companion | plan D02 T12 §7 | the double-click gesture is Stilus's; editing the pixels is Pinxit's |
+| NP-2786 | Bevel effect on an editable area | -- | CD-2116 | companion | other-app: Gesso PHOTO-PAINT effect needing an editable area or mask is raster editing, Gesso's job |  |
+| NP-2787 | Glass effect on an editable area | -- | CD-2119 | companion | other-app: Gesso PHOTO-PAINT effect needing an editable area or mask is raster editing, Gesso's job |  |
+| NP-2788 | Mask-edge emboss effect (The Boss) | -- | CD-2123 | companion | other-app: Gesso PHOTO-PAINT effect needing an editable area or mask is raster editing, Gesso's job |  |
+| NP-2789 | Bokeh blur outside an editable area | -- | CD-2147 | companion | other-app: Gesso PHOTO-PAINT effect needing an editable area or mask is raster editing, Gesso's job |  |
+| NP-2790 | Double-click bitmap to edit in raster editor | -- | CD-2888 | companion | plan D02 T12 §7 | the double-click gesture is Stilus's; editing the pixels is Gesso's |
 | NP-2791 | Standalone font manager | -- | CD-3030 | companion | other-app: none standalone font manager outside the suite's scope |  |
-| NP-2792 | Round-trip bitmap editing in a raster editor | -- | CD-3031 | companion | other-app: Pinxit the Stilus side is NP-1823 (`D02 T12 §7`); editing the pixels is Pinxit's |  |
-| NP-2793 | Raster image editor | -- | CD-3032 | companion | other-app: Pinxit Corel PHOTO-PAINT raster editing is Pinxit's job |  |
-| NP-2794 | Mask from subject | -- | CD-3033 | companion | other-app: Pinxit PHOTO-PAINT subject masking is Pinxit's job |  |
-| NP-2795 | Quick AI image generation in the raster editor | -- | CD-3034 | companion | other-app: Pinxit PHOTO-PAINT AI image generation is Pinxit's job |  |
+| NP-2792 | Round-trip bitmap editing in a raster editor | -- | CD-3031 | companion | other-app: Gesso the Stilus side is NP-1823 (`D02 T12 §7`); editing the pixels is Gesso's |  |
+| NP-2793 | Raster image editor | -- | CD-3032 | companion | other-app: Gesso Corel PHOTO-PAINT raster editing is Gesso's job |  |
+| NP-2794 | Mask from subject | -- | CD-3033 | companion | other-app: Gesso PHOTO-PAINT subject masking is Gesso's job |  |
+| NP-2795 | Quick AI image generation in the raster editor | -- | CD-3034 | companion | other-app: Gesso PHOTO-PAINT AI image generation is Gesso's job |  |
 | NP-2796 | Standalone font manager with online font services | -- | CD-3035 | companion | other-app: none standalone font manager with online font services outside the suite's scope |  |
 | NP-2797 | Screen capture utility | -- | CD-3036 | companion | other-app: none screen capture utility outside the suite's scope |  |
 | NP-2798 | RAW and HDR photo processing app | -- | CD-3037 | companion | other-app: Albumen AfterShot RAW and HDR photo workflow is Albumen's job |  |

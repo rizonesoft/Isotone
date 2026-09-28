@@ -1,13 +1,13 @@
-# Affinity Photo feature inventory (parity reference for Pinxit)
+# Affinity Photo feature inventory (parity reference for Gesso)
 
-> **Provenance note (2026-09-26):** verbatim copy of the Affinity by Canva 3.3 inventory (the Pixel Studio and the photo studios that replace Affinity Photo 2) compiled for the Pinxit parity plan, rows `AF-0001` to `AF-2762`, under its original title: Affinity Photo feature inventory (Affinity by Canva, Pixel Studio and photo studios). The ids are stable and each is placed in exactly one row of [`../pinxit-parity.md`](../pinxit-parity.md). Do not renumber; a future Affinity version appends new ids after AF-2762 (see [`../README.md`](../README.md)).
+> **Provenance note (2026-09-26):** verbatim copy of the Affinity by Canva 3.3 inventory (the Pixel Studio and the photo studios that replace Affinity Photo 2) compiled for the Gesso parity plan, rows `AF-0001` to `AF-2762`, under its original title: Affinity Photo feature inventory (Affinity by Canva, Pixel Studio and photo studios). The ids are stable and each is placed in exactly one row of [`../gesso-parity.md`](../gesso-parity.md). Do not renumber; a future Affinity version appends new ids after AF-2762 (see [`../README.md`](../README.md)).
 
 > **Access limits:** affinity.studio began answering HTTP 429 to every client after about 200 of the 532 targeted help pages, so the remaining current pages were covered from the Affinity Photo 2 help (479 pages read in full). Some rows therefore carry Photo 2 wording; Photo 2 option detail is assumed to hold in the current app unless the current help replaces it, and rows marked "(Photo 2 only)" are documented for Photo 2 but absent or replaced in 3.3.
 
 - Product: Affinity by Canva (single free app that unifies Affinity Photo, Designer and Publisher; Personas are now called Studios; photo editing lives in the Pixel Studio plus the Develop, Liquify, Tone Mapping, Retouching, Color Grading, Compositing, Astrophotography Stack, Canva AI and Slice/Export Studios). Native format .af; V1 and V2 .afphoto/.afdesign/.afpub open.
 - Current version: Affinity 3.3 ("September 2026 Update"), released 2026-09-15 (build 3.3.0.4850 per release notes). Prior: 3.0 released 2025-10-30 (free app launch), 3.1 March 2026, 3.2 April 2026.
 - Inventory date: 2026-09-26. Baseline for dropped features: Affinity Photo 2.x (rows marked "(Photo 2 only)" are documented for Photo 2 but absent or replaced in the current app).
-- Purpose: parity checklist for Pinxit (GPL raster editor, WPF/SkiaSharp, Windows).
+- Purpose: parity checklist for Gesso (GPL raster editor, WPF/SkiaSharp, Windows).
 
 ## Sources
 

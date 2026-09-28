@@ -4999,8 +4999,8 @@ BACKLOG_REMOVED_RE = re.compile(
 BACKLOG_REMOVED_ATTEMPT_RE = re.compile(r"^\s*[-*+]\s+B-\d")
 BACKLOG_REMOVED_GRAMMAR = '`- B-NNN <source> -- removed YYYY-MM-DD -- operator: "<the operator\'s words>"`'
 # The release tags an app release pushes; `isotone` is the suite release.
-RELEASE_APPS = ("stilus", "pinxit", "albumen", "isotone")
-RELEASE_TAG_PATTERN = r"(?:stilus|pinxit|albumen|isotone)-v\d+\.\d+\.\d+"
+RELEASE_APPS = ("stilus", "gesso", "albumen", "isotone")
+RELEASE_TAG_PATTERN = r"(?:stilus|gesso|albumen|isotone)-v\d+\.\d+\.\d+"
 # A release's backlog review, one `reviewed:` field per release per entry:
 # `reviewed: <tag> <YYYY-MM-DD> promoted DNN TNN §N` (part of it became that
 # section) or `reviewed: <tag> <YYYY-MM-DD> deferred by operator: "<words>"`.
@@ -5811,8 +5811,8 @@ DESIGN_BASELINE_NAME = ".design-baseline"
 DESIGN_BASELINE_REF_RE = re.compile(r"^D\d{2} T\d{2} §\d+$")
 # The checklist item that ships an app release: pushing its tag (`isotone` is
 # the suite release, which no design deviation gates but the backlog gate does).
-RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<tag>(?P<app>stilus|pinxit|albumen|isotone)-v\d+\.\d+\.\d+)`")
-DESIGN_DOMAIN_APPS = {"01": ("stilus", "pinxit", "albumen"), "02": ("stilus",), "03": ("pinxit",), "04": ("albumen",)}
+RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<tag>(?P<app>stilus|gesso|albumen|isotone)-v\d+\.\d+\.\d+)`")
+DESIGN_DOMAIN_APPS = {"01": ("stilus", "gesso", "albumen"), "02": ("stilus",), "03": ("gesso",), "04": ("albumen",)}
 
 
 def design_root() -> Path:
@@ -10768,9 +10768,9 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _gbacklog(_gok.replace("-- app: fixture", "-- app: stilus"))
             check("release gate: an app entry is owed its app's review",
                   (_gclasses(), any("B-001, B-002" in m for m in _gmsgs())), (["release-backlog-unreviewed"], True))
-            _gbacklog(_gok.replace("-- app: fixture", "-- app: pinxit").replace(
+            _gbacklog(_gok.replace("-- app: fixture", "-- app: gesso").replace(
                 "- [B-002] Second idea -- source: fixture-idea-2 -- added: 2026-09-26",
-                "- [B-002] Second idea -- app: pinxit -- source: fixture-idea-2 -- added: 2026-09-26"))
+                "- [B-002] Second idea -- app: gesso -- source: fixture-idea-2 -- added: 2026-09-26"))
             check("release gate: another app's entries are out of a Stilus release's scope", _gclasses(), [])
             gfile.write_text(_grelease((_gpush + _gitem).replace("stilus-v0.2.0", "isotone-v1.0.0"), stamp="2026-09-28"),
                              encoding="utf-8")

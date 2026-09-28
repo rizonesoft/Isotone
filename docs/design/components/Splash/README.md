@@ -1,6 +1,6 @@
 # Splash
 
-The Suite card: the window each app shows while it starts (operator decision 2026-09-27). A graphite card with the app icon on a soft accent halo, the app name, its role, the suite and version line, a live status line and launch progress, and the spectrum band as a gentle wave along the bottom edge. It is the same card in Stilus, Pinxit and Albumen; only the icon, the accent, the name, the role and the status text differ.
+The Suite card: the window each app shows while it starts (operator decision 2026-09-27). A graphite card with the app icon on a soft accent halo, the app name, its role, the suite and version line, a live status line and launch progress, and the spectrum band as a gentle wave along the bottom edge. It is the same card in Stilus, Gesso and Albumen; only the icon, the accent, the name, the role and the status text differ.
 
 The reference design is `resources/icons/<app>/<app>-splash.svg` (640 x 360), also used as a marketing image. In the app the card is built in XAML to this spec, never shown as a picture, so the version, the status and the progress are live.
 
@@ -29,7 +29,7 @@ Layout grid: a left column for the icon (x 56 to 192, centred on y 160) and a te
 
 ## Colors
 
-- The accent is `accent-<app>` (Stilus #29C5E6, Pinxit #F5923E, Albumen #4CC47A), the dark-theme value in every theme: the card is always graphite.
+- The accent is `accent-<app>` (Stilus #29C5E6, Gesso #F5923E, Albumen #4CC47A), the dark-theme value in every theme: the card is always graphite.
 - The card greys (#303136, #1A1B1E, #F4F4F5, #B7B8BD, #8C8D93, #6C6D73, #A3A4AA, #3A3B41, #6E6F75) have no token: they are the splash's own palette, matched to the app icon tile. The card looks the same in every brightness theme, like the app icon.
 - Spectrum stops at 0, 0.167, 0.333, 0.5, 0.667, 0.833 and 1: #FF4D6D, #FF9A3C, #FFD84A, #4CC47A, #29C5E6, #5B7CFF, #B45CFF.
 - High contrast: the card fill is the system Window color, every text and the 1px border the system WindowText color, the progress fill the system Highlight color; the halo, the band crest and the glow are dropped; the icon and the band stay, as images.

@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>Gesso.UI</RootNamespace>
+    <AssemblyName>Gesso</AssemblyName>
+    <Description>Gesso - Professional Image Editor</Description>
+    <UseWPF>true</UseWPF>
+    <!-- <ApplicationIcon>Assets\gesso.ico</ApplicationIcon> -->
+    <StartupObject>Gesso.UI.App</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Dirkster.AvalonDock" />
+    <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Sinks.Debug" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gesso.Core\Gesso.Core.csproj" />
+    <ProjectReference Include="..\Gesso.Rendering\Gesso.Rendering.csproj" />
+    <ProjectReference Include="..\Gesso.Plugins.Abstractions\Gesso.Plugins.Abstractions.csproj" />
+    <ProjectReference Include="..\Gesso.Scripting\Gesso.Scripting.csproj" />
+    <ProjectReference Include="..\Gesso.FileFormats\Gesso.FileFormats.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\icons.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

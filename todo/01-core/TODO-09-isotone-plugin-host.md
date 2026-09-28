@@ -11,25 +11,25 @@ track: C9
 
 # TODO-09 -- Isotone.Core Plug-in Host: Photoshop-Compatible Filter, Format, and Acquire Plug-ins
 
-> **Goal:** Stilus and Pinxit (and later Albumen) run third-party Photoshop-compatible plug-ins (8BF filters, format plug-ins, and acquire plug-ins) through one host in `Isotone.Core`: every plug-in runs in an isolated `Isotone.PluginHost.exe` process (x64, with an x86 build for 32-bit plug-ins), never inside an app, talking to the app over a named pipe with pixel tiles in shared memory, so a plug-in that crashes, hangs, or corrupts memory costs the user one dialog, not their document; plug-ins are discovered from their PiPL resources in user-chosen folders; the filter record and its callback suites are emulated from observable behavior with PSFilterPdn (MIT) as the porting reference; and one plug-in manager in `Isotone.UI` lists folders, detected plug-ins, and their support status, disables a failing plug-in with a message, and shows About Plug-ins. The consuming apps own their menus and document commands (`D02 T12 §10`, `D03 T14 §11`), and Pinxit's G'MIC collection (`D03 T14 §13`) runs its native core in the same host process.
+> **Goal:** Stilus and Gesso (and later Albumen) run third-party Photoshop-compatible plug-ins (8BF filters, format plug-ins, and acquire plug-ins) through one host in `Isotone.Core`: every plug-in runs in an isolated `Isotone.PluginHost.exe` process (x64, with an x86 build for 32-bit plug-ins), never inside an app, talking to the app over a named pipe with pixel tiles in shared memory, so a plug-in that crashes, hangs, or corrupts memory costs the user one dialog, not their document; plug-ins are discovered from their PiPL resources in user-chosen folders; the filter record and its callback suites are emulated from observable behavior with PSFilterPdn (MIT) as the porting reference; and one plug-in manager in `Isotone.UI` lists folders, detected plug-ins, and their support status, disables a failing plug-in with a message, and shows About Plug-ins. The consuming apps own their menus and document commands (`D02 T12 §10`, `D03 T14 §11`), and Gesso's G'MIC collection (`D03 T14 §13`) runs its native core in the same host process.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-27):** There is no `src/Isotone.Core/` project yet (`D01 T02 §1` creates it in Phase 2) and no plug-in host process anywhere in the suite: no `src/Isotone.PluginHost/` folder, and no source file mentions PiPL, a filter record, or an 8BF file. Pinxit's only plug-in contract is its managed `IFilterPlugin` in `src/Pinxit/src/Pinxit.Plugins.Abstractions/IFilterPlugin.cs`, which processes 8-bit bytes in-process and is Pinxit-only (its managed extension modules are `D03 T14 §12`, not this file). The Stilus and Pinxit catalog rows for third-party plug-ins (NP-2027; IP-1033, IP-2250 to IP-2254) were backlog B-012 until the operator's 2026-09-27 decision planned them.
+> **Current state (verified 2026-09-27):** There is no `src/Isotone.Core/` project yet (`D01 T02 §1` creates it in Phase 2) and no plug-in host process anywhere in the suite: no `src/Isotone.PluginHost/` folder, and no source file mentions PiPL, a filter record, or an 8BF file. Gesso's only plug-in contract is its managed `IFilterPlugin` in `src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`, which processes 8-bit bytes in-process and is Gesso-only (its managed extension modules are `D03 T14 §12`, not this file). The Stilus and Gesso catalog rows for third-party plug-ins (NP-2027; IP-1033, IP-2250 to IP-2254) were backlog B-012 until the operator's 2026-09-27 decision planned them.
 <!-- claim: absent src/Isotone.Core -->
 <!-- claim: absent src/Isotone.PluginHost -->
-<!-- claim: count "public interface IFilterPlugin" src/Pinxit/src/Pinxit.Plugins.Abstractions/IFilterPlugin.cs = 1 -->
+<!-- claim: count "public interface IFilterPlugin" src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs = 1 -->
 <!-- claim: count "PiPL|FilterRecord|8bf" src/**/*.cs = 0 -->
 
 ## Inputs
 
 - [`standards/shared.md`](../../standards/shared.md) -- refusals that name the file and the reason, progress and Cancel over one second, one log line per change, a dependency is a decision
 - [`standards/testing.md`](../../standards/testing.md) -- driven runs with evidence and the unit tests each section cites
-- [`docs/parity/stilus-parity.md`](../../docs/parity/stilus-parity.md) and [`docs/parity/pinxit-parity.md`](../../docs/parity/pinxit-parity.md) -- the rows the consuming sections own; this file owns no catalog rows
+- [`docs/parity/stilus-parity.md`](../../docs/parity/stilus-parity.md) and [`docs/parity/gesso-parity.md`](../../docs/parity/gesso-parity.md) -- the rows the consuming sections own; this file owns no catalog rows
 - Licensing, verified 2026-09-27: PSFilterPdn (github 0xC0000054/PSFilterPdn, the Paint.NET 8bf host) is MIT and is the porting reference for structure layouts and callback behavior, with its copyright notice kept in every file translated from it; PSFilterHost (same author) is MS-PL, which is not GPL-compatible, so none of its code is read into this project; Adobe's Photoshop Plug-in SDK is under Adobe's proprietary SDK license, so none of its headers or samples are copied, and the ABI is taken from PSFilterPdn and the plug-ins' observable behavior; G'MIC (CeCILL-2.1 or CeCILL-C) is consumed by `D03 T14 §13`, not here
 - Test plug-ins: `tests/fixtures/plugins/` holds own filter, format, and acquire plug-ins written in C for this repository (MIT, own code), built with the MSVC toolset, with the build commands recorded; freely downloadable third-party 8BF filters are used only in driven runs, named with their version in the evidence, and never committed
 - -> XREF: D02 T12 §10 -- Stilus's Bitmaps, Plug-ins menu and effect-stack entries consume §2 and §4
-- -> XREF: D03 T14 §11 -- Pinxit's plug-in filters, format and acquire plug-ins, and plug-in preferences consume §2, §3, and §4
-- -> XREF: D03 T14 §13 -- Pinxit's G'MIC collection runs its native core in §1's host process
+- -> XREF: D03 T14 §11 -- Gesso's plug-in filters, format and acquire plug-ins, and plug-in preferences consume §2, §3, and §4
+- -> XREF: D03 T14 §13 -- Gesso's G'MIC collection runs its native core in §1's host process
 - -> XREF: D04 T04 §15 -- Albumen's viewer effects browser and plug-in folders consume §2 and §4, and Albumen's publish carries §1's host (the former B-012 rows LP-1157, LP-1159, and LP-1224)
 - -> XREF: D04 T11 §7 -- Albumen's batch edit pipeline runs §2's filters as a batch step with stored parameters (LP-1160)
 - Prose references (no XREF because the target files are not edited here): `D01 T02 §1` (the project, app-data paths, and logging), `D01 T02 §2` (the settings store), `D01 T01 §1` and `D01 T01 §3` (the icon catalog and theme resources the manager uses), `D01 T03 §1` (`PixelBuffer<TPixel>` and tiles), `D01 T04 §1` (the gray, CMYK, and Lab conversions plug-ins may request)
@@ -37,7 +37,7 @@ track: C9
 
 ## Outcome
 
-- A third-party 8BF filter runs on a Stilus bitmap object and a Pinxit layer through the same host, with its own dialog, its progress, Cancel, and its parameters remembered for Repeat.
+- A third-party 8BF filter runs on a Stilus bitmap object and a Gesso layer through the same host, with its own dialog, its progress, Cancel, and its parameters remembered for Repeat.
 - Every plug-in runs out of process; killing the host or a plug-in crash mid-filter leaves the app running and the document unchanged, and the plug-in is disabled with a message naming it.
 - Format and acquire plug-ins open, save, and import through the host, with saves written by the consuming app's atomic writer.
 - One plug-in manager in `Isotone.UI` shows folders, detected plug-ins with their support status, and About Plug-ins in every app that hosts.
@@ -74,7 +74,7 @@ Photoshop plug-ins are native DLLs written against a 1990s callback ABI; loaded 
 - [ ] Add `PluginFailureRegistry`: a plug-in that crashed or hung is recorded as disabled with the reason and date in the app's settings (`<App>.Plugins.Disabled`) until the user re-enables it. Done when: a settings readback after a simulated crash shows the entry, and a new session does not load the plug-in.
 - [ ] Run the host with the least privilege available: the same user, no elevation, a job object that kills the host when the app exits, and the working directory set to the plug-in's folder. Done when: a test closes the client process and asserts the host is gone within 2 seconds.
 - [ ] Log one Serilog line per host start, connect, request, failure, disable, and exit in the app's log through `D01 T02 §1`, and have the host write its own log file beside the app's. Done when: a test asserts the start, request, and failure lines.
-- [ ] Add the host to each app's publish output: a `PluginHost` item in the shared publish props so `Stilus`, `Pinxit`, and later `Albumen` each ship their own copy of the x64 and x86 host, and no app depends on another app being installed. Done when: `pwsh scripts/publish.ps1 -App Stilus` output contains `Isotone.PluginHost.exe` and its x86 twin.
+- [ ] Add the host to each app's publish output: a `PluginHost` item in the shared publish props so `Stilus`, `Gesso`, and later `Albumen` each ship their own copy of the x64 and x86 host, and no app depends on another app being installed. Done when: `pwsh scripts/publish.ps1 -App Stilus` output contains `Isotone.PluginHost.exe` and its x86 twin.
 - [ ] Commit: `"core: the isolated plug-in host process and its client"`
 
 **Test checkpoint:** Unit test and driven run with evidence: `dotnet test Isotone.slnx --filter "FullyQualifiedName~PluginHost"` exits 0 with the protocol, shared-tile, client, host-death, hang, and failure-registry tests passing, and the host-death test quoted showing the source tiles byte-identical after the kill. Cheaper substitute that fails: loading plug-ins with `NativeLibrary.Load` inside the app, which the host-death test cannot survive.
@@ -103,7 +103,7 @@ The filter plug-in is what users mean by "a Photoshop plug-in": an 8BF DLL with 
 
 ## 3. Format and Acquire Plug-ins
 
-Photoshop's format plug-ins (kind `8BIF`) open and save file types the app does not know, and acquire plug-ins (kind `8BAM`) import from scanners and cameras through vendor drivers; Pinxit's catalog asks for both (IP-2252), and the host from §1 and the record machinery from §2 carry them. The host returns decoded pixels and writes encoded bytes to the consumer's stream, so every save is written by the consuming app's atomic writer, never by the plug-in to the user's file. Owns no catalog rows (IP-2252 sits on `D03 T14 §11`).
+Photoshop's format plug-ins (kind `8BIF`) open and save file types the app does not know, and acquire plug-ins (kind `8BAM`) import from scanners and cameras through vendor drivers; Gesso's catalog asks for both (IP-2252), and the host from §1 and the record machinery from §2 carry them. The host returns decoded pixels and writes encoded bytes to the consumer's stream, so every save is written by the consuming app's atomic writer, never by the plug-in to the user's file. Owns no catalog rows (IP-2252 sits on `D03 T14 §11`).
 
 **Fidelity:** no surface of its own (File menu entries and format lists belong to D03 T14 §11; the plug-in's own options dialog is the plug-in's)
 
@@ -130,7 +130,7 @@ Every competitor has a place to point at plug-in folders and see what loaded: Ph
 
 **Requires:** display-session -- the manager page, its lists, and the About box need an interactive desktop
 
-- [ ] Add `src/Isotone.UI/Plugins/PluginManagerViewModel.cs` (CommunityToolkit.Mvvm) over `PluginScanner`, taking an app scope (`Stilus`, `Pinxit`, `Albumen`) that prefixes every settings key. Done when: `PluginManagerViewModelTests` load a scan of the fixtures and expose each plug-in with its status.
+- [ ] Add `src/Isotone.UI/Plugins/PluginManagerViewModel.cs` (CommunityToolkit.Mvvm) over `PluginScanner`, taking an app scope (`Stilus`, `Gesso`, `Albumen`) that prefixes every settings key. Done when: `PluginManagerViewModelTests` load a scan of the fixtures and expose each plug-in with its status.
 - [ ] Add the folder list: the default folder `%LOCALAPPDATA%\Isotone\<App>\Plug-ins` created on first use, add and remove search folders through the shared folder picker, and store them in `<App>.Plugins.Folders`. Done when: a settings readback after adding and removing a folder shows the list and the default folder exists.
 - [ ] Add the support-folder authorization Affinity requires: a folder outside the user profile is added only after the user confirms it, recorded in `<App>.Plugins.AuthorizedFolders`. Done when: a view-model test asserts an unconfirmed outside folder is not scanned.
 - [ ] Add the allow-unknown setting (`<App>.Plugins.AllowUnknown`, default off): plug-ins whose PiPL declares no supported host or an unrecognized kind are listed as unsupported unless it is on. Done when: toggling it moves the unknown test plug-in between unsupported and supported in the list.

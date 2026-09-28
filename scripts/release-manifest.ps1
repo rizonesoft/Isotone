@@ -15,7 +15,7 @@
     files.txt                      the public URL of every file, one per line
 
   Layout on the storage: <base>/<prefix><slug>/<version>/<file>, the feed at
-  <base>/<prefix>update/<feed>.json. <slug> is stilus, pinxit, albumen, or isotone (the
+  <base>/<prefix>update/<feed>.json. <slug> is stilus, gesso, albumen, or isotone (the
   suite). -KeyPrefix is empty for a release and 'drafts/' for a draft dry run, so a
   draft never touches the live paths or the live feed.
 
@@ -24,7 +24,7 @@
   pwsh scripts/release-manifest.ps1 -Slug stilus -Name Stilus -Version 0.1.0 -Tag stilus-v0.1.0
 #>
 param(
-  [Parameter(Mandatory)][ValidateSet('stilus', 'pinxit', 'albumen', 'isotone')][string]$Slug,
+  [Parameter(Mandatory)][ValidateSet('stilus', 'gesso', 'albumen', 'isotone')][string]$Slug,
   [Parameter(Mandatory)][string]$Name,
   [Parameter(Mandatory)][string]$Version,
   [Parameter(Mandatory)][string]$Tag,

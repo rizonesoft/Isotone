@@ -66,7 +66,7 @@ track: N11
 - -> XREF: D01 T02 §2 -- the settings store every `Stilus.*` effect key goes through
 - -> XREF: D01 T02 §4 -- the suite history every effect command records into
 - -> XREF: D01 T06 §6 -- the pixel engine extensions cites §5: `D01 T06 §6`'s mesh warp filter reads the warp math `D03 T13 §6` moves out of §5, and nothing else moves
-- -> XREF: D03 T13 §6 -- Pinxit parity retouching and transform cites §5: the warp-style and mesh-map math D03 T13 §6 moves to `Isotone.Core/Vector/Warp/`
+- -> XREF: D03 T13 §6 -- Gesso parity retouching and transform cites §5: the warp-style and mesh-map math D03 T13 §6 moves to `Isotone.Core/Vector/Warp/`
 
 ## Outcome
 

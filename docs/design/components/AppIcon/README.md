@@ -1,6 +1,6 @@
 # App icon
 
-The app icons of Stilus, Pinxit and Albumen: Direction C, the suite tile, a shared graphite tile with the spectrum band along its foot and the app's accent glyph, in a 256 master and hand-tuned 16, 24 and 32 variants.
+The app icons of Stilus, Gesso and Albumen: Direction C, the suite tile, a shared graphite tile with the spectrum band along its foot and the app's accent glyph, in a 256 master and hand-tuned 16, 24 and 32 variants.
 
 The full guide (construction, colors, pixel-grid rules, export) is the App icons section of the brand book; the files are the App icons asset group.
 
@@ -25,4 +25,4 @@ The full guide (construction, colors, pixel-grid rules, export) is the App icons
 ## WPF
 
 - `Window.Icon` and the title-bar mark take the app's `.ico` generated from these SVGs; the mark picks the frame the ladder names for the current DPI (16 at 100 percent, 20 at 125 percent, 24 at 150 percent), never a scaled master.
-- `AutomationProperties.Name` on the title-bar mark is the app name ("Pinxit").
+- `AutomationProperties.Name` on the title-bar mark is the app name ("Gesso").

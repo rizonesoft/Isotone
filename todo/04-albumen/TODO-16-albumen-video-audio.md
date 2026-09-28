@@ -45,7 +45,7 @@ track: L16
 - -> XREF: D04 T12 §8 -- the slideshow player and exporter §6 extends with video and MP4 output
 - `D04 T14 §5` -- the caches preference page the video cache size joins
 - -> XREF: D04 T15 §10 -- Albumen 1.0.0, after which this post-release file runs
-- -> XREF: D03 T23 §1 -- Pinxit's video layers and timeline on the same media stack; neither app copies the other's player or encoder
+- -> XREF: D03 T23 §1 -- Gesso's video layers and timeline on the same media stack; neither app copies the other's player or encoder
 - `D06 T01 §3` -- the Albumen user guide every UI section here updates
 
 ## Outcome
@@ -186,7 +186,7 @@ ACDSee keeps a database-driven view of every cataloged photo and video, Media mo
 - [ ] Add refresh, which rereads the catalog and the media cells without re-importing (LP-1173). Done when: a test adds a catalog row behind the view and refresh shows it.
 - [ ] Add the Orphans view listing cataloged files that no longer exist, through `D04 T06 §8`'s missing check, with Locate and Remove from Catalog (LP-1174). Done when: `MediaOrphanTests` delete a fixture copy and the view lists it, and Remove from Catalog is one undo step.
 - [ ] Add full screen: double-click or Enter opens the item full screen, videos play in place through the transport, edge arrows navigate, and a toggle returns to the grid (LP-1175). Done when: a driven run double-clicks a clip, it plays full screen, and the right arrow shows the next item (captures).
-- [ ] Add the context commands: open in View, Develop, or Edit mode (Edit hands off to Pinxit through `D04 T02 §7`), rotate (the catalog's orientation, never the file), show in Explorer, delete to the Recycle Bin with confirmation, and browse to the file in Manage (LP-1176). Done when: `MediaContextCommandTests` assert each command's target and that rotate changes the catalog row only.
+- [ ] Add the context commands: open in View, Develop, or Edit mode (Edit hands off to Gesso through `D04 T02 §7`), rotate (the catalog's orientation, never the file), show in Explorer, delete to the Recycle Bin with confirmation, and browse to the file in Manage (LP-1176). Done when: `MediaContextCommandTests` assert each command's target and that rotate changes the catalog row only.
 - [ ] Add filter, sort, and group, and the group-by pane and properties pane, reusing `D04 T05 §5` and the properties pane of `D04 T05 §7` (LP-1177). Done when: a test groups the fixture by media type and date and asserts the groups.
 - [ ] Add thumbnail pop-ups on hover or with Shift held, auto hide, a larger thumbnail, and configurable information fields (`Albumen.Media.Popup.*`) (LP-1187). Done when: a view-model test with a fake clock asserts the pop-up after the delay and its configured fields.
 - [ ] Register Media mode's keys through `ShortcutManager` (LP-1130): mode switching, rotation, printing through `D04 T12 §4`, file commands (copy, move, rename, delete), and full-screen navigation inside the mode. Done when: `MediaModeKeyTests` assert each key's command and the table in `docs/user/albumen/media-mode.md` equals the registered keys.

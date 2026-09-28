@@ -14,13 +14,13 @@
   otherwise installer/common.iss uses https://www.rizonesoft.com/.
 .EXAMPLE
   pwsh scripts/package.ps1 -App Stilus
-  pwsh scripts/package.ps1 -App Pinxit -Version 0.2.0
+  pwsh scripts/package.ps1 -App Gesso -Version 0.2.0
   pwsh scripts/package.ps1 -Suite -Version 1.0.0
 #>
 [CmdletBinding(DefaultParameterSetName = 'App')]
 param(
   [Parameter(Mandatory, ParameterSetName = 'App')]
-  [ValidateSet('Stilus', 'Pinxit', 'Albumen')]
+  [ValidateSet('Stilus', 'Gesso', 'Albumen')]
   [string]$App,
   [Parameter(Mandatory, ParameterSetName = 'Suite')]
   [switch]$Suite,

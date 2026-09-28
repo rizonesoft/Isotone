@@ -18,9 +18,9 @@
   --ph-status: var(--statusbar-h-compact);
   --ph-layer: var(--layer-row-h-compact);
   --ph-swatch: var(--swatch-compact);
-  --ph-accent: var(--accent-pinxit);
-  --ph-accent-hover: var(--accent-pinxit-hover);
-  --ph-accent-on: var(--accent-pinxit-on);
+  --ph-accent: var(--accent-gesso);
+  --ph-accent-hover: var(--accent-gesso-hover);
+  --ph-accent-on: var(--accent-gesso-on);
 }
 .ph-comfortable {
   --ph-ctl: var(--control-h-comfortable);
@@ -42,7 +42,7 @@
   line-height: var(--ph-lh);
 }
 .app-stilus { --ph-accent: var(--accent-stilus); --ph-accent-hover: var(--accent-stilus-hover); --ph-accent-on: var(--accent-stilus-on); }
-.app-pinxit { --ph-accent: var(--accent-pinxit); --ph-accent-hover: var(--accent-pinxit-hover); --ph-accent-on: var(--accent-pinxit-on); }
+.app-gesso { --ph-accent: var(--accent-gesso); --ph-accent-hover: var(--accent-gesso-hover); --ph-accent-on: var(--accent-gesso-on); }
 .app-albumen { --ph-accent: var(--accent-albumen); --ph-accent-hover: var(--accent-albumen-hover); --ph-accent-on: var(--accent-albumen-on); }
 
 /* Highlight color options. Blue is the tokens' own value; these remap the state set in a subtree. */

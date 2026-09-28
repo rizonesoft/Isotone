@@ -61,7 +61,7 @@ pwsh scripts/package.ps1 -App Stilus   # optional: build an installer and portab
 - **MVVM** with CommunityToolkit.Mvvm; no third-party UI frameworks. Standard WPF controls only.
 - **Tests:** new behavior comes with tests (xUnit). Bug fixes come with a test that fails before the fix.
 - **Docs:** user-visible changes update the matching guide under [`docs/user/`](docs/user/README.md); architectural changes update [`docs/dev/`](docs/dev/README.md).
-- Coding standards live in [`standards/`](standards/): `shared.md` for suite-wide rules plus one file per app (`stilus.md`, `pinxit.md`, `albumen.md`).
+- Coding standards live in [`standards/`](standards/): `shared.md` for suite-wide rules plus one file per app (`stilus.md`, `gesso.md`, `albumen.md`).
 
 ## Commit messages
 
@@ -76,20 +76,20 @@ Signed-off-by: Your Name <you@example.com>
 ```
 
 - **Types:** `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
-- **Scopes:** the app or area, such as `stilus`, `pinxit`, `albumen`, `core`, `installer`, `ci`, `docs`.
+- **Scopes:** the app or area, such as `stilus`, `gesso`, `albumen`, `core`, `installer`, `ci`, `docs`.
 - Keep the summary under about 72 characters, in the imperative mood ("add", not "added").
 
 Examples:
 
 ```text
 feat(stilus): add corner radius to rectangle tool
-fix(pinxit): keep layer order when undoing a merge
+fix(gesso): keep layer order when undoing a merge
 ci: cache NuGet packages in build workflow
 ```
 
 ## Pull requests
 
-1. Fork the repository and branch from `main` (`feat/stilus-corner-radius`, `fix/pinxit-merge-undo`).
+1. Fork the repository and branch from `main` (`feat/stilus-corner-radius`, `fix/gesso-merge-undo`).
 2. Keep each pull request focused on one change.
 3. Fill in the pull request template: the plan reference, what changed, and how you tested it.
 4. Before requesting review, make sure that:
@@ -119,4 +119,4 @@ Do not submit code copied from projects with incompatible licenses, or from any 
 
 ## Names and icons
 
-The GPL covers the code, not the names and logos. "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Pinxit", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd; the [trademark policy](TRADEMARKS.md) explains what you may do with them. In short: contributing to this repository is always fine, but a fork or modified build that you distribute needs its own name and icons.
+The GPL covers the code, not the names and logos. "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Gesso", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd; the [trademark policy](TRADEMARKS.md) explains what you may do with them. In short: contributing to this repository is always fine, but a fork or modified build that you distribute needs its own name and icons.

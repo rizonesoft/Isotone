@@ -33,7 +33,7 @@ track: N6
 - -> XREF: D02 T14 §2 -- the readers and exporters (`D02 T14 §2`, `§12`, `§15`, `§19`) that extend §14's import table and export dialog
 - -> XREF: D02 T15 §6 -- the assistant's tool catalog that reads §12's command index, and the AI Preferences page §13 hosts
 - -> XREF: D02 T16 §1 -- workspaces, the command index, menus, and preference pages that extend §7, §12, and §13; §17 audits every parity surface
-- -> XREF: D03 T20 §1 -- Pinxit parity workspace cites §12: the command index command search reads
+- -> XREF: D03 T20 §1 -- Gesso parity workspace cites §12: the command index command search reads
 - -> XREF: D01 T01 §8 -- the Isotone AvalonDock theme and `Isotone.DocumentTab` §7's first `DockingManager` uses
 
 ## Outcome
@@ -147,7 +147,7 @@ Stilus opens one document at a time; the history and selection are app singleton
 
 ## 12. The Command Palette and the On-Canvas HUD
 
-`CommandPaletteService`, `CanvasHUDService`, and `PresetService` are deferred here. A command palette (Ctrl+K) makes every command reachable by name; the HUD shows live dimensions and angles while dragging. **Pinxit second consumer (2026-09-26):** the command index built here moves to `Isotone.UI/Workspace/CommandIndex.cs` in `D03 T20 §3`, the command palette consuming it unchanged. -> SOURCE: legacy-stilus-5.3-5.4
+`CommandPaletteService`, `CanvasHUDService`, and `PresetService` are deferred here. A command palette (Ctrl+K) makes every command reachable by name; the HUD shows live dimensions and angles while dragging. **Gesso second consumer (2026-09-26):** the command index built here moves to `Isotone.UI/Workspace/CommandIndex.cs` in `D03 T20 §3`, the command palette consuming it unchanged. -> SOURCE: legacy-stilus-5.3-5.4
 
 **Fidelity:** Command palette overlay and canvas HUD -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/stilus/command-palette/, docs/captures/golden/stilus/hud/.
 **Design:** docs/design/components/Canvas/README.md, docs/design/components/TextBox/README.md, docs/design/components/ListTree/README.md, new surface: docs/design/components/CommandPalette/README.md -- states: all in spec -- themes: all four -- density: both
@@ -175,7 +175,7 @@ Settings accumulate across sections (snapping, autosave, export defaults, units)
 **Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: Preferences dialog -- new build, no baseline; captured to docs/captures/stilus/preferences/. The source is now the design named on the Design line; the captures under `docs/captures/stilus/` are before records only, and the approved renders land under `docs/captures/golden/stilus/`.
 **Job:** a user can change every Stilus setting in one place and remap shortcuts, with conflicts refused. Consumer: every setting's named consumer.
 **Treatment:** a categorized dialog (General, Units, Canvas, Snapping, Autosave, Export, Shortcuts) bound to `StilusSettings`, applying on OK with Cancel reverting; the Shortcuts page edits the keymap with conflict detection and reset to defaults, stored in settings. Cheaper substitute that fails the checkpoint: a JSON file the user edits by hand.
-**Chrome:** consume the settings store, the keymap, and the theme; share nothing with Pinxit until Pinxit builds its own preferences (then file an `Isotone.UI` move).
+**Chrome:** consume the settings store, the keymap, and the theme; share nothing with Gesso until Gesso builds its own preferences (then file an `Isotone.UI` move).
 
 **Requires:** display-session -- the dialog needs an interactive desktop
 

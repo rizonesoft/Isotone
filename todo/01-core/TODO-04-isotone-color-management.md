@@ -10,10 +10,10 @@ track: C4
 
 # TODO-04 -- Isotone.Core Color Management: ICC Transforms, Proofing, and Bitmap Color Modes
 
-> **Goal:** Isotone.Core gains one color-management engine for the suite under `src/Isotone.Core/Color/`: a recorded decision (lcms2, MIT, through a thin `LibraryImport` P/Invoke wrapper with the native DLL bundled per RID, against Windows WCS as the rejected candidate), ICC v2 and v4 profile loading, RGB, CMYK, gray, and Lab transforms with rendering intents, black point compensation, proofing transforms, and a gamut API (§1 and §2, Phase 6), then bitmap color modes including duotone and multichannel (§3, Phase 10). It lives in Isotone.Core, not in an app, because the operator-mandated Isotone.Core pixel engine (`D01 T03 §3`) needs it for Lab, CMYK, and duotone bitmaps, and Pinxit's ICC work (`D03 T04 §2`) and Albumen's output transform (`D04 T02 §2`) are its next consumers; Stilus's color model (`D02 T09 §1`) is its first. The engine part of backlog B-023 (Pinxit color management) is superseded by this file's §1 decision. **Corrected 2026-09-26:** B-023's remaining Pinxit part was promoted into `D03 T18 §4` by the Pinxit parity plan, which consumes this engine.
+> **Goal:** Isotone.Core gains one color-management engine for the suite under `src/Isotone.Core/Color/`: a recorded decision (lcms2, MIT, through a thin `LibraryImport` P/Invoke wrapper with the native DLL bundled per RID, against Windows WCS as the rejected candidate), ICC v2 and v4 profile loading, RGB, CMYK, gray, and Lab transforms with rendering intents, black point compensation, proofing transforms, and a gamut API (§1 and §2, Phase 6), then bitmap color modes including duotone and multichannel (§3, Phase 10). It lives in Isotone.Core, not in an app, because the operator-mandated Isotone.Core pixel engine (`D01 T03 §3`) needs it for Lab, CMYK, and duotone bitmaps, and Gesso's ICC work (`D03 T04 §2`) and Albumen's output transform (`D04 T02 §2`) are its next consumers; Stilus's color model (`D02 T09 §1`) is its first. The engine part of backlog B-023 (Gesso color management) is superseded by this file's §1 decision. **Corrected 2026-09-26:** B-023's remaining Gesso part was promoted into `D03 T18 §4` by the Gesso parity plan, which consumes this engine.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** `src/Isotone.Core/` does not exist yet; `D01 T02 §1` creates it. No ICC code exists anywhere in the tree: no lcms binding, no WPF `ColorContext` use, and no profile type in any `.cs` file under `src/`. Stilus's only color type is the sRGB byte struct `Color` in `src/Stilus/Bezier.Core/Models/Color.cs` with HSL and HSV math and no CMYK, Lab, or spot representation. The engine decision sat in the backlog as part of B-023 (Pinxit color management), recorded there as undecided between an lcms2 wrapper and WCS; B-023 was reworded on 2026-09-26 to consume this file, and promoted the same day into `D03 T18 §4`.
+> **Current state (verified 2026-09-26):** `src/Isotone.Core/` does not exist yet; `D01 T02 §1` creates it. No ICC code exists anywhere in the tree: no lcms binding, no WPF `ColorContext` use, and no profile type in any `.cs` file under `src/`. Stilus's only color type is the sRGB byte struct `Color` in `src/Stilus/Bezier.Core/Models/Color.cs` with HSL and HSV math and no CMYK, Lab, or spot representation. The engine decision sat in the backlog as part of B-023 (Gesso color management), recorded there as undecided between an lcms2 wrapper and WCS; B-023 was reworded on 2026-09-26 to consume this file, and promoted the same day into `D03 T18 §4`.
 <!-- claim: absent src/Isotone.Core/Isotone.Core.csproj -->
 <!-- claim: count "lcms|IccProfile|ColorContext" src/**/*.cs = 0 -->
 <!-- claim: count "public readonly struct Color" src/Stilus/Bezier.Core/Models/Color.cs = 1 -->
@@ -27,7 +27,7 @@ track: C4
 - [`docs/parity/stilus-parity.md`](../../docs/parity/stilus-parity.md) -- the catalog rows NP-2076 to NP-2085 this file owns
 - [lcms2 2.16 API reference](https://github.com/mm2/Little-CMS/blob/master/doc/LittleCMS2.16%20API.pdf) -- the function set the wrapper binds; `transicc` is the golden oracle
 - [ICC.1:2022 (profile version 4.4)](https://www.color.org/specification/ICC.1-2022-05.pdf) -- the profile format the loader validates
-- [`../backlog.md`](../backlog.md) -- B-023's engine part is superseded by §1; its Assign, Convert, and soft-proof parts stay with Pinxit, promoted on 2026-09-26 into `D03 T18 §4`; the "wrapper moves to Isotone.Core" note of B-011 (promoted into `D02 T13 §2`) is fulfilled by §1
+- [`../backlog.md`](../backlog.md) -- B-023's engine part is superseded by §1; its Assign, Convert, and soft-proof parts stay with Gesso, promoted on 2026-09-26 into `D03 T18 §4`; the "wrapper moves to Isotone.Core" note of B-011 (promoted into `D02 T13 §2`) is fulfilled by §1
 - -> XREF: D01 T02 §1 -- Isotone.Core and its app-data paths, which §1 builds inside
 - -> XREF: D01 T02 §2 -- the settings store holding default profiles, intent, and black point keys
 - -> XREF: D01 T03 §3 -- the pixel buffers and quantization §3 converts between modes
@@ -38,16 +38,16 @@ track: C4
 - -> XREF: D02 T13 §14 -- PDF output intents and DeviceN duotone images read §1 profiles and §3 specs
 - -> XREF: D02 T12 §9 -- Stilus bitmap color modes, whose Lab, CMYK, and duotone mode commands wait for §3
 - -> XREF: D02 T14 §2 -- PDF import maps DeviceN duotone images into §3's `DuotoneSpec` and reads ICC-based spaces through §1
-- -> XREF: D03 T04 §2 -- Pinxit's embedded PNG and JPEG profiles are this engine's next consumer
+- -> XREF: D03 T04 §2 -- Gesso's embedded PNG and JPEG profiles are this engine's next consumer
 - -> XREF: D04 T02 §2 -- Albumen's output transform to sRGB, Display P3, and Adobe RGB is a later consumer
 - -> XREF: D01 T06 §1 -- the pixel engine extensions cites §1: the transfer curves the linear processing space converts through; §3: Lab and CMYK sources and the halftone GCR and UCR conversion
 - -> XREF: D01 T07 §1 -- the suite develop engine cites §1: input and output transforms; §2: rendering intents and black point compensation on the output transform
-- -> XREF: D03 T08 §1 -- Pinxit parity document and view cites §1: profile names and conversions for D03 T08 §12's profile tab and D03 T08 §11's readouts
-- -> XREF: D03 T10 §4 -- Pinxit parity selection and channels cites §2: the `GamutMask` behind D03 T10 §4's Out of Gamut
-- -> XREF: D03 T11 §9 -- Pinxit parity adjustments and color cites §1: the conversions every mode, LUT, and ink readout goes through; §2: gamut checks and device links behind D03 T11 §9's warnings; §3: mode conversions and duotone, whose dialog D03 T11 §7 moves to `Isotone.UI`
-- -> XREF: D03 T15 §1 -- Pinxit parity photo (Camera Raw and merges) cites §2: working-space and output transforms into and out of the develop space
-- -> XREF: D03 T17 §12 -- Pinxit parity formats cites §1: profiles for every reader and writer, and the monitor profile D03 T17 §12 tags screenshots with; §3: CMYK, Lab, and duotone buffers for PSD, TIFF, JPEG, and JPEG XL
-- -> XREF: D03 T18 §4 -- Pinxit parity export, color management, and print cites §1: profiles and transforms D03 T18 §4 consumes; §2: intents, proofing transforms, and gamut checks D03 T18 §4 and D03 T18 §5 consume; §3: CMYK, Lab, and multichannel conversions for Convert to Profile
+- -> XREF: D03 T08 §1 -- Gesso parity document and view cites §1: profile names and conversions for D03 T08 §12's profile tab and D03 T08 §11's readouts
+- -> XREF: D03 T10 §4 -- Gesso parity selection and channels cites §2: the `GamutMask` behind D03 T10 §4's Out of Gamut
+- -> XREF: D03 T11 §9 -- Gesso parity adjustments and color cites §1: the conversions every mode, LUT, and ink readout goes through; §2: gamut checks and device links behind D03 T11 §9's warnings; §3: mode conversions and duotone, whose dialog D03 T11 §7 moves to `Isotone.UI`
+- -> XREF: D03 T15 §1 -- Gesso parity photo (Camera Raw and merges) cites §2: working-space and output transforms into and out of the develop space
+- -> XREF: D03 T17 §12 -- Gesso parity formats cites §1: profiles for every reader and writer, and the monitor profile D03 T17 §12 tags screenshots with; §3: CMYK, Lab, and duotone buffers for PSD, TIFF, JPEG, and JPEG XL
+- -> XREF: D03 T18 §4 -- Gesso parity export, color management, and print cites §1: profiles and transforms D03 T18 §4 consumes; §2: intents, proofing transforms, and gamut checks D03 T18 §4 and D03 T18 §5 consume; §3: CMYK, Lab, and multichannel conversions for Convert to Profile
 - -> XREF: D04 T04 §2 -- the Albumen Viewer cites §1: display color transforms for D04 T04 §2
 - -> XREF: D04 T09 §15 -- Albumen parity develop cites §2: proofing transforms and gamut checks for D04 T09 §15
 - -> XREF: D04 T11 §4 -- the Albumen batch tools cites §1: ICC conversion for D04 T11 §4 and D04 T11 §6; §2: rendering intents and black point compensation for D04 T11 §6
@@ -172,6 +172,6 @@ Placed bitmaps in a print document need the same color modes the press uses: gra
 - [ ] `dotnet test Isotone.slnx --filter "FullyQualifiedName~Isotone.Core.Tests.Color"` exits 0 with every test class of §1 to §3 reporting
 - [ ] Every `transicc` golden and duotone fixture round trip passes, with the lcms2 and `transicc` versions recorded beside the fixtures
 - [ ] `docs/dev/decisions.md` carries the engine row; `src/Isotone.Core/THIRD-PARTY-NOTICES.md` carries lcms2's MIT license and the CMYK profile's grant
-- [ ] Shared-once check: Stilus (`D02 T09 §1`) consumes this engine today; the pending second consumers are recorded as Pinxit's ICC work (`D03 T04 §2`) and Albumen's output transform (`D04 T02 §2`), not claimed as shipped
+- [ ] Shared-once check: Stilus (`D02 T09 §1`) consumes this engine today; the pending second consumers are recorded as Gesso's ICC work (`D03 T04 §2`) and Albumen's output transform (`D04 T02 §2`), not claimed as shipped
 - [ ] `python scripts/todo-claims.py` holds for this file
 - [ ] `python scripts/todo-graph.py validate` clean

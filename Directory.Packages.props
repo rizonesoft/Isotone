@@ -21,7 +21,7 @@
     <PackageVersion Include="FluentIcons.Wpf" Version="2.1.341" />
     <!-- Stilus splash logo only (SplashWindow.xaml svgc:SvgViewbox); retired by D02 T02 §2. -->
     <PackageVersion Include="SharpVectors.Wpf" Version="1.8.6" />
-    <!-- Pinxit only; removal is planned (Stilus already dropped it). -->
+    <!-- Gesso only; removal is planned (Stilus already dropped it). -->
     <PackageVersion Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
 

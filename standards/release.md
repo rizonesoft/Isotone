@@ -5,7 +5,7 @@ How each app, and the suite bundle, is versioned, packaged, and released. The me
 ## Versions and tags
 
 - SemVer 2.0 per app, derived from git tags by MinVer. No version string is typed into a project file.
-- Tag prefixes: `stilus-v*`, `pinxit-v*`, `albumen-v*` for the apps, and `isotone-v*` for a suite bundle. A version with a hyphen (`0.1.0-alpha.1`) is a prerelease. A pipeline dry run is a draft release made by dispatching `release.yml` in its draft mode with the tag as an input: the tag is never pushed, and the draft is deleted after inspection (operator decision 2026-09-27, `D00 T02 §7`).
+- Tag prefixes: `stilus-v*`, `gesso-v*`, `albumen-v*` for the apps, and `isotone-v*` for a suite bundle. A version with a hyphen (`0.1.0-alpha.1`) is a prerelease. A pipeline dry run is a draft release made by dispatching `release.yml` in its draft mode with the tag as an input: the tag is never pushed, and the draft is deleted after inspection (operator decision 2026-09-27, `D00 T02 §7`).
 - **No app's version moves because another app shipped.** A suite bundle records which app versions it carries; it does not re-version them.
 - `Isotone.Core` and `Isotone.UI` are not released on their own: each app ships the copy it was built with.
 
@@ -26,7 +26,7 @@ Each app release produces, under `artifacts/dist/`:
 
 Operator decision 2026-09-27: binaries are distributed only from rizonesoft.com.
 
-- The installer, the portable ZIP, and `SHA256SUMS` are uploaded to S3-compatible object storage served as `download.rizonesoft.com`, at `<slug>/<version>/<file>` (slug `stilus`, `pinxit`, `albumen`, or `isotone` for the suite). A published file is never replaced.
+- The installer, the portable ZIP, and `SHA256SUMS` are uploaded to S3-compatible object storage served as `download.rizonesoft.com`, at `<slug>/<version>/<file>` (slug `stilus`, `gesso`, `albumen`, or `isotone` for the suite). A published file is never replaced.
 - The update feed is `download.rizonesoft.com/update/<slug>.json` for the latest stable release and `update/<slug>-prerelease.json` for the latest prerelease; its fields are in [`docs/dev/versioning.md`](../docs/dev/versioning.md).
 - A GitHub release carries the release notes, GitHub's automatic source archives, the SHA-256 table, and prominent links to the downloads. **No installer or ZIP is ever attached to a GitHub release.**
 - winget manifests point at `download.rizonesoft.com` URLs.

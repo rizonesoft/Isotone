@@ -23,7 +23,7 @@ track: N5
 - [`standards/release.md`](../../standards/release.md) -- the release checklist §4 runs line by line
 - [`CHANGELOG.md`](../../CHANGELOG.md) -- the Stilus section §4 fills
 - [`LICENSE`](../../LICENSE) -- GPL-3.0 text the About dialog links
-- -> XREF: D01 T01 §4 -- moves §1 and §2's dialogs to `Isotone.UI` the day Pinxit needs them
+- -> XREF: D01 T01 §4 -- moves §1 and §2's dialogs to `Isotone.UI` the day Gesso needs them
 - -> XREF: D06 T01 §1 -- the Stilus user guide §4 requires
 - -> XREF: D05 T01 §1 -- the clean-machine proof §4 requires
 - -> XREF: D00 T02 §8 -- the .NET 11 GA SDK pin §4 waits for, so no release ships on a release-candidate SDK
@@ -57,7 +57,7 @@ track: N5
 
 ## 1. The About Dialog
 
-A user reporting a bug needs the exact version; a GPL-3.0 application must make its license and its components' licenses reachable. Only Stilus needs this dialog now, so it is built in Stilus; `D01 T01 §4` moves it to `Isotone.UI` when Pinxit needs one.
+A user reporting a bug needs the exact version; a GPL-3.0 application must make its license and its components' licenses reachable. Only Stilus needs this dialog now, so it is built in Stilus; `D01 T01 §4` moves it to `Isotone.UI` when Gesso needs one.
 
 **Fidelity:** About dialog -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/stilus/about/.
 **Design:** docs/design/components/Dialog/README.md#about-dialog, docs/design/components/AppIcon/README.md, docs/design/components/Button/README.md -- states: all in spec -- themes: all four -- density: both

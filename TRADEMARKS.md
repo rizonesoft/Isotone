@@ -4,13 +4,13 @@ The Isotone Graphics Suite is free software: the GNU General Public License v3.0
 
 ## The marks
 
-"Rizonesoft", "Isotone Graphics Suite", "Stilus", "Pinxit", and "Albumen", together with the Rizonesoft logo under [`resources/brand/`](resources/brand/) and the app icons under [`resources/icons/`](resources/icons/README.md), are trademarks or brand names of Rizonetech (Pty) Ltd. Rizonesoft is a brand of Rizonetech (Pty) Ltd.
+"Rizonesoft", "Isotone Graphics Suite", "Stilus", "Gesso", and "Albumen", together with the Rizonesoft logo under [`resources/brand/`](resources/brand/) and the app icons under [`resources/icons/`](resources/icons/README.md), are trademarks or brand names of Rizonetech (Pty) Ltd. Rizonesoft is a brand of Rizonetech (Pty) Ltd.
 
 No registration is claimed by this policy. The marks identify software published by Rizonetech (Pty) Ltd under the Rizonesoft brand, and this policy is how that identification stays reliable for users.
 
 ## What you may do without asking
 
-- **Use the names to refer to the project.** Writing "Stilus", "Pinxit", "Albumen", or "Isotone Graphics Suite" to talk about, review, teach, compare, or link to the official software is nominative use and needs no permission.
+- **Use the names to refer to the project.** Writing "Stilus", "Gesso", "Albumen", or "Isotone Graphics Suite" to talk about, review, teach, compare, or link to the official software is nominative use and needs no permission.
 - **Say what your work is built on.** A fork or a derived product may say it is "based on Stilus" or "built from the Isotone Graphics Suite source code", in plain text, as long as it does not suggest it is the official software or endorsed by Rizonetech (Pty) Ltd.
 - **Redistribute unmodified official builds.** You may pass on an installer or portable ZIP exactly as published on [rizonesoft.com](https://www.rizonesoft.com/?utm_source=github&utm_medium=trademarks), with its names and icons, provided you do not change it and you comply with the GPL (including the source offer).
 - **Build from source for yourself.** Personal and internal builds may keep the names and icons as long as they are not distributed.

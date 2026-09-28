@@ -60,13 +60,13 @@ track: N14
 - -> XREF: D01 T04 §3 -- the duotone and DeviceN bitmap model for PDF and PSD spot channels
 - -> XREF: D01 T02 §2 -- the settings store every format option persists in
 - -> XREF: D01 T02 §4 -- the suite history every import and slice edit records into
-- -> XREF: D03 T04 §1 -- Pinxit's codec decision, which decides whether §12's WIC codec moves to `Isotone.Core`
-- -> XREF: D01 T08 §3 -- moves §12's ICO and CUR decoder into `src/Isotone.Core/Formats/Raster/` and adds the ICO writer and executable icon extraction, so Stilus, Pinxit, and Albumen share one icon codec
+- -> XREF: D03 T04 §1 -- Gesso's codec decision, which decides whether §12's WIC codec moves to `Isotone.Core`
+- -> XREF: D01 T08 §3 -- moves §12's ICO and CUR decoder into `src/Isotone.Core/Formats/Raster/` and adds the ICO writer and executable icon extraction, so Stilus, Gesso, and Albumen share one icon codec
 - -> XREF: D02 T18 §1 -- the legacy formats this file does not cover (FreeHand, FXG, SWF, Publisher, Visio, PowerPoint, Corel and Micrografx legacy, PICT, MET, GEM, FMV, Lotus PIC, NAPLPS, WordPerfect, Quattro Pro, Lotus 1-2-3, WordStar, legacy rasters, XCF, and RAW) extend §6, §7, §9, §11, §12, and §14
-- -> XREF: D03 T04 §5 -- Pinxit's PSD import, which consumes §13's reader from `Isotone.Core` instead of building a second one
-- -> XREF: D03 T16 §8 -- Pinxit parity type and vectors cites §1: the SVG export options D03 T16 §8 moves and shares; §4: Stilus's legacy AI reader, the read-back oracle for D03 T16 §5's Illustrator paths
-- -> XREF: D03 T17 §1 -- Pinxit parity formats cites §2: PdfPig, which D03 T17 §15 and D03 T17 §7 reuse for annotations and text positions; §9: the Ghostscript runner D03 T17 §16 moves; §11: the EMF and WMF code D03 T17 §16 moves; §12: the TGA, PCX, and BMP codecs D03 T17 §8 moves (the ICO and CUR decoder moves earlier, in D01 T08 §3), and the JPEG 2000 decision D03 T17 §5 reconciles; §13: the PSD writer D03 T17 §2 moves; §16: Stilus's progressive JPEG path switches to D03 T17 §11's encoder; §19: the WIA acquire service D03 T17 §12 moves
-- -> XREF: D03 T18 §1 -- Pinxit parity export, color management, and print cites §15: the export queue D03 T18 §1 moves; §16: the web encoder D03 T18 §2 moves; §17: the slice model and image map writer D03 T18 §2 moves
+- -> XREF: D03 T04 §5 -- Gesso's PSD import, which consumes §13's reader from `Isotone.Core` instead of building a second one
+- -> XREF: D03 T16 §8 -- Gesso parity type and vectors cites §1: the SVG export options D03 T16 §8 moves and shares; §4: Stilus's legacy AI reader, the read-back oracle for D03 T16 §5's Illustrator paths
+- -> XREF: D03 T17 §1 -- Gesso parity formats cites §2: PdfPig, which D03 T17 §15 and D03 T17 §7 reuse for annotations and text positions; §9: the Ghostscript runner D03 T17 §16 moves; §11: the EMF and WMF code D03 T17 §16 moves; §12: the TGA, PCX, and BMP codecs D03 T17 §8 moves (the ICO and CUR decoder moves earlier, in D01 T08 §3), and the JPEG 2000 decision D03 T17 §5 reconciles; §13: the PSD writer D03 T17 §2 moves; §16: Stilus's progressive JPEG path switches to D03 T17 §11's encoder; §19: the WIA acquire service D03 T17 §12 moves
+- -> XREF: D03 T18 §1 -- Gesso parity export, color management, and print cites §15: the export queue D03 T18 §1 moves; §16: the web encoder D03 T18 §2 moves; §17: the slice model and image map writer D03 T18 §2 moves
 - -> XREF: D02 T19 §3 -- Stilus batch export reuses §15's Export for Screens presets
 - -> XREF: D04 T13 §9 -- Albumen CAD and plotter drawings move §10's ACadSharp reading and §11's CgmReader and HpglReader into Isotone.Core, Stilus repointing
 
@@ -240,7 +240,7 @@ Handing a file to an Illustrator user means writing an `.ai` Illustrator opens a
 - [ ] Conical and square gradients, which AI 8 cannot express, write as up to 256 filled bands, the count from the gradient's steps setting. Done when: `AiLegacyExportTests.GradientBands` asserts the band count.
 - [ ] Live features Illustrator lacks expand through their `D02 T07 §1` fallbacks, and the export report lists each expansion. Done when: a fixture with a Stilus-only live object exports with one Expanded report line.
 - [ ] Add the Illustrator Options dialog with the data-loss report before writing. Done when: a view-model test asserts Cancel writes nothing; capture committed.
-- [ ] Clipboard write: AICB and PDF flavors beside SVG for paste into other editors and Pinxit, controlled by §19's clipboard settings. Done when: a clipboard test asserts both flavors and that each reads back through §4 and §2.
+- [ ] Clipboard write: AICB and PDF flavors beside SVG for paste into other editors and Gesso, controlled by §19's clipboard settings. Done when: a clipboard test asserts both flavors and that each reads back through §4 and §2.
 - [ ] Log `Exported AI {Path} v{Version} ({Artboards} artboards, {Expanded} expanded)`. Done when: the line is asserted.
 - [ ] Record the interoperability risk with Illustrator itself in the user guide page and in `docs/dev/decisions.md`. Done when: both name the risk and the operator check that covers it.
 - [ ] Commit fixtures `tests/fixtures/stilus/ai/export/` (a multi-artboard, multi-layer document with spot colors and text) with goldens rendered from the written files by Inkscape with poppler, versions recorded. Done when: the README lists them.
@@ -419,7 +419,7 @@ Clip art, plotter, and cutter files still circulate, and EMF is also the Office 
 
 ## 12. Raster Formats: Import and Export Through WIC
 
-Any common image must place at the right size, and any page must export to the raster format a client asks for. WIC through WPF's `BitmapDecoder` and `BitmapEncoder` covers most formats with no dependency; WebP goes through SkiaSharp, AVIF and HEIF through the Windows Store extensions (refused by name when absent), and TGA and PCX through Stilus's own codecs. The codec lives in `Isotone.Stilus.Desktop` until Pinxit's codec decision (`D03 T04 §1`) picks the same stack, when it moves to `Isotone.Core`. Catalog: NP-2311 to NP-2331 (21 features).
+Any common image must place at the right size, and any page must export to the raster format a client asks for. WIC through WPF's `BitmapDecoder` and `BitmapEncoder` covers most formats with no dependency; WebP goes through SkiaSharp, AVIF and HEIF through the Windows Store extensions (refused by name when absent), and TGA and PCX through Stilus's own codecs. The codec lives in `Isotone.Stilus.Desktop` until Gesso's codec decision (`D03 T04 §1`) picks the same stack, when it moves to `Isotone.Core`. Catalog: NP-2311 to NP-2331 (21 features).
 
 **Fidelity:** Raster Formats: Import and Export Through WIC -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/stilus/export-raster/, docs/captures/golden/stilus/raster-import/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/NumberBox/README.md, docs/design/components/ComboBox/README.md, docs/design/components/Slider/README.md, docs/design/components/Checkbox/README.md, docs/design/components/Progress/README.md -- states: all in spec -- themes: all four -- density: both
@@ -461,12 +461,12 @@ Any common image must place at the right size, and any page must export to the r
 
 ## 13. Photoshop PSD Import and Export
 
-Photoshop and Pinxit compositions arrive as layered PSD, and vector drawings go back layered. Stilus writes its own PSD reader and writer against Adobe's published specification. The reader lives in `Isotone.Stilus.Core/Formats/Psd/` until Pinxit's PSD import (`D03 T04 §5`) needs it, when it moves to `Isotone.Core` and Pinxit consumes it rather than building a second reader. Catalog: NP-2332 to NP-2335 (4 features).
+Photoshop and Gesso compositions arrive as layered PSD, and vector drawings go back layered. Stilus writes its own PSD reader and writer against Adobe's published specification. The reader lives in `Isotone.Stilus.Core/Formats/Psd/` until Gesso's PSD import (`D03 T04 §5`) needs it, when it moves to `Isotone.Core` and Gesso consumes it rather than building a second reader. Catalog: NP-2332 to NP-2335 (4 features).
 
 **Fidelity:** Photoshop PSD Import and Export -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/stilus/psd/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/Checkbox/README.md, docs/design/components/RadioButton/README.md, docs/design/components/ListTree/README.md -- states: all in spec -- themes: all four -- density: both
 **Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: new build, no baseline; captured to docs/captures/stilus/psd/. The source is now the design named on the Design line; the captures under `docs/captures/stilus/` are before records only, and the approved renders land under `docs/captures/golden/stilus/`.
-**Job:** a Photoshop or Pinxit composition arrives as editable layers, and a vector drawing goes back layered. Consumer: the document on import; the written PSD on export.
+**Job:** a Photoshop or Gesso composition arrives as editable layers, and a vector drawing goes back layered. Consumer: the document on import; the written PSD on export.
 **Treatment:** a PSD Import dialog (layer comp, layers to objects or flatten, import hidden layers, import slices) and PSD export options in the one export dialog. Cheaper substitute that fails the checkpoint: reading the composite image only.
 **Chrome:** consume §12's bitmap path, the `D02 T12 §7` Links panel for linked PSD, and the settings store. Do not add a second bitmap decoder.
 
@@ -479,7 +479,7 @@ Photoshop and Pinxit compositions arrive as layered PSD, and vector drawings go 
 - [ ] Import options: layer comp, layers to objects or flatten, import hidden layers, import slices, persisted under `Stilus.Formats.Psd.Import.*`. Done when: tests assert each option.
 - [ ] Place linked PSD keeps the link and the chosen comp through `D02 T12 §7`; comps switch from the placed object's properties. Done when: a test switches comps and asserts the relinked pixels.
 - [ ] Add `PsdWriter`: flat or layered, color model, resolution, anti-alias, embed ICC, spot channels kept, text rasterized, and the maximum-compatibility composite always written. Done when: `PsdWriterReadBackTests` read written files back through Stilus and through psd-tools with the same layer count.
-- [ ] Clipboard exchange with raster editors: paths as SVG and AICB flavors (§19), pixels as PNG and DIB; Pinxit is the first partner. Done when: a clipboard test asserts all four flavors.
+- [ ] Clipboard exchange with raster editors: paths as SVG and AICB flavors (§19), pixels as PNG and DIB; Gesso is the first partner. Done when: a clipboard test asserts all four flavors.
 - [ ] Add the PSD Import dialog and the PSD page in the export dialog. Done when: view-model tests assert binding; captures committed.
 - [ ] Log `Imported PSD {Path} ({Layers} layers)` and `Exported PSD {Path} ({Mode})`. Done when: both lines are asserted.
 - [ ] Commit fixtures `tests/fixtures/stilus/psd/` (layered RGB, CMYK, 16-bit, duotone, with comps and masks) with goldens from psd-tools (MIT) layer dumps and GIMP 3.0 composites, versions recorded. Done when: every fixture has both goldens.
@@ -656,12 +656,12 @@ Icon designers need crisp small artwork that exports without blurry edges. Today
 
 ## 19. Clipboard Formats, OLE Objects, Placing Multiple Files, and Scanner Acquire
 
-Artwork must move between Stilus, Pinxit, office apps, and other editors by copy, paste, drag, place, and scan without losing vectors. This section extends the `D02 T03 §3` `ClipboardService` to every flavor the file supports, builds the Import command with search, filters, multiple files, and a place gun, records the OLE decision (no container or server; linked placed files instead), and adds WIA acquire. The WIA test needs a WIA device or the WIA test device and is skipped by name otherwise. Catalog: NP-2351 to NP-2366 (16 features).
+Artwork must move between Stilus, Gesso, office apps, and other editors by copy, paste, drag, place, and scan without losing vectors. This section extends the `D02 T03 §3` `ClipboardService` to every flavor the file supports, builds the Import command with search, filters, multiple files, and a place gun, records the OLE decision (no container or server; linked placed files instead), and adds WIA acquire. The WIA test needs a WIA device or the WIA test device and is skipped by name otherwise. Catalog: NP-2351 to NP-2366 (16 features).
 
 **Fidelity:** Clipboard Formats, OLE Objects, Placing Multiple Files, and Scanner Acquire -- the design named on the Design line below, per standards/design-contract.md; goldens under docs/captures/golden/stilus/import-place/.
 **Design:** docs/design/components/Dialog/README.md, docs/design/components/Menu/README.md, docs/design/components/Canvas/README.md, docs/design/components/ListTree/README.md, docs/design/components/Progress/README.md -- states: all in spec -- themes: all four -- density: both
 **Corrected 2026-09-27:** the design contract (`standards/design-contract.md`, operator decisions that day: "Exact tokens + ±1 DIP geometry + approved goldens", golden sign-off by the review panel only) replaces the capture comparison. The Fidelity line said: new build, no baseline; captured to docs/captures/stilus/import-place/. The source is now the design named on the Design line; the captures under `docs/captures/stilus/` are before records only, and the approved renders land under `docs/captures/golden/stilus/`.
-**Job:** a designer can move artwork between Stilus, Pinxit, office apps, and other editors by copy, paste, drag, place, and scan without losing vectors. Consumer: the document and other applications through the clipboard.
+**Job:** a designer can move artwork between Stilus, Gesso, office apps, and other editors by copy, paste, drag, place, and scan without losing vectors. Consumer: the document and other applications through the clipboard.
 **Treatment:** File, Import (Ctrl+I) with a search box, format filter, multi-select, and a place gun (click places at size, drag sizes, Enter centers, Space keeps the original position, grid placement), plus Clipboard Handling settings and File, Acquire Image. Cheaper substitute that fails the checkpoint: single-file place with bitmap-only paste.
 **Chrome:** consume the `D02 T06 §14` place path, the `D02 T12 §7` linked files and Edit Original, the snapping engine, the settings store, and `Isotone.UI` dialogs. Do not add a second clipboard service.
 

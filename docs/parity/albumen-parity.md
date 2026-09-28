@@ -2,7 +2,7 @@
 
 Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76 feature, merged into Albumen features, each with exactly one status. The sources are [`sources/lightroom-classic-15.5.1.md`](sources/lightroom-classic-15.5.1.md), [`sources/acdsee-ultimate-2027.md`](sources/acdsee-ultimate-2027.md), and [`sources/irfanview-4.76.md`](sources/irfanview-4.76.md); the status grammar and the update rules are in [`README.md`](README.md); the sections that own `plan` rows are designed in [`albumen-section-design.md`](albumen-section-design.md).
 
-**Totals (2026-09-27, integrated the same day, updated for the operator's decisions later that day):** 1,622 features covering 1,857 Lightroom Classic rows, 5,182 ACDSee rows, and 1,880 IrfanView rows (8,919 in all); every source id appears in exactly one row. At integration LP-1045 and LP-1051 were split (the shared `D01 T08` codecs now read CPT and FlashPix; the rest stays in B-050 as LP-1621 and LP-1622), the Explorer preview handler (LP-0031) moved to backlog B-051, and the four former B-012 rows moved onto the suite plug-in host `D01 T09`. ACDSee Edit mode (layered pixel editing) and IrfanView Paint are routed to Pinxit as `other-app: Pinxit` rows naming the Pinxit catalog row that covers each capability; keyboard-shortcut and menu rows are folded into the feature they trigger or into the keymap features of the "Keyboard shortcuts and menus" area. Later on 2026-09-27 the operator's dependency decisions moved face recognition and the People view (LP-0291, LP-0695, LP-0700, LP-0702, LP-0704 to LP-0707, LP-0712 to LP-0714, and LP-0716) to backlog B-052, since the local YuNet and SFace face models were not approved for Albumen; face detection (LP-0420, LP-0693, LP-0694, LP-0696 to LP-0698) stays planned through an OpenRouter vision model on explicit send; slideshow music moved from NAudio to Windows Media Foundation through Vortice; and LP-0953's SFTP option is backlog B-053 while its FTP and FTPS parts stay planned. Later on 2026-09-27 the operator decided to plan the work deferred to after the first release as real sections, because the operator worried "features will be left behind": the 63 rows that pointed at B-041 to B-044 and B-050 are planned, recorded actions, extension points, and the command line in `D04 T17` (Phase 42), video and audio in `D04 T16` (Phase 43), CAD and plotter drawings on Stilus's moved readers in `D04 T13 §9` (Phase 30, whose dependencies are met there), and SWF, the GDAL formats, and the clean-room layered formats in `D04 T13 §10` to `§12` (Phase 45); tethered capture (B-048), self-running slideshows (B-049), the Explorer preview handler (B-051), face recognition (B-052), SFTP (B-053), and Content Credentials (B-047) stay in the backlog.
+**Totals (2026-09-27, integrated the same day, updated for the operator's decisions later that day):** 1,622 features covering 1,857 Lightroom Classic rows, 5,182 ACDSee rows, and 1,880 IrfanView rows (8,919 in all); every source id appears in exactly one row. At integration LP-1045 and LP-1051 were split (the shared `D01 T08` codecs now read CPT and FlashPix; the rest stays in B-050 as LP-1621 and LP-1622), the Explorer preview handler (LP-0031) moved to backlog B-051, and the four former B-012 rows moved onto the suite plug-in host `D01 T09`. ACDSee Edit mode (layered pixel editing) and IrfanView Paint are routed to Gesso as `other-app: Gesso` rows naming the Gesso catalog row that covers each capability; keyboard-shortcut and menu rows are folded into the feature they trigger or into the keymap features of the "Keyboard shortcuts and menus" area. Later on 2026-09-27 the operator's dependency decisions moved face recognition and the People view (LP-0291, LP-0695, LP-0700, LP-0702, LP-0704 to LP-0707, LP-0712 to LP-0714, and LP-0716) to backlog B-052, since the local YuNet and SFace face models were not approved for Albumen; face detection (LP-0420, LP-0693, LP-0694, LP-0696 to LP-0698) stays planned through an OpenRouter vision model on explicit send; slideshow music moved from NAudio to Windows Media Foundation through Vortice; and LP-0953's SFTP option is backlog B-053 while its FTP and FTPS parts stay planned. Later on 2026-09-27 the operator decided to plan the work deferred to after the first release as real sections, because the operator worried "features will be left behind": the 63 rows that pointed at B-041 to B-044 and B-050 are planned, recorded actions, extension points, and the command line in `D04 T17` (Phase 42), video and audio in `D04 T16` (Phase 43), CAD and plotter drawings on Stilus's moved readers in `D04 T13 §9` (Phase 30, whose dependencies are met there), and SWF, the GDAL formats, and the clean-room layered formats in `D04 T13 §10` to `§12` (Phase 45); tethered capture (B-048), self-running slideshows (B-049), the Explorer preview handler (B-051), face recognition (B-052), SFTP (B-053), and Content Credentials (B-047) stay in the backlog.
 
 | Status | Features | Source rows |
 | ------ | -------: | ----------: |
@@ -46,7 +46,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 - [Automation, plug-ins, and command line](#automation-plug-ins-and-command-line) (22)
 - [Video and audio](#video-and-audio) (31)
 - [Cloud and online services](#cloud-and-online-services) (20)
-- [Routed to Pinxit](#routed-to-pinxit) (405)
+- [Routed to Gesso](#routed-to-gesso) (405)
 
 ## Viewer: startup, decoding, and default-app integration
 
@@ -116,7 +116,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0057 | Browsing options: other files in folder, hidden files, folder end dialog, loop, or stop, beep, wheel browsing, always jump on page or wheel | -- | -- | IV-0975, IV-0976, IV-0977, IV-0978, IV-0979, IV-0980, IV-0981, IV-0982 | core | plan D04 T04 §5 |  |
 | LP-0058 | Recent files in the menu and recent folders in dialogs | -- | -- | IV-1016, IV-1017 | core | plan D04 T04 §5 |  |
 | LP-0059 | Multi-page images: next, previous, first, last, go to page, page thumbnails with auto show, page view pane, page keys | -- | AC-0097, AC-4585, AC-4650, AC-4651, AC-4652, AC-4653, AC-4700, AC-4701 | IV-0760, IV-0761, IV-0762, IV-0763, IV-0764, IV-0765, IV-0766, IV-0769, IV-1393, IV-1394, IV-1412, IV-1415, IV-1425 | core | plan D04 T04 §10 |  |
-| LP-0060 | Animated GIF, ANI, APNG, WebP, AVIF, and MNG playback: stop, resume, step frames, speed, option to show the first frame only | -- | AC-4313 | IV-0770, IV-0771, IV-0772, IV-1435, IV-1527, IV-1528 | core | plan D04 T04 §10 | viewing only; extraction is D04 T16 §3 and authoring is Pinxit's D03 T23 §5 |
+| LP-0060 | Animated GIF, ANI, APNG, WebP, AVIF, and MNG playback: stop, resume, step frames, speed, option to show the first frame only | -- | AC-4313 | IV-0770, IV-0771, IV-0772, IV-1435, IV-1527, IV-1528 | core | plan D04 T04 §10 | viewing only; extraction is D04 T16 §3 and authoring is Gesso's D03 T23 §5 |
 | LP-0061 | Play pages of a multi-page file as an animation | -- | -- | IV-0767, IV-0768 | core | plan D04 T04 §10 |  |
 | LP-0062 | Viewer window layout: image area, bottom toolbar with icon sizes and add or remove buttons, filmstrip of the folder, hide bottom panels | -- | AC-0083, AC-0084, AC-0085, AC-0116, AC-0117, AC-4581, AC-4626, AC-4627, AC-4628 | -- | core | plan D04 T04 §14 |  |
 | LP-0063 | Always on top for the viewer window | -- | AC-4249, AC-4314 | -- | core | plan D04 T04 §14 |  |
@@ -1027,7 +1027,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0878 | Add exported files to the catalog and stack them with the original | LR-1059, LR-1060 | -- | -- | core | plan D04 T12 §13 |  |
 | LP-0879 | Export metadata choices: copyright only, copyright and contact, all except camera or camera raw info, all, remove person info, remove location, hierarchical keywords | LR-1094, LR-1095, LR-1096, LR-1097, LR-1098, LR-1099, LR-1100, LR-1101 | -- | -- | core | plan D04 T12 §13 | extends D04 T02 §6 metadata choices |
 | LP-0880 | Export watermark with the watermark editor: text or graphic, effects, presets | LR-1102, LR-1103, LR-1104, LR-1105, LR-1106, LR-1416 | -- | -- | core | plan D04 T12 §13 | consumes the D04 T11 §8 watermark engine |
-| LP-0881 | Post-processing after export: nothing, show in Explorer, open in Pinxit or another application, export actions folder | LR-1107, LR-1108, LR-1109, LR-1110, LR-1111, LR-1112 | -- | -- | automation | plan D04 T12 §13 | export actions run programs the user placed in the folder |
+| LP-0881 | Post-processing after export: nothing, show in Explorer, open in Gesso or another application, export actions folder | LR-1107, LR-1108, LR-1109, LR-1110, LR-1111, LR-1112 | -- | -- | automation | plan D04 T12 §13 | export actions run programs the user placed in the folder |
 | LP-0882 | Export completion sound | LR-1115 | -- | -- | core | plan D04 T12 §13 |  |
 | LP-0883 | Export warning when stored AI results need updating | LR-1117 | -- | -- | ai | plan D04 T12 §13 | names photos whose AI masks need recomputing |
 | LP-0884 | Export actions folder: programs run after export | LR-1384 | -- | -- | automation | plan D04 T12 §13 |  |
@@ -1138,7 +1138,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 
 | ID | Feature | Lightroom | ACDSee | IrfanView | Category | Status | Notes |
 | -- | ------- | --------- | ------ | --------- | -------- | ------ | ----- |
-| LP-0972 | Animated image viewing: animated GIF, APNG, animated WebP, animated AVIF playback | -- | -- | IV-1223, IV-1224, IV-1225 | format | plan D04 T04 §10 | viewing only; authoring is Pinxit's D03 T23 §5 |
+| LP-0972 | Animated image viewing: animated GIF, APNG, animated WebP, animated AVIF playback | -- | -- | IV-1223, IV-1224, IV-1225 | format | plan D04 T04 §10 | viewing only; authoring is Gesso's D03 T23 §5 |
 | LP-0973 | Drag a file from Albumen into another application | -- | AC-1962 | -- | format | plan D04 T05 §6 |  |
 | LP-0974 | Archive formats: browse and read ZIP, RAR, 7z, ARJ, CAB, GZ, TAR, TGZ like folders, write ZIP | -- | AC-5140, AC-5141, AC-5142, AC-5143, AC-5144, AC-5145, AC-5146, AC-5177 | -- | format | plan D04 T05 §12 | SharpCompress (MIT), read-only for RAR |
 | LP-0975 | File descriptions read from descript.ion files | -- | AC-5176 | -- | core | plan D04 T08 §8 | read as captions; Albumen writes descriptions to sidecars |
@@ -1147,7 +1147,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0978 | Apply a develop preset to many RAW files from browse | -- | AC-5173 | -- | automation | plan D04 T11 §9 |  |
 | LP-0979 | Save images as PDF: title, subject, author, keywords, per-color-type compression, security passwords and permissions, paper size and fit | -- | -- | IV-0212, IV-0213, IV-0214, IV-0215, IV-1069 | format | plan D04 T12 §11 | consumes the Isotone.Core PDF writer moved by D03 T17 §7 |
 | LP-0980 | Export a developed image to several formats at once | -- | AC-5172 | -- | core | plan D04 T12 §13 | extends D04 T02 §6 |
-| LP-0981 | Common formats JPEG, PNG, TIFF, GIF, and BMP read and write, including CMYK JPEG, high bit depth and float TIFF, and alpha in every format that carries it | -- | AC-5046, AC-5052, AC-5061, AC-5067, AC-5071, AC-5126, AC-5127, AC-5130, AC-5133, AC-5138 | IV-1126, IV-1145, IV-1154, IV-1168, IV-1183, IV-1232, IV-1245, IV-1246 | format | plan D04 T13 §1 | consumes Pinxit codecs moved to Isotone.Core by D04 T13 §1 |
+| LP-0981 | Common formats JPEG, PNG, TIFF, GIF, and BMP read and write, including CMYK JPEG, high bit depth and float TIFF, and alpha in every format that carries it | -- | AC-5046, AC-5052, AC-5061, AC-5067, AC-5071, AC-5126, AC-5127, AC-5130, AC-5133, AC-5138 | IV-1126, IV-1145, IV-1154, IV-1168, IV-1183, IV-1232, IV-1245, IV-1246 | format | plan D04 T13 §1 | consumes Gesso codecs moved to Isotone.Core by D04 T13 §1 |
 | LP-0982 | Fix a wrong file extension detected on load | -- | -- | IV-1003 | core | plan D04 T13 §1 | content sniffing |
 | LP-0983 | Format support ships in the app: no separate plug-in package, and format handlers can be enabled or disabled | -- | -- | IV-1110, IV-1111, IV-1120 | format | plan D04 T13 §1 |  |
 | LP-0984 | Detect the real format by content, offer to fix a wrong extension, and extension rules for header-less formats | -- | -- | IV-1243, IV-1244 | format | plan D04 T13 §1 |  |
@@ -1161,7 +1161,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-0992 | Photoshop ABR brush files browsed as images: preview, per-brush navigation | -- | AC-1958, AC-1959, AC-1960, AC-1961 | -- | format | plan D04 T13 §3 | ABR tips decoded by the reader of D03 T12 §3 moved to Isotone.Core |
 | LP-0993 | Windows icons and cursors: ICO with every resolution as a page, CUR, animated ANI | -- | AC-5044, AC-5048, AC-5057 | IV-1122, IV-1149, IV-1210 | format | plan D04 T13 §3 | consumes D03 T17 §8 |
 | LP-0994 | PCX and multi-page DCX read and write | -- | AC-5050, AC-5065, AC-5132 | IV-1164 | format | plan D04 T13 §3 | consumes D03 T17 §8 |
-| LP-0995 | PSD and PSB composite read and flattened PSD write | -- | AC-5068, AC-5134 | IV-1170, IV-1226 | format | plan D04 T13 §3 | consumes D03 T17 §2 and §3 moved to Isotone.Core; layered editing is Pinxit |
+| LP-0995 | PSD and PSB composite read and flattened PSD write | -- | AC-5068, AC-5134 | IV-1170, IV-1226 | format | plan D04 T13 §3 | consumes D03 T17 §2 and §3 moved to Isotone.Core; layered editing is Gesso |
 | LP-0996 | TGA read and write | -- | AC-5070, AC-5137 | IV-1182 | format | plan D04 T13 §3 | consumes D03 T17 §8 |
 | LP-0997 | WBMP read and write | -- | AC-5072, AC-5135 | IV-1189 | format | plan D04 T13 §3 | consumes D03 T17 §8 |
 | LP-0998 | DICOM medical images: DCM, ACR, IMA | -- | -- | IV-1051, IV-1131 | format | plan D04 T13 §3 | consumes D03 T17 §6 (own reader; fo-dicom is MS-PL) |
@@ -1188,7 +1188,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1019 | JPEG metadata carry-over on save: keep EXIF, IPTC, XMP, and comment, reset orientation, embedded and DCF thumbnail policy | -- | AC-4374, AC-4375, AC-4376, AC-4377 | IV-0177, IV-0178, IV-0179, IV-0180, IV-0181, IV-0182 | format | plan D04 T13 §6 | writes new files only, never the original (original-file guard) |
 | LP-1020 | Format options dialog shown automatically on Save As for formats with options | -- | -- | IV-0114 | core | plan D04 T13 §6 |  |
 | LP-1021 | JPEG size targeting: reuse the estimated original quality, target a file size, preview dialog to tune quality | -- | -- | IV-0183, IV-0184, IV-0185 | format | plan D04 T13 §6 |  |
-| LP-1022 | GIF save options: interlaced, automatic and custom transparent color, palette index, window color, single frame only | -- | -- | IV-0187, IV-0188, IV-0189, IV-0190, IV-0191, IV-0192 | format | plan D04 T13 §6 | animated GIF authoring is Pinxit's D03 T23 §5 |
+| LP-1022 | GIF save options: interlaced, automatic and custom transparent color, palette index, window color, single frame only | -- | -- | IV-0187, IV-0188, IV-0189, IV-0190, IV-0191, IV-0192 | format | plan D04 T13 §6 | animated GIF authoring is Gesso's D03 T23 §5 |
 | LP-1023 | PNG save options: compression level, automatic and custom transparency, window color, synthetic alpha, optimized PNG | -- | -- | IV-0193, IV-0194, IV-0195, IV-0196, IV-0197, IV-0198, IV-1088 | format | plan D04 T13 §6 | optimization by own zlib pass or oxipng (MIT); OptiPNG is zlib-licensed |
 | LP-1024 | Legacy save options: PNM binary or ASCII, ICO transparency and window color, TGA and BMP RLE | -- | -- | IV-0199, IV-0200, IV-0201, IV-0224, IV-0225 | format | plan D04 T13 §6 |  |
 | LP-1025 | TIFF save options: color and 1-bit compression, grayscale palette, save all pages | -- | -- | IV-0202, IV-0203, IV-0204, IV-0205 | format | plan D04 T13 §6 | consumes D03 T17 §11 |
@@ -1196,7 +1196,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1027 | WebP and JPEG XL save options: quality, lossless, effort, keep metadata | -- | -- | IV-0216, IV-0217, IV-0218, IV-0219, IV-0220 | format | plan D04 T13 §6 | consumes D03 T17 §5 |
 | LP-1028 | Restrict which formats appear in save dialogs | -- | -- | IV-0227 | format | plan D04 T13 §6 |  |
 | LP-1029 | GoPro GPR write | -- | AC-5128 | -- | format | plan D04 T13 §7 | GPR is DNG with VC-5; gpr SDK (Apache-2.0 or MIT) |
-| LP-1030 | Embedded thumbnails of Affinity and Canvas documents | -- | AC-5043, AC-5047, AC-5049 | -- | format | plan D04 T13 §8 | thumbnail only; opening Affinity files is Pinxit B-045 |
+| LP-1030 | Embedded thumbnails of Affinity and Canvas documents | -- | AC-5043, AC-5047, AC-5049 | -- | format | plan D04 T13 §8 | thumbnail only; opening Affinity files is Gesso B-045 |
 | LP-1031 | Rare and legacy raster formats: Formats plug-in set, Amiga, Atari, C64, ZX Spectrum, GEM IMG, IFF and LBM, Sun raster, SGI and RGBA, SIF, G3 fax, Structured Fax, Casio CAM, Windows clipboard CLP, GLCD, MAKI MAG, Utah RLE, Mosaic, Bio-RAD, ICS, AT&T ICN | -- | AC-5056 | IV-1063, IV-1068, IV-1097, IV-1127, IV-1128, IV-1144, IV-1150, IV-1151, IV-1152, IV-1174, IV-1176, IV-1178, IV-1179, IV-1196, IV-1212, IV-1216, IV-1218, IV-1220, IV-1221, IV-1227 | format | plan D04 T13 §8 | own managed codecs from published descriptions; SGI and Sun raster consume D03 T17 §8 |
 | LP-1032 | Kodak Photo CD read up to 16BASE | -- | AC-5064 | IV-1091, IV-1163 | format | plan D04 T13 §8 | own reader from the published format notes |
 | LP-1033 | Macintosh PICT and QuickTime image read | -- | AC-5066 | IV-1158 | format | plan D04 T13 §8 | own reader for bitmap opcodes; no QuickTime dependency |
@@ -1207,7 +1207,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1038 | TIFF annotations display | -- | -- | IV-0953 | core | plan D04 T13 §8 |  |
 | LP-1039 | Font file sample text rendering | -- | -- | IV-1009 | format | plan D04 T13 §8 |  |
 | LP-1040 | FLIF, Webshots WBZ and WBC, and WSQ fingerprint images read | -- | -- | IV-1062, IV-1105, IV-1108, IV-1142, IV-1188, IV-1192 | format | plan D04 T13 §8 | WSQ from NIST NBIS (public domain) |
-| LP-1041 | MNG and JNG, and Autodesk FLI and FLC read with playback in the viewer | -- | -- | IV-1081, IV-1159, IV-1211 | format | plan D04 T13 §8 | playback through D04 T04 §10; authoring is Pinxit's D03 T23 §5 |
+| LP-1041 | MNG and JNG, and Autodesk FLI and FLC read with playback in the viewer | -- | -- | IV-1081, IV-1159, IV-1211 | format | plan D04 T13 §8 | playback through D04 T04 §10; authoring is Gesso's D03 T23 §5 |
 | LP-1042 | TrueType font preview rendered with custom sample text | -- | -- | IV-1184, IV-1230 | format | plan D04 T13 §8 |  |
 | LP-1043 | Plain RAW decoding: ARW, CR2, CR3, CRW, cRAW, sRAW, DCR, DNG, ERF, FFF, GPR, MOS, MRW, NEF, NRW, ORF, PEF, RAF, RW2, RWL, SRF, SRW, KDC, CS1, with previews and EXIF | -- | AC-5075, AC-5076, AC-5077, AC-5078, AC-5079, AC-5080, AC-5081, AC-5082, AC-5083, AC-5084, AC-5085, AC-5086, AC-5087, AC-5088, AC-5089, AC-5090, AC-5091, AC-5092, AC-5093, AC-5094, AC-5095 | IV-1050, IV-1116, IV-1130, IV-1161, IV-1215, IV-1233 | format | shipped-scope D04 T01 §4 | through the decoder D04 T01 §3 chooses |
 | LP-1044 | RAW originals never modified: develop settings stored in the catalog and sidecar | -- | AC-5171 | -- | core | shipped-scope D04 T02 §1 |  |
@@ -1222,8 +1222,8 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1053 | CAD formats: DXF, DWG, HPGL, CGM | -- | -- | IV-1135, IV-1136 | format | plan D04 T13 §9 | Stilus's DXF, DWG, CGM, and HPGL readers moved to Isotone.Core |
 | LP-1054 | Canon DLLs for CRW and CR2 | -- | -- | IV-1006 | format | excluded: platform 32-bit only vendor DLL |  |
 | LP-1055 | Office document viewing: Word, Excel sheet tabs, PowerPoint slides, RTF through installed Microsoft Office | -- | AC-1931, AC-1932, AC-1933, AC-5159, AC-5160, AC-5162, AC-5163, AC-5164, AC-5165, AC-5166, AC-5167, AC-5168, AC-5169, AC-5178 | -- | format | other-app: none office documents need Microsoft Office and are not photos |  |
-| LP-1056 | Brush files shown as images: ABR, JBR, PBR | -- | AC-5041, AC-5058, AC-5063 | -- | format | other-app: Pinxit IP-0774 brush files belong to Pinxit's brush import |  |
-| LP-1057 | Layers not preserved when saving TIFF, PSD, or GSD from the editor | -- | AC-5179 | -- | core | other-app: Pinxit IP-1842 layered TIFF and PSD saving is Pinxit's job |  |
+| LP-1056 | Brush files shown as images: ABR, JBR, PBR | -- | AC-5041, AC-5058, AC-5063 | -- | format | other-app: Gesso IP-0774 brush files belong to Gesso's brush import |  |
+| LP-1057 | Layers not preserved when saving TIFF, PSD, or GSD from the editor | -- | AC-5179 | -- | core | other-app: Gesso IP-1842 layered TIFF and PSD saving is Gesso's job |  |
 | LP-1621 | MRC (Mixed Raster Content) read | -- | -- | IV-1083, IV-1228 | format | plan D04 T13 §11 | through an optional user-installed GDAL; reroutes to the backlog if no installable driver opens it; split from LP-1051 on 2026-09-27 |
 | LP-1622 | Artweaver, BodyPaint 3D, Gemstone GSD, and ACDSee ACDC layered documents | -- | AC-5042, AC-5053, AC-5124, AC-5139 | IV-1046, IV-1047, IV-1124, IV-1125 | format | plan D04 T13 §12 | clean-room analysis of sample files (operator approval 2026-09-27); a format whose structure cannot be established reroutes to the backlog; split from LP-1045 on 2026-09-27 |
 
@@ -1259,7 +1259,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1083 | Toolbar skins: skin files, bundled and downloadable skins, button size | -- | -- | IV-0042, IV-0043, IV-0044, IV-1022 | core | plan D04 T14 §8 | Isotone theme icon sets, no third-party skin art bundled |
 | LP-1084 | Edit in an additional external editor with per-edit copy options: format TIFF, PSD, or PSB, color space, bit depth, resolution, compression | LR-1017, LR-1021, LR-1027, LR-1028, LR-1030, LR-1031, LR-1032, LR-1037, LR-1330, LR-1641 | -- | -- | core | plan D04 T14 §9 |  |
 | LP-1085 | Edit choices: a copy with Albumen adjustments, a copy of the original, or the original non-raw file | LR-1018, LR-1019, LR-1020 | -- | -- | core | plan D04 T14 §9 | Edit Original opens the file in the editor; Albumen itself never writes it |
-| LP-1086 | Edit in Pinxit as layers or a linked raw document | LR-1022, LR-1025, LR-1026, LR-1655 | -- | -- | core | plan D04 T14 §9 | Pinxit opens several files as layers through its open command |
+| LP-1086 | Edit in Gesso as layers or a linked raw document | LR-1022, LR-1025, LR-1026, LR-1655 | -- | -- | core | plan D04 T14 §9 | Gesso opens several files as layers through its open command |
 | LP-1087 | HDR edits handed to an external editor: HDR color spaces and 16 or 32 bit | LR-1029, LR-1036 | -- | -- | core | plan D04 T14 §9 |  |
 | LP-1088 | External editor presets, file naming, stack with original, and round trip back into the catalog | LR-1033, LR-1034, LR-1035, LR-1038 | -- | -- | core | plan D04 T14 §9 | extends D04 T02 §7 stacking |
 | LP-1089 | Editors menu and open in an external editor | -- | AC-0053 | IV-0922 | core | plan D04 T14 §9 |  |
@@ -1267,8 +1267,8 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1091 | External editors: configure, edit, default, multiple images, remove, open in default or named editor, shortcuts and toolbar buttons, per-extension editors, up to ten editors, short paths, all files in one call | -- | AC-4355, AC-4356, AC-4357, AC-4358, AC-4359, AC-4360, AC-4361, AC-4362, AC-4363 | IV-0032, IV-0033, IV-1019, IV-1020, IV-1021 | core | plan D04 T14 §9 |  |
 | LP-1092 | Library and Develop modules in the module switcher | LR-0001, LR-0002, LR-1600 | -- | -- | core | shipped-scope D04 T01 §2 |  |
 | LP-1093 | Catalog-wide undo and redo | LR-0039, LR-1405, LR-1571, LR-1572 | -- | -- | core | shipped-scope D01 T02 §4 |  |
-| LP-1094 | Edit in the suite editor (Photoshop in Lightroom) | LR-1016, LR-1442, LR-1640 | -- | -- | core | shipped-scope D04 T02 §7 | Pinxit is the suite editor |
-| LP-1095 | Edit mode: layered pixel editing hands off to Pinxit | -- | AC-0023, AC-4422, AC-4514, AC-4688, AC-4926, AC-4977 | -- | core | shipped-scope D04 T02 §7 | layered editing is Pinxit; Albumen hands off over files |
+| LP-1094 | Edit in the suite editor (Photoshop in Lightroom) | LR-1016, LR-1442, LR-1640 | -- | -- | core | shipped-scope D04 T02 §7 | Gesso is the suite editor |
+| LP-1095 | Edit mode: layered pixel editing hands off to Gesso | -- | AC-0023, AC-4422, AC-4514, AC-4688, AC-4926, AC-4977 | -- | core | shipped-scope D04 T02 §7 | layered editing is Gesso; Albumen hands off over files |
 
 ## Preferences
 
@@ -1412,7 +1412,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1206 | Online plug-in marketplace | LR-1368 | -- | -- | cloud | excluded: cloud online plug-in exchange |  |
 | LP-1207 | 365 mode uploads to ACDSee cloud | -- | AC-0025, AC-4516, AC-4690, AC-4981 | -- | cloud | excluded: cloud ACDSee 365 online sharing |  |
 | LP-1208 | ACDSee 365 mode and SeeDrive: account, browsing, transfers, uploads, downloads, public folders, sharing, sync to web, transfer options | -- | AC-0153, AC-0154, AC-0155, AC-0156, AC-0157, AC-1818, AC-1819, AC-1820, AC-1821, AC-1822, AC-1823, AC-1824, AC-1825, AC-1826, AC-1827, AC-1828, AC-1829, AC-1830, AC-3939, AC-3940, AC-3941, AC-3942, AC-3943, AC-3944, AC-3945, AC-3946, AC-3947, AC-3948, AC-3949, AC-3950, AC-3951, AC-3952, AC-3953, AC-3954, AC-3955, AC-3956, AC-3957, AC-3958, AC-3959, AC-3960, AC-3961, AC-3962, AC-3963, AC-3964, AC-3965, AC-3966, AC-3967, AC-3968, AC-3969, AC-4289, AC-4290, AC-4291, AC-4292, AC-4293, AC-4294, AC-4295, AC-5001, AC-5002, AC-5003, AC-5004, AC-5005, AC-5006, AC-5007, AC-5008, AC-5009, AC-5010, AC-5011, AC-5012, AC-5013, AC-5014, AC-5015, AC-5016, AC-5017, AC-5018, AC-5019, AC-5020, AC-5021, AC-5022, AC-5023, AC-5024, AC-5025, AC-5026, AC-5027, AC-5028, AC-5029, AC-5030, AC-5031, AC-5032, AC-5033, AC-5034, AC-5035, AC-5036, AC-5037, AC-5038, AC-5039 | -- | cloud | excluded: cloud ACDSee 365 online storage and sharing |  |
-| LP-1209 | ACDSee account, credit purchase, refresh, and no-refund rules for generative tools | -- | AC-0192, AC-0194, AC-0202, AC-0227, AC-0229, AC-0280, AC-0294, AC-2882, AC-2883, AC-2885 | -- | cloud | excluded: cloud ACDSee account and credit store; Pinxit AI uses the user's own OpenRouter key |  |
+| LP-1209 | ACDSee account, credit purchase, refresh, and no-refund rules for generative tools | -- | AC-0192, AC-0194, AC-0202, AC-0227, AC-0229, AC-0280, AC-0294, AC-2882, AC-2883, AC-2885 | -- | cloud | excluded: cloud ACDSee account and credit store; Gesso AI uses the user's own OpenRouter key |  |
 | LP-1210 | ACDSee Mobile Sync: phone app, sync folders, pairing, notifications, sending, root folder, server name | -- | AC-0400, AC-0401, AC-0402, AC-0403, AC-0404, AC-0405, AC-4327, AC-4328, AC-4329 | -- | cloud | excluded: cloud mobile companion app sync service |  |
 | LP-1211 | OneDrive and cloud drives in browse: cloud node, local, always-local, and cloud-only overlays, OneDrive indexing | -- | AC-0431, AC-0432, AC-0433, AC-0456, AC-4325 | -- | cloud | excluded: cloud OneDrive and cloud storage integration |  |
 | LP-1212 | OneDrive browsing, keep on device, free up space, auto download, status column, cloud-only metadata, move to OneDrive, embed into online files | -- | AC-0485, AC-0486, AC-0487, AC-0488, AC-0489, AC-0490, AC-0491, AC-4239 | -- | cloud | excluded: cloud OneDrive integration |  |
@@ -1420,412 +1420,412 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | LP-1214 | Upload manager to Flickr, SmugMug, and Zenfolio with the Flickr uploader settings | -- | AC-1273, AC-1274, AC-1275, AC-1276, AC-1278, AC-1279, AC-1280, AC-1281, AC-1282, AC-1283, AC-1284, AC-1285, AC-1286, AC-1287, AC-1288, AC-1289, AC-1290, AC-1291, AC-1292, AC-1293, AC-1294, AC-1295, AC-1296, AC-1297, AC-1298, AC-4569, AC-4570, AC-4571 | -- | cloud | excluded: cloud photo-sharing site uploads |  |
 | LP-1215 | Legacy 32-bit OCR engine | -- | -- | IV-0708 | ai | excluded: platform 32-bit only engine |  |
 
-## Routed to Pinxit
+## Routed to Gesso
 
 | ID | Feature | Lightroom | ACDSee | IrfanView | Category | Status | Notes |
 | -- | ------- | --------- | ------ | --------- | -------- | ------ | ----- |
-| LP-1216 | Next, previous, first, and last image keys while editing | -- | AC-4708, AC-4709, AC-4714, AC-4715 | -- | core | plan D04 T14 §3 | Albumen filmstrip keys around the Edit in Pinxit hand-off |
+| LP-1216 | Next, previous, first, and last image keys while editing | -- | AC-4708, AC-4709, AC-4714, AC-4715 | -- | core | plan D04 T14 §3 | Albumen filmstrip keys around the Edit in Gesso hand-off |
 | LP-1217 | Tag, reject, metadata, keywords, presets, and caption keys while editing | -- | AC-4725, AC-4726, AC-4727, AC-4728, AC-4729, AC-4730, AC-4731 | -- | core | plan D04 T14 §3 | Albumen keymap; metadata stays in Albumen |
 | LP-1218 | Take a developed photo into the editor as a 16-bit rendition, and revert edits to develop or original | -- | AC-0133, AC-0134, AC-2101, AC-2102, AC-2103, AC-2104, AC-4657, AC-4658 | -- | core | shipped-scope D04 T02 §7 | the edited file is a stacked derivative; the original is never moved or written |
-| LP-1219 | Pixel editing mode after develop, and the round trip back: revert to the develop result, warn that pixel edits are lost on return, keep develop settings, keep catalog data on the saved file, original moved aside or RAW saved as another format | -- | AC-2586, AC-2625, AC-2629, AC-2630, AC-2639, AC-2640, AC-2641, AC-2642, AC-3228 | -- | core | shipped-scope D04 T02 §7 | Edit in Pinxit renders a new stacked TIFF; the original is never written and develop settings stay in the catalog and sidecar |
+| LP-1219 | Pixel editing mode after develop, and the round trip back: revert to the develop result, warn that pixel edits are lost on return, keep develop settings, keep catalog data on the saved file, original moved aside or RAW saved as another format | -- | AC-2586, AC-2625, AC-2629, AC-2630, AC-2639, AC-2640, AC-2641, AC-2642, AC-3228 | -- | core | shipped-scope D04 T02 §7 | Edit in Gesso renders a new stacked TIFF; the original is never written and develop settings stay in the catalog and sidecar |
 | LP-1220 | Restore to developed: discard editor changes and return to the developed photo | -- | AC-3559, AC-3624 | -- | core | shipped-scope D04 T02 §7 | Albumen keeps the developed original; the edited file is a stacked derivative |
-| LP-1221 | Leave the editor for Develop, the previous mode, Manage, Media, View, People, or Dashboard | -- | AC-4713, AC-4716, AC-4908, AC-4909, AC-4910, AC-4911, AC-4912, AC-4914 | -- | core | shipped-scope D04 T02 §7 | Albumen and Pinxit are separate apps joined by the Edit in hand-off |
+| LP-1221 | Leave the editor for Develop, the previous mode, Manage, Media, View, People, or Dashboard | -- | AC-4713, AC-4716, AC-4908, AC-4909, AC-4910, AC-4911, AC-4912, AC-4914 | -- | core | shipped-scope D04 T02 §7 | Albumen and Gesso are separate apps joined by the Edit in hand-off |
 | LP-1222 | Rating and color label keys while editing | -- | AC-4723, AC-4724 | -- | core | shipped-scope D04 T01 §11 | ratings and labels live in Albumen |
 | LP-1223 | Recorded actions play back destructively | -- | AC-3503 | -- | automation | plan D04 T17 §1 | playback writes new files unless the originals opt-in is on |
 | LP-1224 | Photoshop plug-in folders | -- | AC-4281 | -- | automation | plan D04 T04 §15 | plug-in folders through the D01 T09 §4 manager |
 | LP-1225 | Start and stop action recording keys | -- | AC-4906, AC-4907 | -- | automation | plan D04 T17 §1 |  |
 | LP-1226 | Switch to 365 mode from the editor | -- | AC-4913 | -- | core | excluded: cloud ACDSee 365 online service |  |
-| LP-1227 | Prompt-based generative editing of a photo | LR-1039 | -- | -- | ai | other-app: Pinxit IP-2090 prompt-to-edit is Pinxit D03 T19 §10 |  |
-| LP-1228 | Edit mode summary: selections, brush, layers, targeting, repair, and effects | -- | AC-0136 | -- | core | other-app: Pinxit IP-0265 layered pixel editing is Pinxit |  |
-| LP-1229 | Edit mode lighting and color tools summary | -- | AC-0137 | -- | core | other-app: Pinxit IP-0565 adjustment layers are Pinxit |  |
-| LP-1230 | Edit mode detail tools summary | -- | AC-0138 | -- | core | other-app: Pinxit IP-1099 pixel sharpening and noise filters are Pinxit |  |
-| LP-1231 | Estimated cost of a generation shown before it runs, scaled by area | -- | AC-0193, AC-0228, AC-0296, AC-2884 | -- | cloud | other-app: Pinxit IP-1992 AI usage and cost display is Pinxit AI |  |
-| LP-1232 | Generative tools offered per mode without leaving the current view, one image at a time | -- | AC-0195, AC-0196, AC-0204 | -- | cloud | other-app: Pinxit IP-1990 AI menu and workspace is Pinxit AI |  |
-| LP-1233 | Choice of image-generation model per tool | -- | AC-0197, AC-0198, AC-0199, AC-0200, AC-0216, AC-0273, AC-0290, AC-2881 | -- | cloud | other-app: Pinxit IP-1991 per-task model choice through OpenRouter in Pinxit |  |
-| LP-1234 | Generation history: prompt persists, non-deterministic results, saved generation presets and reset | -- | AC-0201, AC-0213, AC-0214, AC-0276, AC-0277, AC-0293 | -- | cloud | other-app: Pinxit IP-1996 generation history for reuse and re-run in Pinxit |  |
-| LP-1235 | Generate an image from a text prompt: aspect ratio, resolution, output format and folder, as a new file or a new layer, progress and notification | -- | AC-0203, AC-0209, AC-0210, AC-0211, AC-0212, AC-0217, AC-0218, AC-0219, AC-0224, AC-0225, AC-0226, AC-0230, AC-0231 | -- | cloud | other-app: Pinxit IP-2014 image generation is Pinxit AI |  |
-| LP-1236 | Prompt entry with length limit and prompting guidance per tool | -- | AC-0205, AC-0215, AC-0274, AC-0291, AC-0298, AC-0299, AC-0300 | -- | cloud | other-app: Pinxit IP-1998 AI prompt entry is Pinxit AI |  |
-| LP-1237 | Reference images for generation: style, character, and composition references | -- | AC-0206, AC-0221, AC-0222, AC-0223, AC-0275, AC-0292 | -- | cloud | other-app: Pinxit IP-2015 reference images for generation in Pinxit |  |
-| LP-1238 | Cloud processing disclosure for generation: what is sent and retained | -- | AC-0207 | -- | cloud | other-app: Pinxit IP-1993 send gate and preview in Pinxit AI |  |
-| LP-1239 | Invisible AI watermark on generated images | -- | AC-0208 | -- | cloud | other-app: Pinxit IP-1878 provenance marking of generated content (Pinxit, B-047) |  |
-| LP-1240 | Visual effect styles for generated images (36 presets, up to five combined) | -- | AC-0220, AC-0232, AC-0233, AC-0234, AC-0235, AC-0236, AC-0237, AC-0238, AC-0239, AC-0240, AC-0241, AC-0242, AC-0243, AC-0244, AC-0245, AC-0246, AC-0247, AC-0248, AC-0249, AC-0250, AC-0251, AC-0252, AC-0253, AC-0254, AC-0255, AC-0256, AC-0257, AC-0258, AC-0259, AC-0260, AC-0261, AC-0262, AC-0263, AC-0264, AC-0265, AC-0266, AC-0267 | -- | cloud | other-app: Pinxit IP-2014 effects presets of Pinxit image generation |  |
-| LP-1241 | Generative edit of the selected layer from a prompt: iterate with undo, output as new layer or replace, selection-constrained, generated layer mask | -- | AC-0268, AC-0269, AC-0270, AC-0271, AC-0272, AC-0278, AC-0279, AC-0281, AC-0282, AC-0283, AC-0284, AC-0285, AC-0286 | -- | cloud | other-app: Pinxit IP-2090 prompt to edit and generative edit in Pinxit |  |
-| LP-1242 | Generative fill from all layers into a new layer | -- | AC-0287, AC-0288, AC-0289 | -- | cloud | other-app: Pinxit IP-2005 generative fill in Pinxit |  |
-| LP-1243 | AI remove: brush over an object and reconstruct the background | -- | AC-0295, AC-0297, AC-2876, AC-2877, AC-2878, AC-2879, AC-2880, AC-2886 | -- | cloud | other-app: Pinxit IP-2004 remove tool with generative mode in Pinxit |  |
-| LP-1244 | New blank image dialog: size, units, aspect ratio, DPI, background, bit depth, presets | -- | AC-0316, AC-0446, AC-0447, AC-0448, AC-0449, AC-0450, AC-0451, AC-0452 | -- | core | other-app: Pinxit IP-0016 new blank documents are pixel editing | presets are IP-0015 |
-| LP-1245 | Load files into a layer stack | -- | AC-1052 | -- | core | other-app: Pinxit IP-1721 layer stacks are Pinxit |  |
-| LP-1246 | Tool groups panel: selections and drawing, AI, enhance, add, geometry, exposure, color, detail | -- | AC-2587, AC-2588, AC-2589, AC-2590, AC-2591, AC-2592, AC-2593, AC-2594 | -- | core | other-app: Pinxit IP-2138 toolbar with tool groups in Pinxit |  |
-| LP-1247 | History pane, history drop-down, undo all, undo and redo buttons | -- | AC-2595, AC-2596, AC-2597, AC-2607 | -- | core | other-app: Pinxit IP-0201 undo, redo, and history in Pinxit |  |
-| LP-1248 | AI actions tab with one-click AI actions and selection refinement | -- | AC-2598, AC-2599, AC-2816, AC-2817 | -- | ai | other-app: Pinxit IP-1998 AI quick actions in Pinxit |  |
-| LP-1249 | Editor histogram with channel toggles and live update | -- | AC-2600, AC-2601, AC-2602, AC-2603, AC-2604, AC-2606 | -- | core | other-app: Pinxit IP-0116 histogram panel in Pinxit |  |
-| LP-1250 | Color tab for choosing drawing colors | -- | AC-2605 | -- | core | other-app: Pinxit IP-0732 color panel in Pinxit |  |
-| LP-1251 | Reset the image and restore to original | -- | AC-2608, AC-2624 | -- | core | other-app: Pinxit IP-1706 revert in Pinxit |  |
-| LP-1252 | Full screen display in the editor | -- | AC-2609 | -- | core | other-app: Pinxit IP-0037 screen modes in Pinxit |  |
-| LP-1253 | Editor zoom: actual size, fit, zoom slider and preset list | -- | AC-2610, AC-2613, AC-2615, AC-2616 | -- | core | other-app: Pinxit IP-0026 zoom commands in Pinxit |  |
-| LP-1254 | Navigator pane, automatic or manual | -- | AC-2611, AC-2612 | -- | core | other-app: Pinxit IP-0061 navigator panel in Pinxit |  |
-| LP-1255 | Show previous to compare with the last saved state | -- | AC-2614 | -- | core | other-app: Pinxit IP-0129 toggle last state in Pinxit |  |
-| LP-1256 | Color picker readout of pre-edit and edited values | -- | AC-2617 | -- | core | other-app: Pinxit IP-0109 info panel readouts in Pinxit |  |
-| LP-1257 | Right-click a slider to reset it | -- | AC-2618, AC-2928 | -- | core | other-app: Pinxit IP-1018 reset filter dialog values in Pinxit |  |
-| LP-1258 | Last-used tool settings reapplied | -- | AC-2619 | -- | core | other-app: Pinxit IP-0576 last-used adjustment settings in Pinxit |  |
-| LP-1259 | Tool presets: save, choose, delete | -- | AC-2620, AC-2621, AC-2622 | -- | core | other-app: Pinxit IP-1013 filter and adjustment presets in Pinxit |  |
-| LP-1260 | Import and export editor presets as a set | -- | AC-2623 | -- | core | other-app: Pinxit IP-2223 preset export and import in Pinxit |  |
-| LP-1261 | Save, discard, cancel, autosave, and save-and-continue of an editing session | -- | AC-2626, AC-2632, AC-2633, AC-2634, AC-2635, AC-2638 | -- | core | other-app: Pinxit IP-1844 save and close semantics in Pinxit |  |
-| LP-1262 | Save as and save a copy under a new name or format | -- | AC-2627, AC-2636, AC-2637 | -- | core | other-app: Pinxit IP-1713 save a copy in Pinxit |  |
-| LP-1263 | Save options: preserve metadata and embed the color profile | -- | AC-2628, AC-2631 | -- | core | other-app: Pinxit IP-1714 save content options in Pinxit |  |
-| LP-1264 | Photoshop 64-bit filter plug-ins | -- | AC-2643 | -- | automation | other-app: Pinxit IP-1033 third-party plug-in host (Pinxit's D03 T14 §11 on the shared D01 T09 host) |  |
-| LP-1265 | Edit brush: paint a filter or adjustment into brushed areas with nib width, feathering, pressure, erase, clear, invert, reload, show strokes, per-stroke undo, straight lines | -- | AC-2644, AC-2645, AC-2646, AC-2647, AC-2648, AC-2649, AC-2650, AC-2651, AC-2652, AC-2653, AC-2654, AC-2655, AC-2656, AC-2657, AC-2658 | -- | core | other-app: Pinxit IP-1007 filter brush through a live filter mask in Pinxit |  |
-| LP-1266 | Smart brushing: restrict edit-brush strokes by color, brightness, or both with a tolerance | -- | AC-2659, AC-2660, AC-2661, AC-2662, AC-2663, AC-2664 | -- | core | other-app: Pinxit IP-2368 Pinxit gains smart brushing on its filter and adjustment brushes |  |
-| LP-1267 | Linear and radial gradient masks for a filter: guides, feathering, squareness, invert, show mask, switch to brush | -- | AC-2665, AC-2666, AC-2667, AC-2668, AC-2669, AC-2670, AC-2671, AC-2672, AC-2673, AC-2674, AC-2675, AC-2676, AC-2677, AC-2678, AC-2679, AC-2680 | -- | core | other-app: Pinxit IP-1004 live filter mask with gradients in Pinxit |  |
-| LP-1268 | Filter blend modes and opacity: normal to lighter color | -- | AC-2681, AC-2682, AC-2683, AC-2684, AC-2685, AC-2686, AC-2687, AC-2688, AC-2689, AC-2690, AC-2691, AC-2692, AC-2693, AC-2694, AC-2695, AC-2696, AC-2697, AC-2698, AC-2699, AC-2700, AC-2701, AC-2702, AC-2703, AC-2704, AC-2705, AC-2706, AC-2708 | -- | core | other-app: Pinxit IP-1019 filter blending mode and opacity in Pinxit |  |
-| LP-1269 | Blend mode and preset hover preview | -- | AC-2707 | -- | core | other-app: Pinxit IP-0329 blend mode hover preview in Pinxit |  |
-| LP-1270 | Layer blend modes: normal to lighter color | -- | AC-2709, AC-2710, AC-2711, AC-2712, AC-2713, AC-2714, AC-2715, AC-2716, AC-2717, AC-2718, AC-2719, AC-2720, AC-2721, AC-2722, AC-2723, AC-2724, AC-2725, AC-2726, AC-2727, AC-2728, AC-2729, AC-2730, AC-2731, AC-2732, AC-2733 | -- | core | other-app: Pinxit IP-0265 layer blend modes in Pinxit |  |
-| LP-1271 | Rulers with units, ruler DPI, and resolution from EXIF | -- | AC-2734, AC-2735, AC-4286, AC-4287, AC-4288 | -- | core | other-app: Pinxit IP-0069 rulers and units in Pinxit |  |
-| LP-1272 | Guidelines: drag from rulers, move, clear, lock, hide, color | -- | AC-2736, AC-2738, AC-2739, AC-2740, AC-4285 | -- | core | other-app: Pinxit IP-0075 guides in Pinxit |  |
-| LP-1273 | Snap to guidelines | -- | AC-2737 | -- | core | other-app: Pinxit IP-0085 snapping in Pinxit |  |
-| LP-1274 | Apply a filter to one channel: red, green, blue, hue, saturation, or lightness | -- | AC-2741 | -- | core | other-app: Pinxit IP-0308 blending channel restrictions in Pinxit |  |
-| LP-1275 | Filter apply, done, and cancel buttons | -- | AC-2742, AC-2743, AC-2744 | -- | core | other-app: Pinxit IP-1032 filter apply and cancel in Pinxit |  |
-| LP-1276 | Pixel targeting: restrict a filter by tone range, color wheels, and detail, with presets and mask preview | -- | AC-2745, AC-2746, AC-2747, AC-2748, AC-2749, AC-2750, AC-2751, AC-2752, AC-2753, AC-2754, AC-2755, AC-2756, AC-2757, AC-2758, AC-2759, AC-2760, AC-2761, AC-2762, AC-2763, AC-2764, AC-2766, AC-2767, AC-2768, AC-2769, AC-2770, AC-2771, AC-2772, AC-2773, AC-2774 | -- | core | other-app: Pinxit IP-0304 tonal and color targeting by blend ranges in Pinxit |  |
-| LP-1277 | Skin targeting for filters and selections | -- | AC-2765, AC-2775, AC-2927 | -- | core | other-app: Pinxit IP-0486 skin-tone color range in Pinxit |  |
-| LP-1278 | AI denoise action | -- | AC-2818 | -- | ai | other-app: Pinxit IP-2070 AI noise reduction in Pinxit |  |
-| LP-1279 | AI select subject and select background | -- | AC-2819, AC-2822, AC-2853, AC-2854 | -- | ai | other-app: Pinxit IP-2028 select subject in Pinxit |  |
-| LP-1280 | AI select sky | -- | AC-2820, AC-2855 | -- | ai | other-app: Pinxit IP-2030 select sky in Pinxit |  |
-| LP-1281 | AI select hair | -- | AC-2821, AC-2856 | -- | ai | other-app: Pinxit IP-2031 select people parts in Pinxit |  |
-| LP-1282 | AI remove background to a mask | -- | AC-2823 | -- | ai | other-app: Pinxit IP-2081 remove background to a layer mask in Pinxit |  |
-| LP-1283 | AI blur background | -- | AC-2824 | -- | ai | other-app: Pinxit IP-2061 portrait blur in Pinxit |  |
-| LP-1284 | AI black and white background as a masked adjustment layer | -- | AC-2825 | -- | ai | other-app: Pinxit IP-2369 Pinxit gains one-click masked background adjustments |  |
-| LP-1285 | Selections restrict edits and filters; use selection toggle and invert for the current edit | -- | AC-2826, AC-2827, AC-2869, AC-2870 | -- | core | other-app: Pinxit IP-1032 filters apply to the selection in Pinxit |  |
-| LP-1286 | Selection display: mask preview, marching ants, highlighted or exposed overlay | -- | AC-2828, AC-2845, AC-2846, AC-2847, AC-2848 | -- | core | other-app: Pinxit IP-0508 selection view modes in Pinxit |  |
-| LP-1287 | Selection basket: store selections and masks, rename, duplicate, add, subtract, intersect with the selection or the mask | -- | AC-2829, AC-2895, AC-2896, AC-2897, AC-2898, AC-2899, AC-2900, AC-2901, AC-2902, AC-2903, AC-2904, AC-2905, AC-2906, AC-2907, AC-2908, AC-2909 | -- | core | other-app: Pinxit IP-0450 saved selections in channels with combine operations in Pinxit |  |
-| LP-1288 | Freehand lasso | -- | AC-2830 | -- | core | other-app: Pinxit IP-0542 lasso in Pinxit |  |
-| LP-1289 | Magic wand with threshold, connected, and brightness, color, or RGB types | -- | AC-2831, AC-2832, AC-2833, AC-2834, AC-2835, AC-2836 | -- | core | other-app: Pinxit IP-0470 magic wand in Pinxit |  |
-| LP-1290 | Rectangular and elliptical selection | -- | AC-2837, AC-2838 | -- | core | other-app: Pinxit IP-0541 marquee in Pinxit |  |
-| LP-1291 | Shape selection with corner and curve nodes | -- | AC-2839, AC-2840 | -- | core | other-app: Pinxit IP-0538 selection from path in Pinxit |  |
-| LP-1292 | Brush selection with smart color or brightness tolerance | -- | AC-2841, AC-2842, AC-2843 | -- | core | other-app: Pinxit IP-0498 selection brush in Pinxit |  |
-| LP-1293 | AI object selection by loose lasso | -- | AC-2844 | -- | ai | other-app: Pinxit IP-2023 object selection in Pinxit |  |
-| LP-1294 | Selection modes: add, subtract, inverse, click to clear, combine tools | -- | AC-2849, AC-2850, AC-2851, AC-2852, AC-2857 | -- | core | other-app: Pinxit IP-0543 selection modes in Pinxit |  |
-| LP-1295 | Save, load, and manage selections | -- | AC-2858, AC-2859, AC-2860 | -- | core | other-app: Pinxit IP-0450 saved selections in Pinxit |  |
-| LP-1296 | Copy, cut, and delete selected pixels | -- | AC-2861, AC-2863 | -- | core | other-app: Pinxit IP-0176 cut, copy, clear in Pinxit |  |
-| LP-1297 | Paste a selection as a new layer | -- | AC-2862 | -- | core | other-app: Pinxit IP-0166 paste as new layer in Pinxit |  |
-| LP-1298 | Refine selection: shift edge and feathering, saved as preset | -- | AC-2864, AC-2865, AC-2866 | -- | core | other-app: Pinxit IP-0514 refine selection in Pinxit |  |
-| LP-1299 | Selection from pixel targeting | -- | AC-2867 | -- | core | other-app: Pinxit IP-0479 mask from color range in Pinxit |  |
-| LP-1300 | Luminosity selection | -- | AC-2868 | -- | core | other-app: Pinxit IP-0491 selection from luminosity in Pinxit |  |
-| LP-1301 | Selection feathering | -- | AC-2871 | -- | core | other-app: Pinxit IP-0545 feather selection in Pinxit |  |
-| LP-1302 | Show or hide selection edges | -- | AC-2872 | -- | core | other-app: Pinxit IP-0453 marching ants toggle in Pinxit |  |
-| LP-1303 | Smart erase: content-aware fill of a selection or a brushed area | -- | AC-2873, AC-2874, AC-2875, AC-3233 | -- | ai | other-app: Pinxit IP-0909 content-aware healing in Pinxit |  |
-| LP-1304 | Channel selection: build a selection or mask from an RGB, CMYK, Lab, or HSL channel with levels and invert | -- | AC-2887, AC-2888, AC-2889, AC-2890, AC-2891, AC-2892, AC-2893, AC-2894 | -- | core | other-app: Pinxit IP-0555 channel to selection in Pinxit |  |
-| LP-1305 | Luminance and color range pane: tone grabber, color wheels, add detail, smoothness, presets | -- | AC-2910, AC-2911, AC-2912, AC-2913, AC-2914, AC-2915, AC-2916, AC-2917, AC-2918, AC-2919, AC-2920, AC-2921, AC-2922, AC-2923, AC-2924, AC-2925, AC-2926 | -- | core | other-app: Pinxit IP-0294 live luminosity and hue range masks in Pinxit |  |
-| LP-1306 | Layers pane basics: blank layer, show and hide, delete, duplicate, reorder, rename, merge down, flatten, blend mode, opacity | -- | AC-2929, AC-2932, AC-2937, AC-2938, AC-2939, AC-2940, AC-2941, AC-2942, AC-2943, AC-2944, AC-2945, AC-2946, AC-2947 | -- | core | other-app: Pinxit IP-0276 layers panel in Pinxit |  |
-| LP-1307 | Geometry commands apply to all layers | -- | AC-2930 | -- | core | other-app: Pinxit IP-0215 canvas rotate and flip in Pinxit |  |
-| LP-1308 | Watermark placed on its own layer | -- | AC-2931 | -- | core | other-app: Pinxit IP-0398 image layers in Pinxit |  |
-| LP-1309 | Add a file or a filmstrip image as a layer | -- | AC-2933, AC-2934, AC-2935 | -- | core | other-app: Pinxit IP-1720 place embedded in Pinxit |  |
-| LP-1310 | Load files into a stack as layers | -- | AC-2936 | -- | core | other-app: Pinxit IP-1721 load files into stack in Pinxit |  |
-| LP-1311 | Layered native format preserving layers for re-editing | -- | AC-2948 | -- | format | other-app: Pinxit IP-1848 native .pinxit format |  |
-| LP-1312 | 16 bits per channel layered documents | -- | AC-2949 | -- | format | other-app: Pinxit IP-0680 bit depth in Pinxit |  |
-| LP-1313 | New image: name, dimensions, aspect ratio, resolution, background, bit depth | -- | AC-2950, AC-2951, AC-2952, AC-2953, AC-2954, AC-2955 | -- | core | other-app: Pinxit IP-0016 new document settings in Pinxit |  |
-| LP-1314 | New image presets | -- | AC-2956 | -- | core | other-app: Pinxit IP-0009 new document presets in Pinxit |  |
-| LP-1315 | Adjustment layers with default masks | -- | AC-2957 | -- | core | other-app: Pinxit IP-0569 adjustment layer model in Pinxit |  |
-| LP-1316 | Clip an adjustment layer to the layer below | -- | AC-2958, AC-3051 | -- | core | other-app: Pinxit IP-0299 clipping masks in Pinxit |  |
-| LP-1317 | Exposure adjustment layer: exposure and contrast | -- | AC-2959, AC-2960 | -- | core | other-app: Pinxit IP-0596 exposure adjustment in Pinxit |  |
-| LP-1318 | Levels adjustment layer | -- | AC-2961, AC-2962, AC-2963 | -- | core | other-app: Pinxit IP-0670 levels in Pinxit |  |
-| LP-1319 | Curves adjustment layer | -- | AC-2964 | -- | core | other-app: Pinxit IP-0671 curves in Pinxit |  |
-| LP-1320 | Light EQ adjustment layer: brighten and darken | -- | AC-2965, AC-2966 | -- | core | other-app: Pinxit IP-0597 shadows and highlights in Pinxit |  |
-| LP-1321 | White balance adjustment layer: temperature, tint, picker | -- | AC-2967, AC-2968, AC-2969 | -- | core | other-app: Pinxit IP-0630 white balance adjustment in Pinxit |  |
-| LP-1322 | Vibrance adjustment layer: vibrance, saturation, hue, lightness | -- | AC-2970, AC-2971, AC-2972, AC-2973 | -- | core | other-app: Pinxit IP-0612 color and vibrance adjustment in Pinxit |  |
-| LP-1323 | Color EQ adjustment layer: per-color hue, saturation, brightness, vibrance | -- | AC-2974, AC-2975 | -- | core | other-app: Pinxit IP-0608 hue and saturation ranges in Pinxit |  |
-| LP-1324 | RGB balance adjustment layer | -- | AC-2976 | -- | core | other-app: Pinxit IP-0610 color balance in Pinxit |  |
-| LP-1325 | Split tone adjustment layer | -- | AC-2977, AC-2978, AC-2979, AC-2980, AC-2981 | -- | core | other-app: Pinxit IP-0632 split toning in Pinxit |  |
-| LP-1326 | Add color adjustment layer with density | -- | AC-2982 | -- | core | other-app: Pinxit IP-0614 photo filter in Pinxit |  |
-| LP-1327 | Black and white adjustment layer | -- | AC-2983 | -- | core | other-app: Pinxit IP-0613 black and white in Pinxit |  |
-| LP-1328 | Negative adjustment layer | -- | AC-2984 | -- | core | other-app: Pinxit IP-0642 invert in Pinxit |  |
-| LP-1329 | Photo effect adjustment layer: preset photographic looks from a list | -- | AC-2985 | -- | core | other-app: Pinxit IP-2370 Pinxit gains a photo effect look list |  |
-| LP-1330 | Skin tune: smoothing, glow, radius, as a tool and an adjustment layer | -- | AC-2986, AC-2987, AC-2988, AC-3240, AC-3241, AC-3242, AC-3243 | -- | core | other-app: Pinxit IP-2044 skin smoothing in Pinxit |  |
-| LP-1331 | Filter adjustment layers: sharpen, Gaussian and directional blur, noise reduction | -- | AC-2989, AC-2990, AC-2991, AC-2992, AC-2993, AC-2994, AC-2995, AC-2996, AC-2997 | -- | core | other-app: Pinxit IP-1003 live filter layers in Pinxit |  |
-| LP-1332 | Clarity and dehaze adjustment layers with Orton, soft light, tonal width, radius, edge processing | -- | AC-2998, AC-2999, AC-3000, AC-3001, AC-3002, AC-3003, AC-3004 | -- | core | other-app: Pinxit IP-0604 clarity and dehaze adjustment layer in Pinxit |  |
-| LP-1333 | Gradient map adjustment layer | -- | AC-3005, AC-3006 | -- | core | other-app: Pinxit IP-0626 gradient map in Pinxit |  |
-| LP-1334 | Vignette adjustment layer | -- | AC-3007, AC-3008, AC-3009 | -- | core | other-app: Pinxit IP-1199 vignette in Pinxit |  |
-| LP-1335 | Posterize adjustment layer | -- | AC-3010 | -- | core | other-app: Pinxit IP-0641 posterize in Pinxit |  |
-| LP-1336 | Threshold adjustment layer | -- | AC-3011 | -- | core | other-app: Pinxit IP-0639 threshold in Pinxit |  |
-| LP-1337 | Color LUT adjustment layer with LUT import | -- | AC-3012 | -- | core | other-app: Pinxit IP-0622 color lookup in Pinxit |  |
-| LP-1338 | Layer masks: add white or black, add from selection automatically, paste as mask | -- | AC-3013, AC-3014, AC-3015, AC-3016, AC-3030, AC-3031, AC-3035, AC-3052 | -- | core | other-app: Pinxit IP-0282 add layer mask in Pinxit |  |
-| LP-1339 | Mask opacity | -- | AC-3017 | -- | core | other-app: Pinxit IP-0287 mask density in Pinxit |  |
-| LP-1340 | Edit a mask with any tool | -- | AC-3018 | -- | core | other-app: Pinxit IP-0289 paint masks in Pinxit |  |
-| LP-1341 | Apply, disable, and enable a mask | -- | AC-3019, AC-3020, AC-3021 | -- | core | other-app: Pinxit IP-0283 mask commands in Pinxit |  |
-| LP-1342 | Mask preview and overlay: highlighted or exposed with color and opacity | -- | AC-3022, AC-3026, AC-3027, AC-3028, AC-3029 | -- | core | other-app: Pinxit IP-0286 mask overlay in Pinxit |  |
-| LP-1343 | Mask properties: feathering and invert, non-destructive | -- | AC-3023, AC-3024, AC-3025 | -- | core | other-app: Pinxit IP-0297 masks properties in Pinxit |  |
-| LP-1344 | Mask to selection: add, subtract, intersect | -- | AC-3032, AC-3033, AC-3034 | -- | core | other-app: Pinxit IP-0288 mask to selection in Pinxit |  |
-| LP-1345 | Text tool with editable text layers | -- | AC-3036 | -- | core | other-app: Pinxit IP-1582 type layers in Pinxit |  |
-| LP-1346 | Layer effects on text | -- | AC-3037 | -- | core | other-app: Pinxit IP-0374 layer styles on text in Pinxit |  |
-| LP-1347 | Dynamic and frame text types, click or drag to place | -- | AC-3038, AC-3039, AC-3041, AC-3042 | -- | core | other-app: Pinxit IP-1584 point and box text in Pinxit |  |
-| LP-1348 | Text on a path with anchor editing | -- | AC-3040, AC-3055 | -- | core | other-app: Pinxit IP-1631 type on a path in Pinxit |  |
-| LP-1349 | Text formatting: font, size, style, justification, color | -- | AC-3043, AC-3044, AC-3045, AC-3046 | -- | core | other-app: Pinxit IP-1592 character panel in Pinxit |  |
-| LP-1350 | Text layer opacity and blend mode | -- | AC-3047, AC-3048 | -- | core | other-app: Pinxit IP-0265 layer blend and opacity in Pinxit |  |
-| LP-1351 | Rasterize text layers, merge text with image layers | -- | AC-3049, AC-3050, AC-3060 | -- | core | other-app: Pinxit IP-1590 rasterize type in Pinxit |  |
-| LP-1352 | Text transform handles, editing keys, undo, and symbol entry | -- | AC-3053, AC-3054, AC-3056, AC-3057, AC-3058 | -- | core | other-app: Pinxit IP-1587 on-canvas text editing in Pinxit |  |
-| LP-1353 | Text snaps to guidelines | -- | AC-3059 | -- | core | other-app: Pinxit IP-0085 snapping in Pinxit |  |
-| LP-1354 | Insert image metadata fields as text | -- | AC-3061, AC-3062 | -- | automation | other-app: Pinxit IP-2371 Pinxit gains metadata text insertion |  |
-| LP-1355 | Resize canvas: drag edges or exact size, anchor, aspect ratio, resolution, canvas color and opacity, grid, nudge | -- | AC-3063, AC-3064, AC-3065, AC-3066, AC-3067, AC-3068, AC-3069, AC-3070, AC-3071, AC-3072, AC-3073, AC-3074, AC-3075, AC-3076, AC-3077, AC-3078, AC-3079, AC-3080, AC-3081, AC-3082, AC-3083 | -- | core | other-app: Pinxit IP-0142 canvas size with extension color in Pinxit |  |
-| LP-1356 | Layer effects framework on image and text layers | -- | AC-3084 | -- | core | other-app: Pinxit IP-0360 layer style effects framework in Pinxit |  |
-| LP-1357 | Inner glow effect | -- | AC-3085, AC-3086, AC-3087, AC-3088, AC-3089 | -- | core | other-app: Pinxit IP-0365 inner glow in Pinxit |  |
-| LP-1358 | Inner shadow effect | -- | AC-3090, AC-3091, AC-3092, AC-3093, AC-3094, AC-3095 | -- | core | other-app: Pinxit IP-0363 inner shadow in Pinxit |  |
-| LP-1359 | Bevel effect with light source | -- | AC-3096, AC-3097, AC-3098 | -- | core | other-app: Pinxit IP-0377 bevel and emboss in Pinxit |  |
-| LP-1360 | Outline effect | -- | AC-3099, AC-3100, AC-3101, AC-3102 | -- | core | other-app: Pinxit IP-0367 stroke effect in Pinxit |  |
-| LP-1361 | Blur layer effect | -- | AC-3103 | -- | core | other-app: Pinxit IP-0368 Gaussian blur layer effect in Pinxit |  |
-| LP-1362 | Drop shadow effect | -- | AC-3104, AC-3105, AC-3106, AC-3107, AC-3108 | -- | core | other-app: Pinxit IP-0362 drop shadow in Pinxit |  |
-| LP-1363 | Clipped adjustments leave layer effects unchanged | -- | AC-3109 | -- | core | other-app: Pinxit IP-0310 blend clipped layers as group in Pinxit |  |
-| LP-1364 | Rasterize text while keeping layer effects editable | -- | AC-3110 | -- | core | other-app: Pinxit IP-0373 rasterize layer style in Pinxit |  |
-| LP-1365 | Copy, paste, and reset layer effects | -- | AC-3111, AC-3112 | -- | core | other-app: Pinxit IP-0370 copy and paste layer style in Pinxit |  |
-| LP-1366 | Frequency separation with blur radius and layer view | -- | AC-3113, AC-3114, AC-3115, AC-3116 | -- | core | other-app: Pinxit IP-0934 frequency separation in Pinxit |  |
-| LP-1367 | Focus stack of layers with auto-align and keep stack | -- | AC-3117, AC-3118, AC-3119, AC-3120, AC-3121 | -- | core | other-app: Pinxit IP-1551 focus merge in Pinxit |  |
-| LP-1368 | HDR merge of layers with auto-align and keep stack | -- | AC-3122, AC-3123, AC-3124, AC-3125, AC-3126 | -- | core | other-app: Pinxit IP-1524 Merge to HDR in Pinxit |  |
-| LP-1369 | Auto-align layers | -- | AC-3127 | -- | core | other-app: Pinxit IP-1522 auto-align layers in Pinxit |  |
-| LP-1370 | Auto-blend layers: focus blend and HDR blend | -- | AC-3128, AC-3129, AC-3130 | -- | core | other-app: Pinxit IP-1541 auto-blend layers in Pinxit |  |
-| LP-1371 | AI denoise in the editor: strength, pixel targeting, blending, opacity, preview, output | -- | AC-3131, AC-3132, AC-3133, AC-3134, AC-3135, AC-3136, AC-3137, AC-3138, AC-3139, AC-3140 | -- | ai | other-app: Pinxit IP-2070 AI noise reduction in Pinxit; Albumen batch denoise is its own row |  |
-| LP-1372 | Face edit framework: detected faces, face selector, feature groups, landmark points to correct, symmetric link, presets, no-face message | -- | AC-3141, AC-3142, AC-3158, AC-3194, AC-3195, AC-3196, AC-3198 | -- | ai | other-app: Pinxit IP-2372 Pinxit gains face landmark editing |  |
-| LP-1373 | Face reshaping: face width, jaw, chin, forehead, cheekbones, eyes, eyebrows, nose, smile, lips | -- | AC-3143, AC-3144, AC-3145, AC-3146, AC-3147, AC-3148, AC-3149, AC-3150, AC-3151, AC-3152, AC-3159, AC-3160, AC-3161, AC-3162, AC-3164, AC-3165, AC-3166, AC-3167, AC-3169, AC-3171, AC-3172 | -- | ai | other-app: Pinxit IP-0986 face-aware liquify in Pinxit |  |
-| LP-1374 | Eye direction horizontal and vertical | -- | AC-3153, AC-3154 | -- | ai | other-app: Pinxit IP-2045 smart portrait gaze in Pinxit |  |
-| LP-1375 | Face color retouching: eye sharpen, whitening, eye color, iris, sclera, eyebrow color, nose contouring, teeth whitening, lip color, blush, eyeshadow | -- | AC-3155, AC-3156, AC-3157, AC-3163, AC-3168, AC-3170, AC-3188, AC-3189, AC-3190, AC-3191, AC-3192, AC-3193 | -- | ai | other-app: Pinxit IP-2373 Pinxit gains face color retouching |  |
-| LP-1376 | Hair recolor with automatic hair mask: color wheel, natural colors, temperature, tint, saturation, tones, sharpness, mask editing | -- | AC-3173, AC-3174, AC-3175, AC-3176, AC-3177, AC-3178, AC-3179, AC-3180, AC-3181, AC-3197 | -- | ai | other-app: Pinxit IP-2374 Pinxit gains hair recolor |  |
-| LP-1377 | Face skin retouching: wrinkles, crow's feet, smoothing, glow, splotch removal, reflections and shadows | -- | AC-3182, AC-3183, AC-3184, AC-3185, AC-3186, AC-3187 | -- | ai | other-app: Pinxit IP-2044 skin smoothing in Pinxit |  |
-| LP-1378 | Sky replacement: sky library and custom skies, position, scale, flip, edge, opacity, brightness, temperature, tint, strength, output as layers, presets | -- | AC-3199, AC-3200, AC-3201, AC-3202, AC-3203, AC-3204, AC-3205, AC-3206, AC-3207, AC-3208, AC-3209, AC-3210, AC-3211, AC-3212, AC-3221, AC-3222 | -- | ai | other-app: Pinxit IP-2099 sky replacement in Pinxit |  |
-| LP-1379 | Sky replacement lighting and reflections: blend mode, foreground and edge lighting, color adjustment, reflections | -- | AC-3213, AC-3214, AC-3215, AC-3216, AC-3217, AC-3218, AC-3219, AC-3220 | -- | ai | other-app: Pinxit IP-2100 sky replacement lighting in Pinxit |  |
-| LP-1380 | Red eye reduction: size, darkening, outline, delete | -- | AC-3223, AC-3224, AC-3225, AC-3226, AC-3227 | -- | core | other-app: Pinxit IP-0915 red eye tool in Pinxit |  |
-| LP-1381 | Repair tool: heal with source, nib width, feathering, pressure, cursor preview, straight lines, presets | -- | AC-3229, AC-3230, AC-3234, AC-3235, AC-3236, AC-3237, AC-3238, AC-3239 | -- | core | other-app: Pinxit IP-0908 healing brush in Pinxit |  |
-| LP-1382 | Clone and blended clone | -- | AC-3231, AC-3232 | -- | core | other-app: Pinxit IP-0900 clone stamp in Pinxit |  |
-| LP-1383 | Special effects gallery with preview, per-effect options, and exit to the filter list | -- | AC-3244, AC-3245, AC-3424, AC-4793 | -- | core | other-app: Pinxit IP-1027 filter gallery in the layered editor |  |
-| LP-1384 | Special effect presets: save and reuse effect settings | -- | AC-3246, AC-3431 | -- | core | other-app: Pinxit IP-1013 filter dialog presets |  |
-| LP-1385 | Bathroom window effect: bar width and direction | -- | AC-3247, AC-3248, AC-3249 | -- | core | other-app: Pinxit IP-1145 tile glass filter |  |
-| LP-1386 | Blinds effect: width, opacity, angle, blind color | -- | AC-3250, AC-3251, AC-3252, AC-3253, AC-3254 | -- | core | other-app: Pinxit IP-1126 blinds filter |  |
-| LP-1387 | One-click photo looks: blue steel, childhood, dramatic, gloom, grunge, lomo, purple haze, seventies, somber | -- | AC-3255, AC-3278, AC-3305, AC-3306, AC-3307, AC-3323, AC-3324, AC-3333, AC-3334, AC-3340, AC-3341, AC-3342, AC-3375, AC-3407, AC-3433 | -- | core | other-app: Pinxit IP-2375 look presets are color treatments on Pinxit adjustments |  |
-| LP-1388 | Painted look effect (Bob Ross): brush size, coverage, paint thickness, colorfulness, background, randomize | -- | AC-3256, AC-3257, AC-3258, AC-3259, AC-3260, AC-3261, AC-3262 | -- | core | other-app: Pinxit IP-1352 paint daubs filter |  |
-| LP-1389 | Bulge effect: center, radius, strength, background, direction | -- | AC-3263, AC-3264, AC-3265, AC-3266, AC-3267, AC-3268, AC-3269 | -- | core | other-app: Pinxit IP-1109 spherize filter |  |
-| LP-1390 | Cartoon effect: shading strength, radius, threshold, smoothness, outline detail and strength, artifact suppression | -- | AC-3270, AC-3271, AC-3272, AC-3273, AC-3274, AC-3275, AC-3276, AC-3277 | -- | core | other-app: Pinxit IP-1268 cartoon filter |  |
-| LP-1391 | Clouds render: size, detail, seed | -- | AC-3279, AC-3280, AC-3281, AC-3282 | -- | core | other-app: Pinxit IP-1253 clouds render filter |  |
-| LP-1392 | Collage effect: number and size of tiles, background, reshuffle | -- | AC-3283, AC-3284, AC-3285, AC-3286, AC-3287 | -- | core | other-app: Pinxit IP-2376 no Pinxit collage filter |  |
-| LP-1393 | Colored edges effect: intensity, edge color, edge detection algorithm, blurring | -- | AC-3288, AC-3289, AC-3290, AC-3291, AC-3292 | -- | core | other-app: Pinxit IP-1256 detect edges filter |  |
-| LP-1394 | Contours and topography effects: rounding, line frequency or count, strength, line color | -- | AC-3293, AC-3294, AC-3295, AC-3296, AC-3297, AC-3452, AC-3453, AC-3454 | -- | core | other-app: Pinxit IP-1342 trace contour filter |  |
-| LP-1395 | Crayon drawing effect | -- | AC-3298 | -- | core | other-app: Pinxit IP-1362 conte crayon filter |  |
-| LP-1396 | Crosshatch effect | -- | AC-3299 | -- | core | other-app: Pinxit IP-1374 crosshatch filter |  |
-| LP-1397 | Dauber effect: intensity, frequency, background, randomize | -- | AC-3300, AC-3301, AC-3302, AC-3303, AC-3304 | -- | core | other-app: Pinxit IP-1352 paint daubs filter |  |
-| LP-1398 | Edge detect effect | -- | AC-3308 | -- | core | other-app: Pinxit IP-1256 detect edges filter |  |
-| LP-1399 | Emboss effect: elevation, weight, azimuth | -- | AC-3309, AC-3310, AC-3311, AC-3312 | -- | core | other-app: Pinxit IP-1255 emboss filter |  |
-| LP-1400 | Furry edges effect: frequency, threshold, fur length, variance, direction, edge detection, colors, randomize | -- | AC-3313, AC-3314, AC-3315, AC-3316, AC-3317, AC-3318, AC-3319, AC-3320, AC-3321, AC-3322 | -- | core | other-app: Pinxit IP-2377 no Pinxit fur stroke filter |  |
-| LP-1401 | Glowing edges effect: intensity and color | -- | AC-3325, AC-3326, AC-3327 | -- | core | other-app: Pinxit IP-1397 glowing edges filter |  |
-| LP-1402 | Gradient map effect: dark and light colors | -- | AC-3328, AC-3329, AC-3330, AC-4872 | -- | core | other-app: Pinxit IP-0626 gradient map adjustment |  |
-| LP-1403 | Granite effect: light angle | -- | AC-3331, AC-3332 | -- | core | other-app: Pinxit IP-1336 texturizer filter |  |
-| LP-1404 | Jiggle distortion: size, detail, strength, randomize | -- | AC-3335, AC-3336, AC-3337, AC-3338, AC-3339 | -- | core | other-app: Pinxit IP-2378 no Pinxit jiggle distortion |  |
-| LP-1405 | Mirror effect: direction and axis position | -- | AC-3343, AC-3344, AC-3345 | -- | core | other-app: Pinxit IP-1119 kaleidoscope and mirrors filter |  |
-| LP-1406 | Negative effect for scanned film negatives | -- | AC-3346, AC-4860 | -- | core | other-app: Pinxit IP-0642 invert adjustment |  |
-| LP-1407 | Oil paint effect: brush width, variance, vibrance | -- | AC-3347, AC-3348, AC-3349, AC-3350 | -- | core | other-app: Pinxit IP-1263 oil paint filter |  |
-| LP-1408 | Old photo effect: age amount | -- | AC-3351, AC-3352 | -- | core | other-app: Pinxit IP-1317 old photo filter |  |
-| LP-1409 | Orton glow effect: blur, contrast, brightness | -- | AC-3353, AC-3354, AC-3355, AC-3356 | -- | core | other-app: Pinxit IP-1201 diffuse glow filter |  |
-| LP-1410 | Outline effect: line width, threshold, background color | -- | AC-3357, AC-3358, AC-3359, AC-3360 | -- | core | other-app: Pinxit IP-1376 ink outlines filter |  |
-| LP-1411 | Pencil drawing effect | -- | AC-3361 | -- | core | other-app: Pinxit IP-1383 graphic pen filter |  |
-| LP-1412 | Photo effect filters: choose a photo filter type | -- | AC-3362, AC-3363, AC-4874 | -- | core | other-app: Pinxit IP-0614 photo filter adjustment |  |
-| LP-1413 | Pixel explosion effect: center, intensity, direction, randomize | -- | AC-3364, AC-3365, AC-3366, AC-3367, AC-3368, AC-3369 | -- | core | other-app: Pinxit IP-2379 no Pinxit pixel explosion filter |  |
-| LP-1414 | Pixelate effect: block width and height, square | -- | AC-3370, AC-3371, AC-3372 | -- | core | other-app: Pinxit IP-1150 pixelize and mosaic filter |  |
-| LP-1415 | Posterize effect: brightness levels | -- | AC-3373, AC-3374, AC-4858 | -- | core | other-app: Pinxit IP-0641 posterize adjustment |  |
-| LP-1416 | Radial waves effect: center, amplitude, wavelength, light strength, background, direction | -- | AC-3376, AC-3377, AC-3378, AC-3379, AC-3380, AC-3381, AC-3382, AC-3383 | -- | core | other-app: Pinxit IP-1123 concentric waves filter |  |
-| LP-1417 | Rain effect: strength, opacity, amount, angle and variances, background blur, color | -- | AC-3384, AC-3385, AC-3386, AC-3387, AC-3388, AC-3389, AC-3390, AC-3391, AC-3392 | -- | core | other-app: Pinxit IP-2380 no Pinxit rain filter |  |
-| LP-1418 | Ripple effect: center, amplitude, wavelength, light strength, background, direction | -- | AC-3393, AC-3394, AC-3395, AC-3396, AC-3397, AC-3398, AC-3399, AC-3400 | -- | core | other-app: Pinxit IP-1123 concentric waves filter |  |
-| LP-1419 | Scattered tiles effect: tile size, scatter amount, background, randomize | -- | AC-3401, AC-3402, AC-3403, AC-3404, AC-3405 | -- | core | other-app: Pinxit IP-1266 tiles filter |  |
-| LP-1420 | Sepia effect | -- | AC-3406 | -- | core | other-app: Pinxit IP-0655 sepia filter |  |
-| LP-1421 | Sheet metal effect: rounding, detail, angle, metal color, indented or pushed out | -- | AC-3408, AC-3409, AC-3410, AC-3411, AC-3412, AC-3413 | -- | core | other-app: Pinxit IP-1380 bas relief filter |  |
-| LP-1422 | Shift effect: strength, bar width, angle, background | -- | AC-3414, AC-3415, AC-3416, AC-3417, AC-3418 | -- | core | other-app: Pinxit IP-1120 shift rows or columns filter |  |
-| LP-1423 | Slant effect: amount, fulcrum, background, direction | -- | AC-3419, AC-3420, AC-3421, AC-3422, AC-3423 | -- | core | other-app: Pinxit IP-1183 shear filter |  |
-| LP-1424 | Sobel edges effect with apply and cancel | -- | AC-3425, AC-3426 | -- | core | other-app: Pinxit IP-1257 Sobel directional edges filter |  |
-| LP-1425 | Solarize and lunarize effect with threshold | -- | AC-3427, AC-3428, AC-3429, AC-3430 | -- | core | other-app: Pinxit IP-1340 solarize filter |  |
-| LP-1426 | Right-click a filter slider to reset it and Reset in filter panels | -- | AC-3432, AC-3541, AC-3623 | -- | core | other-app: Pinxit IP-1018 reset filter dialog values |  |
-| LP-1427 | Stained glass effect: fragment size, seed | -- | AC-3434, AC-3435, AC-3436 | -- | core | other-app: Pinxit IP-1335 stained glass filter |  |
-| LP-1428 | Sunspot effect: position by click, brightness | -- | AC-3437, AC-3438, AC-3439, AC-3440 | -- | core | other-app: Pinxit IP-1254 lens flare render |  |
-| LP-1429 | Swirl effect: center, radius, strength and direction, focus, background, axis | -- | AC-3441, AC-3442, AC-3443, AC-3444, AC-3445, AC-3446, AC-3447, AC-3448, AC-3449 | -- | core | other-app: Pinxit IP-1107 twirl filter |  |
-| LP-1430 | Threshold effect to pure black and white | -- | AC-3450, AC-3451, AC-4863 | -- | core | other-app: Pinxit IP-0639 threshold adjustment |  |
-| LP-1431 | Water reflection effect: position, amplitude, wavelength, perspective, lighting | -- | AC-3455, AC-3456, AC-3457, AC-3458, AC-3459, AC-3460 | -- | core | other-app: Pinxit IP-2381 no Pinxit water reflection filter |  |
-| LP-1432 | Water drops effect: density, radius, height, seed | -- | AC-3461, AC-3462, AC-3463, AC-3464, AC-3465 | -- | core | other-app: Pinxit IP-2382 no Pinxit water drops filter |  |
-| LP-1433 | Waves effect: wavelength, amplitude, angle, background | -- | AC-3466, AC-3467, AC-3468, AC-3469, AC-3470 | -- | core | other-app: Pinxit IP-1189 wave filter |  |
-| LP-1434 | Weave effect: strip width, gap width, background color | -- | AC-3471, AC-3472, AC-3473, AC-3474 | -- | core | other-app: Pinxit IP-1280 weave filter |  |
-| LP-1435 | Wind effect: strength, threshold, chance, edge detection, colors, angle, randomize | -- | AC-3475, AC-3476, AC-3477, AC-3478, AC-3479, AC-3480, AC-3481, AC-3482, AC-3483 | -- | core | other-app: Pinxit IP-1185 wind filter |  |
-| LP-1436 | User-defined convolution: kernel matrix, division, bias, clear, sample kernels | -- | AC-3484, AC-3485, AC-3486, AC-3487, AC-3488, AC-3489 | -- | core | other-app: Pinxit IP-1345 custom convolution kernel |  |
-| LP-1437 | Drawing tools group: shapes with width, feathering, and blending | -- | AC-3490 | -- | core | other-app: Pinxit IP-1675 geometric figures |  |
-| LP-1438 | Hand tool and panning with Space or arrow keys | -- | AC-3491, AC-3631, AC-4744, AC-4826, AC-4880 | -- | core | other-app: Pinxit IP-0127 hand tool |  |
-| LP-1439 | Move tool for layers, text, and selections with arrow nudge and rotation handle | -- | AC-3492, AC-3493, AC-3497, AC-4881 | -- | core | other-app: Pinxit IP-0277 move tool |  |
-| LP-1440 | Snap a layer to canvas edges, center, and corners | -- | AC-3494 | -- | core | other-app: Pinxit IP-0429 align layers to canvas |  |
-| LP-1441 | Placement grid while moving | -- | AC-3495 | -- | core | other-app: Pinxit IP-0080 show grid |  |
-| LP-1442 | Lock aspect ratio while resizing a layer | -- | AC-3496 | -- | core | other-app: Pinxit IP-0947 proportional transform |  |
-| LP-1443 | Move ruler guidelines with the Move tool | -- | AC-3498 | -- | core | other-app: Pinxit IP-0075 drag and move guides |  |
-| LP-1444 | Commit or discard a move | -- | AC-3499 | -- | core | other-app: Pinxit IP-0996 free transform commit and cancel |  |
-| LP-1445 | Off-canvas layer data kept until a destructive operation | -- | AC-3500, AC-3501, AC-3502, AC-3504 | -- | core | other-app: Pinxit IP-0040 show all and clip to canvas | low-disk fallback is Pinxit scratch handling |
-| LP-1446 | Text tool adds a text layer | -- | AC-3505, AC-4884 | -- | core | other-app: Pinxit IP-1584 type tool |  |
-| LP-1447 | Rectangle and ellipse drawing with Shift constraint | -- | AC-3506, AC-3507, AC-4885, AC-4886 | -- | core | other-app: Pinxit IP-1679 rectangle and ellipse tools |  |
-| LP-1448 | Line and arrow drawing with Shift constraint | -- | AC-3508, AC-3509, AC-4887, AC-4888 | -- | core | other-app: Pinxit IP-1683 line tool with arrowheads |  |
-| LP-1449 | Polygon drawing by clicked corners | -- | AC-3510, AC-4889 | -- | core | other-app: Pinxit IP-1682 polygon tool |  |
-| LP-1450 | Curve drawing: drag, bend, click to set | -- | AC-3511, AC-4890 | -- | core | other-app: Pinxit IP-1675 geometric figures with arcs |  |
-| LP-1451 | Paint brush: foreground on left click, background on right click, opacity, flow | -- | AC-3512, AC-3513, AC-3514, AC-4891 | -- | core | other-app: Pinxit IP-0838 brush tool |  |
-| LP-1452 | Brush settings: shape and color dynamics with jitter | -- | AC-3515, AC-3516 | -- | core | other-app: Pinxit IP-0756 shape and color dynamics |  |
-| LP-1453 | Mouse wheel changes brush width, Ctrl or Shift wheel changes feathering | -- | AC-3517 | -- | core | other-app: Pinxit IP-2145 modifier plus wheel adjusts tool size |  |
-| LP-1454 | Per-stroke undo and redo | -- | AC-3518 | -- | core | other-app: Pinxit IP-0201 undo and redo |  |
-| LP-1455 | Paint bucket fill with threshold and connected option | -- | AC-3519, AC-3520, AC-3521, AC-4892 | -- | core | other-app: Pinxit IP-0897 paint bucket tolerance and contiguous |  |
-| LP-1456 | Gradient tool: linear or radial, color, opacity, blend mode, commit or discard | -- | AC-3522, AC-3523, AC-3524, AC-3525, AC-3526, AC-4893 | -- | core | other-app: Pinxit IP-0898 gradient tool |  |
-| LP-1457 | Eraser to transparency | -- | AC-3527, AC-4894 | -- | core | other-app: Pinxit IP-0844 eraser tool |  |
-| LP-1458 | Eyedropper: foreground or background sample, luminance readout | -- | AC-3528, AC-3530, AC-4897 | -- | core | other-app: Pinxit IP-0733 eyedropper tool |  |
-| LP-1459 | Sample colors outside the application window | -- | AC-3529 | -- | core | other-app: Pinxit IP-0698 sample colors anywhere on screen |  |
-| LP-1460 | Foreground and background color boxes, reset to black and white, swap, color dialogs | -- | AC-3531, AC-3532, AC-4898, AC-4899, AC-4900 | -- | core | other-app: Pinxit IP-0735 foreground and background swatches |  |
-| LP-1461 | Color pane in the layered editor | -- | AC-3533, AC-4753 | -- | core | other-app: Pinxit IP-0715 color panel |  |
-| LP-1462 | Brush nib width | -- | AC-3534 | -- | core | other-app: Pinxit IP-0841 paint tool brush size |  |
-| LP-1463 | Brush feathering | -- | AC-3535 | -- | core | other-app: Pinxit IP-0842 paint tool hardness |  |
-| LP-1464 | Brush spacing and auto spacing | -- | AC-3536, AC-3537 | -- | core | other-app: Pinxit IP-0843 paint tool spacing |  |
-| LP-1465 | Fill drawn shapes with color | -- | AC-3538 | -- | core | other-app: Pinxit IP-1686 shape fill |  |
-| LP-1466 | Stroke opacity | -- | AC-3539 | -- | core | other-app: Pinxit IP-0840 paint tool opacity |  |
-| LP-1467 | Stroke blend mode | -- | AC-3540 | -- | core | other-app: Pinxit IP-0793 paint tool blend mode |  |
-| LP-1468 | Straight lines with Shift and Shift-click between points while brushing | -- | AC-3542, AC-3543, AC-3689 | -- | core | other-app: Pinxit IP-0798 straight and constrained lines while painting |  |
-| LP-1469 | Watermark placement: saved watermark images, drag with ruler guides, anchor point with offsets, resize with aspect, alpha or keyed transparency color, blend mode, opacity, new layer, presets | -- | AC-3544, AC-3545, AC-3546, AC-3547, AC-3548, AC-3549, AC-3550, AC-3551, AC-3552, AC-3553, AC-3554, AC-3555, AC-3556, AC-3557, AC-4790 | -- | core | other-app: Pinxit IP-2383 placed image with watermark presets |  |
-| LP-1470 | Filter panel Apply, Done, Cancel, and Reset buttons, apply keeps the tool open | -- | AC-3558, AC-3696 | -- | core | other-app: Pinxit IP-1032 filter apply and cancel with progress |  |
-| LP-1471 | Borders: overall and per-side size with final size readout, color with eyedropper | -- | AC-3560, AC-3561, AC-3562, AC-3563, AC-3564, AC-3575, AC-4791 | -- | core | other-app: Pinxit IP-1313 add border |  |
-| LP-1472 | Border textures, irregular edges, edge blur, drop shadow, raised edge, light direction, custom texture and edge folders | -- | AC-3565, AC-3566, AC-3567, AC-3568, AC-3569, AC-3570, AC-3571, AC-3572, AC-3573, AC-3574 | -- | core | other-app: Pinxit IP-2384 textured and irregular border frames |  |
-| LP-1473 | Vignette frame: focal point, clear and transition zones, stretch, round or rectangular, outline | -- | AC-3576, AC-3577, AC-3578, AC-3579, AC-3580, AC-3581, AC-3582, AC-3583, AC-4792, AC-4868 | -- | core | other-app: Pinxit IP-1199 vignette filter |  |
-| LP-1474 | Vignette frame effects: color, desaturate, blur, clouds, edges, radial waves, radial and zoom blur, crayon, dauber, pixelate, old, glowing edges, ripple | -- | AC-3584, AC-3585, AC-3586, AC-3587, AC-3588, AC-3589, AC-3590, AC-3591, AC-3592, AC-3593, AC-3594, AC-3595, AC-3596, AC-3597, AC-3598 | -- | core | other-app: Pinxit IP-1004 any filter through a live filter mask |  |
-| LP-1475 | Tilt-shift: focus band guides, 45 degree lock, lens or gaussian blur, amount, bokeh frequency, brightness, sides, saturation | -- | AC-3599, AC-3600, AC-3601, AC-3602, AC-3603, AC-3604, AC-3605, AC-3606, AC-4794 | -- | core | other-app: Pinxit IP-1083 tilt-shift blur |  |
-| LP-1476 | Paint or gradient-mask any filter with the edit brush, linear, and radial gradient | -- | AC-3607, AC-3608, AC-3609, AC-4822, AC-4823, AC-4824, AC-4825 | -- | core | other-app: Pinxit IP-1004 live filter mask paint and gradient |  |
-| LP-1477 | Film grain: amount, smoothing, size | -- | AC-3610, AC-3611, AC-3612, AC-3613, AC-4795 | -- | core | other-app: Pinxit IP-0635 grain adjustment layer |  |
-| LP-1478 | Rotate tool: preset orientations, fine straightening, crop or preserve with fill color, grid | -- | AC-3614, AC-3615, AC-3616, AC-3619, AC-3620, AC-3621, AC-3622, AC-4796 | -- | core | other-app: Pinxit IP-0144 arbitrary canvas rotation |  |
-| LP-1479 | Straighten by drawing a horizontal or vertical line | -- | AC-3617, AC-3618 | -- | core | other-app: Pinxit IP-0185 straighten from a drawn line |  |
-| LP-1480 | Flip horizontally and vertically | -- | AC-3625, AC-3626, AC-3627, AC-4797 | -- | core | other-app: Pinxit IP-0211 flip canvas |  |
-| LP-1481 | Crop tool with drag handles and darkened outside area | -- | AC-3628, AC-3629, AC-3632, AC-4798 | -- | core | other-app: Pinxit IP-0212 crop tool |  |
-| LP-1482 | Crop numeric size, units, dpi, constrained ratio and rotate, relative edge offsets, estimated file size | -- | AC-3630, AC-3633, AC-3634, AC-3635, AC-3636, AC-3637, AC-3638, AC-3639, AC-3640 | -- | core | other-app: Pinxit IP-0195 crop presets and numeric modes |  |
-| LP-1483 | Perspective correction by corner and side handles with background fill and grid | -- | AC-3641, AC-3642, AC-3643, AC-4799 | -- | core | other-app: Pinxit IP-1159 perspective filter |  |
-| LP-1484 | Distortion correction: barrel, pincushion, fisheye, center, strength, scale, background, grid | -- | AC-3644, AC-3645, AC-3646, AC-3647, AC-3648, AC-3649, AC-3650, AC-3651, AC-4800 | -- | core | other-app: Pinxit IP-1161 custom lens distortion correction |  |
-| LP-1485 | Lens correction from the Lensfun database: make, model, lens, EXIF lens info, manual strength, CA, transparency or fill, grid | -- | AC-3652, AC-3653, AC-3654, AC-3655, AC-3656, AC-3657, AC-3658, AC-3659, AC-3660, AC-3661, AC-3662, AC-4801 | -- | core | other-app: Pinxit IP-1169 lens correction filter |  |
-| LP-1486 | Resize: pixels, percent, print size with dpi, aspect ratio presets and custom, resampling filter, estimated size | -- | AC-3663, AC-3664, AC-3665, AC-3666, AC-3667, AC-3668, AC-3669, AC-3670, AC-4802 | -- | core | other-app: Pinxit IP-0152 image size with units and constraints |  |
-| LP-1487 | Resize rules: enlarge only, reduce only, fit width, height, both, or largest side | -- | AC-3671, AC-3672, AC-3673, AC-3674, AC-3675, AC-3676, AC-3677 | -- | core | other-app: Pinxit IP-0162 fit image with do not enlarge |  |
-| LP-1488 | Liquify: shift, pinch, bulge, restore, nib width, density, strength, fill or transparency, reset | -- | AC-3678, AC-3679, AC-3680, AC-3681, AC-3682, AC-3683, AC-3684, AC-3685, AC-3686, AC-3687, AC-3688, AC-4803 | -- | core | other-app: Pinxit IP-0990 liquify distortion tools |  |
-| LP-1489 | Exposure tool: exposure, auto, contrast, fill light | -- | AC-3690, AC-3691, AC-3692, AC-3693, AC-3694, AC-4804, AC-4856 | -- | core | other-app: Pinxit IP-0586 light adjustment |  |
-| LP-1490 | Exposure warning overlay for clipped pixels | -- | AC-3695, AC-4827 | -- | core | other-app: Pinxit IP-0592 clipping display |  |
-| LP-1491 | Levels: channel, shadows, midtones, highlights with auto arrows | -- | AC-3697, AC-3698, AC-3699, AC-3700, AC-3701, AC-4805, AC-4866 | -- | core | other-app: Pinxit IP-0670 levels adjustment |  |
-| LP-1492 | Levels auto modes and tolerance | -- | AC-3702, AC-3703, AC-3704, AC-3705 | -- | core | other-app: Pinxit IP-0591 auto color correction options |  |
-| LP-1493 | Levels black, mid, and white point pickers with RGB readout | -- | AC-3706, AC-3707, AC-3708, AC-3709 | -- | core | other-app: Pinxit IP-0590 point eyedroppers |  |
-| LP-1494 | Auto levels: contrast and color, contrast, color, strength | -- | AC-3710, AC-3711, AC-3712, AC-3713, AC-3714, AC-4806 | -- | core | other-app: Pinxit IP-0599 auto tone, contrast, and color |  |
-| LP-1495 | Tone curves: channel, histogram, point editing, node readout | -- | AC-3715, AC-3716, AC-3717, AC-3718, AC-3719, AC-4807, AC-4859 | -- | core | other-app: Pinxit IP-0671 curves adjustment |  |
-| LP-1496 | Tone curves color picker adds a point from the image | -- | AC-3720 | -- | core | other-app: Pinxit IP-0577 on-image targeted adjustment |  |
-| LP-1497 | Light EQ tone equalizer: auto, 1-step, basic, standard bands, advanced curves, on-image drag, wheel, and keys | -- | AC-3721, AC-3722, AC-3723, AC-3724, AC-3725, AC-3726, AC-3727, AC-3728, AC-3729, AC-3730, AC-3731, AC-3732, AC-3733, AC-3734, AC-3735, AC-3736, AC-3737, AC-3738, AC-3739, AC-3740, AC-3741, AC-3742, AC-3743, AC-3744, AC-3745, AC-4808, AC-4871 | -- | core | other-app: Pinxit IP-2385 tone equalizer on the shared develop stage |  |
-| LP-1498 | Dehaze with amount | -- | AC-3746, AC-3747, AC-4809, AC-4876 | -- | core | other-app: Pinxit IP-0604 clarity and dehaze adjustment |  |
-| LP-1499 | Dodge and burn brushes: tone target, range preview, nib, feathering, strength | -- | AC-3748, AC-3749, AC-3750, AC-3751, AC-3756, AC-3757, AC-3758, AC-4810 | -- | core | other-app: Pinxit IP-0927 dodge and burn tools |  |
-| LP-1500 | Saturate and desaturate brushes with standard or vibrance mode | -- | AC-3752, AC-3753, AC-3754, AC-3755 | -- | core | other-app: Pinxit IP-0928 sponge tool |  |
-| LP-1501 | White balance: click reference, temperature, tint, strength, neutral pixel mask | -- | AC-3759, AC-3760, AC-3761, AC-3762, AC-3763, AC-3764, AC-4811, AC-4875 | -- | core | other-app: Pinxit IP-0630 white balance adjustment |  |
-| LP-1502 | Color EQ: high quality and standard modes, per-color saturation, brightness, hue, contrast, curve, on-image drag | -- | AC-3765, AC-3766, AC-3767, AC-3769, AC-3770, AC-3771, AC-3772, AC-3773, AC-3780, AC-3781, AC-3782, AC-3783, AC-4812, AC-4870 | -- | core | other-app: Pinxit IP-0608 hue and saturation range extensions |  |
-| LP-1503 | Color EQ presets | -- | AC-3768 | -- | core | other-app: Pinxit IP-0567 adjustment presets |  |
-| LP-1504 | Color EQ global adjustments: vibrance, saturation, color shift, hue, lightness, RGB balance | -- | AC-3774, AC-3775, AC-3776, AC-3777, AC-3778, AC-3779, AC-4861 | -- | core | other-app: Pinxit IP-0612 color and vibrance adjustment |  |
-| LP-1505 | Color wheel: select a hue range, eyedropper, invert, mask preview, smoothness, saturation, hue, brightness, contrast, multiple wheels | -- | AC-3784, AC-3785, AC-3786, AC-3787, AC-3788, AC-3789, AC-3790, AC-3791, AC-3792, AC-3793, AC-3794, AC-3796, AC-3797, AC-3798 | -- | core | other-app: Pinxit IP-0279 live hue range mask with adjustments |  |
-| LP-1506 | Show previous: compare with the image before the current edit | -- | AC-3795 | -- | core | other-app: Pinxit IP-0573 adjustment view previous |  |
-| LP-1507 | Tone wheels: shadow, midtone, highlight tint with eyedroppers, saturation, brightness | -- | AC-3799, AC-3800, AC-3801, AC-3802, AC-3803 | -- | core | other-app: Pinxit IP-0610 color balance |  |
-| LP-1508 | Convert to black and white: per-color brightness, channel percentages, contrast, color amount, tint, hover preview | -- | AC-3804, AC-3805, AC-3806, AC-3807, AC-3808, AC-3809, AC-3810, AC-3811, AC-3812, AC-3813, AC-3814, AC-4813, AC-4862 | -- | core | other-app: Pinxit IP-0613 black and white adjustment |  |
-| LP-1509 | Split tone: highlight and shadow hue and saturation, balance | -- | AC-3815, AC-3816, AC-3817, AC-3818, AC-3819, AC-3820, AC-4814, AC-4877 | -- | core | other-app: Pinxit IP-0632 split toning |  |
-| LP-1510 | Color LUTs filter with .3dl and .cube files | -- | AC-3821, AC-3822, AC-4815, AC-4879 | -- | core | other-app: Pinxit IP-0622 color lookup |  |
-| LP-1511 | LUT list management: import, refresh, remove | -- | AC-3823, AC-3824, AC-3825 | -- | core | other-app: Pinxit IP-0624 LUT library management |  |
-| LP-1512 | Create a LUT from the adjustment layer stack with description, copyright, format, quality | -- | AC-3826, AC-3827, AC-3828, AC-3829, AC-3830, AC-3831, AC-3832 | -- | core | other-app: Pinxit IP-0625 export LUT from adjustment stack |  |
-| LP-1513 | Histogram pane with R, G, B, L toggles | -- | AC-3833, AC-3834, AC-3835, AC-3836, AC-3837, AC-4750 | -- | core | other-app: Pinxit IP-0116 histogram panel |  |
-| LP-1514 | Colors dialog: honeycomb, custom colors, spectrum, HSL and RGB entry, preview | -- | AC-3838, AC-3839, AC-3840, AC-3841, AC-3842, AC-3843, AC-3844 | -- | core | other-app: Pinxit IP-0706 color picker dialog |  |
-| LP-1515 | Sharpen: amount, radius, mask with preview, detail, threshold | -- | AC-3845, AC-3846, AC-3847, AC-3848, AC-3849, AC-3850, AC-4816, AC-4869 | -- | core | other-app: Pinxit IP-1105 smart sharpen |  |
-| LP-1516 | Blur tool: gaussian blur | -- | AC-3851, AC-3852, AC-4817, AC-4857 | -- | core | other-app: Pinxit IP-1097 gaussian blur |  |
-| LP-1517 | Linear motion blur with angle | -- | AC-3853 | -- | core | other-app: Pinxit IP-1101 motion blur |  |
-| LP-1518 | Radial spin blur with center and direction | -- | AC-3854, AC-3857 | -- | core | other-app: Pinxit IP-1092 radial blur |  |
-| LP-1519 | Spread blur | -- | AC-3855 | -- | core | other-app: Pinxit IP-1080 spread |  |
-| LP-1520 | Zoom blur in or out | -- | AC-3856 | -- | core | other-app: Pinxit IP-1045 zoom motion blur |  |
-| LP-1521 | Smart blur for skin smoothing | -- | AC-3858 | -- | core | other-app: Pinxit IP-1093 smart blur |  |
-| LP-1522 | Lens blur with bokeh shape, frequency, brightness | -- | AC-3859, AC-3860, AC-3861 | -- | core | other-app: Pinxit IP-1053 lens blur |  |
-| LP-1523 | Noise removal: camera noise luminance and color, strength, tonal and frequency range, channel, Alt preview, legacy settings | -- | AC-3862, AC-3863, AC-3864, AC-3865, AC-3866, AC-3867, AC-3868, AC-3869, AC-3870, AC-3871, AC-4818, AC-4878 | -- | core | other-app: Pinxit IP-1066 reduce noise |  |
-| LP-1524 | Median noise removal: square, X, plus kernels | -- | AC-3872, AC-3873, AC-3874, AC-3875 | -- | core | other-app: Pinxit IP-1035 median |  |
-| LP-1525 | Despeckle | -- | AC-3876 | -- | core | other-app: Pinxit IP-1067 despeckle |  |
-| LP-1526 | AI denoise with strength | -- | AC-3877, AC-3878, AC-4783 | -- | ai | other-app: Pinxit IP-2070 AI noise reduction |  |
-| LP-1527 | Add noise: intensity, color proximity, random, monochrome, adjustable color, placement by color, seed | -- | AC-3879, AC-3880, AC-3881, AC-3882, AC-3883, AC-3884, AC-3885, AC-3886 | -- | core | other-app: Pinxit IP-1103 add noise |  |
-| LP-1528 | Detail brush: paint blur or sharpen with radius and threshold | -- | AC-3887, AC-3888, AC-3889, AC-3890, AC-4820 | -- | core | other-app: Pinxit IP-0932 blur and sharpen brush |  |
-| LP-1529 | Clarity with strength | -- | AC-3891, AC-3892, AC-4819, AC-4865 | -- | core | other-app: Pinxit IP-1056 clarity |  |
-| LP-1530 | Chromatic aberration: red and cyan, blue and yellow shifts | -- | AC-3893, AC-3894, AC-3895, AC-4821 | -- | core | other-app: Pinxit IP-1163 chromatic aberration removal |  |
-| LP-1531 | Defringe: strength, radius, color | -- | AC-3896, AC-3897, AC-3898 | -- | core | other-app: Pinxit IP-1164 defringe |  |
-| LP-1532 | Edit mode tool icons option | -- | AC-4276 | -- | core | other-app: Pinxit IP-2126 Edit mode panel display is Pinxit |  |
-| LP-1533 | Edit mode autosave option | -- | AC-4277 | -- | core | other-app: Pinxit IP-1851 Edit mode saving is Pinxit |  |
-| LP-1534 | AI image generation from a text prompt (shortcut entry points in browse and the viewer) | -- | AC-4505, AC-4681 | -- | cloud | other-app: Pinxit IP-2014 generating new images is pixel creation, Pinxit's job |  |
-| LP-1535 | AI generative edit of the current image (shortcut entry points in browse and the viewer) | -- | AC-4506, AC-4682 | -- | cloud | other-app: Pinxit IP-2090 prompt-driven pixel edits are Pinxit's job |  |
-| LP-1536 | Edit-mode general keys: close, minimize, save, save a copy, export, undo, redo, undo all, copy, paste, delete | -- | AC-4702, AC-4703, AC-4710, AC-4711, AC-4712, AC-4717, AC-4718, AC-4719, AC-4720, AC-4721, AC-4722 | -- | core | other-app: Pinxit IP-2150 default keymap conventions |  |
-| LP-1537 | Edit-mode key opens Customize Shortcuts | -- | AC-4704 | -- | core | other-app: Pinxit IP-2147 keyboard shortcuts dialog |  |
-| LP-1538 | Edit-mode key opens Options | -- | AC-4705 | -- | core | other-app: Pinxit IP-2233 preferences dialog |  |
-| LP-1539 | Edit-mode key opens Help | -- | AC-4706 | -- | core | other-app: Pinxit IP-2249 help opens the manual |  |
-| LP-1540 | Toggle the full file path in the status bar | -- | AC-4707 | -- | core | other-app: Pinxit IP-0124 status bar and title format |  |
-| LP-1541 | Toggle left, right, and bottom panes, and the Filter menu, Actions, Properties, Filmstrip, Info palette, Layers, Undo History, AI panes | -- | AC-4732, AC-4733, AC-4734, AC-4745, AC-4746, AC-4747, AC-4748, AC-4749, AC-4751, AC-4752, AC-4754, AC-4755 | -- | core | other-app: Pinxit IP-2126 panel show and hide |  |
-| LP-1542 | Zoom keys: actual size, fit, zoom in and out | -- | AC-4735, AC-4736, AC-4737, AC-4738 | -- | core | other-app: Pinxit IP-0026 zoom commands |  |
-| LP-1543 | Full screen key | -- | AC-4739 | -- | core | other-app: Pinxit IP-0037 screen modes and full screen |  |
-| LP-1544 | Toggle the Navigator when zoomed | -- | AC-4740 | -- | core | other-app: Pinxit IP-0067 navigator panel |  |
-| LP-1545 | Soft proofing key | -- | AC-4741 | -- | core | other-app: Pinxit IP-1955 soft proof |  |
-| LP-1546 | Hold to preview the selected layer mask | -- | AC-4742 | -- | core | other-app: Pinxit IP-0286 view mask alone |  |
-| LP-1547 | Hold Z to show the saved version | -- | AC-4743 | -- | core | other-app: Pinxit IP-0129 toggle last state |  |
-| LP-1548 | Toggle the toolbar, filters toolbar, and actions toolbar | -- | AC-4756, AC-4757, AC-4758 | -- | core | other-app: Pinxit IP-2134 customize toolbar |  |
-| LP-1549 | Full screen image or file list on the second screen | -- | AC-4759, AC-4760 | -- | core | other-app: Pinxit IP-2130 window modes |  |
-| LP-1550 | Rulers toggle | -- | AC-4761 | -- | core | other-app: Pinxit IP-0126 rulers display toggle |  |
-| LP-1551 | Snap to guidelines toggle | -- | AC-4762 | -- | core | other-app: Pinxit IP-0084 snapping toggle |  |
-| LP-1552 | Clear all guidelines | -- | AC-4763 | -- | core | other-app: Pinxit IP-0078 clear guides |  |
-| LP-1553 | Lock guidelines | -- | AC-4764 | -- | core | other-app: Pinxit IP-0077 lock guides |  |
-| LP-1554 | Show or hide guidelines | -- | AC-4765 | -- | core | other-app: Pinxit IP-0080 show guides |  |
-| LP-1555 | Select all, deselect, invert selection keys | -- | AC-4766, AC-4767, AC-4768 | -- | core | other-app: Pinxit IP-0544 select all, deselect, invert |  |
-| LP-1556 | AI select subject and background keys | -- | AC-4769, AC-4770 | -- | ai | other-app: Pinxit IP-2028 select subject |  |
-| LP-1557 | AI select sky key | -- | AC-4771 | -- | ai | other-app: Pinxit IP-2030 select sky |  |
-| LP-1558 | AI select hair key | -- | AC-4772 | -- | ai | other-app: Pinxit IP-2031 select people parts |  |
-| LP-1559 | Luminance and color range and pixel targeting selection keys | -- | AC-4773, AC-4777 | -- | core | other-app: Pinxit IP-0481 color range |  |
-| LP-1560 | Selection from image brightness key | -- | AC-4774 | -- | core | other-app: Pinxit IP-0491 selection from luminosity |  |
-| LP-1561 | Refine selection key | -- | AC-4775 | -- | core | other-app: Pinxit IP-0505 refine selection |  |
-| LP-1562 | Smart erase selection key and tool | -- | AC-4776, AC-4895 | -- | ai | other-app: Pinxit IP-0925 delete and fill selection |  |
-| LP-1563 | Delete selected pixels key | -- | AC-4778 | -- | core | other-app: Pinxit IP-0176 clear selected pixels |  |
-| LP-1564 | Save selection key | -- | AC-4779 | -- | core | other-app: Pinxit IP-0450 save selection |  |
-| LP-1565 | Load selection key | -- | AC-4780 | -- | core | other-app: Pinxit IP-0451 load selection |  |
-| LP-1566 | Manage selections key | -- | AC-4781 | -- | core | other-app: Pinxit IP-0455 selection editor |  |
-| LP-1567 | Selection overlay options key | -- | AC-4782 | -- | core | other-app: Pinxit IP-0562 quick mask options |  |
-| LP-1568 | AI face edit key | -- | AC-4784 | -- | ai | other-app: Pinxit IP-2045 smart portrait |  |
-| LP-1569 | Sky replacement key | -- | AC-4785 | -- | ai | other-app: Pinxit IP-2102 sky replacement |  |
-| LP-1570 | Generative edit key | -- | AC-4786 | -- | cloud | other-app: Pinxit IP-2090 prompt to edit |  |
-| LP-1571 | Red eye reduction key | -- | AC-4787 | -- | core | other-app: Pinxit IP-0915 red eye tool |  |
-| LP-1572 | Repair tool key | -- | AC-4788 | -- | core | other-app: Pinxit IP-0908 healing brush |  |
-| LP-1573 | Skin tune key and adjustment layer key | -- | AC-4789, AC-4873 | -- | core | other-app: Pinxit IP-2044 skin smoothing |  |
-| LP-1574 | Import image as layer key | -- | AC-4828 | -- | core | other-app: Pinxit IP-1720 place embedded |  |
-| LP-1575 | New blank layer key | -- | AC-4829 | -- | core | other-app: Pinxit IP-0267 new layer |  |
-| LP-1576 | Duplicate layer key | -- | AC-4830 | -- | core | other-app: Pinxit IP-0268 duplicate layer |  |
-| LP-1577 | Delete layer key | -- | AC-4831 | -- | core | other-app: Pinxit IP-0269 delete layer |  |
-| LP-1578 | Rename layer key | -- | AC-4832 | -- | core | other-app: Pinxit IP-0270 rename layer |  |
-| LP-1579 | Show or hide layer, show all and hide all layers keys | -- | AC-4833, AC-4837, AC-4838 | -- | core | other-app: Pinxit IP-0229 visibility commands |  |
-| LP-1580 | Clipping toggle key | -- | AC-4834 | -- | core | other-app: Pinxit IP-0299 clipping masks |  |
-| LP-1581 | Merge down key | -- | AC-4835 | -- | core | other-app: Pinxit IP-0274 merge down |  |
-| LP-1582 | Merge all layers key | -- | AC-4836 | -- | core | other-app: Pinxit IP-0264 flatten image |  |
-| LP-1583 | Frequency separation key | -- | AC-4839 | -- | core | other-app: Pinxit IP-0934 frequency separation |  |
-| LP-1584 | Rasterize text layer key | -- | AC-4840 | -- | core | other-app: Pinxit IP-1590 rasterize type layer |  |
-| LP-1585 | HDR merge key | -- | AC-4841 | -- | core | other-app: Pinxit IP-1523 combine exposures into HDR |  |
-| LP-1586 | Focus stack key | -- | AC-4842 | -- | core | other-app: Pinxit IP-1551 focus merge |  |
-| LP-1587 | Auto-align key | -- | AC-4843 | -- | core | other-app: Pinxit IP-1520 auto-align layers |  |
-| LP-1588 | Auto-blend key | -- | AC-4844 | -- | core | other-app: Pinxit IP-1540 auto-blend layers |  |
-| LP-1589 | Add white or black layer mask and mask from selection keys | -- | AC-4845, AC-4846, AC-4850 | -- | core | other-app: Pinxit IP-0282 add layer mask |  |
-| LP-1590 | Combine mask with selection keys: add, subtract, intersect | -- | AC-4847, AC-4848, AC-4849 | -- | core | other-app: Pinxit IP-0288 mask to selection |  |
-| LP-1591 | Invert mask key | -- | AC-4851 | -- | core | other-app: Pinxit IP-0285 mask invert |  |
-| LP-1592 | Delete or disable mask keys | -- | AC-4852, AC-4855 | -- | core | other-app: Pinxit IP-0283 mask commands |  |
-| LP-1593 | Pixel targeting mask key | -- | AC-4853 | -- | core | other-app: Pinxit IP-0294 live hue and luminosity range masks |  |
-| LP-1594 | Paste image layer as luminance mask key | -- | AC-4854 | -- | core | other-app: Pinxit IP-0293 luminosity masks |  |
-| LP-1595 | RGB adjustment layer key | -- | AC-4864 | -- | core | other-app: Pinxit IP-0610 color balance |  |
-| LP-1596 | Vibrance adjustment layer key | -- | AC-4867 | -- | core | other-app: Pinxit IP-0611 vibrance |  |
-| LP-1597 | Resize canvas tool key | -- | AC-4882 | -- | core | other-app: Pinxit IP-0209 canvas size |  |
-| LP-1598 | AI object selection tool key | -- | AC-4883 | -- | ai | other-app: Pinxit IP-2020 object selection tool |  |
-| LP-1599 | AI remove tool key | -- | AC-4896 | -- | ai | other-app: Pinxit IP-2004 remove tool |  |
-| LP-1600 | Rectangle and ellipse selection keys | -- | AC-4901, AC-4902 | -- | core | other-app: Pinxit IP-0541 marquee tools |  |
-| LP-1601 | Lasso selection key | -- | AC-4903 | -- | core | other-app: Pinxit IP-0542 lasso |  |
-| LP-1602 | Magic wand key | -- | AC-4904 | -- | core | other-app: Pinxit IP-0470 magic wand |  |
-| LP-1603 | Brush selection key | -- | AC-4905 | -- | core | other-app: Pinxit IP-0498 selection brush |  |
-| LP-1604 | Paint toolbox: show paint dialog, arrow tool, tool switching by wheel, magnetic docking, tooltips | -- | -- | IV-0358, IV-0419, IV-0443, IV-0444, IV-0445, IV-1427 | core | other-app: Pinxit IP-2141 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1605 | Paintbrush with foreground and background colors | -- | -- | IV-0420 | core | other-app: Pinxit IP-0838 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1606 | Eraser to background with right-button restore | -- | -- | IV-0421 | core | other-app: Pinxit IP-0823 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1607 | Clone brush | -- | -- | IV-0422 | core | other-app: Pinxit IP-0900 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1608 | Color replacer brush | -- | -- | IV-0423 | core | other-app: Pinxit IP-0814 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1609 | Paint text tool with rich per-character formatting and preview | -- | -- | IV-0424, IV-0425 | core | other-app: Pinxit IP-1584 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1610 | Line and arrow-line tools | -- | -- | IV-0426, IV-0427 | core | other-app: Pinxit IP-1683 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1611 | Rectangle, rounded rectangle, and ellipse tools with fill, transparent fill, and right-button color | -- | -- | IV-0428, IV-0429, IV-0430, IV-0431, IV-0440, IV-0441 | core | other-app: Pinxit IP-1679 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1612 | Flood fill with tolerance | -- | -- | IV-0432, IV-0439 | core | other-app: Pinxit IP-0897 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1613 | Paint color picker | -- | -- | IV-0433 | core | other-app: Pinxit IP-0710 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1614 | Paint straighten tool | -- | -- | IV-0434 | core | other-app: Pinxit IP-0185 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1615 | Paint measure tool | -- | -- | IV-0435 | core | other-app: Pinxit IP-0095 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1616 | Pen and brush settings: line style, width, endings, joins, hatch, smooth lines | -- | -- | IV-0436, IV-0437, IV-0438 | core | other-app: Pinxit IP-1687 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1617 | Foreground and background swatches with swap | -- | -- | IV-0442 | core | other-app: Pinxit IP-0735 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1618 | Undo of paint operations | -- | -- | IV-0446 | core | other-app: Pinxit IP-0201 IrfanView Paint plug-in drawing is layered pixel editing, Pinxit's job |  |
-| LP-1619 | Create a new empty image with size, bit depth, and background color | -- | -- | IV-0462, IV-1490 | core | other-app: Pinxit IP-0015 creating blank documents is Pinxit's job |  |
-| LP-1620 | Paint plug-in: lines, circles, arrows, straighten | -- | -- | IV-1089 | core | other-app: Pinxit IP-0838 painting is layered pixel editing |  |
+| LP-1227 | Prompt-based generative editing of a photo | LR-1039 | -- | -- | ai | other-app: Gesso IP-2090 prompt-to-edit is Gesso D03 T19 §10 |  |
+| LP-1228 | Edit mode summary: selections, brush, layers, targeting, repair, and effects | -- | AC-0136 | -- | core | other-app: Gesso IP-0265 layered pixel editing is Gesso |  |
+| LP-1229 | Edit mode lighting and color tools summary | -- | AC-0137 | -- | core | other-app: Gesso IP-0565 adjustment layers are Gesso |  |
+| LP-1230 | Edit mode detail tools summary | -- | AC-0138 | -- | core | other-app: Gesso IP-1099 pixel sharpening and noise filters are Gesso |  |
+| LP-1231 | Estimated cost of a generation shown before it runs, scaled by area | -- | AC-0193, AC-0228, AC-0296, AC-2884 | -- | cloud | other-app: Gesso IP-1992 AI usage and cost display is Gesso AI |  |
+| LP-1232 | Generative tools offered per mode without leaving the current view, one image at a time | -- | AC-0195, AC-0196, AC-0204 | -- | cloud | other-app: Gesso IP-1990 AI menu and workspace is Gesso AI |  |
+| LP-1233 | Choice of image-generation model per tool | -- | AC-0197, AC-0198, AC-0199, AC-0200, AC-0216, AC-0273, AC-0290, AC-2881 | -- | cloud | other-app: Gesso IP-1991 per-task model choice through OpenRouter in Gesso |  |
+| LP-1234 | Generation history: prompt persists, non-deterministic results, saved generation presets and reset | -- | AC-0201, AC-0213, AC-0214, AC-0276, AC-0277, AC-0293 | -- | cloud | other-app: Gesso IP-1996 generation history for reuse and re-run in Gesso |  |
+| LP-1235 | Generate an image from a text prompt: aspect ratio, resolution, output format and folder, as a new file or a new layer, progress and notification | -- | AC-0203, AC-0209, AC-0210, AC-0211, AC-0212, AC-0217, AC-0218, AC-0219, AC-0224, AC-0225, AC-0226, AC-0230, AC-0231 | -- | cloud | other-app: Gesso IP-2014 image generation is Gesso AI |  |
+| LP-1236 | Prompt entry with length limit and prompting guidance per tool | -- | AC-0205, AC-0215, AC-0274, AC-0291, AC-0298, AC-0299, AC-0300 | -- | cloud | other-app: Gesso IP-1998 AI prompt entry is Gesso AI |  |
+| LP-1237 | Reference images for generation: style, character, and composition references | -- | AC-0206, AC-0221, AC-0222, AC-0223, AC-0275, AC-0292 | -- | cloud | other-app: Gesso IP-2015 reference images for generation in Gesso |  |
+| LP-1238 | Cloud processing disclosure for generation: what is sent and retained | -- | AC-0207 | -- | cloud | other-app: Gesso IP-1993 send gate and preview in Gesso AI |  |
+| LP-1239 | Invisible AI watermark on generated images | -- | AC-0208 | -- | cloud | other-app: Gesso IP-1878 provenance marking of generated content (Gesso, B-047) |  |
+| LP-1240 | Visual effect styles for generated images (36 presets, up to five combined) | -- | AC-0220, AC-0232, AC-0233, AC-0234, AC-0235, AC-0236, AC-0237, AC-0238, AC-0239, AC-0240, AC-0241, AC-0242, AC-0243, AC-0244, AC-0245, AC-0246, AC-0247, AC-0248, AC-0249, AC-0250, AC-0251, AC-0252, AC-0253, AC-0254, AC-0255, AC-0256, AC-0257, AC-0258, AC-0259, AC-0260, AC-0261, AC-0262, AC-0263, AC-0264, AC-0265, AC-0266, AC-0267 | -- | cloud | other-app: Gesso IP-2014 effects presets of Gesso image generation |  |
+| LP-1241 | Generative edit of the selected layer from a prompt: iterate with undo, output as new layer or replace, selection-constrained, generated layer mask | -- | AC-0268, AC-0269, AC-0270, AC-0271, AC-0272, AC-0278, AC-0279, AC-0281, AC-0282, AC-0283, AC-0284, AC-0285, AC-0286 | -- | cloud | other-app: Gesso IP-2090 prompt to edit and generative edit in Gesso |  |
+| LP-1242 | Generative fill from all layers into a new layer | -- | AC-0287, AC-0288, AC-0289 | -- | cloud | other-app: Gesso IP-2005 generative fill in Gesso |  |
+| LP-1243 | AI remove: brush over an object and reconstruct the background | -- | AC-0295, AC-0297, AC-2876, AC-2877, AC-2878, AC-2879, AC-2880, AC-2886 | -- | cloud | other-app: Gesso IP-2004 remove tool with generative mode in Gesso |  |
+| LP-1244 | New blank image dialog: size, units, aspect ratio, DPI, background, bit depth, presets | -- | AC-0316, AC-0446, AC-0447, AC-0448, AC-0449, AC-0450, AC-0451, AC-0452 | -- | core | other-app: Gesso IP-0016 new blank documents are pixel editing | presets are IP-0015 |
+| LP-1245 | Load files into a layer stack | -- | AC-1052 | -- | core | other-app: Gesso IP-1721 layer stacks are Gesso |  |
+| LP-1246 | Tool groups panel: selections and drawing, AI, enhance, add, geometry, exposure, color, detail | -- | AC-2587, AC-2588, AC-2589, AC-2590, AC-2591, AC-2592, AC-2593, AC-2594 | -- | core | other-app: Gesso IP-2138 toolbar with tool groups in Gesso |  |
+| LP-1247 | History pane, history drop-down, undo all, undo and redo buttons | -- | AC-2595, AC-2596, AC-2597, AC-2607 | -- | core | other-app: Gesso IP-0201 undo, redo, and history in Gesso |  |
+| LP-1248 | AI actions tab with one-click AI actions and selection refinement | -- | AC-2598, AC-2599, AC-2816, AC-2817 | -- | ai | other-app: Gesso IP-1998 AI quick actions in Gesso |  |
+| LP-1249 | Editor histogram with channel toggles and live update | -- | AC-2600, AC-2601, AC-2602, AC-2603, AC-2604, AC-2606 | -- | core | other-app: Gesso IP-0116 histogram panel in Gesso |  |
+| LP-1250 | Color tab for choosing drawing colors | -- | AC-2605 | -- | core | other-app: Gesso IP-0732 color panel in Gesso |  |
+| LP-1251 | Reset the image and restore to original | -- | AC-2608, AC-2624 | -- | core | other-app: Gesso IP-1706 revert in Gesso |  |
+| LP-1252 | Full screen display in the editor | -- | AC-2609 | -- | core | other-app: Gesso IP-0037 screen modes in Gesso |  |
+| LP-1253 | Editor zoom: actual size, fit, zoom slider and preset list | -- | AC-2610, AC-2613, AC-2615, AC-2616 | -- | core | other-app: Gesso IP-0026 zoom commands in Gesso |  |
+| LP-1254 | Navigator pane, automatic or manual | -- | AC-2611, AC-2612 | -- | core | other-app: Gesso IP-0061 navigator panel in Gesso |  |
+| LP-1255 | Show previous to compare with the last saved state | -- | AC-2614 | -- | core | other-app: Gesso IP-0129 toggle last state in Gesso |  |
+| LP-1256 | Color picker readout of pre-edit and edited values | -- | AC-2617 | -- | core | other-app: Gesso IP-0109 info panel readouts in Gesso |  |
+| LP-1257 | Right-click a slider to reset it | -- | AC-2618, AC-2928 | -- | core | other-app: Gesso IP-1018 reset filter dialog values in Gesso |  |
+| LP-1258 | Last-used tool settings reapplied | -- | AC-2619 | -- | core | other-app: Gesso IP-0576 last-used adjustment settings in Gesso |  |
+| LP-1259 | Tool presets: save, choose, delete | -- | AC-2620, AC-2621, AC-2622 | -- | core | other-app: Gesso IP-1013 filter and adjustment presets in Gesso |  |
+| LP-1260 | Import and export editor presets as a set | -- | AC-2623 | -- | core | other-app: Gesso IP-2223 preset export and import in Gesso |  |
+| LP-1261 | Save, discard, cancel, autosave, and save-and-continue of an editing session | -- | AC-2626, AC-2632, AC-2633, AC-2634, AC-2635, AC-2638 | -- | core | other-app: Gesso IP-1844 save and close semantics in Gesso |  |
+| LP-1262 | Save as and save a copy under a new name or format | -- | AC-2627, AC-2636, AC-2637 | -- | core | other-app: Gesso IP-1713 save a copy in Gesso |  |
+| LP-1263 | Save options: preserve metadata and embed the color profile | -- | AC-2628, AC-2631 | -- | core | other-app: Gesso IP-1714 save content options in Gesso |  |
+| LP-1264 | Photoshop 64-bit filter plug-ins | -- | AC-2643 | -- | automation | other-app: Gesso IP-1033 third-party plug-in host (Gesso's D03 T14 §11 on the shared D01 T09 host) |  |
+| LP-1265 | Edit brush: paint a filter or adjustment into brushed areas with nib width, feathering, pressure, erase, clear, invert, reload, show strokes, per-stroke undo, straight lines | -- | AC-2644, AC-2645, AC-2646, AC-2647, AC-2648, AC-2649, AC-2650, AC-2651, AC-2652, AC-2653, AC-2654, AC-2655, AC-2656, AC-2657, AC-2658 | -- | core | other-app: Gesso IP-1007 filter brush through a live filter mask in Gesso |  |
+| LP-1266 | Smart brushing: restrict edit-brush strokes by color, brightness, or both with a tolerance | -- | AC-2659, AC-2660, AC-2661, AC-2662, AC-2663, AC-2664 | -- | core | other-app: Gesso IP-2368 Gesso gains smart brushing on its filter and adjustment brushes |  |
+| LP-1267 | Linear and radial gradient masks for a filter: guides, feathering, squareness, invert, show mask, switch to brush | -- | AC-2665, AC-2666, AC-2667, AC-2668, AC-2669, AC-2670, AC-2671, AC-2672, AC-2673, AC-2674, AC-2675, AC-2676, AC-2677, AC-2678, AC-2679, AC-2680 | -- | core | other-app: Gesso IP-1004 live filter mask with gradients in Gesso |  |
+| LP-1268 | Filter blend modes and opacity: normal to lighter color | -- | AC-2681, AC-2682, AC-2683, AC-2684, AC-2685, AC-2686, AC-2687, AC-2688, AC-2689, AC-2690, AC-2691, AC-2692, AC-2693, AC-2694, AC-2695, AC-2696, AC-2697, AC-2698, AC-2699, AC-2700, AC-2701, AC-2702, AC-2703, AC-2704, AC-2705, AC-2706, AC-2708 | -- | core | other-app: Gesso IP-1019 filter blending mode and opacity in Gesso |  |
+| LP-1269 | Blend mode and preset hover preview | -- | AC-2707 | -- | core | other-app: Gesso IP-0329 blend mode hover preview in Gesso |  |
+| LP-1270 | Layer blend modes: normal to lighter color | -- | AC-2709, AC-2710, AC-2711, AC-2712, AC-2713, AC-2714, AC-2715, AC-2716, AC-2717, AC-2718, AC-2719, AC-2720, AC-2721, AC-2722, AC-2723, AC-2724, AC-2725, AC-2726, AC-2727, AC-2728, AC-2729, AC-2730, AC-2731, AC-2732, AC-2733 | -- | core | other-app: Gesso IP-0265 layer blend modes in Gesso |  |
+| LP-1271 | Rulers with units, ruler DPI, and resolution from EXIF | -- | AC-2734, AC-2735, AC-4286, AC-4287, AC-4288 | -- | core | other-app: Gesso IP-0069 rulers and units in Gesso |  |
+| LP-1272 | Guidelines: drag from rulers, move, clear, lock, hide, color | -- | AC-2736, AC-2738, AC-2739, AC-2740, AC-4285 | -- | core | other-app: Gesso IP-0075 guides in Gesso |  |
+| LP-1273 | Snap to guidelines | -- | AC-2737 | -- | core | other-app: Gesso IP-0085 snapping in Gesso |  |
+| LP-1274 | Apply a filter to one channel: red, green, blue, hue, saturation, or lightness | -- | AC-2741 | -- | core | other-app: Gesso IP-0308 blending channel restrictions in Gesso |  |
+| LP-1275 | Filter apply, done, and cancel buttons | -- | AC-2742, AC-2743, AC-2744 | -- | core | other-app: Gesso IP-1032 filter apply and cancel in Gesso |  |
+| LP-1276 | Pixel targeting: restrict a filter by tone range, color wheels, and detail, with presets and mask preview | -- | AC-2745, AC-2746, AC-2747, AC-2748, AC-2749, AC-2750, AC-2751, AC-2752, AC-2753, AC-2754, AC-2755, AC-2756, AC-2757, AC-2758, AC-2759, AC-2760, AC-2761, AC-2762, AC-2763, AC-2764, AC-2766, AC-2767, AC-2768, AC-2769, AC-2770, AC-2771, AC-2772, AC-2773, AC-2774 | -- | core | other-app: Gesso IP-0304 tonal and color targeting by blend ranges in Gesso |  |
+| LP-1277 | Skin targeting for filters and selections | -- | AC-2765, AC-2775, AC-2927 | -- | core | other-app: Gesso IP-0486 skin-tone color range in Gesso |  |
+| LP-1278 | AI denoise action | -- | AC-2818 | -- | ai | other-app: Gesso IP-2070 AI noise reduction in Gesso |  |
+| LP-1279 | AI select subject and select background | -- | AC-2819, AC-2822, AC-2853, AC-2854 | -- | ai | other-app: Gesso IP-2028 select subject in Gesso |  |
+| LP-1280 | AI select sky | -- | AC-2820, AC-2855 | -- | ai | other-app: Gesso IP-2030 select sky in Gesso |  |
+| LP-1281 | AI select hair | -- | AC-2821, AC-2856 | -- | ai | other-app: Gesso IP-2031 select people parts in Gesso |  |
+| LP-1282 | AI remove background to a mask | -- | AC-2823 | -- | ai | other-app: Gesso IP-2081 remove background to a layer mask in Gesso |  |
+| LP-1283 | AI blur background | -- | AC-2824 | -- | ai | other-app: Gesso IP-2061 portrait blur in Gesso |  |
+| LP-1284 | AI black and white background as a masked adjustment layer | -- | AC-2825 | -- | ai | other-app: Gesso IP-2369 Gesso gains one-click masked background adjustments |  |
+| LP-1285 | Selections restrict edits and filters; use selection toggle and invert for the current edit | -- | AC-2826, AC-2827, AC-2869, AC-2870 | -- | core | other-app: Gesso IP-1032 filters apply to the selection in Gesso |  |
+| LP-1286 | Selection display: mask preview, marching ants, highlighted or exposed overlay | -- | AC-2828, AC-2845, AC-2846, AC-2847, AC-2848 | -- | core | other-app: Gesso IP-0508 selection view modes in Gesso |  |
+| LP-1287 | Selection basket: store selections and masks, rename, duplicate, add, subtract, intersect with the selection or the mask | -- | AC-2829, AC-2895, AC-2896, AC-2897, AC-2898, AC-2899, AC-2900, AC-2901, AC-2902, AC-2903, AC-2904, AC-2905, AC-2906, AC-2907, AC-2908, AC-2909 | -- | core | other-app: Gesso IP-0450 saved selections in channels with combine operations in Gesso |  |
+| LP-1288 | Freehand lasso | -- | AC-2830 | -- | core | other-app: Gesso IP-0542 lasso in Gesso |  |
+| LP-1289 | Magic wand with threshold, connected, and brightness, color, or RGB types | -- | AC-2831, AC-2832, AC-2833, AC-2834, AC-2835, AC-2836 | -- | core | other-app: Gesso IP-0470 magic wand in Gesso |  |
+| LP-1290 | Rectangular and elliptical selection | -- | AC-2837, AC-2838 | -- | core | other-app: Gesso IP-0541 marquee in Gesso |  |
+| LP-1291 | Shape selection with corner and curve nodes | -- | AC-2839, AC-2840 | -- | core | other-app: Gesso IP-0538 selection from path in Gesso |  |
+| LP-1292 | Brush selection with smart color or brightness tolerance | -- | AC-2841, AC-2842, AC-2843 | -- | core | other-app: Gesso IP-0498 selection brush in Gesso |  |
+| LP-1293 | AI object selection by loose lasso | -- | AC-2844 | -- | ai | other-app: Gesso IP-2023 object selection in Gesso |  |
+| LP-1294 | Selection modes: add, subtract, inverse, click to clear, combine tools | -- | AC-2849, AC-2850, AC-2851, AC-2852, AC-2857 | -- | core | other-app: Gesso IP-0543 selection modes in Gesso |  |
+| LP-1295 | Save, load, and manage selections | -- | AC-2858, AC-2859, AC-2860 | -- | core | other-app: Gesso IP-0450 saved selections in Gesso |  |
+| LP-1296 | Copy, cut, and delete selected pixels | -- | AC-2861, AC-2863 | -- | core | other-app: Gesso IP-0176 cut, copy, clear in Gesso |  |
+| LP-1297 | Paste a selection as a new layer | -- | AC-2862 | -- | core | other-app: Gesso IP-0166 paste as new layer in Gesso |  |
+| LP-1298 | Refine selection: shift edge and feathering, saved as preset | -- | AC-2864, AC-2865, AC-2866 | -- | core | other-app: Gesso IP-0514 refine selection in Gesso |  |
+| LP-1299 | Selection from pixel targeting | -- | AC-2867 | -- | core | other-app: Gesso IP-0479 mask from color range in Gesso |  |
+| LP-1300 | Luminosity selection | -- | AC-2868 | -- | core | other-app: Gesso IP-0491 selection from luminosity in Gesso |  |
+| LP-1301 | Selection feathering | -- | AC-2871 | -- | core | other-app: Gesso IP-0545 feather selection in Gesso |  |
+| LP-1302 | Show or hide selection edges | -- | AC-2872 | -- | core | other-app: Gesso IP-0453 marching ants toggle in Gesso |  |
+| LP-1303 | Smart erase: content-aware fill of a selection or a brushed area | -- | AC-2873, AC-2874, AC-2875, AC-3233 | -- | ai | other-app: Gesso IP-0909 content-aware healing in Gesso |  |
+| LP-1304 | Channel selection: build a selection or mask from an RGB, CMYK, Lab, or HSL channel with levels and invert | -- | AC-2887, AC-2888, AC-2889, AC-2890, AC-2891, AC-2892, AC-2893, AC-2894 | -- | core | other-app: Gesso IP-0555 channel to selection in Gesso |  |
+| LP-1305 | Luminance and color range pane: tone grabber, color wheels, add detail, smoothness, presets | -- | AC-2910, AC-2911, AC-2912, AC-2913, AC-2914, AC-2915, AC-2916, AC-2917, AC-2918, AC-2919, AC-2920, AC-2921, AC-2922, AC-2923, AC-2924, AC-2925, AC-2926 | -- | core | other-app: Gesso IP-0294 live luminosity and hue range masks in Gesso |  |
+| LP-1306 | Layers pane basics: blank layer, show and hide, delete, duplicate, reorder, rename, merge down, flatten, blend mode, opacity | -- | AC-2929, AC-2932, AC-2937, AC-2938, AC-2939, AC-2940, AC-2941, AC-2942, AC-2943, AC-2944, AC-2945, AC-2946, AC-2947 | -- | core | other-app: Gesso IP-0276 layers panel in Gesso |  |
+| LP-1307 | Geometry commands apply to all layers | -- | AC-2930 | -- | core | other-app: Gesso IP-0215 canvas rotate and flip in Gesso |  |
+| LP-1308 | Watermark placed on its own layer | -- | AC-2931 | -- | core | other-app: Gesso IP-0398 image layers in Gesso |  |
+| LP-1309 | Add a file or a filmstrip image as a layer | -- | AC-2933, AC-2934, AC-2935 | -- | core | other-app: Gesso IP-1720 place embedded in Gesso |  |
+| LP-1310 | Load files into a stack as layers | -- | AC-2936 | -- | core | other-app: Gesso IP-1721 load files into stack in Gesso |  |
+| LP-1311 | Layered native format preserving layers for re-editing | -- | AC-2948 | -- | format | other-app: Gesso IP-1848 native .gesso format |  |
+| LP-1312 | 16 bits per channel layered documents | -- | AC-2949 | -- | format | other-app: Gesso IP-0680 bit depth in Gesso |  |
+| LP-1313 | New image: name, dimensions, aspect ratio, resolution, background, bit depth | -- | AC-2950, AC-2951, AC-2952, AC-2953, AC-2954, AC-2955 | -- | core | other-app: Gesso IP-0016 new document settings in Gesso |  |
+| LP-1314 | New image presets | -- | AC-2956 | -- | core | other-app: Gesso IP-0009 new document presets in Gesso |  |
+| LP-1315 | Adjustment layers with default masks | -- | AC-2957 | -- | core | other-app: Gesso IP-0569 adjustment layer model in Gesso |  |
+| LP-1316 | Clip an adjustment layer to the layer below | -- | AC-2958, AC-3051 | -- | core | other-app: Gesso IP-0299 clipping masks in Gesso |  |
+| LP-1317 | Exposure adjustment layer: exposure and contrast | -- | AC-2959, AC-2960 | -- | core | other-app: Gesso IP-0596 exposure adjustment in Gesso |  |
+| LP-1318 | Levels adjustment layer | -- | AC-2961, AC-2962, AC-2963 | -- | core | other-app: Gesso IP-0670 levels in Gesso |  |
+| LP-1319 | Curves adjustment layer | -- | AC-2964 | -- | core | other-app: Gesso IP-0671 curves in Gesso |  |
+| LP-1320 | Light EQ adjustment layer: brighten and darken | -- | AC-2965, AC-2966 | -- | core | other-app: Gesso IP-0597 shadows and highlights in Gesso |  |
+| LP-1321 | White balance adjustment layer: temperature, tint, picker | -- | AC-2967, AC-2968, AC-2969 | -- | core | other-app: Gesso IP-0630 white balance adjustment in Gesso |  |
+| LP-1322 | Vibrance adjustment layer: vibrance, saturation, hue, lightness | -- | AC-2970, AC-2971, AC-2972, AC-2973 | -- | core | other-app: Gesso IP-0612 color and vibrance adjustment in Gesso |  |
+| LP-1323 | Color EQ adjustment layer: per-color hue, saturation, brightness, vibrance | -- | AC-2974, AC-2975 | -- | core | other-app: Gesso IP-0608 hue and saturation ranges in Gesso |  |
+| LP-1324 | RGB balance adjustment layer | -- | AC-2976 | -- | core | other-app: Gesso IP-0610 color balance in Gesso |  |
+| LP-1325 | Split tone adjustment layer | -- | AC-2977, AC-2978, AC-2979, AC-2980, AC-2981 | -- | core | other-app: Gesso IP-0632 split toning in Gesso |  |
+| LP-1326 | Add color adjustment layer with density | -- | AC-2982 | -- | core | other-app: Gesso IP-0614 photo filter in Gesso |  |
+| LP-1327 | Black and white adjustment layer | -- | AC-2983 | -- | core | other-app: Gesso IP-0613 black and white in Gesso |  |
+| LP-1328 | Negative adjustment layer | -- | AC-2984 | -- | core | other-app: Gesso IP-0642 invert in Gesso |  |
+| LP-1329 | Photo effect adjustment layer: preset photographic looks from a list | -- | AC-2985 | -- | core | other-app: Gesso IP-2370 Gesso gains a photo effect look list |  |
+| LP-1330 | Skin tune: smoothing, glow, radius, as a tool and an adjustment layer | -- | AC-2986, AC-2987, AC-2988, AC-3240, AC-3241, AC-3242, AC-3243 | -- | core | other-app: Gesso IP-2044 skin smoothing in Gesso |  |
+| LP-1331 | Filter adjustment layers: sharpen, Gaussian and directional blur, noise reduction | -- | AC-2989, AC-2990, AC-2991, AC-2992, AC-2993, AC-2994, AC-2995, AC-2996, AC-2997 | -- | core | other-app: Gesso IP-1003 live filter layers in Gesso |  |
+| LP-1332 | Clarity and dehaze adjustment layers with Orton, soft light, tonal width, radius, edge processing | -- | AC-2998, AC-2999, AC-3000, AC-3001, AC-3002, AC-3003, AC-3004 | -- | core | other-app: Gesso IP-0604 clarity and dehaze adjustment layer in Gesso |  |
+| LP-1333 | Gradient map adjustment layer | -- | AC-3005, AC-3006 | -- | core | other-app: Gesso IP-0626 gradient map in Gesso |  |
+| LP-1334 | Vignette adjustment layer | -- | AC-3007, AC-3008, AC-3009 | -- | core | other-app: Gesso IP-1199 vignette in Gesso |  |
+| LP-1335 | Posterize adjustment layer | -- | AC-3010 | -- | core | other-app: Gesso IP-0641 posterize in Gesso |  |
+| LP-1336 | Threshold adjustment layer | -- | AC-3011 | -- | core | other-app: Gesso IP-0639 threshold in Gesso |  |
+| LP-1337 | Color LUT adjustment layer with LUT import | -- | AC-3012 | -- | core | other-app: Gesso IP-0622 color lookup in Gesso |  |
+| LP-1338 | Layer masks: add white or black, add from selection automatically, paste as mask | -- | AC-3013, AC-3014, AC-3015, AC-3016, AC-3030, AC-3031, AC-3035, AC-3052 | -- | core | other-app: Gesso IP-0282 add layer mask in Gesso |  |
+| LP-1339 | Mask opacity | -- | AC-3017 | -- | core | other-app: Gesso IP-0287 mask density in Gesso |  |
+| LP-1340 | Edit a mask with any tool | -- | AC-3018 | -- | core | other-app: Gesso IP-0289 paint masks in Gesso |  |
+| LP-1341 | Apply, disable, and enable a mask | -- | AC-3019, AC-3020, AC-3021 | -- | core | other-app: Gesso IP-0283 mask commands in Gesso |  |
+| LP-1342 | Mask preview and overlay: highlighted or exposed with color and opacity | -- | AC-3022, AC-3026, AC-3027, AC-3028, AC-3029 | -- | core | other-app: Gesso IP-0286 mask overlay in Gesso |  |
+| LP-1343 | Mask properties: feathering and invert, non-destructive | -- | AC-3023, AC-3024, AC-3025 | -- | core | other-app: Gesso IP-0297 masks properties in Gesso |  |
+| LP-1344 | Mask to selection: add, subtract, intersect | -- | AC-3032, AC-3033, AC-3034 | -- | core | other-app: Gesso IP-0288 mask to selection in Gesso |  |
+| LP-1345 | Text tool with editable text layers | -- | AC-3036 | -- | core | other-app: Gesso IP-1582 type layers in Gesso |  |
+| LP-1346 | Layer effects on text | -- | AC-3037 | -- | core | other-app: Gesso IP-0374 layer styles on text in Gesso |  |
+| LP-1347 | Dynamic and frame text types, click or drag to place | -- | AC-3038, AC-3039, AC-3041, AC-3042 | -- | core | other-app: Gesso IP-1584 point and box text in Gesso |  |
+| LP-1348 | Text on a path with anchor editing | -- | AC-3040, AC-3055 | -- | core | other-app: Gesso IP-1631 type on a path in Gesso |  |
+| LP-1349 | Text formatting: font, size, style, justification, color | -- | AC-3043, AC-3044, AC-3045, AC-3046 | -- | core | other-app: Gesso IP-1592 character panel in Gesso |  |
+| LP-1350 | Text layer opacity and blend mode | -- | AC-3047, AC-3048 | -- | core | other-app: Gesso IP-0265 layer blend and opacity in Gesso |  |
+| LP-1351 | Rasterize text layers, merge text with image layers | -- | AC-3049, AC-3050, AC-3060 | -- | core | other-app: Gesso IP-1590 rasterize type in Gesso |  |
+| LP-1352 | Text transform handles, editing keys, undo, and symbol entry | -- | AC-3053, AC-3054, AC-3056, AC-3057, AC-3058 | -- | core | other-app: Gesso IP-1587 on-canvas text editing in Gesso |  |
+| LP-1353 | Text snaps to guidelines | -- | AC-3059 | -- | core | other-app: Gesso IP-0085 snapping in Gesso |  |
+| LP-1354 | Insert image metadata fields as text | -- | AC-3061, AC-3062 | -- | automation | other-app: Gesso IP-2371 Gesso gains metadata text insertion |  |
+| LP-1355 | Resize canvas: drag edges or exact size, anchor, aspect ratio, resolution, canvas color and opacity, grid, nudge | -- | AC-3063, AC-3064, AC-3065, AC-3066, AC-3067, AC-3068, AC-3069, AC-3070, AC-3071, AC-3072, AC-3073, AC-3074, AC-3075, AC-3076, AC-3077, AC-3078, AC-3079, AC-3080, AC-3081, AC-3082, AC-3083 | -- | core | other-app: Gesso IP-0142 canvas size with extension color in Gesso |  |
+| LP-1356 | Layer effects framework on image and text layers | -- | AC-3084 | -- | core | other-app: Gesso IP-0360 layer style effects framework in Gesso |  |
+| LP-1357 | Inner glow effect | -- | AC-3085, AC-3086, AC-3087, AC-3088, AC-3089 | -- | core | other-app: Gesso IP-0365 inner glow in Gesso |  |
+| LP-1358 | Inner shadow effect | -- | AC-3090, AC-3091, AC-3092, AC-3093, AC-3094, AC-3095 | -- | core | other-app: Gesso IP-0363 inner shadow in Gesso |  |
+| LP-1359 | Bevel effect with light source | -- | AC-3096, AC-3097, AC-3098 | -- | core | other-app: Gesso IP-0377 bevel and emboss in Gesso |  |
+| LP-1360 | Outline effect | -- | AC-3099, AC-3100, AC-3101, AC-3102 | -- | core | other-app: Gesso IP-0367 stroke effect in Gesso |  |
+| LP-1361 | Blur layer effect | -- | AC-3103 | -- | core | other-app: Gesso IP-0368 Gaussian blur layer effect in Gesso |  |
+| LP-1362 | Drop shadow effect | -- | AC-3104, AC-3105, AC-3106, AC-3107, AC-3108 | -- | core | other-app: Gesso IP-0362 drop shadow in Gesso |  |
+| LP-1363 | Clipped adjustments leave layer effects unchanged | -- | AC-3109 | -- | core | other-app: Gesso IP-0310 blend clipped layers as group in Gesso |  |
+| LP-1364 | Rasterize text while keeping layer effects editable | -- | AC-3110 | -- | core | other-app: Gesso IP-0373 rasterize layer style in Gesso |  |
+| LP-1365 | Copy, paste, and reset layer effects | -- | AC-3111, AC-3112 | -- | core | other-app: Gesso IP-0370 copy and paste layer style in Gesso |  |
+| LP-1366 | Frequency separation with blur radius and layer view | -- | AC-3113, AC-3114, AC-3115, AC-3116 | -- | core | other-app: Gesso IP-0934 frequency separation in Gesso |  |
+| LP-1367 | Focus stack of layers with auto-align and keep stack | -- | AC-3117, AC-3118, AC-3119, AC-3120, AC-3121 | -- | core | other-app: Gesso IP-1551 focus merge in Gesso |  |
+| LP-1368 | HDR merge of layers with auto-align and keep stack | -- | AC-3122, AC-3123, AC-3124, AC-3125, AC-3126 | -- | core | other-app: Gesso IP-1524 Merge to HDR in Gesso |  |
+| LP-1369 | Auto-align layers | -- | AC-3127 | -- | core | other-app: Gesso IP-1522 auto-align layers in Gesso |  |
+| LP-1370 | Auto-blend layers: focus blend and HDR blend | -- | AC-3128, AC-3129, AC-3130 | -- | core | other-app: Gesso IP-1541 auto-blend layers in Gesso |  |
+| LP-1371 | AI denoise in the editor: strength, pixel targeting, blending, opacity, preview, output | -- | AC-3131, AC-3132, AC-3133, AC-3134, AC-3135, AC-3136, AC-3137, AC-3138, AC-3139, AC-3140 | -- | ai | other-app: Gesso IP-2070 AI noise reduction in Gesso; Albumen batch denoise is its own row |  |
+| LP-1372 | Face edit framework: detected faces, face selector, feature groups, landmark points to correct, symmetric link, presets, no-face message | -- | AC-3141, AC-3142, AC-3158, AC-3194, AC-3195, AC-3196, AC-3198 | -- | ai | other-app: Gesso IP-2372 Gesso gains face landmark editing |  |
+| LP-1373 | Face reshaping: face width, jaw, chin, forehead, cheekbones, eyes, eyebrows, nose, smile, lips | -- | AC-3143, AC-3144, AC-3145, AC-3146, AC-3147, AC-3148, AC-3149, AC-3150, AC-3151, AC-3152, AC-3159, AC-3160, AC-3161, AC-3162, AC-3164, AC-3165, AC-3166, AC-3167, AC-3169, AC-3171, AC-3172 | -- | ai | other-app: Gesso IP-0986 face-aware liquify in Gesso |  |
+| LP-1374 | Eye direction horizontal and vertical | -- | AC-3153, AC-3154 | -- | ai | other-app: Gesso IP-2045 smart portrait gaze in Gesso |  |
+| LP-1375 | Face color retouching: eye sharpen, whitening, eye color, iris, sclera, eyebrow color, nose contouring, teeth whitening, lip color, blush, eyeshadow | -- | AC-3155, AC-3156, AC-3157, AC-3163, AC-3168, AC-3170, AC-3188, AC-3189, AC-3190, AC-3191, AC-3192, AC-3193 | -- | ai | other-app: Gesso IP-2373 Gesso gains face color retouching |  |
+| LP-1376 | Hair recolor with automatic hair mask: color wheel, natural colors, temperature, tint, saturation, tones, sharpness, mask editing | -- | AC-3173, AC-3174, AC-3175, AC-3176, AC-3177, AC-3178, AC-3179, AC-3180, AC-3181, AC-3197 | -- | ai | other-app: Gesso IP-2374 Gesso gains hair recolor |  |
+| LP-1377 | Face skin retouching: wrinkles, crow's feet, smoothing, glow, splotch removal, reflections and shadows | -- | AC-3182, AC-3183, AC-3184, AC-3185, AC-3186, AC-3187 | -- | ai | other-app: Gesso IP-2044 skin smoothing in Gesso |  |
+| LP-1378 | Sky replacement: sky library and custom skies, position, scale, flip, edge, opacity, brightness, temperature, tint, strength, output as layers, presets | -- | AC-3199, AC-3200, AC-3201, AC-3202, AC-3203, AC-3204, AC-3205, AC-3206, AC-3207, AC-3208, AC-3209, AC-3210, AC-3211, AC-3212, AC-3221, AC-3222 | -- | ai | other-app: Gesso IP-2099 sky replacement in Gesso |  |
+| LP-1379 | Sky replacement lighting and reflections: blend mode, foreground and edge lighting, color adjustment, reflections | -- | AC-3213, AC-3214, AC-3215, AC-3216, AC-3217, AC-3218, AC-3219, AC-3220 | -- | ai | other-app: Gesso IP-2100 sky replacement lighting in Gesso |  |
+| LP-1380 | Red eye reduction: size, darkening, outline, delete | -- | AC-3223, AC-3224, AC-3225, AC-3226, AC-3227 | -- | core | other-app: Gesso IP-0915 red eye tool in Gesso |  |
+| LP-1381 | Repair tool: heal with source, nib width, feathering, pressure, cursor preview, straight lines, presets | -- | AC-3229, AC-3230, AC-3234, AC-3235, AC-3236, AC-3237, AC-3238, AC-3239 | -- | core | other-app: Gesso IP-0908 healing brush in Gesso |  |
+| LP-1382 | Clone and blended clone | -- | AC-3231, AC-3232 | -- | core | other-app: Gesso IP-0900 clone stamp in Gesso |  |
+| LP-1383 | Special effects gallery with preview, per-effect options, and exit to the filter list | -- | AC-3244, AC-3245, AC-3424, AC-4793 | -- | core | other-app: Gesso IP-1027 filter gallery in the layered editor |  |
+| LP-1384 | Special effect presets: save and reuse effect settings | -- | AC-3246, AC-3431 | -- | core | other-app: Gesso IP-1013 filter dialog presets |  |
+| LP-1385 | Bathroom window effect: bar width and direction | -- | AC-3247, AC-3248, AC-3249 | -- | core | other-app: Gesso IP-1145 tile glass filter |  |
+| LP-1386 | Blinds effect: width, opacity, angle, blind color | -- | AC-3250, AC-3251, AC-3252, AC-3253, AC-3254 | -- | core | other-app: Gesso IP-1126 blinds filter |  |
+| LP-1387 | One-click photo looks: blue steel, childhood, dramatic, gloom, grunge, lomo, purple haze, seventies, somber | -- | AC-3255, AC-3278, AC-3305, AC-3306, AC-3307, AC-3323, AC-3324, AC-3333, AC-3334, AC-3340, AC-3341, AC-3342, AC-3375, AC-3407, AC-3433 | -- | core | other-app: Gesso IP-2375 look presets are color treatments on Gesso adjustments |  |
+| LP-1388 | Painted look effect (Bob Ross): brush size, coverage, paint thickness, colorfulness, background, randomize | -- | AC-3256, AC-3257, AC-3258, AC-3259, AC-3260, AC-3261, AC-3262 | -- | core | other-app: Gesso IP-1352 paint daubs filter |  |
+| LP-1389 | Bulge effect: center, radius, strength, background, direction | -- | AC-3263, AC-3264, AC-3265, AC-3266, AC-3267, AC-3268, AC-3269 | -- | core | other-app: Gesso IP-1109 spherize filter |  |
+| LP-1390 | Cartoon effect: shading strength, radius, threshold, smoothness, outline detail and strength, artifact suppression | -- | AC-3270, AC-3271, AC-3272, AC-3273, AC-3274, AC-3275, AC-3276, AC-3277 | -- | core | other-app: Gesso IP-1268 cartoon filter |  |
+| LP-1391 | Clouds render: size, detail, seed | -- | AC-3279, AC-3280, AC-3281, AC-3282 | -- | core | other-app: Gesso IP-1253 clouds render filter |  |
+| LP-1392 | Collage effect: number and size of tiles, background, reshuffle | -- | AC-3283, AC-3284, AC-3285, AC-3286, AC-3287 | -- | core | other-app: Gesso IP-2376 no Gesso collage filter |  |
+| LP-1393 | Colored edges effect: intensity, edge color, edge detection algorithm, blurring | -- | AC-3288, AC-3289, AC-3290, AC-3291, AC-3292 | -- | core | other-app: Gesso IP-1256 detect edges filter |  |
+| LP-1394 | Contours and topography effects: rounding, line frequency or count, strength, line color | -- | AC-3293, AC-3294, AC-3295, AC-3296, AC-3297, AC-3452, AC-3453, AC-3454 | -- | core | other-app: Gesso IP-1342 trace contour filter |  |
+| LP-1395 | Crayon drawing effect | -- | AC-3298 | -- | core | other-app: Gesso IP-1362 conte crayon filter |  |
+| LP-1396 | Crosshatch effect | -- | AC-3299 | -- | core | other-app: Gesso IP-1374 crosshatch filter |  |
+| LP-1397 | Dauber effect: intensity, frequency, background, randomize | -- | AC-3300, AC-3301, AC-3302, AC-3303, AC-3304 | -- | core | other-app: Gesso IP-1352 paint daubs filter |  |
+| LP-1398 | Edge detect effect | -- | AC-3308 | -- | core | other-app: Gesso IP-1256 detect edges filter |  |
+| LP-1399 | Emboss effect: elevation, weight, azimuth | -- | AC-3309, AC-3310, AC-3311, AC-3312 | -- | core | other-app: Gesso IP-1255 emboss filter |  |
+| LP-1400 | Furry edges effect: frequency, threshold, fur length, variance, direction, edge detection, colors, randomize | -- | AC-3313, AC-3314, AC-3315, AC-3316, AC-3317, AC-3318, AC-3319, AC-3320, AC-3321, AC-3322 | -- | core | other-app: Gesso IP-2377 no Gesso fur stroke filter |  |
+| LP-1401 | Glowing edges effect: intensity and color | -- | AC-3325, AC-3326, AC-3327 | -- | core | other-app: Gesso IP-1397 glowing edges filter |  |
+| LP-1402 | Gradient map effect: dark and light colors | -- | AC-3328, AC-3329, AC-3330, AC-4872 | -- | core | other-app: Gesso IP-0626 gradient map adjustment |  |
+| LP-1403 | Granite effect: light angle | -- | AC-3331, AC-3332 | -- | core | other-app: Gesso IP-1336 texturizer filter |  |
+| LP-1404 | Jiggle distortion: size, detail, strength, randomize | -- | AC-3335, AC-3336, AC-3337, AC-3338, AC-3339 | -- | core | other-app: Gesso IP-2378 no Gesso jiggle distortion |  |
+| LP-1405 | Mirror effect: direction and axis position | -- | AC-3343, AC-3344, AC-3345 | -- | core | other-app: Gesso IP-1119 kaleidoscope and mirrors filter |  |
+| LP-1406 | Negative effect for scanned film negatives | -- | AC-3346, AC-4860 | -- | core | other-app: Gesso IP-0642 invert adjustment |  |
+| LP-1407 | Oil paint effect: brush width, variance, vibrance | -- | AC-3347, AC-3348, AC-3349, AC-3350 | -- | core | other-app: Gesso IP-1263 oil paint filter |  |
+| LP-1408 | Old photo effect: age amount | -- | AC-3351, AC-3352 | -- | core | other-app: Gesso IP-1317 old photo filter |  |
+| LP-1409 | Orton glow effect: blur, contrast, brightness | -- | AC-3353, AC-3354, AC-3355, AC-3356 | -- | core | other-app: Gesso IP-1201 diffuse glow filter |  |
+| LP-1410 | Outline effect: line width, threshold, background color | -- | AC-3357, AC-3358, AC-3359, AC-3360 | -- | core | other-app: Gesso IP-1376 ink outlines filter |  |
+| LP-1411 | Pencil drawing effect | -- | AC-3361 | -- | core | other-app: Gesso IP-1383 graphic pen filter |  |
+| LP-1412 | Photo effect filters: choose a photo filter type | -- | AC-3362, AC-3363, AC-4874 | -- | core | other-app: Gesso IP-0614 photo filter adjustment |  |
+| LP-1413 | Pixel explosion effect: center, intensity, direction, randomize | -- | AC-3364, AC-3365, AC-3366, AC-3367, AC-3368, AC-3369 | -- | core | other-app: Gesso IP-2379 no Gesso pixel explosion filter |  |
+| LP-1414 | Pixelate effect: block width and height, square | -- | AC-3370, AC-3371, AC-3372 | -- | core | other-app: Gesso IP-1150 pixelize and mosaic filter |  |
+| LP-1415 | Posterize effect: brightness levels | -- | AC-3373, AC-3374, AC-4858 | -- | core | other-app: Gesso IP-0641 posterize adjustment |  |
+| LP-1416 | Radial waves effect: center, amplitude, wavelength, light strength, background, direction | -- | AC-3376, AC-3377, AC-3378, AC-3379, AC-3380, AC-3381, AC-3382, AC-3383 | -- | core | other-app: Gesso IP-1123 concentric waves filter |  |
+| LP-1417 | Rain effect: strength, opacity, amount, angle and variances, background blur, color | -- | AC-3384, AC-3385, AC-3386, AC-3387, AC-3388, AC-3389, AC-3390, AC-3391, AC-3392 | -- | core | other-app: Gesso IP-2380 no Gesso rain filter |  |
+| LP-1418 | Ripple effect: center, amplitude, wavelength, light strength, background, direction | -- | AC-3393, AC-3394, AC-3395, AC-3396, AC-3397, AC-3398, AC-3399, AC-3400 | -- | core | other-app: Gesso IP-1123 concentric waves filter |  |
+| LP-1419 | Scattered tiles effect: tile size, scatter amount, background, randomize | -- | AC-3401, AC-3402, AC-3403, AC-3404, AC-3405 | -- | core | other-app: Gesso IP-1266 tiles filter |  |
+| LP-1420 | Sepia effect | -- | AC-3406 | -- | core | other-app: Gesso IP-0655 sepia filter |  |
+| LP-1421 | Sheet metal effect: rounding, detail, angle, metal color, indented or pushed out | -- | AC-3408, AC-3409, AC-3410, AC-3411, AC-3412, AC-3413 | -- | core | other-app: Gesso IP-1380 bas relief filter |  |
+| LP-1422 | Shift effect: strength, bar width, angle, background | -- | AC-3414, AC-3415, AC-3416, AC-3417, AC-3418 | -- | core | other-app: Gesso IP-1120 shift rows or columns filter |  |
+| LP-1423 | Slant effect: amount, fulcrum, background, direction | -- | AC-3419, AC-3420, AC-3421, AC-3422, AC-3423 | -- | core | other-app: Gesso IP-1183 shear filter |  |
+| LP-1424 | Sobel edges effect with apply and cancel | -- | AC-3425, AC-3426 | -- | core | other-app: Gesso IP-1257 Sobel directional edges filter |  |
+| LP-1425 | Solarize and lunarize effect with threshold | -- | AC-3427, AC-3428, AC-3429, AC-3430 | -- | core | other-app: Gesso IP-1340 solarize filter |  |
+| LP-1426 | Right-click a filter slider to reset it and Reset in filter panels | -- | AC-3432, AC-3541, AC-3623 | -- | core | other-app: Gesso IP-1018 reset filter dialog values |  |
+| LP-1427 | Stained glass effect: fragment size, seed | -- | AC-3434, AC-3435, AC-3436 | -- | core | other-app: Gesso IP-1335 stained glass filter |  |
+| LP-1428 | Sunspot effect: position by click, brightness | -- | AC-3437, AC-3438, AC-3439, AC-3440 | -- | core | other-app: Gesso IP-1254 lens flare render |  |
+| LP-1429 | Swirl effect: center, radius, strength and direction, focus, background, axis | -- | AC-3441, AC-3442, AC-3443, AC-3444, AC-3445, AC-3446, AC-3447, AC-3448, AC-3449 | -- | core | other-app: Gesso IP-1107 twirl filter |  |
+| LP-1430 | Threshold effect to pure black and white | -- | AC-3450, AC-3451, AC-4863 | -- | core | other-app: Gesso IP-0639 threshold adjustment |  |
+| LP-1431 | Water reflection effect: position, amplitude, wavelength, perspective, lighting | -- | AC-3455, AC-3456, AC-3457, AC-3458, AC-3459, AC-3460 | -- | core | other-app: Gesso IP-2381 no Gesso water reflection filter |  |
+| LP-1432 | Water drops effect: density, radius, height, seed | -- | AC-3461, AC-3462, AC-3463, AC-3464, AC-3465 | -- | core | other-app: Gesso IP-2382 no Gesso water drops filter |  |
+| LP-1433 | Waves effect: wavelength, amplitude, angle, background | -- | AC-3466, AC-3467, AC-3468, AC-3469, AC-3470 | -- | core | other-app: Gesso IP-1189 wave filter |  |
+| LP-1434 | Weave effect: strip width, gap width, background color | -- | AC-3471, AC-3472, AC-3473, AC-3474 | -- | core | other-app: Gesso IP-1280 weave filter |  |
+| LP-1435 | Wind effect: strength, threshold, chance, edge detection, colors, angle, randomize | -- | AC-3475, AC-3476, AC-3477, AC-3478, AC-3479, AC-3480, AC-3481, AC-3482, AC-3483 | -- | core | other-app: Gesso IP-1185 wind filter |  |
+| LP-1436 | User-defined convolution: kernel matrix, division, bias, clear, sample kernels | -- | AC-3484, AC-3485, AC-3486, AC-3487, AC-3488, AC-3489 | -- | core | other-app: Gesso IP-1345 custom convolution kernel |  |
+| LP-1437 | Drawing tools group: shapes with width, feathering, and blending | -- | AC-3490 | -- | core | other-app: Gesso IP-1675 geometric figures |  |
+| LP-1438 | Hand tool and panning with Space or arrow keys | -- | AC-3491, AC-3631, AC-4744, AC-4826, AC-4880 | -- | core | other-app: Gesso IP-0127 hand tool |  |
+| LP-1439 | Move tool for layers, text, and selections with arrow nudge and rotation handle | -- | AC-3492, AC-3493, AC-3497, AC-4881 | -- | core | other-app: Gesso IP-0277 move tool |  |
+| LP-1440 | Snap a layer to canvas edges, center, and corners | -- | AC-3494 | -- | core | other-app: Gesso IP-0429 align layers to canvas |  |
+| LP-1441 | Placement grid while moving | -- | AC-3495 | -- | core | other-app: Gesso IP-0080 show grid |  |
+| LP-1442 | Lock aspect ratio while resizing a layer | -- | AC-3496 | -- | core | other-app: Gesso IP-0947 proportional transform |  |
+| LP-1443 | Move ruler guidelines with the Move tool | -- | AC-3498 | -- | core | other-app: Gesso IP-0075 drag and move guides |  |
+| LP-1444 | Commit or discard a move | -- | AC-3499 | -- | core | other-app: Gesso IP-0996 free transform commit and cancel |  |
+| LP-1445 | Off-canvas layer data kept until a destructive operation | -- | AC-3500, AC-3501, AC-3502, AC-3504 | -- | core | other-app: Gesso IP-0040 show all and clip to canvas | low-disk fallback is Gesso scratch handling |
+| LP-1446 | Text tool adds a text layer | -- | AC-3505, AC-4884 | -- | core | other-app: Gesso IP-1584 type tool |  |
+| LP-1447 | Rectangle and ellipse drawing with Shift constraint | -- | AC-3506, AC-3507, AC-4885, AC-4886 | -- | core | other-app: Gesso IP-1679 rectangle and ellipse tools |  |
+| LP-1448 | Line and arrow drawing with Shift constraint | -- | AC-3508, AC-3509, AC-4887, AC-4888 | -- | core | other-app: Gesso IP-1683 line tool with arrowheads |  |
+| LP-1449 | Polygon drawing by clicked corners | -- | AC-3510, AC-4889 | -- | core | other-app: Gesso IP-1682 polygon tool |  |
+| LP-1450 | Curve drawing: drag, bend, click to set | -- | AC-3511, AC-4890 | -- | core | other-app: Gesso IP-1675 geometric figures with arcs |  |
+| LP-1451 | Paint brush: foreground on left click, background on right click, opacity, flow | -- | AC-3512, AC-3513, AC-3514, AC-4891 | -- | core | other-app: Gesso IP-0838 brush tool |  |
+| LP-1452 | Brush settings: shape and color dynamics with jitter | -- | AC-3515, AC-3516 | -- | core | other-app: Gesso IP-0756 shape and color dynamics |  |
+| LP-1453 | Mouse wheel changes brush width, Ctrl or Shift wheel changes feathering | -- | AC-3517 | -- | core | other-app: Gesso IP-2145 modifier plus wheel adjusts tool size |  |
+| LP-1454 | Per-stroke undo and redo | -- | AC-3518 | -- | core | other-app: Gesso IP-0201 undo and redo |  |
+| LP-1455 | Paint bucket fill with threshold and connected option | -- | AC-3519, AC-3520, AC-3521, AC-4892 | -- | core | other-app: Gesso IP-0897 paint bucket tolerance and contiguous |  |
+| LP-1456 | Gradient tool: linear or radial, color, opacity, blend mode, commit or discard | -- | AC-3522, AC-3523, AC-3524, AC-3525, AC-3526, AC-4893 | -- | core | other-app: Gesso IP-0898 gradient tool |  |
+| LP-1457 | Eraser to transparency | -- | AC-3527, AC-4894 | -- | core | other-app: Gesso IP-0844 eraser tool |  |
+| LP-1458 | Eyedropper: foreground or background sample, luminance readout | -- | AC-3528, AC-3530, AC-4897 | -- | core | other-app: Gesso IP-0733 eyedropper tool |  |
+| LP-1459 | Sample colors outside the application window | -- | AC-3529 | -- | core | other-app: Gesso IP-0698 sample colors anywhere on screen |  |
+| LP-1460 | Foreground and background color boxes, reset to black and white, swap, color dialogs | -- | AC-3531, AC-3532, AC-4898, AC-4899, AC-4900 | -- | core | other-app: Gesso IP-0735 foreground and background swatches |  |
+| LP-1461 | Color pane in the layered editor | -- | AC-3533, AC-4753 | -- | core | other-app: Gesso IP-0715 color panel |  |
+| LP-1462 | Brush nib width | -- | AC-3534 | -- | core | other-app: Gesso IP-0841 paint tool brush size |  |
+| LP-1463 | Brush feathering | -- | AC-3535 | -- | core | other-app: Gesso IP-0842 paint tool hardness |  |
+| LP-1464 | Brush spacing and auto spacing | -- | AC-3536, AC-3537 | -- | core | other-app: Gesso IP-0843 paint tool spacing |  |
+| LP-1465 | Fill drawn shapes with color | -- | AC-3538 | -- | core | other-app: Gesso IP-1686 shape fill |  |
+| LP-1466 | Stroke opacity | -- | AC-3539 | -- | core | other-app: Gesso IP-0840 paint tool opacity |  |
+| LP-1467 | Stroke blend mode | -- | AC-3540 | -- | core | other-app: Gesso IP-0793 paint tool blend mode |  |
+| LP-1468 | Straight lines with Shift and Shift-click between points while brushing | -- | AC-3542, AC-3543, AC-3689 | -- | core | other-app: Gesso IP-0798 straight and constrained lines while painting |  |
+| LP-1469 | Watermark placement: saved watermark images, drag with ruler guides, anchor point with offsets, resize with aspect, alpha or keyed transparency color, blend mode, opacity, new layer, presets | -- | AC-3544, AC-3545, AC-3546, AC-3547, AC-3548, AC-3549, AC-3550, AC-3551, AC-3552, AC-3553, AC-3554, AC-3555, AC-3556, AC-3557, AC-4790 | -- | core | other-app: Gesso IP-2383 placed image with watermark presets |  |
+| LP-1470 | Filter panel Apply, Done, Cancel, and Reset buttons, apply keeps the tool open | -- | AC-3558, AC-3696 | -- | core | other-app: Gesso IP-1032 filter apply and cancel with progress |  |
+| LP-1471 | Borders: overall and per-side size with final size readout, color with eyedropper | -- | AC-3560, AC-3561, AC-3562, AC-3563, AC-3564, AC-3575, AC-4791 | -- | core | other-app: Gesso IP-1313 add border |  |
+| LP-1472 | Border textures, irregular edges, edge blur, drop shadow, raised edge, light direction, custom texture and edge folders | -- | AC-3565, AC-3566, AC-3567, AC-3568, AC-3569, AC-3570, AC-3571, AC-3572, AC-3573, AC-3574 | -- | core | other-app: Gesso IP-2384 textured and irregular border frames |  |
+| LP-1473 | Vignette frame: focal point, clear and transition zones, stretch, round or rectangular, outline | -- | AC-3576, AC-3577, AC-3578, AC-3579, AC-3580, AC-3581, AC-3582, AC-3583, AC-4792, AC-4868 | -- | core | other-app: Gesso IP-1199 vignette filter |  |
+| LP-1474 | Vignette frame effects: color, desaturate, blur, clouds, edges, radial waves, radial and zoom blur, crayon, dauber, pixelate, old, glowing edges, ripple | -- | AC-3584, AC-3585, AC-3586, AC-3587, AC-3588, AC-3589, AC-3590, AC-3591, AC-3592, AC-3593, AC-3594, AC-3595, AC-3596, AC-3597, AC-3598 | -- | core | other-app: Gesso IP-1004 any filter through a live filter mask |  |
+| LP-1475 | Tilt-shift: focus band guides, 45 degree lock, lens or gaussian blur, amount, bokeh frequency, brightness, sides, saturation | -- | AC-3599, AC-3600, AC-3601, AC-3602, AC-3603, AC-3604, AC-3605, AC-3606, AC-4794 | -- | core | other-app: Gesso IP-1083 tilt-shift blur |  |
+| LP-1476 | Paint or gradient-mask any filter with the edit brush, linear, and radial gradient | -- | AC-3607, AC-3608, AC-3609, AC-4822, AC-4823, AC-4824, AC-4825 | -- | core | other-app: Gesso IP-1004 live filter mask paint and gradient |  |
+| LP-1477 | Film grain: amount, smoothing, size | -- | AC-3610, AC-3611, AC-3612, AC-3613, AC-4795 | -- | core | other-app: Gesso IP-0635 grain adjustment layer |  |
+| LP-1478 | Rotate tool: preset orientations, fine straightening, crop or preserve with fill color, grid | -- | AC-3614, AC-3615, AC-3616, AC-3619, AC-3620, AC-3621, AC-3622, AC-4796 | -- | core | other-app: Gesso IP-0144 arbitrary canvas rotation |  |
+| LP-1479 | Straighten by drawing a horizontal or vertical line | -- | AC-3617, AC-3618 | -- | core | other-app: Gesso IP-0185 straighten from a drawn line |  |
+| LP-1480 | Flip horizontally and vertically | -- | AC-3625, AC-3626, AC-3627, AC-4797 | -- | core | other-app: Gesso IP-0211 flip canvas |  |
+| LP-1481 | Crop tool with drag handles and darkened outside area | -- | AC-3628, AC-3629, AC-3632, AC-4798 | -- | core | other-app: Gesso IP-0212 crop tool |  |
+| LP-1482 | Crop numeric size, units, dpi, constrained ratio and rotate, relative edge offsets, estimated file size | -- | AC-3630, AC-3633, AC-3634, AC-3635, AC-3636, AC-3637, AC-3638, AC-3639, AC-3640 | -- | core | other-app: Gesso IP-0195 crop presets and numeric modes |  |
+| LP-1483 | Perspective correction by corner and side handles with background fill and grid | -- | AC-3641, AC-3642, AC-3643, AC-4799 | -- | core | other-app: Gesso IP-1159 perspective filter |  |
+| LP-1484 | Distortion correction: barrel, pincushion, fisheye, center, strength, scale, background, grid | -- | AC-3644, AC-3645, AC-3646, AC-3647, AC-3648, AC-3649, AC-3650, AC-3651, AC-4800 | -- | core | other-app: Gesso IP-1161 custom lens distortion correction |  |
+| LP-1485 | Lens correction from the Lensfun database: make, model, lens, EXIF lens info, manual strength, CA, transparency or fill, grid | -- | AC-3652, AC-3653, AC-3654, AC-3655, AC-3656, AC-3657, AC-3658, AC-3659, AC-3660, AC-3661, AC-3662, AC-4801 | -- | core | other-app: Gesso IP-1169 lens correction filter |  |
+| LP-1486 | Resize: pixels, percent, print size with dpi, aspect ratio presets and custom, resampling filter, estimated size | -- | AC-3663, AC-3664, AC-3665, AC-3666, AC-3667, AC-3668, AC-3669, AC-3670, AC-4802 | -- | core | other-app: Gesso IP-0152 image size with units and constraints |  |
+| LP-1487 | Resize rules: enlarge only, reduce only, fit width, height, both, or largest side | -- | AC-3671, AC-3672, AC-3673, AC-3674, AC-3675, AC-3676, AC-3677 | -- | core | other-app: Gesso IP-0162 fit image with do not enlarge |  |
+| LP-1488 | Liquify: shift, pinch, bulge, restore, nib width, density, strength, fill or transparency, reset | -- | AC-3678, AC-3679, AC-3680, AC-3681, AC-3682, AC-3683, AC-3684, AC-3685, AC-3686, AC-3687, AC-3688, AC-4803 | -- | core | other-app: Gesso IP-0990 liquify distortion tools |  |
+| LP-1489 | Exposure tool: exposure, auto, contrast, fill light | -- | AC-3690, AC-3691, AC-3692, AC-3693, AC-3694, AC-4804, AC-4856 | -- | core | other-app: Gesso IP-0586 light adjustment |  |
+| LP-1490 | Exposure warning overlay for clipped pixels | -- | AC-3695, AC-4827 | -- | core | other-app: Gesso IP-0592 clipping display |  |
+| LP-1491 | Levels: channel, shadows, midtones, highlights with auto arrows | -- | AC-3697, AC-3698, AC-3699, AC-3700, AC-3701, AC-4805, AC-4866 | -- | core | other-app: Gesso IP-0670 levels adjustment |  |
+| LP-1492 | Levels auto modes and tolerance | -- | AC-3702, AC-3703, AC-3704, AC-3705 | -- | core | other-app: Gesso IP-0591 auto color correction options |  |
+| LP-1493 | Levels black, mid, and white point pickers with RGB readout | -- | AC-3706, AC-3707, AC-3708, AC-3709 | -- | core | other-app: Gesso IP-0590 point eyedroppers |  |
+| LP-1494 | Auto levels: contrast and color, contrast, color, strength | -- | AC-3710, AC-3711, AC-3712, AC-3713, AC-3714, AC-4806 | -- | core | other-app: Gesso IP-0599 auto tone, contrast, and color |  |
+| LP-1495 | Tone curves: channel, histogram, point editing, node readout | -- | AC-3715, AC-3716, AC-3717, AC-3718, AC-3719, AC-4807, AC-4859 | -- | core | other-app: Gesso IP-0671 curves adjustment |  |
+| LP-1496 | Tone curves color picker adds a point from the image | -- | AC-3720 | -- | core | other-app: Gesso IP-0577 on-image targeted adjustment |  |
+| LP-1497 | Light EQ tone equalizer: auto, 1-step, basic, standard bands, advanced curves, on-image drag, wheel, and keys | -- | AC-3721, AC-3722, AC-3723, AC-3724, AC-3725, AC-3726, AC-3727, AC-3728, AC-3729, AC-3730, AC-3731, AC-3732, AC-3733, AC-3734, AC-3735, AC-3736, AC-3737, AC-3738, AC-3739, AC-3740, AC-3741, AC-3742, AC-3743, AC-3744, AC-3745, AC-4808, AC-4871 | -- | core | other-app: Gesso IP-2385 tone equalizer on the shared develop stage |  |
+| LP-1498 | Dehaze with amount | -- | AC-3746, AC-3747, AC-4809, AC-4876 | -- | core | other-app: Gesso IP-0604 clarity and dehaze adjustment |  |
+| LP-1499 | Dodge and burn brushes: tone target, range preview, nib, feathering, strength | -- | AC-3748, AC-3749, AC-3750, AC-3751, AC-3756, AC-3757, AC-3758, AC-4810 | -- | core | other-app: Gesso IP-0927 dodge and burn tools |  |
+| LP-1500 | Saturate and desaturate brushes with standard or vibrance mode | -- | AC-3752, AC-3753, AC-3754, AC-3755 | -- | core | other-app: Gesso IP-0928 sponge tool |  |
+| LP-1501 | White balance: click reference, temperature, tint, strength, neutral pixel mask | -- | AC-3759, AC-3760, AC-3761, AC-3762, AC-3763, AC-3764, AC-4811, AC-4875 | -- | core | other-app: Gesso IP-0630 white balance adjustment |  |
+| LP-1502 | Color EQ: high quality and standard modes, per-color saturation, brightness, hue, contrast, curve, on-image drag | -- | AC-3765, AC-3766, AC-3767, AC-3769, AC-3770, AC-3771, AC-3772, AC-3773, AC-3780, AC-3781, AC-3782, AC-3783, AC-4812, AC-4870 | -- | core | other-app: Gesso IP-0608 hue and saturation range extensions |  |
+| LP-1503 | Color EQ presets | -- | AC-3768 | -- | core | other-app: Gesso IP-0567 adjustment presets |  |
+| LP-1504 | Color EQ global adjustments: vibrance, saturation, color shift, hue, lightness, RGB balance | -- | AC-3774, AC-3775, AC-3776, AC-3777, AC-3778, AC-3779, AC-4861 | -- | core | other-app: Gesso IP-0612 color and vibrance adjustment |  |
+| LP-1505 | Color wheel: select a hue range, eyedropper, invert, mask preview, smoothness, saturation, hue, brightness, contrast, multiple wheels | -- | AC-3784, AC-3785, AC-3786, AC-3787, AC-3788, AC-3789, AC-3790, AC-3791, AC-3792, AC-3793, AC-3794, AC-3796, AC-3797, AC-3798 | -- | core | other-app: Gesso IP-0279 live hue range mask with adjustments |  |
+| LP-1506 | Show previous: compare with the image before the current edit | -- | AC-3795 | -- | core | other-app: Gesso IP-0573 adjustment view previous |  |
+| LP-1507 | Tone wheels: shadow, midtone, highlight tint with eyedroppers, saturation, brightness | -- | AC-3799, AC-3800, AC-3801, AC-3802, AC-3803 | -- | core | other-app: Gesso IP-0610 color balance |  |
+| LP-1508 | Convert to black and white: per-color brightness, channel percentages, contrast, color amount, tint, hover preview | -- | AC-3804, AC-3805, AC-3806, AC-3807, AC-3808, AC-3809, AC-3810, AC-3811, AC-3812, AC-3813, AC-3814, AC-4813, AC-4862 | -- | core | other-app: Gesso IP-0613 black and white adjustment |  |
+| LP-1509 | Split tone: highlight and shadow hue and saturation, balance | -- | AC-3815, AC-3816, AC-3817, AC-3818, AC-3819, AC-3820, AC-4814, AC-4877 | -- | core | other-app: Gesso IP-0632 split toning |  |
+| LP-1510 | Color LUTs filter with .3dl and .cube files | -- | AC-3821, AC-3822, AC-4815, AC-4879 | -- | core | other-app: Gesso IP-0622 color lookup |  |
+| LP-1511 | LUT list management: import, refresh, remove | -- | AC-3823, AC-3824, AC-3825 | -- | core | other-app: Gesso IP-0624 LUT library management |  |
+| LP-1512 | Create a LUT from the adjustment layer stack with description, copyright, format, quality | -- | AC-3826, AC-3827, AC-3828, AC-3829, AC-3830, AC-3831, AC-3832 | -- | core | other-app: Gesso IP-0625 export LUT from adjustment stack |  |
+| LP-1513 | Histogram pane with R, G, B, L toggles | -- | AC-3833, AC-3834, AC-3835, AC-3836, AC-3837, AC-4750 | -- | core | other-app: Gesso IP-0116 histogram panel |  |
+| LP-1514 | Colors dialog: honeycomb, custom colors, spectrum, HSL and RGB entry, preview | -- | AC-3838, AC-3839, AC-3840, AC-3841, AC-3842, AC-3843, AC-3844 | -- | core | other-app: Gesso IP-0706 color picker dialog |  |
+| LP-1515 | Sharpen: amount, radius, mask with preview, detail, threshold | -- | AC-3845, AC-3846, AC-3847, AC-3848, AC-3849, AC-3850, AC-4816, AC-4869 | -- | core | other-app: Gesso IP-1105 smart sharpen |  |
+| LP-1516 | Blur tool: gaussian blur | -- | AC-3851, AC-3852, AC-4817, AC-4857 | -- | core | other-app: Gesso IP-1097 gaussian blur |  |
+| LP-1517 | Linear motion blur with angle | -- | AC-3853 | -- | core | other-app: Gesso IP-1101 motion blur |  |
+| LP-1518 | Radial spin blur with center and direction | -- | AC-3854, AC-3857 | -- | core | other-app: Gesso IP-1092 radial blur |  |
+| LP-1519 | Spread blur | -- | AC-3855 | -- | core | other-app: Gesso IP-1080 spread |  |
+| LP-1520 | Zoom blur in or out | -- | AC-3856 | -- | core | other-app: Gesso IP-1045 zoom motion blur |  |
+| LP-1521 | Smart blur for skin smoothing | -- | AC-3858 | -- | core | other-app: Gesso IP-1093 smart blur |  |
+| LP-1522 | Lens blur with bokeh shape, frequency, brightness | -- | AC-3859, AC-3860, AC-3861 | -- | core | other-app: Gesso IP-1053 lens blur |  |
+| LP-1523 | Noise removal: camera noise luminance and color, strength, tonal and frequency range, channel, Alt preview, legacy settings | -- | AC-3862, AC-3863, AC-3864, AC-3865, AC-3866, AC-3867, AC-3868, AC-3869, AC-3870, AC-3871, AC-4818, AC-4878 | -- | core | other-app: Gesso IP-1066 reduce noise |  |
+| LP-1524 | Median noise removal: square, X, plus kernels | -- | AC-3872, AC-3873, AC-3874, AC-3875 | -- | core | other-app: Gesso IP-1035 median |  |
+| LP-1525 | Despeckle | -- | AC-3876 | -- | core | other-app: Gesso IP-1067 despeckle |  |
+| LP-1526 | AI denoise with strength | -- | AC-3877, AC-3878, AC-4783 | -- | ai | other-app: Gesso IP-2070 AI noise reduction |  |
+| LP-1527 | Add noise: intensity, color proximity, random, monochrome, adjustable color, placement by color, seed | -- | AC-3879, AC-3880, AC-3881, AC-3882, AC-3883, AC-3884, AC-3885, AC-3886 | -- | core | other-app: Gesso IP-1103 add noise |  |
+| LP-1528 | Detail brush: paint blur or sharpen with radius and threshold | -- | AC-3887, AC-3888, AC-3889, AC-3890, AC-4820 | -- | core | other-app: Gesso IP-0932 blur and sharpen brush |  |
+| LP-1529 | Clarity with strength | -- | AC-3891, AC-3892, AC-4819, AC-4865 | -- | core | other-app: Gesso IP-1056 clarity |  |
+| LP-1530 | Chromatic aberration: red and cyan, blue and yellow shifts | -- | AC-3893, AC-3894, AC-3895, AC-4821 | -- | core | other-app: Gesso IP-1163 chromatic aberration removal |  |
+| LP-1531 | Defringe: strength, radius, color | -- | AC-3896, AC-3897, AC-3898 | -- | core | other-app: Gesso IP-1164 defringe |  |
+| LP-1532 | Edit mode tool icons option | -- | AC-4276 | -- | core | other-app: Gesso IP-2126 Edit mode panel display is Gesso |  |
+| LP-1533 | Edit mode autosave option | -- | AC-4277 | -- | core | other-app: Gesso IP-1851 Edit mode saving is Gesso |  |
+| LP-1534 | AI image generation from a text prompt (shortcut entry points in browse and the viewer) | -- | AC-4505, AC-4681 | -- | cloud | other-app: Gesso IP-2014 generating new images is pixel creation, Gesso's job |  |
+| LP-1535 | AI generative edit of the current image (shortcut entry points in browse and the viewer) | -- | AC-4506, AC-4682 | -- | cloud | other-app: Gesso IP-2090 prompt-driven pixel edits are Gesso's job |  |
+| LP-1536 | Edit-mode general keys: close, minimize, save, save a copy, export, undo, redo, undo all, copy, paste, delete | -- | AC-4702, AC-4703, AC-4710, AC-4711, AC-4712, AC-4717, AC-4718, AC-4719, AC-4720, AC-4721, AC-4722 | -- | core | other-app: Gesso IP-2150 default keymap conventions |  |
+| LP-1537 | Edit-mode key opens Customize Shortcuts | -- | AC-4704 | -- | core | other-app: Gesso IP-2147 keyboard shortcuts dialog |  |
+| LP-1538 | Edit-mode key opens Options | -- | AC-4705 | -- | core | other-app: Gesso IP-2233 preferences dialog |  |
+| LP-1539 | Edit-mode key opens Help | -- | AC-4706 | -- | core | other-app: Gesso IP-2249 help opens the manual |  |
+| LP-1540 | Toggle the full file path in the status bar | -- | AC-4707 | -- | core | other-app: Gesso IP-0124 status bar and title format |  |
+| LP-1541 | Toggle left, right, and bottom panes, and the Filter menu, Actions, Properties, Filmstrip, Info palette, Layers, Undo History, AI panes | -- | AC-4732, AC-4733, AC-4734, AC-4745, AC-4746, AC-4747, AC-4748, AC-4749, AC-4751, AC-4752, AC-4754, AC-4755 | -- | core | other-app: Gesso IP-2126 panel show and hide |  |
+| LP-1542 | Zoom keys: actual size, fit, zoom in and out | -- | AC-4735, AC-4736, AC-4737, AC-4738 | -- | core | other-app: Gesso IP-0026 zoom commands |  |
+| LP-1543 | Full screen key | -- | AC-4739 | -- | core | other-app: Gesso IP-0037 screen modes and full screen |  |
+| LP-1544 | Toggle the Navigator when zoomed | -- | AC-4740 | -- | core | other-app: Gesso IP-0067 navigator panel |  |
+| LP-1545 | Soft proofing key | -- | AC-4741 | -- | core | other-app: Gesso IP-1955 soft proof |  |
+| LP-1546 | Hold to preview the selected layer mask | -- | AC-4742 | -- | core | other-app: Gesso IP-0286 view mask alone |  |
+| LP-1547 | Hold Z to show the saved version | -- | AC-4743 | -- | core | other-app: Gesso IP-0129 toggle last state |  |
+| LP-1548 | Toggle the toolbar, filters toolbar, and actions toolbar | -- | AC-4756, AC-4757, AC-4758 | -- | core | other-app: Gesso IP-2134 customize toolbar |  |
+| LP-1549 | Full screen image or file list on the second screen | -- | AC-4759, AC-4760 | -- | core | other-app: Gesso IP-2130 window modes |  |
+| LP-1550 | Rulers toggle | -- | AC-4761 | -- | core | other-app: Gesso IP-0126 rulers display toggle |  |
+| LP-1551 | Snap to guidelines toggle | -- | AC-4762 | -- | core | other-app: Gesso IP-0084 snapping toggle |  |
+| LP-1552 | Clear all guidelines | -- | AC-4763 | -- | core | other-app: Gesso IP-0078 clear guides |  |
+| LP-1553 | Lock guidelines | -- | AC-4764 | -- | core | other-app: Gesso IP-0077 lock guides |  |
+| LP-1554 | Show or hide guidelines | -- | AC-4765 | -- | core | other-app: Gesso IP-0080 show guides |  |
+| LP-1555 | Select all, deselect, invert selection keys | -- | AC-4766, AC-4767, AC-4768 | -- | core | other-app: Gesso IP-0544 select all, deselect, invert |  |
+| LP-1556 | AI select subject and background keys | -- | AC-4769, AC-4770 | -- | ai | other-app: Gesso IP-2028 select subject |  |
+| LP-1557 | AI select sky key | -- | AC-4771 | -- | ai | other-app: Gesso IP-2030 select sky |  |
+| LP-1558 | AI select hair key | -- | AC-4772 | -- | ai | other-app: Gesso IP-2031 select people parts |  |
+| LP-1559 | Luminance and color range and pixel targeting selection keys | -- | AC-4773, AC-4777 | -- | core | other-app: Gesso IP-0481 color range |  |
+| LP-1560 | Selection from image brightness key | -- | AC-4774 | -- | core | other-app: Gesso IP-0491 selection from luminosity |  |
+| LP-1561 | Refine selection key | -- | AC-4775 | -- | core | other-app: Gesso IP-0505 refine selection |  |
+| LP-1562 | Smart erase selection key and tool | -- | AC-4776, AC-4895 | -- | ai | other-app: Gesso IP-0925 delete and fill selection |  |
+| LP-1563 | Delete selected pixels key | -- | AC-4778 | -- | core | other-app: Gesso IP-0176 clear selected pixels |  |
+| LP-1564 | Save selection key | -- | AC-4779 | -- | core | other-app: Gesso IP-0450 save selection |  |
+| LP-1565 | Load selection key | -- | AC-4780 | -- | core | other-app: Gesso IP-0451 load selection |  |
+| LP-1566 | Manage selections key | -- | AC-4781 | -- | core | other-app: Gesso IP-0455 selection editor |  |
+| LP-1567 | Selection overlay options key | -- | AC-4782 | -- | core | other-app: Gesso IP-0562 quick mask options |  |
+| LP-1568 | AI face edit key | -- | AC-4784 | -- | ai | other-app: Gesso IP-2045 smart portrait |  |
+| LP-1569 | Sky replacement key | -- | AC-4785 | -- | ai | other-app: Gesso IP-2102 sky replacement |  |
+| LP-1570 | Generative edit key | -- | AC-4786 | -- | cloud | other-app: Gesso IP-2090 prompt to edit |  |
+| LP-1571 | Red eye reduction key | -- | AC-4787 | -- | core | other-app: Gesso IP-0915 red eye tool |  |
+| LP-1572 | Repair tool key | -- | AC-4788 | -- | core | other-app: Gesso IP-0908 healing brush |  |
+| LP-1573 | Skin tune key and adjustment layer key | -- | AC-4789, AC-4873 | -- | core | other-app: Gesso IP-2044 skin smoothing |  |
+| LP-1574 | Import image as layer key | -- | AC-4828 | -- | core | other-app: Gesso IP-1720 place embedded |  |
+| LP-1575 | New blank layer key | -- | AC-4829 | -- | core | other-app: Gesso IP-0267 new layer |  |
+| LP-1576 | Duplicate layer key | -- | AC-4830 | -- | core | other-app: Gesso IP-0268 duplicate layer |  |
+| LP-1577 | Delete layer key | -- | AC-4831 | -- | core | other-app: Gesso IP-0269 delete layer |  |
+| LP-1578 | Rename layer key | -- | AC-4832 | -- | core | other-app: Gesso IP-0270 rename layer |  |
+| LP-1579 | Show or hide layer, show all and hide all layers keys | -- | AC-4833, AC-4837, AC-4838 | -- | core | other-app: Gesso IP-0229 visibility commands |  |
+| LP-1580 | Clipping toggle key | -- | AC-4834 | -- | core | other-app: Gesso IP-0299 clipping masks |  |
+| LP-1581 | Merge down key | -- | AC-4835 | -- | core | other-app: Gesso IP-0274 merge down |  |
+| LP-1582 | Merge all layers key | -- | AC-4836 | -- | core | other-app: Gesso IP-0264 flatten image |  |
+| LP-1583 | Frequency separation key | -- | AC-4839 | -- | core | other-app: Gesso IP-0934 frequency separation |  |
+| LP-1584 | Rasterize text layer key | -- | AC-4840 | -- | core | other-app: Gesso IP-1590 rasterize type layer |  |
+| LP-1585 | HDR merge key | -- | AC-4841 | -- | core | other-app: Gesso IP-1523 combine exposures into HDR |  |
+| LP-1586 | Focus stack key | -- | AC-4842 | -- | core | other-app: Gesso IP-1551 focus merge |  |
+| LP-1587 | Auto-align key | -- | AC-4843 | -- | core | other-app: Gesso IP-1520 auto-align layers |  |
+| LP-1588 | Auto-blend key | -- | AC-4844 | -- | core | other-app: Gesso IP-1540 auto-blend layers |  |
+| LP-1589 | Add white or black layer mask and mask from selection keys | -- | AC-4845, AC-4846, AC-4850 | -- | core | other-app: Gesso IP-0282 add layer mask |  |
+| LP-1590 | Combine mask with selection keys: add, subtract, intersect | -- | AC-4847, AC-4848, AC-4849 | -- | core | other-app: Gesso IP-0288 mask to selection |  |
+| LP-1591 | Invert mask key | -- | AC-4851 | -- | core | other-app: Gesso IP-0285 mask invert |  |
+| LP-1592 | Delete or disable mask keys | -- | AC-4852, AC-4855 | -- | core | other-app: Gesso IP-0283 mask commands |  |
+| LP-1593 | Pixel targeting mask key | -- | AC-4853 | -- | core | other-app: Gesso IP-0294 live hue and luminosity range masks |  |
+| LP-1594 | Paste image layer as luminance mask key | -- | AC-4854 | -- | core | other-app: Gesso IP-0293 luminosity masks |  |
+| LP-1595 | RGB adjustment layer key | -- | AC-4864 | -- | core | other-app: Gesso IP-0610 color balance |  |
+| LP-1596 | Vibrance adjustment layer key | -- | AC-4867 | -- | core | other-app: Gesso IP-0611 vibrance |  |
+| LP-1597 | Resize canvas tool key | -- | AC-4882 | -- | core | other-app: Gesso IP-0209 canvas size |  |
+| LP-1598 | AI object selection tool key | -- | AC-4883 | -- | ai | other-app: Gesso IP-2020 object selection tool |  |
+| LP-1599 | AI remove tool key | -- | AC-4896 | -- | ai | other-app: Gesso IP-2004 remove tool |  |
+| LP-1600 | Rectangle and ellipse selection keys | -- | AC-4901, AC-4902 | -- | core | other-app: Gesso IP-0541 marquee tools |  |
+| LP-1601 | Lasso selection key | -- | AC-4903 | -- | core | other-app: Gesso IP-0542 lasso |  |
+| LP-1602 | Magic wand key | -- | AC-4904 | -- | core | other-app: Gesso IP-0470 magic wand |  |
+| LP-1603 | Brush selection key | -- | AC-4905 | -- | core | other-app: Gesso IP-0498 selection brush |  |
+| LP-1604 | Paint toolbox: show paint dialog, arrow tool, tool switching by wheel, magnetic docking, tooltips | -- | -- | IV-0358, IV-0419, IV-0443, IV-0444, IV-0445, IV-1427 | core | other-app: Gesso IP-2141 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1605 | Paintbrush with foreground and background colors | -- | -- | IV-0420 | core | other-app: Gesso IP-0838 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1606 | Eraser to background with right-button restore | -- | -- | IV-0421 | core | other-app: Gesso IP-0823 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1607 | Clone brush | -- | -- | IV-0422 | core | other-app: Gesso IP-0900 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1608 | Color replacer brush | -- | -- | IV-0423 | core | other-app: Gesso IP-0814 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1609 | Paint text tool with rich per-character formatting and preview | -- | -- | IV-0424, IV-0425 | core | other-app: Gesso IP-1584 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1610 | Line and arrow-line tools | -- | -- | IV-0426, IV-0427 | core | other-app: Gesso IP-1683 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1611 | Rectangle, rounded rectangle, and ellipse tools with fill, transparent fill, and right-button color | -- | -- | IV-0428, IV-0429, IV-0430, IV-0431, IV-0440, IV-0441 | core | other-app: Gesso IP-1679 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1612 | Flood fill with tolerance | -- | -- | IV-0432, IV-0439 | core | other-app: Gesso IP-0897 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1613 | Paint color picker | -- | -- | IV-0433 | core | other-app: Gesso IP-0710 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1614 | Paint straighten tool | -- | -- | IV-0434 | core | other-app: Gesso IP-0185 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1615 | Paint measure tool | -- | -- | IV-0435 | core | other-app: Gesso IP-0095 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1616 | Pen and brush settings: line style, width, endings, joins, hatch, smooth lines | -- | -- | IV-0436, IV-0437, IV-0438 | core | other-app: Gesso IP-1687 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1617 | Foreground and background swatches with swap | -- | -- | IV-0442 | core | other-app: Gesso IP-0735 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1618 | Undo of paint operations | -- | -- | IV-0446 | core | other-app: Gesso IP-0201 IrfanView Paint plug-in drawing is layered pixel editing, Gesso's job |  |
+| LP-1619 | Create a new empty image with size, bit depth, and background color | -- | -- | IV-0462, IV-1490 | core | other-app: Gesso IP-0015 creating blank documents is Gesso's job |  |
+| LP-1620 | Paint plug-in: lines, circles, arrows, straighten | -- | -- | IV-1089 | core | other-app: Gesso IP-0838 painting is layered pixel editing |  |

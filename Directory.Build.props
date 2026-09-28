@@ -63,7 +63,7 @@
 
   <!--
     Versioning: MinVer derives the version from git tags. Each app overlay sets
-    MinVerTagPrefix (stilus-v, pinxit-v, albumen-v). Anything without an overlay
+    MinVerTagPrefix (stilus-v, gesso-v, albumen-v). Anything without an overlay
     (shared libraries such as a future Isotone.Core) falls back to isotone-v, and
     scripts/publish.ps1 passes -p:MinVerTagPrefix=<app>-v as a global property so
     a shared library always carries the version of the app being published.

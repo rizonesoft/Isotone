@@ -40,7 +40,7 @@
 <div class="pv-h">Masters, 256 viewBox, shown at 128 px on frame</div>
 <div class="ai-masters">
   <div class="ai-master"><img src="/_blob/f20ad4019d4ba19adc340411314932c1" width="128" height="128" alt="Stilus app icon"><span class="nm">Stilus</span><span class="pv-k">stilus.svg, glyph +25%</span></div>
-  <div class="ai-master"><img src="/_blob/5d6e142a182698cca5e83803568974f0" width="128" height="128" alt="Pinxit app icon"><span class="nm">Pinxit</span><span class="pv-k">pinxit.svg, glyph +10%</span></div>
+  <div class="ai-master"><img src="/_blob/5d6e142a182698cca5e83803568974f0" width="128" height="128" alt="Gesso app icon"><span class="nm">Gesso</span><span class="pv-k">gesso.svg, glyph +10%</span></div>
   <div class="ai-master"><img src="/_blob/7144f28429d697fc3f557724727fa37c" width="128" height="128" alt="Albumen app icon"><span class="nm">Albumen</span><span class="pv-k">albumen.svg, glyph +8%</span></div>
 </div>
 
@@ -51,7 +51,7 @@
 
 <div class="pv-h">256, the master at full size</div>
 <div class="ai-masters" style="background:var(--surface-panel)">
-  <img src="/_blob/5d6e142a182698cca5e83803568974f0" width="256" height="256" alt="Pinxit app icon at 256 px">
+  <img src="/_blob/5d6e142a182698cca5e83803568974f0" width="256" height="256" alt="Gesso app icon at 256 px">
   <div class="pv-col" style="justify-content:center;gap:var(--space-2)">
     <span class="pv-k">tile 8..248, rx 48, 1 px inner highlight</span>
     <span class="pv-k">glyph safe box x 36..220, y 28..204, centre (128, 116)</span>
@@ -64,7 +64,7 @@
   <div class="cell"><div class="stage"><img class="ai-clear" src="/_blob/5d6e142a182698cca5e83803568974f0" width="64" height="64" alt=""></div><span class="verdict ok"><i data-i="success" data-s="14"></i>Do</span><span class="why">Right file for the size, clear space of 1/8 on every side</span></div>
   <div class="cell"><div class="stage"><img class="ai-recolor" src="/_blob/5d6e142a182698cca5e83803568974f0" width="64" height="64" alt=""></div><span class="verdict no"><i data-i="error" data-s="14"></i>Don't</span><span class="why">Recolor the glyph or swap accents</span></div>
   <div class="cell"><div class="stage" style="display:flex;gap:var(--space-3);align-items:center"><div class="pv-col" style="align-items:center"><img src="/_blob/5d6e142a182698cca5e83803568974f0" width="16" height="16" alt=""><span class="pv-k">master</span></div><div class="pv-col" style="align-items:center"><img src="/_blob/29e855414f9149085c647878e6ebe63f" width="16" height="16" alt=""><span class="pv-k">-16</span></div></div><span class="verdict no"><i data-i="error" data-s="14"></i>Don't</span><span class="why">Draw the master below 48 px; use the -16 file</span></div>
-  <div class="cell"><div class="stage"><div class="ai-texted"><img src="/_blob/5d6e142a182698cca5e83803568974f0" width="64" height="64" alt=""><span>PINXIT</span></div></div><span class="verdict no"><i data-i="error" data-s="14"></i>Don't</span><span class="why">Add text, a version or a badge</span></div>
+  <div class="cell"><div class="stage"><div class="ai-texted"><img src="/_blob/5d6e142a182698cca5e83803568974f0" width="64" height="64" alt=""><span>GESSO</span></div></div><span class="verdict no"><i data-i="error" data-s="14"></i>Don't</span><span class="why">Add text, a version or a badge</span></div>
   <div class="cell"><div class="stage"><div class="ai-noband"><img src="/_blob/5d6e142a182698cca5e83803568974f0" width="64" height="64" alt=""><i></i></div></div><span class="verdict no"><i data-i="error" data-s="14"></i>Don't</span><span class="why">Drop or recolor the spectrum band</span></div>
   <div class="cell"><div class="stage"><div class="ai-crowd"><img src="/_blob/5d6e142a182698cca5e83803568974f0" width="64" height="64" alt=""><b>2.1</b></div></div><span class="verdict no"><i data-i="error" data-s="14"></i>Don't</span><span class="why">Crowd the tile; keep its clear space</span></div>
 </div>
@@ -74,7 +74,7 @@
 (function () {
   var B = {
     stilus: { m: 'f20ad4019d4ba19adc340411314932c1', s16: '9f131cfb8120e2b85209dfef5b67397e', s24: '008204c735d0319c0eb08139a24288f5', s32: 'ad1e30a74e1f5bd1e2c22286250f64e2' },
-    pinxit: { m: '5d6e142a182698cca5e83803568974f0', s16: '29e855414f9149085c647878e6ebe63f', s24: '45de41eeb1f52234e344e9274efa341d', s32: 'a14a1e039a1fada439f61ccd1df55acc' },
+    gesso: { m: '5d6e142a182698cca5e83803568974f0', s16: '29e855414f9149085c647878e6ebe63f', s24: '45de41eeb1f52234e344e9274efa341d', s32: 'a14a1e039a1fada439f61ccd1df55acc' },
     albumen: { m: '7144f28429d697fc3f557724727fa37c', s16: '55df5652e6693c44ab73a4ac2f938277', s24: 'a3bdd61064ba5963bc412e69a1517d7c', s32: '7b4bdfe977105503e687d21bc9719131' }
   };
   var steps = [[16, 's16', '-16'], [24, 's24', '-24'], [32, 's32', '-32'], [48, 'm', '48'], [64, 'm', '64'], [128, 'm', '128']];
@@ -84,7 +84,7 @@
     }).join('') + '</div>';
   }
   var html = '';
-  ['stilus', 'pinxit', 'albumen'].forEach(function (app) {
+  ['stilus', 'gesso', 'albumen'].forEach(function (app) {
     html += '<div class="app pv-k">' + app.charAt(0).toUpperCase() + app.slice(1) + '</div><div class="on-frame">' + row(app) + '</div><div class="on-panel">' + row(app) + '</div>';
   });
   document.getElementById('ladder').insertAdjacentHTML('beforeend', html);

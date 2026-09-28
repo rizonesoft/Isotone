@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RootNamespace>Gesso.FileFormats</RootNamespace>
+    <AssemblyName>Gesso.FileFormats</AssemblyName>
+    <Description>Image file format support for Gesso</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gesso.Core\Gesso.Core.csproj" />
+  </ItemGroup>
+
+</Project>
