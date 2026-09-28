@@ -2,9 +2,9 @@
 
 <a href="https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-logo">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="resources/brand/isotone-lockup-on-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="resources/brand/isotone-lockup-on-light.svg">
-    <img alt="Isotone Graphics Suite" src="resources/brand/isotone-lockup-on-light.svg" width="380">
+    <source media="(prefers-color-scheme: dark)" srcset="resources/brand/isotone-wordmark-on-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="resources/brand/isotone-wordmark-on-light.svg">
+    <img alt="Isotone Graphics Suite" src="resources/brand/isotone-wordmark-on-light.svg" width="320">
   </picture>
 </a>
 

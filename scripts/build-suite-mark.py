@@ -1,11 +1,11 @@
-"""Build the Isotone suite icon, wordmark, and lockups (operator decision 2026-09-28: icon A "Three Lights", wordmark 2).
+"""Build the Isotone suite icon and wordmark (operator decision 2026-09-28: icon A "Three Lights", wordmark 2, with a single three-color dot).
 
 Writes:
   resources/icons/isotone/isotone.svg            the suite icon master (256 viewBox, Direction C tile and band)
-  resources/brand/isotone-wordmark-on-dark.svg   "isotone" with the Three Lights dot and GRAPHICS SUITE, light ink
+  resources/brand/isotone-wordmark-on-dark.svg   "isotone" with the three-color dot and GRAPHICS SUITE, light ink
   resources/brand/isotone-wordmark-on-light.svg  the same in dark ink
-  resources/brand/isotone-lockup-on-dark.svg     icon plus wordmark, for dark grounds
-  resources/brand/isotone-lockup-on-light.svg    icon plus wordmark, for light grounds
+
+The wordmark stands alone: it is never locked up with the suite icon (operator decision 2026-09-28).
 
 The letters are outlines of Sora (SIL Open Font License 1.1, resources/brand/fonts/), so the files never depend on an
 installed font. The three lights mix by the screen formula, precomputed per overlap, so no renderer needs blend modes.
@@ -113,15 +113,18 @@ def wordmark(ink, sub, x0=0.0, y0=0.0, align='center'):
     total_w = max(width, sw)
     wx = x0 + (total_w - width) / 2 if align == 'center' else x0
     d, _ = big.run(word, size, wx, base, track)
-    # the Three Lights dot, centred over the dotless i's stem where Sora's own dot sits
+    # one dot in the three app colors, where the operator approved it on the comparison page
+    # (operator decision 2026-09-28): 10 right of the stem centre and 42 above the baseline at size 58, radius 8
     s = size / big.upm
-    ib = big.bounds('ı'); jb = big.bounds('i')
-    cx = wx + (ib[0] + ib[2]) / 2 * s
-    dot_bottom = base - ib[3] * s
-    dot_top = base - jb[3] * s
-    cy = (dot_top + dot_bottom) / 2 - 1.0
-    stem = (ib[2] - ib[0]) * s
-    ldefs, lbody = lights(cx, cy, stem * 0.52, stem * 0.36, f'isotone-wm-{ink[1:]}')
+    ib = big.bounds('ı')
+    k = size / 58
+    cx = wx + (ib[0] + ib[2]) / 2 * s + 10 * k
+    cy = base - 42 * k
+    r = 8 * k
+    gid = f'isotone-wm-dot-{ink[1:]}'
+    stops = ''.join(f'<stop offset="{o}" stop-color="{c}"/>' for o, (c, _, _) in zip(('0.15', '0.5', '0.85'), LIGHTS))
+    ldefs = f'<linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="1">{stops}</linearGradient>'
+    lbody = f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="url(#{gid})"/>' 
     sx = x0 + (total_w - sw) / 2 if align == 'center' else x0 + 1
     sd, _ = small.run(sub_text, 12, sx, base + 30, 4.5)
     frag = f'<defs>{ldefs}</defs><path d="{d}" fill="{ink}"/>{lbody}<path d="{sd}" fill="{sub}"/>'
@@ -141,13 +144,6 @@ def main():
     for name, ink, sub in (('on-dark', '#F2F2F3', '#A6A7AD'), ('on-light', '#1E1F23', '#5C5D63')):
         frag, w, h = wordmark(ink, sub, 0, 0)
         write(f'resources/brand/isotone-wordmark-{name}.svg', f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.1f} {h:.1f}" width="{w:.0f}" height="{h:.0f}"><title>Isotone Graphics Suite</title>{frag}</svg>\n')
-        tile = 96
-        frag, w, h = wordmark(ink, sub, tile + 22, 0, align='left')
-        H = max(h, tile)
-        ic = icon().split('\n', 1)[1].rsplit('</svg>', 1)[0]
-        ic_svg = f'<svg x="0" y="{(H - tile) / 2:.1f}" width="{tile}" height="{tile}" viewBox="0 0 256 256">{ic}</svg>'
-        W = tile + 22 + w
-        write(f'resources/brand/isotone-lockup-{name}.svg', f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W:.1f} {H:.1f}" width="{W:.0f}" height="{H:.0f}"><title>Isotone Graphics Suite</title>{ic_svg}<g transform="translate(0 {(H - h) / 2:.1f})">{frag}</g></svg>\n')
 
 
 if __name__ == '__main__':
