@@ -71,9 +71,9 @@ track: C4
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms | D01 T02 §1 |  [ ]   |
+|   1   |   §1    | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms | D01 T02 §1, D01 T02 §5 |  [ ]   |
 |   2   |   §2    | Rendering intents, black point compensation, proofing transforms, and gamut checks | §1 |  [ ]   |
-|   3   |   §3    | Bitmap color modes, duotone, and multichannel, with the Stilus Duotone dialog | §2, D01 T03 §3, D02 T09 §2, D02 T12 §9 |  [ ]   |
+|   3   |   §3    | Bitmap color modes, duotone, and multichannel, with the Stilus Duotone dialog | §2, D01 T03 §3, D02 T09 §2, D02 T12 §9, D01 T02 §5 |  [ ]   |
 
 ---
 

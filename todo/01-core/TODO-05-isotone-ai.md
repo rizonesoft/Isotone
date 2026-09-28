@@ -65,11 +65,11 @@ track: C5
 
 | Order | Section | Deliverable                                                                    | Depends On               | Status |
 | :---: | :-----: | ------------------------------------------------------------------------------ | ------------------------ | :----: |
-|   1   |   §1    | The OpenRouter client: chat, structured output, images, streaming, and models | D01 T02 §2               |  [ ]   |
-|   2   |   §2    | API keys with DPAPI and the AI settings contract                               | §1                       |  [ ]   |
-|   3   |   §3    | The AI provenance record                                                       | §1                       |  [ ]   |
+|   1   |   §1    | The OpenRouter client: chat, structured output, images, streaming, and models | D01 T02 §2, D01 T02 §5 |  [ ]   |
+|   2   |   §2    | API keys with DPAPI and the AI settings contract                               | §1, D01 T02 §5 |  [ ]   |
+|   3   |   §3    | The AI provenance record                                                       | §1, D01 T02 §4 |  [ ]   |
 |   4   |   §4    | The explicit-send gate and the shared AI surfaces in Isotone.UI                 | §2, §3, D01 T01 §3       |  [ ]   |
-|   5   |   §5    | The suite brand kit: shared palettes and styles                                | D01 T02 §2               |  [ ]   |
+|   5   |   §5    | The suite brand kit: shared palettes and styles                                | D01 T02 §2, D01 T02 §5 |  [ ]   |
 
 ---
 

@@ -132,24 +132,28 @@ The installers register file associations (Stilus `.svg`; Gesso `.png`, `.jpg`, 
 
 Both editors need undo, and each grew its own: Stilus's `HistoryManager` over `IEditorCommand` (with move, resize, rotate, scale, group, reorder, add, delete, and property commands) and Gesso's `CommandHistory` over its own `ICommand` with persistence and snapshots. A second copy of a behavior in a second app is a defect, so the day Gesso wires its history into a document (`D03 T03 §2`), both move onto one type here. Stilus's resize and rotate undo (`D02 T03 §1`) lands first so the merged type is proven against a complete command set.
 
+**Corrected 2026-09-28:** moved from Phase 15 to Phase 3 by operator decision ("YES", 2026-09-28): the Stilus parity sections in Phases 4 to 13 and `D01 T05 §3`'s provenance commands record into this history, so it lands before them, and the port covers the record-only path and `CompositeCommand` that `D02 T03 §1` adds to `HistoryManager` in Phase 2.
+
 - [ ] Compare the two APIs (execute, undo, redo, merge of consecutive edits, transaction or macro grouping, limits, change events, descriptions) and write the comparison as the first paragraph of `src/Isotone.Core/History/README.md`. Done when: the table names which app's behavior each member keeps and why.
 - [ ] Add `src/Isotone.Core/History/IUndoableCommand.cs`, `UndoHistory.cs` (bounded stack, `BeginTransaction`/`Commit`/`Rollback`, merge window for drags and slider edits, `Changed` event, description for menu text), with tests for every member. Done when: `UndoHistoryTests` pass, including transaction rollback restoring state and the limit dropping the oldest entry.
 - [ ] Port Stilus's commands to `IUndoableCommand` and delete `HistoryManager` and `IEditorCommand`. Done when: every existing Stilus history test passes against `UndoHistory`.
 - [ ] Port Gesso's `CommandBase` to `IUndoableCommand`, keep Gesso's persistence and snapshot features in Gesso (`Isotone.Gesso.Core/History/`) as extensions over the shared history (only Gesso needs them), and delete `CommandHistory`. Done when: Gesso's history tests pass against `UndoHistory`.
+- [ ] Carry `D02 T03 §1`'s record-only path (`Record`, an already-applied command pushed without executing) and `CompositeCommand`, and `D02 T03 §4`'s `TryMerge`, into `UndoHistory`, so no Stilus caller loses them in the port. Done when: `UndoHistoryTests.Record_DoesNotExecute` and `UndoHistoryTests.MergesConsecutiveEdits` pass.
 - [ ] Commit: `"core: one undo history for Stilus and Gesso"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `UndoHistoryTests` and both apps' history tests reporting; `grep -rn "class HistoryManager\|class CommandHistory" src` prints nothing; in Stilus, drawing a rectangle, resizing it, and pressing Ctrl+Z twice removes it (log lines for each step quoted). Cheaper substitute that fails: an adapter that wraps one app's history for the other, which leaves two implementations.
 
 ## 5. The Atomic Document Writer Moves to Isotone.Core
 
-Stilus's save path writes through an atomic writer built in Stilus (`D02 T04 §1`), because only Stilus saved documents then. Gesso's first save (`D03 T04 §2`) is the second consumer, so the writer moves here in the commit before that section, and both saves go through it.
+Stilus's save path writes through an atomic writer built in Stilus (`D02 T04 §1`), because only Stilus saved documents then. Gesso's first save (`D03 T04 §2`) is the second consumer, so the writer moves here in the commit before that section, and both saves go through it. **Corrected 2026-09-28:** moved from Phase 15 to Phase 3 by operator decision ("YES", 2026-09-28): the second consumer is §2's settings store and every `Isotone.Core` writer from Phase 6 on (`D01 T04 §1` and `§3`, `D01 T05 §1`, `§2`, and `§5`), so the writer moves right after `D02 T04 §1`; Gesso's save is a later consumer.
 
 **Freeze check:** Save-over writes to a temp file in the target directory, flushes to disk, and replaces the target with `File.Replace` (or a rename when the target does not exist); killing the process after the temp write and before the replace leaves the original byte-identical, and a read-only or locked target is refused with the document still open and dirty. Fixture source: `tests/fixtures/save-over/` (a small SVG and PNG, created by this section). The move must not change what Stilus writes: a Stilus save of `tests/fixtures/stilus/svg/bezier-sample.svg` before and after this commit produces identical bytes.
 
 - [ ] Move `AtomicFileWriter` from Stilus to `src/Isotone.Core/IO/AtomicFileWriter.cs` unchanged apart from its namespace, with its tests to `tests/Isotone.Core.Tests`. Done when: Stilus's copy is deleted and Stilus's save calls the shared type.
 - [ ] Add the `tests/fixtures/save-over/` fixtures and a `SaveOverTests` class: interrupted write (a test hook throws between write and replace) leaves the original identical; read-only target refuses; locked target (opened with `FileShare.None`) refuses; target on a missing folder refuses. Done when: all four pass.
 - [ ] Prove the Stilus bytes are unchanged: save the sample through Stilus's exporter before and after the move and compare hashes in a test. Done when: the test asserts equal SHA-256.
-- [ ] Commit: `"core: move the atomic document writer to Isotone.Core for Gesso's save"`
+- [ ] Repoint §2's `JsonSettingsStore` onto `AtomicFileWriter`, deleting its own temp-and-replace code (**Groomed 2026-09-28:** two atomic-replace implementations otherwise). Done when: `grep -rn "File.Replace" src/Isotone.Core` prints one path.
+- [ ] Commit: `"core: move the atomic document writer to Isotone.Core"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `SaveOverTests` reporting all four cases and the byte-identity test passing; `grep -rn "class AtomicFileWriter" src` prints exactly one path, under `src/Isotone.Core/`. Cheaper substitute that fails: Gesso copying the Stilus writer, which the grep catches.
 

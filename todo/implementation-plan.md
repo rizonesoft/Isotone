@@ -206,7 +206,7 @@ Stilus goes first among the apps. This phase gives it a real composition root on
 
 ### Phase 3 -- Stilus 0.1.0: shared UI, complete editing, documents, release
 
-With its foundation sound, Stilus becomes a complete first release: `Isotone.UI` takes the controls and windows Stilus and Gesso duplicate, the suite theme, the visual regression harness whose review-approved goldens every control and chrome section then earns (`D01 T01 §9`), the implicit control styles, and the shared window chrome (title bar with Snap Layouts, document tabs, dock theme, status bar), single instance moves to `Isotone.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the SDK pin moves from the .NET 11 release candidate to GA (`D00 T02 §8`, which waits for the November 2026 GA and parks with that blocker named until then), the clean-machine procedure is proven on Windows 11, and `stilus-v0.1.0` ships.
+With its foundation sound, Stilus becomes a complete first release: `Isotone.Core` takes the suite undo history and the atomic document writer (`D01 T02 §4` and `§5`, moved here from Phase 15 by operator decision on 2026-09-28, because the parity phases and `Isotone.Core`'s own writers build on them), `Isotone.UI` takes the controls and windows Stilus and Gesso duplicate, the suite theme, the visual regression harness whose review-approved goldens every control and chrome section then earns (`D01 T01 §9`), the implicit control styles, and the shared window chrome (title bar with Snap Layouts, document tabs, dock theme, status bar), single instance moves to `Isotone.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the SDK pin moves from the .NET 11 release candidate to GA (`D00 T02 §8`, which waits for the November 2026 GA and parks with that blocker named until then), the clean-machine procedure is proven on Windows 11, and `stilus-v0.1.0` ships.
 
 |  ✔  | Section      | Deliverable                                                     | Items |
 | :-: | ------------ | --------------------------------------------------------------- | :---: |
@@ -240,6 +240,8 @@ With its foundation sound, Stilus becomes a complete first release: `Isotone.UI`
 | [ ] | `D05 T01 §1` | The clean-machine install procedure                             |   3   |
 | [ ] | `D05 T01 §8` | Third-party notices in every package                            |   5   |
 | [ ] | `D02 T05 §4` | Stilus 0.1.0                                                    |  11   |
+| [ ] | `D01 T02 §4` | One undo history for the suite                                  |   6   |
+| [ ] | `D01 T02 §5` | The atomic document writer moves to Isotone.Core                |   5   |
 
 ### Phase 4 -- Stilus parity I: document model, pages, layers, selection, and view
 
@@ -537,12 +539,10 @@ Gesso starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity ph
 
 ### Phase 15 -- Gesso 0.1.0: editing, files, filters, release
 
-Gesso becomes a complete first release: the suite undo history and the atomic document writer move to `Isotone.Core` as Gesso becomes their second consumer, the About and shortcuts dialogs move to `Isotone.UI`, documents open in tabs with every edit in the history, the layers panel and core tools work, PNG, JPEG, TIFF, the native layered format, and PSD import are proven by round trips, autosave and recovery work, the core adjustments and blurs match reference goldens, the user guide is written, and `gesso-v0.1.0` ships.
+Gesso becomes a complete first release: Gesso records into the suite undo history and saves through the atomic document writer, both in `Isotone.Core` since Phase 3 (**Corrected 2026-09-28:** they moved there from this phase by operator decision), the About and shortcuts dialogs move to `Isotone.UI`, documents open in tabs with every edit in the history, the layers panel and core tools work, PNG, JPEG, TIFF, the native layered format, and PSD import are proven by round trips, autosave and recovery work, the core adjustments and blurs match reference goldens, the user guide is written, and `gesso-v0.1.0` ships.
 
 |  ✔  | Section      | Deliverable                                       | Items |
 | :-: | ------------ | ------------------------------------------------- | :---: |
-| [ ] | `D01 T02 §4` | One undo history for the suite                    |   5   |
-| [ ] | `D01 T02 §5` | The atomic document writer moves to Isotone.Core  |   4   |
 | [ ] | `D01 T01 §4` | About and shortcuts dialogs move to Isotone.UI    |   7   |
 | [ ] | `D03 T03 §1` | Documents in tabs with dirty tracking             |   5   |
 | [ ] | `D03 T03 §2` | Every edit in the suite history                   |   5   |
