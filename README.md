@@ -64,23 +64,9 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
 
 <table>
   <tr>
-    <th width="33%">
-      <img src="resources/icons/stilus/stilus.svg" alt="" width="56"><br>
-      Rizonesoft Stilus
-    </th>
-    <th width="33%">
-      <img src="resources/icons/gesso/gesso.svg" alt="" width="56"><br>
-      Rizonesoft Gesso
-    </th>
-    <th width="33%">
-      <img src="resources/icons/albumen/albumen.svg" alt="" width="56"><br>
-      Rizonesoft Albumen
-    </th>
-  </tr>
-  <tr>
-    <td><img src="resources/icons/stilus/stilus-splash.svg" alt="The Stilus splash card: the Stilus icon, the name Stilus, and the line Vector editor"></td>
-    <td><img src="resources/icons/gesso/gesso-splash.svg" alt="The Gesso splash card: the Gesso icon, the name Gesso, and the line Raster and photo editor"></td>
-    <td><img src="resources/icons/albumen/albumen-splash.svg" alt="The Albumen splash card: the Albumen icon, the name Albumen, and the line Digital darkroom and photo manager"></td>
+    <td width="33%"><img src="resources/icons/stilus/stilus-splash.svg" alt="The Stilus splash card: the Stilus icon, the name Stilus, and the line Vector editor"></td>
+    <td width="33%"><img src="resources/icons/gesso/gesso-splash.svg" alt="The Gesso splash card: the Gesso icon, the name Gesso, and the line Raster and photo editor"></td>
+    <td width="33%"><img src="resources/icons/albumen/albumen-splash.svg" alt="The Albumen splash card: the Albumen icon, the name Albumen, and the line Digital darkroom and photo manager"></td>
   </tr>
   <tr>
     <td><strong>Vector editor.</strong> Structure and design: precision illustration, typography, logos, scalable graphics. An Illustrator alternative.</td>
