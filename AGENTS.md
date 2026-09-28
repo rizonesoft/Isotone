@@ -107,7 +107,7 @@ A checkpoint citing a gate that does not exist yet is unfalsifiable and is not a
 
 ## The commit hook
 
-`tools/githooks/pre-commit` refuses a commit whose **staged** tree fails `python scripts/todo-graph.py validate` or `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json`, checked in a temp checkout of the index. It must stay a POSIX shell script with LF endings and index mode `100755`. `tools/provision.ps1` points `core.hooksPath` at `tools/githooks` for each clone; run it once after cloning. A red hook is a defect to fix, never a gate to skip.
+`tools/githooks/pre-commit` refuses a commit whose **staged** tree fails `python scripts/todo-graph.py validate` or `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json`, checked in a temp checkout of the index. It must stay a POSIX shell script with LF endings and index mode `100755`. `tools/githooks/commit-msg` strips any AI-assistant attribution (a `Co-Authored-By:` trailer naming Claude, Anthropic, or another assistant, and "Generated with" footers) from every commit message, so GitHub never lists an assistant as a contributor (operator decision 2026-09-28); never add such lines to commits or pull requests, and keep `.claude/settings.json`'s `includeCoAuthoredBy: false` and empty `attribution`. `tools/provision.ps1` points `core.hooksPath` at `tools/githooks` for each clone; run it once after cloning. A red hook is a defect to fix, never a gate to skip.
 
 ## A measurement recorded is a measurement re-checked
 
