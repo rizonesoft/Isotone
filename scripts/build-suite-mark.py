@@ -113,17 +113,18 @@ def wordmark(ink, sub, x0=0.0, y0=0.0, align='center'):
     total_w = max(width, sw)
     wx = x0 + (total_w - width) / 2 if align == 'center' else x0
     d, _ = big.run(word, size, wx, base, track)
-    # one dot in the three app colors, where the operator approved it on the comparison page
-    # (operator decision 2026-09-28): 10 right of the stem centre and 42 above the baseline at size 58, radius 8
+    # one dot in the three app colors, where the operator approved it on the comparison page (operator decisions
+    # 2026-09-28): 10 right of the stem centre and 41 above the baseline at size 58, radius 6.56 (82 percent of the
+    # first 8), blended in color-wheel order (orange, green, cyan) so no step of the blend turns grey or khaki
     s = size / big.upm
     ib = big.bounds('ı')
     k = size / 58
     cx = wx + (ib[0] + ib[2]) / 2 * s + 10 * k
-    cy = base - 42 * k
-    r = 8 * k
+    cy = base - 41 * k
+    r = 6.56 * k
     gid = f'isotone-wm-dot-{ink[1:]}'
-    stops = ''.join(f'<stop offset="{o}" stop-color="{c}"/>' for o, (c, _, _) in zip(('0.15', '0.5', '0.85'), LIGHTS))
-    ldefs = f'<linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="1">{stops}</linearGradient>'
+    stops = ''.join(f'<stop offset="{o}" stop-color="{c}"/>' for o, c in (('0.1', '#F5923E'), ('0.5', '#4CC47A'), ('0.9', '#29C5E6')))
+    ldefs = f'<linearGradient id="{gid}" x1="0" y1="1" x2="1" y2="0">{stops}</linearGradient>'
     lbody = f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="url(#{gid})"/>' 
     sx = x0 + (total_w - sw) / 2 if align == 'center' else x0 + 1
     sd, _ = small.run(sub_text, 12, sx, base + 22, 4.5)
