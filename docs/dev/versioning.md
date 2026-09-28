@@ -18,7 +18,7 @@ Each app's overlay (`src/<App>/Directory.Build.props`) sets `MinVerTagPrefix`. M
 - **On a tagged commit:** the tag's version, for example `stilus-v1.2.3` gives `1.2.3`.
 - **After a tag:** the next patch as a prerelease with the commit height, for example `1.2.4-alpha.0.5` five commits after `stilus-v1.2.3`.
 - **With no tag for that prefix:** `0.0.0-alpha.0.N`, where N is the commit height.
-- **Build metadata:** the commit SHA, for example `0.0.0-alpha.0.2+2e87a3d...`. It appears in `ProductVersion` / `InformationalVersion`.
+- **Build metadata:** the commit SHA, for example `0.0.0-alpha.0.2+5a8bdd4...`. It appears in `ProductVersion` / `InformationalVersion`.
 
 MinVer settings (root `Directory.Build.props`): `MinVerDefaultPreReleaseIdentifiers=alpha.0`, `MinVerAutoIncrement=patch`.
 

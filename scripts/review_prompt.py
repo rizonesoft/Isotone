@@ -4640,7 +4640,7 @@ def _self_test() -> int:
                 "D00 T01 §1\n"
                 "> **Review:** round 1, candidate "
                 "`0000000000000000000000000000000000000000` plus range "
-                "`e5b0fea..0509aef` -- approve. "
+                "`68aa192..a68ce10` -- approve. "
                 "Raw findings: docs/reviews/00-workspace/D00-T04-s99.md\n"
                 "> **CRUD:** not applicable\n")
         seed_dead = check_stamp_anchors(seed_todo, 1)

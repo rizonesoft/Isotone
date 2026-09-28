@@ -1477,7 +1477,7 @@ refuted: 0
           any("resolves to no commit" in m for m in check_export(tampered)),
           f"{check_export(tampered)}")
     tampered = json.loads(json.dumps(injected))
-    tampered["as_of"]["commit"] = "e5b0fea4ee19850c7ae04e4d05a59d2766d706af"
+    tampered["as_of"]["commit"] = "68aa192e32f5a59e971f90dd81fdc894b4a89eb6"
     check("export-asof-resolving",
           not any("resolves to no commit" in m or "neither a full sha" in m
                   for m in check_export(tampered)),

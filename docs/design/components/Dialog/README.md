@@ -25,7 +25,7 @@ A modal window for a focused task (Image Size, Export, Preferences, confirmation
 
 Help, About <App> is a Dialog with the app icon master at 128px (`docs/design/app-icons.md`), the app name in `dialog-title`, and these lines in `body`, top to bottom, with no other legal text:
 
-- "Version 0.1.0 (commit 2e87a3d)": the informational version with the short commit, and a "Copy version info" button.
+- "Version 0.1.0 (commit 5a8bdd4)": the informational version with the short commit, and a "Copy version info" button.
 - "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd": the copyright holder is the company, never the brand.
 - "Rizonesoft is a brand of Rizonetech (Pty) Ltd.": the publisher users see stays Rizonesoft.
 - "Licensed under the GNU General Public License v3.0" with a link opening the license text shipped with the app.

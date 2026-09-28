@@ -26,7 +26,7 @@ body:
     attributes:
       label: Version
       description: From Help > About, the installer file name, or the commit hash if you built from source.
-      placeholder: "e.g. stilus-v0.1.0, or commit 2e87a3d"
+      placeholder: "e.g. stilus-v0.1.0, or commit 5a8bdd4"
     validations:
       required: true
   - type: dropdown

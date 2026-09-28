@@ -687,7 +687,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: the raiser retracted it\n"
         "evidence: D00-T04-s9.md round 3\n"
-        "as-of: e5b0fea\n",
+        "as-of: 68aa192\n",
         encoding="utf-8",
     )
     if check_transitions(tfind, tpath):
@@ -701,7 +701,7 @@ def _self_test() -> int:
         "from: raised\n"
         "to: duplicate\n"
         "evidence: x\n"
-        "as-of: e5b0fea\n"
+        "as-of: 68aa192\n"
         "\n"
         "transition: D00-T04-S9-F9\n"
         "date: 2026-09-19\n"
@@ -709,7 +709,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: ghost\n"
         "evidence: x\n"
-        "as-of: e5b0fea\n",
+        "as-of: 68aa192\n",
         encoding="utf-8",
     )
     tp = check_transitions(tfind, tpath)
@@ -731,7 +731,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: x\n"
         "evidence: y\n"
-        "as-of: e5b0fea\n"
+        "as-of: 68aa192\n"
         "\n"
         "transition: D00-T04-S9-F1\n"
         "date: 2026-09-19\n"
@@ -739,7 +739,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: x\n"
         "evidence: y\n"
-        "as-of: e5b0fea\n"
+        "as-of: 68aa192\n"
         "\n"
         "transition: D00-T04-S9-F2\n"
         "date: 2026-09-19\n"
@@ -747,7 +747,7 @@ def _self_test() -> int:
         "to: fixed\n"
         "why: x\n"
         "evidence: y\n"
-        "as-of: e5b0fea\n",
+        "as-of: 68aa192\n",
         encoding="utf-8",
     )
     tp2 = check_transitions(tfind, tpath)
@@ -795,7 +795,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: ghost\n"
         "evidence: x\n"
-        "as-of: e5b0fea\n"
+        "as-of: 68aa192\n"
         "\n"
         "transition: D00-T04-S9-F9\n"
         "date: 2026-09-19\n"
@@ -803,7 +803,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: ghost again\n"
         "evidence: x\n"
-        "as-of: e5b0fea\n",
+        "as-of: 68aa192\n",
         encoding="utf-8",
     )
     dup_problems = [p for _, p in check_transitions(tfind, tpath) if "S9-F9" in p]
@@ -822,7 +822,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: ghost\n"
         "evidence: x\n"
-        "as-of: e5b0fea\n"
+        "as-of: 68aa192\n"
         "\n"
         "transition: D00-T04-S9-F8\n"
         "date: 2026-09-19\n"
@@ -830,7 +830,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: another ghost\n"
         "evidence: x\n"
-        "as-of: e5b0fea\n",
+        "as-of: 68aa192\n",
         encoding="utf-8",
     )
     distinct = check_transitions(tfind, tpath)
@@ -848,7 +848,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: the raiser retracted it\n"
         "evidence: x\n"
-        "as-of: e5b0fea\n"
+        "as-of: 68aa192\n"
         "\n"
         "transition: D00-T04-S9-F1\n"
         "date: 2026-09-19\n"
@@ -856,7 +856,7 @@ def _self_test() -> int:
         "to: withdrawn\n"
         "why: still retracted\n"
         "evidence: x\n"
-        "as-of: e5b0fea\n",
+        "as-of: 68aa192\n",
         encoding="utf-8",
     )
     if check_transitions(tfind, tpath) != [
