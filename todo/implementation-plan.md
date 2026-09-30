@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **0 of 752 sections complete (0%).** 752 sections (1 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **0 of 754 sections complete (0%).** 754 sections (1 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -44,7 +44,7 @@ The finished suite is **three standalone creative applications that behave like 
 | Operator-only work never stalls a runner | `D00 T01 §2` · `D99 T01 §1`-`§10` |
 | The review panel works before the first stamp | `D00 T01 §4` |
 | No quarantined test, no excused warning | `D00 T02 §1` · `D00 T02 §2` · `D02 T01 §7` |
-| No dependency without a reason and a license | `D00 T02 §4` · `D00 T02 §5` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` · `D04 T10 §2` · `D04 T08 §6` · `D04 T08 §7` · `D04 T13 §4` · `D04 T07 §7` · `D04 T12 §8` · `D04 T12 §9` · `D04 T12 §11` · `D00 T03 §3` · `D01 T10 §4` · `D01 T10 §5` · `D01 T10 §6` · `D01 T11 §1` · `D01 T11 §2` · `D01 T12 §1` · `D01 T12 §2` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` |
+| No dependency without a reason and a license | `D00 T02 §4` · `D00 T02 §5` · `D00 T04 §1` · `D00 T04 §2` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` · `D04 T10 §2` · `D04 T08 §6` · `D04 T08 §7` · `D04 T13 §4` · `D04 T07 §7` · `D04 T12 §8` · `D04 T12 §9` · `D04 T12 §11` · `D00 T03 §3` · `D01 T10 §4` · `D01 T10 §5` · `D01 T10 §6` · `D01 T11 §1` · `D01 T11 §2` · `D01 T12 §1` · `D01 T12 §2` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` |
 | Every surface implements the design 1:1 and is held to it by gates | `D00 T01 §9` (Design line, design-lint, reference renders) · `D01 T01 §9` (visual regression and goldens) · `D00 T03 §2` (before record) |
 | The apps carry their own names | `D02 T01 §1` · `D03 T01 §1` · `D03 T01 §4` · `D00 T03 §3` |
 | One composition root per app, logging to disk | `D01 T02 §1` · `D02 T01 §2` · `D02 T01 §3` · `D03 T01 §5` · `D04 T01 §2` |
@@ -147,28 +147,30 @@ The copyright holder is Rizonetech (Pty) Ltd and Rizonesoft is its brand; the re
 
 ### Phase 0 -- Workspace spine: gates, CI, import debt, and baselines
 
-Nothing in this plan can be proven until the gates run on every clone and every push, so this phase wires the commit hook, marks operator-only rows, raises the claims ratchet, proves the review panel, and reads back the first green CI runs. It also retires the import debt that belongs to the workspace (the test quarantine, Gesso's excused diagnostics, unused packages, the assertion library's license), records before captures of the imported apps (a record of the legacy look, never a fidelity source), lands the design contract gates (the `**Design:**` line and its shrink-only baseline, design-lint over the UI sources, the design reference renders; operator decisions 2026-09-27) so every later UI section is held to `docs/design/`, and dry-runs the release pipeline as a draft release that is deleted after inspection (operator decision 2026-09-27). Every row here is ready on day one or depends only on another row here.
+Nothing in this plan can be proven until the gates run on every clone and every push, so this phase wires the commit hook, marks operator-only rows, raises the claims ratchet, proves the review panel, and reads back the first green CI runs. It also retires the import debt that belongs to the workspace (the test quarantine, Gesso's excused diagnostics, unused packages, the assertion library's license), records before captures of the imported apps (a record of the legacy look, never a fidelity source), lands the design contract gates (the `**Design:**` line and its shrink-only baseline, design-lint over the UI sources, the design reference renders; operator decisions 2026-09-27) so every later UI section is held to `docs/design/`, and dry-runs the release pipeline as a draft release that is deleted after inspection (operator decision 2026-09-27). It also writes down the native-code policy (C#-first, native code only by `standards/native-code.md`) with its gate and the benchmark harness that backs it (operator decision 2026-09-30), before the first native library lands. Every row here is ready on day one or depends only on another row here.
 
-|  ✔  | Section       | Deliverable                                         | Items |
-| :-: | ------------- | --------------------------------------------------- | :---: |
-| [ ] | `D00 T01 §1`  | Wire the TODO gate into every clone                 |   4   |
-| [ ] | `D00 T01 §2`  | The operator requirement for manual rows            |   6   |
-| [ ] | `D00 T01 §3`  | Raise the claims coverage floor                     |   3   |
-| [ ] | `D00 T01 §4`  | Prove the review panel end to end                   |   5   |
-| [ ] | `D00 T01 §6`  | The parity catalog validator                        |  19   |
-| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog        |  22   |
-| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog      |  22   |
-| [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine  |   5   |
-| [ ] | `D00 T02 §2`  | Gesso diagnostics to zero                           |   4   |
-| [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output              |   3   |
-| [ ] | `D00 T02 §4`  | Prune packages no code uses                         |   7   |
-| [ ] | `D00 T02 §5`  | The assertion library decision and the decision log |   5   |
-| [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite    |   7   |
-| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso    |   7   |
-| [ ] | `D00 T01 §9`  | The design contract gates                           |   9   |
-| [ ] | `D00 T01 §10` | The drift gates                                     |   7   |
-| [ ] | `D00 T01 §5`  | First push: CI green and read back                  |   5   |
-| [ ] | `D00 T02 §7`  | Release pipeline dry run as a draft release         |  10   |
+|  ✔  | Section       | Deliverable                                                      | Items |
+| :-: | ------------- | ---------------------------------------------------------------- | :---: |
+| [ ] | `D00 T01 §1`  | Wire the TODO gate into every clone                              |   4   |
+| [ ] | `D00 T01 §2`  | The operator requirement for manual rows                         |   6   |
+| [ ] | `D00 T01 §3`  | Raise the claims coverage floor                                  |   3   |
+| [ ] | `D00 T01 §4`  | Prove the review panel end to end                                |   5   |
+| [ ] | `D00 T01 §6`  | The parity catalog validator                                     |  19   |
+| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  22   |
+| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  22   |
+| [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
+| [ ] | `D00 T02 §2`  | Gesso diagnostics to zero                                        |   4   |
+| [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                           |   3   |
+| [ ] | `D00 T02 §4`  | Prune packages no code uses                                      |   7   |
+| [ ] | `D00 T02 §5`  | The assertion library decision and the decision log              |   5   |
+| [ ] | `D00 T04 §1`  | The native-code standard, the register, and the native-lint gate |  10   |
+| [ ] | `D00 T04 §2`  | The benchmark harness and the first benchmark record             |   9   |
+| [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                 |   7   |
+| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                 |   7   |
+| [ ] | `D00 T01 §9`  | The design contract gates                                        |   9   |
+| [ ] | `D00 T01 §10` | The drift gates                                                  |   7   |
+| [ ] | `D00 T01 §5`  | First push: CI green and read back                               |   5   |
+| [ ] | `D00 T02 §7`  | Release pipeline dry run as a draft release                      |  10   |
 
 ### Phase 1 -- Suite layout and names
 
@@ -297,7 +299,7 @@ Appearance comes next because every effect and every format carries it. `Isotone
 |  ✔  | Section       | Deliverable                                                                                                  | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------------------------ | :---: |
 | [ ] | `D02 T06 §11` | Symbols and the asset library                                                                                |   3   |
-| [ ] | `D01 T04 §1`  | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms |  18   |
+| [ ] | `D01 T04 §1`  | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms |  19   |
 | [ ] | `D01 T04 §2`  | Rendering intents, black point compensation, proofing transforms, and gamut checks                           |  14   |
 | [ ] | `D02 T09 §1`  | The color model: RGB, CMYK, HSB, Lab, grayscale, spot, global, and tints                                     |  13   |
 | [ ] | `D02 T09 §2`  | The Color panel, color picker, recent colors, and eyedroppers                                                |  17   |
@@ -382,7 +384,7 @@ Bitmaps arrive once vectors are complete. `Isotone.Core` gains the pixel engine 
 |  ✔  | Section       | Deliverable                                                                                | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------ | :---: |
 | [ ] | `D02 T06 §14` | More formats and the export dialog                                                         |   6   |
-| [ ] | `D01 T03 §1`  | Pixel buffers, the effect contract, and the golden harness                                 |  20   |
+| [ ] | `D01 T03 §1`  | Pixel buffers, the effect contract, and the golden harness                                 |  25   |
 | [ ] | `D01 T03 §2`  | Resampling, rotation, straighten, perspective, and lens correction                         |  14   |
 | [ ] | `D01 T03 §3`  | Palette quantization and dithering                                                         |  16   |
 | [ ] | `D01 T03 §4`  | Tonal adjustments                                                                          |  16   |

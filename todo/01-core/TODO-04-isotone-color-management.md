@@ -30,6 +30,7 @@ track: C4
 - [`../backlog.md`](../backlog.md) -- B-023's engine part is superseded by §1; its Assign, Convert, and soft-proof parts stay with Gesso, promoted on 2026-09-26 into `D03 T18 §4`; the "wrapper moves to Isotone.Core" note of B-011 (promoted into `D02 T13 §2`) is fulfilled by §1
 - -> XREF: D01 T02 §1 -- Isotone.Core and its app-data paths, which §1 builds inside
 - -> XREF: D01 T02 §2 -- the settings store holding default profiles, intent, and black point keys
+- -> XREF: D00 T04 §1 -- the native-code standard §1 follows for the lcms2 build, binding, and shipping, and the register whose first row §1 writes
 - -> XREF: D01 T03 §3 -- the pixel buffers and quantization §3 converts between modes
 - -> XREF: D02 T09 §1 -- the first consumer: Stilus's `PaintColor` converts through §1 and warns through §2
 - -> XREF: D02 T09 §2 -- the Color panel's out-of-gamut warning calls §2's gamut API
@@ -71,7 +72,7 @@ track: C4
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms | D01 T02 §1, D01 T02 §5 |  [ ]   |
+|   1   |   §1    | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms | D01 T02 §1, D01 T02 §5, D00 T04 §1 |  [ ]   |
 |   2   |   §2    | Rendering intents, black point compensation, proofing transforms, and gamut checks | §1 |  [ ]   |
 |   3   |   §3    | Bitmap color modes, duotone, and multichannel, with the Stilus Duotone dialog | §2, D01 T03 §3, D02 T09 §2, D02 T12 §9, D01 T02 §5 |  [ ]   |
 
@@ -89,6 +90,7 @@ The suite needs one color engine, and it needs it before Stilus's color model (`
 - [ ] Build lcms2 2.16 or later for `win-x64` and `win-arm64` with `tools/native/lcms2/build.ps1`, recording the source tarball SHA-256 and compiler version in `tools/native/lcms2/SOURCE.txt`, and commit the binaries under `src/Isotone.Core/runtimes/<rid>/native/lcms2.dll`. Done when: both DLLs exist and `SOURCE.txt` names the upstream tag and hash. Cheaper substitute: an unpinned DLL copied from another product, which the hash record rejects. (**Corrected 2026-09-28:** `build/` is gitignored, so the build script and its provenance record are committed under `tools/native/`, with intermediate output under `build/native/`.)
 - [ ] Pack the natives from `src/Isotone.Core/Isotone.Core.csproj` (`<None Include="runtimes/**" Pack="true" CopyToOutputDirectory="PreserveNewest" />`) and add lcms2's MIT license text to `src/Isotone.Core/THIRD-PARTY-NOTICES.md`. Done when: `dotnet publish` of Stilus for `win-x64` places `lcms2.dll` beside `Stilus.exe` and the notice file names lcms2.
 - [ ] Add `src/Isotone.Core/Color/Native/Lcms2.cs`: `[LibraryImport("lcms2")]` bindings for `cmsOpenProfileFromMem`, `cmsCloseProfile`, `cmsCreateTransform`, `cmsDoTransform`, `cmsDeleteTransform`, `cmsGetColorSpace`, `cmsGetDeviceClass`, `cmsGetProfileVersion`, `cmsGetProfileInfoUTF8`, `cmsCreate_sRGBProfile`, `cmsCreateLab4Profile`, and `cmsCreateGrayProfile`. Done when: the file compiles with `AllowUnsafeBlocks` off and the analyzers report no marshalling warning. Source: lcms2 2.16 API reference, section 3.
+- [ ] Add the lcms2 row to `docs/dev/native-libraries.md` (version, MIT, upstream, `win-x64` and `win-arm64`, kind `third-party`, untrusted input yes because embedded ICC profiles come from user files, the lcms2 GitHub security advisories as its feed, this section) and check the build script, `SOURCE.txt`, and bindings against `standards/native-code.md`. Done when: `python scripts/native-lint.py` prints `0 findings` with `Lcms2.cs` in the tree, and fails with `unregistered-library` when the row is removed (quoted, then restored).
 - [ ] Add `SafeProfileHandle` and `SafeTransformHandle` (`SafeHandle` subclasses releasing through `cmsCloseProfile` and `cmsDeleteTransform`) in `src/Isotone.Core/Color/Native/`. Done when: `NativeHandleTests` create and dispose 10,000 transforms without the process private bytes growing more than 5 MB.
 - [ ] Add `src/Isotone.Core/Color/IccProfile.cs` (description, `ProfileClass`, `ColorSpace`, PCS, version, raw bytes, SHA-256) with `IccProfile.Load(ReadOnlySpan<byte>)` returning a result that names the failure for truncated, wrong-signature, or unsupported-class data. Done when: `IccProfileTests` load committed v2 and v4 fixtures and refuse a truncated copy with a message naming the file.
 - [ ] Add `src/Isotone.Core/Color/ColorValue.cs`: a `readonly record struct` carrying `ColorSpaceKind` (Rgb, Cmyk, Gray, Lab) and up to four `double` components with range validation. Done when: constructing CMYK with a component above 100 throws `ArgumentOutOfRangeException`.
