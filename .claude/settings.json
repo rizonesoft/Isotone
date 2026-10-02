@@ -1,5 +1,17 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import os, runpy, sys; sys.argv = ['panel_slots.py', 'agent-gate']; runpy.run_path(os.path.join(os.environ['CLAUDE_PROJECT_DIR'], 'scripts', 'panel_slots.py'), run_name='__main__')\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

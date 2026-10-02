@@ -12,6 +12,19 @@ pwsh scripts/check-all.ps1
 
 It builds `Isotone.slnx` in Debug and Release with warnings as errors, runs `dotnet test`, and runs the TODO gates (`todo-graph.py validate`, `todo-graph.py plan --check`, `todo-claims.py`, `campaign_guard.py --self-test`). Every gate runs even after an earlier one fails, and it prints a table of gate results; green means exit 0 with every gate `PASS`. A `SKIP` row (no Python, a script absent) is not green: quote it and fix the cause. `-SkipBuild` reuses the last build for a re-run of the tests and gates only, while iterating, never for the commit-time run; `-Config Debug` runs the tests against the Debug build instead of the default Release.
 
+## Delegated sections: no weakening, and the pin held
+
+When any part of the section came from a delegate (`standards/delegation.md`):
+
+```powershell
+python scripts/weakening-scan.py --scope build/delegation/<task>/before.json -- <owned paths>   # per shared-tree delegate
+python scripts/weakening-scan.py --scope build/delegation/<task>/before.json --tree <worktree> -- <owned paths>   # per worktree delegate
+python scripts/weakening-scan.py --base <section start rev>
+python scripts/panel_slots.py delegate-audit
+```
+
+Every scope check prints `0 problem(s)`. The scan's every signal is reverted or justified in the commit body as `Weakening scan: <kind> <path>:<line> -- <why>`, and its summary line is quoted; the audit is green (exit 0, `0 failing`) and its summary line is quoted. Red-before-green for each delegate-written test is quoted as its failing run against the broken code `standards/delegation.md` names: the delegate's implementation reverted, or, for a test of existing or lead-written code, the fault the lead named before running it.
+
 ## Every code section: the whole suite
 
 ```powershell

@@ -23,12 +23,12 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `src/Albumen/` | Albumen, the darkroom (planned) |
 | `src/Isotone.Core/`, `src/Isotone.UI/` | Shared libraries, only what two apps need (planned); the target layout is in `docs/dev/architecture.md` |
 | `Isotone.slnx` | The one solution every build, test, and publish goes through |
-| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots, campaign guard) |
+| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots and delegation checks, weakening scan, campaign guard) |
 | `tools/` | `provision.ps1` (sets up a clone, including the commit hook) and `githooks/pre-commit` |
 | `todo/` | The live execution plan; read `todo/README.md` before authoring or implementing |
 | `todo/implementation-plan.md` | Ordered phase plan; its boxes are synchronized through `scripts/todo-graph.py` |
 | `todo/budget.json`, `todo/backlog.md` | The budget decisions and their history (no caps since 2026-09-27); the uncapped list of deferred ideas that are not sections, which loses nothing without a trace |
-| `standards/` | Coding, design, testing, and release standards; `ui.md` is the UI standard every surface answers to and `design-contract.md` the binding contract that holds the code to `docs/design/` |
+| `standards/` | Coding, design, testing, and release standards; `ui.md` is the UI standard every surface answers to, `design-contract.md` the binding contract that holds the code to `docs/design/`, and `delegation.md` the routing of work to subagents |
 | `docs/dev/`, `docs/user/` | Developer documentation and each app's user guide |
 | `docs/design/` | The Isotone Interface design system, canonical: `tokens.json` (the source of every UI value), the component specs, the shell layout, the app icon guide, and `EDITING.md` (how to change it and regenerate the published page at https://rizonesoft.github.io/Isotone/design/) |
 | `docs/legacy/` | The imported apps' pre-monorepo roadmaps, kept for reference only; `todo/` is the plan |
@@ -38,8 +38,8 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `docs/captures/<app>/` | Committed captures of the imported apps' surfaces, a before record only (never a fidelity source) |
 | `docs/captures/golden/` | Approved golden renders of every control and surface, per state, theme, Highlight, density, and scale; written only by `review-todo-section` through the visual harness's approve path (`standards/design-contract.md`) |
 | `resources/` | Brand, icons, screens |
-| `.claude/` | Claude Code skills, the Stop hook, and settings |
-| `.conclave/panel.toml` | The review panel wiring: writer, model registry, and every review slot |
+| `.claude/` | Claude Code skills, the delegate agent definitions under `agents/`, the Stop hook, the agent-routing hook, and settings |
+| `.conclave/panel.toml` | The review panel wiring: writer, delegate pin, model registry, and every review slot |
 | `artifacts/` | Build output (`UseArtifactsOutput`); ignored, never authoritative |
 | `build/` | Scratch, caches, and campaign guard state; ignored, never authoritative |
 
@@ -94,7 +94,8 @@ A checkpoint citing a gate that does not exist yet is unfalsifiable and is not a
 
 - **Output discipline:** bound every command (`dotnet build -v q`, `dotnet test --filter`, `tail`/`head` on logs, field extraction on JSON). Keep full logs in ignored scratch under `build/`.
 - **Act, then report:** complete authorized work and report evidence. Explicit operator stop instructions take effect immediately.
-- **One writer, and it never reviews itself:** Claude Code is the only writer (operator decision); no other harness edits, commits, or runs campaigns here. Every other model takes part only as a headless reviewer through a slot in `.conclave/panel.toml`, run by `python scripts/panel_slots.py exec <slot>` (GPT review slots run through the `codex` CLI), which names the writer, registers the models, and pins every review role; `scripts/panel_slots.py` refuses a table where any slot shares the writer's family. There are no fallback slots: a failed round waits for the operator. Skills name slots, never models: a re-pin is one edit to that file plus a fresh probe date.
+- **One writer, and it never reviews itself:** Claude Code is the only writer (operator decision); no other harness edits, commits, or runs campaigns here. The writer session may delegate to its own Claude subagents (below), and stays the writer of record. Every other model takes part only as a headless reviewer through a slot in `.conclave/panel.toml`, run by `python scripts/panel_slots.py exec <slot>` (GPT review slots run through the `codex` CLI), which names the writer, registers the models, and pins every review role; `scripts/panel_slots.py` refuses a table where any slot shares the writer's family. There are no fallback slots: a failed round waits for the operator. Skills name slots, never models: a re-pin is one edit to that file plus a fresh probe date.
+- **Delegate within the bar, never below it** (operator decision 2026-10-01): research, gate runs, documentation prose, and the first-pass review sweep go to the `.claude/agents/isotone-*` subagents, pinned to the `[delegate]` model and effort in `.conclave/panel.toml` (Sonnet at high effort), under `standards/delegation.md`. The lead session writes all code (operator decision 2026-10-02: "I am not confortable with having a sonnet writer"; `validate` refuses any delegate but `isotone-docs` that can edit) and keeps architecture, consequential design, security, privacy, data integrity, integration, every commit and record, and final acceptance; every gate, the independent review, and the GPT panel run unchanged. Briefs are bounded, with owned paths that never overlap, falsifiable acceptance criteria, and one corrected re-brief at most before the lead takes the work back or escalates. A delegate never weakens an implementation (operator decision 2026-10-02): every delegated diff passes `scripts/weakening-scan.py` with each signal reverted or justified, a line-by-line read against the section, and red-before-green on its tests before it is accepted. Evidence the lead quotes comes from logs it read, never from a delegate's summary.
 - **Writes are serial:** one session owns the working tree. Check `git status` before building over unfamiliar work.
 - **Section atomicity is the candidate range:** one section ships as one logical change, and review fix-loop commits append to that range (never amend); each fix is re-reviewed and the stamp names the whole range. "One section = one commit" never means "one hash".
 - **User documents first:** atomic writes, readback, skip-and-report, confirmed destructive paths, an undo for every edit, and originals never written by a non-destructive workflow. Checkpoints prove the failure path too.
@@ -149,7 +150,13 @@ python scripts/todo-claims.py --coverage     # name every Current state block no
 python scripts/todo-findings.py --check      # fail if docs/reviews/findings.md is stale
 python scripts/todo-runs.py --check          # run records agree with the review files
 python scripts/campaign_guard.py --self-test # the Stop hook and guard lifecycle, in a throwaway workspace
-python scripts/panel_slots.py validate       # the review panel wiring holds
+python scripts/panel_slots.py validate       # the review panel wiring, the delegate pin, and the agent definitions hold
+python scripts/panel_slots.py --self-test    # the panel, delegate, audit, and agent-gate logic
+python scripts/panel_slots.py delegate-probe # live: the delegate alias still serves the pinned model at the pinned effort
+python scripts/panel_slots.py delegate-audit # this session's subagents ran at the pin (none below it)
+python scripts/weakening-scan.py --base <rev> # every hunk that could weaken an implementation, for the lead to clear
+python scripts/weakening-scan.py --snapshot <file>; python scripts/weakening-scan.py --scope <file> [--tree <worktree>] -- <owned paths>   # a delegate wrote only its owned paths and changed no ref, config, or remote
+python scripts/weakening-scan.py --self-test  # the scan's own fixtures
 python scripts/design-lint.py --baseline docs/design/.lint-baseline.json   # no new design-contract violation in the UI sources
 python scripts/design-lint.py --self-test    # the lint's own fixtures
 python scripts/todo-graph.py query design    # surfaces with a Design line, the baseline, open deviations

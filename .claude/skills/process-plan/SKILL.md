@@ -34,9 +34,10 @@ python scripts/todo-graph.py plan --check
 python scripts/todo-graph.py query ready
 python scripts/todo-graph.py query blocked
 python scripts/todo-graph.py query budget
+python scripts/panel_slots.py delegate-probe
 ```
 
-The audit is these commands and the recorded lines, nothing more: the deep phase repair belongs to `process-phase` step 1. Fix every FATAL before talking about shipping. If `plan --check` is stale, run `plan --sync`, then re-check. **Never tick a box in `implementation-plan.md` by hand**: the boxes are a projection of the Implementation Order tables.
+A `delegate-probe` drift or failure does not stop the run: delegation pauses (the lead does the work itself) until the pin is re-proven as `standards/delegation.md` states, and the run file records the line. The audit is these commands and the recorded lines, nothing more: the deep phase repair belongs to `process-phase` step 1. Fix every FATAL before talking about shipping. If `plan --check` is stale, run `plan --sync`, then re-check. **Never tick a box in `implementation-plan.md` by hand**: the boxes are a projection of the Implementation Order tables.
 
 Record these lines **in the run's findings file**, not as the turn's last words:
 

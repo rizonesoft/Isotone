@@ -67,9 +67,18 @@ Use the `skill arg` line it prints as the canonical form for the rest of the run
 - **The design is the bar on surfaces.** `standards/design-contract.md` is binding: `docs/design/` is the source and the code implements it 1:1 (exact tokens, geometry within 1 DIP at 100, 150, and 200 percent, every state and theme the spec lists, approved goldens). A section that builds a surface proves it against the specs its `**Design:**` line names and against its review-approved goldens, never against the old-app captures under `docs/captures/<app>/` (a before record) and never against memory of what the other apps look like. Standard WPF with custom theming, never WPF-UI. A second color picker, undo stack, or settings writer in a second app is a defect, and so is moving code into `Isotone.Core` before a second app needs it.
 - **Edits are proven in both directions.** A section that changes a document proves the undo as well as the do, the save as well as the reopen, and what happens when the file cannot be written.
 
-## The session does every step
+## The session owns every step
 
-One session validates, builds, gates, commits, obtains an independent review, and hands to stamping. It dispatches nobody to implement, gate, or keep records, and the one reviewer it invokes is external and advisory. Output discipline is load-bearing: bound every command (`dotnet build -v q` filtered to errors and warnings, `dotnet test --filter` on the touched tests, `tail`/`head` on logs, field extraction on JSON), because an unbounded dump lands in the one context that must carry it for the rest of the run. Full logs go under `build/` (gitignored).
+One session validates, builds, gates, commits, obtains an independent review, and hands to stamping, and it is accountable for every one of those steps. It delegates bounded work to the pinned subagents under `standards/delegation.md` (operator decision 2026-10-01) and keeps the rest:
+
+| Step | Delegate | The lead keeps |
+| ---- | -------- | -------------- |
+| 2. Validate | `isotone-researcher`, one per independent question, in parallel: claim-by-claim fact checks, callers and consumers, spec and Microsoft Learn reads | Every validation verdict and every correction to the section (step 3) |
+| 4. Build | `isotone-docs` for user guide and developer-doc prose only | All code (source, XAML, scripts, tests, build files: no delegate writes code, operator decision 2026-10-02), integration, ticking items |
+| 6. Gates | `isotone-verifier` runs the sweep into `build/delegation/` logs | Reading those logs and quoting them; the commit-time run is quoted from a log the lead read |
+| 7 to 9 | nothing | The commit, the pushes, the independent review, the stamp hand-off |
+
+A delegate's report is never evidence on its own, and a delegated diff joins the candidate only through the acceptance steps of `standards/delegation.md`: the `--snapshot`/`--scope` check, `python scripts/weakening-scan.py` with every signal reverted or justified in the commit body, a line-by-line read against the section, red-before-green on every delegate-written test, and the lead's own read of the logs. A weakened diff is a failed brief; a failed acceptance gets one corrected re-brief, and a second failure comes back to the lead or goes to the operator. Record `python scripts/panel_slots.py delegate-audit` in the commit body or run file when the section delegated. Output discipline is load-bearing: bound every command (`dotnet build -v q` filtered to errors and warnings, `dotnet test --filter` on the touched tests, `tail`/`head` on logs, field extraction on JSON), because an unbounded dump lands in the one context that must carry it for the rest of the run. Full logs go under `build/` (gitignored).
 
 ## Workflow
 
@@ -256,7 +265,7 @@ python scripts/todo-graph.py plan --sync
 
 ### 10. Report
 
-Tell the user plainly: what was built, what the checkpoint proved (quoted), what the independent review found and what was done about each finding, what plan corrections were made, what was filed rather than fixed, and where the stamp stands.
+Tell the user plainly: what was built, what the checkpoint proved (quoted), what the independent review found and what was done about each finding, what plan corrections were made, what was filed rather than fixed, what was delegated (with the `delegate-audit` line), and where the stamp stands.
 
 ## Guardrails
 
@@ -269,3 +278,4 @@ Tell the user plainly: what was built, what the checkpoint proved (quoted), what
 - Do not end with the plan unsynced.
 - Do not stamp before the independent review has run, or without recording that it could not.
 - Do not discard a review finding silently. Fix it, refute it in the stamp, or file it.
+- Do not delegate what `standards/delegation.md` keeps with the lead, and do not cite a delegate's summary as evidence.

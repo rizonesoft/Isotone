@@ -16,6 +16,10 @@
   11. python scripts/design-lint.py --self-test
   12. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
       (no new design-contract violation in the UI sources; standards/design-contract.md)
+  13. python scripts/panel_slots.py --self-test
+  14. python scripts/panel_slots.py validate (the panel wiring, the delegate pin,
+      and the .claude/agents definitions; standards/delegation.md)
+  15. python scripts/weakening-scan.py --self-test
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
 .EXAMPLE
@@ -81,6 +85,9 @@ try {
     Invoke-PythonGate 'design site --check' 'build-design-site.py' @('--check')
     Invoke-PythonGate 'design-lint self-test' 'design-lint.py' @('--self-test')
     Invoke-PythonGate 'design-lint baseline' 'design-lint.py' @('--baseline', 'docs/design/.lint-baseline.json')
+    Invoke-PythonGate 'panel_slots self-test' 'panel_slots.py' @('--self-test')
+    Invoke-PythonGate 'panel_slots validate' 'panel_slots.py' @('validate')
+    Invoke-PythonGate 'weakening-scan self-test' 'weakening-scan.py' @('--self-test')
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'
     $results.Add([pscustomobject]@{ Gate = 'python gates'; Status = 'SKIP (no python)'; Seconds = 0 })

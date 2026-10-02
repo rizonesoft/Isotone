@@ -11,6 +11,7 @@ The standards every change in the Isotone Graphics Suite answers to. [`AGENTS.md
 | [`gesso.md`](gesso.md) | Gesso, the raster editor: tiles, zero-allocation hot paths, GPU shaders, codecs |
 | [`albumen.md`](albumen.md) | Albumen, the darkroom: the original-file guard, the catalog, the develop pipeline |
 | [`testing.md`](testing.md) | Test projects, naming, fixtures, fidelity proofs, the quarantine |
+| [`delegation.md`](delegation.md) | Routing work from the writer session to its pinned Sonnet subagents: what delegates, what the lead keeps, the brief, parallel ownership, accepting output, escalation, and the model and effort checks |
 | [`release.md`](release.md) | Versions, tags, changelogs, installers, the release checklist |
 
 The legacy per-app standards (`src/Nodus/STANDARDS.md`, `src/Imago/STANDARDS.md`, their paths before the 2026-09-27 rename) were merged into these files on 2026-09-26 and removed; git history keeps them.

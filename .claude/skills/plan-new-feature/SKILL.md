@@ -25,6 +25,8 @@ Find two or three applications that do this job today, from Photoshop, Illustrat
 
 The table is the bar: the plan matches every detail that matters and names what beats each competitor, feature by feature. A plan written without touching the competition invents a market that does not exist.
 
+The survey may fan out to `isotone-researcher` subagents, one per competitor, in parallel (`standards/delegation.md`); each returns rows with the version and source, and the session verifies, merges, and owns the table.
+
 ### 3. Define the surfaces
 
 Specify the feature control by control: the tool on the tool rail with its icon, cursor, and shortcut; its context toolbar or options bar with every control; the menu items and their shortcuts; panels and their docking; dialogs; the on-canvas handles, guides, and overlays; the Preferences page entries; the status strip text; and the log lines. For each surface name its controls, its strings, its states, and its empty, loading, busy, and failure presentations. No placeholder, no hardcoded string, no "details at build time": a builder who must invent a control inherits a gap, not a freedom.

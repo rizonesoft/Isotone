@@ -49,6 +49,8 @@ Then fix the **candidate**: the commit (or commit range) under review, recorded 
 
 Work the three questions across the diff and its blast radius. Fix what you find, then re-ask them: a fix changes the answers. Self-review runs before the lenses, and it costs no round.
 
+An `isotone-reviewer` subagent (`standards/delegation.md`) may run the first-pass sweep of the list below and return candidate findings. The lead verifies each candidate against the code before it counts, still answers the three questions itself, and line-reviews anything the sweep flags as consequential (security, privacy, data integrity, shared contracts, concurrency). The sweep is never a lens verdict and never replaces the panel.
+
 Look specifically for the failure modes this codebase is prone to:
 
 - A trusted value (a pixel, a coordinate, a color, an undo step) decided in code-behind or a converter with nothing verifying it, instead of in the view model or a service.
@@ -70,7 +72,7 @@ Cheap defects caught here cost nothing; the same defect caught by a lens costs a
 
 ### 3. Research pass (feature plans and surfaces)
 
-The researcher is the review session itself (the writer named in `.conclave/panel.toml`): the model with the sources, the web, and the filing tools. It runs in-session, not as a panel lens (lens verdicts must come from the independent headless panel; research needs web access the read-only panel deliberately lacks, and gathering evidence is not judging it, so the writer may research).
+The researcher is the review session itself (the writer named in `.conclave/panel.toml`): the model with the sources, the web, and the filing tools. It may delegate the gathering to `isotone-researcher` subagents, one per competitor or question in parallel, and keeps the triage and every filing. It runs in-session, not as a panel lens (lens verdicts must come from the independent headless panel; research needs web access the read-only panel deliberately lacks, and gathering evidence is not judging it, so the writer may research).
 
 Run it when the candidate is a feature plan (a filed TODO file or section) or an app surface (a built window, panel, dialog, or tool). Skip it on pure infrastructure with one line saying so.
 

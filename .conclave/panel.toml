@@ -1,4 +1,4 @@
-# Review wiring: the writer, the model registry, and slot -> (model, effort, timeout).
+# Review wiring: the writer, its delegate pin, the model registry, and slot -> (model, effort, timeout).
 #
 # The single source of truth for every review pin. Carried from Resolute
 # on 2026-09-26 with the same slots and models. Skills name slots and run
@@ -19,6 +19,25 @@
 # Operator decision: Claude Code on Opus 5.5 is the only writer.
 [writer]
 model = "claude-opus-5-5"
+
+# Writer-side delegation (operator decision 2026-10-01: "Delegate as much
+# research, implementation, testing, documentation, and routine review as
+# can reliably meet that bar to Claude Sonnet subagents running explicitly
+# at high effort"), narrowed 2026-10-02 ("I am not confortable with having
+# a sonnet writer"): delegates research, run gates, write documentation
+# prose, and sweep reviews, and never write code. The writer session stays
+# the lead and the writer of record; its subagents are the `.claude/agents/*.md` definitions, each of
+# which names `alias` as its model and `effort` as its effort, and
+# `standards/delegation.md` routes the work. `model` is what the alias
+# resolved to at the last `delegate-probe` (the registry entry carries the
+# probe date). The delegate shares the writer's family, so the validator
+# keeps it off every review slot: delegates never review on the panel.
+# Re-pinning after a probe reports drift is an edit here plus a fresh
+# registry entry and probe date.
+[delegate]
+alias = "sonnet"
+model = "claude-sonnet-5-5"
+effort = "high"
 
 # The model registry. `family` picks the runner (codex or claude; the
 # grok family survives only in retired entries the validator still
@@ -51,6 +70,12 @@ retired = "2026-09-23"
 [model."claude-opus-5-5"]
 family = "claude"
 probed = "2026-09-23"
+
+# The delegate pin: `claude -p --model sonnet --effort high` served this
+# model, and its transcript recorded effort high (probed 2026-10-01).
+[model."claude-sonnet-5-5"]
+family = "claude"
+probed = "2026-10-01"
 
 [model."gpt-5.6-sol"]
 family = "codex"
