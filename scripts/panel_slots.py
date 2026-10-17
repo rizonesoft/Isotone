@@ -67,7 +67,8 @@ and the writer (exit 1; exit 2 when there is nothing to
 audit). `validate` also holds every `.claude/agents` definition to the pin
 and its tool rules and checks that `.claude/settings.json` wires
 `agent-gate`, the PreToolUse hook for the Agent tool: an allow-list (a
-pinned definition, a fork, or an explicit `opus` override) that fails
+pinned read-only definition, optionally escalated to `opus`) that denies
+forks and built-in agents, because subagents never write, and fails
 closed on an Agent call it cannot judge. `delegate-shell-gate` is the
 PreToolUse hook each delegate definition carries on its shell tools: it
 allows git only as read-only subcommands and denies GitHub calls, panel
@@ -362,15 +363,12 @@ UPWARD_ALIASES = ("opus",)
 ALIAS_OVERRIDES = ("ANTHROPIC_DEFAULT_SONNET_MODEL",)
 # Environment keys that stop Claude Code updating itself (and so its alias map).
 UPDATER_OFF = ("DISABLE_AUTOUPDATER", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")
-# Every delegate definition denies these tools; definitions that cannot edit
-# deny the editing tools too.
-AGENT_ALWAYS_DENIED = ("Agent", "NotebookEdit")
-# The only delegates that may hold an editing tool. No delegate writes code
-# (operator decision 2026-10-02: "I am not confortable with having a sonnet
-# writer"); `isotone-docs` writes Markdown prose. Widening this is an
-# operator decision.
-WRITING_AGENTS = ("isotone-docs",)
-AGENT_EDIT_TOOLS = ("Edit", "Write")
+# Subagents read and run; they never write (Conclave-SDK 4ca1af5, after the
+# operator decision 2026-10-02: "I am not confortable with having a sonnet
+# writer"). No definition may grant these tools, compared case-insensitively,
+# and every definition denies AGENT_ALWAYS_DENIED explicitly.
+AGENT_WRITE_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit", "*")
+AGENT_ALWAYS_DENIED = ("Edit", "Write", "NotebookEdit", "Agent")
 # The two hook commands, verbatim: `validate` compares the settings and every
 # definition with these, so a disabled, inert, or prose-only hook fails.
 _RUN_SELF = ("python -c \"import os, runpy, sys; sys.argv = ['panel_slots.py', '{cmd}']; "
@@ -516,11 +514,12 @@ def _tool_list(value: str | None) -> set[str]:
     return {t.strip() for t in (value or "").strip("[]").split(",") if t.strip()}
 
 
-def load_agents(agents_dir: str | None = None, table: dict | None = None,
-                writing: tuple[str, ...] = WRITING_AGENTS) -> dict[str, dict]:
+def load_agents(agents_dir: str | None = None, table: dict | None = None) -> dict[str, dict]:
     """Read every `.claude/agents/*.md` definition and hold it to the delegate
-    pin and the tool rules. Returns name -> {model, effort, path, edits}; a
-    missing directory returns {}. Raises PanelSlotsError naming the file."""
+    pin and the tool rules: an explicit `tools:` list with no write tool, and
+    the write tools and Agent denied. Returns name -> {model, effort, path,
+    tools}; a missing directory returns {}. Raises PanelSlotsError naming the
+    file."""
     src = agents_dir or agents_path()
     if not os.path.isdir(src):
         return {}
@@ -552,14 +551,12 @@ def load_agents(agents_dir: str | None = None, table: dict | None = None,
         tools, denied = _tool_list(fields.get("tools")), _tool_list(fields.get("disallowedTools"))
         if not tools:
             raise PanelSlotsError(f"agent definition {base} lists no tools: a delegate's tools are explicit")
-        missing = [t for t in AGENT_ALWAYS_DENIED if t not in denied]
-        edits = any(t in tools for t in AGENT_EDIT_TOOLS)
-        if edits and stem not in writing:
+        writes = sorted(t for t in tools if t.lower() in {w.lower() for w in AGENT_WRITE_TOOLS})
+        if writes:
             raise PanelSlotsError(
-                f"agent definition {base} can edit files, and only {', '.join(writing) or 'no agent'} may: "
-                f"no delegate writes code (operator decision 2026-10-02)")
-        if not edits:
-            missing += [t for t in AGENT_EDIT_TOOLS if t not in denied]
+                f"agent definition {base} grants {', '.join(writes)}: subagents read and run, they never "
+                f"write; the main loop makes every change")
+        missing = [t for t in AGENT_ALWAYS_DENIED if t not in denied]
         if missing:
             raise PanelSlotsError(f"agent definition {base} does not deny {', '.join(missing)}")
         head = text.lstrip("\ufeff").replace("\r\n", "\n").split("\n---", 1)[0]
@@ -567,7 +564,7 @@ def load_agents(agents_dir: str | None = None, table: dict | None = None,
             raise PanelSlotsError(
                 f"agent definition {base} has a shell but its frontmatter lacks the verbatim "
                 f"PreToolUse `delegate-shell-gate` hook block (panel_slots.SHELL_HOOK_BLOCK)")
-        out[stem] = {"model": fields["model"], "effort": fields["effort"], "path": path, "edits": edits}
+        out[stem] = {"model": fields["model"], "effort": fields["effort"], "path": path, "tools": sorted(tools)}
     return out
 
 
@@ -855,7 +852,7 @@ def delegate_probe(timeout: int, table: dict | None = None) -> int:
 
 def _allowed_models(table: dict) -> set[str]:
     """Models a delegated turn may serve: the delegate pin, or the writer
-    (an explicit `opus` escalation or a fork)."""
+    (an explicit `opus` escalation of a pinned definition)."""
     return {table["delegate"]["model"], table["writer"]["model"]}
 
 
@@ -1006,13 +1003,17 @@ def _deny(reason: str) -> str:
 
 def gate_decision(tool_input: dict, table: dict, agents: dict[str, dict]) -> str | None:
     """The deny reason for one Agent/Task call, or None to allow it. An
-    allow-list: a pinned definition, a fork, or an explicit upward model."""
+    allow-list: a pinned read-only definition, with no model override, the
+    delegate pin, or an explicit upward model. A fork or a built-in agent
+    carries edit tools, and subagents never write."""
     subagent = tool_input.get("subagent_type")
     raw_model = tool_input.get("model")
     model = _norm_model(raw_model).lower() if isinstance(raw_model, str) else ""
     delegate, writer = table["delegate"], table["writer"]["model"]
     names = ", ".join(sorted(agents)) or "none defined"
-    route = f"Use a pinned agent ({names}) or pass model `opus` for writer-tier work; see standards/delegation.md."
+    route = (f"Use a pinned read-only agent ({names}), passing model `opus` when the work needs the "
+             f"writer's tier; the main loop makes every change. See standards/delegation.md.")
+    never_writes = "Subagents read and run; they never write"
     upward = model in UPWARD_ALIASES or model == writer.lower()
     pinned = model in ("", delegate["alias"].lower(), delegate["model"].lower())
     if "haiku" in model:
@@ -1027,9 +1028,10 @@ def gate_decision(tool_input: dict, table: dict, agents: dict[str, dict]) -> str
         return (f"{subagent} is pinned to {delegate['alias']} at {delegate['effort']} effort; a "
                 f"`{raw_model}` override would run off the pin. Omit the model, or pass `opus` to escalate.")
     if subagent == "fork":
-        return None  # a fork always inherits the writer's model and effort
+        return f"A fork inherits the writer's tools, edit tools included. {never_writes}. {route}"
     if upward:
-        return None
+        return (f"Agent type {subagent or 'general-purpose'!r} is a built-in agent that carries its own "
+                f"tools, edit tools included. {never_writes}. {route}")
     if model and pinned:
         return (f"{delegate['alias'].capitalize()} runs only through a pinned .claude/agents definition "
                 f"so its effort is explicit: a bare override ran at medium effort (measured 2026-10-01). "
@@ -1396,12 +1398,11 @@ def _self_test() -> int:
             return
         check(name, False, "agents loaded without refusal")
 
-    writer_front = front(name="a-two", tools="Read, Edit, Write, Bash", disallowedTools="Agent, NotebookEdit")
-    ok_agents = load_agents(agent_dir({"a-one.md": front(), "a-two.md": writer_front.replace("\n", "\r\n")}), good,
-                            ("a-two",))
+    ok_agents = load_agents(agent_dir({"a-one.md": front(),
+                                       "a-two.md": front(name="a-two").replace("\n", "\r\n")}), good)
     check("agents load", sorted(ok_agents) == ["a-one", "a-two"]
           and ok_agents["a-one"]["model"] == "sonnet" and ok_agents["a-one"]["effort"] == "high"
-          and ok_agents["a-one"]["edits"] is False and ok_agents["a-two"]["edits"] is True, repr(ok_agents))
+          and ok_agents["a-two"]["tools"] == ["Bash", "Grep", "Read"], repr(ok_agents))
     check("agents missing dir is empty", load_agents(os.path.join(tmpd, "no-such-dir"), good) == {})
     check("agent comment after a value is dropped",
           "a-one" in load_agents(agent_dir({"a-one.md": front(model="sonnet # the delegate alias",
@@ -1421,13 +1422,15 @@ def _self_test() -> int:
     agents_refuse("agent lists no tools", {"a-one.md": front(tools=None)}, "lists no tools")
     agents_refuse("agent may spawn agents", {"a-one.md": front(disallowedTools="Edit, Write, NotebookEdit")},
                   "does not deny Agent")
-    agents_refuse("read-only agent may edit", {"a-one.md": front(disallowedTools="NotebookEdit, Agent")},
+    agents_refuse("agent does not deny the edit tools", {"a-one.md": front(disallowedTools="NotebookEdit, Agent")},
                   "does not deny Edit, Write")
-    agents_refuse("an editing agent outside the writing list",
-                  {"a-two.md": writer_front}, "only isotone-docs may")
-    agents_refuse("a code-writing delegate named like the removed one",
-                  {"isotone-implementer.md": front(name="isotone-implementer", tools="Read, Edit, Write, Bash",
-                                                   disallowedTools="Agent, NotebookEdit")}, "no delegate writes code")
+    # Subagents never write: every write tool is refused, whatever the agent's
+    # name (the removed isotone-docs and isotone-implementer included) and
+    # whatever it denies.
+    for tool in AGENT_WRITE_TOOLS + ("edit", "multiedit"):
+        for stem in ("a-one", "isotone-docs", "isotone-implementer"):
+            agents_refuse(f"{stem} granting {tool}",
+                          {f"{stem}.md": front(name=stem, tools=f"Read, {tool}, Bash")}, "never write")
     agents_refuse("shell agent without the shell gate", {"a-one.md": front(hooks=False)}, "lacks the verbatim")
     agents_refuse("shell gate named only in the body",
                   {"a-one.md": front(hooks=False) + "\nThis agent runs delegate-shell-gate.\n" + SHELL_HOOK_BLOCK},
@@ -1438,9 +1441,13 @@ def _self_test() -> int:
     check("agent quoted value with a comment",
           _frontmatter('---\nmodel: "sonnet" # the alias\neffort: \'high\'  # pinned\n---\n')
           == {"model": "sonnet", "effort": "high"})
+    live_defs = load_agents()
     check("checked-in definitions carry the canonical shell hook",
           all(SHELL_HOOK_BLOCK in open(a["path"], encoding="utf-8").read().replace("\r\n", "\n")
-              for a in load_agents().values()))
+              for a in live_defs.values()))
+    check("no checked-in definition grants a write tool", bool(live_defs) and not any(
+        t.lower() in {w.lower() for w in AGENT_WRITE_TOOLS} for a in live_defs.values() for t in a["tools"]),
+          repr({k: a["tools"] for k, a in live_defs.items()}))
     check("agent without a shell needs no shell gate",
           "a-one" in load_agents(agent_dir({"a-one.md": front(hooks=False, tools="Read, Grep")}), good))
 
@@ -1535,7 +1542,7 @@ def _self_test() -> int:
         for ext in (".jsonl", ".meta.json"):
             os.remove(os.path.join(sub, f"agent-{agent_id}{ext}"))
 
-    audit_agents = {"a-one": {"model": "sonnet", "effort": "high", "path": "", "edits": False}}
+    audit_agents = {"a-one": {"model": "sonnet", "effort": "high", "path": "", "tools": ["Bash", "Grep", "Read"]}}
     agent_file("p1", "a-one", "sonnet", [turn("d-claude[1m]", "high"), turn("d-claude", "high")])
     agent_file("s1", "a-one", "opus", [turn("w-claude", "high")])
     agent_file("w1", "general-purpose", "opus", [turn("w-claude", "xhigh")])
@@ -1680,6 +1687,13 @@ def _self_test() -> int:
             ("general-purpose with no model", call("general-purpose"), "names no model"),
             ("no subagent type or model", call(), "names no model"),
             ("an unknown model on an undefined agent", call("Plan", "fable"), "neither the delegate pin"),
+            ("fork", call("fork"), "never write"),
+            ("fork with a moot sonnet override", call("fork", "sonnet"), "never write"),
+            ("general-purpose at opus", call("general-purpose", "opus"), "never write"),
+            ("general-purpose at the writer id", call("general-purpose", "w-claude"), "never write"),
+            ("Plan at opus", call("Plan", "opus"), "never write"),
+            ("claude-code-guide at opus", call("claude-code-guide", "opus"), "never write"),
+            ("opus with no type", call(None, "opus"), "never write"),
             ("a malformed tool_input", {"tool_name": "Agent", "tool_input": "x"}, "could not judge")):
         rc, out, _ = gate(payload)
         reason = denial(out)
@@ -1690,11 +1704,6 @@ def _self_test() -> int:
                            ("defined agent with the delegate id", call("a-one", "d-claude")),
                            ("defined agent escalated to opus", call("a-one", "opus")),
                            ("defined agent escalated to the writer id", call("a-one", "w-claude")),
-                           ("fork", call("fork")),
-                           ("fork with a moot sonnet override", call("fork", "sonnet")),
-                           ("general-purpose at opus", call("general-purpose", "opus")),
-                           ("Plan at opus", call("Plan", "opus")),
-                           ("claude-code-guide at opus", call("claude-code-guide", "opus")),
                            ("another tool", {"tool_name": "Bash", "tool_input": {"command": "x"}}),
                            ("another tool naming haiku", {"tool_name": "Bash", "tool_input": {"model": "haiku"}})):
         check(f"gate allows {label}", gate(payload) == (0, "", ""), repr(gate(payload)))
@@ -1715,6 +1724,15 @@ def _self_test() -> int:
         check(f"gate fails closed {label}", rc == 0 and reason is not None and needle in reason
               and "panel_slots.py validate" in reason, f"{out!r} {err!r}")
     check("gate does not load the wiring for another tool", gate({"tool_name": "Read"}, broken) == (0, "", ""))
+    # No route dispatches a writer agent: a definition that grants a write
+    # tool fails to load, so the gate denies every call, that agent included.
+    writer_dir = agent_dir({"a-one.md": front(),
+                            "isotone-docs.md": front(name="isotone-docs", tools="Read, Edit, Write, Bash")})
+    for target in ("isotone-docs", "a-one"):
+        rc, out, _ = gate(call(target), lambda: (good, load_agents(writer_dir, good)))
+        reason = denial(out)
+        check(f"gate never dispatches beside a writer definition ({target})",
+              rc == 0 and reason is not None and "never write" in reason, out)
 
     # delegate-shell-gate.
     def shell(command, tool: str = "Bash") -> str | None:
