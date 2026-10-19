@@ -901,6 +901,9 @@ SEVERITY_MAP: dict[str, str] = {
     # a `**Requires:**` mark without its reason: the citation is what makes
     # the mark auditable instead of vibes.
     "requires-no-reason": "fatal",
+    # a todo/99-manual/ section without `**Requires:** operator`: it would
+    # read as dependency-ready and a runner would take an operator-only row.
+    "manual-unmarked": "fatal",
     # a stamp dated after the plan-review rule landed that carries no
     # `Plan review:` completion marker: the second-family round is required
     # procedure, so an unmarked stamp reads as fully reviewed while the
@@ -6702,6 +6705,7 @@ track: Z1
 |   7   |   §7    | Operator typo | -- |  [ ]   |
 |   8   |   §8    | Operator without reason | -- |  [ ]   |
 |   9   |   §9    | Operator mark | -- |  [ ]   |
+|  10   |   §10   | Operator and display | -- |  [ ]   |
 
 ---
 
@@ -6787,6 +6791,64 @@ track: Z1
 
 - [ ] Do the thing
 - [ ] Commit: `"selftest: gamma"`
+
+**Test checkpoint:** `true`
+
+## 10. Operator and display
+
+**Requires:** operator, display-session -- a person drives the built app's window
+
+- [ ] Do the thing
+- [ ] Commit: `"selftest: gamma"`
+
+**Test checkpoint:** `true`
+"""
+
+SELF_TEST_TODO_MANUAL = """---
+schema_version: 1
+id: self-test-manual
+domain: 99-manual
+status: active
+title: "TODO-01 -- Self-test manual"
+track: Z9
+---
+
+# TODO-01 -- Self-test manual
+
+> **Goal:** Fixture. The operator-only domain's mark (D00 T01 §11).
+
+## Implementation Order
+
+| Order | Section | Deliverable | Depends On | Status |
+| :---: | :-----: | ----------- | ---------- | :----: |
+|   1   |   §1    | Marked | -- |  [ ]   |
+|   2   |   §2    | Unmarked | -- |  [ ]   |
+|   3   |   §3    | Display only | -- |  [ ]   |
+
+---
+
+## 1. Marked
+
+**Requires:** operator -- the owner's account
+
+- [ ] Do the thing
+- [ ] Commit: `"selftest: manual"`
+
+**Test checkpoint:** `true`
+
+## 2. Unmarked
+
+- [ ] Do the thing
+- [ ] Commit: `"selftest: manual"`
+
+**Test checkpoint:** `true`
+
+## 3. Display only
+
+**Requires:** display-session -- a window on screen
+
+- [ ] Do the thing
+- [ ] Commit: `"selftest: manual"`
 
 **Test checkpoint:** `true`
 """
@@ -7039,6 +7101,34 @@ def cmd_self_test(_args) -> int:
                   (code, any("§9" in ln and "requires" not in ln for ln in lines)), (0, True))
             check("an operator context still parks the display row",
                   (code, any("requires display-session (missing: display-session)" in ln and "§4" in ln for ln in lines)), (0, True))
+            # D00 T01 §11: a section needing both values runs only where both hold.
+            code, lines = ready_lines(context=["operator", "display-session"])
+            check("operator plus display lists the two-value row runnable",
+                  (code, any("§10" in ln and "requires" not in ln for ln in lines)), (0, True))
+            code, lines = ready_lines(context=["operator"])
+            check("operator alone parks the two-value row naming display-session",
+                  (code, any("§10" in ln and "(missing: display-session)" in ln for ln in lines)), (0, True))
+            # D00 T01 §11: every todo/99-manual/ section carries the operator mark.
+            manual = root / "todo" / "99-manual"
+            manual.mkdir()
+            (manual / "INDEX.md").write_text("- TODO-01-self-test-manual.md\n", encoding="utf-8")
+            (manual / "TODO-01-self-test-manual.md").write_text(SELF_TEST_TODO_MANUAL, encoding="utf-8")
+            try:
+                mbuf = _bio.StringIO()
+                with _bctx.redirect_stdout(mbuf), _bctx.redirect_stderr(_bio.StringIO()):
+                    cmd_validate(None)
+                mfatal = [ln for ln in mbuf.getvalue().splitlines()
+                          if ln.startswith("FATAL") and "99-manual" in ln and "without **Requires:** operator" in ln]
+                check("an unmarked manual section is FATAL (manual-unmarked)",
+                      any("§2" in ln for ln in mfatal), True)
+                check("a marked manual section draws no manual-unmarked",
+                      any("§1" in ln for ln in mfatal), False)
+                check("a display-only mark does not satisfy the manual rule",
+                      any("§3" in ln for ln in mfatal), True)
+            finally:
+                for f in manual.iterdir():
+                    f.unlink()
+                manual.rmdir()
             code, lines = ready_lines()
             check("query ready without a context flag still exits 0",
                   code, 0)

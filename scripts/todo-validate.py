@@ -809,6 +809,16 @@ def validate(graph, _args) -> int:
                     f"{t.path}:{s.line}: §{num} has **Requires:** with no reason; "
                     "cite the measurement that convicted the section after ` -- `",
                 )
+            # 8e. every section of the operator-only domain carries the
+            # declared-only `operator` mark (D00 T01 §11): without it a
+            # manual row is dependency-ready like any other and a runner
+            # takes it the moment its dependency ships.
+            if t.domain == "99-manual" and "operator" not in s.requires:
+                flag(
+                    "manual-unmarked",
+                    f"{t.path}:{s.line}: §{num} is in todo/99-manual/ without "
+                    "**Requires:** operator -- <reason>; no runner may take an operator-only row",
+                )
             # 13. every section ends on a commit item
             if not s.has_commit_item:
                 flag("no-commit-item", f"{t.path}:{s.line}: §{num} has no '- [ ] Commit:' checklist item")

@@ -318,19 +318,21 @@ The operator asked on 2026-09-27, after the rename to Isotone, "how are we preve
 
 ## 11. The Manual-Row Invariant
 
+> **Started:** 2026-10-19T22:27:28Z
+
 **Origin:** discovered run=a7679d2284a4 2026-10-19 -- the D00 T01 §2 plan review (run 20261019-D00-T01-S2-gpt)
 
 §2 marked every section of `todo/99-manual/` with `**Requires:** operator`, but nothing keeps the next one marked: a manual section filed without the line is dependency-ready like any other and a runner would take it. This closes that gap in §2's own outcome ("every section in `todo/99-manual/` carries the mark"), which today holds only because no one has added a section since. It is a defect in shipped work, so it passes the admission test.
 
 **Fidelity:** no surface of its own (stdlib tooling run by `validate`, the commit hook, and CI).
 
-- [ ] Add a `manual-unmarked` class to `scripts/todo-validate.py`: a numbered section in any TODO file under `todo/99-manual/` whose `requires` list lacks `operator` is a finding naming the file and section. Done when: `validate` on today's tree reports zero `manual-unmarked` findings. -> SOURCE: plan-review-D00-T01-s2-2026-10-19-s11 D00-T01-S2-PR1
-- [ ] Add `manual-unmarked` to `SEVERITY_MAP` in `scripts/todo-graph.py` as `fatal` and its row to the per-class table in `todo/README.md`. Done when: the self-test's README-parity check passes.
-- [ ] Add self-test fixtures: a `99-manual` fixture file with one marked and one unmarked section. Done when: a case asserts the finding on the unmarked section only.
-- [ ] Add a self-test case for a section requiring both `operator` and `display-session`: it is runnable only in a context declaring both, and `--context operator` alone parks it naming `display-session`. Done when: both cases pass. -> SOURCE: plan-review-D00-T01-s2-2026-10-19-s11b D00-T01-S2-PR3
-- [ ] Commit: `"workspace: refuse a manual section without the operator mark"`
+- [x] Add a `manual-unmarked` class to `scripts/todo-validate.py`: a numbered section in any TODO file under `todo/99-manual/` whose `requires` list lacks `operator` is a finding naming the file and section. Done when: `validate` on today's tree reports zero `manual-unmarked` findings. Rule 8e beside the Requires checks; `validate` reports 0 fatal on the tree. -> SOURCE: plan-review-D00-T01-s2-2026-10-19-s11 D00-T01-S2-PR1
+- [x] Add `manual-unmarked` to `SEVERITY_MAP` in `scripts/todo-graph.py` as `fatal` and its row to the per-class table in `todo/README.md`. Done when: the self-test's README-parity check passes. The README row sits after `requires-no-reason`, matching the map's order (a row placed before it failed the parity check, then passed).
+- [x] Add self-test fixtures: a `99-manual` fixture file with one marked and one unmarked section. Done when: a case asserts the finding on the unmarked section only. `SELF_TEST_TODO_MANUAL` (with an `INDEX.md`) adds a third section marked `display-session` only, which must also fail: three cases.
+- [x] Add a self-test case for a section requiring both `operator` and `display-session`: it is runnable only in a context declaring both, and `--context operator` alone parks it naming `display-session`. Done when: both cases pass. Fixture `SELF_TEST_TODO_C` §10; 774 cases before, 779 after, 0 failed. -> SOURCE: plan-review-D00-T01-s2-2026-10-19-s11b D00-T01-S2-PR3
+- [x] Commit: `"workspace: refuse a manual section without the operator mark"`
 
-**Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the new cases counted; `python scripts/todo-graph.py validate` exits 0 on the tree; deleting the `**Requires:**` line from one `D99 T01` section in a scratch copy makes `validate` exit 1 naming `manual-unmarked` and that section. Cheaper substitute that fails: a reminder in `add-todo`, which the scratch deletion does not trip.
+**Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the new cases counted; `python scripts/todo-graph.py validate` exits 0 on the tree; deleting the `**Requires:**` line from one `D99 T01` section in a scratch copy makes `validate` exit 1 naming that section and the missing `**Requires:** operator` mark (the `manual-unmarked` class; `validate` prints the message, not the class id). **Corrected 2026-10-20:** said "naming `manual-unmarked`"; no `validate` FATAL line prints its class id. Cheaper substitute that fails: a reminder in `add-todo`, which the scratch deletion does not trip.
 
 ## Verification
 
