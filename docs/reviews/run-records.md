@@ -10,4 +10,12 @@ One block per stamped section whose review reached an independent round, appende
 
 Each round line carries the model, provider, exact version (`unresolved` when the invocation never pinned one), cost in total tokens (`unresolved` when unrecorded), latency in wall-clock seconds from the reviewer invocation to its returned output (`unresolved` when untimed), opportunity scope, review purpose, provenance, and the refs that round raised. Findings described only in review prose, without a ref, are noted in `#` comments and counted nowhere.
 
-No runs are recorded yet.
+run: D00-T01-S1
+date: 2026-10-19
+runner: panel
+rounds: 3
+round: 1 model: gpt-6-astra effort: medium outcome: empty candidate: ad0742d provider: openai version: gpt-6-astra cost: 18807tokens latency: 15s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 2 model: gpt-6-astra effort: high outcome: empty candidate: ad0742d provider: openai version: gpt-6-astra cost: 18822tokens latency: 18s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 3 model: gpt-6-astra effort: high outcome: independent candidate: ad0742d provider: openai version: gpt-6-astra cost: unresolved latency: 40s opportunity: full-scope purpose: section-review provenance: recorded findings:
+empty: 2
+refuted: 0

@@ -51,7 +51,7 @@ track: W1
 
 | Order | Section | Deliverable                                   | Depends On | Status |
 | :---: | :-----: | --------------------------------------------- | ---------- | :----: |
-|   1   |   §1    | Wire the TODO gate into every clone           | --         |  [ ]   |
+|   1   |   §1    | Wire the TODO gate into every clone           | --         |  [x]   |
 |   2   |   §2    | The operator requirement for manual rows      | --         |  [ ]   |
 |   3   |   §3    | Raise the claims coverage floor               | --         |  [ ]   |
 |   4   |   §4    | Prove the review panel end to end             | --         |  [ ]   |
@@ -76,6 +76,13 @@ The hook is the only gate that runs before a commit exists, so a tree that fails
 - [x] Commit: `"workspace: wire the TODO gate into every clone"`
 
 **Test checkpoint:** `git ls-files -s tools/githooks/pre-commit` prints `100755`; `git check-attr eol -- tools/githooks/pre-commit` prints `eol: lf`; in a provisioned clone, staging a TODO file whose Implementation Order row depends on a section that does not exist (for example `T07 §3`) and running `git commit` exits non-zero with `pre-commit: todo-graph validate is red on the staged tree` after the validator's `does not resolve` FATAL, and the same commit succeeds once the edge is restored.
+
+> **Verified:** 2026-10-19 | §1 | D00 T01 §1 at `ad0742d`: `git ls-files -s tools/githooks/pre-commit` prints `100755` · `git check-attr eol` prints `eol: lf` · a fresh clone has no core.hooksPath until `pwsh tools/provision.ps1 -SkipInno` sets `tools/githooks` (5/5 green) · that clone refuses a staged dependency on a section that does not exist (exit 1, `does not resolve` FATAL, then the hook line) and accepts the restored edge (exit 0) · check-all: builds and tests PASS (985 + 33 + 8 passed, 0 failed, 0 skipped), every gate PASS except the derived plan projection, current after `plan --sync` changed no box
+> **Review:** round 2, candidate `ad0742d` -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (Light panel: bulk then signoff, gpt-6-astra). Independent: gpt-6-astra high via `panel_slots.py exec independent`, no findings. Raw findings: docs/reviews/00-workspace/D00-T01-s1.md. Attestation: docs/reviews/00-workspace/D00-T01-s1.attest.json
+> **Plan review:** gpt high, filed D00 T01 §5, D00 T01 §6, D00 T01 §9, D00 T01 §10, B-054 (run 20261019-D00-T01-S1-gpt)
+> **CRUD:** not applicable (repository plumbing: the commit hook and its provisioning, with no user record, document, or setting)
+> **Duration:** 2026-10-19T21:18:37Z to 2026-10-19T21:36:47Z
+> **Implementer:** Opus 5.5 (claude-opus-5-5)
 
 ## 2. The Operator Requirement for Manual Rows
 

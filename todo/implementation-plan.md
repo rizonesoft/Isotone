@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **0 of 754 sections complete (0%).** 754 sections (1 discovered); backlog 7 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **1 of 754 sections complete (0%).** 754 sections (1 discovered); backlog 8 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -151,11 +151,11 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 
 |  ✔  | Section       | Deliverable                                                      | Items |
 | :-: | ------------- | ---------------------------------------------------------------- | :---: |
-| [ ] | `D00 T01 §1`  | Wire the TODO gate into every clone                              |   4   |
+| [x] | `D00 T01 §1`  | Wire the TODO gate into every clone                              |   4   |
 | [ ] | `D00 T01 §2`  | The operator requirement for manual rows                         |   6   |
 | [ ] | `D00 T01 §3`  | Raise the claims coverage floor                                  |   3   |
 | [ ] | `D00 T01 §4`  | Prove the review panel end to end                                |   5   |
-| [ ] | `D00 T01 §6`  | The parity catalog validator                                     |  19   |
+| [ ] | `D00 T01 §6`  | The parity catalog validator                                     |  22   |
 | [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  22   |
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  22   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
@@ -167,9 +167,9 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T04 §2`  | The benchmark harness and the first benchmark record             |   9   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                 |   7   |
 | [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                 |   7   |
-| [ ] | `D00 T01 §9`  | The design contract gates                                        |   9   |
-| [ ] | `D00 T01 §10` | The drift gates                                                  |   7   |
-| [ ] | `D00 T01 §5`  | First push: CI green and read back                               |   5   |
+| [ ] | `D00 T01 §9`  | The design contract gates                                        |  10   |
+| [ ] | `D00 T01 §10` | The drift gates                                                  |  10   |
+| [ ] | `D00 T01 §5`  | First push: CI green and read back                               |   6   |
 | [ ] | `D00 T02 §7`  | Release pipeline dry run as a draft release                      |  10   |
 
 ### Phase 1 -- Suite layout and names
