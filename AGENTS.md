@@ -23,7 +23,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `src/Albumen/` | Albumen, the darkroom (planned) |
 | `src/Isotone.Core/`, `src/Isotone.UI/` | Shared libraries, only what two apps need (planned); the target layout is in `docs/dev/architecture.md` |
 | `Isotone.slnx` | The one solution every build, test, and publish goes through |
-| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots and delegation checks, weakening scan, campaign guard), with tests under `tests/` |
+| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots and delegation checks, weakening scan, campaign guard and its keep-alive `campaign_keepalive.py`), the weekly checks `check-vulnerable-packages.py` and `check-sdk-ga.py`, with tests under `tests/` |
 | `tools/` | `provision.ps1` (sets up a clone, including the commit hook) and `githooks/pre-commit` |
 | `todo/` | The live execution plan; read `todo/README.md` before authoring or implementing |
 | `todo/implementation-plan.md` | Ordered phase plan; its boxes are synchronized through `scripts/todo-graph.py` |
@@ -155,6 +155,8 @@ python scripts/todo-claims.py --coverage     # name every Current state block no
 python scripts/todo-findings.py --check      # fail if docs/reviews/findings.md is stale
 python scripts/todo-runs.py --check          # run records agree with the review files
 python scripts/campaign_guard.py --self-test # the Stop hook and guard lifecycle, in a throwaway workspace
+python scripts/campaign_keepalive.py --self-test   # the keep-alive's launch rules and supervisor, with fake processes
+python scripts/campaign_keepalive.py status  # what the keep-alive would do now
 python scripts/panel_slots.py validate       # the review panel wiring, the delegate pin, and the agent definitions hold
 python scripts/panel_slots.py --self-test    # the panel, delegate, audit, and agent-gate logic
 python scripts/panel_slots.py delegate-probe # live: the delegate alias still serves the pinned model at the pinned effort

@@ -3,6 +3,13 @@
   "folder": "\\Isotone\\",
   "tasks": [
     {
+      "name": "isotone-claude-keepalive",
+      "description": "Resume an open Isotone campaign run whose owning Claude session has stopped",
+      "command": ["python", "scripts/campaign_keepalive.py", "resurrect"],
+      "trigger": {"at_logon_delay_minutes": 3, "every_minutes": 60},
+      "timeout_minutes": 245
+    },
+    {
       "name": "isotone-delegate-probe",
       "description": "Check the Sonnet delegate alias still serves the pinned model at the pinned effort",
       "command": ["python", "scripts/panel_slots.py", "delegate-probe"],

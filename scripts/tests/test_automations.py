@@ -36,6 +36,16 @@ class Manifest(unittest.TestCase):
                 self.assertEqual(task["command"][0], "python")
                 self.assertTrue((REPO / task["command"][1]).is_file(), task["command"][1])
 
+    def test_the_keepalive_runs_after_logon_and_hourly(self):
+        task = run.load_tasks(str(AUTO / "tasks.json"))["isotone-claude-keepalive"]
+        self.assertEqual(task["command"], ["python", "scripts/campaign_keepalive.py", "resurrect"])
+        self.assertEqual(task["trigger"], {"at_logon_delay_minutes": 3, "every_minutes": 60})
+
+    def test_the_session_start_hook_observes_every_session(self):
+        settings = json.loads((REPO / ".claude" / "settings.json").read_text(encoding="utf-8"))
+        commands = [h["command"] for entry in settings["hooks"]["SessionStart"] for h in entry["hooks"]]
+        self.assertTrue(any("campaign_keepalive.py" in c and "'observe'" in c for c in commands), commands)
+
     def test_the_readme_lists_exactly_the_manifest(self):
         rows = [line.split("|")[1].strip().strip("`") for line in (AUTO / "README.md").read_text(encoding="utf-8")
                 .splitlines() if line.startswith("| `isotone-")]
@@ -251,6 +261,13 @@ class Vulnerable(unittest.TestCase):
     def test_problems_or_no_projects_are_unverified(self):
         self.assertEqual(vulnerable.verdict({**self.CLEAN, "problems": [{"text": "not restored"}]})[0], 2)
         self.assertEqual(vulnerable.verdict({"version": 1, "projects": []})[0], 2)
+
+
+class KeepAlive(unittest.TestCase):
+    def test_the_keepalive_self_test_passes(self):
+        result = subprocess.run([sys.executable, str(REPO / "scripts" / "campaign_keepalive.py"), "--self-test"],
+                                capture_output=True, text=True, timeout=300)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":
