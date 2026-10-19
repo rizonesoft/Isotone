@@ -305,7 +305,7 @@ Copyright (C) 2025-2026 Rizonetech (Pty) Ltd
 
 Rizonesoft is a brand of Rizonetech (Pty) Ltd.
 
-The Isotone Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text. The GPL covers the code; the names "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Gesso", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, covered by the [trademark policy](TRADEMARKS.md).
+The Isotone Graphics Suite is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** as published by the Free Software Foundation. It is distributed in the hope that it will be useful, but without any warranty. See [LICENSE](LICENSE) for the full text. Rizonetech (Pty) Ltd adds one permission under section 7 of the GPL, so the apps may be conveyed combined with AvalonDock, the docking library they use, which is under the Microsoft Public License: see [LICENSE-EXCEPTION.md](LICENSE-EXCEPTION.md). The GPL covers the code; the names "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Gesso", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, covered by the [trademark policy](TRADEMARKS.md).
 
 Stilus and Gesso were previously published under the MIT License as separate projects by the same author, under the names Bezier and Imago. Both are now part of this repository and are licensed under GPL-3.0.
 

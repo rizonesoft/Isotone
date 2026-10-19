@@ -146,7 +146,7 @@ $body.Add('Check a download before you run it: `(Get-FileHash <file> -Algorithm 
 $body.Add('')
 $body.Add('## Source code')
 $body.Add('')
-$body.Add("The complete source of this release is the tag [``$Tag``]($repoUrl/tree/$Tag); GitHub's source code archives below are that tag. Free software under the [GNU General Public License v3.0]($repoUrl/blob/$Tag/LICENSE).")
+$body.Add("The complete source of this release is the tag [``$Tag``]($repoUrl/tree/$Tag); GitHub's source code archives below are that tag. Free software under the [GNU General Public License v3.0]($repoUrl/blob/$Tag/LICENSE), with the [AvalonDock additional permission]($repoUrl/blob/$Tag/LICENSE-EXCEPTION.md).")
 $body.Add('')
 $body.Add('Copyright (C) 2025-2026 Rizonetech (Pty) Ltd. Rizonesoft is a brand of Rizonetech (Pty) Ltd.')
 $body -join "`n" | Set-Content -LiteralPath (Join-Path $OutDir 'body.md') -Encoding utf8NoBOM

@@ -105,7 +105,7 @@ Do not bump version numbers; versions come from Git tags (see [docs/dev/versioni
 
 The Isotone Graphics Suite is licensed under the [GNU General Public License v3.0](LICENSE). The project copyright is held by Rizonetech (Pty) Ltd ("Copyright (C) 2025-2026 Rizonetech (Pty) Ltd"); Rizonesoft is a brand of Rizonetech (Pty) Ltd.
 
-You keep the copyright of your own contributions. By contributing, you license your contribution under GPL-3.0, the same license as the rest of the project, and certify the DCO below; you do not assign your copyright to anyone. There is no contributor license agreement today; if one is ever introduced it will be announced here before it applies, and it will not apply to contributions made before it.
+You keep the copyright of your own contributions. By contributing, you license your contribution under GPL-3.0 with the additional permission in [LICENSE-EXCEPTION.md](LICENSE-EXCEPTION.md) (linking with AvalonDock), the same terms as the rest of the project, and certify the DCO below; you do not assign your copyright to anyone. There is no contributor license agreement today; if one is ever introduced it will be announced here before it applies, and it will not apply to contributions made before it.
 
 We use the [Developer Certificate of Origin](https://developercertificate.org/) (DCO) instead of a contributor license agreement. The DCO is a short statement that you wrote the change, or otherwise have the right to submit it under the project's license. You certify it by adding a sign-off line to every commit:
 

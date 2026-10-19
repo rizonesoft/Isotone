@@ -5,7 +5,8 @@
 .DESCRIPTION
   Output: artifacts/publish/<App>/<Runtime>/ (symbols moved to
   artifacts/publish/<App>/<Runtime>-symbols/ so installers and ZIPs ship without
-  them). MinVerTagPrefix is passed as a global property, so every project in the
+  them), with LICENSE and LICENSE-EXCEPTION.md copied in beside the app. MinVerTagPrefix
+  is passed as a global property, so every project in the
   app's closure, including shared libraries, carries the app's version. -Version
   overrides MinVer (MinVerVersionOverride) for re-builds of a known version.
 .EXAMPLE
@@ -57,6 +58,11 @@ try {
   }
   $exe = Join-Path $out $spec.Exe
   if (-not (Test-Path $exe)) { throw "publish produced no $($spec.Exe) in $out" }
+  # The license travels with the object code (GPL-3.0 sections 4 and 6), with its section 7 additional permission,
+  # so every installer and portable ZIP built from this folder carries both.
+  foreach ($file in @('LICENSE', 'LICENSE-EXCEPTION.md')) {
+    Copy-Item -Path (Join-Path $RepoRoot $file) -Destination $out -Force
+  }
   $size = (Get-ChildItem $out -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
   $ver = (Get-Item $exe).VersionInfo
   Write-Host ("publish.ps1: {0} {1} (file {2}) -> {3} ({4:N1} MB)" -f $App, $ver.ProductVersion, $ver.FileVersion, $out, $size) -ForegroundColor Green

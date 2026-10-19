@@ -143,7 +143,7 @@ Checked against nuget.org on 2026-09-26 (`dotnet list Isotone.slnx package --out
 | xunit.v3.mtp-off | 4.0.1 | xUnit v3 without Microsoft.Testing.Platform. The plain `xunit.v3` 4.x package brings `xunit.v3.mtp-v2`, and the .NET 10+ SDK then refuses VSTest `dotnet test` ("Testing with VSTest target is no longer supported by Microsoft.Testing.Platform"). The mtp-off flavor keeps `dotnet test` on VSTest through `xunit.runner.visualstudio` 4.0.0, so `tests/Isotone.runsettings` (results folder, quarantine filter) still applies. Test projects set `OutputType` `Exe`. |
 | AwesomeAssertions | 9.6.0 | Replaces FluentAssertions 8 (Xceed commercial license); Apache-2.0 fork of FluentAssertions 7 with the same API. The decision record is owed by `D00 T02 §5`. |
 | Serilog.Extensions.Logging, .Hosting | 10.0.0 | Latest stable; they depend on Microsoft.Extensions.* abstractions, which central transitive pinning lifts to 11.0.0-rc.2. |
-| Dirkster.AvalonDock (+ Themes.VS2013) | 5.0.0 | Latest stable; 5.0.1 is a preview. |
+| Dirkster.AvalonDock (+ Themes.VS2013) | 5.0.0 | Latest stable; 5.0.1 is a preview. Ms-PL, the only GPL-incompatible license in the stack; the suite conveys it under the GPL section 7 additional permission in `LICENSE-EXCEPTION.md` (2026-10-19). |
 | SharpVectors.Wpf | 1.8.6 | Latest. Used only by the Stilus splash logo (`SplashWindow.xaml`, `svgc:SvgViewbox`); `D02 T02 §2` replaces it and drops the package. |
 | WPF-UI | 4.3.0 | Latest. Gesso only; removal is planned. |
 
