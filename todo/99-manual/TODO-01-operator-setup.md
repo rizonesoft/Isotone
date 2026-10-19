@@ -165,7 +165,7 @@ The design contract gives the suite one neutral grey ramp and lets each app name
 
 ## 6. Assign the Copyright to Rizonetech (Pty) Ltd
 
-**Requires:** operator -- the assignment is signed by the copyright holder, Rizonetech (Pty) Ltd
+**Requires:** operator -- the deed is signed by Derick Payne as assignor and by an authorised director for Rizonetech (Pty) Ltd as assignee
 
 Operator decision 2026-09-27: the copyright holder is Rizonetech (Pty) Ltd, the operator's company, and Rizonesoft is its brand. The repository already says so, but the work was written by Derick Payne personally (Bezier, now Stilus; Imago, now Gesso; and Photon, now Isotone, including the MIT-licensed releases Bezier and Imago published before the monorepo), so the company holds the copyright only once a written assignment says it does. This is a legal document only the operator can sign. Advice: have a South African intellectual property attorney draft or review it; South African copyright law (the Copyright Act 98 of 1978) expects an assignment in writing signed by the assignor, and the attorney confirms the form.
 
