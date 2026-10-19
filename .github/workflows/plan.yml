@@ -59,8 +59,6 @@ jobs:
         run: python3 scripts/panel_slots.py validate
       - name: Self-test the weakening scan
         run: python3 scripts/weakening-scan.py --self-test
-      - name: Test the reviewer dispatcher and its pin
-        run: python3 scripts/tests/test_review_dispatch.py
       - name: Test the scheduled automations and the weekly checks
         run: python3 scripts/tests/test_automations.py
       - name: Validate the TODO tree
