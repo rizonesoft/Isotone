@@ -61,6 +61,7 @@ track: W1
 |   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [ ]   |
 |   9   |   §9    | The design contract gates                     | §1         |  [ ]   |
 |  10   |   §10   | The drift gates                               | §1         |  [ ]   |
+|  11   |   §11   | The manual-row invariant                      | §2         |  [ ]   |
 
 ---
 
@@ -307,6 +308,22 @@ The operator asked on 2026-09-27, after the rename to Isotone, "how are we preve
 - [ ] Commit: `"workspace: the drift gates: product facts, retired names, doc claims, and the GitHub mirror"`
 
 **Test checkpoint:** Unit test and driven run: `python scripts/drift-check.py --self-test` prints `0 failed`; `python scripts/drift-check.py` prints `0 finding(s)` on the tree and exits 1 naming the file and `retired-name` after a probe line "Imago raster editor" is added to `README.md` (quoted, then reverted); `python scripts/drift-check.py --check-github` exits 0 after the operator's sync and names the field after a probe difference; `python scripts/todo-claims.py` measures a claim in `docs/dev/build.md`. Cheaper substitute that fails: a one-off grep during the rename, which is what let the GitHub description drift.
+
+## 11. The Manual-Row Invariant
+
+**Origin:** discovered run=a7679d2284a4 2026-10-19 -- the D00 T01 §2 plan review (run 20261019-D00-T01-S2-gpt)
+
+§2 marked every section of `todo/99-manual/` with `**Requires:** operator`, but nothing keeps the next one marked: a manual section filed without the line is dependency-ready like any other and a runner would take it. This closes that gap in §2's own outcome ("every section in `todo/99-manual/` carries the mark"), which today holds only because no one has added a section since. It is a defect in shipped work, so it passes the admission test.
+
+**Fidelity:** no surface of its own (stdlib tooling run by `validate`, the commit hook, and CI).
+
+- [ ] Add a `manual-unmarked` class to `scripts/todo-validate.py`: a numbered section in any TODO file under `todo/99-manual/` whose `requires` list lacks `operator` is a finding naming the file and section. Done when: `validate` on today's tree reports zero `manual-unmarked` findings. -> SOURCE: plan-review-D00-T01-s2-2026-10-19-s11 D00-T01-S2-PR1
+- [ ] Add `manual-unmarked` to `SEVERITY_MAP` in `scripts/todo-graph.py` as `fatal` and its row to the per-class table in `todo/README.md`. Done when: the self-test's README-parity check passes.
+- [ ] Add self-test fixtures: a `99-manual` fixture file with one marked and one unmarked section. Done when: a case asserts the finding on the unmarked section only.
+- [ ] Add a self-test case for a section requiring both `operator` and `display-session`: it is runnable only in a context declaring both, and `--context operator` alone parks it naming `display-session`. Done when: both cases pass. -> SOURCE: plan-review-D00-T01-s2-2026-10-19-s11b D00-T01-S2-PR3
+- [ ] Commit: `"workspace: refuse a manual section without the operator mark"`
+
+**Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the new cases counted; `python scripts/todo-graph.py validate` exits 0 on the tree; deleting the `**Requires:**` line from one `D99 T01` section in a scratch copy makes `validate` exit 1 naming `manual-unmarked` and that section. Cheaper substitute that fails: a reminder in `add-todo`, which the scratch deletion does not trip.
 
 ## Verification
 

@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **1 of 754 sections complete (0%).** 754 sections (1 discovered); backlog 9 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **1 of 755 sections complete (0%).** 755 sections (2 discovered); backlog 9 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -153,6 +153,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | :-: | ------------- | ---------------------------------------------------------------- | :---: |
 | [x] | `D00 T01 §1`  | Wire the TODO gate into every clone                              |   4   |
 | [ ] | `D00 T01 §2`  | The operator requirement for manual rows                         |   6   |
+| [ ] | `D00 T01 §11` | The manual-row invariant                                         |   5   |
 | [ ] | `D00 T01 §3`  | Raise the claims coverage floor                                  |   3   |
 | [ ] | `D00 T01 §4`  | Prove the review panel end to end                                |   7   |
 | [ ] | `D00 T01 §6`  | The parity catalog validator                                     |  22   |
@@ -1217,13 +1218,13 @@ No agent runner takes rows from this phase. Each row is a click path, a purchase
 
 |  ✔  | Section       | Deliverable                                  | Items |
 | :-: | ------------- | -------------------------------------------- | :---: |
-| [ ] | `D99 T01 §1`  | About bar, topics, and social preview        |   5   |
-| [ ] | `D99 T01 §2`  | Branch protection with the required checks   |   3   |
-| [ ] | `D99 T01 §3`  | A code-signing certificate                   |   4   |
-| [ ] | `D99 T01 §4`  | Confirm the icon art licenses                |   2   |
-| [ ] | `D99 T01 §5`  | Choose each app's accent color               |   2   |
-| [ ] | `D99 T01 §6`  | Assign the copyright to Rizonetech (Pty) Ltd |   5   |
-| [ ] | `D99 T01 §7`  | Trademark clearance and CIPC filing          |   5   |
-| [ ] | `D99 T01 §8`  | Download storage and the release secrets     |   6   |
-| [ ] | `D99 T01 §9`  | Decide the product page URLs                 |   4   |
-| [ ] | `D99 T01 §10` | Decide on a CLA before outside contributions |   5   |
+| [ ] | `D99 T01 §1`  | About bar, topics, and social preview        |   7   |
+| [ ] | `D99 T01 §2`  | Branch protection with the required checks   |   5   |
+| [ ] | `D99 T01 §3`  | A code-signing certificate                   |   6   |
+| [ ] | `D99 T01 §4`  | Confirm the icon art licenses                |   3   |
+| [ ] | `D99 T01 §5`  | Choose each app's accent color               |   3   |
+| [ ] | `D99 T01 §6`  | Assign the copyright to Rizonetech (Pty) Ltd |   6   |
+| [ ] | `D99 T01 §7`  | Trademark clearance and CIPC filing          |   6   |
+| [ ] | `D99 T01 §8`  | Download storage and the release secrets     |   8   |
+| [ ] | `D99 T01 §9`  | Decide the product page URLs                 |   5   |
+| [ ] | `D99 T01 §10` | Decide on a CLA before outside contributions |   6   |
