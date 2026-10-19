@@ -20,6 +20,8 @@
   14. python scripts/panel_slots.py validate (the panel wiring, the delegate pin,
       and the .claude/agents definitions; standards/delegation.md)
   15. python scripts/weakening-scan.py --self-test
+  16. python scripts/tests/test_review_dispatch.py (the reviewer dispatcher with
+      fake CLIs, and .conclave/reviewers.toml loads under its rules)
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
 .EXAMPLE
@@ -88,6 +90,7 @@ try {
     Invoke-PythonGate 'panel_slots self-test' 'panel_slots.py' @('--self-test')
     Invoke-PythonGate 'panel_slots validate' 'panel_slots.py' @('validate')
     Invoke-PythonGate 'weakening-scan self-test' 'weakening-scan.py' @('--self-test')
+    Invoke-PythonGate 'review-dispatch tests' 'tests/test_review_dispatch.py' @()
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'
     $results.Add([pscustomobject]@{ Gate = 'python gates'; Status = 'SKIP (no python)'; Seconds = 0 })
