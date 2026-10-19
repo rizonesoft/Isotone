@@ -75,7 +75,7 @@ Sections: [Stilus](#stilus) · [Gesso](#gesso) · [Albumen](#albumen) · [Isoton
 
 #### Changed
 
-- Toolchain: .NET 11 (SDK 11.0.100-rc.1.26425.128 pinned until .NET 11 ships in November 2026), C# `latest` in every project, Windows SDK target 10.0.26100 with Windows 10 1809 as the minimum platform. `Gesso.Plugins.Abstractions` moved from `netstandard2.1` to `net11.0`.
+- Toolchain: .NET 11 (SDK 11.0.100-rc.2.26504.105 pinned until .NET 11 ships in November 2026), C# `latest` in every project, Windows SDK target 10.0.26100 with Windows 10 1809 as the minimum platform. `Gesso.Plugins.Abstractions` moved from `netstandard2.1` to `net11.0`.
 - Packages: SkiaSharp and SkiaSharp.Views.WPF 4.152.1 (Stilus text drawing moved to `SKFont`, paths to `SKPathBuilder`; no .NET Framework OpenTK packages remain), Microsoft.Extensions.* 11.0.0-rc.1.
 - Tests: xUnit v3 (4.0.1, on VSTest) and AwesomeAssertions 9.6.0 in place of xUnit 2.9.3 and FluentAssertions 8.
 - Installers: Inno Setup 7.1 builds 64-bit Setup programs with a wizard that follows the system light or dark theme. The suite installer (one component per app) is built by `isotone-v*` tags and `scripts/package.ps1 -Suite`.

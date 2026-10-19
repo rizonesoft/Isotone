@@ -17,7 +17,7 @@ Documentation for contributors and maintainers of the Isotone Graphics Suite.
 ## Quick reference
 
 ```powershell
-pwsh tools/provision.ps1              # install the pinned .NET SDK (11.0.100-rc.1) and Inno Setup 7
+pwsh tools/provision.ps1              # install the pinned .NET SDK (11.0.100-rc.2) and Inno Setup 7
 dotnet build Isotone.slnx              # build everything
 pwsh scripts/check-all.ps1            # run every gate
 pwsh scripts/package.ps1 -App Stilus   # installer and portable ZIP for one app
