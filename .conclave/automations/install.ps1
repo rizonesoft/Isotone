@@ -41,10 +41,13 @@ foreach ($task in $manifest.tasks) {
   $action = New-ScheduledTaskAction -Execute $pythonw -Argument "`"$runner`" $($task.name)" -WorkingDirectory $repo
   $trigger = $task.trigger
   if ($null -ne $trigger.every_minutes) {
-    $t = New-ScheduledTaskTrigger -AtLogOn -User $user
-    $t.Delay = "PT$($trigger.at_logon_delay_minutes)M"
-    $t.Repetition = (New-ScheduledTaskTrigger -Once -At (Get-Date) `
-        -RepetitionInterval (New-TimeSpan -Minutes $trigger.every_minutes)).Repetition
+    # Two triggers: after each logon (with the delay), and on the interval from now on. A logon trigger's
+    # repetition starts only at the next logon, so on its own it would never tick in the current one.
+    $every = New-TimeSpan -Minutes $trigger.every_minutes
+    $logon = New-ScheduledTaskTrigger -AtLogOn -User $user
+    $logon.Delay = "PT$($trigger.at_logon_delay_minutes)M"
+    $logon.Repetition = (New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval $every).Repetition
+    $t = @($logon, (New-ScheduledTaskTrigger -Once -At (Get-Date).Add($every) -RepetitionInterval $every))
   } else {
     $t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $trigger.weekly -At $trigger.at -RandomDelay (New-TimeSpan -Minutes 5)
   }
