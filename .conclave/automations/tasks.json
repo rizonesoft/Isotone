@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "folder": "\\Isotone\\",
+  "tasks": [
+    {
+      "name": "isotone-delegate-probe",
+      "description": "Check the Sonnet delegate alias still serves the pinned model at the pinned effort",
+      "command": ["python", "scripts/panel_slots.py", "delegate-probe"],
+      "trigger": {"weekly": "Monday", "at": "07:00"},
+      "timeout_minutes": 15
+    },
+    {
+      "name": "isotone-vulnerable-packages",
+      "description": "Check no NuGet package in Isotone.slnx, direct or transitive, has a known vulnerability",
+      "command": ["python", "scripts/check-vulnerable-packages.py"],
+      "trigger": {"weekly": "Monday", "at": "07:15"},
+      "timeout_minutes": 30
+    },
+    {
+      "name": "isotone-dotnet-ga",
+      "description": "Report when .NET 11 ships its GA SDK while global.json still pins a release candidate",
+      "command": ["python", "scripts/check-sdk-ga.py"],
+      "trigger": {"weekly": "Monday", "at": "07:30"},
+      "timeout_minutes": 5
+    }
+  ]
+}

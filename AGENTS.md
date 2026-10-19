@@ -41,6 +41,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `.claude/` | Claude Code skills, the delegate agent definitions under `agents/`, the output and safety rule under `rules/`, the Stop hook, the agent-routing hook, and settings; the Conclave-SDK `base` and `reviewer` kits (Claude only) supplied the `authoring-skills`, `local-tool-safety`, and `independent-review` skills, the rule, and four of the agents |
 | `.conclave/panel.toml` | The review panel wiring: writer, delegate pin, model registry, and every review slot |
 | `.conclave/reviewers.toml` | The Conclave-SDK reviewer pin for ad hoc independent review outside a TODO section, narrowed to the panel's rule: Claude's work goes to GPT-6 Astra only, with no fallback |
+| `.conclave/automations/` | The scheduled jobs (Windows Task Scheduler, under `\Isotone\`): the task list `tasks.json`, the runner that logs each run under `build/automations/` and emails the operator on a failure, and `install.ps1`; the README lists what runs |
 | `artifacts/` | Build output (`UseArtifactsOutput`); ignored, never authoritative |
 | `build/` | Scratch, caches, and campaign guard state; ignored, never authoritative |
 
@@ -163,6 +164,7 @@ python scripts/weakening-scan.py --base <rev> # every hunk that could weaken an 
 python scripts/weakening-scan.py --snapshot <file>; python scripts/weakening-scan.py --scope <file> --   # a delegate wrote nothing and changed no ref, config, or remote
 python scripts/weakening-scan.py --self-test  # the scan's own fixtures
 python scripts/tests/test_review_dispatch.py   # the reviewer dispatcher with fake CLIs, and .conclave/reviewers.toml loads
+python scripts/tests/test_automations.py      # the scheduled tasks, their runner and alert, and the weekly checks
 python scripts/design-lint.py --baseline docs/design/.lint-baseline.json   # no new design-contract violation in the UI sources
 python scripts/design-lint.py --self-test    # the lint's own fixtures
 python scripts/todo-graph.py query design    # surfaces with a Design line, the baseline, open deviations
