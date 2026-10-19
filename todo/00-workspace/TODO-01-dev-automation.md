@@ -66,12 +66,14 @@ track: W1
 
 ## 1. Wire the TODO Gate into Every Clone
 
+> **Started:** 2026-10-19T21:18:37Z
+
 The hook is the only gate that runs before a commit exists, so a tree that fails `validate` never reaches the remote. It must stay a POSIX shell script with LF endings, because Git for Windows runs hooks under its own `sh`.
 
-- [ ] Record `tools/githooks/pre-commit` as executable with `git update-index --chmod=+x tools/githooks/pre-commit`. Done when: `git ls-files -s tools/githooks/pre-commit` prints mode `100755`. Cheaper substitute: relying on the working-tree file mode, which Windows does not keep.
-- [ ] Confirm `.gitattributes` pins `tools/githooks/pre-commit` to `eol=lf`. Done when: `git check-attr eol -- tools/githooks/pre-commit` prints `eol: lf`.
-- [ ] Confirm `tools/provision.ps1` sets `git config core.hooksPath tools/githooks`. Done when: after `pwsh tools/provision.ps1`, `git config core.hooksPath` prints `tools/githooks`.
-- [ ] Commit: `"workspace: wire the TODO gate into every clone"`
+- [x] Record `tools/githooks/pre-commit` as executable with `git update-index --chmod=+x tools/githooks/pre-commit`. Done when: `git ls-files -s tools/githooks/pre-commit` prints mode `100755`. Cheaper substitute: relying on the working-tree file mode, which Windows does not keep. Already true (committed 2026-09-26): `git ls-files -s tools/githooks/pre-commit` printed `100755 a9e8f4119c6a1dce7e93ead5129260c36a8bd34a 0 tools/githooks/pre-commit` on 2026-10-19.
+- [x] Confirm `.gitattributes` pins `tools/githooks/pre-commit` to `eol=lf`. Done when: `git check-attr eol -- tools/githooks/pre-commit` prints `eol: lf`. Already true: it printed `tools/githooks/pre-commit: eol: lf` on 2026-10-19.
+- [x] Confirm `tools/provision.ps1` sets `git config core.hooksPath tools/githooks`. Done when: after `pwsh tools/provision.ps1`, `git config core.hooksPath` prints `tools/githooks`. Already true: in a fresh local clone, `git config core.hooksPath` printed nothing before `pwsh tools/provision.ps1 -SkipInno` and `tools/githooks` after it (provision `5/5 green`, 2026-10-19).
+- [x] Commit: `"workspace: wire the TODO gate into every clone"`
 
 **Test checkpoint:** `git ls-files -s tools/githooks/pre-commit` prints `100755`; `git check-attr eol -- tools/githooks/pre-commit` prints `eol: lf`; in a provisioned clone, staging a TODO file whose Implementation Order row depends on a section that does not exist (for example `T07 §3`) and running `git commit` exits non-zero with `pre-commit: todo-graph validate is red on the staged tree` after the validator's `does not resolve` FATAL, and the same commit succeeds once the edge is restored.
 
