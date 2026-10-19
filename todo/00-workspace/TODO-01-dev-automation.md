@@ -61,7 +61,7 @@ track: W1
 |   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [ ]   |
 |   9   |   §9    | The design contract gates                     | §1         |  [ ]   |
 |  10   |   §10   | The drift gates                               | §1         |  [ ]   |
-|  11   |   §11   | The manual-row invariant                      | §2         |  [ ]   |
+|  11   |   §11   | The manual-row invariant                      | §2         |  [x]   |
 
 ---
 
@@ -333,6 +333,13 @@ The operator asked on 2026-09-27, after the rename to Isotone, "how are we preve
 - [x] Commit: `"workspace: refuse a manual section without the operator mark"`
 
 **Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the new cases counted; `python scripts/todo-graph.py validate` exits 0 on the tree; deleting the `**Requires:**` line from one `D99 T01` section in a scratch copy makes `validate` exit 1 naming that section and the missing `**Requires:** operator` mark (the `manual-unmarked` class; `validate` prints the message, not the class id). **Corrected 2026-10-20:** said "naming `manual-unmarked`"; no `validate` FATAL line prints its class id. Cheaper substitute that fails: a reminder in `add-todo`, which the scratch deletion does not trip.
+
+> **Verified:** 2026-10-20 | §11 | D00 T01 §11 at `f6fb40a`: self-test `779 cases, 0 failed` (five new cases; with rule 8e disabled, 2 fail) · validate 0 fatal, 0 warnings · with the D99 T01 §5 Requires line deleted, validate exits 1 with one FATAL, naming D99 T01 §5 as a `todo/99-manual/` section without `**Requires:** operator` · check-all (isotone-verifier, log read by the lead): all gates passed, 985 + 33 + 8 tests passed, 0 failed, 0 skipped
+> **Review:** round 3, candidate `f6fb40a` -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (Full panel: bulk, bulk, signoff, gpt-6-astra). Independent: gpt-6-astra high via `panel_slots.py exec independent`, no findings. Raw findings: docs/reviews/00-workspace/D00-T01-s11.md. Attestation: docs/reviews/00-workspace/D00-T01-s11.attest.json
+> **Plan review:** gpt high, filed B-056 (3 findings: PR3 deferred to the backlog as B-056, PR1 and PR2 rejected; no section filed) (run 20261019-D00-T01-S11-gpt)
+> **CRUD:** not applicable (a validator rule and its self-test fixtures, with no user record, document, or setting)
+> **Duration:** 2026-10-19T22:27:28Z to 2026-10-19T22:47:47Z
+> **Implementer:** Opus 5.5 (claude-opus-5-5)
 
 ## Verification
 

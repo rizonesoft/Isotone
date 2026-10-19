@@ -30,3 +30,14 @@ round: 3 model: gpt-6-astra effort: high outcome: empty candidate: ce9a258 provi
 round: 4 model: gpt-6-astra effort: high outcome: independent candidate: 7ef0113 provider: openai version: gpt-6-astra cost: unresolved latency: 94s opportunity: full-scope purpose: section-review provenance: recorded findings:
 empty: 2
 refuted: 0
+
+run: D00-T01-S11
+date: 2026-10-19
+runner: panel
+rounds: 4
+round: 1 model: gpt-6-astra effort: medium outcome: empty candidate: f6fb40a provider: openai version: gpt-6-astra cost: 25245tokens latency: 20s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 2 model: gpt-6-astra effort: medium outcome: empty candidate: f6fb40a provider: openai version: gpt-6-astra cost: 21643tokens latency: 16s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 3 model: gpt-6-astra effort: high outcome: empty candidate: f6fb40a provider: openai version: gpt-6-astra cost: 21829tokens latency: 19s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 4 model: gpt-6-astra effort: high outcome: independent candidate: f6fb40a provider: openai version: gpt-6-astra cost: unresolved latency: 56s opportunity: full-scope purpose: section-review provenance: recorded findings:
+empty: 3
+refuted: 0
