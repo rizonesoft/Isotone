@@ -64,8 +64,11 @@ CITED_PATH_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./\-]*[A-Za-z0-9_/])`")
 # was MEASURED, not to what would be nice: a floor above the real number fails
 # on day one and gets deleted rather than met. Resolute measured 3 of 20 on
 # 2026-09-17 (its D00 T04 §1); Isotone re-measured at the port, 2026-09-26, when
-# the tree held one `Current state` block and it carried a claim.
-COVERAGE_FLOOR = 1
+# the tree held one `Current state` block and it carried a claim. D00 T01 §3
+# re-measured on 2026-10-19: 78 of 78 `Current state` blocks carry a claim
+# (`python scripts/todo-claims.py --coverage`), so the floor is that number,
+# measured, not wished.
+COVERAGE_FLOOR = 78
 DEFAULT_ROOT = "todo"
 
 
