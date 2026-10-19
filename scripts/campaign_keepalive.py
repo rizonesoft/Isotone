@@ -19,13 +19,17 @@ process and never a reused pid.
 Any one of these stops a launch, in this order:
 - no guard: there is no open run;
 - the guard's session was never observed, so its process cannot be proven gone;
-- that session's recorded process is alive;
-- another observed Isotone session is alive: the operator is present, and one session owns the tree;
+- that session's recorded process is alive, or Windows will not say (access denied counts as alive);
+- another observed Isotone session is alive, or unreadable: the operator is present, and one session owns
+  the tree;
 - a launch in the last 15 minutes;
-- three resumes in a row that moved neither HEAD nor the run file (reported once, then held).
+- three resumes in a row that moved neither HEAD nor the run file, bookkeeping lines aside (reported once,
+  then held).
 
 While the resumed session runs, the supervisor ends its process tree the moment the guard goes away (an
-operator stop or a run end), names another session (a handover), or another Isotone session starts.
+operator stop or a run end), names another session (a handover), another Isotone session starts, the
+operator resumes this same session in another process, or the supervision itself fails. Observations
+older than a week are pruned, except the one the open guard names.
 Every command takes `--root` to act on a fixture workspace instead of this repository.
 """
 
@@ -68,6 +72,10 @@ PROMPT = ("Claude keep-alive for Isotone: this session owns the open campaign ru
 
 class KeepAliveError(ValueError):
     """A refusal naming why nothing was recorded or launched."""
+
+
+class ProcessUnknown(KeepAliveError):
+    """Windows would not say whether a process is alive, so nothing may treat it as gone."""
 
 
 def _now() -> str:
@@ -120,17 +128,24 @@ class WindowsProcesses:
         return out
 
     def created(self, pid: int) -> int | None:
-        """The creation time of a running process, or None when it has exited or cannot be opened."""
+        """The creation time of a running process, None only when it is proven gone (no such pid, or it has
+        exited), and ProcessUnknown when Windows will not say (access denied, a failed query): a process that
+        cannot be read is never taken for a dead one."""
         handle = self.k32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
         if not handle:
-            return None
+            error = self.ctypes.get_last_error()
+            if error == 87:  # ERROR_INVALID_PARAMETER: no process has this pid
+                return None
+            raise ProcessUnknown(f"cannot open process {pid} (Windows error {error})")
         try:
             code = self.wintypes.DWORD()
-            if not self.k32.GetExitCodeProcess(handle, self.ctypes.byref(code)) or code.value != 259:  # STILL_ACTIVE
+            if not self.k32.GetExitCodeProcess(handle, self.ctypes.byref(code)):
+                raise ProcessUnknown(f"cannot read the exit state of process {pid}")
+            if code.value != 259:  # not STILL_ACTIVE: it has exited
                 return None
             times = [self.wintypes.FILETIME() for _ in range(4)]
             if not self.k32.GetProcessTimes(handle, *(self.ctypes.byref(t) for t in times)):
-                return None
+                raise ProcessUnknown(f"cannot read the creation time of process {pid}")
             return (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
         finally:
             self.k32.CloseHandle(handle)
@@ -152,7 +167,17 @@ def identity(procs, pid: int) -> dict:
 
 
 def alive(procs, owner: dict | None) -> bool:
+    """True when the recorded process still runs; raises ProcessUnknown when Windows will not say."""
     return bool(owner) and owner.get("created") is not None and procs.created(owner.get("pid", 0)) == owner["created"]
+
+
+def maybe_alive(procs, owner: dict | None) -> bool:
+    """alive(), with an unreadable process counted as alive: every caller that may launch or keep a second
+    writer must assume the worst."""
+    try:
+        return alive(procs, owner)
+    except ProcessUnknown:
+        return True
 
 
 def claude_ancestor(procs, start: int | None = None) -> dict:
@@ -216,10 +241,15 @@ def record(root: str, session: str, owner: dict, supervised: bool = False) -> No
             {"session": session, "owner": owner, "seen_at": _now(), "supervised": supervised})
 
 
-def observe(root: str, session: str, procs) -> str:
-    """Record the Claude Code process of `session`, and drop week-old records of exited sessions."""
-    owner = claude_ancestor(procs)
+def observe(root: str, session: str, procs, start: int | None = None) -> str:
+    """Record the Claude Code process of `session`, and drop week-old records of exited sessions, except the
+    one the open guard names: the keep-alive needs it to prove that session gone."""
+    owner = claude_ancestor(procs, start)
     record(root, session, owner)
+    try:
+        keep = str((campaign_guard.read_guard(root) or {}).get("session_id", ""))
+    except campaign_guard.GuardError:
+        return f"observe: session {session} is Claude process {owner['pid']} (guard unreadable, nothing pruned)"
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=OBSERVED_DAYS)
     for other, rec in observed(root).items():
         try:
@@ -227,7 +257,7 @@ def observe(root: str, session: str, procs) -> str:
                 tzinfo=datetime.timezone.utc)
         except ValueError:
             seen = cutoff
-        if other != session and seen <= cutoff and not alive(procs, rec.get("owner")):
+        if other not in (session, keep) and seen <= cutoff and not maybe_alive(procs, rec.get("owner")):
             try:
                 os.unlink(os.path.join(_sessions_dir(root), other + ".json"))
             except FileNotFoundError:
@@ -236,16 +266,21 @@ def observe(root: str, session: str, procs) -> str:
 
 
 def _fingerprint(root: str, guard: dict) -> str:
+    """HEAD plus a hash of the run file without its bookkeeping lines: the line every resume is told to
+    append is not progress, or a session that only records its own resume would never count as stalled."""
+    import hashlib
     try:
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True,
                               timeout=30).stdout.strip()
     except (OSError, subprocess.TimeoutExpired):
         head = ""
     try:
-        size = os.path.getsize(os.path.join(root, guard.get("run_file", "")))
+        with open(os.path.join(root, guard.get("run_file", "")), encoding="utf-8", errors="replace") as fh:
+            body = "".join(line for line in fh if not line.lstrip().startswith("- bookkeeping:"))
+        digest = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
     except OSError:
-        size = -1
-    return f"{head}:{size}"
+        digest = "no-run-file"
+    return f"{head}:{digest}"
 
 
 def decide(root: str, procs, clock=time.time) -> tuple[str, dict | None, str]:
@@ -261,9 +296,13 @@ def decide(root: str, procs, clock=time.time) -> tuple[str, dict | None, str]:
     if not rec:
         return "hold", guard, (f"held: session {session} was never observed, so its process cannot be proven gone "
                                "(start the campaign in a session with the SessionStart hook, or run observe in it)")
-    if alive(procs, rec.get("owner")):
+    try:
+        owner_alive = alive(procs, rec.get("owner"))
+    except ProcessUnknown as exc:
+        return "hold", guard, f"held: cannot tell whether session {session} is alive ({exc})"
+    if owner_alive:
         return "hold", guard, f"held: session {session} is alive (Claude process {rec['owner'].get('pid')})"
-    present = [s for s, r in sessions.items() if s != session and alive(procs, r.get("owner"))]
+    present = [s for s, r in sessions.items() if s != session and maybe_alive(procs, r.get("owner"))]
     if present:
         return "hold", guard, f"held: attended, Isotone session {present[0]} is alive; one session owns the tree"
     state = _read(_state_path(root))
@@ -343,6 +382,41 @@ class _LaunchLock:
         return False
 
 
+def _supervise(root: str, procs, child, session: str, clock, sleep, poll: float, limit: float,
+               killer) -> tuple[int | None, str | None]:
+    """Wait for the resumed session; end it the moment it would no longer be the only writer.
+    Returns (exit code, why it was ended or None)."""
+    owner = identity(procs, child.pid)
+    previous = (observed(root).get(session) or {}).get("owner") or {}
+    # An operator resume that recorded itself between the launch and here must stay visible, or the loop
+    # below could never see it: the child takes the record only from a dead owner or from itself.
+    if owner and (previous.get("pid") == child.pid or not maybe_alive(procs, previous)):
+        record(root, session, owner, supervised=True)
+    deadline = clock() + limit
+    while True:
+        code = child.poll()
+        if code is not None:
+            return code, None
+        ended = None
+        current = campaign_guard.read_guard(root)
+        sessions = observed(root)
+        mine = (sessions.get(session) or {}).get("owner") or {}
+        if not current or str(current.get("session_id", "")) != session:
+            ended = "the guard was ended or handed to another session"
+        elif mine.get("pid") not in (None, child.pid) and maybe_alive(procs, mine):
+            ended = f"the operator resumed session {session} in Claude process {mine['pid']}"
+        else:
+            others = [s for s, r in sessions.items() if s != session and maybe_alive(procs, r.get("owner"))]
+            if others:
+                ended = f"Isotone session {others[0]} started, and one session owns the tree"
+        if not ended and clock() >= deadline:
+            ended = f"the resume ran past {int(limit // 3600)}h"
+        if ended:
+            killer(child)
+            return child.poll(), ended
+        sleep(poll)
+
+
 def resurrect(root: str, procs, launcher=_launch, killer=_kill_tree, clock=time.time, sleep=time.sleep,
               claude: str | None = None, poll: float = POLL, limit: float = SUPERVISE_FOR) -> tuple[int, str]:
     """Resume the run's session when it is provably gone, and supervise it. Returns (exit code, report)."""
@@ -372,29 +446,14 @@ def resurrect(root: str, procs, launcher=_launch, killer=_kill_tree, clock=time.
         stamp = _now().replace(":", "")
         log = os.path.join(root, "build", "claude-keepalive", f"{guard.get('run_id')}-{stamp}.log")
         child = launcher(resume_command(claude, guard, writer_model(root)), root, log)
-        owner = identity(procs, child.pid)
-        if owner:
-            record(root, session, owner, supervised=True)
-        deadline = clock() + limit
-        ended = None
-        while True:
-            code = child.poll()
-            if code is not None:
-                break
-            current = campaign_guard.read_guard(root)
-            if not current or str(current.get("session_id", "")) != session:
-                ended = "the guard was ended or handed to another session"
-            else:
-                others = [s for s, r in observed(root).items() if s != session and alive(procs, r.get("owner"))]
-                if others:
-                    ended = f"Isotone session {others[0]} started, and one session owns the tree"
-            if not ended and clock() >= deadline:
-                ended = f"the resume ran past {int(limit // 3600)}h"
-            if ended:
+        try:
+            code, ended = _supervise(root, procs, child, session, clock, sleep, poll, limit, killer)
+        except BaseException:
+            # Whatever broke the supervision (an unreadable guard, a failed probe, an interrupt), the resumed
+            # session must not outlive it, or no stop, attended session, or deadline would reach it.
+            if child.poll() is None:
                 killer(child)
-                code = child.poll()
-                break
-            sleep(poll)
+            raise
         state.update(last_exit=code, ended=ended, finished_at=_now())
         _atomic(state_path, state)
         if ended and "past" in ended:
@@ -411,6 +470,7 @@ def resurrect(root: str, procs, launcher=_launch, killer=_kill_tree, clock=time.
 class _FakeProcs:
     def __init__(self):
         self.procs: dict[int, tuple[int, str, int]] = {}  # pid -> (parent, exe, created)
+        self.unknown: set[int] = set()  # pids Windows refuses to describe
 
     def add(self, pid: int, parent: int, exe: str, created: int) -> dict:
         self.procs[pid] = (parent, exe, created)
@@ -420,6 +480,8 @@ class _FakeProcs:
         return {pid: (p, exe) for pid, (p, exe, _c) in self.procs.items()}
 
     def created(self, pid):
+        if int(pid) in self.unknown:
+            raise ProcessUnknown(f"cannot open process {pid} (Windows error 5)")
         entry = self.procs.get(int(pid))
         return entry[2] if entry else None
 
@@ -433,6 +495,13 @@ class _FakeChild:
             return -9
         self.polls += 1
         return self.code if self.exits_after is not None and self.polls > self.exits_after else None
+
+
+def _forget(root: str) -> None:
+    try:
+        os.remove(_state_path(root))
+    except FileNotFoundError:
+        pass  # no resume recorded since the last case
 
 
 def _self_test() -> int:
@@ -576,6 +645,81 @@ def _self_test() -> int:
         with _LaunchLock(root) as held:
             code, msg = run() if held else (None, "lock not taken")
         check("a held launch lock holds the tick", code == 0 and "supervising" in msg, msg)
+
+        # Independent review round 1 (e1504c5): the five findings, each as a case.
+        _forget(root)
+        procs.procs.pop(900, None)
+
+        def resume_same_session(argv, r, log):
+            child = launcher(exits_after=None)(argv, r, log)
+            child_box["c"] = child
+            record(root, s_run, procs.add(700, 1, "claude.exe", 444))  # SessionStart of the operator's resume
+            return child
+        code, msg = run(launcher=resume_same_session)
+        check("an attended resume of the same session ends the headless one", code == 0
+              and child_box["c"].killed and "operator resumed session" in msg, msg)
+
+        del procs.procs[700]
+        _forget(root)
+        procs.procs.pop(900, None)
+        record(root, s_run, procs.add(800, 1, "claude.exe", 555))
+        procs.unknown.add(800)
+        code, msg = run()
+        check("an owner Windows will not describe is held, never taken for dead",
+              code == 0 and "cannot tell" in msg, msg)
+        procs.unknown.discard(800)
+        record(root, s_other, procs.add(801, 1, "claude.exe", 556))
+        procs.unknown.add(801)
+        del procs.procs[800]
+        code, msg = run()
+        check("an unreadable other session counts as attended", code == 0 and "attended" in msg, msg)
+        procs.unknown.discard(801)
+        del procs.procs[801]
+
+        run_file = os.path.join(root, "docs", "phase-runs", "run.md")
+        guard = campaign_guard.read_guard(root)
+        before_fp = _fingerprint(root, guard)
+        with open(run_file, "a", encoding="utf-8") as fh:
+            fh.write("- bookkeeping: keep-alive resumed 2026-10-19T00:00:00Z\n")
+        check("a bookkeeping line is not progress", _fingerprint(root, guard) == before_fp)
+        with open(run_file, "a", encoding="utf-8") as fh:
+            fh.write("- shipped D00 T01 §3\n")
+        check("a real run-file line is progress", _fingerprint(root, guard) != before_fp)
+
+        old = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=OBSERVED_DAYS + 1)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ")
+        for sess in (s_run, s_other):
+            _atomic(os.path.join(_sessions_dir(root), sess + ".json"),
+                    {"session": sess, "owner": {"pid": 1, "created": 1}, "seen_at": old})
+        third = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        procs.add(910, 1, "claude.exe", 666)
+        procs.add(911, 910, "python.exe", 667)
+        observe(root, third, procs, start=911)
+        kept = observed(root)
+        check("pruning keeps the observation the open guard names", s_run in kept and s_other not in kept
+              and third in kept, str(sorted(kept)))
+        del procs.procs[910], procs.procs[911]
+        os.remove(os.path.join(_sessions_dir(root), third + ".json"))
+
+        _forget(root)
+        record(root, s_run, {"pid": 1, "created": 1})
+        guard_path = campaign_guard._paths(root)[0]
+        with open(guard_path, encoding="utf-8") as fh:
+            good_guard = fh.read()
+
+        def corrupt_guard(argv, r, log):
+            child = launcher(exits_after=None)(argv, r, log)
+            child_box["c"] = child
+            with open(guard_path, "w", encoding="utf-8") as fh:
+                fh.write("{not json")
+            return child
+        try:
+            run(launcher=corrupt_guard)
+            check("a broken guard mid-run raises", False)
+        except campaign_guard.GuardError:
+            check("a broken guard mid-run ends the resumed session", child_box["c"].killed)
+        with open(guard_path, "w", encoding="utf-8") as fh:
+            fh.write(good_guard)
 
     print(f"campaign_keepalive self-test: {failed} failed")
     return 1 if failed else 0
