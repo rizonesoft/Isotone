@@ -12,7 +12,7 @@ depends_on: []
 > **Goal:** The steps no agent session can perform are done by the operator from exact instructions: the repository's About bar, topics, and social preview are set; `main` is protected by the real required checks; a code-signing certificate exists and is available to the packaging scripts without entering the repository; the licenses of the app icon art are confirmed; each app's accent color is chosen; the project's copyright rests with Rizonetech (Pty) Ltd by a signed assignment; the names are cleared and filed as trademarks; the download storage behind `download.rizonesoft.com` exists with its GitHub secrets; the product page URLs are decided; and the contributor agreement question is answered before outside contributions are accepted.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-09-26):** The repository is `github.com/rizonesoft/Isotone` with default settings as far as this plan knows. `resources/brand/social-preview.jpg` exists for the social preview. The CI checks are named `build` (workflow `build.yml`) and `plan-gates` (workflow `plan.yml`). There is no code-signing certificate (operator statement, 2026-09-26). The app icon candidates `resources/icons/art-and-design.png` (Gesso) and `resources/icons/lens.png` (Albumen) arrived with the initial commit with no recorded source or license. The design contract in `standards/shared.md` leaves each app's accent color to the operator. Until `D00 T01 §2` ships, these rows cannot carry the `**Requires:** operator` mark; they depend on that section so no runner takes them before it does. **Corrected 2026-09-27:** the operator answered three of these rows that day: the social preview is uploaded (§1), the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (§4), and the accents are chosen and recorded in `standards/shared.md` (§5); what each section still owes is its record and its verification, and every row still flips only through a review stamp. **Corrected 2026-09-27, later the same day:** the §4 answer is superseded. The operator chose project-created icons (Direction C, "C it is"), so `resources/icons/art-and-design.png`, `resources/icons/lens.png`, and `resources/icons/stilus_512.png` were removed, and `resources/icons/README.md` records every app icon as created for the project on 2026-09-27 and licensed GPL-3.0 with the repository, with no third-party art. **Corrected 2026-09-27, operator decisions on ownership and distribution:** the copyright holder is Rizonetech (Pty) Ltd (the operator's company) and Rizonesoft is its brand; the repository now says "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd" and "Rizonesoft is a brand of Rizonetech (Pty) Ltd." (`README.md`, `CONTRIBUTING.md`, `Directory.Build.props`, `installer/common.iss`, the splash cards) and has a trademark policy (`TRADEMARKS.md`, no registration claimed). Binaries ship only from rizonesoft.com through S3-compatible storage behind `download.rizonesoft.com`, which does not exist yet (no provider is chosen, and none of the `ISOTONE_DL_S3_*` secrets is set, so `release.yml` refuses a tag release); the product page URLs are undecided, so `ISOTONE_SITE_URL` defaults to `https://www.rizonesoft.com/`; contributors keep their copyright under the GPL with the DCO, and a CLA is undecided. No written assignment from Derick Payne to Rizonetech (Pty) Ltd exists yet, and no trademark search or filing has been made. §6 to §10 are those operator steps. **Corrected 2026-09-27, after the rename to Isotone:** the operator removed the neon brand images ("Remove the neon banners"): `resources/brand/social-preview.jpg`, `resources/brand/isotone-banner.jpg`, and `resources/brand/isotone.png` are deleted, because they spelled the retired Photon name; the social preview still uploaded on GitHub is that image, so §1 now removes or replaces it.
+> **Current state (verified 2026-09-26):** The repository is `github.com/rizonesoft/Isotone` with default settings as far as this plan knows. `resources/brand/social-preview.jpg` exists for the social preview. The CI checks are named `build` (workflow `build.yml`) and `plan-gates` (workflow `plan.yml`). There is no code-signing certificate (operator statement, 2026-09-26). The app icon candidates `resources/icons/art-and-design.png` (Gesso) and `resources/icons/lens.png` (Albumen) arrived with the initial commit with no recorded source or license. The design contract in `standards/shared.md` leaves each app's accent color to the operator. Until `D00 T01 §2` ships, these rows cannot carry the `**Requires:** operator` mark; they depend on that section so no runner takes them before it does. **Corrected 2026-09-27:** the operator answered three of these rows that day: the social preview is uploaded (§1), the operator holds the rights to `resources/icons/art-and-design.png` and `resources/icons/lens.png` (§4), and the accents are chosen and recorded in `standards/shared.md` (§5); what each section still owes is its record and its verification, and every row still flips only through a review stamp. **Corrected 2026-09-27, later the same day:** the §4 answer is superseded. The operator chose project-created icons (Direction C, "C it is"), so `resources/icons/art-and-design.png`, `resources/icons/lens.png`, and `resources/icons/stilus_512.png` were removed, and `resources/icons/README.md` records every app icon as created for the project on 2026-09-27 and licensed GPL-3.0 with the repository, with no third-party art. **Corrected 2026-09-27, operator decisions on ownership and distribution:** the copyright holder is Rizonetech (Pty) Ltd (the operator's company) and Rizonesoft is its brand; the repository now says "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd" and "Rizonesoft is a brand of Rizonetech (Pty) Ltd." (`README.md`, `CONTRIBUTING.md`, `Directory.Build.props`, `installer/common.iss`, the splash cards) and has a trademark policy (`TRADEMARKS.md`, no registration claimed). Binaries ship only from rizonesoft.com through S3-compatible storage behind `download.rizonesoft.com`, which does not exist yet (no provider is chosen, and none of the `ISOTONE_DL_S3_*` secrets is set, so `release.yml` refuses a tag release); the product page URLs are undecided, so `ISOTONE_SITE_URL` defaults to `https://www.rizonesoft.com/`; contributors keep their copyright under the GPL with the DCO, and a CLA is undecided. No written assignment from Derick Payne to Rizonetech (Pty) Ltd exists yet, and no trademark search or filing has been made. §6 to §10 are those operator steps. **Corrected 2026-09-27, after the rename to Isotone:** the operator removed the neon brand images ("Remove the neon banners"): `resources/brand/social-preview.jpg`, `resources/brand/isotone-banner.jpg`, and `resources/brand/isotone.png` are deleted, because they spelled the retired Photon name; the social preview still uploaded on GitHub is that image, so §1 now removes or replaces it. **Corrected 2026-10-20:** `D00 T01 §2` shipped the `operator` value, so every section below carries `**Requires:** operator -- <reason>` and the sentence above saying these rows cannot yet carry the mark describes the tree before it; `query ready` lists a row whose dependencies are met as runnable elsewhere, and only `query ready --context operator` lists it as runnable.
 <!-- claim: exists TRADEMARKS.md -->
 <!-- claim: count "ISOTONE_DL_S3_ENDPOINT" .github/workflows/release.yml = 5 -->
 <!-- claim: absent resources/brand/social-preview.jpg -->
@@ -69,6 +69,8 @@ depends_on: []
 
 ## 1. About Bar, Topics, and Social Preview
 
+**Requires:** operator -- the owner's logged-in GitHub session edits the About bar, topics, and social preview
+
 The About bar is the repository's first impression and the social preview is its face in every link. Both need the owner's logged-in session.
 
 **Groomed 2026-09-28:** the operator set the description, the ten topics (dotnet, gpl3, graphics, image-editor, photo-editor, raster-graphics, skiasharp, vector-graphics, windows, wpf), and the homepage https://rizonesoft.github.io/Isotone/ on 2026-09-27, and removed the custom social preview (`usesCustomOpenGraphImage: false`, read 2026-09-28); what is left is the agent verification, reading "all eight topics" as the ten above, which become the `docs/facts.json` values of `D00 T01 §10`. Whether the homepage stays the design page or becomes `ISOTONE_SITE_URL` is decided in §9.
@@ -93,6 +95,8 @@ The About bar is the repository's first impression and the social preview is its
 
 ## 2. Branch Protection with the Required Checks
 
+**Requires:** operator -- the owner's GitHub admin rights set branch protection on main
+
 A protected `main` keeps a red build from landing. The checks must be the real job names from the workflows, which exist only after `D00 T01 §5` has run them once.
 
 **Corrected 2026-09-28:** said the checks are `build` and `plan-gates`: `build` is the workflow, its job and check run is `build-windows`, and `plan.yml` also runs `campaign-guard`. Because `plan.yml` is path-filtered, requiring `plan-gates` blocks a pull request that touches none of its paths; drop the path filter from its `pull_request` trigger in the same change (owned by `D00 T01 §5`) or leave `plan-gates` out of the required set.
@@ -108,6 +112,8 @@ A protected `main` keeps a red build from landing. The checks must be the real j
 **Test checkpoint:** the `gh api` output names `build` and `plan-gates` as required; a test push of a commit that fails `plan-gates` (on a scratch branch merged by PR) is blocked. Cheaper substitute that fails: a rule with no required checks.
 
 ## 3. A Code-Signing Certificate
+
+**Requires:** operator -- buying the certificate needs the company's purchasing account and its identity validation
 
 Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is written to use a certificate by thumbprint from the Windows certificate store or a cloud signing service, and never a file in the repository. Obtaining one is a purchase and an identity check only the operator can do.
 
@@ -125,6 +131,8 @@ Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is writte
 
 ## 4. Confirm the Icon Art Licenses
 
+**Requires:** operator -- the copyright holder reads and accepts the icon art licenses
+
 `resources/icons/art-and-design.png` (planned as Gesso's icon) and `resources/icons/lens.png` (planned as Albumen's) look like stock illustrations. Shipping them inside an installer requires a license that allows redistribution in a GPL-3.0 application, with attribution if the license asks for it.
 
 **Groomed 2026-09-28:** effectively answered: the only open step is one operator sentence confirming the License section of `resources/icons/README.md`; the stock-art paragraph and the three-row item are historical.
@@ -139,6 +147,8 @@ Unsigned installers show SmartScreen warnings. Signing (`D05 T01 §2`) is writte
 **Test checkpoint:** `resources/icons/README.md` has a license row for Stilus, Gesso, and Albumen with a source URL or an ownership statement (**Corrected 2026-09-27:** its License section covers all three apps' SVGs with a project-created, GPL-3.0 statement). Cheaper substitute that fails: "found on the internet".
 
 ## 5. Choose Each App's Accent Color
+
+**Requires:** operator -- a taste call on each app's accent color that only the operator makes
 
 The design contract gives the suite one neutral grey ramp and lets each app name one accent for focus and selection. Until chosen, the accent is a grey. This is a taste decision.
 
@@ -155,6 +165,8 @@ The design contract gives the suite one neutral grey ramp and lets each app name
 
 ## 6. Assign the Copyright to Rizonetech (Pty) Ltd
 
+**Requires:** operator -- the assignment is signed by the copyright holder, Rizonetech (Pty) Ltd
+
 Operator decision 2026-09-27: the copyright holder is Rizonetech (Pty) Ltd, the operator's company, and Rizonesoft is its brand. The repository already says so, but the work was written by Derick Payne personally (Bezier, now Stilus; Imago, now Gesso; and Photon, now Isotone, including the MIT-licensed releases Bezier and Imago published before the monorepo), so the company holds the copyright only once a written assignment says it does. This is a legal document only the operator can sign. Advice: have a South African intellectual property attorney draft or review it; South African copyright law (the Copyright Act 98 of 1978) expects an assignment in writing signed by the assignor, and the attorney confirms the form.
 
 **Corrected 2026-09-28:** the 2026-09-27 rename had replaced Imago and Photon with Gesso and Isotone in this row; the deed names the works as they were published (Bezier, Imago, Photon) with their current names.
@@ -168,6 +180,8 @@ Operator decision 2026-09-27: the copyright holder is Rizonetech (Pty) Ltd, the 
 **Test checkpoint:** the `docs/dev/decisions.md` entry names the assignment date, and the two `git grep` outputs show no copyright line naming anyone but Rizonetech (Pty) Ltd outside third-party notices. Cheaper substitute that fails: changing the copyright lines without a signed assignment, which leaves the company claiming a copyright it does not hold.
 
 ## 7. Trademark Clearance and CIPC Filing
+
+**Requires:** operator -- the trademark search and filing run under the company's CIPC account
 
 `TRADEMARKS.md` says "Rizonesoft", "Isotone Graphics Suite", "Stilus", "Gesso", and "Albumen" and the app icons are trademarks of Rizonetech (Pty) Ltd, without claiming registration. Before relying on the names (and before the first release makes them public), the operator clears them against existing marks and files the ones that clear. The 2026-09-27 pre-screen below cleared the new names only provisionally, so a conflict found in the full search may still mean renaming an app, which is far cheaper before its first release than after. **Corrected 2026-09-28:** the common-words sentence described the retired names (Imago, Lumen, Nodus) and was carried into the new names by the rename.
 
@@ -183,6 +197,8 @@ Operator decision 2026-09-27: the copyright holder is Rizonetech (Pty) Ltd, the 
 
 ## 8. Download Storage and the Release Secrets
 
+**Requires:** operator -- the storage account and the repository secrets belong to the owner's storage provider and GitHub accounts
+
 Operator decision 2026-09-27: binaries are distributed only from rizonesoft.com, through S3-compatible object storage behind the CDN host `download.rizonesoft.com`; the provider is not chosen. `release.yml` uploads there with rclone and fails a tag release when any of its four secrets is missing, so no app can release until this row is done (`D02 T05 §4` depends on it). The layout, the feed, and the settings are in `docs/dev/versioning.md`.
 
 - [ ] Choose the provider (for example Cloudflare R2, Backblaze B2 with a CDN, Wasabi, DigitalOcean Spaces, or Amazon S3 with CloudFront) and record the choice, its egress cost, and the reason in `docs/dev/decisions.md`. Done when: the entry exists.
@@ -196,6 +212,8 @@ Operator decision 2026-09-27: binaries are distributed only from rizonesoft.com,
 
 ## 9. Decide the Product Page URLs
 
+**Requires:** operator -- the product page URLs are decided on the owner's rizonesoft.com site
+
 Every link to a product page (the installer's publisher URL, the About dialog, the update check's Open Download Page, the README, the release body, and winget's `PackageUrl`) reads one value, `ISOTONE_SITE_URL`, which defaults to `https://www.rizonesoft.com/` because the pages on rizonesoft.com are not decided. Links from GitHub surfaces add `?utm_source=github&utm_medium=<place>`.
 
 - [ ] Decide the pages: one suite page, or one page per app (for example `https://www.rizonesoft.com/stilus/`), and publish them on rizonesoft.com. Done when: `docs/dev/decisions.md` records the URLs and each page answers 200.
@@ -206,6 +224,8 @@ Every link to a product page (the installer's publisher URL, the About dialog, t
 **Test checkpoint:** `gh variable list` shows `ISOTONE_SITE_URL` equal to the recorded page, and `curl -sI` of each recorded URL returns 200 (quoted). Cheaper substitute that fails: typing a per-app URL into the README or a dialog, which leaves the one value and the surfaces disagreeing.
 
 ## 10. Decide on a CLA Before Outside Contributions
+
+**Requires:** operator -- whether contributors sign a CLA is a licensing decision only the copyright holder makes
 
 Contributors keep the copyright of their contributions and license them under GPL-3.0 with the DCO sign-off (`CONTRIBUTING.md`); there is no contributor license agreement. That keeps contributing simple, but it means Rizonetech (Pty) Ltd could not relicense or dual-license code others wrote. The operator decides, with the IP attorney of §6, before the first pull request from someone other than the operator is merged.
 

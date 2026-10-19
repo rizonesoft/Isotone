@@ -338,6 +338,7 @@ Values are comma-separated closed vocabulary (`todo-graph.py` `REQUIRES_ALLOWED`
 | Value | Means | Detected how (local context) |
 | ----- | ----- | ---------------------------- |
 | `display-session` | A Windows interactive session able to show windows: driven runs of the built apps, eyeball checks, captures instead of black frames | `sys.platform == "win32"` with `SESSIONNAME` naming an interactive session (not `Services`, never empty); every other context evaluates False |
+| `operator` | An operator at the keyboard with the owner's accounts: a click path behind the owner's login, a purchase, a signature, or a taste call; every section of `todo/99-manual/` carries it | Declared-only, never detected: no runner's context satisfies it, so `query ready` lists the row as runnable elsewhere and only `--context operator` lists it as runnable |
 
 A section whose open work is worked OUTSIDE this tree carries a `Moved:` marker under its heading:
 

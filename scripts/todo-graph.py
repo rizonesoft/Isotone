@@ -250,11 +250,15 @@ NEEDS_ALLOWED: dict[str, str] = {
 # ported from ScratchPad D00 T01 §13). CLOSED like NEEDS_ALLOWED:
 # `validate` refuses any other value, and refuses a mark without its
 # reason, so a typo cannot silently unmark a section and every mark
-# cites the measurement that convicted it. One value today (the first
-# evidenced mark); a second value is one more entry here, one detector
-# branch below, and its self-test cases.
+# cites the measurement that convicted it. Two values: display-session
+# (detected below) and operator (declared-only, ported from ScratchPad's
+# todo-graph.py by D00 T01 §2: no detector ever reports it, so only
+# `query ready --context operator` satisfies it). A further value is one
+# more entry here, a detector branch below unless it is declared-only,
+# and its self-test cases.
 REQUIRES_ALLOWED: tuple[str, ...] = (
     "display-session",
+    "operator",
 )
 REQUIRES_BLOCK_RE = re.compile(r"^\*\*Requires:\*\*\s*(?P<body>.+?)\s*$")
 REQUIRES_REASON_SEP = " -- "
@@ -270,6 +274,10 @@ def detect_context(platform: str | None = None, environ=None) -> set[str]:
     window-station-less session cannot drive the built tools or capture
     their windows, and never as session 0, which names itself
     "Services" and has no window station (headless services, CI runners).
+
+    `operator` is declared-only and never detected: it marks a step only
+    the operator can perform with the owner's accounts, so no runner's
+    environment satisfies it, and only `--context operator` declares it.
     """
     plat = sys.platform if platform is None else platform
     env = os.environ if environ is None else environ
@@ -6691,6 +6699,9 @@ track: Z1
 |   4   |   §4    | Valid mark | -- |  [ ]   |
 |   5   |   §5    | Shipped unmarked | -- |  [x]   |
 |   6   |   §6    | Two lines, last wins | -- |  [ ]   |
+|   7   |   §7    | Operator typo | -- |  [ ]   |
+|   8   |   §8    | Operator without reason | -- |  [ ]   |
+|   9   |   §9    | Operator mark | -- |  [ ]   |
 
 ---
 
@@ -6746,6 +6757,33 @@ track: Z1
 **Requires:** printerz -- first line loses
 
 **Requires:** display-session -- second wins
+
+- [ ] Do the thing
+- [ ] Commit: `"selftest: gamma"`
+
+**Test checkpoint:** `true`
+
+## 7. Operator typo
+
+**Requires:** operater -- needs a person at the keyboard
+
+- [ ] Do the thing
+- [ ] Commit: `"selftest: gamma"`
+
+**Test checkpoint:** `true`
+
+## 8. Operator without reason
+
+**Requires:** operator
+
+- [ ] Do the thing
+- [ ] Commit: `"selftest: gamma"`
+
+**Test checkpoint:** `true`
+
+## 9. Operator mark
+
+**Requires:** operator -- needs a person at the keyboard
 
 - [ ] Do the thing
 - [ ] Commit: `"selftest: gamma"`
@@ -6949,6 +6987,18 @@ def cmd_self_test(_args) -> int:
                   any("§5" in ln for ln in rfatal), False)
             check("a valid last line draws no Requires FATAL",
                   any("§6" in ln for ln in rfatal), False)
+            check("an operator typo is FATAL (requires-unknown)",
+                  any("§7" in ln and "not in the closed list" in ln for ln in rfatal), True)
+            check("an operator mark without its reason is FATAL (requires-no-reason)",
+                  any("§8" in ln and "with no reason" in ln for ln in rfatal), True)
+            check("a valid operator mark draws no Requires FATAL",
+                  any("§9" in ln for ln in rfatal), False)
+            check("an operator mark parses values plus reason",
+                  (g.sections[9].requires, g.sections[9].requires_reason),
+                  (["operator"], "needs a person at the keyboard"))
+            check("operator is never detected, even in an interactive Windows session",
+                  "operator" in detect_context(platform="win32", environ={"SESSIONNAME": "Console"}),
+                  False)
             check("display-session holds on Windows with SESSIONNAME",
                   detect_context(platform="win32", environ={"SESSIONNAME": "Console"}),
                   {"display-session"})
@@ -6982,6 +7032,13 @@ def cmd_self_test(_args) -> int:
                   (code, any("unknown:printerz" in ln and "§1" in ln for ln in lines)), (0, True))
             check("a mark with no values parks even in a display context",
                   (code, any("no values (see validate)" in ln and "§3" in ln for ln in lines)), (0, True))
+            check("a display context parks the operator row with its requirement named",
+                  (code, any("requires operator (missing: operator)" in ln and "§9" in ln for ln in lines)), (0, True))
+            code, lines = ready_lines(context=["operator"])
+            check("an operator context lists the operator row runnable",
+                  (code, any("§9" in ln and "requires" not in ln for ln in lines)), (0, True))
+            check("an operator context still parks the display row",
+                  (code, any("requires display-session (missing: display-session)" in ln and "§4" in ln for ln in lines)), (0, True))
             code, lines = ready_lines()
             check("query ready without a context flag still exits 0",
                   code, 0)
