@@ -5,7 +5,9 @@
 Task Scheduler starts this through `pythonw.exe` (install.ps1 registers every task in tasks.json with it). It
 runs the task's command from the repository root with the task's timeout, writes the combined output to
 `build/automations/<name>/<UTC>.log` (the newest 20 kept) and the outcome to `build/automations/<name>/last.json`,
-and on a non-zero exit or a timeout sends the failure email through alert.py. Windows has no systemd
+and on a non-zero exit, a timeout, or a command that cannot start (126) sends the failure email through
+alert.py. Every process it starts, and every nested launch in the tasks, carries CREATE_NO_WINDOW, so a
+scheduled run never opens a console on the desktop. Windows has no systemd
 `OnFailure=`, so this wrapper is the one place a failure is reported. Its own exit is the command's (124 on a
 timeout, or 3 when the alert could not be sent), so Task Scheduler's Last Run Result shows the failure too.
 """
@@ -79,7 +81,8 @@ def _utc(stamp: bool = False) -> str:
 
 def _kill_tree(proc) -> None:
     if os.name == "nt":
-        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=60)
+        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=60,
+                       creationflags=NO_WINDOW)
     else:
         proc.kill()
     proc.wait(timeout=60)
@@ -94,13 +97,19 @@ def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_ki
                "timed_out": False}
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     with open(log, "wb") as out:
-        proc = popen(resolve(task["command"]), cwd=root, stdout=out, stderr=subprocess.STDOUT,
-                     stdin=subprocess.DEVNULL, env=env, creationflags=NO_WINDOW if os.name == "nt" else 0)
         try:
-            outcome["exit"] = proc.wait(timeout=task["timeout_minutes"] * 60)
-        except subprocess.TimeoutExpired:
-            killer(proc)
-            outcome.update(exit=124, timed_out=True)
+            proc = popen(resolve(task["command"]), cwd=root, stdout=out, stderr=subprocess.STDOUT,
+                         stdin=subprocess.DEVNULL, env=env, creationflags=NO_WINDOW if os.name == "nt" else 0)
+        except OSError as error:  # the command never started: a failed run like any other, so it is alerted
+            out.write(f"run.py: could not start {task['command'][0]}: {error}\n".encode("utf-8"))
+            proc = None
+            outcome["exit"] = 126
+        if proc is not None:
+            try:
+                outcome["exit"] = proc.wait(timeout=task["timeout_minutes"] * 60)
+            except subprocess.TimeoutExpired:
+                killer(proc)
+                outcome.update(exit=124, timed_out=True)
     outcome["finished"] = _utc()
     logs = sorted(f for f in os.listdir(folder) if f.endswith(".log"))
     for old in logs[:-KEEP_LOGS]:

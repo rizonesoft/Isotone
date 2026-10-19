@@ -58,6 +58,7 @@ RELAUNCH_AFTER = 15 * 60
 STALLED_RESUMES = 3
 SUPERVISE_FOR = 4 * 3600
 POLL = 30.0
+NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 OBSERVED_DAYS = 7
 
 PROMPT = ("Claude keep-alive for Isotone: this session owns the open campaign run in "
@@ -271,7 +272,7 @@ def _fingerprint(root: str, guard: dict) -> str:
     import hashlib
     try:
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True,
-                              timeout=30).stdout.strip()
+                              timeout=30, creationflags=NO_WINDOW).stdout.strip()
     except (OSError, subprocess.TimeoutExpired):
         head = ""
     try:
@@ -340,7 +341,8 @@ def _launch(argv: list[str], root: str, log_path: str):
 
 def _kill_tree(child) -> None:
     if os.name == "nt" and getattr(child, "pid", None):
-        subprocess.run(["taskkill", "/PID", str(child.pid), "/T", "/F"], capture_output=True, timeout=60)
+        subprocess.run(["taskkill", "/PID", str(child.pid), "/T", "/F"], capture_output=True, timeout=60,
+                       creationflags=NO_WINDOW)
     else:
         child.kill()
     try:

@@ -18,6 +18,7 @@ import sys
 
 REPO = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SOLUTION = "Isotone.slnx"
+NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 
 
 def findings(report: dict) -> list[str]:
@@ -55,13 +56,14 @@ def main(argv: list[str]) -> int:
             return 2
         else:
             restore = subprocess.run(["dotnet", "restore", SOLUTION, "-v", "q", "-nologo"], cwd=REPO,
-                                     capture_output=True, text=True, timeout=1200)
+                                     capture_output=True, text=True, timeout=1200, creationflags=NO_WINDOW)
             if restore.returncode:
                 print("check-vulnerable-packages: restore failed:\n" + restore.stdout[-2000:] + restore.stderr[-2000:],
                       file=sys.stderr)
                 return 2
             listed = subprocess.run(["dotnet", "list", SOLUTION, "package", "--vulnerable", "--include-transitive",
-                                     "--format", "json"], cwd=REPO, capture_output=True, text=True, timeout=600)
+                                     "--format", "json"], cwd=REPO, capture_output=True, text=True, timeout=600,
+                                    creationflags=NO_WINDOW)
             if listed.returncode:
                 print("check-vulnerable-packages: dotnet list failed:\n" + listed.stderr[-2000:], file=sys.stderr)
                 return 2

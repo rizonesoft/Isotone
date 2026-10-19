@@ -156,6 +156,27 @@ class Runner(unittest.TestCase):
         self.assertEqual(len(list(folder.glob("*.log"))), run.KEEP_LOGS)
         self.assertTrue((self.root / self.last("isotone-pass")["log"]).exists())
 
+    def test_a_command_that_cannot_start_is_recorded_and_alerted(self):
+        def cannot_start(*_a, **_kw):
+            raise PermissionError(13, "Access is denied")
+
+        self.assertEqual(self.main("isotone-pass", popen=cannot_start), 126)
+        outcome = self.last("isotone-pass")
+        self.assertEqual(outcome["exit"], 126)
+        self.assertIn("could not start", (self.root / outcome["log"]).read_text(encoding="utf-8"))
+        (_name, _task, alerted, tail), = self.alerts
+        self.assertEqual(alerted["exit"], 126)
+        self.assertIn("Access is denied", tail)
+
+    def test_every_nested_launch_opens_no_console(self):
+        for path in (AUTO / "run.py", AUTO / "alert.py", REPO / "scripts" / "check-vulnerable-packages.py",
+                     REPO / "scripts" / "campaign_keepalive.py"):
+            text = path.read_text(encoding="utf-8")
+            calls = text.count("subprocess.run([") + text.count("subprocess.Popen(") + text.count("run([\"wsl.exe\"")
+            flagged = text.count("creationflags=")
+            with self.subTest(path=path.name):
+                self.assertGreaterEqual(flagged, calls - text.count('"git", "init"'), path.name)
+
     def test_an_unknown_task_is_refused(self):
         self.assertEqual(self.main("isotone-missing"), 2)
 

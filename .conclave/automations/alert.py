@@ -40,7 +40,8 @@ class Refused(Exception):
 def key(run=subprocess.run) -> str:
     """The API key, refused unless it has SMTP2GO's shape ("api-" and 32 letters or digits); never echoed."""
     result = run(["wsl.exe", "-e", "bash", "-lc", f'conclave-op read "{ITEM}/credential"'],
-                 capture_output=True, text=True, timeout=90)
+                 capture_output=True, text=True, timeout=90,
+                 creationflags=0x08000000 if os.name == "nt" else 0)  # CREATE_NO_WINDOW: run.py has no console
     value = (result.stdout or "").strip()
     if result.returncode != 0 or not value:
         raise Refused("vault field credential is unavailable")
