@@ -29,8 +29,9 @@ The delegates:
 | `debug-evidence` | nothing | The evidence for a bug before anyone forms a theory: logs around the failure, safe reproduction attempts, what changed recently |
 | `git-runner` | nothing | Read-only git surveys: status, diff summaries, log and blame archaeology (the shell gate denies every git write) |
 | `test-runner` | `build/` only | Running a named test or check command outside a section's gate run and reporting the counts and the exact failures |
+| `mutation-tester` | a scratch folder outside the repository only | Proving a test can fail: each mutation the lead specifies, applied in a scratch copy of the candidate, the named command run, the file restored, and killed or survived reported per mutation |
 
-The last four come from the Conclave-SDK `base` kit (imported 2026-10-19), pinned here like the `isotone-*` definitions: the `[delegate]` effort, the denied edit tools, and the `delegate-shell-gate` hook. The kit's `mutation-tester` is not imported, because it needs `git worktree add` and `git apply`, which the shell gate denies to every delegate. A `forge.py sync` refreshes kit subagents from the SDK, so after one, `python scripts/panel_slots.py validate` must pass before the session uses them.
+The last five come from the Conclave-SDK `base` kit (four imported 2026-10-19, `mutation-tester` 2026-10-21), pinned here like the `isotone-*` definitions: the `[delegate]` effort, the denied edit tools, and the `delegate-shell-gate` hook. The kit's `mutation-tester` builds its copy with `git worktree add` and `git apply`, which the shell gate denies to every delegate, so Isotone's copy (operator decision 2026-10-21) builds it from `git ls-files` with a plain file copy into a scratch folder outside the repository and runs no git write. A `forge.py sync` refreshes kit subagents from the SDK, so after one, `python scripts/panel_slots.py validate` must pass before the session uses them.
 
 ## What the lead keeps
 
