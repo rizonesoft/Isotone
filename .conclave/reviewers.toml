@@ -1,132 +1,25 @@
-# Review wiring: the writer, its delegate pin, the model registry, and slot -> (model, effort, timeout).
+# Independent reviewers for this repository, read by scripts/review-dispatch.py (the Conclave-SDK reviewer kit's
+# schema, adopted 2026-10-21: the operator chose "Full adoption" and "Astra high, no fallback").
 #
-# The single source of truth for every review pin. Carried from Resolute
-# on 2026-09-26 with the same slots and models. Skills name slots and run
-# them through `python scripts/panel_slots.py exec <slot>`; they never
-# name a model. `scripts/panel_slots.py` validates this file: the slot
-# set is exact, every slot names a registered, non-retired model, efforts
-# are a closed set, and no slot runs the writer's family, so the writer
-# never reviews its own work.
+# A route names one reviewer and at most one fallback for work written by one agent, and neither is of the writer's
+# own model family (the CLI names it: codex is OpenAI, agy is Google, claude is Anthropic). Claude Code is Isotone's
+# only writer (operator decision), so only the claude route exists. It names GPT-6 Astra alone: there is no fallback
+# (operator decision 2026-09-25, kept 2026-10-21), so a round Astra cannot return waits for the operator, and the
+# writer's family never reviews. Every review round runs through this route: the panel rounds, the architecture gate,
+# the plan review, the stamp review, and the independent pass.
 #
-# Re-pinning a reviewer is an edit here plus a fresh echo probe date on
-# the model entry; nothing else in the tree changes.
-#
-# Operator decision (Resolute 2026-09-25, adopted for Isotone): every
-# review slot runs GPT-6 Astra through codex (bulk at medium, every other
-# slot at high), and there are no fallback slots. A failed round stops
-# for the operator.
+# Loaded strictly: an unknown key, an unknown CLI, a malformed model, a route naming an undefined reviewer, a
+# same-family reviewer or a second fallback refuses every dispatch. `python scripts/panel_slots.py validate` also
+# refuses a claude route with a fallback. Re-pinning a reviewer is one edit here; nothing else in the tree names a
+# model.
 
-# Operator decision: Claude Code on Opus 5.5 is the only writer.
-[writer]
-model = "claude-opus-5-5"
+schema_version = 1
 
-# Writer-side delegation (operator decision 2026-10-01: "Delegate as much
-# research, implementation, testing, documentation, and routine review as
-# can reliably meet that bar to Claude Sonnet subagents running explicitly
-# at high effort"), narrowed 2026-10-02 ("I am not confortable with having
-# a sonnet writer"), and since 2026-10-17 (Conclave-SDK 4ca1af5)
-# subagents read and run and never write: delegates research, run gates,
-# and sweep reviews, and the main loop makes every change. The writer session stays
-# the lead and the writer of record; its subagents are the `.claude/agents/*.md` definitions, each of
-# which names `alias` as its model and `effort` as its effort, and
-# `standards/delegation.md` routes the work. `model` is what the alias
-# resolved to at the last `delegate-probe` (the registry entry carries the
-# probe date). The delegate shares the writer's family, so the validator
-# keeps it off every review slot: delegates never review on the panel.
-# Re-pinning after a probe reports drift is an edit here plus a fresh
-# registry entry and probe date.
-[delegate]
-alias = "sonnet"
-model = "claude-sonnet-5-5"
-effort = "high"
-
-# The model registry. `family` picks the runner (codex or claude; the
-# grok family survives only in retired entries the validator still
-# parses). `probed` is the date of the last live echo probe through that
-# runner. `retired` marks pins only historical records name: run records
-# and stamps keep parsing, and no slot may use them. `newest` is a regex
-# whose captures are version parts: records naming any concrete model it
-# matches (suffixed variants such as `-build-fast` never match) parse.
-# `served` names what the provider reported having run, for records only.
-[model."gpt-6-astra"]
-family = "codex"
-probed = "2026-09-25"
-
-[model."gpt-6-sol"]
-family = "codex"
-retired = "2026-09-25"
-
-# Retired with the Grok fallbacks; kept so the validator's legacy Grok
-# rules keep a registered family to parse against.
-[model."grok-newest"]
-family = "grok"
-retired = "2026-09-25"
-newest = "grok-(\\d+)\\.(\\d+)"
-served = "grok-(\\d+)\\.(\\d+)-build"
-
-[model."gpt-5.6-terra"]
-family = "codex"
-retired = "2026-09-23"
-
-[model."claude-opus-5-5"]
-family = "claude"
-probed = "2026-09-23"
-
-# The delegate pin: `claude -p --model sonnet --effort high` served this
-# model, and its transcript recorded effort high (probed 2026-10-01).
-[model."claude-sonnet-5-5"]
-family = "claude"
-probed = "2026-10-01"
-
-[model."gpt-5.6-sol"]
-family = "codex"
-retired = "2026-09-23"
-
-[model."opus"]
-family = "claude"
-retired = "2026-09-23"
-
-# Panel rounds. Full: R1-R2 bulk, R3 signoff, R4-R5 depth (blocking
-# findings only). Light: R1 bulk, R2 signoff. There are no fallback
-# slots: a failed round re-runs nothing and waits for the operator.
-[slot.bulk]
-model = "gpt-6-astra"
-effort = "medium"
-timeout = 600
-
-[slot.signoff] # governs every stamp
+# GPT-6 Astra through the Codex CLI, read-only sandbox, high effort (the effort every review round runs at).
+[reviewers.astra]
+cli = "codex"
 model = "gpt-6-astra"
 effort = "high"
-timeout = 600
 
-[slot.depth]
-model = "gpt-6-astra"
-effort = "high"
-timeout = 600
-
-# Plan review after panel close.
-[slot.plan-primary]
-model = "gpt-6-astra"
-effort = "high"
-timeout = 900
-
-# The staged-stamp review before the stamp commit.
-[slot.stamp-check]
-model = "gpt-6-astra"
-effort = "high"
-timeout = 600
-
-# The independent `codex review --commit` pass in process-todo-section.
-[slot.independent]
-model = "gpt-6-astra"
-effort = "high"
-timeout = 900
-
-# The architecture gate after panel close (shared Isotone.Core contracts,
-# document and settings storage, plugin and extension seams, file
-# format readers and writers, undo history). Blocking, GPT like the
-# sign-off.
-[slot.arch-primary]
-model = "gpt-6-astra"
-effort = "high"
-timeout = 600
+[routes]
+claude = ["astra"]

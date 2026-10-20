@@ -1,0 +1,36 @@
+---
+name: independent-review
+description: Get an independent review of your own work outside a TODO section from the reviewer pinned in .conclave/reviewers.toml (GPT-6 Astra, never the writer's family, no fallback) through scripts/review-dispatch.py, then verify and act on every finding. Use before calling a nontrivial workspace change done or before a commit that ships it; TODO sections review through review-todo-section instead.
+---
+
+# Independent review
+
+Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` (the Conclave-SDK reviewer kit's pin, adopted 2026-10-21) names who reviews Claude's work, and `scripts/review-dispatch.py` runs the round.
+
+| Work written by | Reviewer | Fallback |
+| --- | --- | --- |
+| Claude (the only writer) | GPT-6 Astra, high effort | none: a round Astra cannot return waits for the operator |
+
+The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` refuses a fallback or a second writer route (operator decisions 2026-09-25 and 2026-10-21). A TODO section never uses this skill: its panel, architecture, plan, stamp, and independent rounds run through the same dispatcher inside `review-todo-section` and `process-todo-section`.
+
+## Steps
+
+1. Review your own change first and fix what you find.
+2. Write the review prompt to a scratch file, not the repository, from `docs/review-round-prompt.md`: name the candidate commit or range by its full sha, the governing documents, and the lenses that apply.
+3. Run the round as the writer, keeping the raw evidence beside the review:
+
+   ```bash
+   KEEP=$(mktemp -d /tmp/review-XXXXXXXX)
+   python scripts/review-dispatch.py --writer claude --prompt <scratch>/review-prompt.md --keep $KEEP --record docs/reviews/independent/<YYYY-MM-DD>-<topic>.md
+   ```
+
+4. Read the review. Verify every finding against the code before acting: fix what is real, and record why anything else is not, as text after the round (a `## Response to round N` heading), never inside it.
+5. Commit fixes as new commits and run another round on the new tip, up to 3 rounds. A unit that needs patching three rounds running gets re-thought, not patched again.
+
+## Rules
+
+- The dispatcher's JSON output and the `## Round N` section it appends are the evidence. A verdict with no record is an opinion. Independent records live under `docs/reviews/independent/`, apart from the per-section findings files the TODO validators read.
+- Exit 1 means no review was returned. That is never an approval: say so, record it, and wait for the operator rather than shipping on it.
+- A reviewer that could not reach the work (its sandbox could not read the repository) replies `OVERALL: blocked`, which counts as no review. If its sandbox keeps failing, put the diff in the prompt.
+- Reviewers run read-only. Never pass a reviewer a secret, and never ask it to edit files.
+- Change reviewers only in `.conclave/reviewers.toml`, never by calling a model directly.

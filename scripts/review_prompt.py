@@ -6557,14 +6557,15 @@ def _self_test() -> int:
             ("skill-tree-clean",
              "git --no-replace-objects diff --quiet ||"),
             ("skill-stamp-no-fallback",
-             "Slot-timeout expiry has no fallback slot"),
-            ("skill-panel-slot",
-             "python scripts/panel_slots.py exec <slot> < $RUNDIR/review-prompt.md"),
-            ("skill-plan-slot", "python scripts/panel_slots.py exec plan-primary"),
-            ("skill-stamp-slot", "python scripts/panel_slots.py exec stamp-check"),
-            ("skill-arch-slot", "python scripts/panel_slots.py exec arch-primary"),
+             "A failed attempt (dispatcher exit 1) has no fallback"),
+            ("skill-panel-round",
+             "python scripts/review-dispatch.py --writer claude --prompt $RUNDIR/review-prompt.md --keep $ROUND"),
+            ("skill-panel-output", "check-panel --manifest $RUNDIR/manifest.md < $ROUND/review.md"),
+            ("skill-plan-round", "--prompt $RUNDIR/plan-review-prompt.md --keep $RUNDIR/plan"),
+            ("skill-stamp-round", "--prompt $RUNDIR/stamp-prompt.md --keep $RUNDIR/stamp-1"),
+            ("skill-arch-round", "--prompt $RUNDIR/arch-prompt.md --keep $RUNDIR/arch"),
             ("skill-grok-cutoff", "on any later stamp it fails validation, because Grok left the panel"),
-            ("skill-no-fallback", "re-runs nothing on another family, because there is no fallback slot"),
+            ("skill-no-fallback", "re-runs nothing on another family, because the route has no fallback"),
             ("skill-no-third-rung", "the writer's family never fills a round"),
             ("skill-holds-period",
              "The period is part of the verdict."),
@@ -6597,6 +6598,8 @@ def _self_test() -> int:
         check(pin, needle in skill_text, skill_path)
     check("skill-attest-no-checker", "--checker-output" not in skill_text,
           skill_path)
+    # 2026-10-21: every round runs scripts/review-dispatch.py; the retired slot runner is gone.
+    check("skill-no-slot-runner", "panel_slots.py exec" not in skill_text, skill_path)
     # D00 T04 §27: every review pin lives in .conclave/reviewers.toml, so the
     # skill names slots and never a model or a model alias.
     check("skill-no-model-literal",

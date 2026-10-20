@@ -232,16 +232,16 @@ Push the SHIP push. The commit must exist on the remote before the next step, be
 **An outside reviewer reads the commit before this session stamps its own work.** The session that built a section is the worst judge of whether it is right, and this step exists to break that.
 
 ```bash
-python scripts/panel_slots.py exec independent --commit <SHIP_SHA>
+IND=$(mktemp -d /tmp/independent-XXXXXXXX)
+# Fill docs/review-round-prompt.md into $IND/prompt.md: the full <SHIP_SHA>, what the section is meant to do, its ref, the governing documents.
+python scripts/review-dispatch.py --writer claude --prompt $IND/prompt.md --keep $IND --timeout 900 > $IND/summary.json
 ```
 
 It reviews read-only and changes nothing.
 
-**The model is pinned in the `independent` slot of `.conclave/reviewers.toml`, not left to the machine's config.** `exec` runs `codex review --commit <SHIP_SHA>` with the slot's model and effort as `-c` overrides, enforces the slot timeout, and prints the resolved pin as its first stderr line; quote that line in the `Independent:` line. `~/.codex/config.toml` has a `model` key, and relying on it makes every stamp's `Review:` line unverifiable: a stamp records which reviewer read a commit, and a model taken from a config file anybody can edit is only as good as the config on the day somebody reads it back. Pinning it means the slot table at the stamped commit and the stamp together say exactly what reviewed what. Re-pinning is an edit to `.conclave/reviewers.toml` plus a fresh probe date, never an edit here, and stamps written under an earlier pin are left alone: they record what actually read those commits.
+**The reviewer is pinned in `.conclave/reviewers.toml`, not left to the machine's config.** The dispatcher runs the reviewer the claude route names (a codex reviewer as `codex exec` with the pin's model and effort as flags, in its read-only sandbox), enforces `--timeout`, and prints a JSON summary naming the reviewer, model, CLI, and effort that ran; quote those in the `Independent:` line, with the review from `$IND/review.md`. `~/.codex/config.toml` has a `model` key, and relying on it makes every stamp's `Review:` line unverifiable: a stamp records which reviewer read a commit, and a model taken from a config file anybody can edit is only as good as the config on the day somebody reads it back. Pinning it means the pin at the stamped commit and the stamp together say exactly what reviewed what. Re-pinning is an edit to `.conclave/reviewers.toml`, never an edit here, and stamps written under an earlier pin are left alone: they record what actually read those commits.
 
-**`--commit` takes no review instructions.** The usage line prints `codex review --commit <SHA> [PROMPT]`, but supplying either a prompt string or `-` for stdin fails with `the argument '--commit <SHA>' cannot be used with '[PROMPT]'`. `--base <BRANCH>` and `--uncommitted` refuse a prompt the same way. Do not add one **on this command**.
-
-**A bare prompt works.** `codex review "<instructions>"` with **no scope flag** is legal, reviews the latest commit when the working tree is clean, and obeys the instructions. Its price is that the scope is implicit: a bare prompt cannot pin a SHA, so it is only trustworthy with a clean tree immediately after the SHIP push, when the latest commit is the one under review. Check the summary names the right work before believing it. The pinned `--commit` pass above stays the pass of record, because a stamp needs a scope that cannot be misread.
+**The prompt pins the scope.** `docs/review-round-prompt.md` names the candidate by its full sha, which the reviewer inspects with `git show`, so the scope is explicit and cannot be misread. Exit 1 means no review: the reviewer was not installed, failed, timed out, returned nothing, or replied `OVERALL: blocked` because its sandbox could not read the commit. That is a recorded gap, never a pass; when the sandbox keeps failing, put the diff (`git show <SHIP_SHA>`) in the prompt.
 
 Codex reads `AGENTS.md` from the repository root on its own, so the contract it needs is already in front of it: the paths table, the stack rules, and the proof types. **When a section needs review guidance the reviewer would not otherwise have, put it in the section's own `Test checkpoint` rather than in the command**, because the reviewer reads the section.
 

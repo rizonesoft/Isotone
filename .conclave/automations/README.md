@@ -6,7 +6,7 @@ Every scheduled job for Isotone lives here: the task list in `tasks.json`, the r
 
 | Task | When (local time) | Runs | Fails when |
 | --- | --- | --- | --- |
-| `isotone-delegate-probe` | Monday 07:00 | `scripts/panel_slots.py delegate-probe` | the `sonnet` alias no longer serves the pinned delegate model at the pinned effort (`.conclave/reviewers.toml` needs a re-pin) |
+| `isotone-delegate-probe` | Monday 07:00 | `scripts/panel_slots.py delegate-probe` | the `sonnet` alias no longer serves the pinned delegate model at the pinned effort (`DELEGATE` in `scripts/panel_slots.py` needs a re-pin) |
 | `isotone-vulnerable-packages` | Monday 07:15 | `scripts/check-vulnerable-packages.py` | a NuGet package in `Isotone.slnx`, direct or transitive, has a published advisory, or the restore or the report fails |
 | `isotone-dotnet-ga` | Monday 07:30 | `scripts/check-sdk-ga.py` | the .NET 11 GA SDK is out while `global.json` still pins a release candidate, so `D00 T02 §8` is ready (a newer release candidate is printed, not failed) |
 

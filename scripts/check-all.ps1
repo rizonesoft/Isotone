@@ -17,10 +17,14 @@
   12. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
       (no new design-contract violation in the UI sources; standards/design-contract.md)
   13. python scripts/panel_slots.py --self-test
-  14. python scripts/panel_slots.py validate (the panel wiring, the delegate pin,
+  14. python scripts/panel_slots.py validate (the reviewer pin, the delegate pin,
       and the .claude/agents definitions; standards/delegation.md)
-  15. python scripts/weakening-scan.py --self-test
-  16. python scripts/tests/test_automations.py (the scheduled tasks, their
+  15. python scripts/review-dispatch.py --check-pin (the reviewer pin loads under
+      the dispatcher's rules)
+  16. python scripts/tests/test_review_dispatch.py (the dispatcher's routing,
+      read-only invocations, records, and --keep, with fake reviewer CLIs)
+  17. python scripts/weakening-scan.py --self-test
+  18. python scripts/tests/test_automations.py (the scheduled tasks, their
       runner and alert, and the weekly checks; .conclave/automations/README.md)
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
@@ -89,6 +93,8 @@ try {
     Invoke-PythonGate 'design-lint baseline' 'design-lint.py' @('--baseline', 'docs/design/.lint-baseline.json')
     Invoke-PythonGate 'panel_slots self-test' 'panel_slots.py' @('--self-test')
     Invoke-PythonGate 'panel_slots validate' 'panel_slots.py' @('validate')
+    Invoke-PythonGate 'reviewer pin' 'review-dispatch.py' @('--check-pin')
+    Invoke-PythonGate 'review-dispatch tests' 'tests/test_review_dispatch.py' @()
     Invoke-PythonGate 'weakening-scan self-test' 'weakening-scan.py' @('--self-test')
     Invoke-PythonGate 'automations tests' 'tests/test_automations.py' @()
   } else {

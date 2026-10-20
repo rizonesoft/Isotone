@@ -77,8 +77,8 @@ DIAG = _load_diag()
 
 
 def _load_panel_slots():
-    """The review wiring table's loader (D00 T04 §27): model names live
-    in `.conclave/reviewers.toml`, never in this module."""
+    """The delegation guard, whose `load` reads the reviewer pin
+    (`.conclave/reviewers.toml`) under the dispatcher's rules."""
     mod = sys.modules.get("panel_slots")
     if mod is not None:
         return mod
@@ -129,15 +129,63 @@ PROVENANCES = ("recorded", "reconstructed")
 # `Claude panel` is the family word, legacy records say `Opus panel`;
 # D00 T04 §29 adds `Grok panel` for the Grok fallbacks).
 HEADING_FAMILY = {"GPT": "codex", "Opus": "claude", "Claude": "claude", "Grok": "grok"}
-PANEL_TABLE = PANEL_SLOTS.load()
+# The models review records may name, by the family their heading records
+# (D00 T04 §27, §29). The registry lived in `.conclave/reviewers.toml` until
+# the pin took the Conclave-SDK reviewer schema (2026-10-21), which names
+# only today's reviewers; records are history, so the models they may name
+# stay here, retired pins included. A `newest` pattern accepts any concrete
+# release it matches (never a suffixed variant: `grok-4.7`, not
+# `grok-4.7-build-fast`), and `served` what the provider reported running.
+RECORD_MODELS = {
+    "gpt-6-astra": {"family": "codex"},
+    "gpt-6-sol": {"family": "codex"},
+    "gpt-5.6-terra": {"family": "codex"},
+    "gpt-5.6-sol": {"family": "codex"},
+    "claude-opus-5-5": {"family": "claude"},
+    "claude-sonnet-5-5": {"family": "claude"},
+    "opus": {"family": "claude"},
+    "grok-newest": {"family": "grok", "newest": r"grok-(\d+)\.(\d+)", "served": r"grok-(\d+)\.(\d+)-build"},
+}
+# The heading family a live reviewer's CLI records under.
+CLI_FAMILY = {"codex": "codex", "claude": "claude"}
+
+
+def record_registry() -> dict[str, dict]:
+    """RECORD_MODELS plus every reviewer the live pin names, so a re-pinned
+    reviewer's rounds check from the day it is pinned."""
+    models = {name: dict(entry) for name, entry in RECORD_MODELS.items()}
+    for entry in PANEL_SLOTS.load()["reviewers"].values():
+        family = CLI_FAMILY.get(entry["cli"])
+        if family:
+            models.setdefault(entry["model"], {"family": family})
+    return models
+
+
+PANEL_TABLE = record_registry()
+
+
+def family_models(family: str) -> tuple[str, ...]:
+    """Every model name of a family a record may name, retired pins included."""
+    return tuple(sorted(name for name, entry in PANEL_TABLE.items() if entry["family"] == family))
 
 
 def family_accepts(heading: str, model) -> bool:
     """A round's `model:` belongs to its heading's family: a registered
     model (retired pins included, so historical rounds keep checking),
     or a concrete model a `newest` entry resolves to (`grok-4.7`)."""
-    return isinstance(model, str) and PANEL_SLOTS.family_accepts(
-        HEADING_FAMILY[heading], model, PANEL_TABLE)
+    if not isinstance(model, str):
+        return False
+    family = HEADING_FAMILY[heading]
+    for name, entry in PANEL_TABLE.items():
+        if entry["family"] != family:
+            continue
+        if name == model and not entry.get("newest"):
+            return True
+        if entry.get("newest") and re.fullmatch(entry["newest"], model):
+            return True
+        if entry.get("served") and re.fullmatch(entry["served"], model):
+            return True
+    return False
 
 
 # The rungs the cut-leg interim reports, one per family.
@@ -1565,7 +1613,7 @@ refuted: 0
         run = _mkrun(section, "panel")
         run.round_lines = [(0, n + 1, items) for n, items in enumerate(rounds)]
         return run
-    sol = PANEL_SLOTS.family_models("codex")[0]
+    sol = family_models("codex")[0]
     # D00 T04 §29: Grok rounds record the concrete model that ran; the
     # registry's `newest` entry accepts any matching release, never a
     # suffixed variant, and never across families.

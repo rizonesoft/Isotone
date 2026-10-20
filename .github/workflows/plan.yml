@@ -2,8 +2,9 @@ name: plan-gates
 
 # Plan tooling gates (adapted from Resolute's plan.yml): the TODO graph tool
 # self-tests, the TODO tree validates, the plan projection is current, the
-# commit hook is intact (mode 100755, LF). The campaign guard self-test drives
-# the real Stop hook through powershell.exe, so it runs in a Windows job.
+# commit hook is intact (mode 100755, LF), and the reviewer pin loads under
+# the dispatcher's rules. The campaign guard self-test drives the configured
+# Stop hook command through PowerShell and Git Bash, so it runs in a Windows job.
 
 on:
   push:
@@ -53,10 +54,14 @@ jobs:
         run: python3 scripts/todo-graph.py self-test
       - name: Self-test design-lint
         run: python3 scripts/design-lint.py --self-test
-      - name: Self-test the panel and delegation wiring
+      - name: Self-test the reviewer pin rules and the delegation wiring
         run: python3 scripts/panel_slots.py --self-test
-      - name: Validate the panel slots, delegate pin, and agent definitions
+      - name: Validate the reviewer pin, delegate pin, and agent definitions
         run: python3 scripts/panel_slots.py validate
+      - name: Check the reviewer pin loads under the dispatcher's rules
+        run: python3 scripts/review-dispatch.py --check-pin
+      - name: Test the review dispatcher with fake reviewer CLIs
+        run: python3 scripts/tests/test_review_dispatch.py
       - name: Self-test the weakening scan
         run: python3 scripts/weakening-scan.py --self-test
       - name: Test the scheduled automations and the weekly checks
