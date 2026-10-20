@@ -1,11 +1,8 @@
-"""The campaign run guard: its lifecycle commands and the driven
-self-test for the Stop hook (D00 T04 §32, §34).
+"""The campaign run guard: the Claude Code Stop hook, its lifecycle commands, the CI repair ledger, and the driven
+self-test (D00 T04 §32, §34 to §37).
 
-`.claude/hooks/campaign-stop.ps1` blocks the campaign session's end of
-turn while its run is open. The guard file it reads is written and
-deleted only through this module (D00 T04 §34):
-
-    python scripts/campaign_guard.py acquire --session S --phase N --run-file F --cron-id J [--handover REASON]
+    python scripts/campaign_guard.py stop-hook                      (the Stop hook; reads the payload on stdin)
+    python scripts/campaign_guard.py acquire --session S --phase N --run-file F --cron-id J [--scope plan|phase] [--generation G] [--handover REASON]
     python scripts/campaign_guard.py end --session S --reason closeout|park|plan-done|operator-stop|escalation|stall
     python scripts/campaign_guard.py hook-error [--session S] [--ack LINE]
     python scripts/campaign_guard.py mint-generation
@@ -20,26 +17,30 @@ deleted only through this module (D00 T04 §34):
     python scripts/campaign_guard.py repair status|restore --run-file F [--workflow W] | ceiling --run-id ID
     python scripts/campaign_guard.py --self-test
 
-`acquire` creates the guard exclusively; the owning session may re-point
-it (a new phase or job) by compare-and-swap on `session_id`, and another
-session is refused a live guard unless the operator hands it over.
-`end` checks the end path's marker in the run file (a `## Closeout`
-heading, a column-0 `PARKED` line, `0 runnable now`, or nothing for an
-operator stop), then deletes the guard file and the state file and
-names the heartbeat job still to `CronDelete`. `hook-error` prints and
-clears an error the hook recorded, for the heartbeat to report. Every
-command takes `--root` to act on a fixture workspace instead of this
-repository.
+A campaign run has three parts. The guard file (`build/claude-campaign-guard.json`) names the session that owns the
+run, its phase, scope, run file, heartbeat job and run id; it is written and deleted only through this module, under
+an interprocess lock. The Stop hook (`stop-hook`, wired in `.claude/settings.json`) blocks that session's end of turn
+while the run is open and lets go when the run file carries this run's `## Closeout run=<id>` heading or column-0
+`PARKED <UTC> run=<id>` line, when `query ready` reads `0 runnable now` (a plan-scoped run only), or when the stall
+breaker trips after 3 blocks with no change to the tree. The heartbeat is a `CronCreate` job inside the session
+(process-plan holds its prompt) that resumes an idle run, the plan or only its phase as the guard's scope says. There
+is no keep-alive outside the session: a session that died is resumed by the operator, and the new session takes the
+guard with `acquire --handover`.
 
-The self-test drives the real hook with Stop payloads against a
-throwaway workspace (a git repository, a guard file, a run file, and a
-fake `scripts/todo-graph.py` whose runnable count the test controls) and
-asserts every allow and block case, the stall breaker, and the
-lifecycle commands.
+The hook fails open on a bad payload, a missing guard or any error, and records the error for the heartbeat to report
+(`hook-error`). `repair` persists the CI repair episode the review skill's push block bounds at 3 attempts. Every
+command takes `--root` to act on a fixture workspace instead of this repository. The hook and the scope came from
+Conclave-SDK's todo kit (2026-10-21), itself a port of this module and the former `.claude/hooks/campaign-stop.ps1`.
+
+The self-test drives the configured hook command with Stop payloads against a throwaway workspace (a git repository,
+a guard file, a run file, and a fake `scripts/todo-graph.py` whose runnable count the test controls) and asserts every
+allow and block case, the stall breaker, the lifecycle commands, and the repair ledger.
 """
 
 from __future__ import annotations
 
+import datetime
+import hashlib
 import json
 import os
 import re
@@ -47,16 +48,22 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+import uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOOK = os.path.normpath(os.path.join(HERE, "..", ".claude", "hooks", "campaign-stop.ps1"))
-SETTINGS = os.path.normpath(os.path.join(HERE, "..", ".claude", "settings.json"))
+REPO = os.path.normpath(os.path.join(HERE, ".."))
+SETTINGS = os.path.join(REPO, ".claude", "settings.json")
 SESSION = "11111111-2222-3333-4444-555555555555"
 RUN_FILE = "docs/phase-runs/2099-01-01-phase-0.md"
-
-
-REPO = os.path.normpath(os.path.join(HERE, ".."))
 END_REASONS = ("closeout", "park", "plan-done", "operator-stop", "escalation", "stall")
+LOCK_WAIT = 10.0
+MAX_BLOCKS_WITHOUT_PROGRESS = 3
+SCOPES = ("plan", "phase")
+# Claude Code stops a Stop hook at the timeout .claude/settings.json gives it (60 seconds) and treats that as a
+# non-blocking error, so the hook keeps its own deadline well inside it and still has time to record a failure.
+HOOK_BUDGET_SECONDS = 40.0
+UTC_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 
 class GuardError(ValueError):
@@ -68,18 +75,16 @@ def _paths(root: str) -> tuple[str, str]:
             os.path.join(root, "build", "claude-campaign-state.json"))
 
 
-LOCK_WAIT = 10.0
+def _env_int(name: str, default: int) -> int:
+    value = os.environ.get(name, "")
+    return int(value) if value.isdigit() else default
 
 
 class _Lock:
-    """An interprocess lock on the guard: every change (acquire,
-    re-point, handover, end) holds it, so a read-then-replace can never
-    interleave with another session's change (D00 T04 §34 independent
-    review). It is an operating-system lock on an open handle
-    (`msvcrt.locking` on Windows, `flock` elsewhere): it never expires
-    while its holder lives, and the OS releases it when the holder
-    closes the handle or dies, so no age test can break a live holder's
-    lock (panel round 1). The lock file itself is never deleted."""
+    """An interprocess lock on the guard. Every change (acquire, re-point, handover, end, the hook's state write)
+    holds it, so a read-then-replace never interleaves with another change. It is an operating-system lock on an open
+    handle (`msvcrt.locking` on Windows, `flock` elsewhere): it never expires while its holder lives, the OS releases
+    it when the holder dies, and the lock file itself is never deleted."""
 
     def __init__(self, root: str, wait: float = LOCK_WAIT):
         self.path = os.path.join(root, "build", "claude-campaign-guard.lock")
@@ -103,7 +108,6 @@ class _Lock:
             return False
 
     def __enter__(self):
-        import time
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         self.fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o644)
         deadline = time.monotonic() + self.wait
@@ -131,6 +135,17 @@ class _Lock:
         return False
 
 
+def _write_json(path: str, doc) -> None:
+    tmp = f"{path}.{os.getpid()}.tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(doc, fh, indent=2)
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
 def read_guard(root: str) -> dict | None:
     guard, _ = _paths(root)
     try:
@@ -145,125 +160,156 @@ def read_guard(root: str) -> dict | None:
     return doc
 
 
+def _read_state(root: str) -> dict:
+    _, state_path = _paths(root)
+    try:
+        with open(state_path, encoding="utf-8-sig") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    return doc if isinstance(doc, dict) else {}
+
+
 def mint_generation() -> str:
-    """A fresh acquisition generation: the heartbeat prompt carries it, so
-    a replaced job in the same session knows it is obsolete (D00 T04 §36)."""
-    import uuid
+    """A fresh generation: the heartbeat prompt carries it, so a replaced job in the same session knows it is obsolete."""
     return uuid.uuid4().hex[:12]
 
 
 def _utc_now() -> str:
-    import datetime
-    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _run_length(root: str, run_file: str) -> int:
-    try:
-        return os.path.getsize(os.path.join(root, run_file))
-    except OSError:
-        return 0
+    return datetime.datetime.now(datetime.timezone.utc).strftime(UTC_FORMAT)
 
 
 def acquire(root: str, session: str, phase: int, run_file: str, cron_id: str,
-            handover: str | None = None, generation: str | None = None) -> str:
-    """Write the guard for `session`. A new guard is created exclusively
-    (O_EXCL), so two sessions racing to start a run cannot both win; the
-    owner re-points its own guard by compare-and-swap on `session_id`; a
-    live guard owned by another session is refused unless the operator
-    hands it over, and the handover is recorded in the guard."""
+            handover: str | None = None, generation: str | None = None, scope: str | None = None) -> str:
+    """Write the guard for `session`. Only one session can hold it: every guard change holds the lock, so two sessions
+    racing to start a run cannot both win; the owner re-points its own guard; a live guard owned by another session is
+    refused unless the operator hands it over, and the handover is recorded in the guard.
+
+    `scope` is what the run covers: `plan` (process-plan chains every ready phase) or `phase` (process-phase was asked
+    for one phase), so a heartbeat resumes only what was asked for. A re-point keeps the scope unless one is given."""
     if not session or not run_file or not cron_id:
         raise GuardError("acquire needs --session, --run-file, and --cron-id")
     if os.path.isabs(run_file) or ".." in run_file.replace("\\", "/").split("/"):
         raise GuardError(f"run file {run_file!r} must be a repo-relative path inside the workspace")
+    if scope is not None and scope not in SCOPES:
+        raise GuardError(f"scope {scope!r} is not one of {', '.join(SCOPES)}")
     with _Lock(root):
-        return _acquire_locked(root, session, phase, run_file, cron_id, handover, generation)
+        return _acquire_locked(root, session, phase, run_file, cron_id, handover, generation, scope)
 
 
 def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id: str,
-                    handover: str | None, generation: str | None = None) -> str:
+                    handover: str | None, generation: str | None, scope: str | None) -> str:
     guard, state_path = _paths(root)
     os.makedirs(os.path.dirname(guard), exist_ok=True)
+    exists = os.path.exists(guard)
     try:
         previous = read_guard(root) or {}
     except GuardError:
-        previous = {}
+        previous = {}  # a torn or unreadable guard: only an operator handover may replace it (below)
     same_run = previous.get("run_file") == run_file and previous.get("session_id") == session
     doc = {"runner": "claude", "workspace": root.replace("\\", "/"), "phase": phase,
            "run_file": run_file, "session_id": session, "cron_id": cron_id,
-           # D00 T04 §36: the generation the heartbeat prompt carries, when
-           # its job was created (the 7-day expiry counts from it), and the
-           # run file's length at acquisition, so a reused run file's old
-           # markers never end this run.
+           "scope": scope or (previous.get("scope") if previous.get("session_id") == session or
+                              (handover and previous.get("run_file") == run_file) else None) or "plan",
+           # The generation the heartbeat prompt carries, and when its job was created (the 7-day expiry counts
+           # from it).
            "generation": generation or (previous.get("generation") if same_run and
                                         previous.get("cron_id") == cron_id else None) or mint_generation(),
            "job_created_at": (previous.get("job_created_at") if previous.get("cron_id") == cron_id
                               and previous.get("job_created_at") else _utc_now()),
-           # A stable run identity every terminal marker must carry, so a
-           # reused run file's old markers never end this run however the
-           # file is edited (D00 T04 §36 independent review: a byte offset
-           # breaks when a park record is inserted mid-file).
+           # A stable run identity every terminal marker must carry, so a reused run file's old markers never end
+           # this run however the file is edited.
            "run_id": (previous.get("run_id") if (same_run or (handover and previous.get("run_file") == run_file))
                       and previous.get("run_id") else mint_generation())}
-    data = json.dumps(doc, indent=2).encode("utf-8")
-    try:
-        fd = os.open(guard, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
-    except FileExistsError:
-        current = read_guard(root) or {}
-        owner = str(current.get("session_id", ""))
+    what = "created"
+    if exists:
+        owner = str(previous.get("session_id", ""))
         if owner != session:
             if not handover:
-                raise GuardError(f"the guard is live for session {owner or '<none>'}; "
+                raise GuardError(f"the guard is live for session {owner or '<unreadable>'}; "
                                  f"refusing to take it without an operator handover (--handover REASON)")
-            doc["handover_from"] = owner
+            doc["handover_from"] = owner or "<unreadable guard>"
             doc["handover_reason"] = handover
-        # The lock is held from the read above through this replace, so no
-        # other change can land in between.
-        tmp = guard + f".{os.getpid()}.tmp"
-        with open(tmp, "wb") as fh:
-            fh.write(json.dumps(doc, indent=2).encode("utf-8"))
-        os.replace(tmp, guard)
         what = "handed over" if owner != session else "re-pointed"
-        if owner != session or not same_run:
-            try:
-                os.unlink(state_path)
-            except FileNotFoundError:
-                pass
-        return (f"acquire: guard {what} for session {session} (phase {phase}, {run_file}, job {cron_id}, "
-                f"generation {doc['generation']}, run {doc['run_id']})")
-    with os.fdopen(fd, "wb") as fh:
-        fh.write(data)
-    # A fresh guard starts a fresh breaker, under the same lock (D00 T04 §36).
-    try:
-        os.unlink(state_path)
-    except FileNotFoundError:
-        pass
-    return (f"acquire: guard created for session {session} (phase {phase}, {run_file}, job {cron_id}, "
-            f"generation {doc['generation']}, run {doc['run_id']})")
+    # Published whole through a temporary file and a rename, under the lock held since the read above, so neither a
+    # reader nor a crash ever sees a torn guard and no other change lands in between.
+    _write_json(guard, doc)
+    if what != "re-pointed" or not same_run:
+        try:
+            os.unlink(state_path)  # a fresh or handed-over run starts a fresh breaker
+        except FileNotFoundError:
+            pass
+    return (f"acquire: guard {what} for session {session} (phase {phase}, scope {doc['scope']}, {run_file}, "
+            f"job {cron_id}, generation {doc['generation']}, run {doc['run_id']})")
 
 
-def _ready_count(root: str) -> int | None:
+def ready_rows(root: str, timeout: float = 300.0, phase: int | None = None) -> tuple[int | None, str]:
+    """How many rows `query ready` offers, and the first one, or (None, "") when the query cannot be read.
+
+    The SDK's todo-graph prints a JSON list of ready rows; a graph that prints a `N runnable now` summary (Isotone's)
+    is read by that line instead. With `phase`, only that phase's rows count. The text summary does not say which
+    phase a row is in, so for a phase it is unknown (None, ""): a phase run then ends on its own closeout or park
+    marker, never on another phase's count, and is never pointed at another phase's row.
+    """
     try:
+        # The child writes UTF-8 whatever the console code page: rows carry section marks, which a Windows cp1252
+        # stdout would otherwise turn into replacement characters in the hook's next-row line.
         proc = subprocess.run([sys.executable, os.path.join(root, "scripts", "todo-graph.py"), "query", "ready"],
                               capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=root,
-                              timeout=300)
+                              timeout=max(timeout, 1.0), env=dict(os.environ, PYTHONIOENCODING="utf-8"))
     except (OSError, subprocess.TimeoutExpired):
-        return None
-    m = re.findall(r"(\d+) runnable now", proc.stdout)
-    return int(m[-1]) if m else None
+        return None, ""
+    if proc.returncode != 0:
+        return None, ""
+    out = proc.stdout.strip()
+    try:
+        rows = json.loads(out)
+    except ValueError:
+        rows = None
+    if isinstance(rows, list):
+        if phase is not None:  # a phase-scoped run: only that phase's rows (the JSON rows name their phase)
+            rows = [r for r in rows if isinstance(r, dict) and r.get("phase") == phase]
+        first = rows[0] if rows else {}
+        label = f"{first.get('ref', '')}  {first.get('title', '')}".strip() if isinstance(first, dict) else ""
+        return len(rows), label
+    counts = re.findall(r"(\d+) runnable now", out)
+    if not counts or phase is not None:
+        return None, ""
+    lines = [ln.strip() for ln in out.splitlines() if ln.strip() and "runnable now" not in ln]
+    return int(counts[-1]), (lines[0] if lines else "")
+
+
+def marker_run(line: str) -> str | None:
+    m = re.search(r"\brun=([0-9a-f]{6,})\b", line)
+    return m.group(1) if m else None
+
+
+def _run_markers_text(root: str, run_rel: str, guard: dict) -> str:
+    """The run file's lines that count as this run's markers: every line when the guard has no run id, else only
+    `## Closeout` and `PARKED` lines carrying `run=<this run's id>`, wherever they sit in the file."""
+    try:
+        with open(os.path.join(root, run_rel), encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except OSError:
+        return ""
+    run_id = guard.get("run_id")
+    if not run_id:
+        return text
+    keep = [ln for ln in text.splitlines()
+            if not re.match(r"\A(## Closeout\b|PARKED\b)", ln) or marker_run(ln) == run_id]
+    return "\n".join(keep)
 
 
 def end(root: str, session: str, reason: str) -> str:
-    """End the run on one of its end paths: check the path's marker, then
-    delete the guard file and the state file. The heartbeat job lives in
-    the session, not on disk, so the caller deletes it (`CronDelete`) and
-    the returned line names it."""
+    """End the run on one of its end paths: check the path's marker, then delete the guard file and the state file.
+    The heartbeat job lives in the session, not on disk, so the caller deletes it (`CronDelete`) and the returned line
+    names it."""
     if reason not in END_REASONS:
         raise GuardError(f"reason {reason!r} is not one of {', '.join(END_REASONS)}")
     if not session:
         raise GuardError("end needs --session (the session that owns the guard)")
-    # The plan query runs before the lock, so no subprocess is ever held
-    # under it (panel round 1).
-    ready = _ready_count(root) if reason == "plan-done" else None
+    # The plan query runs before the lock, so no subprocess is ever held under it.
+    ready = ready_rows(root)[0] if reason == "plan-done" else None
     with _Lock(root):
         return _end_locked(root, session, reason, ready)
 
@@ -286,26 +332,19 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
     if reason == "escalation" and not re.search(r"(?m)^PARKED\b.*\bescalation:", text):
         raise GuardError(f"escalation needs a column-0 'PARKED <UTC>{tag} escalation: <cause>' line in {run_rel}")
     if reason == "plan-done" and ready != 0:
-        raise GuardError(f"plan-done needs '0 runnable now'; query ready reads {ready}")
+        raise GuardError(f"plan-done needs nothing runnable; query ready reads {ready}")
     if reason == "stall":
         try:
-            with open(state_path, encoding="utf-8-sig") as fh:
-                trips = int(json.load(fh).get("trips", 0))
-        except (OSError, ValueError, TypeError, AttributeError):
+            trips = int(_read_state(root).get("trips", 0))
+        except (TypeError, ValueError):
             trips = 0
         if trips < 2:
             raise GuardError(f"stall needs a state file with trips of 2 or more; it reads {trips}")
-    # The job id outlives the guard until CronDelete is confirmed: a failed
-    # delete stays recoverable (D00 T04 §36).
-    pending = _pending_path(root)
-    jobs = _pending_jobs(root)
-    # Every unconfirmed job is kept: a later end never overwrites an
-    # earlier failed cancellation (D00 T04 §36 panel round 1).
-    jobs = [j for j in jobs if j.get("cron_id") != guard.get("cron_id")]
+    # The job id outlives the guard until CronDelete is confirmed, so a failed delete stays recoverable, and a later
+    # end never overwrites an earlier unconfirmed cancellation.
+    jobs = [j for j in _pending_jobs(root) if j.get("cron_id") != guard.get("cron_id")]
     jobs.append({"cron_id": guard.get("cron_id"), "reason": reason, "at": _utc_now()})
-    with open(pending + ".tmp", "w", encoding="utf-8") as fh:
-        json.dump(jobs, fh)
-    os.replace(pending + ".tmp", pending)
+    _write_json(_pending_path(root), jobs)
     for path in (guard_path, state_path):
         try:
             os.unlink(path)
@@ -319,29 +358,6 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
             f"cancel-confirmed --cron-id {guard.get('cron_id')}")
 
 
-def marker_run(line: str) -> str | None:
-    m = re.search(r"\brun=([0-9a-f]{6,})\b", line)
-    return m.group(1) if m else None
-
-
-def _run_markers_text(root: str, run_rel: str, guard: dict) -> str:
-    """The run file's lines that count as this run's markers: every line
-    when the guard predates run ids, else only `## Closeout` and `PARKED`
-    lines carrying `run=<this run's id>`, wherever they sit in the file
-    (D00 T04 §36)."""
-    try:
-        with open(os.path.join(root, run_rel), encoding="utf-8", errors="replace") as fh:
-            text = fh.read()
-    except OSError:
-        return ""
-    run_id = guard.get("run_id")
-    if not run_id:
-        return text
-    keep = [ln for ln in text.splitlines()
-            if not re.match(r"\A(## Closeout\b|PARKED\b)", ln) or marker_run(ln) == run_id]
-    return "\n".join(keep)
-
-
 def _pending_path(root: str) -> str:
     return os.path.join(root, "build", "claude-campaign-pending-cancel.json")
 
@@ -353,8 +369,8 @@ def _pending_jobs(root: str) -> list[dict]:
     except FileNotFoundError:
         return []
     except (OSError, ValueError):
-        raise GuardError("the pending-cancellation record is unreadable: list the jobs and delete any "
-                         "Isotone heartbeat by hand")
+        raise GuardError("the pending-cancellation record is unreadable: list the jobs with CronList and delete any "
+                         "run-guard heartbeat by hand")
     if isinstance(doc, dict):
         doc = [doc]
     return [j for j in doc if isinstance(j, dict)] if isinstance(doc, list) else []
@@ -379,37 +395,34 @@ def cancel_confirmed(root: str, cron_id: str) -> str:
                              f"(pending: {', '.join(str(j.get('cron_id')) for j in jobs)})")
         rest = [j for j in jobs if str(j.get("cron_id")) != cron_id]
         if rest:
-            with open(_pending_path(root) + ".tmp", "w", encoding="utf-8") as fh:
-                json.dump(rest, fh)
-            os.replace(_pending_path(root) + ".tmp", _pending_path(root))
-            return f"cancel-confirmed: job {cron_id} is gone; still pending: {', '.join(str(j.get('cron_id')) for j in rest)}"
+            _write_json(_pending_path(root), rest)
+            return (f"cancel-confirmed: job {cron_id} is gone; still pending: "
+                    f"{', '.join(str(j.get('cron_id')) for j in rest)}")
         os.unlink(_pending_path(root))
         return f"cancel-confirmed: job {cron_id} is gone; nothing pending"
 
 
 def whoami(root: str, session: str, generation: str | None = None) -> str:
-    """What this heartbeat is to the run: OWNER, NOT THE OWNER, NOT THE
-    CURRENT JOB (a replaced job in the owning session), NO GUARD, or
-    MALFORMED GUARD (D00 T04 §36)."""
+    """What this heartbeat is to the run: OWNER, NOT THE OWNER, NOT THE CURRENT JOB (a replaced job in the owning
+    session), NO GUARD, or MALFORMED GUARD."""
     with _Lock(root):
         try:
             guard = read_guard(root)
         except GuardError:
             return "MALFORMED GUARD"
-        if guard is None:
-            return "NO GUARD"
-        if str(guard.get("session_id", "")) != session:
-            return "NOT THE OWNER"
-        if generation and str(guard.get("generation", "")) != generation:
-            return "NOT THE CURRENT JOB"
-        # The run id rides the answer, so the heartbeat reads which markers
-        # are this run's without carrying the id in its prompt.
-        return f"OWNER run={guard.get('run_id')}" if guard.get("run_id") else "OWNER"
+    if guard is None:
+        return "NO GUARD"
+    if str(guard.get("session_id", "")) != session:
+        return "NOT THE OWNER"
+    if generation and str(guard.get("generation", "")) != generation:
+        return "NOT THE CURRENT JOB"
+    # The run id rides the answer, so the heartbeat reads which markers are this run's.
+    scope = guard.get("scope") or "plan"
+    return f"OWNER run={guard.get('run_id')} scope={scope}" if guard.get("run_id") else f"OWNER scope={scope}"
 
 
 def reset_state(root: str, session: str | None = None, expect_no_guard: bool = False) -> str:
-    """Delete the breaker state under the lock, re-checking ownership or
-    absence first: never a direct delete (D00 T04 §36)."""
+    """Delete the breaker state under the lock, re-checking ownership or absence first: never a direct delete."""
     _, state_path = _paths(root)
     with _Lock(root):
         try:
@@ -428,8 +441,8 @@ def reset_state(root: str, session: str | None = None, expect_no_guard: bool = F
 
 
 def reconcile(root: str, session: str, jobs: list[str]) -> list[str]:
-    """Startup reconciliation between the guard and the live heartbeat jobs
-    (D00 T04 §36): what to delete or recreate before a run starts."""
+    """Startup reconciliation between the guard and the live heartbeat jobs: what to delete or recreate before a run
+    starts."""
     with _Lock(root):
         try:
             guard = read_guard(root)
@@ -470,9 +483,7 @@ def health(root: str, session: str, jobs: list[str]) -> tuple[int, str]:
 
 def expiry(root: str, session: str, now: str | None = None, days: float = 7.0,
            margin_hours: float = 12.0) -> tuple[int, str]:
-    """Whether the heartbeat job nears its 7-day expiry (D00 T04 §36):
-    exit 1 `replace due` inside the margin, else how long is left."""
-    import datetime
+    """Whether the heartbeat job nears its 7-day expiry: exit 1 `replace due` inside the margin, else how long is left."""
     with _Lock(root):
         try:
             guard = read_guard(root)
@@ -480,12 +491,12 @@ def expiry(root: str, session: str, now: str | None = None, days: float = 7.0,
             return 1, "expiry: the guard is unreadable"
     if guard is None or str(guard.get("session_id", "")) != session:
         return 1, "expiry: this session holds no live guard"
-    fmt = "%Y-%m-%dT%H:%M:%SZ"
     try:
-        created = datetime.datetime.strptime(str(guard.get("job_created_at")), fmt)
+        created = datetime.datetime.strptime(str(guard.get("job_created_at")), UTC_FORMAT)
     except ValueError:
         return 1, "expiry: the job's creation time is unknown: replace the job"
-    current = datetime.datetime.strptime(now, fmt) if now else datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0, tzinfo=None)
+    current = (datetime.datetime.strptime(now, UTC_FORMAT) if now else
+               datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0, tzinfo=None))
     left = datetime.timedelta(days=days) - (current - created)
     if left <= datetime.timedelta(hours=margin_hours):
         return 1, (f"expiry: replace due, job {guard.get('cron_id')} created {guard.get('job_created_at')} "
@@ -493,29 +504,49 @@ def expiry(root: str, session: str, now: str | None = None, days: float = 7.0,
     return 0, f"expiry: ok, job {guard.get('cron_id')} expires in {left.total_seconds() / 3600:.1f}h"
 
 
+def _hook_errors_dir(root: str) -> str:
+    return os.path.join(root, "build", "claude-campaign-hook-errors")
+
+
 def hook_error(root: str, session: str | None = None, ack: str | None = None) -> str:
-    """Print and clear the error the hook recorded, if any. With a
-    session, a guard owned by another session is refused before anything
-    is read or cleared (panel round 1: a former owner's heartbeat must
-    not consume the current owner's failure record)."""
+    """Print the error the hook recorded, if any, and clear it on its exact `--ack`. With a session, a guard owned by
+    another session is refused before anything is read or cleared, so a former owner's heartbeat never consumes the
+    current owner's failure record."""
     with _Lock(root):
-        return _hook_error_locked(root, session, ack)
+        unreadable = False
+        if session:
+            try:
+                guard = read_guard(root)
+            except GuardError:
+                guard, unreadable = None, True
+            if guard is not None and str(guard.get("session_id", "")) != session:
+                raise GuardError(f"the guard belongs to session {guard.get('session_id')}, not {session}")
+        _, state_path = _paths(root)
+        state = _read_state(root)
+        err, at = state.get("hook_error"), state.get("hook_error_at")
+        if not err:
+            return _hook_error_log(root, ack)
+        note = " (the guard file is unreadable: repair it before resuming)" if unreadable else ""
+        line = f"campaign-stop hook failed at {at}: {err}{note}"
+        if ack is None:
+            return line
+        if ack != line:
+            raise GuardError("the acknowledgement does not match the recorded error; nothing cleared")
+        state.pop("hook_error", None)
+        state.pop("hook_error_at", None)
+        _write_json(state_path, state)
+        return f"hook-error: acknowledged and cleared: {line}"
 
 
 def _hook_error_log(root: str, ack: str | None) -> str:
-    """The oldest error the hook recorded without the guard lock (D00 T04
-    §36 independent review): one file per error under
-    `build/claude-campaign-hook-errors/`, so a writer never races this
-    drain (panel round 1); printed like a state error, deleted only on its
-    exact --ack."""
-    folder = os.path.join(root, "build", "claude-campaign-hook-errors")
+    """The oldest error the hook recorded without the lock: one file per error, so a writer never races this drain."""
     try:
-        names = sorted(n for n in os.listdir(folder) if n.endswith(".txt"))
+        names = sorted(n for n in os.listdir(_hook_errors_dir(root)) if n.endswith(".txt"))
     except OSError:
         return ""
     if not names:
         return ""
-    oldest = os.path.join(folder, names[0])
+    oldest = os.path.join(_hook_errors_dir(root), names[0])
     try:
         with open(oldest, encoding="utf-8", errors="replace") as fh:
             at, _, reason = fh.read().strip().partition(" ")
@@ -530,46 +561,6 @@ def _hook_error_log(root: str, ack: str | None) -> str:
     return f"hook-error: acknowledged and cleared: {line}"
 
 
-def _hook_error_locked(root: str, session: str | None, ack: str | None = None) -> str:
-    # Under the lock, so no handover lands between the ownership check
-    # and the clear (panel round 2). An unreadable guard cannot name an
-    # owner, and the error it caused is exactly what must be reported,
-    # so it reports rather than refuses (panel round 2).
-    unreadable = False
-    if session:
-        try:
-            guard = read_guard(root)
-        except GuardError:
-            guard, unreadable = None, True
-        if guard is not None and str(guard.get("session_id", "")) != session:
-            raise GuardError(f"the guard belongs to session {guard.get('session_id')}, not {session}")
-    _, state_path = _paths(root)
-    try:
-        with open(state_path, encoding="utf-8-sig") as fh:
-            state = json.load(fh)
-    except (OSError, ValueError):
-        return _hook_error_log(root, ack)
-    err = state.get("hook_error")
-    at = state.get("hook_error_at")
-    if not err:
-        return _hook_error_log(root, ack)
-    note = " (the guard file is unreadable: repair it before resuming)" if unreadable else ""
-    line = f"campaign-stop hook failed at {at}: {err}{note}"
-    if ack is None:
-        # Print only: the record clears after the run file holds it and
-        # the heartbeat acknowledges that exact line (D00 T04 §36).
-        return line
-    if ack != line:
-        raise GuardError("the acknowledgement does not match the recorded error; nothing cleared")
-    state.pop("hook_error", None)
-    state.pop("hook_error_at", None)
-    tmp = state_path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(state, fh)
-    os.replace(tmp, state_path)
-    return f"hook-error: acknowledged and cleared: {line}"
-
-
 REPAIR_BOUND = 3
 
 
@@ -577,7 +568,7 @@ def _repair_path(root: str) -> str:
     return os.path.join(root, "build", "claude-campaign-repair.json")
 
 
-def _git(root: str, *args: str) -> tuple[int, str]:
+def _git_text(root: str, *args: str) -> tuple[int, str]:
     proc = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, encoding="utf-8",
                           errors="replace")
     return proc.returncode, proc.stdout.strip()
@@ -585,8 +576,8 @@ def _git(root: str, *args: str) -> tuple[int, str]:
 
 def _repo_identity(root: str) -> dict:
     """The repository and branch an episode belongs to, read from git."""
-    _rc, url = _git(root, "remote", "get-url", "origin")
-    _rc, branch = _git(root, "rev-parse", "--abbrev-ref", "HEAD")
+    _rc, url = _git_text(root, "remote", "get-url", "origin")
+    _rc, branch = _git_text(root, "rev-parse", "--abbrev-ref", "HEAD")
     return {"repo": url, "branch": branch}
 
 
@@ -598,7 +589,7 @@ def _canon(root: str, rev: str) -> str:
     """A commit's full sha when git resolves it, else the text as given:
     attempts compare by canonical identity, never by printed prefix
     (D00 T04 §37 independent review)."""
-    rc, out = _git(root, "rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}")
+    rc, out = _git_text(root, "rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}")
     return out if rc == 0 and out else rev
 
 
@@ -715,7 +706,7 @@ def repair(root: str, action: str, red: str = "", commit: str = "", green: str =
                 raise GuardError("repair close needs --evidence with the green ci-wait line for this sha and "
                                  "workflow (an authorized no-run is not green)")
             last = ep["attempts"][-1]["commit"] if ep["attempts"] else ep["episode"]
-            rc, _ = _git(root, "merge-base", "--is-ancestor", last, green)
+            rc, _ = _git_text(root, "merge-base", "--is-ancestor", last, green)
             if rc != 0:
                 raise GuardError(f"the green {green[:12]} does not descend from the last attempt {last[:12]}; "
                                  f"it cannot close this episode")
@@ -750,6 +741,186 @@ def repair(root: str, action: str, red: str = "", commit: str = "", green: str =
         raise GuardError(f"repair action {action!r} is not attempt, close, status, restore, or ceiling")
 
 
+# The Stop hook.
+
+def _git(root: str, deadline: float, *args: str) -> bytes:
+    proc = subprocess.run(["git", *args], cwd=root, capture_output=True, timeout=max(deadline - time.monotonic(), 1.0))
+    return proc.stdout
+
+
+def _remaining(deadline: float) -> float:
+    left = deadline - time.monotonic()
+    if left <= 0:
+        raise GuardError("the hook ran out of its time budget before deciding")
+    return left
+
+
+# The guard's own files: a repository that does not ignore build/ would otherwise see every state write as progress.
+OWN_FILES = re.compile(r"^build/claude-campaign-(guard|state|pending-cancel|repair|ceiling)\.json(\.[0-9]+\.tmp)?$|"
+                       r"^build/claude-campaign-guard\.lock$|^build/claude-campaign-hook-errors/")
+
+
+def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None = None) -> str:
+    """HEAD, the working-tree diff, the untracked files, and the run file without its `- bookkeeping:` lines.
+
+    The run file leaves the diff and the untracked set and is hashed on its own, so a heartbeat or retry note in its
+    Critical events never passes for progress, while any other line still counts. Untracked content is hashed for the
+    first 500 files up to 4 MB each, the next 5000 count by size and write time, and any past that by name alone, so a
+    huge scratch tree cannot stall the hook and no untracked path drops out.
+    """
+    deadline = deadline if deadline is not None else time.monotonic() + HOOK_BUDGET_SECONDS
+    max_hashed = _env_int("CAMPAIGN_HASH_FILES", 500)
+    max_bytes = _env_int("CAMPAIGN_HASH_BYTES", 4 * 1024 * 1024)
+    max_stat = _env_int("CAMPAIGN_STAT_FILES", 5000)
+    run_path = run_rel.replace("\\", "/")
+    digest = hashlib.sha256()
+    digest.update(_git(root, deadline, "rev-parse", "HEAD").strip() + b"\n")
+    digest.update(_git(root, deadline, "diff", "HEAD", "--", ".", f":(exclude){run_path}",
+                       ":(exclude)build/claude-campaign-*") + b"\n")
+    listed = _git(root, deadline, "ls-files", "-z", "--others", "--exclude-standard").decode("utf-8", "replace")
+    for index, path in enumerate((p for p in listed.split("\0") if p and p != run_path and not OWN_FILES.match(p)),
+                                 1):
+        _remaining(deadline)
+        full = os.path.join(root, path)
+        try:
+            info = os.stat(full)
+        except OSError:
+            digest.update(f"{path} missing\n".encode("utf-8"))
+            continue
+        if index <= max_hashed and info.st_size <= max_bytes:
+            with open(full, "rb") as fh:
+                digest.update(f"{path} ".encode("utf-8") + hashlib.sha256(fh.read()).hexdigest().encode() + b"\n")
+        elif index <= max_hashed + max_stat:
+            digest.update(f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8"))
+        else:
+            digest.update(f"{path}\n".encode("utf-8"))
+    digest.update(re.sub(r"(?m)^- bookkeeping:.*(\r?\n)?", "", run_text).encode("utf-8"))
+    return digest.hexdigest()
+
+
+def _same_run(still: dict | None, guard: dict) -> bool:
+    return (still is not None and str(still.get("session_id", "")) == str(guard.get("session_id", ""))
+            and str(still.get("run_file", "")) == str(guard.get("run_file", ""))
+            and str(still.get("run_id", "")) == str(guard.get("run_id", "")))
+
+
+def stop_decision(root: str, session: str) -> dict | None:
+    """The hook's decision for one Stop event: None allows the stop, a dict is the `block` payload to print."""
+    guard = read_guard(root)
+    if guard is None or not session or str(guard.get("session_id", "")) != session:
+        return None  # only the campaign session; a second session or a subagent ends its turns normally
+    run_rel = str(guard.get("run_file", ""))
+    if not run_rel or os.path.isabs(run_rel) or ".." in run_rel.replace("\\", "/").split("/"):
+        return None
+    try:
+        with open(os.path.join(root, run_rel), encoding="utf-8", errors="replace") as fh:
+            run_text = fh.read()
+    except FileNotFoundError:
+        return None
+    run_id = str(guard.get("run_id") or "")
+    for line in run_text.splitlines():
+        if re.match(r"(## Closeout\b|PARKED\b)", line) and (not run_id or marker_run(line) == run_id):
+            return None
+    deadline = time.monotonic() + _env_int("CAMPAIGN_HOOK_BUDGET_SECONDS", int(HOOK_BUDGET_SECONDS))
+    phase_only = guard.get("scope") == "phase"
+    ready, next_row = ready_rows(root, timeout=_remaining(deadline) / 2,
+                                 phase=guard.get("phase") if phase_only else None)
+    if ready == 0:
+        return None  # nothing runnable here: blocking cannot produce work that does not exist
+    print_ = fingerprint(root, run_rel, run_text, deadline)
+    _, state_path = _paths(root)
+    with _Lock(root, wait=_env_int("CAMPAIGN_LOCK_WAIT_MS", 5000) / 1000):
+        # A handover or an end that landed while this hook worked means the state is no longer this run's.
+        try:
+            still = read_guard(root)
+        except GuardError:
+            still = None
+        if not _same_run(still, guard):
+            print("campaign-stop: the guard changed while this hook waited; nothing written", file=sys.stderr)
+            return None
+        old = _read_state(root)
+        state = {"fingerprint": str(old.get("fingerprint", "")), "blocks": int(old.get("blocks", 0) or 0),
+                 "trips": int(old.get("trips", 0) or 0), "stalled": False}
+        # An error the heartbeat has not acknowledged yet stays until it is (`hook-error --ack`).
+        state.update({k: old[k] for k in ("hook_error", "hook_error_at") if old.get(k)})
+        if state["fingerprint"] != print_:
+            state.update(fingerprint=print_, blocks=0, trips=0)  # the tree moved: real progress resets the breaker
+        if state["blocks"] >= MAX_BLOCKS_WITHOUT_PROGRESS:
+            # Repeated pushes with no change to the tree mean the session is stuck, not idle: let it stop.
+            state.update(blocks=0, trips=state["trips"] + 1, stalled=True, stalled_at=_utc_now())
+            _write_json(state_path, state)
+            print(f"campaign-stop: stall breaker tripped ({state['trips']}) after {MAX_BLOCKS_WITHOUT_PROGRESS} "
+                  f"blocks with no tree change", file=sys.stderr)
+            return None
+        state["blocks"] += 1
+        _write_json(state_path, state)
+    tag = f" run={run_id}" if run_id else ""
+    onward = (f" of Phase {guard.get('phase')} only (this run covers that phase)" if phase_only
+              else ", then the next phase")
+    reason = (f"Campaign run is still open ({run_rel}). Do not end the turn. Finish the open section's checklist, "
+              f"run its review rounds and stamp it, then the next section{onward}. A commit, a green suite, a "
+              f"red CI (repair it through the review skill's bounded repair loop), or a status report is not a "
+              f"stop.")
+    if next_row:
+        reason += f" Next ready row: {next_row}."
+    reason += (f" Finished means a '## Closeout{tag}' heading or a column-0 'PARKED <UTC>{tag} <reason>' line in the "
+               f"run file. Escalating to the operator ends the run first: write a column-0 'PARKED <UTC>{tag} "
+               f"escalation: <cause>' line, run 'python scripts/campaign_guard.py end --session {session} --reason "
+               f"escalation', CronDelete the heartbeat it names, then report. The breaker allows the stop after "
+               f"{MAX_BLOCKS_WITHOUT_PROGRESS} pushes with no tree change (this is push {state['blocks']}).")
+    return {"decision": "block", "reason": reason}
+
+
+def _record_hook_error(root: str, guard: dict | None, reason: str) -> None:
+    """Record a failure for the heartbeat: in the state file under the lock when this run still owns it, or when the
+    guard was unreadable and still is (the heartbeat then reports the unreadable guard with it), else in a file of its
+    own that needs no lock. Best effort: the hook has already failed open."""
+    at = _utc_now()
+    try:
+        with _Lock(root, wait=1.0):
+            try:
+                still = read_guard(root)
+            except GuardError:
+                still = None
+            if (guard is None and still is None) or (guard is not None and _same_run(still, guard)):
+                state = _read_state(root)
+                state.update(hook_error=reason, hook_error_at=at)
+                _write_json(_paths(root)[1], state)
+                return
+    except (GuardError, OSError):
+        pass
+    folder = _hook_errors_dir(root)
+    os.makedirs(folder, exist_ok=True)
+    name = os.path.join(folder, f"{time.time_ns():020d}-{os.getpid()}.txt")
+    with open(name + ".tmp", "w", encoding="utf-8") as fh:  # the drain lists only .txt, so it never reads a torn file
+        fh.write(f"{at} {reason}")
+    os.replace(name + ".tmp", name)
+
+
+def stop_hook(stdin: str, project_dir: str | None) -> tuple[int, str]:
+    """Run the hook on one Stop payload; returns (exit, stdout). Always exits 0: a failure allows the stop."""
+    root, guard = None, None
+    try:
+        if not stdin.strip():
+            return 0, ""
+        event = json.loads(stdin)
+        root = project_dir or str(event.get("cwd") or "")
+        if not root:
+            return 0, ""
+        guard = read_guard(root)
+        decision = stop_decision(root, str(event.get("session_id") or ""))
+        return 0, json.dumps(decision) if decision else ""
+    except Exception as error:  # fail open, but never silently: the heartbeat reports what is recorded here
+        reason = f"{type(error).__name__}: {error}"
+        print(f"campaign-stop: {reason}", file=sys.stderr)
+        if root:
+            try:
+                _record_hook_error(root, guard, reason)
+            except OSError:
+                pass
+        return 0, ""
+
+
 def _powershell() -> str | None:
     for name in ("powershell.exe", "powershell", "pwsh"):
         found = shutil.which(name)
@@ -761,10 +932,9 @@ def _powershell() -> str | None:
 def run_hook(root: str, session: str) -> tuple[int, dict | None, str]:
     """Feed the hook one Stop payload; return (exit, parsed stdout JSON or
     None when it allowed silently, stderr)."""
-    shell = _powershell()
     env = dict(os.environ, CLAUDE_PROJECT_DIR=root)
     payload = json.dumps({"session_id": session, "cwd": root, "hook_event_name": "Stop"})
-    proc = subprocess.run([shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", HOOK],
+    proc = subprocess.run([sys.executable, os.path.join(root, "scripts", "campaign_guard.py"), "stop-hook"],
                           input=payload, capture_output=True, text=True, encoding="utf-8",
                           errors="replace", env=env, timeout=120)
     out = proc.stdout.strip()
@@ -807,8 +977,9 @@ def _workspace(tmpd: str) -> str:
     os.makedirs(os.path.join(root, "scripts"))
     os.makedirs(os.path.join(root, "build"))
     os.makedirs(os.path.join(root, "docs", "phase-runs"))
-    os.makedirs(os.path.join(root, ".claude", "hooks"))
-    shutil.copyfile(HOOK, os.path.join(root, ".claude", "hooks", "campaign-stop.ps1"))
+    # The hook runs from the fixture's own copy, the path the configured command resolves through
+    # CLAUDE_PROJECT_DIR.
+    shutil.copyfile(os.path.abspath(__file__), os.path.join(root, "scripts", "campaign_guard.py"))
     with open(os.path.join(root, ".gitignore"), "w", encoding="utf-8") as fh:
         fh.write("build/\n")
     # The fake graph prints the runnable count the test writes to ready.txt.
@@ -858,12 +1029,6 @@ def _self_test() -> int:
             failed += 1
             print(f"FAIL {name} {detail}")
 
-    if _powershell() is None:
-        print("campaign_guard self-test: SKIP (no PowerShell on this host)")
-        return 0
-    if not os.path.isfile(HOOK):
-        print(f"FAIL hook-present {HOOK}")
-        return 1
     with tempfile.TemporaryDirectory(prefix="campaign-guard-") as tmpd:
         root = _workspace(tmpd)
 
@@ -876,14 +1041,15 @@ def _self_test() -> int:
 
         # The configured command, not just the script: through PowerShell
         # (a Windows host without Git Bash) and through Git Bash.
-        shells = [("powershell", [_powershell(), "-NoProfile", "-Command"])]
+        shells = [("powershell", [_powershell(), "-NoProfile", "-Command"])] if _powershell() else []
         # Git Bash by path: the `bash` on PATH can be WSL's, which runs a
         # different interpreter against the wrong tree.
         bash = os.path.join(os.environ.get("ProgramFiles", "C:/Program Files"), "Git", "bin", "bash.exe")
         if os.path.isfile(bash):
             shells.append(("bash", [bash, "-c"]))
         check("settings-wire-the-stop-hook", configured_command() is not None
-              and "campaign-stop.ps1" in (configured_command() or ""), str(configured_command()))
+              and "'scripts', 'campaign_guard.py'" in (configured_command() or "")
+              and "'stop-hook'" in (configured_command() or ""), str(configured_command()))
         for label, shell in shells:
             state_path = os.path.join(root, "build", "claude-campaign-state.json")
             if os.path.exists(state_path):
@@ -1092,7 +1258,7 @@ def _self_test() -> int:
         files = sorted(os.listdir(folder)) if os.path.isdir(folder) else []
         logged = "".join(open(os.path.join(folder, n), encoding="utf-8").read() for n in files)
         check("a-lock-timeout-fails-open-into-an-error-file",
-              code == 0 and out is None and len(files) == 1 and "guard lock stayed held" in logged,
+              code == 0 and out is None and len(files) == 1 and "locked by another change" in logged,
               f"{out} {err} {files} {logged!r}")
         shutil.rmtree(folder)
 
@@ -1282,7 +1448,8 @@ def _self_test() -> int:
               isinstance(out, dict) and out.get("decision") == "block", str(out))
         with open(run, "a", encoding="utf-8") as fh:
             fh.write(f"\nPARKED 2099-01-01T00:00:00Z run={rid} this run parked\n")
-        check("whoami-owner-names-the-run", whoami(lroot, SESSION, g1) == f"OWNER run={read_guard(lroot)['run_id']}",
+        check("whoami-owner-names-the-run-and-scope",
+              whoami(lroot, SESSION, g1) == f"OWNER run={read_guard(lroot)['run_id']} scope=plan",
               whoami(lroot, SESSION, g1))
         check("whoami-not-the-current-job", whoami(lroot, SESSION, "stale0000000") == "NOT THE CURRENT JOB")
         check("whoami-not-the-owner", whoami(lroot, "99999999-0000-0000-0000-000000000000", g1) == "NOT THE OWNER")
@@ -1365,7 +1532,7 @@ def _self_test() -> int:
                  "    print('held', flush=True)\n"
                  "    while not os.path.exists(go): time.sleep(0.05)\n"
                  "    if change == 'handover':\n"
-                 "        cg._acquire_locked(root, 'cccccccc-0000-0000-0000-000000000000', 0, cg.RUN_FILE, 'job-h', 'drill')\n"
+                 "        cg._acquire_locked(root, 'cccccccc-0000-0000-0000-000000000000', 0, cg.RUN_FILE, 'job-h', 'drill', None, None)\n"
                  "    else:\n"
                  "        g = cg.read_guard(root)\n"
                  "        cg._end_locked(root, g['session_id'], 'operator-stop', None)\n"
@@ -1378,7 +1545,7 @@ def _self_test() -> int:
             with open(payload_file, "w", encoding="utf-8") as fh:
                 json.dump({"session_id": SESSION, "cwd": lroot, "hook_event_name": "Stop"}, fh)
             payload_in = open(payload_file, "rb")
-            hook = subprocess.Popen([_powershell(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", HOOK],
+            hook = subprocess.Popen([sys.executable, os.path.join(lroot, "scripts", "campaign_guard.py"), "stop-hook"],
                                     stdin=payload_in, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     text=True, encoding="utf-8", errors="replace",
                                     env=dict(os.environ, CLAUDE_PROJECT_DIR=lroot))
@@ -1447,6 +1614,38 @@ def _self_test() -> int:
         finally:
             for k in env_bounds:
                 del os.environ[k]
+
+    # The run's scope (from Conclave-SDK's todo kit, 2026-10-21): a phase started on its own is guarded for that
+    # phase only, so neither the hook nor the heartbeat pushes it on into the rest of the plan.
+    with tempfile.TemporaryDirectory(prefix="campaign-scope-") as stmp:
+        sroot = _workspace(stmp)
+        try:
+            acquire(sroot, SESSION, 4, RUN_FILE, "job-s", scope="all")
+            check("acquire-refuses-an-unknown-scope", False)
+        except GuardError as exc:
+            check("acquire-refuses-an-unknown-scope",
+                  "is not one of plan, phase" in str(exc) and read_guard(sroot) is None, str(exc))
+        msg = acquire(sroot, SESSION, 4, RUN_FILE, "job-s", scope="phase")
+        check("acquire-records-the-scope", "scope phase" in msg and read_guard(sroot)["scope"] == "phase", msg)
+        acquire(sroot, SESSION, 4, RUN_FILE, "job-t")
+        check("a-re-point-keeps-the-scope",
+              read_guard(sroot)["scope"] == "phase" and whoami(sroot, SESSION).endswith(" scope=phase"),
+              str(read_guard(sroot)))
+        code, out, _ = run_hook(sroot, SESSION)
+        check("a-phase-run-pushes-its-phase-only",
+              isinstance(out, dict) and out.get("decision") == "block" and "of Phase 4 only" in out.get("reason", "")
+              and "Next ready row" not in out.get("reason", ""), str(out))
+        _set_ready(sroot, 0)
+        code, out, _ = run_hook(sroot, SESSION)
+        check("a-phase-run-ignores-the-plan-wide-count",
+              isinstance(out, dict) and out.get("decision") == "block", str(out))
+        with open(os.path.join(sroot, RUN_FILE), "a", encoding="utf-8") as fh:
+            fh.write(f"\n## Closeout run={read_guard(sroot)['run_id']}\n\nshipped\n")
+        code, out, _ = run_hook(sroot, SESSION)
+        check("a-phase-run-ends-on-its-closeout", code == 0 and out is None, str(out))
+        os.remove(_paths(sroot)[0])
+        acquire(sroot, SESSION, 0, RUN_FILE, "job-u")
+        check("a-fresh-guard-defaults-to-plan", read_guard(sroot)["scope"] == "plan", str(read_guard(sroot)))
 
     # D00 T04 §35, §37: the repair episode survives a restart, refuses a
     # fourth attempt, binds its identity, counts a repeat once, closes only
@@ -1563,8 +1762,17 @@ def _self_test() -> int:
                         ("skill-marks-bookkeeping", "- bookkeeping: heartbeat resumed"),
                         ("skill-heartbeat-confirms-before-clearing",
                          "CronDelete this job, confirm it gone with CronList, then run `cancel-confirmed`"),
-                        ("skill-markers-carry-the-run-id", "a closeout is a line `## Closeout run=<run id>`")):
+                        ("skill-markers-carry-the-run-id", "a closeout is a line `## Closeout run=<run id>`"),
+                        ("skill-plan-runs-acquire-with-plan-scope", "--generation <generation> --scope plan"),
+                        ("skill-heartbeat-reads-the-scope", "step 1 printed scope=phase")):
         check(pin, needle in skill, plan_skill)
+    phase_skill = os.path.normpath(os.path.join(HERE, "..", ".claude", "skills", "process-phase", "SKILL.md"))
+    try:
+        with open(phase_skill, encoding="utf-8") as fh:
+            phase_text = fh.read()
+    except OSError:
+        phase_text = ""
+    check("skill-a-standalone-phase-is-phase-scoped", "--scope phase" in phase_text, phase_skill)
 
     print(f"campaign_guard self-test: {passed + failed} cases, {failed} failed")
     return 1 if failed else 0
@@ -1584,6 +1792,11 @@ def _opts(argv: list[str]) -> dict:
 def main(argv: list[str]) -> int:
     if argv == ["--self-test"]:
         return _self_test()
+    if argv == ["stop-hook"]:
+        code, out = stop_hook(sys.stdin.read(), os.environ.get("CLAUDE_PROJECT_DIR"))
+        if out:
+            print(out)
+        return code
     if not argv:
         print(__doc__.split("\n\n")[1], file=sys.stderr)
         return 2
@@ -1601,7 +1814,7 @@ def main(argv: list[str]) -> int:
         if argv[0] == "acquire":
             print(acquire(root, opts.get("session", ""), int(opts.get("phase", "0")),
                           opts.get("run_file", ""), opts.get("cron_id", ""), opts.get("handover"),
-                          opts.get("generation")))
+                          opts.get("generation"), opts.get("scope")))
             return 0
         if argv[0] == "end":
             print(end(root, opts.get("session", ""), opts.get("reason", "")))
