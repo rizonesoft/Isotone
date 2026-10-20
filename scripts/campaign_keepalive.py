@@ -320,7 +320,7 @@ def decide(root: str, procs, clock=time.time) -> tuple[str, dict | None, str]:
 
 def writer_model(root: str) -> str:
     import tomllib
-    with open(os.path.join(root, ".conclave", "panel.toml"), "rb") as fh:
+    with open(os.path.join(root, ".conclave", "reviewers.toml"), "rb") as fh:
         return tomllib.load(fh)["writer"]["model"]
 
 
@@ -519,7 +519,7 @@ def _self_test() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         root = os.path.join(tmp, "ws")
         os.makedirs(os.path.join(root, ".conclave"))
-        with open(os.path.join(root, ".conclave", "panel.toml"), "w", encoding="utf-8") as fh:
+        with open(os.path.join(root, ".conclave", "reviewers.toml"), "w", encoding="utf-8") as fh:
             fh.write('[writer]\nmodel = "claude-opus-5-5"\n')
         subprocess.run(["git", "init", "-q", root], check=True)
         procs = _FakeProcs()

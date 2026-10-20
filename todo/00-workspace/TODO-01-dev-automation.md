@@ -19,7 +19,7 @@ track: W1
 <!-- claim: count "^COVERAGE_FLOOR = 78$" scripts/todo-claims.py = 1 -->
 <!-- claim: count "^    \"display-session\",$" scripts/todo-graph.py = 1 -->
 <!-- claim: count "^    \"operator\",$" scripts/todo-graph.py = 1 -->
-<!-- claim: exists .conclave/panel.toml -->
+<!-- claim: exists .conclave/reviewers.toml -->
 
 ## Inputs
 
@@ -28,7 +28,7 @@ track: W1
 - [`scripts/todo-graph.py`](../../scripts/todo-graph.py) -- `REQUIRES_ALLOWED` and `detect_context`, which §2 extends
 - `R:\GitHub\ScratchPad\scripts\todo-graph.py` -- the source §2 ports the `operator` value and its self-test cases from (its D00 T01 §42)
 - [`scripts/todo-claims.py`](../../scripts/todo-claims.py) -- `COVERAGE_FLOOR`, which §3 raises
-- [`.conclave/panel.toml`](../../.conclave/panel.toml) and [`scripts/panel_slots.py`](../../scripts/panel_slots.py) -- the review panel §4 proves
+- [`.conclave/reviewers.toml`](../../.conclave/reviewers.toml) and [`scripts/panel_slots.py`](../../scripts/panel_slots.py) -- the review panel §4 proves
 - [`.github/workflows/build.yml`](../../.github/workflows/build.yml), [`.github/workflows/plan.yml`](../../.github/workflows/plan.yml) -- the workflows §5 reads back
 - -> XREF: D99 T01 §1 -- the operator rows that carry the mark §2 adds; §2 edits that file
 - [`standards/design-contract.md`](../../standards/design-contract.md), [`docs/design/`](../../docs/design/README.md) -- the contract and the design system §9's gates enforce
@@ -121,11 +121,11 @@ The hook is the only gate that runs before a commit exists, so a tree that fails
 
 ## 4. Prove the Review Panel End to End
 
-Every section ships through `review-todo-section`, which runs review slots from `.conclave/panel.toml` through `python scripts/panel_slots.py exec <slot>`. There are no fallback slots: a slot that cannot run parks the campaign. Discovering that on the first real stamp wastes a whole section's context, so this section runs each slot once against a probe first.
+Every section ships through `review-todo-section`, which runs review slots from `.conclave/reviewers.toml` through `python scripts/panel_slots.py exec <slot>`. There are no fallback slots: a slot that cannot run parks the campaign. Discovering that on the first real stamp wastes a whole section's context, so this section runs each slot once against a probe first.
 
 - [ ] Run `python scripts/panel_slots.py validate` and quote its summary line. Done when: it prints `panel slots ok` with the writer and slot counts.
 - [ ] For each slot the review skill uses, run `python scripts/panel_slots.py exec <slot>` against a fixed probe prompt (a two-line diff that adds a typo to `docs/README.md` in a scratch worktree), capturing the verdict under `build/panel-probe/`. Done when: every slot returns a parseable verdict and names the typo, or the failing slot is named with its error.
-- [ ] Record the probe in `docs/reviews/run-records.md` (date, slot names, CLI versions from `codex --version` and the writer harness, verdict per slot) and refresh the probe date in `.conclave/panel.toml` if the file carries one. Done when: `python scripts/todo-runs.py --check` exits 0 with the record present.
+- [ ] Record the probe in `docs/reviews/run-records.md` (date, slot names, CLI versions from `codex --version` and the writer harness, verdict per slot) and refresh the probe date in `.conclave/reviewers.toml` if the file carries one. Done when: `python scripts/todo-runs.py --check` exits 0 with the record present.
 - [ ] Any slot that fails is filed through `add-todo` as a new section in this file with the error quoted, and this section's stamp names it. Done when: no slot failure is left only in the log.
 - [ ] Make the stamp-check slot able to do what its prompt asks: on the D00 T01 §1 stamp (2026-10-19) attempt 2 of the `stamp-check` slot answered "both shell attempts failed with `setup refresh had errors`" and verified no path, so either the slot's sandbox lets the read-only reviewer list the tree, or the stamp prompt carries the `git ls-tree -r --name-only` listing of the staged tree and the reviewer checks paths against it; `review-todo-section` and `panel_slots.py` change together. Done when: a probe stamp citing one nonexistent path is named by the slot on its first attempt, three runs in a row. -> SOURCE: gap-audit-phase0-2026-10-19-stamp-check-paths
 - [ ] Record the independent pass's cost: `codex review --commit` printed no `tokens used` line on the D00 T01 §1 review (2026-10-19), so its round line reads `cost: unresolved`; find where the CLI reports usage for `review` (its JSON or log output) and have `panel_slots.py exec independent` print it on stderr as the other slots do. Done when: an `exec independent` run prints a token figure and the run-records round line carries it. -> SOURCE: gap-audit-phase0-2026-10-19-independent-cost

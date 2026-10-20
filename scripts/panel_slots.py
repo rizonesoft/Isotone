@@ -1,6 +1,6 @@
 """Slot resolution for the review panel (D00 T04 §27, §29).
 
-`.conclave/panel.toml` binds every review role to a (model, effort,
+`.conclave/reviewers.toml` binds every review role to a (model, effort,
 timeout) slot, names the writer, and registers the models. Skills run a
 role as `python scripts/panel_slots.py exec <slot>` and never name a
 model; `todo-runs.py` reads family-to-model sets from here. Ported from
@@ -117,7 +117,7 @@ class PanelSlotsError(ValueError):
 
 def toml_path() -> str:
     here = os.path.dirname(os.path.abspath(__file__))
-    return os.path.normpath(os.path.join(here, "..", ".conclave", "panel.toml"))
+    return os.path.normpath(os.path.join(here, "..", ".conclave", "reviewers.toml"))
 
 
 def _read(path: str | None) -> dict:
@@ -786,7 +786,7 @@ def probe_verdict(result: dict, efforts: list[str], delegate: dict) -> tuple[int
         why.append(f"the transcript recorded effort {','.join(seen) or 'none'}, not {delegate['effort']}")
     return 1, (f"{head}: drift{tail}\n"
                f"delegate probe: {'; '.join(why)}. Register the newly served model in "
-               f".conclave/panel.toml, re-pin `[delegate] model` with a fresh probe date, and re-run "
+               f".conclave/reviewers.toml, re-pin `[delegate] model` with a fresh probe date, and re-run "
                f"the delegated verification in standards/delegation.md.")
 
 

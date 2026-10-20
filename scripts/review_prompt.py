@@ -6597,7 +6597,7 @@ def _self_test() -> int:
         check(pin, needle in skill_text, skill_path)
     check("skill-attest-no-checker", "--checker-output" not in skill_text,
           skill_path)
-    # D00 T04 §27: every review pin lives in .conclave/panel.toml, so the
+    # D00 T04 §27: every review pin lives in .conclave/reviewers.toml, so the
     # skill names slots and never a model or a model alias.
     check("skill-no-model-literal",
           re.search(r"gpt-\d|grok-\d|claude-opus|--model opus", skill_text) is None,

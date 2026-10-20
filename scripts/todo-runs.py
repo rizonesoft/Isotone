@@ -78,7 +78,7 @@ DIAG = _load_diag()
 
 def _load_panel_slots():
     """The review wiring table's loader (D00 T04 §27): model names live
-    in `.conclave/panel.toml`, never in this module."""
+    in `.conclave/reviewers.toml`, never in this module."""
     mod = sys.modules.get("panel_slots")
     if mod is not None:
         return mod
