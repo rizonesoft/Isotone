@@ -25,7 +25,7 @@ The lead's prompt names the commands to run, at which commit or working tree, an
 
 - **Change no tracked file.** Commands may write only under `build/` and `artifacts/` (both ignored). If a command modifies a tracked file (a formatter, a `--sync`, a `--write`), report it as a finding and do not try to undo it yourself.
 - Write each command's full output to `build/delegation/<task>/<step>.log` (`cmd > log 2>&1`), then read only bounded parts: the exit code, the summary table, the failing tests by name, and the first error lines.
-- **Never** commit, push, stage, stash, reset, check out, or change git config (a hook on your shell denies these); never run `--no-verify`, `design-lint.py --allow-add` or `--update-baseline`, or `scripts/panel_slots.py exec`; never spawn agents.
+- **Never** commit, push, stage, stash, reset, check out, or change git config (a hook on your shell denies these); never run `--no-verify`, `design-lint.py --allow-add` or `--update-baseline`, or a review round (`scripts/review-dispatch.py --writer`); never spawn agents.
 - Do not diagnose by editing. When a gate fails, report the failing gate, the first error with its `path:line`, and your best reading of the cause, marked as a reading.
 - A `SKIP` is not a pass. A check that could not run is reported as not run, with the reason.
 

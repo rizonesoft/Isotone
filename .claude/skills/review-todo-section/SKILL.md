@@ -72,7 +72,7 @@ Cheap defects caught here cost nothing; the same defect caught by a lens costs a
 
 ### 3. Research pass (feature plans and surfaces)
 
-The researcher is the review session itself (the writer named in `.conclave/reviewers.toml`): the model with the sources, the web, and the filing tools. It may delegate the gathering to `isotone-researcher` subagents, one per competitor or question in parallel, and keeps the triage and every filing. It runs in-session, not as a panel lens (lens verdicts must come from the independent headless panel; research needs web access the read-only panel deliberately lacks, and gathering evidence is not judging it, so the writer may research).
+The researcher is the review session itself (the writer, `WRITER` in `scripts/panel_slots.py`, whose `claude` route `.conclave/reviewers.toml` reviews): the model with the sources, the web, and the filing tools. It may delegate the gathering to `isotone-researcher` subagents, one per competitor or question in parallel, and keeps the triage and every filing. It runs in-session, not as a panel lens (lens verdicts must come from the independent headless panel; research needs web access the read-only panel deliberately lacks, and gathering evidence is not judging it, so the writer may research).
 
 Run it when the candidate is a feature plan (a filed TODO file or section) or an app surface (a built window, panel, dialog, or tool). Skip it on pure infrastructure with one line saying so.
 
