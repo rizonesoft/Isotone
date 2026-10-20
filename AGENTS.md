@@ -147,6 +147,7 @@ python scripts/todo-graph.py plan --check    # fail if the projection went stale
 python scripts/todo-graph.py query ready     # dependency-safe work right now
 python scripts/todo-graph.py query blocked   # sections waiting on something
 python scripts/todo-graph.py query stats     # tree health
+python scripts/todo-graph.py query plan      # the plan as JSON (title, phases, every row with its status), the shape the Conclave editor extension reads
 python scripts/todo-graph.py query budget    # sections and discovered sections per phase, discovered sections per run (provenance), the backlog count
 python scripts/todo-graph.py query growth --since <ref>   # a run's added sections (discovered ones with their run) and backlog changes
 python scripts/todo-graph.py resolve 'DNN TNN §N'   # ref -> file, section, deps, status

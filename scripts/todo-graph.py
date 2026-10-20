@@ -10,6 +10,7 @@ markdown cannot answer by grep -- what is ready, what is blocked, and on what.
     python scripts/todo-graph.py self-test
     python scripts/todo-graph.py query ready|blocked|stats|deferred|frozen|findings|surfaces
     python scripts/todo-graph.py query budget|backlog
+    python scripts/todo-graph.py query plan          # the plan as JSON, for the Conclave editor extension
     python scripts/todo-graph.py query growth --since <ref>
     python scripts/todo-graph.py render > docs-graph.md
     python scripts/todo-graph.py plan [--check]
@@ -3630,6 +3631,10 @@ def cmd_query(args) -> int:
             return 1 if failing else 0
         return 0
 
+    if what == "plan":
+        print(json.dumps(plan_document(todos, by_key, by_id), indent=2, ensure_ascii=False))
+        return 0
+
     rows = []
     for t in todos:
         for num, s in sorted(t.sections.items()):
@@ -5309,6 +5314,50 @@ def plan_phase_counts() -> dict[str, dict]:
             out[current]["count"] += 1
             out[current]["refs"].append(" ".join(row.group("ref").split()))
     return out
+
+
+def plan_document(todos: list[Todo], by_key, by_id) -> dict:
+    """The plan as JSON for programs that show it (`query plan`, the shape of Conclave-SDK's todo kit), so a reader
+    such as the Conclave editor extension never parses todo/ itself.
+
+    `title` is the plan's H1, `acceptance` the first paragraph under its acceptance-bar heading, `phases` maps each
+    phase number to its title, and `sections` lists every plan row in plan order with its `ref`, `path`, `title`,
+    `phase`, `depends` (the section's own Depends On edges, canonical where they resolve) and `status`: `verified`
+    for a stamped row, `deferred` for a section not runnable in this tree (its file blocked or superseded, or the
+    section Moved), else `ready` or `blocked` by the one dependency gate.
+    """
+    text = PLAN.read_text(encoding="utf-8") if PLAN.exists() else ""
+    title = next((ln[2:].strip() for ln in text.splitlines() if ln.startswith("# ")), "Implementation plan")
+    acceptance = None
+    bar = re.search(r"(?m)^## The acceptance bar\s*$", text)
+    if bar:
+        paragraph = next((p.strip() for p in text[bar.end():].split("\n\n") if p.strip()), "")
+        if paragraph and not paragraph.startswith(("#", "<!--", "|")):
+            acceptance = " ".join(paragraph.split())
+    phases = plan_phase_counts()
+    by_ref = {f"D{t.domain.split('-')[0]} T{t.number} §{num}": (t, num) for t in todos for num in t.sections}
+    sections = []
+    for phase, info in phases.items():
+        for ref in info["refs"]:
+            if ref not in by_ref:
+                continue  # `plan --check` reports an unknown row; this reader only shows what resolves
+            t, num = by_ref[ref]
+            s = t.sections[num]
+            depends = []
+            for raw in s.depends_on:
+                r = resolve_ref(raw, t, by_key)
+                src = by_id.get(r[0]) if r else None
+                depends.append(f"D{src.domain.split('-')[0]} T{src.number} §{r[1]}" if src else raw)
+            if s.status == "x":
+                status = "verified"
+            elif s.moved or t.status in ("blocked", "superseded"):
+                status = "deferred"
+            else:
+                status = "blocked" if unmet_dependencies(t, num, todos, by_key, by_id=by_id) else "ready"
+            sections.append({"ref": ref, "path": t.path, "title": s.deliverable, "phase": int(phase),
+                             "status": status, "depends": depends})
+    return {"title": title, "acceptance": acceptance,
+            "phases": {str(int(p)): info["title"] for p, info in phases.items()}, "sections": sections}
 
 
 def section_origins(todos: list[Todo]) -> tuple[dict[str, dict], list[str]]:
@@ -11023,6 +11072,24 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             code, out = _gquery("backlog")
             check("budget: query backlog lists every entry and the count",
                   (code, "B-001" in out and "B-002" in out and "\n2 backlog entries" in out), (0, True))
+            # query plan: the JSON the Conclave editor extension reads (Conclave-SDK todo kit shape).
+            gfile.write_text(_gtodo([1, 2, 3]).replace("| 3 | §3 | Thing 3 | -- | [ ] |",
+                                                         "| 3 | §3 | Thing 3 | §1 | [ ] |"), encoding="utf-8")
+            code, out = _gquery("plan")
+            try:
+                _gdoc = json.loads(out)
+            except ValueError:
+                _gdoc = {}
+            check("plan: query plan prints the title, phases, and every row in plan order with its status",
+                  (code, _gdoc.get("title"), _gdoc.get("acceptance"), _gdoc.get("phases"),
+                   [(s["ref"], s["phase"], s["status"], s["depends"]) for s in _gdoc.get("sections", [])]),
+                  (0, "Implementation plan", None, {"0": "Budget fixture", "1": "Second fixture"},
+                   [("D95 T01 §1", 0, "ready", []), ("D95 T01 §2", 0, "ready", []),
+                    ("D95 T01 §3", 1, "blocked", ["D95 T01 §1"])]))
+            check("plan: query plan rows name their file and deliverable",
+                  [(s["path"].replace("\\", "/").endswith("95-budget/TODO-01-budget.md"), s["title"])
+                   for s in _gdoc.get("sections", [])],
+                  [(True, "Thing 1"), (True, "Thing 2"), (True, "Thing 3")])
             gfile.write_text(_gtodo([1, 2, 3]), encoding="utf-8")
             # Growth since a ref: a real git history in the fixture tree.
             # Discovered sections are reported with their run; nothing caps them.
@@ -11331,7 +11398,7 @@ def main() -> int:
     q = sub.add_parser("query", help="ask the graph a question")
     q.add_argument(
         "what",
-        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth", "design"],
+        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth", "design", "plan"],
     )
     q.add_argument("target", nargs="?", help="run: run ID to inspect")
     q.add_argument("--since", metavar="REF", help="growth: the commit to count from (a run's start commit)")
