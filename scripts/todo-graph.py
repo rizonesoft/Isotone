@@ -2121,9 +2121,13 @@ def _query_parity(todos: list[Todo], phase: str | None, as_json: bool) -> int:
         elif as_json:
             for bucket in cat["phases"].values():
                 bucket.pop("rows", None)
+    # A damaged catalog yields short counts, so the report refuses rather than passing them off as whole.
+    status = 1 if report["problems"] else 0
+    for problem in report["problems"]:
+        print(f"query parity: damaged input, the counts are not evidence: {problem}", file=sys.stderr)
     if as_json:
         print(json.dumps(report, indent=2, ensure_ascii=False))
-        return 0
+        return status
     for app, cat in report["catalogs"].items():
         totals = ", ".join(f"{k} {v}" for k, v in cat["totals"].items())
         print(f"parity {app}  {cat['rows']} features in {cat['path']}: {totals}")
@@ -2134,7 +2138,7 @@ def _query_parity(todos: list[Todo], phase: str | None, as_json: bool) -> int:
             print()
             for row in cat["phases"][key]["rows"]:
                 print(f"  {row['id']}  {row['status']} {row['ref']}  {row['feature']}")
-    return 0
+    return status
 
 
 def cmd_query(args) -> int:
@@ -11287,12 +11291,18 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a backlog id with no live entry", _pcat.replace("backlog B-001", "backlog B-009"), _pai, "parity-backlog-dead", "B-009"),
                 ("a short catalog row", _pcat.replace("| NP-0004 | Cloud | -- | -- | cloud |", "| NP-0004 | Cloud | -- | cloud |"), _pai, "parity-input-damaged", "stilus-parity.md:8"),
                 ("a source id defined twice in one file", _pcat, _pai + "| AI-0001 | Again | tool | x | y | core | z |\n", "parity-input-damaged", "defined again"),
+                # Independent review 2026-10-21: a row is recognised by its
+                # id prefix, so truncation or a mangled id is never skipped.
+                ("a truncated inventory row (its id also unplaced)", _pcat, _pai + "| AI-0003\n", ["parity-id-missing", "parity-input-damaged"], "illustrator-30.8.md:5"),
+                ("a mangled source id", _pcat, _pai + "| AI-00x3 | Three | tool | x | y | core | z |\n", "parity-input-damaged", "'AI-00x3' is not a whole id"),
+                ("a truncated catalog row", _pcat + "| NP-0007 |\n", _pai, "parity-input-damaged", "stilus-parity.md:11"),
             )
             for name, cat, ai, want, needle in _pcases:
                 _pwrite(cat, ai)
                 found = _pfind()
-                check(f"parity: {name} is {want} naming it",
-                      (sorted({c for c, _ in found}), any(needle in m for _, m in found)), ([want], True))
+                want = want if isinstance(want, list) else [want]
+                check(f"parity: {name} is {', '.join(want)} naming it",
+                      (sorted({c for c, _ in found}), any(needle in m for _, m in found)), (want, True))
             _pwrite()
             (proot / "docs" / "parity" / "stilus-parity.md").unlink()
             found = _pfind()
@@ -11321,6 +11331,15 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                   (pcode, list(pjson), {k: pjson["4"][k] for k in ("features", "sections", "stamped_sections")},
                    [r["id"] for r in pjson["4"]["rows"]]),
                   (0, ["4"], {"features": 2, "sections": 2, "stamped_sections": 1}, ["NP-0001", "NP-0002"]))
+            # Independent review 2026-10-21: a damaged catalog yields short
+            # counts, so the query refuses instead of reporting them as whole.
+            _pwrite(_pcat.replace("| NP-0001 | One | AI-0001 | CD-001 | core | plan D94 T01 §1 |  |", "| NP-0001 |"))
+            pbuf, perr = _pio.StringIO(), _pio.StringIO()
+            with _pctx.redirect_stdout(pbuf), _pctx.redirect_stderr(perr):
+                pcode = cmd_query(argparse.Namespace(what="parity", phase="4", json=True, all=False))
+            check("parity: query parity refuses a damaged catalog, naming the row",
+                  (pcode, json.loads(pbuf.getvalue())["problems"] != [], "stilus-parity.md:5" in perr.getvalue()),
+                  (1, True, True))
         finally:
             TODO_DIR, PLAN = saved_p
             __import__("shutil").rmtree(proot, ignore_errors=True)

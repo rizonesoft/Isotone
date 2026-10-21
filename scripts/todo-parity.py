@@ -79,12 +79,22 @@ def split_row(line: str) -> list[str]:
     return [cell.strip() for cell in _CELL_SPLIT_RE.split(body)]
 
 
-def _table_rows(text: str, id_re: str):
-    """(line number, cells, header width) for every row whose first cell is an id of `id_re`.
+def _id_prefix(id_re: str) -> str:
+    """'AI-' for r'AI-\\d{4}': the literal family prefix every id of the family opens with."""
+    return re.match(r"[A-Za-z]+-", id_re).group(0)
 
-    The width is the cell count of the nearest `| ID |` header above the row, or None when no header precedes it.
+
+def _table_rows(text: str, id_re: str):
+    """(line number, cells, header width, header, problem) for every table row whose first cell opens with the
+    family prefix of `id_re` (`AI-`, `CD-`, `NP-`).
+
+    A row is recognised by its prefix, not by a well-formed id and a closing pipe, so a truncated row (`| AI-1295`)
+    or a mangled id (`| AI-12a5 |`) is reported rather than skipped (independent review 2026-10-21). The width is
+    the cell count of the nearest `| ID |` header above the row, or None when no header precedes it; `problem`
+    is None for a row whose first cell is a whole id of the family.
     """
-    row_re = re.compile(rf"^\|\s*({id_re})\s*\|")
+    row_re = re.compile(rf"^\|\s*({re.escape(_id_prefix(id_re))}[^|\s]*)")
+    id_full = re.compile(rf"^{id_re}$")
     width = None
     header: list[str] | None = None
     for lineno, line in enumerate(text.splitlines(), 1):
@@ -92,8 +102,10 @@ def _table_rows(text: str, id_re: str):
             header = split_row(line)
             width = len(header)
             continue
-        if row_re.match(line):
-            yield lineno, split_row(line), width, header
+        m = row_re.match(line)
+        if m:
+            problem = None if id_full.match(m.group(1)) else f"{m.group(1)!r} is not a whole id of its family"
+            yield lineno, split_row(line), width, header, problem
 
 
 def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[str, str]]]:
@@ -106,8 +118,11 @@ def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[
                                              f"({error.__class__.__name__}); restore it from git")]
     ids: dict[str, int] = {}
     problems: list[tuple[str, str]] = []
-    for lineno, cells, width, _header in _table_rows(text, column["id"]):
+    for lineno, cells, width, _header, problem in _table_rows(text, column["id"]):
         where = f"{column['path']}:{lineno}"
+        if problem is not None:
+            problems.append(("parity-input-damaged", f"{where}: {problem}; repair the row"))
+            continue
         if width is not None and len(cells) != width:
             problems.append(("parity-input-damaged", f"{where}: {cells[0]} has {len(cells)} cells against the "
                                                      f"header's {width}; repair the row"))
@@ -129,8 +144,11 @@ def parse_catalog(root: Path, spec: dict) -> tuple[list[dict], list[tuple[str, s
                                              f"({error.__class__.__name__}); restore it from git")]
     rows: list[dict] = []
     problems: list[tuple[str, str]] = []
-    for lineno, cells, width, header in _table_rows(text, spec["id"]):
+    for lineno, cells, width, header, problem in _table_rows(text, spec["id"]):
         where = f"{spec['path']}:{lineno}"
+        if problem is not None:
+            problems.append(("parity-input-damaged", f"{where}: {problem}; repair the row"))
+            continue
         if header is None or len(cells) != width:
             got = "no `| ID |` header above it" if header is None else f"{len(cells)} cells against the header's {width}"
             problems.append(("parity-input-damaged", f"{where}: {cells[0]} has {got}; repair the row"))
@@ -246,7 +264,8 @@ def parity_report(graph, todos, root=None) -> dict:
     """Per catalog: status totals, and per plan phase the features, distinct sections, and stamped sections.
 
     A `plan` or `shipped-scope` row counts under the phase whose table holds its section, or under `unplaced`;
-    a section counts as stamped only when it carries a `Verified:` stamp, whatever its status kind says.
+    a section counts as stamped only when it carries a `Verified:` stamp, whatever its status kind says. Every
+    damaged catalog row is listed under `problems`, and a report with problems is not evidence.
     """
     root = _root(graph, root)
     sections = _section_index(todos)
@@ -256,9 +275,12 @@ def parity_report(graph, todos, root=None) -> dict:
         titles[phase] = info["title"]
         for ref in info["refs"]:
             phase_of.setdefault(ref, phase)
-    report: dict = {"catalogs": {}}
+    report: dict = {"catalogs": {}, "problems": []}
     for spec in CATALOGS:
-        rows, _problems = parse_catalog(root, spec)
+        # A damaged catalog would report short counts as if they were whole (independent review 2026-10-21), so
+        # its problems ride the report and `query parity` refuses it.
+        rows, problems = parse_catalog(root, spec)
+        report["problems"] += [msg for _cls, msg in problems]
         totals = {kind: 0 for kind in STATUS_KINDS}
         totals["malformed"] = 0
         phases: dict[str, dict] = {}
