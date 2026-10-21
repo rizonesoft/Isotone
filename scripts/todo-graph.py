@@ -11300,7 +11300,14 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 # first cell must be one id.
                 ("an indented inventory row nobody places", _pcat, _pai + "  | AI-0003 | Three | tool | x | y | core | z |\n", "parity-id-missing", "AI-0003"),
                 ("an id cell carrying more than the id", _pcat.replace("| NP-0001 |", "| NP-0001 junk |"), _pai, ["parity-id-missing", "parity-input-damaged"], "'NP-0001 junk' is not a whole id"),
-                ("an empty catalog", "", _pai, "parity-id-missing", "AI-0001"),
+                ("an empty catalog", "", _pai, ["parity-id-missing", "parity-input-damaged"], "catalog has no NP- rows"),
+                # Round 3: a repeated header column, an inventory with no
+                # header, and an inventory with no rows are each damage.
+                ("a header that repeats a column",
+                 _pcat.replace("| Status | Notes |\n", "| Status | Notes | Status |\n").replace(" |  |\n", " |  | excluded: cloud |\n"),
+                 _pai, ["parity-id-missing", "parity-input-damaged"], "repeats Status"),
+                ("an inventory with no header", _pcat, "| AI-0001\n| AI-0002\n", "parity-input-damaged", "no `| ID |` header"),
+                ("an empty inventory", _pcat.replace("| AI-0001 |", "| -- |").replace("| AI-0002 |", "| -- |"), "", "parity-input-damaged", "Illustrator inventory has no AI- rows"),
                 ("a row without its leading pipe", _pcat, _pai + "AI-0003 | Three | tool | x | y | core | z |\n", "parity-id-missing", "AI-0003"),
                 ("a lower-case id", _pcat, _pai + "| ai-0003 | Three | tool | x | y | core | z |\n", "parity-input-damaged", "'ai-0003' is not a whole id"),
             )

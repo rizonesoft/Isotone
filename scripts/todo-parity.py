@@ -85,31 +85,39 @@ def _id_prefix(id_re: str) -> str:
 
 
 def _table_rows(text: str, id_re: str):
-    """(line number, cells, header width, header, problem) for every table row whose first cell opens with the
-    family prefix of `id_re` (`AI-`, `CD-`, `NP-`).
+    """(line number, cells, header, id_ok, problem) for every table row whose first cell opens with the family
+    prefix of `id_re` (`AI-`, `CD-`, `NP-`).
 
-    A row is recognised by its prefix, not by a well-formed id and a closing pipe, so a truncated row (`| AI-1295`)
-    or a mangled id (`| AI-12a5 |`) is reported rather than skipped (independent review 2026-10-21). The width is
-    the cell count of the nearest `| ID |` header above the row, or None when no header precedes it; `problem`
-    is None for a row whose first cell is a whole id of the family.
+    Recognition is wide and every check strict, so no row shape can hide from the count (independent review
+    2026-10-21, rounds 1 to 3): leading whitespace and a missing leading pipe still make a table row in GitHub
+    Markdown, and the prefix matches in any case. `id_ok` says the whole first cell is one id of the family.
+    `problem` is None for a sound row, else the first defect: a first cell that is no whole id, no `| ID |` header
+    above the row, a header that repeats a column name (a second `Status` would overwrite the first), or a cell
+    count that differs from the header's.
     """
-    # Recognition is wide and the id check is strict, so no row shape can hide from the count: leading whitespace
-    # and a missing leading pipe both still make a table row in GitHub Markdown, the prefix matches in any case,
-    # and the whole first cell must be one id (independent review round 2 found an indented row and a
-    # `NP-0001 junk` cell slipping past a token match).
     row_re = re.compile(rf"^\s*\|?\s*{re.escape(_id_prefix(id_re))}", re.IGNORECASE)
     id_full = re.compile(rf"^{id_re}$")
-    width = None
     header: list[str] | None = None
+    header_line = 0
     for lineno, line in enumerate(text.splitlines(), 1):
         if re.match(r"^\s*\|?\s*ID\s*\|", line):
-            header = split_row(line)
-            width = len(header)
+            header, header_line = split_row(line), lineno
             continue
-        if row_re.match(line):
-            cells = split_row(line)
-            problem = None if id_full.match(cells[0]) else f"{cells[0]!r} is not a whole id of its family"
-            yield lineno, cells, width, header, problem
+        if not row_re.match(line):
+            continue
+        cells = split_row(line)
+        id_ok = id_full.match(cells[0]) is not None
+        problem = None
+        if not id_ok:
+            problem = f"{cells[0]!r} is not a whole id of its family"
+        elif header is None:
+            problem = f"{cells[0]} has no `| ID |` header above it"
+        elif len(set(header)) != len(header):
+            repeated = sorted({h for h in header if header.count(h) > 1})
+            problem = f"{cells[0]} sits under the header at line {header_line}, which repeats {', '.join(repeated)}"
+        elif len(cells) != len(header):
+            problem = f"{cells[0]} has {len(cells)} cells against the header's {len(header)}"
+        yield lineno, cells, header, id_ok, problem
 
 
 def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[str, str]]]:
@@ -122,19 +130,22 @@ def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[
                                              f"({error.__class__.__name__}); restore it from git")]
     ids: dict[str, int] = {}
     problems: list[tuple[str, str]] = []
-    for lineno, cells, width, _header, problem in _table_rows(text, column["id"]):
+    for lineno, cells, _header, id_ok, problem in _table_rows(text, column["id"]):
         where = f"{column['path']}:{lineno}"
         if problem is not None:
             problems.append(("parity-input-damaged", f"{where}: {problem}; repair the row"))
+        if not id_ok:
             continue
-        if width is not None and len(cells) != width:
-            problems.append(("parity-input-damaged", f"{where}: {cells[0]} has {len(cells)} cells against the "
-                                                     f"header's {width}; repair the row"))
+        # A damaged row with a whole id still defines it, so the id stays in the denominator and is reported
+        # missing too when no catalog row places it.
         if cells[0] in ids:
             problems.append(("parity-input-damaged", f"{where}: {cells[0]} is defined again (first at line "
                                                      f"{ids[cells[0]]}); a source id is defined once"))
             continue
         ids[cells[0]] = lineno
+    if not ids:
+        problems.append(("parity-input-damaged", f"{column['path']}: the {column['column']} inventory has no "
+                                                 f"{_id_prefix(column['id'])} rows; restore it from git"))
     return ids, problems
 
 
@@ -148,14 +159,12 @@ def parse_catalog(root: Path, spec: dict) -> tuple[list[dict], list[tuple[str, s
                                              f"({error.__class__.__name__}); restore it from git")]
     rows: list[dict] = []
     problems: list[tuple[str, str]] = []
-    for lineno, cells, width, header, problem in _table_rows(text, spec["id"]):
+    seen_any = False
+    for lineno, cells, header, _id_ok, problem in _table_rows(text, spec["id"]):
+        seen_any = True
         where = f"{spec['path']}:{lineno}"
         if problem is not None:
             problems.append(("parity-input-damaged", f"{where}: {problem}; repair the row"))
-            continue
-        if header is None or len(cells) != width:
-            got = "no `| ID |` header above it" if header is None else f"{len(cells)} cells against the header's {width}"
-            problems.append(("parity-input-damaged", f"{where}: {cells[0]} has {got}; repair the row"))
             continue
         named = dict(zip(header, cells))
         missing = [c for c in ("Feature", "Category", "Status", "Notes") if c not in named]
@@ -171,6 +180,9 @@ def parse_catalog(root: Path, spec: dict) -> tuple[list[dict], list[tuple[str, s
             "id": cells[0], "line": lineno, "feature": named["Feature"], "sources": sources,
             "category": named["Category"], "status": named["Status"], "notes": named["Notes"],
         })
+    if not seen_any:
+        problems.append(("parity-input-damaged", f"{spec['path']}: the {spec['app']} catalog has no "
+                                                 f"{_id_prefix(spec['id'])} rows; restore it from git"))
     return rows, problems
 
 
