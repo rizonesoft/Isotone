@@ -1,12 +1,13 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-  Registers the Isotone automations in Windows Task Scheduler, under \Isotone\.
+  Registers this project's automations in Windows Task Scheduler, under the folder tasks.json names.
 .DESCRIPTION
   Reads every task from tasks.json (the one list; nothing here names a task) and registers it to run
   `pythonw.exe .conclave\automations\run.py <name>` from this repository, as the signed-in user, only while
   that user is logged on (no stored password). Idempotent: re-run it after editing tasks.json. A task in the
-  \Isotone\ folder that tasks.json no longer lists is unregistered.
+  project's folder that tasks.json no longer lists is unregistered. On Linux and WSL, install.sh is the
+  systemd equivalent.
 
   Settings on every task: start when available (a run missed while the PC was off fires at the next chance,
   as systemd's Persistent=true does), ignore a new start while one runs, an execution limit five minutes past
@@ -21,8 +22,14 @@ $ErrorActionPreference = 'Stop'
 
 $here = $PSScriptRoot
 $repo = (Resolve-Path (Join-Path $here '..\..')).Path
+$pythonw = (Get-Command pythonw.exe -ErrorAction Ignore).Source  # absent is the throw below
+if (-not $pythonw) { throw 'pythonw.exe is not on PATH; install Python 3 for Windows first' }
+$runner = Join-Path $here 'run.py'
+
+# run.py's own loader checks tasks.json, so nothing is registered that the runner would refuse.
+$folder = & (Join-Path (Split-Path $pythonw) 'python.exe') $runner --check
+if ($LASTEXITCODE -ne 0) { throw 'tasks.json was refused (above); nothing was registered' }
 $manifest = Get-Content -Raw -Path (Join-Path $here 'tasks.json') | ConvertFrom-Json
-$folder = $manifest.folder
 $existing = @(Get-ScheduledTask | Where-Object TaskPath -eq $folder)
 
 if ($Uninstall) {
@@ -31,9 +38,6 @@ if ($Uninstall) {
   return
 }
 
-$pythonw = (Get-Command pythonw.exe -ErrorAction Ignore).Source  # absent is the throw below
-if (-not $pythonw) { throw 'pythonw.exe is not on PATH; install Python 3 for Windows first' }
-$runner = Join-Path $here 'run.py'
 $user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
 

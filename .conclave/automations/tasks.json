@@ -10,18 +10,18 @@
       "timeout_minutes": 15
     },
     {
-      "name": "isotone-vulnerable-packages",
-      "description": "Check no NuGet package in Isotone.slnx, direct or transitive, has a known vulnerability",
-      "command": ["python", "scripts/check-vulnerable-packages.py"],
-      "trigger": {"weekly": "Monday", "at": "07:15"},
-      "timeout_minutes": 30
+      "name": "isotone-local-tools",
+      "description": "Email once when this PC's codex or claude CLI, Python, or pinned .NET SDK is behind",
+      "command": ["python", "scripts/check-local-tools.py", "notify"],
+      "trigger": {"weekly": "Monday", "at": "07:05"},
+      "timeout_minutes": 5
     },
     {
-      "name": "isotone-dotnet-ga",
-      "description": "Report when .NET 11 ships its GA SDK while global.json still pins a release candidate",
-      "command": ["python", "scripts/check-sdk-ga.py"],
-      "trigger": {"weekly": "Monday", "at": "07:30"},
-      "timeout_minutes": 5
+      "name": "isotone-conclave-kits",
+      "description": "Email once when the Conclave SDK kits change in ways Isotone has not absorbed",
+      "command": ["python", "scripts/check-conclave-kits.py", "notify"],
+      "trigger": {"weekly": "Monday", "at": "07:10"},
+      "timeout_minutes": 10
     }
   ]
 }

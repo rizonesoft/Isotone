@@ -25,7 +25,9 @@
       read-only invocations, records, and --keep, with fake reviewer CLIs)
   17. python scripts/weakening-scan.py --self-test
   18. python scripts/tests/test_automations.py (the scheduled tasks, their
-      runner and alert, and the weekly checks; .conclave/automations/README.md)
+      runner, alert, and installers; .conclave/automations/README.md)
+  19. python scripts/tests/test_pin_automations.py (the pin checks and the
+      settings hook scripts)
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
 .EXAMPLE
@@ -97,6 +99,7 @@ try {
     Invoke-PythonGate 'review-dispatch tests' 'tests/test_review_dispatch.py' @()
     Invoke-PythonGate 'weakening-scan self-test' 'weakening-scan.py' @('--self-test')
     Invoke-PythonGate 'automations tests' 'tests/test_automations.py' @()
+    Invoke-PythonGate 'pin automations tests' 'tests/test_pin_automations.py' @()
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'
     $results.Add([pscustomobject]@{ Gate = 'python gates'; Status = 'SKIP (no python)'; Seconds = 0 })

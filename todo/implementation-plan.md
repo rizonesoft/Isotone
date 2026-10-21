@@ -131,7 +131,7 @@ There is none. `D05 T01 §2` carries `**Needs:** Signing certificate (release)` 
 
 ### 6. The operator's GitHub session
 
-Repository settings and branch protection (`D99 T01 §1`, `§2`) need the owner's logged-in browser. The agent's `gh` credentials push, tag, and create releases; they do not change repository settings.
+Repository settings and branch protection (`D99 T01 §1`, `§2`) need the owner's logged-in browser. The agent's `gh` credentials push, tag, and create releases; the one repository setting they changed is the Actions permission to open pull requests, at the operator's request on 2026-10-21 for the daily pins workflow (recorded in `D99 T01 §2`).
 
 ### 7. The download storage and the product page
 

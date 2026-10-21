@@ -64,8 +64,10 @@ jobs:
         run: python3 scripts/tests/test_review_dispatch.py
       - name: Self-test the weakening scan
         run: python3 scripts/weakening-scan.py --self-test
-      - name: Test the scheduled automations and the weekly checks
+      - name: Test the scheduled automations kit
         run: python3 scripts/tests/test_automations.py
+      - name: Test the pin checks and the settings hook scripts
+        run: python3 scripts/tests/test_pin_automations.py
       - name: Validate the TODO tree
         run: python3 scripts/todo-graph.py validate
       - name: Check the design system page is current

@@ -23,7 +23,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `src/Albumen/` | Albumen, the darkroom (planned) |
 | `src/Isotone.Core/`, `src/Isotone.UI/` | Shared libraries, only what two apps need (planned); the target layout is in `docs/dev/architecture.md` |
 | `Isotone.slnx` | The one solution every build, test, and publish goes through |
-| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots and delegation checks, weakening scan, campaign guard), the weekly checks `check-vulnerable-packages.py` and `check-sdk-ga.py`, with tests under `tests/` |
+| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots and delegation checks, weakening scan, campaign guard), the pin checks `check-dotnet-pin.py`, `check-vulnerable-packages.py`, `check-local-tools.py`, and `check-conclave-kits.py` with their shared `lib/pin_proposal.py` and `lib/pin_sources.py`, with tests under `tests/` |
 | `tools/` | `provision.ps1` (sets up a clone, including the commit hook) and `githooks/pre-commit` |
 | `todo/` | The live execution plan; read `todo/README.md` before authoring or implementing |
 | `todo/implementation-plan.md` | Ordered phase plan; its boxes are synchronized through `scripts/todo-graph.py` |
@@ -40,7 +40,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `resources/` | Brand, icons, screens |
 | `.claude/` | Claude Code skills, the delegate agent definitions under `agents/`, the output and safety rule under `rules/`, the Stop hook, the agent-routing hook, and settings; the Conclave-SDK `base` kit (Claude only, imported 2026-10-19) supplied the `authoring-skills` and `local-tool-safety` skills, the rule, and four of the agents (a fifth, `mutation-tester`, came from it on 2026-10-21, adapted to the shell gate). Those copies are Isotone's own from the import on: never run `forge.py sync` here, because forge reads `scripts/todo-graph.py` as its `todo` kit and a sync would overwrite Isotone's TODO skills, `todo-graph.py`, and the adapted agents (trial on a scratch clone, 2026-10-19) |
 | `.conclave/reviewers.toml` | The reviewer pin in the Conclave-SDK reviewer kit's schema (adopted 2026-10-21): the reviewer, its model and effort, and the route for the `claude` writer, read by `scripts/review-dispatch.py`, which runs every review round |
-| `.conclave/automations/` | The scheduled jobs (Windows Task Scheduler, under `\Isotone\`): the task list `tasks.json`, the runner that logs each run under `build/automations/` and emails the operator on a failure, and `install.ps1`; the README lists what runs |
+| `.conclave/automations/` | The scheduled jobs (Windows Task Scheduler, under `\Isotone\`, in the Conclave-SDK automations kit's and RectoPDF's shape): the task list `tasks.json` with the checks only this PC can see, the kit's runner, alert, and installers, and the README listing both those and what the daily `.github/workflows/pins.yml` and Dependabot keep current on GitHub (the .NET 11 SDK with its runtime packages, vulnerable packages, NuGet, Actions); `.conclave/kit-drift-allow.txt` records the kit files Isotone keeps different |
 | `artifacts/` | Build output (`UseArtifactsOutput`); ignored, never authoritative |
 | `build/` | Scratch, caches, and campaign guard state; ignored, never authoritative |
 
@@ -165,7 +165,10 @@ python scripts/panel_slots.py delegate-audit # this session's subagents ran at t
 python scripts/weakening-scan.py --base <rev> # every hunk that could weaken an implementation, for the lead to clear
 python scripts/weakening-scan.py --snapshot <file>; python scripts/weakening-scan.py --scope <file> --   # a delegate wrote nothing and changed no ref, config, or remote
 python scripts/weakening-scan.py --self-test  # the scan's own fixtures
-python scripts/tests/test_automations.py      # the scheduled tasks, their runner and alert, and the weekly checks
+python scripts/tests/test_automations.py      # the scheduled tasks, their runner, alert, and installers (the automations kit's tests)
+python scripts/tests/test_pin_automations.py  # the pin checks, the notice and pull-request plumbing, and the settings hook scripts
+python scripts/check-dotnet-pin.py check      # the .NET SDK pin is the newest release of its channel
+python scripts/check-conclave-kits.py check   # the Conclave SDK kits hold nothing Isotone has not absorbed
 python scripts/design-lint.py --baseline docs/design/.lint-baseline.json   # no new design-contract violation in the UI sources
 python scripts/design-lint.py --self-test    # the lint's own fixtures
 python scripts/todo-graph.py query design    # surfaces with a Design line, the baseline, open deviations

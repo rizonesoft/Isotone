@@ -1,12 +1,20 @@
 version: 2
 updates:
-  # NuGet: versions live in Directory.Packages.props (central package management).
+  # NuGet: versions live in Directory.Packages.props (central package management). Daily, labelled like the pins
+  # workflow's PRs (operator request 2026-10-21, the RectoPDF shape).
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
     open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - pins
+    ignore:
+      # These track the runtime of the SDK global.json pins: scripts/check-dotnet-pin.py moves them with the SDK
+      # (.github/workflows/pins.yml), so a bump never lands without its SDK.
+      - dependency-name: "Microsoft.Extensions.DependencyInjection"
+      - dependency-name: "Microsoft.Extensions.Hosting"
     groups:
       microsoft:
         patterns:
@@ -30,12 +38,15 @@ updates:
           - "minor"
           - "patch"
 
-  # GitHub Actions: pinned by full SHA; Dependabot bumps the SHA and the tag comment.
+  # GitHub Actions: pinned by full SHA; Dependabot bumps the SHA and the tag comment. The pins workflow's token cannot
+  # edit workflow files, so Dependabot owns these.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
+    labels:
+      - dependencies
+      - pins
     groups:
       actions:
         patterns:

@@ -103,6 +103,8 @@ A protected `main` keeps a red build from landing. The checks must be the real j
 
 **Corrected 2026-09-28:** said the checks are `build` and `plan-gates`: `build` is the workflow, its job and check run is `build-windows`, and `plan.yml` also runs `campaign-guard`. Because `plan.yml` is path-filtered, requiring `plan-gates` blocks a pull request that touches none of its paths; drop the path filter from its `pull_request` trigger in the same change (owned by `D00 T01 §5`) or leave `plan-gates` out of the required set.
 
+**Recorded 2026-10-21:** at the operator's request the agent turned on the Actions setting "Allow GitHub Actions to create and approve pull requests" for the daily pins workflow (`.github/workflows/pins.yml`, `.conclave/automations/README.md`), keeping the default workflow token read-only: `gh api repos/rizonesoft/Isotone/actions/permissions/workflow` reads `{"default_workflow_permissions":"read","can_approve_pull_request_reviews":true}`. A ruleset this row adds must let those pull requests run their dispatched `build-windows` and `plan-gates` checks.
+
 - [ ] Protect `main`. Done when: the rule lists both checks.
   1. Open `https://github.com/rizonesoft/Isotone/settings/rules` (or **Settings**, **Branches**), click **New branch ruleset** (or **Add branch protection rule**).
   2. Target `main`; enable **Require status checks to pass**; search and add `build-windows`, `plan-gates`, and `campaign-guard` (the job names GitHub reports as check runs); add the Repository admin role to the ruleset's bypass list (bypass mode: always) so the single writer's direct pushes to `main` are not refused before CI has run.
