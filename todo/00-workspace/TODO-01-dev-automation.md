@@ -59,7 +59,7 @@ track: W1
 |   3   |   §3    | Raise the claims coverage floor               | --         |  [x]   |
 |   4   |   §4    | Prove the review panel end to end             | --         |  [x]   |
 |   5   |   §5    | First push: CI green and read back            | §1         |  [ ]   |
-|   6   |   §6    | The parity catalog validator                  | §1         |  [ ]   |
+|   6   |   §6    | The parity catalog validator                  | §1         |  [x]   |
 |   7   |   §7    | The validator reads the Gesso parity catalog  | §6         |  [ ]   |
 |   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [ ]   |
 |   9   |   §9    | The design contract gates                     | §1         |  [ ]   |
@@ -209,6 +209,12 @@ The Stilus parity catalog (`docs/parity/stilus-parity.md`) is plan data like `to
 - [x] Commit: `"workspace: validate the Stilus parity catalog against its sources and the plan"`
 
 **Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the new parity cases counted; `python scripts/todo-graph.py validate` exits 0 on the tree; deleting one `AI-` id from a scratch copy of the catalog makes `validate` exit 1 naming `parity-id-missing`, and pointing one row at `D02 T99 §1` makes it exit 1 naming `parity-ref-dead`; `python scripts/todo-graph.py query parity --phase 4 --json` prints the Phase 4 counts. Cheaper substitute that fails: a one-off script outside `validate` that CI never runs, which the hook refusal catches.
+
+> **Verified:** 2026-10-21 | §6 | D00 T01 §6 at the assembled candidate a74a173 to `a90225d` (twelve commits, D00 T01 §12's filing `1ef1a19` excluded): `scripts/todo-parity.py` reads 1294 Illustrator ids, 3041 CorelDRAW ids, and 2802 stilus rows · `validate` 0 fatal, 0 warnings · self-test `830 cases, 0 failed`; with `parity_findings` returning at once, 39 parity cases fail · in a clone with NP-0001's AI-0212, AI-0213 emptied, `validate` exits 1 (`AI-0212 (...illustrator-30.8.md:329) is placed in no stilus catalog row`) and the staged change is refused by the hook · NP-0001 pointed at a section of a TODO file that does not exist exits 1 (`names no section in todo/`) · `query parity --phase 4 --json`: features 323, sections 15, stamped sections 0, problems none · check-all after the last fix: all 20 gates passed, 985 + 33 + 8 tests passed, 0 failed, 0 skipped
+> **Review:** round 1, candidate assembled a74a173 to `a90225d`(round 1) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 1 of cap 22, gpt-6-astra medium; check-panel `PASS four lenses, one verdict each; highest none`). Independent: gpt-6-astra medium via `scripts/review-dispatch.py`, twelve rounds: rounds 1 to 11 found 18 input shapes and integrity gaps (F1 to F18, each fixed, from b64921a to a90225d), round 12 approved (four lenses approve, `record` advisory). Raw findings: docs/reviews/00-workspace/D00-T01-s6.md. Attestation: docs/reviews/00-workspace/D00-T01-s6.attest.json
+> **Plan review:** gpt medium, filed D00 T01 §7, D00 T01 §8, D02 T17 §1, B-063 (14 findings: 12 filed as ten items, five on D00 T01 §7, one on D00 T01 §8, four on D02 T17 §1; PR6 and PR7 deferred to the backlog as B-063) (run 20261021-D00-T01-S6-gpt)
+> **CRUD:** not applicable (a validator over plan data, with no user record, document, or setting)
+> **Duration:** 2026-10-21T19:13:00Z to 2026-10-21T20:55:26Z
 
 ## 7. The Validator Reads the Gesso Parity Catalog
 

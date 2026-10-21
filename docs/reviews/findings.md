@@ -4,12 +4,14 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**3 findings across 2 sections.**
+**21 findings across 3 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
+| `adversarial` | 14 | fails under hostile or unexpected input |
+| `integration` | 4 | a consumer, caller, or downstream artifact no longer holds |
 | `record` | 2 | the plan or the evidence misdescribes what happened |
 | `correctness` | 1 | the code does the wrong thing |
 
@@ -18,8 +20,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 1 | wrong behavior in code, plan, or record |
-| `minor` | 2 | polish or wording, or no surviving defect |
+| `major` | 17 | wrong behavior in code, plan, or record |
+| `minor` | 4 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -28,3 +30,21 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T01 §2` | F1 | minor | `correctness` | fixed | independent | the D99 T01 §6 operator mark named the company as the signer |
 | `D00 T01 §4` | F1 | major | `record` | fixed | independent | the panel and architecture probes shared one manifest, so the kept panel review failed check-panel on replay |
 | `D00 T01 §4` | F2 | minor | `record` | fixed | independent | the record claimed a manifest for every probe, but the independent pass is unfenced |
+| `D00 T01 §6` | F1 | major | `adversarial` | fixed | independent | a truncated inventory row was skipped before the damaged-input check |
+| `D00 T01 §6` | F2 | major | `integration` | fixed | independent | query parity dropped the catalog's parse problems and reported short counts |
+| `D00 T01 §6` | F3 | major | `adversarial` | fixed | independent | an indented inventory row was skipped |
+| `D00 T01 §6` | F4 | major | `adversarial` | fixed | independent | an id cell was checked by its first token only |
+| `D00 T01 §6` | F5 | major | `integration` | fixed | independent | query parity reported an empty catalog as valid |
+| `D00 T01 §6` | F6 | major | `adversarial` | fixed | independent | a repeated header column overwrote the first |
+| `D00 T01 §6` | F7 | major | `adversarial` | fixed | independent | an inventory with no header skipped the width check |
+| `D00 T01 §6` | F8 | major | `integration` | fixed | independent | empty inventories and catalog validated |
+| `D00 T01 §6` | F9 | major | `adversarial` | fixed | independent | a header carried into a later table |
+| `D00 T01 §6` | F10 | minor | `adversarial` | fixed | independent | invalid UTF-8 raised a traceback instead of a finding |
+| `D00 T01 §6` | F11 | major | `adversarial` | fixed | independent | a row whose first cell lacked the literal prefix was skipped |
+| `D00 T01 §6` | F12 | major | `adversarial` | fixed | independent | an ID row inside a table was taken for a new header |
+| `D00 T01 §6` | F13 | major | `adversarial` | fixed | independent | a separator-shaped row inside a table was skipped |
+| `D00 T01 §6` | F14 | minor | `adversarial` | fixed | independent | the separator's cell count was never checked against its header |
+| `D00 T01 §6` | F15 | major | `integration` | fixed | independent | query parity reread the catalog after validating it |
+| `D00 T01 §6` | F16 | major | `adversarial` | fixed | independent | a pipe-free truncated row ended the table and vanished |
+| `D00 T01 §6` | F17 | major | `adversarial` | fixed | independent | an autolink row ended the table and vanished |
+| `D00 T01 §6` | F18 | major | `adversarial` | fixed | independent | a file at docs/parity read as an absent parity tree |

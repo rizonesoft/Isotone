@@ -1,0 +1,30 @@
+{
+  "candidate_base": "9f77512db42d7416859858d7c2a2cef058684789",
+  "candidate_head": "a90225d1abba08b9a78d17d163a230a921b6ba84",
+  "checker": "PASS four lenses, one verdict each; highest none :: 4fc9e46c726350f28295d010fdd67237c26a22bac9d17b1002278a0f246ef5cd",
+  "commits": [
+    "a74a173f3c95b6bb5f2159e33337cc4794e02da1",
+    "b64921ad2a6b5d477047bce4f145043b127d1ae0",
+    "d8004bd809e74e37e6fdee3b5df9ef69b418a650",
+    "7bd328fff56f140be02c3a82bbb7e6b7ccb0b2ae",
+    "84de5d423ad0bc875bf26cecbe6f794ff370c7fe",
+    "d5d40938f0cf3a5ccb7ead662fd0ddaee58f07a2",
+    "3618ed81f6ae7c2b9774e941699348540d345856",
+    "bf892d65aa00dd5e38ce69fb498d20e27e869f80",
+    "4a463c096faf744b03cd8c80ea17c8fe09c3a717",
+    "527746ded7e261c57acea07fa0a296512eb4bb09",
+    "0f2d29e31c550637cecbeee3af4d7fbb2e62adc1",
+    "a90225d1abba08b9a78d17d163a230a921b6ba84"
+  ],
+  "findings_path": "docs/reviews/00-workspace/D00-T01-s6.md",
+  "findings_sha256": "dc4b68c19917a4c052113f46a51f2245d65fa198e297c6ccb4b02e4e35884866",
+  "manifest_sha": "3ae9ff7d03c77c235c1afb5800f66d51b0a803bbb0f590dbb92671758da7a3d5",
+  "model": "gpt-6-astra",
+  "model_provenance": "derived",
+  "reviewer": "codex-panel",
+  "runner_sha256": "ee61f33da4e6027866211ac3f598da9ca93dbe5b77966ced5a85499380efaaa7",
+  "schema": 2,
+  "timestamp": "2026-10-21T20:45:44Z",
+  "tree": "6072a2616cd155439bccd7402531874622d83ea7",
+  "verdict": "approve"
+}
