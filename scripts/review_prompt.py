@@ -104,7 +104,9 @@ _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
 _SEVERITY_TAG_RE = re.compile(r"(?<![A-Za-z0-9_])P([123])(?![A-Za-z0-9_])")
 _LEADING_TAG_RE = re.compile(r"(?:\S+\s+)?[*\[(_`]*P[123](?![A-Za-z0-9_])")
 _PROSE_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]*[,;:]?")
-_MD_FENCE_OPEN_RE = re.compile(r"^\s*(`{3,}|~{3,})")
+# CommonMark's opener: a backtick fence's info string holds no backtick
+# (round 6: `` ```not`a`fence `` had opened one), a tilde fence's may.
+_MD_FENCE_OPEN_RE = re.compile(r"^\s*(?:(`{3,})[^`]*|(~{3,}).*)$")
 _MD_FENCE_CLOSE_RE = re.compile(r"^\s*(`{3,}|~{3,})\s*$")
 _HIGHEST_RE = re.compile(r"^\s*\**\s*HIGHEST\s*:\s*\**\s*(P1|P2|P3|none)\s*\**\s*$")
 SEVERITY_RANK = {"none": 0, "P3": 1, "P2": 2, "P1": 3}
@@ -616,7 +618,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             continues = finding_seen and line[:1].isspace() and (
                 opener is not None or _PROSE_WORD_RE.fullmatch(line.split(None, 1)[0]) is not None)
             if opener is not None:
-                in_fence = opener.group(1)
+                in_fence = opener.group(1) or opener.group(2)
             if not continues:
                 # A finding's own tag is its first or second token (after
                 # a marker); a severity named later in the line is prose
@@ -3784,7 +3786,9 @@ def _self_test() -> int:
                        ("tilde-closes-backticks", "   ```text\n   - a.py:2 deletes originals\n   ~~~\n"),
                        ("short-close", "   ````\n   - a.py:2 deletes originals\n   ```\n"),
                        ("two-letter-marker", "  aa) a.py:2 deletes originals\n"),
-                       ("abbreviation-led", "   e.g. a.py:2 deletes originals\n")):
+                       ("abbreviation-led", "   e.g. a.py:2 deletes originals\n"),
+                       # Round 6: a backtick in the info string means no fence.
+                       ("backtick-info-string", "   ```not`a`fence\n   - a.py:2 deletes originals\n   ```\n")):
         ok, reason = check_panel_output(
             receipt + low.replace("2. **P3** b.py:2 test gap\n", "2. **P3** b.py:2 test gap\n" + extra)
             + "HIGHEST: P3\n", manifest3)
