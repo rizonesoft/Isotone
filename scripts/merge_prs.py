@@ -425,10 +425,11 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
         # never the "nothing changed" exit 1 (independent review round 5).
         code, line = 3, f"merge_prs: #{n} merge was issued, then an operation failed ({error}); check it before any other work"
     try:
-        if code == 3:
-            _block(root, n, line)
-        else:
+        if code == 0:
             (root / BLOCKED).unlink(missing_ok=True)
+        else:
+            # Once the merge is issued, only a verified merge clears the intent; everything else keeps it.
+            _block(root, n, line)
     except OSError:
         # The intent record written before the merge is still there, so the next run resolves it from GitHub.
         pass
@@ -448,7 +449,12 @@ def _merge_and_verify(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_f
             return 3, (f"merge_prs: #{n} merge reported an error ({error}) and its state cannot be read back: the "
                        f"outcome is unknown; check the pull request and reconcile main before any other work")
         if state.get("state") != "MERGED":
-            return 1, f"merge_prs: #{n} not merged ({str(state.get('state')).lower()}), nothing changed: {error}"
+            # An error on an issued merge (a timeout included) does not cancel the request: GitHub may still apply
+            # it, so the intent stays and settles, and the caller hears "may have moved", never "nothing changed"
+            # (independent review round 8).
+            return 3, (f"merge_prs: #{n} merge was issued and reported an error ({error}); it reads "
+                       f"{str(state.get('state')).lower()} now but may still land, so its intent settles for "
+                       f"{SETTLE_SECONDS // 60} minutes; reconcile main before any other work")
     try:
         git_fn("pull", "--ff-only", "origin", "main", cwd=root)
     except Failed as error:

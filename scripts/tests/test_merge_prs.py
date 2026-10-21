@@ -294,10 +294,13 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
         self.assertEqual((code, gh.merges(), "nothing eligible; #1 mergeable is conflicting" in out), (0, [], True))
 
-    def test_a_refused_merge_stops_and_leaves_the_rest(self):
+    def test_a_merge_error_that_reads_open_keeps_the_intent_and_stops(self):
+        # A refusal and a timeout look the same from here: the request may still land, so it is never "nothing
+        # changed" (independent review round 8).
         gh = FakeGh([pr(1), pr(2)], merge_fails=True)
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
-        self.assertEqual((code, len(gh.merges()), "#1 not merged" in out), (1, 1, True))
+        self.assertEqual((code, len(gh.merges()), "may still land" in out, (self.root / mp.BLOCKED).exists()),
+                         (3, 1, True, True))
 
     def test_a_failed_pull_after_a_merge_is_its_own_outcome(self):
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(pull_fails=True))
