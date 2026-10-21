@@ -244,12 +244,14 @@ def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id:
 
 
 def ready_rows(root: str, timeout: float = 300.0, phase: int | None = None) -> tuple[int | None, str]:
-    """How many rows `query ready` offers, and the first one, or (None, "") when the query cannot be read.
+    """How many rows `query ready` offers, and the first one; raises GuardError when the query cannot be read.
 
     The SDK's todo-graph prints a JSON list of ready rows; a graph that prints a `N runnable now` summary (Isotone's)
     is read by that line instead. With `phase`, only that phase's rows count. The text summary does not say which
     phase a row is in, so for a phase it is unknown (None, ""): a phase run then ends on its own closeout or park
-    marker, never on another phase's count, and is never pointed at another phase's row.
+    marker, never on another phase's count, and is never pointed at another phase's row. A query that fails, times
+    out, or prints neither shape is an error, never an unknown count: the hook then fails open and records it for the
+    heartbeat (independent review 2026-10-21; the PowerShell hook and the SDK's port kept blocking silently).
     """
     try:
         # The child writes UTF-8 whatever the console code page: rows carry section marks, which a Windows cp1252
@@ -257,10 +259,10 @@ def ready_rows(root: str, timeout: float = 300.0, phase: int | None = None) -> t
         proc = subprocess.run([sys.executable, os.path.join(root, "scripts", "todo-graph.py"), "query", "ready"],
                               capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=root,
                               timeout=max(timeout, 1.0), env=dict(os.environ, PYTHONIOENCODING="utf-8"))
-    except (OSError, subprocess.TimeoutExpired):
-        return None, ""
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise GuardError(f"query ready could not run: {type(exc).__name__}: {exc}") from None
     if proc.returncode != 0:
-        return None, ""
+        raise GuardError(f"query ready exited {proc.returncode}: {(proc.stderr or proc.stdout).strip()[-200:]}")
     out = proc.stdout.strip()
     try:
         rows = json.loads(out)
@@ -273,7 +275,9 @@ def ready_rows(root: str, timeout: float = 300.0, phase: int | None = None) -> t
         label = f"{first.get('ref', '')}  {first.get('title', '')}".strip() if isinstance(first, dict) else ""
         return len(rows), label
     counts = re.findall(r"(\d+) runnable now", out)
-    if not counts or phase is not None:
+    if not counts:
+        raise GuardError("query ready printed neither a JSON list nor an `N runnable now` summary")
+    if phase is not None:
         return None, ""
     lines = [ln.strip() for ln in out.splitlines() if ln.strip() and "runnable now" not in ln]
     return int(counts[-1]), (lines[0] if lines else "")
@@ -781,6 +785,11 @@ def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None =
     for index, path in enumerate((p for p in listed.split("\0") if p and p != run_path and not OWN_FILES.match(p)),
                                  1):
         _remaining(deadline)
+        if index > max_hashed + max_stat:
+            # Past both bounds a path counts by its name alone, with no filesystem call, so a huge scratch tree
+            # costs the hook no stat per file (independent review 2026-10-21).
+            digest.update(f"{path}\n".encode("utf-8"))
+            continue
         full = os.path.join(root, path)
         try:
             info = os.stat(full)
@@ -790,10 +799,8 @@ def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None =
         if index <= max_hashed and info.st_size <= max_bytes:
             with open(full, "rb") as fh:
                 digest.update(f"{path} ".encode("utf-8") + hashlib.sha256(fh.read()).hexdigest().encode() + b"\n")
-        elif index <= max_hashed + max_stat:
-            digest.update(f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8"))
         else:
-            digest.update(f"{path}\n".encode("utf-8"))
+            digest.update(f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8"))
     digest.update(re.sub(r"(?m)^- bookkeeping:.*(\r?\n)?", "", run_text).encode("utf-8"))
     return digest.hexdigest()
 
@@ -1646,6 +1653,53 @@ def _self_test() -> int:
         os.remove(_paths(sroot)[0])
         acquire(sroot, SESSION, 0, RUN_FILE, "job-u")
         check("a-fresh-guard-defaults-to-plan", read_guard(sroot)["scope"] == "plan", str(read_guard(sroot)))
+
+    # Independent review 2026-10-21: a ready query that cannot run fails open and is recorded for the heartbeat
+    # (it used to block silently), and past the stat bound the fingerprint makes no filesystem call per path.
+    with tempfile.TemporaryDirectory(prefix="campaign-fail-") as ftmp:
+        froot = _workspace(ftmp)
+        acquire(froot, SESSION, 0, RUN_FILE, "job-f")
+        graph = os.path.join(froot, "scripts", "todo-graph.py")
+        with open(graph, "w", encoding="utf-8") as fh:
+            fh.write("import sys\nsys.exit(3)\n")
+        code, out, err = run_hook(froot, SESSION)
+        check("a-failed-ready-query-fails-open-and-is-recorded",
+              code == 0 and out is None and "query ready exited 3" in str(_state(froot).get("hook_error")),
+              f"{out} {err} {_state(froot)}")
+        try:
+            end(froot, SESSION, "plan-done")
+            check("plan-done-refuses-an-unreadable-ready-query", False)
+        except GuardError as exc:
+            check("plan-done-refuses-an-unreadable-ready-query", "query ready exited 3" in str(exc)
+                  and read_guard(froot) is not None, str(exc))
+        os.remove(_paths(froot)[1])
+        with open(graph, "w", encoding="utf-8") as fh:
+            fh.write("print('nothing a reader can count')\n")
+        code, out, err = run_hook(froot, SESSION)
+        check("an-unreadable-ready-summary-fails-open-and-is-recorded",
+              code == 0 and out is None and "printed neither" in str(_state(froot).get("hook_error")),
+              f"{out} {err} {_state(froot)}")
+        for n in range(3):
+            with open(os.path.join(froot, f"statbound-{n}.txt"), "w", encoding="utf-8") as fh:
+                fh.write("x\n")
+        real_stat, seen = os.stat, []
+
+        def counting(path, *args, **kwargs):
+            seen.append(str(path))
+            return real_stat(path, *args, **kwargs)
+        saved = {k: os.environ.get(k) for k in ("CAMPAIGN_HASH_FILES", "CAMPAIGN_STAT_FILES")}
+        os.environ.update({"CAMPAIGN_HASH_FILES": "0", "CAMPAIGN_STAT_FILES": "1"})
+        os.stat = counting
+        try:
+            fingerprint(froot, RUN_FILE, "")
+        finally:
+            os.stat = real_stat
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        check("past-the-stat-bound-a-path-costs-no-stat", sum("statbound-" in p for p in seen) == 1, str(seen))
 
     # D00 T04 §35, §37: the repair episode survives a restart, refuses a
     # fourth attempt, binds its identity, counts a repeat once, closes only

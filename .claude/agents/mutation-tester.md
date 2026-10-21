@@ -23,7 +23,7 @@ Never mutate the live working tree: it holds the main loop's uncommitted candida
 **Set up once.**
 
 1. Record the SHA-256 of every target file in the live tree (`Get-FileHash` or `python -c "import hashlib..."`).
-2. Copy the candidate into `<scratch>/mt-copy`: every path `git ls-files -z --cached --others --exclude-standard` prints (tracked files with their uncommitted edits, plus untracked, non-ignored files), copied by a short `python` script with their relative paths. Nothing ignored (`artifacts/`, `build/`, `bin/`, `obj/`) is copied, so the copy builds from source.
+2. Create a new copy folder `<scratch>/mt-<run>`, where `<run>` is a fresh random hex id, with `os.mkdir` (which refuses a folder that exists): if it exists, stop and report it, because a folder this run did not create is never written into or deleted. Copy the candidate into it: every path `git ls-files -z --cached --others --exclude-standard` prints (tracked files with their uncommitted edits, plus untracked, non-ignored files), copied by a short `python` script with their relative paths. A listed path that no longer exists in the live tree is an uncommitted deletion: skip it, so the copy lacks it too. Nothing ignored (`artifacts/`, `build/`, `bin/`, `obj/`) is copied, so the copy builds from source.
 3. Resolve every target with `os.path.realpath`: it must lie inside the copy and not pass through a link. Refuse a target that resolves outside the copy, and report it as NOT APPLIED with that reason, because editing it would edit the live checkout.
 4. Confirm each target file in the copy has the live tree's recorded hash, then run the command unmutated in the copy. A red baseline makes every result meaningless: report it and stop.
 
@@ -34,7 +34,7 @@ Never mutate the live working tree: it holds the main loop's uncommitted candida
 3. Confirm the file now differs, run the command with a timeout, and capture the failing test names (the VSTest `Failed <name>` lines, a self-test's `FAIL` lines, or the exit code when the runner names nothing). Full logs go under `<scratch>/logs/`, never a tracked path.
 4. Restore the saved bytes and confirm the hash. If it does not verify, stop and say so first.
 
-**Tear down.** Delete `<scratch>/mt-copy`, then confirm the live tree's target hashes are unchanged from set-up step 1 and `git status --short` matches what it printed before set-up. A run that dies midway leaves only an abandoned scratch copy, never a mutated candidate; the main loop deletes it by name.
+**Tear down.** Delete only `<scratch>/mt-<run>`, the folder this run created in set-up step 2, then confirm the live tree's target hashes are unchanged from set-up step 1 and `git status --short` matches what it printed before set-up. A run that dies midway leaves only an abandoned scratch copy, never a mutated candidate; the main loop deletes it by name.
 
 **Report**, per mutation: the file, a one-line description, applied or NOT APPLIED (with the count), and **KILLED** (with the failing test names) or **SURVIVED**. Then the baseline result, the restore and tear-down checks, and anything that blocked the run.
 
