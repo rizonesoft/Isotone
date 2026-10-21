@@ -69,6 +69,11 @@ NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0  # CREATE_NO_WINDOW: a 
 # holds new section work for at most that window (round 9); a shorter window would risk a late landing.
 COMMAND_TIMEOUT = 300
 SETTLE_SECONDS = 900
+# GitHub computes `mergeable` lazily: the first read after `main` moves starts the computation and answers UNKNOWN,
+# and a stamp push has always just moved `main`. An UNKNOWN answer is read again, a bounded number of times, before
+# it counts (D00-T01-S12-F43: the first boundary run read both pull requests once and merged nothing).
+MERGEABLE_TRIES = 6
+MERGEABLE_WAIT = 5.0
 
 
 class Refused(Exception):
@@ -452,13 +457,23 @@ def workflows_green(pr: dict, repo: str, root: Path, gh_fn=gh) -> tuple[bool, st
     return True, ""
 
 
+def view_pr(n, repo: str, root: Path, gh_fn=gh) -> dict:
+    """One pull request as GitHub reports it now, its mergeability computed: an UNKNOWN answer is read again up to
+    MERGEABLE_TRIES times, MERGEABLE_WAIT seconds apart, and a last UNKNOWN stands (eligibility refuses it)."""
+    for attempt in range(MERGEABLE_TRIES):
+        pr = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", FIELDS + ",state", cwd=root) or "{}")
+        if pr.get("mergeable") != "UNKNOWN" or attempt == MERGEABLE_TRIES - 1:
+            return pr
+        time.sleep(MERGEABLE_WAIT)
+    return pr
+
+
 def open_prs(repo: str, gh_fn=gh, root: Path = ROOT) -> list[dict]:
-    """The open pull requests on main, oldest first, each read with `gh pr view`: the list reports mergeability as
+    """The open pull requests on main, oldest first, each read with `view_pr`: the list reports mergeability as
     UNKNOWN until GitHub computes it, and viewing a pull request is what makes it compute."""
     listed = json.loads(gh_fn("pr", "list", "--repo", repo, "--state", "open", "--base", "main", "--limit", "50",
                               "--json", "number", cwd=root) or "[]")
-    prs = [json.loads(gh_fn("pr", "view", str(p["number"]), "--repo", repo, "--json", FIELDS + ",state",
-                            cwd=root) or "{}") for p in listed]
+    prs = [view_pr(p["number"], repo, root, gh_fn) for p in listed]
     return sorted(prs, key=lambda p: (p.get("createdAt", ""), p.get("number", 0)))
 
 
@@ -476,7 +491,7 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
     # removed, or a check gone red since the listing is refused, because `gh pr merge` acts on the pull request as it
     # is now (independent review rounds 3 and 4).
     try:
-        now = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", FIELDS + ",state", cwd=root) or "{}")
+        now = view_pr(n, repo, root, gh_fn)
     except (Failed, ValueError) as error:
         return 1, f"merge_prs: #{n} not merged, its state cannot be read: {error}"
     ok, why = eligible(now, root)

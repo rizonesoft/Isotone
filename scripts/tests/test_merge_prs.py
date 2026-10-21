@@ -73,12 +73,14 @@ class FakeGh:
     """
 
     def __init__(self, prs, merge_fails=False, lands=False, view_fails=False, retarget=None, elsewhere=False,
-                 off_main=False, already_merged=()):
+                 off_main=False, already_merged=(), unknown_views=0):
         self.calls, self.prs = [], prs
         self.merge_fails, self.lands, self.view_fails = merge_fails, lands, view_fails
         self.retarget, self.elsewhere, self.off_main = retarget, elsewhere, off_main
         self.merged = {str(n) for n in already_merged}
         self.views: dict[str, int] = {}
+        # GitHub's lazy mergeability: the first `unknown_views` reads of each pull request answer UNKNOWN.
+        self.unknown_views = unknown_views
 
     def _pr(self, n):
         return next(p for p in self.prs if str(p["number"]) == str(n))
@@ -96,7 +98,8 @@ class FakeGh:
             # A retarget lands between the listing (first read) and the final re-read.
             retargeted = self.retarget if self.views[args[2]] >= 2 else None
             base = retargeted or ("release" if merged and self.elsewhere else p["baseRefName"])
-            return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN",
+            mergeable = "UNKNOWN" if self.views[args[2]] <= self.unknown_views else p["mergeable"]
+            return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN", mergeable=mergeable,
                                    mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
         if args[:2] == ("pr", "merge"):
             if not self.merge_fails or self.lands:
@@ -134,8 +137,10 @@ class Base(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.root = Path(self._tmp.name)
+        self._wait, mp.MERGEABLE_WAIT = mp.MERGEABLE_WAIT, 0
 
     def tearDown(self):
+        mp.MERGEABLE_WAIT = self._wait
         self._tmp.cleanup()
 
     def call(self, argv, gh_fn, git_fn, graph=None, active=lambda r: None, validate=ok_validate,
@@ -347,6 +352,17 @@ class MergeTests(Base):
             return real(*args, cwd=cwd)
         code, out = self.call(["run", "--task"], runs_fail_once, FakeGit())
         self.assertEqual((code, gh.merges(), "cannot read #1's workflow runs" in out), (1, [], True))
+
+    def test_a_mergeability_still_being_computed_is_read_again(self):
+        # D00-T01-S12-F43: right after a stamp push GitHub answers UNKNOWN until its computation finishes.
+        gh = FakeGh([pr(1)], unknown_views=2)
+        code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        self.assertEqual((code, len(gh.merges())), (0, 1), out)
+
+    def test_a_mergeability_never_computed_stays_refused(self):
+        gh = FakeGh([pr(1)], unknown_views=99)
+        code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), "mergeable is unknown" in out, gh.views["1"]), (0, [], True, mp.MERGEABLE_TRIES))
 
     def test_recover_settles_and_never_merges(self):
         gh = FakeGh([pr(1)])
