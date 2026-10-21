@@ -32,7 +32,14 @@ FEED = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/{channel}/re
 NUGET = "https://api.nuget.org/v3-flatcontainer/{id}/index.json"
 GLOBAL_JSON = "global.json"
 PROPS = "Directory.Packages.props"
-DOCS = ("README.md", "CONTRIBUTING.md", "docs/dev/README.md", "docs/dev/build.md")
+DOCS = ("README.md", "CONTRIBUTING.md", "AGENTS.md", "docs/dev/README.md", "docs/dev/build.md")
+# A version is replaced only where it stands whole: not after a digit or a dot (`111.0.100`), and not before a digit, a
+# dot and a digit, or a `+` (`11.0.100-rc.20`, `11.0.100-rc.2.26504.105`, `...+build42`).
+WHOLE = (r"(?<![0-9.])", r"(?![0-9]|\.[0-9]|\+)")
+# Prose that describes a prerelease pin, which the GA move leaves for D00 T02 §8's documentation item.
+PRERELEASE_PROSE = re.compile(r"allowPrerelease|release candidate|\brc\b|-rc\.", re.IGNORECASE)
+SDK_VERSION = re.compile(r"(\d+)\.(\d+)\.(\d+)(?:-(preview|rc)\.(\d+)(?:\.(\d+)\.(\d+))?)?")
+STAGE = {"preview": 0, "rc": 1}
 BRANCH = "pins/dotnet-{sdk}"
 PACKAGE = re.compile(r'(<PackageVersion\s+Include="([^"]+)"\s+Version=")([^"]+)(")')
 
@@ -66,6 +73,27 @@ def latest(feed):
     return sdk, runtime
 
 
+def sdk_key(version):
+    """An ordering key for an SDK version (a preview before a release candidate before GA), or None."""
+    match = SDK_VERSION.fullmatch(version or "")
+    if not match:
+        return None
+    major, minor, patch, stage, number, build, revision = match.groups()
+    tail = (STAGE[stage], int(number), int(build or 0), int(revision or 0)) if stage else (2, 0, 0, 0)
+    return (int(major), int(minor), int(patch)) + tail
+
+
+def write_atomic(path, data):
+    """Replace a file through a temporary sibling, so an interrupted rewrite leaves the old file whole."""
+    temporary = path.with_name(f".{path.name}.pin.tmp")
+    try:
+        temporary.write_bytes(data)
+        temporary.replace(path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
 def short(version):
     """`11.0.100-rc.2.26504.105` -> `11.0.100-rc.2`: the form the prose quotes. A GA version is its own short form."""
     match = re.fullmatch(r"(\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?)(?:\.\d+\.\d+)?", version)
@@ -88,10 +116,12 @@ def rewrite_tree(root, old_sdk, new_sdk, old_runtime, new_runtime):
         doc["sdk"].pop("allowPrerelease", None)
     text = json.dumps(doc, indent=2) + "\n"
     if text != path.read_text(encoding="utf-8-sig"):
-        path.write_text(text, encoding="utf-8", newline="\n")
+        write_atomic(path, text.encode("utf-8"))
         changed.append(GLOBAL_JSON)
     pairs = [(old_sdk, new_sdk), (old_runtime, new_runtime), (short(old_sdk), short(new_sdk)),
              (short(old_runtime), short(new_runtime))]
+    # A shields.io badge writes each `-` as `--` (README.md's `.NET-11.0.100--rc.2-512BD4`).
+    pairs += [(old.replace("-", "--"), new.replace("-", "--")) for old, new in pairs[2:] if "-" in old]
     for rel in (PROPS, *DOCS):
         path = root / rel
         if not path.is_file():
@@ -100,11 +130,22 @@ def rewrite_tree(root, old_sdk, new_sdk, old_runtime, new_runtime):
         text = raw
         for old, new in pairs:
             if old and old != new:
-                text = re.sub(re.escape(old) + r"(?![0-9A-Za-z.-]*[0-9A-Za-z])", new, text)
+                text = re.sub(WHOLE[0] + re.escape(old) + WHOLE[1], new.replace("\\", "\\\\"), text)
         if text != raw:
-            path.write_bytes(text.encode("utf-8"))
+            write_atomic(path, text.encode("utf-8"))
             changed.append(rel)
     return changed
+
+
+def prerelease_prose(root):
+    """`file:line` for every line of DOCS that still describes a prerelease pin."""
+    out = []
+    for rel in DOCS:
+        path = Path(root) / rel
+        if path.is_file():
+            out += [f"{rel}:{n}" for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
+                    if PRERELEASE_PROSE.search(line)]
+    return out
 
 
 def nuget_problems(packages, version, fetch=fetch_json):
@@ -131,6 +172,13 @@ def main(argv=None, fetch=fetch_json, root=ROOT, run_gh=pin_proposal.gh):
     if new_sdk == pin:
         print(f"global.json pins {pin}, the newest .NET {channel_of(pin)} SDK")
         return 0
+    if sdk_key(pin) is None or sdk_key(new_sdk) is None:
+        print(f"check-dotnet-pin: cannot order {pin} against {new_sdk}", file=sys.stderr)
+        return 2
+    if sdk_key(new_sdk) < sdk_key(pin):
+        print(f"check-dotnet-pin: the feed's latest-sdk {new_sdk} is older than the pin {pin}; the feed may be stale, "
+              f"so nothing is proposed", file=sys.stderr)
+        return 2
     old_runtime = runtime_of(feed, pin)
     if old_runtime is None:
         print(f"check-dotnet-pin: the {channel_of(pin)} feed does not list the pinned SDK {pin}", file=sys.stderr)
@@ -142,7 +190,7 @@ def main(argv=None, fetch=fetch_json, root=ROOT, run_gh=pin_proposal.gh):
         return 1
     ga = "-" not in new_sdk
     title = f"build: pin the .NET {channel_of(pin)} {'GA ' if ga else ''}SDK {new_sdk}"
-    body = "\n".join([
+    body_lines = [
         f"The newest .NET {channel_of(pin)} release in Microsoft's release metadata is SDK {new_sdk} with runtime "
         f"{new_runtime}; `global.json` pins {pin}.",
         "",
@@ -156,10 +204,16 @@ def main(argv=None, fetch=fetch_json, root=ROOT, run_gh=pin_proposal.gh):
         "",
         "Opened by `scripts/check-dotnet-pin.py pr` from `.github/workflows/pins.yml`; closing this PR declines "
         f"{new_sdk}.",
-    ])
+    ]
 
     def rewrite(tree):
-        return rewrite_tree(tree, pin, new_sdk, old_runtime, new_runtime)
+        changed = rewrite_tree(tree, pin, new_sdk, old_runtime, new_runtime)
+        if ga and changed:
+            left = prerelease_prose(tree)
+            body_lines.append("")
+            body_lines.append("Prose that still describes a prerelease pin, for D00 T02 §8's documentation item: "
+                              + (", ".join(f"`{x}`" for x in left) if left else "none found") + ".")
+        return changed
 
     def checks(tree):
         try:
@@ -168,7 +222,7 @@ def main(argv=None, fetch=fetch_json, root=ROOT, run_gh=pin_proposal.gh):
             return [f"could not read nuget.org: {exc}"]
 
     return pin_proposal.propose_pr(root=root, branch=BRANCH.format(sdk=new_sdk), rewrite=rewrite, checks=checks,
-                                   title=title, body=body, run_gh=run_gh)
+                                   title=title, body=lambda: "\n".join(body_lines), run_gh=run_gh)
 
 
 if __name__ == "__main__":

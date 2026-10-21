@@ -69,7 +69,10 @@ def notice(*, root, key, subject, body, dry_run=False, mail=notify):
 
 
 BOT = ("github-actions[bot]", "41898282+github-actions[bot]@users.noreply.github.com")
-LABELS = {"dependencies": "0366d6", "pins": "5319e7"}
+LABELS = {"dependencies": "0366d6", "pins": "5319e7", "pins:resolved": "c2e0c6"}
+# The label resolve_issues puts on an issue it closes, so a finding that comes back reopens it: only a close without
+# it is the owner dismissing the finding.
+RESOLVED = "pins:resolved"
 CI_WORKFLOWS = ("build.yml", "plan.yml")
 
 
@@ -91,13 +94,16 @@ def propose_pr(*, root, branch, rewrite, checks, title, body, run_gh=gh):
     """Open a pull request for a pin bump from the GitHub pins workflow; return the exit code.
 
     The checkout is main. A branch that already has a pull request (open, merged or closed) is never proposed again,
-    so closing a PR declines that version. The bump is committed as github-actions[bot] on `branch`, pushed, opened as
-    a PR, and the CI workflows are dispatched on the branch, because a PR opened with the workflow token does not start
-    other workflows by itself (workflow_dispatch is the documented exception)."""
+    so closing a PR declines that version; an open one whose CI was never dispatched (a failed dispatch on an earlier
+    run) gets it now. The bump is committed as github-actions[bot] on `branch`, pushed, opened as a PR, and the CI
+    workflows are dispatched on the branch, because a PR opened with the workflow token does not start other workflows
+    by itself (workflow_dispatch is the documented exception). `body` may be a function, called after the rewrite."""
     root = Path(root)
     existing = json.loads(run_gh("pr", "list", "--head", branch, "--state", "all", "--json", "number,state", cwd=root) or "[]")
     if existing:
         print(f"{branch} was proposed before as PR #{existing[0]['number']} ({existing[0]['state'].lower()})")
+        if existing[0]["state"] == "OPEN":
+            dispatch_missing(branch, root, run_gh)
         return 0
     if git("ls-remote", "--exit-code", "--heads", "origin", branch, cwd=root, check=False).returncode == 0:
         git("push", "origin", "--delete", branch, cwd=root)
@@ -113,6 +119,7 @@ def propose_pr(*, root, branch, rewrite, checks, title, body, run_gh=gh):
             print("checks failed, nothing proposed:\n- " + "\n- ".join(problems), file=sys.stderr)
             return 1
         git("add", *changed, cwd=root)
+        body = body() if callable(body) else body
         git("-c", f"user.name={BOT[0]}", "-c", f"user.email={BOT[1]}", "commit", "-q", "-m", title, "-m", body, cwd=root)
         git("push", "-u", "origin", branch, cwd=root)
         ensure_labels(("dependencies", "pins"), root, run_gh)
@@ -127,16 +134,35 @@ def propose_pr(*, root, branch, rewrite, checks, title, body, run_gh=gh):
         git("branch", "-D", branch, cwd=root, check=False)
 
 
+def dispatch_missing(branch, root, run_gh=gh):
+    """Dispatch each CI workflow that has no run on `branch` yet."""
+    for workflow in CI_WORKFLOWS:
+        runs = json.loads(run_gh("run", "list", "--workflow", workflow, "--branch", branch, "--limit", "1",
+                                 "--json", "databaseId", cwd=root) or "[]")
+        if not runs:
+            run_gh("workflow", "run", workflow, "--ref", branch, cwd=root)
+            print(f"started the missing {workflow} on {branch}")
+
+
 def file_issue(*, root, check, title, body, run_gh=gh):
     """Open one issue per finding for an owner decision; return 0. Deduplicated by title within the check's label:
-    an open issue with this title is left alone, a closed one means the owner dismissed it, and older open issues of the
-    same check are closed as superseded."""
+    an open issue with this title is left alone; a closed one that resolve_issues closed (labelled pins:resolved) is
+    reopened, because the finding came back; a closed one without that label means the owner dismissed it; and older
+    open issues of the same check are closed as superseded."""
     label = f"pins:{check}"
-    ensure_labels(("pins", label), root, run_gh)
+    ensure_labels(("pins", label, RESOLVED), root, run_gh)
     issues = json.loads(run_gh("issue", "list", "--label", label, "--state", "all", "--limit", "100",
-                               "--json", "number,title,state", cwd=root) or "[]")
-    if any(i["title"] == title for i in issues):
-        print(f"issue already filed: {title}")
+                               "--json", "number,title,state,labels", cwd=root) or "[]")
+    same = [i for i in issues if i["title"] == title]
+    if same:
+        issue = same[0]
+        names = {lab.get("name") for lab in issue.get("labels") or []}
+        if issue["state"] != "OPEN" and RESOLVED in names:
+            run_gh("issue", "reopen", str(issue["number"]), "--comment", "The finding is back.", cwd=root)
+            run_gh("issue", "edit", str(issue["number"]), "--remove-label", RESOLVED, cwd=root)
+            print(f"reopened #{issue['number']}: {title}")
+        else:
+            print(f"issue already filed: {title}")
         return 0
     for issue in issues:
         if issue["state"] == "OPEN":
@@ -150,7 +176,10 @@ def resolve_issues(*, root, check, message, run_gh=gh):
     """Close every open issue of the check once its finding is gone; return 0."""
     label = f"pins:{check}"
     issues = json.loads(run_gh("issue", "list", "--label", label, "--state", "open", "--json", "number", cwd=root) or "[]")
+    if issues:
+        ensure_labels((RESOLVED,), root, run_gh)
     for issue in issues:
+        run_gh("issue", "edit", str(issue["number"]), "--add-label", RESOLVED, cwd=root)
         run_gh("issue", "close", str(issue["number"]), "--comment", f"Resolved: {message}", cwd=root)
         print(f"closed #{issue['number']}: {message}")
     return 0

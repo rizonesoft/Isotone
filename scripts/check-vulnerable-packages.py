@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.join(REPO, "scripts", "lib"))
 import pin_proposal
 
 SOLUTION = "Isotone.slnx"
+RESTORE = ["dotnet", "restore", SOLUTION, "-v", "q", "-nologo", "-p:NuGetAudit=false"]
 NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 
 
@@ -56,7 +57,10 @@ def verdict(report: dict) -> tuple[int, str]:
 
 def run_report() -> dict | int:
     """The dotnet report, or exit 2 with the reason printed."""
-    restore = subprocess.run(["dotnet", "restore", SOLUTION, "-v", "q", "-nologo"], cwd=REPO,
+    # NuGetAudit off for this restore only: the audit warns NU1901-NU1904 on a vulnerable package, and
+    # TreatWarningsAsErrors would then fail the restore before the report could name it. The report below reads the
+    # same advisories (independent review 2026-10-21).
+    restore = subprocess.run(RESTORE, cwd=REPO,
                              capture_output=True, text=True, timeout=1200, creationflags=NO_WINDOW)
     if restore.returncode:
         print("check-vulnerable-packages: restore failed:\n" + restore.stdout[-2000:] + restore.stderr[-2000:],

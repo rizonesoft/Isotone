@@ -46,8 +46,8 @@ class Mailbox:
 class FakeGh:
     """Records gh calls and answers the list queries the pin modes make."""
 
-    def __init__(self, prs="[]", issues="[]"):
-        self.calls, self.prs, self.issues = [], prs, issues
+    def __init__(self, prs="[]", issues="[]", runs="[]"):
+        self.calls, self.prs, self.issues, self.runs = [], prs, issues, runs
 
     def __call__(self, *args, cwd):
         self.calls.append(args)
@@ -55,6 +55,8 @@ class FakeGh:
             return self.prs
         if args[:2] == ("issue", "list"):
             return self.issues
+        if args[:2] == ("run", "list"):
+            return self.runs
         if args[:2] in (("pr", "create"), ("issue", "create")):
             return "https://github.com/example/repo/1\n"
         return ""
@@ -145,7 +147,7 @@ def feed(latest_sdk, latest_runtime):
             "releases": releases}
 
 
-class DotnetPinTests(GitRepo):
+class DotnetFixture(GitRepo):
     PROPS = ('<Project>\n  <!-- (11.0.0-rc.2 until .NET 11 GA) -->\n  <ItemGroup>\n'
              f'    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="{RC2_RT}" />\n'
              f'    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="{RC2_RT}" />\n'
@@ -168,6 +170,8 @@ class DotnetPinTests(GitRepo):
             return {"versions": [latest_runtime] if listed else []}
         return fetch
 
+
+class DotnetPinTests(DotnetFixture):
     def test_the_newest_release_is_current(self):
         self.assertEqual(self.mod.main(["check"], fetch=self.fetcher(RC2_SDK, RC2_RT), root=self.root), 0)
 
@@ -340,7 +344,7 @@ class LocalToolsTests(GitRepo):
         self.assertEqual(self.call("check", fetch=lambda url: {} if "npm" in url else []), 2)
 
 
-class ConclaveKitTests(GitRepo):
+class KitFixture(GitRepo):
     def setUp(self):
         super().setUp()
         self.mod = load("check-conclave-kits")
@@ -369,6 +373,8 @@ class ConclaveKitTests(GitRepo):
     def blob(self):
         return self.git("rev-parse", "HEAD:kits/todo/templates/.claude/skills/x/SKILL.md", cwd=self.sdk)[:12]
 
+
+class ConclaveKitTests(KitFixture):
     def test_an_identical_claude_file_is_in_step_and_codex_and_project_files_are_ignored(self):
         (self.repo / ".claude" / "skills" / "x" / "SKILL.md").write_bytes(b"kit text\r\n")
         self.assertEqual(self.mod.drift(self.sdk, self.repo), [])
@@ -417,6 +423,102 @@ class ConclaveKitTests(GitRepo):
         entries = self.mod.allowed(REPO)
         self.assertTrue(entries)
         self.assertTrue(all(reason for _blob, reason in entries.values()))
+
+
+class ReviewRound3Tests(DotnetFixture):
+    """The independent review round 3 findings (2026-10-21), one case each where code changed."""
+
+    def test_only_whole_versions_are_replaced_and_the_badge_moves(self):
+        self.write("README.md", f"[badge](https://img.shields.io/badge/.NET-11.0.100--rc.2-512BD4)\n"
+                                f"111.0.100-rc.2.26504.105 and {RC2_SDK}+build42 stay; {RC2_SDK} moves.\n")
+        self.mod.rewrite_tree(self.root, RC2_SDK, RC3_SDK, RC2_RT, RC3_RT)
+        text = (self.root / "README.md").read_text(encoding="utf-8")
+        self.assertIn(".NET-11.0.100--rc.3-512BD4", text)
+        self.assertIn("111.0.100-rc.2.26504.105", text)
+        self.assertIn(f"{RC2_SDK}+build42", text)
+        self.assertIn(f"{RC3_SDK} moves", text)
+
+    def test_agents_md_is_rewritten_with_the_docs(self):
+        self.write("AGENTS.md", f"the SDK {RC2_SDK} is pinned\n")
+        self.assertIn("AGENTS.md", self.mod.rewrite_tree(self.root, RC2_SDK, RC3_SDK, RC2_RT, RC3_RT))
+
+    def test_a_ga_pr_lists_the_prerelease_prose_left_for_the_section(self):
+        self.with_origin()
+        gh = FakeGh()
+        self.assertEqual(self.mod.main(["pr"], fetch=self.fetcher(GA_SDK, GA_RT), root=self.root, run_gh=gh), 0)
+        (create,) = gh.made("pr", "create")
+        body = create[create.index("--body") + 1]
+        self.assertIn("Prose that still describes a prerelease pin", body)
+
+    def test_an_interrupted_rewrite_leaves_the_old_file_whole(self):
+        path = self.root / "global.json"
+        before = path.read_bytes()
+        with mock.patch.object(Path, "replace", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                self.mod.write_atomic(path, b"{}")
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual([p.name for p in self.root.iterdir() if p.name.endswith(".tmp")], [])
+
+    def test_a_feed_older_than_the_pin_proposes_nothing(self):
+        self.write("global.json", json.dumps({"sdk": {"version": RC3_SDK}}))
+        gh = FakeGh()
+        self.assertEqual(self.mod.main(["pr"], fetch=self.fetcher(RC2_SDK, RC2_RT), root=self.root, run_gh=gh), 2)
+        self.assertEqual(gh.made("pr", "create"), [])
+        self.assertLess(self.mod.sdk_key(RC2_SDK), self.mod.sdk_key(RC3_SDK))
+        self.assertLess(self.mod.sdk_key(RC3_SDK), self.mod.sdk_key(GA_SDK))
+
+    def test_an_open_pr_without_ci_gets_it_dispatched(self):
+        self.with_origin()
+        gh = FakeGh(prs='[{"number": 9, "state": "OPEN"}]')
+        self.assertEqual(self.mod.main(["pr"], fetch=self.fetcher(RC3_SDK, RC3_RT), root=self.root, run_gh=gh), 0)
+        self.assertEqual([c[2] for c in gh.made("workflow", "run")], ["build.yml", "plan.yml"])
+        gh = FakeGh(prs='[{"number": 9, "state": "OPEN"}]', runs='[{"databaseId": 1}]')
+        self.mod.main(["pr"], fetch=self.fetcher(RC3_SDK, RC3_RT), root=self.root, run_gh=gh)
+        self.assertEqual(gh.made("workflow", "run"), [])
+
+    def test_a_resolved_finding_that_returns_reopens_its_issue_and_a_dismissed_one_stays(self):
+        resolved = json.dumps([{"number": 5, "title": "t", "state": "CLOSED", "labels": [{"name": "pins:resolved"}]}])
+        gh = FakeGh(issues=resolved)
+        pin_proposal.file_issue(root=self.root, check="x", title="t", body="b", run_gh=gh)
+        self.assertEqual([c[2] for c in gh.made("issue", "reopen")], ["5"])
+        dismissed = json.dumps([{"number": 5, "title": "t", "state": "CLOSED", "labels": []}])
+        gh = FakeGh(issues=dismissed)
+        pin_proposal.file_issue(root=self.root, check="x", title="t", body="b", run_gh=gh)
+        self.assertEqual(gh.made("issue", "reopen") + gh.made("issue", "create"), [])
+        gh = FakeGh(issues='[{"number": 6}]')
+        pin_proposal.resolve_issues(root=self.root, check="x", message="m", run_gh=gh)
+        self.assertEqual(gh.made("issue", "edit"), [("issue", "edit", "6", "--add-label", "pins:resolved")])
+
+    def test_the_vulnerability_restore_does_not_fail_on_the_audit(self):
+        self.assertIn("-p:NuGetAudit=false", load("check-vulnerable-packages").RESTORE)
+
+    def test_each_pins_job_holds_only_its_permissions(self):
+        workflow = (REPO / ".github" / "workflows" / "pins.yml").read_text(encoding="utf-8")
+        job = workflow.split("\n  vulnerable-packages:\n", 1)[1]
+        block = job.split("permissions:\n", 1)[1].split("\n    steps:", 1)[0]
+        self.assertEqual(sorted(line.strip() for line in block.splitlines() if line.strip()),
+                         ["contents: read", "issues: write"])
+
+
+class KitRound3Tests(KitFixture):
+    def test_a_file_entry_with_a_malformed_or_missing_blob_is_refused(self):
+        for line in (".claude/skills/x/SKILL.md | sdk not-a-blob | kept\n", ".claude/skills/x/SKILL.md | kept\n"):
+            self.allow(line)
+            with self.assertRaises(ValueError):
+                self.mod.allowed(self.repo)
+        self.assertEqual(self.mod.allowed(self.repo, strict=False)[".claude/skills/x/SKILL.md"], (None, "kept"))
+
+    def test_an_unrelated_sdk_commit_does_not_resend_the_notice(self):
+        (self.repo / ".claude" / "skills" / "x" / "SKILL.md").write_text("local edit\n", encoding="utf-8")
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=self.repo, check=True)
+        subprocess.run(["git", "commit", "-q", "--allow-empty", "-m", "c"], cwd=self.repo, check=True)
+        (self.sdk / "forge.py").write_text("import json\nprint(json.dumps({'checks': []}))\n", encoding="utf-8")
+        mail = Mailbox()
+        self.assertEqual(self.mod.main(["notify"], root=self.repo, sdk=self.sdk, mail=mail), 0)
+        (self.sdk / "unrelated.txt").write_text("x\n", encoding="utf-8")
+        self.sdk_commit()
+        self.assertEqual(self.mod.main(["notify"], root=self.repo, sdk=self.sdk, mail=mail), 0)
+        self.assertEqual(len(mail.sent), 1)
 
 
 class WorkspaceHooks(unittest.TestCase):

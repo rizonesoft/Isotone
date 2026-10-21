@@ -83,3 +83,62 @@ Round 2 reviewed `1b11445` and `21a2ed5` (the reviewer kit group). Every finding
 2. Fixed. The kept stdout and stderr are copied in the `finally` that removes the scratch, so an interrupt keeps them. Case: `test_an_interrupted_attempt_still_keeps_what_the_reviewer_wrote`.
 3. Fixed. `keep_file` publishes through a temporary sibling and `os.replace`, so a kept file is whole or absent. Case: `test_a_failed_copy_leaves_no_partial_kept_file`.
 4. Fixed. `--keep` refuses a folder that already holds `review.md` or kept stdout or stderr, before any reviewer runs. Case: `test_a_reused_keep_folder_is_refused_before_any_reviewer_runs`.
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T00:56:49Z
+- Effort: high
+- Lines: 33
+- Digest: 2038131d554282d6
+
+Locations refer to `e792b1e`. Behavioral reproductions used in-memory fixtures and mocked external calls; no files were modified.
+
+## adversarial: needs-attention
+
+1. **[P2] The vulnerability job receives unnecessary write permissions.** [.github/workflows/pins.yml:33](R:/GitHub/Isotone/.github/workflows/pins.yml:33) grants both matrix entries `contents`, `pull-requests`, `issues`, and `actions` write access. The vulnerability job only needs repository read and issue write access, yet its restore process inherits the broader token. Reproduce by expanding the `vulnerable-packages` matrix entry: all four write permissions remain. This violates [GitHub’s least-privilege guidance](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token).
+
+2. **[P2] Version replacement corrupts longer version strings.** [scripts/check-dotnet-pin.py:103](R:/GitHub/Isotone/scripts/check-dotnet-pin.py:103) checks only the trailing boundary, and that boundary excludes `+`. Reproduced an RC2-to-RC3 rewrite changing both `111.0.100-rc.2.26504.105` and `11.0.100-rc.2.26504.105+build42`. Neither is the exact pinned version. The existing test covers only a longer numeric suffix.
+
+3. **[P2] Malformed reconciliation blobs silently disable drift detection.** [scripts/check-conclave-kits.py:40](R:/GitHub/Isotone/scripts/check-conclave-kits.py:40) makes the blob optional; line 93 then skips allowed files even when their blob is `None`. Reproduced with `scripts/example.py | sdk not-a-blob | deliberate customization`: parsing succeeds and a changed SDK blob produces no finding. Missing or invalid blobs on file entries must not become permanent exemptions.
+
+4. **[P2] Unrelated SDK commits resend unchanged findings.** [scripts/check-conclave-kits.py:158](R:/GitHub/Isotone/scripts/check-conclave-kits.py:158) hashes the entire SDK HEAD into the notice key. Reproduced two identical drift results with different HEADs: two emails and two notice refs. Any unrelated SDK commit defeats the promised once-per-finding behavior.
+
+## consistency: needs-attention
+
+5. **[P2] Generated pin updates leave contradictory documentation.** [scripts/check-dotnet-pin.py:93](R:/GitHub/Isotone/scripts/check-dotnet-pin.py:93) performs literal version substitutions without handling the README badge’s escaped `--rc.2`. Reproduced an RC3 update that leaves the badge displaying RC2. A GA update also leaves `docs/dev/build.md` claiming `allowPrerelease: true` and describing the SDK as a release candidate, despite removing that setting from `global.json`. `AGENTS.md`, explicitly required by §8’s documentation item, is absent from `DOCS`.
+
+6. **[P2] Configuration writes are not atomic.** [scripts/check-dotnet-pin.py:91](R:/GitHub/Isotone/scripts/check-dotnet-pin.py:91) overwrites `global.json` directly; line 105 similarly overwrites the remaining files. An interruption or write failure after truncation leaves incomplete data. Reproduce by injecting a failure after opening the destination for writing. There is no temporary-file replacement or recovery path, contrary to the repository’s atomic-write requirement.
+
+## integration: needs-attention
+
+7. **[P1] Vulnerabilities can prevent their own issues from being filed.** [scripts/check-vulnerable-packages.py:59](R:/GitHub/Isotone/scripts/check-vulnerable-packages.py:59) restores before collecting the vulnerability report and returns immediately on restore failure. Gesso inherits `TreatWarningsAsErrors=true`, without exemptions for NU1901 through NU1904. NuGet therefore fails restore when an affected dependency is discovered, as [Microsoft documents](https://learn.microsoft.com/en-us/nuget/concepts/auditing-packages). Injecting that restore result reproduced exit 2 with no report command and no GitHub calls. A newly vulnerable Gesso dependency triggers this path.
+
+8. **[P2] Failed CI dispatches are never recovered.** [scripts/lib/pin_proposal.py:98](R:/GitHub/Isotone/scripts/lib/pin_proposal.py:98) returns immediately for any existing PR, although dispatch happens after PR creation at line 121. Reproduced successful creation followed by an HTTP 503 on dispatch: the next run returns success without dispatching either workflow. That PR remains without its promised checks until manually repaired.
+
+9. **[P2] Automatically resolved vulnerabilities remain suppressed if they recur.** [scripts/lib/pin_proposal.py:138](R:/GitHub/Isotone/scripts/lib/pin_proposal.py:138) treats every matching historical issue as dismissal, including issues automatically closed by `resolve_issues`. Reproduce: report vulnerable set A, report clean, then report A again. The final run neither creates nor reopens an issue. Automatic resolution is being confused with an operator’s decision to dismiss the finding.
+
+## source-defect: approve
+
+## record: needs-attention
+
+10. **[P2] The claimed “newer release” condition is only an inequality check.** [scripts/check-dotnet-pin.py:131](R:/GitHub/Isotone/scripts/check-dotnet-pin.py:131) distinguishes equal from different, without checking version ordering. Reproduced a listed pin of `11.0.101` with feed `latest-sdk=11.0.100`: PR mode proposes `pins/dotnet-11.0.100`. A stale or inconsistent feed can therefore propose a downgrade, contrary to the commit’s description.
+
+OVERALL: needs-attention
+
+## Response to round 3
+
+Round 3 reviewed `e792b1e` (the automations commit). Every finding was checked against the code and holds; all ten are fixed in the next commit, each with a case in `scripts/tests/test_pin_automations.py` (`ReviewRound3Tests`, `KitRound3Tests`) that fails when its fix is reverted (a mutation run, twelve mutations, twelve caught).
+
+1. Fixed. `pins.yml` is two jobs: `dotnet` keeps `contents`, `pull-requests`, `issues` and `actions` write; `vulnerable-packages` holds only `contents: read` and `issues: write`, with `persist-credentials: false`.
+2. Fixed. A version is replaced only where it stands whole: not after a digit or a dot, not before a digit, a dot and a digit, or a `+`.
+3. Fixed. A file entry in `.conclave/kit-drift-allow.txt` needs a well-formed `sdk <12 hex>`; a malformed or missing blob is refused (`absorb` alone accepts a missing one, to fill it in).
+4. Fixed. The kit notice key is the findings alone, so an unrelated SDK commit sends nothing new.
+5. Fixed. The rewrite moves the README badge's escaped `--rc.N` form and covers `AGENTS.md`; a GA pull request lists every docs line that still describes a prerelease pin for `D00 T02 §8`'s documentation item, which owns that prose.
+6. Fixed. Every rewritten file goes through a temporary sibling and a rename.
+7. Fixed. The restore before the report runs with `-p:NuGetAudit=false`, so a vulnerable package cannot fail the restore under `TreatWarningsAsErrors` before the report names it.
+8. Fixed. An open pin pull request whose CI never started gets each missing workflow dispatched on the next run.
+9. Fixed. `resolve_issues` labels what it closes `pins:resolved`, and `file_issue` reopens such an issue when its finding returns; a close without the label is still the owner's dismissal.
+10. Fixed. SDK versions are ordered (preview, then release candidate, then GA); a feed whose latest SDK is older than the pin exits 2 and proposes nothing.
+
+While these were fixed, `isotone-conclave-kits` reported the SDK's new base-kit skill `adopt-conclave` (SDK 56c3046). It is not imported: it installs and updates kits through `forge.py`, which AGENTS.md forbids here; the allow-list records it with its SDK blob, so a later change to it is still reported.

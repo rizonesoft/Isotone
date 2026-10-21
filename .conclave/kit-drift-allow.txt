@@ -49,3 +49,4 @@ doctor reviewer skill:independent-review:.agents | as doctor base GEMINI.md
 doctor reviewer skill:independent-review:.codex | as doctor base GEMINI.md
 doctor automations skill:scheduled-automations:.agents | as doctor base GEMINI.md
 doctor automations skill:scheduled-automations:.codex | as doctor base GEMINI.md
+.claude/skills/adopt-conclave/SKILL.md | sdk 044788e892d4 | not imported: it imports and updates kits through forge.py kit and sync, which AGENTS.md forbids in Isotone (a sync overwrites its adapted TODO skills and scripts); kit changes are ported by hand

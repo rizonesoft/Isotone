@@ -8,6 +8,8 @@ name: pins
 # NuGet packages and GitHub Actions are updated by Dependabot (.github/dependabot.yml), except the Microsoft.Extensions.*
 # packages that track the SDK's runtime, which the dotnet check moves with the SDK. Checks only this PC can see (its
 # CLIs, Python, installed SDK, the Conclave SDK checkout) stay in .conclave/automations.
+# Each job holds only the token permissions its check uses (independent review 2026-10-21): the dotnet job pushes a
+# branch, opens a PR, labels it, and dispatches CI; the vulnerable-packages job restores the solution and files issues.
 
 on:
   schedule:
@@ -26,28 +28,15 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
 
 jobs:
-  pin:
-    name: ${{ matrix.check }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+  dotnet:
+    name: dotnet
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
     permissions:
       contents: write
       pull-requests: write
       issues: write
       actions: write
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        include:
-          - check: dotnet
-            os: ubuntu-26.04
-            dotnet: false
-            run: python3 scripts/check-dotnet-pin.py pr
-          - check: vulnerable-packages
-            os: windows-2025
-            dotnet: true
-            run: python scripts/check-vulnerable-packages.py issue
     steps:
       - name: Checkout main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,8 +44,29 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Run the check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/check-dotnet-pin.py pr
+
+  vulnerable-packages:
+    name: vulnerable-packages
+    needs: dotnet
+    if: always()
+    runs-on: windows-2025
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
       - name: Set up .NET (global.json)
-        if: matrix.dotnet
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
@@ -64,5 +74,4 @@ jobs:
       - name: Run the check
         env:
           GH_TOKEN: ${{ github.token }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: ${{ matrix.run }}
+        run: python scripts/check-vulnerable-packages.py issue

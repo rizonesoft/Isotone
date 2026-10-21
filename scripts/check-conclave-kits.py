@@ -48,8 +48,10 @@ def git(sdk, *args):
     return subprocess.run(["git", "-C", str(sdk), *args], capture_output=True, creationflags=pin_proposal.NO_WINDOW)
 
 
-def allowed(root=ROOT):
-    """{path or doctor key: (blob or None, reason)}; a line without a reason is refused."""
+def allowed(root=ROOT, strict=True):
+    """{path or doctor key: (blob or None, reason)}. A line without a reason is refused, and so is a file entry
+    without a well-formed `sdk <blob>` (a malformed blob would otherwise exempt the file for good); `strict=False`
+    accepts a file entry with no blob yet, which `absorb` then fills in."""
     path = Path(root) / ALLOW
     if not path.is_file():
         return {}
@@ -60,7 +62,11 @@ def allowed(root=ROOT):
         match = ENTRY.match(line.strip())
         if not match or not match["reason"].strip():
             raise ValueError(f"{ALLOW}: '{line.strip()}' needs a reason after '|'")
-        entries[match["path"].strip()] = (match["blob"], match["reason"].strip())
+        key, reason = match["path"].strip(), match["reason"].strip()
+        if not key.startswith("doctor ") and (re.match(r"sdk\b", reason) or (strict and match["blob"] is None)):
+            raise ValueError(f"{ALLOW}: '{line.strip()}' needs 'sdk <12 hex digits>' before its reason "
+                             f"(run absorb to record it)")
+        entries[key] = (match["blob"], reason)
     return entries
 
 
@@ -119,7 +125,7 @@ def doctor(sdk, root=ROOT, allow=None):
 
 def absorb_lines(sdk, root=ROOT):
     """The allow-list with every recorded blob moved to the SDK's HEAD, for the operator to review and commit."""
-    allow = allowed(root)
+    allow = allowed(root, strict=False)
     blobs = {rel: blob for _kit, _name, rel, blob in kit_files(sdk)}
     lines = []
     for key, (recorded, reason) in allow.items():
@@ -155,7 +161,9 @@ def main(argv=None, root=ROOT, sdk=None, mail=pin_proposal.notify):
     if args.mode == "check":
         return 1
     head = git(sdk, "rev-parse", "--short=12", "HEAD").stdout.decode().strip()
-    key = "kits-" + hashlib.sha256((head + "\n" + "\n".join(found)).encode()).hexdigest()[:12]
+    # Keyed on the findings alone: an unrelated SDK commit leaves them, and the notice, unchanged; a further change to
+    # a reported file moves its blob in the finding, so it is announced again.
+    key = "kits-" + hashlib.sha256("\n".join(found).encode()).hexdigest()[:12]
     return pin_proposal.notice(root=root, key=key, subject="Isotone: the Conclave SDK kits have changed",
                                body="\n".join([f"Conclave SDK HEAD {head}:"] + found + [
                                    "", "Review each change against Isotone's copy and port what applies by hand "
