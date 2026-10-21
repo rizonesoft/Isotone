@@ -362,7 +362,21 @@ class MergeTests(Base):
     def test_a_mergeability_never_computed_stays_refused(self):
         gh = FakeGh([pr(1)], unknown_views=99)
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
-        self.assertEqual((code, gh.merges(), "mergeable is unknown" in out, gh.views["1"]), (0, [], True, mp.MERGEABLE_TRIES))
+        self.assertEqual((code, gh.merges(), "mergeable is unknown" in out, gh.views["1"]), (0, [], True, 1 + mp.MERGEABLE_TRIES))
+
+    def test_only_the_pull_request_to_merge_waits_for_mergeability(self):
+        # Independent review round 18: pull requests that cannot qualify are read once, whatever their mergeability.
+        humans = [pr(n, author={"login": "someone"}, createdAt=f"2026-10-01T00:00:{n:02d}Z") for n in range(3, 28)]
+        gh = FakeGh(humans + [pr(1)], unknown_views=1)
+        sleeps = []
+        saved = mp.time.sleep
+        mp.time.sleep = sleeps.append
+        try:
+            code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        finally:
+            mp.time.sleep = saved
+        self.assertEqual((code, len(gh.merges()), max(gh.views[str(n)] for n in range(3, 28)), len(sleeps) <= 2 * mp.MERGEABLE_TRIES),
+                         (0, 1, 1, True), out)
 
     def test_recover_settles_and_never_merges(self):
         gh = FakeGh([pr(1)])

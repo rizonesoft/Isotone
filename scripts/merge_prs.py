@@ -71,7 +71,9 @@ COMMAND_TIMEOUT = 300
 SETTLE_SECONDS = 900
 # GitHub computes `mergeable` lazily: the first read after `main` moves starts the computation and answers UNKNOWN,
 # and a stamp push has always just moved `main`. An UNKNOWN answer is read again, a bounded number of times, before
-# it counts (D00-T01-S12-F43: the first boundary run read both pull requests once and merged nothing).
+# it counts (D00-T01-S12-F43: the first boundary run read both pull requests once and merged nothing). Only the one
+# pull request a run would merge is read again, so the waits stay within the scheduled task's timeout however many
+# pull requests are open (independent review round 18): at most two re-reads of MERGEABLE_TRIES each per run.
 MERGEABLE_TRIES = 6
 MERGEABLE_WAIT = 5.0
 
@@ -457,19 +459,26 @@ def workflows_green(pr: dict, repo: str, root: Path, gh_fn=gh) -> tuple[bool, st
     return True, ""
 
 
-def view_pr(n, repo: str, root: Path, gh_fn=gh) -> dict:
-    """One pull request as GitHub reports it now, its mergeability computed: an UNKNOWN answer is read again up to
-    MERGEABLE_TRIES times, MERGEABLE_WAIT seconds apart, and a last UNKNOWN stands (eligibility refuses it)."""
-    for attempt in range(MERGEABLE_TRIES):
+def view_pr(n, repo: str, root: Path, gh_fn=gh, tries: int = 1) -> dict:
+    """One pull request as GitHub reports it now: an UNKNOWN mergeability is read again up to `tries` reads in all,
+    MERGEABLE_WAIT seconds apart, and a last UNKNOWN stands (eligibility refuses it)."""
+    for attempt in range(tries):
         pr = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", FIELDS + ",state", cwd=root) or "{}")
-        if pr.get("mergeable") != "UNKNOWN" or attempt == MERGEABLE_TRIES - 1:
+        if pr.get("mergeable") != "UNKNOWN" or attempt == tries - 1:
             return pr
         time.sleep(MERGEABLE_WAIT)
     return pr
 
 
+def pending_only(pr: dict, root: Path) -> bool:
+    """Whether GitHub's unfinished mergeability computation is all that keeps this pull request from merging."""
+    if "UNKNOWN" not in (pr.get("mergeable"), pr.get("mergeStateStatus")):
+        return False
+    return eligible(dict(pr, mergeable="MERGEABLE", mergeStateStatus="CLEAN"), root)[0]
+
+
 def open_prs(repo: str, gh_fn=gh, root: Path = ROOT) -> list[dict]:
-    """The open pull requests on main, oldest first, each read with `view_pr`: the list reports mergeability as
+    """The open pull requests on main, oldest first, each read once with `view_pr`: the list reports mergeability as
     UNKNOWN until GitHub computes it, and viewing a pull request is what makes it compute."""
     listed = json.loads(gh_fn("pr", "list", "--repo", repo, "--state", "open", "--base", "main", "--limit", "50",
                               "--json", "number", cwd=root) or "[]")
@@ -491,7 +500,7 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
     # removed, or a check gone red since the listing is refused, because `gh pr merge` acts on the pull request as it
     # is now (independent review rounds 3 and 4).
     try:
-        now = view_pr(n, repo, root, gh_fn)
+        now = view_pr(n, repo, root, gh_fn, tries=MERGEABLE_TRIES)
     except (Failed, ValueError) as error:
         return 1, f"merge_prs: #{n} not merged, its state cannot be read: {error}"
     ok, why = eligible(now, root)
@@ -705,6 +714,17 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         print(f"merge_prs: cannot list pull requests: {error}", file=sys.stderr)
         return 1
     verdicts = [(pr, *eligible(pr, root)) for pr in prs]
+    if not any(ok for _pr, ok, _why in verdicts):
+        # The oldest pull request held only by GitHub's unfinished computation is read again; no other one waits.
+        try:
+            i = next(k for k, (pr, _ok, _why) in enumerate(verdicts) if pending_only(pr, root))
+            again = view_pr(verdicts[i][0]["number"], repo, root, gh_fn, tries=MERGEABLE_TRIES)
+            verdicts[i] = (again, *eligible(again, root))
+        except StopIteration:
+            pass
+        except (Failed, ValueError) as error:
+            print(f"merge_prs: cannot read the pull requests: {error}", file=sys.stderr)
+            return 1
     for i, (pr, ok, _why) in enumerate(verdicts):
         if ok:
             try:
