@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **5 of 756 sections complete (1%).** 756 sections (2 discovered); backlog 16 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **5 of 756 sections complete (1%).** 756 sections (2 discovered); backlog 17 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -158,8 +158,8 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T01 §4`  | Prove the review panel end to end                                |   7   |
 | [ ] | `D00 T01 §6`  | The parity catalog validator                                     |  22   |
 | [ ] | `D00 T01 §12` | Merge dependency PRs at section boundaries                       |   9   |
-| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  22   |
-| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  22   |
+| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  27   |
+| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  23   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
 | [ ] | `D00 T02 §2`  | Gesso diagnostics to zero                                        |   4   |
 | [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                           |   3   |
@@ -268,7 +268,7 @@ Parity starts where every later feature stands. This phase fixes how live object
 | [ ] | `D02 T07 §12` | View modes, zoom, rotate view, saved views, windows                |  18   |
 | [ ] | `D02 T07 §13` | History panel, repeat, paste variants, quick duplicates            |  14   |
 | [ ] | `D02 T07 §14` | New Document dialog, presets, templates, document information      |  20   |
-| [ ] | `D02 T17 §1`  | Stilus 0.2.0 (Phase 4)                                             |  13   |
+| [ ] | `D02 T17 §1`  | Stilus 0.2.0 (Phase 4)                                             |  17   |
 
 ### Phase 5 -- Stilus parity II: drawing, paths, shapes, shaping, and transform
 
