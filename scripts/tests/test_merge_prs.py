@@ -321,6 +321,31 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
         self.assertEqual((code, gh.merges(), "nothing eligible; #1 mergeable is conflicting" in out), (0, [], True))
 
+    def test_local_checks_follow_the_fetch(self):
+        git = FakeGit()
+        real = git.__call__
+
+        def switch_during_fetch(*args, cwd=None):
+            out = real(*args, cwd=cwd)
+            if args[0] == "fetch":
+                git.branch, git.status = "refs/heads/work", " M x" + chr(10)
+            return out
+        gh = FakeGh([pr(1)])
+        code, out = self.call(["run", "--campaign"], gh, switch_during_fetch)
+        self.assertEqual((code, gh.merges(), "refs/heads/work" in out), (2, [], True))
+
+    def test_recover_settles_and_never_merges(self):
+        gh = FakeGh([pr(1)])
+        code, out = self.call(["recover"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), "no unresolved merge" in out), (0, [], True))
+        mp._block(self.root, 1, "merge issued, not yet verified")
+        code, out = self.call(["recover"], FakeGh([pr(1)], already_merged=[1]), FakeGit())
+        self.assertEqual((code, (self.root / mp.BLOCKED).exists()), (0, False))
+        mp._block(self.root, 2, "merge issued, not yet verified")
+        gh = FakeGh([pr(2), pr(3)])
+        code, out = self.call(["recover"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), (self.root / mp.BLOCKED).exists()), (3, [], True))
+
     def test_a_tree_dirtied_while_github_is_read_refuses_the_merge(self):
         git = FakeGit()
         gh = FakeGh([pr(1)])

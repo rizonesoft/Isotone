@@ -300,14 +300,15 @@ def preflight(root: Path, campaign: bool, git_fn=git, graph=None, active_fn=camp
         why = active_fn(root)
         if why:
             raise Refused(f"{why}; the loop merges at its section boundaries")
+    # The one slow call goes first, and every local check follows it back to back, so nothing local is judged and
+    # then trusted across a network wait (independent review round 13). An explicit destination, so origin/main is
+    # updated whatever remote.origin.fetch says (round 3): the comparison below is against the commit just fetched.
+    git_fn("fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main", cwd=root)
     branch = git_fn("symbolic-ref", "-q", "HEAD", cwd=root).strip()
     if branch != "refs/heads/main":
         raise Refused(f"the checked-out branch is {branch or 'a detached HEAD'}, not main")
     if git_fn("status", "--porcelain", cwd=root).strip():
         raise Refused("the working tree has uncommitted changes")
-    # An explicit destination, so origin/main is updated whatever remote.origin.fetch says (independent review
-    # round 3): the comparison below is against the commit just fetched, never a stale tracking ref.
-    git_fn("fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main", cwd=root)
     head = git_fn("rev-parse", "HEAD", cwd=root).strip()
     remote = git_fn("rev-parse", "origin/main", cwd=root).strip()
     if head != remote:
@@ -657,7 +658,7 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         why = active_fn(root)
         if why:
             raise Refused(f"{why}; the loop merges at its section boundaries")
-    if args.mode == "run" and blocked(root) is not None:
+    if args.mode in ("run", "recover") and blocked(root) is not None:
         # An unresolved earlier merge outranks every busy-clone refusal: it may have moved main, so it is a failure
         # that alerts until it is resolved, never a quiet exit 0, and a recovery that itself fails is exit 3 too.
         try:
@@ -667,6 +668,11 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         if stuck:
             print(f"merge_prs: not merging: {stuck}", file=sys.stderr)
             return 3
+    if args.mode == "recover":
+        # Recovery only, never a merge: a campaign settles what an earlier run left before its first or resumed
+        # section, and a merge there would land with no CI read-back before section work (independent review round 13).
+        print("merge_prs: recover: no unresolved merge")
+        return 0
     try:
         repo = repository(root, git_fn)
         preflight(root, args.campaign, git_fn, graph, active_fn)
@@ -714,7 +720,8 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
 def main(argv: list[str] | None = None, root: Path = ROOT, gh_fn=gh, git_fn=git, graph=None,
          active_fn=campaign_active, validate_fn=None, lock_fn=clone_lock, run_lock_fn=merge_lock) -> int:
     parser = argparse.ArgumentParser(description="Merge one eligible dependency pull request at a safe moment.")
-    parser.add_argument("mode", choices=("check", "run"))
+    parser.add_argument("mode", choices=("check", "run", "recover"),
+                        help="check lists; run merges at most one; recover only settles an earlier merge's intent")
     parser.add_argument("--campaign", action="store_true", help="the in-loop call: skip the active-campaign refusal")
     parser.add_argument("--task", action="store_true", help="the scheduled task: a busy clone exits 0")
     args = parser.parse_args(argv)
@@ -722,7 +729,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT, gh_fn=gh, git_fn=git,
         if args.mode == "check":
             return _work(args, root, gh_fn, git_fn, graph, active_fn, validate_fn)
         with run_lock_fn(root):
-            if args.campaign:
+            if args.campaign or args.mode == "recover":
                 return _work(args, root, gh_fn, git_fn, graph, active_fn, validate_fn)
             with lock_fn(root):
                 return _work(args, root, gh_fn, git_fn, graph, active_fn, validate_fn)
