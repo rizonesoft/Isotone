@@ -135,12 +135,12 @@ class Base(unittest.TestCase):
         self._tmp.cleanup()
 
     def call(self, argv, gh_fn, git_fn, graph=None, active=lambda r: None, validate=ok_validate,
-             lock=lambda root: contextlib.nullcontext()):
+             lock=lambda root: contextlib.nullcontext(), run_lock=lambda root: contextlib.nullcontext()):
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = mp.main(argv, root=self.root, gh_fn=gh_fn, git_fn=git_fn,
                            graph=graph or FakeGraph(self.root, started_open=False), active_fn=active,
-                           validate_fn=validate, lock_fn=lock)
+                           validate_fn=validate, lock_fn=lock, run_lock_fn=run_lock)
         return code, out.getvalue() + err.getvalue()
 
 
@@ -412,6 +412,33 @@ class MergeTests(Base):
             return real(*args, cwd=cwd)
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), denied)
         self.assertEqual((code, "access denied" in out, (self.root / mp.BLOCKED).exists()), (3, True, True))
+
+    def test_the_task_never_touches_a_running_campaigns_intent(self):
+        mp._block(self.root, 1, "merge issued, not yet verified")
+        gh = FakeGh([pr(1), pr(2)])
+        code, out = self.call(["run", "--task"], gh, FakeGit(), active=lambda r: "a campaign run holds the guard")
+        self.assertEqual((code, (self.root / mp.BLOCKED).exists(), [c for c in gh.calls if c[:2] == ("pr", "view")]),
+                         (0, True, []))
+
+    def test_a_failed_recovery_is_exit_three(self):
+        mp._block(self.root, 1, "merge issued, not yet verified")
+        git = FakeGit()
+        real = git.__call__
+
+        def origin_fails(*args, cwd=None):
+            if args[:2] == ("remote", "get-url"):
+                raise mp.Failed("git remote get-url origin failed")
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--task"], FakeGh([pr(1)], already_merged=[1]), origin_fails)
+        self.assertEqual((code, "recovery failed" in out), (3, True))
+
+    def test_the_real_merge_lock_allows_one_run_at_a_time(self):
+        with mp.merge_lock(self.root):
+            with self.assertRaises(mp.Refused):
+                with mp.merge_lock(self.root):
+                    pass
+        with mp.merge_lock(self.root):
+            pass
 
     def test_an_origin_with_credentials_is_redacted(self):
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]),

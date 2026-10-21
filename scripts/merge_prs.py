@@ -169,6 +169,42 @@ def clone_lock(root: Path):
         lock.__exit__(None, None, None)
 
 
+@contextlib.contextmanager
+def merge_lock(root: Path):
+    """One merge run at a time, campaign or task: an operating-system lock on `build/merge-prs.lock`, held from the
+    recovery check to the verified merge, so no run can resolve or clear another run's intent record while that merge
+    is in flight (independent review round 6). A held lock is a busy clone, not a failure."""
+    path = root / "build" / "merge-prs.lock"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path), os.O_RDWR | os.O_CREAT, 0o644)
+    try:
+        if os.name == "nt":
+            import msvcrt
+            try:
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            except OSError:
+                raise Refused("another merge run holds build/merge-prs.lock") from None
+        else:
+            import fcntl
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                raise Refused("another merge run holds build/merge-prs.lock") from None
+        try:
+            yield
+        finally:
+            if os.name == "nt":
+                import msvcrt
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fd, fcntl.LOCK_UN)
+    finally:
+        os.close(fd)
+
+
 def repository(root: Path, git_fn=git) -> str:
     """'github.com/<owner>/<name>' from origin's URL; every GitHub call names it with its host, so neither GH_REPO nor
     GH_HOST can redirect a merge to another repository or server."""
@@ -432,10 +468,19 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
 
 
 def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int:
+    if args.mode == "run" and not args.campaign:
+        # A running campaign owns the clone and any intent record it has written: the scheduled run leaves both
+        # alone and refuses before touching recovery (independent review round 6).
+        why = active_fn(root)
+        if why:
+            raise Refused(f"{why}; the loop merges at its section boundaries")
     if args.mode == "run" and blocked(root) is not None:
         # An unresolved earlier merge outranks every busy-clone refusal: it may have moved main, so it is a failure
-        # that alerts until it is resolved, never a quiet exit 0.
-        stuck = resolve_block(root, repository(root, git_fn), gh_fn, git_fn, validate_fn)
+        # that alerts until it is resolved, never a quiet exit 0, and a recovery that itself fails is exit 3 too.
+        try:
+            stuck = resolve_block(root, repository(root, git_fn), gh_fn, git_fn, validate_fn)
+        except (Failed, OSError) as error:
+            stuck = f"an earlier merge is unresolved and its recovery failed: {error}"
         if stuck:
             print(f"merge_prs: not merging: {stuck}", file=sys.stderr)
             return 3
@@ -475,17 +520,20 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
 
 
 def main(argv: list[str] | None = None, root: Path = ROOT, gh_fn=gh, git_fn=git, graph=None,
-         active_fn=campaign_active, validate_fn=None, lock_fn=clone_lock) -> int:
+         active_fn=campaign_active, validate_fn=None, lock_fn=clone_lock, run_lock_fn=merge_lock) -> int:
     parser = argparse.ArgumentParser(description="Merge one eligible dependency pull request at a safe moment.")
     parser.add_argument("mode", choices=("check", "run"))
     parser.add_argument("--campaign", action="store_true", help="the in-loop call: skip the active-campaign refusal")
     parser.add_argument("--task", action="store_true", help="the scheduled task: a busy clone exits 0")
     args = parser.parse_args(argv)
     try:
-        if args.mode == "run" and not args.campaign:
+        if args.mode == "check":
+            return _work(args, root, gh_fn, git_fn, graph, active_fn, validate_fn)
+        with run_lock_fn(root):
+            if args.campaign:
+                return _work(args, root, gh_fn, git_fn, graph, active_fn, validate_fn)
             with lock_fn(root):
                 return _work(args, root, gh_fn, git_fn, graph, active_fn, validate_fn)
-        return _work(args, root, gh_fn, git_fn, graph, active_fn, validate_fn)
     except Refused as error:
         print(f"merge_prs: preflight: refused: {error}")
         return 0 if args.task else 2
