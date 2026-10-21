@@ -695,7 +695,10 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
             try:
                 green, why = workflows_green(pr, repo, root, gh_fn)
             except (Failed, ValueError) as error:
-                green, why = False, f"its workflow runs cannot be read: {error}"
+                # A lookup that fails is a failed command, not an ineligible pull request: it stops the run with
+                # exit 1 (the task's failure email), and no other pull request merges past it (GPT panel round 2).
+                print(f"merge_prs: cannot read #{pr['number']}'s workflow runs: {error}", file=sys.stderr)
+                return 1
             if not green:
                 verdicts[i] = (pr, False, why)
     if args.mode == "check":

@@ -334,6 +334,20 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], gh, switch_during_fetch)
         self.assertEqual((code, gh.merges(), "refs/heads/work" in out), (2, [], True))
 
+    def test_a_failed_workflow_run_lookup_stops_the_run(self):
+        gh = FakeGh([pr(1), pr(2)])
+        real = gh.__call__
+        calls = []
+
+        def runs_fail_once(*args, cwd=None):
+            if args[:2] == ("run", "list"):
+                calls.append(args)
+                if len(calls) == 1:
+                    raise mp.Failed("gh run list failed: connection reset")
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--task"], runs_fail_once, FakeGit())
+        self.assertEqual((code, gh.merges(), "cannot read #1's workflow runs" in out), (1, [], True))
+
     def test_recover_settles_and_never_merges(self):
         gh = FakeGh([pr(1)])
         code, out = self.call(["recover"], gh, FakeGit())
