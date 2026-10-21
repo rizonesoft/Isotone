@@ -66,6 +66,8 @@ track: W1
 |  10   |   §10   | The drift gates                               | §1         |  [ ]   |
 |  11   |   §11   | The manual-row invariant                      | §2         |  [x]   |
 |  12   |   §12   | Merge dependency PRs at section boundaries    | --         |  [ ]   |
+|  13   |   §13   | Run-guard robustness                          | --         |  [ ]   |
+|  14   |   §14   | Retire the unused verify-agent-tiers.mjs      | --         |  [ ]   |
 
 ---
 
@@ -399,6 +401,36 @@ The pins workflow and Dependabot open pull requests labelled `dependencies` or `
 - [ ] Commit: `"workspace: merge dependency pull requests at section boundaries"`
 
 **Test checkpoint:** Unit test: `python scripts/tests/test_merge_prs.py` passes, covering each preflight refusal, each eligibility rule (the `.NET` pin refused), the exact `gh pr merge --rebase --match-head-commit` call, one merge per run, and the stop on a failed merge, pull, or validate; driven run: `python scripts/merge_prs.py check` on the live repository prints the preflight verdict and which open pull requests are eligible, and `run --campaign` after a stamp push merges one eligible pull request, after which `git log --oneline -1` shows the rebased commit on `main` and `ci-wait` reads its CI back green. Cheaper substitute that fails: `gh pr merge --auto` on every Dependabot pull request, which merges while a section is in flight and takes the `.NET` pin, and which the preflight and eligibility tests refuse.
+
+## 13. Run-Guard Robustness: Special Files, Re-Points, and Interrupted Ends
+
+The operator reported on 2026-10-21 three run-guard bugs that reviews of other repositories traced to the guard Isotone's `scripts/campaign_guard.py` shares in shape, and each reproduces here by reading the code. First, `fingerprint` hashes untracked files with `os.stat` (which follows links) and then `open(...).read()`, so an untracked FIFO or device blocks the Stop hook past its budget and a link to a folder raises out of it. Second, `acquire` defaults a missing `--phase` to `0` (`int(opts.get("phase", "0"))` in `main`), so re-pointing the guard without `--phase` silently moves the run to Phase 0. Third, `_end_locked` writes the pending cancellation and then deletes the guard file and the state file one after the other, so an end interrupted before the guard is gone leaves a live guard that the heartbeat's `whoami` reads as the owner and resumes, against the stop it was asked for.
+
+<!-- claim: count "int\(opts\.get\(\"phase\", \"0\"\)\)" scripts/campaign_guard.py = 1 -->
+<!-- claim: count "info = os\.stat\(full\)" scripts/campaign_guard.py = 1 -->
+
+**Fidelity:** no surface of its own (the run guard and its self-test).
+
+- [ ] Hash only regular files in `fingerprint`: take `os.lstat`, count a link by its target text and a non-regular file (FIFO, device, socket, folder) by its name and mode without opening it, and open a regular file only with a read bounded by the size `lstat` reported. Done when: self-test cases with an untracked FIFO (where the platform has one), a link to a folder, and a dangling link finish inside the hook budget and leave no `hook_error`.
+- [ ] Keep the phase on a re-point: `acquire` without `--phase` keeps the existing guard's phase and refuses when there is no guard to keep it from, and `--phase` is parsed strictly (a whole number, never a default). Done when: self-test cases re-point a Phase 3 guard without `--phase` and read 3 back, and refuse a first `acquire` without it.
+- [ ] Make `end` atomic for its readers: mark the guard ended first in one atomic write (an `ended` field with the reason), so `whoami`, the hook, and the heartbeat treat a marked guard as over even when the deletes after it never run, and let a later `end` or `reset-state` finish the cleanup. Done when: a self-test case interrupts `end` after the mark (an injected failure before the deletes) and `whoami` prints `NO GUARD` or an ended verdict that the heartbeat stops on, never `OWNER`.
+- [ ] Commit: `"workspace: harden the run guard against special files, phase resets, and interrupted ends"`
+
+**Test checkpoint:** Unit test: `python scripts/campaign_guard.py --self-test` reports `0 failed` with the new cases counted, and each new case fails against the guard before this section (quoted in the review). Cheaper substitute that fails: wrapping the hook in a timeout, which still lets a re-point land on Phase 0 and an interrupted end resume, and which the re-point and interrupted-end cases refuse.
+
+## 14. Retire the Unused verify-agent-tiers.mjs
+
+`scripts/verify-agent-tiers.mjs` arrived with the change that matched Conclave-SDK 4ca1af5 on 2026-10-17 (`cd0c554`), but nothing in Isotone runs it: no workflow, no `scripts/check-all.ps1` gate, no hook, and no document names it. Isotone's agent definitions are checked by `python scripts/panel_slots.py validate` (model, effort, tools, and the denied write tools), and the operator cut the link to the Conclave SDK on 2026-10-21 and reported that the script accepts a frontmatter line Claude Code cannot load. A check nothing runs protects nothing and drifts unseen, so this section removes it and confirms the reader that does run refuses what Claude Code refuses.
+
+<!-- claim: exists scripts/verify-agent-tiers.mjs -->
+
+**Fidelity:** no surface of its own (workspace tooling).
+
+- [ ] Delete `scripts/verify-agent-tiers.mjs`. Done when: `git grep -n verify-agent-tiers` outside the review and phase-run history finds nothing.
+- [ ] Confirm `scripts/panel_slots.py`'s agent-definition reader refuses a frontmatter shape Claude Code cannot load (a duplicate key, a block scalar, a flow collection, a tab-indented line, an unterminated quote), adding a self-test case for each shape it accepts today. Done when: `python scripts/panel_slots.py --self-test` covers each shape with a refusal and reports `0 failed`.
+- [ ] Commit: `"workspace: retire the unused verify-agent-tiers.mjs"`
+
+**Test checkpoint:** Unit test: `python scripts/panel_slots.py --self-test` reports `0 failed` with the new frontmatter cases counted, and `python scripts/panel_slots.py validate` still prints `delegation ok`. Cheaper substitute that fails: deleting the script alone, which leaves any frontmatter shape the running reader accepts untested.
 
 ## Verification
 
