@@ -11325,6 +11325,11 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 # under it; an `ID` row mid-table is a data row.
                 ("an ID row inside a table", _pcat + "| ID | Lost | AI-0001 | -- | core | invalid |  |\n", _pai, "parity-input-damaged", "'ID' is not a whole id"),
                 ("an ID header with no separator row", _pcat.replace("| -- | -- | -- | -- | -- | -- | -- |\n", ""), _pai, ["parity-id-missing", "parity-input-damaged"], "NP-0001 has no `| ID |` header"),
+                # Round 9: a pipe-free line inside an ID table is a one-cell
+                # row (GitHub Markdown), and only a blank line or a new block
+                # ends the table.
+                ("a pipe-free truncated row in a table", _pcat, _pai + "AI-0003\n", ["parity-id-missing", "parity-input-damaged"], "AI-0003 has 1 cells"),
+                ("a heading ends the table", _pcat, _pai + "## Notes\nAI-0003 is mentioned in prose\n", None, None),
                 # Round 7: only the separator under the header is skipped,
                 # and only with the header's cell count.
                 ("a separator-shaped row inside a table", _pcat + "| -- | -- | -- | -- | -- | -- | -- |\n", _pai, "parity-input-damaged", "'--' is not a whole id"),
@@ -11336,6 +11341,9 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             for name, cat, ai, want, needle in _pcases:
                 _pwrite(cat, ai)
                 found = _pfind()
+                if want is None:
+                    check(f"parity: {name}, so nothing after it is a row", found, [])
+                    continue
                 want = want if isinstance(want, list) else [want]
                 check(f"parity: {name} is {', '.join(want)} naming it",
                       (sorted({c for c, _ in found}), any(needle in m for _, m in found)), (want, True))

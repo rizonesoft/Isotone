@@ -84,6 +84,8 @@ def _id_prefix(id_re: str) -> str:
     return re.match(r"[A-Za-z]+-", id_re).group(0)
 
 
+# The block starts that end a GitHub Markdown table: a heading, a block quote, a list item, a fence, or HTML.
+_BLOCK_START_RE = re.compile(r"^\s{0,3}(#{1,6}(\s|$)|>|[-*+]\s|\d{1,9}[.)]\s|```|~~~|<)")
 _SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$")
 
 
@@ -95,7 +97,7 @@ def _table_rows(text: str, id_re: str):
     2026-10-21, rounds 1 to 5, found five row shapes a content match missed): every row between an `| ID |`
     header and the end of its table is a data row, whatever its first cell says; a header is the line that opens
     its table and is followed by a separator row with its cell count, the one separator skipped, and a table
-    ends at a blank line or a line with no pipe. Outside such tables, a row whose first cell mentions the prefix in any case or
+    ends where GitHub Markdown ends it, at a blank line or the start of another block. Outside such tables, a row whose first cell mentions the prefix in any case or
     markup is reported too. `id_ok` says the first cell is one whole id of the family. `problem` is None for a
     sound row, else the first defect: a first cell that is no whole id, no `| ID |` header for the row, a header
     that repeats a column name (a second `Status` would overwrite the first), or a cell count that differs from
@@ -108,7 +110,11 @@ def _table_rows(text: str, id_re: str):
     lines = text.splitlines()
     at_table_start = True
     for lineno, line in enumerate(lines, 1):
-        if not line.strip() or "|" not in line:
+        # A table ends where GitHub Markdown ends it: at a blank line or at the start of another block. Inside an
+        # ID table any other line is a row, a pipe-free one included (`AI-1295` alone is a one-cell row, so a
+        # truncated row never ends the table; independent review round 9). Outside a table, a line with no pipe
+        # is prose and is never a row.
+        if not line.strip() or _BLOCK_START_RE.match(line) or ("|" not in line and header is None):
             header, at_table_start = None, True
             continue
         opens_table, at_table_start = at_table_start, False
