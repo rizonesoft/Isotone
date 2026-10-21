@@ -258,14 +258,30 @@ def run(argv, stdin_text, timeout, watched, stderr_path=None):
     return process.returncode, None
 
 
+KEPT_SUFFIXES = (".stdout.txt", ".stderr.txt")
+
+
+def kept_artifacts(keep):
+    """The evidence an earlier attempt left in a --keep folder; a folder holding any is refused, so a failed attempt
+    can never sit beside an earlier attempt's review."""
+    return sorted(p.name for p in Path(keep).iterdir() if p.name == "review.md" or p.name.endswith(KEPT_SUFFIXES))
+
+
 def keep_file(source, keep, name):
-    """Copy one evidence file into the --keep folder; a reviewer that wrote nothing leaves an empty file, so the folder
-    always says what each attempt produced."""
+    """Copy one evidence file into the --keep folder through a temporary sibling and a rename, so a kept file is whole
+    or absent; a reviewer that wrote nothing leaves an empty file, so the folder always says what each attempt
+    produced."""
     target = Path(keep) / name
-    if source.is_file():
-        shutil.copyfile(source, target)
-    else:
-        target.write_bytes(b"")
+    fd, temporary = tempfile.mkstemp(dir=keep, prefix=f".{name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as out:
+            if source is not None and source.is_file():
+                with open(source, "rb") as src:
+                    shutil.copyfileobj(src, out)
+        os.replace(temporary, target)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def review(pin, writer, prompt_path, timeout, keep=None):
@@ -288,18 +304,20 @@ def review(pin, writer, prompt_path, timeout, keep=None):
             continue
         stdout = None
         tmp = Path(tempfile.mkdtemp())
+        stdout_path, message_path = tmp / "stdout.txt", tmp / "last-message.md"
+        stderr_path = tmp / "stderr.txt" if keep is not None else None
         try:
-            stdout_path, message_path = tmp / "stdout.txt", tmp / "last-message.md"
-            stderr_path = tmp / "stderr.txt" if keep is not None else None
             argv, stdin_text = command(reviewer, executable, prompt, Path(prompt_path).resolve(), message_path, timeout)
             _, problem = run(argv, stdin_text, timeout, [stdout_path, message_path], stderr_path)
             if problem is None:
                 source = message_path if reviewer["cli"] == "codex" else stdout_path
                 stdout = source.read_text(encoding="utf-8", errors="replace") if source.is_file() else ""
+        finally:
+            # Kept before the scratch goes, on every path out (an interrupt included), so --keep never loses the
+            # reviewer's output.
             if keep is not None:
                 keep_file(stdout_path, keep, f"{name}.stdout.txt")
                 keep_file(stderr_path, keep, f"{name}.stderr.txt")
-        finally:
             remove_scratch(tmp)
         if problem is None and not (stdout or "").strip():
             problem = "returned no review"
@@ -497,7 +515,10 @@ def list_rounds(records_dir):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    # allow_abbrev=False: an option is spelled whole (`--w` is not `--writer`), so the delegate shell gate that
+    # refuses a review round can name it exactly (an Isotone change, independent review 2026-10-21).
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     allow_abbrev=False)
     parser.add_argument("--writer", choices=WRITERS, help="The agent whose work is under review")
     parser.add_argument("--prompt", help="File holding the review prompt")
     parser.add_argument("--record", help="Findings file to append this round to")
@@ -542,6 +563,10 @@ def main(argv=None):
         if args.keep is not None:
             if not Path(args.keep).is_dir():
                 raise Refused(f"--keep names {args.keep}, which is not a folder")
+            left = kept_artifacts(args.keep)
+            if left:
+                raise Refused(f"--keep {args.keep} already holds {', '.join(left)} from an earlier attempt; "
+                              f"use a fresh folder per attempt")
         result = review(load_pin(args.pin), args.writer, args.prompt, args.timeout, args.keep)
     except (Refused, OSError) as exc:
         print("review-dispatch refused: " + str(exc), file=sys.stderr)

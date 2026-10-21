@@ -733,6 +733,57 @@ class Keep(unittest.TestCase):
         self.assertFalse((keep / "review.md").exists())
         self.assertTrue((keep / "astra.stderr.txt").is_file() and (keep / "gemini.stderr.txt").is_file())
 
+    def test_a_reused_keep_folder_is_refused_before_any_reviewer_runs(self):
+        keep = self.keep()
+        result, _ = self.dispatch("--writer", "claude", "--prompt", str(self.prompt), "--keep", str(keep))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = len(self.calls())
+        result, _ = self.dispatch("--writer", "claude", "--prompt", str(self.prompt), "--keep", str(keep),
+                                  codex="fail", agy="fail")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("already holds", result.stderr)
+        self.assertEqual(len(self.calls()), calls, "no reviewer ran against a folder holding an earlier review")
+
+    def test_an_abbreviated_option_is_refused(self):
+        result, _ = self.dispatch("--w", "claude", "--prompt", str(self.prompt))
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(self.calls(), [])
+
+    def test_an_interrupted_attempt_still_keeps_what_the_reviewer_wrote(self):
+        spec = importlib.util.spec_from_file_location("dispatch_keep_interrupt", self.repo / "scripts/review-dispatch.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        keep = self.keep()
+
+        def interrupted(argv, stdin_text, timeout, watched, stderr_path=None):
+            watched[0].write_bytes(b"partial review")
+            stderr_path.write_bytes(b"model: gpt-6-astra\n")
+            raise KeyboardInterrupt
+        pin = module.load_pin(self.repo / ".conclave/reviewers.toml")
+        with unittest.mock.patch.object(module, "run", interrupted), \
+                unittest.mock.patch.object(module, "find_cli", lambda name: "fake"):
+            with self.assertRaises(KeyboardInterrupt):
+                module.review(pin, "claude", str(self.prompt), 5, str(keep))
+        self.assertEqual((keep / "astra.stdout.txt").read_bytes(), b"partial review")
+        self.assertIn(b"gpt-6-astra", (keep / "astra.stderr.txt").read_bytes())
+        self.assertFalse((keep / "review.md").exists())
+
+    def test_a_failed_copy_leaves_no_partial_kept_file(self):
+        spec = importlib.util.spec_from_file_location("dispatch_keep_atomic", self.repo / "scripts/review-dispatch.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        keep = self.keep()
+        source = Path(self._tmp.name) / "source.txt"
+        source.write_bytes(b"x" * 100)
+
+        def broken(src, dst, length=0):
+            dst.write(b"half")
+            raise OSError("disk full")
+        with unittest.mock.patch.object(module.shutil, "copyfileobj", broken):
+            with self.assertRaises(OSError):
+                module.keep_file(source, keep, "astra.stdout.txt")
+        self.assertEqual(list(keep.iterdir()), [])
+
     def test_keep_must_name_a_folder(self):
         result, _ = self.dispatch("--writer", "claude", "--prompt", str(self.prompt), "--keep",
                                   str(Path(self._tmp.name) / "missing"))

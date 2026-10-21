@@ -211,7 +211,9 @@ SHELL_DENY = (
     (re.compile(r"(?i)(\$env:)?\b(GIT_[A-Z0-9_]+|PAGER|EDITOR|VISUAL|LESSOPEN|LESSCLOSE)\s*="),
      "sets a variable that changes what git runs"),
     (re.compile(r"--no-verify\b"), "bypasses a hook; no session ever does"),
-    (re.compile(r"review-dispatch\.py\b.*--writer\b"), "runs a review round; every review is the lead's"),
+    # Any dispatcher run but its two read-only reports: the option names never matter, so no spelling slips by.
+    (re.compile(r"review-dispatch\.py\b(?!.*--(?:check-pin|list-rounds)\b)"),
+     "runs a review round; every review is the lead's"),
     (re.compile(r"design-lint\.py\b.*--(?:allow-add|update-baseline)\b"), "grows or rewrites a baseline"),
 )
 
@@ -1377,6 +1379,8 @@ def _self_test() -> int:
                 "git branch -D topic", "cd src && git commit -am x", "python x.py; git push",
                 "git.exe commit -m x", "pwsh -c \"git commit -m x\"", "gh pr create", "gh api repos",
                 "x --no-verify", "python scripts/review-dispatch.py --writer claude --prompt p",
+                "python scripts/review-dispatch.py --w claude --prompt p", "python scripts/review-dispatch.py --writer=claude",
+                "python scripts/review-dispatch.py --prompt p",
                 "python scripts/design-lint.py --baseline b --allow-add",
                 'git -C "R:/some repo" commit -am x', '"git.exe" commit -am x', "'git' push",
                 '"C:/Program Files/Git/cmd/git.exe" commit -m x', "/usr/bin/git add .",
