@@ -11369,6 +11369,12 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("parity: a deleted inventory fails once naming it, its cells not each reported unknown",
                   (sorted({c for c, _ in found}), [m for _, m in found if "coreldraw-2026.md" in m] != [], len(found)),
                   (["parity-input-damaged"], True, 1))
+            __import__("shutil").rmtree(proot / "docs" / "parity")
+            (proot / "docs" / "parity").write_text("not a folder\n", encoding="utf-8")
+            found = _pfind()
+            check("parity: a file where docs/parity/ belongs is damage, not absence (round 11)",
+                  (sorted({c for c, _ in found}), any("docs/parity exists but is not a folder" in m for _, m in found)),
+                  (["parity-input-damaged"], True))
             __import__("shutil").rmtree(proot / "docs")
             check("parity: a tree with no docs/parity/ has nothing to check", _pfind(), [])
             _pwrite()

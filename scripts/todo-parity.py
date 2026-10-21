@@ -257,8 +257,13 @@ def _root(graph, root) -> Path:
 def parity_findings(graph, todos, root=None, texts: dict | None = None) -> list[tuple[str, str]]:
     """Every parity finding as (class, message); empty when the tree carries no `docs/parity/`."""
     root = _root(graph, root)
-    if not (root / "docs" / "parity").is_dir():
+    parity = root / "docs" / "parity"
+    if not parity.exists() and not parity.is_symlink():
         return []
+    if not parity.is_dir():
+        # Only true absence skips the check; a file or a dangling link where the folder belongs is damage
+        # (independent review round 11).
+        return [("parity-input-damaged", "docs/parity exists but is not a folder; restore it from git")]
     texts = texts if texts is not None else snapshot(root)
     sections = _section_index(todos)
     loaded = graph.load_backlog()
