@@ -56,7 +56,7 @@ track: W1
 | :---: | :-----: | --------------------------------------------- | ---------- | :----: |
 |   1   |   §1    | Wire the TODO gate into every clone           | --         |  [x]   |
 |   2   |   §2    | The operator requirement for manual rows      | --         |  [x]   |
-|   3   |   §3    | Raise the claims coverage floor               | --         |  [ ]   |
+|   3   |   §3    | Raise the claims coverage floor               | --         |  [x]   |
 |   4   |   §4    | Prove the review panel end to end             | --         |  [ ]   |
 |   5   |   §5    | First push: CI green and read back            | §1         |  [ ]   |
 |   6   |   §6    | The parity catalog validator                  | §1         |  [ ]   |
@@ -121,6 +121,12 @@ The hook is the only gate that runs before a commit exists, so a tree that fails
 - [x] Commit: `"workspace: raise the claims coverage floor to the measured value"`
 
 **Test checkpoint:** `python scripts/todo-claims.py` exits 0 and prints `coverage N/M, floor N`; deleting the claim lines from any one TODO's `Current state` block (in a scratch copy of the tree) makes it exit 1 naming coverage below the floor. Cheaper substitute that fails: leaving the floor at 1, which the scratch deletion does not trip.
+
+> **Verified:** 2026-10-21 | §3 | D00 T01 §3 at `353cfbf`: `todo-claims: 557 claim(s) -- 557 hold, 0 stale, 0 malformed; coverage 78/78, floor 78` (exit 0) · with every claim deleted from the TODO-04 Current state in a clone at the candidate, `coverage fell to 77, below the recorded floor of 78` (exit 1) · with the floor set back to 1 and its claim matched, the same deletion passes (exit 0), so the checkpoint can fail · check-all (isotone-verifier, log read by the lead): all 17 gates passed, 985 + 33 + 8 tests passed, 0 failed, 0 skipped
+> **Review:** round 1, candidate `353cfbf` -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 1 of cap 22, gpt-6-astra medium; check-panel `PASS four lenses, one verdict each; highest none`). Independent: gpt-6-astra medium via `scripts/review-dispatch.py`, all five lenses approve, no findings. Raw findings: docs/reviews/00-workspace/D00-T01-s3.md. Attestation: docs/reviews/00-workspace/D00-T01-s3.attest.json
+> **Plan review:** gpt medium, filed B-061 (4 findings: PR1 and PR2 deferred to the backlog as B-061, PR4 accepted and fixed in `abbfbc9`, PR3 rejected as already recorded; no section filed) (run 20261021-D00-T01-S3-gpt)
+> **CRUD:** not applicable (a gate constant and the claim that pins it, with no user record, document, or setting)
+> **Duration:** 2026-10-19T22:54:18Z to 2026-10-21T18:28:31Z
 
 ## 4. Prove the Review Panel End to End
 
