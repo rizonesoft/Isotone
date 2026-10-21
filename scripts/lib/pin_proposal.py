@@ -154,6 +154,11 @@ def file_issue(*, root, check, title, body, run_gh=gh):
     issues = json.loads(run_gh("issue", "list", "--label", label, "--state", "all", "--limit", "100",
                                "--json", "number,title,state,labels", cwd=root) or "[]")
     same = [i for i in issues if i["title"] == title]
+    for issue in issues:
+        # Every other open issue of the check describes an older state, whether this finding is new or returning.
+        if issue["state"] == "OPEN" and issue["title"] != title:
+            run_gh("issue", "edit", str(issue["number"]), "--add-label", RESOLVED, cwd=root)
+            run_gh("issue", "close", str(issue["number"]), "--comment", f"Superseded by a newer finding: {title}", cwd=root)
     if same:
         issue = same[0]
         names = {lab.get("name") for lab in issue.get("labels") or []}
@@ -164,10 +169,6 @@ def file_issue(*, root, check, title, body, run_gh=gh):
         else:
             print(f"issue already filed: {title}")
         return 0
-    for issue in issues:
-        if issue["state"] == "OPEN":
-            run_gh("issue", "edit", str(issue["number"]), "--add-label", RESOLVED, cwd=root)
-            run_gh("issue", "close", str(issue["number"]), "--comment", f"Superseded by a newer finding: {title}", cwd=root)
     url = run_gh("issue", "create", "--title", title, "--body", body, "--label", "pins", "--label", label, cwd=root).strip()
     print(f"filed {url}")
     return 0

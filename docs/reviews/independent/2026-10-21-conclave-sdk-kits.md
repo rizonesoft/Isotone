@@ -186,3 +186,41 @@ Round 4 reviewed the fix range `e792b1e..46dcff2`. Every finding was checked aga
 5. Fixed. The architecture gate and the plan review keep one `--keep` folder per attempt (`$RUNDIR/arch-<N>`, `$RUNDIR/plan-<N>`), like the panel and stamp rounds, and the `review_prompt.py` skill pins name them.
 
 Record advisory: noted.
+
+## Round 5: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T01:27:13Z
+- Effort: high
+- Lines: 19
+- Digest: 1fb59beb3def3667
+
+## adversarial: needs-attention
+
+1. **[P2] Non-argument tokens still grant the dispatcher exemption.** [scripts/panel_slots.py:892](R:/GitHub/Isotone/scripts/panel_slots.py:892) treats comments and redirection targets as dispatcher arguments. Reproduce with `python scripts/review-dispatch.py --writer claude --prompt p # --check-pin`, or replace the comment with `> --check-pin`. Both return `shell_decision=None`, although the shell removes that token from the dispatcher’s arguments. An in-memory probe confirmed the resulting arguments reach `review()`. Round 4 finding 1 remains incompletely fixed.
+
+## consistency: needs-attention
+
+2. **[P2] GA updates now leave the README badge stale.** [scripts/check-dotnet-pin.py:126](R:/GitHub/Isotone/scripts/check-dotnet-pin.py:126) generates badge replacements only when the old version contains a hyphen, while the tightened ordinary boundary rejects the badge’s hyphen separator. Reproduce `rewrite_tree()` updating SDK `11.0.100` to `11.0.101` with badge `.NET-11.0.100-512BD4`: `global.json` changes, but the badge remains `11.0.100`. The parent updates it correctly. The regression covers prerelease badges only.
+
+## integration: needs-attention
+
+3. **[P2] Reopening a superseded finding leaves the newer, obsolete issue open.** [scripts/lib/pin_proposal.py:166](R:/GitHub/Isotone/scripts/lib/pin_proposal.py:166) returns before superseding other issues whenever the requested title already exists. Reproduce vulnerability sets `A`, `A+B`, then `A`, without an intervening clean run: the candidate reopens A but leaves A+B open, still reporting the removed vulnerability B. A stateful in-memory reproduction confirmed both remain open. The new regression at [scripts/tests/test_pin_automations.py:450](R:/GitHub/Isotone/scripts/tests/test_pin_automations.py:450) uses separate canned responses and omits the still-open A+B issue, missing this lifecycle defect.
+
+## source-defect: approve
+
+## record: advisory
+
+The full-suite and five-mutation totals were not independently rerun because those runs create files. Verification used candidate and parent source plus in-memory probes. No files were modified.
+
+OVERALL: needs-attention
+
+## Response to round 5
+
+Round 5 reviewed `c5a662e`. Every finding was checked and holds; all three are fixed in the next commit, each with a regression case that fails when its fix is reverted (three mutations, three caught).
+
+1. Rethought, not patched. The shell gate needed a fix in rounds 2, 4 and 5 for the same unit (telling a read-only dispatcher report from a review round by reading a shell line), so per the independent-review rule the approach changed: the gate now refuses any command that names the review dispatcher, whatever its options, comments or redirections. A delegate needs neither report (it can read `.conclave/reviewers.toml`); the delegate definitions and `standards/delegation.md` say so.
+2. Fixed. Badge URLs are rewritten on their own: inside a shields.io URL every short version moves where a single `-`, a query or the URL's end follows it, so a GA-to-GA move updates the badge, and a longer version in a badge is left alone.
+3. Fixed. `file_issue` closes every other open issue of the check as superseded before it reopens or keeps the matching one, so a returning finding never leaves a newer, obsolete issue open.
+
+Record advisory: noted.

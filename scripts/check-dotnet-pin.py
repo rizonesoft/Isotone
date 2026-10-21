@@ -35,9 +35,12 @@ PROPS = "Directory.Packages.props"
 DOCS = ("README.md", "CONTRIBUTING.md", "AGENTS.md", "docs/dev/README.md", "docs/dev/build.md")
 # A version is replaced only where it stands whole: not after a digit or a dot (`111.0.100`), and not before a letter,
 # a digit, a hyphen, a `+`, or a dot and a letter or digit (`11.0.100-rc.20`, `11.0.100-rc.2.26504.105`, `...-private`,
-# `...+build42`). A shields.io badge's escaped form may be followed by a `-`, the badge's field separator.
+# `...+build42`).
 WHOLE = (r"(?<![0-9.])", r"(?![0-9A-Za-z+-]|\.[0-9A-Za-z])")
-BADGE_END = r"(?![0-9A-Za-z+]|\.[0-9A-Za-z])"
+# A shields.io badge URL writes a literal `-` as `--` and separates its fields with a single `-`, so inside one the
+# escaped short form is replaced where a single `-`, a query or the URL's end follows it.
+BADGE = re.compile(r"https://img\.shields\.io/badge/[^\s)\"'>]+")
+BADGE_END = r"(?=-(?!-)|\?|$)"
 # Prose that describes a prerelease pin, which the GA move leaves for D00 T02 §8's documentation item.
 PRERELEASE_PROSE = re.compile(r"allowPrerelease|release candidate|\brc\b|-rc\.", re.IGNORECASE)
 SDK_VERSION = re.compile(r"(\d+)\.(\d+)\.(\d+)(?:-(preview|rc)\.(\d+)(?:\.(\d+)\.(\d+))?)?")
@@ -123,20 +126,29 @@ def rewrite_tree(root, old_sdk, new_sdk, old_runtime, new_runtime):
     pairs = [(old_sdk, new_sdk), (old_runtime, new_runtime), (short(old_sdk), short(new_sdk)),
              (short(old_runtime), short(new_runtime))]
     # A shields.io badge writes each `-` as `--` (README.md's `.NET-11.0.100--rc.2-512BD4`).
-    badges = [(old.replace("-", "--"), new.replace("-", "--")) for old, new in pairs[2:] if "-" in old]
+    badges = [(old.replace("-", "--"), new.replace("-", "--")) for old, new in pairs[2:]]
     for rel in (PROPS, *DOCS):
         path = root / rel
         if not path.is_file():
             continue
         raw = path.read_bytes().decode("utf-8")
         text = raw
-        for (old, new), end in [(pair, WHOLE[1]) for pair in pairs] + [(pair, BADGE_END) for pair in badges]:
+        for old, new in pairs:
             if old and old != new:
-                text = re.sub(WHOLE[0] + re.escape(old) + end, lambda _match, new=new: new, text)
+                text = re.sub(WHOLE[0] + re.escape(old) + WHOLE[1], lambda _match, new=new: new, text)
+        text = BADGE.sub(lambda url: rewrite_badge(url[0], badges), text)
         if text != raw:
             write_atomic(path, text.encode("utf-8"))
             changed.append(rel)
     return changed
+
+
+def rewrite_badge(url, badges):
+    """One shields.io badge URL with each escaped short version moved."""
+    for old, new in badges:
+        if old and old != new:
+            url = re.sub(WHOLE[0] + re.escape(old) + BADGE_END, lambda _match, new=new: new, url)
+    return url
 
 
 def prerelease_prose(root):

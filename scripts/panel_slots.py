@@ -208,6 +208,10 @@ _BRANCH_WRITES = frozenset(("-d", "-D", "--delete", "-m", "-M", "--move", "-c", 
 _BRANCH_QUIET = frozenset(("-v", "-vv", "--verbose", "--color", "--no-color", "--column", "--no-column",
                            "-i", "--ignore-case", "--omit-empty", "-q", "--quiet"))
 SHELL_DENY = (
+    # Any command that names the review dispatcher, whatever its options: reading a shell line well enough to tell a
+    # read-only report from a round failed three review rounds running (an abbreviation, a filename, a comment), and a
+    # delegate needs neither report (it can read .conclave/reviewers.toml). Rethought after review round 5, 2026-10-21.
+    (re.compile(r"review-dispatch", re.IGNORECASE), "runs the review dispatcher; every review is the lead's"),
     (re.compile(r"(?i)(\$env:)?\b(GIT_[A-Z0-9_]+|PAGER|EDITOR|VISUAL|LESSOPEN|LESSCLOSE)\s*="),
      "sets a variable that changes what git runs"),
     (re.compile(r"--no-verify\b"), "bypasses a hook; no session ever does"),
@@ -878,27 +882,10 @@ def _shell_forms(command: str, depth: int = 0) -> list[str]:
     return forms
 
 
-DISPATCH_REPORTS = frozenset(("--check-pin", "--list-rounds"))
-
-
-def dispatch_round(tokens: list[str]) -> bool:
-    """Whether a command segment that names the review dispatcher could start a review round. Only a direct
-    invocation (a token that is the script itself, with no `-c` before it) whose own arguments include `--check-pin`
-    or `--list-rounds` as whole tokens is a read-only report: the dispatcher answers those before it runs anything.
-    Anything else naming it, a path or a filename holding an option's text included, could start one."""
-    if not any("review-dispatch.py" in token.lower() for token in tokens):
-        return False
-    at = next((n for n, token in enumerate(tokens) if _bare(token) == "review-dispatch.py"), None)
-    return at is None or "-c" in tokens[:at] or not DISPATCH_REPORTS & set(tokens[at + 1:])
-
-
 def shell_decision(command: str) -> str | None:
     forms = _shell_forms(command or "")
     for form in forms:
         for tokens in _segments(form):
-            if dispatch_round(tokens):
-                return ("Delegates never run this: it runs a review round; every review is the lead's. Report what "
-                        "you need to the lead (standards/delegation.md).")
             for n, token in enumerate(tokens):
                 name = _bare(token)
                 if name in ("gh", "gh.exe"):
@@ -1397,6 +1384,9 @@ def _self_test() -> int:
                 "python scripts/review-dispatch.py --prompt p",
                 "python scripts/review-dispatch.py --writer claude --prompt p --record docs/reviews/--check-pin.md",
                 "python -c \"import runpy; runpy.run_path('scripts/review-dispatch.py')\" --check-pin",
+                "python scripts/review-dispatch.py --writer claude --prompt p # --check-pin",
+                "python scripts/review-dispatch.py --writer claude --prompt p > --check-pin",
+                "python scripts/review-dispatch.py --check-pin --json", "python scripts\\review-dispatch.py --list-rounds",
                 "python scripts/design-lint.py --baseline b --allow-add",
                 'git -C "R:/some repo" commit -am x', '"git.exe" commit -am x', "'git' push",
                 '"C:/Program Files/Git/cmd/git.exe" commit -m x', "/usr/bin/git add .",
@@ -1427,9 +1417,7 @@ def _self_test() -> int:
                 "git config --global --get core.hooksPath", "git config --local --list", "git config get user.name",
                 "git config list", "git tag --contains HEAD", "git branch -vv", "git branch --merged main",
                 "git remote show origin", "git remote get-url origin", "git -c color.ui=false log -1",
-                "git log --grep commit", "python scripts/review-dispatch.py --check-pin --json",
-                "python scripts\\review-dispatch.py --list-rounds --json",
-                "python scripts/review-dispatch.py --list-rounds"):
+                "git log --grep commit", "type .conclave\\reviewers.toml"):
         check(f"shell gate allows {cmd!r}", shell(cmd) is None)
     check("shell gate ignores other tools", shell("git push", "Read") is None)
     check("shell gate fails closed on unreadable input", shell("{bad", "raw") is not None)

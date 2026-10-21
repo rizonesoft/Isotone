@@ -447,6 +447,22 @@ class ReviewRound3Tests(DotnetFixture):
         self.assertIn(f'"Custom" Version="{RC2_RT}-private"', props)
         self.assertEqual(props.count(f'Version="{GA_RT}"'), 2)
 
+    def test_a_ga_badge_moves_to_the_next_ga_and_an_rc_mention_stays(self):
+        self.write("README.md", "[b](https://img.shields.io/badge/.NET-11.0.100-512BD4?logo=dotnet)\n"
+                                "[c](https://img.shields.io/badge/old-11.0.100--rc.2-gray)\n")
+        self.mod.rewrite_tree(self.root, GA_SDK, "11.0.101", GA_RT, "11.0.1")
+        text = (self.root / "README.md").read_text(encoding="utf-8")
+        self.assertIn(".NET-11.0.101-512BD4?logo", text)
+        self.assertIn("old-11.0.100--rc.2-gray", text, "a different, longer version in a badge is left alone")
+
+    def test_a_returning_finding_supersedes_the_newer_open_issue(self):
+        issues = json.dumps([{"number": 7, "title": "A", "state": "CLOSED", "labels": [{"name": "pins:resolved"}]},
+                             {"number": 8, "title": "A and B", "state": "OPEN", "labels": []}])
+        gh = FakeGh(issues=issues)
+        pin_proposal.file_issue(root=self.root, check="x", title="A", body="b", run_gh=gh)
+        self.assertEqual([c[2] for c in gh.made("issue", "reopen")], ["7"])
+        self.assertEqual([c[2] for c in gh.made("issue", "close")], ["8"])
+
     def test_a_superseded_finding_that_returns_reopens_its_issue(self):
         older = json.dumps([{"number": 7, "title": "A", "state": "OPEN", "labels": []}])
         gh = FakeGh(issues=older)
