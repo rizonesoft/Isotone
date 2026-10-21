@@ -11391,6 +11391,23 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _pwrite()
             check("parity: a clean tree's report carries no problems",
                   par.parity_report(sys.modules[__name__], load_todos())["problems"], [])
+            # Round 8: the report validates and counts one snapshot, so a
+            # file that changes underneath can never be counted unvalidated.
+            _preads: dict[str, int] = {}
+            _preal_read = par._read
+
+            def _pcounting_read(base, rel):
+                _preads[rel] = _preads.get(rel, 0) + 1
+                return _preal_read(base, rel)
+
+            par._read = _pcounting_read
+            try:
+                par.parity_report(sys.modules[__name__], load_todos())
+            finally:
+                par._read = _preal_read
+            check("parity: one report reads each configured file exactly once",
+                  _preads, {spec_path: 1 for spec in par.CATALOGS
+                            for spec_path in [spec["path"]] + [c["path"] for c in spec["columns"]]})
         finally:
             TODO_DIR, PLAN = saved_p
             __import__("shutil").rmtree(proot, ignore_errors=True)

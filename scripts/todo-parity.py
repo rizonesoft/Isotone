@@ -151,9 +151,23 @@ def _read(root: Path, rel: str) -> tuple[str | None, str]:
         return None, f"cannot be read ({error.__class__.__name__})"
 
 
-def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[str, str]]]:
+def snapshot(root: Path) -> dict[str, tuple[str | None, str]]:
+    """Every file the catalogs name, read once: path -> (text, "") or (None, why).
+
+    `parity_findings` and `parity_report` take one snapshot and work only from it, so a report never counts
+    bytes other than the ones it validated, even while a file changes underneath (independent review round 8).
+    """
+    out: dict[str, tuple[str | None, str]] = {}
+    for spec in CATALOGS:
+        for rel in [spec["path"]] + [c["path"] for c in spec["columns"]]:
+            if rel not in out:
+                out[rel] = _read(root, rel)
+    return out
+
+
+def parse_sources(root: Path, column: dict, texts: dict | None = None) -> tuple[dict[str, int], list[tuple[str, str]]]:
     """(source id -> defining line, problems) for one inventory file."""
-    text, why = _read(root, column["path"])
+    text, why = texts[column["path"]] if texts is not None else _read(root, column["path"])
     if text is None:
         return {}, [("parity-input-damaged", f"{column['path']}: the {column['column']} inventory {why}; "
                                              f"restore it from git")]
@@ -178,9 +192,9 @@ def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[
     return ids, problems
 
 
-def parse_catalog(root: Path, spec: dict) -> tuple[list[dict], list[tuple[str, str]]]:
+def parse_catalog(root: Path, spec: dict, texts: dict | None = None) -> tuple[list[dict], list[tuple[str, str]]]:
     """(rows, problems) for one catalog: each row's id, feature, source ids per column, category, status, notes."""
-    text, why = _read(root, spec["path"])
+    text, why = texts[spec["path"]] if texts is not None else _read(root, spec["path"])
     if text is None:
         return [], [("parity-input-damaged", f"{spec['path']}: the {spec['app']} catalog {why}; restore it from git")]
     rows: list[dict] = []
@@ -235,11 +249,12 @@ def _root(graph, root) -> Path:
     return Path(root) if root is not None else graph.TODO_DIR.parent
 
 
-def parity_findings(graph, todos, root=None) -> list[tuple[str, str]]:
+def parity_findings(graph, todos, root=None, texts: dict | None = None) -> list[tuple[str, str]]:
     """Every parity finding as (class, message); empty when the tree carries no `docs/parity/`."""
     root = _root(graph, root)
     if not (root / "docs" / "parity").is_dir():
         return []
+    texts = texts if texts is not None else snapshot(root)
     sections = _section_index(todos)
     loaded = graph.load_backlog()
     backlog = {e["id"] for e in loaded[0]} if loaded is not None else set()
@@ -251,13 +266,13 @@ def parity_findings(graph, todos, root=None) -> list[tuple[str, str]]:
         defined: dict[str, dict[str, int]] = {}
         readable: dict[str, bool] = {}
         for column in spec["columns"]:
-            ids, problems = parse_sources(root, column)
+            ids, problems = parse_sources(root, column, texts)
             defined[column["column"]] = ids
-            readable[column["column"]] = _read(root, column["path"])[0] is not None
+            readable[column["column"]] = texts[column["path"]][0] is not None
             out += problems
-        rows, problems = parse_catalog(root, spec)
+        rows, problems = parse_catalog(root, spec, texts)
         out += problems
-        catalog_readable = _read(root, spec["path"])[0] is not None
+        catalog_readable = texts[spec["path"]][0] is not None
         placed: dict[str, list[str]] = {}
         first_row: dict[str, int] = {}
         for row in rows:
@@ -320,11 +335,12 @@ def parity_report(graph, todos, root=None) -> dict:
     # The counts are evidence only while the catalogs validate: a damaged, empty, or drifted catalog would report
     # short counts as if they were whole (independent review 2026-10-21, rounds 1 and 2), so every parity finding
     # rides the report as a problem and `query parity` refuses it.
-    report: dict = {"catalogs": {}, "problems": [msg for _cls, msg in parity_findings(graph, todos, root)]}
+    texts = snapshot(root)
+    report: dict = {"catalogs": {}, "problems": [msg for _cls, msg in parity_findings(graph, todos, root, texts)]}
     if not (root / "docs" / "parity").is_dir():
         report["problems"].append("no docs/parity/ in this tree, so there is no catalog to report on")
     for spec in CATALOGS:
-        rows, _problems = parse_catalog(root, spec)
+        rows, _problems = parse_catalog(root, spec, texts)
         totals = {kind: 0 for kind in STATUS_KINDS}
         totals["malformed"] = 0
         phases: dict[str, dict] = {}
