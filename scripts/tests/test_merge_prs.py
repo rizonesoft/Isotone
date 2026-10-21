@@ -73,11 +73,11 @@ class FakeGh:
     """
 
     def __init__(self, prs, merge_fails=False, lands=False, view_fails=False, retarget=None, elsewhere=False,
-                 off_main=False):
+                 off_main=False, already_merged=()):
         self.calls, self.prs = [], prs
         self.merge_fails, self.lands, self.view_fails = merge_fails, lands, view_fails
         self.retarget, self.elsewhere, self.off_main = retarget, elsewhere, off_main
-        self.merged = set()
+        self.merged = {str(n) for n in already_merged}
 
     def _pr(self, n):
         return next(p for p in self.prs if str(p["number"]) == str(n))
@@ -85,16 +85,15 @@ class FakeGh:
     def __call__(self, *args, cwd=None):
         self.calls.append(args)
         if args[:2] == ("pr", "list"):
-            return json.dumps(self.prs)
+            return json.dumps([p for p in self.prs if str(p["number"]) not in self.merged])
         if args[:2] == ("pr", "view"):
             if self.view_fails:
                 raise mp.Failed("gh pr view failed: connection reset")
             p = self._pr(args[2])
             merged = args[2] in self.merged
             base = self.retarget or ("release" if merged and self.elsewhere else p["baseRefName"])
-            return json.dumps({"baseRefName": base, "headRefOid": p["headRefOid"],
-                               "state": "MERGED" if merged else "OPEN",
-                               "mergeCommit": {"oid": ("f" if self.off_main else "c") * 40} if merged else None})
+            return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN",
+                                   mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
         if args[:2] == ("pr", "merge"):
             if not self.merge_fails or self.lands:
                 self.merged.add(args[2])
@@ -328,7 +327,7 @@ class MergeTests(Base):
     def test_a_base_retargeted_since_the_listing_is_refused(self):
         gh = FakeGh([pr(1)], retarget="release")
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
-        self.assertEqual((code, gh.merges(), "changed since it was read (base release" in out), (1, [], True))
+        self.assertEqual((code, gh.merges(), "changed since it was read: targets release" in out), (1, [], True))
 
     def test_a_merge_that_landed_elsewhere_or_off_main_blocks(self):
         for kind in ("elsewhere", "off_main"):
@@ -336,6 +335,61 @@ class MergeTests(Base):
                 code, out = self.call(["run", "--campaign"], FakeGh([pr(1)], **{kind: True}), FakeGit())
                 self.assertEqual((code, "did not land on main" in out), (3, True))
                 (self.root / mp.BLOCKED).unlink()
+
+    def test_the_final_reread_rechecks_eligibility(self):
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+
+        def label_removed(*args, cwd=None):
+            out = real(*args, cwd=cwd)
+            if args[:2] == ("pr", "view"):
+                return json.dumps(dict(json.loads(out), labels=[]))
+            return out
+        code, out = self.call(["run", "--campaign"], label_removed, FakeGit())
+        self.assertEqual((code, gh.merges(), "neither dependencies nor pins" in out), (1, [], True))
+
+    def test_the_intent_is_recorded_before_the_merge_is_issued(self):
+        seen = []
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+
+        def watch(*args, cwd=None):
+            if args[:2] == ("pr", "merge"):
+                seen.append((self.root / mp.BLOCKED).exists())
+            return real(*args, cwd=cwd)
+        code, _out = self.call(["run", "--campaign"], watch, FakeGit())
+        self.assertEqual((code, seen, (self.root / mp.BLOCKED).exists()), (0, [True], False))
+
+    def test_a_record_left_by_a_killed_run_blocks_until_github_shows_it_resolved(self):
+        mp._block(self.root, 1, "merge issued, not yet verified")
+        # the merge landed elsewhere: stays blocked even though validate is green
+        code, out = self.call(["run", "--task"], FakeGh([pr(1), pr(2)], already_merged=[1], elsewhere=True), FakeGit())
+        self.assertEqual((code, "did not land on main" in out, (self.root / mp.BLOCKED).exists()), (3, True, True))
+        # the merge never happened: the record clears and the run goes on
+        gh = FakeGh([pr(1), pr(2)])
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, len(gh.merges())), (0, 1))
+
+    def test_a_record_with_an_unlevel_clone_alerts_instead_of_refusing_quietly(self):
+        mp._block(self.root, 1, "merge issued, not yet verified")
+        code, out = self.call(["run", "--task"], FakeGh([pr(1)], already_merged=[1]), FakeGit(remote="b" * 40))
+        self.assertEqual((code, "not level" in out), (3, True))
+
+    def test_a_failure_after_the_merge_is_exit_three(self):
+        git = FakeGit()
+        real = git.__call__
+
+        def head_fails(*args, cwd=None):
+            if args[:2] == ("rev-parse", "HEAD") and any(c[0] == "pull" for c in git.calls):
+                raise mp.Failed("git rev-parse HEAD failed")
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), head_fails)
+        self.assertEqual((code, (self.root / mp.BLOCKED).exists()), (3, True))
+
+    def test_an_origin_with_credentials_is_redacted(self):
+        code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]),
+                              FakeGit(origin="https://user:FAKE_SECRET@example.com/owner/repo.git"))
+        self.assertEqual((code, "FAKE_SECRET" in out, "***@example.com" in out), (1, False, True))
 
     def test_the_fetch_names_its_destination(self):
         git = FakeGit()
@@ -346,10 +400,10 @@ class MergeTests(Base):
         red = lambda r: subprocess.CompletedProcess([], 1, "1 fatal\n", "")
         code, _out = self.call(["run", "--campaign"], FakeGh([pr(1), pr(2)]), FakeGit(), validate=red)
         self.assertEqual((code, (self.root / mp.BLOCKED).exists()), (3, True))
-        gh = FakeGh([pr(2)])
+        gh = FakeGh([pr(1), pr(2)], already_merged=[1])
         code, out = self.call(["run", "--task"], gh, FakeGit(), validate=red)
-        self.assertEqual((code, gh.merges(), "left main to reconcile" in out), (3, [], True))
-        gh = FakeGh([pr(2)])
+        self.assertEqual((code, gh.merges(), "left main red" in out), (3, [], True))
+        gh = FakeGh([pr(1), pr(2)], already_merged=[1])
         code, out = self.call(["run", "--task"], gh, FakeGit())
         self.assertEqual((code, len(gh.merges()), (self.root / mp.BLOCKED).exists()), (0, 1, False))
 

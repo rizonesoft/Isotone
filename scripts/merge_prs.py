@@ -175,7 +175,9 @@ def repository(root: Path, git_fn=git) -> str:
     url = git_fn("remote", "get-url", "origin", cwd=root).strip()
     m = REMOTE_RE.search(url)
     if not m:
-        raise Failed(f"origin {url!r} is not a GitHub repository")
+        # Userinfo in a URL is a credential: it never reaches a log or the failure email (independent review round 4).
+        shown = re.sub(r"(?<=://)[^@/]+@", "***@", url)
+        raise Failed(f"origin {shown!r} is not a GitHub repository")
     return f"github.com/{m.group('owner')}/{m.group('name')}"
 
 
@@ -274,67 +276,91 @@ def open_prs(repo: str, gh_fn=gh, root: Path = ROOT) -> list[dict]:
 
 
 def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn=None) -> tuple[int, str]:
-    """Merge one pull request, pull, and validate; (exit code, the line for the run file). Any outcome where main may
-    have moved without the clone reconciled and validating leaves the blocked record, and no later run merges again
-    until `validate` passes on a reconciled clone."""
-    code, line = _merge_one(pr, repo, root, gh_fn, git_fn, validate_fn)
+    """Merge one pull request, pull, and validate; (exit code, the line for the run file).
+
+    The intent is recorded before the merge is issued (`build/merge-prs-blocked.json`) and cleared only once the merge
+    is verified or proven never to have happened, so a process killed at any point after the merge leaves the record,
+    and no later run merges until `resolve_block` has checked the recorded pull request on GitHub (independent review
+    round 4). Every failure after the merge was issued is exit 3.
+    """
+    n = pr["number"]
+    # Re-read the pull request at the last moment and judge it whole again: a base retargeted, a head pushed, a label
+    # removed, or a check gone red since the listing is refused, because `gh pr merge` acts on the pull request as it
+    # is now (independent review rounds 3 and 4).
+    try:
+        now = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", FIELDS + ",state", cwd=root) or "{}")
+    except (Failed, ValueError) as error:
+        return 1, f"merge_prs: #{n} not merged, its state cannot be read: {error}"
+    ok, why = eligible(now)
+    if not ok or now.get("headRefOid") != pr["headRefOid"] or now.get("state") != "OPEN":
+        return 1, (f"merge_prs: #{n} not merged, it changed since it was read: "
+                   f"{why or 'head ' + str(now.get('headRefOid'))[:12] + ', ' + str(now.get('state')).lower()}")
+    _block(root, n, "merge issued, not yet verified")
+    try:
+        code, line = _merge_and_verify(now, repo, root, gh_fn, git_fn, validate_fn)
+    except Failed as error:
+        code, line = 3, f"merge_prs: #{n} merge was issued, then a command failed ({error}); check it before any other work"
     if code == 3:
-        _block(root, pr["number"], line)
+        _block(root, n, line)
+    else:
+        (root / BLOCKED).unlink(missing_ok=True)
     return code, line
 
 
-def _merge_one(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_fn) -> tuple[int, str]:
+def _merge_and_verify(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_fn) -> tuple[int, str]:
     n, sha = pr["number"], pr["headRefOid"]
-    # Re-read the pull request at the last moment: a base retargeted or a head pushed since the listing is refused,
-    # because `gh pr merge` merges into whatever base the pull request names now (independent review round 3).
-    try:
-        now = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", "baseRefName,headRefOid,state",
-                               cwd=root) or "{}")
-    except (Failed, ValueError) as error:
-        return 1, f"merge_prs: #{n} not merged, its state cannot be read: {error}"
-    if now.get("baseRefName") != "main" or now.get("headRefOid") != sha or now.get("state") != "OPEN":
-        return 1, (f"merge_prs: #{n} not merged, it changed since it was read (base {now.get('baseRefName')}, "
-                   f"head {str(now.get('headRefOid'))[:12]}, {str(now.get('state')).lower()})")
     try:
         gh_fn("pr", "merge", str(n), "--repo", repo, "--rebase", "--delete-branch", "--match-head-commit", sha,
               cwd=root)
     except Failed as error:
         # gh merges first and deletes the branch after, so an error does not prove nothing changed (independent
         # review round 2): read the pull request back and decide from its state.
-        try:
-            state = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", "state", cwd=root) or "{}")
-        except (Failed, ValueError) as read_error:
-            return 3, (f"merge_prs: #{n} merge reported an error ({error}) and its state cannot be read back "
-                       f"({read_error}): the outcome is unknown; check the pull request and reconcile main before "
-                       f"any other work")
+        state = _state(n, repo, root, gh_fn)
+        if state is None:
+            return 3, (f"merge_prs: #{n} merge reported an error ({error}) and its state cannot be read back: the "
+                       f"outcome is unknown; check the pull request and reconcile main before any other work")
         if state.get("state") != "MERGED":
-            return 1, f"merge_prs: #{n} not merged ({state.get('state', 'unknown').lower()}), nothing changed: {error}"
-        # Merged despite the error (for example the branch delete failed): carry on to the pull and validate.
+            return 1, f"merge_prs: #{n} not merged ({str(state.get('state')).lower()}), nothing changed: {error}"
     try:
         git_fn("pull", "--ff-only", "origin", "main", cwd=root)
     except Failed as error:
         return 3, (f"merge_prs: #{n} MERGED on GitHub, but the pull failed, so main moved and the clone is behind: "
                    f"{error}; reconcile (git pull --ff-only origin main, then validate) before any other work")
-    # Read the destination back: the pull request merged into main, and its merge commit is on the main just pulled.
-    try:
-        after = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", "baseRefName,state,mergeCommit",
-                                 cwd=root) or "{}")
-        merged_into = after.get("baseRefName")
-        commit = (after.get("mergeCommit") or {}).get("oid", "")
-        on_main = bool(commit) and _is_ancestor(git_fn, root, commit, "HEAD")
-    except (Failed, ValueError) as error:
-        return 3, f"merge_prs: #{n} merged, but its destination cannot be read back ({error}); check it before any other work"
-    if after.get("state") != "MERGED" or merged_into != "main" or not on_main:
-        return 3, (f"merge_prs: #{n} did not land on main as read back (state {str(after.get('state')).lower()}, "
-                   f"base {merged_into}, merge commit {commit[:12] or 'none'} on main: {on_main}); check it before "
-                   f"any other work")
-    validate_fn = validate_fn or (lambda r: _run([sys.executable, "scripts/todo-graph.py", "validate"], r))
-    done = validate_fn(root)
+    verdict = _landed(n, repo, root, gh_fn, git_fn)
+    if verdict:
+        return 3, f"merge_prs: #{n} {verdict}; check it before any other work"
+    done = _validate(root, validate_fn)
     if done.returncode != 0:
         return 3, (f"merge_prs: #{n} MERGED and pulled, but validate is red on main: "
                    f"{(done.stdout or '').strip()[-200:]}; repair main before any other work")
     head = git_fn("rev-parse", "HEAD", cwd=root).strip()
     return 0, f"merge_prs: merged #{n} ({pr.get('headRefName')}) by rebase into main; main is {head[:12]}"
+
+
+def _state(n, repo: str, root: Path, gh_fn) -> dict | None:
+    try:
+        return json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", "baseRefName,state,mergeCommit",
+                                cwd=root) or "{}")
+    except (Failed, ValueError):
+        return None
+
+
+def _landed(n, repo: str, root: Path, gh_fn, git_fn) -> str | None:
+    """None when the pull request merged into main and its merge commit is on the local HEAD; else what is wrong."""
+    after = _state(n, repo, root, gh_fn)
+    if after is None:
+        return "merged, but its destination cannot be read back"
+    commit = (after.get("mergeCommit") or {}).get("oid", "")
+    on_main = bool(commit) and _is_ancestor(git_fn, root, commit, "HEAD")
+    if after.get("state") != "MERGED" or after.get("baseRefName") != "main" or not on_main:
+        return (f"did not land on main as read back (state {str(after.get('state')).lower()}, base "
+                f"{after.get('baseRefName')}, merge commit {commit[:12] or 'none'} on main: {on_main})")
+    return None
+
+
+def _validate(root: Path, validate_fn):
+    validate_fn = validate_fn or (lambda r: _run([sys.executable, "scripts/todo-graph.py", "validate"], r))
+    return validate_fn(root)
 
 
 def _is_ancestor(git_fn, root: Path, commit: str, ref: str) -> bool:
@@ -345,21 +371,48 @@ def _is_ancestor(git_fn, root: Path, commit: str, ref: str) -> bool:
         return False
 
 
-def _unblock(root: Path, git_fn, validate_fn) -> str | None:
-    """None when no earlier merge left main unreconciled, or when the clone now validates (the record is cleared);
-    else why the run must not merge."""
+def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | None:
+    """None when no earlier merge is unresolved, or when the recorded one is now resolved (the record is cleared);
+    else why this run must not merge.
+
+    Resolution is read from GitHub, not inferred from a green tree (independent review round 4): a pull request still
+    open or closed unmerged never changed anything; a merged one is resolved only when it merged into main, its merge
+    commit is on the freshly fetched main, the clone is level with that main, and validate passes.
+    """
     record = blocked(root)
     if record is None:
         return None
-    validate_fn = validate_fn or (lambda r: _run([sys.executable, "scripts/todo-graph.py", "validate"], r))
-    if validate_fn(root).returncode != 0:
-        return (f"an earlier merge (#{record.get('pr')}) left main to reconcile and validate is still red: "
-                f"{record.get('why', '')[:160]}")
+    n = record.get("pr")
+    state = _state(n, repo, root, gh_fn)
+    if state is None:
+        return f"an earlier merge (#{n}) is unresolved and its state cannot be read: {record.get('why', '')[:160]}"
+    if state.get("state") in ("OPEN", "CLOSED"):
+        (root / BLOCKED).unlink(missing_ok=True)
+        return None
+    try:
+        git_fn("fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main", cwd=root)
+        level = git_fn("rev-parse", "HEAD", cwd=root).strip() == git_fn("rev-parse", "origin/main", cwd=root).strip()
+    except Failed as error:
+        return f"an earlier merge (#{n}) is unresolved and main cannot be read: {error}"
+    if not level:
+        return f"an earlier merge (#{n}) moved main and this clone is not level with it; reconcile, then validate"
+    verdict = _landed(n, repo, root, gh_fn, git_fn)
+    if verdict:
+        return f"an earlier merge (#{n}) {verdict}"
+    if _validate(root, validate_fn).returncode != 0:
+        return f"an earlier merge (#{n}) left main red: validate fails; repair main"
     (root / BLOCKED).unlink(missing_ok=True)
     return None
 
 
 def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int:
+    if args.mode == "run" and blocked(root) is not None:
+        # An unresolved earlier merge outranks every busy-clone refusal: it may have moved main, so it is a failure
+        # that alerts until it is resolved, never a quiet exit 0.
+        stuck = resolve_block(root, repository(root, git_fn), gh_fn, git_fn, validate_fn)
+        if stuck:
+            print(f"merge_prs: not merging: {stuck}", file=sys.stderr)
+            return 3
     try:
         repo = repository(root, git_fn)
         preflight(root, args.campaign, git_fn, graph, active_fn)
@@ -379,18 +432,14 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
     verdicts = [(pr, *eligible(pr)) for pr in prs]
     if args.mode == "check":
         print(f"merge_prs: {preflight_line} ({repo})")
+        if blocked(root) is not None:
+            print(f"  blocked by an unresolved earlier merge: {blocked(root)}")
         for pr, ok, why in verdicts:
             print(f"  #{pr['number']} {'eligible' if ok else 'not eligible: ' + why}")
         if not verdicts:
             print("  no open pull requests")
         return 0
     ready = [pr for pr, ok, _why in verdicts if ok]
-    if ready:
-        stuck = _unblock(root, git_fn, validate_fn)
-        if stuck:
-            # A red main after a merge is a real failure: no further outward merge until it is repaired.
-            print(f"merge_prs: not merging: {stuck}", file=sys.stderr)
-            return 3
     if not ready:
         print("merge_prs: nothing eligible" + "".join(f"; #{pr['number']} {why}" for pr, ok, why in verdicts if not ok))
         return 0
