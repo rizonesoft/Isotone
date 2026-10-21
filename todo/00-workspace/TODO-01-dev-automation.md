@@ -20,6 +20,9 @@ track: W1
 <!-- claim: count "^    \"display-session\",$" scripts/todo-graph.py = 1 -->
 <!-- claim: count "^    \"operator\",$" scripts/todo-graph.py = 1 -->
 <!-- claim: exists .conclave/reviewers.toml -->
+<!-- claim: count "^effort = \"medium\"$" .conclave/reviewers.toml = 1 -->
+<!-- claim: count "at most 22 rounds" .claude/skills/review-todo-section/SKILL.md = 1 -->
+<!-- claim: count "from round 9 on" .claude/skills/review-todo-section/SKILL.md = 1 -->
 
 ## Inputs
 
