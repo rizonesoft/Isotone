@@ -224,3 +224,25 @@ Round 5 reviewed `c5a662e`. Every finding was checked and holds; all three are f
 3. Fixed. `file_issue` closes every other open issue of the check as superseded before it reopens or keeps the matching one, so a returning finding never leaves a newer, obsolete issue open.
 
 Record advisory: noted.
+
+## Round 6: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T01:33:15Z
+- Effort: high
+- Lines: 13
+- Digest: e54378437f988757
+
+## adversarial: approve
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: approve
+
+## record: advisory
+
+The claimed full-suite and mutation totals were not independently rerun because those runs create files. Verification used candidate and parent source, regression cases with writes mocked in memory, and stateful issue-lifecycle probes. No files were modified.
+
+OVERALL: approve
