@@ -47,6 +47,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 BOT_AUTHORS = {"app/dependabot", "dependabot[bot]"}
@@ -61,6 +62,11 @@ STARTED_RE = re.compile(r"^>\s*\*\*Started:\*\*", re.M)
 REMOTE_RE = re.compile(r"^(?:https://(?:[^@/]+@)?github\.com/|ssh://git@github\.com/|git@github\.com:)"
                        r"(?P<owner>[A-Za-z0-9_.-]+)/(?P<name>[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
 NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
+# Every git and gh call is bounded, and an intent record whose pull request still reads OPEN is cleared only after
+# SETTLE_SECONDS, far past any bounded call: a merge issued by a run that was killed cannot land after the record
+# that guards it is gone (independent review round 7).
+COMMAND_TIMEOUT = 300
+SETTLE_SECONDS = 3600
 
 
 class Refused(Exception):
@@ -72,8 +78,11 @@ class Failed(Exception):
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(argv, cwd=str(cwd), capture_output=True, text=True, encoding="utf-8", errors="replace",
-                          creationflags=NO_WINDOW)
+    try:
+        return subprocess.run(argv, cwd=str(cwd), capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              creationflags=NO_WINDOW, timeout=COMMAND_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(argv, 124, "", f"timed out after {COMMAND_TIMEOUT}s")
 
 
 def git(*args: str, cwd: Path = ROOT) -> str:
@@ -239,8 +248,10 @@ def blocked(root: Path) -> dict | None:
 def _block(root: Path, pr: int, why: str) -> None:
     path = root / BLOCKED
     path.parent.mkdir(parents=True, exist_ok=True)
+    earlier = blocked(root)
+    issued = earlier.get("issued_at") if earlier and earlier.get("pr") == pr else None
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps({"pr": pr, "why": why}, indent=2), encoding="utf-8")
+    tmp.write_text(json.dumps({"pr": pr, "why": why, "issued_at": issued or time.time()}, indent=2), encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -266,6 +277,64 @@ def preflight(root: Path, campaign: bool, git_fn=git, graph=None, active_fn=camp
         raise Refused(f"a section is in progress: {', '.join(busy)}")
 
 
+def _glob_re(pattern: str) -> re.Pattern:
+    out, i = "", 0
+    while i < len(pattern):
+        if pattern.startswith("**", i):
+            out, i = out + ".*", i + 2
+        elif pattern[i] == "*":
+            out, i = out + "[^/]*", i + 1
+        elif pattern[i] == "?":
+            out, i = out + "[^/]", i + 1
+        else:
+            out, i = out + re.escape(pattern[i]), i + 1
+    return re.compile(f"^{out}$")
+
+
+def _pull_request_trigger(text: str) -> tuple[bool, list[str] | None]:
+    """(runs on pull requests, its `paths` filter or None) from a workflow file's `on:` block."""
+    lines = text.splitlines()
+    try:
+        start = next(i for i, l in enumerate(lines) if re.match(r"^\s*pull_request\s*:", l) and
+                     not l.lstrip().startswith("#"))
+    except StopIteration:
+        return False, None
+    indent = len(lines[start]) - len(lines[start].lstrip())
+    paths, in_paths, paths_indent = None, False, 0
+    for line in lines[start + 1:]:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        here = len(line) - len(line.lstrip())
+        if here <= indent:
+            break
+        if re.match(r"^\s*paths\s*:", line):
+            paths, in_paths, paths_indent = [], True, here
+            continue
+        if in_paths:
+            m = re.match(r"^\s*-\s*['\"]?([^'\"]+?)['\"]?\s*$", line)
+            if m and here >= paths_indent:
+                paths.append(m.group(1))
+            else:
+                in_paths = False
+    return True, paths
+
+
+def expected_workflows(root: Path, files: list[str]) -> list[str]:
+    """The workflow names GitHub should run for a pull request changing `files`: every workflow under
+    `.github/workflows/` triggered on pull requests whose `paths` filter, if any, matches a changed file."""
+    names = []
+    for wf in sorted((root / ".github" / "workflows").glob("*.yml")):
+        text = wf.read_text(encoding="utf-8")
+        runs, paths = _pull_request_trigger(text)
+        if not runs:
+            continue
+        if paths is not None and not any(_glob_re(pat).match(f) for pat in paths for f in files):
+            continue
+        m = re.search(r"(?m)^name:\s*(.+?)\s*$", text)
+        names.append(m.group(1).strip("'\"") if m else wf.stem)
+    return names
+
+
 def _checks_pass(pr: dict) -> tuple[bool, str]:
     checks = pr.get("statusCheckRollup") or []
     if not checks:
@@ -280,7 +349,7 @@ def _checks_pass(pr: dict) -> tuple[bool, str]:
     return True, ""
 
 
-def eligible(pr: dict) -> tuple[bool, str]:
+def eligible(pr: dict, root: Path = ROOT) -> tuple[bool, str]:
     """(eligible, the first reason it is not)."""
     author = (pr.get("author") or {}).get("login", "")
     branch = pr.get("headRefName", "")
@@ -306,6 +375,12 @@ def eligible(pr: dict) -> tuple[bool, str]:
     ok, why = _checks_pass(pr)
     if not ok:
         return False, why
+    # Every workflow that should have run for these files must have reported, not only the ones that did: a pins
+    # pull request whose plan-gates dispatch failed must not merge on build alone (independent review round 7).
+    ran = {c.get("workflowName") for c in pr.get("statusCheckRollup") or [] if c.get("workflowName")}
+    missing = [w for w in expected_workflows(root, [f.get("path", "") for f in files]) if w not in ran]
+    if missing:
+        return False, f"workflow {', '.join(missing)} has not reported on it"
     if pr.get("mergeable") != "MERGEABLE":
         return False, f"mergeable is {str(pr.get('mergeable')).lower()}"
     if pr.get("mergeStateStatus") != "CLEAN":
@@ -335,7 +410,7 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
         now = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", FIELDS + ",state", cwd=root) or "{}")
     except (Failed, ValueError) as error:
         return 1, f"merge_prs: #{n} not merged, its state cannot be read: {error}"
-    ok, why = eligible(now)
+    ok, why = eligible(now, root)
     if not ok or now.get("headRefOid") != pr["headRefOid"] or now.get("state") != "OPEN":
         return 1, (f"merge_prs: #{n} not merged, it changed since it was read: "
                    f"{why or 'head ' + str(now.get('headRefOid'))[:12] + ', ' + str(now.get('state')).lower()}")
@@ -442,6 +517,13 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
     if state is None:
         return f"an earlier merge (#{n}) is unresolved and its state cannot be read: {record.get('why', '')[:160]}"
     if state.get("state") in ("OPEN", "CLOSED"):
+        # Not merged now does not prove it never will be: a merge issued by a killed run may still be in flight.
+        # The record clears only once SETTLE_SECONDS have passed since the merge was issued; until then the clone is
+        # busy, not failed (independent review round 7).
+        issued = record.get("issued_at")
+        if not isinstance(issued, (int, float)) or time.time() - issued < SETTLE_SECONDS:
+            raise Refused(f"an earlier merge of #{n} still reads {state.get('state').lower()} and may be in flight; "
+                          f"it settles {SETTLE_SECONDS // 60} minutes after it was issued")
         (root / BLOCKED).unlink(missing_ok=True)
         return None
     try:
@@ -500,7 +582,7 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
     except (Failed, ValueError) as error:
         print(f"merge_prs: cannot list pull requests: {error}", file=sys.stderr)
         return 1
-    verdicts = [(pr, *eligible(pr)) for pr in prs]
+    verdicts = [(pr, *eligible(pr, root)) for pr in prs]
     if args.mode == "check":
         print(f"merge_prs: {preflight_line} ({repo})")
         if blocked(root) is not None:

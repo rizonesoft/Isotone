@@ -30,7 +30,7 @@ def pr(number=1, **over):
         "baseRefName": "main", "isDraft": False, "headRefName": f"dependabot/nuget/x-{number}",
         "headRefOid": f"{number:040d}", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
         "statusCheckRollup": [{"__typename": "CheckRun", "name": "build-windows", "status": "COMPLETED",
-                               "conclusion": "SUCCESS"}],
+                               "conclusion": "SUCCESS", "workflowName": "build"}],
         "files": [{"path": "Directory.Packages.props"}], "changedFiles": 1, "createdAt": f"2026-10-2{number}T00:00:00Z",
     }
     base.update(over)
@@ -256,8 +256,22 @@ class EligibilityTests(unittest.TestCase):
         self.assertEqual((ok, "file list is incomplete (1 of 150" in why), (False, True))
         self.assertIn("incomplete", self.reason(changedFiles=None)[1])
 
+    def test_every_expected_workflow_must_have_reported(self):
+        # A pins pull request changing scripts needs build and plan-gates; build alone is not enough.
+        ok, why = self.reason(author={"login": "app/github-actions"}, headRefName="pins/x", labels=[{"name": "pins"}],
+                              files=[{"path": "scripts/check-local-tools.py"}])
+        self.assertEqual((ok, "workflow plan-gates has not reported" in why), (False, True))
+        both = [{"__typename": "CheckRun", "name": n, "status": "COMPLETED", "conclusion": "SUCCESS", "workflowName": w}
+                for n, w in (("build-windows", "build"), ("plan-gates", "plan-gates"))]
+        self.assertTrue(self.reason(files=[{"path": "scripts/x.py"}], statusCheckRollup=both)[0])
+
+    def test_the_expected_workflows_follow_the_path_filters(self):
+        self.assertEqual(mp.expected_workflows(REPO, ["Directory.Packages.props"]), ["build"])
+        self.assertEqual(mp.expected_workflows(REPO, ["todo/README.md"]), ["build", "plan-gates"])
+
     def test_skipped_and_neutral_checks_pass(self):
-        rollup = [{"__typename": "CheckRun", "name": "a", "status": "COMPLETED", "conclusion": "SKIPPED"},
+        rollup = [{"__typename": "CheckRun", "name": "a", "status": "COMPLETED", "conclusion": "SKIPPED",
+                   "workflowName": "build"},
                   {"__typename": "CheckRun", "name": "b", "status": "COMPLETED", "conclusion": "NEUTRAL"},
                   {"__typename": "StatusContext", "context": "c", "state": "SUCCESS"}]
         self.assertTrue(self.reason(statusCheckRollup=rollup)[0])
@@ -360,12 +374,28 @@ class MergeTests(Base):
         code, _out = self.call(["run", "--campaign"], watch, FakeGit())
         self.assertEqual((code, seen, (self.root / mp.BLOCKED).exists()), (0, [True], False))
 
+    def test_an_open_intent_settles_before_it_clears(self):
+        mp._block(self.root, 1, "merge issued, not yet verified")
+        gh = FakeGh([pr(1), pr(2)])
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, "may be in flight" in out, gh.merges(), (self.root / mp.BLOCKED).exists()),
+                         (0, True, [], True))
+        record = json.loads((self.root / mp.BLOCKED).read_text(encoding="utf-8"))
+        record["issued_at"] -= mp.SETTLE_SECONDS + 1
+        (self.root / mp.BLOCKED).write_text(json.dumps(record), encoding="utf-8")
+        gh = FakeGh([pr(1), pr(2)])
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, len(gh.merges())), (0, 1))
+
     def test_a_record_left_by_a_killed_run_blocks_until_github_shows_it_resolved(self):
         mp._block(self.root, 1, "merge issued, not yet verified")
         # the merge landed elsewhere: stays blocked even though validate is green
         code, out = self.call(["run", "--task"], FakeGh([pr(1), pr(2)], already_merged=[1], elsewhere=True), FakeGit())
         self.assertEqual((code, "did not land on main" in out, (self.root / mp.BLOCKED).exists()), (3, True, True))
-        # the merge never happened: the record clears and the run goes on
+        # the merge never happened and the record has settled: it clears and the run goes on
+        record = json.loads((self.root / mp.BLOCKED).read_text(encoding="utf-8"))
+        record["issued_at"] -= mp.SETTLE_SECONDS + 1
+        (self.root / mp.BLOCKED).write_text(json.dumps(record), encoding="utf-8")
         gh = FakeGh([pr(1), pr(2)])
         code, out = self.call(["run", "--task"], gh, FakeGit())
         self.assertEqual((code, len(gh.merges())), (0, 1))
