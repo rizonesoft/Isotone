@@ -63,13 +63,17 @@ class FakeGit:
 
 
 class FakeGh:
-    def __init__(self, prs, merge_fails=False):
-        self.calls, self.prs, self.merge_fails = [], prs, merge_fails
+    def __init__(self, prs, merge_fails=False, state_after="OPEN"):
+        self.calls, self.prs, self.merge_fails, self.state_after = [], prs, merge_fails, state_after
 
     def __call__(self, *args, cwd=None):
         self.calls.append(args)
         if args[:2] == ("pr", "list"):
             return json.dumps(self.prs)
+        if args[:2] == ("pr", "view"):
+            if self.state_after is None:
+                raise mp.Failed("gh pr view failed: connection reset")
+            return json.dumps({"state": self.state_after})
         if args[:2] == ("pr", "merge") and self.merge_fails:
             raise mp.Failed("gh pr merge failed: head commit does not match")
         return ""
@@ -241,10 +245,10 @@ class MergeTests(Base):
         gh, git = FakeGh([pr(2), pr(1)]), FakeGit()
         code, out = self.call(["run", "--campaign"], gh, git)
         self.assertEqual(code, 0)
-        self.assertEqual(gh.merges(), [("pr", "merge", "1", "--repo", "rizonesoft/Isotone", "--rebase",
+        self.assertEqual(gh.merges(), [("pr", "merge", "1", "--repo", "github.com/rizonesoft/Isotone", "--rebase",
                                         "--delete-branch", "--match-head-commit", f"{1:040d}")])
         listing = [c for c in gh.calls if c[:2] == ("pr", "list")][0]
-        self.assertEqual(listing[2:4], ("--repo", "rizonesoft/Isotone"))
+        self.assertEqual(listing[2:4], ("--repo", "github.com/rizonesoft/Isotone"))
         self.assertIn(("pull", "--ff-only", "origin", "main"), git.calls)
         self.assertIn("merged #1", out)
 
@@ -270,11 +274,24 @@ class MergeTests(Base):
     def test_every_github_call_names_the_origin_repository(self):
         gh = FakeGh([pr(1)])
         self.call(["run", "--campaign"], gh, FakeGit(origin="git@github.com:someone/Fork.git"))
-        self.assertTrue(gh.calls and all("--repo" in c and c[c.index("--repo") + 1] == "someone/Fork" for c in gh.calls))
+        self.assertTrue(gh.calls and all("--repo" in c and c[c.index("--repo") + 1] == "github.com/someone/Fork" for c in gh.calls))
 
     def test_an_origin_that_is_not_github_fails(self):
-        code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(origin="https://example.com/x.git"))
-        self.assertEqual((code, "is not a GitHub repository" in out), (1, True))
+        for origin in ("https://example.com/x.git", "https://notgithub.com/rizonesoft/Isotone.git",
+                       "https://github.example.com/rizonesoft/Isotone.git", "git@ghe.corp:rizonesoft/Isotone.git"):
+            with self.subTest(origin=origin):
+                gh = FakeGh([pr(1)])
+                code, out = self.call(["run", "--campaign"], gh, FakeGit(origin=origin))
+                self.assertEqual((code, "is not a GitHub repository" in out, gh.merges()), (1, True, []))
+
+    def test_a_merge_error_after_the_merge_landed_carries_on_to_reconcile(self):
+        gh, git = FakeGh([pr(1)], merge_fails=True, state_after="MERGED"), FakeGit()
+        code, out = self.call(["run", "--campaign"], gh, git)
+        self.assertEqual((code, ("pull", "--ff-only", "origin", "main") in git.calls, "merged #1" in out), (0, True, True))
+
+    def test_a_merge_error_with_an_unreadable_state_blocks(self):
+        code, out = self.call(["run", "--campaign"], FakeGh([pr(1)], merge_fails=True, state_after=None), FakeGit())
+        self.assertEqual((code, "outcome is unknown" in out), (3, True))
 
 
 class RealTreeTests(unittest.TestCase):

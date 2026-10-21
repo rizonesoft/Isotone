@@ -56,7 +56,10 @@ PASSING = {"SUCCESS", "SKIPPED", "NEUTRAL"}
 FIELDS = ("number,author,labels,baseRefName,isDraft,headRefName,headRefOid,mergeable,mergeStateStatus,"
           "statusCheckRollup,files,changedFiles,createdAt")
 STARTED_RE = re.compile(r"^>\s*\*\*Started:\*\*", re.M)
-REMOTE_RE = re.compile(r"github\.com[:/](?P<owner>[A-Za-z0-9_.-]+)/(?P<name>[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
+# origin must be github.com itself, over HTTPS or SSH; any other host (an Enterprise server, a look-alike name) is
+# refused (independent review round 2).
+REMOTE_RE = re.compile(r"^(?:https://(?:[^@/]+@)?github\.com/|ssh://git@github\.com/|git@github\.com:)"
+                       r"(?P<owner>[A-Za-z0-9_.-]+)/(?P<name>[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
 NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 
 
@@ -167,12 +170,13 @@ def clone_lock(root: Path):
 
 
 def repository(root: Path, git_fn=git) -> str:
-    """'<owner>/<name>' from origin's URL; every GitHub call names it, so nothing can redirect a merge elsewhere."""
+    """'github.com/<owner>/<name>' from origin's URL; every GitHub call names it with its host, so neither GH_REPO nor
+    GH_HOST can redirect a merge to another repository or server."""
     url = git_fn("remote", "get-url", "origin", cwd=root).strip()
     m = REMOTE_RE.search(url)
     if not m:
         raise Failed(f"origin {url!r} is not a GitHub repository")
-    return f"{m.group('owner')}/{m.group('name')}"
+    return f"github.com/{m.group('owner')}/{m.group('name')}"
 
 
 def preflight(root: Path, campaign: bool, git_fn=git, graph=None, active_fn=campaign_active) -> None:
@@ -255,7 +259,17 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
         gh_fn("pr", "merge", str(n), "--repo", repo, "--rebase", "--delete-branch", "--match-head-commit", sha,
               cwd=root)
     except Failed as error:
-        return 1, f"merge_prs: #{n} not merged, nothing changed on GitHub: {error}"
+        # gh merges first and deletes the branch after, so an error does not prove nothing changed (independent
+        # review round 2): read the pull request back and decide from its state.
+        try:
+            state = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", "state", cwd=root) or "{}")
+        except (Failed, ValueError) as read_error:
+            return 3, (f"merge_prs: #{n} merge reported an error ({error}) and its state cannot be read back "
+                       f"({read_error}): the outcome is unknown; check the pull request and reconcile main before "
+                       f"any other work")
+        if state.get("state") != "MERGED":
+            return 1, f"merge_prs: #{n} not merged ({state.get('state', 'unknown').lower()}), nothing changed: {error}"
+        # Merged despite the error (for example the branch delete failed): carry on to the pull and validate.
     try:
         git_fn("pull", "--ff-only", "origin", "main", cwd=root)
     except Failed as error:
