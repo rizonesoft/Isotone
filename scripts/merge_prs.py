@@ -79,12 +79,40 @@ class Failed(Exception):
     """A git or gh command failed: a real failure, which always exits nonzero."""
 
 
-def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """Stop a timed-out command and everything it started, so no descendant keeps the output pipes (and the locks
+    this run holds) open past the bound (independent review round 11)."""
     try:
-        return subprocess.run(argv, cwd=str(cwd), capture_output=True, text=True, encoding="utf-8", errors="replace",
-                              creationflags=NO_WINDOW, timeout=COMMAND_TIMEOUT)
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True, timeout=30,
+                           creationflags=NO_WINDOW)
+        else:
+            import signal
+            os.killpg(proc.pid, signal.SIGKILL)
+    except (OSError, subprocess.TimeoutExpired):
+        # Best effort: the process may already be gone. The caller still reports the timeout as a failure (124).
+        pass
+    try:
+        proc.kill()
+    except OSError:
+        # Already exited; nothing is hidden, the timeout result stands.
+        pass
+
+
+def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    proc = subprocess.Popen(argv, cwd=str(cwd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                            encoding="utf-8", errors="replace", creationflags=NO_WINDOW,
+                            start_new_session=(os.name != "nt"))
+    try:
+        out, err = proc.communicate(timeout=COMMAND_TIMEOUT)
+        return subprocess.CompletedProcess(argv, proc.returncode, out, err)
     except subprocess.TimeoutExpired:
-        return subprocess.CompletedProcess(argv, 124, "", f"timed out after {COMMAND_TIMEOUT}s")
+        _kill_tree(proc)
+        try:
+            out, err = proc.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            out, err = "", ""
+        return subprocess.CompletedProcess(argv, 124, out or "", f"timed out after {COMMAND_TIMEOUT}s")
 
 
 def git(*args: str, cwd: Path = ROOT) -> str:
@@ -380,6 +408,10 @@ def eligible(pr: dict, root: Path = ROOT) -> tuple[bool, str]:
         return False, f"its file list is incomplete ({len(files)} of {pr.get('changedFiles')} files read)"
     if branch.startswith("pins/dotnet-") or any(f.get("path") == "global.json" for f in files):
         return False, "a .NET SDK pin is D00 T02 §8's section work"
+    if any(str(f.get("changeType", "")).upper() not in ("ADDED", "MODIFIED", "DELETED") for f in files):
+        # A rename or copy hides its old path from this list, so a renamed global.json could pass; neither bot
+        # renames files, so any such change waits for a person (independent review round 11).
+        return False, "it renames or copies a file, which the bots never do"
     if pr.get("baseRefName") != "main":
         return False, f"targets {pr.get('baseRefName')}, not main"
     if pr.get("isDraft"):
@@ -400,9 +432,32 @@ def eligible(pr: dict, root: Path = ROOT) -> tuple[bool, str]:
     return True, ""
 
 
+def workflows_green(pr: dict, repo: str, root: Path, gh_fn=gh) -> tuple[bool, str]:
+    """(every expected workflow's latest run on the head commit completed with success, the first reason not).
+
+    A workflow run concludes `success` only when all its jobs did, so a job that has not reported cannot hide behind
+    another job's green check (independent review round 11)."""
+    runs = json.loads(gh_fn("run", "list", "--repo", repo, "--commit", pr["headRefOid"], "--limit", "50",
+                            "--json", "workflowName,status,conclusion,createdAt", cwd=root) or "[]")
+    latest: dict[str, dict] = {}
+    for run in sorted(runs, key=lambda r: r.get("createdAt", "")):
+        latest[run.get("workflowName", "")] = run
+    for name in expected_workflows(root, [f.get("path", "") for f in pr.get("files") or []]):
+        run = latest.get(name)
+        if run is None:
+            return False, f"workflow {name} has no run on its head commit"
+        if run.get("status") != "completed" or run.get("conclusion") != "success":
+            return False, f"workflow {name} is {run.get('status')}/{run.get('conclusion') or 'pending'}"
+    return True, ""
+
+
 def open_prs(repo: str, gh_fn=gh, root: Path = ROOT) -> list[dict]:
-    prs = json.loads(gh_fn("pr", "list", "--repo", repo, "--state", "open", "--base", "main", "--limit", "50",
-                           "--json", FIELDS, cwd=root) or "[]")
+    """The open pull requests on main, oldest first, each read with `gh pr view`: the list reports mergeability as
+    UNKNOWN until GitHub computes it, and viewing a pull request is what makes it compute."""
+    listed = json.loads(gh_fn("pr", "list", "--repo", repo, "--state", "open", "--base", "main", "--limit", "50",
+                              "--json", "number", cwd=root) or "[]")
+    prs = [json.loads(gh_fn("pr", "view", str(p["number"]), "--repo", repo, "--json", FIELDS + ",state",
+                            cwd=root) or "{}") for p in listed]
     return sorted(prs, key=lambda p: (p.get("createdAt", ""), p.get("number", 0)))
 
 
@@ -423,6 +478,11 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
     except (Failed, ValueError) as error:
         return 1, f"merge_prs: #{n} not merged, its state cannot be read: {error}"
     ok, why = eligible(now, root)
+    if ok:
+        try:
+            ok, why = workflows_green(now, repo, root, gh_fn)
+        except (Failed, ValueError) as error:
+            ok, why = False, f"its workflow runs cannot be read: {error}"
     if not ok or now.get("headRefOid") != pr["headRefOid"] or now.get("state") != "OPEN":
         return 1, (f"merge_prs: #{n} not merged, it changed since it was read: "
                    f"{why or 'head ' + str(now.get('headRefOid'))[:12] + ', ' + str(now.get('state')).lower()}")
@@ -601,6 +661,14 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         print(f"merge_prs: cannot list pull requests: {error}", file=sys.stderr)
         return 1
     verdicts = [(pr, *eligible(pr, root)) for pr in prs]
+    for i, (pr, ok, _why) in enumerate(verdicts):
+        if ok:
+            try:
+                green, why = workflows_green(pr, repo, root, gh_fn)
+            except (Failed, ValueError) as error:
+                green, why = False, f"its workflow runs cannot be read: {error}"
+            if not green:
+                verdicts[i] = (pr, False, why)
     if args.mode == "check":
         print(f"merge_prs: {preflight_line} ({repo})")
         if blocked(root) is not None:

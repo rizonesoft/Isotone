@@ -31,7 +31,7 @@ def pr(number=1, **over):
         "headRefOid": f"{number:040d}", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
         "statusCheckRollup": [{"__typename": "CheckRun", "name": "build-windows", "status": "COMPLETED",
                                "conclusion": "SUCCESS", "workflowName": "build"}],
-        "files": [{"path": "Directory.Packages.props"}], "changedFiles": 1, "createdAt": f"2026-10-2{number}T00:00:00Z",
+        "files": [{"path": "Directory.Packages.props", "changeType": "MODIFIED"}], "changedFiles": 1, "createdAt": f"2026-10-2{number}T00:00:00Z",
     }
     base.update(over)
     return base
@@ -78,6 +78,7 @@ class FakeGh:
         self.merge_fails, self.lands, self.view_fails = merge_fails, lands, view_fails
         self.retarget, self.elsewhere, self.off_main = retarget, elsewhere, off_main
         self.merged = {str(n) for n in already_merged}
+        self.views: dict[str, int] = {}
 
     def _pr(self, n):
         return next(p for p in self.prs if str(p["number"]) == str(n))
@@ -90,8 +91,11 @@ class FakeGh:
             if self.view_fails:
                 raise mp.Failed("gh pr view failed: connection reset")
             p = self._pr(args[2])
+            self.views[args[2]] = self.views.get(args[2], 0) + 1
             merged = args[2] in self.merged
-            base = self.retarget or ("release" if merged and self.elsewhere else p["baseRefName"])
+            # A retarget lands between the listing (first read) and the final re-read.
+            retargeted = self.retarget if self.views[args[2]] >= 2 else None
+            base = retargeted or ("release" if merged and self.elsewhere else p["baseRefName"])
             return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN",
                                    mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
         if args[:2] == ("pr", "merge"):
@@ -256,14 +260,37 @@ class EligibilityTests(unittest.TestCase):
         self.assertEqual((ok, "file list is incomplete (1 of 150" in why), (False, True))
         self.assertIn("incomplete", self.reason(changedFiles=None)[1])
 
+    def test_a_rename_or_copy_is_refused(self):
+        for kind in ("RENAMED", "COPIED"):
+            with self.subTest(kind=kind):
+                ok, why = self.reason(files=[{"path": "old-global.json", "changeType": kind}])
+                self.assertEqual((ok, "renames or copies" in why), (False, True))
+
     def test_every_expected_workflow_must_have_reported(self):
         # A pins pull request changing scripts needs build and plan-gates; build alone is not enough.
         ok, why = self.reason(author={"login": "app/github-actions"}, headRefName="pins/x", labels=[{"name": "pins"}],
-                              files=[{"path": "scripts/check-local-tools.py"}])
+                              files=[{"path": "scripts/check-local-tools.py", "changeType": "MODIFIED"}])
         self.assertEqual((ok, "workflow plan-gates has not reported" in why), (False, True))
         both = [{"__typename": "CheckRun", "name": n, "status": "COMPLETED", "conclusion": "SUCCESS", "workflowName": w}
                 for n, w in (("build-windows", "build"), ("plan-gates", "plan-gates"))]
-        self.assertTrue(self.reason(files=[{"path": "scripts/x.py"}], statusCheckRollup=both)[0])
+        self.assertTrue(self.reason(files=[{"path": "scripts/x.py", "changeType": "MODIFIED"}], statusCheckRollup=both)[0])
+
+    def test_every_expected_workflow_run_must_have_completed_green(self):
+        p = pr(files=[{"path": "scripts/x.py", "changeType": "MODIFIED"}])
+        def runs(*items):
+            return lambda *a, cwd=None: json.dumps([{"workflowName": w, "status": s, "conclusion": c, "createdAt": at}
+                                                    for w, s, c, at in items])
+        cases = [
+            (runs(("build", "completed", "success", "1")), False, "plan-gates has no run"),
+            (runs(("build", "completed", "success", "1"), ("plan-gates", "in_progress", "", "1")), False, "in_progress"),
+            (runs(("build", "completed", "success", "1"), ("plan-gates", "completed", "failure", "1")), False, "failure"),
+            (runs(("build", "completed", "success", "1"), ("plan-gates", "completed", "failure", "1"),
+                  ("plan-gates", "completed", "success", "2")), True, ""),
+        ]
+        for fake, want, needle in cases:
+            with self.subTest(needle=needle):
+                ok, why = mp.workflows_green(p, "github.com/rizonesoft/Isotone", REPO, fake)
+                self.assertEqual((ok, needle in why), (want, True))
 
     def test_the_expected_workflows_follow_the_path_filters(self):
         self.assertEqual(mp.expected_workflows(REPO, ["Directory.Packages.props"]), ["build"])
@@ -359,7 +386,7 @@ class MergeTests(Base):
 
         def label_removed(*args, cwd=None):
             out = real(*args, cwd=cwd)
-            if args[:2] == ("pr", "view"):
+            if args[:2] == ("pr", "view") and gh.views.get(args[2], 0) >= 2:
                 return json.dumps(dict(json.loads(out), labels=[]))
             return out
         code, out = self.call(["run", "--campaign"], label_removed, FakeGit())
@@ -515,6 +542,22 @@ class MergeTests(Base):
         gh = FakeGh([pr(1), pr(2)], already_merged=[1])
         code, out = self.call(["run", "--task"], gh, FakeGit())
         self.assertEqual((code, len(gh.merges()), (self.root / mp.BLOCKED).exists()), (0, 1, False))
+
+
+class TimeoutTests(unittest.TestCase):
+    def test_a_timed_out_command_is_stopped_with_its_children(self):
+        import time
+        saved = mp.COMMAND_TIMEOUT
+        mp.COMMAND_TIMEOUT = 1
+        try:
+            code = ("import subprocess, sys, time; "
+                    "subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)']); time.sleep(20)")
+            start = time.monotonic()
+            done = mp._run([sys.executable, "-c", code], REPO)
+            took = time.monotonic() - start
+        finally:
+            mp.COMMAND_TIMEOUT = saved
+        self.assertEqual((done.returncode, took < 15), (124, True), took)
 
 
 class RealTreeTests(unittest.TestCase):
