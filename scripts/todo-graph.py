@@ -11304,7 +11304,9 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 # Round 3: a repeated header column, an inventory with no
                 # header, and an inventory with no rows are each damage.
                 ("a header that repeats a column",
-                 _pcat.replace("| Status | Notes |\n", "| Status | Notes | Status |\n").replace(" |  |\n", " |  | excluded: cloud |\n"),
+                 _pcat.replace("| Status | Notes |\n", "| Status | Notes | Status |\n")
+                 .replace("| -- | -- | -- | -- | -- | -- | -- |\n", "| -- | -- | -- | -- | -- | -- | -- | -- |\n")
+                 .replace(" |  |\n", " |  | excluded: cloud |\n"),
                  _pai, ["parity-id-missing", "parity-input-damaged"], "repeats Status"),
                 ("an inventory with no header", _pcat, "| AI-0001\n| AI-0002\n", "parity-input-damaged", "no `| ID |` header"),
                 ("an empty inventory", _pcat.replace("| AI-0001 |", "| -- |").replace("| AI-0002 |", "| -- |"), "", "parity-input-damaged", "Illustrator inventory has no AI- rows"),
@@ -11323,6 +11325,10 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 # under it; an `ID` row mid-table is a data row.
                 ("an ID row inside a table", _pcat + "| ID | Lost | AI-0001 | -- | core | invalid |  |\n", _pai, "parity-input-damaged", "'ID' is not a whole id"),
                 ("an ID header with no separator row", _pcat.replace("| -- | -- | -- | -- | -- | -- | -- |\n", ""), _pai, ["parity-id-missing", "parity-input-damaged"], "NP-0001 has no `| ID |` header"),
+                # Round 7: only the separator under the header is skipped,
+                # and only with the header's cell count.
+                ("a separator-shaped row inside a table", _pcat + "| -- | -- | -- | -- | -- | -- | -- |\n", _pai, "parity-input-damaged", "'--' is not a whole id"),
+                ("a separator narrower than its header", _pcat.replace("| -- | -- | -- | -- | -- | -- | -- |\n", "| -- |\n"), _pai, ["parity-id-missing", "parity-input-damaged"], "NP-0001 has no `| ID |` header"),
                 ("a wrapped id outside any ID table", _pcat + "\n| Key | Notes |\n| -- | -- |\n| **NP-0008** | stray |\n", _pai, "parity-input-damaged", "'**NP-0008**' is not a whole id"),
                 ("a row without its leading pipe", _pcat, _pai + "AI-0003 | Three | tool | x | y | core | z |\n", "parity-id-missing", "AI-0003"),
                 ("a lower-case id", _pcat, _pai + "| ai-0003 | Three | tool | x | y | core | z |\n", "parity-input-damaged", "'ai-0003' is not a whole id"),

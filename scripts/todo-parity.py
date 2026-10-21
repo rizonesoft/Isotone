@@ -94,7 +94,8 @@ def _table_rows(text: str, id_re: str):
     Rows are recognised by the table they sit in, not by what their first cell holds (independent review
     2026-10-21, rounds 1 to 5, found five row shapes a content match missed): every row between an `| ID |`
     header and the end of its table is a data row, whatever its first cell says; a header is the line that opens
-    its table and is followed by a separator row, and a table ends at a blank line or a line with no pipe. Outside such tables, a row whose first cell mentions the prefix in any case or
+    its table and is followed by a separator row with its cell count, the one separator skipped, and a table
+    ends at a blank line or a line with no pipe. Outside such tables, a row whose first cell mentions the prefix in any case or
     markup is reported too. `id_ok` says the first cell is one whole id of the family. `problem` is None for a
     sound row, else the first defect: a first cell that is no whole id, no `| ID |` header for the row, a header
     that repeats a column name (a second `Status` would overwrite the first), or a cell count that differs from
@@ -114,10 +115,13 @@ def _table_rows(text: str, id_re: str):
         # A header opens its table and is followed by a separator row; an `ID` line anywhere else is a data row,
         # so it cannot swap the header mid-table and drop itself from the count (independent review round 6).
         following = lines[lineno] if lineno < len(lines) else ""
-        if opens_table and re.match(r"^\s*\|?\s*ID\s*\|", line) and _SEPARATOR_RE.match(following):
+        if (opens_table and re.match(r"^\s*\|?\s*ID\s*\|", line) and _SEPARATOR_RE.match(following)
+                and len(split_row(following)) == len(split_row(line))):
             header, header_line = split_row(line), lineno
             continue
-        if _SEPARATOR_RE.match(line):
+        # Only the separator directly under the header is structure, and only when it has the header's cell
+        # count; a separator-shaped line anywhere else is a data row (independent review round 7).
+        if header is not None and lineno == header_line + 1:
             continue
         cells = split_row(line)
         if header is None and not mention.search(cells[0]):
