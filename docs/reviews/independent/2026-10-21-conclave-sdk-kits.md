@@ -142,3 +142,47 @@ Round 3 reviewed `e792b1e` (the automations commit). Every finding was checked a
 10. Fixed. SDK versions are ordered (preview, then release candidate, then GA); a feed whose latest SDK is older than the pin exits 2 and proposes nothing.
 
 While these were fixed, `isotone-conclave-kits` reported the SDK's new base-kit skill `adopt-conclave` (SDK 56c3046). It is not imported: it installs and updates kits through `forge.py`, which AGENTS.md forbids here; the allow-list records it with its SDK blob, so a later change to it is still reported.
+
+## Round 4: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T01:15:12Z
+- Effort: high
+- Lines: 23
+- Digest: 7e7be9bff724b4d6
+
+## adversarial: needs-attention
+
+1. **[P2] The shell gate mistakes filenames for read-only options.** `scripts/panel_slots.py:215` exempts any command containing `--check-pin` or `--list-rounds` later in its text. With a valid prompt `p`, `python scripts/review-dispatch.py --writer claude --prompt p --record docs/reviews/--check-pin.md` passes the gate and starts a review. In-memory reproduction returned `shell_decision=None` and reached `review()`. Parse options within the dispatcher invocation; a substring in an argument must not grant the exemption.
+
+## consistency: needs-attention
+
+2. **[P2] Version replacement still modifies longer versions, including cases previously preserved.** `scripts/check-dotnet-pin.py:38` permits alphabetic, hyphenated, and nonnumeric dotted suffixes. Reproduce an RC2-to-GA rewrite with `<PackageVersion Include="Custom" Version="11.0.0-rc.2.26504.105-private" />`: the candidate changes it to `11.0.0-private`, although that package does not match `tracking_packages()` and therefore receives no availability check. An in-memory execution of `rewrite_tree()` confirmed this change; `e792b1e` leaves it untouched. The new regression case covers numeric prefixes and `+build`, but misses these suffixes.
+
+## integration: needs-attention
+
+3. **[P2] Notification deduplication now suppresses subsequent changes to ordinary kit files.** `scripts/check-conclave-kits.py:166` hashes finding text alone, but the missing/different findings at lines 102 and 106 contain no blob identity. Reproduce two different SDK revisions of an unallow-listed `scripts/example.py`: both produce the same finding and notice key, so the second change is suppressed. This also persists after importing the first change and later encountering another. The added test proves unrelated commits stay quiet but does not prove related changes notify.
+
+4. **[P2] Automatically superseded vulnerabilities still become permanent dismissals.** `scripts/lib/pin_proposal.py:160` reopens only issues carrying `pins:resolved`, while automatic supersession at line 169 closes issues without that label. Reproduce vulnerability sets `A`, `A+B`, clean, then `A` again. The first issue was automatically closed without the label; the last run neither creates nor reopens an issue. A stateful in-memory reproduction ended with both issues closed and no notification for the recurring vulnerability. Automatic supersession needs to remain distinguishable from operator dismissal.
+
+5. **[P2] The keep-folder restriction breaks the documented architecture-review retry.** `scripts/review-dispatch.py:566` refuses existing artifacts, but `.claude/skills/review-todo-section/SKILL.md:154` uses the fixed `$RUNDIR/arch` directory and line 157 requires another review after fixing findings. Following that retry reuses the populated directory, returns exit 2, and launches no reviewer. Update the caller to allocate a directory per attempt and read the corresponding result.
+
+## source-defect: approve
+
+## record: advisory
+
+The claimed full-suite and mutation totals were not independently rerun because those suites create files. Verification used source inspection and in-memory probes, including comparisons against `e792b1e`. No files were modified.
+
+OVERALL: needs-attention
+
+## Response to round 4
+
+Round 4 reviewed the fix range `e792b1e..46dcff2`. Every finding was checked against the code and holds; all five are fixed in the next commit, each with a regression case that fails when its fix is reverted (a mutation run, five of five caught).
+
+1. Fixed. The shell gate no longer reads a substring: `dispatch_round` finds the token that is the dispatcher itself and exempts it only when its own arguments hold `--check-pin` or `--list-rounds` as whole tokens and no `-c` comes before it, so `--record docs/reviews/--check-pin.md` and a `python -c` run are refused.
+2. Fixed. A version followed by a letter, a digit, a hyphen, a `+`, or a dot and a letter or digit is part of a longer one and is left alone (`...-private`); only the badge's escaped form may be followed by a `-`, its field separator.
+3. Fixed. Every kit finding names the SDK blob, so a further SDK change to a reported file is a new finding and a new notice.
+4. Fixed. `file_issue` labels the issues it supersedes `pins:resolved`, like `resolve_issues`, so a superseded finding that returns reopens its issue; only the owner's own close dismisses.
+5. Fixed. The architecture gate and the plan review keep one `--keep` folder per attempt (`$RUNDIR/arch-<N>`, `$RUNDIR/plan-<N>`), like the panel and stamp rounds, and the `review_prompt.py` skill pins name them.
+
+Record advisory: noted.

@@ -99,11 +99,11 @@ def drift(sdk, root=ROOT, allow=None):
             continue
         local = Path(root) / rel
         if not local.is_file():
-            out.append(f"{rel} is missing (kit {kit})")
+            out.append(f"{rel} is missing (kit {kit}, sdk {blob})")
             continue
         theirs = git(sdk, "show", f"HEAD:{name}").stdout.replace(b"\r\n", b"\n")
         if local.read_bytes().replace(b"\r\n", b"\n") != theirs:
-            out.append(f"{rel} differs from the SDK (kit {kit})")
+            out.append(f"{rel} differs from the SDK (kit {kit}, sdk {blob})")
     return out
 
 

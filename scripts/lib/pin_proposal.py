@@ -146,9 +146,9 @@ def dispatch_missing(branch, root, run_gh=gh):
 
 def file_issue(*, root, check, title, body, run_gh=gh):
     """Open one issue per finding for an owner decision; return 0. Deduplicated by title within the check's label:
-    an open issue with this title is left alone; a closed one that resolve_issues closed (labelled pins:resolved) is
-    reopened, because the finding came back; a closed one without that label means the owner dismissed it; and older
-    open issues of the same check are closed as superseded."""
+    an open issue with this title is left alone; a closed one that this module closed (resolved or superseded, both
+    labelled pins:resolved) is reopened, because the finding came back; a closed one without that label means the owner
+    dismissed it; and older open issues of the same check are closed as superseded."""
     label = f"pins:{check}"
     ensure_labels(("pins", label, RESOLVED), root, run_gh)
     issues = json.loads(run_gh("issue", "list", "--label", label, "--state", "all", "--limit", "100",
@@ -166,6 +166,7 @@ def file_issue(*, root, check, title, body, run_gh=gh):
         return 0
     for issue in issues:
         if issue["state"] == "OPEN":
+            run_gh("issue", "edit", str(issue["number"]), "--add-label", RESOLVED, cwd=root)
             run_gh("issue", "close", str(issue["number"]), "--comment", f"Superseded by a newer finding: {title}", cwd=root)
     url = run_gh("issue", "create", "--title", title, "--body", body, "--label", "pins", "--label", label, cwd=root).strip()
     print(f"filed {url}")

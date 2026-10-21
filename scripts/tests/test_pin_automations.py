@@ -381,7 +381,8 @@ class ConclaveKitTests(KitFixture):
 
     def test_a_changed_file_is_drift_unless_allowed(self):
         (self.repo / ".claude" / "skills" / "x" / "SKILL.md").write_text("local edit\n", encoding="utf-8")
-        self.assertEqual(self.mod.drift(self.sdk, self.repo), [".claude/skills/x/SKILL.md differs from the SDK (kit todo)"])
+        self.assertEqual(self.mod.drift(self.sdk, self.repo),
+                         [f".claude/skills/x/SKILL.md differs from the SDK (kit todo, sdk {self.blob()})"])
         self.allow(f".claude/skills/x/SKILL.md | sdk {self.blob()} | kept on purpose\n")
         self.assertEqual(self.mod.drift(self.sdk, self.repo), [])
 
@@ -437,6 +438,24 @@ class ReviewRound3Tests(DotnetFixture):
         self.assertIn("111.0.100-rc.2.26504.105", text)
         self.assertIn(f"{RC2_SDK}+build42", text)
         self.assertIn(f"{RC3_SDK} moves", text)
+
+    def test_a_longer_version_with_a_letter_or_hyphen_suffix_is_left_alone(self):
+        self.write("Directory.Packages.props", self.PROPS.replace(
+            "</ItemGroup>", f'<PackageVersion Include="Custom" Version="{RC2_RT}-private" />\n  </ItemGroup>'))
+        self.mod.rewrite_tree(self.root, RC2_SDK, GA_SDK, RC2_RT, GA_RT)
+        props = (self.root / "Directory.Packages.props").read_text(encoding="utf-8")
+        self.assertIn(f'"Custom" Version="{RC2_RT}-private"', props)
+        self.assertEqual(props.count(f'Version="{GA_RT}"'), 2)
+
+    def test_a_superseded_finding_that_returns_reopens_its_issue(self):
+        older = json.dumps([{"number": 7, "title": "A", "state": "OPEN", "labels": []}])
+        gh = FakeGh(issues=older)
+        pin_proposal.file_issue(root=self.root, check="x", title="A and B", body="b", run_gh=gh)
+        self.assertIn(("issue", "edit", "7", "--add-label", "pins:resolved"), gh.calls)
+        back = json.dumps([{"number": 7, "title": "A", "state": "CLOSED", "labels": [{"name": "pins:resolved"}]}])
+        gh = FakeGh(issues=back)
+        pin_proposal.file_issue(root=self.root, check="x", title="A", body="b", run_gh=gh)
+        self.assertEqual([c[2] for c in gh.made("issue", "reopen")], ["7"])
 
     def test_agents_md_is_rewritten_with_the_docs(self):
         self.write("AGENTS.md", f"the SDK {RC2_SDK} is pinned\n")
@@ -519,6 +538,10 @@ class KitRound3Tests(KitFixture):
         self.sdk_commit()
         self.assertEqual(self.mod.main(["notify"], root=self.repo, sdk=self.sdk, mail=mail), 0)
         self.assertEqual(len(mail.sent), 1)
+        self.skill.write_text("kit text v2\n", encoding="utf-8")
+        self.sdk_commit()
+        self.assertEqual(self.mod.main(["notify"], root=self.repo, sdk=self.sdk, mail=mail), 0)
+        self.assertEqual(len(mail.sent), 2, "a further SDK change to a reported file is announced again")
 
 
 class WorkspaceHooks(unittest.TestCase):
