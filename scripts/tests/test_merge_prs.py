@@ -386,6 +386,33 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), head_fails)
         self.assertEqual((code, (self.root / mp.BLOCKED).exists()), (3, True))
 
+    def test_recovery_judges_the_committed_main_not_an_uncommitted_repair(self):
+        mp._block(self.root, 1, "merge issued, not yet verified")
+        gh = FakeGh([pr(1), pr(2)], already_merged=[1])
+        code, out = self.call(["run", "--task"], gh, FakeGit(status=" M repaired.md\n"))
+        self.assertEqual((code, "uncommitted changes" in out, gh.merges(), (self.root / mp.BLOCKED).exists()),
+                         (3, True, [], True))
+
+    def test_a_malformed_record_blocks_until_the_operator_clears_it(self):
+        (self.root / "build").mkdir(exist_ok=True)
+        for body in ("{truncated", "[]", '{"why": "no pr"}'):
+            with self.subTest(body=body):
+                (self.root / mp.BLOCKED).write_text(body, encoding="utf-8")
+                gh = FakeGh([pr(2)])
+                code, out = self.call(["run", "--task"], gh, FakeGit())
+                self.assertEqual((code, gh.merges(), "delete the record" in out), (3, [], True))
+
+    def test_an_os_error_after_the_merge_is_exit_three(self):
+        git = FakeGit()
+        real = git.__call__
+
+        def denied(*args, cwd=None):
+            if args[0] == "pull":
+                raise PermissionError("access denied")
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), denied)
+        self.assertEqual((code, "access denied" in out, (self.root / mp.BLOCKED).exists()), (3, True, True))
+
     def test_an_origin_with_credentials_is_redacted(self):
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]),
                               FakeGit(origin="https://user:FAKE_SECRET@example.com/owner/repo.git"))

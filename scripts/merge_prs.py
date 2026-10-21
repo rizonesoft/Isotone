@@ -185,11 +185,19 @@ BLOCKED = Path("build") / "merge-prs-blocked.json"
 
 
 def blocked(root: Path) -> dict | None:
-    """The record a merge left when main may have moved under a red or unsynced clone, or None."""
-    try:
-        return json.loads((root / BLOCKED).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    """The record a merge left when main may have moved under a red or unsynced clone, or None. Only a missing file
+    means no record: an unreadable or malformed one still blocks (independent review round 5), as a record whose pull
+    request cannot be named, which only the operator clears."""
+    path = root / BLOCKED
+    if not path.exists():
         return None
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return {"pr": None, "why": f"the record cannot be read ({error.__class__.__name__})"}
+    if not isinstance(record, dict) or not isinstance(record.get("pr"), int):
+        return {"pr": None, "why": "the record names no pull request"}
+    return record
 
 
 def _block(root: Path, pr: int, why: str) -> None:
@@ -295,15 +303,24 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
     if not ok or now.get("headRefOid") != pr["headRefOid"] or now.get("state") != "OPEN":
         return 1, (f"merge_prs: #{n} not merged, it changed since it was read: "
                    f"{why or 'head ' + str(now.get('headRefOid'))[:12] + ', ' + str(now.get('state')).lower()}")
-    _block(root, n, "merge issued, not yet verified")
+    try:
+        _block(root, n, "merge issued, not yet verified")
+    except OSError as error:
+        return 1, f"merge_prs: #{n} not merged, the intent record cannot be written: {error}"
     try:
         code, line = _merge_and_verify(now, repo, root, gh_fn, git_fn, validate_fn)
-    except Failed as error:
-        code, line = 3, f"merge_prs: #{n} merge was issued, then a command failed ({error}); check it before any other work"
-    if code == 3:
-        _block(root, n, line)
-    else:
-        (root / BLOCKED).unlink(missing_ok=True)
+    except (Failed, OSError) as error:
+        # Any failure once the merge is issued, a launch or file error included, may have left main moved: exit 3,
+        # never the "nothing changed" exit 1 (independent review round 5).
+        code, line = 3, f"merge_prs: #{n} merge was issued, then an operation failed ({error}); check it before any other work"
+    try:
+        if code == 3:
+            _block(root, n, line)
+        else:
+            (root / BLOCKED).unlink(missing_ok=True)
+    except OSError:
+        # The intent record written before the merge is still there, so the next run resolves it from GitHub.
+        pass
     return code, line
 
 
@@ -383,6 +400,8 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
     if record is None:
         return None
     n = record.get("pr")
+    if n is None:
+        return (f"{record.get('why')} at {BLOCKED.as_posix()}: verify main by hand, then delete the record")
     state = _state(n, repo, root, gh_fn)
     if state is None:
         return f"an earlier merge (#{n}) is unresolved and its state cannot be read: {record.get('why', '')[:160]}"
@@ -396,6 +415,13 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
         return f"an earlier merge (#{n}) is unresolved and main cannot be read: {error}"
     if not level:
         return f"an earlier merge (#{n}) moved main and this clone is not level with it; reconcile, then validate"
+    try:
+        dirty = git_fn("status", "--porcelain", cwd=root).strip()
+    except Failed as error:
+        return f"an earlier merge (#{n}) is unresolved and the tree cannot be read: {error}"
+    if dirty:
+        # Validation must judge the committed main, not an uncommitted repair (independent review round 5).
+        return f"an earlier merge (#{n}) is unresolved and the working tree has uncommitted changes; commit the repair first"
     verdict = _landed(n, repo, root, gh_fn, git_fn)
     if verdict:
         return f"an earlier merge (#{n}) {verdict}"
