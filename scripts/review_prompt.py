@@ -83,18 +83,19 @@ _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
 # severity stop rests on it. Under a needs-attention verdict the floor
 # fails closed, because the independent review of 2026-10-21 found a
 # new list shape escaping each round (`- P1` beside a numbered P3, an
-# indented `  - a.py:2`, an indented `2) P1`):
+# indented `  - a.py:2`, an indented `2) P1`, an indented `**2.**`):
 # - any `P1`, `P2` or `P3` token anywhere on a detail line raises the
-#   floor to it, whatever marker opens the line, so a tag never hides
-#   in a continuation (prose naming a severity raises it too: that
-#   only denies a stop, never grants one);
-# - a line that starts a finding without its tag right after the
-#   marker is P1 (a severity named later is prose): a numbered
-#   item, a list item of any marker at any depth (`-`, `*`, `+`, a
-#   bullet glyph, `2)`, `(b)`, `iv.`), any line at column 0, or an
-#   indented line before the verdict's first finding;
-# - only an indented, unmarked line after a finding continues it;
-# - a needs-attention verdict with no detail line counts as P1.
+#   floor to it, whatever opens the line, so a tag never hides in a
+#   continuation (prose naming a severity raises it too: that only
+#   denies a stop, never grants one);
+# - continuation is whitelisted, never inferred: after a finding, an
+#   indented line inside a fence, a fence line itself, or an indented
+#   line led by a letter that is not a list marker (`a)`, `iv.`);
+# - every other detail line starts a finding, whatever its marker, and
+#   is P1 unless its tag follows its marker (a severity named later is
+#   prose);
+# - a needs-attention verdict with no detail line, or one that leaves
+#   a fence open, counts as P1.
 # Advisory findings never block, so they do not raise the floor. The
 # loop's severity stop (review-todo-section) rests on `highest P3` in
 # the checker's reason, never on the reviewer's word alone.
@@ -103,6 +104,8 @@ _LIST_ITEM_RE = re.compile(
     r"^\s*(?:[-*+" + "".join(map(chr, (0x2022, 0x2023, 0x2043, 0x2219, 0x25AA, 0x25CF, 0x25E6)))
     + r"]|\(?(?:[0-9]{1,4}|[A-Za-z]|[ivxlcdmIVXLCDM]{1,6})[.)])\s")
 _LEADING_TAG_RE = re.compile(r"\s*[*\[(_`]*P[123](?![A-Za-z0-9_])")
+_PROSE_LEAD_RE = re.compile(r"^\s+[A-Za-z]")
+_FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
 _HIGHEST_RE = re.compile(r"^\s*\**\s*HIGHEST\s*:\s*\**\s*(P1|P2|P3|none)\s*\**\s*$")
 SEVERITY_RANK = {"none": 0, "P3": 1, "P2": 2, "P1": 3}
 
@@ -519,6 +522,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
     open_line = 0
     block_floor = 0
     finding_seen = False
+    in_fence = False
     floor = 0
     floor_line = 0
     highest: str | None = None
@@ -535,9 +539,10 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
     def block_severity() -> int:
         # A needs-attention verdict with no numbered finding still holds
         # findings, untagged ones: P1.
+        # A fence left open swallowed whatever followed it: P1 as well.
         if not blocking:
             return 0
-        return block_floor if finding_seen else SEVERITY_RANK["P1"]
+        return block_floor if finding_seen and not in_fence else SEVERITY_RANK["P1"]
 
     for lineno, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
@@ -576,6 +581,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             tally = 0
             block_floor = 0
             finding_seen = False
+            in_fence = False
             open_lens, open_line = lens, lineno
             continue
         if _PANEL_LONG_COUNT_RE.match(line):
@@ -589,19 +595,27 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             tally += 1
         if blocking:
             tags = [SEVERITY_RANK["P" + n] for n in _SEVERITY_TAG_RE.findall(line)]
-            starts = (numbered is not None or _LIST_ITEM_RE.match(line) is not None
-                      or not line[:1].isspace() or not finding_seen)
             if tags:
                 block_floor = max(block_floor, *tags)
-            if starts:
+            fence = _FENCE_RE.match(line) is not None
+            # Continuation is the one shape allowed to carry no finding,
+            # so it is whitelisted, never inferred: an indented line after
+            # a finding, inside or opening or closing a fence, or led by a
+            # letter that is not a list marker. Anything else starts a
+            # finding, whatever marker it uses.
+            continues = finding_seen and line[:1].isspace() and (
+                in_fence or fence
+                or (_PROSE_LEAD_RE.match(line) is not None and _LIST_ITEM_RE.match(line) is None))
+            if fence:
+                in_fence = not in_fence
+            if not continues:
                 # A finding's own tag opens it, right after its marker; a
                 # severity named later in the line is prose and never
                 # stands in for the tag.
                 marker = _LIST_ITEM_RE.match(line)
-                lead = _LEADING_TAG_RE.match(line[marker.end():] if marker else line)
-                if not lead:
+                if not _LEADING_TAG_RE.match(line[marker.end():] if marker else line):
                     block_floor = max(block_floor, SEVERITY_RANK["P1"])
-            finding_seen = finding_seen or starts or bool(tags)
+                finding_seen = True
     bad = close_block()
     if bad:
         return bad
@@ -3750,7 +3764,13 @@ def _self_test() -> int:
                        ("roman", "   iv. a.py:2 deletes originals\n"),
                        ("glyph", "   " + chr(0x2022) + " a.py:2 deletes originals\n"),
                        ("tag-in-continuation", "   and this is really P1: it deletes originals\n"),
-                       ("late-tag-on-finding", "- a.py:2 deletes originals, not P3\n")):
+                       ("late-tag-on-finding", "- a.py:2 deletes originals, not P3\n"),
+                       # Round 4: continuation is whitelisted, so any
+                       # marker the list misses still starts a finding.
+                       ("bold-number", "  **2.** a.py:2 deletes originals\n"),
+                       ("long-number", "  10000) a.py:2 deletes originals\n"),
+                       ("backtick-led", "   `a.py:2` deletes originals\n"),
+                       ("unclosed-fence", "   ```\n   a.py:2 deletes originals\n")):
         ok, reason = check_panel_output(
             receipt + low.replace("2. **P3** b.py:2 test gap\n", "2. **P3** b.py:2 test gap\n" + extra)
             + "HIGHEST: P3\n", manifest3)

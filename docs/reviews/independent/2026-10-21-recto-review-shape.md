@@ -120,3 +120,40 @@ OVERALL: needs-attention
 ## Response to round 3
 
 1. Real, and the third list shape in three rounds, so the family is closed rather than the shape: under a needs-attention verdict, a `P1`, `P2` or `P3` token anywhere on a detail line raises the floor to it, a line opening with any list marker at any depth (`-`, `*`, `+`, bullet glyphs, `2)`, `(b)`, `iv.`) starts a finding, a finding whose tag does not follow its marker is P1 even if a severity is named later, and only indented unmarked prose continues a finding. The repro returns `highest P1 (...)`; at `cc260cd` it returned `highest P3`. New cases: `highest-paren-number-counts`, `-paren-number-untagged-`, `-enclosed-letter-`, `-roman-`, `-glyph-`, `-tag-in-continuation-`, `-late-tag-on-finding-`; `python -W error::SyntaxWarning scripts/review_prompt.py --self-test` prints `489 cases, 0 failed`.
+
+## Round 4: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T17:27:11Z
+- Effort: medium
+- Lines: 24
+- Digest: 238a82afdc185fe5
+
+### adversarial: needs-attention
+
+1. P1 `scripts/review_prompt.py:104` and `:592`: Unrecognized indented list markers still bypass the untagged-P1 floor. Reproduced by passing this text to `check_panel_output`:
+
+   ```text
+   **adversarial: needs-attention**
+   1. P3 a.py:1 typo
+     **2.** a.py:2 deletes originals
+   **consistency: approve**
+   **integration: approve**
+   **record: approve**
+   HIGHEST: P3
+   ```
+
+   Actual result: `(True, 'four lenses, one verdict each; highest P3')`. Replacing `**2.**` with `10000)` produces the same result. Neither marker matches `_LIST_ITEM_RE`, so the untagged finding becomes continuation prose. This incorrectly permits the round-9 severity stop. Reject unsupported finding shapes or conservatively include them in the severity floor.
+
+### consistency: approve
+
+### integration: approve
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 4
+
+1. Real, and the fourth marker shape, so the rule is inverted rather than extended (same-family circuit breaker): continuation is now whitelisted, never inferred. Under a needs-attention verdict, an indented line continues a finding only when it is led by a letter that is not a list marker, or sits in, opens, or closes a fenced block; every other detail line starts a finding whatever its marker, and is P1 unless its tag follows the marker. A verdict that leaves a fence open counts as P1. Both prompts state the format. The repro (`**2.**` and `10000)`) returns `highest P1 (...)`; at `2513da8` it returned `highest P3`. New cases: `highest-bold-number-counts`, `-long-number-`, `-backtick-led-`, `-unclosed-fence-`; `python -W error::SyntaxWarning scripts/review_prompt.py --self-test` prints `493 cases, 0 failed`.
