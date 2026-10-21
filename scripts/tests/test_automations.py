@@ -43,13 +43,25 @@ def alive(pid):
     try:
         with open(f"/proc/{pid}/stat", encoding="utf-8") as fh:
             return fh.read().split(")")[-1].split()[0] != "Z"
-    except FileNotFoundError:
+    except (FileNotFoundError, ProcessLookupError):
+        # A process reaped between the open and the read fails the read with ESRCH: it is gone.
         return False
 
 
 def fixture_task(name, code="print('ok')", trigger=None):
     return {"name": name, "description": f"fixture {name}", "command": [sys.executable, "-c", code],
             "trigger": trigger or {"weekly": "Monday", "at": "07:00"}, "timeout_minutes": 1}
+
+
+class Helpers(unittest.TestCase):
+    def test_a_process_reaped_mid_read_is_gone(self):
+        # Linux fails the read of /proc/<pid>/stat with ESRCH when the process is reaped after the open (seen on the
+        # plan-gates runner, 2026-10-21): the helper reads that as gone, never as an error.
+        from unittest import mock
+        if os.name == "nt":
+            self.skipTest("the /proc branch runs on Linux")
+        with mock.patch("builtins.open", side_effect=ProcessLookupError(3, "No such process")):
+            self.assertFalse(alive(1))
 
 
 class Manifest(unittest.TestCase):
