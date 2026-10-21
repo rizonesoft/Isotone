@@ -59,23 +59,47 @@ class FakeGit:
             return self.remote + "\n"
         if args[0] == "pull" and self.pull_fails:
             raise mp.Failed("git pull --ff-only origin main failed: not a fast-forward")
+        if args[:2] == ("merge-base", "--is-ancestor") and args[2] == "f" * 40:
+            raise mp.Failed("not an ancestor")
         return ""
 
 
 class FakeGh:
-    def __init__(self, prs, merge_fails=False, state_after="OPEN"):
-        self.calls, self.prs, self.merge_fails, self.state_after = [], prs, merge_fails, state_after
+    """A tiny model of GitHub: each listed pull request is OPEN on main until a merge lands it.
+
+    `merge_fails` makes `pr merge` report an error; `lands` says whether the merge landed anyway (the branch delete
+    failed after it). `view_fails` makes every `pr view` fail. `retarget` moves the pull request's base before the
+    merge; `elsewhere` makes a landed merge report another base; `off_main` gives it a merge commit not on main.
+    """
+
+    def __init__(self, prs, merge_fails=False, lands=False, view_fails=False, retarget=None, elsewhere=False,
+                 off_main=False):
+        self.calls, self.prs = [], prs
+        self.merge_fails, self.lands, self.view_fails = merge_fails, lands, view_fails
+        self.retarget, self.elsewhere, self.off_main = retarget, elsewhere, off_main
+        self.merged = set()
+
+    def _pr(self, n):
+        return next(p for p in self.prs if str(p["number"]) == str(n))
 
     def __call__(self, *args, cwd=None):
         self.calls.append(args)
         if args[:2] == ("pr", "list"):
             return json.dumps(self.prs)
         if args[:2] == ("pr", "view"):
-            if self.state_after is None:
+            if self.view_fails:
                 raise mp.Failed("gh pr view failed: connection reset")
-            return json.dumps({"state": self.state_after})
-        if args[:2] == ("pr", "merge") and self.merge_fails:
-            raise mp.Failed("gh pr merge failed: head commit does not match")
+            p = self._pr(args[2])
+            merged = args[2] in self.merged
+            base = self.retarget or ("release" if merged and self.elsewhere else p["baseRefName"])
+            return json.dumps({"baseRefName": base, "headRefOid": p["headRefOid"],
+                               "state": "MERGED" if merged else "OPEN",
+                               "mergeCommit": {"oid": ("f" if self.off_main else "c") * 40} if merged else None})
+        if args[:2] == ("pr", "merge"):
+            if not self.merge_fails or self.lands:
+                self.merged.add(args[2])
+            if self.merge_fails:
+                raise mp.Failed("gh pr merge failed: could not delete the branch")
         return ""
 
     def merges(self):
@@ -264,7 +288,8 @@ class MergeTests(Base):
 
     def test_a_failed_pull_after_a_merge_is_its_own_outcome(self):
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(pull_fails=True))
-        self.assertEqual((code, "MERGED on GitHub, but the pull failed" in out, "reconcile" in out), (3, True, True))
+        self.assertEqual((code, "MERGED on GitHub, but the pull failed" in out, "reconcile" in out,
+                          (self.root / mp.BLOCKED).exists()), (3, True, True, True))
 
     def test_a_red_validate_after_a_merge_is_its_own_outcome(self):
         red = lambda r: subprocess.CompletedProcess([], 1, "1 fatal\n", "")
@@ -285,13 +310,48 @@ class MergeTests(Base):
                 self.assertEqual((code, "is not a GitHub repository" in out, gh.merges()), (1, True, []))
 
     def test_a_merge_error_after_the_merge_landed_carries_on_to_reconcile(self):
-        gh, git = FakeGh([pr(1)], merge_fails=True, state_after="MERGED"), FakeGit()
+        gh, git = FakeGh([pr(1)], merge_fails=True, lands=True), FakeGit()
         code, out = self.call(["run", "--campaign"], gh, git)
         self.assertEqual((code, ("pull", "--ff-only", "origin", "main") in git.calls, "merged #1" in out), (0, True, True))
 
     def test_a_merge_error_with_an_unreadable_state_blocks(self):
-        code, out = self.call(["run", "--campaign"], FakeGh([pr(1)], merge_fails=True, state_after=None), FakeGit())
+        gh = FakeGh([pr(1)], merge_fails=True)
+        real = gh.__call__
+
+        def view_fails_after_merge(*args, cwd=None):
+            if args[:2] == ("pr", "view") and gh.merges():
+                raise mp.Failed("gh pr view failed: connection reset")
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--campaign"], view_fails_after_merge, FakeGit())
         self.assertEqual((code, "outcome is unknown" in out), (3, True))
+
+    def test_a_base_retargeted_since_the_listing_is_refused(self):
+        gh = FakeGh([pr(1)], retarget="release")
+        code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), "changed since it was read (base release" in out), (1, [], True))
+
+    def test_a_merge_that_landed_elsewhere_or_off_main_blocks(self):
+        for kind in ("elsewhere", "off_main"):
+            with self.subTest(kind=kind):
+                code, out = self.call(["run", "--campaign"], FakeGh([pr(1)], **{kind: True}), FakeGit())
+                self.assertEqual((code, "did not land on main" in out), (3, True))
+                (self.root / mp.BLOCKED).unlink()
+
+    def test_the_fetch_names_its_destination(self):
+        git = FakeGit()
+        self.call(["run", "--campaign"], FakeGh([pr(1)]), git)
+        self.assertIn(("fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main"), git.calls)
+
+    def test_a_red_main_after_a_merge_blocks_every_later_merge_until_it_validates(self):
+        red = lambda r: subprocess.CompletedProcess([], 1, "1 fatal\n", "")
+        code, _out = self.call(["run", "--campaign"], FakeGh([pr(1), pr(2)]), FakeGit(), validate=red)
+        self.assertEqual((code, (self.root / mp.BLOCKED).exists()), (3, True))
+        gh = FakeGh([pr(2)])
+        code, out = self.call(["run", "--task"], gh, FakeGit(), validate=red)
+        self.assertEqual((code, gh.merges(), "left main to reconcile" in out), (3, [], True))
+        gh = FakeGh([pr(2)])
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, len(gh.merges()), (self.root / mp.BLOCKED).exists()), (0, 1, False))
 
 
 class RealTreeTests(unittest.TestCase):
