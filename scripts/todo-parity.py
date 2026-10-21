@@ -84,32 +84,38 @@ def _id_prefix(id_re: str) -> str:
     return re.match(r"[A-Za-z]+-", id_re).group(0)
 
 
-def _table_rows(text: str, id_re: str):
-    """(line number, cells, header, id_ok, problem) for every table row whose first cell opens with the family
-    prefix of `id_re` (`AI-`, `CD-`, `NP-`).
+_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$")
 
-    Recognition is wide and every check strict, so no row shape can hide from the count (independent review
-    2026-10-21, rounds 1 to 3): leading whitespace and a missing leading pipe still make a table row in GitHub
-    Markdown, and the prefix matches in any case. `id_ok` says the whole first cell is one id of the family.
-    `problem` is None for a sound row, else the first defect: a first cell that is no whole id, no `| ID |` header
-    above the row, a header that repeats a column name (a second `Status` would overwrite the first), or a cell
-    count that differs from the header's.
+
+def _table_rows(text: str, id_re: str):
+    """(line number, cells, header, id_ok, problem) for every data row of an `| ID |` table, and for every other
+    table row whose first cell mentions the family prefix of `id_re` (`AI-`, `CD-`, `NP-`).
+
+    Rows are recognised by the table they sit in, not by what their first cell holds (independent review
+    2026-10-21, rounds 1 to 5, found five row shapes a content match missed): every row between an `| ID |`
+    header and the end of its table is a data row, whatever its first cell says, and a table ends at a blank
+    line or a line with no pipe. Outside such tables, a row whose first cell mentions the prefix in any case or
+    markup is reported too. `id_ok` says the first cell is one whole id of the family. `problem` is None for a
+    sound row, else the first defect: a first cell that is no whole id, no `| ID |` header for the row, a header
+    that repeats a column name (a second `Status` would overwrite the first), or a cell count that differs from
+    the header's.
     """
-    row_re = re.compile(rf"^\s*\|?\s*{re.escape(_id_prefix(id_re))}", re.IGNORECASE)
+    mention = re.compile(re.escape(_id_prefix(id_re)), re.IGNORECASE)
     id_full = re.compile(rf"^{id_re}$")
     header: list[str] | None = None
     header_line = 0
     for lineno, line in enumerate(text.splitlines(), 1):
+        if not line.strip() or "|" not in line:
+            header = None
+            continue
         if re.match(r"^\s*\|?\s*ID\s*\|", line):
             header, header_line = split_row(line), lineno
             continue
-        if not row_re.match(line):
-            # A header belongs to its own table: a blank line or a line with no pipe ends the table, so a later
-            # table with a different header never inherits this one (independent review round 4).
-            if not line.strip() or "|" not in line:
-                header = None
+        if _SEPARATOR_RE.match(line):
             continue
         cells = split_row(line)
+        if header is None and not mention.search(cells[0]):
+            continue
         id_ok = id_full.match(cells[0]) is not None
         problem = None
         if not id_ok:

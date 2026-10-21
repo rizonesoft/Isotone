@@ -11314,6 +11314,12 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                  _pcat + "\n| Key | Feature | Illustrator | CorelDRAW | Category | Status | Notes | Extra |\n"
                          "| -- | -- | -- | -- | -- | -- | -- | -- |\n| NP-0007 | Seven | -- | -- | core | excluded: cloud |  |\n",
                  _pai, "parity-input-damaged", "NP-0007 has no `| ID |` header"),
+                # Round 5: every row under an `| ID |` header is a data row,
+                # whatever its first cell holds.
+                ("a backticked id", _pcat + "| `NP-9999` | Lost | AI-0001 | -- | core | invalid |  |\n", _pai, "parity-input-damaged", "'`NP-9999`' is not a whole id"),
+                ("a blank id", _pcat + "|  | Lost | AI-0001 | -- | core | invalid |  |\n", _pai, "parity-input-damaged", "'' is not a whole id"),
+                ("an id of another family", _pcat + "| NQ-9999 | Lost | AI-0001 | -- | core | invalid |  |\n", _pai, "parity-input-damaged", "'NQ-9999' is not a whole id"),
+                ("a wrapped id outside any ID table", _pcat + "\n| Key | Notes |\n| -- | -- |\n| **NP-0008** | stray |\n", _pai, "parity-input-damaged", "'**NP-0008**' is not a whole id"),
                 ("a row without its leading pipe", _pcat, _pai + "AI-0003 | Three | tool | x | y | core | z |\n", "parity-id-missing", "AI-0003"),
                 ("a lower-case id", _pcat, _pai + "| ai-0003 | Three | tool | x | y | core | z |\n", "parity-input-damaged", "'ai-0003' is not a whole id"),
             )
