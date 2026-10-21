@@ -39,6 +39,7 @@ track: W2
 - -> XREF: D02 T01 §1 -- the Stilus rename moves the test project §6 migrates; §6 runs after it
 - -> XREF: D03 T04 §1 -- the Gesso codec decision that §4's removal of ImageSharp leaves open, and that §5's decision log records
 - -> XREF: D03 T01 §1 -- the Gesso rename that waits for §2 and §4, and whose moved test projects §6 migrates
+- -> XREF: D00 T01 §12 -- the dependency-merge script that never merges the .NET SDK pin pull requests §8 owns
 
 ## Outcome
 

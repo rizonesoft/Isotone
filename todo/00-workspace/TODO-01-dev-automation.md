@@ -65,6 +65,7 @@ track: W1
 |   9   |   §9    | The design contract gates                     | §1         |  [ ]   |
 |  10   |   §10   | The drift gates                               | §1         |  [ ]   |
 |  11   |   §11   | The manual-row invariant                      | §2         |  [x]   |
+|  12   |   §12   | Merge dependency PRs at section boundaries    | --         |  [ ]   |
 
 ---
 
@@ -362,6 +363,30 @@ The operator asked on 2026-09-27, after the rename to Isotone, "how are we preve
 > **CRUD:** not applicable (a validator rule and its self-test fixtures, with no user record, document, or setting)
 > **Duration:** 2026-10-19T22:27:28Z to 2026-10-19T22:47:47Z
 > **Implementer:** Opus 5.5 (claude-opus-5-5)
+
+## 12. Merge Dependency Pull Requests at Section Boundaries
+
+The pins workflow and Dependabot open pull requests labelled `dependencies` or `pins` (`.conclave/automations/README.md`, "What runs on GitHub"), and until now nothing merged them: `.conclave/automations/README.md` says "Nothing merges by itself", so green bumps wait for a person while the campaign runs past them (on 2026-10-21 Dependabot's #1, `coverlet.collector` 10.0.1 to 10.1.0, and #2, `actions/upload-artifact` 7.0.1 to 7.0.2, were open). The operator asked on 2026-10-21 to "merge PRs inside the loop, at section boundaries", replacing that rule: a script merges an eligible pull request only at the one moment the clone is guaranteed level with GitHub, right after a stamp push, and a scheduled fallback does the same when no campaign runs. The operator's proposal named `.claude/scheduled_tasks.lock` as the active-campaign signal; that file is Claude Code's scheduler lock (it holds a session id and a pid whenever a session has scheduled jobs), not campaign state, so this section takes the run guard `build/claude-campaign-guard.json` (`scripts/campaign_guard.py`) as the signal by default and treats a held scheduler lock as a second reason to refuse. Changing that default is one predicate in the script.
+
+<!-- claim: absent scripts/merge_prs.py -->
+<!-- claim: count "Nothing merges by itself" .conclave/automations/README.md = 1 -->
+<!-- claim: count "^\.claude/scheduled_tasks\.lock$" .gitignore = 1 -->
+
+- -> XREF: D00 T02 §8 -- the .NET SDK pin pull requests stay section work there, so this script never merges one
+
+**Fidelity:** no surface of its own (a stdlib script, its tests, a scheduled task, and skill and documentation text).
+
+- [ ] Add `scripts/merge_prs.py` (stdlib only, `gh` and `git` through `subprocess` with argument lists, no shell) with a `preflight(root)` that refuses, naming the reason, unless the working tree is clean (`git status --porcelain` empty), the local `HEAD` equals the fetched `origin/main` (nothing waiting to be pushed and nothing unpulled), and no section is in progress (no `> **Started:**` line on an open section without its `Verified:` stamp, read through `scripts/todo-graph.py`). Done when: unit tests cover each refusal and the pass with a fake git and a fixture tree.
+- [ ] Add `eligible(pr)`: the author is Dependabot (`app/dependabot`) or the pins workflow (`app/github-actions`, branch `pins/*`), the pull request carries `dependencies` or `pins`, targets `main`, is not a draft, its checks are all `SUCCESS` (or `SKIPPED`/`NEUTRAL`, never pending or failing, and at least one check present), and `mergeable` is `MERGEABLE` with `mergeStateStatus` `CLEAN`; a `.NET` SDK pin pull request (branch `pins/dotnet-*`, or a diff touching `global.json`) is never eligible, because `D00 T02 §8` owns it. Done when: unit tests cover every rule, each refusal reason named.
+- [ ] Add `merge_one(pr)`: `gh pr merge <n> --rebase --delete-branch --match-head-commit <headRefOid>`, then `git pull --ff-only origin main`, then `python scripts/todo-graph.py validate`; merge one pull request per run, stop at the first failure (a refused merge, a pull that is not a fast-forward, a red validate), name it, and leave every remaining pull request untouched. Done when: unit tests show the exact argument lists, one merge per run, and the stop on each failure.
+- [ ] Give the script a CLI: `python scripts/merge_prs.py check` (preflight plus the eligible list, merges nothing, exit 0), `run` (preflight, then at most one merge, exit 0 when a merge landed or nothing was eligible, 1 on a failure, 2 when preflight refused), and `--campaign` for the in-loop call, which skips the active-campaign refusal because the run itself is the caller. Done when: the tests drive each mode and exit code.
+- [ ] Wire it into the loop: `process-plan` (and `process-phase` step 3, which ships the rows) runs `python scripts/merge_prs.py run --campaign` after each stamp push's green CI read-back and before claiming the next row, records its line in the run file, and on a merge reads CI back for the new `main` with `ci-wait` before the next section starts; a failure leaves the pull request for the operator and the run carries on. Done when: both skills state the step and a dry run on today's tree prints its line.
+- [ ] Add the fallback task `isotone-pr-merge` to `.conclave/automations/tasks.json` (hourly while logged on, `python scripts/merge_prs.py run`), which refuses while the run guard exists or the scheduler lock is held by a live process, and whose failures email through the existing alert. Done when: `scripts/tests/test_automations.py` passes with its README row and the installer registers it.
+- [ ] Replace "Nothing merges by itself" in `.conclave/automations/README.md` with the merge rule (who merges, when, which pull requests, the `.NET` exclusion, and how a failure is left), and state the same in `AGENTS.md` (the `.conclave/automations/` row and the working rules), quoting the operator's 2026-10-21 request. Done when: no file says nothing merges, and both name `scripts/merge_prs.py`.
+- [ ] Add `scripts/tests/test_merge_prs.py` (fake `gh` and `git`, like `scripts/tests/test_pin_automations.py`) and run it in `.github/workflows/plan.yml` and `scripts/check-all.ps1`. Done when: the workflow step and the check-all gate both run it and it passes.
+- [ ] Commit: `"workspace: merge dependency pull requests at section boundaries"`
+
+**Test checkpoint:** Unit test: `python scripts/tests/test_merge_prs.py` passes, covering each preflight refusal, each eligibility rule (the `.NET` pin refused), the exact `gh pr merge --rebase --match-head-commit` call, one merge per run, and the stop on a failed merge, pull, or validate; driven run: `python scripts/merge_prs.py check` on the live repository prints the preflight verdict and which open pull requests are eligible, and `run --campaign` after a stamp push merges one eligible pull request, after which `git log --oneline -1` shows the rebased commit on `main` and `ci-wait` reads its CI back green. Cheaper substitute that fails: `gh pr merge --auto` on every Dependabot pull request, which merges while a section is in flight and takes the `.NET` pin, and which the preflight and eligibility tests refuse.
 
 ## Verification
 
