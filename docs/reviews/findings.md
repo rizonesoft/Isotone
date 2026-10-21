@@ -4,12 +4,13 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**1 findings across 1 sections.**
+**3 findings across 2 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
+| `record` | 2 | the plan or the evidence misdescribes what happened |
 | `correctness` | 1 | the code does the wrong thing |
 
 ## By severity
@@ -17,11 +18,13 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 0 | wrong behavior in code, plan, or record |
-| `minor` | 1 | polish or wording, or no surviving defect |
+| `major` | 1 | wrong behavior in code, plan, or record |
+| `minor` | 2 | polish or wording, or no surviving defect |
 
 ## Every finding
 
 | Section | # | Severity | Category | Disposition | Source | Summary |
 | --- | --- | --- | --- | --- | --- | --- |
 | `D00 T01 §2` | F1 | minor | `correctness` | fixed | independent | the D99 T01 §6 operator mark named the company as the signer |
+| `D00 T01 §4` | F1 | major | `record` | fixed | independent | the panel and architecture probes shared one manifest, so the kept panel review failed check-panel on replay |
+| `D00 T01 §4` | F2 | minor | `record` | fixed | independent | the record claimed a manifest for every probe, but the independent pass is unfenced |

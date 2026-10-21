@@ -57,7 +57,7 @@ track: W1
 |   1   |   §1    | Wire the TODO gate into every clone           | --         |  [x]   |
 |   2   |   §2    | The operator requirement for manual rows      | --         |  [x]   |
 |   3   |   §3    | Raise the claims coverage floor               | --         |  [x]   |
-|   4   |   §4    | Prove the review panel end to end             | --         |  [ ]   |
+|   4   |   §4    | Prove the review panel end to end             | --         |  [x]   |
 |   5   |   §5    | First push: CI green and read back            | §1         |  [ ]   |
 |   6   |   §6    | The parity catalog validator                  | §1         |  [ ]   |
 |   7   |   §7    | The validator reads the Gesso parity catalog  | §6         |  [ ]   |
@@ -143,6 +143,12 @@ Every section ships through `review-todo-section`, whose every round (the panel 
 - [x] Commit: `"workspace: prove every kind of review round against a probe"`
 
 **Test checkpoint:** `python scripts/panel_slots.py validate` and `python scripts/review-dispatch.py --check-pin` exit 0; each kind's `review.md` under `build/panel-probe/` names the planted typo; `python scripts/todo-runs.py --check` exits 0. Cheaper substitute that fails: `--check-pin` alone, which checks the pin and never starts a reviewer.
+
+> **Verified:** 2026-10-21 | §4 | D00 T01 §4 at `da367ca..64fd647`: `panel_slots.py validate` prints `delegation ok ... reviewer astra (gpt-6-astra via codex, effort medium, no fallback)` and `--check-pin` prints `"ok": true` with `"codex": true` · against probe commit `237664c` every kind returned exit 0 and named the planted typo, replayed from `build/panel-probe/<kind>/`: panel `PASS four lenses, one verdict each; highest P3`, architecture `**architecture: needs-attention**`, plan review `PASS 2 findings, one per line`, stamp review `PASS 1 naming(s) to answer`, independent pass `source-defect` needs-attention · the missing path named on the first attempt three runs in a row · `todo-runs.py --check`: `4 runs, 13 rounds: all resolve, all covered, counts agree` at the tip · check-all at `92c07e6`: all 20 gates passed, 985 + 33 + 8 tests passed, 0 failed, 0 skipped
+> **Review:** round 1, candidate range da367ca..`64fd647`(round 1) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 1 of cap 22, gpt-6-astra medium; check-panel `PASS four lenses, one verdict each; highest none`). Independent: gpt-6-astra medium via `scripts/review-dispatch.py`, three rounds: round 1 found F1 (shared probe manifest, fixed in 2ea0eeb), round 2 found F2 (the independent probe has no manifest, fixed in 64fd647), round 3 approved all five lenses. Raw findings: docs/reviews/00-workspace/D00-T01-s4.md. Attestation: docs/reviews/00-workspace/D00-T01-s4.attest.json
+> **Plan review:** gpt medium, filed D00 T01 §5, B-062 (8 findings: PR6 to PR8 filed as one item on D00 T01 §5, PR2 to PR5 deferred to the backlog as B-062, PR1 rejected by design) (run 20261021-D00-T01-S4-gpt)
+> **CRUD:** not applicable (review probes and a review-record paragraph, with no user record, document, or setting)
+> **Duration:** 2026-10-21T18:35:00Z to 2026-10-21T19:07:44Z
 
 ## 5. First Push: CI Green and Read Back
 
