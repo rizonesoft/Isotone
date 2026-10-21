@@ -28,5 +28,5 @@ To remove a task, delete its entry and its README row, then re-run the installer
 - `tasks.json` is the only list. Never register a task by hand or name a task in an installer.
 - A scheduled command never needs a person: no prompts, no browser, nothing that writes to a live system without the operator's approval.
 - Never put a secret in `tasks.json`, a command line or a log. The alert reads its key from the vault at send time.
-- Never change `run.py`, `alert.py` or the installers in Isotone: they come from the Conclave-SDK `automations` kit and are refreshed by copying the kit's files when `scripts/check-conclave-kits.py` reports they changed, never by `forge.py sync` (AGENTS.md says why).
-- A check of a repository pin (the .NET SDK, a package advisory) belongs in `.github/workflows/pins.yml`, not here: only a check that needs this PC (its tools, its Conclave SDK checkout, its Claude login) is a task.
+- Change `run.py`, `alert.py` or the installers only to fix the runner itself, never to add a task: a task is an entry in `tasks.json`, and `scripts/tests/test_automations.py` covers the runner.
+- A check of a repository pin (the .NET SDK, a package advisory) belongs in `.github/workflows/pins.yml`, not here: only a check that needs this PC (its tools, its Claude login) is a task.

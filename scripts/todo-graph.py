@@ -5317,7 +5317,7 @@ def plan_phase_counts() -> dict[str, dict]:
 
 
 def plan_document(todos: list[Todo], by_key, by_id) -> dict:
-    """The plan as JSON for programs that show it (`query plan`, the shape of Conclave-SDK's todo kit), so a reader
+    """The plan as JSON for programs that show it (`query plan`), so a reader
     such as the Conclave editor extension never parses todo/ itself.
 
     `title` is the plan's H1, `acceptance` the first paragraph under its acceptance-bar heading, `phases` maps each
@@ -11072,7 +11072,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             code, out = _gquery("backlog")
             check("budget: query backlog lists every entry and the count",
                   (code, "B-001" in out and "B-002" in out and "\n2 backlog entries" in out), (0, True))
-            # query plan: the JSON the Conclave editor extension reads (Conclave-SDK todo kit shape).
+            # query plan: the JSON the Conclave editor extension reads.
             gfile.write_text(_gtodo([1, 2, 3]).replace("| 3 | §3 | Thing 3 | -- | [ ] |",
                                                          "| 3 | §3 | Thing 3 | §1 | [ ] |"), encoding="utf-8")
             code, out = _gquery("plan")

@@ -131,7 +131,7 @@ PROVENANCES = ("recorded", "reconstructed")
 HEADING_FAMILY = {"GPT": "codex", "Opus": "claude", "Claude": "claude", "Grok": "grok"}
 # The models review records may name, by the family their heading records
 # (D00 T04 §27, §29). The registry lived in `.conclave/reviewers.toml` until
-# the pin took the Conclave-SDK reviewer schema (2026-10-21), which names
+# the pin took its current schema (2026-10-21), which names
 # only today's reviewers; records are history, so the models they may name
 # stay here, retired pins included. A `newest` pattern accepts any concrete
 # release it matches (never a suffixed variant: `grok-4.7`, not

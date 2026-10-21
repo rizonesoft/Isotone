@@ -7,7 +7,7 @@ name: pins
 # job here (a source could not be read, a pin is malformed) emails whoever last edited this schedule.
 # NuGet packages and GitHub Actions are updated by Dependabot (.github/dependabot.yml), except the Microsoft.Extensions.*
 # packages that track the SDK's runtime, which the dotnet check moves with the SDK. Checks only this PC can see (its
-# CLIs, Python, installed SDK, the Conclave SDK checkout) stay in .conclave/automations.
+# CLIs, Python, installed SDK) stay in .conclave/automations.
 # Each job holds only the token permissions its check uses (independent review 2026-10-21): the dotnet job pushes a
 # branch, opens a PR, labels it, and dispatches CI; the vulnerable-packages job restores the solution and files issues.
 

@@ -3,7 +3,7 @@
 Ported in shape from RectoPDF's `tests/scripts/test_pin_automations.py` (2026-10-21). Git-backed cases build a
 throwaway repository with an isolated git configuration, so the operator's global settings (signing, hooks, default
 branch) never apply and nothing outside the temp folder changes. The last class holds the workspace check that every
-settings hook runs a script that exists, which lived in test_automations.py before that file became the kit's.
+settings hook runs a script that exists, which lived in test_automations.py before that file took only the automations tests.
 """
 import importlib.util
 import json
@@ -344,88 +344,6 @@ class LocalToolsTests(GitRepo):
         self.assertEqual(self.call("check", fetch=lambda url: {} if "npm" in url else []), 2)
 
 
-class KitFixture(GitRepo):
-    def setUp(self):
-        super().setUp()
-        self.mod = load("check-conclave-kits")
-        self.sdk = Path(self._tmp.name) / "sdk"
-        self.sdk.mkdir()
-        self.git("init", "-q", "-b", "main", cwd=self.sdk)
-        self.skill = self.sdk / "kits" / "todo" / "templates" / ".claude" / "skills" / "x" / "SKILL.md"
-        self.skill.parent.mkdir(parents=True)
-        self.skill.write_text("kit text\n", encoding="utf-8")
-        codex = self.sdk / "kits" / "todo" / "templates" / ".codex" / "skills" / "x" / "SKILL.md"
-        codex.parent.mkdir(parents=True)
-        codex.write_text("codex copy\n", encoding="utf-8")
-        (self.sdk / "kits" / "todo" / "templates" / "AGENTS.md").write_text("project file\n", encoding="utf-8")
-        self.sdk_commit()
-        self.repo = Path(self._tmp.name) / "consumer"
-        (self.repo / ".claude" / "skills" / "x").mkdir(parents=True)
-        (self.repo / ".conclave").mkdir()
-
-    def sdk_commit(self):
-        self.git("add", "-A", cwd=self.sdk)
-        self.git("commit", "-q", "-m", "kit", cwd=self.sdk)
-
-    def allow(self, text):
-        (self.repo / ".conclave" / "kit-drift-allow.txt").write_text(text, encoding="utf-8")
-
-    def blob(self):
-        return self.git("rev-parse", "HEAD:kits/todo/templates/.claude/skills/x/SKILL.md", cwd=self.sdk)[:12]
-
-
-class ConclaveKitTests(KitFixture):
-    def test_an_identical_claude_file_is_in_step_and_codex_and_project_files_are_ignored(self):
-        (self.repo / ".claude" / "skills" / "x" / "SKILL.md").write_bytes(b"kit text\r\n")
-        self.assertEqual(self.mod.drift(self.sdk, self.repo), [])
-
-    def test_a_changed_file_is_drift_unless_allowed(self):
-        (self.repo / ".claude" / "skills" / "x" / "SKILL.md").write_text("local edit\n", encoding="utf-8")
-        self.assertEqual(self.mod.drift(self.sdk, self.repo),
-                         [f".claude/skills/x/SKILL.md differs from the SDK (kit todo, sdk {self.blob()})"])
-        self.allow(f".claude/skills/x/SKILL.md | sdk {self.blob()} | kept on purpose\n")
-        self.assertEqual(self.mod.drift(self.sdk, self.repo), [])
-
-    def test_an_allowed_file_the_sdk_changes_again_is_reported_until_absorbed(self):
-        (self.repo / ".claude" / "skills" / "x" / "SKILL.md").write_text("local edit\n", encoding="utf-8")
-        old = self.blob()
-        self.allow(f".claude/skills/x/SKILL.md | sdk {old} | kept on purpose\n")
-        self.skill.write_text("kit text v2\n", encoding="utf-8")
-        self.sdk_commit()
-        found = self.mod.drift(self.sdk, self.repo)
-        self.assertEqual(len(found), 1)
-        self.assertIn(f"sdk {old} -> {self.blob()}", found[0])
-        (absorbed,) = self.mod.absorb_lines(self.sdk, self.repo)
-        self.assertEqual(absorbed, f".claude/skills/x/SKILL.md | sdk {self.blob()} | kept on purpose")
-        self.allow(absorbed + "\n")
-        self.assertEqual(self.mod.drift(self.sdk, self.repo), [])
-
-    def test_an_entry_without_a_reason_is_refused(self):
-        self.allow(".claude/skills/x/SKILL.md\n")
-        with self.assertRaises(ValueError):
-            self.mod.allowed(self.repo)
-
-    def test_an_uncommitted_sdk_change_is_not_drift(self):
-        (self.repo / ".claude" / "skills" / "x" / "SKILL.md").write_text("kit text\n", encoding="utf-8")
-        self.skill.write_text("wip\n", encoding="utf-8")
-        self.assertEqual(self.mod.drift(self.sdk, self.repo), [])
-
-    def test_an_allowed_doctor_gap_is_quiet_and_a_new_one_is_reported(self):
-        (self.sdk / "forge.py").write_text(
-            "import json\nprint(json.dumps({'checks': [{'name': 'GEMINI.md', 'status': 'missing'},"
-            " {'name': 'new-check', 'status': 'missing'}]}))\n", encoding="utf-8")
-        self.allow("doctor base GEMINI.md | Claude-only\n")
-        gaps = self.mod.doctor(self.sdk, self.repo)
-        self.assertIn("doctor base: missing new-check", gaps)
-        self.assertNotIn("doctor base: missing GEMINI.md", gaps)
-        self.assertIn("doctor todo: missing GEMINI.md", gaps, "an allowance names its kit")
-
-    def test_the_repository_allow_list_parses_and_names_reasons(self):
-        entries = self.mod.allowed(REPO)
-        self.assertTrue(entries)
-        self.assertTrue(all(reason for _blob, reason in entries.values()))
-
-
 class ReviewRound3Tests(DotnetFixture):
     """The independent review round 3 findings (2026-10-21), one case each where code changed."""
 
@@ -533,31 +451,6 @@ class ReviewRound3Tests(DotnetFixture):
         block = job.split("permissions:\n", 1)[1].split("\n    steps:", 1)[0]
         self.assertEqual(sorted(line.strip() for line in block.splitlines() if line.strip()),
                          ["contents: read", "issues: write"])
-
-
-class KitRound3Tests(KitFixture):
-    def test_a_file_entry_with_a_malformed_or_missing_blob_is_refused(self):
-        for line in (".claude/skills/x/SKILL.md | sdk not-a-blob | kept\n", ".claude/skills/x/SKILL.md | kept\n"):
-            self.allow(line)
-            with self.assertRaises(ValueError):
-                self.mod.allowed(self.repo)
-        self.assertEqual(self.mod.allowed(self.repo, strict=False)[".claude/skills/x/SKILL.md"], (None, "kept"))
-
-    def test_an_unrelated_sdk_commit_does_not_resend_the_notice(self):
-        (self.repo / ".claude" / "skills" / "x" / "SKILL.md").write_text("local edit\n", encoding="utf-8")
-        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=self.repo, check=True)
-        subprocess.run(["git", "commit", "-q", "--allow-empty", "-m", "c"], cwd=self.repo, check=True)
-        (self.sdk / "forge.py").write_text("import json\nprint(json.dumps({'checks': []}))\n", encoding="utf-8")
-        mail = Mailbox()
-        self.assertEqual(self.mod.main(["notify"], root=self.repo, sdk=self.sdk, mail=mail), 0)
-        (self.sdk / "unrelated.txt").write_text("x\n", encoding="utf-8")
-        self.sdk_commit()
-        self.assertEqual(self.mod.main(["notify"], root=self.repo, sdk=self.sdk, mail=mail), 0)
-        self.assertEqual(len(mail.sent), 1)
-        self.skill.write_text("kit text v2\n", encoding="utf-8")
-        self.sdk_commit()
-        self.assertEqual(self.mod.main(["notify"], root=self.repo, sdk=self.sdk, mail=mail), 0)
-        self.assertEqual(len(mail.sent), 2, "a further SDK change to a reported file is announced again")
 
 
 class WorkspaceHooks(unittest.TestCase):

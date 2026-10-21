@@ -12,10 +12,10 @@ reply `OVERALL: blocked` (it could not reach the candidate, for example a sandbo
 skipped and the reason recorded. When every reviewer fails there is no review: exit 1, which never counts as approval.
 A review that finds problems is still a review (exit 0).
 
-`--keep DIR` (an Isotone addition) also keeps each reviewer's raw stdout and stderr in DIR as `<reviewer>.stdout.txt`
+`--keep DIR` also keeps each reviewer's raw stdout and stderr in DIR as `<reviewer>.stdout.txt`
 and `<reviewer>.stderr.txt`, and the returned review as `review.md`, so a round's evidence outlives the dispatcher's
 scratch: Codex prints the model it served and the tokens it used on stderr, which Isotone's attestation and round
-records read. Without it stderr is discarded, as the kit does.
+records read. Without it stderr is discarded.
 
 `--check-pin` loads the pin with `load_pin`, the only place the rules live, and reports without running anything:
 with `--json`, `{"ok": true, "schema_version", "reviewers", "routes", "clis": {cli: on PATH}}` and exit 0, or

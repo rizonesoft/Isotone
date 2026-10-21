@@ -1,5 +1,4 @@
-# Independent reviewers for this repository, read by scripts/review-dispatch.py (the Conclave-SDK reviewer kit's
-# schema, adopted 2026-10-21: the operator chose "Full adoption" and "Astra high, no fallback").
+# Independent reviewers for this repository, read by scripts/review-dispatch.py.
 #
 # A route names one reviewer and at most one fallback for work written by one agent, and neither is of the writer's
 # own model family (the CLI names it: codex is OpenAI, agy is Google, claude is Anthropic). Claude Code is Isotone's
@@ -15,11 +14,12 @@
 
 schema_version = 1
 
-# GPT-6 Astra through the Codex CLI, read-only sandbox, high effort (the effort every review round runs at).
+# GPT-6 Astra through the Codex CLI, read-only sandbox, medium effort (operator decision 2026-10-21, RectoPDF's pin:
+# the 22-round cap gives the loop room that one high-effort round bought before).
 [reviewers.astra]
 cli = "codex"
 model = "gpt-6-astra"
-effort = "high"
+effort = "medium"
 
 [routes]
 claude = ["astra"]

@@ -38,7 +38,7 @@ python scripts/panel_slots.py delegate-probe
 python -m unittest discover -s scripts/tests
 ```
 
-The unittest run is the script tests under `scripts/tests` (the kits' automations and review-dispatch tests, and Isotone's pin automations; Conclave-SDK 911c256), so a broken check or dispatcher is found before a campaign leans on it. A `delegate-probe` drift or failure does not stop the run: delegation pauses (the lead does the work itself) until the pin is re-proven as `standards/delegation.md` states, and the run file records the line. The audit is these commands and the recorded lines, nothing more: the deep phase repair belongs to `process-phase` step 1. Fix every FATAL before talking about shipping. If `plan --check` is stale, run `plan --sync`, then re-check. **Never tick a box in `implementation-plan.md` by hand**: the boxes are a projection of the Implementation Order tables.
+The unittest run is the script tests under `scripts/tests` (the automations, review-dispatch, and pin automation tests), so a broken check or dispatcher is found before a campaign leans on it. A `delegate-probe` drift or failure does not stop the run: delegation pauses (the lead does the work itself) until the pin is re-proven as `standards/delegation.md` states, and the run file records the line. The audit is these commands and the recorded lines, nothing more: the deep phase repair belongs to `process-phase` step 1. Fix every FATAL before talking about shipping. If `plan --check` is stale, run `plan --sync`, then re-check. **Never tick a box in `implementation-plan.md` by hand**: the boxes are a projection of the Implementation Order tables.
 
 Record these lines **in the run's findings file**, not as the turn's last words:
 

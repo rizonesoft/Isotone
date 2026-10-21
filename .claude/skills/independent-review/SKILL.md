@@ -5,11 +5,11 @@ description: Get an independent review of your own work outside a TODO section f
 
 # Independent review
 
-Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` (the Conclave-SDK reviewer kit's pin, adopted 2026-10-21) names who reviews Claude's work, and `scripts/review-dispatch.py` runs the round.
+Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` names who reviews Claude's work, and `scripts/review-dispatch.py` runs the round.
 
 | Work written by | Reviewer | Fallback |
 | --- | --- | --- |
-| Claude (the only writer) | GPT-6 Astra, high effort | none: a round Astra cannot return waits for the operator |
+| Claude (the only writer) | GPT-6 Astra, medium effort | none: a round Astra cannot return waits for the operator |
 
 The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` refuses a fallback or a second writer route (operator decisions 2026-09-25 and 2026-10-21). A TODO section never uses this skill: its panel, architecture, plan, stamp, and independent rounds run through the same dispatcher inside `review-todo-section` and `process-todo-section`.
 
@@ -25,7 +25,7 @@ The dispatcher refuses a reviewer of the writer's own family, and `python script
    ```
 
 4. Read the review. Verify every finding against the code before acting: fix what is real, and record why anything else is not, as text after the round (a `## Response to round N` heading), never inside it.
-5. Commit fixes as new commits and run another round on the new tip, up to 3 rounds. A unit that needs patching three rounds running gets re-thought, not patched again.
+5. Commit fixes as new commits and run another round on the new tip, up to 22 rounds (a round that returns no review does not count). From round 9 on, a round whose findings are all `P3` or advisory (its `HIGHEST: P3` line; the prompt asks for a `P1`, `P2` or `P3` tag on every finding, and an untagged one counts as `P1`) ends the loop, and its findings are filed as follow-up work. At the cap, file every leftover with an owner and say so in the record; nobody is asked. A unit that needs patching three rounds running gets re-thought, not patched again.
 
 ## Rules
 

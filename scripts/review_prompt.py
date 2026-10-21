@@ -73,6 +73,19 @@ _PANEL_LONG_COUNT_RE = re.compile(
 # in any shape pass, as before. ASCII digits like the count grammar: a
 # Unicode-digit item is prose, not a finding.
 _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
+# Severity (operator decision 2026-10-21, RectoPDF's review loop): a
+# finding opens with its tag after the number (`1. P2 ...`, bold or
+# bracketed allowed), and the reviewer may close the round with one
+# `HIGHEST: P1|P2|P3|none` line after every verdict. The line is
+# optional, so rounds recorded before it still check; when present it
+# may not understate: an untagged needs-attention finding, or a
+# needs-attention verdict with no numbered finding, counts as P1.
+# Advisory findings never block, so they do not raise the floor. The
+# loop's severity stop (review-todo-section) rests on `highest P3` in
+# the checker's reason, never on the reviewer's word alone.
+_FINDING_SEVERITY_RE = re.compile(r"^\s*[0-9]+\.\s+[*\[(]*(P[123])\b")
+_HIGHEST_RE = re.compile(r"^\s*\**\s*HIGHEST\s*:\s*\**\s*(P1|P2|P3|none)\s*\**\s*$")
+SEVERITY_RANK = {"none": 0, "P3": 1, "P2": 2, "P1": 3}
 
 
 def unique_tag(prefix: str) -> str:
@@ -480,10 +493,16 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             return False, reason
     seen: dict[str, int] = {}
     detail_open = False
+    blocking = False
     declared: int | None = None
     tally = 0
     open_lens = ""
     open_line = 0
+    block_floor = 0
+    floor = 0
+    floor_line = 0
+    highest: str | None = None
+    highest_line = 0
 
     def close_block() -> tuple[bool, str] | None:
         if declared is not None and tally != declared:
@@ -493,24 +512,49 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             )
         return None
 
+    def block_severity() -> int:
+        # A needs-attention verdict with no numbered finding still holds
+        # findings, untagged ones: P1.
+        if not blocking:
+            return 0
+        return block_floor if tally else SEVERITY_RANK["P1"]
+
     for lineno, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
+            continue
+        if highest is not None:
+            return False, f"line {lineno} follows the HIGHEST line (line {highest_line}): {line.strip()[:80]}"
+        h = _HIGHEST_RE.match(line)
+        if h:
+            missing = [lens for lens in PANEL_LENSES if lens not in seen]
+            if missing:
+                return False, f"line {lineno} names HIGHEST before the verdicts for: {', '.join(missing)}"
+            bad = close_block()
+            if bad:
+                return bad
+            if block_severity() > floor:
+                floor, floor_line = block_severity(), open_line
+            highest, highest_line = h.group(1), lineno
             continue
         m = _PANEL_LINE_RE.match(line)
         if m:
             bad = close_block()
             if bad:
                 return bad
+            if block_severity() > floor:
+                floor, floor_line = block_severity(), open_line
             lens = m.group(1)
             if lens in seen:
                 return False, f"line {lineno} repeats the {lens} verdict (first at line {seen[lens]})"
             seen[lens] = lineno
             detail_open = m.group(2) != "approve"
+            blocking = m.group(2) == "needs-attention"
             raw = m.group("c1") or m.group("c2")
             # An approve takes no details, so its tally is fixed at
             # zero: `approve (0)` passes, `approve (2)` fails.
             declared = int(raw) if raw is not None else None
             tally = 0
+            block_floor = 0
             open_lens, open_line = lens, lineno
             continue
         if _PANEL_LONG_COUNT_RE.match(line):
@@ -521,13 +565,23 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             return False, f"line {lineno} is not a verdict or finding detail: {line.strip()[:80]}"
         if _FINDING_ITEM_RE.match(line):
             tally += 1
+            tag = _FINDING_SEVERITY_RE.match(line)
+            block_floor = max(block_floor, SEVERITY_RANK[tag.group(1)] if tag else SEVERITY_RANK["P1"])
     bad = close_block()
     if bad:
         return bad
     missing = [lens for lens in PANEL_LENSES if lens not in seen]
     if missing:
         return False, f"missing verdicts: {', '.join(missing)}"
-    return True, "four lenses, one verdict each"
+    if highest is None:
+        return True, "four lenses, one verdict each"
+    if block_severity() > floor:
+        floor, floor_line = block_severity(), open_line
+    if SEVERITY_RANK[highest] < floor:
+        named = next(k for k, v in SEVERITY_RANK.items() if v == floor)
+        return False, (f"line {highest_line} declares HIGHEST: {highest} but the needs-attention "
+                       f"verdict at line {floor_line} holds a {named} finding (untagged counts as P1)")
+    return True, f"four lenses, one verdict each; highest {highest}"
 
 
 def next_run_id(todo_path: str, section: int, family: str, date: str, *texts: str) -> str:
@@ -3610,6 +3664,35 @@ def _self_test() -> int:
     check("no-manifest-backward-compat", ok, reason)
     ok, reason = check_panel_output(approves, manifest3)
     check("missing-receipt-fails", (not ok) and "not a receipt" in reason, reason)
+    # Severity (2026-10-21): an optional closing HIGHEST line, checked
+    # against the needs-attention findings; without it the reason is
+    # unchanged, so recorded bundles still recheck.
+    low = ("**adversarial: needs-attention (2)**\n1. P3 a.py:1 wording\n2. **P3** b.py:2 test gap\n"
+           "**consistency: advisory**\n1. P1 c.py:3 noted, not blocking\n"
+           "**integration: approve**\n**record: approve**\n")
+    ok, reason = check_panel_output(receipt + low + "HIGHEST: P3\n", manifest3)
+    check("highest-p3-pass", ok and reason.endswith("; highest P3"), reason)
+    ok, reason = check_panel_output(receipt + approves + "**HIGHEST: none**\n", manifest3)
+    check("highest-none-pass", ok and reason.endswith("; highest none"), reason)
+    ok, reason = check_panel_output(receipt + low, manifest3)
+    check("highest-absent-reason-unchanged", ok and reason == "four lenses, one verdict each", reason)
+    ok, reason = check_panel_output(
+        receipt + low.replace("2. **P3** b.py:2", "2. b.py:2") + "HIGHEST: P3\n", manifest3)
+    check("highest-untagged-counts-p1", (not ok) and "holds a P1 finding" in reason, reason)
+    ok, reason = check_panel_output(
+        receipt + low.replace("1. P3 a.py:1", "1. [P2] a.py:1") + "HIGHEST: P3\n", manifest3)
+    check("highest-understated-fails", (not ok) and "holds a P2 finding" in reason, reason)
+    ok, reason = check_panel_output(
+        receipt + approves.replace("**record: approve**", "**record: needs-attention**\nprose only")
+        + "HIGHEST: P3\n", manifest3)
+    check("highest-unnumbered-counts-p1", (not ok) and "holds a P1 finding" in reason, reason)
+    ok, reason = check_panel_output(receipt + low + "HIGHEST: P2\n", manifest3)
+    check("highest-overstated-pass", ok and reason.endswith("; highest P2"), reason)
+    ok, reason = check_panel_output(
+        receipt + "**adversarial: approve**\nHIGHEST: none\n**consistency: approve**\n", manifest3)
+    check("highest-before-verdicts-fails", (not ok) and "before the verdicts" in reason, reason)
+    ok, reason = check_panel_output(receipt + low + "HIGHEST: P3\nOVERALL: approve\n", manifest3)
+    check("highest-trailing-line-fails", (not ok) and "follows the HIGHEST line" in reason, reason)
     bad_sha = "0" * 64
     ok, reason = check_panel_output(f"RECEIPT sha={bad_sha} end={tag} nonce={nonce}\n" + approves,
                                     manifest3)

@@ -1,6 +1,6 @@
 """The writer's delegation guard and the reviewer pin's Isotone rules (D00 T04 §27, §29).
 
-`.conclave/reviewers.toml` is the Conclave-SDK reviewer kit's pin (`schema_version`, `[reviewers.*]`, `[routes]`),
+`.conclave/reviewers.toml` is the reviewer pin (`schema_version`, `[reviewers.*]`, `[routes]`),
 loaded only through `scripts/review-dispatch.py`'s `load_pin`, where its rules live; every review round runs through
 that dispatcher (operator decision 2026-10-21, "Full adoption", which retired the panel slots this module used to
 resolve). This module adds Isotone's own rules on top and guards the writer's subagents:
@@ -148,7 +148,7 @@ UPWARD_ALIASES = ("opus",)
 ALIAS_OVERRIDES = ("ANTHROPIC_DEFAULT_SONNET_MODEL",)
 # Environment keys that stop Claude Code updating itself (and so its alias map).
 UPDATER_OFF = ("DISABLE_AUTOUPDATER", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")
-# Subagents read and run; they never write (Conclave-SDK 4ca1af5, after the
+# Subagents read and run; they never write (after the
 # operator decision 2026-10-02: "I am not confortable with having a sonnet
 # writer"). No definition may grant these tools, compared case-insensitively,
 # and every definition denies AGENT_ALWAYS_DENIED explicitly.

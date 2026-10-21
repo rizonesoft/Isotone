@@ -64,7 +64,7 @@ jobs:
         run: python3 scripts/tests/test_review_dispatch.py
       - name: Self-test the weakening scan
         run: python3 scripts/weakening-scan.py --self-test
-      - name: Test the scheduled automations kit
+      - name: Test the scheduled automations
         run: python3 scripts/tests/test_automations.py
       - name: Test the pin checks and the settings hook scripts
         run: python3 scripts/tests/test_pin_automations.py

@@ -29,8 +29,8 @@ guard with `acquire --handover`.
 
 The hook fails open on a bad payload, a missing guard or any error, and records the error for the heartbeat to report
 (`hook-error`). `repair` persists the CI repair episode the review skill's push block bounds at 3 attempts. Every
-command takes `--root` to act on a fixture workspace instead of this repository. The hook and the scope came from
-Conclave-SDK's todo kit (2026-10-21), itself a port of this module and the former `.claude/hooks/campaign-stop.ps1`.
+command takes `--root` to act on a fixture workspace instead of this repository. The hook and the scope replaced
+the former `.claude/hooks/campaign-stop.ps1` (2026-10-21).
 
 The self-test drives the configured hook command with Stop payloads against a throwaway workspace (a git repository,
 a guard file, a run file, and a fake `scripts/todo-graph.py` whose runnable count the test controls) and asserts every
@@ -246,12 +246,12 @@ def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id:
 def ready_rows(root: str, timeout: float = 300.0, phase: int | None = None) -> tuple[int | None, str]:
     """How many rows `query ready` offers, and the first one; raises GuardError when the query cannot be read.
 
-    The SDK's todo-graph prints a JSON list of ready rows; a graph that prints a `N runnable now` summary (Isotone's)
-    is read by that line instead. With `phase`, only that phase's rows count. The text summary does not say which
+    A graph that prints a JSON list of ready rows is read as that list; one that prints a `N runnable now` summary
+    (Isotone's) is read by that line instead. With `phase`, only that phase's rows count. The text summary does not say which
     phase a row is in, so for a phase it is unknown (None, ""): a phase run then ends on its own closeout or park
     marker, never on another phase's count, and is never pointed at another phase's row. A query that fails, times
     out, or prints neither shape is an error, never an unknown count: the hook then fails open and records it for the
-    heartbeat (independent review 2026-10-21; the PowerShell hook and the SDK's port kept blocking silently).
+    heartbeat (independent review 2026-10-21; the PowerShell hook kept blocking silently).
     """
     try:
         # The child writes UTF-8 whatever the console code page: rows carry section marks, which a Windows cp1252
@@ -1622,7 +1622,7 @@ def _self_test() -> int:
             for k in env_bounds:
                 del os.environ[k]
 
-    # The run's scope (from Conclave-SDK's todo kit, 2026-10-21): a phase started on its own is guarded for that
+    # The run's scope (2026-10-21): a phase started on its own is guarded for that
     # phase only, so neither the hook nor the heartbeat pushes it on into the rest of the plan.
     with tempfile.TemporaryDirectory(prefix="campaign-scope-") as stmp:
         sroot = _workspace(stmp)

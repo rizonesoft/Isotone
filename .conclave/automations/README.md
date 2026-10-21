@@ -1,8 +1,8 @@
 # Isotone automations
 
-Every scheduled job that must run on this machine lives here: the task list in `tasks.json`, the runner, the failure alert, and the installers for Windows Task Scheduler (`install.ps1`) and systemd user timers (`install.sh`). The runner, alert and installers are the Conclave-SDK `automations` kit's (copied 2026-10-21, refreshed by hand when `isotone-conclave-kits` reports a kit change; never by `forge.py sync`, AGENTS.md says why); `tasks.json` and this README are Isotone's own. Isotone runs on Windows, so the tasks are Task Scheduler tasks under `\Isotone\`.
+Every scheduled job that must run on this machine lives here: the task list in `tasks.json`, the runner, the failure alert, and the installers for Windows Task Scheduler (`install.ps1`) and systemd user timers (`install.sh`). Everything in this folder is Isotone's own. Isotone runs on Windows, so the tasks are Task Scheduler tasks under `\Isotone\`.
 
-Repository pins are not kept here (operator request 2026-10-21, the RectoPDF shape). The daily GitHub workflow `.github/workflows/pins.yml` keeps them on their newest releases, and Dependabot keeps NuGet packages and GitHub Actions current, both documented below. Only the checks that need this PC (its CLIs, its Python, its installed .NET SDK, its Claude login, its Conclave SDK checkout) run from this folder.
+Repository pins are not kept here (operator request 2026-10-21, the RectoPDF shape). The daily GitHub workflow `.github/workflows/pins.yml` keeps them on their newest releases, and Dependabot keeps NuGet packages and GitHub Actions current, both documented below. Only the checks that need this PC (its CLIs, its Python, its installed .NET SDK, and its Claude login) run from this folder.
 
 There is no WinUI 3 pin: Isotone is WPF only, and AGENTS.md refuses any other UI framework, so there is no `Microsoft.WindowsAppSDK` package to keep current.
 
@@ -12,7 +12,6 @@ There is no WinUI 3 pin: Isotone is WPF only, and AGENTS.md refuses any other UI
 | --- | --- | --- | --- | --- |
 | `isotone-delegate-probe` | Monday 07:00 | `scripts/panel_slots.py delegate-probe` | (fails instead) | the `sonnet` alias no longer serves the pinned delegate model at the pinned effort (`DELEGATE` in `scripts/panel_slots.py` needs a re-pin) |
 | `isotone-local-tools` | Monday 07:05 | `scripts/check-local-tools.py notify` | this PC's `codex` CLI (which runs every review round), `claude` CLI, or Python is behind its newest stable release, or this PC lacks the SDK `global.json` pins (once per finding) | npm, python.org or `global.json` cannot be read |
-| `isotone-conclave-kits` | Monday 07:10 | `scripts/check-conclave-kits.py notify` | the Conclave SDK's base, todo, reviewer or automations kits changed a file Isotone has not absorbed, or its doctor reports a new gap (once per state) | the SDK checkout is missing (set `CONCLAVE_SDK_ROOT`), or an allow-list entry has no reason |
 
 A weekly task starts when available: a run missed while this PC was off fires at the next chance, with a five-minute random delay. A start while the task still runs is ignored, and a run is stopped five minutes past its timeout. Tasks run only while the operator is logged on, so no password is stored.
 
@@ -33,7 +32,7 @@ The workflow needs the repository setting "Allow GitHub Actions to create and ap
 
 - **A pin moved:** a GitHub pull request labelled `dependencies` and `pins`, from the pins workflow or Dependabot. GitHub notifies you as for any PR. Merge it when its checks are green.
 - **Something needs your decision:** a GitHub issue labelled `pins` and `pins:<check>`. It closes itself once the finding is gone, and closing it yourself dismisses that finding.
-- **Something on this PC is behind:** an email from "Isotone automations" (`website@rizonetech.com`, through SMTP2GO) to `rizonetech@gmail.com`, titled "Isotone: ... is available" or "have changed", sent once per new finding.
+- **Something on this PC is behind:** an email from "Isotone automations" (`website@rizonetech.com`, through SMTP2GO) to `rizonetech@gmail.com`, titled "Isotone: ... is available", sent once per new finding.
 - **A check broke:** on GitHub, a failed `pins` run, which GitHub emails to whoever last edited the schedule; on this PC, an email titled "Automation failed: <task> on <host>" with the log tail and how to run it again, repeated on every failing run until fixed.
 
 No PR, issue or email means everything is current. `gh pr list --label pins`, `gh issue list --label pins` and the `Get-ScheduledTask` line below show the state at any time.
@@ -62,7 +61,7 @@ python scripts/tests/test_automations.py
 python scripts/tests/test_pin_automations.py
 ```
 
-The installer reads `tasks.json` and registers every task it lists; a task under `\Isotone\` that the file no longer lists is removed (2026-10-21 removed `isotone-vulnerable-packages` and `isotone-dotnet-ga`, which moved to the pins workflow).
+The installer reads `tasks.json` and registers every task it lists; a task under `\Isotone\` that the file no longer lists is removed (2026-10-21 removed `isotone-vulnerable-packages` and `isotone-dotnet-ga`, which moved to the pins workflow, and `isotone-conclave-kits`, when Isotone stopped tracking the Conclave SDK).
 
 ## Adding an automation
 
