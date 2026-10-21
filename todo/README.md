@@ -606,6 +606,14 @@ or `validate` fails with `release-backlog-review-missing`. Running it means walk
 | `backlog-review-rewritten` | FATAL | A `reviewed:` field HEAD's entry carries that the working entry lost or changed: a release's backlog review is append-only. |
 | `release-backlog-review-missing` | FATAL | A release section (it pushes an app tag) without its ``Run the backlog review for `<tag>` `` checklist item. |
 | `release-backlog-unreviewed` | FATAL | A release section stamped `[x]` while a backlog entry in its scope (its app or `suite`; every entry for `isotone`), added on or before the stamp, has no `reviewed:` field for that tag. |
+| `parity-id-missing` | FATAL | A competitor source id under `docs/parity/sources/` that no catalog row places: a capability with no owner, the gap the parity acceptance-bar aim exists to refuse. |
+| `parity-id-duplicate` | FATAL | A source id two catalog rows place: one capability with two owners, so neither status can be trusted. |
+| `parity-id-unknown` | FATAL | A catalog cell naming an id its source file does not define, or a token that is no id: a placement pointing at nothing. |
+| `parity-np-duplicate` | FATAL | A catalog feature id (`NP-`) on two rows: ids are stable addresses, never reused. |
+| `parity-status-malformed` | FATAL | A catalog status outside the grammar of `docs/parity/README.md`: `plan` or `shipped-scope` with a full `DNN TNN §N` ref, `backlog B-NNN`, `excluded: <reason>`, or `other-app:` naming Stilus, Gesso, Albumen, or none, then a reason. |
+| `parity-ref-dead` | FATAL | A `plan` or `shipped-scope` ref naming no section in `todo/`, or a section carrying `> **Moved:**`: the row's owner is gone. |
+| `parity-backlog-dead` | FATAL | A `backlog B-NNN` status naming no live entry in `todo/backlog.md`, for example an entry promoted without its catalog rows following. |
+| `parity-input-damaged` | FATAL | A catalog or inventory file missing while `docs/parity/` exists, a row whose cell count differs from its table header, or a source id defined twice in one file: a damaged input fails naming the file and line instead of quietly shrinking the count. |
 | `design-missing` | FATAL | A section whose Fidelity line names a surface carries no `**Design:**` line and is not listed in `todo/.design-baseline`: a surface built from a guess instead of the spec it implements 1:1. |
 | `design-malformed` | FATAL | A `**Design:**` or `**Design deviation:**` line outside its grammar (near misses included), a second Design line in one section, a line outside a numbered section, or `new surface:` without the item that adds the spec to `docs/design/` first. |
 | `design-dead-ref` | FATAL | A Design ref whose file does not exist or whose anchor matches no heading (slugged GitHub-style) or HTML id, or a deviation whose follow-up names no live section. |

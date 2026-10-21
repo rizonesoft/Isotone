@@ -2482,6 +2482,12 @@ def validate(graph, _args) -> int:
     for cls, msg in graph.budget_findings(todos):
         flag(cls, msg)
 
+    # The parity catalogs (D00 T01 §6, docs/parity/README.md): every
+    # competitor source id placed exactly once, every status in the grammar,
+    # every ref live. A tree with no docs/parity/ has nothing to check.
+    for cls, msg in graph.parity_module().parity_findings(graph, todos):
+        flag(cls, msg)
+
     # THE DESIGN CONTRACT (standards/design-contract.md, operator 2026-09-27):
     # every surface section names the docs/design spec it implements 1:1 on
     # a `**Design:**` line whose refs resolve; the gaps of 2026-09-27 live in

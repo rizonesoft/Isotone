@@ -1004,6 +1004,19 @@ SEVERITY_MAP: dict[str, str] = {
     # release, the whole backlog) still has an entry, added on or before
     # the stamp, with no `reviewed: <tag> ...` field for that tag.
     "release-backlog-unreviewed": "fatal",
+    # The parity catalogs are plan data like todo/ (D00 T01 §6): a source id
+    # placed nowhere or twice, a catalog id no source defines, a reused
+    # feature id, a status outside the grammar, a dead section or backlog
+    # ref, or a damaged input breaks the acceptance-bar aim that every
+    # competitor capability has exactly one owner. The fix is mechanical.
+    "parity-id-missing": "fatal",
+    "parity-id-duplicate": "fatal",
+    "parity-id-unknown": "fatal",
+    "parity-np-duplicate": "fatal",
+    "parity-status-malformed": "fatal",
+    "parity-ref-dead": "fatal",
+    "parity-backlog-dead": "fatal",
+    "parity-input-damaged": "fatal",
     # THE DESIGN CONTRACT (standards/design-contract.md, operator 2026-09-27).
     # A surface section without its `**Design:**` line, outside the baseline
     # of 2026-09-27: a surface built from a guess instead of the spec.
@@ -1872,6 +1885,21 @@ def adjacency_module():
     return inspector
 
 
+def parity_module():
+    """scripts/todo-parity.py, the parity catalog checks (D00 T01 §6), loaded without writing bytecode."""
+    spec = importlib.util.spec_from_file_location("todo_parity", Path(__file__).with_name("todo-parity.py"))
+    if spec is None or spec.loader is None:
+        raise RuntimeError("parity catalog checks unavailable")
+    module = importlib.util.module_from_spec(spec)
+    previous_bytecode = sys.dont_write_bytecode
+    try:
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = previous_bytecode
+    return module
+
+
 WARNING_BASELINE = REPO / "todo" / ".warning-baseline"
 
 
@@ -2081,6 +2109,34 @@ def unmet_dependencies(
     return unmet
 
 
+def _query_parity(todos: list[Todo], phase: str | None, as_json: bool) -> int:
+    """`query parity`: per catalog, the status totals and per plan phase the features, sections, and stamped
+    sections they are planned to (D00 T01 §6); `--phase N` narrows to one phase and lists its rows."""
+    report = parity_module().parity_report(sys.modules[__name__], todos)
+    key = None if phase is None else (str(int(phase)) if str(phase).isdigit() else str(phase))
+    for cat in report["catalogs"].values():
+        if key is not None:
+            cat["phases"] = {key: cat["phases"].get(key, {"title": "no rows planned to this phase", "features": 0,
+                                                         "sections": 0, "stamped_sections": 0, "rows": []})}
+        elif as_json:
+            for bucket in cat["phases"].values():
+                bucket.pop("rows", None)
+    if as_json:
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return 0
+    for app, cat in report["catalogs"].items():
+        totals = ", ".join(f"{k} {v}" for k, v in cat["totals"].items())
+        print(f"parity {app}  {cat['rows']} features in {cat['path']}: {totals}")
+        print(f"\n  {'phase':>8}  {'features':>8}  {'sections':>8}  {'stamped':>7}  title")
+        for p, b in cat["phases"].items():
+            print(f"  {p:>8}  {b['features']:>8}  {b['sections']:>8}  {b['stamped_sections']:>7}  {b['title']}")
+        if key is not None:
+            print()
+            for row in cat["phases"][key]["rows"]:
+                print(f"  {row['id']}  {row['status']} {row['ref']}  {row['feature']}")
+    return 0
+
+
 def cmd_query(args) -> int:
     if args.what != "run" and getattr(args, "target", None):
         print(f"query {args.what} takes no target")
@@ -2239,6 +2295,8 @@ def cmd_query(args) -> int:
             )
         return 0
 
+    if what == "parity":
+        return _query_parity(todos, getattr(args, "phase", None), getattr(args, "json", False))
     if what == "budget":
         summary = budget_summary(todos)
         if summary is None:
@@ -11131,6 +11189,142 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _sh_g = __import__("shutil")
             _sh_g.rmtree(groot, ignore_errors=True)
 
+        # --- the parity catalogs (D00 T01 §6, docs/parity/README.md) ---------
+        # Its own tree: two tiny inventories, a six-row catalog, one TODO file
+        # (a stamped, an open, a Moved, and an unphased section), a plan with
+        # one phase, and a one-entry backlog, so every class and count is exact.
+        import io as _pio
+        import contextlib as _pctx
+        par = parity_module()
+        proot = root / "parity-fixture"
+        ptodo = proot / "todo"
+        (ptodo / "94-parity").mkdir(parents=True)
+        (ptodo / "94-parity" / "INDEX.md").write_text(
+            "# 94 Parity\n\n| TODO | Title |\n| --- | --- |\n| [TODO-01](./TODO-01-parity.md) | Parity |\n",
+            encoding="utf-8",
+        )
+
+        def _psection(n: int, extra: str = "") -> str:
+            return (f"## {n}. Thing {n}\n\n{extra}Context.\n\n- [ ] Do thing {n}\n- [ ] Commit: `\"selftest: thing {n}\"`\n\n"
+                    f"**Test checkpoint:** `true`\n\n")
+
+        (ptodo / "94-parity" / "TODO-01-parity.md").write_text(
+            "---\nschema_version: 1\nid: parity-fixture\ndomain: 94-parity\nstatus: active\n"
+            "title: \"TODO-01 -- Parity fixture\"\n---\n\n# TODO-01 -- Parity fixture\n\n"
+            "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
+            "| :---: | :-----: | ----------- | ---------- | :----: |\n"
+            "| 1 | §1 | Thing 1 | -- | [x] |\n| 2 | §2 | Thing 2 | -- | [ ] |\n"
+            "| 3 | §3 | Thing 3 | -- | [ ] |\n| 4 | §4 | Thing 4 | -- | [ ] |\n\n---\n\n"
+            + _psection(1).replace("**Test checkpoint:** `true`\n\n",
+                                   "**Test checkpoint:** `true`\n\n> **Verified:** 2026-10-21 | §1 | fixture\n\n")
+            + _psection(2) + _psection(3, "> **Moved:** 2026-10-21 to docs/elsewhere.md (fixture).\n\n") + _psection(4),
+            encoding="utf-8",
+        )
+        pplan = ptodo / "implementation-plan.md"
+        pplan.write_text(
+            "# Implementation plan\n\n### Phase 4 -- Parity fixture\n\nWhy.\n\n| ✔ | Section | Deliverable | Items |\n"
+            "| :-: | --- | --- | :-: |\n| [x] | `D94 T01 §1` | Thing 1 | 2 |\n| [ ] | `D94 T01 §2` | Thing 2 | 2 |\n",
+            encoding="utf-8",
+        )
+        (ptodo / "backlog.md").write_text(
+            "# Backlog\n\n## Entries\n\n- [B-001] Kept idea -- source: parity-fixture-1 -- added: 2026-10-21 "
+            "-- why deferred: nice to have -- promote when: asked\n\n" + BACKLOG_REMOVED_HEADING + "\n\nNone.\n",
+            encoding="utf-8",
+        )
+        (proot / "docs" / "parity" / "sources").mkdir(parents=True)
+        _phead = "| ID | Feature | Kind | Where | What it does | Category | Source |\n| -- | -- | -- | -- | -- | -- | -- |\n"
+        _pai = _phead + "| AI-0001 | One | tool | x | y | core | z |\n| AI-0002 | Two | tool | x | y | core | z |\n"
+        _pcd = _phead + "| CD-001 | Uno | tool | x | y | core | z |\n| CD-002 | Dos | tool | x | y | core | z |\n"
+        _pcat = (
+            "# Stilus parity\n\n| ID | Feature | Illustrator | CorelDRAW | Category | Status | Notes |\n"
+            "| -- | -- | -- | -- | -- | -- | -- |\n"
+            "| NP-0001 | One | AI-0001 | CD-001 | core | plan D94 T01 §1 |  |\n"
+            "| NP-0002 | Two | AI-0002 | -- | core | shipped-scope D94 T01 §2 |  |\n"
+            "| NP-0003 | Dos | -- | CD-002 | core | backlog B-001 |  |\n"
+            "| NP-0004 | Cloud | -- | -- | cloud | excluded: cloud |  |\n"
+            "| NP-0005 | Elsewhere | -- | -- | core | other-app: none not an editing job |  |\n"
+            "| NP-0006 | Later | -- | -- | core | plan D94 T01 §4 |  |\n"
+        )
+
+        def _pwrite(cat: str = _pcat, ai: str = _pai, cd: str = _pcd) -> None:
+            (proot / "docs" / "parity" / "sources").mkdir(parents=True, exist_ok=True)
+            (proot / "docs" / "parity" / "README.md").write_text("# Parity\n", encoding="utf-8")
+            (proot / "docs" / "parity" / "sources" / "illustrator-30.8.md").write_text(ai, encoding="utf-8")
+            (proot / "docs" / "parity" / "sources" / "coreldraw-2026.md").write_text(cd, encoding="utf-8")
+            (proot / "docs" / "parity" / "stilus-parity.md").write_text(cat, encoding="utf-8")
+
+        def _pfind() -> list[tuple[str, str]]:
+            return par.parity_findings(sys.modules[__name__], load_todos())
+
+        def _pclasses() -> list[str]:
+            return sorted({cls for cls, _ in _pfind()})
+
+        saved_p = (TODO_DIR, PLAN)
+        try:
+            TODO_DIR, PLAN = ptodo, pplan
+            check("parity: every class is FATAL in the map",
+                  [SEVERITY_MAP.get(c) for c in par.PARITY_CLASSES], ["fatal"] * len(par.PARITY_CLASSES))
+            _pwrite()
+            check("parity: the inventories and catalog parse whole",
+                  (len(par.parse_sources(proot, par.CATALOGS[0]["columns"][0])[0]),
+                   len(par.parse_sources(proot, par.CATALOGS[0]["columns"][1])[0]),
+                   len(par.parse_catalog(proot, par.CATALOGS[0])[0])), (2, 2, 6))
+            check("parity: each status form parses and anything else is malformed",
+                  [par.parse_status(s)[0] for s in ("plan D02 T07 §1", "shipped-scope D02 T04 §2", "backlog B-047",
+                                                    "excluded: cloud", "other-app: Gesso pixel work",
+                                                    "planned D02 T07 §1", "plan T07 §1", "other-app: Photoshop x",
+                                                    "backlog B-47", "other-app: none")],
+                  ["plan", "shipped-scope", "backlog", "excluded", "other-app"] + ["malformed"] * 5)
+            check("parity: a clean catalog has no findings", _pfind(), [])
+            _pcases = (
+                ("a source id no row places", _pcat.replace("| AI-0002 | -- |", "| -- | -- |"), _pai, "parity-id-missing", "AI-0002"),
+                ("a source id two rows place", _pcat.replace("| AI-0002 | -- |", "| AI-0002, AI-0001 | -- |"), _pai, "parity-id-duplicate", "AI-0001"),
+                ("an id the source does not define", _pcat.replace("| AI-0002 | -- |", "| AI-0002, AI-0999 | -- |"), _pai, "parity-id-unknown", "AI-0999"),
+                ("a feature id on two rows", _pcat.replace("| NP-0005 |", "| NP-0004 |"), _pai, "parity-np-duplicate", "NP-0004"),
+                ("a status outside the grammar", _pcat.replace("plan D94 T01 §1", "planned D94 T01 §1"), _pai, "parity-status-malformed", "NP-0001"),
+                ("a ref naming no section", _pcat.replace("plan D94 T01 §1", "plan D94 T01 §9"), _pai, "parity-ref-dead", "D94 T01 §9"),
+                ("a ref naming a Moved section", _pcat.replace("plan D94 T01 §1", "plan D94 T01 §3"), _pai, "parity-ref-dead", "moved out of the tree"),
+                ("a backlog id with no live entry", _pcat.replace("backlog B-001", "backlog B-009"), _pai, "parity-backlog-dead", "B-009"),
+                ("a short catalog row", _pcat.replace("| NP-0004 | Cloud | -- | -- | cloud |", "| NP-0004 | Cloud | -- | cloud |"), _pai, "parity-input-damaged", "stilus-parity.md:8"),
+                ("a source id defined twice in one file", _pcat, _pai + "| AI-0001 | Again | tool | x | y | core | z |\n", "parity-input-damaged", "defined again"),
+            )
+            for name, cat, ai, want, needle in _pcases:
+                _pwrite(cat, ai)
+                found = _pfind()
+                check(f"parity: {name} is {want} naming it",
+                      (sorted({c for c, _ in found}), any(needle in m for _, m in found)), ([want], True))
+            _pwrite()
+            (proot / "docs" / "parity" / "stilus-parity.md").unlink()
+            found = _pfind()
+            check("parity: a deleted catalog beside docs/parity/ fails naming the file",
+                  (sorted({c for c, _ in found}), any("docs/parity/stilus-parity.md" in m for _, m in found)),
+                  (["parity-input-damaged"], True))
+            _pwrite()
+            (proot / "docs" / "parity" / "sources" / "coreldraw-2026.md").unlink()
+            found = _pfind()
+            check("parity: a deleted inventory fails once naming it, its cells not each reported unknown",
+                  (sorted({c for c, _ in found}), [m for _, m in found if "coreldraw-2026.md" in m] != [], len(found)),
+                  (["parity-input-damaged"], True, 1))
+            __import__("shutil").rmtree(proot / "docs")
+            check("parity: a tree with no docs/parity/ has nothing to check", _pfind(), [])
+            _pwrite()
+            rep = par.parity_report(sys.modules[__name__], load_todos())["catalogs"]["stilus"]
+            check("parity: the report keeps features, sections, and stamped sections apart, and names unplaced rows",
+                  (rep["totals"], {p: (b["features"], b["sections"], b["stamped_sections"]) for p, b in rep["phases"].items()}),
+                  ({"plan": 2, "shipped-scope": 1, "backlog": 1, "excluded": 1, "other-app": 1, "malformed": 0},
+                   {"4": (2, 2, 1), "unplaced": (1, 1, 0)}))
+            pbuf = _pio.StringIO()
+            with _pctx.redirect_stdout(pbuf):
+                pcode = cmd_query(argparse.Namespace(what="parity", phase="4", json=True, all=False))
+            pjson = json.loads(pbuf.getvalue())["catalogs"]["stilus"]["phases"]
+            check("parity: query parity --phase 4 --json carries that phase's three counts and rows",
+                  (pcode, list(pjson), {k: pjson["4"][k] for k in ("features", "sections", "stamped_sections")},
+                   [r["id"] for r in pjson["4"]["rows"]]),
+                  (0, ["4"], {"features": 2, "sections": 2, "stamped_sections": 1}, ["NP-0001", "NP-0002"]))
+        finally:
+            TODO_DIR, PLAN = saved_p
+            __import__("shutil").rmtree(proot, ignore_errors=True)
+
         # --- the design contract (standards/design-contract.md, 2026-09-27) --
         # Its own tree with a miniature docs/design/ and standards/ui.md, so
         # every ref, anchor, and baseline case is exact.
@@ -11398,7 +11592,7 @@ def main() -> int:
     q = sub.add_parser("query", help="ask the graph a question")
     q.add_argument(
         "what",
-        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth", "design", "plan"],
+        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth", "design", "plan", "parity"],
     )
     q.add_argument("target", nargs="?", help="run: run ID to inspect")
     q.add_argument("--since", metavar="REF", help="growth: the commit to count from (a run's start commit)")
@@ -11407,6 +11601,7 @@ def main() -> int:
     q.add_argument("--at", help="adjacency: inspect an isolated historical commit")
     q.add_argument("--json", action="store_true", help="adjacency, plan-health: machine-readable report")
     q.add_argument("--check", action="store_true", help="plan-health: exit 1 on actionable entries (covered escalations and bare partials pass; --fail-on gates presence); growth: accepted and ignored (nothing is capped since 2026-09-27)")
+    q.add_argument("--phase", metavar="N", help="parity: only this plan phase (its features, sections, and rows)")
     q.add_argument("--fail-on", metavar="DIMS", help="plan-health: comma-separated dimensions whose non-emptiness exits 1")
     q.add_argument("--require-owned", action="store_true", help="adjacency: refuse incomplete file ownership at closeout")
     q.add_argument("--require-conformance", action="store_true", help="adjacency: require non-vacuous tree-wide kind coverage")
@@ -11462,8 +11657,13 @@ def main() -> int:
     )
     pr.set_defaults(fn=cmd_progress)
     args = p.parse_args()
-    if args.cmd == "query" and args.what != "adjacency" and any(getattr(args, key, None) for key in ("file", "at", "json", "require_owned", "require_conformance")):
+    if args.cmd == "query" and args.what == "parity":
+        if any(getattr(args, key, None) for key in ("file", "at", "require_owned", "require_conformance")):
+            p.error("--file/--at/--require-owned/--require-conformance apply only to query adjacency")
+    elif args.cmd == "query" and args.what != "adjacency" and any(getattr(args, key, None) for key in ("file", "at", "json", "require_owned", "require_conformance")):
         p.error("--file/--at/--json/--require-owned/--require-conformance apply only to query adjacency")
+    if args.cmd == "query" and args.what != "parity" and getattr(args, "phase", None) is not None:
+        p.error("--phase applies only to query parity")
     return args.fn(args)
 
 
