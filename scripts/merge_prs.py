@@ -461,7 +461,8 @@ def open_prs(repo: str, gh_fn=gh, root: Path = ROOT) -> list[dict]:
     return sorted(prs, key=lambda p: (p.get("createdAt", ""), p.get("number", 0)))
 
 
-def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn=None) -> tuple[int, str]:
+def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn=None,
+              ready_fn=None) -> tuple[int, str]:
     """Merge one pull request, pull, and validate; (exit code, the line for the run file).
 
     The intent is recorded before the merge is issued (`build/merge-prs-blocked.json`) and cleared only once the merge
@@ -486,6 +487,14 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
     if not ok or now.get("headRefOid") != pr["headRefOid"] or now.get("state") != "OPEN":
         return 1, (f"merge_prs: #{n} not merged, it changed since it was read: "
                    f"{why or 'head ' + str(now.get('headRefOid'))[:12] + ', ' + str(now.get('state')).lower()}")
+    # The clone is judged again at the last moment too: an edit, a branch switch, a local commit, or a section started
+    # while GitHub was being read refuses the merge, because the locks keep out merge runs, not editors or git
+    # (independent review round 12). `ready_fn` is the preflight itself.
+    if ready_fn is not None:
+        try:
+            ready_fn()
+        except (Refused, Failed) as error:
+            return 1, f"merge_prs: #{n} not merged, the clone changed while it was read: {error}"
     try:
         _block(root, n, "merge issued, not yet verified")
     except OSError as error:
@@ -527,6 +536,10 @@ def _merge_and_verify(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_f
             return 3, (f"merge_prs: #{n} merge was issued and reported an error ({error}); it reads "
                        f"{str(state.get('state')).lower()} now but may still land, so its intent settles for "
                        f"{SETTLE_SECONDS // 60} minutes; reconcile main before any other work")
+    unsteady = _clone_unsteady(root, git_fn)
+    if unsteady:
+        return 3, (f"merge_prs: #{n} merge was issued, but the clone changed during it ({unsteady}), so the pull was "
+                   f"skipped; reconcile (git pull --ff-only origin main, then validate) before any other work")
     try:
         git_fn("pull", "--ff-only", "origin", "main", cwd=root)
     except Failed as error:
@@ -541,6 +554,16 @@ def _merge_and_verify(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_f
                    f"{(done.stdout or '').strip()[-200:]}; repair main before any other work")
     head = git_fn("rev-parse", "HEAD", cwd=root).strip()
     return 0, f"merge_prs: merged #{n} ({pr.get('headRefName')}) by rebase into main; main is {head[:12]}"
+
+
+def _clone_unsteady(root: Path, git_fn) -> str | None:
+    """Why the clone is no longer the one the merge was judged against (off main or dirty), or None."""
+    branch = git_fn("symbolic-ref", "-q", "HEAD", cwd=root).strip()
+    if branch != "refs/heads/main":
+        return f"the checked-out branch is {branch or 'a detached HEAD'}"
+    if git_fn("status", "--porcelain", cwd=root).strip():
+        return "the working tree has uncommitted changes"
+    return None
 
 
 def _state(n, repo: str, root: Path, gh_fn) -> dict | None:
@@ -682,7 +705,8 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
     if not ready:
         print("merge_prs: nothing eligible" + "".join(f"; #{pr['number']} {why}" for pr, ok, why in verdicts if not ok))
         return 0
-    code, line = merge_one(ready[0], repo, root, gh_fn, git_fn, validate_fn)
+    code, line = merge_one(ready[0], repo, root, gh_fn, git_fn, validate_fn,
+                           ready_fn=lambda: preflight(root, args.campaign, git_fn, graph, active_fn))
     print(line, file=sys.stdout if code == 0 else sys.stderr)
     return code
 

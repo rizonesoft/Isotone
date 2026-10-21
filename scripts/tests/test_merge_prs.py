@@ -321,6 +321,33 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
         self.assertEqual((code, gh.merges(), "nothing eligible; #1 mergeable is conflicting" in out), (0, [], True))
 
+    def test_a_tree_dirtied_while_github_is_read_refuses_the_merge(self):
+        git = FakeGit()
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+
+        def dirty_on_list(*args, cwd=None):
+            if args[:2] == ("pr", "list"):
+                git.status = " M src/edit.cs\n"
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--campaign"], dirty_on_list, git)
+        self.assertEqual((code, gh.merges(), "the clone changed while it was read" in out,
+                          (self.root / mp.BLOCKED).exists()), (1, [], True, False))
+
+    def test_a_tree_dirtied_during_the_merge_skips_the_pull_and_holds(self):
+        git = FakeGit()
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+
+        def dirty_on_merge(*args, cwd=None):
+            out = real(*args, cwd=cwd)
+            if args[:2] == ("pr", "merge"):
+                git.status = " M src/edit.cs\n"
+            return out
+        code, out = self.call(["run", "--campaign"], dirty_on_merge, git)
+        self.assertEqual((code, len(gh.merges()), [c for c in git.calls if c[0] == "pull"],
+                          (self.root / mp.BLOCKED).exists()), (3, 1, [], True))
+
     def test_a_merge_error_that_reads_open_keeps_the_intent_and_stops(self):
         # A refusal and a timeout look the same from here: the request may still land, so it is never "nothing
         # changed" (independent review round 8).
