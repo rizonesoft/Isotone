@@ -91,23 +91,20 @@ _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
 #   denies a stop, never grants one);
 # - continuation is whitelisted, never inferred: after a finding, an
 #   indented line whose first token is a plain word (letters, ending at
-#   most in `,` `;` `:`), or an indented fenced block, which only a
-#   bare run of its opener's character at least as long closes;
+#   most in `,` `;` `:`) or a fence delimiter with a plain info string;
+#   a fence quotes nothing, so its content takes the same test (rounds
+#   5 to 7 found three ways a fence state machine could be fooled);
 # - every other detail line starts a finding, whatever its marker, and
 #   is P1 unless its tag is its first or second token (a severity named
 #   later is prose);
-# - a needs-attention verdict with no detail line, or one that leaves
-#   a fence open, counts as P1.
+# - a needs-attention verdict with no detail line counts as P1.
 # Advisory findings never block, so they do not raise the floor. The
 # loop's severity stop (review-todo-section) rests on `highest P3` in
 # the checker's reason, never on the reviewer's word alone.
 _SEVERITY_TAG_RE = re.compile(r"(?<![A-Za-z0-9_])P([123])(?![A-Za-z0-9_])")
 _LEADING_TAG_RE = re.compile(r"(?:\S+\s+)?[*\[(_`]*P[123](?![A-Za-z0-9_])")
 _PROSE_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]*[,;:]?")
-# CommonMark's opener: a backtick fence's info string holds no backtick
-# (round 6: `` ```not`a`fence `` had opened one), a tilde fence's may.
-_MD_FENCE_OPEN_RE = re.compile(r"^\s*(?:(`{3,})[^`]*|(~{3,}).*)$")
-_MD_FENCE_CLOSE_RE = re.compile(r"^\s*(`{3,}|~{3,})\s*$")
+_MD_FENCE_RE = re.compile(r"(?:`{3,}|~{3,})[A-Za-z0-9_+-]*")
 _HIGHEST_RE = re.compile(r"^\s*\**\s*HIGHEST\s*:\s*\**\s*(P1|P2|P3|none)\s*\**\s*$")
 SEVERITY_RANK = {"none": 0, "P3": 1, "P2": 2, "P1": 3}
 
@@ -524,7 +521,6 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
     open_line = 0
     block_floor = 0
     finding_seen = False
-    in_fence: str | None = None
     floor = 0
     floor_line = 0
     highest: str | None = None
@@ -541,10 +537,9 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
     def block_severity() -> int:
         # A needs-attention verdict with no numbered finding still holds
         # findings, untagged ones: P1.
-        # A fence left open swallowed whatever followed it: P1 as well.
         if not blocking:
             return 0
-        return block_floor if finding_seen and in_fence is None else SEVERITY_RANK["P1"]
+        return block_floor if finding_seen else SEVERITY_RANK["P1"]
 
     for lineno, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
@@ -583,7 +578,6 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             tally = 0
             block_floor = 0
             finding_seen = False
-            in_fence = None
             open_lens, open_line = lens, lineno
             continue
         if _PANEL_LONG_COUNT_RE.match(line):
@@ -599,26 +593,19 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             tags = [SEVERITY_RANK["P" + n] for n in _SEVERITY_TAG_RE.findall(line)]
             if tags:
                 block_floor = max(block_floor, *tags)
-            if in_fence is not None:
-                # Inside a fence every line continues the finding; only a
-                # bare run of the opener's character, at least as long,
-                # closes it (CommonMark), so `~~~` never closes a backtick
-                # fence and three backticks never close four.
-                close = _MD_FENCE_CLOSE_RE.match(line)
-                if close and close.group(1)[0] == in_fence[0] and len(close.group(1)) >= len(in_fence):
-                    in_fence = None
-                continue
-            opener = _MD_FENCE_OPEN_RE.match(line)
             # Continuation is the one shape allowed to carry no finding,
             # so it is whitelisted, never inferred: an indented line after
-            # a finding that opens a fence or whose first token is a plain
-            # word (letters, ending at most in `,` `;` `:`). Any other
-            # token (`aa)`, `iv.`, `**2.**`, `10000)`, a glyph, a backtick)
-            # starts a finding, whatever marker it is.
+            # a finding whose first token is a plain word (letters, ending
+            # at most in `,` `;` `:`), or a bare fence delimiter. A fence
+            # quotes nothing: its content takes the same test line by
+            # line, so no malformed opener or closer can hide a finding
+            # (rounds 5 to 7), and a fenced repro full of list-like lines
+            # costs the stop, never grants it. Any other token (`aa)`,
+            # `iv.`, `**2.**`, `10000)`, a glyph, a backtick) starts a
+            # finding, whatever marker it is.
+            first = line.split(None, 1)[0]
             continues = finding_seen and line[:1].isspace() and (
-                opener is not None or _PROSE_WORD_RE.fullmatch(line.split(None, 1)[0]) is not None)
-            if opener is not None:
-                in_fence = opener.group(1) or opener.group(2)
+                _MD_FENCE_RE.fullmatch(first) is not None or _PROSE_WORD_RE.fullmatch(first) is not None)
             if not continues:
                 # A finding's own tag is its first or second token (after
                 # a marker); a severity named later in the line is prose
@@ -3788,7 +3775,10 @@ def _self_test() -> int:
                        ("two-letter-marker", "  aa) a.py:2 deletes originals\n"),
                        ("abbreviation-led", "   e.g. a.py:2 deletes originals\n"),
                        # Round 6: a backtick in the info string means no fence.
-                       ("backtick-info-string", "   ```not`a`fence\n   - a.py:2 deletes originals\n   ```\n")):
+                       ("backtick-info-string", "   ```not`a`fence\n   - a.py:2 deletes originals\n   ```\n"),
+                       # Round 7: a fence quotes nothing, however it closes.
+                       ("over-indented-close", "   ```text\n   - a.py:2 deletes originals\n            ```\n"),
+                       ("closed-fence-content", "   ```text\n   - a.py:2 deletes originals\n   ```\n")):
         ok, reason = check_panel_output(
             receipt + low.replace("2. **P3** b.py:2 test gap\n", "2. **P3** b.py:2 test gap\n" + extra)
             + "HIGHEST: P3\n", manifest3)

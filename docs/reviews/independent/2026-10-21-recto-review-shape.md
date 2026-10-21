@@ -240,3 +240,42 @@ OVERALL: needs-attention
 ## Response to round 6
 
 1. Real. The fence opener now follows CommonMark: a backtick fence's info string holds no backtick (a tilde fence's may), so `` ```not`a`fence `` opens nothing and the bullet after it starts an untagged finding (P1). Valid openers (`` ```python ``, `~~~ info`) still quote their content. New case: `highest-backtick-info-string-counts`; `python -W error::SyntaxWarning scripts/review_prompt.py --self-test` prints `498 cases, 0 failed`.
+
+## Round 7: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T17:40:39Z
+- Effort: medium
+- Lines: 26
+- Digest: 843f62f09965eedb
+
+### adversarial: needs-attention
+
+1. P1 `scripts/review_prompt.py:110` and `:607`: An excessively indented delimiter closes a fence incorrectly, bypassing the unclosed-fence P1 floor. Pass this text to `check_panel_output` (the closing backticks have twelve leading spaces):
+
+   ````text
+   **adversarial: needs-attention**
+   1. P3 a.py:1 typo
+      ```text
+      - a.py:2 deletes originals
+               ```
+   **consistency: approve**
+   **integration: approve**
+   **record: approve**
+   HIGHEST: P3
+   ````
+
+   Observed result: `(True, 'four lenses, one verdict each; highest P3')`. `_bundle_transcript_ok` also accepts its PASS transcript. The repository’s `todo-graph.py::strip_fenced_code` identifies the same input as an unclosed fence starting at line 3. This permits the round-9 severity stop on malformed output that should retain the P1 floor. Constrain closing-fence indentation and add this regression case.
+
+### consistency: approve
+
+### integration: approve
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 7
+
+1. Real, and the third fence defect in three rounds (rounds 5, 6 and 7), so the fence state machine is removed rather than patched (same-family circuit breaker): a fence quotes nothing. Every line inside a fenced block takes the same continuation test as any other line (an indented line whose first token is a plain word continues a finding; a fence delimiter line itself is a continuation), so no opener, closer or indentation can hide a finding. A fenced repro full of list-like or code lines now denies the severity stop, which costs a round at most and never grants a wrong stop. Both prompts tell the reviewer that a line inside a fenced block counts. New cases: `highest-over-indented-close-counts`, `highest-closed-fence-content-counts`; `python -W error::SyntaxWarning scripts/review_prompt.py --self-test` prints `500 cases, 0 failed`.
