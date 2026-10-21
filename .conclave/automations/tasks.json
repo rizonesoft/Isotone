@@ -15,6 +15,13 @@
       "command": ["python", "scripts/check-local-tools.py", "notify"],
       "trigger": {"weekly": "Monday", "at": "07:05"},
       "timeout_minutes": 5
+    },
+    {
+      "name": "isotone-pr-merge",
+      "description": "Merge one green Dependabot or pins pull request when no campaign runs and the clone is level with GitHub",
+      "command": ["python", "scripts/merge_prs.py", "run", "--task"],
+      "trigger": {"at_logon_delay_minutes": 15, "every_minutes": 60},
+      "timeout_minutes": 10
     }
   ]
 }
