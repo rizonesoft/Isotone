@@ -2,7 +2,7 @@
 
 schema: 1
 
-Panel wiring: every round runs a slot from `.conclave/reviewers.toml`, GPT through codex on every slot (`bulk` medium for Full rounds 1-2, `signoff` and `depth` high after), and the writer's family never reviews. Round headings in the per-section review files read `GPT panel`, and a round's `model:` must be a registered model of its heading's family. There are no fallback slots: a failed round waits for the operator.
+Panel wiring: every round runs through `python scripts/review-dispatch.py --writer claude` on the one route `.conclave/reviewers.toml` pins, GPT-6 Astra through codex at medium effort (2026-10-21; earlier rounds ran the Full and Light slots, `bulk` medium for Full rounds 1-2 and `signoff` and `depth` high after, as their lines record), and the writer's family never reviews. A loop runs at most 22 rounds and, from round 9, stops on a round whose findings are all P3 (`review-todo-section`, The loop). Round headings in the per-section review files read `GPT panel`, and a round's `model:` must be a registered model of its heading's family. There is no fallback: a failed round waits for the operator.
 
 Terminology, pinned. A run is one section's independent review, however many rounds it took; an engagement is the same thing counted for the report. A round is one reviewer invocation against one candidate. Voided rounds keep their numbers. Two outcomes skip the panel mapping without voiding their findings: stamp, a stamp-review pass over the staged stamp, and independent, a non-panel independent pass inside a panel block; their refs count in yield and coverage, but they meet no panel section. Empty is outcome-based: an engagement is empty when every round came back empty.
 

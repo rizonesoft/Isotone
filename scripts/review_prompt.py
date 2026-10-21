@@ -77,13 +77,23 @@ _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
 # finding opens with its tag after the number (`1. P2 ...`, bold or
 # bracketed allowed), and the reviewer may close the round with one
 # `HIGHEST: P1|P2|P3|none` line after every verdict. The line is
-# optional, so rounds recorded before it still check; when present it
-# may not understate: an untagged needs-attention finding, or a
-# needs-attention verdict with no numbered finding, counts as P1.
-# Advisory findings never block, so they do not raise the floor. The
-# loop's severity stop (review-todo-section) rests on `highest P3` in
-# the checker's reason, never on the reviewer's word alone.
-_FINDING_SEVERITY_RE = re.compile(r"^\s*[0-9]+\.\s+[*\[(]*(P[123])\b")
+# optional, so rounds recorded before it still check, and it must come
+# last. An understated line voids nothing (the verdicts stand), but the
+# PASS reason names the true floor instead of the declared value, so no
+# severity stop rests on it. Under a needs-attention verdict every detail line
+# counts: a numbered item, a list item, or any line at column 0 is a
+# finding, and so is an indented line before the verdict's first
+# finding; only an indented line after a finding continues it. A
+# finding is its tag, untagged meaning P1, and a needs-attention
+# verdict with no finding line counts as P1 too (independent review
+# 2026-10-21 round 1: an unnumbered `- P1` beside a numbered P3 had
+# escaped). Any line that opens with a tag raises the floor to it, so
+# a nested `   - P1` is never read as a mere continuation. Advisory
+# findings never block, so they do not raise the floor. The loop's
+# severity stop (review-todo-section) rests on `highest P3` in the
+# checker's reason, never on the reviewer's word alone.
+_FINDING_SEVERITY_RE = re.compile(r"^\s*(?:[0-9]+\.|[-*+])?\s*[*\[(]*(P[123])\b")
+_LIST_ITEM_RE = re.compile(r"^[-*+]\s")
 _HIGHEST_RE = re.compile(r"^\s*\**\s*HIGHEST\s*:\s*\**\s*(P1|P2|P3|none)\s*\**\s*$")
 SEVERITY_RANK = {"none": 0, "P3": 1, "P2": 2, "P1": 3}
 
@@ -499,6 +509,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
     open_lens = ""
     open_line = 0
     block_floor = 0
+    finding_seen = False
     floor = 0
     floor_line = 0
     highest: str | None = None
@@ -517,7 +528,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
         # findings, untagged ones: P1.
         if not blocking:
             return 0
-        return block_floor if tally else SEVERITY_RANK["P1"]
+        return block_floor if finding_seen else SEVERITY_RANK["P1"]
 
     for lineno, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
@@ -555,6 +566,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             declared = int(raw) if raw is not None else None
             tally = 0
             block_floor = 0
+            finding_seen = False
             open_lens, open_line = lens, lineno
             continue
         if _PANEL_LONG_COUNT_RE.match(line):
@@ -563,10 +575,18 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             return False, f"line {lineno} precedes the first verdict: {line.strip()[:80]}"
         if not detail_open:
             return False, f"line {lineno} is not a verdict or finding detail: {line.strip()[:80]}"
-        if _FINDING_ITEM_RE.match(line):
+        numbered = _FINDING_ITEM_RE.match(line)
+        if numbered:
             tally += 1
+        if blocking:
             tag = _FINDING_SEVERITY_RE.match(line)
-            block_floor = max(block_floor, SEVERITY_RANK[tag.group(1)] if tag else SEVERITY_RANK["P1"])
+            starts = (numbered is not None or _LIST_ITEM_RE.match(line) is not None
+                      or not line[:1].isspace() or not finding_seen)
+            if tag:
+                block_floor = max(block_floor, SEVERITY_RANK[tag.group(1)])
+            elif starts:
+                block_floor = max(block_floor, SEVERITY_RANK["P1"])
+            finding_seen = finding_seen or starts or tag is not None
     bad = close_block()
     if bad:
         return bad
@@ -578,9 +598,12 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
     if block_severity() > floor:
         floor, floor_line = block_severity(), open_line
     if SEVERITY_RANK[highest] < floor:
+        # Understating voids nothing: the verdicts stand, so the round
+        # still counts, but its reason names the floor, so no severity
+        # stop can rest on it.
         named = next(k for k, v in SEVERITY_RANK.items() if v == floor)
-        return False, (f"line {highest_line} declares HIGHEST: {highest} but the needs-attention "
-                       f"verdict at line {floor_line} holds a {named} finding (untagged counts as P1)")
+        return True, (f"four lenses, one verdict each; highest {named} (line {highest_line} declares "
+                      f"{highest}, but the needs-attention verdict at line {floor_line} holds a {named} finding)")
     return True, f"four lenses, one verdict each; highest {highest}"
 
 
@@ -3676,16 +3699,41 @@ def _self_test() -> int:
     check("highest-none-pass", ok and reason.endswith("; highest none"), reason)
     ok, reason = check_panel_output(receipt + low, manifest3)
     check("highest-absent-reason-unchanged", ok and reason == "four lenses, one verdict each", reason)
+    # Understating voids nothing but names the floor, so the reason
+    # never ends `; highest P3` and no severity stop rests on it.
+    def floored(reason: str, sev: str) -> bool:
+        return (reason.startswith(f"four lenses, one verdict each; highest {sev} (")
+                and "declares P3" in reason and not reason.endswith("; highest P3"))
     ok, reason = check_panel_output(
         receipt + low.replace("2. **P3** b.py:2", "2. b.py:2") + "HIGHEST: P3\n", manifest3)
-    check("highest-untagged-counts-p1", (not ok) and "holds a P1 finding" in reason, reason)
+    check("highest-untagged-counts-p1", ok and floored(reason, "P1"), reason)
     ok, reason = check_panel_output(
         receipt + low.replace("1. P3 a.py:1", "1. [P2] a.py:1") + "HIGHEST: P3\n", manifest3)
-    check("highest-understated-fails", (not ok) and "holds a P2 finding" in reason, reason)
+    check("highest-understated-names-floor", ok and floored(reason, "P2"), reason)
     ok, reason = check_panel_output(
-        receipt + approves.replace("**record: approve**", "**record: needs-attention**\nprose only")
+        receipt + approves.replace("**record: approve**", "**record: needs-attention**")
         + "HIGHEST: P3\n", manifest3)
-    check("highest-unnumbered-counts-p1", (not ok) and "holds a P1 finding" in reason, reason)
+    check("highest-empty-needs-attention-counts-p1", ok and floored(reason, "P1"), reason)
+    # Independent review 2026-10-21 round 1: every detail line under a
+    # needs-attention verdict counts, so an unnumbered finding beside a
+    # numbered P3 cannot hide; an indented line after a finding is its
+    # continuation unless it opens with a tag.
+    for leg, extra in (("unnumbered-list", "- P1 a.py:2 deletes originals\n"),
+                       ("column-0-prose", "deletes originals at a.py:2\n"),
+                       ("nested-tag", "   - P1 a.py:2 deletes originals\n")):
+        ok, reason = check_panel_output(
+            receipt + low.replace("2. **P3** b.py:2 test gap\n", "2. **P3** b.py:2 test gap\n" + extra)
+            + "HIGHEST: P3\n", manifest3)
+        check(f"highest-{leg}-counts", ok and floored(reason, "P1"), reason)
+    ok, reason = check_panel_output(
+        receipt + "**adversarial: needs-attention**\n   indented before any finding\n"
+        "**consistency: approve**\n**integration: approve**\n**record: approve**\nHIGHEST: P3\n", manifest3)
+    check("highest-indented-lead-counts-p1", ok and floored(reason, "P1"), reason)
+    ok, reason = check_panel_output(
+        receipt + low.replace("2. **P3** b.py:2 test gap\n",
+                              "2. **P3** b.py:2 test gap\n   ```text\n   repro line\n   ```\n   - sub point\n")
+        + "HIGHEST: P3\n", manifest3)
+    check("highest-continuation-keeps-p3", ok and reason.endswith("; highest P3"), reason)
     ok, reason = check_panel_output(receipt + low + "HIGHEST: P2\n", manifest3)
     check("highest-overstated-pass", ok and reason.endswith("; highest P2"), reason)
     ok, reason = check_panel_output(
