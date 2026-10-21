@@ -104,6 +104,10 @@ def _table_rows(text: str, id_re: str):
             header, header_line = split_row(line), lineno
             continue
         if not row_re.match(line):
+            # A header belongs to its own table: a blank line or a line with no pipe ends the table, so a later
+            # table with a different header never inherits this one (independent review round 4).
+            if not line.strip() or "|" not in line:
+                header = None
             continue
         cells = split_row(line)
         id_ok = id_full.match(cells[0]) is not None
@@ -120,14 +124,23 @@ def _table_rows(text: str, id_re: str):
         yield lineno, cells, header, id_ok, problem
 
 
+def _read(root: Path, rel: str) -> tuple[str | None, str]:
+    """(text, "") for a readable UTF-8 file, else (None, why): a missing file and undecodable bytes alike are
+    damaged input, never a traceback (independent review round 4)."""
+    try:
+        return (root / rel).read_text(encoding="utf-8"), ""
+    except UnicodeDecodeError as error:
+        return None, f"is not valid UTF-8 (byte {error.start})"
+    except OSError as error:
+        return None, f"cannot be read ({error.__class__.__name__})"
+
+
 def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[str, str]]]:
     """(source id -> defining line, problems) for one inventory file."""
-    path = root / column["path"]
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as error:
-        return {}, [("parity-input-damaged", f"{column['path']}: the {column['column']} inventory cannot be read "
-                                             f"({error.__class__.__name__}); restore it from git")]
+    text, why = _read(root, column["path"])
+    if text is None:
+        return {}, [("parity-input-damaged", f"{column['path']}: the {column['column']} inventory {why}; "
+                                             f"restore it from git")]
     ids: dict[str, int] = {}
     problems: list[tuple[str, str]] = []
     for lineno, cells, _header, id_ok, problem in _table_rows(text, column["id"]):
@@ -151,12 +164,9 @@ def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[
 
 def parse_catalog(root: Path, spec: dict) -> tuple[list[dict], list[tuple[str, str]]]:
     """(rows, problems) for one catalog: each row's id, feature, source ids per column, category, status, notes."""
-    path = root / spec["path"]
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as error:
-        return [], [("parity-input-damaged", f"{spec['path']}: the {spec['app']} catalog cannot be read "
-                                             f"({error.__class__.__name__}); restore it from git")]
+    text, why = _read(root, spec["path"])
+    if text is None:
+        return [], [("parity-input-damaged", f"{spec['path']}: the {spec['app']} catalog {why}; restore it from git")]
     rows: list[dict] = []
     problems: list[tuple[str, str]] = []
     seen_any = False
@@ -227,11 +237,11 @@ def parity_findings(graph, todos, root=None) -> list[tuple[str, str]]:
         for column in spec["columns"]:
             ids, problems = parse_sources(root, column)
             defined[column["column"]] = ids
-            readable[column["column"]] = (root / column["path"]).is_file()
+            readable[column["column"]] = _read(root, column["path"])[0] is not None
             out += problems
         rows, problems = parse_catalog(root, spec)
         out += problems
-        catalog_readable = (root / spec["path"]).is_file()
+        catalog_readable = _read(root, spec["path"])[0] is not None
         placed: dict[str, list[str]] = {}
         first_row: dict[str, int] = {}
         for row in rows:

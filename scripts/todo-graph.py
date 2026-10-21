@@ -11308,6 +11308,12 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                  _pai, ["parity-id-missing", "parity-input-damaged"], "repeats Status"),
                 ("an inventory with no header", _pcat, "| AI-0001\n| AI-0002\n", "parity-input-damaged", "no `| ID |` header"),
                 ("an empty inventory", _pcat.replace("| AI-0001 |", "| -- |").replace("| AI-0002 |", "| -- |"), "", "parity-input-damaged", "Illustrator inventory has no AI- rows"),
+                # Round 4: a header belongs to its own table, so rows of a
+                # later table whose header is not `| ID |` are damage.
+                ("a later table without an ID header",
+                 _pcat + "\n| Key | Feature | Illustrator | CorelDRAW | Category | Status | Notes | Extra |\n"
+                         "| -- | -- | -- | -- | -- | -- | -- | -- |\n| NP-0007 | Seven | -- | -- | core | excluded: cloud |  |\n",
+                 _pai, "parity-input-damaged", "NP-0007 has no `| ID |` header"),
                 ("a row without its leading pipe", _pcat, _pai + "AI-0003 | Three | tool | x | y | core | z |\n", "parity-id-missing", "AI-0003"),
                 ("a lower-case id", _pcat, _pai + "| ai-0003 | Three | tool | x | y | core | z |\n", "parity-input-damaged", "'ai-0003' is not a whole id"),
             )
@@ -11317,6 +11323,12 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 want = want if isinstance(want, list) else [want]
                 check(f"parity: {name} is {', '.join(want)} naming it",
                       (sorted({c for c, _ in found}), any(needle in m for _, m in found)), (want, True))
+            _pwrite()
+            (proot / "docs" / "parity" / "sources" / "illustrator-30.8.md").write_bytes(_pai.encode("utf-8") + b"| AI-0003 | \xff |\n")
+            found = _pfind()
+            check("parity: an inventory that is not UTF-8 is one damaged-input finding, not a traceback (round 4)",
+                  (sorted({c for c, _ in found}), [m for _, m in found if "not valid UTF-8" in m] != [], len(found)),
+                  (["parity-input-damaged"], True, 1))
             _pwrite()
             (proot / "docs" / "parity" / "stilus-parity.md").unlink()
             found = _pfind()
