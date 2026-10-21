@@ -279,3 +279,28 @@ OVERALL: needs-attention
 ## Response to round 7
 
 1. Real, and the third fence defect in three rounds (rounds 5, 6 and 7), so the fence state machine is removed rather than patched (same-family circuit breaker): a fence quotes nothing. Every line inside a fenced block takes the same continuation test as any other line (an indented line whose first token is a plain word continues a finding; a fence delimiter line itself is a continuation), so no opener, closer or indentation can hide a finding. A fenced repro full of list-like or code lines now denies the severity stop, which costs a round at most and never grants a wrong stop. Both prompts tell the reviewer that a line inside a fenced block counts. New cases: `highest-over-indented-close-counts`, `highest-closed-fence-content-counts`; `python -W error::SyntaxWarning scripts/review_prompt.py --self-test` prints `500 cases, 0 failed`.
+
+## Round 8: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T17:45:41Z
+- Effort: medium
+- Lines: 12
+- Digest: 04157375ee562c8b
+
+### adversarial: approve
+
+### consistency: needs-attention
+
+1. P3 `standards/delegation.md:5` still attributes the delegation rules to “Conclave-SDK commit 4ca1af5”, despite the requested removal of SDK wording from standards and the equivalent cleanup in AGENTS.md. Reproduce with `rg -n 'Conclave-SDK' standards/delegation.md`. Preserve the dated delegation decision while removing the SDK attribution.
+
+### integration: approve
+
+### record: approve
+
+HIGHEST: P3
+OVERALL: needs-attention
+
+## Response to round 8
+
+1. Real. `standards/delegation.md` keeps the dated 2026-10-17 decision and drops the SDK commit attribution. A sweep (`git grep -n -i -E 'conclave.sdk|4ca1af5|911c256|forge\.py|kit-drift|check-conclave'`, excluding review and phase-run history and the changelog) leaves only AGENTS.md's statement that the link was cut, the automations README naming the removed task, and the dated correction in `todo/00-workspace/TODO-01-dev-automation.md`, all intended.
