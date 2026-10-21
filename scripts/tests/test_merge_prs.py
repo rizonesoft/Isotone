@@ -431,7 +431,8 @@ class MergeTests(Base):
     def test_a_malformed_record_blocks_until_the_operator_clears_it(self):
         (self.root / "build").mkdir(exist_ok=True)
         for body in ("{truncated", "[]", '{"why": "no pr"}', '{"pr": 1, "issued_at": NaN}', '{"pr": 1, "issued_at": "x"}',
-                     '{"pr": 1}', '{"pr": 1, "issued_at": Infinity}'):
+                     '{"pr": 1}', '{"pr": 1, "issued_at": Infinity}', '{"pr": 1, "issued_at": 1' + '0' * 400 + '}',
+                     '{"pr": true, "issued_at": 0}'):
             with self.subTest(body=body):
                 (self.root / mp.BLOCKED).write_text(body, encoding="utf-8")
                 gh = FakeGh([pr(2)])
@@ -455,6 +456,24 @@ class MergeTests(Base):
         code, out = self.call(["run", "--task"], gh, FakeGit(), active=lambda r: "a campaign run holds the guard")
         self.assertEqual((code, (self.root / mp.BLOCKED).exists(), [c for c in gh.calls if c[:2] == ("pr", "view")]),
                          (0, True, []))
+
+    def test_a_record_with_a_null_reason_still_recovers_safely(self):
+        (self.root / "build").mkdir(exist_ok=True)
+        (self.root / mp.BLOCKED).write_text('{"pr": 1, "issued_at": 0, "why": null}', encoding="utf-8")
+        code, out = self.call(["run", "--task"], FakeGh([pr(1)], view_fails=True), FakeGit())
+        self.assertEqual((code, "cannot be read" in out), (3, True))
+
+    def test_an_unexpected_error_in_recovery_is_exit_three(self):
+        mp._block(self.root, 1, "merge issued, not yet verified")
+        gh = FakeGh([pr(1)], already_merged=[1])
+        real = gh.__call__
+
+        def broken(*args, cwd=None):
+            if args[:2] == ("pr", "view"):
+                raise TypeError("unexpected")
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--task"], broken, FakeGit())
+        self.assertEqual((code, "TypeError" in out), (3, True))
 
     def test_a_failed_recovery_is_exit_three(self):
         mp._block(self.root, 1, "merge issued, not yet verified")

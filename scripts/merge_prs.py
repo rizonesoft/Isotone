@@ -242,13 +242,19 @@ def blocked(root: Path) -> dict | None:
         record = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         return {"pr": None, "why": f"the record cannot be read ({error.__class__.__name__})"}
-    if not isinstance(record, dict) or not isinstance(record.get("pr"), int):
+    pr = record.get("pr") if isinstance(record, dict) else None
+    if not isinstance(pr, int) or isinstance(pr, bool) or pr <= 0:
         return {"pr": None, "why": "the record names no pull request"}
-    issued = record.get("issued_at")
-    if not isinstance(issued, (int, float)) or isinstance(issued, bool) or not math.isfinite(issued):
-        # A missing or non-finite time (NaN, infinity) cannot be aged, so it can never settle (round 9).
+    try:
+        issued = float(record.get("issued_at"))
+    except (TypeError, ValueError, OverflowError):
+        issued = math.nan
+    if not math.isfinite(issued):
+        # A missing, non-numeric, or non-finite time (NaN, infinity, an integer past float range) cannot be aged, so
+        # it can never settle (rounds 9 and 10).
         return {"pr": None, "why": "the record carries no usable issue time"}
-    return record
+    why = record.get("why")
+    return {"pr": pr, "issued_at": issued, "why": why if isinstance(why, str) else "no reason recorded"}
 
 
 def _block(root: Path, pr: int, why: str) -> None:
@@ -573,8 +579,8 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         # that alerts until it is resolved, never a quiet exit 0, and a recovery that itself fails is exit 3 too.
         try:
             stuck = resolve_block(root, repository(root, git_fn), gh_fn, git_fn, validate_fn)
-        except (Failed, OSError) as error:
-            stuck = f"an earlier merge is unresolved and its recovery failed: {error}"
+        except Exception as error:  # noqa: BLE001 -- while an intent exists, any failure blocks (round 10)
+            stuck = f"an earlier merge is unresolved and its recovery failed: {error.__class__.__name__}: {error}"
         if stuck:
             print(f"merge_prs: not merging: {stuck}", file=sys.stderr)
             return 3
