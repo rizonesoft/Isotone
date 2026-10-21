@@ -3,10 +3,12 @@
 Every git and gh call goes through a fake, so nothing touches a repository or GitHub; the in-progress check reads a
 fixture TODO file through a fake graph.
 """
+import contextlib
 import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -29,18 +31,26 @@ def pr(number=1, **over):
         "headRefOid": f"{number:040d}", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
         "statusCheckRollup": [{"__typename": "CheckRun", "name": "build-windows", "status": "COMPLETED",
                                "conclusion": "SUCCESS"}],
-        "files": [{"path": "Directory.Packages.props"}], "createdAt": f"2026-10-2{number}T00:00:00Z",
+        "files": [{"path": "Directory.Packages.props"}], "changedFiles": 1, "createdAt": f"2026-10-2{number}T00:00:00Z",
     }
     base.update(over)
     return base
 
 
 class FakeGit:
-    def __init__(self, status="", head=HEAD, remote=HEAD, pull_fails=False):
+    def __init__(self, status="", head=HEAD, remote=HEAD, pull_fails=False, branch="refs/heads/main",
+                 fetch_fails=False, origin="https://github.com/rizonesoft/Isotone.git"):
         self.calls, self.status, self.head, self.remote, self.pull_fails = [], status, head, remote, pull_fails
+        self.branch, self.fetch_fails, self.origin = branch, fetch_fails, origin
 
     def __call__(self, *args, cwd=None):
         self.calls.append(args)
+        if args[0] == "symbolic-ref":
+            return self.branch + "\n"
+        if args[:3] == ("remote", "get-url", "origin"):
+            return self.origin + "\n"
+        if args[0] == "fetch" and self.fetch_fails:
+            raise mp.Failed("git fetch --quiet origin main failed: could not read from remote")
         if args[0] == "status":
             return self.status
         if args[:2] == ("rev-parse", "HEAD"):
@@ -48,7 +58,7 @@ class FakeGit:
         if args[:2] == ("rev-parse", "origin/main"):
             return self.remote + "\n"
         if args[0] == "pull" and self.pull_fails:
-            raise mp.Refused("git pull --ff-only origin main failed: not a fast-forward")
+            raise mp.Failed("git pull --ff-only origin main failed: not a fast-forward")
         return ""
 
 
@@ -61,7 +71,7 @@ class FakeGh:
         if args[:2] == ("pr", "list"):
             return json.dumps(self.prs)
         if args[:2] == ("pr", "merge") and self.merge_fails:
-            raise RuntimeError("gh pr merge failed: head commit does not match")
+            raise mp.Failed("gh pr merge failed: head commit does not match")
         return ""
 
     def merges(self):
@@ -97,12 +107,13 @@ class Base(unittest.TestCase):
     def tearDown(self):
         self._tmp.cleanup()
 
-    def call(self, argv, gh_fn, git_fn, graph=None, active=lambda r: None, validate=ok_validate):
+    def call(self, argv, gh_fn, git_fn, graph=None, active=lambda r: None, validate=ok_validate,
+             lock=lambda root: contextlib.nullcontext()):
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = mp.main(argv, root=self.root, gh_fn=gh_fn, git_fn=git_fn,
                            graph=graph or FakeGraph(self.root, started_open=False), active_fn=active,
-                           validate_fn=validate)
+                           validate_fn=validate, lock_fn=lock)
         return code, out.getvalue() + err.getvalue()
 
 
@@ -145,6 +156,34 @@ class PreflightTests(Base):
         code, out = self.call(["run", "--task"], gh, FakeGit(), active=active)
         self.assertEqual((code, "refused" in out, gh.merges()), (0, True, []))
 
+    def test_a_branch_other_than_main_refuses(self):
+        code, out = self.call(["run", "--campaign"], FakeGh([pr()]), FakeGit(branch="refs/heads/topic"))
+        self.assertEqual((code, "refs/heads/topic, not main" in out), (2, True))
+
+    def test_a_failed_fetch_is_a_failure_even_for_the_task(self):
+        code, out = self.call(["run", "--task"], FakeGh([pr()]), FakeGit(fetch_fails=True))
+        self.assertEqual((code, "could not read from remote" in out), (1, True))
+
+    def test_a_held_clone_lock_is_a_busy_refusal(self):
+        @contextlib.contextmanager
+        def held(root):
+            raise mp.Refused("the run guard's lock is held")
+            yield
+        gh = FakeGh([pr()])
+        code, out = self.call(["run", "--task"], gh, FakeGit(), lock=held)
+        self.assertEqual((code, "lock is held" in out, gh.merges()), (0, True, []))
+
+    def test_the_real_clone_lock_refuses_while_the_guard_lock_is_held(self):
+        (self.root / "scripts").mkdir()
+        shutil.copy(REPO / "scripts" / "campaign_guard.py", self.root / "scripts" / "campaign_guard.py")
+        guard = mp._load("campaign_guard_test_copy", self.root / "scripts" / "campaign_guard.py")
+        with guard._Lock(str(self.root)):
+            with self.assertRaises(mp.Refused):
+                with mp.clone_lock(self.root):
+                    pass
+        with mp.clone_lock(self.root):
+            pass
+
     def test_check_reports_and_merges_nothing(self):
         gh = FakeGh([pr(1), pr(2, isDraft=True)])
         code, out = self.call(["check"], gh, FakeGit(status=" M x\n"))
@@ -185,6 +224,11 @@ class EligibilityTests(unittest.TestCase):
                 ok, why = self.reason(**over)
                 self.assertEqual((ok, needle in why), (False, True), why)
 
+    def test_an_incomplete_file_list_is_refused(self):
+        ok, why = self.reason(changedFiles=150)
+        self.assertEqual((ok, "file list is incomplete (1 of 150" in why), (False, True))
+        self.assertIn("incomplete", self.reason(changedFiles=None)[1])
+
     def test_skipped_and_neutral_checks_pass(self):
         rollup = [{"__typename": "CheckRun", "name": "a", "status": "COMPLETED", "conclusion": "SKIPPED"},
                   {"__typename": "CheckRun", "name": "b", "status": "COMPLETED", "conclusion": "NEUTRAL"},
@@ -197,8 +241,10 @@ class MergeTests(Base):
         gh, git = FakeGh([pr(2), pr(1)]), FakeGit()
         code, out = self.call(["run", "--campaign"], gh, git)
         self.assertEqual(code, 0)
-        self.assertEqual(gh.merges(), [("pr", "merge", "1", "--rebase", "--delete-branch", "--match-head-commit",
-                                        f"{1:040d}")])
+        self.assertEqual(gh.merges(), [("pr", "merge", "1", "--repo", "rizonesoft/Isotone", "--rebase",
+                                        "--delete-branch", "--match-head-commit", f"{1:040d}")])
+        listing = [c for c in gh.calls if c[:2] == ("pr", "list")][0]
+        self.assertEqual(listing[2:4], ("--repo", "rizonesoft/Isotone"))
         self.assertIn(("pull", "--ff-only", "origin", "main"), git.calls)
         self.assertIn("merged #1", out)
 
@@ -212,14 +258,23 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
         self.assertEqual((code, len(gh.merges()), "#1 not merged" in out), (1, 1, True))
 
-    def test_a_failed_pull_stops(self):
+    def test_a_failed_pull_after_a_merge_is_its_own_outcome(self):
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(pull_fails=True))
-        self.assertEqual((code, "the pull failed" in out), (1, True))
+        self.assertEqual((code, "MERGED on GitHub, but the pull failed" in out, "reconcile" in out), (3, True, True))
 
-    def test_a_red_validate_stops(self):
+    def test_a_red_validate_after_a_merge_is_its_own_outcome(self):
         red = lambda r: subprocess.CompletedProcess([], 1, "1 fatal\n", "")
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(), validate=red)
-        self.assertEqual((code, "validate is red" in out), (1, True))
+        self.assertEqual((code, "validate is red on main" in out), (3, True))
+
+    def test_every_github_call_names_the_origin_repository(self):
+        gh = FakeGh([pr(1)])
+        self.call(["run", "--campaign"], gh, FakeGit(origin="git@github.com:someone/Fork.git"))
+        self.assertTrue(gh.calls and all("--repo" in c and c[c.index("--repo") + 1] == "someone/Fork" for c in gh.calls))
+
+    def test_an_origin_that_is_not_github_fails(self):
+        code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(origin="https://example.com/x.git"))
+        self.assertEqual((code, "is not a GitHub repository" in out), (1, True))
 
 
 class RealTreeTests(unittest.TestCase):
