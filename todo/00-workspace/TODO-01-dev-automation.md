@@ -65,7 +65,7 @@ track: W1
 |   9   |   §9    | The design contract gates                     | §1         |  [ ]   |
 |  10   |   §10   | The drift gates                               | §1         |  [ ]   |
 |  11   |   §11   | The manual-row invariant                      | §2         |  [x]   |
-|  12   |   §12   | Merge dependency PRs at section boundaries    | --         |  [ ]   |
+|  12   |   §12   | Merge dependency PRs at section boundaries    | --         |  [x]   |
 |  13   |   §13   | Run-guard robustness                          | --         |  [ ]   |
 |  14   |   §14   | Retire the unused verify-agent-tiers.mjs      | --         |  [ ]   |
 |  15   |   §15   | Unattended merges read main's CI back         | §12        |  [ ]   |
@@ -405,6 +405,12 @@ The pins workflow and Dependabot open pull requests labelled `dependencies` or `
 - [x] Commit: `"workspace: merge dependency pull requests at section boundaries"`
 
 **Test checkpoint:** Unit test: `python scripts/tests/test_merge_prs.py` passes, covering each preflight refusal, each eligibility rule (the `.NET` pin refused), the exact `gh pr merge --rebase --match-head-commit` call, one merge per run, and the stop on a failed merge, pull, or validate; driven run: `python scripts/merge_prs.py check` on the live repository prints the preflight verdict and which open pull requests are eligible, and `run --campaign` after a stamp push merges one eligible pull request, after which `git log --oneline -1` shows the rebased commit on `main` and `ci-wait` reads its CI back green. Cheaper substitute that fails: `gh pr merge --auto` on every Dependabot pull request, which merges while a section is in flight and takes the `.NET` pin, and which the preflight and eligibility tests refuse. **Corrected 2026-10-21:** the live merge cannot run before this section stamps, because this section is the one in progress and preflight refuses while it is (the rule working); the stamp carries the unit tests and the live `check` run, and the first `run --campaign` runs at this section's own stamp boundary, recorded in the run file with its `ci-wait` line.
+
+> **Verified:** 2026-10-21 | §12 | D00 T01 §12 at the assembled candidate 3818dbf to `e89e870` (twenty commits, the run file's repair record `eb0901c` excluded): `python scripts/tests/test_merge_prs.py` `Ran 55 tests` `OK`; with `preflight` returning at once 9 tests fail (`failures=8, errors=1`), with `eligible` returning true 22 fail · on the live repository `merge_prs.py check` prints `preflight: refused: a campaign run holds the guard build/claude-campaign-guard.json` with #1 and #2 listed, and `merge_prs.py recover` prints `no unresolved merge` (exit 0) · check-all at `2e1d437` (scripts equal to `e89e870`'s): all 21 gates passed, 985 + 33 + 8 tests passed, 0 failed, 0 skipped · the CI repair `24f3b6b` (attempt 1 of 3) read back green on both workflows · the live merge runs at this stamp's own boundary, recorded in the run file
+> **Review:** round 2, candidate assembled 3818dbf to `e89e870`(round 2) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 3 of cap 22, attempt 1 void on a miscopied receipt, gpt-6-astra medium; check-panel `PASS four lenses, one verdict each; highest none`). Independent: gpt-6-astra medium via `scripts/review-dispatch.py`, seventeen rounds: rounds 1 to 16 found 40 defects (F1 to F40, each fixed, from 9e377c4 to 30ddf6b), round 17 approved (four lenses approve, `record` advisory); the panel's void attempt and round 1 added F41 and F42, fixed in aa36900 and e89e870. Raw findings: docs/reviews/00-workspace/D00-T01-s12.md. Attestation: docs/reviews/00-workspace/D00-T01-s12.attest.json
+> **Plan review:** gpt medium, filed D00 T01 §12, D00 T01 §15, D00 T01 §13, D00 T02 §8, B-064 (10 findings: 7 filed, a correction on D00 T01 §12, the new section D00 T01 §15, two items on D00 T01 §13, three on D00 T02 §8; PR5 deferred to the backlog as B-064; PR6 and PR7 rejected with reasons) (run 20261021-D00-T01-S12-gpt)
+> **CRUD:** not applicable (a merge script over GitHub pull requests, with no user record, document, or setting)
+> **Duration:** 2026-10-21T21:05:00Z to 2026-10-21T23:38:02Z
 
 ## 13. Run-Guard Robustness: Special Files, Re-Points, and Interrupted Ends
 

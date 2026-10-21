@@ -4,14 +4,16 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**21 findings across 3 sections.**
+**63 findings across 4 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 14 | fails under hostile or unexpected input |
-| `integration` | 4 | a consumer, caller, or downstream artifact no longer holds |
+| `adversarial` | 32 | fails under hostile or unexpected input |
+| `integration` | 21 | a consumer, caller, or downstream artifact no longer holds |
+| `source-defect` | 4 | a Win32 contract, registry layout, or other source read wrongly |
+| `consistency` | 3 | disagrees with the rest of the suite, its naming, or its layout |
 | `record` | 2 | the plan or the evidence misdescribes what happened |
 | `correctness` | 1 | the code does the wrong thing |
 
@@ -20,13 +22,55 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 17 | wrong behavior in code, plan, or record |
-| `minor` | 4 | polish or wording, or no surviving defect |
+| `major` | 45 | wrong behavior in code, plan, or record |
+| `minor` | 18 | polish or wording, or no surviving defect |
 
 ## Every finding
 
 | Section | # | Severity | Category | Disposition | Source | Summary |
 | --- | --- | --- | --- | --- | --- | --- |
+| `D00 T01 §12` | F1 | major | `adversarial` | fixed | independent | the scheduled run did not reserve the clone against a campaign starting |
+| `D00 T01 §12` | F2 | major | `adversarial` | fixed | independent | gh calls were not bound to the repository git checks |
+| `D00 T01 §12` | F3 | minor | `consistency` | fixed | independent | equal commits did not prove the checked-out branch is main |
+| `D00 T01 §12` | F4 | minor | `consistency` | fixed | independent | nested launches opened console windows under the scheduler |
+| `D00 T01 §12` | F5 | minor | `consistency` | fixed | independent | the scheduled run hid git failures as refusals |
+| `D00 T01 §12` | F6 | minor | `integration` | fixed | independent | the loop had no path for a merge whose pull or validate failed |
+| `D00 T01 §12` | F7 | major | `source-defect` | fixed | independent | the SDK exclusion trusted a truncated changed-file list |
+| `D00 T01 §12` | F8 | major | `adversarial` | fixed | independent | the repository binding dropped the host |
+| `D00 T01 §12` | F9 | major | `integration` | fixed | independent | a failed merge command was read as nothing changed |
+| `D00 T01 §12` | F10 | major | `adversarial` | fixed | independent | the merge was not bound to the pull request's base |
+| `D00 T01 §12` | F11 | major | `integration` | fixed | independent | a red post-merge validate did not stop the next merge |
+| `D00 T01 §12` | F12 | major | `source-defect` | fixed | independent | fetching main did not guarantee the tracking ref moved |
+| `D00 T01 §12` | F13 | major | `adversarial` | fixed | independent | the final re-read skipped the eligibility rules |
+| `D00 T01 §12` | F14 | major | `adversarial` | fixed | independent | the merge intent was recorded only after the merge returned |
+| `D00 T01 §12` | F15 | major | `adversarial` | fixed | independent | an unsupported origin URL leaked its credentials into the error |
+| `D00 T01 §12` | F16 | minor | `integration` | fixed | independent | a failed final rev-parse after a merge exited 1 |
+| `D00 T01 §12` | F17 | minor | `source-defect` | fixed | independent | recovery took a green validate as proof the merge was resolved |
+| `D00 T01 §12` | F18 | major | `adversarial` | fixed | independent | recovery cleared the record before checking the tree was clean |
+| `D00 T01 §12` | F19 | major | `adversarial` | fixed | independent | a malformed recovery record read as no record |
+| `D00 T01 §12` | F20 | minor | `integration` | fixed | independent | a launch or file error after a merge escaped as exit 1 |
+| `D00 T01 §12` | F21 | major | `adversarial` | fixed | independent | the scheduled run could delete a campaign's in-flight intent |
+| `D00 T01 §12` | F22 | minor | `integration` | fixed | independent | recovery failures escaped as exit 1 |
+| `D00 T01 §12` | F23 | major | `adversarial` | fixed | independent | an intent still reading open was cleared while its merge could land |
+| `D00 T01 §12` | F24 | major | `integration` | fixed | independent | eligibility trusted only the checks that had reported |
+| `D00 T01 §12` | F25 | major | `adversarial` | fixed | independent | a merge that errored and read open deleted its intent |
+| `D00 T01 §12` | F26 | minor | `adversarial` | fixed | independent | a non-finite issue time cleared the record |
+| `D00 T01 §12` | F27 | major | `integration` | fixed | independent | a settling intent was a quiet refusal that let work resume |
+| `D00 T01 §12` | F28 | minor | `adversarial` | fixed | independent | an oversized issue time or a null reason escaped recovery as exit 1 |
+| `D00 T01 §12` | F29 | minor | `adversarial` | fixed | independent | a timed-out command's children kept its pipes open past the bound |
+| `D00 T01 §12` | F30 | major | `integration` | fixed | independent | one green job satisfied a whole workflow |
+| `D00 T01 §12` | F31 | major | `source-defect` | fixed | independent | a renamed global.json escaped the SDK exclusion |
+| `D00 T01 §12` | F32 | major | `adversarial` | fixed | independent | the clone was judged only before GitHub was read |
+| `D00 T01 §12` | F33 | major | `integration` | fixed | independent | a leftover intent was not settled before a campaign's first section |
+| `D00 T01 §12` | F34 | major | `adversarial` | fixed | independent | the final preflight judged the clone before the slow fetch |
+| `D00 T01 §12` | F35 | minor | `integration` | fixed | independent | startup recovery could merge with no CI read-back |
+| `D00 T01 §12` | F36 | major | `integration` | fixed | independent | resume could build on a merged main never read back |
+| `D00 T01 §12` | F37 | major | `integration` | fixed | independent | the post-merge read-back left out the build workflow |
+| `D00 T01 §12` | F38 | major | `integration` | fixed | independent | an exit-3 reconciliation skipped the read-back |
+| `D00 T01 §12` | F39 | major | `integration` | fixed | independent | start and resume read CI back over one commit only |
+| `D00 T01 §12` | F40 | minor | `integration` | fixed | independent | an exit-3 reconciliation could merge a second pull request first |
+| `D00 T01 §12` | F41 | major | `integration` | fixed | independent | one read-back baseline served both workflows |
+| `D00 T01 §12` | F42 | minor | `adversarial` | fixed | independent | a failed workflow-run lookup became an ineligible verdict |
 | `D00 T01 §2` | F1 | minor | `correctness` | fixed | independent | the D99 T01 §6 operator mark named the company as the signer |
 | `D00 T01 §4` | F1 | major | `record` | fixed | independent | the panel and architecture probes shared one manifest, so the kept panel review failed check-panel on replay |
 | `D00 T01 §4` | F2 | minor | `record` | fixed | independent | the record claimed a manifest for every probe, but the independent pass is unfenced |
