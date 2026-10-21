@@ -225,7 +225,7 @@ Quote every suite count in the body from the commit being created: re-run the su
 
 Push the SHIP push. The commit must exist on the remote before the next step, because the independent reviewer reads the commit. Capture the remote head first (`BEFORE=$(git ls-remote origin refs/heads/main | cut -f1)`) and read CI back after it with `python scripts/review_prompt.py ci-wait <SHIP_SHA> --since $BEFORE`, and record its line in the run file: a red read-back is repaired before the review, never carried into it, by the bounded repair loop the review skill's push block states, escalating only a cause the tree cannot fix. After a repair, `<SHIP_SHA>` is the repaired head: re-run the checkpoint there and give step 8 that sha, because the pre-repair commit is not the candidate any more.
 
-`ci-wait` reads the `plan-gates` workflow (`.github/workflows/plan.yml`) by default; a section whose paths the build workflow covers reads that one back too with `--workflow <name> --workflow-path .github/workflows/<file>.yml`, and records both lines.
+`ci-wait` reads the `plan-gates` workflow (`.github/workflows/plan.yml`) by default; the `build` workflow runs on every push to `main` with no path filter, so every push reads it back too with `--workflow build --workflow-path .github/workflows/build.yml`, and records both lines.
 
 ### 8. Independent review, before the stamp
 
