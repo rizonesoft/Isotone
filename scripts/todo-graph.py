@@ -11329,7 +11329,11 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 # row (GitHub Markdown), and only a blank line or a new block
                 # ends the table.
                 ("a pipe-free truncated row in a table", _pcat, _pai + "AI-0003\n", ["parity-id-missing", "parity-input-damaged"], "AI-0003 has 1 cells"),
-                ("a heading ends the table", _pcat, _pai + "## Notes\nAI-0003 is mentioned in prose\n", None, None),
+                # Round 10: the format rule, not renderer emulation: only a
+                # blank line ends a parity table.
+                ("a heading directly under a table", _pcat, _pai + "## Notes\n", "parity-input-damaged", "'## Notes' is not a whole id"),
+                ("an autolink row in a table", _pcat + "<https://example.com> | Lost | AI-0001 | -- | core | invalid |  |\n", _pai, "parity-input-damaged", "'<https://example.com>' is not a whole id"),
+                ("a blank line then prose ends the table", _pcat, _pai + "\n## Notes\nAI-0003 is mentioned in prose\n", None, None),
                 # Round 7: only the separator under the header is skipped,
                 # and only with the header's cell count.
                 ("a separator-shaped row inside a table", _pcat + "| -- | -- | -- | -- | -- | -- | -- |\n", _pai, "parity-input-damaged", "'--' is not a whole id"),
