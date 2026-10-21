@@ -157,3 +157,47 @@ OVERALL: needs-attention
 ## Response to round 4
 
 1. Real, and the fourth marker shape, so the rule is inverted rather than extended (same-family circuit breaker): continuation is now whitelisted, never inferred. Under a needs-attention verdict, an indented line continues a finding only when it is led by a letter that is not a list marker, or sits in, opens, or closes a fenced block; every other detail line starts a finding whatever its marker, and is P1 unless its tag follows the marker. A verdict that leaves a fence open counts as P1. Both prompts state the format. The repro (`**2.**` and `10000)`) returns `highest P1 (...)`; at `2513da8` it returned `highest P3`. New cases: `highest-bold-number-counts`, `-long-number-`, `-backtick-led-`, `-unclosed-fence-`; `python -W error::SyntaxWarning scripts/review_prompt.py --self-test` prints `493 cases, 0 failed`.
+
+## Round 5: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T17:31:20Z
+- Effort: medium
+- Lines: 28
+- Digest: 8863309778379dce
+
+### adversarial: needs-attention
+
+1. P1 `scripts/review_prompt.py:108` and `:609`: Fence handling toggles a boolean without matching the opener’s character or length. An unclosed fence therefore escapes the required P1 floor and permits the round-9 severity stop. Reproduce by passing this to `check_panel_output`:
+
+   ````text
+   **adversarial: needs-attention**
+   1. P3 a.py:1 typo
+      ```text
+      - a.py:2 deletes originals
+      ~~~
+   **consistency: approve**
+   **integration: approve**
+   **record: approve**
+   HIGHEST: P3
+   ````
+
+   Actual result: `(True, 'four lenses, one verdict each; highest P3')`. The tilde fence cannot close the backtick fence. Opening with four backticks and closing with three produces the same incorrect result. Track the opening delimiter and require a valid matching close; otherwise retain the P1 floor.
+
+2. P1 `scripts/review_prompt.py:105` and `:608`: The continuation whitelist still accepts unsupported alphabetic list markers as prose. Replace the fenced portion above with `  aa) a.py:2 deletes originals`. The checker again returns `highest P3`: `aa)` misses `_LIST_ITEM_RE`, but passes `_PROSE_LEAD_RE`. This untagged finding should count as P1. Recognize or reject alphabetic list-marker shapes before granting continuation status.
+
+### consistency: approve
+
+### integration: approve
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 5
+
+1. Real. A fence inside a needs-attention verdict now records its opener (character and length), and only a bare run of the same character at least as long closes it (CommonMark), so `~~~` never closes a backtick fence and three backticks never close four; a fence left open still counts as P1. New cases: `highest-tilde-closes-backticks-counts`, `highest-short-close-counts`.
+2. Real. Continuation is now a strict whitelist on the first token: after a finding, an indented line continues it only when its first token is a plain word (`[A-Za-z][A-Za-z'-]*` ending at most in `,` `;` `:`) or it opens a fence. `aa)`, `e.g.`, `iv.`, `**2.**`, digits, glyphs and backticks all start a finding, and the list-marker table is gone. A finding's tag is its first or second token. New cases: `highest-two-letter-marker-counts`, `highest-abbreviation-led-counts`; `python -W error::SyntaxWarning scripts/review_prompt.py --self-test` prints `497 cases, 0 failed`.
+
+Self-review note: the first draft of this fix named its fence pattern `_FENCE_OPEN_RE`, which the prompt fence parser already defines later in the module, so the later definition shadowed it and every fenced block read as P1. The self-test caught it (`highest-continuation-keeps-p3`); the patterns are now `_MD_FENCE_OPEN_RE` and `_MD_FENCE_CLOSE_RE`.

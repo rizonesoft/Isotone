@@ -83,29 +83,29 @@ _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
 # severity stop rests on it. Under a needs-attention verdict the floor
 # fails closed, because the independent review of 2026-10-21 found a
 # new list shape escaping each round (`- P1` beside a numbered P3, an
-# indented `  - a.py:2`, an indented `2) P1`, an indented `**2.**`):
+# indented `  - a.py:2`, an indented `2) P1`, an indented `**2.**`, an
+# `aa)`, a fence closed by the wrong delimiter):
 # - any `P1`, `P2` or `P3` token anywhere on a detail line raises the
 #   floor to it, whatever opens the line, so a tag never hides in a
 #   continuation (prose naming a severity raises it too: that only
 #   denies a stop, never grants one);
 # - continuation is whitelisted, never inferred: after a finding, an
-#   indented line inside a fence, a fence line itself, or an indented
-#   line led by a letter that is not a list marker (`a)`, `iv.`);
+#   indented line whose first token is a plain word (letters, ending at
+#   most in `,` `;` `:`), or an indented fenced block, which only a
+#   bare run of its opener's character at least as long closes;
 # - every other detail line starts a finding, whatever its marker, and
-#   is P1 unless its tag follows its marker (a severity named later is
-#   prose);
+#   is P1 unless its tag is its first or second token (a severity named
+#   later is prose);
 # - a needs-attention verdict with no detail line, or one that leaves
 #   a fence open, counts as P1.
 # Advisory findings never block, so they do not raise the floor. The
 # loop's severity stop (review-todo-section) rests on `highest P3` in
 # the checker's reason, never on the reviewer's word alone.
 _SEVERITY_TAG_RE = re.compile(r"(?<![A-Za-z0-9_])P([123])(?![A-Za-z0-9_])")
-_LIST_ITEM_RE = re.compile(
-    r"^\s*(?:[-*+" + "".join(map(chr, (0x2022, 0x2023, 0x2043, 0x2219, 0x25AA, 0x25CF, 0x25E6)))
-    + r"]|\(?(?:[0-9]{1,4}|[A-Za-z]|[ivxlcdmIVXLCDM]{1,6})[.)])\s")
-_LEADING_TAG_RE = re.compile(r"\s*[*\[(_`]*P[123](?![A-Za-z0-9_])")
-_PROSE_LEAD_RE = re.compile(r"^\s+[A-Za-z]")
-_FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
+_LEADING_TAG_RE = re.compile(r"(?:\S+\s+)?[*\[(_`]*P[123](?![A-Za-z0-9_])")
+_PROSE_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]*[,;:]?")
+_MD_FENCE_OPEN_RE = re.compile(r"^\s*(`{3,}|~{3,})")
+_MD_FENCE_CLOSE_RE = re.compile(r"^\s*(`{3,}|~{3,})\s*$")
 _HIGHEST_RE = re.compile(r"^\s*\**\s*HIGHEST\s*:\s*\**\s*(P1|P2|P3|none)\s*\**\s*$")
 SEVERITY_RANK = {"none": 0, "P3": 1, "P2": 2, "P1": 3}
 
@@ -522,7 +522,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
     open_line = 0
     block_floor = 0
     finding_seen = False
-    in_fence = False
+    in_fence: str | None = None
     floor = 0
     floor_line = 0
     highest: str | None = None
@@ -542,7 +542,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
         # A fence left open swallowed whatever followed it: P1 as well.
         if not blocking:
             return 0
-        return block_floor if finding_seen and not in_fence else SEVERITY_RANK["P1"]
+        return block_floor if finding_seen and in_fence is None else SEVERITY_RANK["P1"]
 
     for lineno, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
@@ -581,7 +581,7 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             tally = 0
             block_floor = 0
             finding_seen = False
-            in_fence = False
+            in_fence = None
             open_lens, open_line = lens, lineno
             continue
         if _PANEL_LONG_COUNT_RE.match(line):
@@ -597,23 +597,31 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
             tags = [SEVERITY_RANK["P" + n] for n in _SEVERITY_TAG_RE.findall(line)]
             if tags:
                 block_floor = max(block_floor, *tags)
-            fence = _FENCE_RE.match(line) is not None
+            if in_fence is not None:
+                # Inside a fence every line continues the finding; only a
+                # bare run of the opener's character, at least as long,
+                # closes it (CommonMark), so `~~~` never closes a backtick
+                # fence and three backticks never close four.
+                close = _MD_FENCE_CLOSE_RE.match(line)
+                if close and close.group(1)[0] == in_fence[0] and len(close.group(1)) >= len(in_fence):
+                    in_fence = None
+                continue
+            opener = _MD_FENCE_OPEN_RE.match(line)
             # Continuation is the one shape allowed to carry no finding,
             # so it is whitelisted, never inferred: an indented line after
-            # a finding, inside or opening or closing a fence, or led by a
-            # letter that is not a list marker. Anything else starts a
-            # finding, whatever marker it uses.
+            # a finding that opens a fence or whose first token is a plain
+            # word (letters, ending at most in `,` `;` `:`). Any other
+            # token (`aa)`, `iv.`, `**2.**`, `10000)`, a glyph, a backtick)
+            # starts a finding, whatever marker it is.
             continues = finding_seen and line[:1].isspace() and (
-                in_fence or fence
-                or (_PROSE_LEAD_RE.match(line) is not None and _LIST_ITEM_RE.match(line) is None))
-            if fence:
-                in_fence = not in_fence
+                opener is not None or _PROSE_WORD_RE.fullmatch(line.split(None, 1)[0]) is not None)
+            if opener is not None:
+                in_fence = opener.group(1)
             if not continues:
-                # A finding's own tag opens it, right after its marker; a
-                # severity named later in the line is prose and never
-                # stands in for the tag.
-                marker = _LIST_ITEM_RE.match(line)
-                if not _LEADING_TAG_RE.match(line[marker.end():] if marker else line):
+                # A finding's own tag is its first or second token (after
+                # a marker); a severity named later in the line is prose
+                # and never stands in for the tag.
+                if not _LEADING_TAG_RE.match(line.strip()):
                     block_floor = max(block_floor, SEVERITY_RANK["P1"])
                 finding_seen = True
     bad = close_block()
@@ -3770,7 +3778,13 @@ def _self_test() -> int:
                        ("bold-number", "  **2.** a.py:2 deletes originals\n"),
                        ("long-number", "  10000) a.py:2 deletes originals\n"),
                        ("backtick-led", "   `a.py:2` deletes originals\n"),
-                       ("unclosed-fence", "   ```\n   a.py:2 deletes originals\n")):
+                       ("unclosed-fence", "   ```\n   a.py:2 deletes originals\n"),
+                       # Round 5: fences close only by their own kind,
+                       # and a continuation's first token is a word.
+                       ("tilde-closes-backticks", "   ```text\n   - a.py:2 deletes originals\n   ~~~\n"),
+                       ("short-close", "   ````\n   - a.py:2 deletes originals\n   ```\n"),
+                       ("two-letter-marker", "  aa) a.py:2 deletes originals\n"),
+                       ("abbreviation-led", "   e.g. a.py:2 deletes originals\n")):
         ok, reason = check_panel_output(
             receipt + low.replace("2. **P3** b.py:2 test gap\n", "2. **P3** b.py:2 test gap\n" + extra)
             + "HIGHEST: P3\n", manifest3)
