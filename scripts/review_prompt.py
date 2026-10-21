@@ -81,9 +81,10 @@ _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
 # last. An understated line voids nothing (the verdicts stand), but the
 # PASS reason names the true floor instead of the declared value, so no
 # severity stop rests on it. Under a needs-attention verdict every detail line
-# counts: a numbered item, a list item, or any line at column 0 is a
-# finding, and so is an indented line before the verdict's first
-# finding; only an indented line after a finding continues it. A
+# counts: a numbered item, a list item at any depth, or any line at
+# column 0 is a finding, and so is an indented line before the
+# verdict's first finding; only indented prose after a finding
+# continues it (round 2: an indented `  - a.py:2` bullet had escaped). A
 # finding is its tag, untagged meaning P1, and a needs-attention
 # verdict with no finding line counts as P1 too (independent review
 # 2026-10-21 round 1: an unnumbered `- P1` beside a numbered P3 had
@@ -93,7 +94,7 @@ _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
 # severity stop (review-todo-section) rests on `highest P3` in the
 # checker's reason, never on the reviewer's word alone.
 _FINDING_SEVERITY_RE = re.compile(r"^\s*(?:[0-9]+\.|[-*+])?\s*[*\[(]*(P[123])\b")
-_LIST_ITEM_RE = re.compile(r"^[-*+]\s")
+_LIST_ITEM_RE = re.compile(r"^\s*[-*+]\s")
 _HIGHEST_RE = re.compile(r"^\s*\**\s*HIGHEST\s*:\s*\**\s*(P1|P2|P3|none)\s*\**\s*$")
 SEVERITY_RANK = {"none": 0, "P3": 1, "P2": 2, "P1": 3}
 
@@ -3245,7 +3246,13 @@ _BUNDLE_OID_RE = re.compile(r"\A[0-9a-f]{40}\Z")
 # record. The three shapes are disjoint, so no role plumbing is
 # needed: a transcript holds iff exactly one pattern matches.
 _BUNDLE_HOLDING_RES = (
-    re.compile(r"\APASS four lenses, one verdict each\Z"),
+    # The panel shape takes the severity suffix since 2026-10-21
+    # (independent review round 2): a declared HIGHEST, or the floor an
+    # understated one was raised to. Nothing else rides after it.
+    re.compile(r"\APASS four lenses, one verdict each"
+               r"(?:; highest (?:P[123]|none)"
+               r"|; highest (?P<floor>P[123]) \(line [1-9][0-9]* declares (?:P[23]|none), but the needs-attention"
+               r" verdict at line [1-9][0-9]* holds a (?P=floor) finding\))?\Z"),
     re.compile(r"\APASS (?:explicit no-findings statement"
                r"|\d+ findings, one per line)\Z"),
     re.compile(r"\APASS stamp holds\Z"),
@@ -3720,7 +3727,8 @@ def _self_test() -> int:
     # continuation unless it opens with a tag.
     for leg, extra in (("unnumbered-list", "- P1 a.py:2 deletes originals\n"),
                        ("column-0-prose", "deletes originals at a.py:2\n"),
-                       ("nested-tag", "   - P1 a.py:2 deletes originals\n")):
+                       ("nested-tag", "   - P1 a.py:2 deletes originals\n"),
+                       ("nested-untagged-bullet", "  - a.py:2 deletes originals\n")):
         ok, reason = check_panel_output(
             receipt + low.replace("2. **P3** b.py:2 test gap\n", "2. **P3** b.py:2 test gap\n" + extra)
             + "HIGHEST: P3\n", manifest3)
@@ -3731,9 +3739,20 @@ def _self_test() -> int:
     check("highest-indented-lead-counts-p1", ok and floored(reason, "P1"), reason)
     ok, reason = check_panel_output(
         receipt + low.replace("2. **P3** b.py:2 test gap\n",
-                              "2. **P3** b.py:2 test gap\n   ```text\n   repro line\n   ```\n   - sub point\n")
+                              "2. **P3** b.py:2 test gap\n   ```text\n   repro line\n   ```\n   continued prose\n")
         + "HIGHEST: P3\n", manifest3)
     check("highest-continuation-keeps-p3", ok and reason.endswith("; highest P3"), reason)
+    # Round 2: the bundle transcript grammar carries every severity
+    # reason the checker emits, and nothing riding after it.
+    for leg, text in (("p3", receipt + low + "HIGHEST: P3\n"),
+                      ("none", receipt + approves + "HIGHEST: none\n"),
+                      ("floor", receipt + low.replace("1. P3 a.py:1", "1. a.py:1") + "HIGHEST: P3\n"),
+                      ("floor-p3", receipt + low + "HIGHEST: none\n")):
+        ok, reason = check_panel_output(text, manifest3)
+        check(f"bundle-transcript-highest-{leg}", ok and _bundle_transcript_ok(f"PASS {reason}\n".encode()),
+              reason)
+    check("bundle-transcript-highest-forged-tail-fails",
+          not _bundle_transcript_ok(b"PASS four lenses, one verdict each; highest P3 and more"))
     ok, reason = check_panel_output(receipt + low + "HIGHEST: P2\n", manifest3)
     check("highest-overstated-pass", ok and reason.endswith("; highest P2"), reason)
     ok, reason = check_panel_output(
