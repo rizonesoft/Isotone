@@ -42,6 +42,7 @@ import argparse
 import contextlib
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -63,10 +64,11 @@ REMOTE_RE = re.compile(r"^(?:https://(?:[^@/]+@)?github\.com/|ssh://git@github\.
                        r"(?P<owner>[A-Za-z0-9_.-]+)/(?P<name>[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
 NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0  # CREATE_NO_WINDOW: a scheduled run opens no console
 # Every git and gh call is bounded, and an intent record whose pull request still reads OPEN is cleared only after
-# SETTLE_SECONDS, far past any bounded call: a merge issued by a run that was killed cannot land after the record
-# that guards it is gone (independent review round 7).
+# SETTLE_SECONDS, three times the bound on any call: a merge issued by a run that was killed cannot land after the
+# record that guards it is gone (independent review round 7). While an intent settles, every run exits 3, so the loop
+# holds new section work for at most that window (round 9); a shorter window would risk a late landing.
 COMMAND_TIMEOUT = 300
-SETTLE_SECONDS = 3600
+SETTLE_SECONDS = 900
 
 
 class Refused(Exception):
@@ -242,6 +244,10 @@ def blocked(root: Path) -> dict | None:
         return {"pr": None, "why": f"the record cannot be read ({error.__class__.__name__})"}
     if not isinstance(record, dict) or not isinstance(record.get("pr"), int):
         return {"pr": None, "why": "the record names no pull request"}
+    issued = record.get("issued_at")
+    if not isinstance(issued, (int, float)) or isinstance(issued, bool) or not math.isfinite(issued):
+        # A missing or non-finite time (NaN, infinity) cannot be aged, so it can never settle (round 9).
+        return {"pr": None, "why": "the record carries no usable issue time"}
     return record
 
 
@@ -526,10 +532,10 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
         # Not merged now does not prove it never will be: a merge issued by a killed run may still be in flight.
         # The record clears only once SETTLE_SECONDS have passed since the merge was issued; until then the clone is
         # busy, not failed (independent review round 7).
-        issued = record.get("issued_at")
-        if not isinstance(issued, (int, float)) or time.time() - issued < SETTLE_SECONDS:
-            raise Refused(f"an earlier merge of #{n} still reads {state.get('state').lower()} and may be in flight; "
-                          f"it settles {SETTLE_SECONDS // 60} minutes after it was issued")
+        if time.time() - record["issued_at"] < SETTLE_SECONDS:
+            # Unresolved, not busy: exit 3 holds new section work until it settles (independent review round 9).
+            return (f"an earlier merge of #{n} still reads {state.get('state').lower()} and may be in flight; it "
+                    f"settles {SETTLE_SECONDS // 60} minutes after it was issued")
         (root / BLOCKED).unlink(missing_ok=True)
         return None
     try:

@@ -382,7 +382,9 @@ class MergeTests(Base):
         gh = FakeGh([pr(1), pr(2)])
         code, out = self.call(["run", "--task"], gh, FakeGit())
         self.assertEqual((code, "may be in flight" in out, gh.merges(), (self.root / mp.BLOCKED).exists()),
-                         (0, True, [], True))
+                         (3, True, [], True))
+        code, _out = self.call(["run", "--campaign"], FakeGh([pr(1), pr(2)]), FakeGit())
+        self.assertEqual(code, 3)
         record = json.loads((self.root / mp.BLOCKED).read_text(encoding="utf-8"))
         record["issued_at"] -= mp.SETTLE_SECONDS + 1
         (self.root / mp.BLOCKED).write_text(json.dumps(record), encoding="utf-8")
@@ -428,7 +430,8 @@ class MergeTests(Base):
 
     def test_a_malformed_record_blocks_until_the_operator_clears_it(self):
         (self.root / "build").mkdir(exist_ok=True)
-        for body in ("{truncated", "[]", '{"why": "no pr"}'):
+        for body in ("{truncated", "[]", '{"why": "no pr"}', '{"pr": 1, "issued_at": NaN}', '{"pr": 1, "issued_at": "x"}',
+                     '{"pr": 1}', '{"pr": 1, "issued_at": Infinity}'):
             with self.subTest(body=body):
                 (self.root / mp.BLOCKED).write_text(body, encoding="utf-8")
                 gh = FakeGh([pr(2)])
