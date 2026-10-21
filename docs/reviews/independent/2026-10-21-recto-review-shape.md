@@ -83,3 +83,40 @@ OVERALL: needs-attention
 
 1. Real. A bullet at any depth under a needs-attention verdict now counts as a finding (`_LIST_ITEM_RE` takes leading whitespace); only indented prose after a finding continues it. Both prompts (`review-todo-section`'s panel prompt and `docs/review-round-prompt.md`) now say each finding is one numbered line, continued only by indented prose. The repro returns `highest P1 (...)`. New case: `highest-nested-untagged-bullet-counts`; `highest-continuation-keeps-p3` now continues with indented prose and a fenced block.
 2. Real. `_BUNDLE_HOLDING_RES` accepts the panel PASS with its `; highest <P1|P2|P3|none>` suffix, or the floored form `; highest <floor> (line N declares <lower>, but the needs-attention verdict at line M holds a <floor> finding)`, and nothing after it. New cases: `bundle-transcript-highest-p3`, `-none`, `-floor`, `-floor-p3` (each the checker's own reason fed to `_bundle_transcript_ok`), and `bundle-transcript-highest-forged-tail-fails`. `python scripts/review_prompt.py --self-test` prints `482 cases, 0 failed`.
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-21T17:21:45Z
+- Effort: medium
+- Lines: 24
+- Digest: 66de5ea84535e8f1
+
+### adversarial: needs-attention
+
+1. P1 `scripts/review_prompt.py:583`: An indented ordered-list item using `)` escapes the severity floor. Neither finding regex recognizes it, so an explicit P1 becomes continuation prose. Reproduce by passing this text to `check_panel_output`:
+
+   ```text
+   **adversarial: needs-attention**
+   1. P3 a.py:1 typo
+     2) P1 a.py:2 deletes originals
+   **consistency: approve**
+   **integration: approve**
+   **record: approve**
+   HIGHEST: P3
+   ```
+
+   Actual result: `(True, 'four lenses, one verdict each; highest P3')`. This satisfies the round-9 severity-stop condition despite the P1 finding. Removing the P1 tag also escapes the required untagged-P1 default. Recognize parenthesized ordered-list markers before classifying indented text as continuation, or reject that malformed finding format.
+
+### consistency: approve
+
+### integration: approve
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 3
+
+1. Real, and the third list shape in three rounds, so the family is closed rather than the shape: under a needs-attention verdict, a `P1`, `P2` or `P3` token anywhere on a detail line raises the floor to it, a line opening with any list marker at any depth (`-`, `*`, `+`, bullet glyphs, `2)`, `(b)`, `iv.`) starts a finding, a finding whose tag does not follow its marker is P1 even if a severity is named later, and only indented unmarked prose continues a finding. The repro returns `highest P1 (...)`; at `cc260cd` it returned `highest P3`. New cases: `highest-paren-number-counts`, `-paren-number-untagged-`, `-enclosed-letter-`, `-roman-`, `-glyph-`, `-tag-in-continuation-`, `-late-tag-on-finding-`; `python -W error::SyntaxWarning scripts/review_prompt.py --self-test` prints `489 cases, 0 failed`.

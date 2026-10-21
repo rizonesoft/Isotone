@@ -80,21 +80,29 @@ _FINDING_ITEM_RE = re.compile(r"^\s*[0-9]+\.\s")
 # optional, so rounds recorded before it still check, and it must come
 # last. An understated line voids nothing (the verdicts stand), but the
 # PASS reason names the true floor instead of the declared value, so no
-# severity stop rests on it. Under a needs-attention verdict every detail line
-# counts: a numbered item, a list item at any depth, or any line at
-# column 0 is a finding, and so is an indented line before the
-# verdict's first finding; only indented prose after a finding
-# continues it (round 2: an indented `  - a.py:2` bullet had escaped). A
-# finding is its tag, untagged meaning P1, and a needs-attention
-# verdict with no finding line counts as P1 too (independent review
-# 2026-10-21 round 1: an unnumbered `- P1` beside a numbered P3 had
-# escaped). Any line that opens with a tag raises the floor to it, so
-# a nested `   - P1` is never read as a mere continuation. Advisory
-# findings never block, so they do not raise the floor. The loop's
-# severity stop (review-todo-section) rests on `highest P3` in the
-# checker's reason, never on the reviewer's word alone.
-_FINDING_SEVERITY_RE = re.compile(r"^\s*(?:[0-9]+\.|[-*+])?\s*[*\[(]*(P[123])\b")
-_LIST_ITEM_RE = re.compile(r"^\s*[-*+]\s")
+# severity stop rests on it. Under a needs-attention verdict the floor
+# fails closed, because the independent review of 2026-10-21 found a
+# new list shape escaping each round (`- P1` beside a numbered P3, an
+# indented `  - a.py:2`, an indented `2) P1`):
+# - any `P1`, `P2` or `P3` token anywhere on a detail line raises the
+#   floor to it, whatever marker opens the line, so a tag never hides
+#   in a continuation (prose naming a severity raises it too: that
+#   only denies a stop, never grants one);
+# - a line that starts a finding without its tag right after the
+#   marker is P1 (a severity named later is prose): a numbered
+#   item, a list item of any marker at any depth (`-`, `*`, `+`, a
+#   bullet glyph, `2)`, `(b)`, `iv.`), any line at column 0, or an
+#   indented line before the verdict's first finding;
+# - only an indented, unmarked line after a finding continues it;
+# - a needs-attention verdict with no detail line counts as P1.
+# Advisory findings never block, so they do not raise the floor. The
+# loop's severity stop (review-todo-section) rests on `highest P3` in
+# the checker's reason, never on the reviewer's word alone.
+_SEVERITY_TAG_RE = re.compile(r"(?<![A-Za-z0-9_])P([123])(?![A-Za-z0-9_])")
+_LIST_ITEM_RE = re.compile(
+    r"^\s*(?:[-*+" + "".join(map(chr, (0x2022, 0x2023, 0x2043, 0x2219, 0x25AA, 0x25CF, 0x25E6)))
+    + r"]|\(?(?:[0-9]{1,4}|[A-Za-z]|[ivxlcdmIVXLCDM]{1,6})[.)])\s")
+_LEADING_TAG_RE = re.compile(r"\s*[*\[(_`]*P[123](?![A-Za-z0-9_])")
 _HIGHEST_RE = re.compile(r"^\s*\**\s*HIGHEST\s*:\s*\**\s*(P1|P2|P3|none)\s*\**\s*$")
 SEVERITY_RANK = {"none": 0, "P3": 1, "P2": 2, "P1": 3}
 
@@ -580,14 +588,20 @@ def check_panel_output(text: str, manifest: tuple[str, str, str] | None = None) 
         if numbered:
             tally += 1
         if blocking:
-            tag = _FINDING_SEVERITY_RE.match(line)
+            tags = [SEVERITY_RANK["P" + n] for n in _SEVERITY_TAG_RE.findall(line)]
             starts = (numbered is not None or _LIST_ITEM_RE.match(line) is not None
                       or not line[:1].isspace() or not finding_seen)
-            if tag:
-                block_floor = max(block_floor, SEVERITY_RANK[tag.group(1)])
-            elif starts:
-                block_floor = max(block_floor, SEVERITY_RANK["P1"])
-            finding_seen = finding_seen or starts or tag is not None
+            if tags:
+                block_floor = max(block_floor, *tags)
+            if starts:
+                # A finding's own tag opens it, right after its marker; a
+                # severity named later in the line is prose and never
+                # stands in for the tag.
+                marker = _LIST_ITEM_RE.match(line)
+                lead = _LEADING_TAG_RE.match(line[marker.end():] if marker else line)
+                if not lead:
+                    block_floor = max(block_floor, SEVERITY_RANK["P1"])
+            finding_seen = finding_seen or starts or bool(tags)
     bad = close_block()
     if bad:
         return bad
@@ -3728,7 +3742,15 @@ def _self_test() -> int:
     for leg, extra in (("unnumbered-list", "- P1 a.py:2 deletes originals\n"),
                        ("column-0-prose", "deletes originals at a.py:2\n"),
                        ("nested-tag", "   - P1 a.py:2 deletes originals\n"),
-                       ("nested-untagged-bullet", "  - a.py:2 deletes originals\n")):
+                       ("nested-untagged-bullet", "  - a.py:2 deletes originals\n"),
+                       # Round 3: every marker family, tagged or not.
+                       ("paren-number", "  2) P1 a.py:2 deletes originals\n"),
+                       ("paren-number-untagged", "  2) a.py:2 deletes originals\n"),
+                       ("enclosed-letter", "   (b) a.py:2 deletes originals\n"),
+                       ("roman", "   iv. a.py:2 deletes originals\n"),
+                       ("glyph", "   " + chr(0x2022) + " a.py:2 deletes originals\n"),
+                       ("tag-in-continuation", "   and this is really P1: it deletes originals\n"),
+                       ("late-tag-on-finding", "- a.py:2 deletes originals, not P3\n")):
         ok, reason = check_panel_output(
             receipt + low.replace("2. **P3** b.py:2 test gap\n", "2. **P3** b.py:2 test gap\n" + extra)
             + "HIGHEST: P3\n", manifest3)
