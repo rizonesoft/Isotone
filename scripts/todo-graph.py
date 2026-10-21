@@ -11296,6 +11296,13 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a truncated inventory row (its id also unplaced)", _pcat, _pai + "| AI-0003\n", ["parity-id-missing", "parity-input-damaged"], "illustrator-30.8.md:5"),
                 ("a mangled source id", _pcat, _pai + "| AI-00x3 | Three | tool | x | y | core | z |\n", "parity-input-damaged", "'AI-00x3' is not a whole id"),
                 ("a truncated catalog row", _pcat + "| NP-0007 |\n", _pai, "parity-input-damaged", "stilus-parity.md:11"),
+                # Round 2: an indented row is still a row, and the whole
+                # first cell must be one id.
+                ("an indented inventory row nobody places", _pcat, _pai + "  | AI-0003 | Three | tool | x | y | core | z |\n", "parity-id-missing", "AI-0003"),
+                ("an id cell carrying more than the id", _pcat.replace("| NP-0001 |", "| NP-0001 junk |"), _pai, ["parity-id-missing", "parity-input-damaged"], "'NP-0001 junk' is not a whole id"),
+                ("an empty catalog", "", _pai, "parity-id-missing", "AI-0001"),
+                ("a row without its leading pipe", _pcat, _pai + "AI-0003 | Three | tool | x | y | core | z |\n", "parity-id-missing", "AI-0003"),
+                ("a lower-case id", _pcat, _pai + "| ai-0003 | Three | tool | x | y | core | z |\n", "parity-input-damaged", "'ai-0003' is not a whole id"),
             )
             for name, cat, ai, want, needle in _pcases:
                 _pwrite(cat, ai)
@@ -11340,6 +11347,15 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("parity: query parity refuses a damaged catalog, naming the row",
                   (pcode, json.loads(pbuf.getvalue())["problems"] != [], "stilus-parity.md:5" in perr.getvalue()),
                   (1, True, True))
+            _pwrite("")
+            pbuf, perr = _pio.StringIO(), _pio.StringIO()
+            with _pctx.redirect_stdout(pbuf), _pctx.redirect_stderr(perr):
+                pcode = cmd_query(argparse.Namespace(what="parity", phase=None, json=True, all=False))
+            check("parity: query parity refuses an empty catalog (round 2), its sources unplaced",
+                  (pcode, "is placed in no stilus catalog row" in perr.getvalue()), (1, True))
+            _pwrite()
+            check("parity: a clean tree's report carries no problems",
+                  par.parity_report(sys.modules[__name__], load_todos())["problems"], [])
         finally:
             TODO_DIR, PLAN = saved_p
             __import__("shutil").rmtree(proot, ignore_errors=True)

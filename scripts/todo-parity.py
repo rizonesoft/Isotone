@@ -93,19 +93,23 @@ def _table_rows(text: str, id_re: str):
     the cell count of the nearest `| ID |` header above the row, or None when no header precedes it; `problem`
     is None for a row whose first cell is a whole id of the family.
     """
-    row_re = re.compile(rf"^\|\s*({re.escape(_id_prefix(id_re))}[^|\s]*)")
+    # Recognition is wide and the id check is strict, so no row shape can hide from the count: leading whitespace
+    # and a missing leading pipe both still make a table row in GitHub Markdown, the prefix matches in any case,
+    # and the whole first cell must be one id (independent review round 2 found an indented row and a
+    # `NP-0001 junk` cell slipping past a token match).
+    row_re = re.compile(rf"^\s*\|?\s*{re.escape(_id_prefix(id_re))}", re.IGNORECASE)
     id_full = re.compile(rf"^{id_re}$")
     width = None
     header: list[str] | None = None
     for lineno, line in enumerate(text.splitlines(), 1):
-        if re.match(r"^\|\s*ID\s*\|", line):
+        if re.match(r"^\s*\|?\s*ID\s*\|", line):
             header = split_row(line)
             width = len(header)
             continue
-        m = row_re.match(line)
-        if m:
-            problem = None if id_full.match(m.group(1)) else f"{m.group(1)!r} is not a whole id of its family"
-            yield lineno, split_row(line), width, header, problem
+        if row_re.match(line):
+            cells = split_row(line)
+            problem = None if id_full.match(cells[0]) else f"{cells[0]!r} is not a whole id of its family"
+            yield lineno, cells, width, header, problem
 
 
 def parse_sources(root: Path, column: dict) -> tuple[dict[str, int], list[tuple[str, str]]]:
@@ -265,7 +269,7 @@ def parity_report(graph, todos, root=None) -> dict:
 
     A `plan` or `shipped-scope` row counts under the phase whose table holds its section, or under `unplaced`;
     a section counts as stamped only when it carries a `Verified:` stamp, whatever its status kind says. Every
-    damaged catalog row is listed under `problems`, and a report with problems is not evidence.
+    parity finding (`parity_findings`) is listed under `problems`, and a report with problems is not evidence.
     """
     root = _root(graph, root)
     sections = _section_index(todos)
@@ -275,12 +279,14 @@ def parity_report(graph, todos, root=None) -> dict:
         titles[phase] = info["title"]
         for ref in info["refs"]:
             phase_of.setdefault(ref, phase)
-    report: dict = {"catalogs": {}, "problems": []}
+    # The counts are evidence only while the catalogs validate: a damaged, empty, or drifted catalog would report
+    # short counts as if they were whole (independent review 2026-10-21, rounds 1 and 2), so every parity finding
+    # rides the report as a problem and `query parity` refuses it.
+    report: dict = {"catalogs": {}, "problems": [msg for _cls, msg in parity_findings(graph, todos, root)]}
+    if not (root / "docs" / "parity").is_dir():
+        report["problems"].append("no docs/parity/ in this tree, so there is no catalog to report on")
     for spec in CATALOGS:
-        # A damaged catalog would report short counts as if they were whole (independent review 2026-10-21), so
-        # its problems ride the report and `query parity` refuses it.
-        rows, problems = parse_catalog(root, spec)
-        report["problems"] += [msg for _cls, msg in problems]
+        rows, _problems = parse_catalog(root, spec)
         totals = {kind: 0 for kind in STATUS_KINDS}
         totals["malformed"] = 0
         phases: dict[str, dict] = {}
