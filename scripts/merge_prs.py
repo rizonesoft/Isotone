@@ -457,9 +457,10 @@ def _glob_re(pattern: str) -> re.Pattern:
 # `**` mid-pattern) makes the filter unsure (independent review round 5).
 _SUPPORTED_GLOB_RE = re.compile(r"^(?:\*\*|(?:[A-Za-z0-9._-]|\*(?!\*))+(?:/(?:[A-Za-z0-9._-]|\*(?!\*))+)*(?:/\*\*)?)$")
 # The whitelist for every content line of the `on:` block (independent review round 6 replaced per-shape patches):
-# a scalar is a quoted string with no `#` or a plain token that cannot open a YAML alias, anchor, or tag; a flow
+# a scalar is a quoted string with no `#` (and, double-quoted, no escape: independent review round 8) or a plain
+# token that cannot open a YAML alias, anchor, or tag; a flow
 # sequence holds scalars only. Any line outside these shapes makes the whole block unsure.
-_SCALAR = r"""(?:'[^'#]*'|"[^"#]*"|[A-Za-z0-9_./-][A-Za-z0-9_./*-]*)"""
+_SCALAR = r"""(?:'[^'#]*'|"[^"#\\]*"|[A-Za-z0-9_./-][A-Za-z0-9_./*-]*)"""
 _FLOW = rf"\[\s*(?:{_SCALAR}\s*(?:,\s*{_SCALAR}\s*)*)?\]"
 _VALUE = rf"(?:{_SCALAR}|{_FLOW}|\{{\s*\}})"
 _KEY_LINE_RE = re.compile(rf"^\s+([A-Za-z_][\w-]*)\s*:(?:\s+({_VALUE}))?\s*(?:#.*)?$")

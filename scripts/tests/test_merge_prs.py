@@ -603,6 +603,9 @@ class MergeTests(Base):
             ("on:" + chr(10) + "- push" + chr(10) + "- pull_request" + chr(10), (True, None)),
             ("name: x" + chr(10) + "jobs:" + chr(10) + "  a:" + chr(10) + "    runs-on: x" + chr(10), (True, None)),
             ("on:" + chr(10) + "  pull_request:" + chr(10), (False, None)),
+            # Independent review round 8: an escaped double-quoted scalar is outside the whitelist.
+            ("on: [push, " + chr(34) + chr(92) + "u0070ull_request" + chr(34) + "]" + chr(10), (True, None)),
+            ("on:" + chr(10) + "  push:" + chr(10) + "    paths: [" + chr(34) + "scripts/" + chr(92) + "x2a" + chr(92) + "x2a" + chr(34) + "]" + chr(10), (True, None)),
             # The whitelist covers the whole block: a line it does not know, even under another event, voids it.
             ("on:" + chr(10) + "  pull_request:" + chr(10) + "    types: !!seq [opened]" + chr(10) + "  push:" + chr(10)
              + "    paths: ['scripts/**']" + chr(10), (True, None)),
