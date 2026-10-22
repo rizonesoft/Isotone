@@ -4,17 +4,17 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**76 findings across 4 sections.**
+**96 findings across 5 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 34 | fails under hostile or unexpected input |
-| `integration` | 30 | a consumer, caller, or downstream artifact no longer holds |
-| `consistency` | 5 | disagrees with the rest of the suite, its naming, or its layout |
-| `source-defect` | 4 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 2 | the plan or the evidence misdescribes what happened |
+| `adversarial` | 43 | fails under hostile or unexpected input |
+| `integration` | 36 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 6 | disagrees with the rest of the suite, its naming, or its layout |
+| `source-defect` | 6 | a Win32 contract, registry layout, or other source read wrongly |
+| `record` | 4 | the plan or the evidence misdescribes what happened |
 | `correctness` | 1 | the code does the wrong thing |
 
 ## By severity
@@ -22,8 +22,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 47 | wrong behavior in code, plan, or record |
-| `minor` | 29 | polish or wording, or no surviving defect |
+| `major` | 60 | wrong behavior in code, plan, or record |
+| `minor` | 36 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -84,6 +84,26 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T01 §12` | F53 | minor | `integration` | fixed | independent | campaign start and resume wrote the run file before recover |
 | `D00 T01 §12` | F54 | minor | `integration` | fixed | independent | committing records before recover left the clone ahead of origin/main |
 | `D00 T01 §12` | F55 | minor | `integration` | fixed | independent | a boundary's records dirtied the tree before the merger ran |
+| `D00 T01 §15` | F1 | major | `adversarial` | fixed | independent | the CI gate took the newest runs whatever commit they built |
+| `D00 T01 §15` | F2 | major | `adversarial` | fixed | independent | main's CI was not judged again before the merge |
+| `D00 T01 §15` | F3 | minor | `consistency` | fixed | independent | a refusal at the final preflight became a failure email |
+| `D00 T01 §15` | F4 | minor | `integration` | fixed | independent | a running plan-gates hid a red build |
+| `D00 T01 §15` | F5 | major | `adversarial` | fixed | independent | the final preflight judged the clone before two slow CI reads |
+| `D00 T01 §15` | F6 | major | `integration` | fixed | independent | git diff's quoted names and rename destinations hid triggering paths |
+| `D00 T01 §15` | F7 | major | `adversarial` | fixed | independent | a flow-sequence filter read as empty |
+| `D00 T01 §15` | F8 | minor | `integration` | fixed | independent | a red was reported for a checkout that had left main |
+| `D00 T01 §15` | F9 | minor | `adversarial` | fixed | independent | a red read at the start or on the retry escaped before the clone was judged |
+| `D00 T01 §15` | F10 | major | `integration` | fixed | independent | a column-0 comment ended the on: block |
+| `D00 T01 §15` | F11 | major | `source-defect` | fixed | independent | an unreadable list entry left a partial filter |
+| `D00 T01 §15` | F12 | major | `adversarial` | fixed | independent | glob syntax the matcher does not implement was trusted |
+| `D00 T01 §15` | F13 | major | `adversarial` | fixed | independent | a YAML alias passed as a literal glob |
+| `D00 T01 §15` | F14 | major | `integration` | fixed | independent | an anchored on: mapping read as no trigger |
+| `D00 T01 §15` | F15 | minor | `source-defect` | fixed | independent | every symbolic-ref failure read as a detached checkout |
+| `D00 T01 §15` | F16 | minor | `record` | fixed | independent | the item's evidence text described the SHIP, not the candidate |
+| `D00 T01 §15` | F17 | major | `adversarial` | fixed | independent | a BOM or a column-0 sequence made a workflow read as absent |
+| `D00 T01 §15` | F18 | major | `adversarial` | fixed | independent | an escaped double-quoted event name was read undecoded |
+| `D00 T01 §15` | F19 | major | `integration` | fixed | independent | the misread event dropped the workflow from both pull request gates |
+| `D00 T01 §15` | F20 | minor | `record` | fixed | self | the round-8 test cases read the same with or without the escape rule |
 | `D00 T01 §2` | F1 | minor | `correctness` | fixed | independent | the D99 T01 §6 operator mark named the company as the signer |
 | `D00 T01 §4` | F1 | major | `record` | fixed | independent | the panel and architecture probes shared one manifest, so the kept panel review failed check-panel on replay |
 | `D00 T01 §4` | F2 | minor | `record` | fixed | independent | the record claimed a manifest for every probe, but the independent pass is unfenced |
