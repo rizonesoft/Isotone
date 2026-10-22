@@ -381,10 +381,17 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
     1): its push run on `head` decides; with none, the newest push run on an ancestor decides only when the changes
     since it miss the workflow's push paths (a path-filtered workflow need not run on every commit), and otherwise
     the run for `head` is still to come."""
+    fields = "status,conclusion,url,headSha,createdAt"
     try:
         runs = json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push", "--workflow",
-                                file, "--limit", "30", "--json", "status,conclusion,url,headSha,createdAt",
-                                cwd=root) or "[]")
+                                file, "--limit", "30", "--json", fields, cwd=root) or "[]")
+        if superseded_ok:
+            # A recorded merge may be older than the newest 30 runs: its own runs are read by commit too, so newer
+            # pushes cannot push them out of sight (D00 T01 §16, independent review round 3).
+            seen = {r.get("url") for r in runs}
+            runs += [r for r in json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push",
+                                                 "--workflow", file, "--commit", head, "--limit", "10", "--json",
+                                                 fields, cwd=root) or "[]") if r.get("url") not in seen]
     except ValueError as error:
         raise Failed(f"main's {name} runs cannot be read: {error}") from None
     if not runs:
@@ -1104,15 +1111,15 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         if stuck:
             print(f"merge_prs: not merging: {stuck}", file=sys.stderr)
             return 3
+    held = None
     if args.mode in ("run", "recover"):
-        # The last merge's own CI before anything else, the clone busy or not (D00 T01 §16): pending is a busy clone
-        # (nothing else merges), and a red, no evidence, or a merge unread past the bound is exit 1.
+        # The last merge's own CI before anything else, the clone busy or not (D00 T01 §16): pending holds every merge
+        # (a busy clone), and a red, no evidence, or a merge unread past the bound is exit 1. A held run still judges
+        # main below, so a later head's red is reported while the merge is pending (independent review round 3).
         try:
             line = settle_merge(root, repository(root, git_fn), gh_fn, git_fn)
         except Refused as error:
-            if args.mode == "run":
-                raise
-            line = f"merge_prs: recover: {error}"
+            held, line = error, f"merge_prs: recover: {error}" if args.mode == "recover" else None
         if line:
             print(line)
     if args.mode == "recover":
@@ -1139,6 +1146,9 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
             return 1
         preflight_line = f"preflight: failed: {error}"
         repo = None
+    if args.mode == "run" and held is not None:
+        print(f"merge_prs: preflight: refused: {held}")
+        return 0 if args.task else 2
     try:
         repo = repo or repository(root, git_fn)
         prs = open_prs(repo, gh_fn, root)

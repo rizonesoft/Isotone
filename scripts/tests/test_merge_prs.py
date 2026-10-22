@@ -136,10 +136,15 @@ class FakeGh:
                                    mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
         if args[:2] == ("run", "list") and "--branch" in args:
             wf = args[args.index("--workflow") + 1]
-            # By default main's head and the fake's merge commit (c...) both read green.
-            return json.dumps(self.main_runs.get(wf, [{"status": "completed", "conclusion": "success",
-                                                       "url": f"https://example.invalid/{wf}", "headSha": sha}
-                                                      for sha in (HEAD, "c" * 40)]))
+            # By default main's head and the fake's merge commit (c...) both read green. Like GitHub, the newest runs
+            # come first and `--limit` cuts the list; `--commit` keeps one commit's runs.
+            runs = self.main_runs.get(wf, [{"status": "completed", "conclusion": "success",
+                                            "url": f"https://example.invalid/{wf}/{sha}", "headSha": sha}
+                                           for sha in (HEAD, "c" * 40)])
+            if "--commit" in args:
+                runs = [r for r in runs if r.get("headSha") == args[args.index("--commit") + 1]]
+            runs = sorted(runs, key=lambda r: r.get("createdAt", ""), reverse=True)
+            return json.dumps(runs[:int(args[args.index("--limit") + 1])])
         if args[:2] == ("run", "list") and self.runs is not None:
             return json.dumps(self.runs.get(args[args.index("--commit") + 1], []))
         if args[:2] == ("pr", "merge"):
@@ -749,6 +754,32 @@ class MergeTests(Base):
                 sha, code, merges, green, out = merged_then(state, clock, cancelled_by)
                 after = self.health()["merged"]
                 self.assertEqual((sha, code, merges, green, after and after["pr"]), want, out)
+
+    def test_a_merge_older_than_the_window_is_still_read(self):
+        # Independent review round 3: thirty newer pushes push the merge's own run out of the newest 30.
+        c = "c" * 40
+        self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+        newer = [dict(self.run_on(format(k, "040x"), n=10 + k)[0], url=f"https://x/run/new{k}") for k in range(30)]
+        runs = {"build.yml": self.run_on(c, n=2) + self.run_on(HEAD, n=50) + newer,
+                "plan.yml": self.run_on(c, n=3) + self.run_on(HEAD, n=51) + newer}
+        code, out = self.call(["run", "--task"], FakeGh([], main_runs=runs), FakeGit())
+        self.assertEqual((code, "reads green" in out, self.health()["merged"]), (0, True, None), out)
+
+    def test_a_pending_merge_still_reports_a_red_main(self):
+        # Independent review round 3: merge M still running, main's later head red: exit 1, and nothing merges.
+        c = "c" * 40
+        self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+        red_head = {"build.yml": self.run_on(c, status="in_progress", conclusion="", n=2)
+                    + self.run_on(HEAD, conclusion="failure", n=3),
+                    "plan.yml": self.run_on(c, n=4) + self.run_on(HEAD, n=5)}
+        gh = FakeGh([pr(2)], main_runs=red_head)
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        green_head = {"build.yml": self.run_on(c, status="in_progress", conclusion="", n=2) + self.run_on(HEAD, n=3),
+                      "plan.yml": self.run_on(c, n=4) + self.run_on(HEAD, n=5)}
+        gh2 = FakeGh([pr(2)], main_runs=green_head)
+        code2, out2 = self.call(["run", "--task"], gh2, FakeGit())
+        self.assertEqual((code, gh.merges(), "concluded failure" in out, code2, gh2.merges(), "is not read yet" in out2),
+                         (1, [], True, 0, [], True), out + out2)
 
     def test_recover_reads_the_merge_too(self):
         c = "c" * 40
