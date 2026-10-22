@@ -324,13 +324,14 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
     except StopIteration:
         return None, None
     head = lines[1:end]
-    # YAML's printable repertoire (YAML 1.2.2 section 5.1); everything else, U+FFFE and U+FFFF included, is forbidden.
-    unprintable = sorted({c for c in "\n".join(head) if not (
+    # YAML's printable repertoire (YAML 1.2.2 section 5.1); everything else, U+FFFE and U+FFFF included, is forbidden,
+    # and so is a byte order mark inside the content (sections 5.2 and 5.4: only the stream may open with one).
+    unprintable = sorted({c for c in "\n".join(head) if c == "﻿" or not (
         c in "\t\n" or 0x20 <= ord(c) <= 0x7E or ord(c) == 0x85 or 0xA0 <= ord(c) <= 0xD7FF
         or 0xE000 <= ord(c) <= 0xFFFD or 0x10000 <= ord(c) <= 0x10FFFF)})
     if unprintable:
-        note(f"a character YAML forbids ({', '.join(f'U+{ord(c):04X}' for c in unprintable)}): outside YAML's "
-             f"printable set (YAML 1.2.2 section 5.1)")
+        note(f"a character YAML forbids here ({', '.join(f'U+{ord(c):04X}' for c in unprintable)}): outside YAML's "
+             f"printable set, or a byte order mark inside the content (YAML 1.2.2 sections 5.1, 5.2, and 5.4)")
     odd = sorted({c for c in "\n".join(head) if (c.isspace() and c not in " \t\n") or
                   (unicodedata.category(c) == "Cc" and c not in "\t\n")})
     if odd:
@@ -393,7 +394,12 @@ def _value_problem(line: str, key: str) -> str:
         return (f"key {key!r} opens a {value[0]} quote it does not close on its line: unterminated, which YAML cannot "
                 f"parse (YAML 1.2.2 section 7.3), or continued on another line, outside this repository's agent "
                 f"schema; write it inline")
-    if value[:1] == '"':
+    if value[:1] in ("'", '"'):
+        rest = value[_quote_end(value) + 1:].strip()
+        if rest and not rest.startswith("#"):
+            return (f"key {key!r} has text after its closing quote, which YAML cannot parse (YAML 1.2.2 section "
+                    f"7.3.1); move it inside the quotes")
+    if value[:1] == '"' and "\\" in value:
         return (f"key {key!r} holds an escape in a double-quoted value: valid YAML, but outside this repository's "
                 f"agent schema, whose reader does not decode escapes; write it plainly")
     if value[:1] in ("|", ">"):
@@ -446,7 +452,9 @@ def load_agents(agents_dir: str | None = None, table: dict | None = None) -> dic
     out: dict[str, dict] = {}
     for path in sorted(glob.glob(os.path.join(src, "*.md"))):
         base = os.path.basename(path)
-        with open(path, "r", encoding="utf-8") as fh:
+        # newline="": the parser sees the file's own line breaks, so a lone CR is refused rather than translated into
+        # a line feed first (independent review round 4).
+        with open(path, "r", encoding="utf-8", newline="") as fh:
             text = fh.read()
         fields = _frontmatter(text)
         if fields is None:
@@ -1234,7 +1242,17 @@ def _self_test() -> int:
     for name, files, needle in (
         ("agent indented delimiter ends nothing", {"a-one.md": early}, "a hooks block other than the verbatim"),
         ("agent character outside YAML's printable set", {"a-one.md": front(color="purple" + chr(0xFFFF))},
-         "outside YAML's printable set (YAML 1.2.2 section 5.1)"),
+         "outside YAML's printable set"),
+    ):
+        agents_refuse(name, files, needle)
+    # Independent review round 4: a byte order mark inside a value, a file whose line breaks are lone CRs (read raw, not
+    # translated), and text after a closing quote, each named for what it is.
+    lone_cr = front().replace(chr(10), chr(13))
+    for name, files, needle in (
+        ("agent byte order mark inside a value", {"a-one.md": front(description="does" + chr(0xFEFF) + " things")}, "U+FEFF"),
+        ("agent lone carriage returns are not line breaks", {"a-one.md": lone_cr}, "carries no frontmatter"),
+        ("agent text after a closing quote", {"a-one.md": front(color='"x"junk')},
+         "text after its closing quote, which YAML cannot parse (YAML 1.2.2 section 7.3.1)"),
     ):
         agents_refuse(name, files, needle)
     check("agent delimiters are exact", _frontmatter("--- " + chr(10) + "name: x" + chr(10) + "---" + chr(10)) is None)
