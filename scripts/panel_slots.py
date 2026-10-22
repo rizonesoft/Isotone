@@ -308,7 +308,9 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
     verbatim. Each problem names its basis: invalid YAML by its YAML 1.2.2 section, or the repository's agent schema."""
     body = text.lstrip("\ufeff").replace("\r\n", "\n")
     lines = body.split("\n")
-    if not lines or lines[0].strip() != "---":
+    # Exactly `---`: a delimiter with any other character on its line (an indent included) is no delimiter, so it can
+    # never end the frontmatter early and leave the lines after it unread (independent review round 3).
+    if not lines or lines[0] != "---":
         return None, None
     fields: dict[str, str] = {}
     problem: str | None = None
@@ -318,10 +320,17 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
         if problem is None:
             problem = why
     try:
-        end = next(i for i in range(1, len(lines)) if lines[i].strip() == "---")
+        end = next(i for i in range(1, len(lines)) if lines[i] == "---")
     except StopIteration:
         return None, None
     head = lines[1:end]
+    # YAML's printable repertoire (YAML 1.2.2 section 5.1); everything else, U+FFFE and U+FFFF included, is forbidden.
+    unprintable = sorted({c for c in "\n".join(head) if not (
+        c in "\t\n" or 0x20 <= ord(c) <= 0x7E or ord(c) == 0x85 or 0xA0 <= ord(c) <= 0xD7FF
+        or 0xE000 <= ord(c) <= 0xFFFD or 0x10000 <= ord(c) <= 0x10FFFF)})
+    if unprintable:
+        note(f"a character YAML forbids ({', '.join(f'U+{ord(c):04X}' for c in unprintable)}): outside YAML's "
+             f"printable set (YAML 1.2.2 section 5.1)")
     odd = sorted({c for c in "\n".join(head) if (c.isspace() and c not in " \t\n") or
                   (unicodedata.category(c) == "Cc" and c not in "\t\n")})
     if odd:
@@ -1218,6 +1227,17 @@ def _self_test() -> int:
          "a ':' before a space or the line's end, which YAML forbids (YAML 1.2.2 section 7.3.3)"),
     ):
         agents_refuse(name, files, needle)
+    # Independent review round 3: an indented delimiter is no delimiter, and characters outside YAML's printable set are
+    # refused.
+    early = front().replace(chr(10) + "---" + chr(10) + chr(10) + "body",
+                            chr(10) + "  ---" + chr(10) + "model: haiku" + chr(10) + "---" + chr(10) + chr(10) + "body")
+    for name, files, needle in (
+        ("agent indented delimiter ends nothing", {"a-one.md": early}, "a hooks block other than the verbatim"),
+        ("agent character outside YAML's printable set", {"a-one.md": front(color="purple" + chr(0xFFFF))},
+         "outside YAML's printable set (YAML 1.2.2 section 5.1)"),
+    ):
+        agents_refuse(name, files, needle)
+    check("agent delimiters are exact", _frontmatter("--- " + chr(10) + "name: x" + chr(10) + "---" + chr(10)) is None)
     # The forms the schema accepts all still load: quoted values (an escaped single quote included), a comment after
     # a value, a quoted hash, the indented hook block, and CRLF line ends.
     accepted = load_agents(agent_dir({
