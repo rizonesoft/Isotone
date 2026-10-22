@@ -498,9 +498,11 @@ def view_pr(n, repo: str, root: Path, gh_fn=gh, tries: int = 1) -> dict:
     return pr
 
 
-def pending_only(pr: dict, root: Path) -> bool:
-    """Whether GitHub's unfinished mergeability computation is all that keeps this pull request from merging."""
-    return pending(pr) and eligible(dict(pr, mergeable="MERGEABLE", mergeStateStatus="CLEAN"), root)[0]
+def pending_only(pr: dict, repo: str, root: Path, gh_fn=gh) -> bool:
+    """Whether GitHub's unfinished mergeability computation is all that keeps this pull request from merging: every
+    other rule holds, its workflow runs included (independent review round 20)."""
+    return (pending(pr) and eligible(dict(pr, mergeable="MERGEABLE", mergeStateStatus="CLEAN"), root)[0]
+            and workflows_green(pr, repo, root, gh_fn)[0])
 
 
 def open_prs(repo: str, gh_fn=gh, root: Path = ROOT) -> list[dict]:
@@ -558,6 +560,10 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
             ready_fn()
         except (Refused, Failed) as error:
             return 1, f"merge_prs: #{n} not merged, the clone changed while it was read: {error}"
+    # The reserve again, right before the intent and the merge: the re-reads and the preflight above spend the
+    # budget too (independent review round 20).
+    if _remaining() < MERGE_RESERVE:
+        return 1, f"merge_prs: #{n} not merged, the run's time budget leaves too little to merge and verify"
     try:
         _block(root, n, "merge issued, not yet verified")
     except OSError as error:
@@ -756,7 +762,7 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         if not any(ok for _pr, ok, _why in verdicts):
             # Only once nothing is fully eligible, the oldest pull request held solely by GitHub's unfinished
             # computation is read again (rounds 18 and 19); no other one waits.
-            i = next((k for k, (pr, _ok, _why) in enumerate(verdicts) if pending_only(pr, root)), None)
+            i = next((k for k, (pr, _ok, _why) in enumerate(verdicts) if pending_only(pr, repo, root, gh_fn)), None)
             if i is not None:
                 again = view_pr(verdicts[i][0]["number"], repo, root, gh_fn, tries=MERGEABLE_TRIES)
                 verdicts[i] = _verdict(again, repo, root, gh_fn)

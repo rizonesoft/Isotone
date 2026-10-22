@@ -398,6 +398,32 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
         self.assertEqual((code, [c[2] for c in gh.merges()]), (0, ["2"]), out)
 
+    def test_the_pending_pick_skips_a_red_workflow(self):
+        # Independent review round 20: both pending, #1's build red, #2's green: #2 is the one re-read and merged.
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        (wf / "build.yml").write_text("name: build" + chr(10) + "on:" + chr(10) + "  pull_request:" + chr(10), encoding="utf-8")
+        run = lambda c: [{"workflowName": "build", "status": "completed", "conclusion": c, "createdAt": "1"}]
+        gh = FakeGh([pr(1), pr(2)], unknown_views=1,
+                    runs={pr(1)["headRefOid"]: run("failure"), pr(2)["headRefOid"]: run("success")})
+        code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        self.assertEqual((code, [c[2] for c in gh.merges()]), (0, ["2"]), out)
+
+    def test_the_reserve_is_checked_again_right_before_the_merge(self):
+        import time
+        saved = mp._deadline
+        mp._deadline = time.monotonic() + mp.MERGE_RESERVE + 60
+
+        def spends_the_budget():
+            mp._deadline = time.monotonic() + 1
+        gh = FakeGh([pr(1)])
+        try:
+            code, line = mp.merge_one(pr(1), "github.com/rizonesoft/Isotone", self.root, gh, FakeGit(), ok_validate,
+                                      ready_fn=spends_the_budget)
+        finally:
+            mp._deadline = saved
+        self.assertEqual((code, gh.merges(), "time budget" in line, (self.root / mp.BLOCKED).exists()), (1, [], True, False))
+
     def test_a_spent_budget_issues_no_merge(self):
         saved = mp.RUN_BUDGET
         mp.RUN_BUDGET = mp.MERGE_RESERVE - 1
