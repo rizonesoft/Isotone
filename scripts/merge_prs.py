@@ -510,8 +510,15 @@ def open_prs(repo: str, gh_fn=gh, root: Path = ROOT) -> list[dict]:
     only a bot's dependency pull request is read again with `view_pr` (the listing reports mergeability as UNKNOWN
     until GitHub computes it, and viewing is what makes it compute); every other one is never read in detail
     (independent review round 19)."""
-    listed = json.loads(gh_fn("pr", "list", "--repo", repo, "--state", "open", "--base", "main", "--limit", "50",
-                              "--json", "number,author,headRefName,labels,createdAt", cwd=root) or "[]")
+    # GitHub filters by label before it applies the limit, so newer pull requests without a dependency label can
+    # never crowd an old green bump out of the listing (independent review round 21).
+    seen: dict = {}
+    for label in sorted(LABELS):
+        for p in json.loads(gh_fn("pr", "list", "--repo", repo, "--state", "open", "--base", "main", "--label", label,
+                                  "--limit", "100", "--json", "number,author,headRefName,labels,createdAt",
+                                  cwd=root) or "[]"):
+            seen[p["number"]] = p
+    listed = list(seen.values())
     prs = [view_pr(p["number"], repo, root, gh_fn) if identity(p)[0] else p for p in listed]
     return sorted(prs, key=lambda p: (p.get("createdAt", ""), p.get("number", 0)))
 
@@ -778,7 +785,7 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         for pr, ok, why in verdicts:
             print(f"  #{pr['number']} {'eligible' if ok else 'not eligible: ' + why}")
         if not verdicts:
-            print("  no open pull requests")
+            print("  no open pull requests labelled dependencies or pins")
         return 0
     ready = [pr for pr, ok, _why in verdicts if ok]
     if not ready:

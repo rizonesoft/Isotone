@@ -88,7 +88,13 @@ class FakeGh:
     def __call__(self, *args, cwd=None):
         self.calls.append(args)
         if args[:2] == ("pr", "list"):
-            return json.dumps([p for p in self.prs if str(p["number"]) not in self.merged])
+            # Like GitHub: filter by label first, then keep the newest `--limit`.
+            found = [p for p in self.prs if str(p["number"]) not in self.merged]
+            if "--label" in args:
+                label = args[args.index("--label") + 1]
+                found = [p for p in found if label in {l.get("name") for l in p.get("labels") or []}]
+            found.sort(key=lambda p: p.get("createdAt", ""), reverse=True)
+            return json.dumps(found[:int(args[args.index("--limit") + 1])] if "--limit" in args else found)
         if args[:2] == ("pr", "view"):
             if self.view_fails:
                 raise mp.Failed("gh pr view failed: connection reset")
@@ -397,6 +403,14 @@ class MergeTests(Base):
                     runs={pr(1)["headRefOid"]: run("failure"), pr(2)["headRefOid"]: run("success")})
         code, out = self.call(["run", "--campaign"], gh, FakeGit())
         self.assertEqual((code, [c[2] for c in gh.merges()]), (0, ["2"]), out)
+
+    def test_newer_unlabelled_pull_requests_never_hide_a_bump(self):
+        # Independent review round 21: 120 newer human pull requests and one old green Dependabot bump.
+        humans = [pr(n, author={"login": "someone"}, labels=[], createdAt=f"2026-10-25T00:{n // 60:02d}:{n % 60:02d}Z")
+                  for n in range(10, 130)]
+        gh = FakeGh(humans + [pr(1)])
+        code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        self.assertEqual((code, [c[2] for c in gh.merges()]), (0, ["1"]), out)
 
     def test_the_pending_pick_skips_a_red_workflow(self):
         # Independent review round 20: both pending, #1's build red, #2's green: #2 is the one re-read and merged.
