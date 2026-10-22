@@ -40,7 +40,7 @@ def pr(number=1, **over):
 class FakeGit:
     def __init__(self, status="", head=HEAD, remote=HEAD, pull_fails=False, branch="refs/heads/main",
                  fetch_fails=False, origin="https://github.com/rizonesoft/Isotone.git", detached=False, broken=False,
-                 changed=()):
+                 changed=(), files=None):
         self.calls, self.status, self.head, self.remote, self.pull_fails = [], status, head, remote, pull_fails
         self.branch, self.fetch_fails, self.origin = branch, fetch_fails, origin
         # `symbolic-ref -q HEAD` fails both on a detached HEAD and in a broken repository; `rev-parse --verify`
@@ -48,6 +48,8 @@ class FakeGit:
         self.detached, self.broken = detached, broken
         # What `git diff --name-only <a> <b>` lists.
         self.changed = list(changed)
+        # What `git show <sha>:<path>` prints, by (sha, path); any other path is read from the fake's working tree.
+        self.files = dict(files or {})
 
     def __call__(self, *args, cwd=None):
         self.calls.append(args)
@@ -66,6 +68,14 @@ class FakeGit:
             raise mp.Failed("git fetch --quiet origin main failed: could not read from remote")
         if args[0] == "status":
             return self.status
+        if args[0] == "show":
+            sha, path = args[-1].split(":", 1)
+            if (sha, path) in self.files:
+                return self.files[(sha, path)]
+            try:
+                return (Path(cwd) / path).read_text(encoding="utf-8")
+            except OSError:
+                raise mp.Failed(f"git show {args[-1]} failed: path does not exist") from None
         if args[:2] == ("rev-parse", "HEAD"):
             return self.head + "\n"
         if args[:2] == ("rev-parse", "origin/main"):
@@ -758,6 +768,70 @@ class MergeTests(Base):
         gh = FakeGh([pr(1)])
         code, out = self.call(["run", "--task"], gh, FakeGit())
         self.assertEqual((code, gh.merges(), "cannot be read" in out), (1, [], True))
+
+    def test_a_green_checkout_never_clears_mains_timer(self):
+        # Independent review round 1: detached on a green commit A while main's head B stays queued: B's timer ages
+        # and alerts, and A's green read never clears it.
+        b = "b" * 40
+        runs = {"build.yml": self.run_on(HEAD, n=1) + self.run_on(b, status="queued", conclusion="", n=2),
+                "plan.yml": self.run_on(HEAD, n=3) + self.run_on(b, n=4)}
+        saved = self.at(0)
+        try:
+            codes = []
+            for seconds in (0, mp.PENDING_ALERT_SECONDS):
+                mp._clock = lambda s=seconds: 1_000_000.0 + s
+                codes.append(self.call(["run", "--task"], FakeGh([pr(1)], main_runs=runs),
+                                       FakeGit(detached=True, remote=b))[0])
+        finally:
+            mp._clock = saved
+        self.assertEqual(codes, [0, 1])
+
+    def test_a_failed_read_of_main_leaves_the_record(self):
+        # Independent review round 1: a busy clone whose checkout reads green, then main's own read fails.
+        b = "b" * 40
+        saved = self.at(0)
+        try:
+            pending = {"build.yml": self.run_on(HEAD, status="queued", conclusion="")}
+            self.call(["run", "--task"], FakeGh([pr(1)], main_runs=pending), FakeGit())
+            before = self.health()
+            gh = FakeGh([pr(1)])
+            real = gh.__call__
+
+            def main_fails(*args, cwd=None):
+                if args[:2] == ("run", "list") and gh.reads_of_main > 1:
+                    raise mp.Failed("gh run list failed: HTTP 401")
+                if args[:2] == ("run", "list"):
+                    gh.reads_of_main += 1
+                return real(*args, cwd=cwd)
+            gh.reads_of_main = 0
+            code, out = self.call(["run", "--task"], main_fails, FakeGit(detached=True, remote=b))
+        finally:
+            mp._clock = saved
+        self.assertEqual((code, "HTTP 401" in out, self.health()), (1, True, before))
+
+    def test_a_timer_that_can_never_expire_is_damage(self):
+        for value in ("NaN", "Infinity", "1e18"):
+            with self.subTest(value=value):
+                (self.root / "build").mkdir(exist_ok=True)
+                (self.root / mp.HEALTH).write_text('{"pending_since": {"build": ' + value + '}}', encoding="utf-8")
+                gh = FakeGh([pr(1)])
+                code, out = self.call(["run", "--task"], gh, FakeGit())
+                self.assertEqual((code, gh.merges(), "is malformed" in out), (1, [], True), out)
+
+    def test_the_push_filter_is_read_at_the_judged_head(self):
+        # Independent review round 1: the checkout's copy of the workflow widened its filter to docs/; main's own
+        # copy at its head filters to todo/ only, so a docs-only change inherits the older red run.
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        nl = chr(10)
+        (wf / "plan.yml").write_text("on:" + nl + "  push:" + nl + "    paths:" + nl + "      - 'docs/**'" + nl,
+                                     encoding="utf-8")
+        committed = "on:" + nl + "  push:" + nl + "    paths:" + nl + "      - 'todo/**'" + nl
+        runs = {"plan.yml": self.run_on("b" * 40, conclusion="failure"), "build.yml": self.run_on(HEAD)}
+        gh = FakeGh([pr(1)], main_runs=runs)
+        git = FakeGit(changed=["docs/x.md"], files={(HEAD, ".github/workflows/plan.yml"): committed})
+        code, out = self.call(["run", "--campaign"], gh, git)
+        self.assertEqual((code, gh.merges(), "concluded failure" in out), (1, [], True), out)
 
     def test_main_ci_is_read_again_right_before_the_merge(self):
         # Independent review round 1: main turns red while the pull requests are read.

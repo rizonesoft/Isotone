@@ -360,12 +360,13 @@ def _branch(root: Path, git_fn) -> str:
         return ""
 
 
-def _push_paths(root: Path, file: str) -> list[str] | None:
-    """The push `paths` filter of `.github/workflows/<file>`, or None when it has none or cannot be read (then
-    every change counts as one that triggers it)."""
+def _push_paths(root: Path, file: str, head: str, git_fn) -> list[str] | None:
+    """The push `paths` filter of `.github/workflows/<file>` as committed at `head` (the commit being judged, never
+    the checkout, which a busy clone may hold changed: D00 T01 §16, independent review round 1), or None when it has
+    none or cannot be read (then every change counts as one that triggers it)."""
     try:
-        return _trigger((root / ".github" / "workflows" / file).read_text(encoding="utf-8"), "push")[1]
-    except OSError:
+        return _trigger(git_fn("show", f"{head}:.github/workflows/{file}", cwd=root), "push")[1]
+    except Failed:
         return None
 
 
@@ -396,7 +397,7 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
         if f".github/workflows/{file}" in changed:
             # The older run ran another definition of the workflow: it never stands in for the head (D00 T01 §16).
             return "pending", f"main's {name} workflow changed since its last run; its run for {head[:12]} is to come"
-        paths = _push_paths(root, file)
+        paths = _push_paths(root, file, head, git_fn)
         if paths is None or any(_glob_re(p).match(f) for p in paths for f in changed):
             return "pending", f"main's {name} run for {head[:12]} has not started yet"
         run = older
@@ -407,7 +408,7 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
     return "green", ""
 
 
-def _read_health(root: Path) -> dict:
+def _read_health(root: Path, now: float) -> dict:
     path = root / HEALTH
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
@@ -416,8 +417,10 @@ def _read_health(root: Path) -> dict:
     except (OSError, ValueError) as error:
         raise Failed(f"{HEALTH} cannot be read ({error}); delete it to restart the pending timers") from None
     since = doc.get("pending_since") if isinstance(doc, dict) else None
+    # A timer that is not a finite past instant (NaN, Infinity, or a time to come) would never reach the bound, so it
+    # is damage, never a timer (independent review round 1).
     if not isinstance(since, dict) or not all(isinstance(v, (int, float)) and not isinstance(v, bool)
-                                              for v in since.values()):
+                                              and math.isfinite(v) and v <= now for v in since.values()):
         raise Failed(f"{HEALTH} is malformed; delete it to restart the pending timers")
     return {"pending_since": dict(since)}
 
@@ -425,10 +428,11 @@ def _read_health(root: Path) -> dict:
 def _age_pending(root: Path, verdicts: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
     """The verdicts with each workflow's pending time applied and recorded (D00 T01 §16): the first pending read of a
     workflow starts its timer, a green read clears it, and a pending past PENDING_ALERT_SECONDS reads as red. The
-    record changes only here, after every workflow reached a verdict, so a failed read never moves it."""
-    record = _read_health(root)
-    since = dict(record["pending_since"])
+    verdicts must be main's own head's, and `judge` ages them only after every read it needs has succeeded, so a
+    failed read, or a checkout that left main, never moves the record (independent review round 1)."""
     now = _clock()
+    record = _read_health(root, now)
+    since = dict(record["pending_since"])
     out = []
     for name, state, why in verdicts:
         if state == "green":
@@ -448,22 +452,19 @@ def _age_pending(root: Path, verdicts: list[tuple[str, str, str]]) -> list[tuple
     return out
 
 
-def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git, head: str | None = None,
-            record: bool = False) -> tuple[str, str, str]:
-    """(the head judged, "green" | "pending" | "red", why) for `main`'s guarding workflows at `head` (the local HEAD
-    unless named). Every workflow is read before the state is chosen, so a red one outranks one still running
-    (independent review round 1). With `record`, pending time is aged and kept (`_age_pending`). It raises only when
-    GitHub or the health record cannot be read; `judge` decides what the state means."""
-    head = head or git_fn("rev-parse", "HEAD", cwd=root).strip()
-    verdicts = [(name, *_ci_verdict(name, file, repo, root, head, gh_fn, git_fn)) for name, file in MAIN_WORKFLOWS]
-    if record:
-        verdicts = _age_pending(root, verdicts)
-    verdicts = [(state, why) for _name, state, why in verdicts]
+def _verdicts(repo: str, root: Path, head: str, gh_fn, git_fn) -> list[tuple[str, str, str]]:
+    """(workflow, state, why) for every guarding workflow at `head`; it raises when GitHub cannot be read."""
+    return [(name, *_ci_verdict(name, file, repo, root, head, gh_fn, git_fn)) for name, file in MAIN_WORKFLOWS]
+
+
+def _combined(verdicts: list[tuple[str, str, str]]) -> tuple[str, str]:
+    """Every workflow is read before the state is chosen, so a red one outranks one still running (D00 T01 §15,
+    independent review round 1)."""
     for state in ("red", "pending"):
-        found = [why for s, why in verdicts if s == state]
+        found = [why for _name, s, why in verdicts if s == state]
         if found:
-            return head, state, "; ".join(found)
-    return head, "green", ""
+            return state, "; ".join(found)
+    return "green", ""
 
 
 def judge(root: Path, repo: str, campaign: bool, git_fn, gh_fn, graph, active_fn, record: bool = False,
@@ -474,25 +475,30 @@ def judge(root: Path, repo: str, campaign: bool, git_fn, gh_fn, graph, active_fn
     review rounds 2 to 4). A head that moved since its CI was read is a busy clone. GitHub rebases onto the base as
     it is when `gh pr merge` runs; the instant between this judgment and that call is the window no client closes,
     and the landed check and validate after the merge read the result."""
-    head, state, why = main_ci(repo, root, gh_fn, git_fn, record=record)
+    head = git_fn("rev-parse", "HEAD", cwd=root).strip()
+    verdicts = _verdicts(repo, root, head, gh_fn, git_fn)
     try:
         preflight(root, campaign, git_fn, graph, active_fn)
     except Refused as busy:
         # The scheduled task still reports a red main when the clone is busy for a local reason (uncommitted work, a
         # detached checkout, a section in progress), judged on main's own fetched head, never on whatever the
-        # checkout holds; a running campaign reads CI itself, so it is left alone (D00 T01 §16).
+        # checkout holds; a running campaign reads CI itself, so it is left alone (D00 T01 §16). Only main's head
+        # ages the pending timers, and only once its read succeeded (independent review round 1).
         if task and not active_fn(root):
             try:
                 origin = git_fn("rev-parse", "origin/main", cwd=root).strip()
             except Failed:
                 raise busy from None
-            ostate, owhy = (state, why) if origin == head else main_ci(repo, root, gh_fn, git_fn, head=origin)[1:]
+            main = verdicts if origin == head else _verdicts(repo, root, origin, gh_fn, git_fn)
+            ostate, owhy = _combined(_age_pending(root, main) if record else main)
             if ostate == "red":
                 raise Failed(f"{owhy}; repair main (nothing merges, the clone is busy: {busy})") from None
         raise
     now = git_fn("rev-parse", "HEAD", cwd=root).strip()
     if now != head:
         raise Refused(f"main moved from {head[:12]} to {now[:12]} while its CI was read")
+    # The preflight passed, so HEAD is origin/main as just fetched: these are main's own verdicts.
+    state, why = _combined(_age_pending(root, verdicts) if record else verdicts)
     if state == "red":
         raise Failed(f"{why}; repair main before any merge")
     if state == "pending":
