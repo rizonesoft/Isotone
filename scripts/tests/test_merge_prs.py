@@ -606,6 +606,8 @@ class MergeTests(Base):
             # Independent review round 8: an escaped double-quoted scalar is outside the whitelist.
             ("on: [push, " + chr(34) + chr(92) + "u0070ull_request" + chr(34) + "]" + chr(10), (True, None)),
             ("on:" + chr(10) + "  push:" + chr(10) + "    paths: [" + chr(34) + "scripts/" + chr(92) + "x2a" + chr(92) + "x2a" + chr(34) + "]" + chr(10), (True, None)),
+            # The escaped event is the one asked about, so an undecoded escape would read as absent.
+            ("on: [" + chr(34) + chr(92) + "u0070ush" + chr(34) + "]" + chr(10), (True, None)),
             # The whitelist covers the whole block: a line it does not know, even under another event, voids it.
             ("on:" + chr(10) + "  pull_request:" + chr(10) + "    types: !!seq [opened]" + chr(10) + "  push:" + chr(10)
              + "    paths: ['scripts/**']" + chr(10), (True, None)),
