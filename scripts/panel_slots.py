@@ -298,8 +298,56 @@ def _frontmatter(text: str) -> dict[str, str] | None:
     return None
 
 
+def _frontmatter_problem(text: str) -> str | None:
+    """Why an agent definition's frontmatter cannot be trusted to mean what `_frontmatter` reads, or None. Two kinds,
+    each naming its basis (D00 T01 §14), so no rule rests on a guess about Claude Code's loader:
+
+    - invalid YAML, which no conforming loader reads: a tab in indentation (YAML 1.2.2 section 6.1), a top-level key
+      given twice (section 3.2.1.1, mapping keys are unique), a quote opened and never closed (section 7.3);
+    - valid YAML outside this repository's agent schema, whose reader takes each value inline on its own line: a
+      block scalar (`|` or `>`) or a flow collection (`[...]`, `{...}`), refused with "write it inline", since the
+      reader would otherwise see a different value than the loader."""
+    lines = text.lstrip("\ufeff").replace("\r\n", "\n").split("\n")
+    if not lines or lines[0].strip() != "---":
+        return None
+    seen: set[str] = set()
+    for line in lines[1:]:
+        if line.strip() == "---":
+            return None
+        indent = line[:len(line) - len(line.lstrip(" \t"))]
+        if "\t" in indent:
+            return "a tab in indentation, which YAML forbids (YAML 1.2.2 section 6.1)"
+        if not line.strip() or line.lstrip().startswith("#") or indent:
+            continue
+        key, sep, value = line.partition(":")
+        if not sep or not key.strip():
+            continue
+        key, value = key.strip(), value.strip()
+        if key in seen:
+            return f"key {key!r} appears twice, which YAML forbids (YAML 1.2.2 section 3.2.1.1: mapping keys are unique)"
+        seen.add(key)
+        if value[:1] in ("'", '"'):
+            quote, at = value[0], 1
+            while True:
+                at = value.find(quote, at)
+                if at < 0:
+                    return (f"key {key!r} opens a {quote} quote it never closes, which YAML cannot parse "
+                            f"(YAML 1.2.2 section 7.3)")
+                if quote == "'" and value[at + 1:at + 2] == "'":
+                    at += 2  # '' is an escaped quote inside a single-quoted scalar
+                    continue
+                break
+        elif value[:1] in ("|", ">"):
+            return (f"key {key!r} holds a block-scalar value: valid YAML, but outside this repository's agent "
+                    f"schema, whose reader takes values inline; write it inline")
+        elif value[:1] in ("[", "{"):
+            return (f"key {key!r} holds a flow collection: valid YAML, but outside this repository's agent schema "
+                    f"(tools are one comma-separated line); write it inline")
+    return None
+
+
 def _tool_list(value: str | None) -> set[str]:
-    return {t.strip() for t in (value or "").strip("[]").split(",") if t.strip()}
+    return {t.strip() for t in (value or "").split(",") if t.strip()}
 
 
 def load_agents(agents_dir: str | None = None, table: dict | None = None) -> dict[str, dict]:
@@ -320,6 +368,9 @@ def load_agents(agents_dir: str | None = None, table: dict | None = None) -> dic
         fields = _frontmatter(text)
         if fields is None:
             raise PanelSlotsError(f"agent definition {base} carries no frontmatter")
+        problem = _frontmatter_problem(text)
+        if problem:
+            raise PanelSlotsError(f"agent definition {base}: {problem}")
         stem = os.path.splitext(base)[0]
         if fields.get("name") != stem:
             raise PanelSlotsError(
@@ -1047,7 +1098,30 @@ def _self_test() -> int:
     agents_refuse("agent unterminated frontmatter", {"a-one.md": "---\nname: a-one\n"}, "carries no frontmatter")
     agents_refuse("agent name differs from stem", {"a-one.md": front(name="other")}, "differs from its file stem")
     agents_refuse("agent empty description", {"a-one.md": front(description="")}, "empty or block-scalar")
-    agents_refuse("agent block-scalar description", {"a-one.md": front(description=">")}, "empty or block-scalar")
+    agents_refuse("agent block-scalar description", {"a-one.md": front(description=">")}, "block-scalar value")
+    # D00 T01 §14: every frontmatter shape the reader would misread is refused, each naming its basis: invalid YAML
+    # by its section of the YAML 1.2.2 spec, a valid shape outside this schema as such.
+    for name, files, needle in (
+        ("agent duplicate key", {"a-one.md": front().replace("model: sonnet\n", "model: sonnet\nmodel: haiku\n")},
+         "appears twice, which YAML forbids (YAML 1.2.2 section 3.2.1.1"),
+        ("agent block scalar on another key", {"a-one.md": front(effort="|")}, "block-scalar value: valid YAML"),
+        ("agent folded scalar", {"a-one.md": front(model=">-")}, "block-scalar value: valid YAML"),
+        ("agent flow sequence", {"a-one.md": front(tools="[Read, Grep]")}, "flow collection: valid YAML"),
+        ("agent flow mapping", {"a-one.md": front(color="{a: b}")}, "flow collection: valid YAML"),
+        ("agent tab-indented line", {"a-one.md": front().replace("hooks:\n  PreToolUse:", "hooks:\n\tPreToolUse:")},
+         "a tab in indentation, which YAML forbids (YAML 1.2.2 section 6.1)"),
+        ("agent unterminated double quote", {"a-one.md": front(description='"does things')},
+         "never closes, which YAML cannot parse (YAML 1.2.2 section 7.3)"),
+        ("agent unterminated single quote", {"a-one.md": front(description="'it''s open")},
+         "never closes, which YAML cannot parse (YAML 1.2.2 section 7.3)"),
+    ):
+        agents_refuse(name, files, needle)
+    # The forms the schema accepts all still load: quoted values (an escaped single quote included), a comment after
+    # a value, a quoted hash, the indented hook block, and CRLF line ends.
+    accepted = load_agents(agent_dir({
+        "a-one.md": front(description="'it''s careful: really'", model='"sonnet"  # the alias', color="purple"),
+        "a-two.md": front(name="a-two", description='"a # b, quoted"').replace("\n", "\r\n")}), good)
+    check("agent accepted forms all load", sorted(accepted) == ["a-one", "a-two"], repr(accepted))
     agents_refuse("agent model differs", {"a-one.md": front(model="haiku")}, "differs from the delegate alias")
     agents_refuse("agent model missing", {"a-one.md": front(model=None)}, "differs from the delegate alias")
     agents_refuse("agent effort missing", {"a-one.md": front(effort=None)}, "effort None differs")
