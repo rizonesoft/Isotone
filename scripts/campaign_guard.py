@@ -8,7 +8,7 @@ self-test (D00 T04 §32, §34 to §37).
     python scripts/campaign_guard.py mint-generation
     python scripts/campaign_guard.py whoami --session S --generation G
     python scripts/campaign_guard.py reset-state --session S | --expect-no-guard yes
-    python scripts/campaign_guard.py pending-cancel | cancel-confirmed --cron-id J
+    python scripts/campaign_guard.py pending-cancel [--session S] | cancel-confirmed --cron-id J --session S [--if-pending yes]
     python scripts/campaign_guard.py reconcile --session S --jobs J1,J2
     python scripts/campaign_guard.py health --session S --jobs J1,J2
     python scripts/campaign_guard.py expiry --session S [--now ISO]
@@ -425,7 +425,7 @@ def _finish_end(root: str, guard: dict, guard_path: str, state_path: str, what: 
         raise GuardError(f"could not delete {', '.join(left)}")
     return (f"end: {reason}: {what}; CronDelete {guard.get('cron_id')} now "
             f"(the heartbeat job), confirm it is gone with CronList, then run "
-            f"cancel-confirmed --cron-id {guard.get('cron_id')}")
+            f"cancel-confirmed --cron-id {guard.get('cron_id')} --session {guard.get('session_id')}")
 
 
 def _pending_path(root: str) -> str:
@@ -453,15 +453,15 @@ def _job_key(job: dict) -> tuple[str, str]:
 
 
 def _yours(job: dict, session: str | None) -> bool:
-    """Whether `session` may confirm this cancellation: heartbeat jobs live in one session, so only that session's
-    CronList can prove one gone (independent review round 9). A record from before sessions were kept, or a call
-    without a session (the operator's), may confirm any."""
-    return not session or not job.get("session_id") or str(job.get("session_id")) == session
+    """Whether this cancellation is `session`'s: heartbeat jobs live in one session, so only that session's CronList
+    can prove one gone (independent review rounds 9 to 11). A record from before sessions were kept is anyone's; no
+    session at all (`pending-cancel` without one, the operator's read-only view) sees every record but confirms none."""
+    return not job.get("session_id") or (bool(session) and str(job.get("session_id")) == session)
 
 
 def pending_cancel(root: str, session: str | None = None) -> str:
     try:
-        jobs = [j for j in _pending_jobs(root) if _yours(j, session)]
+        jobs = [j for j in _pending_jobs(root) if not session or _yours(j, session)]
     except GuardError as exc:
         return f"pending-cancel: {exc}"
     return "\n".join(f"pending-cancel: CronDelete {j.get('cron_id')} (ended by {j.get('reason')} at {j.get('at')})"
@@ -473,6 +473,9 @@ def cancel_confirmed(root: str, cron_id: str, session: str | None = None, if_pen
     from before sessions were kept), keyed by (session, job) (independent review round 10). With `if_pending`, a
     job with no record of this session's is no error, so a heartbeat settles its own job the same way on every path
     where it deletes itself."""
+    if not session:
+        raise GuardError("cancel-confirmed needs --session: only the session whose CronList proved the job gone may "
+                         "clear its cancellation (independent review round 11)")
     with _Lock(root):
         jobs = _pending_jobs(root)
         hits = [j for j in jobs if str(j.get("cron_id")) == cron_id and _yours(j, session)]
@@ -549,8 +552,11 @@ def reconcile(root: str, session: str, jobs: list[str]) -> list[str]:
             return ["reconcile: the guard is unreadable: report it to the operator and start nothing"]
     out: list[str] = []
     try:
-        out += [f"reconcile: a pending cancellation is unconfirmed: CronDelete {j.get('cron_id')}, then cancel-confirmed"
-                for j in _pending_jobs(root)]
+        # Only this session's unconfirmed jobs: another session's job id is session-local and may name a live job
+        # of this session's (independent review round 11).
+        out += [f"reconcile: a pending cancellation is unconfirmed: CronDelete {j.get('cron_id')}, then "
+                f"cancel-confirmed --cron-id {j.get('cron_id')} --session {session}"
+                for j in _pending_jobs(root) if _yours(j, session)]
     except GuardError as exc:
         out.append(f"reconcile: {exc}")
     if guard is None:
@@ -1713,12 +1719,12 @@ def _self_test() -> int:
               pending_cancel(lroot).startswith("pending-cancel: CronDelete job-b") and "cancel-confirmed" in msg,
               pending_cancel(lroot))
         try:
-            cancel_confirmed(lroot, "job-zzz")
+            cancel_confirmed(lroot, "job-zzz", SESSION)
             check("cancel-confirmed-refuses-another-job", False)
         except GuardError as exc:
             check("cancel-confirmed-refuses-another-job", "no pending cancellation names job job-zzz" in str(exc), str(exc))
         check("cancel-confirmed-clears-the-pending-record",
-              cancel_confirmed(lroot, "job-b").startswith("cancel-confirmed: job job-b is gone")
+              cancel_confirmed(lroot, "job-b", SESSION).startswith("cancel-confirmed: job job-b is gone")
               and pending_cancel(lroot) == "")
         check("reconcile-orphan-job", reconcile(lroot, SESSION, ["job-x"])
               == ["reconcile: orphan job job-x has no guard: CronDelete it"])
@@ -1733,8 +1739,8 @@ def _self_test() -> int:
         check("pending-cancellations-accumulate", "CronDelete job-p1" in pend and "CronDelete job-p2" in pend, pend)
         check("reconcile-surfaces-a-pending-cancellation",
               any("pending cancellation is unconfirmed: CronDelete job-p1" in r for r in reconcile(lroot, SESSION, [])))
-        cancel_confirmed(lroot, "job-p1")
-        cancel_confirmed(lroot, "job-p2")
+        cancel_confirmed(lroot, "job-p1", SESSION)
+        cancel_confirmed(lroot, "job-p2", SESSION)
         check("pending-cancellations-drain-one-by-one", pending_cancel(lroot) == "", pending_cancel(lroot))
 
         def _interleave(change: str) -> tuple:
@@ -2167,7 +2173,7 @@ def _self_test() -> int:
         check("a-later-end-finishes-the-cleanup",
               "finished an interrupted end" in msg and not os.path.exists(_paths(rroot)[0])
               and "job-r2" in pending_cancel(rroot), msg)
-        cancel_confirmed(rroot, "job-r2")
+        cancel_confirmed(rroot, "job-r2", SESSION)
         # The heartbeat's path finishes it too, and a new run may start over an ended guard without a handover.
         acquire(rroot, SESSION, 2, RUN_FILE, "job-r4")
         globals()["_pending_jobs"] = interrupted
@@ -2202,7 +2208,7 @@ def _self_test() -> int:
             _set_ready(rroot, 3)
         check("an-interrupted-plan-done-end-finishes-without-the-plan-query",
               "finished an interrupted end" in msg and not os.path.exists(_paths(rroot)[0]), msg)
-        cancel_confirmed(rroot, "job-r6")
+        cancel_confirmed(rroot, "job-r6", SESSION)
         acquire(rroot, SESSION, 2, RUN_FILE, "job-r4")
         globals()["_pending_jobs"] = interrupted
         try:
@@ -2416,6 +2422,26 @@ def _self_test() -> int:
             settled = repr(exc)
         check("settling-with-nothing-pending-is-no-error", "nothing pending for job job-q" in settled, settled)
         cancel_confirmed(kroot, "job-z", "A")
+
+    with tempfile.TemporaryDirectory(prefix="campaign-sessions-") as qtmp:
+        # Independent review round 11: confirming needs a session, and reconcile advises only this session's jobs.
+        qroot = _workspace(qtmp)
+        _write_json(_pending_path(qroot), [{"cron_id": "J", "reason": "park", "at": _utc_now(), "session_id": "A"}])
+        try:
+            cancel_confirmed(qroot, "J", None)
+            check("confirming-needs-a-session", False)
+        except GuardError as exc:
+            check("confirming-needs-a-session", "needs --session" in str(exc) and "J" in pending_cancel(qroot), str(exc))
+        acquire(qroot, "B", 1, RUN_FILE, "J")
+        advice = reconcile(qroot, "B", ["J"])
+        check("reconcile-never-deletes-for-another-sessions-record",
+              not any("CronDelete J" in line for line in advice), str(advice))
+        _write_json(_pending_path(qroot), [{"cron_id": "K", "reason": "park", "at": _utc_now(), "session_id": "B"}])
+        advice = reconcile(qroot, "B", ["J", "K"])
+        check("reconcile-advises-this-sessions-unconfirmed-job",
+              any("CronDelete K, then cancel-confirmed --cron-id K --session B" in line for line in advice), str(advice))
+        msg = end(qroot, "B", "operator-stop")
+        check("end-names-the-session-in-its-confirm-command", "cancel-confirmed --cron-id J --session B" in msg, msg)
 
     with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
         proot = _workspace(ptmp)
