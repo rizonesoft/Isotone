@@ -390,8 +390,6 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
         if "\t" in indent:
             note("a tab in indentation, which YAML forbids (YAML 1.2.2 section 6.1)")
             continue
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
         if indent:
             note("an indented line outside the canonical hooks block: a value continued on another line or a nested "
                  "block, outside this repository's agent schema; write it inline")
