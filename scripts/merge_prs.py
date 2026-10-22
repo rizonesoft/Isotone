@@ -214,8 +214,10 @@ def campaign_active(root: Path) -> str | None:
             doc = json.loads(guard.read_text(encoding="utf-8-sig"))
         except (OSError, ValueError):
             doc = None  # unreadable: a campaign may hold it, so the cautious answer is yes
-        # A guard `end` marked ended is no campaign, even when the deletes after the mark never ran (D00 T01 §13).
-        if not (isinstance(doc, dict) and doc.get("ended")):
+        # A guard `end` marked ended is no campaign, even when the deletes after the mark never ran (D00 T01 §13);
+        # only the mark `end` writes ({reason, at}) counts, and anything else is read the cautious way.
+        ended = doc.get("ended") if isinstance(doc, dict) else None
+        if not (isinstance(ended, dict) and isinstance(ended.get("reason"), str)):
             return "a campaign run holds the guard build/claude-campaign-guard.json"
     lock = root / ".claude" / "scheduled_tasks.lock"
     try:

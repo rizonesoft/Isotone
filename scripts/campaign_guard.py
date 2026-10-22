@@ -161,7 +161,12 @@ def read_guard(root: str, include_ended: bool = False) -> dict | None:
         raise GuardError(f"the guard file {guard} does not parse: {exc}")
     if not isinstance(doc, dict):
         raise GuardError(f"the guard file {guard} is not an object")
-    if doc.get("ended") and not include_ended:
+    ended = doc.get("ended")
+    if ended is not None and not (isinstance(ended, dict) and isinstance(ended.get("reason"), str)):
+        # Only `end` writes the mark, always as {reason, at}; anything else is a damaged guard, reported as one
+        # rather than read as over (independent review round 2).
+        raise GuardError(f"the guard file {guard} carries a malformed ended mark")
+    if ended and not include_ended:
         return None
     return doc
 
@@ -918,7 +923,9 @@ def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None =
         if index <= max_hashed and info.st_size <= max_bytes and hashed_total + info.st_size <= max_total:
             hashed = _hash_regular(full, info, deadline, index - 1, len(paths))
             if hashed is None:
-                digest.update(f"{path} replaced\n".encode("utf-8"))
+                # Unread (an open error such as a Windows sharing violation, or a path replaced since lstat): it still
+                # counts by size and write time, so a change to it stays visible (independent review round 2).
+                digest.update(f"{path} {info.st_size} {info.st_mtime_ns} unread\n".encode("utf-8"))
             else:
                 hashed_total += info.st_size
                 digest.update(f"{path} ".encode("utf-8") + hashed.encode() + b"\n")
@@ -2125,6 +2132,34 @@ def _self_test() -> int:
         acquire(hroot, "99999999-0000-0000-0000-000000000000", 2, RUN_FILE, "job-new")
         check("a-new-run-keeps-the-ended-runs-job-for-cancellation", "job-old" in pending_cancel(hroot),
               pending_cancel(hroot))
+
+        # Independent review round 2: a malformed ended mark is a damaged guard, never an over one.
+        with open(_paths(hroot)[0], "w", encoding="utf-8") as fh:
+            json.dump({"session_id": SESSION, "cron_id": "job-x", "ended": True}, fh)
+        try:
+            read_guard(hroot)
+            check("a-malformed-ended-mark-is-a-damaged-guard", False)
+        except GuardError as exc:
+            check("a-malformed-ended-mark-is-a-damaged-guard",
+                  "malformed ended mark" in str(exc) and whoami(hroot, SESSION) == "MALFORMED GUARD", str(exc))
+        os.remove(_paths(hroot)[0])
+        # An unread file still counts by size and write time.
+        unread = os.path.join(hroot, "unread.txt")
+        with open(unread, "w", encoding="utf-8") as fh:
+            fh.write("0123456789")
+        real_open = globals()["_open_no_follow"]
+
+        def refused(full):
+            raise PermissionError(32, "The process cannot access the file because it is being used")
+        globals()["_open_no_follow"] = refused
+        try:
+            before = fingerprint(hroot, RUN_FILE, "")
+            with open(unread, "w", encoding="utf-8") as fh:
+                fh.write("01234567890123456789")
+            after = fingerprint(hroot, RUN_FILE, "")
+        finally:
+            globals()["_open_no_follow"] = real_open
+        check("an-unread-file-still-counts-by-size-and-time", before != after)
 
     with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
         proot = _workspace(ptmp)

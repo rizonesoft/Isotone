@@ -905,6 +905,8 @@ class MergeTests(Base):
         self.assertIn("holds the guard", mp.campaign_active(self.root) or "")
         guard.write_text("{torn", encoding="utf-8")
         self.assertIn("holds the guard", mp.campaign_active(self.root) or "")
+        guard.write_text(json.dumps({"session_id": "s", "ended": True}), encoding="utf-8")
+        self.assertIn("holds the guard", mp.campaign_active(self.root) or "")
 
     def test_the_task_never_touches_a_running_campaigns_intent(self):
         mp._block(self.root, 1, "merge issued, not yet verified")
