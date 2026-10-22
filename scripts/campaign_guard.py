@@ -2397,35 +2397,38 @@ def _self_test() -> int:
                 answers[(root, args)] = real_git(root, time.monotonic() + 60, *args)
             return answers[(root, args)]
         globals()["_git"] = recorded_git
-        fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 60)
+        try:
+            fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 60)
 
-        def stuck_read(fd, n):
-            time.sleep(1.0)
-            return real_read(fd, n)
-        globals()["_read_fd"] = stuck_read
-        began = time.monotonic()
-        try:
-            fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
-            stuck = ""
-        except GuardError as exc:
-            stuck = str(exc)
+            def stuck_read(fd, n):
+                time.sleep(1.0)
+                return real_read(fd, n)
+            globals()["_read_fd"] = stuck_read
+            began = time.monotonic()
+            try:
+                fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
+                stuck = ""
+            except GuardError as exc:
+                stuck = str(exc)
+            finally:
+                took = time.monotonic() - began
+                globals()["_read_fd"] = real_read
+            def stuck_lstat(path, *args, **kwargs):
+                time.sleep(1.0)
+                return real_lstat_walk(path, *args, **kwargs)
+            real_lstat_walk = os.lstat
+            os.lstat = stuck_lstat
+            began_l = time.monotonic()
+            try:
+                fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
+                stuck_l = ""
+            except GuardError as exc:
+                stuck_l = str(exc)
+            finally:
+                took_l = time.monotonic() - began_l
+                os.lstat = real_lstat_walk
         finally:
-            took = time.monotonic() - began
-            globals()["_read_fd"] = real_read
-        def stuck_lstat(path, *args, **kwargs):
-            time.sleep(1.0)
-            return real_lstat_walk(path, *args, **kwargs)
-        real_lstat_walk = os.lstat
-        os.lstat = stuck_lstat
-        began_l = time.monotonic()
-        try:
-            fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
-            stuck_l = ""
-        except GuardError as exc:
-            stuck_l = str(exc)
-        finally:
-            took_l = time.monotonic() - began_l
-            os.lstat = real_lstat_walk
+            # Restored whatever escapes the warm-up or either case (independent review round 1).
             globals()["_git"] = real_git
         time.sleep(1.0)  # let the abandoned worker leave the patched lstat before anything else runs
         check("a-blocked-lstat-is-abandoned-at-the-deadline",
