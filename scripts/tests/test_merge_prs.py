@@ -73,14 +73,14 @@ class FakeGh:
     """
 
     def __init__(self, prs, merge_fails=False, lands=False, view_fails=False, retarget=None, elsewhere=False,
-                 off_main=False, already_merged=(), unknown_views=0):
+                 off_main=False, already_merged=(), unknown_views=0, pending_field="mergeable", runs=None):
         self.calls, self.prs = [], prs
         self.merge_fails, self.lands, self.view_fails = merge_fails, lands, view_fails
         self.retarget, self.elsewhere, self.off_main = retarget, elsewhere, off_main
         self.merged = {str(n) for n in already_merged}
         self.views: dict[str, int] = {}
         # GitHub's lazy mergeability: the first `unknown_views` reads of each pull request answer UNKNOWN.
-        self.unknown_views = unknown_views
+        self.unknown_views, self.pending_field, self.runs = unknown_views, pending_field, runs
 
     def _pr(self, n):
         return next(p for p in self.prs if str(p["number"]) == str(n))
@@ -98,9 +98,12 @@ class FakeGh:
             # A retarget lands between the listing (first read) and the final re-read.
             retargeted = self.retarget if self.views[args[2]] >= 2 else None
             base = retargeted or ("release" if merged and self.elsewhere else p["baseRefName"])
-            mergeable = "UNKNOWN" if self.views[args[2]] <= self.unknown_views else p["mergeable"]
-            return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN", mergeable=mergeable,
+            limit = (self.unknown_views.get(args[2], 0) if isinstance(self.unknown_views, dict) else self.unknown_views)
+            pending = {self.pending_field: "UNKNOWN"} if self.views[args[2]] <= limit else {}
+            return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN", **pending,
                                    mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
+        if args[:2] == ("run", "list") and self.runs is not None:
+            return json.dumps(self.runs.get(args[args.index("--commit") + 1], []))
         if args[:2] == ("pr", "merge"):
             if not self.merge_fails or self.lands:
                 self.merged.add(args[2])
@@ -351,7 +354,7 @@ class MergeTests(Base):
                     raise mp.Failed("gh run list failed: connection reset")
             return real(*args, cwd=cwd)
         code, out = self.call(["run", "--task"], runs_fail_once, FakeGit())
-        self.assertEqual((code, gh.merges(), "cannot read #1's workflow runs" in out), (1, [], True))
+        self.assertEqual((code, gh.merges(), "cannot read the pull requests or their workflow runs" in out), (1, [], True))
 
     def test_a_mergeability_still_being_computed_is_read_again(self):
         # D00-T01-S12-F43: right after a stamp push GitHub answers UNKNOWN until its computation finishes.
@@ -375,8 +378,35 @@ class MergeTests(Base):
             code, out = self.call(["run", "--campaign"], gh, FakeGit())
         finally:
             mp.time.sleep = saved
-        self.assertEqual((code, len(gh.merges()), max(gh.views[str(n)] for n in range(3, 28)), len(sleeps) <= 2 * mp.MERGEABLE_TRIES),
-                         (0, 1, 1, True), out)
+        self.assertEqual((code, len(gh.merges()), [n for n in range(3, 28) if str(n) in gh.views],
+                          len(sleeps) <= 2 * mp.MERGEABLE_TRIES), (0, 1, [], True), out)
+
+    def test_a_merge_state_still_being_computed_is_read_again(self):
+        # Independent review round 19: `pending` covers mergeStateStatus as well as mergeable.
+        gh = FakeGh([pr(1)], unknown_views=1, pending_field="mergeStateStatus")
+        code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        self.assertEqual((code, len(gh.merges())), (0, 1), out)
+
+    def test_the_re_read_follows_the_workflow_verdicts(self):
+        # Independent review round 19: #1 passes eligibility but its build is red, #2 is still being computed.
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        (wf / "build.yml").write_text("name: build" + chr(10) + "on:" + chr(10) + "  pull_request:" + chr(10), encoding="utf-8")
+        run = lambda c: [{"workflowName": "build", "status": "completed", "conclusion": c, "createdAt": "1"}]
+        gh = FakeGh([pr(1), pr(2)], unknown_views={"2": 1},
+                    runs={pr(1)["headRefOid"]: run("failure"), pr(2)["headRefOid"]: run("success")})
+        code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        self.assertEqual((code, [c[2] for c in gh.merges()]), (0, ["2"]), out)
+
+    def test_a_spent_budget_issues_no_merge(self):
+        saved = mp.RUN_BUDGET
+        mp.RUN_BUDGET = mp.MERGE_RESERVE - 1
+        try:
+            gh = FakeGh([pr(1)])
+            code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        finally:
+            mp.RUN_BUDGET = saved
+        self.assertEqual((code, gh.merges(), "time budget" in out, (self.root / mp.BLOCKED).exists()), (1, [], True, False))
 
     def test_recover_settles_and_never_merges(self):
         gh = FakeGh([pr(1)])
@@ -641,6 +671,21 @@ class MergeTests(Base):
 
 
 class TimeoutTests(unittest.TestCase):
+    def test_the_run_deadline_caps_each_command(self):
+        import time
+        saved = mp._deadline
+        mp._deadline = time.monotonic() + 2
+        try:
+            start = time.monotonic()
+            done = mp._run([sys.executable, "-c", "import time; time.sleep(20)"], REPO)
+            took = time.monotonic() - start
+            mp._deadline = time.monotonic() - 1
+            spent = mp._run([sys.executable, "-c", "print(1)"], REPO)
+        finally:
+            mp._deadline = saved
+        self.assertEqual((done.returncode, took < 15, spent.returncode, "budget is spent" in spent.stderr),
+                         (124, True, 124, True), took)
+
     def test_a_timed_out_command_is_stopped_with_its_children(self):
         import time
         saved = mp.COMMAND_TIMEOUT

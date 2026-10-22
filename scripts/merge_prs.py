@@ -76,6 +76,16 @@ SETTLE_SECONDS = 900
 # pull requests are open (independent review round 18): at most two re-reads of MERGEABLE_TRIES each per run.
 MERGEABLE_TRIES = 6
 MERGEABLE_WAIT = 5.0
+# One deadline for the whole run (independent review round 19): every command's timeout and every wait is capped by
+# the time left, so a run ends inside the scheduled task's 600-second timeout however slow GitHub is, and a merge is
+# issued only while MERGE_RESERVE seconds remain for the merge, the pull, and validate.
+RUN_BUDGET = 540
+MERGE_RESERVE = 120
+_deadline: float | None = None
+
+
+def _remaining() -> float:
+    return float("inf") if _deadline is None else _deadline - time.monotonic()
 
 
 class Refused(Exception):
@@ -107,11 +117,14 @@ def _kill_tree(proc: subprocess.Popen) -> None:
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    limit = min(COMMAND_TIMEOUT, _remaining())
+    if limit < 1:
+        return subprocess.CompletedProcess(argv, 124, "", "the run's time budget is spent")
     proc = subprocess.Popen(argv, cwd=str(cwd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                             encoding="utf-8", errors="replace", creationflags=NO_WINDOW,
                             start_new_session=(os.name != "nt"))
     try:
-        out, err = proc.communicate(timeout=COMMAND_TIMEOUT)
+        out, err = proc.communicate(timeout=limit)
         return subprocess.CompletedProcess(argv, proc.returncode, out, err)
     except subprocess.TimeoutExpired:
         _kill_tree(proc)
@@ -119,7 +132,7 @@ def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
             out, err = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
             out, err = "", ""
-        return subprocess.CompletedProcess(argv, 124, out or "", f"timed out after {COMMAND_TIMEOUT}s")
+        return subprocess.CompletedProcess(argv, 124, out or "", f"timed out after {int(limit)}s")
 
 
 def git(*args: str, cwd: Path = ROOT) -> str:
@@ -397,8 +410,8 @@ def _checks_pass(pr: dict) -> tuple[bool, str]:
     return True, ""
 
 
-def eligible(pr: dict, root: Path = ROOT) -> tuple[bool, str]:
-    """(eligible, the first reason it is not)."""
+def identity(pr: dict) -> tuple[bool, str]:
+    """(a bot's dependency pull request, the reason it is not): the author, branch, and labels the listing carries."""
     author = (pr.get("author") or {}).get("login", "")
     branch = pr.get("headRefName", "")
     if author in BOT_AUTHORS:
@@ -410,6 +423,15 @@ def eligible(pr: dict, root: Path = ROOT) -> tuple[bool, str]:
     labels = {l.get("name", "") for l in pr.get("labels") or []}
     if not labels & LABELS:
         return False, "carries neither dependencies nor pins"
+    return True, ""
+
+
+def eligible(pr: dict, root: Path = ROOT) -> tuple[bool, str]:
+    """(eligible, the first reason it is not)."""
+    ok, why = identity(pr)
+    if not ok:
+        return False, why
+    branch = pr.get("headRefName", "")
     files = pr.get("files") or []
     if not isinstance(pr.get("changedFiles"), int) or len(files) < pr["changedFiles"]:
         # The file list GitHub returns is capped; an incomplete one could hide a global.json change.
@@ -459,12 +481,18 @@ def workflows_green(pr: dict, repo: str, root: Path, gh_fn=gh) -> tuple[bool, st
     return True, ""
 
 
+def pending(pr: dict) -> bool:
+    """Whether GitHub is still computing this pull request's mergeability (either field reads UNKNOWN)."""
+    return "UNKNOWN" in (pr.get("mergeable"), pr.get("mergeStateStatus"))
+
+
 def view_pr(n, repo: str, root: Path, gh_fn=gh, tries: int = 1) -> dict:
-    """One pull request as GitHub reports it now: an UNKNOWN mergeability is read again up to `tries` reads in all,
-    MERGEABLE_WAIT seconds apart, and a last UNKNOWN stands (eligibility refuses it)."""
+    """One pull request as GitHub reports it now: while `pending`, it is read again, up to `tries` reads in all,
+    MERGEABLE_WAIT seconds apart and never past the run's deadline; a last pending answer stands (eligibility
+    refuses it)."""
     for attempt in range(tries):
         pr = json.loads(gh_fn("pr", "view", str(n), "--repo", repo, "--json", FIELDS + ",state", cwd=root) or "{}")
-        if pr.get("mergeable") != "UNKNOWN" or attempt == tries - 1:
+        if not pending(pr) or attempt == tries - 1 or _remaining() < MERGEABLE_WAIT + MERGE_RESERVE:
             return pr
         time.sleep(MERGEABLE_WAIT)
     return pr
@@ -472,18 +500,26 @@ def view_pr(n, repo: str, root: Path, gh_fn=gh, tries: int = 1) -> dict:
 
 def pending_only(pr: dict, root: Path) -> bool:
     """Whether GitHub's unfinished mergeability computation is all that keeps this pull request from merging."""
-    if "UNKNOWN" not in (pr.get("mergeable"), pr.get("mergeStateStatus")):
-        return False
-    return eligible(dict(pr, mergeable="MERGEABLE", mergeStateStatus="CLEAN"), root)[0]
+    return pending(pr) and eligible(dict(pr, mergeable="MERGEABLE", mergeStateStatus="CLEAN"), root)[0]
 
 
 def open_prs(repo: str, gh_fn=gh, root: Path = ROOT) -> list[dict]:
-    """The open pull requests on main, oldest first, each read once with `view_pr`: the list reports mergeability as
-    UNKNOWN until GitHub computes it, and viewing a pull request is what makes it compute."""
+    """The open pull requests on main, oldest first. The listing's author, branch, and labels settle `identity`, so
+    only a bot's dependency pull request is read again with `view_pr` (the listing reports mergeability as UNKNOWN
+    until GitHub computes it, and viewing is what makes it compute); every other one is never read in detail
+    (independent review round 19)."""
     listed = json.loads(gh_fn("pr", "list", "--repo", repo, "--state", "open", "--base", "main", "--limit", "50",
-                              "--json", "number", cwd=root) or "[]")
-    prs = [view_pr(p["number"], repo, root, gh_fn) for p in listed]
+                              "--json", "number,author,headRefName,labels,createdAt", cwd=root) or "[]")
+    prs = [view_pr(p["number"], repo, root, gh_fn) if identity(p)[0] else p for p in listed]
     return sorted(prs, key=lambda p: (p.get("createdAt", ""), p.get("number", 0)))
+
+
+def _verdict(pr: dict, repo: str, root: Path, gh_fn) -> tuple[dict, bool, str]:
+    """(the pull request, fully eligible, the first reason not): `eligible`, then its workflow runs on its head."""
+    ok, why = eligible(pr, root)
+    if ok:
+        ok, why = workflows_green(pr, repo, root, gh_fn)
+    return pr, ok, why
 
 
 def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn=None,
@@ -496,6 +532,8 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
     round 4). Every failure after the merge was issued is exit 3.
     """
     n = pr["number"]
+    if _remaining() < MERGE_RESERVE:
+        return 1, f"merge_prs: #{n} not merged, the run's time budget leaves too little to merge and verify"
     # Re-read the pull request at the last moment and judge it whole again: a base retargeted, a head pushed, a label
     # removed, or a check gone red since the listing is refused, because `gh pr merge` acts on the pull request as it
     # is now (independent review rounds 3 and 4).
@@ -713,29 +751,20 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
     except (Failed, ValueError) as error:
         print(f"merge_prs: cannot list pull requests: {error}", file=sys.stderr)
         return 1
-    verdicts = [(pr, *eligible(pr, root)) for pr in prs]
-    if not any(ok for _pr, ok, _why in verdicts):
-        # The oldest pull request held only by GitHub's unfinished computation is read again; no other one waits.
-        try:
-            i = next(k for k, (pr, _ok, _why) in enumerate(verdicts) if pending_only(pr, root))
-            again = view_pr(verdicts[i][0]["number"], repo, root, gh_fn, tries=MERGEABLE_TRIES)
-            verdicts[i] = (again, *eligible(again, root))
-        except StopIteration:
-            pass
-        except (Failed, ValueError) as error:
-            print(f"merge_prs: cannot read the pull requests: {error}", file=sys.stderr)
-            return 1
-    for i, (pr, ok, _why) in enumerate(verdicts):
-        if ok:
-            try:
-                green, why = workflows_green(pr, repo, root, gh_fn)
-            except (Failed, ValueError) as error:
-                # A lookup that fails is a failed command, not an ineligible pull request: it stops the run with
-                # exit 1 (the task's failure email), and no other pull request merges past it (GPT panel round 2).
-                print(f"merge_prs: cannot read #{pr['number']}'s workflow runs: {error}", file=sys.stderr)
-                return 1
-            if not green:
-                verdicts[i] = (pr, False, why)
+    try:
+        verdicts = [_verdict(pr, repo, root, gh_fn) for pr in prs]
+        if not any(ok for _pr, ok, _why in verdicts):
+            # Only once nothing is fully eligible, the oldest pull request held solely by GitHub's unfinished
+            # computation is read again (rounds 18 and 19); no other one waits.
+            i = next((k for k, (pr, _ok, _why) in enumerate(verdicts) if pending_only(pr, root)), None)
+            if i is not None:
+                again = view_pr(verdicts[i][0]["number"], repo, root, gh_fn, tries=MERGEABLE_TRIES)
+                verdicts[i] = _verdict(again, repo, root, gh_fn)
+    except (Failed, ValueError) as error:
+        # A lookup that fails is a failed command, not an ineligible pull request: it stops the run with exit 1
+        # (the task's failure email), and no other pull request merges past it (GPT panel round 2).
+        print(f"merge_prs: cannot read the pull requests or their workflow runs: {error}", file=sys.stderr)
+        return 1
     if args.mode == "check":
         print(f"merge_prs: {preflight_line} ({repo})")
         if blocked(root) is not None:
@@ -763,6 +792,8 @@ def main(argv: list[str] | None = None, root: Path = ROOT, gh_fn=gh, git_fn=git,
     parser.add_argument("--campaign", action="store_true", help="the in-loop call: skip the active-campaign refusal")
     parser.add_argument("--task", action="store_true", help="the scheduled task: a busy clone exits 0")
     args = parser.parse_args(argv)
+    global _deadline
+    _deadline = time.monotonic() + RUN_BUDGET
     try:
         if args.mode == "check":
             return _work(args, root, gh_fn, git_fn, graph, active_fn, validate_fn)
@@ -777,6 +808,8 @@ def main(argv: list[str] | None = None, root: Path = ROOT, gh_fn=gh, git_fn=git,
     except Failed as error:
         print(f"merge_prs: {error}", file=sys.stderr)
         return 1
+    finally:
+        _deadline = None
 
 
 if __name__ == "__main__":
