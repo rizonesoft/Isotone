@@ -70,6 +70,7 @@ track: W1
 |  14   |   §14   | Retire the unused verify-agent-tiers.mjs      | --         |  [x]   |
 |  15   |   §15   | Unattended merges read main's CI back         | §12        |  [x]   |
 |  16   |   §16   | Unattended merger health                      | §15        |  [x]   |
+|  17   |   §17   | Time the guard's deadline cases on the walk   | §13        |  [ ]   |
 
 ---
 
@@ -424,6 +425,8 @@ The operator reported on 2026-10-21 three run-guard bugs that reviews of other r
 <!-- claim: count "info = os\.stat\(full\)" scripts/campaign_guard.py = 0 -->
 <!-- claim: count "info = os\.lstat\(full\)" scripts/campaign_guard.py = 1 -->
 
+- -> XREF: D00 T01 §17 -- makes the two deadline cases time the walk alone (a CI flake on the Windows runner, 2026-10-22)
+
 **Fidelity:** no surface of its own (the run guard and its self-test).
 
 - [x] Hash only regular files in `fingerprint`: take `os.lstat`, count a link by its target text and a non-regular file (FIFO, device, socket, folder) by its name and mode without opening it, and open a regular file only with a read bounded by the size `lstat` reported. Done when: self-test cases with an untracked FIFO (where the platform has one), a link to a folder, and a dangling link finish inside the hook budget and leave no `hook_error`. **Corrected 2026-10-22:** `git ls-files --others` never lists a FIFO (probed under Linux: it listed `dirlink` and `pipelink`, not `pipe`), so the hazard reaches the fingerprint through a link: the old code raised `IsADirectoryError` on a link to a folder and blocked until killed on a link to a FIFO (`timeout 10` exit 124). The FIFO case is a link to a FIFO. `fingerprint` takes `os.lstat`, counts a link (or a Windows reparse point) by its `os.readlink` text and any other non-regular file by its kind, and opens only regular files; self-test `special-files-count-without-a-hook-error` (a link to a folder, a dangling link, a FIFO and a link to it where the host allows) and `a-link-counts-by-its-target-text`. Under Linux (WSL) the new fingerprint read a folder link, a dangling link, and a link to a FIFO in 0.00 s with no `hook_error`, where the guard before this section raised `IsADirectoryError` on the folder link and blocked on the FIFO link until `timeout 10` (exit 124).
@@ -525,6 +528,24 @@ D00 T01 §15 makes the hourly `isotone-pr-merge` task read `main`'s CI on every 
 > **Plan review:** gpt medium, filed B-067 (6 findings: PR2 and PR3 deferred to the backlog as B-067; PR1, PR4, PR5, and PR6 rejected with reasons) (run 20261022-D00-T01-S16-gpt)
 > **CRUD:** not applicable (a workspace merge script and its local health record, with no user record, document, or setting)
 > **Duration:** 2026-10-22T07:01:33Z to 2026-10-22T08:19:53Z
+
+## 17. Time the Guard's Deadline Cases on the Walk
+
+> **Started:** 2026-10-22T08:56:47Z
+
+**Origin:** discovered run=592bbffe4b4f 2026-10-22 -- a red plan-gates read-back on `2832601` (repair attempt 1 of 3)
+
+`D00 T01 §13`'s self-test cases `a-blocked-read-is-abandoned-at-the-deadline` and `a-blocked-lstat-is-abandoned-at-the-deadline` give `fingerprint` a 0.2 s budget and require it to return inside 0.8 s while one read or `lstat` blocks for 1.0 s. The budget also covers the three `git` calls `fingerprint` makes before its walk starts, and on the Windows runner those took the whole budget: plan-gates run 39749933894 on `2832601` failed with `FAIL a-blocked-read-is-abandoned-at-the-deadline 1.14s fingerprint incomplete: the time budget ran out after 0 of 1 untracked paths`, so the case timed git and never reached the blocked read it exists to prove. A defect in shipped work (`D00 T01 §13`'s tests), so it is a section of its own, the repair commit's owner.
+
+**Fidelity:** no surface of its own (the campaign guard's self-test).
+
+- -> XREF: D00 T01 §13 -- the deadline cases this section makes time the walk alone
+
+- [x] Serve `git`'s answers from memory inside the timed window: before the two deadline cases, read the tree's `rev-parse`, `diff`, and `ls-files` answers once through the real `_git` with a generous deadline, patch `_git` to return them, and restore it after both cases. Done when: `python scripts/campaign_guard.py --self-test` reports `0 failed`, and with `_git` slowed by 0.4 s a call the old cases fail and the new ones pass. `recorded_git` in `scripts/campaign_guard.py`'s self-test warms one `fingerprint` with a 60 s deadline, then serves those answers inside both timed cases and restores `_git` in the `lstat` case's `finally`; the self-test reports `189 cases, 0 failed`, and with `_git` slowed by 0.4 s a call the cases before this section fail `a-blocked-lstat-is-abandoned-at-the-deadline` and `a-blocked-read-is-abandoned-at-the-deadline` while the cases after it pass.
+- [x] Keep the cases able to fail: with the walk's `worker.join` waiting without its deadline, both deadline cases fail. Done when: that mutation fails both cases. With `worker.join()` waiting without its deadline, both deadline cases fail (`189 cases, 2 failed`).
+- [x] Commit: `"workspace: time the guard's deadline cases on the walk, not on git"` This commit.
+
+**Test checkpoint:** Unit test: `python scripts/campaign_guard.py --self-test` reports `189 cases, 0 failed`; with `_git` slowed by 0.4 s a call, the cases before this section fail both deadline cases and the cases after it pass; with `worker.join` waiting without its deadline, both cases fail; plan-gates reads back green on the repair. Cheaper substitute that fails: widening the 0.8 s bound, which a slower runner's git outruns again and which lets a walk that waits out a 1.0 s read pass.
 
 ## Verification
 

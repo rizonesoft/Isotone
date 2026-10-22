@@ -2386,6 +2386,19 @@ def _self_test() -> int:
             time.monotonic = real_monotonic
         check("a-read-that-crosses-the-deadline-is-incomplete", "fingerprint incomplete" in crossed, crossed)
 
+        # The two cases below time the walk alone: git's answers for this tree are read once, before the clock runs,
+        # and served from memory inside it, so a slow runner's git calls cannot spend the 0.2 s budget before the
+        # blocked read even starts (D00 T01 §17: on the Windows runner they did, and the case timed git, not the walk).
+        real_git = _git
+        answers: dict = {}
+
+        def recorded_git(root, deadline, *args):
+            if (root, args) not in answers:
+                answers[(root, args)] = real_git(root, time.monotonic() + 60, *args)
+            return answers[(root, args)]
+        globals()["_git"] = recorded_git
+        fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 60)
+
         def stuck_read(fd, n):
             time.sleep(1.0)
             return real_read(fd, n)
@@ -2413,6 +2426,7 @@ def _self_test() -> int:
         finally:
             took_l = time.monotonic() - began_l
             os.lstat = real_lstat_walk
+            globals()["_git"] = real_git
         time.sleep(1.0)  # let the abandoned worker leave the patched lstat before anything else runs
         check("a-blocked-lstat-is-abandoned-at-the-deadline",
               "fingerprint incomplete" in stuck_l and took_l < 0.8, f"{took_l:.2f}s {stuck_l}")
