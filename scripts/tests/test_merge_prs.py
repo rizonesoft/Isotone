@@ -53,7 +53,7 @@ class FakeGit:
         self.calls.append(args)
         if args[0] == "symbolic-ref":
             if self.detached or self.broken:
-                raise mp.Failed("git symbolic-ref -q HEAD failed: ")
+                raise mp.Failed("git symbolic-ref -q HEAD failed: ", 1 if self.detached else 128)
             return self.branch + "\n"
         if args[:2] == ("diff", "--name-only"):
             assert "-z" in args and "--no-renames" in args, args
@@ -582,7 +582,9 @@ class MergeTests(Base):
             # the whole filter.
             ("on:" + chr(10) + "  workflow_dispatch:" + chr(10) + "# CI on pushes" + chr(10) + "  push:" + chr(10)
              + "    paths:" + chr(10) + "      - 'scripts/**'" + chr(10), (True, ["scripts/**"])),
-            (on + "    paths:" + chr(10) + "      - 'scripts/**'" + chr(10) + "      - 'todo/**' # plans" + chr(10), (True, None)),
+            # A trailing comment is a comment: the whole filter is read, never part of it.
+            (on + "    paths:" + chr(10) + "      - 'scripts/**'" + chr(10) + "      - 'todo/**' # plans" + chr(10),
+             (True, ["scripts/**", "todo/**"])),
             (on + "    paths-ignore:" + chr(10) + "      - 'docs/**'" + chr(10), (True, None)),
             (on + "    paths: ['scripts/**', todo/** extra]" + chr(10), (True, None)),
             ("on:" + chr(10) + "  push: {}" + chr(10), (True, None)),
@@ -592,6 +594,15 @@ class MergeTests(Base):
             (on + "    paths: ['scripts/**/*.py']" + chr(10), (True, None)),
             (on + "    paths: ['*.jsx?']" + chr(10), (True, None)),
             (on + "    paths: ['docs/*.md', '.gitattributes', '**']" + chr(10), (True, ["docs/*.md", ".gitattributes", "**"])),
+            # Independent review round 6: YAML aliases and anchors are outside the whitelist, so the block is unsure.
+            ("env: {FILTER: &filter 'scripts/**'}" + chr(10) + on + "    paths: [*filter]" + chr(10), (True, None)),
+            ("on: &triggers" + chr(10) + "  pull_request:" + chr(10) + "    branches: [main]" + chr(10), (True, None)),
+            (on + "    paths:" + chr(10) + "      - *filter" + chr(10), (True, None)),
+            # The whitelist covers the whole block: a line it does not know, even under another event, voids it.
+            ("on:" + chr(10) + "  pull_request:" + chr(10) + "    types: !!seq [opened]" + chr(10) + "  push:" + chr(10)
+             + "    paths: ['scripts/**']" + chr(10), (True, None)),
+            ("on:" + chr(10) + "  schedule:" + chr(10) + "    - cron: '3 4 * * *'" + chr(10) + "  push:" + chr(10)
+             + "    branches: [main]" + chr(10) + "    paths: ['scripts/**']" + chr(10), (True, ["scripts/**"])),
         ]
         for text, want in cases:
             with self.subTest(text=text):
@@ -662,6 +673,16 @@ class MergeTests(Base):
                 gh = FakeGh([pr(1)])
                 code, out = self.call(["run", *flags], gh, FakeGit(detached=True))
                 self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (want, [], True))
+
+    def test_a_symbolic_ref_timeout_is_not_a_detached_head(self):
+        # Independent review round 6: only symbolic-ref's own exit 1 means detached; a timeout stays a failure.
+        def timed_out(*args, cwd=None):
+            if args[0] == "symbolic-ref":
+                raise mp.Failed("git symbolic-ref -q HEAD failed: timed out after 300s", 124)
+            return FakeGit()(*args, cwd=cwd)
+        gh = FakeGh([pr(1)])
+        code, out = self.call(["run", "--task"], gh, timed_out)
+        self.assertEqual((code, gh.merges()), (1, []))
 
     def test_a_broken_repository_is_still_a_failure(self):
         gh = FakeGh([pr(1)])

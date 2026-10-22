@@ -96,7 +96,12 @@ class Refused(Exception):
 
 
 class Failed(Exception):
-    """A git or gh command failed: a real failure, which always exits nonzero."""
+    """A git or gh command failed: a real failure, which always exits nonzero. `returncode` is the command's exit
+    status when one ran (124 for a timeout), so a caller can tell a documented status from any other failure."""
+
+    def __init__(self, message: str, returncode: int | None = None):
+        super().__init__(message)
+        self.returncode = returncode
 
 
 def _kill_tree(proc: subprocess.Popen) -> None:
@@ -141,7 +146,7 @@ def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
 def git(*args: str, cwd: Path = ROOT) -> str:
     done = _run(["git", *args], cwd)
     if done.returncode != 0:
-        raise Failed(f"git {' '.join(args)} failed: {(done.stderr or done.stdout).strip()[:200]}")
+        raise Failed(f"git {' '.join(args)} failed: {(done.stderr or done.stdout).strip()[:200]}", done.returncode)
     return done.stdout
 
 
@@ -319,12 +324,15 @@ def _block(root: Path, pr: int, why: str) -> None:
 
 
 def _branch(root: Path, git_fn) -> str:
-    """The checked-out branch ref, or "" on a detached HEAD. `git symbolic-ref -q HEAD` fails on a detached HEAD as
-    it does on a broken repository, so a HEAD that still resolves to a commit reads as detached (a busy clone), and
-    anything else stays a failure (D00 T01 §15, D00-T01-S12-F44)."""
+    """The checked-out branch ref, or "" on a detached HEAD. `git symbolic-ref -q HEAD` exits 1, silently, exactly
+    when HEAD is not a symbolic ref; that status with a HEAD that still resolves to a commit reads as detached (a busy
+    clone), and every other failure (a fatal 128, a timeout's 124) stays a failure (D00 T01 §15, D00-T01-S12-F44,
+    independent review round 6)."""
     try:
         return git_fn("symbolic-ref", "-q", "HEAD", cwd=root).strip()
     except Failed as error:
+        if error.returncode != 1:
+            raise
         try:
             git_fn("rev-parse", "--verify", "-q", "HEAD", cwd=root)
         except Failed:
@@ -444,12 +452,28 @@ def _glob_re(pattern: str) -> re.Pattern:
     return re.compile(f"^{out}$")
 
 
-_FILTER_ITEM_RE = re.compile(r"""^\s*-\s+(?:'([^'#\s][^'#]*)'|"([^"#\s][^"#]*)"|([^'"#\s][^\s#]*))\s*$""")
 # The glob shapes `_glob_re` matches exactly as GitHub does: literal path characters, `*` inside one segment, and
 # `**` only as a whole trailing segment (or the whole pattern). Any other syntax GitHub supports (`?`, `[...]`, `+`,
 # `**` mid-pattern) makes the filter unsure (independent review round 5).
 _SUPPORTED_GLOB_RE = re.compile(r"^(?:\*\*|(?:[A-Za-z0-9._-]|\*(?!\*))+(?:/(?:[A-Za-z0-9._-]|\*(?!\*))+)*(?:/\*\*)?)$")
-_FLOW_ITEM_RE = re.compile(r"""^(?:'([^'#\s][^'#,]*)'|"([^"#\s][^"#,]*)"|([^'"#\s,\[\]]+))$""")
+# The whitelist for every content line of the `on:` block (independent review round 6 replaced per-shape patches):
+# a scalar is a quoted string with no `#` or a plain token that cannot open a YAML alias, anchor, or tag; a flow
+# sequence holds scalars only. Any line outside these shapes makes the whole block unsure.
+_SCALAR = r"""(?:'[^'#]*'|"[^"#]*"|[A-Za-z0-9_./-][A-Za-z0-9_./*-]*)"""
+_FLOW = rf"\[\s*(?:{_SCALAR}\s*(?:,\s*{_SCALAR}\s*)*)?\]"
+_VALUE = rf"(?:{_SCALAR}|{_FLOW}|\{{\s*\}})"
+_KEY_LINE_RE = re.compile(rf"^\s+([A-Za-z_][\w-]*)\s*:(?:\s+({_VALUE}))?\s*(?:#.*)?$")
+_ITEM_LINE_RE = re.compile(rf"^\s+-\s+({_SCALAR})\s*(?:#.*)?$")
+_ITEM_KEY_LINE_RE = re.compile(rf"^\s+-\s+[A-Za-z_][\w-]*\s*:(?:\s+{_VALUE})?\s*(?:#.*)?$")
+_SCALAR_RE = re.compile(_SCALAR)
+
+
+def _unquote(value: str) -> str:
+    return value[1:-1] if value[:1] in "'\"" else value
+
+
+def _flow_items(value: str) -> list[str]:
+    return [_unquote(m.group(0)) for m in _SCALAR_RE.finditer(value[1:-1])]
 
 
 def _indent(line: str) -> int:
@@ -457,16 +481,17 @@ def _indent(line: str) -> int:
 
 
 def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
-    """(the workflow runs on `event`, that event's `paths` filter or None) under a strict grammar that fails closed
-    (independent review rounds 3 and 4 replaced a lenient reader): None means every change triggers it, and it is
-    the answer for any shape this reader does not fully recognise, so both callers read an unsure filter the
-    cautious way (the pull request must show the workflow; an older run never stands in for the head's).
+    """(the workflow runs on `event`, that event's `paths` filter or None) under a whitelist grammar that fails
+    closed (independent review rounds 3 to 6): None means every change triggers it, and it is the answer for any
+    shape this reader does not fully recognise, so both callers read an unsure filter the cautious way (the pull
+    request must show the workflow; an older run never stands in for the head's).
 
-    The grammar: a top-level `on:` key, whose block runs to the next content line at column 0 (blank and comment
-    lines never end it); the event as one of the block's top keys; and under it an optional `paths:` key holding
-    either a flow sequence or a block list whose every entry is one plain glob. Anything else (an inline `on:`, an
-    inline event value, `paths-ignore`, a trailing comment, a negated, empty, or unreadable entry, or a glob outside
-    the shapes `_glob_re` matches exactly) is unsure."""
+    The grammar: a top-level `on:` key that is bare or names events as a plain scalar or a flow sequence of them;
+    its block runs to the next content line at column 0 (blank and comment lines never end it), and every content
+    line in it is a key line, a list item, or a list item that is a key, with scalars that cannot open a YAML alias,
+    anchor, or tag. The event is one of the block's top keys with no inline value, and under it an optional `paths:`
+    key holds a flow sequence or a block list of globs, every one in the shapes `_glob_re` matches exactly. Anything
+    else (`paths-ignore` included) is unsure: the workflow runs, on every change."""
     lines = text.splitlines()
 
     def content(line: str) -> bool:
@@ -477,17 +502,27 @@ def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
         return False, None
     inline = re.sub(r"\s+#.*$", "", lines[top].split(":", 1)[1]).strip()
     if inline:
-        return bool(re.search(rf"\b{re.escape(event)}\b", inline)), None
+        if re.fullmatch(_SCALAR, inline):
+            return _unquote(inline) == event, None
+        if re.fullmatch(_FLOW, inline):
+            return event in _flow_items(inline), None
+        return True, None
     end = next((i for i in range(top + 1, len(lines)) if content(lines[i]) and not lines[i][0].isspace()), len(lines))
     block = [i for i in range(top + 1, end) if content(lines[i])]
     if not block:
         return False, None
+    if not all(_KEY_LINE_RE.match(lines[i]) or _ITEM_LINE_RE.match(lines[i]) or _ITEM_KEY_LINE_RE.match(lines[i])
+               for i in block):
+        return True, None
     base = min(_indent(lines[i]) for i in block)
-    start = next((i for i in block if _indent(lines[i]) == base
-                  and re.match(rf"^\s*{re.escape(event)}\s*:", lines[i])), None)
-    if start is None:
+    tops = {_KEY_LINE_RE.match(lines[i]).group(1): i for i in block
+            if _indent(lines[i]) == base and _KEY_LINE_RE.match(lines[i])}
+    if any(_indent(lines[i]) == base and not _KEY_LINE_RE.match(lines[i]) for i in block):
+        return True, None
+    if event not in tops:
         return False, None
-    if re.sub(r"\s+#.*$", "", lines[start].split(":", 1)[1]).strip():
+    start = tops[event]
+    if _KEY_LINE_RE.match(lines[start]).group(2):
         return True, None
     under = [i for i in block if i > start]
     stop = next((k for k, i in enumerate(under) if _indent(lines[i]) <= base), len(under))
@@ -495,34 +530,32 @@ def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
     if not children:
         return True, None
     child = min(_indent(lines[i]) for i in children)
-    keys = {re.match(r"^\s*([\w-]+)\s*:", lines[i]).group(1) if re.match(r"^\s*([\w-]+)\s*:", lines[i]) else None: i
-            for i in children if _indent(lines[i]) == child}
-    if None in keys or "paths-ignore" in keys:
-        return True, None
-    if "paths" not in keys:
-        return True, None
-    at = keys["paths"]
-    value = lines[at].split(":", 1)[1].strip()
-    paths: list[str] = []
-    if value:
-        flow = re.fullmatch(r"\[(.*)\]", value)
-        if flow is None:
-            return True, None
-        for item in (p.strip() for p in flow.group(1).split(",")):
-            m = _FLOW_ITEM_RE.match(item)
+    keys = {}
+    for i in children:
+        if _indent(lines[i]) == child:
+            m = _KEY_LINE_RE.match(lines[i])
             if m is None:
                 return True, None
-            paths.append(next(g for g in m.groups() if g is not None))
+            keys[m.group(1)] = i
+    if "paths-ignore" in keys or "paths" not in keys:
+        return True, None
+    at = keys["paths"]
+    value = _KEY_LINE_RE.match(lines[at]).group(2)
+    if value:
+        if not re.fullmatch(_FLOW, value):
+            return True, None
+        paths = _flow_items(value)
     else:
+        paths = []
         for i in children:
             if i <= at:
                 continue
             if _indent(lines[i]) <= _indent(lines[at]):
                 break
-            m = _FILTER_ITEM_RE.match(lines[i])
+            m = _ITEM_LINE_RE.match(lines[i])
             if m is None:
                 return True, None
-            paths.append(next(g for g in m.groups() if g is not None).strip())
+            paths.append(_unquote(m.group(1)))
     if not paths or not all(_SUPPORTED_GLOB_RE.match(p) for p in paths):
         return True, None
     return True, paths
