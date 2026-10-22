@@ -293,6 +293,12 @@ _SINGLE = r"'(?:[^']|'')*'"
 _DOUBLE = r'"[^"\\]*"'
 _PLAIN_CHAR = r"(?:(?!:(?:[ \t]|$))(?![ \t]#)[^\n])"
 _PLAIN = rf"(?:[^\s'\"|>\[\]{{}}&*!%@`#,?:-]|-(?=[^\s]))(?:{_PLAIN_CHAR})*"
+# Plain values YAML resolves to something other than a string: the core schema's null, booleans, integers, and floats
+# (YAML 1.2.2 section 10.3.2), plus the YAML 1.1 booleans an older loader still reads as such.
+_NON_STRING_PLAIN_RE = re.compile(
+    r"null|Null|NULL|~|true|True|TRUE|false|False|FALSE|[-+]?[0-9]+|0o[0-7]+|0x[0-9a-fA-F]+"
+    r"|[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)"
+    r"|y|Y|yes|Yes|YES|n|N|no|No|NO|on|On|ON|off|Off|OFF")
 _VALUE_LINE_RE = re.compile(
     rf"^([A-Za-z_][\w-]*):(?:[ ]+(?:({_SINGLE})|({_DOUBLE})|({_PLAIN})))?[ \t]*(?:[ \t]#.*)?$")
 
@@ -324,14 +330,18 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
     except StopIteration:
         return None, None
     head = lines[1:end]
-    # YAML's printable repertoire (YAML 1.2.2 section 5.1); everything else, U+FFFE and U+FFFF included, is forbidden,
-    # and so is a byte order mark inside the content (sections 5.2 and 5.4: only the stream may open with one).
-    unprintable = sorted({c for c in "\n".join(head) if c == "\ufeff" or not (
+    # YAML's printable repertoire (YAML 1.2.2 section 5.1); everything else, U+FFFE and U+FFFF included, is forbidden.
+    unprintable = sorted({c for c in "\n".join(head) if not (
         c in "\t\n" or 0x20 <= ord(c) <= 0x7E or ord(c) == 0x85 or 0xA0 <= ord(c) <= 0xD7FF
         or 0xE000 <= ord(c) <= 0xFFFD or 0x10000 <= ord(c) <= 0x10FFFF)})
     if unprintable:
-        note(f"a character YAML forbids here ({', '.join(f'U+{ord(c):04X}' for c in unprintable)}): outside YAML's "
-             f"printable set, or a byte order mark inside the content (YAML 1.2.2 sections 5.1, 5.2, and 5.4)")
+        note(f"a character YAML forbids ({', '.join(f'U+{ord(c):04X}' for c in unprintable)}): outside YAML's "
+             f"printable set (YAML 1.2.2 section 5.1)")
+    # A byte order mark inside the content: YAML excludes it from plain scalars but allows it quoted (section 5.2), so
+    # it is this repository's schema that refuses it everywhere after the stream's start (independent review round 5).
+    if "\ufeff" in "\n".join(head):
+        note("a byte order mark (U+FEFF) inside the frontmatter: outside this repository's agent schema, which "
+             "allows one only at the start of the file")
     odd = sorted({c for c in "\n".join(head) if (c.isspace() and c not in " \t\n") or
                   (unicodedata.category(c) == "Cc" and c not in "\t\n")})
     if odd:
@@ -369,6 +379,12 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
             fields[key] = double[1:-1]
         else:
             fields[key] = (plain or "").rstrip(" \t")
+            if fields[key] and _NON_STRING_PLAIN_RE.fullmatch(fields[key]):
+                # Every field of this schema is a string; YAML resolves this plain value to null, a boolean, or a
+                # number instead, so the reader's string would not be what the loader holds (independent review round
+                # 5).
+                note(f"key {key!r} holds {fields[key]!r}, which YAML resolves to a null, a boolean, or a number rather "
+                     f"than a string (the YAML 1.2.2 core schema, section 10.3.2, or a YAML 1.1 boolean); quote it")
         if key == "hooks" and not fields[key]:
             # The one nested block the schema allows is the canonical shell gate, verbatim: its own quoted content can
             # never reach past it to stand in for a top-level field (independent review round 2).
@@ -1255,6 +1271,11 @@ def _self_test() -> int:
          "text after its closing quote, which YAML cannot parse (YAML 1.2.2 section 7.3.1)"),
     ):
         agents_refuse(name, files, needle)
+    # Independent review round 5: a plain value YAML resolves to a non-string is refused, and a quoted one passes.
+    for value in ("null", "~", "true", "False", "123", "-4.5e3", ".inf", "0x1F", "yes", "off"):
+        agents_refuse(f"agent plain {value} is not a string", {"a-one.md": front(color=value)}, "rather than a string")
+    check("agent quoted non-strings are strings",
+          "a-one" in load_agents(agent_dir({"a-one.md": front(color="'null'", description='"123"')}), good))
     check("agent delimiters are exact", _frontmatter("--- " + chr(10) + "name: x" + chr(10) + "---" + chr(10)) is None)
     # The forms the schema accepts all still load: quoted values (an escaped single quote included), a comment after
     # a value, a quoted hash, the indented hook block, and CRLF line ends.
