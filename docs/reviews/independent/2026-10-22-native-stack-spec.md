@@ -241,3 +241,38 @@ This record's round 6 is the spec's eighth review round. Every finding was verif
 3. P1, protections compared before a concurrent change are not bound to the displaced file: verified against File Security and Access Rights. The temporary file is created narrower than any target could be (user and SYSTEM only, a no-read-up and no-write-up label, EFS with the target's key holders), and the full contract is applied after the commit from the displaced version itself, read from the backup name; invariant 2 is restated against the displaced version. Proof added for a DACL tightened and a key holder added during a save.
 4. P2, DPAPI user scope roams: verified against `CryptProtectData`'s remarks. The claim is corrected to the user, not the machine; the recovery folder is local, non-roaming app data, so checkpoints reach another machine only in a portable copy.
 5. P3, the status line's round count: verified and corrected.
+
+## Round 7: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T21:56:16Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 3c48881e11ca5d53
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:92`: Recovery does not finish the newly deferred file identity transfer before deleting the backup. Save a target containing `Zone.Identifier` or another named data stream, then kill the app immediately after the installation rename, before that stream is copied. Recovery accepts the new document hash, deletes the matching old backup, and retires the journal without transferring the stream. This permanently loses data or protection required by line 88. Backup deletion must wait for verified completion of the identity contract, including during recovery.
+
+## consistency: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: The fixed conflict outcome covers more interleavings than the reference sequence can produce. Start saving N from original A, then let another program overwrite A with B before the first rename. Line 87 moves B to the backup and installs N at the target; it cannot produce the promised A-at-backup, B-at-target, N-at-temporary outcome. A may already have been destroyed by the external writer. Scope the guarantee to attainable preservation outcomes and make the reference sequence and proofs agree.
+
+## integration: approve
+
+## source-defect: needs-attention
+
+3. P1 `docs/specs/2026-10-22-native-stack-design.md:87`: The changed-encryption fallback contradicts the claim that temporary protections are always narrower. Start with an unencrypted target and temporary file in an unencrypted NTFS folder. Pause the save, encrypt the target with `EncryptFileW`, then resume. The displaced version is now EFS protected, but the specified fallback permits leaving the replacement plaintext with a restrictive DACL and merely reporting the change. That violates invariant 2. Microsoft’s [File Security and Access Rights](https://learn.microsoft.com/en-us/windows/win32/fileio/file-security-and-access-rights) distinguishes encryption’s protection on the storage media from ACL enforcement; [EncryptFileW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-encryptfilew) documents the encryption operation. An ACL cannot substitute for preserving that encryption.
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 7
+
+This record's round 7 is the spec's ninth review round. Every finding was verified and is real.
+
+1. P1, recovery deletes the backup before the deferred contract is applied: verified. The backup is deleted only after every contract item has been applied from it and read back, in the save and in recovery, which finishes the transfer first. Proof added: a kill right after the commit with a named stream not yet applied.
+2. P2, the conflict outcome promised versions another program may have destroyed: verified. The outcome now covers every file the save moves or finds, and states that a version another program overwrote in place before the save moved it was destroyed by that program.
+3. P1, encryption added mid-save was only reported: verified against `EncryptFileW` and File Security and Access Rights. Invariant 2 now names protections another program adds mid-save, which are applied to the new file before the save is reported, encryption included (the new file is encrypted in place); the narrowness claim is limited to access control, and encryption follows the target as the save starts. Proof added: the target encrypted during a save.
