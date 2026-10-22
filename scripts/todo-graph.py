@@ -1004,19 +1004,22 @@ SEVERITY_MAP: dict[str, str] = {
     # release, the whole backlog) still has an entry, added on or before
     # the stamp, with no `reviewed: <tag> ...` field for that tag.
     "release-backlog-unreviewed": "fatal",
-    # The parity catalogs are plan data like todo/ (D00 T01 §6): a source id
-    # placed nowhere or twice, a catalog id no source defines, a reused
+    # The parity catalogs are plan data like todo/ (D00 T01 §6, §7): a source
+    # id placed nowhere or twice, a catalog id no source defines, a reused
     # feature id, a status outside the grammar, a dead section or backlog
-    # ref, or a damaged input breaks the acceptance-bar aim that every
-    # competitor capability has exactly one owner. The fix is mechanical.
+    # ref, a damaged input, or a summary its rows do not add up to breaks the
+    # acceptance-bar aim that every competitor capability has exactly one
+    # owner. The fix is mechanical.
     "parity-id-missing": "fatal",
     "parity-id-duplicate": "fatal",
     "parity-id-unknown": "fatal",
     "parity-np-duplicate": "fatal",
+    "parity-ip-duplicate": "fatal",
     "parity-status-malformed": "fatal",
     "parity-ref-dead": "fatal",
     "parity-backlog-dead": "fatal",
     "parity-input-damaged": "fatal",
+    "parity-totals-drift": "fatal",
     # THE DESIGN CONTRACT (standards/design-contract.md, operator 2026-09-27).
     # A surface section without its `**Design:**` line, outside the baseline
     # of 2026-09-27: a surface built from a guess instead of the spec.
@@ -2109,10 +2112,23 @@ def unmet_dependencies(
     return unmet
 
 
-def _query_parity(todos: list[Todo], phase: str | None, as_json: bool) -> int:
+def _query_parity(todos: list[Todo], phase: str | None, as_json: bool, catalog: str | None = None) -> int:
     """`query parity`: per catalog, the status totals and per plan phase the features, sections, and stamped
-    sections they are planned to (D00 T01 §6); `--phase N` narrows to one phase and lists its rows."""
-    report = parity_module().parity_report(sys.modules[__name__], todos)
+    sections they are planned to (D00 T01 §6); `--phase N` narrows to one phase and lists its rows, and `--catalog
+    <app>` to one catalog, its problems, and the problems no catalog owns (D00 T01 §7). The JSON keeps one shape,
+    `{"catalogs": {<app>: ...}, "problems": [...]}`, whichever catalogs it carries."""
+    par = parity_module()
+    apps = [spec["app"] for spec in par.CATALOGS]
+    catalog = catalog or "all"
+    if catalog != "all" and catalog not in apps:
+        print(f"query parity: --catalog {catalog} names no catalog; one of {', '.join(apps)}, or all", file=sys.stderr)
+        return 2
+    report = par.parity_report(sys.modules[__name__], todos)
+    if catalog != "all":
+        report["catalogs"] = {catalog: report["catalogs"][catalog]}
+        # Every catalog's messages open with its name; a problem naming another catalog is not this one's.
+        report["problems"] = [p for p in report["problems"]
+                              if p.startswith(f"{catalog}: ") or not any(p.startswith(f"{a}: ") for a in apps)]
     key = None if phase is None else (str(int(phase)) if str(phase).isdigit() else str(phase))
     for cat in report["catalogs"].values():
         if key is not None:
@@ -2300,7 +2316,8 @@ def cmd_query(args) -> int:
         return 0
 
     if what == "parity":
-        return _query_parity(todos, getattr(args, "phase", None), getattr(args, "json", False))
+        return _query_parity(todos, getattr(args, "phase", None), getattr(args, "json", False),
+                             getattr(args, "catalog", None))
     if what == "budget":
         summary = budget_summary(todos)
         if summary is None:
@@ -11193,10 +11210,12 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _sh_g = __import__("shutil")
             _sh_g.rmtree(groot, ignore_errors=True)
 
-        # --- the parity catalogs (D00 T01 §6, docs/parity/README.md) ---------
-        # Its own tree: two tiny inventories, a six-row catalog, one TODO file
-        # (a stamped, an open, a Moved, and an unphased section), a plan with
-        # one phase, and a one-entry backlog, so every class and count is exact.
+        # --- the parity catalogs (D00 T01 §6, §7, docs/parity/README.md) -----
+        # Its own tree: a six-row Stilus catalog over two tiny inventories, a
+        # five-row Gesso catalog over three (Photoshop's PS-A and PS-B in one
+        # file), one TODO file (a stamped, an open, a Moved, and an unphased
+        # section), a plan with one phase, and a two-entry backlog, so every
+        # class and count is exact.
         import io as _pio
         import contextlib as _pctx
         par = parity_module()
@@ -11232,7 +11251,9 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
         )
         (ptodo / "backlog.md").write_text(
             "# Backlog\n\n## Entries\n\n- [B-001] Kept idea -- source: parity-fixture-1 -- added: 2026-10-21 "
-            "-- why deferred: nice to have -- promote when: asked\n\n" + BACKLOG_REMOVED_HEADING + "\n\nNone.\n",
+            "-- why deferred: nice to have -- promote when: asked\n- [B-045] Affinity files -- source: parity-fixture-45 "
+            "-- added: 2026-10-22 -- why deferred: nice to have -- promote when: asked\n\n" + BACKLOG_REMOVED_HEADING
+            + "\n\nNone.\n",
             encoding="utf-8",
         )
         (proot / "docs" / "parity" / "sources").mkdir(parents=True)
@@ -11240,7 +11261,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
         _pai = _phead + "| AI-0001 | One | tool | x | y | core | z |\n| AI-0002 | Two | tool | x | y | core | z |\n"
         _pcd = _phead + "| CD-001 | Uno | tool | x | y | core | z |\n| CD-002 | Dos | tool | x | y | core | z |\n"
         _pcat = (
-            "# Stilus parity\n\n| ID | Feature | Illustrator | CorelDRAW | Category | Status | Notes |\n"
+            "# Stilus parity\n\n## Core\n\n| ID | Feature | Illustrator | CorelDRAW | Category | Status | Notes |\n"
             "| -- | -- | -- | -- | -- | -- | -- |\n"
             "| NP-0001 | One | AI-0001 | CD-001 | core | plan D94 T01 §1 |  |\n"
             "| NP-0002 | Two | AI-0002 | -- | core | shipped-scope D94 T01 §2 |  |\n"
@@ -11249,13 +11270,76 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             "| NP-0005 | Elsewhere | -- | -- | core | other-app: none not an editing job |  |\n"
             "| NP-0006 | Later | -- | -- | core | plan D94 T01 §4 |  |\n"
         )
+        # The Gesso fixture in the real catalogs' layout: its Totals table and
+        # Areas list above two area sections, one PS-A and one PS-B id, the
+        # `excluded: removed` and `other-app: Stilus` forms, and B-045.
+        _gsrc = "| ID | Feature | Kind | Where | What it does | Category | Source |\n| -- | -- | -- | -- | -- | -- | -- |\n"
+        _pps = _gsrc + "| PS-A-0001 | One | tool | x | y | core | z |\n| PS-B-0001 | Two | tool | x | y | core | z |\n"
+        _paf = _gsrc + "| AF-0001 | Uno | tool | x | y | core | z |\n| AF-0002 | Dos | tool | x | y | core | z |\n"
+        _pgp = _gsrc + "| GP-0001 | Ein | tool | x | y | core | z |\n| GP-0002 | Zwei | tool | x | y | core | z |\n"
+        _ghead = "| ID | Feature | Photoshop | Affinity | GIMP | Category | Status | Notes |\n| -- | -- | -- | -- | -- | -- | -- | -- |\n"
+        _gbody = (
+            "## Pixels\n\n" + _ghead
+            + "| IP-0001 | One | PS-A-0001 | AF-0001 | -- | core | plan D94 T01 §1 |  |\n"
+            "| IP-0002 | Two | PS-B-0001 | -- | -- | core | shipped-scope D94 T01 §2 |  |\n"
+            "| IP-0003 | Kept | -- | -- | GP-0001 | core | backlog B-045 |  |\n\n"
+            "## Elsewhere\n\n" + _ghead
+            + "| IP-0004 | Old 3D | -- | -- | GP-0002 | 3d | excluded: removed |  |\n"
+            "| IP-0005 | Vectors | -- | AF-0002 | -- | core | other-app: Stilus vector work |  |\n"
+        )
+        _gtotals = (
+            "| Status | Features | Source rows |\n| ------ | -------: | ----------: |\n| `plan` | 1 | 2 |\n"
+            "| `shipped-scope` | 1 | 1 |\n| `backlog` | 1 | 1 |\n| `excluded` | 1 | 1 |\n| `other-app` | 1 | 1 |\n"
+            "| **Total** | **5** | **6** |\n"
+        )
+        _gareas = "## Areas\n\n- [Pixels](#pixels) (3)\n- [Elsewhere](#elsewhere) (2)\n"
+        _gcat = "# Gesso parity\n\n" + _gtotals + "\n" + _gareas + "\n" + _gbody
 
-        def _pwrite(cat: str = _pcat, ai: str = _pai, cd: str = _pcd) -> None:
+        def _psummary(app: int, body: str) -> tuple[str, str]:
+            """The Totals table and Areas list `body`'s parsed rows add up to,
+            so a case aimed at another class never trips the drift check; the
+            drift cases write their summary by hand instead."""
+            spec = par.CATALOGS[app]
+            rows, _ = par.parse_catalog(proot, spec, {spec["path"]: (body, "")})
+            if not rows:
+                return "", ""
+            kinds = {k: [0, 0] for k in par.STATUS_KINDS}
+            areas: dict[str, int] = {}
+            lines = body.splitlines()
+            for r in rows:
+                k = par.parse_status(r["status"])[0]
+                if k in kinds:
+                    kinds[k][0] += 1
+                    kinds[k][1] += sum(len(v) for v in r["sources"].values())
+                area = [ln[3:] for ln in lines[: r["line"] - 1] if ln.startswith("## ")][-1]
+                areas[area] = areas.get(area, 0) + 1
+            total = [len(rows), sum(sum(len(v) for v in r["sources"].values()) for r in rows)]
+            tot = ("| Status | Features | Source rows |\n| -- | --: | --: |\n"
+                   + "".join(f"| `{k}` | {n} | {s} |\n" for k, (n, s) in kinds.items())
+                   + f"| **Total** | **{total[0]}** | **{total[1]}** |\n")
+            return tot, "## Areas\n\n" + "".join(f"- [{a}](#{a.lower()}) ({n})\n" for a, n in areas.items())
+
+        def _pwrite(cat: str = _pcat, ai: str = _pai, cd: str = _pcd, gcat: str | None = None, ps: str = _pps,
+                    af: str = _paf, gp: str = _pgp) -> None:
+            """Both catalogs and their five inventories. The Stilus catalog
+            gets its summary appended (after its rows, so its line numbers
+            stay put); the Gesso catalog is written as given, or, when only its
+            body is meant to change, with a summary built for that body."""
             (proot / "docs" / "parity" / "sources").mkdir(parents=True, exist_ok=True)
             (proot / "docs" / "parity" / "README.md").write_text("# Parity\n", encoding="utf-8")
             (proot / "docs" / "parity" / "sources" / "illustrator-30.8.md").write_text(ai, encoding="utf-8")
             (proot / "docs" / "parity" / "sources" / "coreldraw-2026.md").write_text(cd, encoding="utf-8")
-            (proot / "docs" / "parity" / "stilus-parity.md").write_text(cat, encoding="utf-8")
+            (proot / "docs" / "parity" / "sources" / "photoshop-27.10.md").write_text(ps, encoding="utf-8")
+            (proot / "docs" / "parity" / "sources" / "affinity-3.3.md").write_text(af, encoding="utf-8")
+            (proot / "docs" / "parity" / "sources" / "gimp-3.2.6.md").write_text(gp, encoding="utf-8")
+            tot, areas = _psummary(0, cat)
+            (proot / "docs" / "parity" / "stilus-parity.md").write_text(
+                cat + (f"\n{tot}\n{areas}" if tot else ""), encoding="utf-8")
+            (proot / "docs" / "parity" / "gesso-parity.md").write_text(_gcat if gcat is None else gcat, encoding="utf-8")
+
+        def _gwrite(body: str, **kw) -> None:
+            tot, areas = _psummary(1, body)
+            _pwrite(gcat="# Gesso parity\n\n" + (f"{tot}\n{areas}\n" if tot else "") + body, **kw)
 
         def _pfind() -> list[tuple[str, str]]:
             return par.parity_findings(sys.modules[__name__], load_todos())
@@ -11276,9 +11360,13 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("parity: each status form parses and anything else is malformed",
                   [par.parse_status(s)[0] for s in ("plan D02 T07 §1", "shipped-scope D02 T04 §2", "backlog B-047",
                                                     "excluded: cloud", "other-app: Gesso pixel work",
+                                                    "excluded: removed", "excluded: platform (no such hardware)",
+                                                    "other-app: Stilus vector work",
                                                     "planned D02 T07 §1", "plan T07 §1", "other-app: Photoshop x",
-                                                    "backlog B-47", "other-app: none")],
-                  ["plan", "shipped-scope", "backlog", "excluded", "other-app"] + ["malformed"] * 5)
+                                                    "backlog B-47", "other-app: none", "excluded: lazy",
+                                                    "excluded: cloudy")],
+                  ["plan", "shipped-scope", "backlog", "excluded", "other-app", "excluded", "excluded", "other-app"]
+                  + ["malformed"] * 7)
             check("parity: a clean catalog has no findings", _pfind(), [])
             _pcases = (
                 ("a source id no row places", _pcat.replace("| AI-0002 | -- |", "| -- | -- |"), _pai, "parity-id-missing", "AI-0002"),
@@ -11289,13 +11377,13 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a ref naming no section", _pcat.replace("plan D94 T01 §1", "plan D94 T01 §9"), _pai, "parity-ref-dead", "D94 T01 §9"),
                 ("a ref naming a Moved section", _pcat.replace("plan D94 T01 §1", "plan D94 T01 §3"), _pai, "parity-ref-dead", "moved out of the tree"),
                 ("a backlog id with no live entry", _pcat.replace("backlog B-001", "backlog B-009"), _pai, "parity-backlog-dead", "B-009"),
-                ("a short catalog row", _pcat.replace("| NP-0004 | Cloud | -- | -- | cloud |", "| NP-0004 | Cloud | -- | cloud |"), _pai, "parity-input-damaged", "stilus-parity.md:8"),
+                ("a short catalog row", _pcat.replace("| NP-0004 | Cloud | -- | -- | cloud |", "| NP-0004 | Cloud | -- | cloud |"), _pai, "parity-input-damaged", "stilus-parity.md:10"),
                 ("a source id defined twice in one file", _pcat, _pai + "| AI-0001 | Again | tool | x | y | core | z |\n", "parity-input-damaged", "defined again"),
                 # Independent review 2026-10-21: a row is recognised by its
                 # id prefix, so truncation or a mangled id is never skipped.
                 ("a truncated inventory row (its id also unplaced)", _pcat, _pai + "| AI-0003\n", ["parity-id-missing", "parity-input-damaged"], "illustrator-30.8.md:5"),
                 ("a mangled source id", _pcat, _pai + "| AI-00x3 | Three | tool | x | y | core | z |\n", "parity-input-damaged", "'AI-00x3' is not a whole id"),
-                ("a truncated catalog row", _pcat + "| NP-0007 |\n", _pai, "parity-input-damaged", "stilus-parity.md:11"),
+                ("a truncated catalog row", _pcat + "| NP-0007 |\n", _pai, "parity-input-damaged", "stilus-parity.md:13"),
                 # Round 2: an indented row is still a row, and the whole
                 # first cell must be one id.
                 ("an indented inventory row nobody places", _pcat, _pai + "  | AI-0003 | Three | tool | x | y | core | z |\n", "parity-id-missing", "AI-0003"),
@@ -11350,7 +11438,76 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                     continue
                 want = want if isinstance(want, list) else [want]
                 check(f"parity: {name} is {', '.join(want)} naming it",
-                      (sorted({c for c, _ in found}), any(needle in m for _, m in found)), (want, True))
+                      (sorted({c for c, _ in found}), any(needle in m for _, m in found),
+                       all(m.startswith("stilus: ") for _, m in found)), (want, True, True))
+            # --- the Gesso catalog through the same path (D00 T01 §7) ---------
+            _pwrite()
+            check("parity: the Gesso inventories and catalog parse whole, PS-A and PS-B as one Photoshop family",
+                  ([len(par.parse_sources(proot, c)[0]) for c in par.CATALOGS[1]["columns"]],
+                   len(par.parse_catalog(proot, par.CATALOGS[1])[0])), ([2, 2, 2], 5))
+            check("parity: a clean Gesso catalog with its summary, other-app: Stilus, and excluded: removed has no findings",
+                  _pfind(), [])
+            _gcases = (
+                ("a missing PS-B id", _gbody.replace("| PS-B-0001 | -- |", "| -- | -- |"), {}, "parity-id-missing", "PS-B-0001"),
+                ("a duplicate GP id", _gbody.replace("| -- | -- | GP-0002 |", "| -- | -- | GP-0002, GP-0001 |"), {}, "parity-id-duplicate", "GP-0001"),
+                ("an unknown AF id", _gbody.replace("| AF-0002 |", "| AF-0002, AF-0999 |"), {}, "parity-id-unknown", "AF-0999"),
+                ("a duplicate IP id", _gbody.replace("| IP-0005 |", "| IP-0004 |"), {}, "parity-ip-duplicate", "IP-0004"),
+                ("an excluded reason outside the grammar", _gbody.replace("excluded: removed", "excluded: lazy"), {}, "parity-status-malformed", "IP-0004"),
+                ("a dead ref", _gbody.replace("plan D94 T01 §1", "plan D94 T01 §9"), {}, "parity-ref-dead", "D94 T01 §9"),
+                ("a dead backlog id", _gbody.replace("backlog B-045", "backlog B-099"), {}, "parity-backlog-dead", "B-099"),
+                # Section 6's damaged-input rules, repeated on the Gesso families.
+                ("a short Gesso row", _gbody.replace("| IP-0005 | Vectors | -- |", "| IP-0005 | Vectors |"), {}, ["parity-id-missing", "parity-input-damaged"], "IP-0005 has 7 cells"),
+                ("a Photoshop id defined twice", _gbody, {"ps": _pps + "| PS-B-0001 | Again | tool | x | y | core | z |\n"}, "parity-input-damaged", "PS-B-0001 is defined again"),
+                ("a PS-C row, a family of neither", _gbody, {"ps": _pps + "| PS-C-0001 | Three | tool | x | y | core | z |\n"}, "parity-input-damaged", "'PS-C-0001' is not a whole id"),
+                ("an empty GIMP inventory", _gbody.replace("| GP-0001 |", "| -- |").replace("| GP-0002 |", "| -- |"), {"gp": ""}, "parity-input-damaged", "GIMP inventory has no GP- rows"),
+                ("a truncated Affinity row", _gbody, {"af": _paf + "| AF-0003\n"}, ["parity-id-missing", "parity-input-damaged"], "affinity-3.3.md:5"),
+            )
+            for name, body, kw, want, needle in _gcases:
+                _gwrite(body, **kw)
+                found = _pfind()
+                want = want if isinstance(want, list) else [want]
+                check(f"parity: Gesso, {name} is {', '.join(want)} naming it with gesso:",
+                      (sorted({c for c, _ in found}), any(needle in m for _, m in found),
+                       all(m.startswith("gesso: ") for _, m in found)), (want, True, True))
+            # The summary is reconciled number by number and part by part.
+            _gdrift = (
+                ("a Totals cell off by one", _gcat.replace("| `plan` | 1 | 2 |", "| `plan` | 1 | 3 |"), "Totals `plan` Source rows says 3 but the rows add up to 2"),
+                ("a Total cell off by one", _gcat.replace("| **Total** | **5** |", "| **Total** | **6** |"), "Totals `Total` Features says 6 but the rows add up to 5"),
+                ("an Areas count off by one", _gcat.replace("(#pixels) (3)", "(#pixels) (4)"), "Areas entry `Pixels` says 4 but its section holds 3 rows"),
+                ("a deleted Totals row", _gcat.replace("| `backlog` | 1 | 1 |\n", ""), "Totals table has no `backlog` row"),
+                ("a repeated Totals row", _gcat.replace("| `backlog` | 1 | 1 |\n", "| `backlog` | 1 | 1 |\n| `backlog` | 1 | 1 |\n"), "Totals row `backlog` at line 8 repeats the one at line 7"),
+                ("a malformed Totals row", _gcat.replace("| `excluded` | 1 | 1 |", "| `excluded` | one | 1 |"), "is not a status kind or Total with two counts"),
+                ("a deleted Totals table", _gcat.replace(_gtotals, ""), "has 0 Totals tables"),
+                ("a repeated Areas entry", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", "- [Elsewhere](#elsewhere) (2)\n- [Elsewhere](#elsewhere) (2)\n"), "Areas entry `Elsewhere` at line 16 repeats the one at line 15"),
+                ("a deleted Areas entry", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", ""), "area `Elsewhere` holds 2 rows but the Areas list has no entry for it"),
+                ("a malformed Areas entry", _gcat.replace("- [Elsewhere](#elsewhere) (2)", "- Elsewhere (2)"), "is not `- [Name](#anchor) (N)`"),
+                ("an Areas entry naming no area", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", "- [Elsewhere](#elsewhere) (2)\n- [Gone](#gone) (0)\n"), "Areas entry `Gone` (line 16) names no area heading with rows"),
+                ("a deleted Areas list", _gcat.replace(_gareas + "\n", ""), "has 0 `## Areas` lists"),
+            )
+            for name, gcat, needle in _gdrift:
+                _pwrite(gcat=gcat)
+                found = _pfind()
+                check(f"parity: Gesso, {name} is parity-totals-drift naming it",
+                      (sorted({c for c, _ in found}), any(needle in m for _, m in found),
+                       all(m.startswith("gesso: ") for _, m in found)), (["parity-totals-drift"], True, True))
+            _pwrite()
+            (proot / "docs" / "parity" / "sources" / "photoshop-27.10.md").write_bytes(_pps.encode("utf-8") + b"| PS-A-0002 | \xff |\n")
+            found = _pfind()
+            check("parity: Gesso, a Photoshop inventory that is not UTF-8 is one damaged-input finding",
+                  (sorted({c for c, _ in found}), [m for _, m in found if m.startswith("gesso: ") and "not valid UTF-8" in m] != [], len(found)),
+                  (["parity-input-damaged"], True, 1))
+            _pwrite()
+            (proot / "docs" / "parity" / "gesso-parity.md").unlink()
+            found = _pfind()
+            check("parity: Gesso, a deleted catalog beside docs/parity/ fails naming the file, never skipped",
+                  (sorted({c for c, _ in found}), any(m.startswith("gesso: ") and "docs/parity/gesso-parity.md" in m for _, m in found)),
+                  (["parity-input-damaged"], True))
+            _pwrite()
+            (proot / "docs" / "parity" / "sources" / "affinity-3.3.md").unlink()
+            found = _pfind()
+            check("parity: Gesso, a deleted inventory fails once naming it",
+                  (sorted({c for c, _ in found}), [m for _, m in found if "affinity-3.3.md" in m] != [], len(found)),
+                  (["parity-input-damaged"], True, 1))
             _pwrite()
             (proot / "docs" / "parity" / "sources" / "illustrator-30.8.md").write_bytes(_pai.encode("utf-8") + b"| AI-0003 | \xff |\n")
             found = _pfind()
@@ -11391,6 +11548,46 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                   (pcode, list(pjson), {k: pjson["4"][k] for k in ("features", "sections", "stamped_sections")},
                    [r["id"] for r in pjson["4"]["rows"]]),
                   (0, ["4"], {"features": 2, "sections": 2, "stamped_sections": 1}, ["NP-0001", "NP-0002"]))
+            def _pquery(**kw) -> tuple[int, dict, str]:
+                out, err = _pio.StringIO(), _pio.StringIO()
+                args = dict(what="parity", phase=None, json=True, all=False, catalog=None)
+                args.update(kw)
+                with _pctx.redirect_stdout(out), _pctx.redirect_stderr(err):
+                    code = cmd_query(argparse.Namespace(**args))
+                return code, (json.loads(out.getvalue()) if out.getvalue().strip() else {}), err.getvalue()
+
+            gcode, gjson, _ = _pquery(phase="4", catalog="gesso")
+            gph = gjson["catalogs"]["gesso"]["phases"]["4"]
+            check("parity: query parity --catalog gesso --phase 4 --json carries only Gesso, with that phase's counts",
+                  (gcode, list(gjson["catalogs"]), {k: gph[k] for k in ("features", "sections", "stamped_sections")},
+                   [r["id"] for r in gph["rows"]], list(gjson)),
+                  (0, ["gesso"], {"features": 2, "sections": 2, "stamped_sections": 1}, ["IP-0001", "IP-0002"],
+                   ["catalogs", "problems"]))
+            acode, ajson, _ = _pquery(catalog="all")
+            check("parity: query parity --catalog all lists both catalogs, each with its totals",
+                  (acode, list(ajson["catalogs"]), ajson["catalogs"]["gesso"]["totals"]),
+                  (0, ["stilus", "gesso"], {"plan": 1, "shipped-scope": 1, "backlog": 1, "excluded": 1,
+                                            "other-app": 1, "malformed": 0}))
+            xcode, _x, xerr = _pquery(catalog="photoshop")
+            check("parity: query parity --catalog naming no catalog is refused, listing the catalogs",
+                  (xcode, "one of stilus, gesso" in xerr), (2, True))
+            # Section 6's JSON contract: adding the Gesso catalog leaves the
+            # Stilus object exactly as it was.
+            _pfull = par.CATALOGS
+            par.CATALOGS = _pfull[:1]
+            try:
+                alone = par.parity_report(sys.modules[__name__], load_todos())
+            finally:
+                par.CATALOGS = _pfull
+            both = par.parity_report(sys.modules[__name__], load_todos())
+            check("parity: the Stilus report object is unchanged by the Gesso catalog beside it",
+                  (alone["catalogs"]["stilus"] == both["catalogs"]["stilus"], list(both["catalogs"])), (True, ["stilus", "gesso"]))
+            _pwrite(gcat=_gcat.replace("| `plan` | 1 | 2 |", "| `plan` | 1 | 3 |"))
+            scode, _s, _ = _pquery(catalog="stilus")
+            gcode2, _g, gerr = _pquery(catalog="gesso")
+            check("parity: a damaged Gesso catalog refuses --catalog gesso, not --catalog stilus",
+                  (scode, gcode2, "gesso: " in gerr), (0, 1, True))
+            _pwrite()
             # Independent review 2026-10-21: a damaged catalog yields short
             # counts, so the query refuses instead of reporting them as whole.
             _pwrite(_pcat.replace("| NP-0001 | One | AI-0001 | CD-001 | core | plan D94 T01 §1 |  |", "| NP-0001 |"))
@@ -11398,7 +11595,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             with _pctx.redirect_stdout(pbuf), _pctx.redirect_stderr(perr):
                 pcode = cmd_query(argparse.Namespace(what="parity", phase="4", json=True, all=False))
             check("parity: query parity refuses a damaged catalog, naming the row",
-                  (pcode, json.loads(pbuf.getvalue())["problems"] != [], "stilus-parity.md:5" in perr.getvalue()),
+                  (pcode, json.loads(pbuf.getvalue())["problems"] != [], "stilus-parity.md:7" in perr.getvalue()),
                   (1, True, True))
             _pwrite("")
             pbuf, perr = _pio.StringIO(), _pio.StringIO()
@@ -11707,6 +11904,7 @@ def main() -> int:
     q.add_argument("--json", action="store_true", help="adjacency, plan-health: machine-readable report")
     q.add_argument("--check", action="store_true", help="plan-health: exit 1 on actionable entries (covered escalations and bare partials pass; --fail-on gates presence); growth: accepted and ignored (nothing is capped since 2026-09-27)")
     q.add_argument("--phase", metavar="N", help="parity: only this plan phase (its features, sections, and rows)")
+    q.add_argument("--catalog", metavar="APP", help="parity: one catalog (stilus, gesso) or all (the default)")
     q.add_argument("--fail-on", metavar="DIMS", help="plan-health: comma-separated dimensions whose non-emptiness exits 1")
     q.add_argument("--require-owned", action="store_true", help="adjacency: refuse incomplete file ownership at closeout")
     q.add_argument("--require-conformance", action="store_true", help="adjacency: require non-vacuous tree-wide kind coverage")

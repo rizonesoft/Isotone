@@ -597,5 +597,5 @@ Starting the right document in one step, describing it for whoever receives it, 
 - [ ] `dotnet test Isotone.slnx` exits 0 with this file's test classes reporting
 - [ ] Every fixture under `tests/fixtures/stilus/svg-live/`, `pages/`, `layers/`, `guides/`, and `metadata/` round-trips element by element and opens in Inkscape (version quoted)
 - [ ] The benchmark project reports the §2 and §11 budgets met on the generated 10,000-element fixture
-- [ ] `python scripts/todo-graph.py query parity --phase 4` reports every NP row planned to this file stamped
+- [ ] `python scripts/todo-graph.py query parity --catalog stilus --phase 4` reports every NP row planned to this file stamped
 - [ ] `python scripts/todo-graph.py validate` clean

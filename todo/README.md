@@ -610,10 +610,12 @@ or `validate` fails with `release-backlog-review-missing`. Running it means walk
 | `parity-id-duplicate` | FATAL | A source id two catalog rows place: one capability with two owners, so neither status can be trusted. |
 | `parity-id-unknown` | FATAL | A catalog cell naming an id its source file does not define, or a token that is no id: a placement pointing at nothing. |
 | `parity-np-duplicate` | FATAL | A catalog feature id (`NP-`) on two rows: ids are stable addresses, never reused. |
+| `parity-ip-duplicate` | FATAL | A Gesso catalog feature id (`IP-`) on two rows: the Gesso counterpart of `parity-np-duplicate`, since ids are stable addresses, never reused. |
 | `parity-status-malformed` | FATAL | A catalog status outside the grammar of `docs/parity/README.md`: `plan` or `shipped-scope` with a full `DNN TNN §N` ref, `backlog B-NNN`, `excluded: <reason>`, or `other-app:` naming Stilus, Gesso, Albumen, or none, then a reason. |
 | `parity-ref-dead` | FATAL | A `plan` or `shipped-scope` ref naming no section in `todo/`, or a section carrying `> **Moved:**`: the row's owner is gone. |
 | `parity-backlog-dead` | FATAL | A `backlog B-NNN` status naming no live entry in `todo/backlog.md`, for example an entry promoted without its catalog rows following. |
 | `parity-input-damaged` | FATAL | A catalog or inventory file missing while `docs/parity/` exists, a row whose cell count differs from its table header, or a source id defined twice in one file: a damaged input fails naming the file and line instead of quietly shrinking the count. |
+| `parity-totals-drift` | FATAL | A catalog's Totals table (features and source rows per status kind and in all) or Areas list (`- [Name](#anchor) (N)`) disagrees with its rows, or a part of it is missing, repeated, or malformed: the summary a reader trusts must be the one the rows add up to. |
 | `design-missing` | FATAL | A section whose Fidelity line names a surface carries no `**Design:**` line and is not listed in `todo/.design-baseline`: a surface built from a guess instead of the spec it implements 1:1. |
 | `design-malformed` | FATAL | A `**Design:**` or `**Design deviation:**` line outside its grammar (near misses included), a second Design line in one section, a line outside a numbered section, or `new surface:` without the item that adds the spec to `docs/design/` first. |
 | `design-dead-ref` | FATAL | A Design ref whose file does not exist or whose anchor matches no heading (slugged GitHub-style) or HTML id, or a deviation whose follow-up names no live section. |

@@ -580,5 +580,5 @@ Associative dimensions and live connectors for technical drawings and diagrams: 
 - [ ] `dotnet test Isotone.slnx` exits 0 with this file's test classes reporting
 - [ ] Every fixture under `tests/fixtures/stilus/svg/live-shapes/`, `generators/`, `compound-shapes/`, `clipping/`, and `annotations/` round-trips element by element and opens in Inkscape (version quoted)
 - [ ] The benchmark project reports the §5, §8, §9, §10, §14, and §15 budgets met
-- [ ] `python scripts/todo-graph.py query parity --phase 5` reports every NP row planned to this file stamped
+- [ ] `python scripts/todo-graph.py query parity --catalog stilus --phase 5` reports every NP row planned to this file stamped
 - [ ] `python scripts/todo-graph.py validate` clean

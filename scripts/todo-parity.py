@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The parity catalog checks (D00 T01 §6): every competitor source id placed once, every status in the grammar.
+"""The parity catalog checks (D00 T01 §6, §7): every competitor source id placed once, every status in the grammar.
 
     python scripts/todo-parity.py            # self-check: the source and catalog row counts on today's files
 
@@ -14,15 +14,20 @@ Every finding is FATAL (`SEVERITY_MAP` in `scripts/todo-graph.py`, mirrored in `
 - `parity-id-missing`: a source id no catalog row places.
 - `parity-id-duplicate`: a source id two catalog rows place.
 - `parity-id-unknown`: a catalog cell naming an id its source does not define, or a token that is no id.
-- `parity-np-duplicate`: a catalog feature id used on two rows.
+- `parity-np-duplicate`: a Stilus catalog feature id (`NP-`) used on two rows.
+- `parity-ip-duplicate`: a Gesso catalog feature id (`IP-`) used on two rows (D00 T01 §7).
 - `parity-status-malformed`: a status outside the grammar.
 - `parity-ref-dead`: a `plan` or `shipped-scope` ref naming no section, or a section carrying `> **Moved:**`.
 - `parity-backlog-dead`: a `backlog B-NNN` id with no live entry in `todo/backlog.md`.
 - `parity-input-damaged`: a catalog or source file the spec names is missing while `docs/parity/` exists, a row
   whose cell count differs from its table header, or a source id defined twice in one file. A damaged input never
   shrinks the denominator quietly: it fails naming the file and line.
+- `parity-totals-drift`: the catalog's Totals table or Areas list disagrees with its rows, or is missing, repeated,
+  or malformed in part (D00 T01 §7), so the summary a reader trusts is the one the rows add up to.
 
-A tree with no `docs/parity/` at all (a bare export of `todo/`) has nothing to check and validates.
+Every message opens with its catalog's name (`stilus:`, `gesso:`), since one validator reads every catalog. A tree
+with no `docs/parity/` at all (a bare export of `todo/`) has nothing to check and validates; with `docs/parity/`
+present, every configured catalog and inventory must be there.
 """
 
 from __future__ import annotations
@@ -31,16 +36,29 @@ import re
 import sys
 from pathlib import Path
 
-# One catalog per app. `columns` maps each source column of the catalog to its inventory file and id shape.
-# D00 T01 §7 and §8 add the Gesso and Albumen catalogs here.
+# One catalog per app, and one spec per catalog: its path, its feature-id shape and the class a reused feature id
+# raises, and `columns`, mapping each source column of the catalog to its inventory file and id shape. A column's id
+# shape may cover more than one family in one file (Photoshop's `PS-A-` and `PS-B-`). D00 T01 §8 adds Albumen here.
 CATALOGS = (
     {
         "app": "stilus",
         "path": "docs/parity/stilus-parity.md",
         "id": r"NP-\d{4}",
+        "duplicate": "parity-np-duplicate",
         "columns": (
             {"column": "Illustrator", "path": "docs/parity/sources/illustrator-30.8.md", "id": r"AI-\d{4}"},
             {"column": "CorelDRAW", "path": "docs/parity/sources/coreldraw-2026.md", "id": r"CD-\d{3,4}"},
+        ),
+    },
+    {
+        "app": "gesso",
+        "path": "docs/parity/gesso-parity.md",
+        "id": r"IP-\d{4}",
+        "duplicate": "parity-ip-duplicate",
+        "columns": (
+            {"column": "Photoshop", "path": "docs/parity/sources/photoshop-27.10.md", "id": r"PS-[AB]-\d{4}"},
+            {"column": "Affinity", "path": "docs/parity/sources/affinity-3.3.md", "id": r"AF-\d{4}"},
+            {"column": "GIMP", "path": "docs/parity/sources/gimp-3.2.6.md", "id": r"GP-\d{4}"},
         ),
     },
 )
@@ -50,10 +68,12 @@ PARITY_CLASSES = (
     "parity-id-duplicate",
     "parity-id-unknown",
     "parity-np-duplicate",
+    "parity-ip-duplicate",
     "parity-status-malformed",
     "parity-ref-dead",
     "parity-backlog-dead",
     "parity-input-damaged",
+    "parity-totals-drift",
 )
 
 STATUS_KINDS = ("plan", "shipped-scope", "backlog", "excluded", "other-app")
@@ -62,7 +82,8 @@ _STATUS_RES = (
     ("plan", re.compile(rf"^plan ({_REF})$")),
     ("shipped-scope", re.compile(rf"^shipped-scope ({_REF})$")),
     ("backlog", re.compile(r"^backlog (B-\d{3})$")),
-    ("excluded", re.compile(r"^excluded: (\S.*)$")),
+    # The three reasons of docs/parity/README.md, each optionally explained (D00 T01 §7).
+    ("excluded", re.compile(r"^excluded: ((?:cloud|platform|removed)(?: \S.*)?)$")),
     ("other-app", re.compile(r"^other-app: ((?:Stilus|Gesso|Albumen|none) \S.*)$")),
 )
 # A cell separator is a pipe no backslash escapes, so `a \| b` stays one cell.
@@ -231,6 +252,110 @@ def parse_catalog(root: Path, spec: dict, texts: dict | None = None) -> tuple[li
     return rows, problems
 
 
+_NUMBER_RE = r"\**([0-9][0-9,]*)\**"
+_TOTALS_HEADER = ["Status", "Features", "Source rows"]
+_AREA_RE = re.compile(r"^- \[(?P<name>[^\]]+)\]\(#[^)\s]+\) \((?P<n>[0-9][0-9,]*)\)$")
+
+
+def _count(text: str) -> int | None:
+    """2385 for '2385', '2,385', or '**2,385**' (commas, when used, at every thousand); None for anything else."""
+    m = re.fullmatch(_NUMBER_RE, text.strip())
+    if not m or not re.fullmatch(r"\d+|\d{1,3}(,\d{3})+", m.group(1)):
+        return None
+    return int(m.group(1).replace(",", ""))
+
+
+def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, str]]:
+    """`parity-totals-drift` for one readable catalog with rows (D00 T01 §7): the Totals table (features and source
+    rows per status kind and in all) and the Areas list (`- [Name](#anchor) (N)`, one per `## Name` heading that holds
+    rows) must each be there exactly once, well formed, and equal to what the rows add up to. A part deleted, repeated,
+    or malformed is drift too, so removing summary data never passes the reconciliation."""
+    out: list[tuple[str, str]] = []
+    where = spec["path"]
+
+    def drift(msg: str) -> None:
+        out.append(("parity-totals-drift", f"{where}: {msg}"))
+
+    lines = text.splitlines()
+    # What the rows add up to.
+    want: dict[str, list[int]] = {kind: [0, 0] for kind in STATUS_KINDS}
+    for row in rows:
+        kind, _arg = parse_status(row["status"])
+        if kind in want:
+            want[kind][0] += 1
+            want[kind][1] += sum(len(v) for v in row["sources"].values())
+    want_total = [len(rows), sum(sum(len(v) for v in r["sources"].values()) for r in rows)]
+    # The Totals table: the one whose header is exactly Status | Features | Source rows.
+    tables = [i for i, line in enumerate(lines) if line.strip().startswith("|") and split_row(line) == _TOTALS_HEADER]
+    if len(tables) != 1:
+        drift(f"has {len(tables)} Totals tables (`| Status | Features | Source rows |`); it carries exactly one")
+    else:
+        seen: dict[str, int] = {}
+        for lineno in range(tables[0] + 2, len(lines)):
+            line = lines[lineno]
+            if not line.strip():
+                break
+            cells = split_row(line)
+            label = cells[0].strip("`*")
+            if len(cells) != 3 or label not in (*STATUS_KINDS, "Total") or not cells[0].strip("`*") or \
+                    _count(cells[1]) is None or _count(cells[2]) is None:
+                drift(f"Totals row at line {lineno + 1} ({line.strip()!r}) is not a status kind or Total with two counts")
+                continue
+            if label in seen:
+                drift(f"Totals row `{label}` at line {lineno + 1} repeats the one at line {seen[label]}")
+                continue
+            seen[label] = lineno + 1
+            got = [_count(cells[1]), _count(cells[2])]
+            exp = want_total if label == "Total" else want[label]
+            for col, g, e in zip(("Features", "Source rows"), got, exp):
+                if g != e:
+                    drift(f"Totals `{label}` {col} says {g:,} but the rows add up to {e:,}")
+        for label in (*STATUS_KINDS, "Total"):
+            if label not in seen:
+                drift(f"Totals table has no `{label}` row")
+    # The Areas list against the rows under each `## ` heading.
+    heads = [(i, line[3:].strip()) for i, line in enumerate(lines) if line.startswith("## ")]
+    per_area: dict[str, int] = {}
+    for row in rows:
+        area = None
+        for i, name in heads:
+            if i < row["line"] - 1:
+                area = name
+        if area is None or area == "Areas":
+            drift(f"{row['id']} (line {row['line']}) sits under no area heading")
+            continue
+        per_area[area] = per_area.get(area, 0) + 1
+    starts = [i for i, name in heads if name == "Areas"]
+    if len(starts) != 1:
+        drift(f"has {len(starts)} `## Areas` lists; it carries exactly one")
+        return out
+    listed: dict[str, int] = {}
+    for lineno in range(starts[0] + 1, len(lines)):
+        line = lines[lineno]
+        if line.startswith("## "):
+            break
+        if not line.strip():
+            continue
+        m = _AREA_RE.match(line.strip())
+        if not m or _count(m.group("n")) is None:
+            drift(f"Areas entry at line {lineno + 1} ({line.strip()!r}) is not `- [Name](#anchor) (N)`")
+            continue
+        name = m.group("name")
+        if name in listed:
+            drift(f"Areas entry `{name}` at line {lineno + 1} repeats the one at line {listed[name]}")
+            continue
+        listed[name] = lineno + 1
+        n = _count(m.group("n"))
+        if name not in per_area:
+            drift(f"Areas entry `{name}` (line {lineno + 1}) names no area heading with rows")
+        elif n != per_area[name]:
+            drift(f"Areas entry `{name}` says {n:,} but its section holds {per_area[name]:,} rows")
+    for name in per_area:
+        if name not in listed:
+            drift(f"area `{name}` holds {per_area[name]:,} rows but the Areas list has no entry for it")
+    return out
+
+
 def parse_status(text: str) -> tuple[str, str]:
     """(kind, argument) for a status in the grammar of `docs/parity/README.md`, else ("malformed", text)."""
     for kind, rx in _STATUS_RES:
@@ -273,45 +398,46 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None) -> list[
         # An unreadable file is one `parity-input-damaged` finding, never a cascade: a missing catalog places
         # nothing, so its sources' ids are not each reported missing, and a missing inventory defines nothing, so
         # the catalog's cells for it are not each reported unknown.
+        found: list[tuple[str, str]] = []
         defined: dict[str, dict[str, int]] = {}
         readable: dict[str, bool] = {}
         for column in spec["columns"]:
             ids, problems = parse_sources(root, column, texts)
             defined[column["column"]] = ids
             readable[column["column"]] = texts[column["path"]][0] is not None
-            out += problems
+            found += problems
         rows, problems = parse_catalog(root, spec, texts)
-        out += problems
+        found += problems
         catalog_readable = texts[spec["path"]][0] is not None
         placed: dict[str, list[str]] = {}
         first_row: dict[str, int] = {}
         for row in rows:
             where = f"{spec['path']}:{row['line']}: {row['id']}"
             if row["id"] in first_row:
-                out.append(("parity-np-duplicate", f"{where} is used again (first at line {first_row[row['id']]}); "
-                                                   f"take the next free number"))
+                found.append((spec["duplicate"], f"{where} is used again (first at line {first_row[row['id']]}); "
+                                                 f"take the next free number"))
             else:
                 first_row[row["id"]] = row["line"]
             kind, arg = parse_status(row["status"])
             if kind == "malformed":
-                out.append(("parity-status-malformed", f"{where} has status {row['status']!r}, outside the grammar "
+                found.append(("parity-status-malformed", f"{where} has status {row['status']!r}, outside the grammar "
                                                        f"of docs/parity/README.md"))
             elif kind in ("plan", "shipped-scope"):
                 hit = sections.get(" ".join(arg.split()))
                 if hit is None:
-                    out.append(("parity-ref-dead", f"{where} {kind} {arg} names no section in todo/"))
+                    found.append(("parity-ref-dead", f"{where} {kind} {arg} names no section in todo/"))
                 elif hit[2].moved:
-                    out.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that moved out of the "
+                    found.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that moved out of the "
                                                    f"tree (`> **Moved:**`); point the row at its new owner"))
             elif kind == "backlog" and arg not in backlog:
-                out.append(("parity-backlog-dead", f"{where} backlog {arg} names no live entry in todo/backlog.md"))
+                found.append(("parity-backlog-dead", f"{where} backlog {arg} names no live entry in todo/backlog.md"))
             for column in spec["columns"]:
                 if not readable[column["column"]]:
                     continue
                 shape = re.compile(rf"^{column['id']}$")
                 for token in row["sources"][column["column"]]:
                     if not shape.match(token) or token not in defined[column["column"]]:
-                        out.append(("parity-id-unknown", f"{where} places {token!r} in {column['column']}, which "
+                        found.append(("parity-id-unknown", f"{where} places {token!r} in {column['column']}, which "
                                                          f"{column['path']} does not define"))
                         continue
                     placed.setdefault(token, []).append(f"{row['id']} (line {row['line']})")
@@ -319,11 +445,15 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None) -> list[
             for sid, line in defined[column["column"]].items():
                 rows_of = placed.get(sid, [])
                 if not rows_of:
-                    out.append(("parity-id-missing", f"{spec['path']}: {sid} ({column['path']}:{line}) is placed in "
+                    found.append(("parity-id-missing", f"{spec['path']}: {sid} ({column['path']}:{line}) is placed in "
                                                      f"no {spec['app']} catalog row"))
                 elif len(rows_of) > 1:
-                    out.append(("parity-id-duplicate", f"{spec['path']}: {sid} is placed in {len(rows_of)} rows: "
+                    found.append(("parity-id-duplicate", f"{spec['path']}: {sid} is placed in {len(rows_of)} rows: "
                                                        f"{', '.join(rows_of)}; a source id sits in exactly one"))
+        if catalog_readable and rows:
+            # An empty catalog is already damage; the summary is reconciled against rows that parsed.
+            found += totals_findings(spec, texts[spec["path"]][0], rows)
+        out += [(cls, f"{spec['app']}: {msg}") for cls, msg in found]
     return out
 
 
@@ -388,7 +518,13 @@ def _self_check(root: Path) -> int:
     for spec in CATALOGS:
         for column in spec["columns"]:
             ids, problems = parse_sources(root, column)
-            print(f"{column['path']}: {len(ids)} {column['column']} ids" + (f", {len(problems)} problem(s)" if problems else ""))
+            # One column may hold several families (Photoshop's PS-A- and PS-B-): each is counted too.
+            families: dict[str, int] = {}
+            for sid in ids:
+                families[sid.rsplit("-", 1)[0]] = families.get(sid.rsplit("-", 1)[0], 0) + 1
+            split = f" ({', '.join(f'{n} {k}' for k, n in sorted(families.items()))})" if len(families) > 1 else ""
+            print(f"{column['path']}: {len(ids)} {column['column']} ids{split}"
+                  + (f", {len(problems)} problem(s)" if problems else ""))
         rows, problems = parse_catalog(root, spec)
         print(f"{spec['path']}: {len(rows)} {spec['app']} rows" + (f", {len(problems)} problem(s)" if problems else ""))
     return 0
