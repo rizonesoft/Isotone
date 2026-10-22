@@ -369,6 +369,11 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
         if match is None:
             note(_value_problem(line, key))
             continue
+        if _NON_STRING_PLAIN_RE.fullmatch(key):
+            # Keys are strings too: `true` and `True` are one boolean key to YAML (independent review round 6).
+            note(f"key {key!r} resolves to a null, a boolean, or a number rather than a string (the YAML 1.2.2 core "
+                 f"schema, section 10.3.2, or a YAML 1.1 boolean), outside this repository's agent schema")
+            continue
         if key in fields:
             note(f"key {key!r} appears twice, which YAML forbids (YAML 1.2.2 section 3.2.1.1: mapping keys are unique)")
             continue
@@ -379,13 +384,17 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
             fields[key] = double[1:-1]
         else:
             fields[key] = (plain or "").rstrip(" \t")
-            if fields[key] and _NON_STRING_PLAIN_RE.fullmatch(fields[key]):
+            if not fields[key] and key != "hooks":
+                # An absent value is null to YAML, not an empty string; only `hooks:` opens a block (round 6).
+                note(f"key {key!r} has no value, which YAML resolves to null rather than a string (YAML 1.2.2 "
+                     f"section 10.3.2); give it a value, or quote an empty one")
+            elif fields[key] and _NON_STRING_PLAIN_RE.fullmatch(fields[key]):
                 # Every field of this schema is a string; YAML resolves this plain value to null, a boolean, or a
                 # number instead, so the reader's string would not be what the loader holds (independent review round
                 # 5).
                 note(f"key {key!r} holds {fields[key]!r}, which YAML resolves to a null, a boolean, or a number rather "
                      f"than a string (the YAML 1.2.2 core schema, section 10.3.2, or a YAML 1.1 boolean); quote it")
-        if key == "hooks" and not fields[key]:
+        if key == "hooks" and single is None and double is None and not fields[key]:
             # The one nested block the schema allows is the canonical shell gate, verbatim: its own quoted content can
             # never reach past it to stand in for a top-level field (independent review round 2).
             block = [line]
@@ -1204,7 +1213,7 @@ def _self_test() -> int:
     agents_refuse("agent no frontmatter", {"a-one.md": "just prose\n"}, "carries no frontmatter")
     agents_refuse("agent unterminated frontmatter", {"a-one.md": "---\nname: a-one\n"}, "carries no frontmatter")
     agents_refuse("agent name differs from stem", {"a-one.md": front(name="other")}, "differs from its file stem")
-    agents_refuse("agent empty description", {"a-one.md": front(description="")}, "empty or block-scalar")
+    agents_refuse("agent empty description", {"a-one.md": front(description="")}, "has no value")
     agents_refuse("agent block-scalar description", {"a-one.md": front(description=">")}, "block-scalar value")
     # D00 T01 §14: every frontmatter shape the reader would misread is refused, each naming its basis: invalid YAML
     # by its section of the YAML 1.2.2 spec, a valid shape outside this schema as such.
@@ -1276,6 +1285,18 @@ def _self_test() -> int:
         agents_refuse(f"agent plain {value} is not a string", {"a-one.md": front(color=value)}, "rather than a string")
     check("agent quoted non-strings are strings",
           "a-one" in load_agents(agent_dir({"a-one.md": front(color="'null'", description='"123"')}), good))
+    # Independent review round 6: an absent value is null, and a key that resolves to a non-string is refused.
+    for name, files, needle in (
+        ("agent empty value", {"a-one.md": front(color="")}, "has no value, which YAML resolves to null"),
+        ("agent empty value with a comment", {"a-one.md": front(color="# empty")}, "has no value, which YAML resolves to null"),
+        ("agent boolean keys", {"a-one.md": front().replace("name: a-one" + chr(10), "name: a-one" + chr(10) + "true: one" + chr(10) + "True: two" + chr(10))},
+         "key 'true' resolves to a null, a boolean, or a number"),
+        ("agent null key", {"a-one.md": front().replace("name: a-one" + chr(10), "name: a-one" + chr(10) + "null: one" + chr(10))},
+         "key 'null' resolves to a null"),
+    ):
+        agents_refuse(name, files, needle)
+    check("agent quoted empty value is a string", _frontmatter("---" + chr(10) + "color: ''" + chr(10) + "---" + chr(10)) == {"color": ""}
+          and _frontmatter_problem("---" + chr(10) + "color: ''" + chr(10) + "---" + chr(10)) is None)
     check("agent delimiters are exact", _frontmatter("--- " + chr(10) + "name: x" + chr(10) + "---" + chr(10)) is None)
     # The forms the schema accepts all still load: quoted values (an escaped single quote included), a comment after
     # a value, a quoted hash, the indented hook block, and CRLF line ends.
