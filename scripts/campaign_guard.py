@@ -454,9 +454,10 @@ def _job_key(job: dict) -> tuple[str, str]:
 
 def _yours(job: dict, session: str | None) -> bool:
     """Whether this cancellation is `session`'s: heartbeat jobs live in one session, so only that session's CronList
-    can prove one gone (independent review rounds 9 to 11). A record from before sessions were kept is anyone's; no
-    session at all (`pending-cancel` without one, the operator's read-only view) sees every record but confirms none."""
-    return not job.get("session_id") or (bool(session) and str(job.get("session_id")) == session)
+    can prove one gone (independent review rounds 9 to 11). A record without a session belongs to no session: no
+    heartbeat or reconcile acts on it, and only the operator clears it (`cancel-confirmed --unowned yes`, independent
+    review round 12); `pending-cancel` without a session is the operator's read-only view of every record."""
+    return bool(session) and bool(job.get("session_id")) and str(job.get("session_id")) == session
 
 
 def pending_cancel(root: str, session: str | None = None) -> str:
@@ -468,9 +469,11 @@ def pending_cancel(root: str, session: str | None = None) -> str:
                      for j in jobs)
 
 
-def cancel_confirmed(root: str, cron_id: str, session: str | None = None, if_pending: bool = False) -> str:
+def cancel_confirmed(root: str, cron_id: str, session: str | None = None, if_pending: bool = False,
+                     unowned: bool = False) -> str:
     """Clear the cancellation of `cron_id` that `session` confirmed gone: only that session's record (or a record
-    from before sessions were kept), keyed by (session, job) (independent review round 10). With `if_pending`, a
+    the operator names with `unowned` for a record that carries no session), keyed by (session, job) (independent
+    review rounds 10 and 12). With `if_pending`, a
     job with no record of this session's is no error, so a heartbeat settles its own job the same way on every path
     where it deletes itself."""
     if not session:
@@ -478,7 +481,8 @@ def cancel_confirmed(root: str, cron_id: str, session: str | None = None, if_pen
                          "clear its cancellation (independent review round 11)")
     with _Lock(root):
         jobs = _pending_jobs(root)
-        hits = [j for j in jobs if str(j.get("cron_id")) == cron_id and _yours(j, session)]
+        hits = [j for j in jobs if str(j.get("cron_id")) == cron_id
+                and (not j.get("session_id") if unowned else _yours(j, session))]
         if not hits:
             if if_pending:
                 return f"cancel-confirmed: nothing pending for job {cron_id}"
@@ -557,6 +561,10 @@ def reconcile(root: str, session: str, jobs: list[str]) -> list[str]:
         out += [f"reconcile: a pending cancellation is unconfirmed: CronDelete {j.get('cron_id')}, then "
                 f"cancel-confirmed --cron-id {j.get('cron_id')} --session {session}"
                 for j in _pending_jobs(root) if _yours(j, session)]
+        out += [f"reconcile: a pending cancellation names job {j.get('cron_id')} with no session: it may be any "
+                f"session's job, so delete nothing for it and report it to the operator, who clears it with "
+                f"cancel-confirmed --cron-id {j.get('cron_id')} --session <yours> --unowned yes"
+                for j in _pending_jobs(root) if not j.get("session_id")]
     except GuardError as exc:
         out.append(f"reconcile: {exc}")
     if guard is None:
@@ -2442,6 +2450,24 @@ def _self_test() -> int:
               any("CronDelete K, then cancel-confirmed --cron-id K --session B" in line for line in advice), str(advice))
         msg = end(qroot, "B", "operator-stop")
         check("end-names-the-session-in-its-confirm-command", "cancel-confirmed --cron-id J --session B" in msg, msg)
+        # Independent review round 12: a record with no session is no session's: no deletion, no confirmation, and
+        # only the operator's explicit --unowned clears it.
+        cancel_confirmed(qroot, "J", "B")
+        _write_json(_pending_path(qroot), [{"cron_id": "J", "reason": "operator-stop", "at": _utc_now()}])
+        acquire(qroot, "B", 1, RUN_FILE, "J")
+        advice = reconcile(qroot, "B", ["J"])
+        check("reconcile-deletes-nothing-for-an-unowned-record",
+              not any("CronDelete J" in line for line in advice) and any("no session" in line for line in advice),
+              str(advice))
+        try:
+            cancel_confirmed(qroot, "J", "B")
+            unowned_clear = "cleared"
+        except GuardError as exc:
+            unowned_clear = str(exc)
+        check("a-session-never-confirms-an-unowned-record", unowned_clear != "cleared" and "J" in pending_cancel(qroot),
+              unowned_clear)
+        check("the-operator-clears-an-unowned-record",
+              "is gone" in cancel_confirmed(qroot, "J", "B", unowned=True) and pending_cancel(qroot) == "")
 
     with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
         proot = _workspace(ptmp)
@@ -2551,7 +2577,8 @@ def main(argv: list[str]) -> int:
                 print(line)
             return 0
         if argv[0] == "cancel-confirmed":
-            print(cancel_confirmed(root, opts.get("cron_id", ""), opts.get("session"), opts.get("if_pending") == "yes"))
+            print(cancel_confirmed(root, opts.get("cron_id", ""), opts.get("session"), opts.get("if_pending") == "yes",
+                                   opts.get("unowned") == "yes"))
             return 0
         if argv[0] in ("reconcile", "health"):
             jobs = [j for j in opts.get("jobs", "").split(",") if j]
