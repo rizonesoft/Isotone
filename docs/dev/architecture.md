@@ -89,4 +89,4 @@ Every app has the same skeleton, set by [`standards/shared.md`](../../standards/
 
 ## Decisions
 
-Recorded decisions with their evidence and cost of change live in [decisions.md](decisions.md) once the first one is written (`todo/00-workspace/TODO-02-build-and-test-debt.md` §5 creates it).
+Recorded decisions with their evidence and cost of change live in [decisions.md](decisions.md), one entry each; `D00 T02 §5` started it with the assertion library.
