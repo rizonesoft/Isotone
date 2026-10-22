@@ -550,3 +550,32 @@ This record's round 15 is the spec's seventeenth review round. Both findings wer
 
 1. P2, dropping every unflushed write is an incomplete power-loss model: verified (SQLite's atomic commit documentation covers incomplete and out-of-order writes). Between flush boundaries the harness now keeps some writes, drops others, and reorders them (exhaustively when few, sampled when many), never undoing a completed flush.
 2. P2, an unbuffered copy can still be warmed by a scanner before launch: verified against `CreateFileW`'s buffering notes. The harness records file I/O with Windows Performance Recorder from the copy to the launch and discards any run in which another process read or mapped the app's files in between.
+
+## Round 16: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:52:35Z
+- Effort: xhigh
+- Lines: 14
+- Digest: 2f0dd543d155a5a2
+
+### adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:93`: The power-loss oracle permits losing an acknowledged save. Demonstrate with a saver that reports success before its commit becomes durable: discard the pending writes, restart, and recover the complete old version. The specified “either the old or the new version” assertion passes despite losing successfully saved work, potentially after its checkpoints were retired. Process-kill tests can miss this because storage remains powered. Invariant 6 requires durability, but this proof does not verify it across the success boundary. Require the acknowledged revision and its contract after power loss, with a negative control that reports success before durability.
+
+### consistency: approve
+
+### integration: approve
+
+### source-defect: approve
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 16
+
+This record's round 16 is the spec's eighteenth review round. The finding was verified.
+
+1. P1, the power-loss check accepts the old version after a save was reported successful: verified. The check now requires that, once the harness saw the app report a save as successful before power was cut, the target holds that saved version with its file identity contract and the checkpoints that save retired are not needed; a second negative control, a save that reports success before its commit and contract are durable, must fail.
