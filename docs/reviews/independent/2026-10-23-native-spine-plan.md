@@ -62,3 +62,53 @@ Every finding was verified against the repository or the cited documentation and
 15. P2, built-in triplets do not pin the toolset minor version: verified. Overlay triplets set `VCPKG_PLATFORM_TOOLSET_VERSION`, and dev-env checks them against the pin.
 16. P2, `/CETCOMPAT` is x64-only: verified. Applied on x64 only, with a check on the ARM64 link line.
 17. P2, the 2026-09-30 decision entry does not exist: verified. §1 now writes it as history with its supersession line.
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T23:54:25Z
+- Effort: xhigh
+- Lines: 26
+- Digest: 125da222e70a9bca
+
+### adversarial: needs-attention
+
+1. P1 `todo/00-workspace/TODO-05-native-spine.md:100`: The standard checker accepts `/std:c++23preview /std:c++20`: the pinned switch is present and `c++latest` is absent, but MSVC selects C++20. Verified read-only with `cl /Zs /W4 /WX /std:c++23preview /std:c++20 /TP todo/.warning-baseline`: D9025, exit 0. The checker must reject conflicting switches or validate the effective one. [MSVC precedence](https://learn.microsoft.com/en-us/cpp/error-messages/tool-errors/command-line-warning-d9025).
+2. P1 `todo/00-workspace/TODO-05-native-spine.md:146`: The prescribed artifact stage invokes the import gate without requiring size enforcement. Section 6 makes the size check conditional on `--budget-mb`; its only explicit size invocation is the negative probe. An oversized folder can therefore pass the prescribed check-all stages. Require the normal invocation to enforce the approved budget and prove that with an oversized fixture.
+3. P1 `todo/00-workspace/TODO-05-native-spine.md:169`: The fuzz helper and qualification never require coverage and sanitizer instrumentation in the libraries being fuzzed. Instrumenting only the executable containing the qualification parser satisfies every checkpoint, while a reader compiled into `isotone_core` can remain uninstrumented. Qualify a parser in a separately compiled library and require instrumented library variants. [LLVM instrumentation requirements](https://llvm.org/docs/LibFuzzer.html#fuzzer-usage).
+4. P2 `todo/00-workspace/TODO-04-native-code-policy.md:94`: The OSV algorithm omits pagination despite requiring every advisory to be reported. A first response carrying `next_page_token`, with an advisory on the second page, escapes the prescribed single-query implementation and fixtures. Require token traversal until exhaustion, including failure handling for subsequent pages. [OSV pagination](https://google.github.io/osv.dev/post-v1-query/#pagination).
+
+### consistency: needs-attention
+
+5. P1 `todo/00-workspace/TODO-05-native-spine.md:146`: Section 7 narrows §6’s explicit requirement to inspect every `.exe` and `.dll` in Debug and Release to Release executables alone. A Debug-only `/MDd` dependency or a prohibited import in a DLL escapes check-all and the CI job that repeats its stages. The two sections specify different acceptance boundaries.
+
+### integration: needs-attention
+
+6. P1 `todo/00-workspace/TODO-05-native-spine.md:104`: The checkpoint runs bare `cmake --workflow --preset ...`, but §3 creates the presets under `native/`. The existing check-all explicitly works from the repository root, and neither dev-env nor these commands establishes `native/` as the working directory. Following the commands there fails to find the presets. The runner needs an explicit directory convention or root preset entry point. [CMake preset lookup](https://cmake.org/cmake/help/v4.3/manual/cmake.1.html#run-a-workflow-preset).
+7. P1 `todo/00-workspace/TODO-04-native-code-policy.md:70`: This wires the installed-tree lint into both workflows without providing its configure/install prerequisite. Its section depends only on `D00 T05 §4`; native CI setup arrives in §8. At this boundary, `build.yml` builds only .NET, while `plan.yml` runs its Python gates on Ubuntu without the Windows installed tree. A fresh workflow checkout cannot satisfy the live lint as specified. Separate portable self-tests from live inventory checks and supply the latter’s prerequisites.
+
+### source-defect: needs-attention
+
+8. P1 `todo/00-workspace/TODO-05-native-spine.md:98`: The Ninja presets never explicitly set `CMAKE_BUILD_TYPE` for Debug and Release. Preset names and matching build presets do not select configurations for single-configuration Ninja. Both named workflows can build the same default configuration and pass the checkpoint without proving Debug plus Release. Require the cache values and verify the resulting configuration. [CMake build types](https://cmake.org/cmake/help/v4.3/variable/CMAKE_BUILD_TYPE.html).
+9. P1 `todo/00-workspace/TODO-05-native-spine.md:84`: Naming the overlay path `native/triplets/` inside `native/vcpkg-configuration.json` resolves to `native/native/triplets/`. The manual install command can conceal this through its separate command-line overlay, leaving the committed configuration broken. Configuration-relative spelling must be `triplets/`. [vcpkg path resolution](https://learn.microsoft.com/en-us/vcpkg/reference/vcpkg-configuration-json#overlay-triplets).
+10. P2 `todo/00-workspace/TODO-04-native-code-policy.md:65`: The proposed `vcpkg list --x-json` alternative points at `artifacts/vcpkg_installed/<triplet>` as the installed root. The shared database belongs at `artifacts/vcpkg_installed/vcpkg/status`, beside the triplet directories. Pointing list at a triplet directory queries a different, empty database and produces false orphan findings. Query the common installation root and filter its triplet records. [vcpkg installed-tree layout](https://github.com/microsoft/vcpkg-tool/blob/main/include/vcpkg/installedpaths.h).
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 2
+
+Every finding was verified against the repository or the cited documentation and is real.
+
+1. P1, the standard check accepted a conflicting later switch: verified (MSVC D9025, the last switch wins). `native-std-check.py` requires exactly one `/std:` switch, the pinned one, with a duplicated-switch fixture.
+2. P1, the size budget was enforced only with a flag: verified. `--publish` reads the budget from `native/size-budget.json` by default, check-all's `native artifacts` stage runs it over every named app's publish folder, and the self-test has an oversized folder failing with no flag.
+3. P1, the fuzzed library was not instrumented: verified against libFuzzer's requirements. `isotone_add_fuzz_target` builds every library it names with coverage and AddressSanitizer, and the qualification parser lives in its own library whose compile lines must show the options.
+4. P2, OSV pagination: verified. The job follows `next_page_token` to the end, a failed page counts as `unchecked`, and fixtures cover both.
+5. P1, check-all narrowed the import check to Release executables: verified. The stage covers every `.exe` and `.dll` in all four build folders, as §6 says.
+6. P1, presets live in `native/` but commands ran from the root: verified. §3 fixes the convention: every native command runs inside dev-env with `native/` as its working directory.
+7. P1, the live dependency lint was wired before its installed tree existed: verified. `D00 T04 §1` now depends on `D00 T05 §7`; its self-test goes to the portable gates, the live lint to check-all after the native configure, and `D00 T05 §8` (now depending on `D00 T04 §1`) adds it to CI's native job.
+8. P1, Ninja presets never set the build type: verified. Each configure preset sets `CMAKE_BUILD_TYPE`, checked in `CMakeCache.txt`.
+9. P1, the overlay path in `vcpkg-configuration.json` resolves relative to the file: verified. It is `triplets`, and a configure without a command-line overlay must find the triplets.
+10. P2, `vcpkg list` pointed at a triplet folder: verified. The lint reads the common root's database and filters by triplet.
