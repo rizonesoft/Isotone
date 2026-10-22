@@ -257,31 +257,25 @@ _TOTALS_HEADER = ["Status", "Features", "Source rows"]
 _AREA_RE = re.compile(r"^- \[(?P<name>[^\]]+)\]\(#(?P<anchor>[^)\s]+)\) \((?P<n>[0-9][0-9,]*)\)$")
 
 
+# The parity format's heading rule, stricter than GitHub Markdown on purpose (like its table rule): a catalog's
+# headings are its `# ` title and `## ` sections, in plain text, with no other heading form and no fenced block, and
+# no two headings sharing a slug. Then an anchor is the plain slug below, never GitHub's collision suffixes, and a
+# shape GitHub would read differently is refused rather than emulated (D00 T01 §7, independent review rounds 1 to 3
+# each found another corner of emulating GitHub's slugger: the circuit breaker's redesign).
+_AREA_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ,():&'/-]*")
+_FORBIDDEN_LINE_RES = (
+    (re.compile(r"^ {0,3}(`{3,}|~{3,})"), "opens a fenced block"),
+    (re.compile(r"^ {0,3}#{3,6}(\s|$)"), "is a heading below level 2"),
+    (re.compile(r"^ {0,3}(=+|-+)\s*$"), "is a setext heading underline or a rule"),
+    (re.compile(r"^ {0,3}<h[1-6][\s>]", re.IGNORECASE), "is an HTML heading"),
+    (re.compile(r"^ {1,3}#{1,2}(\s|$)"), "is an indented heading"),
+)
+
+
 def _anchor(heading: str) -> str:
-    """The anchor GitHub gives a heading's text: lower case, punctuation other than `-` and `_` dropped, each space a
-    `-` ('3D (removed)' -> '3d-removed'), so an Areas link is checked against the section it must open."""
-    return re.sub(r"[^\w\- ]", "", heading.strip().lower()).replace(" ", "-")
-
-
-def _anchors(lines: list[str]) -> dict[int, str]:
-    """Line index -> anchor for every ATX heading, in document order: a slug already taken gets GitHub's `-1`,
-    `-2`, ... suffix, so two headings whose text differs only in punctuation get different anchors (independent
-    review round 2), and a link that opens the earlier one is not taken for the later."""
-    out: dict[int, str] = {}
-    used: dict[str, int] = {}
-    for i, line in enumerate(lines):
-        m = re.match(r"^#{1,6} +(.*?)\s*#*\s*$", line)
-        if not m:
-            continue
-        base = _anchor(m.group(1))
-        slug = base
-        while slug in used:
-            used[base] += 1
-            slug = f"{base}-{used[base]}"
-        used.setdefault(base, 0)
-        used[slug] = used.get(slug, 0)
-        out[i] = slug
-    return out
+    """The plain slug of a plain-text heading: lower case, punctuation other than `-` dropped, each space a `-`
+    ('3D (removed)' -> '3d-removed'). The heading rule above keeps this equal to GitHub's anchor."""
+    return re.sub(r"[^a-z0-9\- ]", "", heading.strip().lower()).replace(" ", "-")
 
 
 def _count(text: str) -> int | None:
@@ -352,8 +346,24 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
                 drift(f"Totals table has no `{label}` row")
     # The Areas list against the rows under each `## ` heading.
     heads = [(i, line[3:].strip()) for i, line in enumerate(lines) if line.startswith("## ")]
-    anchors = _anchors(lines)
-    anchor_of = {name: anchors.get(i, _anchor(name)) for i, name in reversed(heads)}
+    for i, line in enumerate(lines):
+        for rx, why in _FORBIDDEN_LINE_RES:
+            if rx.match(line):
+                drift(f"line {i + 1} ({line.strip()[:40]!r}) {why}; a parity catalog's headings are its `# ` title "
+                      f"and `## ` sections, and it holds no fenced block")
+    slugs: dict[str, int] = {}
+    for i, line in enumerate(lines):
+        if not re.match(r"^#{1,2} ", line):
+            continue
+        text = line.lstrip("#").strip()
+        if line.startswith("## ") and not _AREA_NAME_RE.fullmatch(text):
+            drift(f"heading `{text}` at line {i + 1} is not plain text (letters, digits, spaces, and , ( ) : & ' / -)")
+        slug = _anchor(text)
+        if slug in slugs:
+            drift(f"heading `{text}` at line {i + 1} has the anchor #{slug} of the heading at line {slugs[slug]}; "
+                  f"each heading's anchor is its own")
+        else:
+            slugs[slug] = i + 1
     first_head: dict[str, int] = {}
     for i, name in heads:
         # One section per area: two headings of one name would merge their rows under one Areas entry
@@ -393,11 +403,10 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
             drift(f"Areas entry `{name}` at line {lineno + 1} repeats the one at line {listed[name]}")
             continue
         listed[name] = lineno + 1
-        want_anchor = anchor_of.get(name, _anchor(name))
-        if m.group("anchor") != want_anchor:
-            # The link must open the section it counts (independent review rounds 1 and 2).
+        if m.group("anchor") != _anchor(name):
+            # The link must open the section it counts (independent review rounds 1 to 3).
             drift(f"Areas entry `{name}` (line {lineno + 1}) links #{m.group('anchor')}, but its heading's anchor "
-                  f"is #{want_anchor}")
+                  f"is #{_anchor(name)}")
         n = _count(m.group("n"))
         if name not in per_area:
             drift(f"Areas entry `{name}` (line {lineno + 1}) names no area heading with rows")

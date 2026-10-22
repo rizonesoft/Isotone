@@ -2119,7 +2119,7 @@ def _query_parity(todos: list[Todo], phase: str | None, as_json: bool, catalog: 
     `{"catalogs": {<app>: ...}, "problems": [...]}`, whichever catalogs it carries."""
     par = parity_module()
     apps = [spec["app"] for spec in par.CATALOGS]
-    catalog = catalog or "all"
+    catalog = "all" if catalog is None else catalog
     if catalog != "all" and catalog not in apps:
         print(f"query parity: --catalog {catalog} names no catalog; one of {', '.join(apps)}, or all", file=sys.stderr)
         return 2
@@ -11450,9 +11450,6 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                                             "Layer styles, smart objects, comps, and artboards")],
                   ["documents-and-canvas", "view-guides-and-measurement", "3d-removed",
                    "layer-styles-smart-objects-comps-and-artboards"])
-            check("parity: anchors take GitHub's -1 and -2 suffixes in document order",
-                  list(par._anchors(["# A", "## Areas", "## A!", "## A", "### Areas"]).values()),
-                  ["a", "areas", "a-1", "a-2", "areas-1"])
             check("parity: a clean Gesso catalog with its summary, other-app: Stilus, and excluded: removed has no findings",
                   _pfind(), [])
             _gcases = (
@@ -11499,12 +11496,17 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a runaway count", _gcat.replace("| `plan` | 1 | 2 |", "| `plan` | " + "9" * 5000 + " | 2 |"), "is not a status kind or Total with two counts"),
                 ("an Areas link to another section", _gcat.replace("(#elsewhere) (2)", "(#pixels) (2)"), "links #pixels, but its heading's anchor is #elsewhere"),
                 ("an Areas link to no section", _gcat.replace("(#elsewhere) (2)", "(#nowhere) (2)"), "links #nowhere"),
-                # Round 2: a heading whose slug another heading already holds
-                # gets GitHub's -1 suffix, so linking the bare slug opens the
-                # other section.
-                ("an Areas link to a punctuation twin's anchor",
+                # Rounds 2 and 3: a heading form GitHub would read
+                # differently is refused, never emulated (the format rule).
+                ("a heading whose anchor another heading holds",
                  _gcat.replace("## Elsewhere", "## Pixels!").replace("- [Elsewhere](#elsewhere) (2)", "- [Pixels!](#pixels) (2)"),
-                 "links #pixels, but its heading's anchor is #pixels-1"),
+                 "has the anchor #pixels of the heading at line"),
+                ("a fenced block", _gcat.replace("## Elsewhere", "```\n### Pixels\n```\n\n## Elsewhere"), "opens a fenced block"),
+                ("a heading below level 2", _gcat.replace("## Elsewhere", "### Notes\n\n## Elsewhere"), "is a heading below level 2"),
+                ("an area heading in markup", _gcat.replace("## Elsewhere", "## _Elsewhere_").replace("- [Elsewhere](#elsewhere) (2)", "- [_Elsewhere_](#elsewhere) (2)"), "is not plain text"),
+                ("a setext underline", _gcat.replace("## Elsewhere", "Pixels\n---\n\n## Elsewhere"), "is a setext heading underline or a rule"),
+                ("an HTML heading", _gcat.replace("## Elsewhere", "<h2>Pixels</h2>\n\n## Elsewhere"), "is an HTML heading"),
+                ("an indented heading", _gcat.replace("## Elsewhere", "  ## Pixels\n\n## Elsewhere"), "is an indented heading"),
             )
             for name, gcat, needle in _gdrift:
                 _pwrite(gcat=gcat)
@@ -11590,6 +11592,9 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                   (acode, list(ajson["catalogs"]), ajson["catalogs"]["gesso"]["totals"]),
                   (0, ["stilus", "gesso"], {"plan": 1, "shipped-scope": 1, "backlog": 1, "excluded": 1,
                                             "other-app": 1, "malformed": 0}))
+            ecode, _e, eerr = _pquery(catalog="")
+            check("parity: an empty --catalog is refused, not read as all (independent review round 3)",
+                  (ecode, "names no catalog" in eerr), (2, True))
             xcode, _x, xerr = _pquery(catalog="photoshop")
             check("parity: query parity --catalog naming no catalog is refused, listing the catalogs",
                   (xcode, "one of stilus, gesso" in xerr), (2, True))
