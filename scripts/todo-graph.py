@@ -11502,11 +11502,18 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                  _gcat.replace("## Elsewhere", "## Pixels!").replace("- [Elsewhere](#elsewhere) (2)", "- [Pixels!](#pixels) (2)"),
                  "has the anchor #pixels of the heading at line"),
                 ("a fenced block", _gcat.replace("## Elsewhere", "```\n### Pixels\n```\n\n## Elsewhere"), "opens a fenced block"),
-                ("a heading below level 2", _gcat.replace("## Elsewhere", "### Notes\n\n## Elsewhere"), "is a heading below level 2"),
+                ("a heading below level 2", _gcat.replace("## Elsewhere", "### Notes\n\n## Elsewhere"), "is a heading the parity format does not allow"),
                 ("an area heading in markup", _gcat.replace("## Elsewhere", "## _Elsewhere_").replace("- [Elsewhere](#elsewhere) (2)", "- [_Elsewhere_](#elsewhere) (2)"), "is not plain text"),
                 ("a setext underline", _gcat.replace("## Elsewhere", "Pixels\n---\n\n## Elsewhere"), "is a setext heading underline or a rule"),
                 ("an HTML heading", _gcat.replace("## Elsewhere", "<h2>Pixels</h2>\n\n## Elsewhere"), "is an HTML heading"),
-                ("an indented heading", _gcat.replace("## Elsewhere", "  ## Pixels\n\n## Elsewhere"), "is an indented heading"),
+                ("an indented heading", _gcat.replace("## Elsewhere", "  ## Pixels\n\n## Elsewhere"), "is a heading the parity format does not allow"),
+                # Round 4: the rule is an allowlist, so a tab-separated, a
+                # blockquoted, or a closed heading is refused too, and the
+                # title is plain text like the sections.
+                ("a tab-separated heading", _gcat.replace("## Elsewhere", "##\tNotes\n\n## Elsewhere"), "is a heading the parity format does not allow"),
+                ("a blockquoted heading", _gcat.replace("## Elsewhere", "> ## Notes\n\n## Elsewhere"), "is a heading the parity format does not allow"),
+                ("a heading with a closing sequence", _gcat.replace("## Elsewhere", "## Notes ##\n\n## Elsewhere"), "is not plain text"),
+                ("a title in markup", _gcat.replace("# Gesso parity", "# [Pixels](#unused)"), "heading `[Pixels](#unused)` at line 1 is not plain text"),
             )
             for name, gcat, needle in _gdrift:
                 _pwrite(gcat=gcat)
