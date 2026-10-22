@@ -355,3 +355,35 @@ This record's round 9 is the spec's eleventh review round. Every finding was ver
 2. P2, the first save to a new name fell out of the invariants: verified. Invariant 1 states the new-name outcome (the complete new file or nothing), invariant 2 takes a new name's protection from the folder's inheritance, and invariants 5 and 7 are scoped to a target that held a file. Proof added: a first save killed at each step.
 3. P3, power loss proved only on NTFS: verified. The power-loss proofs run on NTFS and ReFS.
 4. P1, logon-session restrictions not preserved by account-wide folder DACLs and user-scoped DPAPI: verified against `CryptProtectData` and Trustees. Answered by stating the threat model's boundary: Windows does not separate processes of the same user (each can open the other and read its memory), so a restriction narrower than the account is carried on the document by the file identity contract but is not one the app's process or its secondary copies can enforce; the spec and the user guides say so, and Secondary copies is scoped to that boundary.
+
+## Round 10: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:17:44Z
+- Effort: xhigh
+- Lines: 16
+- Digest: 2720c497e8808037
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:92`: The recorded document-content hash cannot prove ownership of an entire file. After an interrupted save, place a foreign file at the recorded temporary pathname with identical document bytes but an additional `:notes` stream. Its hash matches, so recovery can delete it and destroy the added data. Named streams contain independent data, as [Microsoft documents](https://learn.microsoft.com/en-us/windows/win32/fileio/file-streams). Extend the ownership predicate and foreign-file proof to cover named streams and the rest of the identity contract before destructive cleanup.
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: needs-attention
+
+2. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: Round 11's deletion-based rollback does not establish the promised absence of weaker data on disk. Demonstrate on an unencrypted NTFS test volume: write a unique marker only into the replacement, encrypt the original mid-save, trigger the specified replacement-encryption failure, and let rollback delete the replacement. The marker can remain recoverable in unallocated storage. [Microsoft explicitly documents that deletion leaves recoverable data](https://learn.microsoft.com/en-us/troubleshoot/windows-server/certificates-and-public-key-infrastructure-pki/use-cipher-to-overwrite-deleted-data). Deletion therefore cannot satisfy invariant 2 or line 93's no-copy-on-disk proof as written. Define the guarantee's treatment of storage remnants and require a proof matching it.
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 10
+
+This record's round 10 is the spec's twelfth review round. Both findings were verified and are real.
+
+1. P1, a main-stream hash cannot prove a whole file the app's: verified against File Streams. Invariant 3 now proves ownership by the file's whole set of data streams (enumerated with `FindFirstStreamW`) and each stream's hash. Proof added: a foreign file with the app's main stream and an extra named stream, kept.
+2. P1, deletion leaves the data in freed storage: verified against Microsoft's cipher /w guidance. The threat model now states that the guarantees are about files, and that storage a file no longer occupies (freed clusters, remapped SSD blocks) is outside any application's control and protected by full-volume encryption such as BitLocker, which the user guides say; invariant 2 and the rollback proof are stated in terms of files.
