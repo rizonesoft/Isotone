@@ -258,9 +258,30 @@ _AREA_RE = re.compile(r"^- \[(?P<name>[^\]]+)\]\(#(?P<anchor>[^)\s]+)\) \((?P<n>
 
 
 def _anchor(heading: str) -> str:
-    """The anchor GitHub gives a heading: lower case, punctuation other than `-` and `_` dropped, each space a `-`
-    ('3D (removed)' -> '3d-removed'), so an Areas link is checked against the section it must open."""
+    """The anchor GitHub gives a heading's text: lower case, punctuation other than `-` and `_` dropped, each space a
+    `-` ('3D (removed)' -> '3d-removed'), so an Areas link is checked against the section it must open."""
     return re.sub(r"[^\w\- ]", "", heading.strip().lower()).replace(" ", "-")
+
+
+def _anchors(lines: list[str]) -> dict[int, str]:
+    """Line index -> anchor for every ATX heading, in document order: a slug already taken gets GitHub's `-1`,
+    `-2`, ... suffix, so two headings whose text differs only in punctuation get different anchors (independent
+    review round 2), and a link that opens the earlier one is not taken for the later."""
+    out: dict[int, str] = {}
+    used: dict[str, int] = {}
+    for i, line in enumerate(lines):
+        m = re.match(r"^#{1,6} +(.*?)\s*#*\s*$", line)
+        if not m:
+            continue
+        base = _anchor(m.group(1))
+        slug = base
+        while slug in used:
+            used[base] += 1
+            slug = f"{base}-{used[base]}"
+        used.setdefault(base, 0)
+        used[slug] = used.get(slug, 0)
+        out[i] = slug
+    return out
 
 
 def _count(text: str) -> int | None:
@@ -331,6 +352,8 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
                 drift(f"Totals table has no `{label}` row")
     # The Areas list against the rows under each `## ` heading.
     heads = [(i, line[3:].strip()) for i, line in enumerate(lines) if line.startswith("## ")]
+    anchors = _anchors(lines)
+    anchor_of = {name: anchors.get(i, _anchor(name)) for i, name in reversed(heads)}
     first_head: dict[str, int] = {}
     for i, name in heads:
         # One section per area: two headings of one name would merge their rows under one Areas entry
@@ -370,10 +393,11 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
             drift(f"Areas entry `{name}` at line {lineno + 1} repeats the one at line {listed[name]}")
             continue
         listed[name] = lineno + 1
-        if m.group("anchor") != _anchor(name):
-            # The link must open the section it counts (independent review round 1).
+        want_anchor = anchor_of.get(name, _anchor(name))
+        if m.group("anchor") != want_anchor:
+            # The link must open the section it counts (independent review rounds 1 and 2).
             drift(f"Areas entry `{name}` (line {lineno + 1}) links #{m.group('anchor')}, but its heading's anchor "
-                  f"is #{_anchor(name)}")
+                  f"is #{want_anchor}")
         n = _count(m.group("n"))
         if name not in per_area:
             drift(f"Areas entry `{name}` (line {lineno + 1}) names no area heading with rows")

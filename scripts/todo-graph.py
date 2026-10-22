@@ -11450,6 +11450,9 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                                             "Layer styles, smart objects, comps, and artboards")],
                   ["documents-and-canvas", "view-guides-and-measurement", "3d-removed",
                    "layer-styles-smart-objects-comps-and-artboards"])
+            check("parity: anchors take GitHub's -1 and -2 suffixes in document order",
+                  list(par._anchors(["# A", "## Areas", "## A!", "## A", "### Areas"]).values()),
+                  ["a", "areas", "a-1", "a-2", "areas-1"])
             check("parity: a clean Gesso catalog with its summary, other-app: Stilus, and excluded: removed has no findings",
                   _pfind(), [])
             _gcases = (
@@ -11496,6 +11499,12 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a runaway count", _gcat.replace("| `plan` | 1 | 2 |", "| `plan` | " + "9" * 5000 + " | 2 |"), "is not a status kind or Total with two counts"),
                 ("an Areas link to another section", _gcat.replace("(#elsewhere) (2)", "(#pixels) (2)"), "links #pixels, but its heading's anchor is #elsewhere"),
                 ("an Areas link to no section", _gcat.replace("(#elsewhere) (2)", "(#nowhere) (2)"), "links #nowhere"),
+                # Round 2: a heading whose slug another heading already holds
+                # gets GitHub's -1 suffix, so linking the bare slug opens the
+                # other section.
+                ("an Areas link to a punctuation twin's anchor",
+                 _gcat.replace("## Elsewhere", "## Pixels!").replace("- [Elsewhere](#elsewhere) (2)", "- [Pixels!](#pixels) (2)"),
+                 "links #pixels, but its heading's anchor is #pixels-1"),
             )
             for name, gcat, needle in _gdrift:
                 _pwrite(gcat=gcat)
@@ -11584,6 +11593,10 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             xcode, _x, xerr = _pquery(catalog="photoshop")
             check("parity: query parity --catalog naming no catalog is refused, listing the catalogs",
                   (xcode, "one of stilus, gesso" in xerr), (2, True))
+            _pcli = subprocess.run([sys.executable, str(Path(__file__)), "query", "stats", "--catalog", "gesso"],
+                                   capture_output=True, text=True)
+            check("parity: --catalog outside query parity is refused, as --phase is (independent review round 2)",
+                  (_pcli.returncode, "--catalog applies only to query parity" in _pcli.stderr), (2, True))
             # Section 6's JSON contract: adding the Gesso catalog leaves the
             # Stilus object exactly as it was.
             _pfull = par.CATALOGS
@@ -11980,6 +11993,8 @@ def main() -> int:
         p.error("--file/--at/--json/--require-owned/--require-conformance apply only to query adjacency")
     if args.cmd == "query" and args.what != "parity" and getattr(args, "phase", None) is not None:
         p.error("--phase applies only to query parity")
+    if args.cmd == "query" and args.what != "parity" and getattr(args, "catalog", None) is not None:
+        p.error("--catalog applies only to query parity")
     return args.fn(args)
 
 
