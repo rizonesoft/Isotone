@@ -211,10 +211,20 @@ def _acquire_locked(root: str, session: str, phase: int | None, run_file: str, c
     os.makedirs(os.path.dirname(guard), exist_ok=True)
     try:
         raw = read_guard(root, include_ended=True)
-        previous = raw if raw and not raw.get("ended") else {}
-        exists = bool(previous)  # an ended guard is no guard: a new run may start over it (D00 T01 §13)
     except GuardError:
-        previous, exists = {}, True  # a torn or unreadable guard: only an operator handover may replace it (below)
+        raw = {"torn": True}  # a torn or unreadable guard: only an operator handover may replace it (below)
+    # An ended guard is no guard: a new run may start over it (D00 T01 §13), but any other guard file, even an empty
+    # object, has an owner to hand over from (independent review round 1).
+    exists = raw is not None and not raw.get("ended")
+    previous = raw if exists and not raw.get("torn") else {}
+    if raw is not None and raw.get("ended"):
+        # An end interrupted after its mark may not have recorded its heartbeat for cancellation yet: record it before
+        # the guard that names it is overwritten, so the job is never lost (independent review round 1).
+        jobs = _pending_jobs(root)
+        if raw.get("cron_id") and raw.get("cron_id") not in [j.get("cron_id") for j in jobs]:
+            jobs.append({"cron_id": raw.get("cron_id"), "reason": str((raw.get("ended") or {}).get("reason", "")),
+                         "at": _utc_now()})
+            _write_json(_pending_path(root), jobs)
     if phase is None:
         if not isinstance(previous.get("phase"), int) or isinstance(previous.get("phase"), bool):
             raise GuardError("acquire without --phase keeps a live guard's phase, and there is none to keep: pass "
@@ -810,18 +820,40 @@ def _is_link(info: os.stat_result) -> bool:
     return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & 0x400)
 
 
+def _open_no_follow(full: str) -> int:
+    """A read-only descriptor for `full` that never follows a link. POSIX: `O_NOFOLLOW` (a link fails to open) and
+    `O_NONBLOCK` (a FIFO opens without waiting for a writer). Windows has neither, so the file is opened through
+    `CreateFileW` with `FILE_FLAG_OPEN_REPARSE_POINT`, which opens a symlink or junction as itself, never its target
+    (independent review round 1); the caller refuses a handle that is a reparse point."""
+    if os.name != "nt":
+        return os.open(full, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+    import ctypes
+    import msvcrt
+    from ctypes import wintypes
+    create = ctypes.WinDLL("kernel32", use_last_error=True).CreateFileW
+    create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD,
+                       wintypes.DWORD, wintypes.HANDLE]
+    create.restype = wintypes.HANDLE
+    generic_read, share_all, open_existing, open_reparse_point = 0x80000000, 0x7, 3, 0x00200000
+    handle = create(full, generic_read, share_all, None, open_existing, open_reparse_point, None)
+    if handle in (None, wintypes.HANDLE(-1).value):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+
+
 def _hash_regular(full: str, info: os.stat_result, deadline: float, done: int, total: int) -> str | None:
     """The SHA-256 of a regular file, read through a handle opened without following a link and without blocking,
-    and only when the handle is still the regular file `lstat` saw (same device and inode): None when the path was
-    replaced between the two calls, so a FIFO swapped in is never read (D00 T01 §13)."""
-    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    and only when the handle is still the regular file `lstat` saw (same device and inode, and no reparse point):
+    None when the path was replaced between the two calls, so a FIFO or a link swapped in is never read
+    (D00 T01 §13)."""
     try:
-        fd = os.open(full, flags)
+        fd = _open_no_follow(full)
     except OSError:
         return None
     try:
         now = os.fstat(fd)
-        if not stat.S_ISREG(now.st_mode) or (now.st_dev, now.st_ino) != (info.st_dev, info.st_ino):
+        if (not stat.S_ISREG(now.st_mode) or (now.st_dev, now.st_ino) != (info.st_dev, info.st_ino)
+                or getattr(now, "st_file_attributes", 0) & 0x400):
             return None
         sha, left = hashlib.sha256(), info.st_size
         while left > 0:
@@ -1930,6 +1962,22 @@ def _self_test() -> int:
         for p, body in ((a_path, "aaaa\n"), (b_path, "bbbb\n")):
             with open(p, "w", encoding="utf-8") as fh:
                 fh.write(body)
+        # A link swapped in for a regular file between lstat and the open is never followed (POSIX O_NOFOLLOW;
+        # Windows FILE_FLAG_OPEN_REPARSE_POINT): where the host allows links, rename the file, put a link to it at
+        # its old path, and hash with the saved lstat (independent review round 1).
+        swap = os.path.join(rroot, "swap.txt")
+        with open(swap, "w", encoding="utf-8") as fh:
+            fh.write("swap\n")
+        saved = os.lstat(swap)
+        os.replace(swap, swap + ".moved")
+        try:
+            os.symlink("swap.txt.moved", swap)
+            linked = True
+        except (OSError, NotImplementedError):
+            linked = False  # no symlink privilege here; the Windows CI runner has it
+        if linked:
+            check("a-link-swapped-in-before-the-open-is-never-followed",
+                  _hash_regular(swap, saved, time.monotonic() + 30, 0, 1) is None)
         check("a-swapped-file-is-never-read",
               _hash_regular(a_path, os.lstat(b_path), time.monotonic() + 30, 0, 1) is None
               and _hash_regular(a_path, os.lstat(a_path), time.monotonic() + 30, 0, 1) is not None)
@@ -2049,6 +2097,34 @@ def _self_test() -> int:
         msg = reset_state(rroot, expect_no_guard=True)
         check("reset-state-finishes-an-interrupted-end",
               "finished an interrupted end" in msg and not os.path.exists(_paths(rroot)[0]), msg)
+
+    with tempfile.TemporaryDirectory(prefix="campaign-handover-") as htmp:
+        # Independent review round 1: an empty-object guard still has an owner to hand over from, and a new run over
+        # an end interrupted before it recorded its job keeps that job for cancellation.
+        hroot = _workspace(htmp)
+        with open(_paths(hroot)[0], "w", encoding="utf-8") as fh:
+            fh.write("{}")
+        try:
+            acquire(hroot, SESSION, 1, RUN_FILE, "job-h")
+            check("an-empty-guard-still-needs-a-handover", False)
+        except GuardError as exc:
+            check("an-empty-guard-still-needs-a-handover", "--handover" in str(exc), str(exc))
+        os.remove(_paths(hroot)[0])
+        acquire(hroot, SESSION, 1, RUN_FILE, "job-old")
+        real_pending = globals()["_pending_jobs"]
+
+        def interrupted(root):
+            raise GuardError("injected: the end stopped after its mark")
+        globals()["_pending_jobs"] = interrupted
+        try:
+            end(hroot, SESSION, "operator-stop")
+        except GuardError as exc:
+            check("an-injected-end-stops-after-its-mark-again", "injected" in str(exc), str(exc))
+        finally:
+            globals()["_pending_jobs"] = real_pending
+        acquire(hroot, "99999999-0000-0000-0000-000000000000", 2, RUN_FILE, "job-new")
+        check("a-new-run-keeps-the-ended-runs-job-for-cancellation", "job-old" in pending_cancel(hroot),
+              pending_cancel(hroot))
 
     with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
         proot = _workspace(ptmp)
