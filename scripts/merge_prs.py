@@ -92,6 +92,8 @@ MAIN_WORKFLOWS = (("plan-gates", "plan.yml"), ("build", "build.yml"))
 # stuck or disabled workflow cannot stop merging in silence (D00 T01 §16). The timer is per workflow, kept across
 # heads in HEALTH, and only a green read clears it, so frequent pushes cannot reset it.
 PENDING_ALERT_SECONDS = 2 * 3600
+# How many runs since a merge's cancelled run are read to find the one that superseded it; a full page fails closed.
+SUCCESSOR_LIMIT = 200
 HEALTH = Path("build") / "merge-prs-health.json"
 
 
@@ -419,8 +421,21 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
     if superseded_ok and run.get("headSha") == head and run.get("conclusion") == "cancelled":
         # A merged commit's own run cancelled by a later push to main (`concurrency: cancel-in-progress`): the first
         # later run on main that finished reads the merge in its place (D00 T01 §16, independent review round 2).
-        later = [r for r in reversed(runs) if r.get("headSha") not in (None, head)
-                 and r.get("createdAt", "") > run.get("createdAt", "") and _is_ancestor(git_fn, root, head, r["headSha"])]
+        # Every run since the cancelled one is read, never the newest 30 alone, which can hide the successor that
+        # decides (independent review round 4); a full page cannot prove which came first, so it fails closed.
+        created = run.get("createdAt") or ""
+        try:
+            since = json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push", "--workflow",
+                                     file, "--created", f">={created}", "--limit", str(SUCCESSOR_LIMIT), "--json",
+                                     fields, cwd=root) or "[]") if created else []
+        except ValueError as error:
+            raise Failed(f"main's {name} runs cannot be read: {error}") from None
+        if not created or len(since) >= SUCCESSOR_LIMIT:
+            return "pending", (f"main's {name} run on {head[:12]} was cancelled, and the run that superseded it cannot "
+                               f"be told apart among the runs since")
+        later = sorted((r for r in since if r.get("headSha") not in (None, head)
+                        and r.get("createdAt", "") > created and _is_ancestor(git_fn, root, head, r["headSha"])),
+                       key=lambda r: r.get("createdAt", ""))
         done = next((r for r in later if r.get("status") == "completed" and r.get("conclusion") != "cancelled"), None)
         if done is None:
             return "pending", f"main's {name} run on {head[:12]} was cancelled by a later push whose run has not finished"

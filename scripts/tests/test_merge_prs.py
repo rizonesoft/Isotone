@@ -143,6 +143,10 @@ class FakeGh:
                                            for sha in (HEAD, "c" * 40)])
             if "--commit" in args:
                 runs = [r for r in runs if r.get("headSha") == args[args.index("--commit") + 1]]
+            if "--created" in args:
+                since = args[args.index("--created") + 1]
+                assert since.startswith(">="), since
+                runs = [r for r in runs if r.get("createdAt", "") >= since[2:]]
             runs = sorted(runs, key=lambda r: r.get("createdAt", ""), reverse=True)
             return json.dumps(runs[:int(args[args.index("--limit") + 1])])
         if args[:2] == ("run", "list") and self.runs is not None:
@@ -764,6 +768,28 @@ class MergeTests(Base):
                 "plan.yml": self.run_on(c, n=3) + self.run_on(HEAD, n=51) + newer}
         code, out = self.call(["run", "--task"], FakeGh([], main_runs=runs), FakeGit())
         self.assertEqual((code, "reads green" in out, self.health()["merged"]), (0, True, None), out)
+
+    def test_a_cancelled_merge_reads_its_first_successor_past_the_window(self):
+        # Independent review round 4: the merge's run was cancelled, its first finished successor failed, and thirty
+        # newer green runs follow: the merge reads red, not green.
+        c = "c" * 40
+        self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+        newer = [dict(self.run_on(format(k, "040x"), n=20 + k)[0], url=f"https://x/run/new{k}") for k in range(30)]
+        build = self.run_on(c, conclusion="cancelled", n=2) + self.run_on("d" * 40, conclusion="failure", n=3) + newer
+        runs = {"build.yml": build, "plan.yml": self.run_on(c, n=4) + newer}
+        code, out = self.call(["run", "--task"], FakeGh([], main_runs=runs), FakeGit())
+        self.assertEqual((code, "reads red" in out), (1, True), out)
+
+    def test_a_full_page_of_successors_fails_closed(self):
+        c = "c" * 40
+        self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+        many = [dict(self.run_on(format(k, "040x"), n=10)[0], url=f"https://x/run/m{k}",
+                     createdAt=f"2026-10-22T01:{k // 60:02d}:{k % 60:02d}Z") for k in range(mp.SUCCESSOR_LIMIT)]
+        head = [dict(self.run_on(HEAD)[0], createdAt="2026-10-22T05:00:00Z")]
+        runs = {"build.yml": self.run_on(c, conclusion="cancelled", n=2) + many + head,
+                "plan.yml": self.run_on(c, n=4) + head}
+        code, out = self.call(["run", "--task"], FakeGh([pr(2)], main_runs=runs), FakeGit())
+        self.assertEqual((code, "cannot be told apart" in out, self.health()["merged"]["sha"]), (0, True, c), out)
 
     def test_a_pending_merge_still_reports_a_red_main(self):
         # Independent review round 3: merge M still running, main's later head red: exit 1, and nothing merges.
