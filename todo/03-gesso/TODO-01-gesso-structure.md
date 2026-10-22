@@ -57,7 +57,7 @@ track: I1
 | :---: | :-----: | ------------------------------------------------------ | ----------------------- | :----: |
 |   1   |   §1    | Restructure and rename Gesso to Isotone.Gesso           | D00 T02 §2, D00 T02 §4  |  [ ]   |
 |   2   |   §2    | Port the snapshot canvas, ruler, and container         | §1                      |  [ ]   |
-|   3   |   §3    | WPF-UI out of Gesso                                    | §2, D01 T01 §6, D01 T01 §7 |  [ ]   |
+|   3   |   §3    | WPF-UI out of Gesso                                    | §2, D01 T01 §6, D01 T01 §7, D00 T02 §2 |  [ ]   |
 |   4   |   §4    | The Gesso icon                                         | §1, D00 T03 §3          |  [ ]   |
 |   5   |   §5    | Composition root on Isotone.Core                        | §3, D01 T02 §2          |  [ ]   |
 
