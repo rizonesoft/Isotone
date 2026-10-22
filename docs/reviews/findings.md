@@ -4,16 +4,16 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**64 findings across 4 sections.**
+**76 findings across 4 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 32 | fails under hostile or unexpected input |
-| `integration` | 22 | a consumer, caller, or downstream artifact no longer holds |
+| `adversarial` | 34 | fails under hostile or unexpected input |
+| `integration` | 30 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 5 | disagrees with the rest of the suite, its naming, or its layout |
 | `source-defect` | 4 | a Win32 contract, registry layout, or other source read wrongly |
-| `consistency` | 3 | disagrees with the rest of the suite, its naming, or its layout |
 | `record` | 2 | the plan or the evidence misdescribes what happened |
 | `correctness` | 1 | the code does the wrong thing |
 
@@ -22,8 +22,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 46 | wrong behavior in code, plan, or record |
-| `minor` | 18 | polish or wording, or no surviving defect |
+| `major` | 47 | wrong behavior in code, plan, or record |
+| `minor` | 29 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -72,6 +72,18 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T01 §12` | F41 | major | `integration` | fixed | independent | one read-back baseline served both workflows |
 | `D00 T01 §12` | F42 | minor | `adversarial` | fixed | independent | a failed workflow-run lookup became an ineligible verdict |
 | `D00 T01 §12` | F43 | major | `integration` | fixed | self | the boundary run read each pull request's mergeability once while GitHub was still computing it |
+| `D00 T01 §12` | F44 | minor | `consistency` | filed | independent | a detached checkout raised a failure alert instead of a quiet refusal |
+| `D00 T01 §12` | F45 | major | `integration` | filed | independent | the scheduled path reads no CI on main before or after its merge |
+| `D00 T01 §12` | F46 | minor | `integration` | fixed | independent | every listed pull request was re-read, past the task's timeout |
+| `D00 T01 §12` | F47 | minor | `adversarial` | fixed | independent | the per-call bound did not keep a whole run inside the task's timeout |
+| `D00 T01 §12` | F48 | minor | `consistency` | fixed | independent | the re-read and the pending pick used different pending rules |
+| `D00 T01 §12` | F49 | minor | `integration` | fixed | independent | the pending pick ran before the workflow verdicts |
+| `D00 T01 §12` | F50 | minor | `adversarial` | fixed | independent | the merge reserve was checked before the final reads spent it |
+| `D00 T01 §12` | F51 | minor | `integration` | fixed | independent | the pending pick could go to a pull request whose build was red |
+| `D00 T01 §12` | F52 | minor | `integration` | fixed | independent | the listing limit applied before the bot filter |
+| `D00 T01 §12` | F53 | minor | `integration` | fixed | independent | campaign start and resume wrote the run file before recover |
+| `D00 T01 §12` | F54 | minor | `integration` | fixed | independent | committing records before recover left the clone ahead of origin/main |
+| `D00 T01 §12` | F55 | minor | `integration` | fixed | independent | a boundary's records dirtied the tree before the merger ran |
 | `D00 T01 §2` | F1 | minor | `correctness` | fixed | independent | the D99 T01 §6 operator mark named the company as the signer |
 | `D00 T01 §4` | F1 | major | `record` | fixed | independent | the panel and architecture probes shared one manifest, so the kept panel review failed check-panel on replay |
 | `D00 T01 §4` | F2 | minor | `record` | fixed | independent | the record claimed a manifest for every probe, but the independent pass is unfenced |

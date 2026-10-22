@@ -1,7 +1,7 @@
 {
   "candidate_base": "aa8e87e27030a748060b3a2236897fcdc4aa29d6",
-  "candidate_head": "e89e870c3a44e72df11a1141b97bc8ec59cecb20",
-  "checker": "PASS four lenses, one verdict each; highest none :: c108b468c64b9c0fceb91aff0f41cdc66a866c5b994256b1ce5850286607bea4",
+  "candidate_head": "e1e59580bf98ae97f26680ee5c4b8419dd982e11",
+  "checker": "PASS four lenses, one verdict each; highest none :: 8c55bf24e97742ce38393c4ab79a386d3c221d4f1fad6774c30493b1647e420c",
   "commits": [
     "3818dbfe6845da37be350cc0e637ed3adc690e21",
     "9e377c44402cd8b8aac9fa6792f4c96c2a69f0ca",
@@ -22,17 +22,25 @@
     "2cf5f21b63730917a28fe593668c920ab418113c",
     "30ddf6bcd4b78589644a11717273a6ab1fa061d5",
     "aa369009b5ef4962e5e5d512e46d084e56e3b900",
-    "e89e870c3a44e72df11a1141b97bc8ec59cecb20"
+    "e89e870c3a44e72df11a1141b97bc8ec59cecb20",
+    "b94f58ce67f7ea4752b2538e8a34d4f8734f7840",
+    "efc91e5fa7ee20ac21ad4b45b0499cd1c6f106e8",
+    "7d71cbceb6be7c671a51b41495507edde9587314",
+    "ecc38b07c3104532ecf6fe3a5724daad987b0501",
+    "212899071df38b409e0ecb3084b8f7f0768a245f",
+    "50449eab1e8f091dbff01f94889817ba5930a314",
+    "82a4976f3adb907914dd30b032176f48fcc21d4f",
+    "e1e59580bf98ae97f26680ee5c4b8419dd982e11"
   ],
   "findings_path": "docs/reviews/00-workspace/D00-T01-s12.md",
-  "findings_sha256": "906058f30b72424408c124ec481969d4b58bcc1bb01884f6a0faf233ebce6116",
-  "manifest_sha": "404e441589405d923cfa020705c78debd23e566d2b8ed3a6cab34bc366f37f8c",
+  "findings_sha256": "e7cc5749d9d4878fd572404cb88fc4eded97043d92052607b7b65a0d34f834b3",
+  "manifest_sha": "d6d3a44d081432063e609c3067b1cf89f0dde10e3852fb4a458221af8af8bbe3",
   "model": "gpt-6-astra",
   "model_provenance": "derived",
   "reviewer": "codex-panel",
-  "runner_sha256": "5bda0793b99545fbbb2cd6c64745ad838ccbc07101fa74d75c698232d353674e",
+  "runner_sha256": "5c3ea84eaa219b13a6cfb83d1d810b4aab02f7da7e115919839f19bdaa6ea10f",
   "schema": 2,
-  "timestamp": "2026-10-21T23:25:07Z",
-  "tree": "73db35e44c504a2d3d033801c4205edcd07127c4",
+  "timestamp": "2026-10-22T00:35:04Z",
+  "tree": "d9115b0770246fd8207cf14b1917de7556bb451e",
   "verdict": "approve"
 }
