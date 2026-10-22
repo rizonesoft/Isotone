@@ -30,6 +30,8 @@
       settings hook scripts)
   20. python scripts/tests/test_merge_prs.py (the dependency pull request
       merger, D00 T01 §12)
+  21. python scripts/tests/test_build_props.py (a WPF temporary project shares
+      its parent's artifacts folders, D00 T02 §3; asks the pinned SDK)
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
 .EXAMPLE
@@ -103,6 +105,7 @@ try {
     Invoke-PythonGate 'automations tests' 'tests/test_automations.py' @()
     Invoke-PythonGate 'pin automations tests' 'tests/test_pin_automations.py' @()
     Invoke-PythonGate 'merge prs tests' 'tests/test_merge_prs.py' @()
+    Invoke-PythonGate 'build props tests' 'tests/test_build_props.py' @()
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'
     $results.Add([pscustomobject]@{ Gate = 'python gates'; Status = 'SKIP (no python)'; Seconds = 0 })

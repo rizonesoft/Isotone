@@ -53,6 +53,9 @@ jobs:
         run: dotnet restore Isotone.slnx
       - name: Build (Release)
         run: dotnet build Isotone.slnx -c Release --no-restore
+      # A WPF temporary project shares its parent's artifacts folders (D00 T02 §3): asked of the pinned SDK.
+      - name: WPF temporary project folders
+        run: python scripts/tests/test_build_props.py
       - name: Test (Release)
         run: >-
           dotnet test Isotone.slnx -c Release --no-build
