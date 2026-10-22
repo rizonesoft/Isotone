@@ -69,6 +69,7 @@ track: W1
 |  13   |   §13   | Run-guard robustness                          | --         |  [ ]   |
 |  14   |   §14   | Retire the unused verify-agent-tiers.mjs      | --         |  [ ]   |
 |  15   |   §15   | Unattended merges read main's CI back         | §12        |  [ ]   |
+|  16   |   §16   | Unattended merger health                      | §15        |  [ ]   |
 
 ---
 
@@ -427,6 +428,8 @@ The operator reported on 2026-10-21 three run-guard bugs that reviews of other r
 - [ ] Make `end` atomic for its readers: mark the guard ended first in one atomic write (an `ended` field with the reason), so `whoami`, the hook, and the heartbeat treat a marked guard as over even when the deletes after it never run, and let a later `end` or `reset-state` finish the cleanup. Done when: a self-test case interrupts `end` after the mark (an injected failure before the deletes) and `whoami` prints `NO GUARD` or an ended verdict that the heartbeat stops on, never `OWNER`.
 - [ ] Treat an ended guard as no campaign in the scheduled merger: `campaign_active` in `scripts/merge_prs.py` reads the guard's `ended` mark (this section's third item), so an interrupted end never blocks unattended merges for good. Done when: a `scripts/tests/test_merge_prs.py` case with an ended guard reads no active campaign, and one with a live guard still refuses. -> SOURCE: plan-review-D00-T01-s12-2026-10-22-s13 D00-T01-S12-PR3
 - [ ] Bound the fingerprint by time and bytes as well as file size, and open a regular file by handle after the `lstat` (re-checking the handle's mode and identity), so a large tree stays inside the hook's budget and a file swapped for a FIFO between the two calls is never read. Done when: self-test cases with an oversized file, many files past the byte budget, and a file replaced between `lstat` and open each finish inside the budget. -> SOURCE: plan-review-D00-T01-s12-2026-10-22-s13 D00-T01-S12-PR10
+- [ ] Make a bounded fingerprint say so: when the time or byte budget stops `fingerprint` early, it returns an explicit incomplete result, and the hook treats an incomplete fingerprint as changed (progress), never as unchanged, so a budget can never make a changed tree look stalled. Done when: a self-test case that hits each budget reads as progress. -> SOURCE: plan-review-D00-T01-s15-2026-10-22-s13 D00-T01-S15-PR7
+- [ ] Open regular files without following or blocking: open with `O_NOFOLLOW` and `O_NONBLOCK` where the platform has them (and the Windows equivalent of refusing a reparse point), then check the handle is a regular file, so a FIFO swapped in before the open cannot stall the hook. Done when: a self-test case swaps a FIFO in before the open (on Linux) and the hook stays inside its budget. -> SOURCE: plan-review-D00-T01-s15-2026-10-22-s13 D00-T01-S15-PR8
 - [ ] Commit: `"workspace: harden the run guard against special files, phase resets, and interrupted ends"`
 
 **Test checkpoint:** Unit test: `python scripts/campaign_guard.py --self-test` reports `0 failed` with the new cases counted, and each new case fails against the guard before this section (quoted in the review). Cheaper substitute that fails: wrapping the hook in a timeout, which still lets a re-point land on Phase 0 and an interrupted end resume, and which the re-point and interrupted-end cases refuse.
@@ -456,6 +459,7 @@ The scheduled `isotone-pr-merge` task (D00 T01 §12) merges one green dependency
 **Fidelity:** no surface of its own (the merge script and its tests).
 
 - -> XREF: D00 T01 §12 -- the merger whose scheduled path this completes
+- -> XREF: D00 T01 §16 -- the health checks that keep the unattended merger from falling silent
 - -> SOURCE: plan-review-D00-T01-s12-2026-10-22-s15 D00-T01-S12-PR2
 - -> SOURCE: review-D00-T01-s12-cap-2026-10-22 D00-T01-S12-F44 D00-T01-S12-F45
 
@@ -465,6 +469,25 @@ The scheduled `isotone-pr-merge` task (D00 T01 §12) merges one green dependency
 - [x] Commit: `"workspace: unattended merges read main's CI back"` 71 tests pass in `python scripts/tests/test_merge_prs.py`. After independent review round 1, 76 pass: each guarding workflow is judged by its push run on `main`'s head (or, for a path-filtered one, an older run whose later changes miss its push paths), every workflow is read before judging so a red outranks a running one, `main_ci` runs again with the final preflight, and a refusal there stays a busy clone. After round 2, 79 pass: the final check reads main's CI first, then runs the preflight, and refuses when the head moved from the one judged; the changed paths come from `git diff --name-only -z --no-renames`, unquoted and with both sides of a move. After round 3, 81 pass: the trigger reader parses flow sequences and answers "every change" for any filter it cannot be sure of (an inline `on:`, an unreadable or empty `paths:`, a negated pattern), and a red found at the final check is reported only once the preflight shows the clone still qualifies. After round 4, 82 pass, on a redesign of both: one `judge` (main's CI read first, then the preflight, the same head required, and only then the CI's verdict) runs before the listing and before the merge, and `_trigger` is a strict grammar that fails closed (the `on:` block ends only at a column-0 content line; every `paths:` entry must be one plain glob; anything else, `paths-ignore` included, counts as every change). It reads all five workflows in `.github/workflows/` as GitHub does. After round 5, a glob outside the shapes `_glob_re` matches exactly (literal characters, `*` within a segment, `**` only as a whole trailing segment) also voids the filter. After round 6, 83 pass (**Corrected 2026-10-22:** this note first said 84; that round's whitelist case went into an existing sub-test): the reader is a whitelist (every content line of the `on:` block must be a key line, a list item, or a list item that is a key, with scalars that cannot open a YAML alias, anchor, or tag; anything else, an anchored `on:` included, reads as runs on every change), and `_branch` reads only `symbolic-ref`'s own exit 1 as detached, so a timeout or a fatal error stays a failure. After round 7, 83 pass with the reader answering "does not run" only from an `on:` block read in full (a missing `on:`, an empty block, or a column-0 sequence under it reads as runs on every change), and a leading BOM stripped. After round 8, a double-quoted scalar holding a YAML escape is outside the whitelist too.
 
 **Test checkpoint:** Unit test: `python scripts/tests/test_merge_prs.py` passes with the new cases, and each new case fails against `scripts/merge_prs.py` before this section (quoted in the review). Cheaper substitute that fails: trusting the pull request's own green checks, which say nothing about `main` after the rebase.
+
+## 16. Unattended Merger Health
+
+**Origin:** discovered run=592bbffe4b4f 2026-10-22 -- the D00 T01 §15 plan review (D00-T01-S15-PR1, PR2, PR3, PR6)
+
+D00 T01 §15 makes the hourly `isotone-pr-merge` task read `main`'s CI on every run, but three paths still let the unattended merger fall silent: a guarding workflow whose run stays queued or never starts reads as a busy clone (exit 0) on every run, so merging stops with no alert; a merge whose CI the task has not yet read stays unverified while the operator is logged off (the task runs only while logged on); and a clone the preflight refuses for a local reason (uncommitted work, a detached checkout) hides a red `main` from the task. Separately, an older green run inherited for a path-filtered workflow should never be inherited across a change to that workflow's own file, and a run on a commit that is not an ancestor of `main`'s head must never be inherited. This is a defect in shipped work: D00 T01 §15's unattended path can stop working without telling anyone.
+
+**Fidelity:** no surface of its own (the merge script and its tests).
+
+- -> XREF: D00 T01 §15 -- the CI read this keeps honest
+- -> SOURCE: plan-review-D00-T01-s15-2026-10-22-s16 D00-T01-S15-PR1 D00-T01-S15-PR2 D00-T01-S15-PR3 D00-T01-S15-PR6
+
+- [ ] Alert on a pending that does not end: record in `build/merge-prs-health.json` (atomic write) when `main`'s CI was first seen pending for a head, and exit 1 from `run --task` naming the workflow and the head once it has stayed pending past a bound (two hours), so a stuck or disabled workflow cannot silently stop merging. Done when: unit tests show exit 0 inside the bound and exit 1 past it, and a green read clears the record.
+- [ ] Keep a merge unverified until its CI is read: after the task's own merge, record the merged head; every later run (task, campaign, or `recover`) reads that head's CI first, and an unread or still-pending merge past the bound in the first item alerts with exit 1, so a logoff never leaves a merge unread for good. Done when: unit tests cover a merge read green on the next run (record cleared), red (exit 1), and pending past the bound (exit 1).
+- [ ] Report a red `main` even when the clone is busy for a local reason: with `--task`, when the preflight refuses for uncommitted work, a detached checkout, or a section in progress (never for a running campaign, which reads CI itself), still read `main`'s CI and exit 1 on a red, without merging. Done when: unit tests with a dirty and a detached clone and a red `main` exit 1, and the same with a green `main` exit 0.
+- [ ] Never inherit across a workflow change or from a non-ancestor: in `_ci_verdict`, a change to the workflow's own file since the older run reads as pending, and a run whose head is not an ancestor of `main`'s head is never inherited. Done when: unit tests for both cases read pending, with the ancestor check driven through `git merge-base --is-ancestor`.
+- [ ] Commit: `"workspace: keep the unattended merger from falling silent"`
+
+**Test checkpoint:** Unit test: `python scripts/tests/test_merge_prs.py` passes with the new cases, and each fails against `scripts/merge_prs.py` before this section (quoted in the review). Cheaper substitute that fails: an hourly email whenever `main`'s CI is pending, which fires on every push and trains the operator to ignore it.
 
 ## Verification
 

@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **7 of 759 sections complete (1%).** 759 sections (3 discovered); backlog 18 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **7 of 760 sections complete (1%).** 760 sections (4 discovered); backlog 19 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -159,8 +159,9 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T01 §6`  | The parity catalog validator                                     |  22   |
 | [x] | `D00 T01 §12` | Merge dependency PRs at section boundaries                       |  10   |
 | [ ] | `D00 T01 §15` | Unattended merges read main's CI back                            |   4   |
-| [ ] | `D00 T01 §13` | Run-guard robustness                                             |   6   |
+| [ ] | `D00 T01 §13` | Run-guard robustness                                             |   8   |
 | [ ] | `D00 T01 §14` | Retire the unused verify-agent-tiers.mjs                         |   3   |
+| [ ] | `D00 T01 §16` | Unattended merger health                                         |   5   |
 | [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  27   |
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  23   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
