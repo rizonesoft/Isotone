@@ -858,32 +858,37 @@ def _open_no_follow(full: str) -> int:
     return msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
 
 
-def _hash_regular(full: str, info: os.stat_result, deadline: float, done: int, total: int) -> str | None:
-    """The SHA-256 of a regular file, read through a handle opened without following a link and without blocking,
-    and only when the handle is still the regular file `lstat` saw (same device and inode, and no reparse point):
-    None when the path was replaced between the two calls, so a FIFO or a link swapped in is never read
-    (D00 T01 §13)."""
+def _hash_regular(full: str, info: os.stat_result, deadline: float, done: int,
+                  total: int) -> tuple[str | None, int]:
+    """(the SHA-256 of a regular file or None, the bytes read). The file is read through a handle opened without
+    following a link and without blocking, and only when the handle is still the regular file `lstat` saw (same
+    device and inode, and no reparse point): None when the path was replaced between the two calls, so a FIFO or a
+    link swapped in is never read (D00 T01 §13), or when a read fails. The bytes read count against the byte budget
+    whether or not the hash completes (independent review round 4); the walk checks the deadline before each path,
+    before each read, and once more before it accepts the fingerprint."""
     try:
         fd = _open_no_follow(full)
     except OSError:
-        return None
+        return None, 0
+    consumed = 0
     try:
         now = os.fstat(fd)
         if (not stat.S_ISREG(now.st_mode) or (now.st_dev, now.st_ino) != (info.st_dev, info.st_ino)
                 or getattr(now, "st_file_attributes", 0) & 0x400):
-            return None
+            return None, 0
         sha, left = hashlib.sha256(), info.st_size
         while left > 0:
             _within(deadline, done, total)  # a spent budget propagates: the walk is incomplete, not this file
             try:
                 chunk = os.read(fd, min(1 << 20, left))
             except OSError:
-                return None  # unread: the caller counts it by size and write time (independent review round 3)
+                return None, consumed  # unread: the caller counts it by size and write time (round 3)
             if not chunk:
                 break
+            consumed += len(chunk)
             sha.update(chunk)
             left -= len(chunk)
-        return sha.hexdigest()
+        return sha.hexdigest(), consumed
     finally:
         os.close(fd)
 
@@ -936,19 +941,20 @@ def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None =
             digest.update(f"{path} special {stat.S_IFMT(info.st_mode):o}\n".encode("utf-8"))
             continue
         if index <= max_hashed and info.st_size <= max_bytes and hashed_total + info.st_size <= max_total:
-            hashed = _hash_regular(full, info, deadline, index - 1, len(paths))
+            hashed, consumed = _hash_regular(full, info, deadline, index - 1, len(paths))
+            hashed_total += consumed
             if hashed is None:
                 # Unread (an open error such as a Windows sharing violation, or a path replaced since lstat): it still
                 # counts by size and write time, so a change to it stays visible (independent review round 2).
                 digest.update(f"{path} {info.st_size} {info.st_mtime_ns} unread\n".encode("utf-8"))
             else:
-                hashed_total += info.st_size
                 digest.update(f"{path} ".encode("utf-8") + hashed.encode() + b"\n")
         else:
             # Past the per-file or the total byte budget a file counts by size and write time, so every path still
             # counts and no read can outlast the hook.
             digest.update(f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8"))
     digest.update(re.sub(r"(?m)^- bookkeeping:.*(\r?\n)?", "", run_text).encode("utf-8"))
+    _within(deadline, len(paths), len(paths))  # a walk that finished past the deadline is no complete read either
     return digest.hexdigest()
 
 
@@ -1999,15 +2005,15 @@ def _self_test() -> int:
             linked = False  # no symlink privilege here; the Windows CI runner has it
         if linked:
             check("a-link-swapped-in-before-the-open-is-never-followed",
-                  _hash_regular(swap, saved, time.monotonic() + 30, 0, 1) is None)
+                  _hash_regular(swap, saved, time.monotonic() + 30, 0, 1)[0] is None)
         check("a-swapped-file-is-never-read",
-              _hash_regular(a_path, os.lstat(b_path), time.monotonic() + 30, 0, 1) is None
-              and _hash_regular(a_path, os.lstat(a_path), time.monotonic() + 30, 0, 1) is not None)
+              _hash_regular(a_path, os.lstat(b_path), time.monotonic() + 30, 0, 1)[0] is None
+              and _hash_regular(a_path, os.lstat(a_path), time.monotonic() + 30, 0, 1)[0] is not None)
         if hasattr(os, "mkfifo"):
             fifo = os.path.join(rroot, "swapped-pipe")
             os.mkfifo(fifo)
             began = time.monotonic()
-            got = _hash_regular(fifo, os.lstat(a_path), time.monotonic() + 30, 0, 1)
+            got = _hash_regular(fifo, os.lstat(a_path), time.monotonic() + 30, 0, 1)[0]
             check("a-fifo-swapped-in-before-the-open-never-blocks", got is None and time.monotonic() - began < 5,
                   f"{got} {time.monotonic() - began:.1f}s")
         # The byte budget: past the total, a file counts by size and write time (a same-size, same-time edit is then
@@ -2200,6 +2206,51 @@ def _self_test() -> int:
         finally:
             os.read = real_read
         check("a-read-error-leaves-the-file-unread-not-the-hook-failed", before != after and not escaped, escaped)
+        # Independent review round 4: bytes read before a failed read still count against the byte budget, and the
+        # deadline holds after the last read.
+        big = [os.path.join(hroot, f"big{n}.bin") for n in range(3)]
+        for p in big:
+            with open(p, "wb") as fh:
+                fh.write(b"x" * 4096)
+        reads = []
+
+        def half_then_fail(fd, n):
+            # Every file returns 2048 bytes, then its next read fails: bytes read before the failure are spent.
+            reads.append(n)
+            if len(reads) % 2 == 0:
+                raise OSError(5, "Input/output error")
+            return real_read(fd, 2048)
+        os.environ["CAMPAIGN_HASH_TOTAL_BYTES"] = "4096"
+        os.read = half_then_fail
+        try:
+            fingerprint(hroot, RUN_FILE, "")
+        finally:
+            os.read = real_read
+            del os.environ["CAMPAIGN_HASH_TOTAL_BYTES"]
+        spent = 2048 * ((len(reads) + 1) // 2)
+        check("a-failed-read-still-counts-against-the-byte-budget", spent <= 4096, f"{spent} bytes over {reads}")
+        # One untracked file, so the read that crosses the deadline is the walk's last: only the check before the
+        # fingerprint is accepted can see it.
+        one = _workspace(os.path.join(htmp, "one"))
+        with open(os.path.join(one, "only.txt"), "w", encoding="utf-8") as fh:
+            fh.write("only\n")
+        real_monotonic = time.monotonic
+        clock = [real_monotonic()]
+
+        def slow_read(fd, n):
+            clock[0] += 5
+            return real_read(fd, n)
+        time.monotonic = lambda: clock[0]
+        os.read = slow_read
+        try:
+            fingerprint(one, RUN_FILE, "", deadline=clock[0] + 1)
+            crossed = ""
+        except GuardError as exc:
+            crossed = str(exc)
+        finally:
+            os.read = real_read
+            time.monotonic = real_monotonic
+        check("a-read-that-crosses-the-deadline-is-incomplete", "fingerprint incomplete" in crossed, crossed)
 
     with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
         proot = _workspace(ptmp)
