@@ -48,8 +48,9 @@ Everything here is Windows-only. The TODO tooling is stdlib Python 3 (`python` o
 
 ## The decisions this project runs on
 
+- **The stack is moving to C++20 with our own UI** on Win32, Direct2D, DirectWrite, and Direct3D (operator decision 2026-10-22: "I feel that C++ and our own UI will get is much closer to Photoshop quality."; `docs/dev/decisions.md`). The architecture, toolchain, and migration are specified in `docs/specs/2026-10-22-native-stack-design.md`, and the TODO tree is re-planned from it. Until that re-plan lands, the .NET and WPF bullets below describe the imported C# code, which stays a behavior reference and is not extended.
 - **.NET 11 and C# `latest`**, SDK pinned by `global.json` (the 11.0.100 release candidate until .NET 11 ships; `D00 T02 §8` moves the pin to GA), built from `Isotone.slnx`, warnings as errors through `Directory.Build.props`, packages centrally versioned in `Directory.Packages.props`.
-- **WPF only, standard controls with custom theming. No WPF-UI** and no other UI framework: a WPF-UI reference is a defect. WinUI 3 was raised and declined (operator confirmation 2026-10-22: "please note that we will stay with WPF"), so a switch is not proposed again unless the operator reopens it.
+- **WPF only, standard controls with custom theming. No WPF-UI** and no other UI framework: a WPF-UI reference is a defect.
 - **CommunityToolkit.Mvvm** for view models (`ObservableObject`, `RelayCommand`, source generators). Logic lives in view models and services; code-behind is for view-only concerns.
 - **Microsoft.Extensions.DependencyInjection** for composition: one composition root per app, constructor injection, no static service locator.
 - **Serilog** for logging: one configuration per app, structured events, one log line per action that changes a document or a setting.
