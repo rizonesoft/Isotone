@@ -2400,18 +2400,22 @@ def _self_test() -> int:
         try:
             fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 60)
 
-            # Each blocked call signals when it is entered (so the case proves the walk reached it before the deadline,
-            # never that the budget ran out somewhere else) and when it leaves (so the abandoned worker is waited out
-            # after the timed interval, before anything else runs): D00 T01 §17's plan review.
-            entered_r, left_r = threading.Event(), threading.Event()
+            # Each blocked call signals when it is entered, so the case proves the walk reached it before the deadline
+            # (D00 T01 §17's plan review), and after the timed interval the abandoned walk thread itself, not only the
+            # blocked call, must end before its patch is restored or the next case runs; a case whose worker outlives
+            # the wait fails, and the lstat case does not start beside a live read worker (independent review round 5).
+            def walk_ended() -> bool:
+                alive = [t for t in threading.enumerate() if t.name == "campaign-fingerprint-walk"]
+                for worker in alive:
+                    worker.join(10)
+                return not any(worker.is_alive() for worker in alive)
+
+            entered_r = threading.Event()
 
             def stuck_read(fd, n):
                 entered_r.set()
-                try:
-                    time.sleep(1.0)
-                    return real_read(fd, n)
-                finally:
-                    left_r.set()
+                time.sleep(1.0)
+                return real_read(fd, n)
             globals()["_read_fd"] = stuck_read
             began = time.monotonic()
             try:
@@ -2422,43 +2426,40 @@ def _self_test() -> int:
             finally:
                 took = time.monotonic() - began
                 try:
-                    left_ok_r = left_r.wait(10)
+                    ended_r = walk_ended()
                 finally:
                     # Restored even if the wait is interrupted (independent review round 4).
                     globals()["_read_fd"] = real_read
-            entered_l, left_l = threading.Event(), threading.Event()
-
-            def stuck_lstat(path, *args, **kwargs):
-                entered_l.set()
-                try:
+            entered_l = threading.Event()
+            stuck_l, took_l, ended_l = "not run: the read case's walk thread is still alive", 0.0, False
+            if ended_r:
+                def stuck_lstat(path, *args, **kwargs):
+                    entered_l.set()
                     time.sleep(1.0)
                     return real_lstat_walk(path, *args, **kwargs)
-                finally:
-                    left_l.set()
-            real_lstat_walk = os.lstat
-            os.lstat = stuck_lstat
-            began_l = time.monotonic()
-            try:
-                fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
-                stuck_l = ""
-            except GuardError as exc:
-                stuck_l = str(exc)
-            finally:
-                took_l = time.monotonic() - began_l
+                real_lstat_walk = os.lstat
+                os.lstat = stuck_lstat
+                began_l = time.monotonic()
                 try:
-                    left_ok_l = left_l.wait(10)
+                    fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
+                    stuck_l = ""
+                except GuardError as exc:
+                    stuck_l = str(exc)
                 finally:
-                    os.lstat = real_lstat_walk
+                    took_l = time.monotonic() - began_l
+                    try:
+                        ended_l = walk_ended()
+                    finally:
+                        os.lstat = real_lstat_walk
         finally:
             # Restored whatever escapes the warm-up or either case (independent review round 1).
             globals()["_git"] = real_git
-        # A worker still blocked after the cleanup wait fails the case, so no later case runs beside it (round 4).
         check("a-blocked-lstat-is-abandoned-at-the-deadline",
-              entered_l.is_set() and left_ok_l and "fingerprint incomplete" in stuck_l and took_l < 0.8,
-              f"entered {entered_l.is_set()} left {left_ok_l} {took_l:.2f}s {stuck_l}")
+              entered_l.is_set() and ended_l and "fingerprint incomplete" in stuck_l and took_l < 0.8,
+              f"entered {entered_l.is_set()} walk ended {ended_l} {took_l:.2f}s {stuck_l}")
         check("a-blocked-read-is-abandoned-at-the-deadline",
-              entered_r.is_set() and left_ok_r and "fingerprint incomplete" in stuck and took < 0.8,
-              f"entered {entered_r.is_set()} left {left_ok_r} {took:.2f}s {stuck}")
+              entered_r.is_set() and ended_r and "fingerprint incomplete" in stuck and took < 0.8,
+              f"entered {entered_r.is_set()} walk ended {ended_r} {took:.2f}s {stuck}")
 
     with tempfile.TemporaryDirectory(prefix="campaign-keys-") as ktmp:
         kroot = _workspace(ktmp)
