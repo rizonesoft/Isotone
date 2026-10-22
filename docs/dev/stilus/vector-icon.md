@@ -131,5 +131,5 @@ Bezier.Desktop/
 
 ## See Also
 
-- [IconService](../services/icon-service.md) - Icon loading and caching
-- [icons.json](../../Bezier.Desktop/Resources/icons.json) - Icon definitions
+- [IconService](../../../src/Stilus/Bezier.Desktop/Services/IconService.cs) - Icon loading and caching
+- [icons.json](../../../src/Stilus/Bezier.Desktop/Resources/icons.json) - Icon definitions

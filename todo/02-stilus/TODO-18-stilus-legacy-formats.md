@@ -15,9 +15,11 @@ track: N18
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Stilus imports nothing on this list. `ImportFormat` in `src/Stilus/Bezier.Core/Services/ImportService.cs` names nine file formats (SVG, AI, EPS, PDF, PNG, JPG, GIF, BMP, WebP) plus the clipboard, and no Stilus source mentions FreeHand, Visio, WordPerfect, MacPaint, or XCF. No fixture folder exists (`tests/fixtures` is absent) and `Isotone.Core` does not exist yet (`src/Isotone.Core/Isotone.Core.csproj` is absent), so the shared codecs this file consumes arrive with `D01 T08`. Until 2026-09-27 these catalog rows sat in the backlog (B-037 legacy vector and document formats, B-038 legacy raster formats, B-039 camera RAW in Stilus); the operator's decision that day ("Group 1: plan them all") promoted them into this file.
+>
+> **Corrected 2026-10-22:** `tests/fixtures/` exists since `D00 T03 §1` moved two Stilus SVG fixtures into `tests/fixtures/stilus/svg/`; this file's own fixtures are still absent, which the claim below now measures (`tests/fixtures/stilus/legacy`).
 <!-- claim: count "^    (Svg|Ai|Eps|Pdf|Png|Jpg|Gif|Bmp|WebP),$" src/Stilus/Bezier.Core/Services/ImportService.cs = 9 -->
 <!-- claim: count "FreeHand|Visio|WordPerfect|MacPaint|Xcf" src/Stilus/**/*.cs = 0 -->
-<!-- claim: absent tests/fixtures -->
+<!-- claim: absent tests/fixtures/stilus/legacy -->
 <!-- claim: absent src/Isotone.Core/Isotone.Core.csproj -->
 <!-- claim: exists docs/parity/stilus-parity.md -->
 

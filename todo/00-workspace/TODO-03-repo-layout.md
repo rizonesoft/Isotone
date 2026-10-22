@@ -14,10 +14,13 @@ track: W3
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The imports brought their own documentation folders: `src/Stilus/docs/` (a `README.md` indexing mostly missing pages, `components/vector-icon.md`, `ui/status-bar.md`) and `src/Gesso/docs/` (five `README.md` stubs under `api/`, `architecture/`, `plugins/`, `user-guide/`). Two loose SVG files sit at `src/Stilus/test.svg` and `src/Stilus/bezier-sample.svg`. `src/Gesso/.github/` is an empty directory left after the per-app workflows were removed. There is no `docs/captures/` folder, so a `Fidelity:` block that names one cannot be satisfied and `process-todo-section` would refuse every UI section.
-<!-- claim: exists src/Stilus/docs/README.md -->
-<!-- claim: exists src/Gesso/docs/README.md -->
-<!-- claim: exists src/Stilus/bezier-sample.svg -->
-<!-- claim: exists src/Stilus/test.svg -->
+>
+> **Corrected 2026-10-22:** `D00 T03 §1` moved the two Stilus pages to `docs/dev/stilus/` and the two SVGs to `tests/fixtures/stilus/svg/`, and deleted the Stilus index and the five Gesso stubs, so the claims below now measure the new layout.
+<!-- claim: absent src/Stilus/docs -->
+<!-- claim: absent src/Gesso/docs -->
+<!-- claim: exists tests/fixtures/stilus/svg/bezier-sample.svg -->
+<!-- claim: exists tests/fixtures/stilus/svg/test.svg -->
+<!-- claim: exists docs/dev/stilus/vector-icon.md -->
 <!-- claim: absent docs/captures -->
 >
 > **Corrected 2026-09-27:** the operator chose the app icon design that day (Direction C, "Suite tile": "C it is"), and its SVG sources are committed under `resources/icons/<app>/` (`<app>.svg` master for 48 px and up, hand-tuned `<app>-16.svg`, `-24.svg`, `-32.svg`, and `<app>-splash.svg`, which since the operator's second decision that day is the Suite card splash, a 640 by 360 reference design and marketing image that the apps rebuild in XAML), recorded with their construction rules and license in `resources/icons/README.md`. No raster is generated from them yet: `resources/icons/stilus/stilus.ico` and `resources/icons/stilus/PNG/` are still the old Stilus design, which `installer/Stilus.iss` and `installer/Suite.iss` reference, and `resources/icons/gesso/gesso.ico` and `resources/icons/albumen/albumen.ico`, which `installer/Gesso.iss` and `installer/Albumen.iss` point at, do not exist. There is no export script. §3 closes that gap. **Corrected 2026-09-28:** the 16, 24, and 32 px SVGs are generated from the masters by `scripts/generate-small-icons.py` (commit 62d0284), not hand-tuned.
@@ -68,15 +71,17 @@ track: W3
 
 ## 1. Fold the Per-App Docs and Samples into the Suite
 
+> **Started:** 2026-10-22T13:02:14Z
+
 The suite has one documentation tree (`docs/dev/`, `docs/user/`) and one fixture tree. Pages left inside `src/` are invisible to anyone reading `docs/`, and sample files beside the projects look like build inputs. Only pages with real content move; index stubs that link to pages that never existed are deleted.
 
-- [ ] Move `src/Stilus/docs/components/vector-icon.md` and `src/Stilus/docs/ui/status-bar.md` to `docs/dev/stilus/`, fixing every relative link inside them. Done when: both files open from `docs/dev/stilus/` with no dead link (checked by following each one).
-- [ ] Delete `src/Stilus/docs/README.md` (it indexes `core/`, `elements/`, and tutorial pages that do not exist). Done when: `src/Stilus/docs/` no longer exists.
-- [ ] Read the five `src/Gesso/docs/**/README.md` files; move any with content beyond a heading and a list of missing links to `docs/dev/gesso/`, delete the rest. Done when: `src/Gesso/docs/` no longer exists and the commit body lists each file's fate.
-- [ ] Move `src/Stilus/test.svg` and `src/Stilus/bezier-sample.svg` to `tests/fixtures/stilus/svg/` and add `tests/fixtures/stilus/svg/README.md` naming their origin (the Bezier repository) and license (GPL-3.0, this repository's). Done when: `git ls-files tests/fixtures/stilus/svg` lists three files.
-- [ ] Remove the empty `src/Gesso/.github/` directory. Done when: `Test-Path src/Gesso/.github` prints `False`.
-- [ ] List the moved pages in `docs/dev/README.md` (a "Per-app notes" line per app). Done when: each moved page is linked once from that index.
-- [ ] Commit: `"docs: fold per-app docs and samples into the suite layout"`
+- [x] Move `src/Stilus/docs/components/vector-icon.md` and `src/Stilus/docs/ui/status-bar.md` to `docs/dev/stilus/`, fixing every relative link inside them. Done when: both files open from `docs/dev/stilus/` with no dead link (checked by following each one). Both now live in `docs/dev/stilus/`. `vector-icon.md` had two relative links: `../services/icon-service.md` named a page that never existed, so it now points at the class it described, `src/Stilus/Bezier.Desktop/Services/IconService.cs`, and the `icons.json` link points at `src/Stilus/Bezier.Desktop/Resources/icons.json`; both resolve (`Test-Path`), and `status-bar.md` has no links.
+- [x] Delete `src/Stilus/docs/README.md` (it indexes `core/`, `elements/`, and tutorial pages that do not exist). Done when: `src/Stilus/docs/` no longer exists. Deleted; `src/Stilus/docs/` no longer exists.
+- [x] Read the five `src/Gesso/docs/**/README.md` files; move any with content beyond a heading and a list of missing links to `docs/dev/gesso/`, delete the rest. Done when: `src/Gesso/docs/` no longer exists and the commit body lists each file's fate. All five were stubs (a heading and a list of topics or links, no prose: `docs/README.md` 16 lines of links, `api/` 10 lines of namespace names, `architecture/` 19 lines of layer and system names, `plugins/` 16 lines of plugin types and four placeholder steps, `user-guide/` 12 lines of topic names), so all five are deleted and `docs/dev/gesso/` is not created; `src/Gesso/docs/` no longer exists.
+- [x] Move `src/Stilus/test.svg` and `src/Stilus/bezier-sample.svg` to `tests/fixtures/stilus/svg/` and add `tests/fixtures/stilus/svg/README.md` naming their origin (the Bezier repository) and license (GPL-3.0, this repository's). Done when: `git ls-files tests/fixtures/stilus/svg` lists three files. Moved to `tests/fixtures/stilus/svg/` with a `README.md` naming their origin and license (and that `bezier-sample.svg` is an Adobe Illustrator 30.0 export); `git ls-files tests/fixtures/stilus/svg` lists three files.
+- [x] Remove the empty `src/Gesso/.github/` directory. Done when: `Test-Path src/Gesso/.github` prints `False`. **Corrected 2026-10-22:** already gone (git tracks no empty folder, and the import left none on disk); `Test-Path src/Gesso/.github` prints `False`.
+- [x] List the moved pages in `docs/dev/README.md` (a "Per-app notes" line per app). Done when: each moved page is linked once from that index. The Stilus line of "Per-app notes" links both pages once.
+- [x] Commit: `"docs: fold per-app docs and samples into the suite layout"` This commit.
 
 **Test checkpoint:** `Get-ChildItem src/Stilus, src/Gesso -Directory -Recurse | Where-Object Name -in 'docs','.github'` returns nothing; every relative link in `docs/dev/stilus/*.md` and `docs/dev/gesso/*.md` resolves to an existing file (a PowerShell loop over the links with `Test-Path`, quoted); `dotnet build Isotone.slnx -c Release` still exits 0. Cheaper substitute that fails: copying the pages and leaving the originals, which leaves two copies to drift.
 
