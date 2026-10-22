@@ -326,7 +326,7 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
     head = lines[1:end]
     # YAML's printable repertoire (YAML 1.2.2 section 5.1); everything else, U+FFFE and U+FFFF included, is forbidden,
     # and so is a byte order mark inside the content (sections 5.2 and 5.4: only the stream may open with one).
-    unprintable = sorted({c for c in "\n".join(head) if c == "﻿" or not (
+    unprintable = sorted({c for c in "\n".join(head) if c == "\ufeff" or not (
         c in "\t\n" or 0x20 <= ord(c) <= 0x7E or ord(c) == 0x85 or 0xA0 <= ord(c) <= 0xD7FF
         or 0xE000 <= ord(c) <= 0xFFFD or 0x10000 <= ord(c) <= 0x10FFFF)})
     if unprintable:
