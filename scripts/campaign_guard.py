@@ -465,8 +465,15 @@ def pending_cancel(root: str, session: str | None = None) -> str:
         jobs = [j for j in _pending_jobs(root) if not session or _yours(j, session)]
     except GuardError as exc:
         return f"pending-cancel: {exc}"
-    return "\n".join(f"pending-cancel: CronDelete {j.get('cron_id')} (ended by {j.get('reason')} at {j.get('at')})"
-                     for j in jobs)
+    # Every line names the session that owns the job, since job ids are session-local, and a record with no session
+    # says to delete nothing (independent review round 13): only the owning session's CronList can act on a job.
+    return "\n".join(
+        f"pending-cancel: CronDelete {j.get('cron_id')} in session {j.get('session_id')} only "
+        f"(ended by {j.get('reason')} at {j.get('at')})" if j.get("session_id") else
+        f"pending-cancel: job {j.get('cron_id')} has no session (ended by {j.get('reason')} at {j.get('at')}): it may "
+        f"be any session's, so delete nothing for it; the operator clears it with cancel-confirmed --cron-id "
+        f"{j.get('cron_id')} --session <yours> --unowned yes"
+        for j in jobs)
 
 
 def cancel_confirmed(root: str, cron_id: str, session: str | None = None, if_pending: bool = False,
@@ -2466,6 +2473,15 @@ def _self_test() -> int:
             unowned_clear = str(exc)
         check("a-session-never-confirms-an-unowned-record", unowned_clear != "cleared" and "J" in pending_cancel(qroot),
               unowned_clear)
+        _write_json(_pending_path(qroot), [
+            {"cron_id": "J", "reason": "park", "at": _utc_now(), "session_id": "A"},
+            {"cron_id": "J", "reason": "park", "at": _utc_now(), "session_id": "B"},
+            {"cron_id": "J", "reason": "operator-stop", "at": _utc_now()}])
+        view = pending_cancel(qroot).splitlines()
+        check("the-operator-view-names-each-records-session",
+              len(view) == 3 and "CronDelete J in session A only" in view[0] and "CronDelete J in session B only" in view[1]
+              and "has no session" in view[2] and "delete nothing" in view[2] and "CronDelete" not in view[2], str(view))
+        _write_json(_pending_path(qroot), [{"cron_id": "J", "reason": "operator-stop", "at": _utc_now()}])
         check("the-operator-clears-an-unowned-record",
               "is gone" in cancel_confirmed(qroot, "J", "B", unowned=True) and pending_cancel(qroot) == "")
 
