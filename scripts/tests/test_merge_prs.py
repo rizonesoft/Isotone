@@ -899,8 +899,14 @@ class MergeTests(Base):
         # D00 T01 §13: an end interrupted after its mark leaves the guard file, marked ended; it blocks nothing.
         guard = self.root / "build" / "claude-campaign-guard.json"
         guard.parent.mkdir(parents=True, exist_ok=True)
-        guard.write_text(json.dumps({"session_id": "s", "ended": {"reason": "operator-stop"}}), encoding="utf-8")
+        guard.write_text(json.dumps({"session_id": "s", "ended": {"reason": "operator-stop",
+                                                                    "at": "2026-10-22T00:00:00Z"}}), encoding="utf-8")
         self.assertIsNone(mp.campaign_active(self.root))
+        # Independent review round 3: only end's own mark counts; the guard's test decides.
+        for bad in ({"reason": "operator-stop"}, {"reason": "bogus", "at": "2026-10-22T00:00:00Z"},
+                    {"reason": "operator-stop", "at": []}):
+            guard.write_text(json.dumps({"session_id": "s", "ended": bad}), encoding="utf-8")
+            self.assertIn("holds the guard", mp.campaign_active(self.root) or "", bad)
         guard.write_text(json.dumps({"session_id": "s"}), encoding="utf-8")
         self.assertIn("holds the guard", mp.campaign_active(self.root) or "")
         guard.write_text("{torn", encoding="utf-8")

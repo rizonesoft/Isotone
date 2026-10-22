@@ -147,6 +147,18 @@ def _write_json(path: str, doc) -> None:
             os.unlink(tmp)
 
 
+def ended_mark_ok(ended) -> bool:
+    """Whether `ended` is the mark `end` writes: {reason: one of END_REASONS, at: a UTC timestamp}. The guard's
+    readers and the scheduled merger share this one test (independent review round 3)."""
+    if not isinstance(ended, dict) or set(ended) != {"reason", "at"} or ended.get("reason") not in END_REASONS:
+        return False
+    try:
+        time.strptime(str(ended.get("at")), UTC_FORMAT)
+    except ValueError:
+        return False
+    return isinstance(ended.get("at"), str)
+
+
 def read_guard(root: str, include_ended: bool = False) -> dict | None:
     """The live guard, or None. A guard `end` has marked ended reads as None (the run is over even when the deletes
     after the mark never ran), except for `include_ended`, which only the paths finishing that cleanup ask for
@@ -162,7 +174,7 @@ def read_guard(root: str, include_ended: bool = False) -> dict | None:
     if not isinstance(doc, dict):
         raise GuardError(f"the guard file {guard} is not an object")
     ended = doc.get("ended")
-    if ended is not None and not (isinstance(ended, dict) and isinstance(ended.get("reason"), str)):
+    if ended is not None and not ended_mark_ok(ended):
         # Only `end` writes the mark, always as {reason, at}; anything else is a damaged guard, reported as one
         # rather than read as over (independent review round 2).
         raise GuardError(f"the guard file {guard} carries a malformed ended mark")
@@ -862,8 +874,11 @@ def _hash_regular(full: str, info: os.stat_result, deadline: float, done: int, t
             return None
         sha, left = hashlib.sha256(), info.st_size
         while left > 0:
-            _within(deadline, done, total)
-            chunk = os.read(fd, min(1 << 20, left))
+            _within(deadline, done, total)  # a spent budget propagates: the walk is incomplete, not this file
+            try:
+                chunk = os.read(fd, min(1 << 20, left))
+            except OSError:
+                return None  # unread: the caller counts it by size and write time (independent review round 3)
             if not chunk:
                 break
             sha.update(chunk)
@@ -2133,15 +2148,24 @@ def _self_test() -> int:
         check("a-new-run-keeps-the-ended-runs-job-for-cancellation", "job-old" in pending_cancel(hroot),
               pending_cancel(hroot))
 
-        # Independent review round 2: a malformed ended mark is a damaged guard, never an over one.
-        with open(_paths(hroot)[0], "w", encoding="utf-8") as fh:
-            json.dump({"session_id": SESSION, "cron_id": "job-x", "ended": True}, fh)
-        try:
-            read_guard(hroot)
-            check("a-malformed-ended-mark-is-a-damaged-guard", False)
-        except GuardError as exc:
-            check("a-malformed-ended-mark-is-a-damaged-guard",
-                  "malformed ended mark" in str(exc) and whoami(hroot, SESSION) == "MALFORMED GUARD", str(exc))
+        # Independent review rounds 2 and 3: only end's own mark ends a guard; any other is a damaged guard.
+        for bad in (True, {"reason": "bogus", "at": "2026-10-22T00:00:00Z"}, {"reason": "operator-stop", "at": []},
+                    {"reason": "operator-stop"}, {"reason": "operator-stop", "at": "yesterday"},
+                    {"reason": "operator-stop", "at": "2026-10-22T00:00:00Z", "extra": 1}):
+            with open(_paths(hroot)[0], "w", encoding="utf-8") as fh:
+                json.dump({"session_id": SESSION, "cron_id": "job-x", "ended": bad}, fh)
+            try:
+                read_guard(hroot)
+                check(f"a-malformed-ended-mark-is-a-damaged-guard {bad!r}", False)
+            except GuardError as exc:
+                check(f"a-malformed-ended-mark-is-a-damaged-guard {bad!r}",
+                      "malformed ended mark" in str(exc) and whoami(hroot, SESSION) == "MALFORMED GUARD", str(exc))
+            try:
+                acquire(hroot, "99999999-0000-0000-0000-000000000000", 1, RUN_FILE, "job-y")
+                check(f"a-malformed-ended-mark-still-needs-a-handover {bad!r}", False)
+            except GuardError as exc:
+                check(f"a-malformed-ended-mark-still-needs-a-handover {bad!r}", "--handover" in str(exc), str(exc))
+        check("end's-own-mark-is-well-formed", ended_mark_ok({"reason": "operator-stop", "at": _utc_now()}))
         os.remove(_paths(hroot)[0])
         # An unread file still counts by size and write time.
         unread = os.path.join(hroot, "unread.txt")
@@ -2160,6 +2184,22 @@ def _self_test() -> int:
         finally:
             globals()["_open_no_follow"] = real_open
         check("an-unread-file-still-counts-by-size-and-time", before != after)
+        # A read error after a good open is the same: unread, counted by size and time, never a failed hook.
+        real_read = os.read
+
+        def broken_read(fd, n):
+            raise OSError(5, "Input/output error")
+        os.read = broken_read
+        try:
+            before = fingerprint(hroot, RUN_FILE, "")
+            with open(unread, "w", encoding="utf-8") as fh:
+                fh.write("0123456789012345678901234567890")
+            after, escaped = fingerprint(hroot, RUN_FILE, ""), ""
+        except OSError as exc:
+            before, after, escaped = "", "", repr(exc)
+        finally:
+            os.read = real_read
+        check("a-read-error-leaves-the-file-unread-not-the-hook-failed", before != after and not escaped, escaped)
 
     with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
         proot = _workspace(ptmp)

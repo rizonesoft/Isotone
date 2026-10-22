@@ -215,9 +215,11 @@ def campaign_active(root: Path) -> str | None:
         except (OSError, ValueError):
             doc = None  # unreadable: a campaign may hold it, so the cautious answer is yes
         # A guard `end` marked ended is no campaign, even when the deletes after the mark never ran (D00 T01 §13);
-        # only the mark `end` writes ({reason, at}) counts, and anything else is read the cautious way.
+        # only the mark `end` writes counts, judged by the guard's own test, and anything else is read the cautious way.
         ended = doc.get("ended") if isinstance(doc, dict) else None
-        if not (isinstance(ended, dict) and isinstance(ended.get("reason"), str)):
+        # The guard's code beside this script, the same checkout, decides what an ended mark is.
+        rule = _load("campaign_guard_for_merge", Path(__file__).resolve().parent / "campaign_guard.py")
+        if not rule.ended_mark_ok(ended):
             return "a campaign run holds the guard build/claude-campaign-guard.json"
     lock = root / ".claude" / "scheduled_tasks.lock"
     try:
