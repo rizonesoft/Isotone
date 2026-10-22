@@ -208,8 +208,15 @@ def _live_pid(pid) -> bool:
 def campaign_active(root: Path) -> str | None:
     """Why a campaign is running, or None. The run guard is the signal; a scheduler lock held by a live process is a
     second reason (it means some session has scheduled jobs, which may be a campaign's heartbeat)."""
-    if (root / "build" / "claude-campaign-guard.json").exists():
-        return "a campaign run holds the guard build/claude-campaign-guard.json"
+    guard = root / "build" / "claude-campaign-guard.json"
+    if guard.exists():
+        try:
+            doc = json.loads(guard.read_text(encoding="utf-8-sig"))
+        except (OSError, ValueError):
+            doc = None  # unreadable: a campaign may hold it, so the cautious answer is yes
+        # A guard `end` marked ended is no campaign, even when the deletes after the mark never ran (D00 T01 §13).
+        if not (isinstance(doc, dict) and doc.get("ended")):
+            return "a campaign run holds the guard build/claude-campaign-guard.json"
     lock = root / ".claude" / "scheduled_tasks.lock"
     try:
         data = json.loads(lock.read_text(encoding="utf-8"))

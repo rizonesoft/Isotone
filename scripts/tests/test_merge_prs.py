@@ -895,6 +895,17 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], FakeGh([pr(1)]), denied)
         self.assertEqual((code, "access denied" in out, (self.root / mp.BLOCKED).exists()), (3, True, True))
 
+    def test_an_ended_guard_is_no_campaign(self):
+        # D00 T01 §13: an end interrupted after its mark leaves the guard file, marked ended; it blocks nothing.
+        guard = self.root / "build" / "claude-campaign-guard.json"
+        guard.parent.mkdir(parents=True, exist_ok=True)
+        guard.write_text(json.dumps({"session_id": "s", "ended": {"reason": "operator-stop"}}), encoding="utf-8")
+        self.assertIsNone(mp.campaign_active(self.root))
+        guard.write_text(json.dumps({"session_id": "s"}), encoding="utf-8")
+        self.assertIn("holds the guard", mp.campaign_active(self.root) or "")
+        guard.write_text("{torn", encoding="utf-8")
+        self.assertIn("holds the guard", mp.campaign_active(self.root) or "")
+
     def test_the_task_never_touches_a_running_campaigns_intent(self):
         mp._block(self.root, 1, "merge issued, not yet verified")
         gh = FakeGh([pr(1), pr(2)])

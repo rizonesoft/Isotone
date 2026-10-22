@@ -45,6 +45,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -146,7 +147,10 @@ def _write_json(path: str, doc) -> None:
             os.unlink(tmp)
 
 
-def read_guard(root: str) -> dict | None:
+def read_guard(root: str, include_ended: bool = False) -> dict | None:
+    """The live guard, or None. A guard `end` has marked ended reads as None (the run is over even when the deletes
+    after the mark never ran), except for `include_ended`, which only the paths finishing that cleanup ask for
+    (D00 T01 §13)."""
     guard, _ = _paths(root)
     try:
         with open(guard, encoding="utf-8-sig") as fh:
@@ -157,6 +161,8 @@ def read_guard(root: str) -> dict | None:
         raise GuardError(f"the guard file {guard} does not parse: {exc}")
     if not isinstance(doc, dict):
         raise GuardError(f"the guard file {guard} is not an object")
+    if doc.get("ended") and not include_ended:
+        return None
     return doc
 
 
@@ -179,14 +185,16 @@ def _utc_now() -> str:
     return datetime.datetime.now(datetime.timezone.utc).strftime(UTC_FORMAT)
 
 
-def acquire(root: str, session: str, phase: int, run_file: str, cron_id: str,
+def acquire(root: str, session: str, phase: int | None, run_file: str, cron_id: str,
             handover: str | None = None, generation: str | None = None, scope: str | None = None) -> str:
     """Write the guard for `session`. Only one session can hold it: every guard change holds the lock, so two sessions
     racing to start a run cannot both win; the owner re-points its own guard; a live guard owned by another session is
     refused unless the operator hands it over, and the handover is recorded in the guard.
 
     `scope` is what the run covers: `plan` (process-plan chains every ready phase) or `phase` (process-phase was asked
-    for one phase), so a heartbeat resumes only what was asked for. A re-point keeps the scope unless one is given."""
+    for one phase), so a heartbeat resumes only what was asked for. A re-point keeps the scope unless one is given,
+    and keeps the phase when `phase` is None; a first acquire needs the phase (D00 T01 §13: a re-point without
+    `--phase` used to move the run to Phase 0)."""
     if not session or not run_file or not cron_id:
         raise GuardError("acquire needs --session, --run-file, and --cron-id")
     if os.path.isabs(run_file) or ".." in run_file.replace("\\", "/").split("/"):
@@ -197,15 +205,21 @@ def acquire(root: str, session: str, phase: int, run_file: str, cron_id: str,
         return _acquire_locked(root, session, phase, run_file, cron_id, handover, generation, scope)
 
 
-def _acquire_locked(root: str, session: str, phase: int, run_file: str, cron_id: str,
+def _acquire_locked(root: str, session: str, phase: int | None, run_file: str, cron_id: str,
                     handover: str | None, generation: str | None, scope: str | None) -> str:
     guard, state_path = _paths(root)
     os.makedirs(os.path.dirname(guard), exist_ok=True)
-    exists = os.path.exists(guard)
     try:
-        previous = read_guard(root) or {}
+        raw = read_guard(root, include_ended=True)
+        previous = raw if raw and not raw.get("ended") else {}
+        exists = bool(previous)  # an ended guard is no guard: a new run may start over it (D00 T01 §13)
     except GuardError:
-        previous = {}  # a torn or unreadable guard: only an operator handover may replace it (below)
+        previous, exists = {}, True  # a torn or unreadable guard: only an operator handover may replace it (below)
+    if phase is None:
+        if not isinstance(previous.get("phase"), int) or isinstance(previous.get("phase"), bool):
+            raise GuardError("acquire without --phase keeps a live guard's phase, and there is none to keep: pass "
+                             "--phase")
+        phase = previous["phase"]
     same_run = previous.get("run_file") == run_file and previous.get("session_id") == session
     doc = {"runner": "claude", "workspace": root.replace("\\", "/"), "phase": phase,
            "run_file": run_file, "session_id": session, "cron_id": cron_id,
@@ -320,11 +334,13 @@ def end(root: str, session: str, reason: str) -> str:
 
 def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
     guard_path, state_path = _paths(root)
-    guard = read_guard(root)
+    guard = read_guard(root, include_ended=True)
     if guard is None:
         raise GuardError("no guard file: the run is already over")
     if str(guard.get("session_id", "")) != session:
         raise GuardError(f"the guard belongs to session {guard.get('session_id')}, not {session}")
+    if guard.get("ended"):
+        return _finish_end(root, guard, guard_path, state_path, "finished an interrupted end")
     run_rel = str(guard.get("run_file", ""))
     text = _run_markers_text(root, run_rel, guard)
     rid = guard.get("run_id")
@@ -344,6 +360,17 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
             trips = 0
         if trips < 2:
             raise GuardError(f"stall needs a state file with trips of 2 or more; it reads {trips}")
+    # The mark comes first, in one atomic write: from here every reader (whoami, the hook, the heartbeat, a new
+    # acquire, the scheduled merger) reads the run as over, even if nothing after this line runs (D00 T01 §13).
+    guard = dict(guard, ended={"reason": reason, "at": _utc_now()})
+    _write_json(guard_path, guard)
+    return _finish_end(root, guard, guard_path, state_path, "guard and state deleted")
+
+
+def _finish_end(root: str, guard: dict, guard_path: str, state_path: str, what: str) -> str:
+    """The cleanup after the mark: record the heartbeat job for cancellation, then delete the guard and the state.
+    Safe to repeat, so a later `end` (or `reset-state --expect-no-guard`) finishes an interrupted one."""
+    reason = str((guard.get("ended") or {}).get("reason", ""))
     # The job id outlives the guard until CronDelete is confirmed, so a failed delete stays recoverable, and a later
     # end never overwrites an earlier unconfirmed cancellation.
     jobs = [j for j in _pending_jobs(root) if j.get("cron_id") != guard.get("cron_id")]
@@ -357,7 +384,7 @@ def _end_locked(root: str, session: str, reason: str, ready: int | None) -> str:
     left = [p for p in (guard_path, state_path) if os.path.exists(p)]
     if left:
         raise GuardError(f"could not delete {', '.join(left)}")
-    return (f"end: {reason}: guard and state deleted; CronDelete {guard.get('cron_id')} now "
+    return (f"end: {reason}: {what}; CronDelete {guard.get('cron_id')} now "
             f"(the heartbeat job), confirm it is gone with CronList, then run "
             f"cancel-confirmed --cron-id {guard.get('cron_id')}")
 
@@ -427,12 +454,17 @@ def whoami(root: str, session: str, generation: str | None = None) -> str:
 
 def reset_state(root: str, session: str | None = None, expect_no_guard: bool = False) -> str:
     """Delete the breaker state under the lock, re-checking ownership or absence first: never a direct delete."""
-    _, state_path = _paths(root)
+    guard_path, state_path = _paths(root)
     with _Lock(root):
         try:
-            guard = read_guard(root)
+            raw = read_guard(root, include_ended=True)
         except GuardError:
             raise GuardError("the guard is unreadable; refusing to reset its state")
+        if raw is not None and raw.get("ended"):
+            # An end interrupted after its mark: finish its cleanup (D00 T01 §13).
+            if expect_no_guard or str(raw.get("session_id", "")) == session:
+                return "reset-state: " + _finish_end(root, raw, guard_path, state_path, "finished an interrupted end")
+        guard = raw if raw is not None and not raw.get("ended") else None
         if expect_no_guard and guard is not None:
             raise GuardError("a guard exists: a new run started; its state is not this heartbeat's to delete")
         if not expect_no_guard and (guard is None or str(guard.get("session_id", "")) != session):
@@ -764,27 +796,70 @@ OWN_FILES = re.compile(r"^build/claude-campaign-(guard|state|pending-cancel|repa
                        r"^build/claude-campaign-guard\.lock$|^build/claude-campaign-hook-errors/")
 
 
+def _within(deadline: float, done: int, total: int) -> None:
+    """Raise when the hook's time budget is spent mid-walk. An incomplete fingerprint is undecidable, never unchanged:
+    the hook fails open with this recorded as its error (D00 T01 §13), since counting it as progress would keep the
+    stall breaker from ever tripping on a tree that always exceeds the budget."""
+    if deadline - time.monotonic() <= 0:
+        raise GuardError(f"fingerprint incomplete: the time budget ran out after {done} of {total} untracked paths; "
+                         f"the hook cannot tell progress from a stall")
+
+
+def _is_link(info: os.stat_result) -> bool:
+    # A Windows reparse point (a symlink or a junction) counts as a link too.
+    return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & 0x400)
+
+
+def _hash_regular(full: str, info: os.stat_result, deadline: float, done: int, total: int) -> str | None:
+    """The SHA-256 of a regular file, read through a handle opened without following a link and without blocking,
+    and only when the handle is still the regular file `lstat` saw (same device and inode): None when the path was
+    replaced between the two calls, so a FIFO swapped in is never read (D00 T01 §13)."""
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    try:
+        fd = os.open(full, flags)
+    except OSError:
+        return None
+    try:
+        now = os.fstat(fd)
+        if not stat.S_ISREG(now.st_mode) or (now.st_dev, now.st_ino) != (info.st_dev, info.st_ino):
+            return None
+        sha, left = hashlib.sha256(), info.st_size
+        while left > 0:
+            _within(deadline, done, total)
+            chunk = os.read(fd, min(1 << 20, left))
+            if not chunk:
+                break
+            sha.update(chunk)
+            left -= len(chunk)
+        return sha.hexdigest()
+    finally:
+        os.close(fd)
+
+
 def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None = None) -> str:
     """HEAD, the working-tree diff, the untracked files, and the run file without its `- bookkeeping:` lines.
 
     The run file leaves the diff and the untracked set and is hashed on its own, so a heartbeat or retry note in its
     Critical events never passes for progress, while any other line still counts. Untracked content is hashed for the
-    first 500 files up to 4 MB each, the next 5000 count by size and write time, and any past that by name alone, so a
-    huge scratch tree cannot stall the hook and no untracked path drops out.
+    first 500 files up to 4 MB each and 64 MB in all, the next 5000 count by size and write time, and any past that by
+    name alone, so a huge scratch tree cannot stall the hook and no untracked path drops out. Links and special files
+    count without being opened (D00 T01 §13).
     """
     deadline = deadline if deadline is not None else time.monotonic() + HOOK_BUDGET_SECONDS
     max_hashed = _env_int("CAMPAIGN_HASH_FILES", 500)
     max_bytes = _env_int("CAMPAIGN_HASH_BYTES", 4 * 1024 * 1024)
+    max_total = _env_int("CAMPAIGN_HASH_TOTAL_BYTES", 64 * 1024 * 1024)
     max_stat = _env_int("CAMPAIGN_STAT_FILES", 5000)
+    hashed_total = 0
     run_path = run_rel.replace("\\", "/")
     digest = hashlib.sha256()
     digest.update(_git(root, deadline, "rev-parse", "HEAD").strip() + b"\n")
     digest.update(_git(root, deadline, "diff", "HEAD", "--", ".", f":(exclude){run_path}",
                        ":(exclude)build/claude-campaign-*") + b"\n")
     listed = _git(root, deadline, "ls-files", "-z", "--others", "--exclude-standard").decode("utf-8", "replace")
-    for index, path in enumerate((p for p in listed.split("\0") if p and p != run_path and not OWN_FILES.match(p)),
-                                 1):
-        _remaining(deadline)
+    paths = [p for p in listed.split("\0") if p and p != run_path and not OWN_FILES.match(p)]
+    for index, path in enumerate(paths, 1):
+        _within(deadline, index - 1, len(paths))
         if index > max_hashed + max_stat:
             # Past both bounds a path counts by its name alone, with no filesystem call, so a huge scratch tree
             # costs the hook no stat per file (independent review 2026-10-21).
@@ -792,14 +867,32 @@ def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None =
             continue
         full = os.path.join(root, path)
         try:
-            info = os.stat(full)
+            # lstat, never stat: a link counts by its target text and a FIFO, device, socket, or folder by its kind,
+            # none of them opened, so no special file can block or break the hook (D00 T01 §13).
+            info = os.lstat(full)
         except OSError:
             digest.update(f"{path} missing\n".encode("utf-8"))
             continue
-        if index <= max_hashed and info.st_size <= max_bytes:
-            with open(full, "rb") as fh:
-                digest.update(f"{path} ".encode("utf-8") + hashlib.sha256(fh.read()).hexdigest().encode() + b"\n")
+        if _is_link(info):
+            try:
+                target = os.readlink(full)
+            except OSError:
+                target = "<unreadable link>"
+            digest.update(f"{path} -> {target}\n".encode("utf-8"))
+            continue
+        if not stat.S_ISREG(info.st_mode):
+            digest.update(f"{path} special {stat.S_IFMT(info.st_mode):o}\n".encode("utf-8"))
+            continue
+        if index <= max_hashed and info.st_size <= max_bytes and hashed_total + info.st_size <= max_total:
+            hashed = _hash_regular(full, info, deadline, index - 1, len(paths))
+            if hashed is None:
+                digest.update(f"{path} replaced\n".encode("utf-8"))
+            else:
+                hashed_total += info.st_size
+                digest.update(f"{path} ".encode("utf-8") + hashed.encode() + b"\n")
         else:
+            # Past the per-file or the total byte budget a file counts by size and write time, so every path still
+            # counts and no read can outlast the hook.
             digest.update(f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8"))
     digest.update(re.sub(r"(?m)^- bookkeeping:.*(\r?\n)?", "", run_text).encode("utf-8"))
     return digest.hexdigest()
@@ -1682,18 +1775,18 @@ def _self_test() -> int:
         for n in range(3):
             with open(os.path.join(froot, f"statbound-{n}.txt"), "w", encoding="utf-8") as fh:
                 fh.write("x\n")
-        real_stat, seen = os.stat, []
+        real_stat, seen = os.lstat, []
 
         def counting(path, *args, **kwargs):
             seen.append(str(path))
             return real_stat(path, *args, **kwargs)
         saved = {k: os.environ.get(k) for k in ("CAMPAIGN_HASH_FILES", "CAMPAIGN_STAT_FILES")}
         os.environ.update({"CAMPAIGN_HASH_FILES": "0", "CAMPAIGN_STAT_FILES": "1"})
-        os.stat = counting
+        os.lstat = counting
         try:
             fingerprint(froot, RUN_FILE, "")
         finally:
-            os.stat = real_stat
+            os.lstat = real_stat
             for k, v in saved.items():
                 if v is None:
                     os.environ.pop(k, None)
@@ -1796,6 +1889,175 @@ def _self_test() -> int:
               c1.stdout + c2.stderr)
 
     # D00 T04 §34: the runner's contract routes through these commands.
+    # D00 T01 §13: special files, a phase kept on a re-point, an end marked before it deletes, and the budgets.
+    with tempfile.TemporaryDirectory(prefix="campaign-robust-") as rtmp:
+        rroot = _workspace(rtmp)
+        acquire(rroot, SESSION, 3, RUN_FILE, "job-r")
+        # Special files: a link to a folder, a dangling link, and a FIFO count without being opened or followed.
+        os.makedirs(os.path.join(rroot, "realdir"))
+        with open(os.path.join(rroot, "realdir", "inner.txt"), "w", encoding="utf-8") as fh:
+            fh.write("x\n")
+        made = []
+        for name, target in (("dirlink", "realdir"), ("dangling", "nowhere")):
+            try:
+                os.symlink(target, os.path.join(rroot, name), target_is_directory=(name == "dirlink"))
+                made.append(name)
+            except (OSError, NotImplementedError):
+                pass  # a Windows host without the symlink privilege: the link cases below are skipped
+        if hasattr(os, "mkfifo"):
+            # git never lists a FIFO, but it lists a link to one, which the old stat-and-open blocked on for good.
+            os.mkfifo(os.path.join(rroot, "pipe"))
+            made.append("pipe")
+            try:
+                os.symlink("pipe", os.path.join(rroot, "pipelink"))
+                made.append("pipelink")
+            except (OSError, NotImplementedError):
+                pass
+        began = time.monotonic()
+        code, out, err = run_hook(rroot, SESSION)
+        took = time.monotonic() - began
+        check("special-files-count-without-a-hook-error",
+              code == 0 and isinstance(out, dict) and out.get("decision") == "block"
+              and not _state(rroot).get("hook_error") and took < HOOK_BUDGET_SECONDS,
+              f"made={made} took={took:.1f}s {out} {err} {_state(rroot)}")
+        if "dangling" in made:
+            before = fingerprint(rroot, RUN_FILE, "")
+            os.remove(os.path.join(rroot, "dangling"))
+            os.symlink("elsewhere", os.path.join(rroot, "dangling"))
+            check("a-link-counts-by-its-target-text", fingerprint(rroot, RUN_FILE, "") != before)
+        # A path replaced between lstat and open is never read: the handle is not the file lstat saw.
+        a_path, b_path = os.path.join(rroot, "a.txt"), os.path.join(rroot, "b.txt")
+        for p, body in ((a_path, "aaaa\n"), (b_path, "bbbb\n")):
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write(body)
+        check("a-swapped-file-is-never-read",
+              _hash_regular(a_path, os.lstat(b_path), time.monotonic() + 30, 0, 1) is None
+              and _hash_regular(a_path, os.lstat(a_path), time.monotonic() + 30, 0, 1) is not None)
+        if hasattr(os, "mkfifo"):
+            fifo = os.path.join(rroot, "swapped-pipe")
+            os.mkfifo(fifo)
+            began = time.monotonic()
+            got = _hash_regular(fifo, os.lstat(a_path), time.monotonic() + 30, 0, 1)
+            check("a-fifo-swapped-in-before-the-open-never-blocks", got is None and time.monotonic() - began < 5,
+                  f"{got} {time.monotonic() - began:.1f}s")
+        # The byte budget: past the total, a file counts by size and write time (a same-size, same-time edit is then
+        # invisible); under it, the content counts.
+        budget_file = os.path.join(rroot, "budget.txt")
+        with open(budget_file, "w", encoding="utf-8") as fh:
+            fh.write("12345\n")
+
+        def same_size_edit() -> bool:
+            st_before = os.stat(budget_file)
+            before = fingerprint(rroot, RUN_FILE, "")
+            with open(budget_file, "w", encoding="utf-8") as fh:
+                fh.write("54321\n")
+            os.utime(budget_file, ns=(st_before.st_atime_ns, st_before.st_mtime_ns))
+            changed = fingerprint(rroot, RUN_FILE, "") != before
+            with open(budget_file, "w", encoding="utf-8") as fh:
+                fh.write("12345\n")
+            os.utime(budget_file, ns=(st_before.st_atime_ns, st_before.st_mtime_ns))
+            return changed
+        check("under-the-byte-budget-content-counts", same_size_edit())
+        os.environ["CAMPAIGN_HASH_TOTAL_BYTES"] = "3"
+        try:
+            check("past-the-byte-budget-a-file-counts-by-size-and-time", not same_size_edit())
+        finally:
+            del os.environ["CAMPAIGN_HASH_TOTAL_BYTES"]
+        # The time budget: an incomplete fingerprint is named, and the hook fails open with it recorded, leaving the
+        # breaker's blocks as they were (never an unchanged read, never progress).
+        try:
+            fingerprint(rroot, RUN_FILE, "", deadline=time.monotonic() - 1)
+            check("a-spent-budget-names-an-incomplete-fingerprint", False)
+        except GuardError as exc:
+            check("a-spent-budget-names-an-incomplete-fingerprint", "fingerprint incomplete" in str(exc), str(exc))
+        run_hook(rroot, SESSION)
+        blocks_before = _state(rroot).get("blocks")
+        real_ready, real_lstat = globals()["ready_rows"], os.lstat
+        saved_budget = os.environ.get("CAMPAIGN_HOOK_BUDGET_SECONDS")
+
+        def slow_lstat(path, *args, **kwargs):
+            time.sleep(0.4)
+            return real_lstat(path, *args, **kwargs)
+        globals()["ready_rows"] = lambda root, timeout=0, phase=None: (3, "row")
+        os.environ["CAMPAIGN_HOOK_BUDGET_SECONDS"] = "1"
+        os.lstat = slow_lstat
+        try:
+            code, out = stop_hook(json.dumps({"session_id": SESSION, "cwd": rroot}), rroot)
+        finally:
+            os.lstat = real_lstat
+            globals()["ready_rows"] = real_ready
+            if saved_budget is None:
+                os.environ.pop("CAMPAIGN_HOOK_BUDGET_SECONDS", None)
+            else:
+                os.environ["CAMPAIGN_HOOK_BUDGET_SECONDS"] = saved_budget
+        st = _state(rroot)
+        check("an-incomplete-fingerprint-fails-open-recorded-with-the-breaker-untouched",
+              code == 0 and out == "" and "fingerprint incomplete" in str(st.get("hook_error"))
+              and st.get("blocks") == blocks_before, f"{code} {out!r} {st}")
+
+        # The phase: a re-point without --phase keeps it; a first acquire without one, or a loose one, is refused.
+        acquire(rroot, SESSION, None, RUN_FILE, "job-r2")
+        check("a-re-point-without-phase-keeps-it", read_guard(rroot)["phase"] == 3, str(read_guard(rroot)))
+        check("the-cli-refuses-a-loose-phase",
+              main(["acquire", "--root", rroot, "--session", SESSION, "--phase", "3x", "--run-file", RUN_FILE,
+                    "--cron-id", "job-r3"]) == 1 and read_guard(rroot)["phase"] == 3)
+
+        # An end interrupted after its mark: every reader sees the run over, and a later end finishes it.
+        real_pending = globals()["_pending_jobs"]
+
+        def interrupted(root):
+            raise GuardError("injected: the end stopped after its mark")
+        globals()["_pending_jobs"] = interrupted
+        try:
+            end(rroot, SESSION, "operator-stop")
+            check("the-injected-end-stops-after-the-mark", False)
+        except GuardError as exc:
+            check("the-injected-end-stops-after-the-mark", "injected" in str(exc), str(exc))
+        finally:
+            globals()["_pending_jobs"] = real_pending
+        marked = read_guard(rroot, include_ended=True)
+        code, out, _ = run_hook(rroot, SESSION)
+        check("an-ended-guard-reads-as-over-everywhere",
+              marked is not None and marked.get("ended", {}).get("reason") == "operator-stop"
+              and read_guard(rroot) is None and whoami(rroot, SESSION) == "NO GUARD" and out is None,
+              f"{marked} {whoami(rroot, SESSION)} {out}")
+        msg = end(rroot, SESSION, "operator-stop")
+        check("a-later-end-finishes-the-cleanup",
+              "finished an interrupted end" in msg and not os.path.exists(_paths(rroot)[0])
+              and "job-r2" in pending_cancel(rroot), msg)
+        cancel_confirmed(rroot, "job-r2")
+        # The heartbeat's path finishes it too, and a new run may start over an ended guard without a handover.
+        acquire(rroot, SESSION, 2, RUN_FILE, "job-r4")
+        globals()["_pending_jobs"] = interrupted
+        try:
+            end(rroot, SESSION, "operator-stop")
+        except GuardError as exc:
+            check("an-injected-end-stops-after-its-mark-again", "injected" in str(exc), str(exc))
+        finally:
+            globals()["_pending_jobs"] = real_pending
+        msg = acquire(rroot, "99999999-0000-0000-0000-000000000000", 5, RUN_FILE, "job-other")
+        check("a-new-run-starts-over-an-ended-guard", "created" in msg and read_guard(rroot)["phase"] == 5, msg)
+        os.remove(_paths(rroot)[0])
+        acquire(rroot, SESSION, 2, RUN_FILE, "job-r5")
+        globals()["_pending_jobs"] = interrupted
+        try:
+            end(rroot, SESSION, "operator-stop")
+        except GuardError as exc:
+            check("an-injected-end-stops-after-its-mark-again", "injected" in str(exc), str(exc))
+        finally:
+            globals()["_pending_jobs"] = real_pending
+        msg = reset_state(rroot, expect_no_guard=True)
+        check("reset-state-finishes-an-interrupted-end",
+              "finished an interrupted end" in msg and not os.path.exists(_paths(rroot)[0]), msg)
+
+    with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
+        proot = _workspace(ptmp)
+        try:
+            acquire(proot, SESSION, None, RUN_FILE, "job-p")
+            check("a-first-acquire-needs-a-phase", False)
+        except GuardError as exc:
+            check("a-first-acquire-needs-a-phase", "pass --phase" in str(exc) and read_guard(proot) is None, str(exc))
+
     plan_skill = os.path.normpath(os.path.join(HERE, "..", ".claude", "skills", "process-plan", "SKILL.md"))
     try:
         with open(plan_skill, encoding="utf-8") as fh:
@@ -1866,7 +2128,10 @@ def main(argv: list[str]) -> int:
         opts = _opts(argv[1:])
         root = opts.pop("root", REPO)
         if argv[0] == "acquire":
-            print(acquire(root, opts.get("session", ""), int(opts.get("phase", "0")),
+            raw_phase = opts.get("phase")
+            if raw_phase is not None and not re.fullmatch(r"[0-9]+", raw_phase):
+                raise GuardError(f"--phase {raw_phase!r} is not a whole number")
+            print(acquire(root, opts.get("session", ""), int(raw_phase) if raw_phase is not None else None,
                           opts.get("run_file", ""), opts.get("cron_id", ""), opts.get("handover"),
                           opts.get("generation"), opts.get("scope")))
             return 0
