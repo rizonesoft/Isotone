@@ -189,13 +189,7 @@ The full root configuration applies (warnings are errors, code style enforced), 
 
 ### Test quarantine (`tests/Isotone.runsettings`)
 
-These legacy tests are excluded through `TestCaseFilter`. Remove each entry in the same change that fixes its test.
-
-| Test | Symptom |
-| ---- | ------- |
-| `Bezier.Tests.ElementTooltipTests.ElementTooltip_FromElement_UsesUnnamedForNullName` | Fails every run: expected `"Unnamed"`, got `""`. |
-| `Bezier.Tests.AssetLibraryServiceTests.ToggleFavorite_AddsFavorite` | Flaky (about half of runs): favorites state leaks between tests, probably persisted user state. |
-| `Bezier.Tests.AssetLibraryServiceTests.ToggleFavorite_RemovesFavorite` | Flaky, same cause. |
+The quarantine is empty: `D00 T02 §1` fixed the three legacy tests it held (2026-10-22), and `tests/Isotone.runsettings` carries no `TestCaseFilter`. What a quarantine entry must carry, if one is ever needed again, is in [`standards/testing.md`](../../standards/testing.md#the-quarantine).
 
 ### Other known debt
 

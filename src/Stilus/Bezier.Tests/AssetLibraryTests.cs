@@ -1,14 +1,33 @@
 namespace Bezier.Tests;
 
+using System.IO;
 using Bezier.Core.Services;
 
-public class AssetLibraryServiceTests
+public sealed class AssetLibraryServiceTests : IDisposable
 {
+    // A fresh library folder per test, deleted afterwards, so no test reads or writes %LOCALAPPDATA%.
+    private readonly string _libraryPath = Path.Combine(Path.GetTempPath(), "isotone-asset-library-" + Guid.NewGuid().ToString("N"));
     private readonly AssetLibraryService _service;
 
     public AssetLibraryServiceTests()
     {
-        _service = new AssetLibraryService();
+        _service = new AssetLibraryService(_libraryPath);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_libraryPath))
+        {
+            Directory.Delete(_libraryPath, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void AssetLibraryService_UsesTheGivenLibraryFolder()
+    {
+        _service.ToggleFavorite(_service.Assets[0].Id);
+
+        Assert.True(File.Exists(Path.Combine(_libraryPath, "library.json")));
     }
 
     [Fact]
@@ -216,7 +235,7 @@ public class AssetLibraryServiceTests
         // Ensure asset exists
         var asset = _service.GetAsset("builtin-star");
         Assert.NotNull(asset);
-        
+
         // Ensure it's a favorite (toggle until true)
         if (!_service.Favorites.Contains("builtin-star"))
         {

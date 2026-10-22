@@ -108,9 +108,18 @@ public class AssetLibraryService : INotifyPropertyChanged
     }
 
     public AssetLibraryService()
+        : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Bezier", "Library"))
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        _userLibraryPath = Path.Combine(appData, "Bezier", "Library");
+    }
+
+    /// <summary>
+    /// Creates the service over the given user library folder (created when absent). Tests pass a temporary folder,
+    /// so they never touch the developer's own library.
+    /// </summary>
+    public AssetLibraryService(string userLibraryPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userLibraryPath);
+        _userLibraryPath = userLibraryPath;
         Directory.CreateDirectory(_userLibraryPath);
 
         InitializeBuiltInAssets();
@@ -256,7 +265,8 @@ public class AssetLibraryService : INotifyPropertyChanged
     public bool RemoveAsset(string assetId)
     {
         var asset = _assets.FirstOrDefault(a => a.Id == assetId && !a.IsBuiltIn);
-        if (asset == null) return false;
+        if (asset == null)
+            return false;
 
         _assets.Remove(asset);
         _favorites.Remove(assetId);
@@ -280,7 +290,8 @@ public class AssetLibraryService : INotifyPropertyChanged
     public bool ToggleFavorite(string assetId)
     {
         var asset = _assets.FirstOrDefault(a => a.Id == assetId);
-        if (asset == null) return false;
+        if (asset == null)
+            return false;
 
         if (_favorites.Contains(assetId))
         {
@@ -304,7 +315,8 @@ public class AssetLibraryService : INotifyPropertyChanged
     public void MarkAsUsed(string assetId)
     {
         var asset = _assets.FirstOrDefault(a => a.Id == assetId);
-        if (asset == null) return;
+        if (asset == null)
+            return;
 
         asset.UsageCount++;
         _recentlyUsed.Remove(assetId);
@@ -345,7 +357,8 @@ public class AssetLibraryService : INotifyPropertyChanged
     public bool RemoveFolder(string folderId)
     {
         var folder = _folders.FirstOrDefault(f => f.Id == folderId);
-        if (folder == null) return false;
+        if (folder == null)
+            return false;
 
         _folders.Remove(folder);
         SaveUserLibrary();
@@ -360,7 +373,8 @@ public class AssetLibraryService : INotifyPropertyChanged
     public bool AddToFolder(string assetId, string folderId)
     {
         var folder = _folders.FirstOrDefault(f => f.Id == folderId);
-        if (folder == null) return false;
+        if (folder == null)
+            return false;
 
         if (!folder.AssetIds.Contains(assetId))
         {
@@ -377,7 +391,8 @@ public class AssetLibraryService : INotifyPropertyChanged
     public bool RemoveFromFolder(string assetId, string folderId)
     {
         var folder = _folders.FirstOrDefault(f => f.Id == folderId);
-        if (folder == null) return false;
+        if (folder == null)
+            return false;
 
         var removed = folder.AssetIds.Remove(assetId);
         if (removed)
@@ -394,7 +409,8 @@ public class AssetLibraryService : INotifyPropertyChanged
     public IEnumerable<Asset> GetAssetsInFolder(string folderId)
     {
         var folder = _folders.FirstOrDefault(f => f.Id == folderId);
-        if (folder == null) return [];
+        if (folder == null)
+            return [];
 
         return folder.AssetIds
             .Select(id => _assets.FirstOrDefault(a => a.Id == id))
@@ -410,7 +426,8 @@ public class AssetLibraryService : INotifyPropertyChanged
 
         foreach (var path in filePaths)
         {
-            if (!File.Exists(path)) continue;
+            if (!File.Exists(path))
+                continue;
 
             try
             {
@@ -501,12 +518,12 @@ public class AssetLibraryService : INotifyPropertyChanged
             CreateBuiltInIcon("triangle", "Triangle", "icons-basic", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><polygon points="12,2 22,22 2,22" fill="none" stroke="currentColor" stroke-width="2"/></svg>""", ["shape"]),
             CreateBuiltInIcon("star", "Star", "icons-basic", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><polygon points="12,2 15,9 22,9 17,14 19,22 12,18 5,22 7,14 2,9 9,9" fill="none" stroke="currentColor" stroke-width="2"/></svg>""", ["shape", "favorite"]),
             CreateBuiltInIcon("heart", "Heart", "icons-basic", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="currentColor" stroke-width="2"/></svg>""", ["love", "like"]),
-            
+
             CreateBuiltInIcon("arrow-right", "Arrow Right", "icons-arrows", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["direction", "next"]),
             CreateBuiltInIcon("arrow-left", "Arrow Left", "icons-arrows", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M19 12H5m7-7l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["direction", "back"]),
             CreateBuiltInIcon("arrow-up", "Arrow Up", "icons-arrows", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 19V5m-7 7l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["direction"]),
             CreateBuiltInIcon("arrow-down", "Arrow Down", "icons-arrows", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14m-7-7l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["direction"]),
-            
+
             CreateBuiltInIcon("check", "Checkmark", "icons-ui", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["done", "success", "tick"]),
             CreateBuiltInIcon("x", "Close", "icons-ui", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["close", "remove", "delete"]),
             CreateBuiltInIcon("plus", "Plus", "icons-ui", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["add", "new"]),
@@ -514,12 +531,12 @@ public class AssetLibraryService : INotifyPropertyChanged
             CreateBuiltInIcon("menu", "Menu", "icons-ui", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>""", ["hamburger", "navigation"]),
             CreateBuiltInIcon("search", "Search", "icons-ui", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>""", ["find", "magnifier"]),
             CreateBuiltInIcon("settings", "Settings", "icons-ui", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" fill="none" stroke="currentColor" stroke-width="2"/></svg>""", ["gear", "preferences"]),
-            
+
             CreateBuiltInIcon("file", "File", "icons-file", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7z" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="13 2 13 9 20 9" fill="none" stroke="currentColor" stroke-width="2"/></svg>""", ["document"]),
             CreateBuiltInIcon("folder", "Folder", "icons-file", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2v11z" fill="none" stroke="currentColor" stroke-width="2"/></svg>""", ["directory"]),
             CreateBuiltInIcon("download", "Download", "icons-file", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5l5 5 5-5m-5 5V3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["save"]),
             CreateBuiltInIcon("upload", "Upload", "icons-file", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m14-7l-5-5-5 5m5-5v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>""", ["export"]),
-            
+
             CreateBuiltInIcon("play", "Play", "icons-media", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>""", ["start", "video"]),
             CreateBuiltInIcon("pause", "Pause", "icons-media", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="none" stroke="currentColor" stroke-width="2"/><rect x="14" y="4" width="4" height="16" fill="none" stroke="currentColor" stroke-width="2"/></svg>""", ["stop"]),
             CreateBuiltInIcon("image", "Image", "icons-media", """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><polyline points="21 15 16 10 5 21" fill="none" stroke="currentColor" stroke-width="2"/></svg>""", ["photo", "picture"])
@@ -577,7 +594,8 @@ public class AssetLibraryService : INotifyPropertyChanged
     private void LoadUserLibrary()
     {
         var libraryFile = Path.Combine(_userLibraryPath, "library.json");
-        if (!File.Exists(libraryFile)) return;
+        if (!File.Exists(libraryFile))
+            return;
 
         try
         {

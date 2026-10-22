@@ -239,7 +239,7 @@ public class ElementTooltip
         return new ElementTooltip
         {
             Type = element.GetType().Name.Replace("Svg", ""),
-            Name = element.Name ?? "Unnamed",
+            Name = string.IsNullOrWhiteSpace(element.Name) ? "Unnamed" : element.Name,
             Dimensions = $"{bounds.Width:F0} × {bounds.Height:F0}",
             X = mouseX + 15,
             Y = mouseY + 15,
