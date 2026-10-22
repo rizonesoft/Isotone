@@ -2421,8 +2421,11 @@ def _self_test() -> int:
                 stuck = str(exc)
             finally:
                 took = time.monotonic() - began
-                left_r.wait(10)
-                globals()["_read_fd"] = real_read
+                try:
+                    left_ok_r = left_r.wait(10)
+                finally:
+                    # Restored even if the wait is interrupted (independent review round 4).
+                    globals()["_read_fd"] = real_read
             entered_l, left_l = threading.Event(), threading.Event()
 
             def stuck_lstat(path, *args, **kwargs):
@@ -2442,17 +2445,20 @@ def _self_test() -> int:
                 stuck_l = str(exc)
             finally:
                 took_l = time.monotonic() - began_l
-                left_l.wait(10)
-                os.lstat = real_lstat_walk
+                try:
+                    left_ok_l = left_l.wait(10)
+                finally:
+                    os.lstat = real_lstat_walk
         finally:
             # Restored whatever escapes the warm-up or either case (independent review round 1).
             globals()["_git"] = real_git
+        # A worker still blocked after the cleanup wait fails the case, so no later case runs beside it (round 4).
         check("a-blocked-lstat-is-abandoned-at-the-deadline",
-              entered_l.is_set() and "fingerprint incomplete" in stuck_l and took_l < 0.8,
-              f"entered {entered_l.is_set()} {took_l:.2f}s {stuck_l}")
+              entered_l.is_set() and left_ok_l and "fingerprint incomplete" in stuck_l and took_l < 0.8,
+              f"entered {entered_l.is_set()} left {left_ok_l} {took_l:.2f}s {stuck_l}")
         check("a-blocked-read-is-abandoned-at-the-deadline",
-              entered_r.is_set() and "fingerprint incomplete" in stuck and took < 0.8,
-              f"entered {entered_r.is_set()} {took:.2f}s {stuck}")
+              entered_r.is_set() and left_ok_r and "fingerprint incomplete" in stuck and took < 0.8,
+              f"entered {entered_r.is_set()} left {left_ok_r} {took:.2f}s {stuck}")
 
     with tempfile.TemporaryDirectory(prefix="campaign-keys-") as ktmp:
         kroot = _workspace(ktmp)
