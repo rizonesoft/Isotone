@@ -579,3 +579,35 @@ OVERALL: needs-attention
 This record's round 16 is the spec's eighteenth review round. The finding was verified.
 
 1. P1, the power-loss check accepts the old version after a save was reported successful: verified. The check now requires that, once the harness saw the app report a save as successful before power was cut, the target holds that saved version with its file identity contract and the checkpoints that save retired are not needed; a second negative control, a save that reports success before its commit and contract are durable, must fail.
+
+## Round 17: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:57:43Z
+- Effort: xhigh
+- Lines: 16
+- Digest: 1f5620b0dc908b94
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:93`: The completed-checkpoint assertion applies to process-kill runs, but the separate power-loss oracle checks saved targets and acknowledged saves only. Demonstrate with a checkpoint writer that reports completion before its required flush: successfully save N, report checkpoint N+1 complete, then reconstruct storage with that checkpoint’s pending writes dropped. The saved target and its contract remain correct, so the specified power-loss assertions pass despite losing checkpointed work. Require recovery of the newest checkpoint reported complete before the cut, with a premature-completion negative control.
+
+## consistency: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:93`: The new exact acknowledged-version requirement contradicts the permitted outcome of a subsequent interrupted save. Successfully save N, durably commit N+1 and its contract, then cut power immediately before N+1 reports success. Recovery correctly retains N+1 under invariants 1 and 4, but the latest acknowledged save is N, so the new assertion rejects that valid result. Define the acknowledged save as the durability floor while permitting a valid later commit, and test this interleaving.
+
+## integration: approve
+
+## source-defect: approve
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 17
+
+This record's round 17 is the spec's nineteenth review round. Both findings were verified.
+
+1. P1, the power-loss check did not cover checkpoints: verified. Each open document must be recovered with contents equal to the newest checkpoint the app reported complete before the cut, or a later complete one; a checkpoint that reports completion before it is durable is a third negative control.
+2. P2, the acknowledged-version check rejected a valid later commit: verified. What the app acknowledged before the cut is now a durability floor that a later complete commit may pass but never fall below, for saves and for checkpoints alike.
