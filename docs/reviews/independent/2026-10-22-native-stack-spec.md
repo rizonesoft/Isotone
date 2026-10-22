@@ -276,3 +276,44 @@ This record's round 7 is the spec's ninth review round. Every finding was verifi
 1. P1, recovery deletes the backup before the deferred contract is applied: verified. The backup is deleted only after every contract item has been applied from it and read back, in the save and in recovery, which finishes the transfer first. Proof added: a kill right after the commit with a named stream not yet applied.
 2. P2, the conflict outcome promised versions another program may have destroyed: verified. The outcome now covers every file the save moves or finds, and states that a version another program overwrote in place before the save moved it was destroyed by that program.
 3. P1, encryption added mid-save was only reported: verified against `EncryptFileW` and File Security and Access Rights. Invariant 2 now names protections another program adds mid-save, which are applied to the new file before the save is reported, encryption included (the new file is encrypted in place); the narrowness claim is limited to access control, and encryption follows the target as the save starts. Proof added: the target encrypted during a save.
+
+## Round 8: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:02:27Z
+- Effort: xhigh
+- Lines: 22
+- Digest: 32a3542030694734
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:87`: The deferred identity transfer has no durability boundary before backup deletion. The only specified flush precedes copying named streams; subsequent readback can read cached writes. Persist the backup deletion and journal retirement, then cut power before the copied stream reaches disk: document bytes can survive while a contracted stream is lost. Microsoft’s [File Caching](https://learn.microsoft.com/en-us/windows/win32/fileio/file-caching) documentation explicitly distinguishes readback from durable storage. Require durable completion of the transferred data and metadata before deleting the backup, and include them in the power-loss comparison.
+
+## consistency: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: Round 9’s conflict correction remains inconsistent with the reference sequence. Start saving N from A, let another program overwrite A with B, then resume without further interference. Line 87 moves B to the backup and successfully installs N at the target, discovering B’s different hash during cleanup. Line 86 instead requires N at the temporary name and the save reported as not completed. Distinguish a foreign displaced version from a file appearing between the renames, and specify attainable outcomes for both.
+
+## integration: needs-attention
+
+3. P2 `docs/specs/2026-10-22-native-stack-design.md:92`: The newly required recovery transfer is not replayable after successful backup deletion. Complete the contract transfer, delete the backup, then kill the process before journal retirement. On restart, the target matches the new hash, but recovery must apply and verify the contract from a backup that no longer exists. The recorded hashes cover document data, not proof that the transfer completed. Define a durable completion state and an explicit recovery branch for this ordinary interruption.
+
+## source-defect: needs-attention
+
+4. P1 `docs/specs/2026-10-22-native-stack-design.md:87`: The new `EncryptFileW` step retains an unsafe failure outcome. Encrypt the original mid-save, install the plaintext replacement, then have another process open the replacement before encryption runs. Microsoft documents that [EncryptFileW requires exclusive access](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-encryptfilew), so encryption fails. The specified fallback keeps the backup but leaves the replacement plaintext, still violating invariant 2. Define a safe failure transition instead of treating encryption as cleanup after commitment.
+
+5. P1 `docs/specs/2026-10-22-native-stack-design.md:87`: Granting the saving user and SYSTEM is not necessarily narrower than the target’s DACL. For example, give the target a DACL allowing its current logon SID, then save while another logon session uses the same account. The temporary file’s account-SID grant permits that other session to read data before the deferred DACL transfer; equal integrity levels do not prevent it. Microsoft’s [Trustees](https://learn.microsoft.com/en-us/windows/win32/secauthz/trustees) documentation distinguishes account and logon-session trustees. Protection must derive from the target before writing, rather than assuming this fixed ACL is universally narrower.
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 8
+
+This record's round 8 is the spec's tenth review round. Every finding was verified and is real (finding 1 against File Caching, finding 4 against `EncryptFileW`'s exclusive-access requirement, finding 5 against Trustees). The save sequence has drawn findings in eight consecutive rounds, each one a deeper concurrency or durability case of a prescribed Win32 sequence, so the sequence moved out of the spec: the spec keeps the invariants and the proofs, and the document safety foundation section designs the sequence and reviews it with its code and its kill and power-loss tests. The requirements rounds 3 to 10 established are kept in the spec as the inputs to that design, so nothing found here is dropped.
+
+1. P1, no durability boundary before releasing the backup: verified. Invariant 6 requires every state a later step depends on, each applied contract item included, to be durable on the medium rather than readable from the cache, with the journal recording each durable state. Proof added: power loss after each durable state, with every contract item present.
+2. P2, the conflict outcomes did not match the sequence: verified. Two conflicts now have separate fixed outcomes: a version at the target's name that is not the app's last one (the save completes, that version is kept, the user is told), and a file appearing while the new data is installed (the save does not complete, every version is kept).
+3. P2, recovery not replayable after the backup's release: verified. Invariant 6's journal of durable states lets recovery resume from the last one and never need a released file. Proof added: a kill after the release and before the journal's retirement.
+4. P1, encryption failure after the commit left the new file plaintext: verified. Invariant 7 rolls the save back when a step after the commit cannot complete safely. Proof added: encryption blocked by another program's open handle.
+5. P1, a fixed user-and-SYSTEM DACL is not always narrower: verified. Invariant 2 requires the temporary file's protection to be derived from the target's own before any data is written. Proof added: a DACL granting only a logon session.
