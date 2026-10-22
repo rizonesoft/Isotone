@@ -46,7 +46,7 @@ class FakeGit:
         # `symbolic-ref -q HEAD` fails both on a detached HEAD and in a broken repository; `rev-parse --verify`
         # tells them apart.
         self.detached, self.broken = detached, broken
-        # What `git diff --name-only <a> <b>` lists.
+        # What `git log --name-only <a>..<b>` lists.
         self.changed = list(changed)
         # What `git show <sha>:<path>` prints, by (sha, path); any other path is read from the fake's working tree.
         self.files = dict(files or {})
@@ -57,8 +57,8 @@ class FakeGit:
             if self.detached or self.broken:
                 raise mp.Failed("git symbolic-ref -q HEAD failed: ", 1 if self.detached else 128)
             return self.branch + "\n"
-        if args[:2] == ("diff", "--name-only"):
-            assert "-z" in args and "--no-renames" in args, args
+        if args[:2] == ("log", "--name-only"):
+            assert "-z" in args and "--no-renames" in args and "--format=" in args, args
             return "".join(f + "\0" for f in self.changed)
         if args[:2] == ("rev-parse", "--verify") and self.broken:
             raise mp.Failed("git rev-parse --verify -q HEAD failed: not a git repository")
@@ -136,8 +136,10 @@ class FakeGh:
                                    mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
         if args[:2] == ("run", "list") and "--branch" in args:
             wf = args[args.index("--workflow") + 1]
+            # By default main's head and the fake's merge commit (c...) both read green.
             return json.dumps(self.main_runs.get(wf, [{"status": "completed", "conclusion": "success",
-                                                       "url": f"https://example.invalid/{wf}", "headSha": HEAD}]))
+                                                       "url": f"https://example.invalid/{wf}", "headSha": sha}
+                                                      for sha in (HEAD, "c" * 40)]))
         if args[:2] == ("run", "list") and self.runs is not None:
             return json.dumps(self.runs.get(args[args.index("--commit") + 1], []))
         if args[:2] == ("pr", "merge"):
@@ -701,16 +703,116 @@ class MergeTests(Base):
         self.assertEqual(codes, [0, 0, 1])
 
     def test_the_merged_head_is_read_on_the_next_run(self):
-        # The merge lands on main's head, so the next run's judgment reads it: red alerts, pending is busy.
-        gh = FakeGh([pr(1), pr(2)])
-        code, _ = self.call(["run", "--task"], gh, FakeGit())
-        red = {"build.yml": self.run_on(HEAD, conclusion="failure", n=3)}
-        code_red, out_red = self.call(["run", "--task"], FakeGh([pr(2)], main_runs=red), FakeGit())
-        pending = {"build.yml": self.run_on(HEAD, status="in_progress", conclusion="", n=4)}
-        gh_p = FakeGh([pr(2)], main_runs=pending)
-        code_p, _ = self.call(["run", "--task"], gh_p, FakeGit())
-        self.assertEqual((code, len(gh.merges()), code_red, "concluded failure" in out_red, code_p, gh_p.merges()),
-                         (0, 1, 1, True, 0, []))
+        # Items 2 and 8: a merge stays unverified until its own commit's CI is read; while it is pending nothing else
+        # merges (a busy clone, even with main's later head green), and a red, no evidence, or past the bound is exit 1.
+        c = "c" * 40
+        later = "d" * 40
+        green_head = {"plan.yml": self.run_on(HEAD, n=1), "build.yml": self.run_on(HEAD, n=2)}
+
+        def runs(state, cancelled_by=None):
+            out = dict(green_head)
+            if state == "green":
+                own = self.run_on(c, n=5)
+            elif state == "red":
+                own = self.run_on(c, conclusion="failure", n=5)
+            elif state == "pending":
+                own = self.run_on(c, status="queued", conclusion="", n=5)
+            else:
+                own = self.run_on(c, conclusion="cancelled", n=5) + (cancelled_by or [])
+            return {"plan.yml": out["plan.yml"] + self.run_on(c, n=4), "build.yml": out["build.yml"] + own}
+
+        def merged_then(state, clock=0, cancelled_by=None):
+            (self.root / mp.HEALTH).unlink(missing_ok=True)
+            saved = self.at(0)
+            try:
+                first = FakeGh([pr(1), pr(2)])
+                self.call(["run", "--task"], first, FakeGit())
+                merged = self.health()["merged"]
+                mp._clock = lambda: 1_000_000.0 + clock
+                gh = FakeGh([pr(2)], main_runs=runs(state, cancelled_by))
+                code, out = self.call(["run", "--task"], gh, FakeGit())
+            finally:
+                mp._clock = saved
+            return merged["sha"], code, len(gh.merges()), "reads green" in out, out
+
+        # (merged sha, exit, merges this run, "reads green" printed, the record after: the merge kept unverified, or
+        # None once read; a green read lets #2 merge, which records #2's merge in its place).
+        cases = [("green", 0, None, (c, 0, 1, True, 2)),
+                 ("pending", 0, None, (c, 0, 0, False, 1)),
+                 ("pending", mp.PENDING_ALERT_SECONDS, None, (c, 1, 0, False, 1)),
+                 ("red", 0, None, (c, 1, 0, False, None)),
+                 ("cancelled", 0, self.run_on(later, n=6), (c, 0, 1, True, 2)),
+                 ("cancelled", 0, self.run_on(later, conclusion="failure", n=6), (c, 1, 0, False, None)),
+                 ("cancelled", 0, self.run_on(later, status="in_progress", conclusion="", n=6), (c, 0, 0, False, 1))]
+        for state, clock, cancelled_by, want in cases:
+            with self.subTest(state=state, clock=clock, later=cancelled_by and cancelled_by[0]["conclusion"]):
+                sha, code, merges, green, out = merged_then(state, clock, cancelled_by)
+                after = self.health()["merged"]
+                self.assertEqual((sha, code, merges, green, after and after["pr"]), want, out)
+
+    def test_recover_reads_the_merge_too(self):
+        c = "c" * 40
+        self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+        pending = {"build.yml": self.run_on(HEAD, n=1) + self.run_on(c, status="queued", conclusion="", n=2)}
+        code, out = self.call(["recover"], FakeGh([], main_runs=pending), FakeGit())
+        red = {"build.yml": self.run_on(HEAD, n=1) + self.run_on(c, conclusion="failure", n=2)}
+        code2, out2 = self.call(["recover"], FakeGh([], main_runs=red), FakeGit())
+        self.assertEqual((code, "is not read yet" in out, code2, "reads red" in out2, self.health()["merged"]),
+                         (0, True, 1, True, None), out + out2)
+
+    def test_a_recovered_merge_is_recorded_unverified(self):
+        # A merge a killed run left as an intent is recorded once recovery proves it landed, then read like any other.
+        c = "c" * 40
+        red = lambda r: subprocess.CompletedProcess([], 1, "1 fatal\n", "")
+        self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(), validate=red)
+        pending = {"build.yml": self.run_on(HEAD, n=1) + self.run_on(c, status="queued", conclusion="", n=2)}
+        gh = FakeGh([pr(1), pr(2)], already_merged=[1], main_runs=pending)
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), (self.root / mp.BLOCKED).exists(), self.health()["merged"]["pr"]),
+                         (0, [], False, 1), out)
+
+    def test_one_unverified_merge_at_a_time(self):
+        saved = self.at(0)
+        try:
+            mp._record_merge(self.root, "c" * 40, 1)
+            mp._record_merge(self.root, "c" * 40, 1)
+            with self.assertRaises(mp.Failed) as refused:
+                mp._record_merge(self.root, "e" * 40, 2)
+        finally:
+            mp._clock = saved
+        self.assertEqual((self.health()["merged"], "still unverified" in str(refused.exception)),
+                         ({"sha": "c" * 40, "pr": 1, "at": 1_000_000.0}, True))
+
+    def test_a_merge_with_no_run_evidence_keeps_its_record(self):
+        c = "c" * 40
+        self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+        before = self.health()
+        code, out = self.call(["run", "--task"], FakeGh([pr(2)], main_runs={"build.yml": []}), FakeGit())
+        self.assertEqual((code, "cannot be read" in out, self.health(), before["merged"]["sha"]), (1, True, before, c))
+
+    def test_no_evidence_never_moves_the_timers(self):
+        # Independent review round 2: plan-gates reads green, build has no run history: plan-gates' timer stays.
+        (self.root / "build").mkdir(exist_ok=True)
+        (self.root / mp.HEALTH).write_text('{"pending_since": {"plan-gates": 999000.0}}', encoding="utf-8")
+        saved = self.at(0)
+        try:
+            code, out = self.call(["run", "--task"], FakeGh([pr(1)], main_runs={"build.yml": []}), FakeGit())
+        finally:
+            mp._clock = saved
+        self.assertEqual((code, self.health()["pending_since"]), (1, {"plan-gates": 999000.0}), out)
+
+    def test_a_reverted_workflow_edit_still_blocks_inheritance(self):
+        # Independent review round 2: the workflow was edited and then reverted inside the range; the endpoints' diff
+        # misses it, the per-commit list does not.
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        nl = chr(10)
+        (wf / "plan.yml").write_text("on:" + nl + "  push:" + nl + "    paths:" + nl + "      - 'todo/**'" + nl,
+                                     encoding="utf-8")
+        gh = FakeGh([pr(1)], main_runs={"plan.yml": self.run_on("b" * 40)})
+        code, out = self.call(["run", "--campaign"], gh,
+                              FakeGit(changed=[".github/workflows/plan.yml", ".github/workflows/plan.yml"]))
+        self.assertEqual((code, gh.merges(), "workflow changed since its last run" in out), (2, [], True), out)
 
     def test_a_busy_clone_still_reports_a_red_main(self):
         red = {"build.yml": self.run_on(HEAD, conclusion="failure", n=9)}

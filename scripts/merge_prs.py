@@ -35,6 +35,11 @@ GitHub but something failed (a refused merge, a git or gh command that failed); 
 `--task`, a busy clone exits 0 instead, because a campaign running or a section in progress is the task doing its job,
 and only a real failure reaches the failure email); 3 when the merge landed on GitHub but the pull or `validate` then
 failed, so `main` moved and the clone must be reconciled before any other work.
+
+A merge the script made stays unverified in `build/merge-prs-health.json` until its own CI is read (D00 T01 §16): every
+later `run` or `recover` reads it first, and while it is pending nothing else merges (a busy clone); a red, a read that
+fails, or a merge still unread two hours on is exit 1. A guarding workflow on `main` that has not read green for two
+hours is exit 1 too, so a stuck or disabled workflow cannot stop merging in silence.
 """
 from __future__ import annotations
 
@@ -370,7 +375,8 @@ def _push_paths(root: Path, file: str, head: str, git_fn) -> list[str] | None:
         return None
 
 
-def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, git_fn) -> tuple[str, str]:
+def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, git_fn,
+                superseded_ok: bool = False) -> tuple[str, str]:
     """("green" | "pending" | "red", why) for one guarding workflow at `head` (D00 T01 §15, independent review round
     1): its push run on `head` decides; with none, the newest push run on an ancestor decides only when the changes
     since it miss the workflow's push paths (a path-filtered workflow need not run on every commit), and otherwise
@@ -382,18 +388,20 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
     except ValueError as error:
         raise Failed(f"main's {name} runs cannot be read: {error}") from None
     if not runs:
-        # No history at all is a workflow that never runs on main (removed, renamed, or disabled), never lag.
-        return "red", f"main has no {name} push run to read, so its CI cannot be judged"
+        # No history at all is a workflow that never runs on main (removed, renamed, or disabled), never lag. It reads
+        # as red, but it is no evidence, so it never moves the health record (D00 T01 §16, independent review round 2).
+        return "unknown", f"main has no {name} push run to read, so its CI cannot be judged"
     runs = sorted(runs, key=lambda r: r.get("createdAt", ""), reverse=True)
     run = next((r for r in runs if r.get("headSha") == head), None)
     if run is None:
         older = next((r for r in runs if r.get("headSha") and _is_ancestor(git_fn, root, r["headSha"], head)), None)
         if older is None:
             return "pending", f"main's {name} has no push run on {head[:12]} or any commit before it yet"
-        # NUL-separated paths are never quoted, and with renames off a moved file lists both its sides, so every
-        # path the push touched meets the filter (independent review round 2).
-        changed = [f for f in git_fn("diff", "--name-only", "-z", "--no-renames", older["headSha"], head,
-                                     cwd=root).split("\0") if f]
+        # Every path any commit in the range touched, never the endpoints' diff, which hides an edit a later commit
+        # reverted (D00 T01 §16, independent review round 2). NUL-separated paths are never quoted, and with renames
+        # off a moved file lists both its sides, so every path the push touched meets the filter (D00 T01 §15).
+        changed = [f for f in git_fn("log", "--name-only", "-z", "--no-renames", "-m", "--format=",
+                                     f"{older['headSha']}..{head}", cwd=root).split("\0") if f.strip()]
         if f".github/workflows/{file}" in changed:
             # The older run ran another definition of the workflow: it never stands in for the head (D00 T01 §16).
             return "pending", f"main's {name} workflow changed since its last run; its run for {head[:12]} is to come"
@@ -401,6 +409,15 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
         if paths is None or any(_glob_re(p).match(f) for p in paths for f in changed):
             return "pending", f"main's {name} run for {head[:12]} has not started yet"
         run = older
+    if superseded_ok and run.get("headSha") == head and run.get("conclusion") == "cancelled":
+        # A merged commit's own run cancelled by a later push to main (`concurrency: cancel-in-progress`): the first
+        # later run on main that finished reads the merge in its place (D00 T01 §16, independent review round 2).
+        later = [r for r in reversed(runs) if r.get("headSha") not in (None, head)
+                 and r.get("createdAt", "") > run.get("createdAt", "") and _is_ancestor(git_fn, root, head, r["headSha"])]
+        done = next((r for r in later if r.get("status") == "completed" and r.get("conclusion") != "cancelled"), None)
+        if done is None:
+            return "pending", f"main's {name} run on {head[:12]} was cancelled by a later push whose run has not finished"
+        run = done
     if run.get("status") != "completed":
         return "pending", f"main's {name} run is {run.get('status')}: {run.get('url')}"
     if run.get("conclusion") != "success":
@@ -408,21 +425,39 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
     return "green", ""
 
 
+def _instant(value, now: float) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value <= now
+
+
 def _read_health(root: Path, now: float) -> dict:
     path = root / HEALTH
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        return {"pending_since": {}}
+        return {"pending_since": {}, "merged": None}
     except (OSError, ValueError) as error:
-        raise Failed(f"{HEALTH} cannot be read ({error}); delete it to restart the pending timers") from None
+        raise Failed(f"{HEALTH} cannot be read ({error}); check main's CI and the last merge, then delete it") from None
+    merged = doc.get("merged") if isinstance(doc, dict) else None
+    if merged is not None and not (isinstance(merged, dict) and isinstance(merged.get("sha"), str)
+                                   and re.fullmatch(r"[0-9a-f]{40}", merged["sha"])
+                                   and isinstance(merged.get("pr"), int) and not isinstance(merged["pr"], bool)
+                                   and _instant(merged.get("at"), now)):
+        raise Failed(f"{HEALTH} names an unverified merge it cannot describe; check main's CI and the last merge, "
+                     f"then delete it")
     since = doc.get("pending_since") if isinstance(doc, dict) else None
     # A timer that is not a finite past instant (NaN, Infinity, or a time to come) would never reach the bound, so it
     # is damage, never a timer (independent review round 1).
-    if not isinstance(since, dict) or not all(isinstance(v, (int, float)) and not isinstance(v, bool)
-                                              and math.isfinite(v) and v <= now for v in since.values()):
-        raise Failed(f"{HEALTH} is malformed; delete it to restart the pending timers")
-    return {"pending_since": dict(since)}
+    if not isinstance(since, dict) or not all(_instant(v, now) for v in since.values()):
+        raise Failed(f"{HEALTH} is malformed; check main's CI and the last merge, then delete it")
+    return {"pending_since": dict(since), "merged": merged}
+
+
+def _write_health(root: Path, record: dict) -> None:
+    path = root / HEALTH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(record, indent=2), encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def _age_pending(root: Path, verdicts: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
@@ -432,6 +467,9 @@ def _age_pending(root: Path, verdicts: list[tuple[str, str, str]]) -> list[tuple
     failed read, or a checkout that left main, never moves the record (independent review round 1)."""
     now = _clock()
     record = _read_health(root, now)
+    if any(state == "unknown" for _name, state, _why in verdicts):
+        # No evidence is not a reading: nothing moves (D00 T01 §16, independent review round 2).
+        return verdicts
     since = dict(record["pending_since"])
     out = []
     for name, state, why in verdicts:
@@ -444,12 +482,48 @@ def _age_pending(root: Path, verdicts: list[tuple[str, str, str]]) -> list[tuple
                                      f"past the {PENDING_ALERT_SECONDS // 3600}-hour bound: a stuck or disabled workflow")
         out.append((name, state, why))
     if since != record["pending_since"]:
-        path = root / HEALTH
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps({"pending_since": since}, indent=2), encoding="utf-8")
-        os.replace(tmp, path)
+        _write_health(root, {**record, "pending_since": since})
     return out
+
+
+def _record_merge(root: Path, commit: str, n) -> None:
+    """Record a landed merge as unverified until its own CI is read (D00 T01 §16). One at a time: a different
+    unverified merge already recorded is never overwritten."""
+    now = _clock()
+    record = _read_health(root, now)
+    held = record["merged"]
+    if held is not None and held["sha"] != commit:
+        raise Failed(f"the merge of #{held['pr']} at {held['sha'][:12]} is still unverified")
+    if held is None:
+        _write_health(root, {**record, "merged": {"sha": commit, "pr": n, "at": now}})
+
+
+def settle_merge(root: Path, repo: str, gh_fn, git_fn) -> str | None:
+    """Read the CI of the last merge this script made, before anything else (D00 T01 §16). None when no merge is
+    unverified; the line to print when this read verified it; Refused while it is pending inside the bound (nothing
+    else merges meanwhile); Failed on a red, on no run evidence, past the bound, or when it cannot be read, and only
+    a green or a red clears the record."""
+    now = _clock()
+    record = _read_health(root, now)
+    held = record["merged"]
+    if held is None:
+        return None
+    sha, n = held["sha"], held["pr"]
+    git_fn("fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main", cwd=root)
+    verdicts = [(name, *_ci_verdict(name, file, repo, root, sha, gh_fn, git_fn, superseded_ok=True))
+                for name, file in MAIN_WORKFLOWS]
+    state, why = _combined(verdicts)
+    if any(s == "unknown" for _name, s, _why in verdicts):
+        raise Failed(f"the merge of #{n} at {sha[:12]} cannot be read: {why}")
+    if state == "pending":
+        if now - held["at"] >= PENDING_ALERT_SECONDS:
+            raise Failed(f"the merge of #{n} at {sha[:12]} is still unread {int((now - held['at']) // 60)} minutes on, "
+                         f"past the {PENDING_ALERT_SECONDS // 3600}-hour bound: {why}")
+        raise Refused(f"the merge of #{n} at {sha[:12]} is not read yet ({why}); nothing else merges until it is")
+    _write_health(root, {**record, "merged": None})
+    if state == "red":
+        raise Failed(f"the merge of #{n} at {sha[:12]} reads red: {why}; repair main")
+    return f"merge_prs: the merge of #{n} at {sha[:12]} reads green"
 
 
 def _verdicts(repo: str, root: Path, head: str, gh_fn, git_fn) -> list[tuple[str, str, str]]:
@@ -461,7 +535,7 @@ def _combined(verdicts: list[tuple[str, str, str]]) -> tuple[str, str]:
     """Every workflow is read before the state is chosen, so a red one outranks one still running (D00 T01 §15,
     independent review round 1)."""
     for state in ("red", "pending"):
-        found = [why for _name, s, why in verdicts if s == state]
+        found = [why for _name, s, why in verdicts if s == state or (state == "red" and s == "unknown")]
         if found:
             return state, "; ".join(found)
     return "green", ""
@@ -897,15 +971,21 @@ def _merge_and_verify(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_f
     except Failed as error:
         return 3, (f"merge_prs: #{n} MERGED on GitHub, but the pull failed, so main moved and the clone is behind: "
                    f"{error}; reconcile (git pull --ff-only origin main, then validate) before any other work")
-    verdict = _landed(n, repo, root, gh_fn, git_fn)
+    verdict, commit = _landed(n, repo, root, gh_fn, git_fn)
     if verdict:
         return 3, f"merge_prs: #{n} {verdict}; check it before any other work"
     done = _validate(root, validate_fn)
     if done.returncode != 0:
         return 3, (f"merge_prs: #{n} MERGED and pulled, but validate is red on main: "
                    f"{(done.stdout or '').strip()[-200:]}; repair main before any other work")
+    try:
+        _record_merge(root, commit, n)
+    except (Failed, OSError) as error:
+        # The intent stays, so the next run's recovery records the merge before anything else (D00 T01 §16).
+        return 3, f"merge_prs: #{n} MERGED and validated, but it cannot be recorded as unverified: {error}"
     head = git_fn("rev-parse", "HEAD", cwd=root).strip()
-    return 0, f"merge_prs: merged #{n} ({pr.get('headRefName')}) by rebase into main; main is {head[:12]}"
+    return 0, (f"merge_prs: merged #{n} ({pr.get('headRefName')}) by rebase into main; main is {head[:12]}; its CI is "
+               f"read on the next run")
 
 
 def _clone_unsteady(root: Path, git_fn) -> str | None:
@@ -926,17 +1006,18 @@ def _state(n, repo: str, root: Path, gh_fn) -> dict | None:
         return None
 
 
-def _landed(n, repo: str, root: Path, gh_fn, git_fn) -> str | None:
-    """None when the pull request merged into main and its merge commit is on the local HEAD; else what is wrong."""
+def _landed(n, repo: str, root: Path, gh_fn, git_fn) -> tuple[str | None, str]:
+    """(None, the merge commit) when the pull request merged into main and its merge commit is on the local HEAD;
+    else (what is wrong, "")."""
     after = _state(n, repo, root, gh_fn)
     if after is None:
-        return "merged, but its destination cannot be read back"
+        return "merged, but its destination cannot be read back", ""
     commit = (after.get("mergeCommit") or {}).get("oid", "")
     on_main = bool(commit) and _is_ancestor(git_fn, root, commit, "HEAD")
     if after.get("state") != "MERGED" or after.get("baseRefName") != "main" or not on_main:
         return (f"did not land on main as read back (state {str(after.get('state')).lower()}, base "
-                f"{after.get('baseRefName')}, merge commit {commit[:12] or 'none'} on main: {on_main})")
-    return None
+                f"{after.get('baseRefName')}, merge commit {commit[:12] or 'none'} on main: {on_main})"), ""
+    return None, commit
 
 
 def _validate(root: Path, validate_fn):
@@ -993,11 +1074,15 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
     if dirty:
         # Validation must judge the committed main, not an uncommitted repair (independent review round 5).
         return f"an earlier merge (#{n}) is unresolved and the working tree has uncommitted changes; commit the repair first"
-    verdict = _landed(n, repo, root, gh_fn, git_fn)
+    verdict, commit = _landed(n, repo, root, gh_fn, git_fn)
     if verdict:
         return f"an earlier merge (#{n}) {verdict}"
     if _validate(root, validate_fn).returncode != 0:
         return f"an earlier merge (#{n}) left main red: validate fails; repair main"
+    try:
+        _record_merge(root, commit, n)
+    except (Failed, OSError) as error:
+        return f"an earlier merge (#{n}) landed but cannot be recorded as unverified: {error}"
     (root / BLOCKED).unlink(missing_ok=True)
     return None
 
@@ -1019,6 +1104,17 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         if stuck:
             print(f"merge_prs: not merging: {stuck}", file=sys.stderr)
             return 3
+    if args.mode in ("run", "recover"):
+        # The last merge's own CI before anything else, the clone busy or not (D00 T01 §16): pending is a busy clone
+        # (nothing else merges), and a red, no evidence, or a merge unread past the bound is exit 1.
+        try:
+            line = settle_merge(root, repository(root, git_fn), gh_fn, git_fn)
+        except Refused as error:
+            if args.mode == "run":
+                raise
+            line = f"merge_prs: recover: {error}"
+        if line:
+            print(line)
     if args.mode == "recover":
         # Recovery only, never a merge: a campaign settles what an earlier run left before its first or resumed
         # section, and a merge there would land with no CI read-back before section work (independent review round 13).
