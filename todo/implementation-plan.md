@@ -167,7 +167,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  23   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
 | [ ] | `D00 T02 §9`  | Point every Stilus test at a temporary app data                  |   4   |
-| [ ] | `D00 T02 §2`  | Gesso diagnostics to zero                                        |   4   |
+| [ ] | `D00 T02 §2`  | Gesso diagnostics to zero                                        |   5   |
 | [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                           |   3   |
 | [ ] | `D00 T02 §4`  | Prune packages no code uses                                      |   7   |
 | [ ] | `D00 T02 §5`  | The assertion library decision and the decision log              |   5   |
