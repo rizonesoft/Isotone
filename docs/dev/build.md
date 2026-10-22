@@ -132,6 +132,13 @@ Every Setup.exe is a PE32+ AMD64 image. The Stilus installer installs silently p
 
 Every action is pinned by full commit SHA with the tag in a trailing comment.
 
+The first recorded green runs, read back by `D00 T01 §5`:
+
+| Workflow | First green run | Commit | Date (UTC) |
+| -------- | --------------- | ------ | ---------- |
+| `build` | https://github.com/rizonesoft/Isotone/actions/runs/36202856393 | `7578c90` | 2026-09-25 23:55 (2026-09-26 local) |
+| `plan-gates` | https://github.com/rizonesoft/Isotone/actions/runs/36203128891 | `819cd2f` | 2026-09-25 23:59 (2026-09-26 local; the run before it failed) |
+
 ## Package versions
 
 Checked against nuget.org on 2026-09-26 (`dotnet list Isotone.slnx package --outdated --include-prerelease`). Every package is on its latest stable release, except where the table says why:
