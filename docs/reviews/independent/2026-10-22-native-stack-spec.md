@@ -200,3 +200,44 @@ This record's round 5 is the spec's seventh review round. Every finding was veri
 3. P2, the session lock breaks Albumen's external-editor handoff: verified. No lock is held; the app watches the folder and offers to reload; a proof covers the external editor saving over an image Albumen shows.
 4. P2, the held handle blocks ordinary readers: verified. Resolved by holding no handle.
 5. P2, file IDs change on FAT renames: verified. Invariant 3 forbids deciding by file IDs, times, or timing; a FAT proof with long names is added.
+
+## Round 6: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T21:50:00Z
+- Effort: xhigh
+- Lines: 22
+- Digest: 872fdb088864e4e1
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:92`: Recovery deletes the temporary pathname without checking its content, violating invariant 3. Reproduce by killing the app after journaling, placing unrelated content at the recorded temporary name, then restarting. Recovery deletes that foreign file because its only stated condition is that the temporary file is not the target. Random names and `CREATE_NEW` do not establish ownership after a crash.
+
+## consistency: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: Invariants 1 and 5 conflict with invariant 3 and the reference sequence’s conflict handling. Move original A to the backup, let another program create B at the target, then fail the installation rename. Preserving B prevents leaving A at the target as invariant 5 requires; after a crash, preserving B also prevents satisfying invariant 1’s old-or-new requirement. Define an explicit conflict outcome and corresponding exceptions to those invariants and proofs.
+
+## integration: needs-attention
+
+3. P1 `docs/specs/2026-10-22-native-stack-design.md:88`: The protection comparison is no longer bound to the file actually displaced. Pause after the final comparison, tighten the target’s DACL from another process, then resume the two renames. The replacement retains the temporary file’s earlier, broader DACL, weakening protection despite a successful comparison. The reference sequence needs a protection contract tied to the displaced version and a regression scenario for concurrent security changes. Microsoft’s [File Security and Access Rights](https://learn.microsoft.com/en-us/windows/win32/fileio/file-security-and-access-rights) documents that renaming does not assign a new security descriptor.
+
+## source-defect: needs-attention
+
+4. P2 `docs/specs/2026-10-22-native-stack-design.md:89`: User-scoped `CryptProtectData` does not guarantee that checkpoints are readable only on the originating machine. Microsoft explicitly permits decryption on another computer with a roaming profile. Reproduce with the same roaming user on two machines and transfer the checkpoint and wrapped key. Either specify additional machine binding or correct the restriction and recovery behavior. See [CryptProtectData, Remarks](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata#remarks).
+
+## record: needs-attention
+
+5. P3 `docs/specs/2026-10-22-native-stack-design.md:3`: The status says “six independent review rounds” but enumerates seven. Commit `c8b327f` and the record’s `Response to round 5` confirm that the seventh review was answered. Update the count.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 6
+
+This record's round 6 is the spec's eighth review round. Every finding was verified and is real.
+
+1. P1, recovery deletes the temporary name without proving it: verified. A file at the temporary name is deleted only when its hash equals the new data's recorded hash; a partial one is kept and listed in the recovery report. Proof added.
+2. P2, invariants 1 and 5 conflict with invariant 3: verified. The invariants now state that 1 and 5 hold when no other program touches the target's name, and define the conflict outcome (every version kept under a named path, the save reported not completed, the user told), which the proofs check.
+3. P1, protections compared before a concurrent change are not bound to the displaced file: verified against File Security and Access Rights. The temporary file is created narrower than any target could be (user and SYSTEM only, a no-read-up and no-write-up label, EFS with the target's key holders), and the full contract is applied after the commit from the displaced version itself, read from the backup name; invariant 2 is restated against the displaced version. Proof added for a DACL tightened and a key holder added during a save.
+4. P2, DPAPI user scope roams: verified against `CryptProtectData`'s remarks. The claim is corrected to the user, not the machine; the recovery folder is local, non-roaming app data, so checkpoints reach another machine only in a portable copy.
+5. P3, the status line's round count: verified and corrected.
