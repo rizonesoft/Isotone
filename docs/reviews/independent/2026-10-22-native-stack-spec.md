@@ -611,3 +611,32 @@ This record's round 17 is the spec's nineteenth review round. Both findings were
 
 1. P1, the power-loss check did not cover checkpoints: verified. Each open document must be recovered with contents equal to the newest checkpoint the app reported complete before the cut, or a later complete one; a checkpoint that reports completion before it is durable is a third negative control.
 2. P2, the acknowledged-version check rejected a valid later commit: verified. What the app acknowledged before the cut is now a durability floor that a later complete commit may pass but never fall below, for saves and for checkpoints alike.
+
+## Round 18: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T23:02:58Z
+- Effort: xhigh
+- Lines: 14
+- Digest: e945fd84aca2652f
+
+## adversarial: approve
+
+## consistency: needs-attention
+
+1. P2 `docs/specs/2026-10-22-native-stack-design.md:93`: The new power-loss checkpoint assertion contradicts legitimate retirement at lines 91-92. Complete checkpoint N, edit to N+1, successfully save N+1, durably retire the covered checkpoints, keep the document open, then cut power before another checkpoint. Correct recovery retains saved N+1 and offers no retired checkpoint. The new assertion instead requires recovery equal to checkpoint N or a later complete checkpoint, neither of which is eligible. It therefore rejects correct behavior and conflicts with this paragraph’s existing save-then-kill proof requiring nothing recovered. Scope the checkpoint floor to checkpoints still requiring recovery, allow a covering durable save to satisfy it, and include this interleaving in the power-loss proofs.
+
+## integration: approve
+
+## source-defect: approve
+
+## record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 18
+
+This record's round 18 is the spec's twentieth review round. The finding was verified.
+
+1. P2, the checkpoint floor rejected a correct save-then-retire outcome: verified. The floor now holds an open document's edits up to its newest acknowledged checkpoint either in that checkpoint or a later complete one, or in a durable save that covered them and retired the checkpoint (nothing then offered, consistent with the save-then-kill proof); the power-loss runs include that interleaving.
