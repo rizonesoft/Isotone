@@ -538,7 +538,7 @@ Gesso starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity ph
 |  ✔  | Section      | Deliverable                                       | Items |
 | :-: | ------------ | ------------------------------------------------- | :---: |
 | [ ] | `D03 T01 §2` | Port the snapshot canvas, ruler, and container    |   8   |
-| [ ] | `D03 T01 §3` | WPF-UI out of Gesso                               |   7   |
+| [ ] | `D03 T01 §3` | WPF-UI out of Gesso                               |   8   |
 | [ ] | `D03 T01 §5` | Composition root on Isotone.Core                  |   4   |
 | [ ] | `D03 T02 §1` | The tiled image store                             |   6   |
 | [ ] | `D03 T02 §2` | The viewport on the tiled document                |   6   |

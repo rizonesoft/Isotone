@@ -180,10 +180,7 @@ Warning load under the root analyzers (clean Release build on the .NET 11 RC SDK
 
 ### Gesso (`src/Gesso/Directory.Build.props`)
 
-The full root configuration applies (warnings are errors, code style enforced), except these diagnostics, which stay warnings via `WarningsNotAsErrors`:
-
-- `IDE0005`: unnecessary using directives (6 sites, for example `Gesso.Core/GlobalUsings.cs`, `Gesso.UI/GlobalUsings.cs`).
-- `CS0618`: obsolete API use (1 site: WPF-UI `IContentDialogService.SetDialogHost` in `Views/MainWindow.xaml.cs`).
+The full root configuration applies (warnings are errors, code style enforced) and excuses nothing. `D00 T02 §2` (2026-10-22) cleared the two diagnostics the imported code was allowed as warnings: `IDE0005` (unused usings in `Gesso.Core/GlobalUsings.cs`, `Gesso.Rendering/GlobalUsings.cs`, `Gesso.FileFormats/GlobalUsings.cs`, `Diagnostics/PerformanceMetrics.cs`, `Controls/VectorIcon.cs`, and `Services/DialogService.cs`) and `CS0618`: its one site, WPF-UI's obsolete `SetDialogHost(ContentPresenter)` in `Views/MainWindow.xaml.cs`, is excused on that line alone by a `#pragma` marked `WORKAROUND`, because the documented replacement is a WPF-UI `ContentDialogHost` the design contract forbids adding; `D03 T01 §3` removes the WPF-UI dialog service and the pragma with it.
 
 `NU1701` left the list on 2026-09-26: SkiaSharp.Views.WPF 4 on the Windows SDK TFM restores OpenTK 4 for .NET. The .NET 11 SDK also enforces `IDE1006` naming in the WPF markup-compile pass and adds `IDE0054` and `IDE0330`; the handful of Gesso sites they found were fixed, and `.editorconfig` gained a private-constants naming rule because the new Roslyn matches `const` fields against `required_modifiers = static`.
 

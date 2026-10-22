@@ -9,15 +9,8 @@
   </PropertyGroup>
 
   <!--
-    LEGACY DEBT (imported Gesso code): the root configuration applies in full
-    (warnings are errors, code style enforced) except for the diagnostics below,
-    which stay visible as warnings. Listed in docs/dev/build.md; retire by TODO.
-      IDE0005  unnecessary using directives
-      CS0618   obsolete API use (WPF-UI IContentDialogService.SetDialogHost)
-    NU1701 left on 2026-09-26: SkiaSharp.Views.WPF 4 on the Windows SDK TFM
-    restores OpenTK 4 for .NET, not the .NET Framework OpenTK 3 packages.
+    The root configuration applies in full (warnings are errors, code style
+    enforced): nothing is excused. The imported code's IDE0005 and CS0618 sites
+    were cleared by D00 T02 §2 (2026-10-22), and NU1701 left on 2026-09-26.
   -->
-  <PropertyGroup>
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);IDE0005;CS0618</WarningsNotAsErrors>
-  </PropertyGroup>
 </Project>

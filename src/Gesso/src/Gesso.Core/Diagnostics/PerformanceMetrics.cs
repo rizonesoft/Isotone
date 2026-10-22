@@ -1,7 +1,6 @@
 namespace Gesso.Core.Diagnostics;
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Serilog;
 
 /// <summary>

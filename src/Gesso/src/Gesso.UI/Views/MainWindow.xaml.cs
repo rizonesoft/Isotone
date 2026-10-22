@@ -26,7 +26,12 @@ public partial class MainWindow : FluentWindow
         InitializeComponent();
 
         _snackbarService.SetSnackbarPresenter(SnackbarPresenter);
+        // WORKAROUND: WPF-UI 4.3 marks SetDialogHost(ContentPresenter) obsolete, and its replacement needs a WPF-UI
+        // ContentDialogHost, which the design contract forbids adding. D03 T01 §3 removes the WPF-UI dialog service,
+        // and this call and its pragma with it; until then CS0618 is excused on this line alone.
+#pragma warning disable CS0618
         _contentDialogService.SetDialogHost(RootContentDialog);
+#pragma warning restore CS0618
 
         Loaded += OnLoaded;
     }
