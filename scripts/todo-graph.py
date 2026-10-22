@@ -11505,7 +11505,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a heading below level 2", _gcat.replace("## Elsewhere", "### Notes\n\n## Elsewhere"), "is a block the parity format does not allow"),
                 ("an area heading in markup", _gcat.replace("## Elsewhere", "## _Elsewhere_").replace("- [Elsewhere](#elsewhere) (2)", "- [_Elsewhere_](#elsewhere) (2)"), "is not plain text"),
                 ("a setext underline", _gcat.replace("## Elsewhere", "Pixels\n---\n\n## Elsewhere"), "is a block the parity format does not allow"),
-                ("an HTML heading", _gcat.replace("## Elsewhere", "<h2>Pixels</h2>\n\n## Elsewhere"), "holds raw HTML"),
+                ("an HTML heading", _gcat.replace("## Elsewhere", "<h2>Pixels</h2>\n\n## Elsewhere"), "holds an angle-bracket construct"),
                 ("an indented heading", _gcat.replace("## Elsewhere", "  ## Pixels\n\n## Elsewhere"), "is a block the parity format does not allow"),
                 # Round 4: the rule is an allowlist, so a tab-separated, a
                 # blockquoted, or a closed heading is refused too, and the
@@ -11516,8 +11516,16 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 # inside a list item and HTML anywhere are refused too.
                 ("a heading in a list item", _gcat.replace("## Elsewhere", "- ## Notes\n\n## Elsewhere"), "is a block the parity format does not allow"),
                 ("a heading in an ordered list item", _gcat.replace("## Elsewhere", "1. ## Notes\n\n## Elsewhere"), "is a block the parity format does not allow"),
-                ("an HTML heading inside a div", _gcat.replace("## Elsewhere", "<div><h2 id=\"pixels\">Counterfeit</h2></div>\n\n## Elsewhere"), "holds raw HTML"),
-                ("raw HTML in a table cell", _gcat.replace("| IP-0005 | Vectors |", "| IP-0005 | <b>Vectors</b> |"), "holds raw HTML"),
+                ("an HTML heading inside a div", _gcat.replace("## Elsewhere", "<div><h2 id=\"pixels\">Counterfeit</h2></div>\n\n## Elsewhere"), "holds an angle-bracket construct"),
+                ("raw HTML in a table cell", _gcat.replace("| IP-0005 | Vectors |", "| IP-0005 | <b>Vectors</b> |"), "holds an angle-bracket construct"),
+                # Round 6: thematic breaks are blocks, an autolink is an
+                # angle-bracket construct, and a Totals header inside another
+                # table is no summary.
+                ("a thematic break of asterisks", _gcat.replace("## Elsewhere", "***\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                ("a thematic break of underscores", _gcat.replace("## Elsewhere", "___\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                ("an autolink in a paragraph", _gcat.replace("# Gesso parity\n", "# Gesso parity\n\nSee <https://example.com>\n"), "holds an angle-bracket construct"),
+                ("a Totals header inside another table", _gcat.replace("| Status | Features | Source rows |", "| Other | Numbers | Facts |\n| -- | -- | -- |\n| Status | Features | Source rows |"), "has 0 Totals tables"),
+                ("an Areas count off by one names the catalog", _gcat.replace("(#pixels) (3)", "(#pixels) (4)"), "docs/parity/gesso-parity.md: Areas entry `Pixels` says 4"),
                 ("a heading with a closing sequence", _gcat.replace("## Elsewhere", "## Notes ##\n\n## Elsewhere"), "is not plain text"),
                 ("a title in markup", _gcat.replace("# Gesso parity", "# [Pixels](#unused)"), "heading `[Pixels](#unused)` at line 1 is not plain text"),
             )

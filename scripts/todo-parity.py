@@ -260,14 +260,16 @@ _AREA_RE = re.compile(r"^- \[(?P<name>[^\]]+)\]\(#(?P<anchor>[^)\s]+)\) \((?P<n>
 # The parity format's line grammar, stricter than GitHub Markdown on purpose (like its table rule). A catalog is made
 # of five kinds of line and nothing else: blank lines, table lines (opening with `|`), its `# ` title and `## `
 # sections at the line start with one space and plain text, the Areas entries under `## Areas`, and plain paragraph
-# lines, which open with no block marker (`#`, `>`, a list marker, a fence, an underline, indentation). Raw HTML
-# appears nowhere. Then every heading a reader or GitHub sees is one the check reads, its anchor is the plain slug
+# lines, which open with no block marker (`#`, `>`, a list marker, a fence, an underline or thematic break,
+# indentation). No angle-bracket construct (`<` before a letter, `/`, `!`, or `?`) appears anywhere: raw HTML,
+# autolinks, and tag-like text inside code alike, so nothing a renderer turns into markup is left to judgement. Then every heading a reader or GitHub sees is one the check reads, its anchor is the plain slug
 # below, and no Markdown construct can hide or counterfeit one (D00 T01 §7: review rounds 1 to 3 found corners of
 # emulating GitHub's slugger and rounds 4 and 5 corners of a heading allowlist, so the breaker made it the grammar).
 _HEADING_TEXT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ,():&'/-]*")
 _ALLOWED_HEADING_RE = re.compile(r"^(#{1,2}) (\S.*)$")
 _RAW_HTML_RE = re.compile(r"<[A-Za-z/!?]")
-_BLOCK_START_RE = re.compile(r"^(?:[ \t]|#|>|[-*+](?:[ \t]|$)|\d+[.)](?:[ \t]|$)|`{3,}|~{3,}|=+[ \t]*$|-+[ \t]*$)")
+_BLOCK_START_RE = re.compile(r"^(?:[ \t]|#|>|[-*+](?:[ \t]|$)|\d+[.)](?:[ \t]|$)|`{3,}|~{3,}|=+[ \t]*$|-+[ \t]*$"
+                             r"|(?:\*[ \t]*){3,}$|(?:_[ \t]*){3,}$)")
 
 
 def _anchor(heading: str) -> str:
@@ -307,7 +309,10 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
             want[kind][1] += sum(len(v) for v in row["sources"].values())
     want_total = [len(rows), sum(sum(len(v) for v in r["sources"].values()) for r in rows)]
     # The Totals table: the one whose header is exactly Status | Features | Source rows.
-    tables = [i for i, line in enumerate(lines) if line.strip().startswith("|") and split_row(line) == _TOTALS_HEADER]
+    # A Totals header opens its own table (the file start or a blank line above it); a header-shaped row inside another
+    # table is that table's row, never the summary (independent review round 6).
+    tables = [i for i, line in enumerate(lines) if line.strip().startswith("|") and split_row(line) == _TOTALS_HEADER
+              and (i == 0 or not lines[i - 1].strip())]
     if len(tables) != 1:
         drift(f"has {len(tables)} Totals tables (`| Status | Features | Source rows |`); it carries exactly one")
     else:
@@ -349,9 +354,9 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
     allowed: list[tuple[int, str]] = []
     section = None
     for i, line in enumerate(lines):
-        where = f"line {i + 1} ({line.strip()[:40]!r})"
+        at = f"line {i + 1} ({line.strip()[:40]!r})"
         if _RAW_HTML_RE.search(line):
-            drift(f"{where} holds raw HTML; {rule}")
+            drift(f"{at} holds an angle-bracket construct (raw HTML or an autolink); {rule}")
         if not line.strip() or line.startswith("|"):
             continue
         m = _ALLOWED_HEADING_RE.match(line)
@@ -362,7 +367,7 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
         if section == "Areas" and line.startswith("- "):
             continue  # an Areas entry: its shape is checked with the list below
         if _BLOCK_START_RE.match(line):
-            drift(f"{where} is a block the parity format does not allow; {rule}")
+            drift(f"{at} is a block the parity format does not allow; {rule}")
     slugs: dict[str, int] = {}
     for i, text in allowed:
         # The title is held to the same plain text as the sections (independent review round 4).
