@@ -31,29 +31,6 @@ public sealed class AssetLibraryServiceTests : IDisposable
     }
 
     [Fact]
-    public void AssetLibraryService_RelativeFolder_SavesWhereItLoaded()
-    {
-        var saved = Environment.CurrentDirectory;
-        var elsewhere = Path.Combine(_libraryPath, "elsewhere");
-        Directory.CreateDirectory(elsewhere);
-        try
-        {
-            Environment.CurrentDirectory = _libraryPath;
-            var service = new AssetLibraryService("relative-library");
-            Environment.CurrentDirectory = elsewhere;
-
-            service.ToggleFavorite(service.Assets[0].Id);
-
-            Assert.True(File.Exists(Path.Combine(_libraryPath, "relative-library", "library.json")));
-            Assert.False(Directory.Exists(Path.Combine(elsewhere, "relative-library")));
-        }
-        finally
-        {
-            Environment.CurrentDirectory = saved;
-        }
-    }
-
-    [Fact]
     public void AssetLibraryService_HasBuiltInCategories()
     {
         Assert.True(_service.Categories.Count > 0);
@@ -384,6 +361,58 @@ public sealed class AssetLibraryServiceTests : IDisposable
         Assert.Equal(2, assets.Count);
         Assert.Contains(assets, a => a.Id == "builtin-circle");
         Assert.Contains(assets, a => a.Id == "builtin-square");
+    }
+}
+
+/// <summary>
+/// Tests that change process-wide state (the working directory) run alone: no test in another class may resolve a
+/// relative path while one of these has moved it.
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class ProcessWideStateCollection
+{
+    public const string Name = "Process-wide state";
+}
+
+[Collection(ProcessWideStateCollection.Name)]
+public sealed class AssetLibraryServiceWorkingDirectoryTests : IDisposable
+{
+    private readonly string _libraryPath = Path.Combine(Path.GetTempPath(), "isotone-asset-library-" + Guid.NewGuid().ToString("N"));
+
+    public AssetLibraryServiceWorkingDirectoryTests()
+    {
+        Directory.CreateDirectory(_libraryPath);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_libraryPath))
+        {
+            Directory.Delete(_libraryPath, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void AssetLibraryService_RelativeFolder_SavesWhereItLoaded()
+    {
+        var saved = Environment.CurrentDirectory;
+        var elsewhere = Path.Combine(_libraryPath, "elsewhere");
+        Directory.CreateDirectory(elsewhere);
+        try
+        {
+            Environment.CurrentDirectory = _libraryPath;
+            var service = new AssetLibraryService("relative-library");
+            Environment.CurrentDirectory = elsewhere;
+
+            service.ToggleFavorite(service.Assets[0].Id);
+
+            Assert.True(File.Exists(Path.Combine(_libraryPath, "relative-library", "library.json")));
+            Assert.False(Directory.Exists(Path.Combine(elsewhere, "relative-library")));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = saved;
+        }
     }
 }
 

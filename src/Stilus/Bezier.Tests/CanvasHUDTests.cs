@@ -138,7 +138,17 @@ public class ElementTooltipTests
     [Fact]
     public void ElementTooltip_FromElement_UsesUnnamedForNullName()
     {
-        var element = new SvgRect { Name = null };
+        var element = new SvgRect { Name = null! };
+
+        var tooltip = ElementTooltip.FromElement(element, 0, 0);
+
+        Assert.Equal("Unnamed", tooltip.Name);
+    }
+
+    [Fact]
+    public void ElementTooltip_FromElement_UsesUnnamedForWhitespaceName()
+    {
+        var element = new SvgRect { Name = "   " };
 
         var tooltip = ElementTooltip.FromElement(element, 0, 0);
 
