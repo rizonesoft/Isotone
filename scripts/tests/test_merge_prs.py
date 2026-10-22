@@ -791,6 +791,36 @@ class MergeTests(Base):
         code, out = self.call(["run", "--task"], FakeGh([pr(2)], main_runs=runs), FakeGit())
         self.assertEqual((code, "cannot be told apart" in out, self.health()["merged"]["sha"]), (0, True, c), out)
 
+    def test_a_merge_with_no_run_of_its_own_is_read_over_its_push(self):
+        # Independent review round 5: the merge changed only what plan-gates does not watch, so plan-gates never ran on
+        # it, and thirty newer runs push every ancestor's run out of the newest 30. The merge's own push decides.
+        c = "c" * 40
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        nl = chr(10)
+        (wf / "plan.yml").write_text("on:" + nl + "  push:" + nl + "    paths:" + nl + "      - 'todo/**'" + nl,
+                                     encoding="utf-8")
+        newer = [dict(self.run_on(format(k, "040x"), n=10 + k)[0], url=f"https://x/run/new{k}") for k in range(30)]
+        head = [dict(self.run_on(HEAD)[0], createdAt="2026-10-22T05:00:00Z")]
+        runs = {"plan.yml": self.run_on("e" * 40, n=1) + newer + head,
+                "build.yml": self.run_on(c, n=2) + newer + head}
+        outcomes = []
+        for touched in (["Directory.Packages.props"], ["todo/x.md"]):
+            (self.root / mp.HEALTH).unlink(missing_ok=True)
+            self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+            self.assertEqual(self.health()["merged"]["base"], HEAD)
+            code, out = self.call(["run", "--task"], FakeGh([], main_runs=runs), FakeGit(changed=touched))
+            outcomes.append((code, "reads green" in out, self.health()["merged"] is None))
+        self.assertEqual(outcomes, [(0, True, True), (0, False, False)])
+
+    def test_a_recovered_merge_keeps_its_push_base(self):
+        red = lambda r: subprocess.CompletedProcess([], 1, "1 fatal" + chr(10), "")
+        self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(), validate=red)
+        base = json.loads((self.root / mp.BLOCKED).read_text(encoding="utf-8"))["base"]
+        pending = {"build.yml": self.run_on(HEAD, n=1) + self.run_on("c" * 40, status="queued", conclusion="", n=2)}
+        self.call(["run", "--task"], FakeGh([pr(1), pr(2)], already_merged=[1], main_runs=pending), FakeGit())
+        self.assertEqual((base, self.health()["merged"]["base"]), (HEAD, HEAD))
+
     def test_a_pending_merge_still_reports_a_red_main(self):
         # Independent review round 3: merge M still running, main's later head red: exit 1, and nothing merges.
         c = "c" * 40
@@ -838,7 +868,7 @@ class MergeTests(Base):
         finally:
             mp._clock = saved
         self.assertEqual((self.health()["merged"], "still unverified" in str(refused.exception)),
-                         ({"sha": "c" * 40, "pr": 1, "at": 1_000_000.0}, True))
+                         ({"sha": "c" * 40, "pr": 1, "at": 1_000_000.0, "base": None}, True))
 
     def test_a_merge_with_no_run_evidence_keeps_its_record(self):
         c = "c" * 40

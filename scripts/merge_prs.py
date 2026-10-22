@@ -337,16 +337,22 @@ def blocked(root: Path) -> dict | None:
         # it can never settle (rounds 9 and 10).
         return {"pr": None, "why": "the record carries no usable issue time"}
     why = record.get("why")
-    return {"pr": pr, "issued_at": issued, "why": why if isinstance(why, str) else "no reason recorded"}
+    base = record.get("base")
+    return {"pr": pr, "issued_at": issued, "why": why if isinstance(why, str) else "no reason recorded",
+            "base": base if isinstance(base, str) and re.fullmatch(r"[0-9a-f]{40}", base) else None}
 
 
-def _block(root: Path, pr: int, why: str) -> None:
+def _block(root: Path, pr: int, why: str, base: str | None = None) -> None:
     path = root / BLOCKED
     path.parent.mkdir(parents=True, exist_ok=True)
     earlier = blocked(root)
-    issued = earlier.get("issued_at") if earlier and earlier.get("pr") == pr else None
+    same = bool(earlier) and earlier.get("pr") == pr
+    issued = earlier.get("issued_at") if same else None
+    # Main's head before the merge, kept across rewrites, so a recovered merge is read over its own push (D00 T01 §16).
+    base = base or (earlier.get("base") if same else None)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps({"pr": pr, "why": why, "issued_at": issued or time.time()}, indent=2), encoding="utf-8")
+    tmp.write_text(json.dumps({"pr": pr, "why": why, "issued_at": issued or time.time(), "base": base}, indent=2),
+                   encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -377,23 +383,13 @@ def _push_paths(root: Path, file: str, head: str, git_fn) -> list[str] | None:
         return None
 
 
-def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, git_fn,
-                superseded_ok: bool = False) -> tuple[str, str]:
+def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, git_fn) -> tuple[str, str]:
     """("green" | "pending" | "red", why) for one guarding workflow at `head` (D00 T01 §15, independent review round
     1): its push run on `head` decides; with none, the newest push run on an ancestor decides only when the changes
     since it miss the workflow's push paths (a path-filtered workflow need not run on every commit), and otherwise
     the run for `head` is still to come."""
-    fields = "status,conclusion,url,headSha,createdAt"
     try:
-        runs = json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push", "--workflow",
-                                file, "--limit", "30", "--json", fields, cwd=root) or "[]")
-        if superseded_ok:
-            # A recorded merge may be older than the newest 30 runs: its own runs are read by commit too, so newer
-            # pushes cannot push them out of sight (D00 T01 §16, independent review round 3).
-            seen = {r.get("url") for r in runs}
-            runs += [r for r in json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push",
-                                                 "--workflow", file, "--commit", head, "--limit", "10", "--json",
-                                                 fields, cwd=root) or "[]") if r.get("url") not in seen]
+        runs = _main_runs(name, file, repo, root, gh_fn, "--limit", "30")
     except ValueError as error:
         raise Failed(f"main's {name} runs cannot be read: {error}") from None
     if not runs:
@@ -409,41 +405,76 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
         # Every path any commit in the range touched, never the endpoints' diff, which hides an edit a later commit
         # reverted (D00 T01 §16, independent review round 2). NUL-separated paths are never quoted, and with renames
         # off a moved file lists both its sides, so every path the push touched meets the filter (D00 T01 §15).
-        changed = [f for f in git_fn("log", "--name-only", "-z", "--no-renames", "-m", "--format=",
-                                     f"{older['headSha']}..{head}", cwd=root).split("\0") if f.strip()]
-        if f".github/workflows/{file}" in changed:
+        why = _triggers(file, root, older["headSha"], head, git_fn)
+        if why == "workflow":
             # The older run ran another definition of the workflow: it never stands in for the head (D00 T01 §16).
             return "pending", f"main's {name} workflow changed since its last run; its run for {head[:12]} is to come"
-        paths = _push_paths(root, file, head, git_fn)
-        if paths is None or any(_glob_re(p).match(f) for p in paths for f in changed):
+        if why:
             return "pending", f"main's {name} run for {head[:12]} has not started yet"
         run = older
-    if superseded_ok and run.get("headSha") == head and run.get("conclusion") == "cancelled":
-        # A merged commit's own run cancelled by a later push to main (`concurrency: cancel-in-progress`): the first
-        # later run on main that finished reads the merge in its place (D00 T01 §16, independent review round 2).
-        # Every run since the cancelled one is read, never the newest 30 alone, which can hide the successor that
-        # decides (independent review round 4); a full page cannot prove which came first, so it fails closed.
-        created = run.get("createdAt") or ""
-        try:
-            since = json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push", "--workflow",
-                                     file, "--created", f">={created}", "--limit", str(SUCCESSOR_LIMIT), "--json",
-                                     fields, cwd=root) or "[]") if created else []
-        except ValueError as error:
-            raise Failed(f"main's {name} runs cannot be read: {error}") from None
-        if not created or len(since) >= SUCCESSOR_LIMIT:
-            return "pending", (f"main's {name} run on {head[:12]} was cancelled, and the run that superseded it cannot "
-                               f"be told apart among the runs since")
-        later = sorted((r for r in since if r.get("headSha") not in (None, head)
-                        and r.get("createdAt", "") > created and _is_ancestor(git_fn, root, head, r["headSha"])),
-                       key=lambda r: r.get("createdAt", ""))
-        done = next((r for r in later if r.get("status") == "completed" and r.get("conclusion") != "cancelled"), None)
-        if done is None:
-            return "pending", f"main's {name} run on {head[:12]} was cancelled by a later push whose run has not finished"
-        run = done
+    return _run_state(name, run)
+
+
+def _main_runs(name: str, file: str, repo: str, root: Path, gh_fn, *query: str) -> list[dict]:
+    """Main's push runs of one workflow matching `query`, newest first; ValueError when the reply is not JSON."""
+    runs = json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push", "--workflow", file,
+                            *query, "--json", "status,conclusion,url,headSha,createdAt", cwd=root) or "[]")
+    return sorted(runs, key=lambda r: r.get("createdAt", ""), reverse=True)
+
+
+def _triggers(file: str, root: Path, base: str, head: str, git_fn) -> str | None:
+    """Why the commits `base..head` run the workflow ("workflow": a change to its own file, D00 T01 §16; "paths": a
+    change its push paths at `head` match, or no filter), or None. Every path any commit in the range touched counts, never
+    the endpoints' diff, which hides an edit a later commit reverted (D00 T01 §16, independent review round 2).
+    NUL-separated paths are never quoted, and with renames off a moved file lists both its sides (D00 T01 §15)."""
+    changed = [f for f in git_fn("log", "--name-only", "-z", "--no-renames", "-m", "--format=", f"{base}..{head}",
+                                 cwd=root).split("\0") if f.strip()]
+    if f".github/workflows/{file}" in changed:
+        return "workflow"
+    paths = _push_paths(root, file, head, git_fn)
+    return "paths" if paths is None or any(_glob_re(p).match(f) for p in paths for f in changed) else None
+
+
+def _run_state(name: str, run: dict) -> tuple[str, str]:
     if run.get("status") != "completed":
         return "pending", f"main's {name} run is {run.get('status')}: {run.get('url')}"
     if run.get("conclusion") != "success":
         return "red", f"main's {name} run concluded {run.get('conclusion')}: {run.get('url')}"
+    return "green", ""
+
+
+def _merge_verdict(name: str, file: str, repo: str, root: Path, held: dict, gh_fn, git_fn) -> tuple[str, str]:
+    """("green" | "pending" | "red" | "unknown", why) for one guarding workflow on a recorded merge, read without the
+    newest-runs window, which later pushes can push the deciding run out of (D00 T01 §16, independent review rounds
+    3 to 5). The merge's own runs are read by commit; a run cancelled by a later push (`build.yml` cancels in progress
+    per ref) is decided by the first later run on main that finished, found among every run since, a full page
+    failing closed; and with no own run, the merge's own push (`base..sha`, main's head before the merge to the merge
+    commit) decides whether the workflow should run: a push that touched nothing it watches is no reason to wait."""
+    sha, base = held["sha"], held.get("base")
+    try:
+        if not _main_runs(name, file, repo, root, gh_fn, "--limit", "1"):
+            return "unknown", f"main has no {name} push run to read, so the merge cannot be judged"
+        own = _main_runs(name, file, repo, root, gh_fn, "--commit", sha, "--limit", "10")
+        run = own[0] if own else None
+        if run is not None and run.get("conclusion") == "cancelled":
+            created = run.get("createdAt") or ""
+            since = _main_runs(name, file, repo, root, gh_fn, "--created", f">={created}", "--limit",
+                               str(SUCCESSOR_LIMIT)) if created else []
+            if not created or len(since) >= SUCCESSOR_LIMIT:
+                return "pending", (f"main's {name} run on {sha[:12]} was cancelled, and the run that superseded it "
+                                   f"cannot be told apart among the runs since")
+            # The query already bounds the list to runs since; descent from the merge is what makes one a successor.
+            later = [r for r in reversed(since) if r.get("headSha") not in (None, sha)
+                     and _is_ancestor(git_fn, root, sha, r["headSha"])]
+            run = next((r for r in later if r.get("status") == "completed" and r.get("conclusion") != "cancelled"), None)
+            if run is None:
+                return "pending", f"main's {name} run on {sha[:12]} was cancelled by a later push whose run has not finished"
+    except ValueError as error:
+        raise Failed(f"main's {name} runs cannot be read: {error}") from None
+    if run is not None:
+        return _run_state(name, run)
+    if base is None or _triggers(file, root, base, sha, git_fn):
+        return "pending", f"main's {name} run for the merge at {sha[:12]} has not started yet"
     return "green", ""
 
 
@@ -463,7 +494,9 @@ def _read_health(root: Path, now: float) -> dict:
     if merged is not None and not (isinstance(merged, dict) and isinstance(merged.get("sha"), str)
                                    and re.fullmatch(r"[0-9a-f]{40}", merged["sha"])
                                    and isinstance(merged.get("pr"), int) and not isinstance(merged["pr"], bool)
-                                   and _instant(merged.get("at"), now)):
+                                   and _instant(merged.get("at"), now)
+                                   and (merged.get("base") is None or (isinstance(merged["base"], str)
+                                                                       and re.fullmatch(r"[0-9a-f]{40}", merged["base"])))):
         raise Failed(f"{HEALTH} names an unverified merge it cannot describe; check main's CI and the last merge, "
                      f"then delete it")
     since = doc.get("pending_since") if isinstance(doc, dict) else None
@@ -508,7 +541,7 @@ def _age_pending(root: Path, verdicts: list[tuple[str, str, str]]) -> list[tuple
     return out
 
 
-def _record_merge(root: Path, commit: str, n) -> None:
+def _record_merge(root: Path, commit: str, n, base: str | None = None) -> None:
     """Record a landed merge as unverified until its own CI is read (D00 T01 §16). One at a time: a different
     unverified merge already recorded is never overwritten."""
     now = _clock()
@@ -517,7 +550,7 @@ def _record_merge(root: Path, commit: str, n) -> None:
     if held is not None and held["sha"] != commit:
         raise Failed(f"the merge of #{held['pr']} at {held['sha'][:12]} is still unverified")
     if held is None:
-        _write_health(root, {**record, "merged": {"sha": commit, "pr": n, "at": now}})
+        _write_health(root, {**record, "merged": {"sha": commit, "pr": n, "at": now, "base": base}})
 
 
 def settle_merge(root: Path, repo: str, gh_fn, git_fn) -> str | None:
@@ -532,8 +565,7 @@ def settle_merge(root: Path, repo: str, gh_fn, git_fn) -> str | None:
         return None
     sha, n = held["sha"], held["pr"]
     git_fn("fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main", cwd=root)
-    verdicts = [(name, *_ci_verdict(name, file, repo, root, sha, gh_fn, git_fn, superseded_ok=True))
-                for name, file in MAIN_WORKFLOWS]
+    verdicts = [(name, *_merge_verdict(name, file, repo, root, held, gh_fn, git_fn)) for name, file in MAIN_WORKFLOWS]
     state, why = _combined(verdicts)
     if any(s == "unknown" for _name, s, _why in verdicts):
         raise Failed(f"the merge of #{n} at {sha[:12]} cannot be read: {why}")
@@ -944,8 +976,8 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
     if _remaining() < MERGE_RESERVE:
         return 1, f"merge_prs: #{n} not merged, the run's time budget leaves too little to merge and verify"
     try:
-        _block(root, n, "merge issued, not yet verified")
-    except OSError as error:
+        _block(root, n, "merge issued, not yet verified", base=git_fn("rev-parse", "HEAD", cwd=root).strip())
+    except (OSError, Failed) as error:
         return 1, f"merge_prs: #{n} not merged, the intent record cannot be written: {error}"
     try:
         code, line = _merge_and_verify(now, repo, root, gh_fn, git_fn, validate_fn)
@@ -1001,7 +1033,7 @@ def _merge_and_verify(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_f
         return 3, (f"merge_prs: #{n} MERGED and pulled, but validate is red on main: "
                    f"{(done.stdout or '').strip()[-200:]}; repair main before any other work")
     try:
-        _record_merge(root, commit, n)
+        _record_merge(root, commit, n, (blocked(root) or {}).get("base"))
     except (Failed, OSError) as error:
         # The intent stays, so the next run's recovery records the merge before anything else (D00 T01 §16).
         return 3, f"merge_prs: #{n} MERGED and validated, but it cannot be recorded as unverified: {error}"
@@ -1102,7 +1134,7 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
     if _validate(root, validate_fn).returncode != 0:
         return f"an earlier merge (#{n}) left main red: validate fails; repair main"
     try:
-        _record_merge(root, commit, n)
+        _record_merge(root, commit, n, record.get("base"))
     except (Failed, OSError) as error:
         return f"an earlier merge (#{n}) landed but cannot be recorded as unverified: {error}"
     (root / BLOCKED).unlink(missing_ok=True)
