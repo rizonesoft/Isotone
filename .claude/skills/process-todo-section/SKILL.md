@@ -234,7 +234,7 @@ Push the SHIP push. The commit must exist on the remote before the next step, be
 ```bash
 IND=$(mktemp -d /tmp/independent-XXXXXXXX)
 # Fill docs/review-round-prompt.md into $IND/prompt.md: the full <SHIP_SHA>, what the section is meant to do, its ref, the governing documents.
-python scripts/review-dispatch.py --writer claude --prompt $IND/prompt.md --keep $IND --timeout 900 > $IND/summary.json
+python scripts/review-dispatch.py --writer claude --prompt $IND/prompt.md --keep $IND > $IND/summary.json
 ```
 
 It reviews read-only and changes nothing.
