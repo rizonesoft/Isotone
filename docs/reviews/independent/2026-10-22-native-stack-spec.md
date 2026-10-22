@@ -159,3 +159,44 @@ This record's round 4 is the spec's sixth review round. Every finding was verifi
 1. P1, recovery can overwrite a file created after an interrupted save: verified. Recovery now decides by the file IDs the journal records, never by a format check, and never overwrites a file the record does not name: it restores the original only into a free name, and otherwise keeps both and tells the user. Proof added.
 2. P2, portable-mode folders on FAT or exFAT cannot carry a DACL: verified against Microsoft's File System Functionality Comparison. Encryption at rest is the protection that always holds; the DACL is a second layer that such volumes cannot carry, which the log records; checkpoints from another machine or account are reported unreadable rather than offered.
 3. P1, the identity check does not make the replacement conditional, and last-write time does not prove unchanged contents: verified against `MoveFileExW` and File Times. An open document's file is now held with read-only sharing for the whole session (as Microsoft Office does), so it cannot change under the app; the commit renames the original to the backup name through that held handle and installs the new file without replacing, so no step can destroy a file the app does not hold. Proofs added: refused foreign writes, a file created between the two renames, and a document opened read-only when another program holds it for writing.
+
+## Round 5: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T21:42:33Z
+- Effort: xhigh
+- Lines: 22
+- Digest: 45449dec9298470b
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: Ownership is lost during installation of the new file. Pause after `MoveFileExW` returns but before the prescribed reopen; replace the target with unrelated file B, then resume and save again. No identity check is required when reacquiring the lock, so the app can adopt B and subsequently delete it as its backup without confirmation. Protecting the original does not protect this handoff. Microsoft describes [MoveFileEx’s separate open, rename, and close operations](https://devblogs.microsoft.com/oldnewthing/20211022-00/?p=105822/).
+
+## consistency: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: The journal must contain the temporary file’s ID before the next specified step creates that file with `CREATE_NEW`. That ID does not exist yet. Following the stated order cannot produce the required journal; creating the temporary file first introduces an unrecorded crash state. Specify an executable creation and journaling order, including recovery from interruption between them.
+
+## integration: needs-attention
+
+3. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: The unconditional session-long write lock prevents Albumen’s planned external-editor workflow. Open an image in Albumen Viewer, launch its configured external editor with the current path, and save there: Albumen’s handle denies the write or replacement. `todo/04-albumen/TODO-04-albumen-viewer.md:316` requires that handoff. The spec needs a viewing and handoff ownership contract that preserves this commitment.
+
+## source-defect: needs-attention
+
+4. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: The held handle cannot generally provide the promised interoperability with readers. Renaming through it requires `DELETE` access, so another reader opened with `GENERIC_READ` and `FILE_SHARE_READ` fails with `ERROR_SHARING_VIOLATION`; that reader must also share delete access. An existing such reader likewise prevents acquiring the required handle, although it holds no writing access. This follows Microsoft’s [rename access requirements](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_rename_information) and [bidirectional sharing checks](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew).
+
+5. P2 `docs/specs/2026-10-22-native-stack-design.md:91`: Identity-based recovery assumes IDs survive the prescribed renames on FAT, where line 86 still requires the same protocol. Microsoft documents that [renaming a FAT file to a longer name can change its ID](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information). Record an original’s ID, rename it to a sufficiently longer backup name, kill the app, and compare during recovery: the recorded identity no longer identifies that backup. Logging a weaker guarantee supplies no recovery rule for this supported case.
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 5
+
+This record's round 5 is the spec's seventh review round. Every finding was verified and is real (finding 3 against `todo/04-albumen/TODO-04-albumen-viewer.md:316`, finding 4 against `CreateFileW`'s sharing rules, finding 5 against `BY_HANDLE_FILE_INFORMATION`'s FAT note). Saving has now drawn findings in five rounds, each one a level deeper into a prescribed Win32 call sequence, so the unit was re-thought at its altitude: the spec now owns five invariants and the proofs, and the document safety foundation section owns the exact sequence, with a reference sequence as its default.
+
+1. P1, ownership lost while re-acquiring the lock: verified. No lock is held any more, so there is no handoff; a displaced file is moved aside by a rename that never replaces, and deleted only when its content hash proves it is the app's own last version.
+2. P2, the journal cannot hold the temporary file's ID before it exists: verified. The journal holds a fresh random temporary name created with `CREATE_NEW`, and identity is by content hash, not file ID.
+3. P2, the session lock breaks Albumen's external-editor handoff: verified. No lock is held; the app watches the folder and offers to reload; a proof covers the external editor saving over an image Albumen shows.
+4. P2, the held handle blocks ordinary readers: verified. Resolved by holding no handle.
+5. P2, file IDs change on FAT renames: verified. Invariant 3 forbids deciding by file IDs, times, or timing; a FAT proof with long names is added.
