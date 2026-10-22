@@ -640,3 +640,24 @@ OVERALL: needs-attention
 This record's round 18 is the spec's twentieth review round. The finding was verified.
 
 1. P2, the checkpoint floor rejected a correct save-then-retire outcome: verified. The floor now holds an open document's edits up to its newest acknowledged checkpoint either in that checkpoint or a later complete one, or in a durable save that covered them and retired the checkpoint (nothing then offered, consistent with the save-then-kill proof); the power-loss runs include that interleaving.
+
+## Round 19: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T23:08:37Z
+- Effort: xhigh
+- Lines: 12
+- Digest: 33619da2fb4d2d3a
+
+## adversarial: approve
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: approve
+
+## record: approve
+
+HIGHEST: none
+OVERALL: approve
