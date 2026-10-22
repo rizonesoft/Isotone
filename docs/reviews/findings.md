@@ -4,17 +4,17 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**122 findings across 6 sections.**
+**148 findings across 7 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 56 | fails under hostile or unexpected input |
-| `integration` | 45 | a consumer, caller, or downstream artifact no longer holds |
+| `adversarial` | 68 | fails under hostile or unexpected input |
+| `integration` | 47 | a consumer, caller, or downstream artifact no longer holds |
+| `source-defect` | 15 | a Win32 contract, registry layout, or other source read wrongly |
+| `record` | 10 | the plan or the evidence misdescribes what happened |
 | `consistency` | 7 | disagrees with the rest of the suite, its naming, or its layout |
-| `source-defect` | 7 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 6 | the plan or the evidence misdescribes what happened |
 | `correctness` | 1 | the code does the wrong thing |
 
 ## By severity
@@ -22,8 +22,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 65 | wrong behavior in code, plan, or record |
-| `minor` | 57 | polish or wording, or no surviving defect |
+| `major` | 81 | wrong behavior in code, plan, or record |
+| `minor` | 67 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -110,6 +110,32 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T01 §13` | F24 | major | `integration` | fixed | independent | a record with no session was treated as every session's |
 | `D00 T01 §13` | F25 | minor | `integration` | fixed | independent | the operator's pending view hid each record's session and advised deleting unowned jobs |
 | `D00 T01 §13` | F26 | minor | `record` | fixed | self | the self-test's os.read patch broke subprocess pipes on Linux |
+| `D00 T01 §14` | F1 | major | `adversarial` | fixed | independent | a value continued on an indented line read as its first line |
+| `D00 T01 §14` | F2 | major | `adversarial` | fixed | independent | a quoted twin of a key passed the duplicate check |
+| `D00 T01 §14` | F3 | major | `adversarial` | fixed | independent | an escaped double quote read as the closing quote |
+| `D00 T01 §14` | F4 | major | `integration` | fixed | independent | a double-quoted escape could rename a tool past the write-tool check |
+| `D00 T01 §14` | F5 | minor | `source-defect` | fixed | independent | a valid multi-line quoted value was called invalid YAML |
+| `D00 T01 §14` | F6 | minor | `record` | fixed | independent | the accepted-forms fixture checked names, not parsed values |
+| `D00 T01 §14` | F7 | major | `adversarial` | fixed | independent | quoted content in the unchecked hooks block could stand in for a top-level field |
+| `D00 T01 §14` | F8 | major | `adversarial` | fixed | independent | a U+2028 inside a value split differently in the checker and the reader |
+| `D00 T01 §14` | F9 | major | `source-defect` | fixed | independent | a non-breaking space before '#' was read as a comment |
+| `D00 T01 §14` | F10 | major | `source-defect` | fixed | independent | a trailing ':' in a plain value passed |
+| `D00 T01 §14` | F11 | major | `adversarial` | fixed | independent | an indented '---' ended the frontmatter early |
+| `D00 T01 §14` | F12 | major | `adversarial` | fixed | independent | U+FFFE and U+FFFF passed the character check |
+| `D00 T01 §14` | F13 | minor | `record` | fixed | independent | the loader-grounding item was ticked without loader evidence |
+| `D00 T01 §14` | F14 | major | `adversarial` | fixed | independent | a byte order mark inside a value passed |
+| `D00 T01 §14` | F15 | major | `integration` | fixed | independent | universal-newline reading translated lone CRs before the parser saw them |
+| `D00 T01 §14` | F16 | minor | `source-defect` | fixed | independent | text after a closing quote was reported as an escape |
+| `D00 T01 §14` | F17 | major | `adversarial` | fixed | independent | plain values YAML resolves to null, booleans, or numbers read as strings |
+| `D00 T01 §14` | F18 | minor | `source-defect` | fixed | independent | the byte order mark refusal was attributed to YAML |
+| `D00 T01 §14` | F19 | major | `adversarial` | fixed | independent | an absent value read as an empty string though YAML reads null |
+| `D00 T01 §14` | F20 | major | `source-defect` | fixed | independent | keys that resolve to one non-string key passed as two |
+| `D00 T01 §14` | F21 | major | `adversarial` | fixed | independent | an implicit key past 1024 characters passed |
+| `D00 T01 §14` | F22 | minor | `adversarial` | fixed | independent | a long malformed line backtracked quadratically |
+| `D00 T01 §14` | F23 | minor | `source-defect` | fixed | independent | schema refusals claimed refused shapes were valid YAML |
+| `D00 T01 §14` | F24 | minor | `source-defect` | fixed | independent | a tab before a comment or on a blank line was called forbidden indentation |
+| `D00 T01 §14` | F25 | minor | `record` | fixed | self | the self-test fixture's default description was itself invalid YAML |
+| `D00 T01 §14` | F26 | minor | `record` | fixed | self | an edit left a literal U+FEFF inside a string literal in the parser |
 | `D00 T01 §15` | F1 | major | `adversarial` | fixed | independent | the CI gate took the newest runs whatever commit they built |
 | `D00 T01 §15` | F2 | major | `adversarial` | fixed | independent | main's CI was not judged again before the merge |
 | `D00 T01 §15` | F3 | minor | `consistency` | fixed | independent | a refusal at the final preflight became a failure email |

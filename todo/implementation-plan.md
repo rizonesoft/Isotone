@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **9 of 760 sections complete (1%).** 760 sections (4 discovered); backlog 20 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **10 of 760 sections complete (1%).** 760 sections (4 discovered); backlog 20 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -160,7 +160,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T01 §12` | Merge dependency PRs at section boundaries                       |  10   |
 | [x] | `D00 T01 §15` | Unattended merges read main's CI back                            |   4   |
 | [x] | `D00 T01 §13` | Run-guard robustness                                             |   8   |
-| [ ] | `D00 T01 §14` | Retire the unused verify-agent-tiers.mjs                         |   5   |
+| [x] | `D00 T01 §14` | Retire the unused verify-agent-tiers.mjs                         |   5   |
 | [ ] | `D00 T01 §16` | Unattended merger health                                         |   9   |
 | [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  27   |
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  23   |

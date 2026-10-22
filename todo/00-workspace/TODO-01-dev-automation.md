@@ -67,7 +67,7 @@ track: W1
 |  11   |   §11   | The manual-row invariant                      | §2         |  [x]   |
 |  12   |   §12   | Merge dependency PRs at section boundaries    | --         |  [x]   |
 |  13   |   §13   | Run-guard robustness                          | --         |  [x]   |
-|  14   |   §14   | Retire the unused verify-agent-tiers.mjs      | --         |  [ ]   |
+|  14   |   §14   | Retire the unused verify-agent-tiers.mjs      | --         |  [x]   |
 |  15   |   §15   | Unattended merges read main's CI back         | §12        |  [x]   |
 |  16   |   §16   | Unattended merger health                      | §15        |  [ ]   |
 
@@ -460,6 +460,12 @@ The operator reported on 2026-10-21 three run-guard bugs that reviews of other r
 - [x] Commit: `"workspace: retire the unused verify-agent-tiers.mjs"` Each refusal kind fails its case under its mutation; `panel_slots.py validate` prints `delegation ok` with the 8 checked-in definitions.
 
 **Test checkpoint:** Unit test: `python scripts/panel_slots.py --self-test` reports `0 failed` with the new frontmatter cases counted, and `python scripts/panel_slots.py validate` still prints `delegation ok`. Cheaper substitute that fails: deleting the script alone, which leaves any frontmatter shape the running reader accepts untested.
+
+> **Verified:** 2026-10-22 | §14 | D00 T01 §14 at `45c7d65^..1ee8ced` (twelve commits): `scripts/verify-agent-tiers.mjs` is absent and `git grep -n verify-agent-tiers` outside `todo/`, `docs/reviews/`, and `docs/phase-runs/` prints nothing · `python scripts/panel_slots.py --self-test` `337 cases, 0 failed` and `validate` prints `delegation ok` with 8 agent definitions · eight mutations each fail the self-test (the frontmatter check off: 42 cases; duplicate keys, stripped delimiters, the printable set, and universal-newline reading: 1 each; absent values and the hooks block: 3 each; non-string plain values: 10) · check-all at `d19cad9` (scripts equal to `1ee8ced`'s): all 21 gates passed, 985 + 33 + 8 tests passed, 0 failed, 0 skipped
+> **Review:** round 1, candidate `1ee8ced`(round 1) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 1 of cap 22, gpt-6-astra medium; check-panel `PASS four lenses, one verdict each; highest none`). Independent: gpt-6-astra medium via `scripts/review-dispatch.py`, nine rounds: rounds 1 to 8 found 23 defects (F1 to F23, each fixed, from 5789db3 to 8a04b3b), round 9 reported only a P3 (stop: low-severity, the independent sign-off; F24 fixed in 1d0de91 rather than filed, being one line); the lead added F25 and F26. Raw findings: docs/reviews/00-workspace/D00-T01-s14.md. Attestation: docs/reviews/00-workspace/D00-T01-s14.attest.json
+> **Plan review:** gpt medium, filed D00 T01 §14, B-066 (5 findings: 1 filed, a correction to D00 T01 §14's introduction; PR2 and PR4 deferred to the backlog as B-066; PR3 and PR5 rejected with reasons) (run 20261022-D00-T01-S14-gpt)
+> **CRUD:** not applicable (a workspace check over agent definitions, with no user record, document, or setting)
+> **Duration:** 2026-10-22T05:31:31Z to 2026-10-22T06:49:37Z
 
 ## 15. Unattended Merges Read Main's CI Back
 
