@@ -483,3 +483,38 @@ This record's round 13 is the spec's fifteenth review round, the first with no P
 
 1. P3, the invariants forbid the pending outcome recovery allows: verified. The invariants now name that one pending state (a weaker committed file recovery cannot yet protect or roll back because another program holds it open) as the only exception to invariants 2 and 7, kept with its journal record, reported to the user, and completed once the handle is released; a save reported as successful never left a weaker file.
 2. P2, the cold-start condition was assumed, not established: verified against Microsoft's startup measurement guidance on SuperFetch. The protocol now stops SysMain for the runs, purges the standby list from the elevated harness, records each run with Windows Performance Recorder, and discards any run in which the executable was not read from disk.
+
+## Round 14: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:41:29Z
+- Effort: xhigh
+- Lines: 18
+- Digest: ff79f7b7d10db72f
+
+### adversarial: needs-attention
+
+1. P2 `docs/specs/2026-10-22-native-stack-design.md:93`: Turning off a VM does not prove the promised physical-media durability. Host caches remain powered and can finish writes after the guest stops. Demonstrate with a save implementation that omits a required storage flush: guest power-off can preserve writes that host power loss would discard. Require a fault harness that discards volatile storage state, with a missing-flush negative control. Microsoft documents the distinct guest and host caching layers in [Hyper-V storage consistency guidance](https://learn.microsoft.com/en-us/previous-versions/troubleshoot/windows-server/hyper-v-storage-caching-layers-data-consistency-requirements).
+
+### consistency: approve
+
+### integration: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:23`: The startup endpoint precedes proof of input responsiveness. Present a frame at 100 ms, block the UI thread for two seconds, then handle the scripted keystroke. The specified timer can report 100 ms because it timestamps the earlier frame, although input was unavailable beyond either limit. End timing when the input is handled, or when a subsequent displayed frame confirms its effect. Line 24 inherits this defect.
+
+### source-defect: needs-attention
+
+3. P2 `docs/specs/2026-10-22-native-stack-design.md:23`: Some executable disk I/O does not establish a fully cold image. Keep selected startup image pages resident in another process, purge standby pages, then launch: resident pages produce soft faults while uncached pages produce hard faults, satisfying the stated acceptance check despite partial warming. Microsoft’s [Working Set documentation](https://learn.microsoft.com/en-us/windows/win32/memory/working-set) explicitly distinguishes these cases. Verify image residency before launch, rather than treating the presence of hard faults as sufficient.
+
+### record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 14
+
+This record's round 14 is the spec's sixteenth review round. All three findings were verified.
+
+1. P2, turning a virtual machine off does not prove media durability: verified against Microsoft's Hyper-V storage caching guidance. Power loss is now proved with a fault harness that records the guest's writes and flushes below the guest and reconstructs the disk at every flush boundary and at random points between, dropping unflushed writes, with a negative control (one required flush removed) that must fail.
+2. P2, the startup endpoint preceded proof of input: verified. Both start goals now time to the displayed frame that shows the scripted keystroke's effect, sent as soon as the main window exists.
+3. P2, hard faults do not prove a fully cold image: verified against the Working Set documentation. Instead of verifying residency, which Windows has no documented per-file query for, each cold run launches a fresh copy of the publish folder written with unbuffered I/O to a new folder, so no page of the app's files was ever cached or mapped elsewhere and no prefetch trace names that path.
