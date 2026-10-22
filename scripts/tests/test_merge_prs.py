@@ -47,9 +47,9 @@ class FakeGit:
         # tells them apart.
         self.detached, self.broken = detached, broken
         # What `git log --name-only <a>..<b>` lists (every commit's paths), and what `git diff --name-only <a> <b>`
-        # lists (the endpoints' paths; the same unless named).
+        # lists (the endpoints' paths; the same unless named, either as one list or per (a, b) pair).
         self.changed = list(changed)
-        self.diffed = self.changed if diffed is None else list(diffed)
+        self.diffed = self.changed if diffed is None else diffed if isinstance(diffed, dict) else list(diffed)
         # What `git show <sha>:<path>` prints, by (sha, path); any other path is read from the fake's working tree.
         self.files = dict(files or {})
 
@@ -64,7 +64,8 @@ class FakeGit:
             return "".join(f + "\0" for f in self.changed)
         if args[:2] == ("diff", "--name-only"):
             assert "-z" in args and "--no-renames" in args, args
-            return "".join(f + "\0" for f in self.diffed)
+            diffed = self.diffed.get((args[-2], args[-1]), []) if isinstance(self.diffed, dict) else self.diffed
+            return "".join(f + "\0" for f in diffed)
         if args[:2] == ("rev-parse", "--verify") and self.broken:
             raise mp.Failed("git rev-parse --verify -q HEAD failed: not a git repository")
         if args[:3] == ("remote", "get-url", "origin"):
@@ -102,7 +103,7 @@ class FakeGh:
 
     def __init__(self, prs, merge_fails=False, lands=False, view_fails=False, retarget=None, elsewhere=False,
                  off_main=False, already_merged=(), unknown_views=0, pending_field="mergeable", runs=None,
-                 main_runs=None):
+                 main_runs=None, pushes=None):
         self.calls, self.prs = [], prs
         self.merge_fails, self.lands, self.view_fails = merge_fails, lands, view_fails
         self.retarget, self.elsewhere, self.off_main = retarget, elsewhere, off_main
@@ -112,6 +113,8 @@ class FakeGh:
         self.unknown_views, self.pending_field, self.runs = unknown_views, pending_field, runs
         # main's newest push run per workflow file; green unless a test says otherwise.
         self.main_runs = main_runs or {}
+        # main's push activity, newest first, as (before, after) pairs; none unless a test names it.
+        self.pushes = pushes or []
 
     def _pr(self, n):
         return next(p for p in self.prs if str(p["number"]) == str(n))
@@ -139,6 +142,8 @@ class FakeGh:
             pending = {self.pending_field: "UNKNOWN"} if self.views[args[2]] <= limit else {}
             return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN", **pending,
                                    mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
+        if args[0] == "api" and "/activity?" in args[1]:
+            return json.dumps([{"before": b, "after": a, "activity_type": "push"} for b, a in self.pushes])
         if args[:2] == ("run", "list") and "--branch" in args:
             wf = args[args.index("--workflow") + 1]
             # By default main's head and the fake's merge commit (c...) both read green. Like GitHub, the newest runs
@@ -841,6 +846,32 @@ class MergeTests(Base):
         pending = {"build.yml": self.run_on(HEAD, n=1) + self.run_on("c" * 40, status="queued", conclusion="", n=2)}
         self.call(["run", "--task"], FakeGh([pr(1), pr(2)], already_merged=[1], main_runs=pending), FakeGit())
         self.assertEqual((base, self.health()["merged"]["base"]), (HEAD, HEAD))
+
+    def test_each_push_is_compared_at_its_own_endpoints(self):
+        # Independent review round 7: a push that edits todo/ and reverts it never runs plan-gates on GitHub, so main's
+        # head inherits the older plan-gates run; across two pushes each one's endpoints count, and a chain the push
+        # history cannot follow falls back to every commit's paths.
+        older, mid = "e" * 40, "b" * 40
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        nl = chr(10)
+        (wf / "plan.yml").write_text("on:" + nl + "  push:" + nl + "    paths:" + nl + "      - 'todo/**'" + nl,
+                                     encoding="utf-8")
+        runs = {"plan.yml": self.run_on(older, n=1), "build.yml": self.run_on(HEAD, n=2)}
+        commits = ["todo/x.md", "todo/x.md", "Directory.Packages.props"]
+        cases = [("one push", [(older, HEAD)], {(older, HEAD): ["Directory.Packages.props"]}, 1),
+                 ("two pushes", [(mid, HEAD), (older, mid)],
+                  {(older, mid): ["docs/a.md"], (mid, HEAD): ["Directory.Packages.props"]}, 1),
+                 ("a push that touched todo/", [(mid, HEAD), (older, mid)],
+                  {(older, mid): ["todo/x.md"], (mid, HEAD): ["Directory.Packages.props"]}, 0),
+                 ("a broken chain", [(mid, HEAD)], {(mid, HEAD): ["Directory.Packages.props"]}, 0),
+                 ("no push history", [], {}, 0)]
+        for name, pushes, diffed, merges in cases:
+            with self.subTest(name=name):
+                (self.root / mp.HEALTH).unlink(missing_ok=True)
+                gh = FakeGh([pr(1)], main_runs=runs, pushes=pushes)
+                code, out = self.call(["run", "--campaign"], gh, FakeGit(changed=commits, diffed=diffed))
+                self.assertEqual(len(gh.merges()), merges, out)
 
     def test_a_pending_merge_still_reports_a_red_main(self):
         # Independent review round 3: merge M still running, main's later head red: exit 1, and nothing merges.

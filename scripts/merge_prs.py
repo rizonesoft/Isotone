@@ -402,10 +402,10 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
         older = next((r for r in runs if r.get("headSha") and _is_ancestor(git_fn, root, r["headSha"], head)), None)
         if older is None:
             return "pending", f"main's {name} has no push run on {head[:12]} or any commit before it yet"
-        # Every path any commit in the range touched, never the endpoints' diff, which hides an edit a later commit
-        # reverted (D00 T01 §16, independent review round 2). NUL-separated paths are never quoted, and with renames
-        # off a moved file lists both its sides, so every path the push touched meets the filter (D00 T01 §15).
-        why = _triggers(file, root, older["headSha"], head, git_fn)
+        # Each push since the older run is compared as GitHub compares it, at its own endpoints, when main's push
+        # history names them all (D00 T01 §16, independent review round 7); otherwise every commit's paths count.
+        why = _triggers(file, root, older["headSha"], head, git_fn,
+                        _pushes(repo, root, older["headSha"], head, gh_fn))
         if why == "workflow":
             # The older run ran another definition of the workflow: it never stands in for the head (D00 T01 §16).
             return "pending", f"main's {name} workflow changed since its last run; its run for {head[:12]} is to come"
@@ -422,15 +422,38 @@ def _main_runs(name: str, file: str, repo: str, root: Path, gh_fn, *query: str) 
     return sorted(runs, key=lambda r: r.get("createdAt", ""), reverse=True)
 
 
-def _triggers(file: str, root: Path, base: str, head: str, git_fn, one_push: bool = False) -> str | None:
+def _pushes(repo: str, root: Path, base: str, head: str, gh_fn) -> list[tuple[str, str]] | None:
+    """The pushes to main from `base` to `head` as (before, after) pairs, walked back from `head` through main's push
+    activity (GET /repos/{repo}/activity, the newest 100), or None when the chain cannot be followed all the way to
+    `base` (unread, older than that page, or a branch creation), which the caller reads conservatively."""
+    try:
+        acts = json.loads(gh_fn("api", f"repos/{repo}/activity?ref=refs/heads/main&activity_type=push&per_page=100",
+                                cwd=root) or "[]")
+    except (Failed, ValueError):
+        return None
+    before_of = {a.get("after"): a.get("before") for a in acts if isinstance(a, dict) and a.get("after")}
+    ranges, cur = [], head
+    while cur != base:
+        before = before_of.get(cur)
+        if not isinstance(before, str) or not re.fullmatch(r"[0-9a-f]{40}", before) or set(before) == {"0"} \
+                or len(ranges) >= len(before_of):
+            return None
+        ranges.append((before, cur))
+        cur = before
+    return ranges
+
+
+def _triggers(file: str, root: Path, base: str, head: str, git_fn,
+              pushes: list[tuple[str, str]] | None = None) -> str | None:
     """Why the commits `base..head` run the workflow ("workflow": a change to its own file, D00 T01 §16; "paths": a
-    change its push paths at `head` match, or no filter), or None. Across pushes every path any commit touched counts,
-    never the endpoints' diff, which hides an edit a later push reverted (D00 T01 §16, independent review round 2);
-    `one_push` is a single push, which GitHub filters on its own endpoints' diff (independent review round 6).
-    NUL-separated paths are never quoted, and with renames off a moved file lists both its sides (D00 T01 §15)."""
-    listing = (("diff", "--name-only", "-z", "--no-renames", base, head) if one_push else
-               ("log", "--name-only", "-z", "--no-renames", "-m", "--format=", f"{base}..{head}"))
-    changed = [f for f in git_fn(*listing, cwd=root).split("\0") if f.strip()]
+    change its push paths at `head` match, or no filter), or None. With `pushes`, the (before, after) pushes that make
+    up the range, each is compared at its own endpoints, as GitHub compares a push for its path filter (independent
+    review rounds 6 and 7). Without them every path any commit touched counts, never the range's endpoints' diff, which
+    hides an edit a later push reverted (independent review round 2). NUL-separated paths are never quoted, and with
+    renames off a moved file lists both its sides (D00 T01 §15)."""
+    listings = ([("diff", "--name-only", "-z", "--no-renames", before, after) for before, after in pushes] if pushes
+                else [("log", "--name-only", "-z", "--no-renames", "-m", "--format=", f"{base}..{head}")])
+    changed = [f for listing in listings for f in git_fn(*listing, cwd=root).split("\0") if f.strip()]
     if f".github/workflows/{file}" in changed:
         return "workflow"
     paths = _push_paths(root, file, head, git_fn)
@@ -476,7 +499,7 @@ def _merge_verdict(name: str, file: str, repo: str, root: Path, held: dict, gh_f
         raise Failed(f"main's {name} runs cannot be read: {error}") from None
     if run is not None:
         return _run_state(name, run)
-    if base is None or _triggers(file, root, base, sha, git_fn, one_push=True):
+    if base is None or _triggers(file, root, base, sha, git_fn, pushes=[(base, sha)]):
         return "pending", f"main's {name} run for the merge at {sha[:12]} has not started yet"
     return "green", ""
 
