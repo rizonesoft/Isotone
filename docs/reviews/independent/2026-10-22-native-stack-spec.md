@@ -124,3 +124,38 @@ This record's round 3 is the spec's fifth review round. Every finding was verifi
 2. P1, recovery retirement before a durable replacement: verified. A recovered document's earlier checkpoints are retired only after a save or a new-session checkpoint of it completes, or the user discards it. Proof added: recovery, a kill before the first new checkpoint, and recovery again.
 3. P1, the tile store's scratch is an unprotected copy: verified against `todo/03-gesso/TODO-02-gesso-rendering.md:68`. Secondary copies now names every kind of document-content file an app writes (checkpoints, dumps, tile scratch, persisted undo, preview and thumbnail caches, and any later kind), all in user-only folders and encrypted before the first byte; process-only copies use a key held only in memory. Proofs added for each kind.
 4. P2, the attach breakpoint read as a crash: verified against `DebugActiveProcess`. The attach breakpoint is continued as handled and every other first-chance exception passed back unhandled. Proof added: a healthy session with the watcher attached writes no dump.
+
+## Round 4: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T21:35:27Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 0c9f61e827e22ed8
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:91`: Recovery can overwrite a file created after the interrupted save. Demonstrate by killing the app after its backup exists, replacing the target with unrelated content that fails its format check, then restarting. The specified recovery restores the old backup over that new file without checking its identity or preserving it. A failed format check does not establish ownership of the current target. Require conflict detection and preservation before restoration.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:96`: Portable-mode dump storage cannot satisfy line 88’s mandatory user-only DACL on FAT32 or exFAT. Run the portable ZIP from an exFAT USB drive and trigger a crash: the required folder protection cannot be enforced, so the implementation must either violate the protection contract or fail the promised dump proof. Define a supported fallback or an explicit volume restriction. Microsoft’s [File System Functionality Comparison](https://learn.microsoft.com/en-us/windows/win32/fileio/filesystem-functionality-comparison) documents that these filesystems lack ACL support.
+
+## source-defect: needs-attention
+
+3. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: The new identity check does not make existing-file replacement conditional. Pause immediately after the final `GetFileInformationByHandleEx` check, let another process replace the target with B, then resume. `MoveFileExW(MOVEFILE_REPLACE_EXISTING)` replaces B, while the backup contains A. B is destroyed without confirmation. Microsoft documents [pathname-based replacement](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw), with no expected-destination identity parameter. Separately, ID plus last-write time cannot establish unchanged contents: Microsoft’s [File Times](https://learn.microsoft.com/en-us/windows/win32/sysinfo/file-times) documentation says write timestamps need not be fully updated until writing handles close. Require a protocol that protects the checked revision through commit or preserves the actual displaced revision, with tests for both interleavings.
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 4
+
+This record's round 4 is the spec's sixth review round. Every finding was verified and is real. Findings 1 and 3 share a cause: Windows has no rename that replaces a name only if it still holds an expected file (`MoveFileExW` replaces by pathname), so any check-then-replace leaves a race. Saving's ownership was re-thought from checking to holding.
+
+1. P1, recovery can overwrite a file created after an interrupted save: verified. Recovery now decides by the file IDs the journal records, never by a format check, and never overwrites a file the record does not name: it restores the original only into a free name, and otherwise keeps both and tells the user. Proof added.
+2. P2, portable-mode folders on FAT or exFAT cannot carry a DACL: verified against Microsoft's File System Functionality Comparison. Encryption at rest is the protection that always holds; the DACL is a second layer that such volumes cannot carry, which the log records; checkpoints from another machine or account are reported unreadable rather than offered.
+3. P1, the identity check does not make the replacement conditional, and last-write time does not prove unchanged contents: verified against `MoveFileExW` and File Times. An open document's file is now held with read-only sharing for the whole session (as Microsoft Office does), so it cannot change under the app; the commit renames the original to the backup name through that held handle and installs the new file without replacing, so no step can destroy a file the app does not hold. Proofs added: refused foreign writes, a file created between the two renames, and a document opened read-only when another program holds it for writing.
