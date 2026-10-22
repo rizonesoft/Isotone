@@ -242,7 +242,7 @@ def _acquire_locked(root: str, session: str, phase: int | None, run_file: str, c
         # An end interrupted after its mark may not have recorded its heartbeat for cancellation yet: record it before
         # the guard that names it is overwritten, so the job is never lost (independent review round 1).
         jobs = _pending_jobs(root)
-        if raw.get("cron_id") and raw.get("cron_id") not in [j.get("cron_id") for j in jobs]:
+        if raw.get("cron_id") and (str(raw.get("session_id", "")), str(raw.get("cron_id"))) not in map(_job_key, jobs):
             jobs.append({"cron_id": raw.get("cron_id"), "reason": str((raw.get("ended") or {}).get("reason", "")),
                          "at": _utc_now(), "session_id": raw.get("session_id")})
             _write_json(_pending_path(root), jobs)
@@ -410,7 +410,8 @@ def _finish_end(root: str, guard: dict, guard_path: str, state_path: str, what: 
     reason = str((guard.get("ended") or {}).get("reason", ""))
     # The job id outlives the guard until CronDelete is confirmed, so a failed delete stays recoverable, and a later
     # end never overwrites an earlier unconfirmed cancellation.
-    jobs = [j for j in _pending_jobs(root) if j.get("cron_id") != guard.get("cron_id")]
+    mine = (str(guard.get("session_id", "")), str(guard.get("cron_id", "")))
+    jobs = [j for j in _pending_jobs(root) if _job_key(j) != mine]
     jobs.append({"cron_id": guard.get("cron_id"), "reason": reason, "at": _utc_now(),
                  "session_id": guard.get("session_id")})
     _write_json(_pending_path(root), jobs)
@@ -445,6 +446,12 @@ def _pending_jobs(root: str) -> list[dict]:
     return [j for j in doc if isinstance(j, dict)] if isinstance(doc, list) else []
 
 
+def _job_key(job: dict) -> tuple[str, str]:
+    """A cancellation's identity: its session and its job, since job ids are session-local (independent review
+    round 10)."""
+    return str(job.get("session_id", "") or ""), str(job.get("cron_id", ""))
+
+
 def _yours(job: dict, session: str | None) -> bool:
     """Whether `session` may confirm this cancellation: heartbeat jobs live in one session, so only that session's
     CronList can prove one gone (independent review round 9). A record from before sessions were kept, or a call
@@ -461,19 +468,26 @@ def pending_cancel(root: str, session: str | None = None) -> str:
                      for j in jobs)
 
 
-def cancel_confirmed(root: str, cron_id: str, session: str | None = None) -> str:
+def cancel_confirmed(root: str, cron_id: str, session: str | None = None, if_pending: bool = False) -> str:
+    """Clear the cancellation of `cron_id` that `session` confirmed gone: only that session's record (or a record
+    from before sessions were kept), keyed by (session, job) (independent review round 10). With `if_pending`, a
+    job with no record of this session's is no error, so a heartbeat settles its own job the same way on every path
+    where it deletes itself."""
     with _Lock(root):
         jobs = _pending_jobs(root)
-        if not jobs:
-            return "cancel-confirmed: nothing pending"
-        if cron_id not in [str(j.get("cron_id")) for j in jobs]:
+        hits = [j for j in jobs if str(j.get("cron_id")) == cron_id and _yours(j, session)]
+        if not hits:
+            if if_pending:
+                return f"cancel-confirmed: nothing pending for job {cron_id}"
+            if not jobs:
+                return "cancel-confirmed: nothing pending"
+            theirs = [j for j in jobs if str(j.get("cron_id")) == cron_id]
+            if theirs:
+                raise GuardError(f"job {cron_id} belongs to session {theirs[0].get('session_id')}, whose own "
+                                 f"heartbeat confirms it; this session's CronList cannot prove it gone")
             raise GuardError(f"no pending cancellation names job {cron_id} "
                              f"(pending: {', '.join(str(j.get('cron_id')) for j in jobs)})")
-        theirs = [j for j in jobs if str(j.get("cron_id")) == cron_id and not _yours(j, session)]
-        if theirs:
-            raise GuardError(f"job {cron_id} belongs to session {theirs[0].get('session_id')}, whose own heartbeat "
-                             f"confirms it; this session's CronList cannot prove it gone")
-        rest = [j for j in jobs if str(j.get("cron_id")) != cron_id]
+        rest = [j for j in jobs if not any(j is h for h in hits)]
         if rest:
             _write_json(_pending_path(root), rest)
             return (f"cancel-confirmed: job {cron_id} is gone; still pending: "
@@ -880,33 +894,14 @@ def _open_no_follow(full: str) -> int:
     return msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
 
 
+# The read the fingerprint's file hashing goes through: the self-test replaces it to fail or stall file reads without
+# touching os.read, which subprocess reads its pipes with on POSIX.
+_read_fd = os.read
+
+
 def _hash_regular(full: str, info: os.stat_result, deadline: float, done: int,
                   total: int) -> tuple[str | None, int]:
-    """`_hash_file` with its open and reads run in a daemon thread that the walk waits on only until the deadline: a
-    deadline check cannot interrupt a blocking `open` or `read` on slow storage, so a stuck one is abandoned and the
-    walk reports itself incomplete in time for the hook to record it (independent review round 9). The abandoned
-    thread holds nothing the hook needs and ends with the hook's process."""
-    box: dict = {}
-
-    def work() -> None:
-        try:
-            box["result"] = _hash_file(full, info, deadline, done, total)
-        except BaseException as exc:  # handed to the waiting walk below, never lost
-            box["error"] = exc
-    worker = threading.Thread(target=work, name="campaign-fingerprint-read", daemon=True)
-    worker.start()
-    worker.join(max(0.0, deadline - time.monotonic()))
-    if worker.is_alive():
-        raise GuardError(f"fingerprint incomplete: reading an untracked file outlasted the time budget after {done} "
-                         f"of {total} untracked paths; the hook cannot tell progress from a stall")
-    if "error" in box:
-        raise box["error"]
-    return box["result"]
-
-
-def _hash_file(full: str, info: os.stat_result, deadline: float, done: int,
-               total: int) -> tuple[str | None, int]:
-    """(the SHA-256 of a regular file or None, the bytes read). The file is read through a handle opened without
+    """(the SHA-256 of a regular file or None, the bytes read), called from the fingerprint's bounded walk. The file is read through a handle opened without
     following a link and without blocking, and only when the handle is still the regular file `lstat` saw (same
     device and inode, and no reparse point): None when the path was replaced between the two calls, so a FIFO or a
     link swapped in is never read (D00 T01 §13), or when a read fails. The bytes read count against the byte budget
@@ -926,7 +921,7 @@ def _hash_file(full: str, info: os.stat_result, deadline: float, done: int,
         while left > 0:
             _within(deadline, done, total)  # a spent budget propagates: the walk is incomplete, not this file
             try:
-                chunk = os.read(fd, min(1 << 20, left))
+                chunk = _read_fd(fd, min(1 << 20, left))
             except OSError:
                 return None, consumed  # unread: the caller counts it by size and write time (round 3)
             if not chunk:
@@ -953,7 +948,6 @@ def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None =
     max_bytes = _env_int("CAMPAIGN_HASH_BYTES", 4 * 1024 * 1024)
     max_total = _env_int("CAMPAIGN_HASH_TOTAL_BYTES", 64 * 1024 * 1024)
     max_stat = _env_int("CAMPAIGN_STAT_FILES", 5000)
-    hashed_total = 0
     run_path = run_rel.replace("\\", "/")
     digest = hashlib.sha256()
     digest.update(_git(root, deadline, "rev-parse", "HEAD").strip() + b"\n")
@@ -961,44 +955,70 @@ def fingerprint(root: str, run_rel: str, run_text: str, deadline: float | None =
                        ":(exclude)build/claude-campaign-*") + b"\n")
     listed = _git(root, deadline, "ls-files", "-z", "--others", "--exclude-standard").decode("utf-8", "replace")
     paths = [p for p in listed.split("\0") if p and p != run_path and not OWN_FILES.match(p)]
-    for index, path in enumerate(paths, 1):
-        _within(deadline, index - 1, len(paths))
-        if index > max_hashed + max_stat:
-            # Past both bounds a path counts by its name alone, with no filesystem call, so a huge scratch tree
-            # costs the hook no stat per file (independent review 2026-10-21).
-            digest.update(f"{path}\n".encode("utf-8"))
-            continue
-        full = os.path.join(root, path)
-        try:
-            # lstat, never stat: a link counts by its target text and a FIFO, device, socket, or folder by its kind,
-            # none of them opened, so no special file can block or break the hook (D00 T01 §13).
-            info = os.lstat(full)
-        except OSError:
-            digest.update(f"{path} missing\n".encode("utf-8"))
-            continue
-        if _is_link(info):
+    lines: list[bytes] = []
+
+    def walk() -> None:
+        hashed_total = 0
+        for index, path in enumerate(paths, 1):
+            _within(deadline, index - 1, len(paths))
+            if index > max_hashed + max_stat:
+                # Past both bounds a path counts by its name alone, with no filesystem call, so a huge scratch tree
+                # costs the hook no stat per file (independent review 2026-10-21).
+                lines.append(f"{path}\n".encode("utf-8"))
+                continue
+            full = os.path.join(root, path)
             try:
-                target = os.readlink(full)
+                # lstat, never stat: a link counts by its target text and a FIFO, device, socket, or folder by its
+                # kind, none of them opened, so no special file can block or break the hook (D00 T01 §13).
+                info = os.lstat(full)
             except OSError:
-                target = "<unreadable link>"
-            digest.update(f"{path} -> {target}\n".encode("utf-8"))
-            continue
-        if not stat.S_ISREG(info.st_mode):
-            digest.update(f"{path} special {stat.S_IFMT(info.st_mode):o}\n".encode("utf-8"))
-            continue
-        if index <= max_hashed and info.st_size <= max_bytes and hashed_total + info.st_size <= max_total:
-            hashed, consumed = _hash_regular(full, info, deadline, index - 1, len(paths))
-            hashed_total += consumed
-            if hashed is None:
-                # Unread (an open error such as a Windows sharing violation, or a path replaced since lstat): it still
-                # counts by size and write time, so a change to it stays visible (independent review round 2).
-                digest.update(f"{path} {info.st_size} {info.st_mtime_ns} unread\n".encode("utf-8"))
+                lines.append(f"{path} missing\n".encode("utf-8"))
+                continue
+            if _is_link(info):
+                try:
+                    target = os.readlink(full)
+                except OSError:
+                    target = "<unreadable link>"
+                lines.append(f"{path} -> {target}\n".encode("utf-8"))
+                continue
+            if not stat.S_ISREG(info.st_mode):
+                lines.append(f"{path} special {stat.S_IFMT(info.st_mode):o}\n".encode("utf-8"))
+                continue
+            if index <= max_hashed and info.st_size <= max_bytes and hashed_total + info.st_size <= max_total:
+                hashed, consumed = _hash_regular(full, info, deadline, index - 1, len(paths))
+                hashed_total += consumed
+                if hashed is None:
+                    # Unread (an open or read error, or a path replaced since lstat): it still counts by size and
+                    # write time, so a change to it stays visible (independent review rounds 2 and 3).
+                    lines.append(f"{path} {info.st_size} {info.st_mtime_ns} unread\n".encode("utf-8"))
+                else:
+                    lines.append(f"{path} ".encode("utf-8") + hashed.encode() + b"\n")
             else:
-                digest.update(f"{path} ".encode("utf-8") + hashed.encode() + b"\n")
-        else:
-            # Past the per-file or the total byte budget a file counts by size and write time, so every path still
-            # counts and no read can outlast the hook.
-            digest.update(f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8"))
+                # Past the per-file or the total byte budget a file counts by size and write time, so every path
+                # still counts and no read can outlast the hook.
+                lines.append(f"{path} {info.st_size} {info.st_mtime_ns}\n".encode("utf-8"))
+
+    # The walk's every filesystem call (lstat, readlink, open, read) runs in one daemon worker the hook waits on only
+    # until the deadline: no deadline check can interrupt a call blocked on slow storage, so a stuck one is abandoned
+    # and the walk reports itself incomplete in time for the hook to record it (independent review rounds 9 and 10).
+    # The abandoned worker holds nothing the hook needs and ends with the hook's process.
+    box: dict = {}
+
+    def work() -> None:
+        try:
+            walk()
+        except BaseException as exc:  # handed to the waiting caller below, never lost
+            box["error"] = exc
+    worker = threading.Thread(target=work, name="campaign-fingerprint-walk", daemon=True)
+    worker.start()
+    worker.join(max(0.0, deadline - time.monotonic()))
+    if worker.is_alive():
+        raise GuardError(f"fingerprint incomplete: the untracked walk outlasted the time budget ({len(lines)} of "
+                         f"{len(paths)} untracked paths read); the hook cannot tell progress from a stall")
+    if "error" in box:
+        raise box["error"]
+    for line in lines:
+        digest.update(line)
     digest.update(re.sub(r"(?m)^- bookkeeping:.*(\r?\n)?", "", run_text).encode("utf-8"))
     _within(deadline, len(paths), len(paths))  # a walk that finished past the deadline is no complete read either
     return digest.hexdigest()
@@ -2284,11 +2304,11 @@ def _self_test() -> int:
             globals()["_open_no_follow"] = real_open
         check("an-unread-file-still-counts-by-size-and-time", before != after)
         # A read error after a good open is the same: unread, counted by size and time, never a failed hook.
-        real_read = os.read
+        real_read = globals()["_read_fd"]
 
         def broken_read(fd, n):
             raise OSError(5, "Input/output error")
-        os.read = broken_read
+        globals()["_read_fd"] = broken_read
         try:
             before = fingerprint(hroot, RUN_FILE, "")
             with open(unread, "w", encoding="utf-8") as fh:
@@ -2297,7 +2317,7 @@ def _self_test() -> int:
         except OSError as exc:
             before, after, escaped = "", "", repr(exc)
         finally:
-            os.read = real_read
+            globals()["_read_fd"] = real_read
         check("a-read-error-leaves-the-file-unread-not-the-hook-failed", before != after and not escaped, escaped)
         # Independent review round 4: bytes read before a failed read still count against the byte budget, and the
         # deadline holds after the last read, and a read blocked past the deadline is abandoned in time (round 9).
@@ -2314,11 +2334,11 @@ def _self_test() -> int:
                 raise OSError(5, "Input/output error")
             return real_read(fd, 2048)
         os.environ["CAMPAIGN_HASH_TOTAL_BYTES"] = "4096"
-        os.read = half_then_fail
+        globals()["_read_fd"] = half_then_fail
         try:
             fingerprint(hroot, RUN_FILE, "")
         finally:
-            os.read = real_read
+            globals()["_read_fd"] = real_read
             del os.environ["CAMPAIGN_HASH_TOTAL_BYTES"]
         spent = 2048 * ((len(reads) + 1) // 2)
         check("a-failed-read-still-counts-against-the-byte-budget", spent <= 4096, f"{spent} bytes over {reads}")
@@ -2334,21 +2354,21 @@ def _self_test() -> int:
             clock[0] += 5
             return real_read(fd, n)
         time.monotonic = lambda: clock[0]
-        os.read = slow_read
+        globals()["_read_fd"] = slow_read
         try:
             fingerprint(one, RUN_FILE, "", deadline=clock[0] + 1)
             crossed = ""
         except GuardError as exc:
             crossed = str(exc)
         finally:
-            os.read = real_read
+            globals()["_read_fd"] = real_read
             time.monotonic = real_monotonic
         check("a-read-that-crosses-the-deadline-is-incomplete", "fingerprint incomplete" in crossed, crossed)
 
         def stuck_read(fd, n):
             time.sleep(1.0)
             return real_read(fd, n)
-        os.read = stuck_read
+        globals()["_read_fd"] = stuck_read
         began = time.monotonic()
         try:
             fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
@@ -2357,9 +2377,45 @@ def _self_test() -> int:
             stuck = str(exc)
         finally:
             took = time.monotonic() - began
-            os.read = real_read
+            globals()["_read_fd"] = real_read
+        def stuck_lstat(path, *args, **kwargs):
+            time.sleep(1.0)
+            return real_lstat_walk(path, *args, **kwargs)
+        real_lstat_walk = os.lstat
+        os.lstat = stuck_lstat
+        began_l = time.monotonic()
+        try:
+            fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
+            stuck_l = ""
+        except GuardError as exc:
+            stuck_l = str(exc)
+        finally:
+            took_l = time.monotonic() - began_l
+            os.lstat = real_lstat_walk
+        time.sleep(1.0)  # let the abandoned worker leave the patched lstat before anything else runs
+        check("a-blocked-lstat-is-abandoned-at-the-deadline",
+              "fingerprint incomplete" in stuck_l and took_l < 0.8, f"{took_l:.2f}s {stuck_l}")
         check("a-blocked-read-is-abandoned-at-the-deadline",
               "fingerprint incomplete" in stuck and took < 0.8, f"{took:.2f}s {stuck}")
+
+    with tempfile.TemporaryDirectory(prefix="campaign-keys-") as ktmp:
+        kroot = _workspace(ktmp)
+        # Independent review round 10: two sessions' records for the same job id are two records, and settling one
+        # leaves the other; settling a job with nothing pending is no error.
+        _write_json(_pending_path(kroot), [{"cron_id": "job-z", "reason": "park", "at": _utc_now(), "session_id": "A"}])
+        acquire(kroot, "B", 1, RUN_FILE, "job-z", handover="test")
+        end_pending = globals()["_pending_jobs"]
+        msg = end(kroot, "B", "operator-stop")
+        keys = sorted(_job_key(j) for j in end_pending(kroot))
+        check("cancellations-are-keyed-by-session-and-job", keys == [("A", "job-z"), ("B", "job-z")], str(keys))
+        cancel_confirmed(kroot, "job-z", "B")
+        check("settling-one-sessions-job-leaves-the-other", [_job_key(j) for j in end_pending(kroot)] == [("A", "job-z")])
+        try:
+            settled = cancel_confirmed(kroot, "job-q", "B", if_pending=True)
+        except GuardError as exc:
+            settled = repr(exc)
+        check("settling-with-nothing-pending-is-no-error", "nothing pending for job job-q" in settled, settled)
+        cancel_confirmed(kroot, "job-z", "A")
 
     with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
         proot = _workspace(ptmp)
@@ -2469,7 +2525,7 @@ def main(argv: list[str]) -> int:
                 print(line)
             return 0
         if argv[0] == "cancel-confirmed":
-            print(cancel_confirmed(root, opts.get("cron_id", ""), opts.get("session")))
+            print(cancel_confirmed(root, opts.get("cron_id", ""), opts.get("session"), opts.get("if_pending") == "yes"))
             return 0
         if argv[0] in ("reconcile", "health"):
             jobs = [j for j in opts.get("jobs", "").split(",") if j]
