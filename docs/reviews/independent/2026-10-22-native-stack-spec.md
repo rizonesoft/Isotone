@@ -451,3 +451,35 @@ This record's round 12 is the spec's fourteenth review round. Both findings were
 
 1. P1, recovery cannot finish a protection-failure rollback when another program blocks encryption: verified. Recovery now retires a journal record only once its save is settled: a protection step blocked by another program's handle keeps the record, is retried at each start and while the app runs, and the user is told which file is not yet protected and where the previous version is. Proof added for the combined crash-and-blocked-encryption case.
 2. P1, held sharing does not freeze a whole file: verified (sharing modes apply per stream and exclude attribute access). The overclaim is corrected: a held handle stops other programs writing the file's data, renaming it, or deleting it, but not attaching a stream or an extended attribute, as sync clients do; deleting the app's own temporary file removes such metadata with it and loses no document data. The save invariants now state their threat model, consistent with the account boundary the spec already draws: crashes, power loss, and ordinary concurrent programs (external editors, sync clients, scanners, indexers, Explorer), not a same-user program set on defeating them, which can read and write the app's memory and so defeat any protocol.
+
+## Round 13: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:35:45Z
+- Effort: xhigh
+- Lines: 16
+- Digest: 28da1b5e601217ab
+
+## adversarial: approve
+
+## consistency: needs-attention
+
+1. P3 `docs/specs/2026-10-22-native-stack-design.md:86`: The formal invariants still contradict round 14’s accepted recovery outcome. Run line 93’s new crash-and-blocked-encryption proof: line 92 requires retaining the weaker committed file pending retry, while invariants 2 and 7 require no weaker file and rollback when protection cannot complete. State the pending-recovery exception in the invariants and distinguish it from successful completion; the current proof accepts an outcome the stated invariants forbid.
+
+## integration: approve
+
+## source-defect: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:23`: Rebooting and waiting 60 seconds does not establish the asserted empty application cache. Microsoft explicitly warns that SuperFetch can preload application code and turn a cold-start measurement into a warmer one. Demonstrate by training application launches with SysMain enabled, rebooting, and inspecting cached application pages before the timed launch. The protocol neither controls preloading nor verifies its stated cold condition, so warmed runs can satisfy the cold-start gate. Require cache-state verification or controlled preloading, or redefine the metric as a post-reboot launch. See [Microsoft’s startup measurement guidance](https://learn.microsoft.com/en-us/archive/msdn-magazine/2008/march/clr-inside-out-improving-application-startup-performance).
+
+## record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 13
+
+This record's round 13 is the spec's fifteenth review round, the first with no P1. Both findings were verified.
+
+1. P3, the invariants forbid the pending outcome recovery allows: verified. The invariants now name that one pending state (a weaker committed file recovery cannot yet protect or roll back because another program holds it open) as the only exception to invariants 2 and 7, kept with its journal record, reported to the user, and completed once the handle is released; a save reported as successful never left a weaker file.
+2. P2, the cold-start condition was assumed, not established: verified against Microsoft's startup measurement guidance on SuperFetch. The protocol now stops SysMain for the runs, purges the standby list from the elevated harness, records each run with Windows Performance Recorder, and discards any run in which the executable was not read from disk.
