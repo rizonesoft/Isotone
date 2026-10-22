@@ -619,31 +619,145 @@ class MergeTests(Base):
                 self.assertEqual(mp._trigger(text, "push"), want)
 
     def test_a_red_from_a_checkout_that_left_main_is_a_quiet_refusal(self):
-        # Independent review round 3: detached onto a commit whose runs failed while the pull requests were read.
+        # Independent review round 3: detached onto a commit whose runs failed while the pull requests were read;
+        # main itself (origin/main, another commit) is green, so the red is not main's and no email goes out.
         git = FakeGit()
         gh = FakeGh([pr(1)])
         real = gh.__call__
 
         def detach_onto_red(*args, cwd=None):
             if args[:2] == ("pr", "list"):
-                git.detached = True
-                gh.main_runs = {"build.yml": self.run_on(HEAD, conclusion="failure", n=6)}
+                git.detached, git.remote = True, "b" * 40
+                gh.main_runs = {"build.yml": self.run_on(HEAD, conclusion="failure", n=6) + self.run_on("b" * 40, n=7),
+                                "plan.yml": self.run_on("b" * 40, n=8)}
             return real(*args, cwd=cwd)
         code, out = self.call(["run", "--task"], detach_onto_red, git)
         self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (0, [], True))
 
     def test_a_red_read_at_the_start_waits_for_the_clone_too(self):
-        # Independent review round 4: detached while the first CI read finds red: a busy clone, no email.
+        # Independent review round 4: detached while the first CI read finds red: a busy clone, no email, since main
+        # itself (origin/main, another commit) is green.
         git = FakeGit()
-        gh = FakeGh([pr(1)], main_runs={"build.yml": self.run_on(HEAD, conclusion="failure", n=4)})
+        gh = FakeGh([pr(1)], main_runs={"build.yml": self.run_on(HEAD, conclusion="failure", n=4) + self.run_on("b" * 40, n=5),
+                                        "plan.yml": self.run_on("b" * 40, n=6)})
         real = gh.__call__
 
         def detach_on_ci(*args, cwd=None):
             if args[:2] == ("run", "list") and "--branch" in args:
-                git.detached = True
+                git.detached, git.remote = True, "b" * 40
             return real(*args, cwd=cwd)
         code, out = self.call(["run", "--task"], detach_on_ci, git)
         self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (0, [], True))
+
+    # D00 T01 §16: the unattended merger never falls silent.
+    def health(self):
+        try:
+            return json.loads((self.root / mp.HEALTH).read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return None
+
+    def at(self, seconds):
+        saved = mp._clock
+        mp._clock = lambda: 1_000_000.0 + seconds
+        return saved
+
+    def test_a_pending_main_alerts_past_the_bound_and_a_green_read_clears_it(self):
+        pending = {"build.yml": self.run_on(HEAD, status="in_progress", conclusion="")}
+        saved = self.at(0)
+        try:
+            code, out = self.call(["run", "--task"], FakeGh([pr(1)], main_runs=pending), FakeGit())
+            inside = (code, self.health()["pending_since"].get("build"))
+            mp._clock = lambda: 1_000_000.0 + mp.PENDING_ALERT_SECONDS - 1
+            code2, _ = self.call(["run", "--task"], FakeGh([pr(1)], main_runs=pending), FakeGit())
+            mp._clock = lambda: 1_000_000.0 + mp.PENDING_ALERT_SECONDS
+            code3, out3 = self.call(["run", "--task"], FakeGh([pr(1)], main_runs=pending), FakeGit())
+            gh = FakeGh([pr(1)])
+            code4, _ = self.call(["run", "--task"], gh, FakeGit())
+        finally:
+            mp._clock = saved
+        self.assertEqual((inside, code2, code3, "has not read green for 120 minutes" in out3, code4, len(gh.merges()),
+                          self.health()["pending_since"]), ((0, 1_000_000.0), 0, 1, True, 0, 1, {}), out3)
+
+    def test_pushes_cannot_reset_the_pending_timer(self):
+        saved = self.at(0)
+        try:
+            codes = []
+            for hour, head in enumerate(("1" * 40, "2" * 40, "3" * 40)):
+                mp._clock = lambda h=hour: 1_000_000.0 + h * 3600
+                pending = {"build.yml": self.run_on(head, status="queued", conclusion="")}
+                codes.append(self.call(["run", "--task"], FakeGh([pr(1)], main_runs=pending), FakeGit(head=head, remote=head))[0])
+        finally:
+            mp._clock = saved
+        self.assertEqual(codes, [0, 0, 1])
+
+    def test_the_merged_head_is_read_on_the_next_run(self):
+        # The merge lands on main's head, so the next run's judgment reads it: red alerts, pending is busy.
+        gh = FakeGh([pr(1), pr(2)])
+        code, _ = self.call(["run", "--task"], gh, FakeGit())
+        red = {"build.yml": self.run_on(HEAD, conclusion="failure", n=3)}
+        code_red, out_red = self.call(["run", "--task"], FakeGh([pr(2)], main_runs=red), FakeGit())
+        pending = {"build.yml": self.run_on(HEAD, status="in_progress", conclusion="", n=4)}
+        gh_p = FakeGh([pr(2)], main_runs=pending)
+        code_p, _ = self.call(["run", "--task"], gh_p, FakeGit())
+        self.assertEqual((code, len(gh.merges()), code_red, "concluded failure" in out_red, code_p, gh_p.merges()),
+                         (0, 1, 1, True, 0, []))
+
+    def test_a_busy_clone_still_reports_a_red_main(self):
+        red = {"build.yml": self.run_on(HEAD, conclusion="failure", n=9)}
+        cases = [("dirty, main red", FakeGit(status=" M x" + chr(10)), red, None, 1),
+                 ("dirty, main green", FakeGit(status=" M x" + chr(10)), None, None, 0),
+                 ("detached, main red", FakeGit(detached=True), red, None, 1),
+                 ("a section in progress, main red", FakeGit(), red, "graph", 1),
+                 ("a running campaign, main red", FakeGit(), red, "campaign", 0)]
+        for name, git, runs, busy, want in cases:
+            with self.subTest(name=name):
+                gh = FakeGh([pr(1)], main_runs=runs)
+                kw = {}
+                if busy == "graph":
+                    kw["graph"] = FakeGraph(self.root, started_open=True)
+                if busy == "campaign":
+                    kw["active"] = lambda r: "a campaign run holds the guard"
+                code, out = self.call(["run", "--task"], gh, git, **kw)
+                self.assertEqual((code, gh.merges()), (want, []), out)
+
+    def test_a_changed_workflow_is_never_inherited(self):
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        (wf / "plan.yml").write_text("name: plan-gates" + chr(10) + "on:" + chr(10) + "  push:" + chr(10)
+                                     + "    paths:" + chr(10) + "      - 'todo/**'" + chr(10), encoding="utf-8")
+        runs = {"plan.yml": self.run_on("b" * 40)}
+        gh = FakeGh([pr(1)], main_runs=runs)
+        code, out = self.call(["run", "--campaign"], gh, FakeGit(changed=[".github/workflows/plan.yml"]))
+        gh2 = FakeGh([pr(1)], main_runs={"plan.yml": self.run_on("f" * 40)})
+        code2, out2 = self.call(["run", "--campaign"], gh2, FakeGit(changed=["docs/x.md"]))
+        self.assertEqual((code, gh.merges(), "workflow changed since its last run" in out, code2, gh2.merges()),
+                         (2, [], True, 2, []), out + out2)
+
+    def test_a_failed_observation_never_moves_the_record(self):
+        saved = self.at(0)
+        try:
+            pending = {"build.yml": self.run_on(HEAD, status="queued", conclusion="")}
+            self.call(["run", "--task"], FakeGh([pr(1)], main_runs=pending), FakeGit())
+            before = self.health()
+            gh = FakeGh([pr(1)], main_runs=pending)
+            real = gh.__call__
+
+            def lookup_fails(*args, cwd=None):
+                if args[:2] == ("run", "list") and "--branch" in args:
+                    raise mp.Failed("gh run list failed: HTTP 401")
+                return real(*args, cwd=cwd)
+            mp._clock = lambda: 1_000_000.0 + mp.PENDING_ALERT_SECONDS + 5
+            code, out = self.call(["run", "--task"], lookup_fails, FakeGit())
+        finally:
+            mp._clock = saved
+        self.assertEqual((code, "HTTP 401" in out, self.health()), (1, True, before))
+
+    def test_a_damaged_health_record_alerts(self):
+        (self.root / "build").mkdir(exist_ok=True)
+        (self.root / mp.HEALTH).write_text("{torn", encoding="utf-8")
+        gh = FakeGh([pr(1)])
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), "cannot be read" in out), (1, [], True))
 
     def test_main_ci_is_read_again_right_before_the_merge(self):
         # Independent review round 1: main turns red while the pull requests are read.

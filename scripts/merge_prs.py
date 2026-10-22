@@ -83,6 +83,15 @@ RUN_BUDGET = 540
 # The workflows that guard `main` itself, read at the start of every run (D00 T01 §15): a merge onto a red `main` is
 # refused, and the hourly task's next run reports a red its own merge caused, since it cannot wait out a build.
 MAIN_WORKFLOWS = (("plan-gates", "plan.yml"), ("build", "build.yml"))
+# A guarding workflow that has not read green for this long alerts (exit 1) instead of reading as a busy clone, so a
+# stuck or disabled workflow cannot stop merging in silence (D00 T01 §16). The timer is per workflow, kept across
+# heads in HEALTH, and only a green read clears it, so frequent pushes cannot reset it.
+PENDING_ALERT_SECONDS = 2 * 3600
+HEALTH = Path("build") / "merge-prs-health.json"
+
+
+def _clock() -> float:
+    return time.time()
 MERGE_RESERVE = 120
 _deadline: float | None = None
 
@@ -384,6 +393,9 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
         # path the push touched meets the filter (independent review round 2).
         changed = [f for f in git_fn("diff", "--name-only", "-z", "--no-renames", older["headSha"], head,
                                      cwd=root).split("\0") if f]
+        if f".github/workflows/{file}" in changed:
+            # The older run ran another definition of the workflow: it never stands in for the head (D00 T01 §16).
+            return "pending", f"main's {name} workflow changed since its last run; its run for {head[:12]} is to come"
         paths = _push_paths(root, file)
         if paths is None or any(_glob_re(p).match(f) for p in paths for f in changed):
             return "pending", f"main's {name} run for {head[:12]} has not started yet"
@@ -395,12 +407,58 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
     return "green", ""
 
 
-def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git) -> tuple[str, str, str]:
-    """(the head judged, "green" | "pending" | "red", why) for `main`'s guarding workflows. Every workflow is read
-    before the state is chosen, so a red one outranks one still running (independent review round 1). It raises
-    only when GitHub cannot be read; `judge` decides what the state means."""
-    head = git_fn("rev-parse", "HEAD", cwd=root).strip()
-    verdicts = [_ci_verdict(name, file, repo, root, head, gh_fn, git_fn) for name, file in MAIN_WORKFLOWS]
+def _read_health(root: Path) -> dict:
+    path = root / HEALTH
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {"pending_since": {}}
+    except (OSError, ValueError) as error:
+        raise Failed(f"{HEALTH} cannot be read ({error}); delete it to restart the pending timers") from None
+    since = doc.get("pending_since") if isinstance(doc, dict) else None
+    if not isinstance(since, dict) or not all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                                              for v in since.values()):
+        raise Failed(f"{HEALTH} is malformed; delete it to restart the pending timers")
+    return {"pending_since": dict(since)}
+
+
+def _age_pending(root: Path, verdicts: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
+    """The verdicts with each workflow's pending time applied and recorded (D00 T01 §16): the first pending read of a
+    workflow starts its timer, a green read clears it, and a pending past PENDING_ALERT_SECONDS reads as red. The
+    record changes only here, after every workflow reached a verdict, so a failed read never moves it."""
+    record = _read_health(root)
+    since = dict(record["pending_since"])
+    now = _clock()
+    out = []
+    for name, state, why in verdicts:
+        if state == "green":
+            since.pop(name, None)
+        elif state == "pending":
+            first = since.setdefault(name, now)
+            if now - first >= PENDING_ALERT_SECONDS:
+                state, why = "red", (f"{why}; main's {name} has not read green for {int((now - first) // 60)} minutes, "
+                                     f"past the {PENDING_ALERT_SECONDS // 3600}-hour bound: a stuck or disabled workflow")
+        out.append((name, state, why))
+    if since != record["pending_since"]:
+        path = root / HEALTH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"pending_since": since}, indent=2), encoding="utf-8")
+        os.replace(tmp, path)
+    return out
+
+
+def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git, head: str | None = None,
+            record: bool = False) -> tuple[str, str, str]:
+    """(the head judged, "green" | "pending" | "red", why) for `main`'s guarding workflows at `head` (the local HEAD
+    unless named). Every workflow is read before the state is chosen, so a red one outranks one still running
+    (independent review round 1). With `record`, pending time is aged and kept (`_age_pending`). It raises only when
+    GitHub or the health record cannot be read; `judge` decides what the state means."""
+    head = head or git_fn("rev-parse", "HEAD", cwd=root).strip()
+    verdicts = [(name, *_ci_verdict(name, file, repo, root, head, gh_fn, git_fn)) for name, file in MAIN_WORKFLOWS]
+    if record:
+        verdicts = _age_pending(root, verdicts)
+    verdicts = [(state, why) for _name, state, why in verdicts]
     for state in ("red", "pending"):
         found = [why for s, why in verdicts if s == state]
         if found:
@@ -408,15 +466,30 @@ def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git) -> tuple[str, str, str]
     return head, "green", ""
 
 
-def judge(root: Path, repo: str, campaign: bool, git_fn, gh_fn, graph, active_fn) -> None:
+def judge(root: Path, repo: str, campaign: bool, git_fn, gh_fn, graph, active_fn, record: bool = False,
+          task: bool = False) -> None:
     """The one judgment before every listing and every merge (D00 T01 §15): main's CI first (the slow GitHub reads),
     then the preflight (one fetch and the local checks back to back), and only then the CI's verdict, so nothing
     local is trusted across a GitHub read and a red is never reported for a clone the preflight refuses (independent
     review rounds 2 to 4). A head that moved since its CI was read is a busy clone. GitHub rebases onto the base as
     it is when `gh pr merge` runs; the instant between this judgment and that call is the window no client closes,
     and the landed check and validate after the merge read the result."""
-    head, state, why = main_ci(repo, root, gh_fn, git_fn)
-    preflight(root, campaign, git_fn, graph, active_fn)
+    head, state, why = main_ci(repo, root, gh_fn, git_fn, record=record)
+    try:
+        preflight(root, campaign, git_fn, graph, active_fn)
+    except Refused as busy:
+        # The scheduled task still reports a red main when the clone is busy for a local reason (uncommitted work, a
+        # detached checkout, a section in progress), judged on main's own fetched head, never on whatever the
+        # checkout holds; a running campaign reads CI itself, so it is left alone (D00 T01 §16).
+        if task and not active_fn(root):
+            try:
+                origin = git_fn("rev-parse", "origin/main", cwd=root).strip()
+            except Failed:
+                raise busy from None
+            ostate, owhy = (state, why) if origin == head else main_ci(repo, root, gh_fn, git_fn, head=origin)[1:]
+            if ostate == "red":
+                raise Failed(f"{owhy}; repair main (nothing merges, the clone is busy: {busy})") from None
+        raise
     now = git_fn("rev-parse", "HEAD", cwd=root).strip()
     if now != head:
         raise Refused(f"main moved from {head[:12]} to {now[:12]} while its CI was read")
@@ -949,7 +1022,8 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         repo = repository(root, git_fn)
         # Main's own CI and the clone, whether or not anything turns out eligible: the hourly task learns of a red
         # its earlier merge caused on its next run, and never merges onto it (D00 T01 §15).
-        judge(root, repo, args.campaign, git_fn, gh_fn, graph, active_fn)
+        judge(root, repo, args.campaign, git_fn, gh_fn, graph, active_fn, record=args.mode == "run",
+              task=args.task)
         preflight_line = "preflight: ok"
     except Refused as error:
         preflight_line = f"preflight: refused: {error}"
@@ -997,7 +1071,8 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         print("merge_prs: nothing eligible" + "".join(f"; #{pr['number']} {why}" for pr, ok, why in verdicts if not ok))
         return 0
     code, line = merge_one(ready[0], repo, root, gh_fn, git_fn, validate_fn,
-                           ready_fn=lambda: judge(root, repo, args.campaign, git_fn, gh_fn, graph, active_fn))
+                           ready_fn=lambda: judge(root, repo, args.campaign, git_fn, gh_fn, graph, active_fn,
+                                                  record=True, task=args.task))
     print(line, file=sys.stdout if code == 0 else sys.stderr)
     return code
 
