@@ -1,0 +1,24 @@
+{
+  "candidate_base": "283260131e5c3b4560830f24479e2590cd6b69f7",
+  "candidate_head": "7bacc2f854da3f72435c3c5f0d1dfb64edbe6a0d",
+  "checker": "PASS four lenses, one verdict each; highest none :: c7223cf0c1b49ac0f46e2caa29271b650c3524898da82573be936937b62154e2",
+  "commits": [
+    "05b80f77deea4d7dbe922f9d4a6f3634d97f8e9d",
+    "4ba316db4f35111e4542534ed7a10c4add8c7eab",
+    "6e91d552ad7d71289bce4b63a968a55370b2ed65",
+    "1a065cf85b9b106669689489b6bdb25a372deef6",
+    "1e08d3b750c437be12c1e84813c81ad9c0569b7a",
+    "7bacc2f854da3f72435c3c5f0d1dfb64edbe6a0d"
+  ],
+  "findings_path": "docs/reviews/00-workspace/D00-T01-s17.md",
+  "findings_sha256": "cc3003bd468557f8c6075ec4315ae8d31cbf0a8c293414a2112ba4e868ff55e5",
+  "manifest_sha": "45fbd4d13b6bc173f8e23800263b95b979f3575fc6fdf11a7643b0bdc141fd9c",
+  "model": "gpt-6.1-sol",
+  "model_provenance": "derived",
+  "reviewer": "codex-panel",
+  "runner_sha256": "9fcffc330a2ae4c054944b8c101fe89ce61edce3b7dca3662630bf706c5f1646",
+  "schema": 2,
+  "timestamp": "2026-10-22T11:42:49Z",
+  "tree": "99e6afdea0928c7ddb82d3ac816125f5e3ec6a17",
+  "verdict": "approve"
+}
