@@ -2400,9 +2400,18 @@ def _self_test() -> int:
         try:
             fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 60)
 
+            # Each blocked call signals when it is entered (so the case proves the walk reached it before the deadline,
+            # never that the budget ran out somewhere else) and when it leaves (so the abandoned worker is waited out
+            # after the timed interval, before anything else runs): D00 T01 §17's plan review.
+            entered_r, left_r = threading.Event(), threading.Event()
+
             def stuck_read(fd, n):
-                time.sleep(1.0)
-                return real_read(fd, n)
+                entered_r.set()
+                try:
+                    time.sleep(1.0)
+                    return real_read(fd, n)
+                finally:
+                    left_r.set()
             globals()["_read_fd"] = stuck_read
             began = time.monotonic()
             try:
@@ -2412,10 +2421,17 @@ def _self_test() -> int:
                 stuck = str(exc)
             finally:
                 took = time.monotonic() - began
+                left_r.wait(10)
                 globals()["_read_fd"] = real_read
+            entered_l, left_l = threading.Event(), threading.Event()
+
             def stuck_lstat(path, *args, **kwargs):
-                time.sleep(1.0)
-                return real_lstat_walk(path, *args, **kwargs)
+                entered_l.set()
+                try:
+                    time.sleep(1.0)
+                    return real_lstat_walk(path, *args, **kwargs)
+                finally:
+                    left_l.set()
             real_lstat_walk = os.lstat
             os.lstat = stuck_lstat
             began_l = time.monotonic()
@@ -2426,15 +2442,17 @@ def _self_test() -> int:
                 stuck_l = str(exc)
             finally:
                 took_l = time.monotonic() - began_l
+                left_l.wait(10)
                 os.lstat = real_lstat_walk
         finally:
             # Restored whatever escapes the warm-up or either case (independent review round 1).
             globals()["_git"] = real_git
-        time.sleep(1.0)  # let the abandoned worker leave the patched lstat before anything else runs
         check("a-blocked-lstat-is-abandoned-at-the-deadline",
-              "fingerprint incomplete" in stuck_l and took_l < 0.8, f"{took_l:.2f}s {stuck_l}")
+              entered_l.is_set() and "fingerprint incomplete" in stuck_l and took_l < 0.8,
+              f"entered {entered_l.is_set()} {took_l:.2f}s {stuck_l}")
         check("a-blocked-read-is-abandoned-at-the-deadline",
-              "fingerprint incomplete" in stuck and took < 0.8, f"{took:.2f}s {stuck}")
+              entered_r.is_set() and "fingerprint incomplete" in stuck and took < 0.8,
+              f"entered {entered_r.is_set()} {took:.2f}s {stuck}")
 
     with tempfile.TemporaryDirectory(prefix="campaign-keys-") as ktmp:
         kroot = _workspace(ktmp)
