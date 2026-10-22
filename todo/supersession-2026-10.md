@@ -26,8 +26,8 @@ Generated from `python scripts/todo-graph.py query plan` on 2026-10-23 and edite
 | D00 T02 §3 | 0 | Quiet the WPF temporary project output | pending (W1) |  |
 | D00 T02 §4 | 0 | Prune packages no code uses | kept | stamped; stays as shipped |
 | D00 T02 §5 | 0 | The assertion library decision and the decision log | pending (W1) |  |
-| D00 T04 §1 | 0 | The native-code standard, the register, and the native-lint gate | pending (W1) |  |
-| D00 T04 §2 | 0 | The benchmark harness and the first benchmark record | pending (W1) |  |
+| D00 T04 §1 | 0 | The native-code standard, the register, and the native-lint gate | rewritten in place | now "The C++ standard, the dependency register, and the register gate"; the register columns, advisory requirement, and OS-calling rules carry over (spec) |
+| D00 T04 §2 | 0 | The benchmark harness and the first benchmark record | rewritten in place | Google Benchmark replaces BenchmarkDotNet; the reference machine record joins it; new D00 T04 §3 carries the advisory job |
 | D00 T03 §1 | 0 | Fold the per-app docs and samples into the suite | pending (W1) |  |
 | D00 T03 §2 | 0 | Before captures of the imported Stilus and Gesso | pending (W1) |  |
 | D00 T01 §9 | 0 | The design contract gates | pending (W1) |  |

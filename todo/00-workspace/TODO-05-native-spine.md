@@ -1,0 +1,194 @@
+---
+schema_version: 1
+id: native-spine
+domain: 00-workspace
+status: draft
+title: "TODO-05 -- The Native Spine: Toolchain, Build, Gates, and CI"
+depends_on: []
+track: W5
+---
+
+# TODO-05 -- The Native Spine: Toolchain, Build, Gates, and CI
+
+> **Goal:** The C++ half of the repository builds, tests, and checks itself the same way on every clone and on every push: one script enters a pinned Visual Studio toolchain and refuses any other, CMake presets build `native/` for x64 and ARM64 in Debug, Release, and AddressSanitizer configurations with C++23 and warnings as errors, vcpkg supplies every library from a committed baseline as static libraries, GoogleTest runs through CTest, clang-format, clang-tidy, MSVC `/analyze`, a size gate, and an import gate hold every build, fuzz targets have a qualified toolchain and a nightly budget, `scripts/check-all.ps1` and CI run all of it with ARM64 tests executing on ARM64, and the proof standard every TODO cites is written for C++. Nothing here is user-visible; every native section after this file stands on it.
+
+> [!IMPORTANT]
+> **Current state (verified 2026-10-23):** The operator approved `docs/specs/2026-10-22-native-stack-design.md` on 2026-10-23; its sections "The toolchain" and "Testing and the gates" and step 1 of "The order of work" are this file's contract, and `docs/plans/2026-10-23-native-replan.md` makes this file wave 1 of the re-plan. No native code exists: there is no `native/` folder, no `CMakeLists.txt`, no `CMakePresets.json`, no vcpkg manifest, and no `scripts/dev-env.ps1`. The development machine has Visual Studio Professional 2026 18.11.1 at `C:\Program Files\Microsoft Visual Studio\18\Professional` with MSVC toolset 14.51.36231, Windows SDK 10.0.26100.0, and, bundled with Visual Studio, CMake 4.3.1-msvc1, Ninja 1.13.2, LLVM 22.1.3 (`clang-tidy`, `clang-format`, `clang-cl`), and the vcpkg tool 2026-07-27 at `VC\vcpkg\vcpkg.exe` (each read from the tool's own `--version` output). MSVC 14.51 offers `/std:c++20`, `/std:c++23preview`, and `/std:c++latest`; Microsoft's MSVC Build Tools 14.52 release candidate (Visual Studio 18.12) adds `/std:c++23` and deprecates `/std:c++23preview` as its alias. CMake maps `CXX_STANDARD 23` on MSVC to `/std:c++latest`, not the preview switch (CMake forum and issue 26692), so the standard switch is set explicitly. CI runs on `windows-2025` and `ubuntu-26.04` today (`.github/workflows/build.yml`, `plan.yml`, `pins.yml`, `release.yml`); GitHub offers Windows on Arm runners to public repositories (`windows-11-arm`, and `windows-11-vs2026-arm` with Visual Studio 2026). `scripts/check-all.ps1` runs the .NET build and test and 19 Python gates; it has no native stage. The .NET gates stay as long as C# code remains (spec, "The repository during the move").
+<!-- claim: exists docs/specs/2026-10-22-native-stack-design.md -->
+<!-- claim: exists docs/plans/2026-10-23-native-replan.md -->
+<!-- claim: absent native -->
+<!-- claim: absent scripts/dev-env.ps1 -->
+<!-- claim: absent CMakePresets.json -->
+<!-- claim: count "runs-on: windows-2025" .github/workflows/build.yml = 1 -->
+<!-- claim: count "dotnet build \$Solution" scripts/check-all.ps1 = 2 -->
+
+## Inputs
+
+- [`docs/specs/2026-10-22-native-stack-design.md`](../../docs/specs/2026-10-22-native-stack-design.md) "The toolchain", "Testing and the gates", "Dependencies and their upkeep", "The repository during the move", and "The order of work" step 1 -- every pin, flag, configuration, and gate this file builds
+- [`docs/dev/decisions.md`](../../docs/dev/decisions.md) "2026-10-22: The C++ language standard" -- the `/std` rule §1 and §3 apply
+- [`scripts/check-all.ps1`](../../scripts/check-all.ps1) -- the gate runner §7 extends (its `Invoke-Gate` and `Invoke-PythonGate` shape)
+- [`.github/workflows/build.yml`](../../.github/workflows/build.yml) -- the workflow §8 adds native jobs to
+- Microsoft Learn: "Use the Microsoft C++ toolset from the command line" (`vcvarsall.bat` and `-vcvars_ver`), "/std (Specify Language Standard Version)", "AddressSanitizer" (`/fsanitize=address`, supported architectures), "/fsanitize=fuzzer", "DUMPBIN /DEPENDENTS"; CMake "cmake-presets(7)" (toolset and architecture strategy `external`); vcpkg "Manifest mode", "Triplet files", and "Binary caching" -- the sources each section reads before it writes
+- -> XREF: D00 T04 §1 -- the C++ standard and the dependency register read §2's manifest and §3's build; the register's gate joins §7's runner and §8's CI
+- -> XREF: D00 T04 §2 -- the benchmark harness builds through §3's presets and links Google Benchmark through §2's manifest
+
+## Outcome
+
+- `pwsh scripts/dev-env.ps1 -Check -Arch x64` and `-Arch arm64` report every pinned tool (MSVC toolset, Windows SDK, CMake, Ninja, LLVM, vcpkg) as matching `native/toolchain.json`, and exit 1 naming the tool when one differs.
+- `cmake --workflow --preset <name>` builds and tests `native/` for x64 and ARM64 in Debug and Release, and for x64 under AddressSanitizer with dependencies built by the sanitizer triplet, with `/std:c++23preview`, `/W4 /WX /permissive-`, and the static runtime; every library comes from `native/vcpkg.json` at its committed baseline as a static library.
+- The format, clang-tidy, `/analyze`, sanitizer, size, and import gates each fail on a planted probe and pass on the tree; `pwsh scripts/check-all.ps1` runs every one of them, and CI runs them on x64 and runs the ARM64 tests on an ARM64 runner.
+- Every file reader can carry a fuzz target on a qualified fuzzing toolchain, with committed corpora, regression inputs replayed in every build, and a nightly budget in CI.
+- `todo/README.md` "What counts as proof", `AGENTS.md`, and the gate card name the C++ proofs, so every native section cites a gate that exists.
+
+**Adjacency:** all=not-applicable (a toolchain, build description, gates, and CI: no records, settings, documents, or surfaces a user sees)
+
+**Adjacency rationale:** Nothing here ships to a user. The apps' settings, documents, and surfaces are owned by the foundation and app sections that build on this spine; this file only makes their builds and proofs possible and repeatable.
+
+## Implementation Order
+
+| Order | Section | Deliverable | Depends On | Status |
+| :---: | :-----: | ----------- | ---------- | :----: |
+|   1   |   §1    | The toolchain pin and the developer environment | -- |  [ ]   |
+|   2   |   §2    | The vcpkg manifest, baseline, and triplets | §1 |  [ ]   |
+|   3   |   §3    | The CMake build, presets, and the test harness | §2 |  [ ]   |
+|   4   |   §4    | The format, clang-tidy, and /analyze gates | §3 |  [ ]   |
+|   5   |   §5    | The AddressSanitizer lane | §3 |  [ ]   |
+|   6   |   §6    | The import and size gates | §3 |  [ ]   |
+|   7   |   §7    | The native stages of check-all and the gate card | §4, §5, §6 |  [ ]   |
+|   8   |   §8    | CI for x64 and ARM64 | §7 |  [ ]   |
+|   9   |   §9    | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget | §5, §8 |  [ ]   |
+|  10   |   §10   | The proof standard for C++ | §7, §9 |  [ ]   |
+
+---
+
+## 1. The Toolchain Pin and the Developer Environment
+
+Ninja cannot select an MSVC toolset by itself, and "whatever Visual Studio is installed" makes builds differ between machines, so one script enters the pinned developer environment and every build, script, and CI job runs inside it (spec, "Pinning the toolchain"). The pin is chosen where the development machine and the CI runner images meet; this section measures both rather than assuming them. It must not touch the .NET build.
+
+- [ ] Read the toolsets the CI images provide: the Visual Studio version, MSVC toolsets, and Windows SDKs listed in the `actions/runner-images` readme for the x64 Windows image `.github/workflows/build.yml` will use and for `windows-11-vs2026-arm` (or `windows-11-arm` if it carries Visual Studio 2026), quoting each readme's commit or date. Done when: the commit message of this section quotes both images' lists. Cheaper substitute that fails: pinning the development machine's toolset without checking CI has it.
+- [ ] Choose the pin where both meet: the newest MSVC toolset and Windows SDK installed on both the development machine and both images, preferring 14.52 when it is generally available on all three (its `/std:c++23` moves the standard switch, `docs/dev/decisions.md` "2026-10-22: The C++ language standard"). Record the choice, the alternatives, and the cost of changing in a new entry "The native toolchain pin" in `docs/dev/decisions.md`. Done when: the entry names the toolset, the SDK, and the evidence for each machine.
+- [ ] Write `native/toolchain.json`: the exact versions of the MSVC toolset (as `cl` reports it), the Windows SDK, CMake, Ninja, LLVM (`clang-tidy`, `clang-format`, `clang-cl`), and the vcpkg tool, the Visual Studio version range, and the required Visual Studio components (`Microsoft.VisualStudio.Component.VC.Tools.x86.x64`, `Microsoft.VisualStudio.Component.VC.Tools.ARM64`, `Microsoft.VisualStudio.Component.VC.Llvm.Clang`, the Windows 11 SDK component of the pinned version, `Microsoft.VisualStudio.Component.Vcpkg`, `Microsoft.VisualStudio.Component.VC.ASAN`). Done when: the file parses as JSON and names every key.
+- [ ] Write `scripts/dev-env.ps1`: locate Visual Studio with `vswhere -version <range> -requires <components>`, enter its developer environment through `Launch-VsDevShell.ps1` (or `vcvarsall.bat`) with `-vcvars_ver=<toolset>`, the pinned SDK, host x64, and target `-Arch x64` or `-Arch arm64`; set `VCPKG_ROOT` to the bundled vcpkg; then verify the version `cl` prints, `$env:WindowsSDKVersion`, and the `--version` of `cmake`, `ninja`, `clang-tidy`, `clang-format`, and `vcpkg` against the pin. Dot-sourced, it leaves the session in that environment; `-Run { ... }` runs a block inside it; `-Check` prints one line per tool (`tool pinned found ok|MISMATCH`) and exits 1 on any mismatch or missing component. Done when: `pwsh scripts/dev-env.ps1 -Check -Arch x64` and `-Arch arm64` exit 0 on the development machine.
+- [ ] Add `-PinFile <path>` to `scripts/dev-env.ps1` and a test `scripts/tests/test_dev_env.py` that runs `-Check` against fixture pins under `scripts/tests/fixtures/toolchain/` (one matching the machine, generated from the real pin; one naming a toolset that is not installed; one naming a different CMake), asserting exit 0, exit 1 naming `MSVC toolset`, and exit 1 naming `cmake`. Done when: `python scripts/tests/test_dev_env.py` passes and a mutant that skips the CMake comparison fails it.
+- [ ] Extend `tools/provision.ps1` to run `scripts/dev-env.ps1 -Check` and, when a component is missing, print the exact `vs_installer.exe modify --add <component>` command for each missing component (never running it). Done when: provisioning on the development machine prints the check table.
+- [ ] Add the C++ prerequisites to `CONTRIBUTING.md` (the Visual Studio version range and every component from `native/toolchain.json`) and a "Native toolchain" paragraph to `docs/dev/` naming `scripts/dev-env.ps1`. Done when: both name the pin file.
+- [ ] Commit: `"workspace: pin the native toolchain and enter it through dev-env"`
+
+**Test checkpoint:** Driven run with evidence: `pwsh scripts/dev-env.ps1 -Check -Arch x64` and `-Arch arm64` print every pinned tool as `ok` (quoted); `pwsh scripts/dev-env.ps1 -Check -PinFile scripts/tests/fixtures/toolchain/wrong-toolset.json` exits 1 with the `MSVC toolset` line marked `MISMATCH` (quoted); `python scripts/tests/test_dev_env.py` passes. Cheaper substitute that fails: a README line naming the Visual Studio version, which nothing checks.
+
+## 2. The vcpkg Manifest, Baseline, and Triplets
+
+Every library is linked statically and comes from one committed baseline, so a build on any machine resolves the same versions (spec, "Packages"). The sanitizer triplet builds dependencies with AddressSanitizer so §5's lane covers library code too. This section adds no library an app links: GoogleTest is the first and only dependency, for tests.
+
+- [ ] Write `native/vcpkg.json` in manifest mode: `name` `isotone`, `builtin-baseline` set to the commit of the vcpkg registry the bundled tool's documentation names as current on the day (quoted in the commit), and a `test` feature holding `gtest`, so app builds never install test-only libraries. Done when: `vcpkg install --x-manifest-root=native --triplet x64-windows-static --x-feature=test` succeeds inside `scripts/dev-env.ps1 -Run`.
+- [ ] Write `native/vcpkg-configuration.json` pinning the default registry to the same baseline and naming the overlay triplet folder `native/triplets/`. Done when: the file names the baseline commit and the folder.
+- [ ] Use the static triplets `x64-windows-static` and `arm64-windows-static` (static library linkage and the static CRT, matching §3's `/MT`), and write the overlay triplet `native/triplets/x64-windows-static-asan.cmake`: the same, plus `/fsanitize=address` in `VCPKG_C_FLAGS` and `VCPKG_CXX_FLAGS`; add `arm64-windows-static-asan.cmake` only if §5 finds AddressSanitizer supported on ARM64 by the pinned toolset. Done when: `vcpkg install` succeeds for each triplet that exists, and `installed/<triplet>/bin` holds no `.dll`.
+- [ ] Set up binary caching: locally vcpkg's default cache, and in CI a `files` binary source in a folder `actions/cache` restores, keyed on the baseline commit, the triplet, and the hash of `native/vcpkg.json`. Done when: `native/README.md` documents both and §8 reuses the key.
+- [ ] Write `native/README.md`: the layout of `native/` (`core`, `ui`, `stilus`, `gesso`, `albumen`, `tests`, `triplets`, `cmake`), how to enter the environment, the presets, and that every new library is added through `D00 T04 §1`'s register in the same commit. Done when: the README names each folder and links `docs/dev/native-libraries.md`.
+- [ ] Commit: `"workspace: the vcpkg manifest, baseline, and static triplets"`
+
+**Test checkpoint:** Driven run with evidence: inside `scripts/dev-env.ps1 -Run`, `vcpkg install` in manifest mode with the `test` feature succeeds for `x64-windows-static`, `arm64-windows-static`, and `x64-windows-static-asan` (the tail of each log quoted); `Get-ChildItem native/vcpkg_installed/*/bin -Filter *.dll` lists nothing; the asan triplet's build log for `gtest` shows `/fsanitize=address` on its compile lines (quoted). Cheaper substitute that fails: installing GoogleTest by hand, which pins nothing.
+
+## 3. The CMake Build, Presets, and the Test Harness
+
+The build description is CMake with Ninja and committed presets that Visual Studio also opens (spec, "Build description"). C++23 comes from an explicit `/std:c++23preview`, because CMake turns `CXX_STANDARD 23` into `/std:c++latest` on MSVC, which the standard decision forbids. The first library and test are deliberately trivial: they prove the build, not a feature.
+
+- [ ] Write `native/CMakeLists.txt`: `cmake_minimum_required` at the pinned CMake's major and minor, `project(Isotone LANGUAGES C CXX)`, the C++ switch as an explicit compile option `/std:c++23preview` (or `/std:c++23` once §1's pin carries 14.52) and never `CXX_STANDARD`, the warning and conformance flags `/W4 /WX /permissive- /utf-8 /Zc:__cplusplus /Zc:preprocessor /EHsc /external:anglebrackets /external:W0`, the static runtime through `CMAKE_MSVC_RUNTIME_LIBRARY` `MultiThreaded$<$<CONFIG:Debug>:Debug>`, full PDBs in Release (`/Zi`, `/DEBUG:FULL`, `/OPT:REF`, `/OPT:ICF`), `/guard:cf` and `/CETCOMPAT`, `CMAKE_EXPORT_COMPILE_COMMANDS` on, and `enable_testing()`. Done when: configuring prints no warning.
+- [ ] Write `native/cmake/IsotoneTargets.cmake` with `isotone_add_library(name ...)` and `isotone_add_test(name ...)` helpers that apply the flags above to every target and register tests through `gtest_discover_tests`. Done when: both helpers are used by the skeleton below.
+- [ ] Write `native/CMakePresets.json`: configure presets `x64-debug`, `x64-release`, `x64-asan`, `arm64-debug`, `arm64-release` (and `arm64-asan` only if §5 finds it supported), each with the Ninja generator, `toolset` and `architecture` strategy `external`, `binaryDir` `${sourceDir}/../artifacts/native/${presetName}`, `CMAKE_TOOLCHAIN_FILE` `$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake`, `VCPKG_TARGET_TRIPLET` per preset, `VCPKG_MANIFEST_FEATURES` `test`; matching build and test presets; and workflow presets `x64-debug`, `x64-release`, `x64-asan`, and `arm64-release` (configure and build; the x64 ones also test). Done when: `cmake --list-presets=all` inside the environment lists every preset.
+- [ ] Add the skeleton: `native/core/` with `isotone_core` (`native/core/include/isotone/core/build_info.h` and `src/build_info.cpp`, returning the version and the build id that CMake writes at configure time from `git describe --always --dirty` and a `ISOTONE_VERSION` cache variable), and `native/tests/core/build_info_test.cpp` (GoogleTest: the version is non-empty and the build id matches `^[0-9a-f]{7,}(-dirty)?$`). Done when: both targets build in every preset.
+- [ ] Add a configure-time check in `native/cmake/IsotoneTargets.cmake` that fails when any compile command in `compile_commands.json` carries `/std:c++latest` or lacks the pinned standard switch. Done when: forcing `CXX_STANDARD 23` on one target makes configuration fail naming that target.
+- [ ] Add `artifacts/native/` to the build-output rules where `artifacts/` is described (`AGENTS.md` path table and `docs/dev/`), and confirm `.gitignore` already ignores it. Done when: `git check-ignore artifacts/native/x64-debug` prints the path.
+- [ ] Commit: `"workspace: the CMake build, presets, and the GoogleTest harness"`
+
+**Test checkpoint:** Builds clean and unit test: inside `scripts/dev-env.ps1 -Run`, `cmake --workflow --preset x64-debug`, `x64-release`, and `arm64-release` exit 0 and the x64 ones report `BuildInfo.VersionIsSet` and `BuildInfo.BuildIdShape` passing (quoted); `dumpbin /headers` on the ARM64 test executable shows `AA64 machine (ARM64)` (quoted); a probe unused local variable in `build_info.cpp` fails the build with `C4189` under `/WX` (quoted, then reverted); the compile command of `build_info.cpp` contains `/std:c++23preview` and not `/std:c++latest` (quoted). Cheaper substitute that fails: a Visual Studio solution that only one machine can build.
+
+## 4. The Format, clang-tidy, and /analyze Gates
+
+The C++ equivalents of today's `dotnet format` and analyzer gates (spec, "Warnings and analysis"). The tree is empty but for §3's skeleton, so every gate starts at zero findings and stays absolute: there is no baseline to grow into.
+
+- [ ] Write `native/.clang-format` from a named base style with the deviations the C++ standard (`D00 T04 §1`) will cite (**Default**: `BasedOnStyle: Microsoft`, `ColumnLimit: 120`, `PointerAlignment: Left`, `IncludeBlocks: Regroup`, recorded with its cost of changing: one reformat commit). Done when: `clang-format --dry-run --Werror` passes on the skeleton.
+- [ ] Write `native/.clang-tidy`: `clang-analyzer-*`, `bugprone-*`, `cppcoreguidelines-*`, `modernize-*`, `performance-*`, `portability-*`, and `readability-*`, each exclusion listed with a one-line reason, `WarningsAsErrors: '*'`, and `HeaderFilterRegex` limited to `native/`. Done when: clang-tidy runs clean on the skeleton through `compile_commands.json`.
+- [ ] Write `scripts/native-format.ps1` (`-Check` runs `clang-format --dry-run --Werror` over every C and C++ source and header under `native/`, `-Fix` rewrites them) and `scripts/native-tidy.ps1` (runs `clang-tidy -p <build dir>` over every translation unit in the x64 Debug compile database, in parallel, exiting 1 on any diagnostic), both inside `scripts/dev-env.ps1`. Done when: both exit 0 on the tree.
+- [ ] Add the configure preset `x64-analyze` (inherits `x64-debug`, adds `/analyze /analyze:external-` with analysis warnings as errors) and its build preset. Done when: `cmake --build --preset x64-analyze` exits 0.
+- [ ] Commit: `"workspace: the native format, clang-tidy, and /analyze gates"`
+
+**Test checkpoint:** Static analysis clean: `pwsh scripts/native-format.ps1 -Check`, `pwsh scripts/native-tidy.ps1`, and `cmake --build --preset x64-analyze` exit 0 on the tree; a probe misindented line fails the format gate, a probe `std::move` of a value used afterwards fails clang-tidy with `bugprone-use-after-move`, and a probe dereference of a possibly null pointer fails `/analyze` with `C6011` (each quoted, then reverted). Cheaper substitute that fails: running clang-format in the editor only, which nothing enforces.
+
+## 5. The AddressSanitizer Lane
+
+The whole CTest suite also runs under AddressSanitizer with dependencies built by the sanitizer triplet, on every architecture the pinned toolset supports it for, executing on that architecture; a deliberate out-of-bounds probe proves the lane fails when instrumentation catches an error (spec, "Sanitized tests").
+
+- [ ] Determine, from Microsoft Learn's AddressSanitizer documentation for the pinned toolset and a probe build, which target architectures support `/fsanitize=address`, and record them in `native/README.md` and the commit. Done when: the record names x64's status and ARM64's status with the source.
+- [ ] Complete the `x64-asan` preset (and `arm64-asan` where supported): `/fsanitize=address /Zi`, the `-asan` triplet, `/INCREMENTAL:NO`, and a test preset that puts the toolset's AddressSanitizer runtime folder on `PATH` and sets `ASAN_OPTIONS=halt_on_error=1:detect_leaks=0` (leak detection is not supported by MSVC's AddressSanitizer). Done when: `cmake --workflow --preset x64-asan` builds and runs the suite.
+- [ ] Add `native/tests/sanitizer/asan_probe_test.cpp`: a test that writes one byte past a heap allocation, built only in the asan presets, registered with the CTest label `asan-probe`, `WILL_FAIL TRUE`, and a `PASS_REGULAR_EXPRESSION` of `AddressSanitizer: heap-buffer-overflow`, so the lane passes only if instrumentation catches it. Done when: the probe passes in `x64-asan` and is absent from the other presets.
+- [ ] Commit: `"workspace: the AddressSanitizer lane with its negative probe"`
+
+**Test checkpoint:** Driven run with evidence: `cmake --workflow --preset x64-asan` exits 0 with `asan_probe` reported as passing because the expected `heap-buffer-overflow` report appeared (quoted); building the probe without `/fsanitize=address` (a scratch preset) makes it fail, proving the check depends on instrumentation (quoted, then removed). Cheaper substitute that fails: a sanitizer preset that nothing proves is instrumenting.
+
+## 6. The Import and Size Gates
+
+Each app's executable may import only Windows system DLLs, and each app's publish folder must stay at or under 30 MB before optional content (operator answer; spec, "Goals"). The gates exist before the first app so every later section is held to them; until an app exists they run on the test executables, which prove the static runtime.
+
+- [ ] Write `native/system-dlls.txt`: the Windows system DLLs an Isotone executable may import (for example `KERNEL32.dll`, `USER32.dll`, `GDI32.dll`, `ADVAPI32.dll`, `SHELL32.dll`, `ole32.dll`, `OLEAUT32.dll`, `d3d11.dll`, `dxgi.dll`, `d2d1.dll`, `DWrite.dll`, `dcomp.dll`, `UIAutomationCore.dll`, `icu.dll`, `bcrypt.dll`, `crypt32.dll`, `dbghelp.dll`, `winspool.drv`), each with a one-line reason and the section that needs it, plus the `api-ms-win-*` and `ext-ms-win-*` API set pattern. Done when: every entry has a reason; a later section adds its DLL here in its own commit.
+- [ ] Write `scripts/native-artifact-gate.py` (stdlib Python): given a folder, run `dumpbin /dependents` on every `.exe` and `.dll` (inside the environment) and fail `import-not-system` for any dependency not in `native/system-dlls.txt` (notably `VCRUNTIME140.dll`, `MSVCP140.dll`, and `ucrtbase.dll`, which `/MT` excludes); and with `--budget-mb <n>` fail `over-budget` when the folder's total size exceeds it, printing the largest files. Output `file:rule:message`; exit 1 on any finding. Done when: it passes on the x64 Release test executables.
+- [ ] Add the entry "The output size budget" to `docs/dev/decisions.md`, quoting the operator's 30 MB answer as the spec records it ("Goals and how each is measured", Output size), and write `native/size-budget.json` (`{"default_mb": 30, "decision": "The output size budget"}`); make the gate fail `budget-undocumented` when the `decision` heading is not in `docs/dev/decisions.md`, so a raised budget needs a decision entry. Done when: a probe budget naming a missing heading fails.
+- [ ] Add `--self-test` with fixtures of recorded `dumpbin` output (a clean one, one importing `VCRUNTIME140.dll`, one importing an unknown DLL) and size fixtures. Done when: `python scripts/native-artifact-gate.py --self-test` prints `0 failed` and a mutant that ignores the API set pattern fails it.
+- [ ] Commit: `"workspace: the native import and size gates"`
+
+**Test checkpoint:** Driven run with evidence: the gate passes on `artifacts/native/x64-release` and `arm64-release` (quoted); a probe build of the test executable with `/MD` fails with `import-not-system` naming `VCRUNTIME140.dll` (quoted, then reverted); `--budget-mb 0.001` fails with `over-budget` (quoted); the self-test prints `0 failed`. Cheaper substitute that fails: a size check by eye in a release section, after the budget has already been blown.
+
+## 7. The Native Stages of check-all and the Gate Card
+
+One command runs every gate locally (AGENTS.md, Validation). The native stages join the existing .NET and Python stages, which stay while C# code remains.
+
+- [ ] Extend `scripts/check-all.ps1` with native stages, each through `Invoke-Gate` inside `scripts/dev-env.ps1`: `native toolchain` (`-Check`), `native x64-debug`, `native x64-release`, `native arm64-release` (build only on an x64 host), `native x64-asan`, `native format`, `native tidy`, `native analyze`, and `native artifacts` (the import gate over every x64 and ARM64 Release executable), and the Python gates `test_dev_env.py` and `native-artifact-gate.py --self-test`; add `-SkipNative` beside `-SkipBuild`, and list every stage in the header comment. Done when: `pwsh scripts/check-all.ps1` lists each native stage as PASS.
+- [ ] Update `.claude/skills/process-todo-section/gates.md` with the native gates, which preset proves what, and how a section cites them. Done when: the card names every native stage by its check-all name.
+- [ ] Add the native commands to the Validation block of `AGENTS.md` (`pwsh scripts/dev-env.ps1 -Check`, `cmake --workflow --preset x64-release`, the format, tidy, and artifact gates) and `native/` to its path table. Done when: `grep -n "dev-env.ps1" AGENTS.md` prints the Validation line.
+- [ ] Commit: `"workspace: run the native gates in check-all"`
+
+**Test checkpoint:** Driven run with evidence: `pwsh scripts/check-all.ps1` exits 0 with every native stage PASS (the summary quoted); a probe failing assertion in `build_info_test.cpp` makes it exit 1 with `native x64-debug` FAIL while the later stages still run (quoted, then reverted). Cheaper substitute that fails: native gates that must be remembered and run by hand.
+
+## 8. CI for x64 and ARM64
+
+Every push builds both architectures, and ARM64 tests execute on ARM64 so cross-compiling is never mistaken for running (spec, "Architectures"). The pinned toolset must exist on the images; §1 chose it where they meet.
+
+- [ ] Add a `native` job to `.github/workflows/build.yml` on the x64 Windows image §1 chose: checkout, restore the vcpkg binary cache (§2's key), run `scripts/dev-env.ps1 -Check -Arch x64`, then every native stage of §7 except the ARM64 tests, and upload the ARM64 Release test executables and their `CTestTestfile.cmake` folders as an artifact. Done when: the job is green on a push.
+- [ ] Add a `native-arm64-tests` job on the ARM64 image §1 chose, needing `native`: download the artifact and run every test executable it lists with `--gtest_output=xml`, failing on any failure, and upload the XML. Done when: the job is green and its log shows the tests ran on `ARM64` (`$env:PROCESSOR_ARCHITECTURE` printed).
+- [ ] If no ARM64 runner can run the job (image or quota), record that in `docs/dev/decisions.md` and run the ARM64 tests on a recorded local ARM64 machine through a script `scripts/run-arm64-tests.ps1`, with a scheduled task in `.conclave/automations/tasks.json`, rather than skipping them (spec, "Architectures"). Done when: either the CI job or the recorded machine runs them, and the decision log says which.
+- [ ] Add the native gates to `.github/workflows/plan.yml` where it runs Python self-tests (`test_dev_env.py` needs Windows, so only `native-artifact-gate.py --self-test` joins the Ubuntu job). Done when: the plan workflow names the script.
+- [ ] Commit: `"ci: build native for x64 and ARM64 and run the ARM64 tests on ARM64"`
+
+**Test checkpoint:** Driven run with evidence: the push of this commit produces green `native` and `native-arm64-tests` jobs, read back with `gh run view <id> --log | Select-String "PROCESSOR_ARCHITECTURE|tests passed"` (quoted); a probe failing test pushed on a throwaway branch turns `native-arm64-tests` red (run id quoted; branch deleted). Cheaper substitute that fails: cross-compiling ARM64 in CI and calling it tested.
+
+## 9. Fuzzing: the Qualified Toolchain, the Corpus Layout, and the Nightly Budget
+
+Every file reader has a fuzz target built with libFuzzer (spec, "Fuzzing"). MSVC's `/fsanitize=fuzzer` is documented as experimental, so it is qualified against the pinned toolset before any reader depends on it, with clang-cl from the same Visual Studio as the fallback.
+
+- [ ] Add `isotone_add_fuzz_target(name SOURCES ... )` to `native/cmake/IsotoneTargets.cmake`: in a fuzz preset it builds a libFuzzer executable from a `LLVMFuzzerTestOneInput`, and in every other preset it builds a replay test that runs the target function once on every file under `native/tests/fuzz/<name>/corpus/` and `regressions/`, registered with CTest. Done when: a target's regressions run in `x64-debug`.
+- [ ] Add a qualification target `native/tests/fuzz/qualify/`: a tiny length-prefixed record parser with a planted out-of-bounds read compiled only when `ISOTONE_FUZZ_QUALIFY` is defined. Done when: the target builds in the fuzz preset.
+- [ ] Qualify the toolchain: build the qualification target with MSVC (`/fsanitize=address /fsanitize=fuzzer`) in a preset `x64-fuzz-msvc` and run it with `-max_total_time=300`; if it does not find the planted crash, crashes itself, or cannot build, build it with `clang-cl` (`-fsanitize=fuzzer,address`) from the pinned LLVM in `x64-fuzz-clang` and repeat. Record the result as "The fuzzing toolchain" in `docs/dev/decisions.md` with the run output. Done when: one toolchain finds the planted crash within the budget and the decision names it.
+- [ ] Commit the crash input the qualification found as `native/tests/fuzz/qualify/regressions/<hash>` and prove the replay test fails while the planted bug is compiled in and passes without it. Done when: both runs are quoted in the commit.
+- [ ] Add a nightly workflow `.github/workflows/fuzz.yml` (scheduled and `workflow_dispatch`): for every fuzz target, run 5 minutes (**Default**, spec) with `-rss_limit_mb=2048` and `-timeout=10`, upload any crash input as an artifact, and fail the run. Done when: a manual dispatch runs the qualification target (with the planted bug disabled) to the budget and passes.
+- [ ] Commit: `"workspace: qualify the fuzzing toolchain and add the nightly fuzz budget"`
+
+**Test checkpoint:** Format fidelity proof (the fuzz part): the qualifying toolchain finds the planted crash (the libFuzzer report quoted), its input replays as a failing CTest with the bug compiled in and a passing one without it (both quoted), and the nightly workflow's dispatched run is green (run id quoted). Cheaper substitute that fails: adopting `/fsanitize=fuzzer` because it compiles, without proving it finds a known bug.
+
+## 10. The Proof Standard for C++
+
+A Test checkpoint may cite only a gate that exists (AGENTS.md, What counts as proof), so the proof standard is written for C++ once the gates above exist and before any native feature section runs.
+
+- [ ] Rewrite "What counts as proof" in `todo/README.md` for both stacks: for native work, (1) builds clean: Debug and Release, x64 and ARM64, `/W4 /WX`, `/analyze` and clang-tidy clean; (2) static analysis clean: the format and tidy gates on the touched files; (3) unit test: a GoogleTest case cited as `Suite.Case`, run through CTest, and the AddressSanitizer lane; (4) driven run with evidence: UI Automation for reading and invoking the interface, `SendInput` and synthetic pointer injection for keyboard, pointer, pen, and IME paths, a log line, a settings readback, or a saved file inspected; (5) format fidelity proof: a fixture opened, saved, reopened, and compared within a stated tolerance, plus the reader's fuzz target and its regression corpus; and goldens per `standards/design-contract.md`. Keep the .NET wording for C# code, marked as applying while C# remains. Done when: each native proof names the gate or preset that runs it.
+- [ ] Mirror the same in the "What counts as proof" block of `AGENTS.md`. Done when: both texts name GoogleTest, CTest, the presets, and the fuzz regressions.
+- [ ] Update `.claude/skills/create-todo/todo-template.md`'s Verification block to the native commands (`pwsh scripts/check-all.ps1`, `cmake --workflow --preset x64-release`, the artifact gate), keeping one line for C# files. Done when: the template's first Verification lines are the native ones.
+- [ ] Commit: `"todo: the proof standard for C++"`
+
+**Test checkpoint:** Static evidence: `grep -n "GoogleTest" todo/README.md AGENTS.md .claude/skills/create-todo/todo-template.md` prints a line in each; `python scripts/todo-graph.py validate` and `python scripts/todo-graph.py self-test` exit 0. Cheaper substitute that fails: native sections citing "unit tests pass" with no named runner, which no reviewer can falsify.
+
+## Verification
+
+- [ ] `pwsh scripts/check-all.ps1` exits 0 with every native stage PASS
+- [ ] `pwsh scripts/dev-env.ps1 -Check -Arch x64` and `-Arch arm64` exit 0
+- [ ] The latest CI run on `main` shows `native` and `native-arm64-tests` green, and the latest nightly `fuzz.yml` run green
+- [ ] `docs/dev/decisions.md` holds "The native toolchain pin" and "The fuzzing toolchain"
+- [ ] `python scripts/todo-graph.py validate` clean
