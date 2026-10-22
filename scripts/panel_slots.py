@@ -365,6 +365,11 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
                  "block, outside this repository's agent schema; write it inline")
             continue
         key = line.partition(":")[0].strip()
+        if len(key) > 1024:
+            # An implicit key is at most 1024 characters (YAML 1.2.2 section 8.2.2, independent review round 7).
+            note(f"a key of {len(key)} characters, past the 1024 an implicit key may have, which YAML forbids "
+                 f"(YAML 1.2.2 section 8.2.2)")
+            continue
         match = _VALUE_LINE_RE.match(line)
         if match is None:
             note(_value_problem(line, key))
@@ -1297,6 +1302,10 @@ def _self_test() -> int:
         agents_refuse(name, files, needle)
     check("agent quoted empty value is a string", _frontmatter("---" + chr(10) + "color: ''" + chr(10) + "---" + chr(10)) == {"color": ""}
           and _frontmatter_problem("---" + chr(10) + "color: ''" + chr(10) + "---" + chr(10)) is None)
+    agents_refuse("agent key past 1024 characters",
+                  {"a-one.md": front().replace("name: a-one" + chr(10), "name: a-one" + chr(10) + "k" * 1025 + ": purple" + chr(10))},
+                  "past the 1024 an implicit key may have")
+    check("agent key of 1024 characters is read", _frontmatter_problem("---" + chr(10) + "k" * 1024 + ": v" + chr(10) + "---" + chr(10)) is None)
     check("agent delimiters are exact", _frontmatter("--- " + chr(10) + "name: x" + chr(10) + "---" + chr(10)) is None)
     # The forms the schema accepts all still load: quoted values (an escaped single quote included), a comment after
     # a value, a quoted hash, the indented hook block, and CRLF line ends.
