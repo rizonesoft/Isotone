@@ -49,6 +49,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import uuid
 
@@ -243,7 +244,7 @@ def _acquire_locked(root: str, session: str, phase: int | None, run_file: str, c
         jobs = _pending_jobs(root)
         if raw.get("cron_id") and raw.get("cron_id") not in [j.get("cron_id") for j in jobs]:
             jobs.append({"cron_id": raw.get("cron_id"), "reason": str((raw.get("ended") or {}).get("reason", "")),
-                         "at": _utc_now()})
+                         "at": _utc_now(), "session_id": raw.get("session_id")})
             _write_json(_pending_path(root), jobs)
     if phase is None:
         if not isinstance(previous.get("phase"), int) or isinstance(previous.get("phase"), bool):
@@ -410,7 +411,8 @@ def _finish_end(root: str, guard: dict, guard_path: str, state_path: str, what: 
     # The job id outlives the guard until CronDelete is confirmed, so a failed delete stays recoverable, and a later
     # end never overwrites an earlier unconfirmed cancellation.
     jobs = [j for j in _pending_jobs(root) if j.get("cron_id") != guard.get("cron_id")]
-    jobs.append({"cron_id": guard.get("cron_id"), "reason": reason, "at": _utc_now()})
+    jobs.append({"cron_id": guard.get("cron_id"), "reason": reason, "at": _utc_now(),
+                 "session_id": guard.get("session_id")})
     _write_json(_pending_path(root), jobs)
     for path in (guard_path, state_path):
         try:
@@ -443,16 +445,23 @@ def _pending_jobs(root: str) -> list[dict]:
     return [j for j in doc if isinstance(j, dict)] if isinstance(doc, list) else []
 
 
-def pending_cancel(root: str) -> str:
+def _yours(job: dict, session: str | None) -> bool:
+    """Whether `session` may confirm this cancellation: heartbeat jobs live in one session, so only that session's
+    CronList can prove one gone (independent review round 9). A record from before sessions were kept, or a call
+    without a session (the operator's), may confirm any."""
+    return not session or not job.get("session_id") or str(job.get("session_id")) == session
+
+
+def pending_cancel(root: str, session: str | None = None) -> str:
     try:
-        jobs = _pending_jobs(root)
+        jobs = [j for j in _pending_jobs(root) if _yours(j, session)]
     except GuardError as exc:
         return f"pending-cancel: {exc}"
     return "\n".join(f"pending-cancel: CronDelete {j.get('cron_id')} (ended by {j.get('reason')} at {j.get('at')})"
                      for j in jobs)
 
 
-def cancel_confirmed(root: str, cron_id: str) -> str:
+def cancel_confirmed(root: str, cron_id: str, session: str | None = None) -> str:
     with _Lock(root):
         jobs = _pending_jobs(root)
         if not jobs:
@@ -460,6 +469,10 @@ def cancel_confirmed(root: str, cron_id: str) -> str:
         if cron_id not in [str(j.get("cron_id")) for j in jobs]:
             raise GuardError(f"no pending cancellation names job {cron_id} "
                              f"(pending: {', '.join(str(j.get('cron_id')) for j in jobs)})")
+        theirs = [j for j in jobs if str(j.get("cron_id")) == cron_id and not _yours(j, session)]
+        if theirs:
+            raise GuardError(f"job {cron_id} belongs to session {theirs[0].get('session_id')}, whose own heartbeat "
+                             f"confirms it; this session's CronList cannot prove it gone")
         rest = [j for j in jobs if str(j.get("cron_id")) != cron_id]
         if rest:
             _write_json(_pending_path(root), rest)
@@ -869,6 +882,30 @@ def _open_no_follow(full: str) -> int:
 
 def _hash_regular(full: str, info: os.stat_result, deadline: float, done: int,
                   total: int) -> tuple[str | None, int]:
+    """`_hash_file` with its open and reads run in a daemon thread that the walk waits on only until the deadline: a
+    deadline check cannot interrupt a blocking `open` or `read` on slow storage, so a stuck one is abandoned and the
+    walk reports itself incomplete in time for the hook to record it (independent review round 9). The abandoned
+    thread holds nothing the hook needs and ends with the hook's process."""
+    box: dict = {}
+
+    def work() -> None:
+        try:
+            box["result"] = _hash_file(full, info, deadline, done, total)
+        except BaseException as exc:  # handed to the waiting walk below, never lost
+            box["error"] = exc
+    worker = threading.Thread(target=work, name="campaign-fingerprint-read", daemon=True)
+    worker.start()
+    worker.join(max(0.0, deadline - time.monotonic()))
+    if worker.is_alive():
+        raise GuardError(f"fingerprint incomplete: reading an untracked file outlasted the time budget after {done} "
+                         f"of {total} untracked paths; the hook cannot tell progress from a stall")
+    if "error" in box:
+        raise box["error"]
+    return box["result"]
+
+
+def _hash_file(full: str, info: os.stat_result, deadline: float, done: int,
+               total: int) -> tuple[str | None, int]:
     """(the SHA-256 of a regular file or None, the bytes read). The file is read through a handle opened without
     following a link and without blocking, and only when the handle is still the regular file `lstat` saw (same
     device and inode, and no reparse point): None when the path was replaced between the two calls, so a FIFO or a
@@ -2155,6 +2192,18 @@ def _self_test() -> int:
         finally:
             globals()["_pending_jobs"] = real_pending
         msg = acquire(rroot, "99999999-0000-0000-0000-000000000000", 5, RUN_FILE, "job-other")
+        # The cancellation the new run kept belongs to the ended run's session: the new session neither lists nor
+        # confirms it, and the owning session does (independent review round 9).
+        other = "99999999-0000-0000-0000-000000000000"
+        try:
+            cancel_confirmed(rroot, "job-r4", other)
+            foreign = ""
+        except GuardError as exc:
+            foreign = str(exc)
+        check("another-session-never-confirms-this-sessions-job",
+              "belongs to session" in foreign and "job-r4" not in pending_cancel(rroot, other)
+              and "job-r4" in pending_cancel(rroot, SESSION), foreign)
+        check("the-owning-session-confirms-its-job", "job-r4 is gone" in cancel_confirmed(rroot, "job-r4", SESSION))
         check("a-new-run-starts-over-an-ended-guard", "created" in msg and read_guard(rroot)["phase"] == 5, msg)
         os.remove(_paths(rroot)[0])
         acquire(rroot, SESSION, 2, RUN_FILE, "job-r5")
@@ -2251,7 +2300,7 @@ def _self_test() -> int:
             os.read = real_read
         check("a-read-error-leaves-the-file-unread-not-the-hook-failed", before != after and not escaped, escaped)
         # Independent review round 4: bytes read before a failed read still count against the byte budget, and the
-        # deadline holds after the last read.
+        # deadline holds after the last read, and a read blocked past the deadline is abandoned in time (round 9).
         big = [os.path.join(hroot, f"big{n}.bin") for n in range(3)]
         for p in big:
             with open(p, "wb") as fh:
@@ -2295,6 +2344,22 @@ def _self_test() -> int:
             os.read = real_read
             time.monotonic = real_monotonic
         check("a-read-that-crosses-the-deadline-is-incomplete", "fingerprint incomplete" in crossed, crossed)
+
+        def stuck_read(fd, n):
+            time.sleep(1.0)
+            return real_read(fd, n)
+        os.read = stuck_read
+        began = time.monotonic()
+        try:
+            fingerprint(one, RUN_FILE, "", deadline=time.monotonic() + 0.2)
+            stuck = ""
+        except GuardError as exc:
+            stuck = str(exc)
+        finally:
+            took = time.monotonic() - began
+            os.read = real_read
+        check("a-blocked-read-is-abandoned-at-the-deadline",
+              "fingerprint incomplete" in stuck and took < 0.8, f"{took:.2f}s {stuck}")
 
     with tempfile.TemporaryDirectory(prefix="campaign-phase-") as ptmp:
         proot = _workspace(ptmp)
@@ -2398,13 +2463,13 @@ def main(argv: list[str]) -> int:
         if argv[0] == "reset-state":
             print(reset_state(root, opts.get("session"), opts.get("expect_no_guard") == "yes"))
             return 0
-        if argv[0] == "pending-cancel" and not opts:
-            line = pending_cancel(root)
+        if argv[0] == "pending-cancel" and set(opts) <= {"session"}:
+            line = pending_cancel(root, opts.get("session"))
             if line:
                 print(line)
             return 0
         if argv[0] == "cancel-confirmed":
-            print(cancel_confirmed(root, opts.get("cron_id", "")))
+            print(cancel_confirmed(root, opts.get("cron_id", ""), opts.get("session")))
             return 0
         if argv[0] in ("reconcile", "health"):
             jobs = [j for j in opts.get("jobs", "").split(",") if j]
