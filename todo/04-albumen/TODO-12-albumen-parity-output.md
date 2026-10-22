@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-parity-output
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-12 -- Albumen Parity: Export, Print, Slideshows, Web Galleries, and Books"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L12
 # TODO-12 -- Albumen Parity: Export, Print, Slideshows, Web Galleries, and Books
 
 > **Goal:** Albumen's output reaches Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76 parity: the export dialog of `D04 T02 §6` grows every destination, naming, format, sizing, color, preset, metadata, watermark, and post-processing option the three apps offer, including DNG and HDR output and local publish folders; a Print module prints single images, grids, picture and custom packages, and contact sheets with printer profiles, print sharpening, and 16-bit output on the suite print frame; slideshows are authored with templates, overlays, titles, music, and transitions and exported to PDF and JPEG; web galleries, books, PDFs, and PowerPoint files are generated locally; and photos go out by email or to the user's own FTP or FTPS server (SFTP is backlog B-053). The code lives in `src/Albumen/Isotone.Albumen.Core/Output/` (`Export/`, `Publish/`, `Print/`, `Slideshow/`, `Web/`, `Books/`, `Documents/`, `Share/`) and `src/Albumen/Isotone.Albumen.Desktop/Views/Output/`. It consumes the suite engines and never duplicates them (operator decision 2026-09-27): the develop pipeline and export runner (`D04 T02 §2`, `D04 T02 §6`), the token and watermark engines (`D04 T11 §2`, `D04 T11 §8`), the codec writers and DNG writer (`D04 T13 §6`, `D04 T13 §7`), the print frame in `src/Isotone.UI/Print/` (`D03 T18 §6`), the suite color engine (`D01 T04 §1`, `D01 T04 §2`), and the suite PDF writer (`D03 T17 §7`); it moves Gesso's contact-sheet engine (`D03 T18 §7`) and FTP client (`D03 T17 §12`) to `Isotone.Core` on this second use. Every output is a new file written through `AtomicFileWriter`; nothing in this file opens an original for writing. Video export is `D04 T16 §3` and `D04 T16 §6`; self-running EXE and screen-saver slideshows are backlog B-049.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code: `src/Albumen` does not exist, so there is no export, print, slideshow, web, book, or email surface. `todo/04-albumen/TODO-02-albumen-develop.md` §6 plans the first export dialog and `ExportRunner`, which §1 and §13 extend. There is no shared print frame yet: `src/Isotone.UI` does not exist, and Gesso's print section (`D03 T18 §6`, in `todo/03-gesso/TODO-18-gesso-parity-output.md`) is what moves Stilus's print frame into it. Albumen's print and contact-sheet idea was backlog B-035 (`albumen-roadmap-print`), which §4 promotes; the Albumen integration deleted the entry. No package the output features add is referenced in `Directory.Packages.props` yet (DocumentFormat.OpenXml, FluentFTP). **Corrected 2026-09-27:** also listed NAudio for slideshow music and SSH.NET for SFTP upload; the operator did not approve either for Albumen, so music plays through Windows Media Foundation over Vortice.MediaFoundation (the player `D04 T04 §8` builds) and SFTP is backlog B-053; the claim below still proves none of the four is referenced.

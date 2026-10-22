@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-media
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-11 -- Isotone.Core Media: Decoding, Playback, Audio, and Encoding for Video and Sound"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: C11
 # TODO-11 -- Isotone.Core Media: Decoding, Playback, Audio, and Encoding for Video and Sound
 
 > **Goal:** The suite reads, plays, and writes video and sound through one media layer in `src/Isotone.Core/Media/` and one transport control in `src/Isotone.UI/Media/`, so Gesso's video layers, timeline, and Render Video (`D03 T23`) and Albumen's video cataloging, playback, trimming, Media mode, image audio, and video slideshows (`D04 T16`) never grow two decoders, two clocks, or two playbars. Windows Media Foundation through Vortice.MediaFoundation decodes, encodes, and plays; XAudio2 through Vortice.XAudio2 mixes audio; an optional FFmpeg the user installs is run as an external process for the containers and codecs Media Foundation lacks, never bundled and never linked. Every decode is frame-exact against a named reference, every encode writes a new file atomically, and no media operation ever writes a source file. This file exists because the operator promoted the video and audio work deferred to after the first release (operator decision 2026-09-27, planned so no feature is "left behind").
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** There is no `src/Isotone.Core/` or `src/Isotone.UI/` yet (`D01 T02 §1` and `D01 T01 §1` create them) and no Albumen source tree. No source file under `src/` references Media Foundation, XAudio2, or FFmpeg, and `Directory.Packages.props` has no Vortice package: Vortice.Windows arrives with Gesso's HDR display (`D03 T15 §4`) and Albumen's quick-slideshow music (`D04 T04 §8`, `SlideshowAudioPlayer` in `src/Albumen/Isotone.Albumen.Core/Audio/` over the Media Engine), which is the first media code the plan builds and the one §1 moves here on its second consumer. The shared codec registry (`D04 T13 §1`) reads still images only; animated GIF, APNG, WebP, MNG, and FLI playback in the viewer (`D04 T04 §10`) are frame sequences, not media sources.

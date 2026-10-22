@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-document
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-08 -- Gesso Parity: Document, Canvas, View, History, and the Image Menu"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I8
 # TODO-08 -- Gesso Parity: Document, Canvas, View, History, and the Image Menu
 
 > **Goal:** Gesso's document foundation reaches Photoshop, Affinity Photo, and GIMP parity: a document model with precision (8-bit, 16-bit, and 32-bit float, perceptual or linear), separate X and Y resolution, pixel aspect ratio, and a transparent-background switch; one native-format contract (`gesso:` parameters in the OpenRaster `stack.xml` beside a rendered PNG for every non-raster layer and document part) that every later live layer kind and document part registers with; the New Document dialog with presets and templates; the full zoom, rotate, flip, screen-mode, window, view-mode, display-filter, and navigator set; rulers, units, guides, grids, and snapping; measurement, count, notes, and the Info, Histogram, and Scope panels; snapshots, non-linear history, and history saved with the document; the Image menu's canvas, trim, reveal, and resampling commands; every clipboard and paste variant; and the crop and perspective-crop extensions. The code lives in `src/Gesso/Isotone.Gesso.Core/` (`Documents/`, `Native/`, `Guides/`, `Snapping/`, `Analysis/`, `History/`), `src/Gesso/Isotone.Gesso.Rendering/` (`Display/`, `Overlays/`), `src/Gesso/Isotone.Gesso.FileFormats/Native/`, and `src/Gesso/Isotone.Gesso.Desktop/`; it consumes the pixel engine (`D01 T03 §2` resampling, rotation, and perspective, `D01 T03 §4` histograms), color management (`D01 T04`), the suite history (`D01 T02 §4`), and the units converter and snapping core it moves out of Stilus on their second consumer; it never writes a second resampler, a second history stack, or a second container format, and view state never enters history.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `GessoDocument` (`src/Gesso/src/Gesso.Core/Documents/GessoDocument.cs`, 98 lines) holds one `Resolution` field defaulting to 72 and no pixel aspect ratio, precision curve, guides, or document parts; no Gesso source names a pixel aspect at all. The bit-depth enum in `src/Gesso/src/Gesso.Core/Documents/BitDepth.cs` already names 32-bit float (`Bpc32 = 32`), which §1's precision readout labels. Undo is two linear lists in `src/Gesso/src/Gesso.Core/History/CommandHistory.cs` beside a 166-line `HistorySnapshot.cs`, so non-linear history (§6) has no model to extend until `D01 T02 §4` moves it to the suite. Zoom is one scalar clamped at 3,200 percent in `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs`, and Cut, Copy, and Paste there only log. Guides exist only as a view-model flag (`_showGuides`); nothing in `Gesso.Core` models a guide, and nothing in Gesso computes a histogram. Checklist paths below name the post-rename `Isotone.Gesso.*` projects that `D03 T01 §1` creates; the claims name today's `Gesso.*` paths and move with that rename.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-workspace
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-16 -- Stilus Parity: Workspace, Customization, Preferences, and Utilities"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: N16
 # TODO-16 -- Stilus Parity: Workspace, Customization, Preferences, and Utilities
 
 > **Goal:** Stilus reaches Illustrator 30.8 and CorelDRAW 2026 parity for the workspace a professional customizes and lives in: named workspaces with presets and import and export, a customizable toolbox, toolbars, property bar, status bar, menus, context menus, and shortcut sets, complete Preferences across general, selection and nodes, display, files, performance, and warnings, UI appearance, scaling, and diagnostics, the welcome screen and navigator (promoting backlog B-013, source `legacy-stilus-5.8-5.9`, into §7), pen, touch, and Surface Dial input, hints and a project timer, object data with find and replace objects, and QR codes and barcodes. It extends, never duplicates, the command palette (`D02 T06 §12`), the Preferences dialog and shortcut remapping (`D02 T06 §13`), accessibility (`D02 T06 §17`), and the shortcuts dialog and Help menu (`D02 T05 §2`, `D02 T05 §3`). The file is frozen because §5 moves document saves onto a background worker and adds a backup of the original before save.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The main window's Window menu toggles five fixed panels through `Show*Panel` bindings in `src/Stilus/Bezier.Desktop/Views/MainWindowView.xaml`, and nothing saves a named arrangement. `Dirkster.AvalonDock` is referenced by `src/Stilus/Bezier.Desktop/Bezier.Desktop.csproj` but no view uses a `DockingManager` yet (tabs and dock layouts arrive with `D02 T06 §7`). `ShortcutManager` in `src/Stilus/Bezier.Core/Services/ShortcutManager.cs` already models profiles including an Illustrator set, remapping, conflicts, and JSON export, which §3 extends rather than replaces. Theming is the Catppuccin `ThemeManager` (`src/Stilus/Bezier.Core/Services/ThemeManager.cs`), which the suite theme of `D01 T01 §3` replaces before §6 adds brightness levels. Stilus has no welcome screen or navigator, no pen, stylus, or touch handling, and no QR or barcode library. The status strip shows one bound `StatusText`.

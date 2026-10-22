@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-video-audio
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-16 -- Albumen Video and Audio: Cataloging, Playback, Trimming, Media Mode, Image Audio, and Video Slideshows"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L16
 # TODO-16 -- Albumen Video and Audio: Cataloging, Playback, Trimming, Media Mode, Image Audio, and Video Slideshows
 
 > **Goal:** Albumen catalogs, browses, plays, trims, and exports the video and audio a photographer keeps beside their photos, the way Lightroom Classic, ACDSee Photo Studio Ultimate, and IrfanView do: video and audio import with photos and show in browse with their metadata and thumbnails, play in the viewer and the loupe with one shared transport, trim non-destructively with a poster frame and quick develop, give up single frames or every frame as new images, gather in ACDSee's Media mode, carry the audio clips attached to images, and take part in slideshows that export as MP4 video. Everything decodes, plays, and encodes through the suite media stack in `Isotone.Core` (`D01 T11`: Windows Media Foundation through Vortice, with an optional user-installed FFmpeg for what Media Foundation cannot read), never a second stack in Albumen. Originals stay safe by default with opt-in writes (operator decision 2026-09-27, "Safe by default, opt-in writes"): trims, poster frames, and quick develop are catalog data, extracted frames and exported videos are new files, and image audio is written as a same-named WAV beside the image unless the user opted into embedding it in the original.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code (`src/Albumen/` is absent) and `src/Isotone.Core/` does not exist, so the media stack this file consumes (`todo/01-core/TODO-11-isotone-media.md`, planned in parallel on 2026-09-27) is planned, not built. No package of the Vortice family is referenced by the solution yet; the first Media Foundation use planned in the tree is Albumen's slideshow music (`SlideshowAudioPlayer`, `D04 T04 §8`), which `D01 T11 §1` moves into `Isotone.Core`. Before this file the catalog's video, audio, and Media mode rows waited in backlog B-043 and frame extraction in B-044; the operator's 2026-09-27 decision to plan the work deferred to after the first release as real sections (the operator worried "features will be left behind") promoted them here. The Albumen slideshow of `D04 T12 §8` skips video clips today with a warning that names this file's §6 once it ships.

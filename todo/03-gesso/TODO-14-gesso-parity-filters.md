@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-filters
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-14 -- Gesso Parity: Smart Filters, the Filter Menu, the Filter Gallery, and Interactive Filter Surfaces"
 depends_on: []
 track: I14
@@ -11,6 +11,8 @@ track: I14
 # TODO-14 -- Gesso Parity: Smart Filters, the Filter Menu, the Filter Gallery, and Interactive Filter Surfaces
 
 > **Goal:** Every pixel effect in the suite engine (`D01 T03 §1` onward and `D01 T06 §1` onward) is reachable in Gesso and can stay live: smart filters on smart objects, Affinity live filter layers, and GIMP 3 layer filters with masks, per-filter blending, blend ranges, and a filter brush (§1); a Filter menu, generated dialogs, presets, repeat, recent, and Fade built from effect descriptors (§2); the Filter Gallery (§3); the Blur Gallery (§4); lighting and gradient-flare surfaces (§5); lens correction with lensfun profiles and adaptive wide angle (§6); Vanishing Point and Affinity's live projections (§7); the GEGL operation tool and filter browser (§8); GIMP's decor and combine scripts as native undoable commands (§9); and Affinity's procedural texture, equations, and FFT denoise dialogs with the dedicated editors GIMP draws for its fractal and GIMPressionist filters (§10). Gesso code lives in `src/Gesso/Isotone.Gesso.Core/Filters/`, `src/Gesso/Isotone.Gesso.Rendering/`, and `src/Gesso/Isotone.Gesso.Desktop/Filters/`; algorithms are consumed from the engine and never re-implemented in Gesso; live filters persist through the `D03 T08 §1` `gesso:` contract with a rendered PNG fallback; every apply is one undo step with one Information line; no Adobe, Affinity, or GIMP presets, flares, textures, or lens profiles beyond the decided lensfun data are bundled.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Seven filter commands in `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` (Gaussian, Motion, Surface, Unsharp, Smart, Add Noise, Reduce Noise) only log that a dialog would open. The Filter menu in `src/Gesso/src/Gesso.UI/Views/MainWindow.xaml` is hand-written XAML with three submenus (Blur, Sharpen, Noise), which §2 replaces with a generated menu. The smart object layer `src/Gesso/src/Gesso.Core/Layers/SmartObjectLayer.cs` (117 lines) carries no filter stack, and `src/Gesso/src/Gesso.Core/Layers/LayerType.cs` has no live filter kind. The only filter contract is the 53-line 8-bit plug-in interface `src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`, which §2 does not extend; plug-in hosting was promoted from the backlog on 2026-09-27: Photoshop-compatible plug-ins through the shared host `D01 T09` into §11 (B-012), a versioned managed plug-in contract into §12 (B-024), and the G'MIC collection into §13. An adjustment layer model type exists (`src/Gesso/src/Gesso.Core/Layers/AdjustmentLayer.cs`), the precedent a live filter layer follows. These paths move to `src/Gesso/Isotone.Gesso.*` when `D03 T01 §1` renames the projects; every item below names the target paths.

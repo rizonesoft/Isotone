@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-develop
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-07 -- Isotone.Core Develop Engine: the Scene-Referred Pipeline for Gesso's Camera Raw Filter and Albumen"
 depends_on: []
 track: C7
@@ -11,6 +11,8 @@ track: C7
 # TODO-07 -- Isotone.Core Develop Engine: the Scene-Referred Pipeline for Gesso's Camera Raw Filter and Albumen
 
 > **Goal:** `src/Isotone.Core/Develop/` holds the suite's one develop engine: a versioned `DevelopSettings` record and a float32 linear-light, scene-referred pipeline (white balance, exposure and tone, profiles as LUTs, curves, presence, color mixer and grading, calibration, negative inversion, sharpening and noise, grain and vignette, lens profiles and geometry), a resolution-independent local masking engine, spot healing and red eye, and presets, snapshots, and Camera Raw (`crs`) XMP exchange. Gesso's Camera Raw filter and Develop studio (`D03 T15 §1`, `D03 T15 §2`, `D03 T15 §12`) are its first consumer and Albumen's develop module (`D04 T02 §2`) its planned second, which the integration that lands this file rewrites to consume §1 to §3 instead of building a pipeline inside Albumen's own assembly. The engine references no WPF, no Gesso or Albumen type, and never opens a source file for writing; every stage is a pure function of its input tile and the settings, with a scalar reference beside its SIMD path, and settings are data that the consumers' histories undo.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` project yet, and so no `Develop/` folder; `D01 T02 §1` creates the project. Albumen has no source tree (`src/Albumen/` is absent), and its develop file was authored before this engine, planning its own stages inside `Isotone.Albumen.Core`; the integration that lands this file rewrites `D04 T02 §2` to consume this one. Gesso has no develop code at all: no source file under `src/Gesso/src/` mentions `Develop`, and its adjustment enum in `src/Gesso/src/Gesso.Core/Layers/AdjustmentLayer.cs` names `Exposure` and `Vibrance` only as display-referred adjustment layers. No code anywhere in `src/` reads a lens database. `standards/albumen.md` already fixes the contract this engine meets: float32 linear light with one output transform at the end, and previews and exports of the same settings agreeing within a stated tolerance. **Corrected 2026-09-28:** the Albumen rewrite has landed: `D04 T02 §1` and `§2` consume `D01 T07 §1` to `§3`; nothing in this file rewrites them any more.

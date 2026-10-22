@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-layout-maps
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-13 -- Layout Maps: Menus, Tools, Panels, and Buttons Where an Adobe User Expects Them"
 depends_on: []
 frozen: false
@@ -12,6 +12,8 @@ track: C13
 # TODO-13 -- Layout Maps: Menus, Tools, Panels, and Buttons Where an Adobe User Expects Them
 
 > **Goal:** A Photoshop user finds every Gesso command, tool, panel, and button where their hands expect it, an Illustrator user does the same in Stilus, and a Lightroom Classic user does the same in Albumen: the same menus in the same order with the same shortcuts, the same tools in the same groups, the same options bar per tool, and the same panels docked in the same places with their buttons in the same order. Each app follows a recorded layout map in `docs/design/layout-maps/`, captured from a driven run of the reference program where it is installed and from its documentation where it is not; a checker holds each map to its parity inventory, so every competitor feature has a recorded place in our app; shared tests fail the build when an app's real menus, tools, or panels drift from its map; and every section that builds one of those surfaces cites its map. Our product names, icons, and artwork stay our own (operator requests 2026-10-22: "can we have or are we already planning for things to be in the same place and layout as Adobe products. Same menu stracture/map. So anybody using photoshop can use our system", "Then add it to the todo system and plan", and "buttons, features and panels should also be in the expected places.").
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-10-22):** The design system already promises familiarity: principle 2 of `docs/design/README.md` is "Photoshop-familiar" (same window anatomy and shortcuts, "A Photoshop user should find every tool where their hands expect it"), and the options bar spec keeps Photoshop's order. Nothing records what each menu, tool group, options bar, or panel holds, or where: the component specs (`Menu`, `ToolRail`, `OptionsBar`, the dock theme) specify how those surfaces look, not their contents, and there is no `docs/design/layout-maps/`. The parity inventories place each competitor feature with a coarse `Where` column (a menu path such as `Filter > Blur`, `Toolbar`, `Options bar`, `Layers panel`, a dialog, or `Preferences`) but record no order or position: Photoshop 27.10 has 563 `command` rows, Illustrator 30.8 has 347, Lightroom Classic 15.5.1 has 715, and CorelDRAW 2026 has 781. This machine has Photoshop 27.11 and Illustrator 30.8.2 installed (`VersionInfo.ProductVersion`, 2026-10-22), so their layouts can be captured from driven runs; Lightroom Classic and CorelDRAW are not installed. The apps' main windows are made complete by `D02 T03 §5` (Stilus), `D03 T06 §2` (Gesso), and `D04 T01 §2` (Albumen's shell), and their menus, toolbars, and workspaces become user-editable in `D02 T16`, `D03 T20`, and `D04 T14`.

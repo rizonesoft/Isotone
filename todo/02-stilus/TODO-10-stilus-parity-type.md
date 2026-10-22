@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-type
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-10 -- Stilus Parity: Type, Tables, and Graphs"
 depends_on: []
 track: N10
@@ -11,6 +11,8 @@ track: N10
 # TODO-10 -- Stilus Parity: Type, Tables, and Graphs
 
 > **Goal:** Stilus sets type the way Illustrator 30.8 and CorelDRAW 2026 do: a HarfBuzz shaping engine with bidi, script runs, and font fallback under a rich text model of point, area, path, and vertical text; full character, OpenType, and paragraph formatting with composers and hyphenation; frames with columns, threading, and wrap; font management with substitution and embedding; text commands, styles, and writing tools; and live tables and graphs, all persisted in SVG with a `stilus:` live layer and a plain positioned-`<tspan>` fallback that Inkscape renders. When this file closes, every catalog feature in `docs/parity/stilus-parity.md` whose status is `plan D02 T10 §N` (NP-1129 to NP-1431, 300 features) is shipped, which serves the acceptance-bar aim "Stilus covers every CorelDRAW and Illustrator capability in the parity catalog".
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Text is one element type, `SvgText` (`src/Stilus/Bezier.Core/Models/Elements/SvgText.cs`, 191 lines), holding a single `Text` string with one family, size, weight, and italic flag: no runs, no paragraphs, no frames. The text tool (`src/Stilus/Bezier.Core/Tools/TextTool.cs`, 460 lines, shortcut T) creates point text only, and `src/Stilus/Bezier.Tests/TextToolTests.cs` holds 22 tests. The SVG reader (`src/Stilus/Bezier.Core/Services/SvgParser.cs`) flattens `<text>` to the element's value; neither it nor `src/Stilus/Bezier.Core/Services/SvgExporter.cs` knows `<tspan>` or `<textPath>`. Rendering calls `canvas.DrawText` with an `SKFont` at 5 call sites in `src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs` (rulers included): no shaping, no kerning beyond Skia defaults, no fallback. No shaping package is referenced in `Directory.Packages.props` and no text folder exists in the core project. SkiaSharp is a central package at 4.152.1 (referenced by `Bezier.Desktop` and `Bezier.Tests`), so HarfBuzzSharp and SkiaSharp.HarfBuzz must match its version line. Area text, text on a path, and text to outlines are owed by `D02 T06 §3`, which this file extends and which runs first in Phase 7. Paths below use the Isotone.Stilus names `D02 T01 §1` introduces; the claims use today's names.

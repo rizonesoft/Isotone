@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-releases
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-21 -- Gesso Parity Releases: 0.2.0 to 1.0.0"
 depends_on: []
 track: I21
@@ -11,6 +11,8 @@ track: I21
 # TODO-21 -- Gesso Parity Releases: 0.2.0 to 1.0.0
 
 > **Goal:** Each Gesso parity phase ends with a published, independently installable Gesso release on its own `gesso-v*` tag, proven on a clean machine, whose release notes list the parity catalog features the phase completed, so progress is shipped rather than accumulated; `gesso-v1.0.0` at the end of Phase 27 declares the catalog complete (every `plan` row stamped, every other row carrying its recorded status); `gesso-v1.1.0` to `gesso-v1.3.0` (Phases 42 to 44) ship the work the operator planned on 2026-09-27 from the entries deferred after the first release: suite automation, video and animation, and on-device models with the GPU develop path.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Gesso's only planned release so far is 0.1.0 (`D03 T06 §3`, `todo/03-gesso/TODO-06-gesso-release.md`), which has not shipped: no `gesso-v*` tag exists and `CHANGELOG.md` has no Gesso release section. The release checklist every section here runs is `standards/release.md`. The Gesso installer script `installer/Gesso.iss` already registers the opt-in `.psd` association (seven `.psd` mentions) that the parity formats extend. The catalog the releases reconcile exists at `docs/parity/gesso-parity.md` (2,385 features since the 18 rows routed from the Albumen catalog were added on 2026-09-27, 2,024 of them planned after the operator's 2026-09-27 promotions), but the query every release quotes does not exist until `D00 T01 §6` and `D00 T01 §7` ship it: `scripts/todo-parity.py` is absent. The Gesso user guide folder `docs/user/gesso/` does not exist yet; `D06 T01 §2` creates it. **Corrected 2026-09-28:** 2,110 features are `plan` (the 86 rows from B-041 to B-044 and B-046 became planned in `D03 T22`, `D03 T23`, and `D03 T19 §16` and `§17` later on 2026-09-27). **Corrected 2026-10-21:** `D00 T01 §6` shipped `scripts/todo-parity.py` and `query parity` for the Stilus catalog; the Gesso catalog joins it with `D00 T01 §7`, and the claim below now says the module exists.

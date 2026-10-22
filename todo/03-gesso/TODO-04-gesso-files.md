@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-files
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-04 -- Gesso File I/O"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I4
 # TODO-04 -- Gesso File I/O
 
 > **Goal:** Gesso opens and saves the files people actually have: PNG and JPEG (8 and 16 bit where the format allows, with color profiles kept), TIFF, a native layered format that keeps every layer, mask, and blend mode, and PSD for reading layered work from Photoshop; every reader and writer is proven by a round trip against committed fixtures, every save is atomic, and a crash offers recovery. The codec libraries are a recorded decision with their licenses checked against GPL-3.0.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `Gesso.FileFormats` holds one interface, `IImageFormat` (42 lines), and a `GlobalUsings.cs` that imports only `System.Buffers` (**Corrected 2026-09-26:** said "importing SixLabors.ImageSharp, which no code uses (`D00 T02 §4` removes it)"; the toolchain upgrade removed the package and the usings, `D00 T02 §4` verifies). `DocumentService.OpenDocumentAsync` and `SaveDocumentAsync` are stand-ins that log and return true. No fixture exists under `tests/fixtures/gesso/`. The installer registers optional `.png`, `.jpg`/`.jpeg`, and `.psd` associations (`installer/Gesso.iss`), so today those open an empty Gesso. The legacy roadmap's file phase (7, 34 items) is entirely open.

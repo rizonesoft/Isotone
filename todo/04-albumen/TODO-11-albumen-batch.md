@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-batch
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-11 -- Albumen Batch Tools: Rename, Convert, Resize, Edit, and Export"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L11
 # TODO-11 -- Albumen Batch Tools: Rename, Convert, Resize, Edit, and Export
 
 > **Goal:** Batch work is core Albumen (operator decision 2026-09-27): one job engine in `Isotone.Albumen.Core/Batch/` runs ordered `IBatchOperation`s (rename, convert, resize, rotate and flip, color, the ACDSee Batch Edit and IrfanView advanced operations, text and watermarks, develop, export) over a file list in the background under one Activity Manager, always with a dry run listing every output name, conflict, and skip before anything is written; one token engine names files and fills overlays across the app and accepts IrfanView's `$`-patterns; renames and moves are journaled and undoable; pixel operations reuse the suite pixel engine and the develop engine, never a copy. Originals are safe by default with opt-in writes (operator decision 2026-09-27): every batch writes new files unless the user explicitly chose an in-place overwrite for that operation, which `OriginalWritePolicy` allows only with the setting on, a verified backup copy by default, and an atomic replace through the suite atomic writer. Recorded actions, droplets, scripting, and command-line switches are the suite automation of `D01 T10` (in Albumen `D04 T17`), which reuses this engine.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code. The only batch work Albumen plans today is develop sync (`D04 T02 §5`) and export (`D04 T02 §6`), with one naming template, `{date}-{name}-{seq}`. Action-based batch (the former backlog entry B-042) is planned since 2026-09-27 as the suite batch runner of `todo/01-core/TODO-10-isotone-automation.md` (`D01 T10 §9`), which moves this file's job engine into `Isotone.Core` on its second consumer and leaves Albumen's core batch operations here. The suite pixel engine the operations reuse is planned (`todo/01-core/TODO-03-isotone-pixel-engine.md`), not built, and `Isotone.Core` does not exist yet. `standards/albumen.md` states the original-file guard as safe by default with opt-in in-place writes (the operator's 2026-09-27 decision, recorded in the standard at the Albumen integration), which §1 here builds.

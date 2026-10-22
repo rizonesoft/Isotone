@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-develop
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-02 -- Albumen: Non-Destructive Develop, Export, 0.1.0, and Accessibility"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L2
 # TODO-02 -- Albumen: Non-Destructive Develop, Export, 0.1.0, and Accessibility
 
 > **Goal:** An Albumen user develops RAW and JPEG photos non-destructively (white balance, exposure, contrast, highlights and shadows, whites and blacks, tone curve, vibrance and saturation, crop and straighten), copies settings across a batch, exports finished files with size, format, color space, and metadata choices, hands a photo to Gesso when Gesso is installed, and gets all of it as `albumen-v0.1.0`, with the original never written (the opt-in in-place writes of the Albumen parity phases arrive later with `D04 T11 §1`); and once the Albumen parity surfaces exist, every Albumen surface works by keyboard and screen reader and is translatable (§9, relocated to Phase 39).
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Nothing exists: no develop code, no pipeline, no export. The Albumen notes removed on 2026-09-26 asked for "RAW processing and non-destructive editing", "batch adjustments and presets", and "Edit In (send to Gesso)" with no technical choices. `standards/albumen.md` sets the contract this file builds to: edits are data in the catalog, the pipeline is float32 linear-light with one output transform at the end, previews and exports of the same settings agree within a stated tolerance, and "Edit in Gesso" never loads Gesso's assemblies. **Corrected 2026-09-26:** this file planned its own develop stages in `Isotone.Albumen.Core/Develop/Pipeline/`; the Gesso parity plan builds the suite develop engine in `Isotone.Core/Develop/` (`D01 T07`, Phase 23) before Albumen starts, so §1 stores its `DevelopSettings`, §2 renders through its pipeline, and §5 uses its presets and clipboard, and Albumen keeps its own edit stack, panels, preview cache, and export. **Corrected 2026-09-28:** the removed notes file was `src/Lumen.UI/TODO.md`, and its wording was "send to Imago" before the 2026-09-27 rename.

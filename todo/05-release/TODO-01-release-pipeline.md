@@ -2,7 +2,7 @@
 schema_version: 1
 id: release-pipeline
 domain: 05-release
-status: draft
+status: blocked
 title: "TODO-01 -- Distribution: Clean-Machine Proof, Signing, arm64, Updates, winget, and the Suite Bundle"
 depends_on: []
 track: R1
@@ -11,6 +11,8 @@ track: R1
 # TODO-01 -- Distribution: Clean-Machine Proof, Signing, arm64, Updates, winget, and the Suite Bundle
 
 > **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Isotone Graphics Suite (`isotone-v1.0.0`, then `isotone-v1.1.0` after the post-release phases 42 to 45) without any app's version moving.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The pipeline exists and has not run on GitHub: `scripts/publish.ps1` (self-contained, `-Runtime` accepts `win-arm64`), `scripts/package.ps1` (per-app and `-Suite`), `installer/common.iss` with `ArchitecturesAllowed=x64compatible`, per-app `.iss` files and `Suite.iss`, and `.github/workflows/release.yml` triggered by `stilus-v*`, `gesso-v*`, `albumen-v*`, and `isotone-v*` tags. A local Stilus installer was verified on 2026-09-26 (63.1 MB, silent per-user install and uninstall, per `docs/dev/build.md`). Nothing is signed: there is no certificate, and `standards/release.md` says so. Only x64 is published. No app checks for updates (Stilus's Check for Updates is a stub). No winget manifest exists. `Suite.iss` requires Stilus and Gesso publishes and names Stilus's executable `Bezier.Desktop.exe`. **Corrected 2026-09-27:** by operator decision that day, binaries are distributed only from rizonesoft.com: `release.yml` uploads the installer, the portable ZIP, and `SHA256SUMS` to S3-compatible storage served as `download.rizonesoft.com` (`<slug>/<version>/<file>`, slug `stilus`, `gesso`, `albumen`, or `isotone`) with a hash-pinned rclone, writes the update feed `update/<slug>.json` (stable) or `update/<slug>-prerelease.json` last, and creates a GitHub release with no attached files whose body (from `scripts/release-manifest.ps1`) carries the CHANGELOG notes, Download links, the SHA-256 table, and the tag's source link; a tag release fails when the storage secrets are missing, and the storage itself is the operator's step `D99 T01 §8`. Every section below that said a GitHub release carries assets now reads the files from `download.rizonesoft.com`. **Corrected 2026-09-28:** 63.1 MB was the pre-upgrade size; after the 2026-09-26 upgrade the Stilus installer is 66.0 MB (`docs/dev/build.md`); and only `release.yml` has never run, while `build` and `plan-gates` have run green since 2026-09-26.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-output
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-18 -- Gesso Parity: Export, Web Output, Color Management, and Print"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I18
 # TODO-18 -- Gesso Parity: Export, Web Output, Color Management, and Print
 
 > **Goal:** A Gesso user exports anything (document, selection, layers, artboards, comps, generated assets) at any size and format from one Export As dialog or Quick Export, optimizes web images in Save for Web and Affinity's Export studio with slices and continuous export, builds image maps, sets suite-wide color settings with working spaces, policies, custom CMYK, assign and convert, display color management, and OpenColorIO, soft-proofs with gamut and deficient-vision views, and prints with Gesso-managed color, marks, functions, separations, halftones, preflight, contact sheets, and PDF presentations. The color engine is `D01 T04 §1` to `D01 T04 §3` (Gesso's hand-rolled `ColorProfile` and `SoftProofing` classes are retired), the print dialog frame, planner, marks, separations, halftones, and preflight engine move from Stilus (`D02 T13 §2`, `D02 T13 §3`, `D02 T13 §4`, `D02 T13 §5`, `D02 T13 §9`, `D02 T13 §10`) into `src/Isotone.Core/Print/`, `src/Isotone.Core/Preflight/`, and `src/Isotone.UI/Print/`, and the export queue, web encoder, slice model, and image map writer move from Stilus (`D02 T14 §15`, `D02 T14 §16`, `D02 T14 §17`) into `src/Isotone.Core/Export/`; Gesso's surfaces live in `src/Gesso/Isotone.Gesso.Desktop/Views/Export/` and `Views/Print/`. Exporting never changes the document; color operations are undoable commands; nothing prints or converts silently.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Export is a logging stub: `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` only logs "Export dialog for" the document, over a five-format `ExportFormats` filter string in `src/Gesso/src/Gesso.UI/Services/IFileDialogService.cs`. Gesso carries its own hand-rolled color classes: `src/Gesso/src/Gesso.Core/Colors/ColorProfile.cs` (130 lines, four built-in RGB profiles by primaries and gamma) and `src/Gesso/src/Gesso.Core/Colors/SoftProofing.cs` (178 lines, a matrix soft proof), which §4 and §5 retire in favor of the `D01 T04 §1` engine. No ICC engine exists anywhere in `src/` yet; `D01 T04 §1` adds lcms2. Gesso has no printing code and no Print menu entry: no `.cs` or `.xaml` file under `src/Gesso/src/` mentions `Print`. Backlog B-021 (print) and B-023 (color management and soft proofing) are promoted into §6 and §4; the integration that lands this file deletes both entries.

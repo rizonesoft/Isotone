@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-automation
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-22 -- Gesso Automation: Actions, Scripts, Procedures, Extensions, Batch, and Data-Driven Graphics"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I22
 # TODO-22 -- Gesso Automation: Actions, Scripts, Procedures, Extensions, Batch, and Data-Driven Graphics
 
 > **Goal:** After the first release, Gesso covers every automation capability of Photoshop, Affinity, and GIMP in its parity catalog on the suite-wide automation system of `D01 T10` (operator decision 2026-09-27, planning the work deferred "after the first release" as real sections because the operator worried "features will be left behind"): every Gesso command records into actions and replays as one undo step, including conditional steps and recorded AI steps; C# scripts drive a documented Gesso object model from the Scripts menu, script events, and the scripting workspace; a procedure database and browser describe every command, filter, and script, and declared parameters generate dialogs; extensions, the MCP server, and the Generator-style asset hook expose Gesso behind explicit permissions; batch runs, droplets, the Image Processor, and headless mode process folders; and variables and data sets produce data-driven graphics. Where Gesso does a job differently it says so: C# scripts instead of ExtendScript, UXP JavaScript, Affinity JavaScript, Script-Fu, or Python-Fu; Photoshop ATN files are imported but not written; Affinity `.afmacro` files are not read.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Gesso's only automation code is `src/Gesso/src/Gesso.Scripting/ScriptEngine.cs` (62 lines: a Roslyn `ScriptEngine` with `EvaluateAsync` and `RunAsync`, no globals, no object model, no menu), referenced by no view; `D03 T01 §1` renames the project to `Isotone.Gesso.Scripting` and `D01 T10 §4` moves the engine to `src/Isotone.Core/Scripting/`, leaving the Gesso project to hold Gesso's object model. `src/Gesso/src/Gesso.Plugins.Abstractions/` holds `IPlugin` and `IFilterPlugin` and nothing loads them. Roslyn scripting (`Microsoft.CodeAnalysis.CSharp.Scripting`) is already a centrally versioned package. The automation rows IP-2257 to IP-2298 of `docs/parity/gesso-parity.md` were backlog B-041 and B-042 until this file planned them.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-ui
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-01 -- Isotone.UI: the Shared WPF Library"
 depends_on: []
 track: C1
@@ -11,6 +11,8 @@ track: C1
 # TODO-01 -- Isotone.UI: the Shared WPF Library
 
 > **Goal:** The suite's house style lives in one WPF library, `Isotone.UI`, that every app consumes: the icon catalog and `VectorIcon`, the splash and exception windows, the border glow, the theme resources generated from the design system's `docs/design/tokens.json` with live theme, Highlight, and density switching, the implicit control styles and the shared window chrome (title bar, document tabs, dock theme, status bar) every app's windows are drawn with, and the About and shortcuts dialogs once a second app needs them. No control or window exists twice.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no `src/Isotone.UI/`. Stilus and Gesso each carry their own copy of the same UI pieces, grown from one origin: `VectorIcon.cs` (Stilus 145 lines, Gesso 119; **Corrected 2026-10-22:** 118 since `D00 T02 §2` dropped an unused `using`), `IconService.cs` (68 and 69), `BorderGlowAnimator.cs` (209 and 209), `SplashWindow.xaml.cs` (121 and 115), and `ExceptionWindow.xaml.cs` (174 and 171). Each has its own `Resources/icons.json` (Stilus 7 lines, Gesso 69), and the two differ. The palettes differ too: Stilus's `MainWindowView.xaml` defines pure greys (`Base` `#1A1A1A`), Gesso's `Themes/Colors.xaml` defines Catppuccin Mocha (`Base` `#1E1E2E`) with an orange accent. Both apps load `IconService` through a static `Instance`.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-effects
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-11 -- Stilus Parity: Interactive and Live Effects"
 depends_on: []
 track: N11
@@ -11,6 +11,8 @@ track: N11
 # TODO-11 -- Stilus Parity: Interactive and Live Effects
 
 > **Goal:** Give Stilus every interactive and live vector effect Illustrator 30.8 and CorelDRAW 2026 users reach for (blend, contour, envelope and warp, distortion, shadows, glows and bevels, classic and modern 3D, lenses, PowerClip, symmetry, perspective, puppet warp, Live Paint and smart fill, repeats, and path effects), each one a live object under the live-object contract (`D02 T07 §1`) that sits in the Appearance stack (`D02 T09 §14`), renders through SkiaSharp at draw time (shadows and glows as Skia image filters, never through the Phase 9 pixel engine), expands to plain SVG geometry, survives a save and reopen as the same editable effect, and is undone by one step of the suite history. When this file closes, every catalog feature in `docs/parity/stilus-parity.md` whose status is `plan D02 T11 §N` (NP-1432 to NP-1726, 295 features) is shipped, which serves the acceptance-bar aim "Stilus covers every CorelDRAW and Illustrator capability in the parity catalog".
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** No effect model, registry, or effects folder exists in the core project (`src/Stilus/Bezier.Core/Effects` is absent). The offset operation every contour, offset path, and block shadow needs is a placeholder in `src/Stilus/Bezier.Core/Services/PathOperationsService.cs` ("Placeholder - actual implementation uses SkiaSharp path effects") that returns its input, and so is the boolean operation the live pathfinder effects and Live Paint need ("This will be implemented with SkiaSharp in the Desktop layer"); `StrokeToPath` in the same file is a placeholder too. The core project (`src/Stilus/Bezier.Core/Bezier.Core.csproj`) references no SkiaSharp package today, although `standards/stilus.md` allows it for geometry. The renderer, `src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs`, is one 840-line file with no Skia image filters (no shadow, glow, or feather path) that never applies a clip path, although `src/Stilus/Bezier.Core/Models/Elements/SvgClipPath.cs` exists in the model, so PowerClip starts from the model only. The SVG writer (`src/Stilus/Bezier.Core/Services/SvgExporter.cs`) emits no `stilus:` data yet; `D02 T07 §1` adds it before this file runs. There are 9 tool classes on `ToolBase` under `src/Stilus/Bezier.Core/Tools/` and none is an effect tool. A per-element `BlendMode` enum exists in `src/Stilus/Bezier.Core/Models/VectorElement.cs` and is what shadow merge modes and glow modes reuse. Paths below use the Isotone.Stilus names `D02 T01 §1` introduces; the claims use today's names.

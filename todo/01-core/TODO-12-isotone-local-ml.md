@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-local-ml
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-12 -- Isotone.Core On-Device Models: ONNX Runtime, the Model Catalog, and the Model Manager"
 depends_on: []
 frozen: false
@@ -12,6 +12,8 @@ track: C12
 # TODO-12 -- Isotone.Core On-Device Models: ONNX Runtime, the Model Catalog, and the Model Manager
 
 > **Goal:** Every suite AI task that a local model can do (segmentation and saliency, inpainting, upscaling, denoise and deblur, depth, and the photo models Gesso adds) can run on the user's own machine, offline, as an alternative to its OpenRouter path: one runtime (ONNX Runtime with the DirectML execution provider and a CPU fallback) behind the same task seam the AI features already use (`D01 T05`), one model catalog whose every entry records its license and is refused unless that license is GPL-compatible or permissive, downloads only on an explicit user action with hash verification, and one Model Manager surface in `Isotone.UI` each app hosts in its AI settings. OpenRouter stays the default; local results write the same provenance record. Tests run on tiny fixture models and never download. This file exists because the operator promoted the on-device model work deferred to after the first release (operator decision 2026-09-27, planned so no feature is "left behind").
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** There is no `src/Isotone.Core/` yet (`D01 T02 §1` creates it), so the AI core of `D01 T05` (`IAiClient`, `AiSendGate`, `ProvenanceRecord`) is planned, not built. No source file references ONNX Runtime or DirectML, and `Directory.Packages.props` has no ONNX package. Every AI task in the plan runs through OpenRouter (`D01 T05 §1`) or a classical algorithm (`D01 T06 §4` shake reduction, `D01 T06 §13` height-based normals, `D03 T15 §14` classical star separation, `D04 T10 §8` classical denoise); Albumen's face detection runs through an OpenRouter vision model (`D04 T10 §2`) and face recognition stays backlog B-052, which this file does not change.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-photo
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-15 -- Gesso Parity: the Camera Raw Filter, Develop Studio, Tone Mapping, and Photo Merges"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I15
 # TODO-15 -- Gesso Parity: the Camera Raw Filter, Develop Studio, Tone Mapping, and Photo Merges
 
 > **Goal:** A photographer can develop any Gesso layer through a Camera Raw filter that stays re-editable as a smart filter, work in an Affinity-style Develop studio that commits to a pixel layer or an embedded or linked RAW layer, edit and view 32-bit unbounded documents on SDR and Windows HDR displays, tone map with the HDR Toning dialog, a tone mapping studio, and the four GIMP operators, and merge photos (auto-align, Merge to HDR, panorama, image stacks, auto-blend, focus merge, astrophotography stacking, and crop and straighten of scanned photos). The develop surfaces consume the shared develop engine `D01 T07` (never a second pipeline), the tone-mapping operators are registered in the one `Isotone.Core/Imaging/Effects/` registry, and the merges live in `src/Gesso/Isotone.Gesso.Core/Photo/` on OpenCV 4 through OpenCvSharp4 (Apache-2.0) scoped to that folder, moving to `Isotone.Core` only when Albumen's photo merge (`D04 T09 §16`, the former backlog B-032) moves it. Every commit is one undoable command, every live result (develop smart filter, RAW layer, tone map filter layer, stack smart object, live stack group, merge and focus sources) registers its `gesso:` element and PNG fallback with the `D03 T08 §1` contract, and no merge overwrites a source layer. The file is frozen because §1, §2, §3, §4, §6, §8, §9, §10, and §12 add content to what an `.gesso` save writes, and each of them carries a freeze check.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no `Isotone.Core` project yet, so neither the develop engine this file consumes (`D01 T07`) nor the effect registry the tone-mapping operators join exists; `D01 T02 §1` creates the project. Gesso tiles hold 4 bytes per pixel (RGBA8) only (`src/Gesso/src/Gesso.Core/Tiles/Tile.cs`), so 32-bit float HDR documents need the float tiles `D03 T08 §1` adds before §4 can run. `BitDepth.Bpc32` exists in `src/Gesso/src/Gesso.Core/Documents/BitDepth.cs` but is modeled as a normalized float with a maximum of 1.0, the bounded assumption §4 removes. Gesso has no RAW, DNG, or develop code of any kind, and `src/Gesso/src/Gesso.FileFormats/` holds only the `IImageFormat` contract with no TIFF codec yet (`D03 T04 §3` adds it). No OpenCV package and no DirectX swap-chain binding are referenced anywhere in the solution (`Directory.Packages.props`); §5 adds OpenCvSharp4 and §4 adds Vortice.Windows, each with a decision row. Camera RAW files open only once `D03 T07 §11` shares Albumen's decoder, which runs after this phase.

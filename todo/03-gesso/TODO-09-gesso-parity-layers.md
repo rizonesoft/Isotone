@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-layers
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-09 -- Gesso Parity: Layers, Masks, Blending, Styles, Smart Objects, and Artboards"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I9
 # TODO-09 -- Gesso Parity: Layers, Masks, Blending, Styles, Smart Objects, and Artboards
 
 > **Goal:** Gesso's layer stack reaches Photoshop, Affinity Photo, and GIMP parity: every layer kind (pixel, group, fill, container, symbol instance, and the kinds later files register: adjustment, text, shape, vector, smart object, link) with full locks, color labels, tags, filtering, isolation, and linked attributes; every Layer menu command including stamp, rasterize, Revert Rasterize, and matting; a mask stack per layer with pixel, vector, live (hue range, luminosity range, band pass), and compound masks, density, and feather; clipping masks with Affinity child semantics; blending options with fill opacity, knockout, Blend If, and Affinity blend ranges; every GIMP, Affinity, and Porter-Duff blend mode; layer styles with every Photoshop effect, contours, the Styles panel, and ASL import; embedded and linked smart objects and GIMP link layers; layer comps and Affinity states; align, distribute, and move-tool extensions; and artboards. The model lives in `src/Gesso/Isotone.Gesso.Core/Layers/` and `Masks/`, compositing in `src/Gesso/Isotone.Gesso.Rendering/` (render graph, blending, effects) with CPU and GPU parity, panels in `src/Gesso/Isotone.Gesso.Desktop/`; every live element persists through `D03 T08 §1`'s `gesso:` contract with a PNG fallback, every edit is one undoable command, and nothing live is flattened unless the user rasterizes or applies; it consumes the pixel engine (`D01 T03 §4`, `§6`) and moves Stilus's gradient model, link manager, and align math to `Isotone.Core` on their second consumer rather than copying them.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `LayerType` in `src/Gesso/src/Gesso.Core/Layers/LayerType.cs` names six kinds (raster, adjustment, group, text, shape, smart object) and `Layer` carries one lock flag (`_isLocked`), so there are no per-kind locks, labels, tags, fill, container, or symbol layers. `LayerMask` in `src/Gesso/src/Gesso.Core/Masks/LayerMask.cs` is a whole-image `byte[]` buffer with density and feather already modeled, which §3 moves onto tiles. `VectorMask.cs` keeps its own segment list (291 lines) and clipping is the static helper `ClippingMask`, not a render-graph node. `SmartObjectLayer.cs` (117 lines) models embedded or linked with a source path and scale but holds no contents. `BlendMode.cs` already names GIMP and Affinity modes (grain merge at 91, reflect, glow) that nothing implements, and no layer styles, layer comps, or artboards exist anywhere in `src/Gesso/src/`. Checklist paths below name the post-rename `Isotone.Gesso.*` projects (`D03 T01 §1`); the claims name today's `Gesso.*` paths.

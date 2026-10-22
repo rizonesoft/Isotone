@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-rendering
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-02 -- Gesso Tiles, Viewport, and the Render Pipeline"
 depends_on: []
 track: I2
@@ -11,6 +11,8 @@ track: I2
 # TODO-02 -- Gesso Tiles, Viewport, and the Render Pipeline
 
 > **Goal:** Gesso's pixels live in tiles, its layers composite through a render graph with every blend mode it names proven against golden images, the canvas shows the composite at any zoom with smooth pan, and a ComputeSharp GPU path produces the same pixels as the CPU path within a stated tolerance, falling back cleanly where no DirectX 12 device exists.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The pieces exist as scaffolding. `Gesso.Core/Tiles/` has `Tile` (256 by 256, pooled byte buffers, 81 lines), `TileCoordinate`, and `TileCache` (a concurrent dictionary with a memory cap and least-recently-used eviction, 139 lines), and `TileTests` covers them; `RasterLayer` does not use tiles. `Gesso.Rendering/` holds a `RenderContext` with zoom and pan math (45 lines), an `IRenderNode` interface and a `RenderNode` base (37 and 44 lines), an `IPixelShader` interface, and global usings for SkiaSharp and ComputeSharp; no node composites anything. `Gesso.Core/Layers/BlendMode.cs` names the Photoshop blend modes (Normal through Luminosity) with categories, and no code implements one. The legacy roadmap's rendering phase (2, 40 items) is entirely open.

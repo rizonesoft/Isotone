@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-browse
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-05 -- Albumen Parity: Browse Without Importing"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L05
 # TODO-05 -- Albumen Parity: Browse Without Importing
 
 > **Goal:** A photographer can point Albumen at any folder and work there at once, ACDSee style: browse without importing, with the file system as the source of truth and the catalog as its cache (an `origin` of `browsed` or `library` per record); a background indexer fills metadata and thumbnails for chosen locations while idle; the folder tree, favorites, address bar, tabs, and home page navigate; file list views, thumbnails, sorting, grouping, filtering, and selection behave like a fast file manager; file operations copy, move, rename, and recycle photos with their sidecars and pairs and an undo journal; compare, the information palette, the basket, selective browsing, a private encrypted folder, calendar browsing, a duplicate finder, archives, and folder sync complete the job. Rating or keywording a browsed file creates its record with no import step, and browsing never writes an image byte of an original. Budgets: an unindexed folder of 5,000 JPEGs lists in at most 300 ms and shows its first screen of thumbnails in at most 1.5 s, a reopened indexed folder in at most 200 ms, and the indexer processes at least 50 JPEGs per second without raising the foreground frame time over 16 ms.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code. The foundation file plans a catalog of imported photos only, with no browsed membership, and no Albumen section plans the Recycle Bin or file operations yet. No archive package is in the solution (`Directory.Packages.props` has no SharpCompress). `standards/albumen.md` already says paths are stored relative to a root folder so a moved library can be reconnected, and states the unconditional original-file guard; the operator's 2026-09-27 decision (opt-in in-place writes) does not touch browsing, which writes only the catalog, sidecars, and user-requested file operations. **Corrected 2026-09-28:** `D04 T04 §6` plans the viewer's Recycle Bin and file operations, which §6 here takes over (see its journal item).

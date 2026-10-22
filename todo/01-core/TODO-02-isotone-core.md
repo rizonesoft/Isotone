@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-core
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-02 -- Isotone.Core: Shared Services"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: C2
 # TODO-02 -- Isotone.Core: Shared Services
 
 > **Goal:** The non-UI behavior every app needs exists once, in `Isotone.Core`, the day a second app needs it: app-data paths and the Serilog bootstrap, the settings store, single instance with file-open forwarding, the undo history, and the atomic document writer. Each move leaves no copy behind and no shared type with a single consumer.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/`. Gesso configures Serilog in `src/Gesso/src/Gesso.UI/App.xaml.cs` through `Host.CreateDefaultBuilder().UseSerilog(...)`, writing to `%LOCALAPPDATA%\Gesso\logs\gesso-.log`; Stilus references `Serilog` and `Serilog.Sinks.File` but no `.cs` file in `src/Stilus/` mentions Serilog, and it logs through its own `DebugLogger` singleton. Gesso's `SettingsService` writes `%LOCALAPPDATA%\Gesso\settings.json`; Stilus has no settings store, and its `FileOperationsService` and `AssetLibraryService` build their own `%LOCALAPPDATA%\Bezier\...` paths. Gesso has `Services/SingleInstanceManager.cs`; Stilus has none. Undo exists twice: Stilus `Bezier.Core/Services/HistoryManager.cs` with `IEditorCommand`, Gesso `Gesso.Core/History/CommandHistory.cs` with its own `ICommand`. Stilus saves with `SvgExporter.ExportToFile` straight onto the target path.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-selection
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-10 -- Gesso Parity: Selection, Refine, Channels, and Quick Mask"
 depends_on: []
 track: I10
@@ -11,6 +11,8 @@ track: I10
 # TODO-10 -- Gesso Parity: Selection, Refine, Channels, and Quick Mask
 
 > **Goal:** Gesso selects like Photoshop 27.10, Affinity Photo 3.3, and GIMP 3.2.6: a tiled soft selection with floating selections, selections saved to channels and files, and a selection editor; marquee, lasso, and magnetic lasso extensions; the magic wand, select by color, and Color Range with tonal, skin, gamut, and alpha ranges; one local segmentation engine (GrabCut, guided-filter, closed-form, and global matting) behind quick selection, paint select, foreground select, intelligent scissors, and Focus Area; one Select and Mask workspace for every refine path; modify, transform, and float commands; the complete Select menu; and a Channels panel with alpha and spot channels and quick mask options. The code lives in `src/Gesso/Isotone.Gesso.Core/Selection/` (the segmentation engine in `Selection/Segmentation/`, which stays in Gesso until Albumen's AI develop masks, `D04 T10 §7`, move it, except the guided filter, which `D03 T10 §6` builds in `Isotone.Core`) and `src/Gesso/Isotone.Gesso.Desktop/Selection/`; it consumes the `D01 T03` resampler and histogram, the `D01 T04 §2` gamut masks, and the `D03 T09 §3` layer masks, and never re-implements them. Every selection change is one undoable command, every selection and channel persists through the `D03 T08 §1` contract, and nothing here talks to a network: AI selection (`D03 T19 §6`) only seeds this engine. This file promotes backlog B-027 (`legacy-gesso-4.2-smart-selection`) into §3.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Gesso's selection is one flat, untiled 8-bit array the size of the document (`private byte[]? _mask;` in `src/Gesso/src/Gesso.Core/Selections/Selection.cs`, 360 lines), so Select All on a large image allocates the whole canvas. `SelectionOperation` already has a GIMP-style `Difference` mode beside Replace, Add, Subtract, and Intersect. `src/Gesso/src/Gesso.Core/Selections/SelectionTools.cs` offers five static selectors (rectangle, ellipse, polygon, a tolerance magic wand with a `contiguous` flag, and an RGBA range), none of them a tool. `src/Gesso/src/Gesso.Core/Selections/QuickMask.cs` (121 lines) has enter, exit, and cancel but no options and no surface. There is no channel model anywhere in `Gesso.Core`, and `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` binds no Select menu command. `D03 T03 §5` (Gesso 0.1.0) adds the marquee, lasso, combine modes, feather, and marching ants this file extends; its catalog rows IP-0541 to IP-0545 are `shipped-scope` there. These paths are today's names; `D03 T01 §1` renames them to `Isotone.Gesso.*`, and every checklist item below names the renamed paths.

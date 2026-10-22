@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-legacy-formats
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-18 -- Stilus Legacy Formats and Camera RAW: FreeHand, Publisher, Visio, PowerPoint, Corel Legacy, Metafiles, Legacy Rasters, XCF, and RAW"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: N18
 # TODO-18 -- Stilus Legacy Formats and Camera RAW: FreeHand, Publisher, Visio, PowerPoint, Corel Legacy, Metafiles, Legacy Rasters, XCF, and RAW
 
 > **Goal:** Every file format Illustrator 30.8 and CorelDRAW 2026 still open, save, or export that the formats phase (`D02 T14`) did not cover opens in Stilus as editable objects or writes from Stilus, each proven against committed fixtures and a named golden: FreeHand, FXG, and SWF; Microsoft Publisher, Visio, and PowerPoint binaries; Corel DESIGNER and Micrografx Designer, Corel ArtShow, Presentations, R.A.V.E., and Picture Publisher; Macintosh PICT, OS/2 MET, GEM, Frame Vector Metafile, Lotus PIC, and NAPLPS; WordPerfect, Quattro Pro, Lotus 1-2-3, and WordStar; the legacy rasters (DCS, CPT, PCD, RIF, WI, CAL, ICO and EXE icons, FPX, MacPaint, Scitex CT, XPM) on the shared codecs of `D01 T08`; GIMP XCF with layers on the XCF core `D02 T18 §9` moves from Gesso; and camera RAW through CorelDRAW's RAW Lab job on the suite RAW decoder and develop engine. Every reader is an own managed reader, with open libraries used as references and oracles only, and every format whose structure no specification and no open reader describes is established by documented clean-room analysis of fixtures or rerouted with the evidence, never shipped partially.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Stilus imports nothing on this list. `ImportFormat` in `src/Stilus/Bezier.Core/Services/ImportService.cs` names nine file formats (SVG, AI, EPS, PDF, PNG, JPG, GIF, BMP, WebP) plus the clipboard, and no Stilus source mentions FreeHand, Visio, WordPerfect, MacPaint, or XCF. No fixture folder exists (`tests/fixtures` is absent) and `Isotone.Core` does not exist yet (`src/Isotone.Core/Isotone.Core.csproj` is absent), so the shared codecs this file consumes arrive with `D01 T08`. Until 2026-09-27 these catalog rows sat in the backlog (B-037 legacy vector and document formats, B-038 legacy raster formats, B-039 camera RAW in Stilus); the operator's decision that day ("Group 1: plan them all") promoted them into this file.

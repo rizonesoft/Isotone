@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-roadmap
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-06 -- Stilus after 0.1.0: Deferral Owners and Accessibility"
 depends_on: []
 track: N6
@@ -11,6 +11,8 @@ track: N6
 # TODO-06 -- Stilus after 0.1.0: Deferral Owners and Accessibility
 
 > **Goal:** The Stilus work after its first release that the plan is already committed to: the sections that 0.1.0 work names as the owner of a disabled command, a planned menu stub, or a deferred service, and the accessibility and localization work the acceptance bar requires. When this file closes, no Stilus control defers to a section that does not ship, no triaged service is left unwired, and Stilus works without a mouse or eyes. Its sections now run inside the Stilus parity phases, where the parity sections that extend them need them, rather than in a phase of their own.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The legacy roadmap (`docs/legacy/stilus-roadmap.md`, 3,199 lines, phases 0 to 25) was mined into 21 sections on 2026-09-26. The same day the plan was bounded (`todo/budget.json`): the 13 sections nothing outside this file depends on, defers to, or names in the acceptance bar moved to `todo/backlog.md` as B-001 to B-013, and their section numbers are retired, never reused. What stays: path editing (§2) and text to path (§3), which `D02 T02 §5` and `D02 T03 §5` name for disabled or planned commands; tabs (§7), which `D02 T04 §6` names for multi-file open and §11 builds on; the three sections the triage in `D02 T02 §1` hands its deferred services to (§11, §12, §14); Preferences (§13), which `D02 T03 §5` and `D02 T05 §2` name; and accessibility (§17), which the acceptance bar names. Services exist for several of these features, but none is reachable from the app. Every section below names its legacy source with a `-> SOURCE:` line. The Stilus parity plan (2026-09-26, `docs/parity/section-design.md`) relocated all eight rows from the old Phase 9, which left the plan, into the parity phases without changing their addresses: §7 to Phase 4, §2 to Phase 5, §11 to Phase 6, §3 to Phase 7, §14 to Phase 9, and §12, §13, and §17 to Phase 13; the parity catalog marks their features `shipped-scope` and the parity sections extend them through `Depends On`. Twelve of the thirteen backlog entries that left this file (all but B-012) were promoted into parity sections the same day.

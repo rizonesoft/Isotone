@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-automation
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-19 -- Stilus Automation: the Object Model, Actions, Scripts, and Batch"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: N19
 # TODO-19 -- Stilus Automation: the Object Model, Actions, Scripts, and Batch
 
 > **Goal:** After the first release, Stilus takes part in the suite-wide automation system of `D01 T10` (operator decision 2026-09-27, planning the work deferred "after the first release" as real sections because the operator worried "features will be left behind"): every Stilus command is recordable into actions and playable back as one undo step, a documented C# object model drives documents, pages, layers, elements, styles, symbols, and export from scripts, the Scripts menu and Scripts docker list and run scripts, macros can travel inside a Stilus document without ever running on open, the automation and MCP servers expose Stilus to outside tools behind explicit permissions, extensions add panels and commands, and files are batch processed through actions from the Batch dialog, droplets, and the command line. Every Illustrator and CorelDRAW automation row of the parity catalog (NP-2751 to NP-2761) is planned here.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Stilus has no automation of any kind. Its projects are still `src/Stilus/Bezier.Core` and `src/Stilus/Bezier.Desktop` (renamed `Isotone.Stilus.*` by `D02 T01 §1`); no Stilus source file mentions a macro, a script engine, or Roslyn, and there is no Scripts menu. The suite scripting engine is Gesso's 62-line Roslyn `ScriptEngine` in `src/Gesso/src/Gesso.Scripting/`, which `D01 T10 §4` moves to `src/Isotone.Core/Scripting/`. `Isotone.Core` and `Isotone.UI` do not exist yet. The eleven automation rows of `docs/parity/stilus-parity.md` (NP-2751 to NP-2761) were backlog B-041 and B-042 until this file planned them.

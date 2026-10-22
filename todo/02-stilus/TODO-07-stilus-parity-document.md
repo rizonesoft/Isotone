@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-document
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-07 -- Stilus Parity: Document Model, Pages, Layers, Selection, and View"
 depends_on: []
 track: N7
@@ -11,6 +11,8 @@ track: N7
 # TODO-07 -- Stilus Parity: Document Model, Pages, Layers, Selection, and View
 
 > **Goal:** Stilus gains the document foundation every later parity file builds on: a live-object persistence contract in the `stilus:` SVG namespace with plain-SVG fallbacks, a spatial index that keeps a 10,000-object document interactive, one page and artboard model with Corel-style multipage views, full layer and Objects panel control, the Select menu and selection tools, isolation mode, a contextual property bar and Properties panel, rulers, grids, guides, measurement, the full snapping set, view modes and windows, a History panel with paste variants, and a New Document dialog with presets and templates, each edit one undo step and each tunable a setting.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The SVG writer and reader know nothing about artboards, so a saved document loses every artboard but the implicit document bounds, and no `stilus:` namespace exists yet: `SvgParser.cs` reads only `inkscape:label` from a foreign namespace. `ArtboardManager` (412 lines) already models artboards with create, duplicate, rename, resize, move, reorder, navigate, and grid, row, and column arrange, and `Artboard.cs` holds 24 presets; none of it is wired to a surface or persisted. `VectorDocument` holds a flat `Elements` collection with no layers or guides; `Layer` and `LayerManager` (449 lines) exist beside it, unused by the document. Guides live in a private list inside `SnapManager`, not in the document, so they are never saved, and `SnapTarget` knows only Grid, Guides, Objects, and SmartGuides. There is no spatial index: `SkiaRenderer` walks every element each frame and hit testing walks the list back to front. The canvas already draws rulers and a grid (`SkiaCanvas.ShowRulers`, `SkiaRenderer.RenderRulers`, `RenderGrid`), and zoom is clamped at 6,400 percent. No magic wand or lasso tool exists. Undo is Stilus-local (`HistoryManager`, 167 lines) until `D01 T02 §4` moves it to `Isotone.Core`. Paths below name the post-rename `Isotone.Stilus.*` projects (`D02 T01 §1`); the claims name today's `Bezier.*` paths.

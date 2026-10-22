@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-color
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-09 -- Stilus Parity: Color, Fills, Strokes, Brushes, Transparency, Styles, and Symbols"
 depends_on: []
 track: N9
@@ -11,6 +11,8 @@ track: N9
 # TODO-09 -- Stilus Parity: Color, Fills, Strokes, Brushes, Transparency, Styles, and Symbols
 
 > **Goal:** Stilus paints like Illustrator 30.8 and CorelDRAW 2026: a color model that carries RGB, CMYK, HSB, Lab, grayscale, spot, global, and tint values through Isotone.Core color management (`D01 T04 §1`); one Color panel and picker, eyedroppers, swatches, palettes, color styles and harmonies, and Recolor; linear, radial, conical, rectangular, freeform, and mesh gradients; pattern, texture, and procedural fills with a fill library; a full stroke model with arrowheads, dashes, alignment, and variable width; stacked appearances and reusable styles; art, pattern, scatter, calligraphic, bristle, and painterly brushes; every standard blend mode, opacity masks, and fountain transparency; and dynamic, 9-slice, nested, and library-linked symbols with the symbolism tools. Every paint attribute persists in SVG through the live-object contract (`D02 T07 §1`), every edit is one undoable command, and every palette, brush, style, and symbol library a user owns imports and exports. This file promotes backlog B-003 (`legacy-stilus-4.2-1.4`) into §3 and B-010 (`legacy-stilus-6`) into §16.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Stilus's color is one 8-bit RGBA struct (`src/Stilus/Bezier.Core/Models/Color.cs`) with HSL, HSV, and hex helpers and no CMYK, Lab, or spot type. Five fill types exist under `src/Stilus/Bezier.Core/Models/Fills/` (solid, linear, radial, pattern, none), and `PatternFill` exists in the model but `src/Stilus/Bezier.Core/Services/SvgExporter.cs` never writes it. `Stroke` (`src/Stilus/Bezier.Core/Models/Stroke.cs`, 89 lines) holds width, opacity, cap, join, miter limit, and dash array only: no alignment, arrowheads, or width profile. A 12-member `BlendMode` enum sits on `VectorElement`, but neither the SVG writer nor `src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs` reads it, and Hue, Saturation, Color, and Luminosity are missing. The Properties panel's Fill row in `src/Stilus/Bezier.Desktop/Views/MainWindowView.xaml` is a static placeholder showing a literal hex, not a bound color. There is no eyedropper tool; `src/Stilus/Bezier.Core/Tools/` holds 10 files. `Symbol` and `SymbolInstance` exist with an `Overrides` dictionary (`src/Stilus/Bezier.Core/Models/Symbol.cs`), but the SVG writer never writes an instance. `src/Isotone.Core/` does not exist yet, so no color-management engine exists anywhere in the tree.

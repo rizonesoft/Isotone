@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-retouch
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-13 -- Gesso Parity: Retouching, Content-Aware Tools, Transform, Warp, and Liquify"
 depends_on: []
 track: I13
@@ -11,6 +11,8 @@ track: I13
 # TODO-13 -- Gesso Parity: Retouching, Content-Aware Tools, Transform, Warp, and Liquify
 
 > **Goal:** Gesso has the full retouching and geometry toolset of Photoshop 27.10, Affinity Photo 3.3, and GIMP 3.2.6: clone stamp with the Clone Source panel, perspective and seamless clone, healing, spot healing, patch, blemish, inpainting, and red eye; a classical content-aware engine (PatchMatch fill workspace, content-aware scale and move, delete and fill, heal selection) in `src/Gesso/Isotone.Gesso.Core/Retouch/` that runs with no network; dodge, burn, sponge, tone, blur, sharpen, and median brushes; Free Transform extensions and the GIMP transform tools; warp and mesh warp, puppet warp, cage and N-point deformation, and perspective warp; Liquify with a GPU path and face-aware controls; and frequency separation. Tools run on the `D03 T03 §4` tool system and the `D03 T12 §1` brush engine with the `D03 T12 §5` paint options, geometry samples through the `D01 T03 §2` resampler and inverse mapper, warp-style math moves out of Stilus rather than being copied, every stroke or apply is one undoable command through the suite history with tile snapshots and one Serilog Information line, warps on smart objects stay re-editable, and generative modes belong to `D03 T19 §3`, never to this file.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** No retouching, content-aware, warp, or liquify code exists in Gesso: no source file under `src/Gesso/src/` mentions healing, liquify, warp, PatchMatch, or a clone source. Gesso has no tool folder or tool abstraction yet (`src/Gesso/src/Gesso.Core/Tools` is absent); `D03 T03 §4` adds it. The history's command categories in `src/Gesso/src/Gesso.Core/History/Commands/CommandBase.cs` already name `Transform`, but no command uses it. The Image menu's rotate and flip commands in `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` only write a Debug line (five of them); `D03 T03 §7` wires them before §5 extends them to layers. The selection tools are a 328-line model (`src/Gesso/src/Gesso.Core/Selections/SelectionTools.cs`) that `D03 T10 §1` replaces; the content-aware sampling area reads the replacement. Raster layers tile at 256 pixels (`TileSize = 256` in `src/Gesso/src/Gesso.Core/Tiles/Tile.cs`), the unit every retouch stroke snapshots. These paths move to `src/Gesso/Isotone.Gesso.*` when `D03 T01 §1` renames the projects; every item below names the target paths.

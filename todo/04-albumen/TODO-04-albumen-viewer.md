@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-viewer
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-04 -- Albumen Parity: the Fast Default Viewer"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L4
 # TODO-04 -- Albumen Parity: the Fast Default Viewer
 
 > **Goal:** Albumen ships an IrfanView-class image viewer: `AlbumenViewer.exe`, a second executable in the Albumen install with its own minimal startup path, opens any image the suite reads in milliseconds from Explorer within a recorded, measured startup budget, can be registered as the Windows default viewer for every format it reads, browses the file's folder with prefetch, shows images at any zoom with correct orientation and display color, plays multi-page and animated files, runs fullscreen and quick slideshows, shows information, histogram, pixel values, QR codes, and text, performs file operations, and offers quick edits (rotate, crop, resize, color, effects, text, watermark, borders, lossless JPEG transforms) that run the batch engine's operations; the Albumen library is one keystroke away. Originals are safe by default and written only on opt-in (operator decision 2026-09-27, "Safe by default, opt-in writes"): quick edits save to a new file and rotation is stored as metadata unless the user turns on an in-place setting of `D04 T11 §1`'s `OriginalWritePolicy`, in which case Save and lossless rotation replace the original through its `InPlaceWriter`, atomically and after a verified backup copy. The code lives in `src/Albumen/Isotone.Albumen.Viewer/` (the WPF exe, AssemblyName `AlbumenViewer`) and `src/Albumen/Isotone.Albumen.Core/Viewer/`; it decodes only through the shared `Isotone.Core/Formats/` registry (`D04 T13 §1`), applies display color through `D01 T04 §1`, applies quick edits through `D04 T11 §7`'s `IBatchOperation` implementations and the `Isotone.Core` effect registry (`D01 T03`, `D01 T06`), and forwards to `Albumen.exe` through `D01 T02 §3`.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code at all (`src/Albumen` is absent), so there is no viewer project; the Albumen app itself is created by `D04 T01 §2`, and every checklist path below names the projects that section creates (`src/Albumen/Isotone.Albumen.Core/`, `src/Albumen/Isotone.Albumen.Desktop/`, `tests/Isotone.Albumen.Tests/`). The app manifest `scripts/apps.psd1` still names the legacy project path `src/Albumen/Albumen.UI/Albumen.UI.csproj` and marks Albumen `Shipping  = $false`, and names no `AlbumenViewer` executable. `installer/Albumen.iss` refuses to compile without `/DAlbumenShipping` (three mentions) and registers no file type, while the shared `installer/common.iss` already sets `ChangesAssociations=yes`. `standards/albumen.md` states the frozen guard "Albumen never writes an original image" unless the user opts in, with the opt-in writes the operator approved on 2026-09-27 (recorded in the standard at the Albumen integration), which `D04 T11 §1` builds and this file's §11 and §16 consume. Nothing in `src/` registers a Windows capabilities key or sets a wallpaper. `docs/dev/albumen/` (where §1 records the startup budgets) does not exist yet.

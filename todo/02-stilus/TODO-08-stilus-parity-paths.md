@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-paths
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-08 -- Stilus Parity: Drawing, Paths, Shapes, Shaping, and Transform"
 depends_on: []
 track: N8
@@ -11,6 +11,8 @@ track: N8
 # TODO-08 -- Stilus Parity: Drawing, Paths, Shapes, Shaping, and Transform
 
 > **Goal:** Give Stilus the full drawing and geometry toolset of Illustrator 30.8 and CorelDRAW 2026: every pen, curve, freehand, and shape tool; parametric live shapes and corners; node-level editing, cutting, and shaping brushes; the complete Pathfinder and shaping set with compound paths and clipping; numeric and interactive transforms, align, arrange, and step and repeat; and associative dimensions and connectors, each edit one undoable command and every live object persisted through the `stilus:` namespace with a plain-SVG fallback.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Nine tools derive from `ToolBase` today (select, pen, node edit, rectangle, ellipse, line, text, pan, zoom); there is no polygon, star, spiral, pencil, knife, eraser, transform, dimension, or connector tool (`PolygonTool.cs` and `PencilTool.cs` are absent). The pen tool is one 453-line file with Escape, Enter, and Backspace handling and no rubber band, continue, or auto add and delete; the node edit tool is one 700-line file whose keys 1, 2, and 3 convert nodes to corner, smooth, and symmetric, the only three `ControlPointType` values. `PathOperationsService` carries nine `Placeholder` markers (offset, simplify, stroke to path, bounds, split, and flatten among them). `ToolPoint` carries only X and Y: no pressure, tilt, or bearing reaches a tool. `SvgClipPath` and `SvgMask` model classes exist, but `SvgParser.cs` never reads `clipPath` and `SkiaRenderer` never clips. `AlignmentService` is ten static methods and `TransformService` is 201 lines of resize, rotate, snap-angle, and scale math. No connector code exists in core services. The Object menu's Transform submenu holds only the fixed 90 and 180 degree rotations and the two flips. Paths below name the post-rename `Isotone.Stilus.*` projects (`D02 T01 §1`); the claims name today's `Bezier.*` paths.

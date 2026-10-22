@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-documents
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-04 -- Stilus Documents: Save, Fidelity, Export, and Recovery"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: N4
 # TODO-04 -- Stilus Documents: Save, Fidelity, Export, and Recovery
 
 > **Goal:** A Stilus user's drawing is safe and portable: saving is atomic and never damages the file on disk, closing a changed document asks first, SVG round-trips are proven against committed fixtures, PNG, JPEG, and PDF export produce what the canvas shows, recent files and autosave work, a crash offers recovery, and double-clicking an `.svg` opens it in the running Stilus.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `MainWindowViewModel.Save` and `SaveAs` call `SvgExporter.ExportToFile` directly on the target path, so a crash or full disk mid-write truncates the user's file; `Document.IsDirty` is set false after a save, but nothing prompts on close or exit, and the window title never shows an unsaved marker. `ExportPng`, `ExportJpeg`, `ExportPdf`, and `ExportXaml` only set `StatusText`. `FileOperationsService` (recent files, autosave drafts under `%LOCALAPPDATA%\Bezier\Drafts`) and `ExportService` are referenced by no app code. `SvgImporterTests` and `SvgExporterTests` exist but no committed fixture is round-tripped; the only sample SVGs are `src/Stilus/test.svg` and `src/Stilus/bezier-sample.svg`. The app ignores command-line arguments, so the installer's opt-in `.svg` association (`installer/Stilus.iss`) would start an empty window.

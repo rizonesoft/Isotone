@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-painting
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-12 -- Gesso Parity: the Brush Engine, Painting Tools, Fills, Gradients, and Patterns"
 depends_on: []
 track: I12
@@ -11,6 +11,8 @@ track: I12
 # TODO-12 -- Gesso Parity: the Brush Engine, Painting Tools, Fills, Gradients, and Patterns
 
 > **Goal:** Gesso paints like Photoshop 27.10, Affinity Photo 3.3, and GIMP 3.2.6: the brush engine in `src/Gesso/Isotone.Gesso.Core/Painting/` (which stays in Gesso; Stilus's vector brushes never need it) grows computed, sampled, erodible, bristle, airbrush, and multi-nozzle tips, smoothing and stabilizers, build-up, wet edges, texture, dual brushes, and full pen dynamics with GIMP's dynamics matrix; brushes, dynamics, and tool presets live in searchable libraries that import ABR, GBR, GIH, VBR, and MyPaint MYB (painted by libmypaint); the brush, pencil, pixel, airbrush, ink, history, art history, mixer, smudge, color replacement, and eraser tools share one options model that the `D03 T13` retouch tools also consume; fill and stroke cover the Fill dialog, scripted patterns, line-art bucket fill, and stroke styles; gradients get every shape, interpolation, the GIMP segment editor, noise and diffusion gradients, and live gradient fill layers on the suite gradient model; patterns get a library, PAT import, pattern and fill layers, pattern preview, and the pattern stamp; and symmetry painting covers every competitor's modes. Every stroke is one undoable command recorded as tile snapshots, the engine allocates nothing per dab, and no Adobe, Affinity, MyPaint, or GIMP brush, gradient, or pattern pack is bundled; users import the files they own. This file promotes backlog B-020 (`legacy-gesso-4.4`) into §1.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no brush, painting, or tool code in Gesso yet: no type in `src/Gesso/src/Gesso.Core` mentions a brush, and neither `src/Gesso/src/Gesso.Core/Painting` nor `src/Gesso/src/Gesso.Core/Tools` exists; `D03 T03 §4` and `§6` create the tool system and the round brush and eraser this file extends, and their catalog rows IP-0838 to IP-0844 are `shipped-scope` there. The only gradient in `Gesso.Core` today is the `GradientMap` adjustment type name, and no pattern type exists. Raster layers tile at 256 px (`TileSize = 256` in `src/Gesso/src/Gesso.Core/Tiles/Tile.cs`), the unit that dab rendering, tile snapshots, and multi-threaded painting lock on. `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` binds no brush, gradient, or fill command. `src/Isotone.Core` does not exist yet, so the gradient model this file extends arrives by the `D03 T09 §8` move. These paths are today's names; `D03 T01 §1` renames them to `Isotone.Gesso.*`, and every checklist item below names the renamed paths.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-parity-import
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-07 -- Albumen Parity: Import, Devices, and Capture"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L7
 # TODO-07 -- Albumen Parity: Import, Devices, and Capture
 
 > **Goal:** Albumen's import reaches Lightroom Classic, ACDSee, and IrfanView parity on top of `D04 T01 §6`'s safe add and copy: a full import window with sources, a candidate grid, Move mode, and new-only and duplicate filters; previews and smart previews built on import, a hash-verified second copy, renaming through the suite token engine, and destination organization; presets and everything applied during import, with metadata going to sidecars by default and into the imported files only when the user turned embedding on; phones and cameras over Windows Portable Devices and AutoPlay; auto import from watched folders as the tethered-shooting path (tethered capture proper stays backlog B-048); Copy as DNG and Convert to DNG; scanning through WIA and TWAIN with IrfanView's batch scanning and Copy Shop; and a screen capture utility. Browsing a folder without importing it (`D04 T05 §1`) stays the default way to see photos where they are; import is for cards, devices, copies, and organizing. The code lives in `src/Albumen/Isotone.Albumen.Core/Import/`, `Devices/`, `Acquire/`, and `Capture/`, and `src/Albumen/Isotone.Albumen.Desktop/Import/`; every path keeps the original-file guard as the operator's 2026-09-27 decision shapes it: a source is removed only after a hash-verified copy, and only into the Recycle Bin.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code: `src/Albumen` does not exist. Import is planned in `todo/04-albumen/TODO-01-albumen-foundation.md` (`D04 T01 §6`: Add or Copy, SHA-256 verified copies, duplicate skip, the `yyyy/yyyy-MM-dd` folder pattern, and MetadataExtractor for EXIF during import), and its Freeze check is where Albumen's original-file guard joins the frozen set. Gesso's parity plan already moves Stilus's `WiaAcquireService` into `src/Isotone.Core/Acquire/` and adds screenshots through `Windows.Graphics.Capture` in `todo/03-gesso/TODO-17-gesso-parity-formats.md` (`D03 T17 §12`), recording TWAIN as unsupported for Gesso; §7 consumes the moved WIA service as its third consumer and adds TWAIN for Albumen, and §8 moves the screenshot code to `Isotone.Core` on its second consumer. **Corrected 2026-09-27 (authoring):** the design had §7 move the WIA code out of Gesso; `D03 T17 §12` already places it in `Isotone.Core`, so §7 consumes it. Tethered capture has no backlog entry until the integration commit adds B-048. Checklist paths name the projects `D04 T01 §2` creates. **Corrected 2026-09-28:** B-048 exists in `todo/backlog.md`.

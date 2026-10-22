@@ -2,7 +2,7 @@
 schema_version: 1
 id: user-guides
 domain: 06-docs
-status: draft
+status: blocked
 title: "TODO-01 -- User Guides"
 depends_on: []
 track: D1
@@ -11,6 +11,8 @@ track: D1
 # TODO-01 -- User Guides
 
 > **Goal:** Each app ships with a user guide that covers every surface it ships, written for someone who has never used it, with captures from the real app, and the suite has one install and troubleshooting guide covering installers, portable ZIPs, install scope, logs, and bug reports.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `docs/user/README.md` lists four getting-started guides (installing the suite, Stilus, Gesso, Albumen) and two help guides (troubleshooting, keyboard shortcuts), all marked planned; no guide page exists. UI sections in the app domains are required to update their app's guide in the same commit, so the guides grow with the apps; this file owns each guide's structure, its first complete pass before a release, and the suite-wide pages.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-roadmap
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-07 -- Gesso after 0.1.0: Deferral Owners and Accessibility"
 depends_on: []
 track: I7
@@ -11,6 +11,8 @@ track: I7
 # TODO-07 -- Gesso after 0.1.0: Deferral Owners and Accessibility
 
 > **Goal:** The Gesso work after its first release that the plan is already committed to: the rest of the filter catalog that the 0.1.0 Filter menu names for its disabled items, RAW import through the decoder Albumen shares, and the workspaces, Preferences, accessibility, and localization work the acceptance bar requires. When this file closes, no Gesso menu item is disabled as planned, and Gesso works without a mouse or eyes. On 2026-09-26 the Gesso parity plan relocated three of these sections into its phases without changing their addresses: the filter catalog (§3) runs first in Phase 21, where the filter surfaces and engine extensions extend it, workspaces and Preferences (§17) run first in Phase 27, and the accessibility and localization audit (§16) runs last in Phase 27 so it covers every parity surface; RAW import (§11) stays in Phase 41, after Albumen's decoder ships.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The legacy roadmap (`docs/legacy/gesso-roadmap.md`, 853 lines, phases 0 to 11) was mined into 18 sections on 2026-09-26. The same day the plan was bounded (`todo/budget.json`): the 14 sections nothing outside this file depends on, defers to, or names in the acceptance bar moved to `todo/backlog.md` as B-014 to B-027, and their section numbers are retired, never reused. What stays: the filter catalog (§3), which `D03 T05 §3` names in the tooltips of its disabled filters; RAW import (§11), which `D04 T01` cross-references for the shared decoder; accessibility (§16), which the acceptance bar names; and workspaces and Preferences (§17), which §16 builds on and which enables the planned Preferences item. Several features have model types and no behavior, among them `AdjustmentLayer` and a Roslyn `ScriptEngine` in `Gesso.Scripting` (62 lines), whose sections now wait in the backlog. Every section below names its legacy source with a `-> SOURCE:` line. **Corrected 2026-09-26:** the Gesso parity plan promoted B-014 to B-023 and B-027 into its sections, merged B-025 (scripting) into the suite-wide B-041, and kept B-024 and B-026 in the backlog; `AdjustmentLayer` gains its behavior in `D03 T11 §1`, and the parity sections extend §3, §16, and §17 through their dependency edges. **Corrected 2026-09-27:** on the operator's decision to plan every deferred row ("Group 1: plan them all"), B-026 (performance, `legacy-gesso-9`) was promoted into §18 to §20 here, B-024 (filter plug-ins, `legacy-gesso-8.1-8.3`) into `D03 T14 §12`, and B-012 (third-party filter plug-in hosts) into `D01 T09` with Gesso's surface in `D03 T14 §11`; no section number was reused.

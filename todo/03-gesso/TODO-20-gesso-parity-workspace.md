@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-workspace
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-20 -- Gesso Parity: Workspace, Customization, Preferences, and Help"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I20
 # TODO-20 -- Gesso Parity: Workspace, Customization, Preferences, and Help
 
 > **Goal:** Gesso reaches Photoshop 27.10, Affinity Photo 3.3, and GIMP 3.2.6 parity for the workspace a professional customizes and lives in: workspaces and studios as presets (Essentials, Photography, Painting, Graphic and Web, Compositing, Color Grading, Typography, Develop, and the AI workspace), docking, tabs, single and multi-window modes, GIMP dockable dialogs, the Properties panel pages and the Contextual Task Bar, numeric field behaviors, a customizable toolbar and options bar, menus, shortcut sets, and command search, complete Preferences (general, tools, cursors, units, guides, type, interface, language, accessibility display, files, performance, GPU, scratch, input devices), the presets manager and resource folders, and help, learning, and local diagnostics. The workspace, toolbar, menu, and shortcut-set frames of `D02 T16 §1` to `§3` move to `src/Isotone.UI/Workspace/` on this second use (each move the first item of its section, Stilus consuming the moved type unchanged), and the other Stilus pieces Gesso needs again (`PreferenceKeyRegistry`, `WarningRegistry`, `PressureCurve`, the Surface Dial menu, `SystemInfoReport`, `GpuDiagnostics`, and the welcome frame) move the same way; nothing is copied. It extends `D03 T07 §17` (workspaces and the Preferences dialog) and feeds `D03 T07 §16` (the accessibility and localization audit that runs last), sends nothing anywhere by default, and every document edit stays one undo step. The file is frozen because §5 moves document saves onto a background worker, which changes how the user's file is written.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The Window menu in `src/Gesso/src/Gesso.UI/Views/MainWindow.xaml` toggles five fixed panels through `Show*Panel` bindings and offers only Reset Workspace (`ResetWorkspaceCommand`); nothing saves a named arrangement. `Dirkster.AvalonDock` is referenced by `src/Gesso/src/Gesso.UI/Gesso.UI.csproj`, but no XAML under `src/Gesso/` uses a `DockingManager` yet. Gesso's own `src/Gesso/src/Gesso.UI/Services/SettingsService.cs` writes under `%LOCALAPPDATA%\Gesso` rather than `Rizonesoft\Gesso`, the store `D01 T02 §2` replaces before any preference here is added. Edit, Preferences is bound to `PreferencesCommand` with no dialog behind it until `D03 T07 §17`. There is no pen, stylus, or touch handling anywhere in Gesso, and `src/Gesso/src/Gesso.UI/ViewModels/WelcomeViewModel.cs` is a 12-line stub with a message and a version string. The Stilus types this file moves (`D02 T16 §1` to `§8`) are planned, not built, so each move item runs against whatever `D02 T16` shipped.

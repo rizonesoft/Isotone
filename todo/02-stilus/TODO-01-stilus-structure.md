@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-structure
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-01 -- Stilus Layout, Names, and Composition Root"
 depends_on: []
 track: N1
@@ -11,6 +11,8 @@ track: N1
 # TODO-01 -- Stilus Layout, Names, and Composition Root
 
 > **Goal:** The imported Bezier code is Stilus in every name a user or developer meets: `Isotone.Stilus.*` projects and namespaces in the target layout, an executable called `Stilus.exe`, one composition root on the Generic Host with every service registered, logging through the suite's Serilog bootstrap, and a build with warnings as errors and code style enforced, like the rest of the suite.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Stilus is three projects under `src/Stilus/`: `Bezier.Core` (`net11.0`), `Bezier.Desktop` (`net11.0-windows10.0.26100.0`, WPF, no `AssemblyName`, so the executable is `Bezier.Desktop.exe`), and `Bezier.Tests`. 147 `.cs` files declare a `Bezier` namespace, 11 XAML files use `x:Class="Bezier..."` or `clr-namespace:Bezier`, and 17 string literals say "Bezier" (window title `Bezier`, `"Bezier - Untitled"`, `%LOCALAPPDATA%\Bezier` folders). `scripts/apps.psd1`, `installer/Stilus.iss`, and `installer/Suite.iss` name `Bezier.Desktop.exe`. The composition root is `ServiceCollectionExtensions.AddBezierServices`, which registers only `MainWindowViewModel`; the `HistoryManager` and `ToolManager` registrations are commented out, and `MainWindowViewModel` constructs `SvgImporter`, `SvgExporter`, `HistoryManager`, and `ToolManager` itself with `new`. `App.Services` is a static service locator. Logging goes through a custom `DebugLogger` singleton that feeds the debug window and writes no file. `src/Stilus/Directory.Build.props` sets `TreatWarningsAsErrors=false` and `EnforceCodeStyleInBuild=false`; the Release build reports 334 distinct warnings (CA1305 151, CS0618 44, CA2263 40, CA1805 20, NU1701 15, CA1859 14, CA1861 10, CA1310 9, CA1806 8, CA2008 5, others 18, per `docs/dev/build.md`).

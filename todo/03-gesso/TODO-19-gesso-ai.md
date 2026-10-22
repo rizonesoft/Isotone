@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-ai
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-19 -- Gesso AI: Editable, Suite-Aware, Reproducible"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I19
 # TODO-19 -- Gesso AI: Editable, Suite-Aware, Reproducible
 
 > **Goal:** Gesso's AI is its own design built on the suite's pillars, not a clone of Firefly, Canva AI, or GIMP plug-ins. Every result is editable and never destructive: a generation lands as a new pixel layer with a layer mask inside a named group, variations as hidden siblings; an AI selection lands as a selection or a layer mask; an assistant edit lands as adjustment layers, masks, and filter layers built from schema-validated JSON; each apply is one named undoable command and no source pixel is overwritten. Image generation runs through OpenRouter's image models with honest limits stated in the UI and the help: masked crops with context padding, size caps with tiling and overlap, seeds recorded with whether the model honored them, estimated (never measured) depth, and cautions before faces are sent. Selections come from locating, not guessing pixels: a vision model returns boxes, points, and labels as JSON and the local segmentation engine `D03 T10 §6` makes the pixel mask, so the same selections work offline in Local mode. It is suite-aware (the `D01 T05 §5` brand kit in a Brand Kits panel and in prompts, file hand-offs with Albumen and Stilus through `SuiteAppLocator`) and reproducible (a provenance record per action inside the `.gesso` document, a panel that re-runs, compares, and reverts, optional XMP export). All of it lives in `src/Gesso/Isotone.Gesso.Core/AI/` and `src/Gesso/Isotone.Gesso.Desktop/AI/`, consumes the `D01 T05` client, key store, send gate, provenance, and brand kit, never talks HTTP itself, and sends nothing without an explicit action and a send preview. The file is frozen because §1, §2, §3, §10, and §13 change what an `.gesso` save writes (the provenance block, AI smart filters, generative layers, assistant chats, and hand-off write-back), so each carries a freeze check.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Gesso contains no HTTP client and no OpenRouter code anywhere under `src/Gesso/`, so every request in this file goes through the shared core `D01 T05`, which does not exist yet: there is no `src/Isotone.Core/`. There is no segmentation or matting code in Gesso today; the local engine every AI selection feeds is `D03 T10 §6`. Selections (`src/Gesso/src/Gesso.Core/Selections/Selection.cs`) and layer masks (`src/Gesso/src/Gesso.Core/Masks/LayerMask.cs`) are already 8-bit byte masks, the form every AI selection and mask result must land in. An `AdjustmentLayer` model type exists (`src/Gesso/src/Gesso.Core/Layers/AdjustmentLayer.cs`, 57 lines) that the assistant's structured edits instantiate once `D03 T11 §1` makes it live. Paths below name the targets after the `D03 T01 §1` rename (`Isotone.Gesso.*`).

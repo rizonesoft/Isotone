@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-adjustments
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-11 -- Gesso Parity: Adjustment Layers, Adjustments, Image Modes, and Color"
 depends_on: []
 track: I11
@@ -11,6 +11,8 @@ track: I11
 # TODO-11 -- Gesso Parity: Adjustment Layers, Adjustments, Image Modes, and Color
 
 > **Goal:** Gesso corrects tone and color like Photoshop 27.10, Affinity Photo 3.3, and GIMP 3.2.6: non-destructive adjustment layers with an Adjustments panel, a Properties page per kind, presets and Photoshop preset files, a targeted adjustment tool, and an adjustment brush; every tonal and color adjustment the three ship, from Levels and Curves extensions to color lookup with LUT files and OpenColorIO, gradient maps, match and replace color, and GIMP's Colors menu operations; image modes (bitmap, grayscale, duotone, indexed, RGB, CMYK, Lab, multichannel) and 8, 16, and 32-bit precision; channel operations (Apply Image, Calculations, decompose, compose); and the color panels, pickers, samplers, swatches, palettes, and color books. Gesso code lives in `src/Gesso/Isotone.Gesso.Core/Adjustments/`, `Color/`, and `Channels/` and `src/Gesso/Isotone.Gesso.Desktop/Adjustments/` and `Color/`; every algorithm Gesso adds joins the one `EffectRegistry` in `src/Isotone.Core/Imaging/Adjust/`, palette files move to `src/Isotone.Core/Color/Palettes/`, and everything consumes `D01 T03 §3` to `§5` and `§11`, `D01 T04 §1` to `§3`, and `D01 T05 §5` rather than growing a second curve, histogram, quantizer, or color conversion. No Adobe or Affinity preset, LUT, or color book is bundled; users import the files they own. This file promotes backlog B-014 (`legacy-gesso-5.1-adjustment-layers`) into §1.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `src/Gesso/src/Gesso.Core/Layers/AdjustmentLayer.cs` is a 57-line model holding only an `AdjustmentType` enum of 16 kinds, with no parameters, mask, or rendering. `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` binds no Levels, Curves, or Hue/Saturation command; those dialogs arrive with `D03 T05 §2` (Gesso 0.1.0), whose catalog rows IP-0669 to IP-0672 are `shipped-scope` there. The document `ColorSpace` enum (`src/Gesso/src/Gesso.Core/Documents/ColorSpace.cs`) lists RGB variants, CMYK, Lab, and grayscale but no indexed, bitmap, duotone, or multichannel mode, and `BitDepth` (`src/Gesso/src/Gesso.Core/Documents/BitDepth.cs`) has exactly 8, 16, and 32. Gesso carries its own 342-line color converter (`src/Gesso/src/Gesso.Core/Colors/ColorConverter.cs`) with Lab and CMYK structs in `ColorModels.cs` that the suite engine (`D01 T04`) supersedes, so §7 and §9 convert through `Isotone.Core` instead. There is no palette or swatch code anywhere in Gesso, and `src/Isotone.Core` does not exist yet to hold the moved palette readers. These paths are today's names; `D03 T01 §1` renames them to `Isotone.Gesso.*`, and every checklist item below names the renamed paths.

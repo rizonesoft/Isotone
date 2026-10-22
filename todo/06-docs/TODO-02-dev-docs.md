@@ -2,7 +2,7 @@
 schema_version: 1
 id: dev-docs
 domain: 06-docs
-status: draft
+status: blocked
 title: "TODO-02 -- Developer Documentation and the Project Site"
 depends_on: []
 track: D2
@@ -11,6 +11,8 @@ track: D2
 # TODO-02 -- Developer Documentation and the Project Site
 
 > **Goal:** A contributor can understand the suite from the developer docs alone, and they stay true: the architecture page matches the tree after each restructure, the README shows the real apps, and the user guides are published as a browsable site.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `docs/dev/architecture.md` was written on 2026-09-26 from the old `Description.md` (removed the same day) and describes the target layout, not the current one: `src/Isotone.Core/`, `src/Isotone.UI/`, and `src/Albumen/` do not exist yet. `docs/dev/` also holds `build.md`, `versioning.md`, and `README.md`. The README's screenshots come from `resources/screens/web/`, which are concept renders rather than captures of the built apps. There is no published site; the guides render only on GitHub. **Corrected 2026-09-28:** the README leads with `resources/brand/isotone-cover.png` (labelled a design concept) and its per-app row shows the splash cards; the neon art under `resources/screens/` was removed on 2026-09-28 with the other neon brand images (operator: "Remove the neon banners"), so §2 writes its captures into a new `resources/screens/web/`. GitHub Pages already serves the design system from `.github/workflows/pages.yml` (https://rizonesoft.github.io/Isotone/design/, the root redirecting there), so the guides join that one site rather than a second one.

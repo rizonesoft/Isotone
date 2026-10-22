@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-release-0-1
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-06 -- Gesso 0.1.0"
 depends_on: []
 track: I6
@@ -11,6 +11,8 @@ track: I6
 # TODO-06 -- Gesso 0.1.0
 
 > **Goal:** Gesso ships its first real release, `gesso-v0.1.0`: the shared About and shortcuts dialogs with Gesso's identity, a menu bar where every item works or names the section that builds it, a user guide, and a tag that produces a verified installer and portable ZIP.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `MainWindowViewModel.About`, `KeyboardShortcuts`, and `Documentation` exist as commands in Gesso and only log. No Gesso tag exists, `CHANGELOG.md` has no Gesso release, and `docs/user/` has no Gesso pages. The Stilus release (`D02 T05 §4`) and the shared dialogs (`D01 T01 §4`) are the pattern this file follows.

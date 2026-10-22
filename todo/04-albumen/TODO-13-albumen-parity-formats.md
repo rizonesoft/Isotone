@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-parity-formats
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-13 -- Albumen Parity: Formats"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L13
 # TODO-13 -- Albumen Parity: Formats
 
 > **Goal:** Albumen, the Albumen Viewer, and the batch tools read every image format Gesso reads and every format IrfanView and ACDSee open that a GPL-3.0-compatible reader exists for, through one codec registry in `src/Isotone.Core/Formats/` that Gesso's readers and writers move into on this second consumer (never a copy); formats are detected by content, not extension; documents and multi-page files open as pages; RAW coverage is reported per camera with RAW+JPEG pairs handled as the user chooses; every writable format carries its per-format save options; and Albumen owns the suite's one DNG writer. Every reader and writer owes a format fidelity proof against a named reference, opening never changes a file, and writing produces a new file through the atomic writer unless the user opted into an in-place write for that operation (operator decision 2026-09-27, "safe by default, opt-in writes"), which then replaces the file atomically after an optional backup copy.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code and `Isotone.Core` does not exist yet. Gesso's format project `src/Gesso/src/Gesso.FileFormats/` holds only the `IImageFormat` interface: no codec and no registry; the `FormatRegistry` is planned by `D03 T17 §1` inside Gesso's format project (renamed `src/Gesso/Isotone.Gesso.FileFormats/` by then), with the shared codecs planned under `src/Isotone.Core/Formats/`. No archive or compression package is referenced by the solution yet. Albumen is declared in `scripts/apps.psd1` but not shipping, and `installer/Albumen.iss` refuses to compile without `/DAlbumenShipping`. `standards/albumen.md` states the original-file guard ("Albumen never writes an original image" unless the user opts in, as the operator decided on 2026-09-27), with the opt-in in-place writes that `D04 T11 §1` builds as `OriginalWritePolicy` and `InPlaceWriter`.

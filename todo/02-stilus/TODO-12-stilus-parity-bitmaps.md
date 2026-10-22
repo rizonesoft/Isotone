@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-bitmaps
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-12 -- Stilus Parity: Bitmaps, Tracing, and Raster Effects"
 depends_on: []
 track: N12
@@ -11,6 +11,8 @@ track: N12
 # TODO-12 -- Stilus Parity: Bitmaps, Tracing, and Raster Effects
 
 > **Goal:** Stilus treats placed images as first-class bitmap objects: a designer can crop, resample, straighten, correct perspective, change color mode, mask colors, and rasterize vector art; apply every `Isotone.Core` pixel-engine effect and adjustment non-destructively through an FX stack that persists in the `stilus:` namespace with a rasterized SVG fallback; trace bitmaps into editable vectors with a Stilus-local potrace port (outline) and skeletonization (centerline) behind both an Image Trace panel and a trace dialog; build vector and image mosaics and photo mockups; and manage linked files through a Links panel. `D02 T06 §14` (File, Place for images) is relocated into Phase 9 ahead of §1 so placing images exists before bitmap editing starts.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The bitmap element exists as `SvgImage` in `src/Stilus/Bezier.Core/Models/Elements/SvgImage.cs` with position, size, `Href`, `EmbeddedData`, and `MimeType`, and nothing else: no decoded pixels, no color mode, no resolution. `src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs` has no branch for it, so a parsed `<image>` is invisible on the canvas today. `src/Stilus/Bezier.Core/Services/ImportService.cs` can build an embedded image element from raster bytes (`ImportRasterImage`), but no file in `src/Stilus/Bezier.Desktop/` references `ImportService`; the service triage defers it to `D02 T06 §14`. The SVG reader `src/Stilus/Bezier.Core/Services/SvgParser.cs` never mentions filters, so a `<filter>` is dropped on open. There is no tracing code in Stilus (`src/Stilus/Bezier.Core/Tracing` does not exist), no mosaic code, and no link management.

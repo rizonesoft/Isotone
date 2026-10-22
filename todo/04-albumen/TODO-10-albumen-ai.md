@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-ai
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-10 -- Albumen AI: Faces, Keywords, Similarity, Culling, and Masks"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L10
 # TODO-10 -- Albumen AI: Faces, Keywords, Similarity, Culling, and Masks
 
 > **Goal:** Albumen's AI answers every Lightroom Classic and ACDSee AI job on the suite's three pillars. Results are editable, structured, non-destructive data applied as undoable catalog or edit-stack commands: a suggested keyword, caption, detected face, verdict, or setting is a proposal the user accepts, an AI mask is a develop mask component, generative removal is a develop spot, and enhanced pixels are new files. The features are suite-aware: they run on the shared AI core `D01 T05` (OpenRouter with the user's own key stored with DPAPI, the explicit-send gate and send preview, provenance), and the segmentation engine, vision locator, image-generation adapter, distraction finder, and depth estimator Gesso built move to `Isotone.Core` on this second consumer. Every action is explainable and reproducible: the prompt, model, parameters, and seed (with whether the model honored it) are recorded in the catalog, shown in the photo's history, re-runnable and comparable, and embedded as XMP in exports. Similarity is local perceptual hashing; face detection, keywords, captions, alt text, OCR, eye-state culling, mask locating, auto settings, super resolution, and generative removal send a downscaled, metadata-stripped copy only after an explicit action and the send preview (face detection through an OpenRouter vision model by the operator's decision of 2026-09-27, which did not approve local face models for Albumen); faces are named by hand, and recognizing the same person across photos is backlog B-052; denoise is classical by default, with optional on-device models for denoise, raw details, keywords, and similarity in §13 (ONNX Runtime through `D01 T12`, nothing leaving the machine). Code lives in `src/Albumen/Isotone.Albumen.Core/AI/` and `src/Albumen/Isotone.Albumen.Core/Faces/`, with shared pieces in `src/Isotone.Core/AI/` and `src/Isotone.Core/Imaging/Segmentation/`. Every test runs over the recorded transport of `D01 T05 §1`; no live key is used in CI.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no source tree (`src/Albumen/` is absent) and `src/Isotone.Core/` does not exist, so the AI core this file consumes (`todo/01-core/TODO-05-isotone-ai.md`) is planned, not built, and every Albumen path below is a target path `D04 T01 §2` creates. No source file in the repository talks to OpenRouter. No ONNX Runtime package is referenced yet; on-device models, once backlog B-046, are planned in §13 on the suite runtime of `D01 T12` (operator decision 2026-09-27 to plan the work deferred to after the first release as real sections), and face recognition is backlog B-052. **Corrected 2026-09-27:** said Albumen detects and recognizes faces locally with OpenCV's YuNet and SFace models on OpenCvSharp4; the operator did not approve those models for Albumen, so detection runs through the vision model on explicit send (§2), naming is by hand (§3, §12), and recognition and the People view went to B-052. Gesso's AI pieces this file moves (`D03 T10 §6`, `D03 T19 §2`, `§6`, `§8`, `§9`, `§14`) are planned in Gesso's parity phases, which run before this file.

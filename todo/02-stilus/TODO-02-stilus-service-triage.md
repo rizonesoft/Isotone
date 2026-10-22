@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-service-triage
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-02 -- Core Service Triage: Wire, Defer, or Delete"
 depends_on: []
 track: N2
@@ -11,6 +11,8 @@ track: N2
 # TODO-02 -- Core Service Triage: Wire, Defer, or Delete
 
 > **Goal:** No Stilus service exists only for its tests. Each of the services the app never calls is wired into a working command, handed to a named later section, or deleted with its tests; there is one SVG render path; and the selection, arrange, boolean, layers, snapping, and keyboard services the 0.1.0 release needs are reachable from the rendered app with undo.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `src/Stilus/Bezier.Core/Services/` holds 31 files. 25 of them are referenced by no file in `Bezier.Desktop` (measured by name with `grep -rlw`): AlignmentService, AnimationService, ArtboardManager (used only by `VectorDocument`), AssetLibraryService, CanvasHUDService, CanvasTooltipService, CodeEditorService, CommandPaletteService, ExportDialogService, ExportService, FileOperationsService, ImportService, LayerManager, MicroInteractionService, PathOperationsService, PresetService, SelectionManager, ShortcutManager, SnapManager, SymbolLibraryService, ThemeManager, ToastNotificationService, TransformService, VisualFeedbackService, and `SvgParser.cs` (which holds the `SvgImporter` class the app does use). All but the importer have a test file. Some are placeholders: `PathOperationsService.BooleanOp` returns its first input unchanged ("This will be implemented with SkiaSharp in the Desktop layer"), and the file carries 10 such "Placeholder" or "will be implemented" markers. The Object and Path menus call view-model commands (`AlignLeft`, `Rotate90Cw`, `Union`, and the rest) whose bodies only set `StatusText` (26 such bodies). `SelectTool` keeps its own `_selectedElements` list and never consults `SelectionManager`. Three Desktop services are dead too: `SvgVisualEditor.cs` (the only user of SharpVectors), `SvgCanvasRenderer.cs`, and `SvgOptimizerService.cs`; no `.cs` file uses Svg.Skia. The layers panel is an `ItemsControl` over `Document.Elements` with no reorder, lock, or visibility toggle.

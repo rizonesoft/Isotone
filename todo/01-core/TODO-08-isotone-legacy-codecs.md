@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-legacy-codecs
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-08 -- Isotone.Core Legacy Raster Codecs: Bitonal, Kodak, Icon, PICT, and Corel Formats"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: C8
 # TODO-08 -- Isotone.Core Legacy Raster Codecs: Bitonal, Kodak, Icon, PICT, and Corel Formats
 
 > **Goal:** `src/Isotone.Core/Formats/` holds one managed, stream-based, fidelity-proven codec for each legacy raster format the parity catalogs name and more than one app reads: MacPaint, CALS Type 1, GEM IMG, XPM, and Scitex CT (§1); Kodak Photo CD and FlashPix (§2); Windows icons and cursors with the icon resources inside EXE, DLL, and ICL files (§3); Macintosh PICT as a drawing-operation model with a writer and a rasterizer (§4); and the undocumented Corel PHOTO-PAINT CPT, Corel Painter RIF, and Wavelet Compressed Bitmap WI, decoded from documented clean-room analysis of fixtures (§5). Stilus is the first consumer (`D02 T18 §5`, `§6`, `§8`), Gesso the second (`D03 T17 §8` registers the XPM, ICO, and CUR codecs and `D03 T17 §9` the Scitex CT writer instead of building its own), and Albumen is the third (`D04 T13 §3` registers the XPM and icon codecs and `D04 T13 §8` the GEM IMG, Photo CD, FlashPix, PICT, and CPT codecs from here rather than a second copy). Codecs read from and write to a caller-supplied `Stream`; they never open, create, or replace a file, so every save goes through the consuming app's atomic writer. Opening never changes a file, and what a format cannot carry is reported, never silently dropped.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** There is no `src/Isotone.Core/` project yet; `D01 T02 §1` creates it in Phase 2, and `D01 T03 §1` adds the `PixelBuffer` types these codecs decode into in Phase 9. No legacy raster codec exists anywhere in the suite: no MacPaint, Photo CD, FlashPix, Scitex CT, PICT, CALS, GEM, CPT, RIF, or WI reader or writer. Stilus names an ICO export format and options (`ExportFormat.Ico` and `class IcoExportOptions` in `src/Stilus/Bezier.Core/Services/ExportService.cs`) but has no ICO encoder or decoder; `D02 T14 §12` plans ICO decode through WIC in the WPF desktop project and CUR through that decoder path, which §3 replaces with a managed codec here. The Gesso catalog plans XPM (IP-1807) and ICO (IP-1798) in `D03 T17 §8` and Scitex CT write (IP-1816) in `D03 T17 §9`; the Stilus catalog's legacy raster rows (NP-2391 to NP-2402) were backlog B-038 until the operator's 2026-09-27 decision planned them.

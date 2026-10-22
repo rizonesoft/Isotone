@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-pixel-engine
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-03 -- Isotone.Core Pixel Engine: Buffers, Resampling, Adjustments, and Bitmap Effects"
 depends_on: []
 track: C3
@@ -11,6 +11,8 @@ track: C3
 # TODO-03 -- Isotone.Core Pixel Engine: Buffers, Resampling, Adjustments, and Bitmap Effects
 
 > **Goal:** `Isotone.Core/Imaging/` holds one deterministic, golden-tested pixel engine in pure managed C# with `System.Numerics.Vector<T>` SIMD: tiled RGBA8, RGBA16, and float buffers with premultiplied alpha, one effect contract (parameter schema, seed, preview at scale, progress, cancellation, serializable description), resampling and geometric correction, palette quantization and dithering, the tonal and color adjustments, and every bitmap effect family both competitors ship (blur, sharpen, noise, distort, artistic, brush-stroke, sketch, texture, creative, camera, color-transform, edge, custom, pixelate, video). It lives in `Isotone.Core` by operator decision (2026-09-26) although Stilus (`D02 T12`) is its first consumer; Gesso's filter pipeline (`D03 T05 §1`) is its planned second consumer, so nothing in it references WPF, a SkiaSharp view, or a Stilus type.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` yet; `D01 T02 §1` creates the project and this file adds its `Imaging/` folder. Gesso already tiles its raster layers at 256 by 256 (`TileSize = 256` in `src/Gesso/src/Gesso.Core/Tiles/Tile.cs`), the tile size this engine adopts so its second consumer needs no re-tiling. Gesso has a filter plug-in contract (`src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`), and its filter commands in `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` only log that a dialog would open; `D03 T05 §1` routes them through this engine. Stilus's bitmap element `src/Stilus/Bezier.Core/Models/Elements/SvgImage.cs` (120 lines) holds encoded bytes only (`EmbeddedData`, `MimeType`) with no decoded pixel access, and `src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs` draws no `SvgImage` at all. There is no decisions log yet: the first section that records a decision creates `docs/dev/decisions.md`. **Corrected 2026-09-28:** `D00 T02 §5` (Phase 0) creates `docs/dev/decisions.md`; this file only adds rows.

@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-parity-develop
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-09 -- Albumen Parity: Develop"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L9
 # TODO-09 -- Albumen Parity: Develop
 
 > **Goal:** Albumen's develop module reaches Lightroom Classic and ACDSee Develop parity on the suite develop engine: the workspace (tool strip, before and after and reference views, pixel readouts, overlays, panel organization), history and snapshots, saving develop results as data, as new files, or (only when the user opts in) into the original, profiles and white balance, presence, the tone curve, color mixer, point color, color grading and ACDSee's Color EQ, color wheel, tone wheels, and split tone, detail, lens corrections with DNG opcodes and flat-field, Upright, transform, calibration and process versions, effects and crop extensions, masking with brushes, gradients, range masks and pixel targeting, remove, heal, clone and red eye, preset and default management, sync and auto sync, the ACDSee extras (Light EQ, soft focus, skin tune, develop LUTs, blend modes, and effects), soft proofing, and photo merges (HDR, panorama, HDR panorama, focus stacking). Every panel is a surface over `Isotone.Core/Develop/` (`D01 T07`) and stores its values in Albumen's edit stack (`D04 T02 §1`); no develop stage is implemented under `src/Albumen/` (the grep of `D04 T02 §2` stays green), the ACDSee-only stages are added to the suite engine by `D01 T07 §7` to `§9`, and the merge engines, the HDR display path, and the content-aware fill core move from Gesso to `Isotone.Core` and `Isotone.UI` on this second consumer. Originals are safe by default (operator decision 2026-09-27, "Safe by default, opt-in writes"): develop results live in the catalog and the XMP sidecar or become new files, and only the opt-in in-place policy of `D04 T11 §1` lets the user write a develop result into an original, through the suite atomic writer with an optional verified backup. **Corrected 2026-09-28:** the content-aware core is not moved by this file (§10's correction); `D03 T13 §3` builds it in `Isotone.Core`, reached through `D01 T07 §5`.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no source tree (`src/Albumen/` is absent), so every Albumen path below is a target path `D04 T01 §2` creates (`src/Albumen/Isotone.Albumen.Core/`, `src/Albumen/Isotone.Albumen.Desktop/`, `tests/Isotone.Albumen.Tests/`). `src/Isotone.Core/` is absent too, so the develop engine this file surfaces is planned, not built: `todo/01-core/TODO-07-isotone-develop.md` holds twelve sections, §7 to §9 added with this file for the ACDSee stages and §10 to §12 (the GPU develop path, the former backlog B-033) added on 2026-09-27. Albumen's develop file `todo/04-albumen/TODO-02-albumen-develop.md` already owns the edit stack, the pipeline hookup, the develop panel, crop, presets, export, Edit in Gesso, the 0.1.0 release, and accessibility in nine sections, which this file extends and never repeats. No lens database reader and no OpenCV binding exist anywhere in the repository yet (`D03 T14 §6` and `D03 T15 §5` add them in Gesso's parity phases, before this file runs). `standards/albumen.md` states the original-file guard as safe by default with the 2026-09-27 opt-in writes (recorded in the standard at the Albumen integration), which this file's §17 consumes through `D04 T11 §1`.

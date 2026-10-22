@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-adjustments
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-05 -- Gesso Filters and Adjustments for 0.1.0"
 depends_on: []
 track: I5
@@ -11,6 +11,8 @@ track: I5
 # TODO-05 -- Gesso Filters and Adjustments for 0.1.0
 
 > **Goal:** Gesso's Filter and Image, Adjustments menus run real operations: one filter pipeline with live preview, cancellation, and progress; the core tonal and color adjustments (brightness and contrast, levels, curves, hue and saturation); and the blurs and sharpening every photo needs, each proven against reference output and each one undo step.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `MainWindowViewModel` has `GaussianBlur`, `MotionBlur`, `SurfaceBlur`, `UnsharpMask`, `SmartSharpen`, `AddNoise`, and `ReduceNoise` commands whose bodies log "Opening ... dialog" and do nothing. `Gesso.Plugins.Abstractions` defines `IFilterPlugin` and `IPlugin`, which nothing implements or loads. `Gesso.Core/Layers/AdjustmentLayer.cs` exists as a model type. The legacy roadmap's filter phase (5, 64 items) is entirely open.

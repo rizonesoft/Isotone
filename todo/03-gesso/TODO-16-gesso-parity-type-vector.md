@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-type-vector
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-16 -- Gesso Parity: Type, Paths, Shapes, and Vector Layers"
 depends_on: []
 track: I16
@@ -11,6 +11,8 @@ track: I16
 # TODO-16 -- Gesso Parity: Type, Paths, Shapes, and Vector Layers
 
 > **Goal:** A Gesso user sets live point, paragraph, and frame text in any script with full character, paragraph, OpenType, and style control, draws and edits paths with the pen family, keeps a Paths panel with clipping paths and path booleans, and builds live shapes, GIMP-style vector layers, and frames, exporting them as SVG; everything stays editable until the user rasterizes. The code is the suite's, not a copy: §1 to §4 move the Stilus text engine, rich-text model, fonts, composers, styles, spell checking, and type panels (`D02 T10 §1` to `D02 T10 §13`) into `src/Isotone.Core/Text/` and `src/Isotone.UI/Text/`, and §5 to §7 move path geometry, booleans, node editing, and live-shape generators (`D02 T08 §1`, `D02 T08 §4`, `D02 T08 §6`, `D02 T08 §7`, `D02 T08 §10`) into `src/Isotone.Core/Vector/`, with Gesso-specific layers in `src/Gesso/Isotone.Gesso.Core/Layers/` and tools in `src/Gesso/Isotone.Gesso.Desktop/Tools/`. Text, shape, vector, and frame layers persist through the `D03 T08 §1` contract as `gesso:` elements beside a rendered PNG, paths as `gesso:paths`; every edit is one undoable command with one Serilog Information line.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Gesso's `TextLayer` (`src/Gesso/src/Gesso.Core/Layers/TextLayer.cs`, 118 lines) is a flat single-style model: one font family defaulting to Segoe UI, one size, one color, no runs, no shaping, no paragraphs. Its `ShapeLayer` (`src/Gesso/src/Gesso.Core/Layers/ShapeLayer.cs`, 92 lines) names eight fixed shape kinds ending in `RoundedRectangle` and holds no path geometry of its own. Its vector mask (`src/Gesso/src/Gesso.Core/Masks/VectorMask.cs`, 291 lines) keeps its own `VectorPathSegment` type, which §5 re-bases on the shared geometry so one path type remains. No shaping package is referenced in `Directory.Packages.props` and Stilus has no text folder yet (`src/Stilus/Bezier.Core/Text` is absent); `D02 T10 §1` adds both before this file runs. Stilus's path booleans and SVG reader live today in `src/Stilus/Bezier.Core/Services/PathOperationsService.cs` (351 lines) and `src/Stilus/Bezier.Core/Services/SvgParser.cs` (907 lines), which the Stilus parity sections extend and §5 then moves. Backlog B-018 (text layers) and B-019 (shape layers and vector tools) are promoted into §1 and §7; the integration that lands this file deletes both entries.

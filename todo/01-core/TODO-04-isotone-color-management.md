@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-color-management
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-04 -- Isotone.Core Color Management: ICC Transforms, Proofing, and Bitmap Color Modes"
 depends_on: []
 track: C4
@@ -11,6 +11,8 @@ track: C4
 # TODO-04 -- Isotone.Core Color Management: ICC Transforms, Proofing, and Bitmap Color Modes
 
 > **Goal:** Isotone.Core gains one color-management engine for the suite under `src/Isotone.Core/Color/`: a recorded decision (lcms2, MIT, through a thin `LibraryImport` P/Invoke wrapper with the native DLL bundled per RID, against Windows WCS as the rejected candidate), ICC v2 and v4 profile loading, RGB, CMYK, gray, and Lab transforms with rendering intents, black point compensation, proofing transforms, and a gamut API (§1 and §2, Phase 6), then bitmap color modes including duotone and multichannel (§3, Phase 10). It lives in Isotone.Core, not in an app, because the operator-mandated Isotone.Core pixel engine (`D01 T03 §3`) needs it for Lab, CMYK, and duotone bitmaps, and Gesso's ICC work (`D03 T04 §2`) and Albumen's output transform (`D04 T02 §2`) are its next consumers; Stilus's color model (`D02 T09 §1`) is its first. The engine part of backlog B-023 (Gesso color management) is superseded by this file's §1 decision. **Corrected 2026-09-26:** B-023's remaining Gesso part was promoted into `D03 T18 §4` by the Gesso parity plan, which consumes this engine.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `src/Isotone.Core/` does not exist yet; `D01 T02 §1` creates it. No ICC code exists anywhere in the tree: no lcms binding, no WPF `ColorContext` use, and no profile type in any `.cs` file under `src/`. Stilus's only color type is the sRGB byte struct `Color` in `src/Stilus/Bezier.Core/Models/Color.cs` with HSL and HSV math and no CMYK, Lab, or spot representation. The engine decision sat in the backlog as part of B-023 (Gesso color management), recorded there as undecided between an lcms2 wrapper and WCS; B-023 was reworded on 2026-09-26 to consume this file, and promoted the same day into `D03 T18 §4`.

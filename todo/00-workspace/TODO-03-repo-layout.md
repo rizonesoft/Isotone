@@ -2,7 +2,7 @@
 schema_version: 1
 id: repo-layout
 domain: 00-workspace
-status: draft
+status: blocked
 title: "TODO-03 -- Repository Layout, Visual Baselines, and App Icon Export"
 depends_on: []
 track: W3
@@ -11,6 +11,8 @@ track: W3
 # TODO-03 -- Repository Layout, Visual Baselines, and App Icon Export
 
 > **Goal:** Nothing in the tree is a leftover of the imports: each app's documentation lives under `docs/`, sample files sit with the test fixtures, empty folders are gone, both imported apps have committed captures of their current surfaces as a before record of the legacy look (never a fidelity source: the design in `docs/design/` is, under `standards/design-contract.md`), and every raster app icon (PNG sizes and the multi-resolution ICO of Stilus, Gesso, and Albumen) is generated from the committed SVG sources by one script whose check fails the gates when a raster drifts from its source.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The imports brought their own documentation folders: `src/Stilus/docs/` (a `README.md` indexing mostly missing pages, `components/vector-icon.md`, `ui/status-bar.md`) and `src/Gesso/docs/` (five `README.md` stubs under `api/`, `architecture/`, `plugins/`, `user-guide/`). Two loose SVG files sit at `src/Stilus/test.svg` and `src/Stilus/bezier-sample.svg`. `src/Gesso/.github/` is an empty directory left after the per-app workflows were removed. There is no `docs/captures/` folder, so a `Fidelity:` block that names one cannot be satisfied and `process-todo-section` would refuse every UI section.

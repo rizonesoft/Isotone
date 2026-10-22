@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-parity-formats
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-17 -- Gesso Parity: the File Menu and Every Format"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I17
 # TODO-17 -- Gesso Parity: the File Menu and Every Format
 
 > **Goal:** Gesso's File menu does everything Photoshop, Affinity Photo, and GIMP do to get pixels in and out (open as, place embedded and linked, revert, close all, save a copy, a format matrix, export versus save semantics, clipboard, screenshots, scanners, URLs, archives), and it reads and writes every format those three apps carry: PSD and PSB with live adjustments, styles, text, and smart objects; GIMP XCF; WebP, AVIF, HEIF, JPEG XL, JPEG 2000, JPEG XR, and QOI; OpenEXR, Radiance, PFM, PNM, FITS, and DICOM; PDF, Photoshop PDF, EPS, SVG, WMF, and EMF; the long tail of legacy and resource formats; the full JPEG, PNG, and TIFF option sets; and EXIF, IPTC, and XMP metadata. Every codec registers with one `FormatRegistry` in `src/Gesso/Isotone.Gesso.FileFormats/`, shared codecs live in `src/Isotone.Core/Formats/`, `src/Isotone.Core/Pdf/`, and `src/Isotone.Core/Metadata/` (moved from Stilus on this second use, never copied), native libraries are the ones `docs/dev/decisions.md` records with GPL-3.0 checks, and every reader and writer owes a format fidelity proof against a named reference implementation. Opening never changes a file; saving goes through the atomic writer; what a format cannot carry is reported, never silently dropped.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `src/Gesso/src/Gesso.FileFormats/` holds only the `IImageFormat` interface (`IImageFormat.cs`, 42 lines); no codec exists. The File menu in `src/Gesso/src/Gesso.UI/Views/MainWindow.xaml` has New, Open, Save, Save As, Export, and Exit, with no Place, Revert, Close, Import, or Print entry. The open and export filters are hard-coded strings in `src/Gesso/src/Gesso.UI/Services/IFileDialogService.cs` that already list WebP twice with no codec behind them; §1's registry replaces them. The installer (`installer/Gesso.iss`) registers a `.psd` association, and no Gesso fixture folder exists (`tests/fixtures/gesso` is absent). No PSD reader or writer exists anywhere in Stilus yet; `D02 T14 §13` builds both and `D03 T04 §5` moves the reader. Backlog B-022 (more formats and PSD write) is promoted into §5, with its PSD-write part in §2 and §13, EXR in §6, and GIF in §8; the integration that lands this file deletes the entry.

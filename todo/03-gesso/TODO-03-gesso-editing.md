@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-editing
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-03 -- Gesso Documents, Layers, Tools, and History"
 depends_on: []
 track: I3
@@ -11,6 +11,8 @@ track: I3
 # TODO-03 -- Gesso Documents, Layers, Tools, and History
 
 > **Goal:** Gesso edits real images: documents open in tabs with dirty tracking, every edit is an undo step in the suite history, a layers panel manages layers with blend modes and opacity, and the core tools (move, hand, zoom, marquee and lasso selections, brush and eraser, transform and crop, fill, gradient, and eyedropper) work on tiled layers with a color panel to drive them.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `Gesso.UI/Services/DocumentService.cs` is a stand-in: `NewDocumentAsync`, `OpenDocumentAsync`, `SaveDocumentAsync`, and `ExportAsync` log a line, `await Task.Delay(10)` (four such awaits), and return true without touching a document. `MainWindowViewModel` binds 39 commands; the layer (new, duplicate, delete, merge down, flatten), image (size, canvas size, rotate, flip), edit (cut, copy, paste), and filter commands only log. The model is further along than the UI: `Gesso.Core` has `GessoDocument`, `Layer` and its subclasses (raster, group, adjustment, text, shape, smart object), `LayerMask`, `VectorMask`, `ClippingMask`, `Selection`, `SelectionTools`, `QuickMask`, and `CommandHistory` with persistence and snapshots, with tests for the document, history, raster layer, and tiles. There is no tool abstraction and no layers panel.

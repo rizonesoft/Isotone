@@ -2,7 +2,7 @@
 schema_version: 1
 id: gesso-video-animation
 domain: 03-gesso
-status: draft
+status: blocked
 title: "TODO-23 -- Gesso Video, Timeline, Audio, and Frame Animation"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: I23
 # TODO-23 -- Gesso Video, Timeline, Audio, and Frame Animation
 
 > **Goal:** After its first release Gesso edits motion the way Photoshop, Affinity, and GIMP users expect, on the suite media stack instead of a private one: video files open as video layers whose altered frames are stored non-destructively beside a link to the untouched source, a Timeline panel arranges video, image, and audio tracks with keyframes, transitions, and comments, Render Video encodes through the shared encoder, a frame animation panel with onion skin and tweening builds GIF-style animations from layers, the animated formats (GIF, APNG, animated WebP, MNG, FLI and FLC) are authored with their frame options, and GIMP's animation filters and temporal blur generate frames. The operator promoted this work from the backlog on 2026-09-27 because they worried "features will be left behind" (B-043 video and audio, B-044 animation, deferred to after the first release on 2026-09-26). Decoding, playback, audio, and encoding are the suite media stack's (`D01 T11 §1` to `D01 T11 §4`), so Gesso owns only its document model, panels, and commands; a source media file is never written, and every save goes through Gesso's atomic document writer.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Gesso has no video, timeline, or animation code: its layer kinds are raster, adjustment, group, text, shape, and smart object (`src/Gesso/src/Gesso.Core/Layers/LayerType.cs`), and nothing under `src/Gesso/` mentions a video layer, a timeline, an animation frame, or onion skin. The suite media stack this file consumes (`D01 T11 §1` to `D01 T11 §4`) is planned, not built: there is no `src/Isotone.Core/`, and no Vortice package is referenced by the solution. Animated GIF and animated WebP authoring were explicitly left out of the codec sections (`D03 T17 §8` writes single-frame GIF, `D03 T17 §5` writes still WebP), and Save for Web (`D03 T18 §2`) has no animation controls. Paths below name the targets after the `D03 T01 §1` rename (`Isotone.Gesso.*`).

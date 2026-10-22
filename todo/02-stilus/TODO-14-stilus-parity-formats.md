@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-formats
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-14 -- Stilus Parity: File Formats, Export, and Web"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: N14
 # TODO-14 -- Stilus Parity: File Formats, Export, and Web
 
 > **Goal:** A Stilus user can open, place, and save the files the rest of the industry sends (SVG with every export option, PDF, Illustrator .ai, CorelDRAW .cdr and .cmx, EPS and PostScript, DWG and DXF, metafiles and plotter files, every common raster format, PSD, office documents), can batch-export artboards, pages, and assets for screens and the web with optimized previews, slices, links, and rollovers, can draw pixel-perfect, and can exchange artwork through the clipboard, placed files, and a scanner, with every reader and writer proven against committed fixtures and goldens from a named reference implementation.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `src/Stilus/Bezier.Core/Services/ImportService.cs` refuses PDF outright ("PDF import requires additional libraries") and routes AI, EPS, and PDF through three stub methods; the AI and EPS stubs only search the file text for an embedded `<svg` and otherwise fail ("Full AI support requires Adobe Illustrator"). `ImportService.ImportFromClipboard` already accepts SVG, image, and text clipboard payloads, but no app code calls it. `SvgExportOptions` in `SvgExporter.cs` has only minify, IDs, XML declaration, viewBox, decimal precision, and inline styles: no SVGZ, CSS, font, or image options. `ExportService` knows an ICO format (extension and MIME) that `D02 T06 §14` wires. Copy and Paste in `MainWindowViewModel` only set the status text (`D02 T03 §3` builds the real clipboard). `RawSvgDialog` shows the document's SVG source and copies it as plain text. `SkiaCanvas` passes a `PixelPreview` flag to the renderer only at zoom 8 or more, and `SkiaRenderer` threads the flag through without using it. No format package (PdfPig, PDFsharp, ACadSharp, NPOI, DocumentFormat.OpenXml) is referenced, there is no `tests/fixtures/` tree and no `docs/dev/decisions.md` yet, and `VectorElement` has no slice, rollover, or hyperlink model.

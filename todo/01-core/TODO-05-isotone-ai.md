@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-ai
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-05 -- Isotone.Core AI: OpenRouter Client, Keys, Consent, Provenance, and the Brand Kit"
 depends_on: []
 track: C5
@@ -11,6 +11,8 @@ track: C5
 # TODO-05 -- Isotone.Core AI: OpenRouter Client, Keys, Consent, Provenance, and the Brand Kit
 
 > **Goal:** The AI plumbing every suite app needs exists once: an OpenRouter client (chat with JSON-schema structured output, image generation and editing, vision, streaming, the model catalog, and key usage), a bring-your-own key stored with DPAPI, a per-task model choice in settings, an explicit-send gate with a send preview, a provenance record every AI action writes into the document, and a suite brand kit of palettes and styles. It lives in `Isotone.Core` (`src/Isotone.Core/AI/`, `src/Isotone.Core/Brand/`) and `Isotone.UI` (`src/Isotone.UI/AI/`) by operator decision (2026-09-26), not in Stilus, so Gesso and Albumen reuse the client, key store, consent gate, provenance, and brand kit instead of growing their own. Nothing leaves the machine without an explicit user action, and no key ever reaches `settings.json` or a log.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` and no `src/Isotone.UI/` yet; `D01 T02 §1` and `D01 T01 §1` create them. No source file in the repository talks to OpenRouter or any HTTP AI endpoint: neither Stilus nor Gesso contains an `HttpClient`, and nothing uses DPAPI (`ProtectedData`) for secrets. The Stilus SVG reader (`src/Stilus/Bezier.Core/Services/SvgParser.cs`) skips root `<metadata>` children, so a provenance record written there is lost on reopen until `D02 T07 §1` makes the reader keep it. Stilus's `ExportService` strips metadata by default (`RemoveMetadata = true`), which provenance export must respect as an explicit choice. Gesso keeps its own `SettingsService` today (the store `D01 T02 §2` replaces), so AI settings go only through the shared store. Albumen has no source tree yet; its reuse of this file is a stated consumer, not a dependency.

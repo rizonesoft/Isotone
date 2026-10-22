@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-ai
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-15 -- Stilus AI: Editable, Suite-Aware, Reproducible"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: N15
 # TODO-15 -- Stilus AI: Editable, Suite-Aware, Reproducible
 
 > **Goal:** Stilus's AI is its own design, not a clone of Firefly or Corel AI, built on three pillars. Every result is editable, structured output: the model returns JSON validated against a schema, applied as one named undoable command that creates real vector objects (named layers, document swatches, styles, and constraints), and raster results are placed images, never flattened into artwork. It is suite-aware: the shared brand kit from `D01 T05 §5` constrains color and type, and the Albumen photo to Gesso cleanup to Stilus trace pipeline works over files, offering a hand-off only when the other app is installed and refusing by name otherwise, with no runtime dependency. It is explainable and reproducible: every action writes a provenance record with prompt, model, parameters, and seed into the document's SVG metadata, and the provenance panel can re-run, compare, and revert. All of it runs through the user's own OpenRouter key, with nothing sent without an explicit action and a send preview.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** Stilus has no AI code and no HTTP client anywhere under `src/Stilus/`. The SVG reader (`src/Stilus/Bezier.Core/Services/SvgParser.cs`) drops root `<metadata>`, so embedded provenance needs the reader change owned by `D02 T07 §1` before §1 can prove a round trip. The history (`src/Stilus/Bezier.Core/Services/HistoryManager.cs`) keeps 100 steps by default, and one AI apply must occupy exactly one of them; `D01 T02 §4` replaces it with the suite `UndoHistory` before this file runs. Commands exist for add, delete, group, and property change (`src/Stilus/Bezier.Core/Commands/AddElementCommand.cs` and its siblings), the building blocks an AI apply composes. The Gesso source tree exists (`src/Gesso/src/Gesso.UI/App.xaml.cs`), so the Gesso hand-off in §11 has a real target to detect; Albumen has no source tree yet, so its hand-off is file-based and refused by name when absent. The shared AI core this file consumes (`D01 T05`) does not exist yet: there is no `src/Isotone.Core/`.

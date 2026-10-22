@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-plugin-host
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-09 -- Isotone.Core Plug-in Host: Photoshop-Compatible Filter, Format, and Acquire Plug-ins"
 depends_on: []
 frozen: false
@@ -12,6 +12,8 @@ track: C9
 # TODO-09 -- Isotone.Core Plug-in Host: Photoshop-Compatible Filter, Format, and Acquire Plug-ins
 
 > **Goal:** Stilus and Gesso (and later Albumen) run third-party Photoshop-compatible plug-ins (8BF filters, format plug-ins, and acquire plug-ins) through one host in `Isotone.Core`: every plug-in runs in an isolated `Isotone.PluginHost.exe` process (x64, with an x86 build for 32-bit plug-ins), never inside an app, talking to the app over a named pipe with pixel tiles in shared memory, so a plug-in that crashes, hangs, or corrupts memory costs the user one dialog, not their document; plug-ins are discovered from their PiPL resources in user-chosen folders; the filter record and its callback suites are emulated from observable behavior with PSFilterPdn (MIT) as the porting reference; and one plug-in manager in `Isotone.UI` lists folders, detected plug-ins, and their support status, disables a failing plug-in with a message, and shows About Plug-ins. The consuming apps own their menus and document commands (`D02 T12 §10`, `D03 T14 §11`), and Gesso's G'MIC collection (`D03 T14 §13`) runs its native core in the same host process.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** There is no `src/Isotone.Core/` project yet (`D01 T02 §1` creates it in Phase 2) and no plug-in host process anywhere in the suite: no `src/Isotone.PluginHost/` folder, and no source file mentions PiPL, a filter record, or an 8BF file. Gesso's only plug-in contract is its managed `IFilterPlugin` in `src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`, which processes 8-bit bytes in-process and is Gesso-only (its managed extension modules are `D03 T14 §12`, not this file). The Stilus and Gesso catalog rows for third-party plug-ins (NP-2027; IP-1033, IP-2250 to IP-2254) were backlog B-012 until the operator's 2026-09-27 decision planned them.

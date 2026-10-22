@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-editing
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-03 -- Editing Correctness: Undo, Clipboard, and the View Model Split"
 depends_on: []
 track: N3
@@ -11,6 +11,8 @@ track: N3
 # TODO-03 -- Editing Correctness: Undo, Clipboard, and the View Model Split
 
 > **Goal:** Every edit a Stilus user can make is one undo step, the Edit menu does what it says, the 1,050-line main view model is split by responsibility so each part can be tested, and no menu item in the shipped app is a status-text stub: each one works or is disabled with a tooltip naming the section that will build it.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `src/Stilus/Bezier.Desktop/ViewModels/MainWindowViewModel.cs` is 1,050 lines in twelve regions (window, status bar, context toolbar, view state, tool state, undo, file, edit, view, object, path, and help commands) with 33 `[ObservableProperty]` fields, and the main window binds 100 commands to it. `SelectTool.OnMouseUp` finishes a resize and a rotation with `// TODO: Add ResizeCommand for undo support` (line 315) and `// TODO: Add RotateCommand for undo support` (line 321): the transforms are applied live during the drag and nothing is recorded, so Ctrl+Z skips them. `ResizeCommand` and `RotateCommand` exist and are tested. `PropertyChangeCommand` exists and nothing uses it, not even a test: the context toolbar's `DocumentWidth`/`DocumentHeight` and the element geometry fields write straight to the model. `Cut`, `Copy`, `Paste`, `Duplicate`, `Delete`, `SelectAll`, `Preferences`, and `Close` only set `StatusText`; `Documentation`, `KeyboardShortcuts`, and `About` end in `// TODO` comments (lines 973, 980, 1046).

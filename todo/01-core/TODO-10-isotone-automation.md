@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-automation
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-10 -- Isotone.Core and Isotone.UI Automation: Actions, Scripting, the Automation Server, Extensions, the Command Line, and Batch"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: C10
 # TODO-10 -- Isotone.Core and Isotone.UI Automation: Actions, Scripting, the Automation Server, Extensions, the Command Line, and Batch
 
 > **Goal:** Stilus, Gesso, and Albumen share one automation system, built once in `Isotone.Core` and `Isotone.UI` after the first release (operator decision 2026-09-27, planning the work deferred "after the first release" as real sections because the operator worried "features will be left behind"): recorded actions that play back as one undo step, with sets, conditions, exposed parameters, and an Actions panel; action files and a library that imports Photoshop ATN; one C# scripting host on Roslyn with a trust model, a Scripts menu, startup scripts, and script events; a script editor and console with an object-model reference browser and a command listener; an off-by-default automation server on a per-user named pipe with an MCP bridge whose permissions the user grants; an extension SDK with collectible load contexts and an extension manager; one command-line grammar every app registers its switches into; and one batch runner with droplets, moved from Albumen on its second consumer. Each app's own object model, recordable commands, and catalog rows are its own sections (`D02 T19`, `D03 T22`, `D04 T17`); this file owns no catalog row.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Neither `src/Isotone.Core/` nor `src/Isotone.UI/` exists yet (`D01 T02 §1` and `D01 T01 §1` create them). The only scripting code in the repository is Gesso's `ScriptEngine` (62 lines in `src/Gesso/src/Gesso.Scripting/ScriptEngine.cs`, `EvaluateAsync<T>` and `RunAsync` over Roslyn scripting with no globals, no trust model, no undo, and no caller), which `D03 T01 §1` renames to `src/Gesso/Isotone.Gesso.Scripting/`. `Directory.Packages.props` already pins `Microsoft.CodeAnalysis.CSharp.Scripting` for it; AvalonEdit and the ModelContextProtocol SDK are not referenced. No app records actions, reads a command line beyond opening files, hosts extensions, or runs a batch: Albumen's batch engine (`Isotone.Albumen.Core/Batch/`, `ActivityManager`, `TokenEngine`) is planned in `D04 T11` and does not exist yet. There is no `docs/dev/decisions.md` yet (`D00 T02 §4` creates it), no `src/Isotone.Extensibility/`, and no `src/Isotone.Mcp/`. **Corrected 2026-09-28:** said `D00 T02 §4`; `D00 T02 §5` creates the decision log in Phase 0.

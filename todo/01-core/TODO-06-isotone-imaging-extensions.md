@@ -2,7 +2,7 @@
 schema_version: 1
 id: isotone-imaging-extensions
 domain: 01-core
-status: draft
+status: blocked
 title: "TODO-06 -- Isotone.Core Pixel Engine Extensions: the Filters Gesso Adds for Photoshop, Affinity, and GIMP Parity"
 depends_on: []
 track: C6
@@ -11,6 +11,8 @@ track: C6
 # TODO-06 -- Isotone.Core Pixel Engine Extensions: the Filters Gesso Adds for Photoshop, Affinity, and GIMP Parity
 
 > **Goal:** `src/Isotone.Core/Imaging/` grows every filter algorithm that Photoshop 27.10, Affinity Photo 3.3, and GIMP 3.2.6 ship and the `D01 T03` engine lacks, as effects in the same `EffectRegistry`, behind the same `IPixelEffect` contract, and proven through the same golden harness: a 32-bit float processing contract with linear or perceptual space per effect, GEGL abyss policies, a GEGL op-id map, and on-canvas control descriptors (§1); blur, lens blur and blur-gallery kernels, sharpening and deconvolution, denoise and noise (§2 to §5); distort, projection, map, pixelate, and halftone effects (§6, §7, §14); light and shadow, procedural noise, patterns and fractals, edges and stylize, artistic, and generic morphology and channel math (§8 to §13). This file extends `D01 T03` and never duplicates it: an existing class gains parameters, and a new class exists only for a new kernel. Gesso is its first consumer (the Filter menu `D03 T14 §2` and the surfaces `D03 T14 §3` to `§10`), Stilus's effect gallery (`D02 T12 §2`) lists every new effect through the shared registry with no Stilus change, and the develop engine (`D01 T07 §2`, `§3`) and Gesso AI fallbacks (`D03 T19 §8`, `§14`) consume the kernels later. Nothing in it references WPF, a SkiaSharp view, a Gesso type, or a Stilus type; no dialog lives here; no third-party texture, preset, or image is bundled; every effect is deterministic for a seed, cancellable at tile granularity, logs through the `D01 T03 §1` line, and is proven by a GIMP 3.2.6 or GEGL golden, a libvips or ImageMagick golden, or a committed snapshot golden plus the `D01 T03 §1` property suite.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` project yet, so the `D01 T03` engine this file extends exists only as a plan; every item below names `D01 T03` types (`IPixelEffect`, `EffectRegistry`, `EffectParameterSchema`, `EffectDescription`, `TileRunner`, `InverseMapper`, `InverseMapEffect`, `CounterRng`) as they will exist when that file ships. Gesso's Filter menu in `src/Gesso/src/Gesso.UI/Views/MainWindow.xaml` holds only three submenus (Blur, Sharpen, Noise). Gesso's only filter contract, `src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`, processes 8-bit bytes (`void Apply(Span<byte> imageData, ...)`) and has no point or curve parameter type, so no float processing path and no on-canvas control description exist anywhere in the suite. Gesso already models 32-bit float documents (`Bpc32 = 32` in `src/Gesso/src/Gesso.Core/Documents/BitDepth.cs`), which the §1 float contract serves. No GEGL operation id appears in any source file, so the §1 op map is new.

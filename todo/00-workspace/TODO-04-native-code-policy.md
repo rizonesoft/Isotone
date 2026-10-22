@@ -2,7 +2,7 @@
 schema_version: 1
 id: native-code-policy
 domain: 00-workspace
-status: draft
+status: blocked
 title: "TODO-04 -- The Native-Code Policy, Its Gate, and the Benchmark Harness"
 depends_on: []
 track: W4
@@ -11,6 +11,8 @@ track: W4
 # TODO-04 -- The Native-Code Policy, Its Gate, and the Benchmark Harness
 
 > **Goal:** The suite's answer to "C#, C, or C++?" is written down once, enforced by a gate, and backed by measurement: C# is the language of every app and library; native code enters only as a mature third-party library, a Windows system API, or an own kernel that a committed benchmark record shows the best managed and GPU paths cannot match; every native call goes through source-generated `LibraryImport` over a flat C ABI (never `DllImport`, never C++/CLI); every file-format reader the suite writes itself stays managed; and a BenchmarkDotNet harness produces the dated records that admission bar, the pixel engine, and every later "is it fast enough" question cite.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-30):** The operator asked on 2026-09-30 whether developing in C# loses optimization against C or C++ and whether the languages can be mixed, then accepted the recommendation above ("yes, add all to the todos, sounds good"). Nothing in the tree uses native interop yet: no `DllImport` or `LibraryImport` in any C# source, and no C or C++ source or `.vcxproj` anywhere. The heavy paths already lean on native code or the GPU through packages: SkiaSharp (Skia, C++) and ComputeSharp (C# compiled to HLSL on DirectX 12) in `Directory.Packages.props`. The plan already brings in many native libraries through `LibraryImport`, each with its own ad hoc rules: lcms2 in `D01 T04 §1` (the first, with the convention `tools/native/<lib>/build.ps1`, `SOURCE.txt` with the source hash, binaries under `runtimes/<rid>/native/`, and a `THIRD-PARTY-NOTICES.md` entry), then libmypaint, OpenColorIO through a C shim, libwebp, OpenEXR, PDFium, libjpeg-turbo, DjVuLibre, and CharLS in the Gesso and Albumen parity files, and LibRaw in `D04 T01 §3`; no standard states the convention, so each section re-derives it. `standards/gesso.md` asks for SIMD with a scalar path and "a benchmark names the budget before an optimization lands", but there is no benchmark project and no place a benchmark result is recorded. Gesso's tiles are managed `byte[]` rented from `ArrayPool` (`src/Gesso/src/Gesso.Core/Tiles/Tile.cs`). There is no `docs/dev/decisions.md` yet; `D00 T02 §5` creates it.

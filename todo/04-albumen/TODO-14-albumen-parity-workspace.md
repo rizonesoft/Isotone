@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-parity-workspace
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-14 -- Albumen Parity: Workspace, Preferences, and Help"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L14
 # TODO-14 -- Albumen Parity: Workspace, Preferences, and Help
 
 > **Goal:** Albumen's workspace reaches Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76 parity once every parity surface exists: modes and the module picker with the identity plate, panel groups, screen modes, and lights out; customizable toolbars, menus, favorite menus, dockable panes, saved workspaces, and touch input; one default keymap with alternative key sets, the shortcut editor, and the overlay; preference pages for general behavior, interface, file handling, the viewer and browse, performance, caches, color management, and display; the Originals group of the File Handling page where a user may opt in to writing into original files (embedding metadata, rotating in place, saving over the original, converting in place), every opt-in off by default and lockable off by an administrator, rendering the one policy `D04 T11 §1` owns (operator decision 2026-09-27: "Safe by default, opt-in writes"); settings storage with portable mode, administrator deployment, and migration from earlier installations; help, languages, and updates; themes and appearance; and external editors beyond Edit in Gesso. The code lives in `src/Albumen/Isotone.Albumen.Desktop/Workspace/`, `Preferences/`, and `Help/`, and in `src/Albumen/Isotone.Albumen.Core/Settings/`; it consumes the workspace, toolbar, menu, and shortcut-set frames Gesso moved to `src/Isotone.UI/Workspace/` (`D03 T20 §1` to `D03 T20 §3`), `PreferenceKeyRegistry` in `src/Isotone.Core/Settings/` and `WarningRegistry` in `src/Isotone.UI/Warnings/` (`D03 T20 §4`), `SystemInfoReport` (`D03 T20 §8`), the settings store (`D01 T02 §2`), the suite theme (`D01 T01 §3`), and the update check (`D05 T01 §4`), never a second copy. The relocated accessibility and localization audit (`D04 T02 §9`) runs after this file, last before Albumen 1.0.0.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code and no settings of its own: `src/Albumen` does not exist. The shared workspace frames do not exist yet either: `src/Isotone.UI` is absent, and Gesso's workspace file (`todo/03-gesso/TODO-20-gesso-parity-workspace.md`) is what moves them from Stilus into it. The Albumen installer `installer/Albumen.iss` is guarded by `AlbumenShipping` (three mentions) and has no `[Registry]` section, so it registers no file type or setting. The suite update check is planned as `## 4. The Update Check` in `todo/05-release/TODO-01-release-pipeline.md`. `scripts/apps.psd1` still names the legacy Albumen project path `src/Albumen/Albumen.UI/Albumen.UI.csproj`, which `D04 T01 §2` replaces. `standards/albumen.md` states today that Albumen never writes an original image; §10 of this file is the only place that guard gains its operator-approved opt-in exceptions, and the integration commit amends the standard to name them. **Corrected 2026-09-28:** `standards/albumen.md` already names the opt-ins; the policy is `D04 T11 §1`'s, and §10 renders its keys.

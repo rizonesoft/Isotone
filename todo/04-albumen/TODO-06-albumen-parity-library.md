@@ -2,7 +2,7 @@
 schema_version: 1
 id: albumen-parity-library
 domain: 04-albumen
-status: draft
+status: blocked
 title: "TODO-06 -- Albumen Parity: Library, Collections, Search, and the Catalog"
 depends_on: []
 frozen: true
@@ -12,6 +12,8 @@ track: L6
 # TODO-06 -- Albumen Parity: Library, Collections, Search, and the Catalog
 
 > **Goal:** Albumen's library reaches Lightroom Classic and ACDSee parity on top of the 0.1.0 grid, loupe, and catalog, over both imported and browsed photos: every grid, loupe, filmstrip, survey, and second-window view option; label sets, flag and rating cycles, ACDSee tagging, and configurable auto advance; stacks, auto-stacks, and virtual copies; the full filter bar with text rules, attribute filters, metadata browser columns, and filter presets; collection sets, target and quick collections, and a smart-collection rule editor with every criterion; ACDSee categories, auto categories, and special items; quick and advanced search with saved searches and disk search; the Folders and Catalog panels with synchronize, relocate, missing-photo recovery, and offline volumes; scheduled catalog backup and maintenance (promoting B-036); multiple catalogs with import from Albumen, Lightroom Classic, and Photoshop Elements catalogs; smart previews for offline editing; the dashboard; and the Painter and Quick Develop. The code lives in `src/Albumen/Isotone.Albumen.Core/` (`Catalog/`, `Library/`, `Search/`, `Collections/`, `Maintenance/`, `CatalogExchange/`, `SmartPreviews/`) and `src/Albumen/Isotone.Albumen.Desktop/` (`Library/`, `Panels/`, `Dashboard/`); it extends `D04 T01 §5` to `§11` in place, moves or deletes an original only as an explicit user file operation into the Recycle Bin, and never writes an original image's bytes.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Albumen has no code: `src/Albumen` does not exist, and the library this file extends is planned in `todo/04-albumen/TODO-01-albumen-foundation.md` (`D04 T01 §5` catalog, `§7` preview cache, `§8` grid, `§9` loupe, `§10` keywords and collections, `§11` culling and sidecars). The foundation file already names the catalog location setting `Albumen.Catalog.Path` and the preview cache limit `Albumen.Cache.SizeMB` that §10 and §11 extend, and `standards/albumen.md` requires forward-only migrations with a backup before each, which every schema change here follows. Catalog maintenance and library statistics were backlog B-036 until the Albumen integration of 2026-09-27 promoted the entry into §9 and §12. Checklist paths name the projects `D04 T01 §2` creates.

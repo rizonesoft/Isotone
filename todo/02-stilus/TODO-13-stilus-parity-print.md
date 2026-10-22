@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-print
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-13 -- Stilus Parity: Color Management, Print, Prepress, and PDF"
 depends_on: []
 track: N13
@@ -11,6 +11,8 @@ track: N13
 # TODO-13 -- Stilus Parity: Color Management, Print, Prepress, and PDF
 
 > **Goal:** A Stilus user can take a drawing to a print shop or a desktop printer without leaving Stilus: the document carries its ICC profiles and policies, the screen soft-proofs the press, File, Print drives any Windows printer with tiling, marks, bleed, separations, overprint, trapping, flattening, imposition, and variable data, and Publish to PDF writes exact vector PDF with spot colors, layers, PDF/X and PDF/A presets, and security through Stilus's own content-stream writer on PDFsharp (MIT). This promotes backlog B-011 (source `legacy-stilus-9`) and consumes the `Isotone.Core` color engine of `D01 T04 §1` to `D01 T04 §3`.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The document color mode is a bare enum in `src/Stilus/Bezier.Core/Services/FileOperationsService.cs` with RGB, CMYK, and Grayscale and no profile behind it, and the same file defines five print-category document presets (A4, A3, Letter, Legal, and Business Card) although nothing prints. No Stilus source touches WPF or .NET printing (`PrintDialog`, `System.Printing`, `XpsDocumentWriter`, `PrintVisual`). `src/Stilus/Bezier.Core/Services/ExportDialogService.cs` advertises a "Print" preset described as a high-quality PDF with no writer behind it, and File, Export, PDF in `src/Stilus/Bezier.Desktop/ViewModels/MainWindowViewModel.cs` only sets status text; `D02 T04 §4` replaces it with an `SKDocument` exporter that §14 of this file supersedes. No PDF library is referenced by `Directory.Packages.props`, and `src/Stilus/Bezier.Core/Services/ImportService.cs` names the missing PDF library as its blocker. `src/Isotone.Core`, which will host the color engine this file consumes, does not exist yet; neither does `docs/dev/decisions.md` for the printing-path and PDFsharp rows, nor any capture home under `docs/captures`.

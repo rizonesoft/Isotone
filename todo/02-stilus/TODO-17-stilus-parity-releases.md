@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-parity-releases
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-17 -- Stilus Parity Releases: 0.2.0 to 1.0.0"
 depends_on: []
 track: N17
@@ -11,6 +11,8 @@ track: N17
 # TODO-17 -- Stilus Parity Releases: 0.2.0 to 1.0.0
 
 > **Goal:** Each parity phase ends in a real, independently installable Stilus release: every section of the phase stamped, every catalog row the phase plans reconciled against its section's stamp, the changelog and user guide current, the installer proven on a clean machine, and a `stilus-v*` tag whose GitHub release carries verified assets; `stilus-v1.0.0` declares parity with the catalog complete for every row planned in Phases 4 to 13, and `stilus-v1.1.0` (Phase 41) ships the two capabilities that wait on other apps' code: GIMP XCF import on Gesso's XCF reader and camera RAW import on the shared RAW decoder (operator decision 2026-09-27, "Group 1: plan them all"), and `stilus-v1.2.0` (Phase 42) ships the suite automation system in Stilus: recorded actions, C# scripts, extensions, the automation and MCP servers, the command line, and batch processing with droplets (operator decision 2026-09-27 planning the work deferred after the first release as real sections).
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The release checklist every section here runs is `standards/release.md` (seven lines, each quoted from a real run). The previous release section is `D02 T05 §4` (Stilus 0.1.0), which has not shipped: no `stilus-v*` tag exists yet. The catalog the releases reconcile exists at `docs/parity/stilus-parity.md` (2,802 features, 2,680 of them planned to sections since the operator's 2026-09-27 promotions), but the parity query every release quotes does not exist until `D00 T01 §6` ships it (`scripts/todo-parity.py` is absent). The Stilus user guide folder `docs/user/stilus/` does not exist yet; `D06 T01 §1` creates it. **Corrected 2026-09-28:** said 2,680 planned; the catalog plans 2,692 (NP-2790 joined `D02 T12 §7` on 2026-09-28). **Corrected 2026-10-21:** `D00 T01 §6` shipped `scripts/todo-parity.py` and `python scripts/todo-graph.py query parity --catalog stilus` for the Stilus catalog; the claim below now says it exists.

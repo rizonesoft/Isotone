@@ -2,7 +2,7 @@
 schema_version: 1
 id: stilus-release-0-1
 domain: 02-stilus
-status: draft
+status: blocked
 title: "TODO-05 -- Stilus 0.1.0"
 depends_on: []
 track: N5
@@ -11,6 +11,8 @@ track: N5
 # TODO-05 -- Stilus 0.1.0
 
 > **Goal:** Stilus ships its first real release, `stilus-v0.1.0`: an About dialog that says what it is, a keyboard-shortcuts dialog generated from the one keymap, a Help menu whose every item works, a user guide covering every surface, and a tag that produces a verified installer and portable ZIP on `download.rizonesoft.com`, with a GitHub release that links them.
+
+> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `MainWindowViewModel.About`, `KeyboardShortcuts`, and `Documentation` end in `// TODO` comments and do nothing (lines 1046, 980, 973); `CheckUpdates` sets status text. There is no About or shortcuts dialog anywhere in `src/Stilus/`. No Stilus tag exists; the release workflow has not run (its dry run is `D00 T02 §7`). `CHANGELOG.md` has a Stilus section with no release under it, and `docs/user/README.md` has no Stilus guide pages. **Corrected 2026-09-27:** operator decisions that day: the copyright holder is Rizonetech (Pty) Ltd and Rizonesoft is its brand, so the About dialog states "Copyright (C) 2025-2026 Rizonetech (Pty) Ltd" and "Rizonesoft is a brand of Rizonetech (Pty) Ltd." with the GPL source offer (the About section of `docs/design/components/Dialog/README.md`); and binaries are distributed only from rizonesoft.com (`download.rizonesoft.com`), never attached to a GitHub release, so the release in §4 uploads through `release.yml` to storage the operator provisions in `D99 T01 §8`, and §4 now depends on that step.
