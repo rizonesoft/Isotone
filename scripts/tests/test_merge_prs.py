@@ -142,7 +142,7 @@ class FakeGh:
             pending = {self.pending_field: "UNKNOWN"} if self.views[args[2]] <= limit else {}
             return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN", **pending,
                                    mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
-        if args[0] == "api" and "/activity?" in args[1]:
+        if args[0] == "api" and "/activity?" in args[-1]:
             return json.dumps([{"before": b, "after": a, "activity_type": "push"} for b, a in self.pushes])
         if args[:2] == ("run", "list") and "--branch" in args:
             wf = args[args.index("--workflow") + 1]
@@ -1187,9 +1187,16 @@ class MergeTests(Base):
         self.assertEqual((code, "validate is red on main" in out), (3, True))
 
     def test_every_github_call_names_the_origin_repository(self):
-        gh = FakeGh([pr(1)])
+        # Main's head has no plan-gates run of its own, so the push history is read too (independent review round 8):
+        # `gh api` takes the host with --hostname and the owner and name in its REST path.
+        gh = FakeGh([pr(1)], main_runs={"plan.yml": self.run_on("e" * 40, n=1), "build.yml": self.run_on(HEAD, n=2)})
         self.call(["run", "--campaign"], gh, FakeGit(origin="git@github.com:someone/Fork.git"))
-        self.assertTrue(gh.calls and all("--repo" in c and c[c.index("--repo") + 1] == "github.com/someone/Fork" for c in gh.calls))
+        api = [c for c in gh.calls if c[0] == "api"]
+        rest = [c for c in gh.calls if c[0] != "api"]
+        self.assertEqual(api, [("api", "--hostname", "github.com",
+                                "repos/someone/Fork/activity?ref=refs/heads/main&activity_type=push&per_page=100")])
+        self.assertTrue(rest and all("--repo" in c and c[c.index("--repo") + 1] == "github.com/someone/Fork"
+                                     for c in rest))
 
     def test_an_origin_that_is_not_github_fails(self):
         for origin in ("https://example.com/x.git", "https://notgithub.com/rizonesoft/Isotone.git",

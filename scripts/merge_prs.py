@@ -426,8 +426,12 @@ def _pushes(repo: str, root: Path, base: str, head: str, gh_fn) -> list[tuple[st
     """The pushes to main from `base` to `head` as (before, after) pairs, walked back from `head` through main's push
     activity (GET /repos/{repo}/activity, the newest 100), or None when the chain cannot be followed all the way to
     `base` (unread, older than that page, or a branch creation), which the caller reads conservatively."""
+    # `repo` carries its host (`repository`): the REST path takes the owner and name, and the host is pinned with
+    # --hostname as --repo pins it elsewhere (independent review round 8).
+    host, _, slug = repo.partition("/")
     try:
-        acts = json.loads(gh_fn("api", f"repos/{repo}/activity?ref=refs/heads/main&activity_type=push&per_page=100",
+        acts = json.loads(gh_fn("api", "--hostname", host,
+                                f"repos/{slug}/activity?ref=refs/heads/main&activity_type=push&per_page=100",
                                 cwd=root) or "[]")
     except (Failed, ValueError):
         return None
