@@ -160,8 +160,8 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T01 §12` | Merge dependency PRs at section boundaries                       |  10   |
 | [x] | `D00 T01 §15` | Unattended merges read main's CI back                            |   4   |
 | [ ] | `D00 T01 §13` | Run-guard robustness                                             |   8   |
-| [ ] | `D00 T01 §14` | Retire the unused verify-agent-tiers.mjs                         |   3   |
-| [ ] | `D00 T01 §16` | Unattended merger health                                         |   5   |
+| [ ] | `D00 T01 §14` | Retire the unused verify-agent-tiers.mjs                         |   5   |
+| [ ] | `D00 T01 §16` | Unattended merger health                                         |   9   |
 | [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  27   |
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  23   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
