@@ -59,6 +59,7 @@ track: N16
 - -> XREF: D02 T15 §1 -- the AI usage indicator the application bar shows
 - -> XREF: D03 T20 §1 -- Gesso parity workspace cites §1: the workspace frame it moves to `Isotone.UI`; §2: the toolbar, toolbox, and status bar frame it moves; §3: the menu, context menu, and shortcut-set frame it moves; §4: `PreferenceKeyRegistry` and the coverage test moved to `Isotone.Core/Settings/`; §5: `WarningRegistry` moved to `Isotone.UI`; §6: brightness themes and `ThemeService` consumed, `SystemInfoReport`, `GpuDiagnostics`, and the UI-scale helpers moved; §7: the welcome frame moved to `Isotone.UI/Welcome/`; §8: `PressureCurve` and the Surface Dial menu moved; §9: rich tooltips consumed
 - -> XREF: D02 T19 §1 -- Stilus automation adds Window, Actions, File, Scripts, and File, Automate to §3's menus and shortcut sets
+- -> XREF: D01 T13 §3 -- the Stilus layout map that §1's default workspace (menus, toolbars and tools, panel layout, and shortcut set) comes from, and that Reset restores
 
 ## Outcome
 
@@ -124,6 +125,7 @@ A professional arranges the window for the task in front of them and carries tha
 - [ ] Add the application bar in `src/Stilus/Isotone.Stilus.Desktop/Views/ApplicationBar.xaml`: workspace switcher, command search (`D02 T06 §12`), and AI usage (`D02 T15 §1`); no account or cloud items. Done when: each control works in a driven run and the capture shows no sign-in item.
 - [ ] Capture each preset to `docs/captures/stilus/workspaces/<preset>.png`. Done when: six captures exist and differ in layout.
 - [ ] Update `docs/user/stilus/workspaces.md` with presets, saving, import and export, F8 reset, and panel locking. Done when: every control of the switcher and menu is documented.
+- [ ] Make `docs/design/layout-maps/stilus.md` (`D01 T13 §3`) the default workspace: the shipped menus, toolbars and tools, panel layout, and shortcut set are generated from the map, Reset returns to it, and `StilusLayoutMapTests` runs against the default. The CorelDRAW 2026 shortcut table in the map is offered as a second shortcut set (`D02 T16 §3`). Done when: rearranging panels and tools and pressing Reset makes `StilusLayoutMapTests` pass again.
 - [ ] Commit: `"stilus: workspaces with presets, save, reset, import, and export"`
 
 **Test checkpoint:** Format fidelity proof and driven run: `dotnet test Isotone.slnx --filter "FullyQualifiedName~Workspace"` exits 0 with `WorkspaceServiceTests` and `WorkspaceFileTests` reporting; the committed `.stilusws` fixture imports and re-exports with every part equal; switching presets in a driven run changes the captured layout and logs one line per switch. Cheaper substitute that fails: a workspace that saves only dock positions, which the part-by-part comparison rejects.

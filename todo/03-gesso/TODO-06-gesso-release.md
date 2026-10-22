@@ -27,6 +27,7 @@ track: I6
 - -> XREF: D03 T08 §1 -- Gesso parity document and view cites §3: Gesso 0.1.0 ships before every section there
 - -> XREF: D03 T20 §8 -- Gesso parity workspace cites §1: the Help menu, About, and shortcuts dialog D03 T20 §8 extends
 - -> XREF: D03 T21 §1 -- the Gesso parity releases cites §3: the 0.1.0 release procedure every section repeats; D03 T21 §1 follows it; §2: the menu audit each release re-runs so no item is disabled without an owner
+- -> XREF: D01 T13 §4 -- the Gesso layout map (from Photoshop 27.11) that §4 makes Gesso's menus, tools, and panels follow, with `D01 T13 §6`'s conformance tests
 
 ## Outcome
 
@@ -44,7 +45,8 @@ track: I6
 | :---: | :-----: | ------------------------------------------------- | --------------------------------------------------------------------------- | :----: |
 |   1   |   §1    | About, shortcuts, and help in Gesso               | D01 T01 §4, D03 T03 §4                                                      |  [ ]   |
 |   2   |   §2    | Every Gesso menu command works or names its owner | §1, D03 T03 §8, D03 T04 §6, D03 T05 §3                                      |  [ ]   |
-|   3   |   §3    | Gesso 0.1.0                                       | §2, D03 T01 §4, D03 T02 §5, D06 T01 §2, D05 T01 §1                          |  [ ]   |
+|   3   |   §4    | Gesso's window follows the Photoshop layout map   | §2, D01 T13 §4, D01 T13 §6                |  [ ]   |
+|   4   |   §3    | Gesso 0.1.0                                       | §2, D03 T01 §4, D03 T02 §5, D06 T01 §2, D05 T01 §1, §4 |  [ ]   |
 
 ---
 
@@ -106,6 +108,29 @@ Gesso's first release, following `standards/release.md` exactly as Stilus's did.
 **Requires:** display-session -- launching the installed app on the clean machine needs an interactive desktop
 
 **Test checkpoint:** `gh release view gesso-v0.1.0 --json isPrerelease,assets,body` shows a non-prerelease, no assets, and a body linking the installer, the ZIP, and `SHA256SUMS` under `https://download.rizonesoft.com/gesso/0.1.0/`; every checklist line has quoted evidence; the downloaded installer's hash matches `SHA256SUMS`. Cheaper substitute that fails: tagging without the clean-machine run.
+
+## 4. Gesso's Main Window Follows the Photoshop Layout Map
+
+The operator asked on 2026-10-22 that "anybody using photoshop can use our system", with "buttons, features and panels" also "in the expected places": each app's main window follows its layout map, so a user of its reference program finds every command, tool, panel, and button where their hands expect it. `D01 T13 §4` writes `docs/design/layout-maps/gesso.md` from the reference program; this section makes Gesso's real menus, tool rail, options bars, and default panel layout match it and adds the tests that keep them matched. It builds on §2, which makes every menu item work or name its owning section, and it ships before Gesso 0.1.0 (§3).
+
+**Fidelity:** Gesso main window: menu bar and every menu, the tool rail, the options bar, and the default panel layout -- the design named on the Design line below, per standards/design-contract.md, and the layout map `docs/design/layout-maps/gesso.md` from `D01 T13 §4` (cited on the Design line once it exists, `D01 T13 §7`); goldens under docs/captures/golden/gesso/main-window/.
+**Design:** docs/design/components/Menu/README.md, docs/design/components/ToolRail/README.md, docs/design/components/OptionsBar/README.md, docs/design/components/Panel/README.md, docs/design/components/Tooltip/README.md, docs/design/shell-layout.md#gesso-raster -- states: all in spec -- themes: all four -- density: both
+**Job:** a user of Photoshop finds each command, tool, panel, and button, its position, and its shortcut where their hands expect them. Consumer: the user; the layout map tests are the developer's consumer.
+**Treatment:** the main window rearranged to the map: menus reordered, relabelled, and rebound; tools regrouped and reordered with their shortcuts; each built tool's options bar in the map's order; the default workspace's panels docked, grouped, and ordered as the map places them, with their buttons in order; `planned` items disabled in place with the `Planned: <ref>` tooltip, `own` items after the reference program's behind a separator, `omitted` items absent; and `GessoLayoutMapTests` over `D01 T13 §6`'s `LayoutMapConformance`. Cheaper substitute that fails the checkpoint: hiding what is not built yet, which moves everything after it.
+**Chrome:** consume the shared `Menu`, `ToolRail`, `OptionsBar`, and panel styles, the docking manager's default layout, and the tooltip style; bind shortcuts through the app's one keymap. Do not build a second command or tool list.
+
+**Requires:** display-session -- the driven pass that opens every menu, tool, and panel needs an interactive desktop
+
+- [ ] Reorder and relabel the main menu to the map's Menus part: every top-level menu in the map's order, every item in its position with its label, separators where the map has them, `own` items after the reference program's. Done when: the menu reads top to bottom as the map does.
+- [ ] Rearrange the tool rail to the map's Tools part: groups in order, each group's tools with the default first, each tool's shortcut and Shift cycle, `planned` tools disabled in place with their tooltip. Done when: the rail reads top to bottom as the map does.
+- [ ] Order each built tool's options bar controls as the map's Options bar part does. Done when: the options bar of each built tool reads left to right as the map does.
+- [ ] Make the default workspace the map's Panels part: each built panel docked on its side, in its tab group and order, collapsed or open as mapped, with its buttons in the mapped order and its panel menu items in order; each `planned` panel listed disabled in the Window menu with its owner. Done when: a fresh profile opens with the mapped layout.
+- [ ] Bind every shortcut in the map's Menus, Tools, and Shortcuts parts through the app's keymap, so the shown shortcut and the gesture that fires the command come from one place. Done when: each mapped shortcut fires its command in a driven run of a sample (one per menu and per tool group quoted).
+- [ ] Add `GessoLayoutMapTests`: build a `LayoutSnapshot` from the loaded main window with a fresh profile and assert `LayoutMapConformance` reports no difference from the map. Done when: the test passes, and swapping two tools in a group, or two menu items, fails it with both named (quoted, then restored).
+- [ ] Update the app's user guide pages on the window, menus, and tools, and the shortcuts dialog's list, so they show the map's labels, places, and shortcuts. Done when: a sample of five features reads the same in the window, the dialog, and the guide.
+- [ ] Commit: `"gesso: menus, tools, and panels follow the Photoshop layout map"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Isotone.slnx --filter "FullyQualifiedName~GessoLayoutMapTests|FullyQualifiedName~MenuAuditTests"` exits 0; moving one tool or menu item fails `GessoLayoutMapTests` naming it (quoted, then restored); a driven pass with a fresh profile opens every top-level menu, selects every built tool, and shows the default panels, and the app's log has 0 `[ERR]` lines; the main window's golden is approved through the visual harness. Cheaper substitute that fails: a screenshot compared by eye with the reference program, which the next layout change silently breaks.
 
 ## Verification
 

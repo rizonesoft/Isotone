@@ -47,6 +47,7 @@ track: L1
 - -> XREF: D04 T13 §5 -- Albumen parity formats cites §4: the RAW decoder D04 T13 §5 extends and D04 T13 §7 writes DNG from; §6: the import dialog that offers D04 T13 §5's RAW+JPEG pair choice
 - -> XREF: D01 T01 §8 -- the shared window chrome (with `D01 T01 §7`'s `IsotoneWindow`), document tabs, dock theme, and status bar §2's shell is built on
 - -> XREF: D04 T14 §1 -- Albumen parity workspace cites §2: the shell, splash, and About D04 T14 §1 and D04 T14 §7 extend; §7: the preview cache D04 T14 §5 sizes and purges
+- -> XREF: D01 T13 §5 -- the Albumen layout map (from Lightroom Classic 15.5.1, per module) that §12 makes Albumen's menus, tool strip, and panels follow, with `D01 T13 §6`'s conformance tests
 
 ## Job and non-goals
 
@@ -102,6 +103,7 @@ From documentation, to be confirmed and extended by driven runs in §1 (each row
 |   9   |   §9    | Loupe, compare, and filmstrip                            | §8                             |  [ ]   |
 |  10   |   §10   | Keywords, collections, and smart collections             | §8                             |  [ ]   |
 |  11   |   §11   | Ratings, flags, labels, and XMP sidecars                 | §8                             |  [ ]   |
+|  12   |   §12   | Albumen's window follows the Lightroom Classic map  | §2, D01 T13 §5, D01 T13 §6     |  [ ]   |
 
 ---
 
@@ -302,6 +304,31 @@ Culling is ratings (0 to 5), flags (pick, reject, none), and color labels, set f
 - [ ] Commit: `"albumen: keyboard culling and safe XMP sidecars"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `CullingTests` and the sidecar tests reporting; the unchanged-originals assertion passes; darktable shows a rating Albumen wrote (capture). Cheaper substitute that fails: embedding XMP in originals, which the unchanged-originals test catches.
+
+## 12. Albumen's Main Window Follows the Lightroom Classic Layout Map
+
+The operator asked on 2026-10-22 that "anybody using photoshop can use our system", with "buttons, features and panels" also "in the expected places": each app's main window follows its layout map, so a user of its reference program finds every command, tool, panel, and button where their hands expect it. `D01 T13 §5` writes `docs/design/layout-maps/albumen.md` from the reference program; this section makes Albumen's real menus, tool rail, options bars, and default panel layout match it and adds the tests that keep them matched. It builds on the audit its first item adds, which makes every menu item work or name its owning section, and it ships before Albumen 0.1.0 (`D04 T02 §8`).
+
+**Fidelity:** Albumen main window: menu bar and every menu, the tool rail, the options bar, and the default panel layout -- the design named on the Design line below, per standards/design-contract.md, and the layout map `docs/design/layout-maps/albumen.md` from `D01 T13 §5` (cited on the Design line once it exists, `D01 T13 §7`); goldens under docs/captures/golden/albumen/main-window/.
+**Design:** docs/design/components/Menu/README.md, docs/design/components/ToolRail/README.md, docs/design/components/OptionsBar/README.md, docs/design/components/Panel/README.md, docs/design/components/Tooltip/README.md, docs/design/shell-layout.md#albumen-darkroom-and-photo-manager -- states: all in spec -- themes: all four -- density: both
+**Job:** a user of Lightroom Classic finds each command, tool, panel, and button, its position, and its shortcut where their hands expect them. Consumer: the user; the layout map tests are the developer's consumer.
+**Treatment:** the main window rearranged to the map: menus reordered, relabelled, and rebound; tools regrouped and reordered with their shortcuts; each built tool's options bar in the map's order; the default workspace's panels docked, grouped, and ordered as the map places them, with their buttons in order; `planned` items disabled in place with the `Planned: <ref>` tooltip, `own` items after the reference program's behind a separator, `omitted` items absent; and `AlbumenLayoutMapTests` over `D01 T13 §6`'s `LayoutMapConformance`. Cheaper substitute that fails the checkpoint: hiding what is not built yet, which moves everything after it.
+**Chrome:** consume the shared `Menu`, `ToolRail`, `OptionsBar`, and panel styles, the docking manager's default layout, and the tooltip style; bind shortcuts through the app's one keymap. Do not build a second command or tool list.
+
+**Requires:** display-session -- the driven pass that opens every menu, tool, and panel needs an interactive desktop
+
+- [ ] Give the shell a planned-commands table and a `MenuAuditTests` as Stilus (`D02 T03 §5`) and Gesso (`D03 T06 §2`) have, from the shared helper if `D03 T06 §2` moved it to `Isotone.UI`: every menu item works or is disabled with a `Planned: <ref>` tooltip that resolves. Done when: the audit test passes.
+- [ ] Switch the menus, tool strip, and panels with the page (Browse, Develop, and the output pages), as the map's contexts switch them with Lightroom Classic's modules, and run `AlbumenLayoutMapTests` once per built context. Done when: each page shows its context's layout and its test passes.
+- [ ] Reorder and relabel the main menu to the map's Menus part: every top-level menu in the map's order, every item in its position with its label, separators where the map has them, `own` items after the reference program's. Done when: the menu reads top to bottom as the map does.
+- [ ] Rearrange the tool rail to the map's Tools part: groups in order, each group's tools with the default first, each tool's shortcut and Shift cycle, `planned` tools disabled in place with their tooltip. Done when: the rail reads top to bottom as the map does.
+- [ ] Order each built tool's options bar controls as the map's Options bar part does. Done when: the options bar of each built tool reads left to right as the map does.
+- [ ] Make the default workspace the map's Panels part: each built panel docked on its side, in its tab group and order, collapsed or open as mapped, with its buttons in the mapped order and its panel menu items in order; each `planned` panel listed disabled in the Window menu with its owner. Done when: a fresh profile opens with the mapped layout.
+- [ ] Bind every shortcut in the map's Menus, Tools, and Shortcuts parts through the app's keymap, so the shown shortcut and the gesture that fires the command come from one place. Done when: each mapped shortcut fires its command in a driven run of a sample (one per menu and per tool group quoted).
+- [ ] Add `AlbumenLayoutMapTests`: build a `LayoutSnapshot` from the loaded main window with a fresh profile and assert `LayoutMapConformance` reports no difference from the map. Done when: the test passes, and swapping two tools in a group, or two menu items, fails it with both named (quoted, then restored).
+- [ ] Update the app's user guide pages on the window, menus, and tools, and the shortcuts dialog's list, so they show the map's labels, places, and shortcuts. Done when: a sample of five features reads the same in the window, the dialog, and the guide.
+- [ ] Commit: `"albumen: menus, tools, and panels follow the Lightroom Classic layout map"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Isotone.slnx --filter "FullyQualifiedName~AlbumenLayoutMapTests|FullyQualifiedName~MenuAuditTests"` exits 0; moving one tool or menu item fails `AlbumenLayoutMapTests` naming it (quoted, then restored); a driven pass with a fresh profile opens every top-level menu, selects every built tool, and shows the default panels, and the app's log has 0 `[ERR]` lines; the main window's golden is approved through the visual harness. Cheaper substitute that fails: a screenshot compared by eye with the reference program, which the next layout change silently breaks.
 
 ## Verification
 

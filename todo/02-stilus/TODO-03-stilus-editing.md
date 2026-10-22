@@ -32,6 +32,7 @@ track: N3
 - -> XREF: D02 T07 §13 -- paste variants and quick duplicates on §3's clipboard, and the property bar (`D02 T07 §8`) that writes through §4's property commands
 - -> XREF: D02 T08 §13 -- the transform tools that record drags as undo steps the way §1 does
 - -> XREF: D02 T14 §19 -- more clipboard flavors and OLE objects on §3's `ClipboardService`
+- -> XREF: D01 T13 §3 -- the Stilus layout map (from Illustrator 30.8.2) that §6 makes the main window's menus, tools, and panels follow, with `D01 T13 §6`'s conformance tests
 
 ## Outcome
 
@@ -54,6 +55,7 @@ track: N3
 |   3   |   §3    | Clipboard and the Edit menu                          | §2, D02 T02 §3                                               |  [ ]   |
 |   4   |   §4    | Property edits are undo steps                        | §2                                                           |  [ ]   |
 |   5   |   §5    | Every menu command works or names its owner          | §3, §4, D02 T02 §4, D02 T02 §5, D02 T02 §6, D02 T02 §8, D02 T04 §1, D02 T04 §4, D02 T04 §5 |  [ ]   |
+|   6   |   §6    | The main window follows the Illustrator layout map   | §5, D01 T13 §3, D01 T13 §6, D02 T02 §8                       |  [ ]   |
 
 ---
 
@@ -153,6 +155,29 @@ The surface-completeness rule in `todo/README.md` says every control on a shippe
 - [ ] Commit: `"stilus: every menu command works or names the section that builds it"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with `MenuAuditTests` reporting; for every ref in `PlannedCommands.cs`, `python scripts/todo-graph.py resolve '<ref>'` exits 0 or 4 (quote the loop's output); a driven pass clicks every enabled menu item on a sample document and the log has 0 `[ERR]` lines. Cheaper substitute that fails: removing the unfinished items from the menu.
+
+## 6. The Main Window Follows the Illustrator Layout Map
+
+The operator asked on 2026-10-22 that "anybody using photoshop can use our system", with "buttons, features and panels" also "in the expected places": each app's main window follows its layout map, so a user of its reference program finds every command, tool, panel, and button where their hands expect it. `D01 T13 §3` writes `docs/design/layout-maps/stilus.md` from the reference program; this section makes Stilus's real menus, tool rail, options bars, and default panel layout match it and adds the tests that keep them matched. It builds on §5, which makes every menu item work or name its owning section, and it ships before Stilus 0.1.0 (`D02 T05 §4`).
+
+**Fidelity:** Stilus main window: menu bar and every menu, the tool rail, the options bar, and the default panel layout -- the design named on the Design line below, per standards/design-contract.md, and the layout map `docs/design/layout-maps/stilus.md` from `D01 T13 §3` (cited on the Design line once it exists, `D01 T13 §7`); goldens under docs/captures/golden/stilus/main-window/.
+**Design:** docs/design/components/Menu/README.md, docs/design/components/ToolRail/README.md, docs/design/components/OptionsBar/README.md, docs/design/components/Panel/README.md, docs/design/components/Tooltip/README.md, docs/design/shell-layout.md#stilus-vector -- states: all in spec -- themes: all four -- density: both
+**Job:** a user of Illustrator finds each command, tool, panel, and button, its position, and its shortcut where their hands expect them. Consumer: the user; the layout map tests are the developer's consumer.
+**Treatment:** the main window rearranged to the map: menus reordered, relabelled, and rebound; tools regrouped and reordered with their shortcuts; each built tool's options bar in the map's order; the default workspace's panels docked, grouped, and ordered as the map places them, with their buttons in order; `planned` items disabled in place with the `Planned: <ref>` tooltip, `own` items after the reference program's behind a separator, `omitted` items absent; and `StilusLayoutMapTests` over `D01 T13 §6`'s `LayoutMapConformance`. Cheaper substitute that fails the checkpoint: hiding what is not built yet, which moves everything after it.
+**Chrome:** consume the shared `Menu`, `ToolRail`, `OptionsBar`, and panel styles, the docking manager's default layout, and the tooltip style; bind shortcuts through the app's one keymap. Do not build a second command or tool list.
+
+**Requires:** display-session -- the driven pass that opens every menu, tool, and panel needs an interactive desktop
+
+- [ ] Reorder and relabel the main menu to the map's Menus part: every top-level menu in the map's order, every item in its position with its label, separators where the map has them, `own` items after the reference program's. Done when: the menu reads top to bottom as the map does.
+- [ ] Rearrange the tool rail to the map's Tools part: groups in order, each group's tools with the default first, each tool's shortcut and Shift cycle, `planned` tools disabled in place with their tooltip. Done when: the rail reads top to bottom as the map does.
+- [ ] Order each built tool's options bar controls as the map's Options bar part does. Done when: the options bar of each built tool reads left to right as the map does.
+- [ ] Make the default workspace the map's Panels part: each built panel docked on its side, in its tab group and order, collapsed or open as mapped, with its buttons in the mapped order and its panel menu items in order; each `planned` panel listed disabled in the Window menu with its owner. Done when: a fresh profile opens with the mapped layout.
+- [ ] Bind every shortcut in the map's Menus, Tools, and Shortcuts parts through the app's keymap, so the shown shortcut and the gesture that fires the command come from one place. Done when: each mapped shortcut fires its command in a driven run of a sample (one per menu and per tool group quoted).
+- [ ] Add `StilusLayoutMapTests`: build a `LayoutSnapshot` from the loaded main window with a fresh profile and assert `LayoutMapConformance` reports no difference from the map. Done when: the test passes, and swapping two tools in a group, or two menu items, fails it with both named (quoted, then restored).
+- [ ] Update the app's user guide pages on the window, menus, and tools, and the shortcuts dialog's list, so they show the map's labels, places, and shortcuts. Done when: a sample of five features reads the same in the window, the dialog, and the guide.
+- [ ] Commit: `"stilus: menus, tools, and panels follow the Illustrator layout map"`
+
+**Test checkpoint:** Unit test and driven run with evidence: `dotnet test Isotone.slnx --filter "FullyQualifiedName~StilusLayoutMapTests|FullyQualifiedName~MenuAuditTests"` exits 0; moving one tool or menu item fails `StilusLayoutMapTests` naming it (quoted, then restored); a driven pass with a fresh profile opens every top-level menu, selects every built tool, and shows the default panels, and the app's log has 0 `[ERR]` lines; the main window's golden is approved through the visual harness. Cheaper substitute that fails: a screenshot compared by eye with the reference program, which the next layout change silently breaks.
 
 ## Verification
 

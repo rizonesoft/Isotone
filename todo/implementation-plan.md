@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **14 of 762 sections complete (2%).** 762 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **14 of 772 sections complete (2%).** 772 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -54,6 +54,7 @@ The finished suite is **three standalone creative applications that behave like 
 | A crash loses nothing | `D02 T04 §5` · `D03 T04 §6` |
 | Formats are proven, not assumed | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §12` · `D03 T17 §2` · `D03 T17 §4` · `D03 T17 §5` · `D03 T17 §6` · `D01 T08 §1` · `D02 T18 §8` · `D04 T13 §1` · `D04 T13 §2` · `D04 T13 §3` · `D04 T13 §4` · `D04 T13 §6` · `D04 T13 §7` · `D04 T13 §8` · `D04 T08 §9` · `D01 T11 §3` · `D03 T23 §5` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` · `D04 T13 §12` |
 | No menu item silently does nothing | `D02 T03 §5` · `D03 T06 §2` |
+| A user of the reference program finds every menu, tool, panel, and button where they expect it (operator requests 2026-10-22) | `D01 T13 §1` · `D02 T03 §6` · `D03 T06 §4` · `D04 T01 §12` |
 | Originals are never written unless the user opts in; a verified backup is taken by default | `D04 T01 §6` · `D04 T01 §11` · `D04 T02 §1` · `D04 T11 §1` · `D04 T08 §9` · `D04 T14 §10` · `D04 T04 §11` · `D04 T04 §16` · `D04 T05 §6` · `D04 T08 §8` · `D04 T09 §17` · `D04 T16 §5` · `D04 T17 §1` · `D04 T17 §3` |
 | It looks like one suite | `standards/design-contract.md`, `standards/ui.md`, and `docs/design/` · `D00 T01 §9` · `D01 T01 §9` · `D01 T01 §3` · `D01 T01 §5` · `D01 T01 §6` · `D01 T01 §7` · `D01 T01 §8` |
 | It works without a mouse or eyes | `D02 T06 §17` · `D03 T07 §16` · `D04 T02 §9` |
@@ -197,6 +198,10 @@ Stilus goes first among the apps. This phase gives it a real composition root on
 
 |  ✔  | Section      | Deliverable                                         | Items |
 | :-: | ------------ | --------------------------------------------------- | :---: |
+| [ ] | `D01 T13 §1` | The layout-map format and the binding rule          |   7   |
+| [ ] | `D01 T13 §2` | The layout-map checker                              |   5   |
+| [ ] | `D01 T13 §7` | Every layout section cites its map                  |   4   |
+| [ ] | `D01 T13 §3` | The Stilus map from a driven Illustrator run        |   6   |
 | [ ] | `D01 T02 §1` | Create Isotone.Core with app-data paths and logging |   7   |
 | [ ] | `D01 T02 §2` | The settings store                                  |   6   |
 | [ ] | `D02 T01 §2` | Composition root on the Generic Host                |   5   |
@@ -221,6 +226,7 @@ With its foundation sound, Stilus becomes a complete first release: `Isotone.Cor
 |  ✔  | Section      | Deliverable                                                     | Items |
 | :-: | ------------ | --------------------------------------------------------------- | :---: |
 | [ ] | `D01 T01 §1` | Create Isotone.UI with the icon catalog                         |   9   |
+| [ ] | `D01 T13 §6` | The shared layout conformance test helpers                      |   4   |
 | [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Isotone.UI           |   8   |
 | [ ] | `D01 T01 §3` | The suite theme resources                                       |  19   |
 | [ ] | `D01 T01 §9` | The visual regression harness and goldens                       |  13   |
@@ -241,6 +247,7 @@ With its foundation sound, Stilus becomes a complete first release: `Isotone.Cor
 | [ ] | `D02 T04 §5` | Recent files, autosave, and crash recovery                      |   7   |
 | [ ] | `D02 T04 §6` | Open from the command line and the .svg association             |   5   |
 | [ ] | `D02 T03 §5` | Every menu command works or names its owner                     |   5   |
+| [ ] | `D02 T03 §6` | The main window follows the Illustrator layout map              |   8   |
 | [ ] | `D02 T05 §1` | The About dialog                                                |   6   |
 | [ ] | `D02 T05 §2` | The keyboard shortcuts dialog                                   |   4   |
 | [ ] | `D02 T05 §3` | The Help menu                                                   |   3   |
@@ -504,7 +511,7 @@ The last parity phase first reads and writes the legacy formats the operator ask
 | :-: | ------------- | ------------------------------------------------------------------------------------------------------------------- | :---: |
 | [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD                                                                           |   5   |
 | [ ] | `D02 T06 §13` | Preferences and shortcut remapping                                                                                  |   4   |
-| [ ] | `D02 T16 §1`  | Workspaces: presets, save, reset, import, and export                                                                |  16   |
+| [ ] | `D02 T16 §1`  | Workspaces: presets, save, reset, import, and export                                                                |  17   |
 | [ ] | `D02 T16 §2`  | Toolbox, toolbars, property bar, and status bar customization                                                       |  17   |
 | [ ] | `D02 T16 §3`  | Menus, context menus, command search, and shortcut sets                                                             |  17   |
 | [ ] | `D02 T16 §4`  | Preferences: general, selection and nodes, display, and units                                                       |  17   |
@@ -537,6 +544,7 @@ Gesso starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity ph
 
 |  ✔  | Section      | Deliverable                                       | Items |
 | :-: | ------------ | ------------------------------------------------- | :---: |
+| [ ] | `D01 T13 §4` | The Gesso map from a driven Photoshop run         |   4   |
 | [ ] | `D03 T01 §2` | Port the snapshot canvas, ruler, and container    |   8   |
 | [ ] | `D03 T01 §3` | WPF-UI out of Gesso                               |   8   |
 | [ ] | `D03 T01 §5` | Composition root on Isotone.Core                  |   4   |
@@ -572,6 +580,7 @@ Gesso becomes a complete first release: Gesso records into the suite undo histor
 | [ ] | `D03 T05 §3` | Blur and sharpen                                  |   5   |
 | [ ] | `D03 T06 §1` | About, shortcuts, and help in Gesso               |   3   |
 | [ ] | `D03 T06 §2` | Every Gesso menu command works or names its owner |   3   |
+| [ ] | `D03 T06 §4` | Gesso's window follows the Photoshop layout map   |   8   |
 | [ ] | `D06 T01 §2` | The Gesso user guide                              |   4   |
 | [ ] | `D03 T06 §3` | Gesso 0.1.0                                       |   8   |
 
@@ -843,7 +852,7 @@ The last parity phase customizes and audits the whole surface once it exists: wo
 |  ✔  | Section       | Deliverable                                                                       | Items |
 | :-: | ------------- | --------------------------------------------------------------------------------- | :---: |
 | [ ] | `D03 T07 §17` | Workspaces, panels, and preferences                                               |   3   |
-| [ ] | `D03 T20 §1`  | Workspaces, panels, the Properties panel, and the Contextual Task Bar             |  26   |
+| [ ] | `D03 T20 §1`  | Workspaces, panels, the Properties panel, and the Contextual Task Bar             |  27   |
 | [ ] | `D03 T20 §2`  | The toolbar and the options bar                                                   |  16   |
 | [ ] | `D03 T20 §3`  | Menus, shortcuts, and command search                                              |  15   |
 | [ ] | `D03 T20 §4`  | Preferences I: general, tools, cursors, units, guides, and type                   |  23   |
@@ -862,35 +871,37 @@ The last parity phase customizes and audits the whole surface once it exists: wo
 
 Albumen is planned from nothing with `plan-new-feature` rigor and built on the spine the other two apps proved. The competitor survey is driven first so the plan is corrected by evidence; then the app is created on `Isotone.Core` and `Isotone.UI`, the RAW decoder is chosen with coverage, speed, and license measured, decoding is proven against a reference, the SQLite catalog and safe import land (the original-file guard joins the frozen set), and the preview cache, grid, and loupe make a 50,000-photo library usable.
 
-|  ✔  | Section      | Deliverable                       | Items |
-| :-: | ------------ | --------------------------------- | :---: |
-| [ ] | `D04 T01 §1` | The competitor survey, driven     |   4   |
-| [ ] | `D04 T01 §2` | Create the Albumen app            |   8   |
-| [ ] | `D04 T01 §3` | The RAW decoder decision          |   4   |
-| [ ] | `D04 T01 §4` | RAW decode with fidelity fixtures |   5   |
-| [ ] | `D04 T01 §5` | The catalog database              |   5   |
-| [ ] | `D04 T01 §6` | Import                            |   7   |
-| [ ] | `D04 T01 §7` | Thumbnails and the preview cache  |   4   |
-| [ ] | `D04 T01 §8` | The library grid                  |   6   |
-| [ ] | `D04 T01 §9` | Loupe, compare, and filmstrip     |   6   |
+|  ✔  | Section      | Deliverable                                            | Items |
+| :-: | ------------ | ------------------------------------------------------ | :---: |
+| [ ] | `D01 T13 §5` | The Albumen map from Lightroom Classic's documentation |   5   |
+| [ ] | `D04 T01 §1` | The competitor survey, driven                          |   4   |
+| [ ] | `D04 T01 §2` | Create the Albumen app                                 |   8   |
+| [ ] | `D04 T01 §3` | The RAW decoder decision                               |   4   |
+| [ ] | `D04 T01 §4` | RAW decode with fidelity fixtures                      |   5   |
+| [ ] | `D04 T01 §5` | The catalog database                                   |   5   |
+| [ ] | `D04 T01 §6` | Import                                                 |   7   |
+| [ ] | `D04 T01 §7` | Thumbnails and the preview cache                       |   4   |
+| [ ] | `D04 T01 §8` | The library grid                                       |   6   |
+| [ ] | `D04 T01 §9` | Loupe, compare, and filmstrip                          |   6   |
 
 ### Phase 29 -- Albumen 0.1.0: develop, export, Edit in Gesso, release
 
 Albumen becomes a complete first release: keywords, collections, culling, and XMP sidecars finish the library; the edit stack, the develop pipeline on the suite develop engine that Phase 23 builds (`D01 T07`), the develop panel, crop, presets, and export make it a darkroom; Edit in Gesso hands photos to Gesso over files, never over assemblies; the user guide is written; and `albumen-v0.1.0` ships with the original-file guard proven on the installed build. The Albumen parity phases (30 to 39) follow before distribution.
 
-|  ✔  | Section       | Deliverable                                      | Items |
-| :-: | ------------- | ------------------------------------------------ | :---: |
-| [ ] | `D04 T01 §10` | Keywords, collections, and smart collections     |   4   |
-| [ ] | `D04 T01 §11` | Ratings, flags, labels, and XMP sidecars         |   4   |
-| [ ] | `D04 T02 §1`  | The edit stack                                   |   4   |
-| [ ] | `D04 T02 §2`  | The develop pipeline on the suite develop engine |   6   |
-| [ ] | `D04 T02 §3`  | The develop panel                                |   6   |
-| [ ] | `D04 T02 §4`  | Crop and straighten                              |   4   |
-| [ ] | `D04 T02 §5`  | Presets, copy and paste settings, and sync       |   3   |
-| [ ] | `D04 T02 §6`  | Export                                           |   4   |
-| [ ] | `D06 T01 §3`  | The Albumen user guide                           |   4   |
-| [ ] | `D04 T02 §7`  | Edit in Gesso                                    |   4   |
-| [ ] | `D04 T02 §8`  | Albumen 0.1.0                                    |   8   |
+|  ✔  | Section       | Deliverable                                        | Items |
+| :-: | ------------- | -------------------------------------------------- | :---: |
+| [ ] | `D04 T01 §10` | Keywords, collections, and smart collections       |   4   |
+| [ ] | `D04 T01 §11` | Ratings, flags, labels, and XMP sidecars           |   4   |
+| [ ] | `D04 T01 §12` | Albumen's window follows the Lightroom Classic map |  10   |
+| [ ] | `D04 T02 §1`  | The edit stack                                     |   4   |
+| [ ] | `D04 T02 §2`  | The develop pipeline on the suite develop engine   |   6   |
+| [ ] | `D04 T02 §3`  | The develop panel                                  |   6   |
+| [ ] | `D04 T02 §4`  | Crop and straighten                                |   4   |
+| [ ] | `D04 T02 §5`  | Presets, copy and paste settings, and sync         |   3   |
+| [ ] | `D04 T02 §6`  | Export                                             |   4   |
+| [ ] | `D06 T01 §3`  | The Albumen user guide                             |   4   |
+| [ ] | `D04 T02 §7`  | Edit in Gesso                                      |   4   |
+| [ ] | `D04 T02 §8`  | Albumen 0.1.0                                      |   8   |
 
 ### Phase 30 -- Albumen parity I: shared formats and the fast default viewer
 
@@ -1094,7 +1105,7 @@ The last parity phase customizes and audits the whole surface once it exists: mo
 |  ✔  | Section       | Deliverable                                                                       | Items |
 | :-: | ------------- | --------------------------------------------------------------------------------- | :---: |
 | [ ] | `D04 T14 §1`  | Modes, the module picker, and panels                                              |  12   |
-| [ ] | `D04 T14 §2`  | Toolbars, menus, pane layout, saved workspaces, and touch                         |  16   |
+| [ ] | `D04 T14 §2`  | Toolbars, menus, pane layout, saved workspaces, and touch                         |  17   |
 | [ ] | `D04 T14 §3`  | The keymap and shortcuts                                                          |  15   |
 | [ ] | `D04 T14 §4`  | Preferences I: general, interface, file handling, and the viewer and browse pages |  15   |
 | [ ] | `D04 T14 §5`  | Preferences II: performance, caches, color management, and display                |  12   |

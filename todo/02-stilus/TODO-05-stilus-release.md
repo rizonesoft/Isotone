@@ -51,7 +51,7 @@ track: N5
 |   1   |   §1    | The About dialog                       | D02 T03 §2                                                                              |  [ ]   |
 |   2   |   §2    | The keyboard shortcuts dialog          | D02 T02 §8                                                                              |  [ ]   |
 |   3   |   §3    | The Help menu                          | §1, §2                                                                                  |  [ ]   |
-|   4   |   §4    | Stilus 0.1.0                            | §3, D02 T01 §7, D02 T03 §5, D02 T04 §6, D01 T01 §3, D06 T01 §1, D05 T01 §1, D00 T02 §7, D00 T02 §8, D99 T01 §8, D05 T01 §8, D02 T02 §7 |  [ ]   |
+|   4   |   §4    | Stilus 0.1.0                            | §3, D02 T01 §7, D02 T03 §5, D02 T04 §6, D01 T01 §3, D06 T01 §1, D05 T01 §1, D00 T02 §7, D00 T02 §8, D99 T01 §8, D05 T01 §8, D02 T02 §7, D02 T03 §6 |  [ ]   |
 
 ---
 

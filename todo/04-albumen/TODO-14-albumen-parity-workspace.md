@@ -67,6 +67,7 @@ track: L14
 - -> XREF: D06 T02 §3 -- the published guide site §7 opens
 - -> XREF: D04 T15 §10 -- Albumen 1.0.0, which follows this file
 - -> XREF: D01 T07 §12 -- wires §5's GPU acceleration preference to Isotone.Gpu.Enabled and Isotone.Gpu.Adapter
+- -> XREF: D01 T13 §5 -- the Albumen layout map that §2's default workspace (menus, toolbars and tools, panel layout, and shortcut set) comes from, and that Reset restores
 
 ## Outcome
 
@@ -156,6 +157,7 @@ A user arranges Albumen for their screens and hands and gets it back next time. 
 - [ ] Add the Tablet Mode dialog (LP-1074) enlarging touch targets and turning on touch-friendly toolbars, stored as `Albumen.Workspace.TabletMode`. Done when: a test asserts the enlarged minimum target size with the key on.
 - [ ] Log one Serilog Information line per workspace save, load, and reset. Done when: a Serilog test logger asserts the lines.
 - [ ] Commit captures of the dialogs and a floated pane under `docs/captures/albumen/workspace/` and extend `docs/user/albumen/workspace.md`. Done when: every control is captured and documented.
+- [ ] Make `docs/design/layout-maps/albumen.md` (`D01 T13 §5`) the default workspace: the shipped menus, toolbars and tools, panel layout, and shortcut set are generated from the map, Reset returns to it, and `AlbumenLayoutMapTests` runs against the default. Done when: rearranging panels and tools and pressing Reset makes `AlbumenLayoutMapTests` pass again.
 - [ ] Commit: `"albumen: customizable toolbars and menus, docking, saved workspaces, and touch"`
 
 **Test checkpoint:** Unit test and driven run: `dotnet test Isotone.slnx --filter "FullyQualifiedName~ToolbarCustomizationTests|FullyQualifiedName~FavoritesMenuTests|FullyQualifiedName~AlbumenWorkspaceRoundTripTests|FullyQualifiedName~TouchGestureMapTests"` exits 0; a driven float of a pane to a second monitor and back is captured. Cheaper substitute that fails: fixed toolbars, which the customization test catches.

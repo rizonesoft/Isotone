@@ -84,6 +84,7 @@ track: I20
 - -> XREF: D04 T14 §1 -- Albumen parity workspace cites §1: the `Isotone.UI/Workspace/` frame, panes, and saved workspaces D04 T14 §1 and D04 T14 §2 consume; §2: the toolbar customization frame D04 T14 §2 consumes; §3: menus, shortcut sets, and command search D04 T14 §3 consumes; §4: `PreferenceKeyRegistry` and `WarningRegistry`, moved to the shared libraries, which D04 T14 §4 consumes; §6: touch and pen input handling D04 T14 §2 reuses; §8: `SystemInfoReport` and the help plumbing D04 T14 §7 consumes; §9: interface appearance and language switching D04 T14 §7 and D04 T14 §8 follow
 - -> XREF: D01 T10 §1 -- suite automation cites §3: CommandIndex, MenuDefinition, and ShortcutManager, which the recorder and the Scripts menu use
 - -> XREF: D01 T07 §12 -- wires §5's GPU switch to Isotone.Gpu.Enabled
+- -> XREF: D01 T13 §4 -- the Gesso layout map that §1's default workspace (menus, toolbars and tools, panel layout, and shortcut set) comes from, and that Reset restores
 
 ## Outcome
 
@@ -156,6 +157,7 @@ A professional rearranges the whole window for a task and carries that arrangeme
 - [ ] Capture each preset to `docs/captures/gesso/workspaces/<preset>.png` and the task bar to `docs/captures/gesso/contextual-task-bar/`. Done when: ten workspace captures exist and differ in layout.
 - [ ] Log one Information line per workspace switch, save, import, and studio change. Done when: the lines appear in the driven run log (quoted).
 - [ ] Update `docs/user/gesso/workspaces.md` with presets, studios, docking, tabs, window modes, the Properties pages, and the Contextual Task Bar. Done when: every control of the switcher, menus, and bar is documented.
+- [ ] Make `docs/design/layout-maps/gesso.md` (`D01 T13 §4`) the default workspace: the shipped menus, toolbars and tools, panel layout, and shortcut set are generated from the map, Reset returns to it, and `GessoLayoutMapTests` runs against the default. Done when: rearranging panels and tools and pressing Reset makes `GessoLayoutMapTests` pass again.
 - [ ] Commit: `"gesso: workspaces and studios on the shared frame, docking, window modes, Properties pages, and the Contextual Task Bar"`
 
 **Test checkpoint:** Format fidelity proof plus driven run: `dotnet test Isotone.slnx --filter "FullyQualifiedName~GessoWorkspacePresetsTests|FullyQualifiedName~PropertiesPagesTests|FullyQualifiedName~ContextualTaskBarTests|FullyQualifiedName~UnitExpressionVariablesTests|FullyQualifiedName~Isotone.UI.Tests.Workspace"` exits 0; `tests/fixtures/gesso/workspace/photography.gessows` imports and re-exports with every part equal, the moved `WorkspaceServiceTests` report inside `Isotone.UI.Tests.Workspace`, `grep -rn "class WorkspaceService" src` prints one path under `src/Isotone.UI/`, and a driven run switches three presets with captures and one log line each. Cheaper substitute that fails: a second Gesso copy of the workspace model, which the single-class grep rejects.

@@ -68,7 +68,7 @@ track: L2
 |   5   |   §5    | Presets, copy and paste settings, and sync        | §3, D01 T07 §6                                               |  [ ]   |
 |   6   |   §6    | Export                                            | §2, D04 T01 §10                                              |  [ ]   |
 |   7   |   §7    | Edit in Gesso                                     | §6, D03 T06 §3, D02 T15 §11                                  |  [ ]   |
-|   8   |   §8    | Albumen 0.1.0                                       | §4, §5, §7, D04 T01 §11, D06 T01 §3, D05 T01 §1              |  [ ]   |
+|   8   |   §8    | Albumen 0.1.0                                       | §4, §5, §7, D04 T01 §11, D06 T01 §3, D05 T01 §1, D04 T01 §12 |  [ ]   |
 |   9   |   §9    | Accessibility and localization                    | §8, D04 T14 §9, D04 T14 §10, D04 T12 §12, D04 T12 §13 |  [ ]   |
 
 ---
