@@ -372,42 +372,39 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
     if run.get("status") != "completed":
         return "pending", f"main's {name} run is {run.get('status')}: {run.get('url')}"
     if run.get("conclusion") != "success":
-        return "red", f"main's {name} run concluded {run.get('conclusion')}: {run.get('url')}; repair main before any merge"
+        return "red", f"main's {name} run concluded {run.get('conclusion')}: {run.get('url')}"
     return "green", ""
 
 
-def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git) -> str:
-    """Refused while a guarding workflow's run for `main`'s head is still to come or running (a busy clone); Failed
-    when one completed with anything but success or cannot be read. Every workflow is read before judging, so a
-    red one is reported even while another is still running (independent review round 1)."""
+def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git) -> tuple[str, str, str]:
+    """(the head judged, "green" | "pending" | "red", why) for `main`'s guarding workflows. Every workflow is read
+    before the state is chosen, so a red one outranks one still running (independent review round 1). It raises
+    only when GitHub cannot be read; `judge` decides what the state means."""
     head = git_fn("rev-parse", "HEAD", cwd=root).strip()
     verdicts = [_ci_verdict(name, file, repo, root, head, gh_fn, git_fn) for name, file in MAIN_WORKFLOWS]
-    red = [why for state, why in verdicts if state == "red"]
-    if red:
-        raise Failed("; ".join(red))
-    pending = [why for state, why in verdicts if state == "pending"]
-    if pending:
-        raise Refused("; ".join(pending))
-    return head
+    for state in ("red", "pending"):
+        found = [why for s, why in verdicts if s == state]
+        if found:
+            return head, state, "; ".join(found)
+    return head, "green", ""
 
 
-def final_check(root: Path, repo: str, campaign: bool, git_fn, gh_fn, graph, active_fn) -> None:
-    """The last judgment before a merge: main's CI first (the slow GitHub reads), then the preflight (one fetch and
-    the local checks back to back), and the head the preflight leaves must be the one whose CI was judged, so nothing
-    local is trusted across a GitHub read (independent review round 2). GitHub rebases onto the base as it is when
-    `gh pr merge` runs; the window between this check and that call is the narrow one no client can close, and the
-    landed check and validate after the merge read the result."""
-    try:
-        judged = main_ci(repo, root, gh_fn, git_fn)
-    except Failed:
-        # A red is main's only while the clone still qualifies: a clone moved off main is a busy refusal, and on a
-        # qualifying clone main's CI is judged again and stands (independent review round 3).
-        preflight(root, campaign, git_fn, graph, active_fn)
-        judged = main_ci(repo, root, gh_fn, git_fn)
+def judge(root: Path, repo: str, campaign: bool, git_fn, gh_fn, graph, active_fn) -> None:
+    """The one judgment before every listing and every merge (D00 T01 §15): main's CI first (the slow GitHub reads),
+    then the preflight (one fetch and the local checks back to back), and only then the CI's verdict, so nothing
+    local is trusted across a GitHub read and a red is never reported for a clone the preflight refuses (independent
+    review rounds 2 to 4). A head that moved since its CI was read is a busy clone. GitHub rebases onto the base as
+    it is when `gh pr merge` runs; the instant between this judgment and that call is the window no client closes,
+    and the landed check and validate after the merge read the result."""
+    head, state, why = main_ci(repo, root, gh_fn, git_fn)
     preflight(root, campaign, git_fn, graph, active_fn)
-    head = git_fn("rev-parse", "HEAD", cwd=root).strip()
-    if head != judged:
-        raise Refused(f"main moved from {judged[:12]} to {head[:12]} while its CI was read")
+    now = git_fn("rev-parse", "HEAD", cwd=root).strip()
+    if now != head:
+        raise Refused(f"main moved from {head[:12]} to {now[:12]} while its CI was read")
+    if state == "red":
+        raise Failed(f"{why}; repair main before any merge")
+    if state == "pending":
+        raise Refused(why)
 
 
 def preflight(root: Path, campaign: bool, git_fn=git, graph=None, active_fn=campaign_active) -> None:
@@ -447,52 +444,81 @@ def _glob_re(pattern: str) -> re.Pattern:
     return re.compile(f"^{out}$")
 
 
-def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
-    """(the workflow runs on `event`, that event's `paths` filter or None), read from the file's top-level `on:`
-    block only, so a key of the same name elsewhere in the file is never taken for the trigger.
+_FILTER_ITEM_RE = re.compile(r"""^\s*-\s+(?:'([^'#\s][^'#]*)'|"([^"#\s][^"#]*)"|([^'"#\s][^\s#]*))\s*$""")
+_FLOW_ITEM_RE = re.compile(r"""^(?:'([^'#\s][^'#,]*)'|"([^"#\s][^"#,]*)"|([^'"#\s,\[\]]+))$""")
 
-    None means every change triggers it, and it is also the answer whenever this reader cannot be sure of a filter:
-    an inline `on:` form, a `paths:` value it cannot read, an empty list, or a negated pattern (independent review
-    round 3). Both callers read None the cautious way: the pull request must show the workflow, and an older run on
-    `main` never stands in for the head's."""
+
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
+
+
+def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
+    """(the workflow runs on `event`, that event's `paths` filter or None) under a strict grammar that fails closed
+    (independent review rounds 3 and 4 replaced a lenient reader): None means every change triggers it, and it is
+    the answer for any shape this reader does not fully recognise, so both callers read an unsure filter the
+    cautious way (the pull request must show the workflow; an older run never stands in for the head's).
+
+    The grammar: a top-level `on:` key, whose block runs to the next content line at column 0 (blank and comment
+    lines never end it); the event as one of the block's top keys; and under it an optional `paths:` key holding
+    either a flow sequence or a block list whose every entry is one plain glob. Anything else (an inline `on:`, an
+    inline event value, `paths-ignore`, a trailing comment, a negated, empty, or unreadable entry) is unsure."""
     lines = text.splitlines()
-    top = next((i for i, l in enumerate(lines) if re.match(r"^(on|['\"]on['\"])\s*:", l)), None)
+
+    def content(line: str) -> bool:
+        return bool(line.strip()) and not line.lstrip().startswith("#")
+
+    top = next((i for i, l in enumerate(lines) if re.match(r"""^(on|'on'|"on")\s*:""", l)), None)
     if top is None:
         return False, None
     inline = re.sub(r"\s+#.*$", "", lines[top].split(":", 1)[1]).strip()
     if inline:
         return bool(re.search(rf"\b{re.escape(event)}\b", inline)), None
-    end = next((i for i in range(top + 1, len(lines)) if re.match(r"^\S", lines[i])), len(lines))
-    start = next((i for i in range(top + 1, end) if re.match(rf"^\s+{re.escape(event)}\s*:", lines[i])), None)
+    end = next((i for i in range(top + 1, len(lines)) if content(lines[i]) and not lines[i][0].isspace()), len(lines))
+    block = [i for i in range(top + 1, end) if content(lines[i])]
+    if not block:
+        return False, None
+    base = min(_indent(lines[i]) for i in block)
+    start = next((i for i in block if _indent(lines[i]) == base
+                  and re.match(rf"^\s*{re.escape(event)}\s*:", lines[i])), None)
     if start is None:
         return False, None
-    indent = len(lines[start]) - len(lines[start].lstrip())
-    paths, in_paths, paths_indent, unsure = None, False, 0, False
-    for line in lines[start + 1:end]:
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        here = len(line) - len(line.lstrip())
-        if here <= indent:
-            break
-        key = re.match(r"^\s*paths\s*:(.*)$", line)
-        if key:
-            paths, in_paths, paths_indent = [], True, here
-            value = re.sub(r"\s+#.*$", "", key.group(1)).strip()
-            if value:
-                in_paths = False
-                flow = re.fullmatch(r"\[(.*)\]", value)
-                if flow is None:
-                    unsure = True
-                else:
-                    paths = [p.strip().strip("'\"") for p in flow.group(1).split(",") if p.strip()]
-            continue
-        if in_paths:
-            m = re.match(r"^\s*-\s*['\"]?([^'\"]+?)['\"]?\s*$", line)
-            if m and here >= paths_indent:
-                paths.append(m.group(1))
-            else:
-                in_paths = False
-    if paths is not None and (unsure or not paths or any(p.startswith("!") for p in paths)):
+    if re.sub(r"\s+#.*$", "", lines[start].split(":", 1)[1]).strip():
+        return True, None
+    under = [i for i in block if i > start]
+    stop = next((k for k, i in enumerate(under) if _indent(lines[i]) <= base), len(under))
+    children = under[:stop]
+    if not children:
+        return True, None
+    child = min(_indent(lines[i]) for i in children)
+    keys = {re.match(r"^\s*([\w-]+)\s*:", lines[i]).group(1) if re.match(r"^\s*([\w-]+)\s*:", lines[i]) else None: i
+            for i in children if _indent(lines[i]) == child}
+    if None in keys or "paths-ignore" in keys:
+        return True, None
+    if "paths" not in keys:
+        return True, None
+    at = keys["paths"]
+    value = lines[at].split(":", 1)[1].strip()
+    paths: list[str] = []
+    if value:
+        flow = re.fullmatch(r"\[(.*)\]", value)
+        if flow is None:
+            return True, None
+        for item in (p.strip() for p in flow.group(1).split(",")):
+            m = _FLOW_ITEM_RE.match(item)
+            if m is None:
+                return True, None
+            paths.append(next(g for g in m.groups() if g is not None))
+    else:
+        for i in children:
+            if i <= at:
+                continue
+            if _indent(lines[i]) <= _indent(lines[at]):
+                break
+            m = _FILTER_ITEM_RE.match(lines[i])
+            if m is None:
+                return True, None
+            paths.append(next(g for g in m.groups() if g is not None).strip())
+    if not paths or any(p.startswith("!") for p in paths):
         return True, None
     return True, paths
 
@@ -869,10 +895,9 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         return 0
     try:
         repo = repository(root, git_fn)
-        preflight(root, args.campaign, git_fn, graph, active_fn)
-        # Main's own CI, whether or not anything turns out eligible: the hourly task learns of a red its earlier
-        # merge caused on its next run, and never merges onto it (D00 T01 §15).
-        main_ci(repo, root, gh_fn, git_fn)
+        # Main's own CI and the clone, whether or not anything turns out eligible: the hourly task learns of a red
+        # its earlier merge caused on its next run, and never merges onto it (D00 T01 §15).
+        judge(root, repo, args.campaign, git_fn, gh_fn, graph, active_fn)
         preflight_line = "preflight: ok"
     except Refused as error:
         preflight_line = f"preflight: refused: {error}"
@@ -920,7 +945,7 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         print("merge_prs: nothing eligible" + "".join(f"; #{pr['number']} {why}" for pr, ok, why in verdicts if not ok))
         return 0
     code, line = merge_one(ready[0], repo, root, gh_fn, git_fn, validate_fn,
-                           ready_fn=lambda: final_check(root, repo, args.campaign, git_fn, gh_fn, graph, active_fn))
+                           ready_fn=lambda: judge(root, repo, args.campaign, git_fn, gh_fn, graph, active_fn))
     print(line, file=sys.stdout if code == 0 else sys.stderr)
     return code
 

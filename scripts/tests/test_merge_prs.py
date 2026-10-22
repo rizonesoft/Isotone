@@ -578,6 +578,15 @@ class MergeTests(Base):
             ("name: x" + chr(10) + "on: workflow_dispatch" + chr(10), (False, None)),
             ("name: x" + chr(10) + "on:" + chr(10) + "  workflow_dispatch:" + chr(10) + "jobs:" + chr(10)
              + "  push:" + chr(10) + "    runs-on: x" + chr(10), (False, None)),
+            # Independent review round 4: a column-0 comment never ends the block, and one unreadable entry voids
+            # the whole filter.
+            ("on:" + chr(10) + "  workflow_dispatch:" + chr(10) + "# CI on pushes" + chr(10) + "  push:" + chr(10)
+             + "    paths:" + chr(10) + "      - 'scripts/**'" + chr(10), (True, ["scripts/**"])),
+            (on + "    paths:" + chr(10) + "      - 'scripts/**'" + chr(10) + "      - 'todo/**' # plans" + chr(10), (True, None)),
+            (on + "    paths-ignore:" + chr(10) + "      - 'docs/**'" + chr(10), (True, None)),
+            (on + "    paths: ['scripts/**', todo/** extra]" + chr(10), (True, None)),
+            ("on:" + chr(10) + "  push: {}" + chr(10), (True, None)),
+            (on + "    branches: [main]" + chr(10), (True, None)),
         ]
         for text, want in cases:
             with self.subTest(text=text):
@@ -595,6 +604,19 @@ class MergeTests(Base):
                 gh.main_runs = {"build.yml": self.run_on(HEAD, conclusion="failure", n=6)}
             return real(*args, cwd=cwd)
         code, out = self.call(["run", "--task"], detach_onto_red, git)
+        self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (0, [], True))
+
+    def test_a_red_read_at_the_start_waits_for_the_clone_too(self):
+        # Independent review round 4: detached while the first CI read finds red: a busy clone, no email.
+        git = FakeGit()
+        gh = FakeGh([pr(1)], main_runs={"build.yml": self.run_on(HEAD, conclusion="failure", n=4)})
+        real = gh.__call__
+
+        def detach_on_ci(*args, cwd=None):
+            if args[:2] == ("run", "list") and "--branch" in args:
+                git.detached = True
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--task"], detach_on_ci, git)
         self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (0, [], True))
 
     def test_main_ci_is_read_again_right_before_the_merge(self):
