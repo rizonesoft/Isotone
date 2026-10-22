@@ -145,14 +145,29 @@ public class ElementTooltipTests
         Assert.Equal("Unnamed", tooltip.Name);
     }
 
-    [Fact]
-    public void ElementTooltip_FromElement_UsesUnnamedForWhitespaceName()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\t")]
+    public void ElementTooltip_FromElement_UsesUnnamedForBlankName(string name)
     {
-        var element = new SvgRect { Name = "   " };
+        var element = new SvgRect { Name = name };
 
         var tooltip = ElementTooltip.FromElement(element, 0, 0);
 
         Assert.Equal("Unnamed", tooltip.Name);
+    }
+
+    [Theory]
+    [InlineData("Logo")]
+    [InlineData(" Logo ")]
+    public void ElementTooltip_FromElement_KeepsAGivenName(string name)
+    {
+        var element = new SvgRect { Name = name };
+
+        var tooltip = ElementTooltip.FromElement(element, 0, 0);
+
+        Assert.Equal(name, tooltip.Name);
     }
 }
 
