@@ -72,7 +72,7 @@ track: W1
 |  14   |   §14   | Retire the unused verify-agent-tiers.mjs      | --         |  [x]   |
 |  15   |   §15   | Unattended merges read main's CI back         | §12        |  [x]   |
 |  16   |   §16   | Unattended merger health                      | §15        |  [x]   |
-|  17   |   §17   | Time the guard's deadline cases on the walk   | §13        |  [ ]   |
+|  17   |   §17   | Time the guard's deadline cases on the walk   | §13        |  [x]   |
 
 ---
 
@@ -551,6 +551,12 @@ D00 T01 §15 makes the hourly `isotone-pr-merge` task read `main`'s CI on every 
 - [x] Commit: `"workspace: time the guard's deadline cases on the walk, not on git"` This commit.
 
 **Test checkpoint:** Unit test: `python scripts/campaign_guard.py --self-test` reports `189 cases, 0 failed`; with `_git` slowed by 0.4 s a call, the cases before this section fail both deadline cases and the cases after it pass; with `worker.join` waiting without its deadline, both cases fail; plan-gates reads back green on the repair. Cheaper substitute that fails: widening the 0.8 s bound, which a slower runner's git outruns again and which lets a walk that waits out a 1.0 s read pass.
+
+> **Verified:** 2026-10-22 | §17 | D00 T01 §17 at the assembled candidate `05b80f7`, `4ba316d`, `6e91d55`, `1a065cf`, `1e08d3b`, `7bacc2f` (six commits): `python scripts/campaign_guard.py --self-test` `189 cases, 0 failed`; with `_git` slowed by 0.4 s a call the cases before this section fail both deadline cases and these pass; with the walk's `worker.join()` waiting without its deadline, with a zero budget (`entered False`), and with the walk-thread join cut to 0.01 s (`walk ended False`, the `lstat` case `not run`), both cases fail; check-all at `725f9c7` (whose `scripts/campaign_guard.py` equals `7bacc2f`'s): all gates passed; plan-gates read back green on the repair (`c97b6a8`, repair episode closed after 1 attempt)
+> **Review:** round 2, candidate assembled 05b80f7 to `7bacc2f`(round 2) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 2 of cap 22, gpt-6.1-sol xhigh; Round 1 clean at `6e91d55`(round 1) before the plan review's fix; check-panel `PASS four lenses, one verdict each; highest none`). Independent: gpt-6.1-sol xhigh via `scripts/review-dispatch.py`, six rounds: rounds 1, 2, 4, and 5 found six P3 defects (F1 to F6, fixed in 4ba316d, 6e91d55, 1e08d3b, and 7bacc2f), round 6 approved every lens (the sign-off). Raw findings: docs/reviews/00-workspace/D00-T01-s17.md. Attestation: docs/reviews/00-workspace/D00-T01-s17.attest.json
+> **Plan review:** gpt xhigh, filed D00 T01 §17, B-068 (4 findings: PR1 and PR3 filed on this section, PR2 deferred to the backlog as B-068, PR4 rejected) (run 20261022-D00-T01-S17-gpt)
+> **CRUD:** not applicable (a self-test of the campaign guard, with no user record, document, or setting)
+> **Duration:** 2026-10-22T08:56:47Z to 2026-10-22T12:16:35Z
 
 ## Verification
 

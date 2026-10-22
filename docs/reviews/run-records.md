@@ -194,3 +194,18 @@ round: 11 model: gpt-6-astra effort: medium outcome: independent candidate: 3f69
 round: 12 model: gpt-6-astra effort: medium outcome: independent candidate: 4b86c2d provider: openai version: gpt-6-astra cost: 90956tokens latency: 104s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings:
 empty: 1
 refuted: 0
+
+run: D00-T01-S17
+date: 2026-10-22
+runner: panel
+rounds: 8
+round: 1 model: gpt-6.1-sol effort: xhigh outcome: empty candidate: 6e91d55 provider: openai version: gpt-6.1-sol cost: 35180tokens latency: 60s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 2 model: gpt-6.1-sol effort: xhigh outcome: empty candidate: 7bacc2f provider: openai version: gpt-6.1-sol cost: 31434tokens latency: 64s opportunity: full-scope purpose: fix-loop provenance: recorded findings:
+round: 3 model: gpt-6.1-sol effort: xhigh outcome: independent candidate: 05b80f7 provider: openai version: gpt-6.1-sol cost: 78304tokens latency: 261s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T01-S17-F1
+round: 4 model: gpt-6.1-sol effort: xhigh outcome: independent candidate: 4ba316d provider: openai version: gpt-6.1-sol cost: 85443tokens latency: 246s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S17-F2
+round: 5 model: gpt-6.1-sol effort: xhigh outcome: independent candidate: 6e91d55 provider: openai version: gpt-6.1-sol cost: 76752tokens latency: 171s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings:
+round: 6 model: gpt-6.1-sol effort: xhigh outcome: independent candidate: 1a065cf provider: openai version: gpt-6.1-sol cost: 103789tokens latency: 322s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S17-F3, D00-T01-S17-F4
+round: 7 model: gpt-6.1-sol effort: xhigh outcome: independent candidate: 1e08d3b provider: openai version: gpt-6.1-sol cost: 70087tokens latency: 287s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S17-F5, D00-T01-S17-F6
+round: 8 model: gpt-6.1-sol effort: xhigh outcome: independent candidate: 7bacc2f provider: openai version: gpt-6.1-sol cost: 78712tokens latency: 194s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings:
+empty: 2
+refuted: 0

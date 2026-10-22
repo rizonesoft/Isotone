@@ -4,16 +4,16 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**166 findings across 8 sections.**
+**172 findings across 9 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 75 | fails under hostile or unexpected input |
-| `integration` | 53 | a consumer, caller, or downstream artifact no longer holds |
+| `adversarial` | 78 | fails under hostile or unexpected input |
+| `integration` | 55 | a consumer, caller, or downstream artifact no longer holds |
 | `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 11 | the plan or the evidence misdescribes what happened |
+| `record` | 12 | the plan or the evidence misdescribes what happened |
 | `consistency` | 7 | disagrees with the rest of the suite, its naming, or its layout |
 | `correctness` | 1 | the code does the wrong thing |
 
@@ -23,7 +23,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
 | `major` | 95 | wrong behavior in code, plan, or record |
-| `minor` | 71 | polish or wording, or no surviving defect |
+| `minor` | 77 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -174,6 +174,12 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T01 §16` | F16 | major | `adversarial` | fixed | independent | a red workflow cleared the merge record while another was still running |
 | `D00 T01 §16` | F17 | minor | `record` | fixed | self | main_ci was left without callers after the round-1 fix |
 | `D00 T01 §16` | F18 | minor | `source-defect` | fixed | self | a strict createdAt filter on a cancelled run's successors could drop a same-second successor |
+| `D00 T01 §17` | F1 | minor | `adversarial` | fixed | independent | _git stayed patched if the warm-up or the read case raised |
+| `D00 T01 §17` | F2 | minor | `record` | fixed | independent | the item still said _git is restored in the lstat case's finally |
+| `D00 T01 §17` | F3 | minor | `adversarial` | fixed | independent | an interrupted cleanup wait could skip a patch's restore |
+| `D00 T01 §17` | F4 | minor | `integration` | fixed | independent | the cleanup wait's result was ignored, so a later case could run beside a live worker |
+| `D00 T01 §17` | F5 | minor | `adversarial` | fixed | independent | a timed-out read cleanup still let the lstat case start beside the read worker |
+| `D00 T01 §17` | F6 | minor | `integration` | fixed | independent | the exit event marked the end of the blocked call, not of the walk thread |
 | `D00 T01 §2` | F1 | minor | `correctness` | fixed | independent | the D99 T01 §6 operator mark named the company as the signer |
 | `D00 T01 §4` | F1 | major | `record` | fixed | independent | the panel and architecture probes shared one manifest, so the kept panel review failed check-panel on replay |
 | `D00 T01 §4` | F2 | minor | `record` | fixed | independent | the record claimed a manifest for every probe, but the independent pass is unfenced |
