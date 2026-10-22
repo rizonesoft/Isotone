@@ -174,7 +174,7 @@ def read_guard(root: str, include_ended: bool = False) -> dict | None:
     if not isinstance(doc, dict):
         raise GuardError(f"the guard file {guard} is not an object")
     ended = doc.get("ended")
-    if ended is not None and not ended_mark_ok(ended):
+    if "ended" in doc and not ended_mark_ok(ended):  # present at all, even as null, means end's exact mark (round 5)
         # Only `end` writes the mark, always as {reason, at}; anything else is a damaged guard, reported as one
         # rather than read as over (independent review round 2).
         raise GuardError(f"the guard file {guard} carries a malformed ended mark")
@@ -2155,7 +2155,7 @@ def _self_test() -> int:
               pending_cancel(hroot))
 
         # Independent review rounds 2 and 3: only end's own mark ends a guard; any other is a damaged guard.
-        for bad in (True, {"reason": "bogus", "at": "2026-10-22T00:00:00Z"}, {"reason": "operator-stop", "at": []},
+        for bad in (None, True, {"reason": "bogus", "at": "2026-10-22T00:00:00Z"}, {"reason": "operator-stop", "at": []},
                     {"reason": "operator-stop"}, {"reason": "operator-stop", "at": "yesterday"},
                     {"reason": "operator-stop", "at": "2026-10-22T00:00:00Z", "extra": 1}):
             with open(_paths(hroot)[0], "w", encoding="utf-8") as fh:
