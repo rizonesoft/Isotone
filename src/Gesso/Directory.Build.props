@@ -10,7 +10,9 @@
 
   <!--
     The root configuration applies in full (warnings are errors, code style
-    enforced): nothing is excused. The imported code's IDE0005 and CS0618 sites
-    were cleared by D00 T02 §2 (2026-10-22), and NU1701 left on 2026-09-26.
+    enforced): nothing is excused project-wide. D00 T02 §2 (2026-10-22) cleared
+    the imported code's IDE0005 sites; its one CS0618 site is excused on its own
+    line (Views/MainWindow.xaml.cs, WORKAROUND) until D03 T01 §3 removes it.
+    NU1701 left on 2026-09-26.
   -->
 </Project>
