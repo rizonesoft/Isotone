@@ -11450,6 +11450,9 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                                             "Layer styles, smart objects, comps, and artboards")],
                   ["documents-and-canvas", "view-guides-and-measurement", "3d-removed",
                    "layer-styles-smart-objects-comps-and-artboards"])
+            _pwrite(gcat=_gcat.replace("## Areas\n", "## Areas \n").replace("## Pixels\n", "## Pixels  \n"))
+            check("parity: Gesso, trailing spaces after a heading are not drift (independent review round 7)", _pfind(), [])
+            _pwrite()
             check("parity: a clean Gesso catalog with its summary, other-app: Stilus, and excluded: removed has no findings",
                   _pfind(), [])
             _gcases = (

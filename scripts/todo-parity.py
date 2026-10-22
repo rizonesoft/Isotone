@@ -361,8 +361,10 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
             continue
         m = _ALLOWED_HEADING_RE.match(line)
         if m:
-            allowed.append((i, m.group(2)))
-            section = m.group(2) if m.group(1) == "##" else None
+            # One name per heading, trimmed as the Areas reconciliation trims it (independent review round 7).
+            text = m.group(2).strip()
+            allowed.append((i, text))
+            section = text if m.group(1) == "##" else None
             continue
         if section == "Areas" and line.startswith("- "):
             continue  # an Areas entry: its shape is checked with the list below
