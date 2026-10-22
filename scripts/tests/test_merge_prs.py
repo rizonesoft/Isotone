@@ -565,6 +565,38 @@ class MergeTests(Base):
         code, out = self.call(["run", "--campaign"], advance_on_final_ci, git)
         self.assertEqual((code, gh.merges(), "main moved" in out), (2, [], True))
 
+    def test_the_trigger_reader_answers_cautiously(self):
+        # Independent review round 3: a flow sequence is read, and what cannot be read counts as every change.
+        on = "name: x" + chr(10) + "on:" + chr(10) + "  push:" + chr(10)
+        cases = [
+            (on + "    paths: ['scripts/**', \"todo/**\"]" + chr(10), (True, ["scripts/**", "todo/**"])),
+            (on + "    paths:" + chr(10) + "      - 'scripts/**'" + chr(10), (True, ["scripts/**"])),
+            (on + "    paths: []" + chr(10), (True, None)),
+            (on + "    paths: scripts/**" + chr(10), (True, None)),
+            (on + "    paths:" + chr(10) + "      - 'scripts/**'" + chr(10) + "      - '!scripts/x'" + chr(10), (True, None)),
+            ("name: x" + chr(10) + "on: [push, pull_request]" + chr(10), (True, None)),
+            ("name: x" + chr(10) + "on: workflow_dispatch" + chr(10), (False, None)),
+            ("name: x" + chr(10) + "on:" + chr(10) + "  workflow_dispatch:" + chr(10) + "jobs:" + chr(10)
+             + "  push:" + chr(10) + "    runs-on: x" + chr(10), (False, None)),
+        ]
+        for text, want in cases:
+            with self.subTest(text=text):
+                self.assertEqual(mp._trigger(text, "push"), want)
+
+    def test_a_red_from_a_checkout_that_left_main_is_a_quiet_refusal(self):
+        # Independent review round 3: detached onto a commit whose runs failed while the pull requests were read.
+        git = FakeGit()
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+
+        def detach_onto_red(*args, cwd=None):
+            if args[:2] == ("pr", "list"):
+                git.detached = True
+                gh.main_runs = {"build.yml": self.run_on(HEAD, conclusion="failure", n=6)}
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--task"], detach_onto_red, git)
+        self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (0, [], True))
+
     def test_main_ci_is_read_again_right_before_the_merge(self):
         # Independent review round 1: main turns red while the pull requests are read.
         gh = FakeGh([pr(1)])

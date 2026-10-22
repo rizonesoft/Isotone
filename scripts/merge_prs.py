@@ -397,7 +397,13 @@ def final_check(root: Path, repo: str, campaign: bool, git_fn, gh_fn, graph, act
     local is trusted across a GitHub read (independent review round 2). GitHub rebases onto the base as it is when
     `gh pr merge` runs; the window between this check and that call is the narrow one no client can close, and the
     landed check and validate after the merge read the result."""
-    judged = main_ci(repo, root, gh_fn, git_fn)
+    try:
+        judged = main_ci(repo, root, gh_fn, git_fn)
+    except Failed:
+        # A red is main's only while the clone still qualifies: a clone moved off main is a busy refusal, and on a
+        # qualifying clone main's CI is judged again and stands (independent review round 3).
+        preflight(root, campaign, git_fn, graph, active_fn)
+        judged = main_ci(repo, root, gh_fn, git_fn)
     preflight(root, campaign, git_fn, graph, active_fn)
     head = git_fn("rev-parse", "HEAD", cwd=root).strip()
     if head != judged:
@@ -443,24 +449,42 @@ def _glob_re(pattern: str) -> re.Pattern:
 
 def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
     """(the workflow runs on `event`, that event's `paths` filter or None), read from the file's top-level `on:`
-    block only, so a key of the same name elsewhere in the file is never taken for the trigger."""
+    block only, so a key of the same name elsewhere in the file is never taken for the trigger.
+
+    None means every change triggers it, and it is also the answer whenever this reader cannot be sure of a filter:
+    an inline `on:` form, a `paths:` value it cannot read, an empty list, or a negated pattern (independent review
+    round 3). Both callers read None the cautious way: the pull request must show the workflow, and an older run on
+    `main` never stands in for the head's."""
     lines = text.splitlines()
-    try:
-        top = next(i for i, l in enumerate(lines) if re.match(r"^(on|['\"]on['\"])\s*:\s*$", l))
-        end = next((i for i in range(top + 1, len(lines)) if re.match(r"^\S", lines[i])), len(lines))
-        start = next(i for i in range(top + 1, end) if re.match(rf"^\s+{re.escape(event)}\s*:", lines[i]))
-    except StopIteration:
+    top = next((i for i, l in enumerate(lines) if re.match(r"^(on|['\"]on['\"])\s*:", l)), None)
+    if top is None:
+        return False, None
+    inline = re.sub(r"\s+#.*$", "", lines[top].split(":", 1)[1]).strip()
+    if inline:
+        return bool(re.search(rf"\b{re.escape(event)}\b", inline)), None
+    end = next((i for i in range(top + 1, len(lines)) if re.match(r"^\S", lines[i])), len(lines))
+    start = next((i for i in range(top + 1, end) if re.match(rf"^\s+{re.escape(event)}\s*:", lines[i])), None)
+    if start is None:
         return False, None
     indent = len(lines[start]) - len(lines[start].lstrip())
-    paths, in_paths, paths_indent = None, False, 0
-    for line in lines[start + 1:]:
+    paths, in_paths, paths_indent, unsure = None, False, 0, False
+    for line in lines[start + 1:end]:
         if not line.strip() or line.lstrip().startswith("#"):
             continue
         here = len(line) - len(line.lstrip())
         if here <= indent:
             break
-        if re.match(r"^\s*paths\s*:", line):
+        key = re.match(r"^\s*paths\s*:(.*)$", line)
+        if key:
             paths, in_paths, paths_indent = [], True, here
+            value = re.sub(r"\s+#.*$", "", key.group(1)).strip()
+            if value:
+                in_paths = False
+                flow = re.fullmatch(r"\[(.*)\]", value)
+                if flow is None:
+                    unsure = True
+                else:
+                    paths = [p.strip().strip("'\"") for p in flow.group(1).split(",") if p.strip()]
             continue
         if in_paths:
             m = re.match(r"^\s*-\s*['\"]?([^'\"]+?)['\"]?\s*$", line)
@@ -468,6 +492,8 @@ def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
                 paths.append(m.group(1))
             else:
                 in_paths = False
+    if paths is not None and (unsure or not paths or any(p.startswith("!") for p in paths)):
+        return True, None
     return True, paths
 
 
