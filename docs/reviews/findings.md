@@ -4,17 +4,17 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**96 findings across 5 sections.**
+**122 findings across 6 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 43 | fails under hostile or unexpected input |
-| `integration` | 36 | a consumer, caller, or downstream artifact no longer holds |
-| `consistency` | 6 | disagrees with the rest of the suite, its naming, or its layout |
-| `source-defect` | 6 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 4 | the plan or the evidence misdescribes what happened |
+| `adversarial` | 56 | fails under hostile or unexpected input |
+| `integration` | 45 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 7 | disagrees with the rest of the suite, its naming, or its layout |
+| `source-defect` | 7 | a Win32 contract, registry layout, or other source read wrongly |
+| `record` | 6 | the plan or the evidence misdescribes what happened |
 | `correctness` | 1 | the code does the wrong thing |
 
 ## By severity
@@ -22,8 +22,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 60 | wrong behavior in code, plan, or record |
-| `minor` | 36 | polish or wording, or no surviving defect |
+| `major` | 65 | wrong behavior in code, plan, or record |
+| `minor` | 57 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -84,6 +84,32 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T01 §12` | F53 | minor | `integration` | fixed | independent | campaign start and resume wrote the run file before recover |
 | `D00 T01 §12` | F54 | minor | `integration` | fixed | independent | committing records before recover left the clone ahead of origin/main |
 | `D00 T01 §12` | F55 | minor | `integration` | fixed | independent | a boundary's records dirtied the tree before the merger ran |
+| `D00 T01 §13` | F1 | minor | `adversarial` | fixed | independent | an empty-object guard counted as absent and skipped the handover |
+| `D00 T01 §13` | F2 | minor | `integration` | fixed | independent | a new acquire over an interrupted end dropped the old heartbeat's cancellation |
+| `D00 T01 §13` | F3 | minor | `source-defect` | fixed | independent | Windows opened a swapped-in link with no reparse-point refusal |
+| `D00 T01 §13` | F4 | minor | `adversarial` | fixed | independent | an open error became a constant that hid later size and time changes |
+| `D00 T01 §13` | F5 | minor | `adversarial` | fixed | independent | any truthy ended value ended a guard while cleanup assumed an object |
+| `D00 T01 §13` | F6 | major | `adversarial` | fixed | independent | an ended mark with a bogus reason or timestamp still ended the guard |
+| `D00 T01 §13` | F7 | minor | `adversarial` | fixed | independent | a read error after a good open failed the hook |
+| `D00 T01 §13` | F8 | major | `integration` | fixed | independent | the merger accepted a malformed ended mark as no campaign |
+| `D00 T01 §13` | F9 | minor | `record` | fixed | independent | the item claimed marks outside {reason, at} were malformed when a missing at still read as ended |
+| `D00 T01 §13` | F10 | minor | `adversarial` | fixed | independent | bytes read before a failed read were not charged to the byte budget |
+| `D00 T01 §13` | F11 | minor | `adversarial` | fixed | independent | a read crossing the deadline on the last file still returned a fingerprint |
+| `D00 T01 §13` | F12 | minor | `adversarial` | fixed | independent | an ended field present as null passed validation |
+| `D00 T01 §13` | F13 | minor | `integration` | fixed | independent | the heartbeat's NO GUARD step left the cleanup's cancellation unconfirmed |
+| `D00 T01 §13` | F14 | minor | `adversarial` | fixed | independent | retrying an interrupted plan-done end queried the plan before seeing the mark |
+| `D00 T01 §13` | F15 | minor | `integration` | fixed | independent | the heartbeat cleared other sessions' pending cancellations |
+| `D00 T01 §13` | F16 | minor | `adversarial` | fixed | independent | time.strptime accepted second 61 in an ended mark |
+| `D00 T01 §13` | F17 | minor | `adversarial` | fixed | independent | a deadline check could not interrupt a blocking read |
+| `D00 T01 §13` | F18 | minor | `integration` | fixed | independent | heartbeat step 3 confirmed another session's job |
+| `D00 T01 §13` | F19 | minor | `adversarial` | fixed | independent | lstat and readlink ran outside the bounded worker |
+| `D00 T01 §13` | F20 | minor | `consistency` | fixed | independent | cancellations were keyed by job id alone |
+| `D00 T01 §13` | F21 | minor | `integration` | fixed | independent | the stale-heartbeat exit skipped settling its own cancellation |
+| `D00 T01 §13` | F22 | major | `adversarial` | fixed | independent | cancel-confirmed without a session cleared every session's record |
+| `D00 T01 §13` | F23 | major | `integration` | fixed | independent | reconcile advised deleting a job named only by another session's record |
+| `D00 T01 §13` | F24 | major | `integration` | fixed | independent | a record with no session was treated as every session's |
+| `D00 T01 §13` | F25 | minor | `integration` | fixed | independent | the operator's pending view hid each record's session and advised deleting unowned jobs |
+| `D00 T01 §13` | F26 | minor | `record` | fixed | self | the self-test's os.read patch broke subprocess pipes on Linux |
 | `D00 T01 §15` | F1 | major | `adversarial` | fixed | independent | the CI gate took the newest runs whatever commit they built |
 | `D00 T01 §15` | F2 | major | `adversarial` | fixed | independent | main's CI was not judged again before the merge |
 | `D00 T01 §15` | F3 | minor | `consistency` | fixed | independent | a refusal at the final preflight became a failure email |

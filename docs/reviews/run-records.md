@@ -136,3 +136,25 @@ round: 9 model: gpt-6-astra effort: medium outcome: independent candidate: 410a5
 round: 10 model: gpt-6-astra effort: medium outcome: independent candidate: addb559 provider: openai version: gpt-6-astra cost: 57707tokens latency: 141s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings:
 empty: 1
 refuted: 0
+
+run: D00-T01-S13
+date: 2026-10-22
+runner: panel
+rounds: 15
+round: 1 model: gpt-6-astra effort: medium outcome: empty candidate: 73a9cc8 provider: openai version: gpt-6-astra cost: 45081tokens latency: 26s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 2 model: gpt-6-astra effort: medium outcome: independent candidate: de2c717 provider: openai version: gpt-6-astra cost: 76806tokens latency: 108s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T01-S13-F1, D00-T01-S13-F2, D00-T01-S13-F3
+round: 3 model: gpt-6-astra effort: medium outcome: independent candidate: 6d49240 provider: openai version: gpt-6-astra cost: 73366tokens latency: 144s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F4, D00-T01-S13-F5
+round: 4 model: gpt-6-astra effort: medium outcome: independent candidate: cd8dd73 provider: openai version: gpt-6-astra cost: 71049tokens latency: 141s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F6, D00-T01-S13-F7, D00-T01-S13-F8, D00-T01-S13-F9
+round: 5 model: gpt-6-astra effort: medium outcome: independent candidate: e6dd52e provider: openai version: gpt-6-astra cost: 67650tokens latency: 99s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F10, D00-T01-S13-F11
+round: 6 model: gpt-6-astra effort: medium outcome: independent candidate: bc89400 provider: openai version: gpt-6-astra cost: 82329tokens latency: 104s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F12
+round: 7 model: gpt-6-astra effort: medium outcome: independent candidate: 8350cba provider: openai version: gpt-6-astra cost: 70306tokens latency: 114s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F13
+round: 8 model: gpt-6-astra effort: medium outcome: independent candidate: 81c799b provider: openai version: gpt-6-astra cost: 73170tokens latency: 103s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F14, D00-T01-S13-F15
+round: 9 model: gpt-6-astra effort: medium outcome: independent candidate: 83d4030 provider: openai version: gpt-6-astra cost: 69999tokens latency: 121s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F16
+round: 10 model: gpt-6-astra effort: medium outcome: independent candidate: cb28842 provider: openai version: gpt-6-astra cost: 68021tokens latency: 104s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F17, D00-T01-S13-F18
+round: 11 model: gpt-6-astra effort: medium outcome: independent candidate: de632e2 provider: openai version: gpt-6-astra cost: 70324tokens latency: 98s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F19, D00-T01-S13-F20, D00-T01-S13-F21
+round: 12 model: gpt-6-astra effort: medium outcome: independent candidate: 7372239 provider: openai version: gpt-6-astra cost: 70602tokens latency: 103s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F22, D00-T01-S13-F23
+round: 13 model: gpt-6-astra effort: medium outcome: independent candidate: 08053d4 provider: openai version: gpt-6-astra cost: 68452tokens latency: 98s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F24
+round: 14 model: gpt-6-astra effort: medium outcome: independent candidate: 7735b51 provider: openai version: gpt-6-astra cost: 77036tokens latency: 120s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T01-S13-F25
+round: 15 model: gpt-6-astra effort: medium outcome: independent candidate: 73a9cc8 provider: openai version: gpt-6-astra cost: 88887tokens latency: 98s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings:
+empty: 1
+refuted: 0
