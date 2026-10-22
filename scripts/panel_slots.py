@@ -57,6 +57,7 @@ import json
 import shutil
 import subprocess
 import sys
+import time
 import tempfile
 
 # The delegate pin is closed. A new alias or effort is an operator decision
@@ -285,22 +286,49 @@ def _frontmatter_problem(text: str) -> str | None:
     return _read_frontmatter(text)[1]
 
 
-# The agent-definition schema's one-line values (D00 T01 §14, independent review rounds 1 and 2): a single-quoted
+# The agent-definition schema's one-line values (D00 T01 §14, independent review rounds 1, 2, and 8): a single-quoted
 # scalar ('' is its only escape), a double-quoted scalar with no escape at all, or a plain scalar that opens with no
 # YAML indicator and holds no ':' followed by a space, a tab, or the line's end, each optionally followed by a space or
-# tab and '# comment' (only a space or a tab separates a comment, YAML 1.2.2 section 6.6).
-_SINGLE = r"'(?:[^']|'')*'"
-_DOUBLE = r'"[^"\\]*"'
-_PLAIN_CHAR = r"(?:(?!:(?:[ \t]|$))(?![ \t]#)[^\n])"
-_PLAIN = rf"(?:[^\s'\"|>\[\]{{}}&*!%@`#,?:-]|-(?=[^\s]))(?:{_PLAIN_CHAR})*"
+# tab and '# comment' (only a space or a tab separates a comment, YAML 1.2.2 section 6.6). `_parse_line` reads them in
+# one left-to-right pass, so no malformed line can make it backtrack.
+_KEY_RE = re.compile(r"[A-Za-z_][\w-]*")
+_PLAIN_BAD_START = frozenset("'\"|>[]{}&*!%@`#,?:-")
 # Plain values YAML resolves to something other than a string: the core schema's null, booleans, integers, and floats
 # (YAML 1.2.2 section 10.3.2), plus the YAML 1.1 booleans an older loader still reads as such.
 _NON_STRING_PLAIN_RE = re.compile(
     r"null|Null|NULL|~|true|True|TRUE|false|False|FALSE|[-+]?[0-9]+|0o[0-7]+|0x[0-9a-fA-F]+"
     r"|[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)"
     r"|y|Y|yes|Yes|YES|n|N|no|No|NO|on|On|ON|off|Off|OFF")
-_VALUE_LINE_RE = re.compile(
-    rf"^([A-Za-z_][\w-]*):(?:[ ]+(?:({_SINGLE})|({_DOUBLE})|({_PLAIN})))?[ \t]*(?:[ \t]#.*)?$")
+
+
+def _parse_line(line: str) -> tuple[str, str] | None:
+    """(kind, value) for a top-level line in the schema's one-line shapes, kind one of `empty`, `single`, `double`,
+    `plain`, or None for any other shape. Every step is a linear scan (independent review round 8 measured the regex it
+    replaces backtracking quadratically on a long run of spaces)."""
+    key, sep, rest = line.partition(":")
+    if not sep or not _KEY_RE.fullmatch(key) or (rest and rest[0] not in " \t"):
+        return None
+    body = rest.strip(" \t")
+    if not body or body[0] == "#":
+        return "empty", ""
+    if body[0] in "'\"":
+        end = _quote_end(body)
+        if end < 0:
+            return None
+        tail = body[end + 1:]
+        if tail.strip(" \t") and not (tail[:1] in " \t" and tail.lstrip(" \t")[:1] == "#"):
+            return None
+        inner = body[1:end]
+        if body[0] == '"':
+            return ("double", inner) if "\\" not in inner else None
+        return "single", inner.replace("''", "'")
+    comment = re.search(r"[ \t]#", body)
+    value = (body[:comment.start()] if comment else body).rstrip(" \t")
+    if value[0] in _PLAIN_BAD_START and not (value[0] == "-" and len(value) > 1 and value[1] not in " \t"):
+        return None
+    if re.search(r":(?:[ \t]|$)", value):
+        return None
+    return "plain", value
 
 
 def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
@@ -309,8 +337,8 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
 
     Lines are split once, on LF after CRLF is normalised, and any other line break or whitespace character (U+2028,
     a non-breaking space, a form feed, a control character) is outside the schema, since YAML and this reader would
-    split or strip it differently. Every top-level line must be `identifier: value` in `_VALUE_LINE_RE`'s one-line
-    shapes and keys are unique; the only nested content allowed is the canonical `hooks:` block (`SHELL_HOOK_BLOCK`),
+    split or strip it differently. Every top-level line must be `identifier: value` in `_parse_line`'s one-line shapes
+    and keys are unique; the only nested content allowed is the canonical `hooks:` block (`SHELL_HOOK_BLOCK`),
     verbatim. Each problem names its basis: invalid YAML by its YAML 1.2.2 section, or the repository's agent schema."""
     body = text.lstrip("\ufeff").replace("\r\n", "\n")
     lines = body.split("\n")
@@ -370,8 +398,8 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
             note(f"a key of {len(key)} characters, past the 1024 an implicit key may have, which YAML forbids "
                  f"(YAML 1.2.2 section 8.2.2)")
             continue
-        match = _VALUE_LINE_RE.match(line)
-        if match is None:
+        parsed = _parse_line(line)
+        if parsed is None:
             note(_value_problem(line, key))
             continue
         if _NON_STRING_PLAIN_RE.fullmatch(key):
@@ -382,24 +410,19 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
         if key in fields:
             note(f"key {key!r} appears twice, which YAML forbids (YAML 1.2.2 section 3.2.1.1: mapping keys are unique)")
             continue
-        single, double, plain = match.group(2), match.group(3), match.group(4)
-        if single is not None:
-            fields[key] = single[1:-1].replace("''", "'")
-        elif double is not None:
-            fields[key] = double[1:-1]
-        else:
-            fields[key] = (plain or "").rstrip(" \t")
-            if not fields[key] and key != "hooks":
+        kind, fields[key] = parsed
+        if kind in ("empty", "plain"):
+            if kind == "empty" and key != "hooks":
                 # An absent value is null to YAML, not an empty string; only `hooks:` opens a block (round 6).
                 note(f"key {key!r} has no value, which YAML resolves to null rather than a string (YAML 1.2.2 "
                      f"section 10.3.2); give it a value, or quote an empty one")
-            elif fields[key] and _NON_STRING_PLAIN_RE.fullmatch(fields[key]):
+            elif kind == "plain" and _NON_STRING_PLAIN_RE.fullmatch(fields[key]):
                 # Every field of this schema is a string; YAML resolves this plain value to null, a boolean, or a
                 # number instead, so the reader's string would not be what the loader holds (independent review round
                 # 5).
                 note(f"key {key!r} holds {fields[key]!r}, which YAML resolves to a null, a boolean, or a number rather "
                      f"than a string (the YAML 1.2.2 core schema, section 10.3.2, or a YAML 1.1 boolean); quote it")
-        if key == "hooks" and single is None and double is None and not fields[key]:
+        if key == "hooks" and kind == "empty":
             # The one nested block the schema allows is the canonical shell gate, verbatim: its own quoted content can
             # never reach past it to stand in for a top-level field (independent review round 2).
             block = [line]
@@ -415,7 +438,8 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
 
 
 def _value_problem(line: str, key: str) -> str:
-    """Why a top-level line falls outside `_VALUE_LINE_RE`, naming the basis."""
+    """Why a top-level line falls outside `_parse_line`'s shapes, naming the basis; a schema refusal never claims the
+    shape is valid YAML (independent review round 8)."""
     value = line.partition(":")[2].strip()
     if not re.fullmatch(r"[A-Za-z_][\w-]*", key):
         return (f"line {line[:40]!r} is not an `identifier: value` pair (a quoted or unusual key), outside this "
@@ -430,14 +454,17 @@ def _value_problem(line: str, key: str) -> str:
             return (f"key {key!r} has text after its closing quote, which YAML cannot parse (YAML 1.2.2 section "
                     f"7.3.1); move it inside the quotes")
     if value[:1] == '"' and "\\" in value:
-        return (f"key {key!r} holds an escape in a double-quoted value: valid YAML, but outside this repository's "
-                f"agent schema, whose reader does not decode escapes; write it plainly")
+        return (f"key {key!r} holds a backslash escape in a double-quoted value: outside this repository's agent "
+                f"schema, whose reader does not decode escapes; write it plainly")
     if value[:1] in ("|", ">"):
-        return (f"key {key!r} holds a block-scalar value: valid YAML, but outside this repository's agent schema, "
-                f"whose reader takes values inline; write it inline")
+        return (f"key {key!r} holds a block-scalar value: outside this repository's agent schema, whose reader takes "
+                f"values inline; write it inline")
     if value[:1] in ("[", "{"):
-        return (f"key {key!r} holds a flow collection: valid YAML, but outside this repository's agent schema "
-                f"(tools are one comma-separated line); write it inline")
+        return (f"key {key!r} holds a flow collection: outside this repository's agent schema (tools are one "
+                f"comma-separated line); write it inline")
+    if line.partition(":")[2][:1] not in ("", " ", "\t"):
+        return (f"line {line[:40]!r} has no space after its ':', so YAML reads it as one plain value rather than a "
+                f"key and a value; outside this repository's agent schema")
     if re.search(r":(?:[ \t]|$)", value):
         return (f"key {key!r} holds a plain value with a ':' before a space or the line's end, which YAML forbids "
                 f"(YAML 1.2.2 section 7.3.3); quote it")
@@ -1225,10 +1252,10 @@ def _self_test() -> int:
     for name, files, needle in (
         ("agent duplicate key", {"a-one.md": front().replace("model: sonnet\n", "model: sonnet\nmodel: haiku\n")},
          "appears twice, which YAML forbids (YAML 1.2.2 section 3.2.1.1"),
-        ("agent block scalar on another key", {"a-one.md": front(effort="|")}, "block-scalar value: valid YAML"),
-        ("agent folded scalar", {"a-one.md": front(model=">-")}, "block-scalar value: valid YAML"),
-        ("agent flow sequence", {"a-one.md": front(tools="[Read, Grep]")}, "flow collection: valid YAML"),
-        ("agent flow mapping", {"a-one.md": front(color="{a: b}")}, "flow collection: valid YAML"),
+        ("agent block scalar on another key", {"a-one.md": front(effort="|")}, "block-scalar value: outside"),
+        ("agent folded scalar", {"a-one.md": front(model=">-")}, "block-scalar value: outside"),
+        ("agent flow sequence", {"a-one.md": front(tools="[Read, Grep]")}, "flow collection: outside"),
+        ("agent flow mapping", {"a-one.md": front(color="{a: b}")}, "flow collection: outside"),
         ("agent tab-indented line", {"a-one.md": front().replace("hooks:\n  PreToolUse:", "hooks:\n\tPreToolUse:")},
          "a tab in indentation, which YAML forbids (YAML 1.2.2 section 6.1)"),
         ("agent unterminated double quote", {"a-one.md": front(description='"does things')},
@@ -1246,7 +1273,7 @@ def _self_test() -> int:
          "is not an `identifier: value` pair"),
         ("agent escaped closing quote", {"a-one.md": front(description='"never closes\\"')}, "does not close on its line"),
         ("agent escape that would rename a tool", {"a-one.md": front(tools='"Read, \\u0057rite"')},
-         "an escape in a double-quoted value"),
+         "a backslash escape in a double-quoted value"),
         ("agent multi-line quoted value", {"a-one.md": front(description='"careful\n  reviewer"')}, "does not close on its line"),
         ("agent colon-space in a plain value", {"a-one.md": front(description="does things: carefully")},
          "which YAML forbids (YAML 1.2.2 section 7.3.3)"),
@@ -1306,6 +1333,17 @@ def _self_test() -> int:
                   {"a-one.md": front().replace("name: a-one" + chr(10), "name: a-one" + chr(10) + "k" * 1025 + ": purple" + chr(10))},
                   "past the 1024 an implicit key may have")
     check("agent key of 1024 characters is read", _frontmatter_problem("---" + chr(10) + "k" * 1024 + ": v" + chr(10) + "---" + chr(10)) is None)
+    # Independent review round 8: rejection is linear in the line's length, a schema refusal never claims the shape
+    # is valid YAML, and a ':' with no space after it is no key.
+    began = time.monotonic()
+    slow = _read_frontmatter("---" + chr(10) + "color: a" + " " * 64000 + ":" + chr(10) + "---" + chr(10))
+    check("agent long malformed line is refused in linear time", slow[1] is not None and time.monotonic() - began < 0.5,
+          f"{time.monotonic() - began:.2f}s")
+    check("agent schema refusals claim no YAML validity",
+          all("valid YAML" not in (_frontmatter_problem("---" + chr(10) + v + chr(10) + "---" + chr(10)) or "")
+              for v in ('color: "bad' + chr(92) + 'q"', "color: [unterminated", "color: |", "color: {a: b}")))
+    agents_refuse("agent colon without a space", {"a-one.md": front(color=None).replace("name: a-one" + chr(10), "name: a-one" + chr(10) + "color:purple" + chr(10))},
+                  "no space after its ':'")
     check("agent delimiters are exact", _frontmatter("--- " + chr(10) + "name: x" + chr(10) + "---" + chr(10)) is None)
     # The forms the schema accepts all still load: quoted values (an escaped single quote included), a comment after
     # a value, a quoted hash, the indented hook block, and CRLF line ends.
