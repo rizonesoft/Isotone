@@ -353,8 +353,14 @@ def end(root: str, session: str, reason: str) -> str:
         raise GuardError(f"reason {reason!r} is not one of {', '.join(END_REASONS)}")
     if not session:
         raise GuardError("end needs --session (the session that owns the guard)")
-    # The plan query runs before the lock, so no subprocess is ever held under it.
-    ready = ready_rows(root)[0] if reason == "plan-done" else None
+    # The plan query runs before the lock, so no subprocess is ever held under it. An end interrupted after its mark
+    # is finished without it: the run is already over, so no prerequisite may stand in the cleanup's way
+    # (independent review round 7).
+    try:
+        already = bool((read_guard(root, include_ended=True) or {}).get("ended"))
+    except GuardError:
+        already = False
+    ready = ready_rows(root)[0] if reason == "plan-done" and not already else None
     with _Lock(root):
         return _end_locked(root, session, reason, ready)
 
@@ -2103,6 +2109,40 @@ def _self_test() -> int:
               and "job-r2" in pending_cancel(rroot), msg)
         cancel_confirmed(rroot, "job-r2")
         # The heartbeat's path finishes it too, and a new run may start over an ended guard without a handover.
+        acquire(rroot, SESSION, 2, RUN_FILE, "job-r4")
+        globals()["_pending_jobs"] = interrupted
+        try:
+            end(rroot, SESSION, "operator-stop")
+        except GuardError as exc:
+            check("an-injected-end-stops-after-its-mark-again", "injected" in str(exc), str(exc))
+        finally:
+            globals()["_pending_jobs"] = real_pending
+        # A plan-done end interrupted after its mark is finished even when the plan query now fails.
+        os.remove(_paths(rroot)[0])
+        acquire(rroot, SESSION, 2, RUN_FILE, "job-r6")
+        _set_ready(rroot, 0)
+        globals()["_pending_jobs"] = interrupted
+        try:
+            end(rroot, SESSION, "plan-done")
+        except GuardError as exc:
+            check("an-injected-end-stops-after-its-mark-again", "injected" in str(exc), str(exc))
+        finally:
+            globals()["_pending_jobs"] = real_pending
+
+        def query_fails(root, timeout=0, phase=None):
+            raise GuardError("query ready exited 3")
+        real_ready = globals()["ready_rows"]
+        globals()["ready_rows"] = query_fails
+        try:
+            msg = end(rroot, SESSION, "plan-done")
+        except GuardError as exc:
+            msg = str(exc)
+        finally:
+            globals()["ready_rows"] = real_ready
+            _set_ready(rroot, 3)
+        check("an-interrupted-plan-done-end-finishes-without-the-plan-query",
+              "finished an interrupted end" in msg and not os.path.exists(_paths(rroot)[0]), msg)
+        cancel_confirmed(rroot, "job-r6")
         acquire(rroot, SESSION, 2, RUN_FILE, "job-r4")
         globals()["_pending_jobs"] = interrupted
         try:
