@@ -361,7 +361,10 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
         older = next((r for r in runs if r.get("headSha") and _is_ancestor(git_fn, root, r["headSha"], head)), None)
         if older is None:
             return "pending", f"main's {name} has no push run on {head[:12]} or any commit before it yet"
-        changed = [f for f in git_fn("diff", "--name-only", older["headSha"], head, cwd=root).splitlines() if f]
+        # NUL-separated paths are never quoted, and with renames off a moved file lists both its sides, so every
+        # path the push touched meets the filter (independent review round 2).
+        changed = [f for f in git_fn("diff", "--name-only", "-z", "--no-renames", older["headSha"], head,
+                                     cwd=root).split("\0") if f]
         paths = _push_paths(root, file)
         if paths is None or any(_glob_re(p).match(f) for p in paths for f in changed):
             return "pending", f"main's {name} run for {head[:12]} has not started yet"
@@ -373,7 +376,7 @@ def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, g
     return "green", ""
 
 
-def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git) -> None:
+def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git) -> str:
     """Refused while a guarding workflow's run for `main`'s head is still to come or running (a busy clone); Failed
     when one completed with anything but success or cannot be read. Every workflow is read before judging, so a
     red one is reported even while another is still running (independent review round 1)."""
@@ -385,6 +388,20 @@ def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git) -> None:
     pending = [why for state, why in verdicts if state == "pending"]
     if pending:
         raise Refused("; ".join(pending))
+    return head
+
+
+def final_check(root: Path, repo: str, campaign: bool, git_fn, gh_fn, graph, active_fn) -> None:
+    """The last judgment before a merge: main's CI first (the slow GitHub reads), then the preflight (one fetch and
+    the local checks back to back), and the head the preflight leaves must be the one whose CI was judged, so nothing
+    local is trusted across a GitHub read (independent review round 2). GitHub rebases onto the base as it is when
+    `gh pr merge` runs; the window between this check and that call is the narrow one no client can close, and the
+    landed check and validate after the merge read the result."""
+    judged = main_ci(repo, root, gh_fn, git_fn)
+    preflight(root, campaign, git_fn, graph, active_fn)
+    head = git_fn("rev-parse", "HEAD", cwd=root).strip()
+    if head != judged:
+        raise Refused(f"main moved from {judged[:12]} to {head[:12]} while its CI was read")
 
 
 def preflight(root: Path, campaign: bool, git_fn=git, graph=None, active_fn=campaign_active) -> None:
@@ -877,8 +894,7 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         print("merge_prs: nothing eligible" + "".join(f"; #{pr['number']} {why}" for pr, ok, why in verdicts if not ok))
         return 0
     code, line = merge_one(ready[0], repo, root, gh_fn, git_fn, validate_fn,
-                           ready_fn=lambda: (preflight(root, args.campaign, git_fn, graph, active_fn),
-                                             main_ci(repo, root, gh_fn, git_fn)))
+                           ready_fn=lambda: final_check(root, repo, args.campaign, git_fn, gh_fn, graph, active_fn))
     print(line, file=sys.stdout if code == 0 else sys.stderr)
     return code
 

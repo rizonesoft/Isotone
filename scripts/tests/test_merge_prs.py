@@ -56,7 +56,8 @@ class FakeGit:
                 raise mp.Failed("git symbolic-ref -q HEAD failed: ")
             return self.branch + "\n"
         if args[:2] == ("diff", "--name-only"):
-            return "".join(f + "\n" for f in self.changed)
+            assert "-z" in args and "--no-renames" in args, args
+            return "".join(f + "\0" for f in self.changed)
         if args[:2] == ("rev-parse", "--verify") and self.broken:
             raise mp.Failed("git rev-parse --verify -q HEAD failed: not a git repository")
         if args[:3] == ("remote", "get-url", "origin"):
@@ -519,6 +520,50 @@ class MergeTests(Base):
                 gh = FakeGh([pr(1)], main_runs=runs)
                 code, out = self.call(["run", "--campaign"], gh, FakeGit(changed=changed))
                 self.assertEqual((code, len(gh.merges())), (want, merges), out)
+
+    def test_a_non_ascii_or_moved_path_still_meets_the_filter(self):
+        # Independent review round 2: -z leaves names unquoted, --no-renames lists a move's old side.
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        (wf / "plan.yml").write_text("name: plan-gates" + chr(10) + "on:" + chr(10) + "  push:" + chr(10)
+                                     + "    paths:" + chr(10) + "      - 'scripts/**'" + chr(10), encoding="utf-8")
+        for changed in (["scripts/caf" + chr(233) + ".py"], ["archive/check.py", "scripts/check.py"]):
+            with self.subTest(changed=changed):
+                gh = FakeGh([pr(1)], main_runs={"plan.yml": self.run_on("b" * 40)})
+                code, out = self.call(["run", "--campaign"], gh, FakeGit(changed=changed))
+                self.assertEqual((code, gh.merges()), (2, []), out)
+
+    def test_the_clone_is_judged_after_main_ci_at_the_merge(self):
+        # Independent review round 2: a checkout detached during the final CI read never reaches the merge.
+        git = FakeGit()
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+        reads = []
+
+        def detach_on_final_ci(*args, cwd=None):
+            if args[:2] == ("run", "list") and "--branch" in args:
+                reads.append(args)
+                if len(reads) > len(mp.MAIN_WORKFLOWS):
+                    git.detached = True
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--task"], detach_on_final_ci, git)
+        self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (0, [], True))
+
+    def test_main_moving_while_its_ci_is_read_refuses_the_merge(self):
+        git = FakeGit()
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+        reads = []
+
+        def advance_on_final_ci(*args, cwd=None):
+            out = real(*args, cwd=cwd)
+            if args[:2] == ("run", "list") and "--branch" in args:
+                reads.append(args)
+                if len(reads) == 2 * len(mp.MAIN_WORKFLOWS):
+                    git.head = git.remote = "e" * 40
+            return out
+        code, out = self.call(["run", "--campaign"], advance_on_final_ci, git)
+        self.assertEqual((code, gh.merges(), "main moved" in out), (2, [], True))
 
     def test_main_ci_is_read_again_right_before_the_merge(self):
         # Independent review round 1: main turns red while the pull requests are read.
