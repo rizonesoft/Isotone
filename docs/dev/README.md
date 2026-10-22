@@ -26,7 +26,7 @@ pwsh scripts/package.ps1 -App Stilus   # installer and portable ZIP for one app
 ## Per-app notes
 
 - **Stilus** lives in `src/Stilus/` (projects still named `Bezier.*` from its origin until `D02 T01 §1`). Standards: [`standards/stilus.md`](../../standards/stilus.md). Notes: [the vector icon control](stilus/vector-icon.md) and [the status bar](stilus/status-bar.md), moved from `src/Stilus/docs/` by `D00 T03 §1`.
-- **Gesso** lives in `src/Gesso/`. Standards: [`standards/gesso.md`](../../standards/gesso.md).
+- **Gesso** lives in `src/Gesso/`. Standards: [`standards/gesso.md`](../../standards/gesso.md). Notes: [the plug-in interfaces](gesso/plugins.md), moved from `src/Gesso/docs/` by `D00 T03 §1`.
 - **Albumen** is planned and will live in `src/Albumen/`. Standards: [`standards/albumen.md`](../../standards/albumen.md).
 - The original Bezier and Imago roadmaps (the apps now named Stilus and Gesso) are kept for reference in [`docs/legacy/`](../legacy/README.md).
 
