@@ -39,14 +39,21 @@ def pr(number=1, **over):
 
 class FakeGit:
     def __init__(self, status="", head=HEAD, remote=HEAD, pull_fails=False, branch="refs/heads/main",
-                 fetch_fails=False, origin="https://github.com/rizonesoft/Isotone.git"):
+                 fetch_fails=False, origin="https://github.com/rizonesoft/Isotone.git", detached=False, broken=False):
         self.calls, self.status, self.head, self.remote, self.pull_fails = [], status, head, remote, pull_fails
         self.branch, self.fetch_fails, self.origin = branch, fetch_fails, origin
+        # `symbolic-ref -q HEAD` fails both on a detached HEAD and in a broken repository; `rev-parse --verify`
+        # tells them apart.
+        self.detached, self.broken = detached, broken
 
     def __call__(self, *args, cwd=None):
         self.calls.append(args)
         if args[0] == "symbolic-ref":
+            if self.detached or self.broken:
+                raise mp.Failed("git symbolic-ref -q HEAD failed: ")
             return self.branch + "\n"
+        if args[:2] == ("rev-parse", "--verify") and self.broken:
+            raise mp.Failed("git rev-parse --verify -q HEAD failed: not a git repository")
         if args[:3] == ("remote", "get-url", "origin"):
             return self.origin + "\n"
         if args[0] == "fetch" and self.fetch_fails:
@@ -73,7 +80,8 @@ class FakeGh:
     """
 
     def __init__(self, prs, merge_fails=False, lands=False, view_fails=False, retarget=None, elsewhere=False,
-                 off_main=False, already_merged=(), unknown_views=0, pending_field="mergeable", runs=None):
+                 off_main=False, already_merged=(), unknown_views=0, pending_field="mergeable", runs=None,
+                 main_runs=None):
         self.calls, self.prs = [], prs
         self.merge_fails, self.lands, self.view_fails = merge_fails, lands, view_fails
         self.retarget, self.elsewhere, self.off_main = retarget, elsewhere, off_main
@@ -81,6 +89,8 @@ class FakeGh:
         self.views: dict[str, int] = {}
         # GitHub's lazy mergeability: the first `unknown_views` reads of each pull request answer UNKNOWN.
         self.unknown_views, self.pending_field, self.runs = unknown_views, pending_field, runs
+        # main's newest push run per workflow file; green unless a test says otherwise.
+        self.main_runs = main_runs or {}
 
     def _pr(self, n):
         return next(p for p in self.prs if str(p["number"]) == str(n))
@@ -108,6 +118,10 @@ class FakeGh:
             pending = {self.pending_field: "UNKNOWN"} if self.views[args[2]] <= limit else {}
             return json.dumps(dict(p, baseRefName=base, state="MERGED" if merged else "OPEN", **pending,
                                    mergeCommit={"oid": ("f" if self.off_main else "c") * 40} if merged else None))
+        if args[:2] == ("run", "list") and "--branch" in args:
+            wf = args[args.index("--workflow") + 1]
+            return json.dumps(self.main_runs.get(wf, [{"status": "completed", "conclusion": "success",
+                                                       "url": f"https://example.invalid/{wf}", "headSha": HEAD}]))
         if args[:2] == ("run", "list") and self.runs is not None:
             return json.dumps(self.runs.get(args[args.index("--commit") + 1], []))
         if args[:2] == ("pr", "merge"):
@@ -354,7 +368,7 @@ class MergeTests(Base):
         calls = []
 
         def runs_fail_once(*args, cwd=None):
-            if args[:2] == ("run", "list"):
+            if args[:2] == ("run", "list") and "--commit" in args:
                 calls.append(args)
                 if len(calls) == 1:
                     raise mp.Failed("gh run list failed: connection reset")
@@ -447,6 +461,50 @@ class MergeTests(Base):
         finally:
             mp.RUN_BUDGET = saved
         self.assertEqual((code, gh.merges(), "time budget" in out, (self.root / mp.BLOCKED).exists()), (1, [], True, False))
+
+    def test_a_red_main_stops_the_run_before_any_merge(self):
+        # D00 T01 §15: the newest build run on main failed, so nothing merges and the task's email fires.
+        for flags in (["--task"], ["--campaign"]):
+            with self.subTest(flags=flags):
+                red = {"build.yml": [{"status": "completed", "conclusion": "failure", "url": "https://x/run/9",
+                                      "headSha": HEAD}]}
+                gh = FakeGh([pr(1)], main_runs=red)
+                code, out = self.call(["run", *flags], gh, FakeGit())
+                self.assertEqual((code, gh.merges(), "build run concluded failure: https://x/run/9" in out),
+                                 (1, [], True))
+
+    def test_a_red_main_is_reported_with_nothing_eligible(self):
+        # D00 T01 §15: the hourly task reads main's CI on every run, so its own red merge surfaces on the next one.
+        red = {"plan.yml": [{"status": "completed", "conclusion": "failure", "url": "https://x/run/8", "headSha": HEAD}]}
+        gh = FakeGh([], main_runs=red)
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, "plan-gates run concluded failure" in out), (1, True))
+
+    def test_a_running_main_build_is_a_busy_clone(self):
+        running = {"build.yml": [{"status": "in_progress", "conclusion": "", "url": "https://x/run/7", "headSha": HEAD}]}
+        for flags, want in ((["--task"], 0), (["--campaign"], 2)):
+            with self.subTest(flags=flags):
+                gh = FakeGh([pr(1)], main_runs=running)
+                code, out = self.call(["run", *flags], gh, FakeGit())
+                self.assertEqual((code, gh.merges(), "is in_progress" in out), (want, [], True))
+
+    def test_main_with_no_run_to_read_is_a_failure(self):
+        gh = FakeGh([pr(1)], main_runs={"build.yml": []})
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), "no build push run" in out), (1, [], True))
+
+    def test_a_detached_checkout_is_a_quiet_refusal(self):
+        # D00-T01-S12-F44: a detached HEAD is a busy clone, never a failure email.
+        for flags, want in ((["--task"], 0), (["--campaign"], 2)):
+            with self.subTest(flags=flags):
+                gh = FakeGh([pr(1)])
+                code, out = self.call(["run", *flags], gh, FakeGit(detached=True))
+                self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (want, [], True))
+
+    def test_a_broken_repository_is_still_a_failure(self):
+        gh = FakeGh([pr(1)])
+        code, out = self.call(["run", "--task"], gh, FakeGit(broken=True))
+        self.assertEqual((code, gh.merges()), (1, []))
 
     def test_recover_settles_and_never_merges(self):
         gh = FakeGh([pr(1)])

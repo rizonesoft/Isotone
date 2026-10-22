@@ -80,6 +80,9 @@ MERGEABLE_WAIT = 5.0
 # the time left, so a run ends inside the scheduled task's 600-second timeout however slow GitHub is, and a merge is
 # issued only while MERGE_RESERVE seconds remain for the merge, the pull, and validate.
 RUN_BUDGET = 540
+# The workflows that guard `main` itself, read at the start of every run (D00 T01 §15): a merge onto a red `main` is
+# refused, and the hourly task's next run reports a red its own merge caused, since it cannot wait out a build.
+MAIN_WORKFLOWS = (("plan-gates", "plan.yml"), ("build", "build.yml"))
 MERGE_RESERVE = 120
 _deadline: float | None = None
 
@@ -315,6 +318,39 @@ def _block(root: Path, pr: int, why: str) -> None:
     os.replace(tmp, path)
 
 
+def _branch(root: Path, git_fn) -> str:
+    """The checked-out branch ref, or "" on a detached HEAD. `git symbolic-ref -q HEAD` fails on a detached HEAD as
+    it does on a broken repository, so a HEAD that still resolves to a commit reads as detached (a busy clone), and
+    anything else stays a failure (D00 T01 §15, D00-T01-S12-F44)."""
+    try:
+        return git_fn("symbolic-ref", "-q", "HEAD", cwd=root).strip()
+    except Failed as error:
+        try:
+            git_fn("rev-parse", "--verify", "-q", "HEAD", cwd=root)
+        except Failed:
+            raise error from None
+        return ""
+
+
+def main_ci(repo: str, root: Path, gh_fn=gh) -> None:
+    """Refused while `main`'s newest push run of a guarding workflow is still running (a busy clone); Failed when one
+    completed with anything but success, or cannot be read (D00 T01 §15)."""
+    for name, file in MAIN_WORKFLOWS:
+        try:
+            runs = json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push", "--workflow",
+                                    file, "--limit", "1", "--json", "status,conclusion,url,headSha", cwd=root) or "[]")
+        except ValueError as error:
+            raise Failed(f"main's {name} runs cannot be read: {error}") from None
+        if not runs:
+            raise Failed(f"main has no {name} push run to read, so its CI cannot be judged")
+        run = runs[0]
+        if run.get("status") != "completed":
+            raise Refused(f"main's newest {name} run is {run.get('status')}: {run.get('url')}")
+        if run.get("conclusion") != "success":
+            raise Failed(f"main's newest {name} run concluded {run.get('conclusion')}: {run.get('url')}; "
+                         f"repair main before any merge")
+
+
 def preflight(root: Path, campaign: bool, git_fn=git, graph=None, active_fn=campaign_active) -> None:
     if not campaign:
         why = active_fn(root)
@@ -324,7 +360,7 @@ def preflight(root: Path, campaign: bool, git_fn=git, graph=None, active_fn=camp
     # then trusted across a network wait (independent review round 13). An explicit destination, so origin/main is
     # updated whatever remote.origin.fetch says (round 3): the comparison below is against the commit just fetched.
     git_fn("fetch", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main", cwd=root)
-    branch = git_fn("symbolic-ref", "-q", "HEAD", cwd=root).strip()
+    branch = _branch(root, git_fn)
     if branch != "refs/heads/main":
         raise Refused(f"the checked-out branch is {branch or 'a detached HEAD'}, not main")
     if git_fn("status", "--porcelain", cwd=root).strip():
@@ -634,7 +670,7 @@ def _merge_and_verify(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_f
 
 def _clone_unsteady(root: Path, git_fn) -> str | None:
     """Why the clone is no longer the one the merge was judged against (off main or dirty), or None."""
-    branch = git_fn("symbolic-ref", "-q", "HEAD", cwd=root).strip()
+    branch = _branch(root, git_fn)
     if branch != "refs/heads/main":
         return f"the checked-out branch is {branch or 'a detached HEAD'}"
     if git_fn("status", "--porcelain", cwd=root).strip():
@@ -751,12 +787,21 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
     try:
         repo = repository(root, git_fn)
         preflight(root, args.campaign, git_fn, graph, active_fn)
+        # Main's own CI, whether or not anything turns out eligible: the hourly task learns of a red its earlier
+        # merge caused on its next run, and never merges onto it (D00 T01 §15).
+        main_ci(repo, root, gh_fn)
         preflight_line = "preflight: ok"
     except Refused as error:
         preflight_line = f"preflight: refused: {error}"
         if args.mode == "run":
             print(f"merge_prs: {preflight_line}")
             return 0 if args.task else 2
+        repo = None
+    except Failed as error:
+        if args.mode == "run":
+            print(f"merge_prs: not merging: {error}", file=sys.stderr)
+            return 1
+        preflight_line = f"preflight: failed: {error}"
         repo = None
     try:
         repo = repo or repository(root, git_fn)
