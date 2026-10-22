@@ -110,11 +110,13 @@ Gesso already builds with warnings as errors and code style enforced, except for
 
 ## 3. Quiet the WPF Temporary Project Output
 
+> **Started:** 2026-10-22T11:03:09Z
+
 WPF markup compilation builds a generated `<Project>_<hash>_wpftmp` project, and under `UseArtifactsOutput` each one gets its own folder in `artifacts/bin/` and `artifacts/obj/`. They are harmless and noisy: a reader of `artifacts/` cannot tell which folders are real.
 
-- [ ] Find the property that names the artifacts folder for the generated project (`ArtifactsProjectName` or the equivalent in the .NET 11 SDK's `Microsoft.NET.DefaultOutputPaths.targets`; **Corrected 2026-09-26:** said the .NET 10 SDK, the pin moved) and set it in `Directory.Build.props` so a `_wpftmp` project reuses its parent's folder, or `Directory.Build.targets` if the value is only known after evaluation. Done when: the chosen property and the SDK file and line that read it are cited in the commit body. Source: the SDK targets file shipped with the pinned SDK.
-- [ ] Remove the `*_wpftmp` bullet from "Other known debt" in `docs/dev/build.md`. Done when: the bullet is gone.
-- [ ] Commit: `"build: keep WPF temporary projects out of artifacts"`
+- [x] Find the property that names the artifacts folder for the generated project (`ArtifactsProjectName` or the equivalent in the .NET 11 SDK's `Microsoft.NET.DefaultOutputPaths.targets`; **Corrected 2026-09-26:** said the .NET 10 SDK, the pin moved) and set it in `Directory.Build.props` so a `_wpftmp` project reuses its parent's folder, or `Directory.Build.targets` if the value is only known after evaluation. Done when: the chosen property and the SDK file and line that read it are cited in the commit body. Source: the SDK targets file shipped with the pinned SDK. `ArtifactsProjectName`: the pinned SDK's `Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultOutputPaths.targets` line 49 sets it to `$(MSBuildProjectName)` only when empty (imported from `Microsoft.NET.Sdk.BeforeCommon.targets` line 57, after `Directory.Build.props`), and WPF names the temporary project `<Parent>_<8 random characters>_wpftmp` (`Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.WinFX.targets` line 376); `Directory.Build.props` sets it, for a project whose name ends `_wpftmp`, to the name with `_<8>_wpftmp` stripped, so the temporary project shares its parent's folders.
+- [x] Remove the `*_wpftmp` bullet from "Other known debt" in `docs/dev/build.md`. Done when: the bullet is gone. Removed from "Other known debt".
+- [x] Commit: `"build: keep WPF temporary projects out of artifacts"` This commit.
 
 **Test checkpoint:** after `Remove-Item artifacts -Recurse -Force; dotnet build Isotone.slnx -c Release`, `Get-ChildItem artifacts -Recurse -Directory -Filter *_wpftmp*` returns nothing, and `dotnet test Isotone.slnx -c Release --no-build` still exits 0 with the same test count. Cheaper substitute that fails: a post-build step that deletes the folders, which leaves them during the build and races incremental builds.
 

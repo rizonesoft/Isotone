@@ -198,4 +198,3 @@ The quarantine is empty: `D00 T02 §1` fixed the three legacy tests it held (202
 - Code is not signed (installers and binaries).
 - The SDK is the .NET 11 release candidate (`11.0.100-rc.2.26504.105`) and Microsoft.Extensions.* are `11.0.0-rc.2`; `D00 T02 §8` pins GA when it ships (November 2026), and the first product release waits for it.
 - SharpVectors.Wpf ships only for the Stilus splash logo; `D02 T02 §2` replaces the `SvgViewbox` and drops it.
-- The WPF temporary projects leave `*_wpftmp` folders under `artifacts/bin/`. They are harmless, but noisy.

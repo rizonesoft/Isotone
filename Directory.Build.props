@@ -34,6 +34,17 @@
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
   </PropertyGroup>
 
+  <!--
+    WPF markup compilation builds a temporary project, <Parent>_<8 random characters>_wpftmp (Microsoft.WinFX.targets,
+    GenerateTemporaryTargetAssembly). Under artifacts output it would take its own name as ArtifactsProjectName and
+    leave one artifacts/bin and artifacts/obj folder per build; with its parent's name it shares the parent's folders,
+    as it does in the classic bin/obj layout. The SDK's Microsoft.NET.DefaultOutputPaths.targets sets
+    ArtifactsProjectName to $(MSBuildProjectName) only when it is still empty, so it is set here first.
+  -->
+  <PropertyGroup Condition="'$(UseArtifactsOutput)' == 'true' and $(MSBuildProjectName.EndsWith('_wpftmp'))">
+    <ArtifactsProjectName>$([System.Text.RegularExpressions.Regex]::Replace('$(MSBuildProjectName)', '_[a-z0-9]{8}_wpftmp$', ''))</ArtifactsProjectName>
+  </PropertyGroup>
+
   <!-- Tests: one settings file (results location plus the quarantine list). -->
   <PropertyGroup>
     <RunSettingsFilePath>$(MSBuildThisFileDirectory)tests/Isotone.runsettings</RunSettingsFilePath>
