@@ -142,8 +142,8 @@ The TODO system and its tooling, the review dispatcher and every review rule, th
 
 1. **The native spine:** `scripts/dev-env.ps1` and the pinned toolchain, presets, the vcpkg baseline and triplets, the gates (build, analysis, format, size, imports, TODO), CI for x64 and ARM64 with ARM64 test execution, the test harness, and the dependency register. Nothing user-visible.
 2. **The foundations, before anything is built on them,** each ending in its driven proof, and each able to send the spec back for revision if it fails its bar: document safety; the task system and threading; localization services; a window with the Isotone title bar and menu bar on the swap chain and partial-redraw contract; device-loss recovery and the WARP fallback; the display color pipeline in SDR and Advanced Color; the text editing model with TSF; UI Automation with the screen reader scenarios; a docked panel that floats and redocks; a GPU canvas meeting the frame cadence and pen latency goals; runtime theming; the goldens environment with its repeatability proof; and crash diagnostics.
-3. **Isotone UI's controls and docking**, then **Stilus native** to the behavior of today's Stilus and its 0.1.0 scope, with its layout map; the C# Stilus tree retires at that release (operator answer: Stilus first).
-4. **Gesso native**, then **Albumen**, the same way, each followed by its parity phases in the order the plan already gives them.
+3. **Isotone UI's controls and docking**, then **Stilus native** to the behavior of today's Stilus and its 0.1.0 scope, with its layout map; the C# Stilus tree retires at that release (operator answer: Stilus first), and Stilus's parity phases follow in the order the plan already gives them.
+4. **Gesso native**, then **Albumen**, the same way, each followed by its parity phases in the order the plan already gives them, then the post-release phases (automation on Lua, video and audio with animation, on-device models, and Albumen's remaining formats) ending in the suite bundle.
 
 ## Risks and how each is held
 
