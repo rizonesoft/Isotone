@@ -317,3 +317,41 @@ This record's round 8 is the spec's tenth review round. Every finding was verifi
 3. P2, recovery not replayable after the backup's release: verified. Invariant 6's journal of durable states lets recovery resume from the last one and never need a released file. Proof added: a kill after the release and before the journal's retirement.
 4. P1, encryption failure after the commit left the new file plaintext: verified. Invariant 7 rolls the save back when a step after the commit cannot complete safely. Proof added: encryption blocked by another program's open handle.
 5. P1, a fixed user-and-SYSTEM DACL is not always narrower: verified. Invariant 2 requires the temporary file's protection to be derived from the target's own before any data is written. Proof added: a DACL granting only a logon session.
+
+## Round 9: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:10:20Z
+- Effort: xhigh
+- Lines: 20
+- Digest: 569fcd2ef1340968
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: Invariant 7’s rollback does not establish a safe outcome for the moved-aside replacement. In the required encryption-failure scenario at line 93, restore the encrypted previous version and inspect the retained new file: moving it aside does not encrypt it. The target can be restored while document data remains plaintext elsewhere, violating invariant 2 and the secondary-copy rule. Require protection of every retained version after rollback, and make the proof inspect those versions. Microsoft documents the triggering exclusive-access failure in [EncryptFileW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-encryptfilew).
+
+## consistency: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: The revised invariants omit the absent-target case, and `f742f30` removes the previous rule assigning inherited folder protections to a new-file save. Save an untitled document to an unused pathname: invariant 2 requires deriving protection from a nonexistent target, while invariants 1, 5, and 7 assume a previous version exists. Kill before installation and neither complete version exists at that pathname. Define the initial-save protection policy and distinguish legitimate pre-commit absence from loss of an existing target.
+
+## integration: needs-attention
+
+3. P3 `docs/specs/2026-10-22-native-stack-design.md:93`: The durability guarantee covers local NTFS and ReFS at line 87, but the power-loss proof explicitly runs only on NTFS. The specified matrix can pass without exercising recovery on the second guaranteed filesystem. Require the power-loss and contract-preservation proofs on both, or narrow the guarantee.
+
+## source-defect: needs-attention
+
+4. P1 `docs/specs/2026-10-22-native-stack-design.md:89`: Account-wide DACLs and user-scoped DPAPI do not preserve logon-session restrictions. Open the session-restricted document required by line 93, create a checkpoint, then access its ciphertext and wrapped key from another session of the same account. The prescribed folder ACL permits access, and DPAPI permits decryption with matching user credentials, exposing content that the original DACL denies. This contradicts “never ... weaker than the document.” Derive secondary-copy access restrictions from the source and test unauthorized decryption, rather than only plaintext absence. See Microsoft’s [CryptProtectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata) and [Trustees](https://learn.microsoft.com/en-us/windows/win32/secauthz/trustees).
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 9
+
+This record's round 9 is the spec's eleventh review round. Every finding was verified and is real.
+
+1. P1, rollback leaves the new data in a retained file: verified. Rollback deletes the new file, proved the app's by its hash, since the document stays open with its edits and encrypted checkpoints; the proof checks no copy of the new data is left on disk.
+2. P2, the first save to a new name fell out of the invariants: verified. Invariant 1 states the new-name outcome (the complete new file or nothing), invariant 2 takes a new name's protection from the folder's inheritance, and invariants 5 and 7 are scoped to a target that held a file. Proof added: a first save killed at each step.
+3. P3, power loss proved only on NTFS: verified. The power-loss proofs run on NTFS and ReFS.
+4. P1, logon-session restrictions not preserved by account-wide folder DACLs and user-scoped DPAPI: verified against `CryptProtectData` and Trustees. Answered by stating the threat model's boundary: Windows does not separate processes of the same user (each can open the other and read its memory), so a restriction narrower than the account is carried on the document by the file identity contract but is not one the app's process or its secondary copies can enforce; the spec and the user guides say so, and Secondary copies is scoped to that boundary.
