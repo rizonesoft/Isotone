@@ -52,7 +52,7 @@ track: N6
 | 1 | §2 | Path editing: continue, join, break, reverse, simplify   | D02 T05 §4  |  [ ]   |
 | 2 | §3 | Text: area text, text on path, text to path             | D02 T05 §4  |  [ ]   |
 | 3 | §7 | Documents in tabs, saved layouts, nested layers          | D02 T05 §4, D01 T01 §8 |  [ ]   |
-| 4 | §11 | Symbols and the asset library                            | §7          |  [ ]   |
+| 4 | §11 | Symbols and the asset library                            | §7, D00 T02 §1 |  [ ]   |
 | 5 | §12 | The command palette and the on-canvas HUD                | D02 T05 §4  |  [ ]   |
 | 6 | §13 | Preferences and shortcut remapping                       | D02 T05 §4  |  [ ]   |
 | 7 | §14 | More formats and the export dialog                       | D02 T05 §4  |  [ ]   |
@@ -142,6 +142,7 @@ Stilus opens one document at a time; the history and selection are app singleton
 - [ ] Wire `SymbolLibraryService` with make, place, edit master, and break link, each undoable. Done when: a fixture with symbols round-trips.
 - [ ] Wire `AssetLibraryService` (with the injected folder from `D00 T02 §1`) into a searchable panel with an empty state. Done when: search and favorites are tested.
 - [ ] Save the user library atomically and refuse a failed save aloud: `AssetLibraryService.SaveUserLibrary` writes `library.json` through the atomic writer `D02 T04 §1` builds (a temporary file beside it, flushed, then replaced), and a failed save leaves the previous file byte-identical and is reported, never swallowed by an empty `catch`. Done when: a test whose save fails part-way (a read-only or full target) leaves the earlier library loadable with its user assets and reports the failure. -> SOURCE: review-D00-T02-s1-2026-10-22 D00-T02-S1-F1
+- [ ] Prove a seeded user library survives: a folder seeded with `library.json` holding user assets and favorites loads them on a new `AssetLibraryService`, and a save then reload keeps them. Done when: the test passes and fails if the constructor resets the folder. -> SOURCE: plan-review-D00-T02-s1-2026-10-22-t06-s11 D00-T02-S1-PR5
 - [ ] Commit: `"stilus: symbols and the asset library"`
 
 **Test checkpoint:** `dotnet test Isotone.slnx` exits 0 with the symbol and library tests reporting; editing a master updates three instances on a driven run (capture). Cheaper substitute that fails: copied geometry.

@@ -56,7 +56,7 @@ track: N4
 |   2   |   §2    | SVG round-trip fidelity fixtures                       | D02 T01 §1, D00 T03 §1  |  [ ]   |
 |   3   |   §3    | PNG and JPEG export                                    | §2, D02 T03 §2          |  [ ]   |
 |   4   |   §4    | PDF export                                             | §3                      |  [ ]   |
-|   5   |   §5    | Recent files, autosave, and crash recovery             | §1, D01 T02 §2          |  [ ]   |
+|   5   |   §5    | Recent files, autosave, and crash recovery             | §1, D01 T02 §2, D00 T02 §9 |  [ ]   |
 |   6   |   §6    | Open from the command line and the .svg association    | §1, D01 T02 §3          |  [ ]   |
 
 ---

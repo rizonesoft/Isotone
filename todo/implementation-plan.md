@@ -166,7 +166,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  27   |
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  23   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
-| [ ] | `D00 T02 §9`  | Point every Stilus test at a temporary app data                  |   4   |
+| [ ] | `D00 T02 §9`  | Point every Stilus test at a temporary app data                  |   8   |
 | [ ] | `D00 T02 §2`  | Gesso diagnostics to zero                                        |   5   |
 | [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                           |   3   |
 | [ ] | `D00 T02 §4`  | Prune packages no code uses                                      |   7   |
@@ -306,7 +306,7 @@ Appearance comes next because every effect and every format carries it. `Isotone
 
 |  ✔  | Section       | Deliverable                                                                                                  | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------------------------ | :---: |
-| [ ] | `D02 T06 §11` | Symbols and the asset library                                                                                |   4   |
+| [ ] | `D02 T06 §11` | Symbols and the asset library                                                                                |   5   |
 | [ ] | `D01 T04 §1`  | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms |  19   |
 | [ ] | `D01 T04 §2`  | Rendering intents, black point compensation, proofing transforms, and gamut checks                           |  14   |
 | [ ] | `D02 T09 §1`  | The color model: RGB, CMYK, HSB, Lab, grayscale, spot, global, and tints                                     |  13   |
