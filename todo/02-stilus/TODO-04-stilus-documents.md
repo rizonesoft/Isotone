@@ -159,6 +159,7 @@ A designer who loses an hour to a crash stops using the app. Autosave writes a r
 
 **Requires:** display-session -- the kill-and-recover drive needs an interactive desktop
 
+- -> XREF: D00 T02 §9 -- gives `FileOperationsService` its app-data folder through a constructor
 - [ ] Move `FileOperationsService`'s recent-file list onto `StilusSettings` (`Stilus.RecentFiles`, max 10) and its draft folder onto `AppDataPaths.Recovery`. Done when: `grep -n "LocalApplicationData" src/Stilus` prints nothing (**Corrected 2026-09-28:** `AssetLibraryService`, deferred to `D02 T06 §11`, also reads `LocalApplicationData`; this section routes its default folder through `AppDataPaths` too, so the grep holds).
 - [ ] Wire File, Open Recent (with Clear Recent) and add each opened or saved file to the list. Done when: `RecentFilesTests` cover ordering, the cap, and missing files.
 - [ ] Add `AutosaveService` (timer, dirty documents only, `AtomicFileWriter`, a session marker file deleted on clean exit) and the `Stilus.Autosave.IntervalMinutes` setting (default 2). Done when: `AutosaveServiceTests` cover interval, clean-document skip, and draft deletion after save.

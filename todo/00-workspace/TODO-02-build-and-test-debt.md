@@ -68,6 +68,7 @@ track: W2
 |   6   |   §6    | xUnit v3                                             | §5, D02 T01 §1, D03 T01 §1    |  [ ]   |
 |   7   |   §7    | Release pipeline dry run as a draft release          | D00 T01 §5                    |  [ ]   |
 |   8   |   §8    | Pin the .NET 11 GA SDK                               | --                            |  [ ]   |
+|   9   |   §9    | Point every Stilus test at a temporary app data | §1                            |  [ ]   |
 
 ---
 
@@ -77,8 +78,9 @@ track: W2
 
 A quarantine is debt with a collector, and this section is the collector. Both failures are in services the Stilus triage (`D02 T02 §1`) defers rather than deletes, so the tests must hold on their own now; the flaky pair is the more serious one, because a test that writes to the real `%LOCALAPPDATA%` touches the developer's own data.
 
+- -> XREF: D00 T02 §9 -- isolates `FileOperationsTests` the same way
 - [x] `ElementTooltip.FromElement` in `src/Stilus/Bezier.Core/Services/CanvasHUDService.cs` falls back to `"Unnamed"` when the name is null, empty, or whitespace (`string.IsNullOrWhiteSpace`). Done when: `ElementTooltip_FromElement_UsesUnnamedForNullName` passes. Cheaper substitute that fails: changing the test's expectation to `""`. `Name = string.IsNullOrWhiteSpace(element.Name) ? "Unnamed" : element.Name`; the test passes, and fails with the old `??` restored.
-- [x] `AssetLibraryService` takes its library folder through a constructor parameter (defaulting to the current `%LOCALAPPDATA%` path for the app), and `AssetLibraryServiceTests` passes a fresh temporary folder per test and deletes it in `Dispose`. Done when: running the class 20 times in a row (`for ($i=0;$i -lt 20;$i++){ dotnet test Isotone.slnx --no-build --filter "FullyQualifiedName~AssetLibraryServiceTests" }`) passes every time and no file appears under `%LOCALAPPDATA%\Bezier\Library` during the runs. A second constructor takes the folder (the parameterless one keeps the `%LOCALAPPDATA%\Bezier\Library` default); `AssetLibraryServiceTests` is `IDisposable`, uses `isotone-asset-library-<guid>` under the temp folder, and gains `AssetLibraryService_UsesTheGivenLibraryFolder`. 20 runs of the class: 0 failed, 34 passed each; the `%LOCALAPPDATA%` library's files unchanged across the runs (path, write time, and length compared); no temporary folder left behind. With the default constructor restored, 2 of the 34 fail.
+- [x] `AssetLibraryService` takes its library folder through a constructor parameter (defaulting to the current `%LOCALAPPDATA%` path for the app), and `AssetLibraryServiceTests` passes a fresh temporary folder per test and deletes it in `Dispose`. Done when: running the class 20 times in a row (`for ($i=0;$i -lt 20;$i++){ dotnet test Isotone.slnx --no-build --filter "FullyQualifiedName~AssetLibraryServiceTests" }`) passes every time and no file appears under `%LOCALAPPDATA%\Bezier\Library` during the runs. A second constructor takes the folder (the parameterless one keeps the `%LOCALAPPDATA%\Bezier\Library` default); `AssetLibraryServiceTests` is `IDisposable`, uses `isotone-asset-library-<guid>` under the temp folder, and gains `AssetLibraryService_UsesTheGivenLibraryFolder`. 20 runs of the class: 0 failed, 34 passed each; the `%LOCALAPPDATA%` library's files unchanged across the runs (path, write time, and length compared); no temporary folder left behind. With the default constructor restored, 2 of the 34 fail. Independent review round 1: the folder is resolved once with `Path.GetFullPath`, so a later change of working directory cannot redirect a save (`AssetLibraryService_RelativeFolder_SavesWhereItLoaded`, failing with the path left unresolved); its two older findings are filed, the library's non-atomic save on `D02 T06 §11` and `FileOperationsTests`' writes to `%LOCALAPPDATA%` as `D00 T02 §9`.
 - [x] Remove the `TestCaseFilter` element from `tests/Isotone.runsettings`, and keep the comment explaining what a quarantine entry must carry. Done when: the file has no `FullyQualifiedName!=`. Removed; the comment says what an entry must carry and points at `standards/testing.md`; `grep -c FullyQualifiedName tests/Isotone.runsettings` prints 0.
 - [x] Update the "Test quarantine" block of `docs/dev/build.md` to say the quarantine is empty and point at `standards/testing.md`. Done when: the table is gone and the sentence cites the standard. The table is gone; the block says the quarantine is empty and links `standards/testing.md#the-quarantine`.
 - [x] Commit: `"test: fix the three quarantined Stilus tests and empty the quarantine"` This commit.
@@ -194,6 +196,24 @@ The operator chose on 2026-09-26 to move to .NET 11 on its release candidate, `1
 - [ ] Commit: `"build: pin the .NET 11 GA SDK"`
 
 **Test checkpoint:** `dotnet --version` prints the GA version with no `-rc`; `dotnet test Isotone.slnx -c Release` exits 0 with the same per-assembly counts as on the release candidate; editing `global.json` back to `11.0.100-rc.2.26504.105` on a machine without that SDK makes `dotnet build` fail naming it. Cheaper substitute that fails: `rollForward: latestFeature` on the RC pin, which silently builds on whatever SDK a machine has.
+
+## 9. Point Every Stilus Test at a Temporary App-Data Folder
+
+**Origin:** discovered run=592bbffe4b4f 2026-10-22 -- the independent review of `D00 T02 §1` (D00-T02-S1-F2)
+
+`standards/testing.md` says a test that touches settings or app data points the service at its own temporary folder, and `D00 T02 §1` did that for `AssetLibraryService`. One other Stilus service still writes under `%LOCALAPPDATA%` from the tests: `FileOperationsService`'s only constructor puts its drafts and its recent-files list under `%LOCALAPPDATA%\Bezier` (`Drafts\`, `recent-files.json`), and `FileOperationsTests` constructs it, so every test run rewrites the developer's own recent-files list (for example to `C:\test.svg`). A defect in shipped work: the suite violates the testing standard and touches user data.
+
+**Fidelity:** no surface of its own (a service constructor and its tests).
+
+- -> XREF: D00 T02 §1 -- the same fix for `AssetLibraryService`
+- -> XREF: D02 T04 §5 -- wires `FileOperationsService`'s recent files and drafts, with this constructor
+
+- [ ] Give `FileOperationsService` a constructor that takes its app-data folder (resolved once with `Path.GetFullPath`, created when absent), the parameterless one keeping `%LOCALAPPDATA%\Bezier`. Done when: the drafts folder and `recent-files.json` sit under the folder given.
+- [ ] Give each `FileOperationsTests` test a fresh temporary folder, deleted in `Dispose`, and add one test proving the given folder is used. Done when: the class passes 20 runs in a row with no file under `%LOCALAPPDATA%\Bezier` written during the runs.
+- [ ] Prove the whole suite leaves `%LOCALAPPDATA%\Bezier` alone: list its files (path, write time, length) before and after `dotnet test Isotone.slnx -c Release`. Done when: the two listings are equal, and with the parameterless constructor restored in `FileOperationsTests` they differ.
+- [ ] Commit: `"test: point FileOperationsTests at a temporary app-data folder"`
+
+**Test checkpoint:** Unit test and driven run: `dotnet test Isotone.slnx -c Release` exits 0 with the new test counted, and the `%LOCALAPPDATA%\Bezier` listing is equal before and after it; with the default constructor restored in `FileOperationsTests` the listing changes. Cheaper substitute that fails: deleting the tests that save recent files, which drops the coverage instead of isolating it.
 
 ## Verification
 
