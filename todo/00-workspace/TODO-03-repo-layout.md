@@ -15,7 +15,7 @@ track: W3
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** The imports brought their own documentation folders: `src/Stilus/docs/` (a `README.md` indexing mostly missing pages, `components/vector-icon.md`, `ui/status-bar.md`) and `src/Gesso/docs/` (five `README.md` stubs under `api/`, `architecture/`, `plugins/`, `user-guide/`). Two loose SVG files sit at `src/Stilus/test.svg` and `src/Stilus/bezier-sample.svg`. `src/Gesso/.github/` is an empty directory left after the per-app workflows were removed. There is no `docs/captures/` folder, so a `Fidelity:` block that names one cannot be satisfied and `process-todo-section` would refuse every UI section.
 >
-> **Corrected 2026-10-22:** `D00 T03 §1` moved the two Stilus pages to `docs/dev/stilus/` and the two SVGs to `tests/fixtures/stilus/svg/`, and deleted the Stilus index and the five Gesso stubs, so the claims below now measure the new layout.
+> **Corrected 2026-10-22:** `D00 T03 §1` moved the two Stilus pages to `docs/dev/stilus/` and the two SVGs to `tests/fixtures/stilus/svg/`, deleted the Stilus index and four Gesso stub READMEs, and moved the fifth, the plug-in page, to `docs/dev/gesso/plugins.md` (corrected against the code), so the claims below now measure the new layout.
 <!-- claim: absent src/Stilus/docs -->
 <!-- claim: absent src/Gesso/docs -->
 <!-- claim: exists tests/fixtures/stilus/svg/bezier-sample.svg -->
