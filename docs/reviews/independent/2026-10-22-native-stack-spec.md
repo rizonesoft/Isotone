@@ -387,3 +387,35 @@ This record's round 10 is the spec's twelfth review round. Both findings were ve
 
 1. P1, a main-stream hash cannot prove a whole file the app's: verified against File Streams. Invariant 3 now proves ownership by the file's whole set of data streams (enumerated with `FindFirstStreamW`) and each stream's hash. Proof added: a foreign file with the app's main stream and an extra named stream, kept.
 2. P1, deletion leaves the data in freed storage: verified against Microsoft's cipher /w guidance. The threat model now states that the guarantees are about files, and that storage a file no longer occupies (freed clusters, remapped SSD blocks) is outside any application's control and protected by full-volume encryption such as BitLocker, which the user guides say; invariant 2 and the rollback proof are stated in terms of files.
+
+## Round 11: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:23:45Z
+- Effort: xhigh
+- Lines: 16
+- Digest: a374972d2fc34974
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: The strengthened ownership rule conflicts with rollback’s protection guarantee. Combine the required scenarios: encrypt the original mid-save, install the replacement, then have another program add `:notes` to the replacement and keep it open so encryption fails. Invariant 3 now forbids deleting that changed file, while invariant 7 requires removing the weaker replacement. Preserving it through the conflict outcome leaves document data in an unencrypted file, violating invariant 2 and line 93’s rollback proof. Define a compatible outcome and require this combined proof. Microsoft documents the triggering exclusive-access failure in [EncryptFileW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-encryptfilew).
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: needs-attention
+
+2. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: Round 12’s ownership predicate still accepts files containing foreign data. Place a foreign file at the recorded temporary pathname with identical main and named data streams but an additional NTFS extended attribute containing unique data. Every specified hash matches, permitting recovery to delete that file and destroy the attribute. Microsoft’s [FindFirstStreamW documentation](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findfirststreamw) limits enumeration to `$DATA`; [WIN32_STREAM_ID](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-win32_stream_id) identifies extended attributes separately as `$EA` / `BACKUP_EA_DATA`. Extend the ownership predicate and preservation proof to cover this independent data.
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 11
+
+This record's round 11 is the spec's thirteenth review round. Both findings were verified and are real (finding 2 against `FindFirstStreamW`, which enumerates only `$DATA` streams, and `WIN32_STREAM_ID`). Proving ownership by a file's contents had now drawn findings in three consecutive rounds (the main stream, then named streams, then extended attributes), so it was re-thought rather than extended again: in a running save, ownership is proved by holding, through handles the save opened and held with sharing that lets no other program write, rename, or delete the file; recovery, which holds no handle, never deletes or overwrites anything and lists every leftover file for the user.
+
+1. P1, the ownership rule conflicts with rollback when another program changes the new file: verified. Under held handles no other program can change the new file during a save, so rollback deletes it through the handle held since its creation. Proof added: the combined scenario, with another program's write, stream, or attribute refused.
+2. P1, extended attributes escape the ownership predicate: verified. Resolved by the same change: recovery deletes nothing, and the save deletes only through held handles. Extended attributes are added to the list outside the file identity contract, as with every replacing save.
