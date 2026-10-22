@@ -152,11 +152,14 @@ def ended_mark_ok(ended) -> bool:
     readers and the scheduled merger share this one test (independent review round 3)."""
     if not isinstance(ended, dict) or set(ended) != {"reason", "at"} or ended.get("reason") not in END_REASONS:
         return False
+    at = ended.get("at")
+    if not isinstance(at, str):
+        return False
     try:
-        time.strptime(str(ended.get("at")), UTC_FORMAT)
+        # datetime, not time.strptime (which takes second 61), and an exact round trip (independent review round 8).
+        return datetime.datetime.strptime(at, UTC_FORMAT).strftime(UTC_FORMAT) == at
     except ValueError:
         return False
-    return isinstance(ended.get("at"), str)
 
 
 def read_guard(root: str, include_ended: bool = False) -> dict | None:
@@ -2197,6 +2200,7 @@ def _self_test() -> int:
         # Independent review rounds 2 and 3: only end's own mark ends a guard; any other is a damaged guard.
         for bad in (None, True, {"reason": "bogus", "at": "2026-10-22T00:00:00Z"}, {"reason": "operator-stop", "at": []},
                     {"reason": "operator-stop"}, {"reason": "operator-stop", "at": "yesterday"},
+                    {"reason": "operator-stop", "at": "2026-10-22T23:59:61Z"}, {"reason": "operator-stop", "at": "2026-10-22T1:2:3Z"},
                     {"reason": "operator-stop", "at": "2026-10-22T00:00:00Z", "extra": 1}):
             with open(_paths(hroot)[0], "w", encoding="utf-8") as fh:
                 json.dump({"session_id": SESSION, "cron_id": "job-x", "ended": bad}, fh)
