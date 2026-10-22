@@ -3724,6 +3724,9 @@ def cmd_query(args) -> int:
                 u["query_label"]
                 for u in unmet_dependencies(t, num, todos, by_key, by_id=by_id)
             ]
+            # A blocked or superseded file defers its sections, as plan_document does.
+            if t.status in ("blocked", "superseded"):
+                missing.insert(0, f"file status {t.status}")
             rows.append((t, num, s, missing))
 
     if what == "ready":
@@ -9959,6 +9962,18 @@ An oversized section: the clean single-WARN shape (over-30-items).
             with _ctx.redirect_stdout(qbuf), _ctx.redirect_stderr(_io.StringIO()):
                 cmd_query(argparse.Namespace(what="blocked", all=False))
             check("query blocked excludes the moved section", "Moved thing" in qbuf.getvalue(), False)
+            # A blocked or superseded file defers its sections, as `query plan` does: never ready, listed as blocked.
+            moved_path = root / "todo" / "93-moved" / "TODO-05-moved.md"
+            for file_status in ("blocked", "superseded"):
+                moved_path.write_text(SELF_TEST_TODO_MOVED.replace("status: active", f"status: {file_status}", 1), encoding="utf-8")
+                rbuf, bbuf = _io.StringIO(), _io.StringIO()
+                with _ctx.redirect_stdout(rbuf), _ctx.redirect_stderr(_io.StringIO()):
+                    cmd_query(argparse.Namespace(what="ready", all=False))
+                with _ctx.redirect_stdout(bbuf), _ctx.redirect_stderr(_io.StringIO()):
+                    cmd_query(argparse.Namespace(what="blocked", all=False))
+                check(f"query ready excludes a section of a {file_status} file", "Depends on the moved thing" in rbuf.getvalue(), False)
+                check(f"query blocked names the {file_status} file as the wait", f"waiting on: file status {file_status}" in bbuf.getvalue(), True)
+            moved_path.write_text(SELF_TEST_TODO_MOVED, encoding="utf-8")
             sbuf = _io.StringIO()
             with _ctx.redirect_stdout(sbuf), _ctx.redirect_stderr(_io.StringIO()):
                 cmd_query(argparse.Namespace(what="stats", all=False))

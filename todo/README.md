@@ -429,7 +429,7 @@ Reviewers refuse stamps on partial scope. The mechanical check (a `[x]` row with
 python scripts/todo-graph.py build      # parse todo/ -> build/todo-cache.json
 python scripts/todo-graph.py validate   # structural + graph integrity checks
 python scripts/todo-graph.py self-test  # the script's own suite; must stay green
-python scripts/todo-graph.py query ready        # sections with all deps met, split into runnable-now versus runnable-elsewhere by the runner's context
+python scripts/todo-graph.py query ready        # sections with all deps met in files neither blocked nor superseded, split into runnable-now versus runnable-elsewhere by the runner's context
 python scripts/todo-graph.py query blocked      # sections waiting on something
 python scripts/todo-graph.py query stats        # tree health
 python scripts/todo-graph.py query plan-health  # review-loop governance: --json for machines; --check/--fail-on gate automation
