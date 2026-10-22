@@ -491,15 +491,17 @@ def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
     line in it is a key line, a list item, or a list item that is a key, with scalars that cannot open a YAML alias,
     anchor, or tag. The event is one of the block's top keys with no inline value, and under it an optional `paths:`
     key holds a flow sequence or a block list of globs, every one in the shapes `_glob_re` matches exactly. Anything
-    else (`paths-ignore` included) is unsure: the workflow runs, on every change."""
-    lines = text.splitlines()
+    else (`paths-ignore` included) is unsure: the workflow runs, on every change. "Does not run" is answered only
+    when the `on:` block was read in full and the event is not in it: a missing `on:`, an empty block, or a
+    sequence at column 0 under it is unsure too (independent review round 7)."""
+    lines = text.lstrip("\ufeff").splitlines()
 
     def content(line: str) -> bool:
         return bool(line.strip()) and not line.lstrip().startswith("#")
 
     top = next((i for i, l in enumerate(lines) if re.match(r"""^(on|'on'|"on")\s*:""", l)), None)
     if top is None:
-        return False, None
+        return True, None
     inline = re.sub(r"\s+#.*$", "", lines[top].split(":", 1)[1]).strip()
     if inline:
         if re.fullmatch(_SCALAR, inline):
@@ -510,7 +512,7 @@ def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
     end = next((i for i in range(top + 1, len(lines)) if content(lines[i]) and not lines[i][0].isspace()), len(lines))
     block = [i for i in range(top + 1, end) if content(lines[i])]
     if not block:
-        return False, None
+        return True, None
     if not all(_KEY_LINE_RE.match(lines[i]) or _ITEM_LINE_RE.match(lines[i]) or _ITEM_KEY_LINE_RE.match(lines[i])
                for i in block):
         return True, None

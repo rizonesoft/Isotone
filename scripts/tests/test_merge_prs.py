@@ -598,6 +598,11 @@ class MergeTests(Base):
             ("env: {FILTER: &filter 'scripts/**'}" + chr(10) + on + "    paths: [*filter]" + chr(10), (True, None)),
             ("on: &triggers" + chr(10) + "  pull_request:" + chr(10) + "    branches: [main]" + chr(10), (True, None)),
             (on + "    paths:" + chr(10) + "      - *filter" + chr(10), (True, None)),
+            # Independent review round 7: "does not run" only from a block read in full.
+            (chr(0xFEFF) + "on:" + chr(10) + "  push:" + chr(10) + "    paths: ['scripts/**']" + chr(10), (True, ["scripts/**"])),
+            ("on:" + chr(10) + "- push" + chr(10) + "- pull_request" + chr(10), (True, None)),
+            ("name: x" + chr(10) + "jobs:" + chr(10) + "  a:" + chr(10) + "    runs-on: x" + chr(10), (True, None)),
+            ("on:" + chr(10) + "  pull_request:" + chr(10), (False, None)),
             # The whitelist covers the whole block: a line it does not know, even under another event, voids it.
             ("on:" + chr(10) + "  pull_request:" + chr(10) + "    types: !!seq [opened]" + chr(10) + "  push:" + chr(10)
              + "    paths: ['scripts/**']" + chr(10), (True, None)),
