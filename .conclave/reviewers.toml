@@ -2,8 +2,8 @@
 #
 # A route names one reviewer and at most one fallback for work written by one agent, and neither is of the writer's
 # own model family (the CLI names it: codex is OpenAI, agy is Google, claude is Anthropic). Claude Code is Isotone's
-# only writer (operator decision), so only the claude route exists. It names GPT-6 Astra alone: there is no fallback
-# (operator decision 2026-09-25, kept 2026-10-21), so a round Astra cannot return waits for the operator, and the
+# only writer (operator decision), so only the claude route exists. It names GPT-6.1 Sol alone: there is no fallback
+# (operator decision 2026-09-25, kept 2026-10-21 and 2026-10-22), so a round Sol cannot return waits for the operator, and the
 # writer's family never reviews. Every review round runs through this route: the panel rounds, the architecture gate,
 # the plan review, the stamp review, and the independent pass.
 #
@@ -14,12 +14,13 @@
 
 schema_version = 1
 
-# GPT-6 Astra through the Codex CLI, read-only sandbox, medium effort (operator decision 2026-10-21, RectoPDF's pin:
-# the 22-round cap gives the loop room that one high-effort round bought before).
-[reviewers.astra]
+# GPT-6.1 Sol through the Codex CLI, read-only sandbox, xhigh effort (operator decision 2026-10-22: "Pin GPT6.1-sol
+# at xhigh as the reviewer in place of Astra 6 medium without stopping", replacing GPT-6 Astra at medium, the
+# 2026-10-21 pin).
+[reviewers.sol]
 cli = "codex"
-model = "gpt-6-astra"
-effort = "medium"
+model = "gpt-6.1-sol"
+effort = "xhigh"
 
 [routes]
-claude = ["astra"]
+claude = ["sol"]

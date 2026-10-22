@@ -1,6 +1,6 @@
 ---
 name: independent-review
-description: Get an independent review of your own work outside a TODO section from the reviewer pinned in .conclave/reviewers.toml (GPT-6 Astra, never the writer's family, no fallback) through scripts/review-dispatch.py, then verify and act on every finding. Use before calling a nontrivial workspace change done or before a commit that ships it; TODO sections review through review-todo-section instead.
+description: Get an independent review of your own work outside a TODO section from the reviewer pinned in .conclave/reviewers.toml (GPT-6.1 Sol, never the writer's family, no fallback) through scripts/review-dispatch.py, then verify and act on every finding. Use before calling a nontrivial workspace change done or before a commit that ships it; TODO sections review through review-todo-section instead.
 ---
 
 # Independent review
@@ -9,7 +9,7 @@ Your own review is not enough for a nontrivial change: a different model reviews
 
 | Work written by | Reviewer | Fallback |
 | --- | --- | --- |
-| Claude (the only writer) | GPT-6 Astra, medium effort | none: a round Astra cannot return waits for the operator |
+| Claude (the only writer) | GPT-6.1 Sol, xhigh effort | none: a round Sol cannot return waits for the operator |
 
 The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` refuses a fallback or a second writer route (operator decisions 2026-09-25 and 2026-10-21). A TODO section never uses this skill: its panel, architecture, plan, stamp, and independent rounds run through the same dispatcher inside `review-todo-section` and `process-todo-section`.
 
