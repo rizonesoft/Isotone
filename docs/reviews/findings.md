@@ -4,16 +4,16 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**148 findings across 7 sections.**
+**166 findings across 8 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 68 | fails under hostile or unexpected input |
-| `integration` | 47 | a consumer, caller, or downstream artifact no longer holds |
-| `source-defect` | 15 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 10 | the plan or the evidence misdescribes what happened |
+| `adversarial` | 75 | fails under hostile or unexpected input |
+| `integration` | 53 | a consumer, caller, or downstream artifact no longer holds |
+| `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
+| `record` | 11 | the plan or the evidence misdescribes what happened |
 | `consistency` | 7 | disagrees with the rest of the suite, its naming, or its layout |
 | `correctness` | 1 | the code does the wrong thing |
 
@@ -22,8 +22,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 81 | wrong behavior in code, plan, or record |
-| `minor` | 67 | polish or wording, or no surviving defect |
+| `major` | 95 | wrong behavior in code, plan, or record |
+| `minor` | 71 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -156,6 +156,24 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T01 §15` | F18 | major | `adversarial` | fixed | independent | an escaped double-quoted event name was read undecoded |
 | `D00 T01 §15` | F19 | major | `integration` | fixed | independent | the misread event dropped the workflow from both pull request gates |
 | `D00 T01 §15` | F20 | minor | `record` | fixed | self | the round-8 test cases read the same with or without the escape rule |
+| `D00 T01 §16` | F1 | major | `adversarial` | fixed | independent | a green detached checkout cleared main's pending timer |
+| `D00 T01 §16` | F2 | major | `adversarial` | fixed | independent | a NaN, Infinity, or future timer never reached the bound |
+| `D00 T01 §16` | F3 | major | `integration` | fixed | independent | the push filter was read from the working tree, not the judged head |
+| `D00 T01 §16` | F4 | major | `source-defect` | fixed | independent | the record moved before a failed read of main |
+| `D00 T01 §16` | F5 | major | `adversarial` | fixed | independent | the endpoints' diff hid a workflow edit a later commit reverted |
+| `D00 T01 §16` | F6 | major | `integration` | fixed | independent | the correction to items 2 and 8 narrowed the section: a later green head stood in for an unread merge |
+| `D00 T01 §16` | F7 | major | `source-defect` | fixed | independent | no run evidence still moved the timers |
+| `D00 T01 §16` | F8 | major | `adversarial` | fixed | independent | a recorded merge's own run fell outside the newest-30 window |
+| `D00 T01 §16` | F9 | major | `integration` | fixed | independent | a pending merge returned before main's CI was judged |
+| `D00 T01 §16` | F10 | major | `adversarial` | fixed | independent | a cancelled merge's deciding successor fell outside the window |
+| `D00 T01 §16` | F11 | major | `integration` | fixed | independent | a path-filtered merge's deciding ancestor fell outside the window |
+| `D00 T01 §16` | F12 | minor | `source-defect` | fixed | independent | the merge's single push was read per commit, not at its endpoints |
+| `D00 T01 §16` | F13 | minor | `integration` | fixed | independent | main's head inheritance read every commit, not each push at its endpoints |
+| `D00 T01 §16` | F14 | major | `integration` | fixed | independent | the push-history request named repos/github.com/<owner>/<name> |
+| `D00 T01 §16` | F15 | major | `adversarial` | fixed | independent | a recovered merge's bound restarted at recovery |
+| `D00 T01 §16` | F16 | major | `adversarial` | fixed | independent | a red workflow cleared the merge record while another was still running |
+| `D00 T01 §16` | F17 | minor | `record` | fixed | self | main_ci was left without callers after the round-1 fix |
+| `D00 T01 §16` | F18 | minor | `source-defect` | fixed | self | a strict createdAt filter on a cancelled run's successors could drop a same-second successor |
 | `D00 T01 §2` | F1 | minor | `correctness` | fixed | independent | the D99 T01 §6 operator mark named the company as the signer |
 | `D00 T01 §4` | F1 | major | `record` | fixed | independent | the panel and architecture probes shared one manifest, so the kept panel review failed check-panel on replay |
 | `D00 T01 §4` | F2 | minor | `record` | fixed | independent | the record claimed a manifest for every probe, but the independent pass is unfenced |

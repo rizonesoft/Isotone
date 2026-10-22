@@ -69,7 +69,7 @@ track: W1
 |  13   |   §13   | Run-guard robustness                          | --         |  [x]   |
 |  14   |   §14   | Retire the unused verify-agent-tiers.mjs      | --         |  [x]   |
 |  15   |   §15   | Unattended merges read main's CI back         | §12        |  [x]   |
-|  16   |   §16   | Unattended merger health                      | §15        |  [ ]   |
+|  16   |   §16   | Unattended merger health                      | §15        |  [x]   |
 
 ---
 
@@ -519,6 +519,12 @@ D00 T01 §15 makes the hourly `isotone-pr-merge` task read `main`'s CI on every 
 - [x] Commit: `"workspace: keep the unattended merger from falling silent"` 111 tests pass in `python scripts/tests/test_merge_prs.py` after GPT panel round 1; each rule fails its case under the mutation that removes it.
 
 **Test checkpoint:** Unit test: `python scripts/tests/test_merge_prs.py` passes with the new cases, and each fails against `scripts/merge_prs.py` before this section (quoted in the review). Cheaper substitute that fails: an hourly email whenever `main`'s CI is pending, which fires on every push and trains the operator to ignore it.
+
+> **Verified:** 2026-10-22 | §16 | D00 T01 §16 at `497c1e5^..8df2f2b` (eleven commits): `python scripts/tests/test_merge_prs.py` at `8df2f2b` `Ran 111 tests` `OK` · 29 mutations of `scripts/merge_prs.py`, one per rule across items 1 to 4, 7, and 8, each failing at least one case, none surviving · driven live, read-only: `main`'s plan-gates and build at `8df2f2b` read green, `_pushes` read the chain `497c1e5->4b86c2d->8df2f2b` from `gh api --hostname github.com repos/rizonesoft/Isotone/activity`, the merge read of `497c1e5` read green on both workflows, and `_triggers` read the run-file-only push `2421162->512337a` as not running plan-gates, matching GitHub (no plan-gates run on `512337a`, build `success`) · check-all at `5811ac6` (scripts equal to `8df2f2b`'s): all gates passed
+> **Review:** round 2, candidate `8df2f2b`(round 2) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 2 of cap 22, gpt-6-astra medium; Round 1 at `4b86c2d`(round 1) one P1, F16, fixed in 8df2f2b; check-panel `PASS four lenses, one verdict each; highest none`). Independent: gpt-6-astra medium via `scripts/review-dispatch.py`, ten rounds: rounds 1 to 9 found 15 defects (F1 to F15, each fixed, from 290ba25 to 4b86c2d), round 10 approved every lens (the independent sign-off); the circuit breaker fired once (aca055a redesigned the merge read); the lead added F17 and F18. Raw findings: docs/reviews/00-workspace/D00-T01-s16.md. Attestation: docs/reviews/00-workspace/D00-T01-s16.attest.json
+> **Plan review:** gpt medium, filed B-067 (6 findings: PR2 and PR3 deferred to the backlog as B-067; PR1, PR4, PR5, and PR6 rejected with reasons) (run 20261022-D00-T01-S16-gpt)
+> **CRUD:** not applicable (a workspace merge script and its local health record, with no user record, document, or setting)
+> **Duration:** 2026-10-22T07:01:33Z to 2026-10-22T08:19:53Z
 
 ## Verification
 
