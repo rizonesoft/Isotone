@@ -1,0 +1,22 @@
+{
+  "candidate_base": "0cd4edcf33687a212ebea9db40a815f9d8f9b99d",
+  "candidate_head": "5188fd71153ec30e7c9058450092093171e6e92b",
+  "checker": "PASS four lenses, one verdict each; highest none :: e6f6e5930dd53985507abc3d7cb555f455c14818b5ae95a99b81a00acf1b262a",
+  "commits": [
+    "8e8f8d5e511b4ec3ae516c6508f76466c472c461",
+    "5f71761d7a24635b7a847560dd435cc11f92f8f2",
+    "7bbb865f6c5d8dc26f96a0f5e7a70663876f6fe2",
+    "5188fd71153ec30e7c9058450092093171e6e92b"
+  ],
+  "findings_path": "docs/reviews/00-workspace/D00-T02-s2.md",
+  "findings_sha256": "1ee19019485b424bfb92573d8fb58222547025d30f62e6b30b383959fdfd8292",
+  "manifest_sha": "a56f0005c3d7186fc4ed769638277716dc191b998ab5f6c2abcb57d86313f95b",
+  "model": "gpt-6.1-sol",
+  "model_provenance": "derived",
+  "reviewer": "codex-panel",
+  "runner_sha256": "dd73b19b8fdf355d555910864f7fcfb9985b9b6631cb021d7c872a0b43b08728",
+  "schema": 2,
+  "timestamp": "2026-10-22T11:54:30Z",
+  "tree": "b4374aa895df342e16729c91bee7490f08e2f90e",
+  "verdict": "approve"
+}

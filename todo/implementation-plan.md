@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **12 of 762 sections complete (2%).** 762 sections (6 discovered); backlog 23 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **13 of 762 sections complete (2%).** 762 sections (6 discovered); backlog 23 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -167,7 +167,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  23   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
 | [ ] | `D00 T02 §9`  | Point every Stilus test at a temporary app data                  |   8   |
-| [ ] | `D00 T02 §2`  | Gesso diagnostics to zero                                        |   5   |
+| [x] | `D00 T02 §2`  | Gesso diagnostics to zero                                        |   5   |
 | [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                           |   5   |
 | [ ] | `D00 T02 §4`  | Prune packages no code uses                                      |   7   |
 | [ ] | `D00 T02 §5`  | The assertion library decision and the decision log              |   5   |

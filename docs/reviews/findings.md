@@ -4,16 +4,16 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**172 findings across 9 sections.**
+**175 findings across 10 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
 | `adversarial` | 78 | fails under hostile or unexpected input |
-| `integration` | 55 | a consumer, caller, or downstream artifact no longer holds |
+| `integration` | 56 | a consumer, caller, or downstream artifact no longer holds |
 | `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 12 | the plan or the evidence misdescribes what happened |
+| `record` | 14 | the plan or the evidence misdescribes what happened |
 | `consistency` | 7 | disagrees with the rest of the suite, its naming, or its layout |
 | `correctness` | 1 | the code does the wrong thing |
 
@@ -22,8 +22,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 95 | wrong behavior in code, plan, or record |
-| `minor` | 77 | polish or wording, or no surviving defect |
+| `major` | 96 | wrong behavior in code, plan, or record |
+| `minor` | 79 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -201,3 +201,6 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T01 §6` | F16 | major | `adversarial` | fixed | independent | a pipe-free truncated row ended the table and vanished |
 | `D00 T01 §6` | F17 | major | `adversarial` | fixed | independent | an autolink row ended the table and vanished |
 | `D00 T01 §6` | F18 | major | `adversarial` | fixed | independent | a file at docs/parity read as an absent parity tree |
+| `D00 T02 §2` | F1 | minor | `record` | fixed | independent | the CS0618 replacement item was ticked though the obsolete call stays |
+| `D00 T02 §2` | F2 | minor | `record` | fixed | independent | the using count said four more global usings where 14 directives were removed |
+| `D00 T02 §2` | F3 | major | `integration` | fixed | independent | the struck item lacked the Deferred marker validate needs once the row flips |
