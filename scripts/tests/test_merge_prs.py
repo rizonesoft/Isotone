@@ -587,6 +587,11 @@ class MergeTests(Base):
             (on + "    paths: ['scripts/**', todo/** extra]" + chr(10), (True, None)),
             ("on:" + chr(10) + "  push: {}" + chr(10), (True, None)),
             (on + "    branches: [main]" + chr(10), (True, None)),
+            # Independent review round 5: glob syntax `_glob_re` does not implement voids the filter.
+            (on + "    paths: ['scripts/[a-z]*.py']" + chr(10), (True, None)),
+            (on + "    paths: ['scripts/**/*.py']" + chr(10), (True, None)),
+            (on + "    paths: ['*.jsx?']" + chr(10), (True, None)),
+            (on + "    paths: ['docs/*.md', '.gitattributes', '**']" + chr(10), (True, ["docs/*.md", ".gitattributes", "**"])),
         ]
         for text, want in cases:
             with self.subTest(text=text):

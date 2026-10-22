@@ -445,6 +445,10 @@ def _glob_re(pattern: str) -> re.Pattern:
 
 
 _FILTER_ITEM_RE = re.compile(r"""^\s*-\s+(?:'([^'#\s][^'#]*)'|"([^"#\s][^"#]*)"|([^'"#\s][^\s#]*))\s*$""")
+# The glob shapes `_glob_re` matches exactly as GitHub does: literal path characters, `*` inside one segment, and
+# `**` only as a whole trailing segment (or the whole pattern). Any other syntax GitHub supports (`?`, `[...]`, `+`,
+# `**` mid-pattern) makes the filter unsure (independent review round 5).
+_SUPPORTED_GLOB_RE = re.compile(r"^(?:\*\*|(?:[A-Za-z0-9._-]|\*(?!\*))+(?:/(?:[A-Za-z0-9._-]|\*(?!\*))+)*(?:/\*\*)?)$")
 _FLOW_ITEM_RE = re.compile(r"""^(?:'([^'#\s][^'#,]*)'|"([^"#\s][^"#,]*)"|([^'"#\s,\[\]]+))$""")
 
 
@@ -461,7 +465,8 @@ def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
     The grammar: a top-level `on:` key, whose block runs to the next content line at column 0 (blank and comment
     lines never end it); the event as one of the block's top keys; and under it an optional `paths:` key holding
     either a flow sequence or a block list whose every entry is one plain glob. Anything else (an inline `on:`, an
-    inline event value, `paths-ignore`, a trailing comment, a negated, empty, or unreadable entry) is unsure."""
+    inline event value, `paths-ignore`, a trailing comment, a negated, empty, or unreadable entry, or a glob outside
+    the shapes `_glob_re` matches exactly) is unsure."""
     lines = text.splitlines()
 
     def content(line: str) -> bool:
@@ -518,7 +523,7 @@ def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
             if m is None:
                 return True, None
             paths.append(next(g for g in m.groups() if g is not None).strip())
-    if not paths or any(p.startswith("!") for p in paths):
+    if not paths or not all(_SUPPORTED_GLOB_RE.match(p) for p in paths):
         return True, None
     return True, paths
 
