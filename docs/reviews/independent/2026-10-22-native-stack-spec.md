@@ -518,3 +518,35 @@ This record's round 14 is the spec's sixteenth review round. All three findings 
 1. P2, turning a virtual machine off does not prove media durability: verified against Microsoft's Hyper-V storage caching guidance. Power loss is now proved with a fault harness that records the guest's writes and flushes below the guest and reconstructs the disk at every flush boundary and at random points between, dropping unflushed writes, with a negative control (one required flush removed) that must fail.
 2. P2, the startup endpoint preceded proof of input: verified. Both start goals now time to the displayed frame that shows the scripted keystroke's effect, sent as soon as the main window exists.
 3. P2, hard faults do not prove a fully cold image: verified against the Working Set documentation. Instead of verifying residency, which Windows has no documented per-file query for, each cold run launches a fresh copy of the publish folder written with unbuffered I/O to a new folder, so no page of the app's files was ever cached or mapped elsewhere and no prefetch trace names that path.
+
+## Round 15: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:46:39Z
+- Effort: xhigh
+- Lines: 16
+- Digest: a27220bc557a163e
+
+### adversarial: needs-attention
+
+1. P2 `docs/specs/2026-10-22-native-stack-design.md:93`: Dropping every unflushed write tests an incomplete power-loss model. Between flushes, real storage can persist some writes while losing others. Demonstrate with two pending writes: the prescribed reconstruction retains neither, whereas retaining only one can expose an inconsistent journal, namespace, or payload. Random crash times do not explore those persistence combinations, and one missing-flush negative control does not establish that coverage. Require partial and reordered persistence cases respecting completed flushes. [SQLite’s crash-test documentation](https://sqlite.org/atomiccommit.html) explicitly covers incomplete and out-of-order writes.
+
+### consistency: approve
+
+### integration: approve
+
+### source-defect: needs-attention
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:23`: An unbuffered fresh copy does not establish cold residency by construction. `COPY_FILE_NO_BUFFERING` controls the copy’s I/O; it cannot prevent a scanner from subsequently reading or mapping the destination before launch. Demonstrate by performing buffered reads of the fresh executable between copying and launching: all prescribed preparation steps still occur, but startup can use warmed pages, with no rejection criterion. Require controlled exclusion of intervening readers or verification that rejects warmed runs. Microsoft’s [CreateFileW documentation](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew) describes buffering flags as handle settings and explicitly excludes memory-mapped files from `FILE_FLAG_NO_BUFFERING`.
+
+### record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 15
+
+This record's round 15 is the spec's seventeenth review round. Both findings were verified.
+
+1. P2, dropping every unflushed write is an incomplete power-loss model: verified (SQLite's atomic commit documentation covers incomplete and out-of-order writes). Between flush boundaries the harness now keeps some writes, drops others, and reorders them (exhaustively when few, sampled when many), never undoing a completed flush.
+2. P2, an unbuffered copy can still be warmed by a scanner before launch: verified against `CreateFileW`'s buffering notes. The harness records file I/O with Windows Performance Recorder from the copy to the launch and discards any run in which another process read or mapped the app's files in between.
