@@ -11506,6 +11506,10 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                  "has the anchor #pixels of the heading at line"),
                 ("a fenced block", _gcat.replace("## Elsewhere", "```\n### Pixels\n```\n\n## Elsewhere"), "is a block the parity format does not allow"),
                 ("a heading below level 2", _gcat.replace("## Elsewhere", "### Notes\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                # A second title would end an area for the reader while its rows stay counted under it (GPT panel round 1).
+                ("a second title inside an area", _gcat.replace("## Pixels\n\n", "## Pixels\n\n# Unrelated title\n\n", 1), "is a second `# ` title"),
+                ("an only title below a section", _gcat.replace("# Gesso parity\n\n", "", 1).replace("## Pixels\n\n", "## Pixels\n\n# Unrelated title\n\n", 1), "is a `# ` title after the first `## ` section"),
+                ("a second title at the top", _gcat.replace("# Gesso parity\n", "# Gesso parity\n\n# Another title\n", 1), "is a second `# ` title"),
                 ("an area heading in markup", _gcat.replace("## Elsewhere", "## _Elsewhere_").replace("- [Elsewhere](#elsewhere) (2)", "- [_Elsewhere_](#elsewhere) (2)"), "is not plain text"),
                 ("a setext underline", _gcat.replace("## Elsewhere", "Pixels\n---\n\n## Elsewhere"), "is a block the parity format does not allow"),
                 ("an HTML heading", _gcat.replace("## Elsewhere", "<h2>Pixels</h2>\n\n## Elsewhere"), "holds an angle-bracket construct"),

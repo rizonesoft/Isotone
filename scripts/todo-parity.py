@@ -353,6 +353,7 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
             "and plain paragraph lines")
     allowed: list[tuple[int, str]] = []
     section = None
+    title_at: int | None = None
     for i, line in enumerate(lines):
         at = f"line {i + 1} ({line.strip()[:40]!r})"
         if _RAW_HTML_RE.search(line):
@@ -364,6 +365,15 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
             # One name per heading, trimmed as the Areas reconciliation trims it (independent review round 7).
             text = m.group(2).strip()
             allowed.append((i, text))
+            if m.group(1) == "#":
+                # One title, above every section: area ownership follows `## ` headings only, so a later `# `
+                # heading would leave its rows counted under the area before it (GPT panel round 1).
+                if title_at is not None:
+                    drift(f"{at} is a second `# ` title (the first is at line {title_at}); {rule}")
+                elif heads and heads[0][0] < i:
+                    drift(f"{at} is a `# ` title after the first `## ` section; {rule}")
+                else:
+                    title_at = i + 1
             section = text if m.group(1) == "##" else None
             continue
         if section == "Areas" and line.startswith("- "):
