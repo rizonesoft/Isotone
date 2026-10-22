@@ -351,7 +351,7 @@ def _block(root: Path, pr: int, why: str, base: str | None = None) -> None:
     # Main's head before the merge, kept across rewrites, so a recovered merge is read over its own push (D00 T01 §16).
     base = base or (earlier.get("base") if same else None)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps({"pr": pr, "why": why, "issued_at": issued or time.time(), "base": base}, indent=2),
+    tmp.write_text(json.dumps({"pr": pr, "why": why, "issued_at": issued or _clock(), "base": base}, indent=2),
                    encoding="utf-8")
     os.replace(tmp, path)
 
@@ -571,16 +571,18 @@ def _age_pending(root: Path, verdicts: list[tuple[str, str, str]]) -> list[tuple
     return out
 
 
-def _record_merge(root: Path, commit: str, n, base: str | None = None) -> None:
-    """Record a landed merge as unverified until its own CI is read (D00 T01 §16). One at a time: a different
+def _record_merge(root: Path, commit: str, n, base: str | None = None, at: float | None = None) -> None:
+    """Record a landed merge as unverified until its own CI is read (D00 T01 §16), aged from `at`, when the merge was
+    issued, so a merge recovered late is not read as new (independent review round 9). One at a time: a different
     unverified merge already recorded is never overwritten."""
     now = _clock()
+    at = now if at is None else min(at, now)
     record = _read_health(root, now)
     held = record["merged"]
     if held is not None and held["sha"] != commit:
         raise Failed(f"the merge of #{held['pr']} at {held['sha'][:12]} is still unverified")
     if held is None:
-        _write_health(root, {**record, "merged": {"sha": commit, "pr": n, "at": now, "base": base}})
+        _write_health(root, {**record, "merged": {"sha": commit, "pr": n, "at": at, "base": base}})
 
 
 def settle_merge(root: Path, repo: str, gh_fn, git_fn) -> str | None:
@@ -1063,7 +1065,8 @@ def _merge_and_verify(pr: dict, repo: str, root: Path, gh_fn, git_fn, validate_f
         return 3, (f"merge_prs: #{n} MERGED and pulled, but validate is red on main: "
                    f"{(done.stdout or '').strip()[-200:]}; repair main before any other work")
     try:
-        _record_merge(root, commit, n, (blocked(root) or {}).get("base"))
+        intent = blocked(root) or {}
+        _record_merge(root, commit, n, intent.get("base"), intent.get("issued_at"))
     except (Failed, OSError) as error:
         # The intent stays, so the next run's recovery records the merge before anything else (D00 T01 §16).
         return 3, f"merge_prs: #{n} MERGED and validated, but it cannot be recorded as unverified: {error}"
@@ -1138,7 +1141,7 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
         # Not merged now does not prove it never will be: a merge issued by a killed run may still be in flight.
         # The record clears only once SETTLE_SECONDS have passed since the merge was issued; until then the clone is
         # busy, not failed (independent review round 7).
-        if time.time() - record["issued_at"] < SETTLE_SECONDS:
+        if _clock() - record["issued_at"] < SETTLE_SECONDS:
             # Unresolved, not busy: exit 3 holds new section work until it settles (independent review round 9).
             return (f"an earlier merge of #{n} still reads {state.get('state').lower()} and may be in flight; it "
                     f"settles {SETTLE_SECONDS // 60} minutes after it was issued")
@@ -1164,7 +1167,7 @@ def resolve_block(root: Path, repo: str, gh_fn, git_fn, validate_fn) -> str | No
     if _validate(root, validate_fn).returncode != 0:
         return f"an earlier merge (#{n}) left main red: validate fails; repair main"
     try:
-        _record_merge(root, commit, n, record.get("base"))
+        _record_merge(root, commit, n, record.get("base"), record.get("issued_at"))
     except (Failed, OSError) as error:
         return f"an earlier merge (#{n}) landed but cannot be recorded as unverified: {error}"
     (root / BLOCKED).unlink(missing_ok=True)

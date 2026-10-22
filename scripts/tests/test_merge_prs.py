@@ -910,6 +910,21 @@ class MergeTests(Base):
         self.assertEqual((code, gh.merges(), (self.root / mp.BLOCKED).exists(), self.health()["merged"]["pr"]),
                          (0, [], False, 1), out)
 
+    def test_a_merge_recovered_late_keeps_its_age(self):
+        # Independent review round 9: a merge left as an intent and recovered past the bound with its CI still
+        # queued is overdue at once, never new.
+        c = "c" * 40
+        red = lambda r: subprocess.CompletedProcess([], 1, "1 fatal" + chr(10), "")
+        saved = self.at(0)
+        try:
+            self.call(["run", "--campaign"], FakeGh([pr(1)]), FakeGit(), validate=red)
+            mp._clock = lambda: 1_000_000.0 + mp.PENDING_ALERT_SECONDS + 60
+            pending = {"build.yml": self.run_on(HEAD, n=1) + self.run_on(c, status="queued", conclusion="", n=2)}
+            code, out = self.call(["recover"], FakeGh([pr(1)], already_merged=[1], main_runs=pending), FakeGit())
+        finally:
+            mp._clock = saved
+        self.assertEqual((code, "still unread" in out, self.health()["merged"]["at"]), (1, True, 1_000_000.0), out)
+
     def test_one_unverified_merge_at_a_time(self):
         saved = self.at(0)
         try:
