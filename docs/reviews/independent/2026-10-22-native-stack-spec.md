@@ -419,3 +419,35 @@ This record's round 11 is the spec's thirteenth review round. Both findings were
 
 1. P1, the ownership rule conflicts with rollback when another program changes the new file: verified. Under held handles no other program can change the new file during a save, so rollback deletes it through the handle held since its creation. Proof added: the combined scenario, with another program's write, stream, or attribute refused.
 2. P1, extended attributes escape the ownership predicate: verified. Resolved by the same change: recovery deletes nothing, and the save deletes only through held handles. Extended attributes are added to the list outside the file identity contract, as with every replacing save.
+
+## Round 12: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T22:29:10Z
+- Effort: xhigh
+- Lines: 16
+- Digest: c3ec94b680676af6
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:92`: Recovery cannot perform the required protection-failure rollback. Start with an unencrypted target, encrypt it mid-save, install the plaintext replacement, then kill the app before encryption transfers. Before recovery, have another process hold the replacement open, preventing encryption, as documented for [EncryptFileW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-encryptfilew). Invariant 7 requires deleting the weaker replacement and restoring the encrypted previous version. Recovery now forbids deletion or overwriting, restores the previous version only into an empty target name, and then retires the journal. Keeping and listing the plaintext replacement violates the protection requirement. Line 93 needs this combined crash-and-protection-failure proof; its separate rollback and successful-recovery cases miss it.
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: needs-attention
+
+2. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: Held sharing restrictions do not establish the claimed whole-file immutability. Microsoft documents that [sharing modes apply per stream](https://learn.microsoft.com/en-us/windows/win32/fileio/file-streams), and [CreateFileW sharing restrictions exclude attribute and extended-attribute access](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew). While the save holds its main-stream handle, another process with suitable permissions can create `replacement:notes` using compatible sharing, or open the file for `FILE_WRITE_EA` and change an extended attribute. The refusal required by line 93 therefore does not follow from the stated mechanism. Close the foreign stream before triggering rollback: deletion through the continuously held handle can destroy its newly added data. Round 13’s replacement ownership proof still permits the data loss it was intended to prevent.
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 12
+
+This record's round 12 is the spec's fourteenth review round. Both findings were verified against the cited documentation.
+
+1. P1, recovery cannot finish a protection-failure rollback when another program blocks encryption: verified. Recovery now retires a journal record only once its save is settled: a protection step blocked by another program's handle keeps the record, is retried at each start and while the app runs, and the user is told which file is not yet protected and where the previous version is. Proof added for the combined crash-and-blocked-encryption case.
+2. P1, held sharing does not freeze a whole file: verified (sharing modes apply per stream and exclude attribute access). The overclaim is corrected: a held handle stops other programs writing the file's data, renaming it, or deleting it, but not attaching a stream or an extended attribute, as sync clients do; deleting the app's own temporary file removes such metadata with it and loses no document data. The save invariants now state their threat model, consistent with the account boundary the spec already draws: crashes, power loss, and ordinary concurrent programs (external editors, sync clients, scanners, indexers, Explorer), not a same-user program set on defeating them, which can read and write the app's memory and so defeat any protocol.
