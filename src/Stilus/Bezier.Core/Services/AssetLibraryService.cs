@@ -114,12 +114,13 @@ public class AssetLibraryService : INotifyPropertyChanged
 
     /// <summary>
     /// Creates the service over the given user library folder (created when absent). Tests pass a temporary folder,
-    /// so they never touch the developer's own library.
+    /// so they never touch the developer's own library. A relative folder is resolved once, here, so a later change
+    /// of working directory cannot send a save somewhere the library was not loaded from.
     /// </summary>
     public AssetLibraryService(string userLibraryPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userLibraryPath);
-        _userLibraryPath = userLibraryPath;
+        _userLibraryPath = Path.GetFullPath(userLibraryPath);
         Directory.CreateDirectory(_userLibraryPath);
 
         InitializeBuiltInAssets();

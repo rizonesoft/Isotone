@@ -31,6 +31,29 @@ public sealed class AssetLibraryServiceTests : IDisposable
     }
 
     [Fact]
+    public void AssetLibraryService_RelativeFolder_SavesWhereItLoaded()
+    {
+        var saved = Environment.CurrentDirectory;
+        var elsewhere = Path.Combine(_libraryPath, "elsewhere");
+        Directory.CreateDirectory(elsewhere);
+        try
+        {
+            Environment.CurrentDirectory = _libraryPath;
+            var service = new AssetLibraryService("relative-library");
+            Environment.CurrentDirectory = elsewhere;
+
+            service.ToggleFavorite(service.Assets[0].Id);
+
+            Assert.True(File.Exists(Path.Combine(_libraryPath, "relative-library", "library.json")));
+            Assert.False(Directory.Exists(Path.Combine(elsewhere, "relative-library")));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = saved;
+        }
+    }
+
+    [Fact]
     public void AssetLibraryService_HasBuiltInCategories()
     {
         Assert.True(_service.Categories.Count > 0);
