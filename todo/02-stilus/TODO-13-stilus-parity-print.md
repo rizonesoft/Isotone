@@ -16,6 +16,8 @@ track: N13
 > **Current state (verified 2026-09-26):** The document color mode is a bare enum in `src/Stilus/Bezier.Core/Services/FileOperationsService.cs` with RGB, CMYK, and Grayscale and no profile behind it, and the same file defines five print-category document presets (A4, A3, Letter, Legal, and Business Card) although nothing prints. No Stilus source touches WPF or .NET printing (`PrintDialog`, `System.Printing`, `XpsDocumentWriter`, `PrintVisual`). `src/Stilus/Bezier.Core/Services/ExportDialogService.cs` advertises a "Print" preset described as a high-quality PDF with no writer behind it, and File, Export, PDF in `src/Stilus/Bezier.Desktop/ViewModels/MainWindowViewModel.cs` only sets status text; `D02 T04 §4` replaces it with an `SKDocument` exporter that §14 of this file supersedes. No PDF library is referenced by `Directory.Packages.props`, and `src/Stilus/Bezier.Core/Services/ImportService.cs` names the missing PDF library as its blocker. `src/Isotone.Core`, which will host the color engine this file consumes, does not exist yet; neither does `docs/dev/decisions.md` for the printing-path and PDFsharp rows, nor any capture home under `docs/captures`.
 >
 > **Corrected 2026-10-22:** `docs/dev/decisions.md` exists since `D00 T02 §5` recorded the assertion library in it; a row this file owes is added there, and the claim below now checks it exists.
+>
+> **Corrected 2026-10-22:** `docs/captures/` exists since `D00 T03 §2` committed the imported apps' before captures there; this file's own capture home, the goldens under `docs/captures/golden/stilus/color-settings/`, is still absent, which the claim below now measures.
 <!-- claim: count "^    CMYK,$" src/Stilus/Bezier.Core/Services/FileOperationsService.cs = 1 -->
 <!-- claim: count "Category = PresetCategory.Print" src/Stilus/Bezier.Core/Services/FileOperationsService.cs = 5 -->
 <!-- claim: count "PrintDialog|System\.Printing|XpsDocumentWriter|PrintVisual" src/Stilus/**/*.cs = 0 -->
@@ -25,7 +27,7 @@ track: N13
 <!-- claim: count "PDF vector extraction requires a dedicated library like PdfSharp or iText" src/Stilus/Bezier.Core/Services/ImportService.cs = 1 -->
 <!-- claim: absent src/Isotone.Core -->
 <!-- claim: exists docs/dev/decisions.md -->
-<!-- claim: absent docs/captures -->
+<!-- claim: absent docs/captures/golden/stilus/color-settings -->
 
 ## Inputs
 
