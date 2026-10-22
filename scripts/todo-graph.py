@@ -11420,7 +11420,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 # Round 10: the format rule, not renderer emulation: only a
                 # blank line ends a parity table.
                 ("a heading directly under a table", _pcat, _pai + "## Notes\n", "parity-input-damaged", "'## Notes' is not a whole id"),
-                ("an autolink row in a table", _pcat + "<https://example.com> | Lost | AI-0001 | -- | core | invalid |  |\n", _pai, "parity-input-damaged", "'<https://example.com>' is not a whole id"),
+                ("an autolink row in a table", _pcat + "<https://example.com> | Lost | AI-0001 | -- | core | invalid |  |\n", _pai, ["parity-input-damaged", "parity-totals-drift"], "'<https://example.com>' is not a whole id"),
                 ("a blank line then prose ends the table", _pcat, _pai + "\n## Notes\nAI-0003 is mentioned in prose\n", None, None),
                 # Round 7: only the separator under the header is skipped,
                 # and only with the header's cell count.
@@ -11501,17 +11501,23 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a heading whose anchor another heading holds",
                  _gcat.replace("## Elsewhere", "## Pixels!").replace("- [Elsewhere](#elsewhere) (2)", "- [Pixels!](#pixels) (2)"),
                  "has the anchor #pixels of the heading at line"),
-                ("a fenced block", _gcat.replace("## Elsewhere", "```\n### Pixels\n```\n\n## Elsewhere"), "opens a fenced block"),
-                ("a heading below level 2", _gcat.replace("## Elsewhere", "### Notes\n\n## Elsewhere"), "is a heading the parity format does not allow"),
+                ("a fenced block", _gcat.replace("## Elsewhere", "```\n### Pixels\n```\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                ("a heading below level 2", _gcat.replace("## Elsewhere", "### Notes\n\n## Elsewhere"), "is a block the parity format does not allow"),
                 ("an area heading in markup", _gcat.replace("## Elsewhere", "## _Elsewhere_").replace("- [Elsewhere](#elsewhere) (2)", "- [_Elsewhere_](#elsewhere) (2)"), "is not plain text"),
-                ("a setext underline", _gcat.replace("## Elsewhere", "Pixels\n---\n\n## Elsewhere"), "is a setext heading underline or a rule"),
-                ("an HTML heading", _gcat.replace("## Elsewhere", "<h2>Pixels</h2>\n\n## Elsewhere"), "is an HTML heading"),
-                ("an indented heading", _gcat.replace("## Elsewhere", "  ## Pixels\n\n## Elsewhere"), "is a heading the parity format does not allow"),
+                ("a setext underline", _gcat.replace("## Elsewhere", "Pixels\n---\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                ("an HTML heading", _gcat.replace("## Elsewhere", "<h2>Pixels</h2>\n\n## Elsewhere"), "holds raw HTML"),
+                ("an indented heading", _gcat.replace("## Elsewhere", "  ## Pixels\n\n## Elsewhere"), "is a block the parity format does not allow"),
                 # Round 4: the rule is an allowlist, so a tab-separated, a
                 # blockquoted, or a closed heading is refused too, and the
                 # title is plain text like the sections.
-                ("a tab-separated heading", _gcat.replace("## Elsewhere", "##\tNotes\n\n## Elsewhere"), "is a heading the parity format does not allow"),
-                ("a blockquoted heading", _gcat.replace("## Elsewhere", "> ## Notes\n\n## Elsewhere"), "is a heading the parity format does not allow"),
+                ("a tab-separated heading", _gcat.replace("## Elsewhere", "##\tNotes\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                ("a blockquoted heading", _gcat.replace("## Elsewhere", "> ## Notes\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                # Round 5: the grammar refuses every other block, so a heading
+                # inside a list item and HTML anywhere are refused too.
+                ("a heading in a list item", _gcat.replace("## Elsewhere", "- ## Notes\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                ("a heading in an ordered list item", _gcat.replace("## Elsewhere", "1. ## Notes\n\n## Elsewhere"), "is a block the parity format does not allow"),
+                ("an HTML heading inside a div", _gcat.replace("## Elsewhere", "<div><h2 id=\"pixels\">Counterfeit</h2></div>\n\n## Elsewhere"), "holds raw HTML"),
+                ("raw HTML in a table cell", _gcat.replace("| IP-0005 | Vectors |", "| IP-0005 | <b>Vectors</b> |"), "holds raw HTML"),
                 ("a heading with a closing sequence", _gcat.replace("## Elsewhere", "## Notes ##\n\n## Elsewhere"), "is not plain text"),
                 ("a title in markup", _gcat.replace("# Gesso parity", "# [Pixels](#unused)"), "heading `[Pixels](#unused)` at line 1 is not plain text"),
             )

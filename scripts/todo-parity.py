@@ -257,23 +257,17 @@ _TOTALS_HEADER = ["Status", "Features", "Source rows"]
 _AREA_RE = re.compile(r"^- \[(?P<name>[^\]]+)\]\(#(?P<anchor>[^)\s]+)\) \((?P<n>[0-9][0-9,]*)\)$")
 
 
-# The parity format's heading rule, stricter than GitHub Markdown on purpose (like its table rule): a catalog's
-# headings are its `# ` title and `## ` sections, in plain text, with no other heading form and no fenced block, and
-# no two headings sharing a slug. Then an anchor is the plain slug below, never GitHub's collision suffixes, and a
-# shape GitHub would read differently is refused rather than emulated (D00 T01 §7, independent review rounds 1 to 3
-# each found another corner of emulating GitHub's slugger: the circuit breaker's redesign).
+# The parity format's line grammar, stricter than GitHub Markdown on purpose (like its table rule). A catalog is made
+# of five kinds of line and nothing else: blank lines, table lines (opening with `|`), its `# ` title and `## `
+# sections at the line start with one space and plain text, the Areas entries under `## Areas`, and plain paragraph
+# lines, which open with no block marker (`#`, `>`, a list marker, a fence, an underline, indentation). Raw HTML
+# appears nowhere. Then every heading a reader or GitHub sees is one the check reads, its anchor is the plain slug
+# below, and no Markdown construct can hide or counterfeit one (D00 T01 §7: review rounds 1 to 3 found corners of
+# emulating GitHub's slugger and rounds 4 and 5 corners of a heading allowlist, so the breaker made it the grammar).
 _HEADING_TEXT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ,():&'/-]*")
-# The only headings allowed, read as an allowlist (independent review round 4: a blocklist missed tab-separated and
-# blockquoted headings): a line that would open a heading, once any indentation and blockquote markers are set aside,
-# must be exactly `# <plain text>` or `## <plain text>` at the start of the line.
-_HEADING_OPEN_RE = re.compile(r"^#{1,6}(?:[ \t]|$)")
 _ALLOWED_HEADING_RE = re.compile(r"^(#{1,2}) (\S.*)$")
-_CONTAINER_PREFIX_RE = re.compile(r"^(?:[ \t]*>)*[ \t]*")
-_FORBIDDEN_LINE_RES = (
-    (re.compile(r"^(`{3,}|~{3,})"), "opens a fenced block"),
-    (re.compile(r"^(=+|-+)[ \t]*$"), "is a setext heading underline or a rule"),
-    (re.compile(r"^<h[1-6][\s>]", re.IGNORECASE), "is an HTML heading"),
-)
+_RAW_HTML_RE = re.compile(r"<[A-Za-z/!?]")
+_BLOCK_START_RE = re.compile(r"^(?:[ \t]|#|>|[-*+](?:[ \t]|$)|\d+[.)](?:[ \t]|$)|`{3,}|~{3,}|=+[ \t]*$|-+[ \t]*$)")
 
 
 def _anchor(heading: str) -> str:
@@ -350,20 +344,25 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
                 drift(f"Totals table has no `{label}` row")
     # The Areas list against the rows under each `## ` heading.
     heads = [(i, line[3:].strip()) for i, line in enumerate(lines) if line.startswith("## ")]
-    rule = "a parity catalog's headings are its `# ` title and `## ` sections at the line start, and it holds no fenced block"
+    rule = ("a parity catalog holds only blank lines, tables, its `# ` title and `## ` sections, the Areas entries, "
+            "and plain paragraph lines")
     allowed: list[tuple[int, str]] = []
+    section = None
     for i, line in enumerate(lines):
-        core = _CONTAINER_PREFIX_RE.sub("", line, count=1)
-        if _HEADING_OPEN_RE.match(core):
-            m = _ALLOWED_HEADING_RE.match(line)
-            if core != line or not m:
-                drift(f"line {i + 1} ({line.strip()[:40]!r}) is a heading the parity format does not allow; {rule}")
-            else:
-                allowed.append((i, m.group(2)))
+        where = f"line {i + 1} ({line.strip()[:40]!r})"
+        if _RAW_HTML_RE.search(line):
+            drift(f"{where} holds raw HTML; {rule}")
+        if not line.strip() or line.startswith("|"):
             continue
-        for rx, why in _FORBIDDEN_LINE_RES:
-            if rx.match(core):
-                drift(f"line {i + 1} ({line.strip()[:40]!r}) {why}; {rule}")
+        m = _ALLOWED_HEADING_RE.match(line)
+        if m:
+            allowed.append((i, m.group(2)))
+            section = m.group(2) if m.group(1) == "##" else None
+            continue
+        if section == "Areas" and line.startswith("- "):
+            continue  # an Areas entry: its shape is checked with the list below
+        if _BLOCK_START_RE.match(line):
+            drift(f"{where} is a block the parity format does not allow; {rule}")
     slugs: dict[str, int] = {}
     for i, text in allowed:
         # The title is held to the same plain text as the sections (independent review round 4).
