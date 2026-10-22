@@ -588,8 +588,8 @@ def _record_merge(root: Path, commit: str, n, base: str | None = None, at: float
 def settle_merge(root: Path, repo: str, gh_fn, git_fn) -> str | None:
     """Read the CI of the last merge this script made, before anything else (D00 T01 §16). None when no merge is
     unverified; the line to print when this read verified it; Refused while it is pending inside the bound (nothing
-    else merges meanwhile); Failed on a red, on no run evidence, past the bound, or when it cannot be read, and only
-    a green or a red clears the record."""
+    else merges meanwhile); Failed on a red, on no run evidence, past the bound, or when it cannot be read. Only a
+    read in which every workflow has finished clears the record."""
     now = _clock()
     record = _read_health(root, now)
     held = record["merged"]
@@ -606,6 +606,11 @@ def settle_merge(root: Path, repo: str, gh_fn, git_fn) -> str | None:
             raise Failed(f"the merge of #{n} at {sha[:12]} is still unread {int((now - held['at']) // 60)} minutes on, "
                          f"past the {PENDING_ALERT_SECONDS // 3600}-hour bound: {why}")
         raise Refused(f"the merge of #{n} at {sha[:12]} is not read yet ({why}); nothing else merges until it is")
+    if state == "red" and any(s == "pending" for _name, s, _why in verdicts):
+        # Reported now, but kept until every workflow has finished, so the one still running is read and timed too
+        # (GPT panel round 1).
+        raise Failed(f"the merge of #{n} at {sha[:12]} reads red: {why}; repair main (its record stays until every "
+                     f"workflow has finished)")
     _write_health(root, {**record, "merged": None})
     if state == "red":
         raise Failed(f"the merge of #{n} at {sha[:12]} reads red: {why}; repair main")

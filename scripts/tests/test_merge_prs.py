@@ -910,6 +910,22 @@ class MergeTests(Base):
         self.assertEqual((code, gh.merges(), (self.root / mp.BLOCKED).exists(), self.health()["merged"]["pr"]),
                          (0, [], False, 1), out)
 
+    def test_a_red_merge_is_kept_until_every_workflow_finished(self):
+        # GPT panel round 1: plan-gates failed on the merge while build is still queued: the red is reported, and the
+        # record stays until build finishes too.
+        c = "c" * 40
+        self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+        head = {"plan.yml": self.run_on(HEAD, n=1), "build.yml": self.run_on(HEAD, n=2)}
+        queued = {"plan.yml": head["plan.yml"] + self.run_on(c, conclusion="failure", n=3),
+                  "build.yml": head["build.yml"] + self.run_on(c, status="queued", conclusion="", n=4)}
+        code, out = self.call(["run", "--task"], FakeGh([pr(2)], main_runs=queued), FakeGit())
+        kept = self.health()["merged"]
+        done = {"plan.yml": queued["plan.yml"], "build.yml": head["build.yml"] + self.run_on(c, n=4)}
+        gh = FakeGh([pr(2)], main_runs=done)
+        code2, out2 = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, "reads red" in out, kept and kept["sha"], code2, "reads red" in out2,
+                          self.health()["merged"], gh.merges()), (1, True, c, 1, True, None, []), out + out2)
+
     def test_a_merge_recovered_late_keeps_its_age(self):
         # Independent review round 9: a merge left as an intent and recovered past the bound with its CI still
         # queued is overdue at once, never new.
