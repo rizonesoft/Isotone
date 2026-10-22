@@ -40,6 +40,7 @@ Each entry holds:
 - **Cost of change:** the imported C# Stilus and Gesso are rewritten in C++ rather than ported line by line, with the C# code kept as a behavior reference until each native app reaches its first release; most implementation sections of `todo/` are re-planned against the spec, while the parity catalogs, the design system, the layout maps, and the TODO and review tooling carry over. Reversing it later would mean rebuilding the UI toolkit's surfaces in another framework.
 - **Owner:** the architecture spec above, and the re-plan filed from it.
 - **Amended:** the language standard is C++23, not C++20 (next entry).
+- **Spec approved:** the operator approved `docs/specs/2026-10-22-native-stack-design.md` on 2026-10-23 ("Approve, start re-plan"), after 21 independent review rounds ending in a round with no findings (`docs/reviews/independent/2026-10-22-native-stack-spec.md`); the re-plan of `todo/` starts from it.
 
 ## 2026-10-22: The C++ language standard
 
