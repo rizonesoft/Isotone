@@ -40,14 +40,16 @@ def pr(number=1, **over):
 class FakeGit:
     def __init__(self, status="", head=HEAD, remote=HEAD, pull_fails=False, branch="refs/heads/main",
                  fetch_fails=False, origin="https://github.com/rizonesoft/Isotone.git", detached=False, broken=False,
-                 changed=(), files=None):
+                 changed=(), files=None, diffed=None):
         self.calls, self.status, self.head, self.remote, self.pull_fails = [], status, head, remote, pull_fails
         self.branch, self.fetch_fails, self.origin = branch, fetch_fails, origin
         # `symbolic-ref -q HEAD` fails both on a detached HEAD and in a broken repository; `rev-parse --verify`
         # tells them apart.
         self.detached, self.broken = detached, broken
-        # What `git log --name-only <a>..<b>` lists.
+        # What `git log --name-only <a>..<b>` lists (every commit's paths), and what `git diff --name-only <a> <b>`
+        # lists (the endpoints' paths; the same unless named).
         self.changed = list(changed)
+        self.diffed = self.changed if diffed is None else list(diffed)
         # What `git show <sha>:<path>` prints, by (sha, path); any other path is read from the fake's working tree.
         self.files = dict(files or {})
 
@@ -60,6 +62,9 @@ class FakeGit:
         if args[:2] == ("log", "--name-only"):
             assert "-z" in args and "--no-renames" in args and "--format=" in args, args
             return "".join(f + "\0" for f in self.changed)
+        if args[:2] == ("diff", "--name-only"):
+            assert "-z" in args and "--no-renames" in args, args
+            return "".join(f + "\0" for f in self.diffed)
         if args[:2] == ("rev-parse", "--verify") and self.broken:
             raise mp.Failed("git rev-parse --verify -q HEAD failed: not a git repository")
         if args[:3] == ("remote", "get-url", "origin"):
@@ -812,6 +817,22 @@ class MergeTests(Base):
             code, out = self.call(["run", "--task"], FakeGh([], main_runs=runs), FakeGit(changed=touched))
             outcomes.append((code, "reads green" in out, self.health()["merged"] is None))
         self.assertEqual(outcomes, [(0, True, True), (0, False, False)])
+
+    def test_a_merges_own_push_is_compared_at_its_endpoints(self):
+        # Independent review round 6: the merge's commits edit todo/ and revert it, leaving a package change; GitHub
+        # compares the one push's endpoints, so plan-gates never runs, and the merge does not wait for it.
+        c = "c" * 40
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        nl = chr(10)
+        (wf / "plan.yml").write_text("on:" + nl + "  push:" + nl + "    paths:" + nl + "      - 'todo/**'" + nl,
+                                     encoding="utf-8")
+        self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
+        runs = {"plan.yml": self.run_on(HEAD, n=1), "build.yml": self.run_on(c, n=2) + self.run_on(HEAD, n=3)}
+        git = FakeGit(changed=["todo/x.md", "todo/x.md", "Directory.Packages.props"],
+                      diffed=["Directory.Packages.props"])
+        code, out = self.call(["run", "--task"], FakeGh([], main_runs=runs), git)
+        self.assertEqual((code, "reads green" in out, self.health()["merged"]), (0, True, None), out)
 
     def test_a_recovered_merge_keeps_its_push_base(self):
         red = lambda r: subprocess.CompletedProcess([], 1, "1 fatal" + chr(10), "")

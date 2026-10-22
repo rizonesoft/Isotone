@@ -422,13 +422,15 @@ def _main_runs(name: str, file: str, repo: str, root: Path, gh_fn, *query: str) 
     return sorted(runs, key=lambda r: r.get("createdAt", ""), reverse=True)
 
 
-def _triggers(file: str, root: Path, base: str, head: str, git_fn) -> str | None:
+def _triggers(file: str, root: Path, base: str, head: str, git_fn, one_push: bool = False) -> str | None:
     """Why the commits `base..head` run the workflow ("workflow": a change to its own file, D00 T01 §16; "paths": a
-    change its push paths at `head` match, or no filter), or None. Every path any commit in the range touched counts, never
-    the endpoints' diff, which hides an edit a later commit reverted (D00 T01 §16, independent review round 2).
+    change its push paths at `head` match, or no filter), or None. Across pushes every path any commit touched counts,
+    never the endpoints' diff, which hides an edit a later push reverted (D00 T01 §16, independent review round 2);
+    `one_push` is a single push, which GitHub filters on its own endpoints' diff (independent review round 6).
     NUL-separated paths are never quoted, and with renames off a moved file lists both its sides (D00 T01 §15)."""
-    changed = [f for f in git_fn("log", "--name-only", "-z", "--no-renames", "-m", "--format=", f"{base}..{head}",
-                                 cwd=root).split("\0") if f.strip()]
+    listing = (("diff", "--name-only", "-z", "--no-renames", base, head) if one_push else
+               ("log", "--name-only", "-z", "--no-renames", "-m", "--format=", f"{base}..{head}"))
+    changed = [f for f in git_fn(*listing, cwd=root).split("\0") if f.strip()]
     if f".github/workflows/{file}" in changed:
         return "workflow"
     paths = _push_paths(root, file, head, git_fn)
@@ -449,7 +451,8 @@ def _merge_verdict(name: str, file: str, repo: str, root: Path, held: dict, gh_f
     3 to 5). The merge's own runs are read by commit; a run cancelled by a later push (`build.yml` cancels in progress
     per ref) is decided by the first later run on main that finished, found among every run since, a full page
     failing closed; and with no own run, the merge's own push (`base..sha`, main's head before the merge to the merge
-    commit) decides whether the workflow should run: a push that touched nothing it watches is no reason to wait."""
+    commit, one push compared as GitHub compares it) decides whether the workflow should run: a push that touched
+    nothing it watches is no reason to wait."""
     sha, base = held["sha"], held.get("base")
     try:
         if not _main_runs(name, file, repo, root, gh_fn, "--limit", "1"):
@@ -473,7 +476,7 @@ def _merge_verdict(name: str, file: str, repo: str, root: Path, held: dict, gh_f
         raise Failed(f"main's {name} runs cannot be read: {error}") from None
     if run is not None:
         return _run_state(name, run)
-    if base is None or _triggers(file, root, base, sha, git_fn):
+    if base is None or _triggers(file, root, base, sha, git_fn, one_push=True):
         return "pending", f"main's {name} run for the merge at {sha[:12]} has not started yet"
     return "green", ""
 
