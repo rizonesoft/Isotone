@@ -332,23 +332,59 @@ def _branch(root: Path, git_fn) -> str:
         return ""
 
 
-def main_ci(repo: str, root: Path, gh_fn=gh) -> None:
-    """Refused while `main`'s newest push run of a guarding workflow is still running (a busy clone); Failed when one
-    completed with anything but success, or cannot be read (D00 T01 §15)."""
-    for name, file in MAIN_WORKFLOWS:
-        try:
-            runs = json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push", "--workflow",
-                                    file, "--limit", "1", "--json", "status,conclusion,url,headSha", cwd=root) or "[]")
-        except ValueError as error:
-            raise Failed(f"main's {name} runs cannot be read: {error}") from None
-        if not runs:
-            raise Failed(f"main has no {name} push run to read, so its CI cannot be judged")
-        run = runs[0]
-        if run.get("status") != "completed":
-            raise Refused(f"main's newest {name} run is {run.get('status')}: {run.get('url')}")
-        if run.get("conclusion") != "success":
-            raise Failed(f"main's newest {name} run concluded {run.get('conclusion')}: {run.get('url')}; "
-                         f"repair main before any merge")
+def _push_paths(root: Path, file: str) -> list[str] | None:
+    """The push `paths` filter of `.github/workflows/<file>`, or None when it has none or cannot be read (then
+    every change counts as one that triggers it)."""
+    try:
+        return _trigger((root / ".github" / "workflows" / file).read_text(encoding="utf-8"), "push")[1]
+    except OSError:
+        return None
+
+
+def _ci_verdict(name: str, file: str, repo: str, root: Path, head: str, gh_fn, git_fn) -> tuple[str, str]:
+    """("green" | "pending" | "red", why) for one guarding workflow at `head` (D00 T01 §15, independent review round
+    1): its push run on `head` decides; with none, the newest push run on an ancestor decides only when the changes
+    since it miss the workflow's push paths (a path-filtered workflow need not run on every commit), and otherwise
+    the run for `head` is still to come."""
+    try:
+        runs = json.loads(gh_fn("run", "list", "--repo", repo, "--branch", "main", "--event", "push", "--workflow",
+                                file, "--limit", "30", "--json", "status,conclusion,url,headSha,createdAt",
+                                cwd=root) or "[]")
+    except ValueError as error:
+        raise Failed(f"main's {name} runs cannot be read: {error}") from None
+    if not runs:
+        # No history at all is a workflow that never runs on main (removed, renamed, or disabled), never lag.
+        return "red", f"main has no {name} push run to read, so its CI cannot be judged"
+    runs = sorted(runs, key=lambda r: r.get("createdAt", ""), reverse=True)
+    run = next((r for r in runs if r.get("headSha") == head), None)
+    if run is None:
+        older = next((r for r in runs if r.get("headSha") and _is_ancestor(git_fn, root, r["headSha"], head)), None)
+        if older is None:
+            return "pending", f"main's {name} has no push run on {head[:12]} or any commit before it yet"
+        changed = [f for f in git_fn("diff", "--name-only", older["headSha"], head, cwd=root).splitlines() if f]
+        paths = _push_paths(root, file)
+        if paths is None or any(_glob_re(p).match(f) for p in paths for f in changed):
+            return "pending", f"main's {name} run for {head[:12]} has not started yet"
+        run = older
+    if run.get("status") != "completed":
+        return "pending", f"main's {name} run is {run.get('status')}: {run.get('url')}"
+    if run.get("conclusion") != "success":
+        return "red", f"main's {name} run concluded {run.get('conclusion')}: {run.get('url')}; repair main before any merge"
+    return "green", ""
+
+
+def main_ci(repo: str, root: Path, gh_fn=gh, git_fn=git) -> None:
+    """Refused while a guarding workflow's run for `main`'s head is still to come or running (a busy clone); Failed
+    when one completed with anything but success or cannot be read. Every workflow is read before judging, so a
+    red one is reported even while another is still running (independent review round 1)."""
+    head = git_fn("rev-parse", "HEAD", cwd=root).strip()
+    verdicts = [_ci_verdict(name, file, repo, root, head, gh_fn, git_fn) for name, file in MAIN_WORKFLOWS]
+    red = [why for state, why in verdicts if state == "red"]
+    if red:
+        raise Failed("; ".join(red))
+    pending = [why for state, why in verdicts if state == "pending"]
+    if pending:
+        raise Refused("; ".join(pending))
 
 
 def preflight(root: Path, campaign: bool, git_fn=git, graph=None, active_fn=campaign_active) -> None:
@@ -388,12 +424,14 @@ def _glob_re(pattern: str) -> re.Pattern:
     return re.compile(f"^{out}$")
 
 
-def _pull_request_trigger(text: str) -> tuple[bool, list[str] | None]:
-    """(runs on pull requests, its `paths` filter or None) from a workflow file's `on:` block."""
+def _trigger(text: str, event: str) -> tuple[bool, list[str] | None]:
+    """(the workflow runs on `event`, that event's `paths` filter or None), read from the file's top-level `on:`
+    block only, so a key of the same name elsewhere in the file is never taken for the trigger."""
     lines = text.splitlines()
     try:
-        start = next(i for i, l in enumerate(lines) if re.match(r"^\s*pull_request\s*:", l) and
-                     not l.lstrip().startswith("#"))
+        top = next(i for i, l in enumerate(lines) if re.match(r"^(on|['\"]on['\"])\s*:\s*$", l))
+        end = next((i for i in range(top + 1, len(lines)) if re.match(r"^\S", lines[i])), len(lines))
+        start = next(i for i in range(top + 1, end) if re.match(rf"^\s+{re.escape(event)}\s*:", lines[i]))
     except StopIteration:
         return False, None
     indent = len(lines[start]) - len(lines[start].lstrip())
@@ -422,7 +460,7 @@ def expected_workflows(root: Path, files: list[str]) -> list[str]:
     names = []
     for wf in sorted((root / ".github" / "workflows").glob("*.yml")):
         text = wf.read_text(encoding="utf-8")
-        runs, paths = _pull_request_trigger(text)
+        runs, paths = _trigger(text, "pull_request")
         if not runs:
             continue
         if paths is not None and not any(_glob_re(pat).match(f) for pat in paths for f in files):
@@ -598,11 +636,13 @@ def merge_one(pr: dict, repo: str, root: Path, gh_fn=gh, git_fn=git, validate_fn
     # The clone is judged again at the last moment too: an edit, a branch switch, a local commit, or a section started
     # while GitHub was being read refuses the merge, because the locks keep out merge runs, not editors or git
     # (independent review round 12). `ready_fn` is the preflight itself.
+    # A refusal here is still a busy clone and propagates as one (exit 0 with --task, 2 otherwise); main's CI is
+    # judged again too, bound to the head the merge would land on (D00 T01 §15, independent review round 1).
     if ready_fn is not None:
         try:
             ready_fn()
-        except (Refused, Failed) as error:
-            return 1, f"merge_prs: #{n} not merged, the clone changed while it was read: {error}"
+        except Failed as error:
+            return 1, f"merge_prs: #{n} not merged, the clone or main's CI changed while it was read: {error}"
     # The reserve again, right before the intent and the merge: the re-reads and the preflight above spend the
     # budget too (independent review round 20).
     if _remaining() < MERGE_RESERVE:
@@ -789,7 +829,7 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         preflight(root, args.campaign, git_fn, graph, active_fn)
         # Main's own CI, whether or not anything turns out eligible: the hourly task learns of a red its earlier
         # merge caused on its next run, and never merges onto it (D00 T01 §15).
-        main_ci(repo, root, gh_fn)
+        main_ci(repo, root, gh_fn, git_fn)
         preflight_line = "preflight: ok"
     except Refused as error:
         preflight_line = f"preflight: refused: {error}"
@@ -837,7 +877,8 @@ def _work(args, root: Path, gh_fn, git_fn, graph, active_fn, validate_fn) -> int
         print("merge_prs: nothing eligible" + "".join(f"; #{pr['number']} {why}" for pr, ok, why in verdicts if not ok))
         return 0
     code, line = merge_one(ready[0], repo, root, gh_fn, git_fn, validate_fn,
-                           ready_fn=lambda: preflight(root, args.campaign, git_fn, graph, active_fn))
+                           ready_fn=lambda: (preflight(root, args.campaign, git_fn, graph, active_fn),
+                                             main_ci(repo, root, gh_fn, git_fn)))
     print(line, file=sys.stdout if code == 0 else sys.stderr)
     return code
 

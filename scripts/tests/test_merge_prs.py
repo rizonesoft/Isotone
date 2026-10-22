@@ -39,12 +39,15 @@ def pr(number=1, **over):
 
 class FakeGit:
     def __init__(self, status="", head=HEAD, remote=HEAD, pull_fails=False, branch="refs/heads/main",
-                 fetch_fails=False, origin="https://github.com/rizonesoft/Isotone.git", detached=False, broken=False):
+                 fetch_fails=False, origin="https://github.com/rizonesoft/Isotone.git", detached=False, broken=False,
+                 changed=()):
         self.calls, self.status, self.head, self.remote, self.pull_fails = [], status, head, remote, pull_fails
         self.branch, self.fetch_fails, self.origin = branch, fetch_fails, origin
         # `symbolic-ref -q HEAD` fails both on a detached HEAD and in a broken repository; `rev-parse --verify`
         # tells them apart.
         self.detached, self.broken = detached, broken
+        # What `git diff --name-only <a> <b>` lists.
+        self.changed = list(changed)
 
     def __call__(self, *args, cwd=None):
         self.calls.append(args)
@@ -52,6 +55,8 @@ class FakeGit:
             if self.detached or self.broken:
                 raise mp.Failed("git symbolic-ref -q HEAD failed: ")
             return self.branch + "\n"
+        if args[:2] == ("diff", "--name-only"):
+            return "".join(f + "\n" for f in self.changed)
         if args[:2] == ("rev-parse", "--verify") and self.broken:
             raise mp.Failed("git rev-parse --verify -q HEAD failed: not a git repository")
         if args[:3] == ("remote", "get-url", "origin"):
@@ -493,6 +498,59 @@ class MergeTests(Base):
         code, out = self.call(["run", "--task"], gh, FakeGit())
         self.assertEqual((code, gh.merges(), "no build push run" in out), (1, [], True))
 
+    def run_on(self, sha, status="completed", conclusion="success", n=1):
+        return [{"status": status, "conclusion": conclusion, "url": f"https://x/run/{n}", "headSha": sha,
+                 "createdAt": f"2026-10-22T00:00:{n:02d}Z"}]
+
+    def test_a_build_on_an_older_commit_does_not_clear_head(self):
+        # Independent review round 1: main's head has no build yet, only an older commit does.
+        gh = FakeGh([pr(1)], main_runs={"build.yml": self.run_on("b" * 40)})
+        code, out = self.call(["run", "--campaign"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), "has not started yet" in out), (2, [], True))
+
+    def test_an_older_plan_gates_run_counts_only_when_the_changes_miss_its_paths(self):
+        wf = self.root / ".github" / "workflows"
+        wf.mkdir(parents=True)
+        (wf / "plan.yml").write_text("name: plan-gates" + chr(10) + "on:" + chr(10) + "  push:" + chr(10)
+                                     + "    paths:" + chr(10) + "      - 'todo/**'" + chr(10), encoding="utf-8")
+        runs = {"plan.yml": self.run_on("b" * 40)}
+        for changed, want, merges in ((["docs/user/x.md"], 0, 1), (["todo/x.md"], 2, 0)):
+            with self.subTest(changed=changed):
+                gh = FakeGh([pr(1)], main_runs=runs)
+                code, out = self.call(["run", "--campaign"], gh, FakeGit(changed=changed))
+                self.assertEqual((code, len(gh.merges())), (want, merges), out)
+
+    def test_main_ci_is_read_again_right_before_the_merge(self):
+        # Independent review round 1: main turns red while the pull requests are read.
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+
+        def red_after_listing(*args, cwd=None):
+            if args[:2] == ("pr", "list"):
+                gh.main_runs = {"build.yml": self.run_on(HEAD, conclusion="failure", n=5)}
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--campaign"], red_after_listing, FakeGit())
+        self.assertEqual((code, gh.merges(), "concluded failure" in out), (1, [], True))
+
+    def test_a_checkout_detached_before_the_final_preflight_stays_quiet(self):
+        git = FakeGit()
+        gh = FakeGh([pr(1)])
+        real = gh.__call__
+
+        def detach_on_list(*args, cwd=None):
+            if args[:2] == ("pr", "list"):
+                git.detached = True
+            return real(*args, cwd=cwd)
+        code, out = self.call(["run", "--task"], detach_on_list, git)
+        self.assertEqual((code, gh.merges(), "a detached HEAD" in out), (0, [], True))
+
+    def test_a_red_build_outranks_a_running_plan_gates(self):
+        runs = {"plan.yml": self.run_on(HEAD, status="in_progress", conclusion=""),
+                "build.yml": self.run_on(HEAD, conclusion="failure", n=2)}
+        gh = FakeGh([pr(1)], main_runs=runs)
+        code, out = self.call(["run", "--task"], gh, FakeGit())
+        self.assertEqual((code, gh.merges(), "build run concluded failure" in out), (1, [], True))
+
     def test_a_detached_checkout_is_a_quiet_refusal(self):
         # D00-T01-S12-F44: a detached HEAD is a busy clone, never a failure email.
         for flags, want in ((["--task"], 0), (["--campaign"], 2)):
@@ -528,8 +586,9 @@ class MergeTests(Base):
                 git.status = " M src/edit.cs\n"
             return real(*args, cwd=cwd)
         code, out = self.call(["run", "--campaign"], dirty_on_list, git)
-        self.assertEqual((code, gh.merges(), "the clone changed while it was read" in out,
-                          (self.root / mp.BLOCKED).exists()), (1, [], True, False))
+        # A busy clone at the final preflight stays a busy clone (exit 2 here), never a failure (D00 T01 §15).
+        self.assertEqual((code, gh.merges(), "uncommitted changes" in out,
+                          (self.root / mp.BLOCKED).exists()), (2, [], True, False))
 
     def test_a_tree_dirtied_during_the_merge_skips_the_pull_and_holds(self):
         git = FakeGit()
