@@ -4,7 +4,7 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**175 findings across 10 sections.**
+**176 findings across 11 sections.**
 
 ## By category
 
@@ -14,7 +14,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `integration` | 56 | a consumer, caller, or downstream artifact no longer holds |
 | `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
 | `record` | 14 | the plan or the evidence misdescribes what happened |
-| `consistency` | 7 | disagrees with the rest of the suite, its naming, or its layout |
+| `consistency` | 8 | disagrees with the rest of the suite, its naming, or its layout |
 | `correctness` | 1 | the code does the wrong thing |
 
 ## By severity
@@ -23,7 +23,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
 | `major` | 96 | wrong behavior in code, plan, or record |
-| `minor` | 79 | polish or wording, or no surviving defect |
+| `minor` | 80 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -204,3 +204,4 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T02 §2` | F1 | minor | `record` | fixed | independent | the CS0618 replacement item was ticked though the obsolete call stays |
 | `D00 T02 §2` | F2 | minor | `record` | fixed | independent | the using count said four more global usings where 14 directives were removed |
 | `D00 T02 §2` | F3 | major | `integration` | fixed | independent | the struck item lacked the Deferred marker validate needs once the row flips |
+| `D00 T02 §4` | F1 | minor | `consistency` | fixed | independent | 'none is ticked without the review stamp' contradicted the ticked items |
