@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **14 of 762 sections complete (2%).** 762 sections (6 discovered); backlog 23 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **14 of 762 sections complete (2%).** 762 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -164,14 +164,14 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T01 §16` | Unattended merger health                                         |   9   |
 | [x] | `D00 T01 §17` | Time the guard's deadline cases on the walk                      |   4   |
 | [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                     |  27   |
-| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  23   |
+| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                   |  29   |
 | [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine               |   5   |
 | [ ] | `D00 T02 §9`  | Point every Stilus test at a temporary app data                  |   8   |
 | [x] | `D00 T02 §2`  | Gesso diagnostics to zero                                        |   5   |
 | [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                           |   5   |
 | [x] | `D00 T02 §4`  | Prune packages no code uses                                      |   7   |
 | [ ] | `D00 T02 §5`  | The assertion library decision and the decision log              |   5   |
-| [ ] | `D00 T04 §1`  | The native-code standard, the register, and the native-lint gate |  10   |
+| [ ] | `D00 T04 §1`  | The native-code standard, the register, and the native-lint gate |  15   |
 | [ ] | `D00 T04 §2`  | The benchmark harness and the first benchmark record             |   9   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                 |   7   |
 | [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                 |   7   |
@@ -211,8 +211,8 @@ Stilus goes first among the apps. This phase gives it a real composition root on
 | [ ] | `D02 T03 §1` | Undo for resize and rotate                          |   8   |
 | [ ] | `D02 T03 §2` | Split the main window view model                    |   7   |
 | [ ] | `D02 T04 §1` | Atomic save and dirty tracking                      |   9   |
-| [ ] | `D02 T04 §2` | SVG round-trip fidelity fixtures                    |   5   |
-| [ ] | `D00 T02 §6` | xUnit v3                                            |   5   |
+| [ ] | `D02 T04 §2` | SVG round-trip fidelity fixtures                    |  14   |
+| [ ] | `D00 T02 §6` | xUnit v3                                            |   8   |
 
 ### Phase 3 -- Stilus 0.1.0: shared UI, complete editing, documents, release
 
