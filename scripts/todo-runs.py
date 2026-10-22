@@ -109,7 +109,9 @@ TRIGGER_LEGEND = (
 )
 
 RUNNERS = ("codex", "panel")
-EFFORTS = ("high", "medium", "low")
+# Every effort the pinned codex reviewer accepts (scripts/review-dispatch.py EFFORTS["codex"]): the operator pinned
+# xhigh on 2026-10-22, so its rounds are recorded with it.
+EFFORTS = ("xhigh", "high", "medium", "low")
 OUTCOMES = ("findings", "empty", "error", "stamp", "independent")
 PROVIDERS = ("openai", "anthropic")
 # Outcomes the panel mapping skips: error voids the attempt's verdicts,
@@ -1183,6 +1185,11 @@ refuted: 0
     _r, errors_e = parse_runs(bad_effort)
     check_runs(_r, errors_e)
     check("bad-effort-fails", any("effort must be" in m for _, m in errors_e), f"{errors_e}")
+
+    xhigh = good.replace("effort: high", "effort: xhigh")
+    _r, errors_x = parse_runs(xhigh)
+    check_runs(_r, errors_x)
+    check("xhigh-effort-accepted", not any("effort must be" in m for _, m in errors_x), f"{errors_x}")
 
     bad_ref = good.replace("D00-T01-S1-F2", "D00-T01-S1-F1-F2")
     _r, errors_r = parse_runs(bad_ref)
