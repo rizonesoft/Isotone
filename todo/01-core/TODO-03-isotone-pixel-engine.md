@@ -14,13 +14,15 @@ track: C3
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** There is no `src/Isotone.Core/` yet; `D01 T02 §1` creates the project and this file adds its `Imaging/` folder. Gesso already tiles its raster layers at 256 by 256 (`TileSize = 256` in `src/Gesso/src/Gesso.Core/Tiles/Tile.cs`), the tile size this engine adopts so its second consumer needs no re-tiling. Gesso has a filter plug-in contract (`src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`), and its filter commands in `src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs` only log that a dialog would open; `D03 T05 §1` routes them through this engine. Stilus's bitmap element `src/Stilus/Bezier.Core/Models/Elements/SvgImage.cs` (120 lines) holds encoded bytes only (`EmbeddedData`, `MimeType`) with no decoded pixel access, and `src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs` draws no `SvgImage` at all. There is no decisions log yet: the first section that records a decision creates `docs/dev/decisions.md`. **Corrected 2026-09-28:** `D00 T02 §5` (Phase 0) creates `docs/dev/decisions.md`; this file only adds rows.
+>
+> **Corrected 2026-10-22:** `docs/dev/decisions.md` exists since `D00 T02 §5` recorded the assertion library in it; a row this file owes is added there, and the claim below now checks it exists.
 <!-- claim: absent src/Isotone.Core -->
 <!-- claim: count "TileSize = 256" src/Gesso/src/Gesso.Core/Tiles/Tile.cs = 1 -->
 <!-- claim: exists src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs -->
 <!-- claim: count "Opening Gaussian Blur dialog" src/Gesso/src/Gesso.UI/ViewModels/MainWindowViewModel.cs = 1 -->
 <!-- claim: lines src/Stilus/Bezier.Core/Models/Elements/SvgImage.cs = 120 -->
 <!-- claim: count "SvgImage" src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs = 0 -->
-<!-- claim: absent docs/dev/decisions.md -->
+<!-- claim: exists docs/dev/decisions.md -->
 
 ## Inputs
 

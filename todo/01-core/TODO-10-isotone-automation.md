@@ -15,6 +15,8 @@ track: C10
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-27):** Neither `src/Isotone.Core/` nor `src/Isotone.UI/` exists yet (`D01 T02 §1` and `D01 T01 §1` create them). The only scripting code in the repository is Gesso's `ScriptEngine` (62 lines in `src/Gesso/src/Gesso.Scripting/ScriptEngine.cs`, `EvaluateAsync<T>` and `RunAsync` over Roslyn scripting with no globals, no trust model, no undo, and no caller), which `D03 T01 §1` renames to `src/Gesso/Isotone.Gesso.Scripting/`. `Directory.Packages.props` already pins `Microsoft.CodeAnalysis.CSharp.Scripting` for it; AvalonEdit and the ModelContextProtocol SDK are not referenced. No app records actions, reads a command line beyond opening files, hosts extensions, or runs a batch: Albumen's batch engine (`Isotone.Albumen.Core/Batch/`, `ActivityManager`, `TokenEngine`) is planned in `D04 T11` and does not exist yet. There is no `docs/dev/decisions.md` yet (`D00 T02 §4` creates it), no `src/Isotone.Extensibility/`, and no `src/Isotone.Mcp/`. **Corrected 2026-09-28:** said `D00 T02 §4`; `D00 T02 §5` creates the decision log in Phase 0.
+>
+> **Corrected 2026-10-22:** `docs/dev/decisions.md` exists since `D00 T02 §5` recorded the assertion library in it; a row this file owes is added there, and the claim below now checks it exists.
 <!-- claim: absent src/Isotone.Core -->
 <!-- claim: absent src/Isotone.UI -->
 <!-- claim: lines src/Gesso/src/Gesso.Scripting/ScriptEngine.cs = 62 -->
@@ -22,7 +24,7 @@ track: C10
 <!-- claim: count "Microsoft.CodeAnalysis.CSharp.Scripting" Directory.Packages.props = 1 -->
 <!-- claim: count "AvalonEdit" Directory.Packages.props = 0 -->
 <!-- claim: count "ModelContextProtocol" Directory.Packages.props = 0 -->
-<!-- claim: absent docs/dev/decisions.md -->
+<!-- claim: exists docs/dev/decisions.md -->
 <!-- claim: absent src/Isotone.Extensibility -->
 <!-- claim: absent src/Isotone.Mcp -->
 

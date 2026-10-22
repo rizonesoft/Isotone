@@ -14,6 +14,8 @@ track: W4
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-30):** The operator asked on 2026-09-30 whether developing in C# loses optimization against C or C++ and whether the languages can be mixed, then accepted the recommendation above ("yes, add all to the todos, sounds good"). Nothing in the tree uses native interop yet: no `DllImport` or `LibraryImport` in any C# source, and no C or C++ source or `.vcxproj` anywhere. The heavy paths already lean on native code or the GPU through packages: SkiaSharp (Skia, C++) and ComputeSharp (C# compiled to HLSL on DirectX 12) in `Directory.Packages.props`. The plan already brings in many native libraries through `LibraryImport`, each with its own ad hoc rules: lcms2 in `D01 T04 §1` (the first, with the convention `tools/native/<lib>/build.ps1`, `SOURCE.txt` with the source hash, binaries under `runtimes/<rid>/native/`, and a `THIRD-PARTY-NOTICES.md` entry), then libmypaint, OpenColorIO through a C shim, libwebp, OpenEXR, PDFium, libjpeg-turbo, DjVuLibre, and CharLS in the Gesso and Albumen parity files, and LibRaw in `D04 T01 §3`; no standard states the convention, so each section re-derives it. `standards/gesso.md` asks for SIMD with a scalar path and "a benchmark names the budget before an optimization lands", but there is no benchmark project and no place a benchmark result is recorded. Gesso's tiles are managed `byte[]` rented from `ArrayPool` (`src/Gesso/src/Gesso.Core/Tiles/Tile.cs`). There is no `docs/dev/decisions.md` yet; `D00 T02 §5` creates it.
+>
+> **Corrected 2026-10-22:** `docs/dev/decisions.md` exists since `D00 T02 §5` recorded the assertion library in it; a row this file owes is added there, and the claim below now checks it exists.
 <!-- claim: count "DllImport|LibraryImport" src/**/*.cs = 0 -->
 <!-- claim: count "ArrayPool<byte>.Shared.Rent" src/Gesso/src/Gesso.Core/Tiles/Tile.cs = 1 -->
 <!-- claim: count "Include=\"ComputeSharp\"" Directory.Packages.props = 1 -->
@@ -23,7 +25,7 @@ track: W4
 <!-- claim: absent docs/dev/native-libraries.md -->
 <!-- claim: absent docs/benchmarks -->
 <!-- claim: absent tests/Isotone.Benchmarks -->
-<!-- claim: absent docs/dev/decisions.md -->
+<!-- claim: exists docs/dev/decisions.md -->
 
 ## Inputs
 

@@ -15,6 +15,8 @@ track: N14
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `src/Stilus/Bezier.Core/Services/ImportService.cs` refuses PDF outright ("PDF import requires additional libraries") and routes AI, EPS, and PDF through three stub methods; the AI and EPS stubs only search the file text for an embedded `<svg` and otherwise fail ("Full AI support requires Adobe Illustrator"). `ImportService.ImportFromClipboard` already accepts SVG, image, and text clipboard payloads, but no app code calls it. `SvgExportOptions` in `SvgExporter.cs` has only minify, IDs, XML declaration, viewBox, decimal precision, and inline styles: no SVGZ, CSS, font, or image options. `ExportService` knows an ICO format (extension and MIME) that `D02 T06 §14` wires. Copy and Paste in `MainWindowViewModel` only set the status text (`D02 T03 §3` builds the real clipboard). `RawSvgDialog` shows the document's SVG source and copies it as plain text. `SkiaCanvas` passes a `PixelPreview` flag to the renderer only at zoom 8 or more, and `SkiaRenderer` threads the flag through without using it. No format package (PdfPig, PDFsharp, ACadSharp, NPOI, DocumentFormat.OpenXml) is referenced, there is no `tests/fixtures/` tree and no `docs/dev/decisions.md` yet, and `VectorElement` has no slice, rollover, or hyperlink model.
+>
+> **Corrected 2026-10-22:** `docs/dev/decisions.md` exists since `D00 T02 §5` recorded the assertion library in it; a row this file owes is added there, and the claim below now checks it exists.
 <!-- claim: count "PDF import requires additional libraries" src/Stilus/Bezier.Core/Services/ImportService.cs = 1 -->
 <!-- claim: count "ImportFormat\.(Ai|Eps|Pdf) =>" src/Stilus/Bezier.Core/Services/ImportService.cs = 3 -->
 <!-- claim: count "Full AI support requires Adobe Illustrator" src/Stilus/Bezier.Core/Services/ImportService.cs = 1 -->
@@ -27,7 +29,7 @@ track: N14
 <!-- claim: count "pixelPreview" src/Stilus/Bezier.Desktop/Services/SkiaRenderer.cs = 6 -->
 <!-- claim: count "PdfPig|PDFsharp|ACadSharp|NPOI|DocumentFormat\.OpenXml" Directory.Packages.props = 0 -->
 <!-- claim: absent tests/fixtures -->
-<!-- claim: absent docs/dev/decisions.md -->
+<!-- claim: exists docs/dev/decisions.md -->
 <!-- claim: count "Rollover|Hyperlink" src/Stilus/Bezier.Core/Models/VectorElement.cs = 0 -->
 
 ## Inputs
