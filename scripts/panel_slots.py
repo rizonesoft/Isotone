@@ -376,13 +376,17 @@ def _read_frontmatter(text: str) -> tuple[dict[str, str] | None, str | None]:
         note(f"a character other than a space, a tab, or a line feed separates or breaks lines here "
              f"({', '.join(f'U+{ord(c):04X}' for c in odd)}): YAML and this reader would split or strip it differently "
              f"(YAML 1.2.2 sections 5.4 and 5.5), outside this repository's agent schema")
-    if any("\t" in l[:len(l) - len(l.lstrip(" \t"))] for l in head):
+    # A tab before content is indentation, which YAML forbids; before a comment or on a blank line it is only
+    # separation, which YAML allows (section 6.6, independent review round 9).
+    if any("\t" in l[:len(l) - len(l.lstrip(" \t"))] and l.strip() and not l.lstrip().startswith("#") for l in head):
         note("a tab in indentation, which YAML forbids (YAML 1.2.2 section 6.1)")
     index = 0
     while index < len(head):
         line = head[index]
         index += 1
         indent = line[:len(line) - len(line.lstrip(" \t"))]
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
         if "\t" in indent:
             note("a tab in indentation, which YAML forbids (YAML 1.2.2 section 6.1)")
             continue
@@ -1344,6 +1348,8 @@ def _self_test() -> int:
               for v in ('color: "bad' + chr(92) + 'q"', "color: [unterminated", "color: |", "color: {a: b}")))
     agents_refuse("agent colon without a space", {"a-one.md": front(color=None).replace("name: a-one" + chr(10), "name: a-one" + chr(10) + "color:purple" + chr(10))},
                   "no space after its ':'")
+    check("agent tab before a comment or on a blank line is allowed",
+          _frontmatter_problem("---" + chr(10) + chr(9) + "# note" + chr(10) + chr(9) + chr(10) + "name: x" + chr(10) + "---" + chr(10)) is None)
     check("agent delimiters are exact", _frontmatter("--- " + chr(10) + "name: x" + chr(10) + "---" + chr(10)) is None)
     # The forms the schema accepts all still load: quoted values (an escaped single quote included), a comment after
     # a value, a quoted hash, the indented hook block, and CRLF line ends.
