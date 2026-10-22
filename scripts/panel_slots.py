@@ -290,6 +290,14 @@ def _frontmatter(text: str) -> dict[str, str] | None:
         value = value.strip()
         end = value.find(value[0], 1) if value[:1] in ("'", '"') else -1
         rest = value[end + 1:].strip() if end > 0 else ""
+        if value[:1] == "'":
+            # A single-quoted scalar's only escape is '' (YAML 1.2.2 section 7.3.2): find the real closing quote and
+            # decode it, so the reader means what YAML means.
+            m = re.match(r"'((?:[^']|'')*)'\s*(#.*)?$", value)
+            if m:
+                value = m.group(1).replace("''", "'")
+                fields[key.strip()] = value
+                continue
         if end > 0 and (not rest or rest.startswith("#")):
             value = value[1:end]
         else:
@@ -298,51 +306,95 @@ def _frontmatter(text: str) -> dict[str, str] | None:
     return None
 
 
-def _frontmatter_problem(text: str) -> str | None:
-    """Why an agent definition's frontmatter cannot be trusted to mean what `_frontmatter` reads, or None. Two kinds,
-    each naming its basis (D00 T01 §14), so no rule rests on a guess about Claude Code's loader:
+# The agent-definition schema's one-line values (D00 T01 §14, independent review round 1): a single-quoted scalar
+# ('' is its only escape), a double-quoted scalar with no escape at all, or a plain scalar that opens with no YAML
+# indicator and holds no ": ", each optionally followed by " # comment".
+_SINGLE = r"'(?:[^']|'')*'"
+_DOUBLE = r'"[^"\\]*"'
+_PLAIN = r"[^\s'\"|>\[\]{}&*!%@`#,?:-](?:(?!:\s)(?! #)[^\n])*?|-(?=\S)(?:(?!:\s)(?! #)[^\n])*?"
+_VALUE_LINE_RE = re.compile(rf"^([A-Za-z_][\w-]*):(?:[ ]+({_SINGLE}|{_DOUBLE}|{_PLAIN}))?[ ]*(?:[ ]#.*)?$")
 
-    - invalid YAML, which no conforming loader reads: a tab in indentation (YAML 1.2.2 section 6.1), a top-level key
-      given twice (section 3.2.1.1, mapping keys are unique), a quote opened and never closed (section 7.3);
-    - valid YAML outside this repository's agent schema, whose reader takes each value inline on its own line: a
-      block scalar (`|` or `>`) or a flow collection (`[...]`, `{...}`), refused with "write it inline", since the
-      reader would otherwise see a different value than the loader."""
+
+def _quote_end(value: str) -> int:
+    """The index of the quote closing the scalar `value` opens, or -1: '' escapes a single quote and a backslash
+    escapes the next character in a double-quoted one (YAML 1.2.2 sections 7.3.1 and 7.3.2), scanned left to right
+    so an escaped quote never reads as the close (independent review round 1)."""
+    quote, at = value[0], 1
+    while at < len(value):
+        if quote == "'" and value[at] == "'":
+            if value[at + 1:at + 2] == "'":
+                at += 2
+                continue
+            return at
+        if quote == '"' and value[at] == "\\":
+            at += 2
+            continue
+        if quote == '"' and value[at] == '"':
+            return at
+        at += 1
+    return -1
+
+
+def _frontmatter_problem(text: str) -> str | None:
+    """Why an agent definition's frontmatter cannot be trusted to mean what `_frontmatter` reads, or None. A whitelist
+    that fails closed (independent review round 1 replaced a list of refused shapes): every top-level line must be
+    `identifier: value` with a one-line value in `_VALUE_LINE_RE`'s shapes, keys are unique, and only `hooks:` (with no
+    value) may carry indented lines, its block. Each refusal names its basis, so no rule rests on a guess about Claude
+    Code's loader:
+
+    - invalid YAML, which no conforming loader reads: a tab in indentation (YAML 1.2.2 section 6.1), a key given twice
+      (section 3.2.1.1, mapping keys are unique), a quote opened and never closed on a one-line value (section 7.3),
+      a ": " inside a plain value (section 7.3.3);
+    - anything else outside this repository's agent schema, whose reader takes each value inline on its own line: a
+      block scalar, a flow collection, an escape in a double-quoted value, a quoted or unusual key, a value continued
+      on indented lines, nested content under any key but `hooks`; refused with "write it inline"."""
     lines = text.lstrip("\ufeff").replace("\r\n", "\n").split("\n")
     if not lines or lines[0].strip() != "---":
         return None
     seen: set[str] = set()
+    nested_ok = False
     for line in lines[1:]:
         if line.strip() == "---":
             return None
         indent = line[:len(line) - len(line.lstrip(" \t"))]
         if "\t" in indent:
             return "a tab in indentation, which YAML forbids (YAML 1.2.2 section 6.1)"
-        if not line.strip() or line.lstrip().startswith("#") or indent:
+        if not line.strip() or line.lstrip().startswith("#"):
             continue
-        key, sep, value = line.partition(":")
-        if not sep or not key.strip():
+        if indent:
+            if not nested_ok:
+                return ("an indented line under a key other than `hooks:`: a value continued on another line or a "
+                        "nested block, outside this repository's agent schema; write it inline")
             continue
-        key, value = key.strip(), value.strip()
+        key = line.partition(":")[0].strip()
+        match = _VALUE_LINE_RE.match(line)
+        if match is None:
+            value = line.partition(":")[2].strip()
+            if not re.fullmatch(r"[A-Za-z_][\w-]*", key):
+                return (f"line {line[:40]!r} is not an `identifier: value` pair (a quoted or unusual key), outside "
+                        f"this repository's agent schema; write it inline")
+            if value[:1] in ("'", '"') and _quote_end(value) < 0:
+                return (f"key {key!r} opens a {value[0]} quote it does not close on its line: unterminated, which "
+                        f"YAML cannot parse (YAML 1.2.2 section 7.3), or continued on another line, outside this "
+                        f"repository's agent schema; write it inline")
+            if value[:1] == '"':
+                return (f"key {key!r} holds an escape in a double-quoted value: valid YAML, but outside this "
+                        f"repository's agent schema, whose reader does not decode escapes; write it plainly")
+            if value[:1] in ("|", ">"):
+                return (f"key {key!r} holds a block-scalar value: valid YAML, but outside this repository's agent "
+                        f"schema, whose reader takes values inline; write it inline")
+            if value[:1] in ("[", "{"):
+                return (f"key {key!r} holds a flow collection: valid YAML, but outside this repository's agent "
+                        f"schema (tools are one comma-separated line); write it inline")
+            if re.search(r":\s", value):
+                return (f"key {key!r} holds a plain value with ': ' in it, which YAML forbids (YAML 1.2.2 section "
+                        f"7.3.3); quote it")
+            return (f"key {key!r} holds a value outside this repository's agent schema (a YAML indicator such as "
+                    f"&, *, !, %, @, or ` opens it); write it plainly")
         if key in seen:
             return f"key {key!r} appears twice, which YAML forbids (YAML 1.2.2 section 3.2.1.1: mapping keys are unique)"
         seen.add(key)
-        if value[:1] in ("'", '"'):
-            quote, at = value[0], 1
-            while True:
-                at = value.find(quote, at)
-                if at < 0:
-                    return (f"key {key!r} opens a {quote} quote it never closes, which YAML cannot parse "
-                            f"(YAML 1.2.2 section 7.3)")
-                if quote == "'" and value[at + 1:at + 2] == "'":
-                    at += 2  # '' is an escaped quote inside a single-quoted scalar
-                    continue
-                break
-        elif value[:1] in ("|", ">"):
-            return (f"key {key!r} holds a block-scalar value: valid YAML, but outside this repository's agent "
-                    f"schema, whose reader takes values inline; write it inline")
-        elif value[:1] in ("[", "{"):
-            return (f"key {key!r} holds a flow collection: valid YAML, but outside this repository's agent schema "
-                    f"(tools are one comma-separated line); write it inline")
+        nested_ok = key == "hooks" and match.group(2) is None
     return None
 
 
@@ -1067,7 +1119,7 @@ def _self_test() -> int:
     hook_block = SHELL_HOOK_BLOCK
 
     def front(hooks: bool = True, **kw: str | None) -> str:
-        base: dict[str, str | None] = {"name": "a-one", "description": "does things: carefully",
+        base: dict[str, str | None] = {"name": "a-one", "description": "does things carefully",
                                        "model": "sonnet", "effort": "high", "tools": "Read, Grep, Bash",
                                        "disallowedTools": "Edit, Write, NotebookEdit, Agent"}
         base.update(kw)
@@ -1111,9 +1163,25 @@ def _self_test() -> int:
         ("agent tab-indented line", {"a-one.md": front().replace("hooks:\n  PreToolUse:", "hooks:\n\tPreToolUse:")},
          "a tab in indentation, which YAML forbids (YAML 1.2.2 section 6.1)"),
         ("agent unterminated double quote", {"a-one.md": front(description='"does things')},
-         "never closes, which YAML cannot parse (YAML 1.2.2 section 7.3)"),
+         "does not close on its line: unterminated, which YAML cannot parse (YAML 1.2.2 section 7.3)"),
         ("agent unterminated single quote", {"a-one.md": front(description="'it''s open")},
-         "never closes, which YAML cannot parse (YAML 1.2.2 section 7.3)"),
+         "does not close on its line: unterminated, which YAML cannot parse (YAML 1.2.2 section 7.3)"),
+    ):
+        agents_refuse(name, files, needle)
+    for name, files, needle in (
+        # Independent review round 1: a continued value, a quoted twin of a key, an escaped closing quote, an escape
+        # that would rename a tool, a multi-line quoted value, and a plain value with ": " in it.
+        ("agent value continued on an indented line", {"a-one.md": front().replace("model: sonnet\n", "model: sonnet\n  haiku\n")},
+         "an indented line under a key other than `hooks:`"),
+        ("agent quoted twin of a key", {"a-one.md": front().replace("model: sonnet\n", 'model: sonnet\n"model": haiku\n')},
+         "is not an `identifier: value` pair"),
+        ("agent escaped closing quote", {"a-one.md": front(description='"never closes\\"')}, "does not close on its line"),
+        ("agent escape that would rename a tool", {"a-one.md": front(tools='"Read, \\u0057rite"')},
+         "an escape in a double-quoted value"),
+        ("agent multi-line quoted value", {"a-one.md": front(description='"careful\n  reviewer"')}, "does not close on its line"),
+        ("agent colon-space in a plain value", {"a-one.md": front(description="does things: carefully")},
+         "which YAML forbids (YAML 1.2.2 section 7.3.3)"),
+        ("agent anchor on a value", {"a-one.md": front(model="&m sonnet")}, "a YAML indicator"),
     ):
         agents_refuse(name, files, needle)
     # The forms the schema accepts all still load: quoted values (an escaped single quote included), a comment after
@@ -1122,6 +1190,12 @@ def _self_test() -> int:
         "a-one.md": front(description="'it''s careful: really'", model='"sonnet"  # the alias', color="purple"),
         "a-two.md": front(name="a-two", description='"a # b, quoted"').replace("\n", "\r\n")}), good)
     check("agent accepted forms all load", sorted(accepted) == ["a-one", "a-two"], repr(accepted))
+    # ... and are read as YAML reads them (independent review round 1).
+    check("agent accepted forms read as YAML means them",
+          _frontmatter(front(description="'it''s careful: really'", model='"sonnet"  # the alias'))
+          == {"name": "a-one", "description": "it's careful: really", "model": "sonnet", "effort": "high",
+              "tools": "Read, Grep, Bash", "disallowedTools": "Edit, Write, NotebookEdit, Agent", "hooks": ""},
+          repr(_frontmatter(front(description="'it''s careful: really'", model='"sonnet"  # the alias'))))
     agents_refuse("agent model differs", {"a-one.md": front(model="haiku")}, "differs from the delegate alias")
     agents_refuse("agent model missing", {"a-one.md": front(model=None)}, "differs from the delegate alias")
     agents_refuse("agent effort missing", {"a-one.md": front(effort=None)}, "effort None differs")
