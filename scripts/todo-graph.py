@@ -11445,6 +11445,11 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("parity: the Gesso inventories and catalog parse whole, PS-A and PS-B as one Photoshop family",
                   ([len(par.parse_sources(proot, c)[0]) for c in par.CATALOGS[1]["columns"]],
                    len(par.parse_catalog(proot, par.CATALOGS[1])[0])), ([2, 2, 2], 5))
+            check("parity: an Areas anchor is GitHub's heading anchor",
+                  [par._anchor(h) for h in ("Documents and canvas", "View, guides, and measurement", "3D (removed)",
+                                            "Layer styles, smart objects, comps, and artboards")],
+                  ["documents-and-canvas", "view-guides-and-measurement", "3d-removed",
+                   "layer-styles-smart-objects-comps-and-artboards"])
             check("parity: a clean Gesso catalog with its summary, other-app: Stilus, and excluded: removed has no findings",
                   _pfind(), [])
             _gcases = (
@@ -11483,6 +11488,14 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a malformed Areas entry", _gcat.replace("- [Elsewhere](#elsewhere) (2)", "- Elsewhere (2)"), "is not `- [Name](#anchor) (N)`"),
                 ("an Areas entry naming no area", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", "- [Elsewhere](#elsewhere) (2)\n- [Gone](#gone) (0)\n"), "Areas entry `Gone` (line 16) names no area heading with rows"),
                 ("a deleted Areas list", _gcat.replace(_gareas + "\n", ""), "has 0 `## Areas` lists"),
+                # Independent review round 1: the separator is checked, a
+                # heading counts once, a count is bounded, and a link opens
+                # the section it counts.
+                ("a fake row in place of the Totals separator", _gcat.replace("| ------ | -------: | ----------: |", "| `plan` | 999 | 999 |"), "has no separator row under its header"),
+                ("a repeated area heading", _gcat.replace("| IP-0003 | Kept |", "\n## Pixels\n\n" + _ghead.rstrip("\n") + "\n| IP-0003 | Kept |"), "area heading `Pixels` at line"),
+                ("a runaway count", _gcat.replace("| `plan` | 1 | 2 |", "| `plan` | " + "9" * 5000 + " | 2 |"), "is not a status kind or Total with two counts"),
+                ("an Areas link to another section", _gcat.replace("(#elsewhere) (2)", "(#pixels) (2)"), "links #pixels, but its heading's anchor is #elsewhere"),
+                ("an Areas link to no section", _gcat.replace("(#elsewhere) (2)", "(#nowhere) (2)"), "links #nowhere"),
             )
             for name, gcat, needle in _gdrift:
                 _pwrite(gcat=gcat)

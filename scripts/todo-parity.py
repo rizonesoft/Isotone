@@ -254,13 +254,21 @@ def parse_catalog(root: Path, spec: dict, texts: dict | None = None) -> tuple[li
 
 _NUMBER_RE = r"\**([0-9][0-9,]*)\**"
 _TOTALS_HEADER = ["Status", "Features", "Source rows"]
-_AREA_RE = re.compile(r"^- \[(?P<name>[^\]]+)\]\(#[^)\s]+\) \((?P<n>[0-9][0-9,]*)\)$")
+_AREA_RE = re.compile(r"^- \[(?P<name>[^\]]+)\]\(#(?P<anchor>[^)\s]+)\) \((?P<n>[0-9][0-9,]*)\)$")
+
+
+def _anchor(heading: str) -> str:
+    """The anchor GitHub gives a heading: lower case, punctuation other than `-` and `_` dropped, each space a `-`
+    ('3D (removed)' -> '3d-removed'), so an Areas link is checked against the section it must open."""
+    return re.sub(r"[^\w\- ]", "", heading.strip().lower()).replace(" ", "-")
 
 
 def _count(text: str) -> int | None:
-    """2385 for '2385', '2,385', or '**2,385**' (commas, when used, at every thousand); None for anything else."""
+    """2385 for '2385', '2,385', or '**2,385**' (commas, when used, at every thousand, and at most nine digits, so a
+    runaway number is malformed, never an integer conversion that fails: independent review round 1); None for
+    anything else."""
     m = re.fullmatch(_NUMBER_RE, text.strip())
-    if not m or not re.fullmatch(r"\d+|\d{1,3}(,\d{3})+", m.group(1)):
+    if not m or not re.fullmatch(r"\d{1,9}|\d{1,3}(,\d{3}){1,2}", m.group(1)):
         return None
     return int(m.group(1).replace(",", ""))
 
@@ -291,7 +299,15 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
         drift(f"has {len(tables)} Totals tables (`| Status | Features | Source rows |`); it carries exactly one")
     else:
         seen: dict[str, int] = {}
-        for lineno in range(tables[0] + 2, len(lines)):
+        start = tables[0] + 1
+        sep = lines[start] if start < len(lines) else ""
+        # The line under the header must be its separator: anything else is a row, never skipped unread
+        # (independent review round 1).
+        if _SEPARATOR_RE.match(sep) and len(split_row(sep)) == 3:
+            start += 1
+        else:
+            drift(f"Totals table at line {tables[0] + 1} has no separator row under its header")
+        for lineno in range(start, len(lines)):
             line = lines[lineno]
             if not line.strip():
                 break
@@ -315,6 +331,15 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
                 drift(f"Totals table has no `{label}` row")
     # The Areas list against the rows under each `## ` heading.
     heads = [(i, line[3:].strip()) for i, line in enumerate(lines) if line.startswith("## ")]
+    first_head: dict[str, int] = {}
+    for i, name in heads:
+        # One section per area: two headings of one name would merge their rows under one Areas entry
+        # (independent review round 1).
+        if name in first_head:
+            drift(f"area heading `{name}` at line {i + 1} repeats the one at line {first_head[name]}; "
+                  f"each area has one section")
+        else:
+            first_head[name] = i + 1
     per_area: dict[str, int] = {}
     for row in rows:
         area = None
@@ -345,6 +370,10 @@ def totals_findings(spec: dict, text: str, rows: list[dict]) -> list[tuple[str, 
             drift(f"Areas entry `{name}` at line {lineno + 1} repeats the one at line {listed[name]}")
             continue
         listed[name] = lineno + 1
+        if m.group("anchor") != _anchor(name):
+            # The link must open the section it counts (independent review round 1).
+            drift(f"Areas entry `{name}` (line {lineno + 1}) links #{m.group('anchor')}, but its heading's anchor "
+                  f"is #{_anchor(name)}")
         n = _count(m.group("n"))
         if name not in per_area:
             drift(f"Areas entry `{name}` (line {lineno + 1}) names no area heading with rows")
