@@ -39,3 +39,14 @@ Each entry holds:
 - **Choice:** C++20 with our own UI on Win32, Direct2D, DirectWrite, and Direct3D, decided by the operator. It gives the most control (every pixel and frame is ours, so the design system and the layout maps are implemented with nothing in between), the most speed (no runtime, no garbage collector, direct GPU access), the smallest output (one executable per app, libraries linked statically), and the fewest dependencies (Windows itself plus the libraries we choose). The architecture, the toolchain, and the migration are specified in `docs/specs/2026-10-22-native-stack-design.md`.
 - **Cost of change:** the imported C# Stilus and Gesso are rewritten in C++ rather than ported line by line, with the C# code kept as a behavior reference until each native app reaches its first release; most implementation sections of `todo/` are re-planned against the spec, while the parity catalogs, the design system, the layout maps, and the TODO and review tooling carry over. Reversing it later would mean rebuilding the UI toolkit's surfaces in another framework.
 - **Owner:** the architecture spec above, and the re-plan filed from it.
+- **Amended:** the language standard is C++23, not C++20 (next entry).
+
+## 2026-10-22: The C++ language standard
+
+- **Date:** 2026-10-22, after the operator remarked "Looks like C++ 20 is not the latest".
+- **Question:** which ISO C++ standard the native stack pins.
+- **Options:** C++20 (`/std:c++20`, MSVC's newest stable, ABI-stable switch); C++23 (`/std:c++23preview`, which Microsoft documents may change and may not be ABI compatible across releases, until `/std:c++23` ships); the working draft (`/std:c++latest`, which adds in-progress and experimental features).
+- **Evidence:** C++23 is the current published ISO standard; MSVC Build Tools 14.51 (Visual Studio 2026 18.11, on the development machine) offers `/std:c++20`, `/std:c++23preview`, and `/std:c++latest`, and no `/std:c++23` yet (Microsoft Learn, `/std` (Specify Language Standard Version), and What's new for MSVC Build Tools 14.51).
+- **Choice:** C++23 through `/std:c++23preview`, then `/std:c++23` when MSVC ships it, and C++26 when MSVC ships a switch scoped to that standard; never `/std:c++latest`. The preview ABI caveat is contained because the toolset is pinned and every library is linked statically and built by that same toolset, so a toolset move rebuilds the whole program.
+- **Cost of change:** falling back to C++20 means replacing the C++23 features in use (for example `std::expected`, deducing `this`, `std::print`), mechanical but proportional to their use; each forward move is a section that rebuilds and retests everything.
+- **Owner:** `docs/specs/2026-10-22-native-stack-design.md` (The toolchain), and the native spine section that pins the toolset.

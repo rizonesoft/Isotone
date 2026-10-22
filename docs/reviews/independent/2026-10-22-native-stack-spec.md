@@ -44,3 +44,46 @@ This record's round 1 is the spec's third review round; rounds 1 and 2 ran befor
 5. P1, protections lost on save: verified. The temporary file is created with the target's security descriptor, attributes, EFS encryption, and compression before any document data is written, and the save fails if they cannot be applied; named streams such as the Mark of the Web are copied; read-only targets are refused. Proofs added for each.
 6. P2, reference white applied to Advanced Color SDR: verified against Microsoft's Advanced Color guidance ("Reference white applies only to HDR displays"). The policy is now per mode: reference white scaling in HDR only, scRGB 1.0 as the display's white in Advanced Color SDR. Proof added on an Advanced Color SDR display.
 7. P2, the watcher cannot dump after exit and misses fail-fast: verified against Microsoft's `__fastfail` and `RaiseFailFastException` documentation (no handlers run; an attached debugger is given the state). The watcher now attaches as the app's debugger with kill-on-exit off and dumps on last-chance and fail-fast exceptions while the app is suspended. Proofs added: access violation, `__fastfail`, `/GS` overrun, and stack overflow, plus a killed watcher leaving the app running.
+
+## Round 2: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-22T21:17:07Z
+- Effort: xhigh
+- Lines: 22
+- Digest: 91070c34d3588a86
+
+## adversarial: needs-attention
+
+1. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: Save commits have no serialization or revision-order rule. Start saving N, edit and checkpoint N+1, then start saving N+1. Let N+1 finish and retire its checkpoints, then let N replace the target. A crash now leaves N on disk with N+1 excluded from recovery. The revised retirement cutoff does not prevent this interleaving. Require ordered commits per target and test reversed save completion.
+
+2. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: The failure guarantee contradicts the operation order. After the replacing rename succeeds, deleting the backup or retiring the journal can fail, but the previous file is already replaced. Inject either cleanup failure after the rename to disprove “if any step fails ... the previous file is untouched.” Define the commit point, distinguish committed saves from cleanup failures, and retain retryable cleanup records.
+
+## consistency: approve
+
+## integration: needs-attention
+
+3. P1 `docs/specs/2026-10-22-native-stack-design.md:87`: Protected documents can leak through recovery files. Open an EFS-encrypted document while the recovery directory is unencrypted, edit it, and allow its first checkpoint. The “same write protocol” copies protections from the checkpoint target, which does not yet exist, rather than from the source document. Nothing requires encrypting that checkpoint; line 94 similarly permits plaintext dumps containing document data. Define and test protection before writing these secondary copies. EFS encryption is specific to files and their destination directory’s defaults. [Microsoft: Handling Encrypted Files and Directories](https://learn.microsoft.com/en-us/windows/win32/fileio/handling-encrypted-files-and-directories).
+
+## source-defect: needs-attention
+
+4. P1 `docs/specs/2026-10-22-native-stack-design.md:86`: Copying owner and DACL does not preserve mandatory integrity protection. Integrity labels and their policies reside in the SACL. Demonstrate with a file carrying an explicit medium-integrity `SYSTEM_MANDATORY_LABEL_NO_READ_UP` policy: the specified replacement omits that policy, allowing a low-integrity process with sufficient DACL access to read the saved contents. Preserve the label and policy before writing data, or refuse the save. [Microsoft: Mandatory Integrity Control](https://learn.microsoft.com/en-us/windows/win32/secauthz/mandatory-integrity-control).
+
+5. P2 `docs/specs/2026-10-22-native-stack-design.md:86`: Preserving `FILE_ATTRIBUTE_ENCRYPTED` does not preserve the original EFS users’ keys. Give users A and B decrypting access to a file, then save it as A using the specified newly encrypted replacement. The protocol never transfers B’s encryption certificate, so B can lose access despite an unchanged DACL and a successful encryption-attribute check. Require preservation and verification of authorized decryptors, with a two-user regression test. Microsoft exposes separate APIs for querying and adding these keys. [Microsoft: Encrypted Files and User Keys](https://learn.microsoft.com/en-us/windows/win32/fileio/encrypted-files-and-user-keys).
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 2
+
+This record's round 2 is the spec's fourth review round. Every finding was verified and is real. All five sit in the save protocol, the third round running to patch that unit, so under the loop's rule it was re-thought as a whole rather than patched again: saving now has one stated commit point and serialized commits; what a save preserves is one named list, the file identity contract, each item applied before data is written, read back before the commit, and the save refused when any item cannot be reproduced, with what lies outside the contract named; and every secondary copy of document data is encrypted at rest whatever the source's protection.
+
+1. P1, reversed save completion: verified. Saves of one target are serialized and only the newest waiting request runs, so commits follow edit order. Proof added: a slow save of N with N+1 queued, killed at each point.
+2. P2, failure guarantee contradicts the operation order: verified. The replacing rename is the commit point; failures before it fail the save with the previous file untouched, cleanup failures after it are not save failures and are finished from the journal at the next save or start. Proof added: an injected cleanup failure.
+3. P1, protected documents leak through recovery files and dumps: verified. A Secondary copies rule: recovery and dump folders granted to the user and SYSTEM only, every checkpoint and dump encrypted at rest under a DPAPI-wrapped key, dumps encrypted through `MiniDumpWriteDump`'s I/O callbacks. Proof added: no plaintext of an EFS document in its checkpoint or dump.
+4. P1, integrity label not preserved: verified against Microsoft's Mandatory Integrity Control documentation (labels live in the SACL). The label and its policy are in the contract, through `LABEL_SECURITY_INFORMATION`. Proof added.
+5. P2, EFS key holders not preserved: verified. The contract carries every user able to decrypt the target (`QueryUsersOnEncryptedFile`, `AddUsersToEncryptedFile`) and refuses the save when a certificate is unavailable. Proofs added: a two-user file, and the refusal.
+
+Also in this revision, outside the review: the language standard moved from C++20 to C++23 (`docs/dev/decisions.md`, 2026-10-22: The C++ language standard).
