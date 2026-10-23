@@ -18,7 +18,9 @@ Run it inside scripts/dev-env.ps1, where dumpbin is on PATH. Output `file:rule:m
 2 dumpbin missing or nothing to check. Stdlib only.
 """
 import argparse
+import contextlib
 import fnmatch
+import io
 import json
 import os
 import re
@@ -189,13 +191,19 @@ def size_findings(folder, budget_mb, excluded=("*.pdb",), optional=()):
 
 
 RULES = ("import-not-system", "crt-not-static", "dll-in-vcpkg-tree", "over-budget", "budget-undocumented",
-         "publish-missing", "inspection-failed")
+         "publish-missing", "inspection-failed", "input-missing")
 RULE_RE = re.compile(":(" + "|".join(RULES) + "):")
 
 
 def rule_of(finding):
     """The rule of a `file:rule:message` finding; the file part may hold a drive letter's colon."""
     return RULE_RE.search(finding).group(1)
+
+
+def missing_inputs(folders, vcpkg_roots):
+    """input-missing for every build folder or vcpkg root named on the command line that is not an existing folder: an
+    input asked for by name is checked or refused, never skipped while another input passes."""
+    return [f"{raw}:input-missing:not an existing folder" for raw in [*folders, *vcpkg_roots] if not Path(raw).is_dir()]
 
 
 def inspected(path, code, text, check):
@@ -245,6 +253,11 @@ def main(argv=None):
             print(line)
         return 1 if findings else 0
 
+    missing = missing_inputs(args.folders, args.vcpkg_root)
+    if missing:
+        for line in findings + missing:
+            print(line)
+        return 1
     if not shutil.which("dumpbin"):
         print("native-artifact-gate: dumpbin is not on PATH; run inside scripts/dev-env.ps1")
         return 2
@@ -383,7 +396,15 @@ def self_test():
               [rule_of(line) for line in inspected("x.exe", 1181, "LINK : fatal error LNK1181: cannot open input file",
                                                    lambda out: import_findings("x.exe", out, shipping))],
               ["inspection-failed"])
-        check("a missing publish folder fails", main(["--publish", str(tmp / "no-such-folder")]), 1)
+        def quiet_main(argv):
+            with contextlib.redirect_stdout(io.StringIO()):
+                return main(argv)
+
+        check("a missing publish folder fails", quiet_main(["--publish", str(tmp / "no-such-folder")]), 1)
+        check("a named build folder or vcpkg root that does not exist fails, beside one that does",
+              [rule_of(line) for line in missing_inputs([str(tmp), str(tmp / "arm64-releas")], [str(tmp / "no-root")])],
+              ["input-missing", "input-missing"])
+        check("a missing named input fails the run before any inspection", quiet_main([str(tmp / "arm64-releas")]), 1)
         relocated = tmp / "source" / "CMakePresets.json"
         relocated.parent.mkdir()
         relocated.write_text(json.dumps({"version": 6, "configurePresets": [
