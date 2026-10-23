@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **16 of 846 sections complete (2%).** 846 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **17 of 846 sections complete (2%).** 846 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -174,7 +174,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T02 §5`  | The assertion library decision and the decision log                                      |   5   |
 | [x] | `D00 T05 §1`  | The toolchain pin and the developer environment                                          |   8   |
 | [x] | `D00 T05 §2`  | The vcpkg manifest, baseline, and triplets                                               |   7   |
-| [ ] | `D00 T05 §3`  | The CMake build, presets, and the test harness                                           |  11   |
+| [x] | `D00 T05 §3`  | The CMake build, presets, and the test harness                                           |  11   |
 | [ ] | `D00 T05 §4`  | The format, clang-tidy, and /analyze gates                                               |   6   |
 | [ ] | `D00 T05 §5`  | The AddressSanitizer lane                                                                |   4   |
 | [ ] | `D00 T05 §6`  | The import and size gates                                                                |  11   |

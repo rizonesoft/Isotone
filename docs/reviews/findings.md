@@ -4,26 +4,26 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**187 findings across 13 sections.**
+**193 findings across 14 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 78 | fails under hostile or unexpected input |
-| `integration` | 56 | a consumer, caller, or downstream artifact no longer holds |
+| `adversarial` | 79 | fails under hostile or unexpected input |
+| `integration` | 57 | a consumer, caller, or downstream artifact no longer holds |
 | `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 16 | the plan or the evidence misdescribes what happened |
+| `record` | 17 | the plan or the evidence misdescribes what happened |
+| `correctness` | 12 | the code does the wrong thing |
 | `consistency` | 9 | disagrees with the rest of the suite, its naming, or its layout |
-| `correctness` | 9 | the code does the wrong thing |
 
 ## By severity
 
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 102 | wrong behavior in code, plan, or record |
-| `minor` | 85 | polish or wording, or no surviving defect |
+| `major` | 105 | wrong behavior in code, plan, or record |
+| `minor` | 88 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -216,3 +216,9 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §2` | F1 | minor | `record` | fixed | independent | the CMake configures were proved with vcpkg install, not through CMake |
 | `D00 T05 §2` | F2 | minor | `record` | refuted | independent | the installation and cache proofs looked unrecorded |
 | `D00 T05 §2` | F3 | minor | `correctness` | fixed | self | vcpkg refused the triplets' Visual Studio path |
+| `D00 T05 §3` | F1 | major | `adversarial` | fixed | independent | MSVC's CL and _CL_ overrode the pinned standard switch |
+| `D00 T05 §3` | F2 | major | `integration` | fixed | independent | the always-registered script test hid an unregistered test executable |
+| `D00 T05 §3` | F3 | minor | `record` | fixed | independent | the no-tests probe predated the script test |
+| `D00 T05 §3` | F4 | minor | `correctness` | fixed | self | CMake picked the bundled clang++ instead of cl |
+| `D00 T05 §3` | F5 | major | `correctness` | fixed | self | an archive unpacked inside a work tree reported that tree's commit |
+| `D00 T05 §3` | F6 | minor | `correctness` | fixed | self | CMake's regular expressions have no repetition count |
