@@ -325,9 +325,9 @@ def suppression_findings(path, text):
             found.append(finding(path, n, "suppression-unreasoned", "warning(disable) is not allowed in a source"))
         if re.search(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*push\s*,", line):
             found.append(finding(path, n, "suppression-unreasoned", "warning(push, <level>) lowers the warning level; not allowed"))
-        m = re.search(r"#\s*pragma\s+warning\s*\(\s*suppress\s*:[^)]*\)(.*)", line)
-        if m and len(m.group(1).strip(" /:-").strip()) < 3:
-            found.append(finding(path, n, "suppression-unreasoned", "#pragma warning(suppress) carries its reason on the same line"))
+        m = re.search(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*suppress\s*:[^)]*\)[)\"\s]*(.*)", line)
+        if m and len(m.group(2).strip(" /:-").strip()) < 3:
+            found.append(finding(path, n, "suppression-unreasoned", "warning(suppress) carries its reason on the same line"))
     return found
 
 
@@ -337,8 +337,9 @@ def cmake_suppression_findings(path, text):
     lines = text.splitlines()
     found = []
     for n, line in enumerate(lines):
-        # MSVC takes each switch with / or -: a warning disabled (wd), all warnings off (w), or a level below 4 (W0 to W3).
-        if not re.search(r"(?<![\w/-])[/-](wd\d+|w\b|W[0-3]\b)", line) or line.lstrip().startswith("#"):
+        # MSVC takes each switch with / or -: a warning disabled (wd), all warnings off (w), a level below 4 (W0 to W3),
+        # or the warnings of a newer compiler version turned off (Wv).
+        if not re.search(r"(?<![\w/-])[/-](wd\d+|w\b|W[0-3]\b|Wv\b)", line) or line.lstrip().startswith("#"):
             continue
         if not path.replace("\\", "/").startswith("native/cmake/"):
             found.append(finding(path, n + 1, "suppression-unreasoned", "a target-wide /wd lives only in native/cmake/"))
@@ -553,6 +554,13 @@ def self_test():
           loadlibrary_findings("native/probe.cpp", 'LoadLibraryW(L"kernel32.dll");', ["kernel32.dll"], set()), [])
     for text in ("__pragma(warning(disable: 4996))", '_Pragma("warning(disable: 4996)")', "#pragma warning(push, 0)"):
         check(f"suppression: {text}", rules(suppression_findings("native/a.cpp", text)), ["suppression-unreasoned"])
+    for text in ("__pragma(warning(suppress: 6011))", '_Pragma("warning(suppress: 6011)")'):
+        check(f"a reasonless {text}", rules(suppression_findings("native/a.cpp", text)), ["suppression-unreasoned"])
+    check("__pragma(warning(suppress)) with its reason passes",
+          suppression_findings("native/a.cpp", "__pragma(warning(suppress: 6011)) // the analyzer misreads the guard above"), [])
+    check("/Wv outside native/cmake/ fails",
+          rules(cmake_suppression_findings("native/core/CMakeLists.txt", "target_compile_options(isotone_core PRIVATE /Wv:19.00)")),
+          ["suppression-unreasoned"])
     check("#pragma warning(push) alone, with no level, passes", suppression_findings("native/a.cpp", "#pragma warning(push)"), [])
     for text in ("target_compile_options(isotone_core PRIVATE -wd4996)", "target_compile_options(isotone_core PRIVATE /W1)",
                  "target_compile_options(isotone_core PRIVATE -w)"):
