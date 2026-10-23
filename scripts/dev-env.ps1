@@ -12,7 +12,9 @@
   Dot-sourced (. scripts/dev-env.ps1 -Arch x64), it leaves the session in that environment and throws on a mismatch.
   -Run { ... } (or its text, from another process) runs a block inside it and returns the block's exit code. -Check prints one line per item
   (`<item> pinned <value> found <value> ok|MISMATCH`) and exits 1 on any mismatch or missing component.
-  -PinFile reads another pin (the tests' fixtures); -VsWhere another vswhere (the tests' stand-ins).
+  -PinFile reads another pin (the tests' fixtures); -VsWhere another vswhere (the tests' stand-ins); -TripletDir and
+  -SdkInclude other triplets and SDK folders. -Check also refuses an overlay triplet whose toolset version is not the
+  pin's, and a Windows SDK newer than the pinned one, because vcpkg builds each dependency with the newest installed.
 .EXAMPLE
   pwsh scripts/dev-env.ps1 -Check -Arch arm64
 #>
@@ -22,6 +24,9 @@ param(
   [string]$PinFile = (Join-Path (Split-Path -Parent $PSScriptRoot) 'native\toolchain.json'),
   # The installer's vswhere; the tests point it at a missing path or a stand-in that reports a chosen installation.
   [string]$VsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe",
+  # The overlay triplets and the Windows SDK include folder; the tests point them at fixtures.
+  [string]$TripletDir = (Join-Path (Split-Path -Parent $PSScriptRoot) 'native\triplets'),
+  [string]$SdkInclude = "${env:ProgramFiles(x86)}\Windows Kits\10\Include",
   [switch]$Check,
   # A script block, or its text when the script runs in its own process (pwsh -File ... -Run 'cmake --preset x64').
   [object]$Run
@@ -163,6 +168,16 @@ if ($vs) {
     Add-BundledToolRow 'vcpkg' $Pin.vcpkg 'vcpkg' 'program version (\S+)' $vs
   }
 }
+
+# 4. What vcpkg builds dependencies with, which the environment above does not govern: each port runs its own vcvarsall,
+# with the toolset version its triplet names and the newest Windows SDK installed (vcpkg "Triplet files").
+foreach ($triplet in @(Get-ChildItem $TripletDir -Filter 'isotone-*.cmake' -ErrorAction Ignore)) {
+  $m = Select-String -Path $triplet.FullName -Pattern 'set\(VCPKG_PLATFORM_TOOLSET_VERSION\s+([^\s)]+)\)' | Select-Object -First 1
+  Add-Row "triplet $($triplet.BaseName) toolset" $Pin.msvc.toolset ($(if ($m) { $m.Matches[0].Groups[1].Value } else { 'none' }))
+}
+$sdks = @(Get-ChildItem $SdkInclude -Directory -ErrorAction Ignore | Where-Object { $_.Name -match '^10\.0\.\d+\.\d+$' } |
+  Sort-Object { [version]$_.Name } -Descending)
+Add-Row 'Windows SDK newest installed' $Pin.windows_sdk ($(if ($sdks) { $sdks[0].Name } else { 'none' }))
 
 $bad = @($Rows | Where-Object { -not $_.Ok })
 if ($Check) {

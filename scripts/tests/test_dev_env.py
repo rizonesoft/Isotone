@@ -43,11 +43,13 @@ def fixture(name):
     return json.dumps(pin, indent=2) + "\n"
 
 
-def check(pin_path, arch="x64", vswhere=None):
-    """(exit code, {item: (line, ok)}) from dev-env.ps1 -Check against one pin (and, given, another vswhere)."""
+def check(pin_path, arch="x64", vswhere=None, extra=()):
+    """(exit code, {item: (line, ok)}) from dev-env.ps1 -Check against one pin (and, given, another vswhere or other
+    triplet and SDK folders)."""
     cmd = ["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Check", "-Arch", arch, "-PinFile", str(pin_path)]
     if vswhere:
         cmd += ["-VsWhere", str(vswhere)]
+    cmd += list(extra)
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     rows = {}
     for line in proc.stdout.splitlines():
@@ -90,6 +92,28 @@ class DevEnvCheckTest(unittest.TestCase):
                 self.assertFalse(rows[item][1], rows[item][0])
                 self.assertEqual([k for k, (_, ok) in rows.items() if not ok], [item])
 
+
+    def test_a_triplet_off_the_pin_is_refused(self):
+        # vcpkg builds each dependency with its triplet's toolset, so a triplet off the pin fails only its own row.
+        with tempfile.TemporaryDirectory() as tmp:
+            for src in (ROOT / "native" / "triplets").glob("isotone-*.cmake"):
+                text = src.read_text(encoding="utf-8")
+                if src.name == "isotone-x64.cmake":
+                    text = text.replace("VCPKG_PLATFORM_TOOLSET_VERSION 14.51.36231", "VCPKG_PLATFORM_TOOLSET_VERSION 14.44.35207")
+                Path(tmp, src.name).write_text(text, encoding="utf-8")
+            code, rows = check(PIN, extra=("-TripletDir", tmp))
+        self.assertEqual(code, 1)
+        self.assertEqual([k for k, (_, ok) in rows.items() if not ok], ["triplet isotone-x64 toolset"], rows)
+
+    def test_a_newer_windows_sdk_is_refused(self):
+        # vcpkg's per-port vcvarsall takes the newest installed SDK, so one newer than the pin fails the check.
+        with tempfile.TemporaryDirectory() as tmp:
+            for version in ("10.0.22621.0", "10.0.26100.0", "10.0.99999.0"):
+                Path(tmp, version).mkdir()
+            code, rows = check(PIN, extra=("-SdkInclude", tmp))
+        self.assertEqual(code, 1)
+        self.assertEqual([k for k, (_, ok) in rows.items() if not ok], ["Windows SDK newest installed"], rows)
+        self.assertIn("found 10.0.99999.0", rows["Windows SDK newest installed"][0])
 
     def test_compiler_options_in_the_environment_do_not_hide_the_compiler(self):
         # CL and _CL_ are the developer's own compiler options; /nologo there must not hide the banner the check reads.
