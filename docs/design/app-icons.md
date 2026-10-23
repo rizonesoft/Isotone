@@ -1,6 +1,6 @@
 # App icons
 
-Stilus, Gesso and Albumen share one app icon system: Direction C, the suite tile, chosen on 2026-09-27, with the Solid glyphs chosen on 2026-10-23 (operator decision: concept 2 of five, then refined: the Stilus handles removed and the curve enlarged and weighted, the brush given less material and lighter bristles and enlarged, the lens enlarged, and the stroke dropped from Gesso below 40 px). The splash is the Suite card (operator decision 2026-09-27), a 640 x 360 graphite card that carries the master icon; its spec is the Splash component guide. Direction A, the neon art, is retired and no longer in the repository.
+Stilus, Gesso and Albumen, and the three planned apps Tinctura, Capio and Folium, share one app icon system: Direction C, the suite tile, chosen on 2026-09-27, with the Solid glyphs chosen on 2026-10-23 (operator decision: concept 2 of five, then refined: the Stilus handles removed and the curve enlarged and weighted, the brush given less material and lighter bristles and enlarged, the lens enlarged, and the stroke dropped from Gesso below 40 px). The splash is the Suite card (operator decision 2026-09-27), a 640 x 360 graphite card that carries the master icon; its spec is the Splash component guide. Direction A, the neon art, is retired and no longer in the repository.
 
 The app icons are separate from the UI icon catalog: catalog icons are Lucide-style strokes that draw commands and tools in the chrome, while app icons are full-color files that identify an app to Windows and to the person using it.
 
@@ -34,6 +34,9 @@ Optical balancing makes the three glyphs look the same size and weight although 
 | Stilus | the curve `M68 168C82 92 174 140 188 64` as a #127EA0 body, a #29C5E6 face offset (-1, -2) and a #C7F4FC highlight offset (-3, -5); two 22 unit square anchors at its ends, white #F2F3F5 with a 4 unit #29C5E6 edge, corner radius 3 |
 | Gesso | a brush at `translate(124 112) rotate(45)`: handle two-tone #F5923E and #D9741F, ferrule two-tone #E3E6EA and #AEB4BD with one #7D838D crimp, bristles from #B8763E through #E88A3A to a #FFC861 tip; a tapered stroke from the tip, #E0701C through #F5923E to #FFD15A, with one white gloss line at 40 percent |
 | Albumen | a lens rim of radius 66 (#6A707A to #25272C), a black well of radius 56, six blades alternating #5FD58C and #38AE64 that extend the sides of a radius 22 hexagon opening (#0B2414) to the well, so they tile it exactly; a glint arc and a rim edge in white |
+| Tinctura (planned) | a ring of twelve hue segments between radii 48 and 76, one every 30 degrees from red at the top (HSL lightness 0.6, saturation 0.85), 1.2 degrees of tile between neighbours; nothing in the centre (grown by 1.05) |
+| Capio (planned) | four crop corners, 44 unit arms and a 16 unit stroke in two-tone red (#FF4D6D and #C9264A), framing x 52 to 204 and y 42 to 190; a white #F2F3F5 crosshair at the centre: a radius 24 ring and four ticks, 7 units |
+| Folium (planned) | a page (x 64 to 194, y 36 to 196) in two-tone white with a folded corner; a blue header bar, a crossed placeholder graphic frame (#A3B5FF, edged #3550D6), and two columns of #8A93A6 text lines |
 
 Each master keeps its gradient and clip ids prefixed with the app (`stilus-c-bg`, `gesso-c-spec`...) so several icons can be inlined in one document without collisions.
 
@@ -55,6 +58,9 @@ At taskbar and title-bar sizes an icon is recognized by its silhouette, so below
 - Stilus: the curve and its two anchors, heavier (a 25 unit body, 32 unit anchors with a 6 unit edge), without the highlight.
 - Gesso: the paintbrush alone, without the stroke or the crimp line; the light ferrule stays, since it is what makes the shape read as a brush.
 - Albumen: the rim, the blades and the opening, without the glints.
+- Tinctura: the hue ring with 3 degrees between segments, so the colors stay apart.
+- Capio: the corners at a 22 unit stroke and the crosshair at 10.
+- Folium: the page, the header, the frame, and three heavy lines in place of the text columns.
 - The glyph is scaled to fill a box inset from the tile (1.5 px at 16, 2.6 px at 24, 3.2 px at 32) and centered above the band.
 - The tile keeps the master's graphite gradient with a smaller corner radius (3, 4, 6), and the spectrum band is a straight bar 2, 2.5, and 3.5 px tall, clipped to the tile corners; the inner highlight and the band crest are dropped.
 - The masters, the variants and the icon inside each `<app>-splash.svg` are written by `scripts/build-app-icons.py` from one geometry, so a change to a glyph carries through every size; edit the script, never the SVGs, and `python scripts/build-app-icons.py --check` fails when a committed file differs from what it writes. The suite icon's variants come from `scripts/generate-small-icons.py`.

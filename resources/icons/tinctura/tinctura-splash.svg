@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+<defs>
+<linearGradient id="tinctura-sp-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#303136"/><stop offset="1" stop-color="#1A1B1E"/></linearGradient>
+<radialGradient id="tinctura-sp-halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#B45CFF" stop-opacity="0.20"/><stop offset="1" stop-color="#B45CFF" stop-opacity="0"/></radialGradient>
+<linearGradient id="tinctura-sp-spec" x1="0" y1="0" x2="640" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.000" stop-color="#FF4D6D"/><stop offset="0.167" stop-color="#FF9A3C"/><stop offset="0.333" stop-color="#FFD84A"/><stop offset="0.500" stop-color="#4CC47A"/><stop offset="0.667" stop-color="#29C5E6"/><stop offset="0.833" stop-color="#5B7CFF"/><stop offset="1.000" stop-color="#B45CFF"/></linearGradient>
+<clipPath id="tinctura-sp-clip"><rect x="0" y="0" width="640" height="360" rx="8"/></clipPath>
+</defs>
+<rect x="0" y="0" width="640" height="360" rx="8" fill="url(#tinctura-sp-bg)"/>
+<g clip-path="url(#tinctura-sp-clip)">
+<circle cx="128" cy="160" r="150" fill="url(#tinctura-sp-halo)"/>
+<path d="M0 340C140 330 250 352 380 341S560 326 640 332V360H0Z" fill="url(#tinctura-sp-spec)"/>
+<path d="M0 340C140 330 250 352 380 341S560 326 640 332" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="1.5"/>
+</g>
+<rect x="0.5" y="0.5" width="639" height="359" rx="7.5" fill="none" stroke="#FFFFFF" stroke-opacity=".08"/>
+<svg x="56" y="92" width="136" height="136" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="tinctura-c-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D3E45"/><stop offset="1" stop-color="#18191D"/></linearGradient>
+    <linearGradient id="tinctura-c-spec" x1="8" y1="0" x2="248" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.00" stop-color="#FF4D6D"/><stop offset="0.17" stop-color="#FF9A3C"/><stop offset="0.33" stop-color="#FFD84A"/><stop offset="0.50" stop-color="#4CC47A"/><stop offset="0.67" stop-color="#29C5E6"/><stop offset="0.83" stop-color="#5B7CFF"/><stop offset="1.00" stop-color="#B45CFF"/></linearGradient>
+    <clipPath id="tinctura-c-clip"><rect x="8" y="8" width="240" height="240" rx="52"/></clipPath>
+    
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#tinctura-c-bg)"/>
+  <g clip-path="url(#tinctura-c-clip)">
+    <path d="M0 230C64 220 120 240 176 230S236 218 256 222V256H0Z" fill="url(#tinctura-c-spec)"/>
+    <path d="M0 230C64 220 120 240 176 230S236 218 256 222" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
+  </g>
+  <rect x="9" y="9" width="238" height="238" rx="51" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="2"/>
+  <g transform="translate(128 116) scale(1.05) translate(-128 -116)"><path d="M128.8 40A76 76 0 0 1 165.31 49.79L151.56 74.18A48 48 0 0 0 128.5 68Z" fill="#F04242"/><path d="M166.69 50.58A76 76 0 0 1 193.42 77.31L169.32 91.57A48 48 0 0 0 152.43 74.68Z" fill="#F09942"/><path d="M194.21 78.69A76 76 0 0 1 204 115.2L176 115.5A48 48 0 0 0 169.82 92.44Z" fill="#F0F042"/><path d="M204 116.8A76 76 0 0 1 194.21 153.31L169.82 139.56A48 48 0 0 0 176 116.5Z" fill="#99F042"/><path d="M193.42 154.69A76 76 0 0 1 166.69 181.42L152.43 157.32A48 48 0 0 0 169.32 140.43Z" fill="#42F042"/><path d="M165.31 182.21A76 76 0 0 1 128.8 192L128.5 164A48 48 0 0 0 151.56 157.82Z" fill="#42F099"/><path d="M127.2 192A76 76 0 0 1 90.69 182.21L104.44 157.82A48 48 0 0 0 127.5 164Z" fill="#42F0F0"/><path d="M89.31 181.42A76 76 0 0 1 62.58 154.69L86.68 140.43A48 48 0 0 0 103.57 157.32Z" fill="#4299F0"/><path d="M61.79 153.31A76 76 0 0 1 52 116.8L80 116.5A48 48 0 0 0 86.18 139.56Z" fill="#4242F0"/><path d="M52 115.2A76 76 0 0 1 61.79 78.69L86.18 92.44A48 48 0 0 0 80 115.5Z" fill="#9942F0"/><path d="M62.58 77.31A76 76 0 0 1 89.31 50.58L103.57 74.68A48 48 0 0 0 86.68 91.57Z" fill="#F042F0"/><path d="M90.69 49.79A76 76 0 0 1 127.2 40L127.5 68A48 48 0 0 0 104.44 74.18Z" fill="#F04299"/></g>
+</svg>
+<g font-family="Segoe UI Variable Display, Segoe UI, system-ui, sans-serif">
+<text x="228" y="148" font-size="46" font-weight="600" fill="#F4F4F5" letter-spacing="-0.5">Tinctura</text>
+<text x="230" y="178" font-size="16" fill="#B7B8BD">Color picker and color studio</text>
+<text x="230" y="212" font-size="13" fill="#8C8D93">Isotone Graphics Suite<tspan fill="#6C6D73"> · </tspan>Version 0.1.0</text>
+</g>
+<g font-family="Segoe UI Variable Text, Segoe UI, system-ui, sans-serif">
+<text x="230" y="272" font-size="12" fill="#A3A4AA">Loading palettes…</text>
+<rect x="230" y="284" width="340" height="3" rx="1.5" fill="#3A3B41"/>
+<rect x="230" y="284" width="146" height="3" rx="1.5" fill="#B45CFF"/>
+<text x="610" y="312" font-size="11" fill="#6E6F75" text-anchor="end">© 2026 Rizonetech (Pty) Ltd · Free and open source (GPL-3.0)</text>
+</g>
+</svg>

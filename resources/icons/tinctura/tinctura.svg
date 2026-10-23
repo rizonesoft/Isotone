@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="tinctura-c-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D3E45"/><stop offset="1" stop-color="#18191D"/></linearGradient>
+    <linearGradient id="tinctura-c-spec" x1="8" y1="0" x2="248" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.00" stop-color="#FF4D6D"/><stop offset="0.17" stop-color="#FF9A3C"/><stop offset="0.33" stop-color="#FFD84A"/><stop offset="0.50" stop-color="#4CC47A"/><stop offset="0.67" stop-color="#29C5E6"/><stop offset="0.83" stop-color="#5B7CFF"/><stop offset="1.00" stop-color="#B45CFF"/></linearGradient>
+    <clipPath id="tinctura-c-clip"><rect x="8" y="8" width="240" height="240" rx="52"/></clipPath>
+    
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#tinctura-c-bg)"/>
+  <g clip-path="url(#tinctura-c-clip)">
+    <path d="M0 230C64 220 120 240 176 230S236 218 256 222V256H0Z" fill="url(#tinctura-c-spec)"/>
+    <path d="M0 230C64 220 120 240 176 230S236 218 256 222" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
+  </g>
+  <rect x="9" y="9" width="238" height="238" rx="51" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="2"/>
+  <g transform="translate(128 116) scale(1.05) translate(-128 -116)"><path d="M128.8 40A76 76 0 0 1 165.31 49.79L151.56 74.18A48 48 0 0 0 128.5 68Z" fill="#F04242"/><path d="M166.69 50.58A76 76 0 0 1 193.42 77.31L169.32 91.57A48 48 0 0 0 152.43 74.68Z" fill="#F09942"/><path d="M194.21 78.69A76 76 0 0 1 204 115.2L176 115.5A48 48 0 0 0 169.82 92.44Z" fill="#F0F042"/><path d="M204 116.8A76 76 0 0 1 194.21 153.31L169.82 139.56A48 48 0 0 0 176 116.5Z" fill="#99F042"/><path d="M193.42 154.69A76 76 0 0 1 166.69 181.42L152.43 157.32A48 48 0 0 0 169.32 140.43Z" fill="#42F042"/><path d="M165.31 182.21A76 76 0 0 1 128.8 192L128.5 164A48 48 0 0 0 151.56 157.82Z" fill="#42F099"/><path d="M127.2 192A76 76 0 0 1 90.69 182.21L104.44 157.82A48 48 0 0 0 127.5 164Z" fill="#42F0F0"/><path d="M89.31 181.42A76 76 0 0 1 62.58 154.69L86.68 140.43A48 48 0 0 0 103.57 157.32Z" fill="#4299F0"/><path d="M61.79 153.31A76 76 0 0 1 52 116.8L80 116.5A48 48 0 0 0 86.18 139.56Z" fill="#4242F0"/><path d="M52 115.2A76 76 0 0 1 61.79 78.69L86.18 92.44A48 48 0 0 0 80 115.5Z" fill="#9942F0"/><path d="M62.58 77.31A76 76 0 0 1 89.31 50.58L103.57 74.68A48 48 0 0 0 86.68 91.57Z" fill="#F042F0"/><path d="M90.69 49.79A76 76 0 0 1 127.2 40L127.5 68A48 48 0 0 0 104.44 74.18Z" fill="#F04299"/></g>
+</svg>

@@ -1,5 +1,6 @@
-"""Build the Stilus, Gesso and Albumen app icons (operator decision 2026-10-23: the Solid glyphs, concept 2, on the
-Direction C tile and spectrum band).
+"""Build the app icons (operator decisions 2026-10-23: the Solid glyphs, concept 2, on the Direction C tile and spectrum
+band, for Stilus, Gesso and Albumen, then for the three planned apps: Tinctura's hue ring, Capio's crop corners and
+crosshair, Folium's layout page).
 
 Writes, for each app in resources/icons/<app>/:
   <app>.svg          the master, 256 viewBox, for 48 px and up
@@ -7,12 +8,15 @@ Writes, for each app in resources/icons/<app>/:
   <app>-splash.svg   only the nested master icon inside the Suite card reference design is replaced
 
 The glyphs are one geometry drawn two ways: the master (Stilus: the Bezier curve with its two square anchors;
-Gesso: the paintbrush laying a tapered stroke; Albumen: the six-blade iris in its rim) and the small glyph (the
-curve heavier, the brush alone, the iris without its glints). Edit this script, never the SVGs.
+Gesso: the paintbrush laying a tapered stroke; Albumen: the six-blade iris in its rim; Tinctura: a twelve-hue ring;
+Capio: four crop corners around a crosshair; Folium: a page with a header, columns, and a placeholder frame) and the
+small glyph (the curve heavier, the brush alone, the iris without its glints, the ring with wider gaps, the corners and
+crosshair heavier, the page with three heavy lines). Edit this script, never the SVGs.
 Usage: python scripts/build-app-icons.py          rewrite the files
        python scripts/build-app-icons.py --check  exit 1 when a committed file differs from what this script writes
 Requires resvg-py and Pillow (the small variants are fitted to the rendered glyph bounds).
 """
+import colorsys
 import io
 import math
 import os
@@ -24,7 +28,7 @@ from PIL import Image
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 ICONS = os.path.join(ROOT, 'resources', 'icons')
-APPS = ('stilus', 'gesso', 'albumen')
+APPS = ('stilus', 'gesso', 'albumen', 'tinctura', 'capio', 'folium')
 SPEC = ['#FF4D6D', '#FF9A3C', '#FFD84A', '#4CC47A', '#29C5E6', '#5B7CFF', '#B45CFF']
 TILE_TOP, TILE_BOTTOM = '#3D3E45', '#18191D'
 BAND = 'M0 230C64 220 120 240 176 230S236 218 256 222'
@@ -39,7 +43,10 @@ HANDLE = 'M-6 -100C-6 -106 6 -106 6 -100L10 -24H-10Z'
 FERRULE = 'M-11 -24H11L13 4H-13Z'
 BRISTLE = 'M-13 4C-17 30 -9 54 0 74C9 54 17 30 13 4Z'
 PAINT = 'M66 166C96 186 136 160 186 172C191 173 191 180 186 181C138 174 102 206 60 188C52 184 56 164 66 166Z'
-GROW = {'stilus': 1.2, 'gesso': 1.12, 'albumen': 1.22}
+GROW = {'stilus': 1.2, 'gesso': 1.12, 'albumen': 1.22, 'tinctura': 1.05, 'capio': 1.0, 'folium': 1.0}
+RED = ('#FF4D6D', '#C9264A')
+BLUE = ('#A3B5FF', '#5B7CFF', '#3550D6')
+INK = '#8A93A6' 
 # x0, width, corner radius, band top, band height on each small grid
 TILE = {16: (0, 16, 3, 14, 2), 24: (1, 22, 4, 20.5, 2.5), 32: (1, 30, 6, 27.5, 3.5)}
 PAD = {16: 1.5, 24: 2.6, 32: 3.2}
@@ -73,6 +80,21 @@ def iris(radius=56, inner=22):
     return blades, 'M' + 'L'.join(f'{n(x)} {n(y)}' for x, y in hexv) + 'Z'
 
 
+def hue_ring(gap, outer=76, inner=48):
+    """Twelve hue segments, one every 30 degrees from red at the top, each a wedge of the ring with `gap` degrees
+    of tile between neighbours."""
+    out = ''
+    for i in range(12):
+        a0, a1 = math.radians(-90 + i * 30 + gap / 2), math.radians(-90 + (i + 1) * 30 - gap / 2)
+        r, g, b = colorsys.hls_to_rgb(i / 12, 0.6, 0.85)
+        col = '#%02X%02X%02X' % (round(r * 255), round(g * 255), round(b * 255))
+        o0, o1 = (CX + outer * math.cos(a0), CY + outer * math.sin(a0)), (CX + outer * math.cos(a1), CY + outer * math.sin(a1))
+        i1, i0 = (CX + inner * math.cos(a1), CY + inner * math.sin(a1)), (CX + inner * math.cos(a0), CY + inner * math.sin(a0))
+        out += (f'<path d="M{n(o0[0])} {n(o0[1])}A{outer} {outer} 0 0 1 {n(o1[0])} {n(o1[1])}L{n(i1[0])} {n(i1[1])}'
+                f'A{inner} {inner} 0 0 0 {n(i0[0])} {n(i0[1])}Z" fill="{col}"/>')
+    return out
+
+
 def glyph_defs(app, p):
     """The glyph's gradients, ids prefixed with `p` (`stilus-c`, `gesso-c-s16`...)."""
     if app == 'gesso':
@@ -84,6 +106,14 @@ def glyph_defs(app, p):
                 f'<stop offset="0.45" stop-color="#E88A3A"/><stop offset="1" stop-color="#FFC861"/></linearGradient>'
                 f'<linearGradient id="{p}-paint" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E0701C"/>'
                 f'<stop offset="0.55" stop-color="#F5923E"/><stop offset="1" stop-color="#FFD15A"/></linearGradient>')
+    if app == 'capio':
+        return (f'<linearGradient id="{p}-red" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="{RED[0]}"/>'
+                f'<stop offset="0.5" stop-color="{RED[1]}"/></linearGradient>')
+    if app == 'folium':
+        return (f'<linearGradient id="{p}-paper" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="{WHITE}"/>'
+                f'<stop offset="0.5" stop-color="#D9DEE6"/></linearGradient>'
+                f'<linearGradient id="{p}-blue" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="{BLUE[1]}"/>'
+                f'<stop offset="0.5" stop-color="{BLUE[2]}"/></linearGradient>')
     if app == 'albumen':
         return (f'<linearGradient id="{p}-ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6A707A"/>'
                 f'<stop offset="1" stop-color="#25272C"/></linearGradient>')
@@ -116,6 +146,35 @@ def glyph(app, p, small):
         gloss = ('<path d="M70 172C98 188 132 166 176 174" fill="none" stroke="#FFFFFF" stroke-opacity=".4" '
                  'stroke-width="2.5" stroke-linecap="round"/>')
         return grow(f'<path d="{PAINT}" fill="url(#{p}-paint)"/>{gloss}{brush}', GROW[app])
+    if app == 'tinctura':
+        return grow(hue_ring(gap=3.0 if small else 1.2), GROW[app])
+    if app == 'capio':
+        w, ring, tick = (22, 10, 10) if small else (16, 7, 7)
+        out = ''
+        for x, y, sx, sy in ((52, 42, 1, 1), (204, 42, -1, 1), (52, 190, 1, -1), (204, 190, -1, -1)):
+            out += (f'<path d="M{x + sx * 44} {y}H{x}V{y + sy * 44}" fill="none" stroke="url(#{p}-red)" '
+                    f'stroke-width="{w}" stroke-linecap="round" stroke-linejoin="round"/>')
+        return out + (f'<circle cx="{CX}" cy="{CY}" r="24" fill="none" stroke="{WHITE}" stroke-width="{ring}"/>'
+                      f'<path d="M128 78V96M128 136V154M90 116H108M148 116H166" stroke="{WHITE}" '
+                      f'stroke-width="{tick}" stroke-linecap="round"/>')
+    if app == 'folium':
+        page = (f'<path d="M64 44C64 39 68 36 72 36H164L194 66V188C194 193 190 196 186 196H72C68 196 64 193 64 188Z" '
+                f'fill="url(#{p}-paper)"/><path d="M164 36V60C164 63 166 66 170 66H194Z" fill="#B9C0CC"/>'
+                f'<rect x="80" y="54" width="70" height="14" rx="4" fill="url(#{p}-blue)"/>'
+                f'<rect x="134" y="84" width="44" height="40" rx="3" fill="{BLUE[0]}"/>'
+                f'<path d="M134 84L178 124M178 84L134 124" stroke="{BLUE[2]}" stroke-width="{5 if small else 3}"/>'
+                f'<rect x="134" y="84" width="44" height="40" rx="3" fill="none" stroke="{BLUE[2]}" '
+                f'stroke-width="{5 if small else 3}"/>')
+        if small:
+            lines = ''.join(f'<path d="M80 {y}H122" stroke="{INK}" stroke-width="10" stroke-linecap="round"/>'
+                            for y in (100, 128, 156))
+            lines += f'<path d="M136 152H176" stroke="{INK}" stroke-width="10" stroke-linecap="round"/>'
+        else:
+            lines = ''.join(f'<path d="M80 {y}H122" stroke="{INK}" stroke-width="5" stroke-linecap="round"/>'
+                            for y in (96, 110, 124, 138, 152, 166))
+            lines += ''.join(f'<path d="M136 {y}H176" stroke="{INK}" stroke-width="5" stroke-linecap="round"/>'
+                             for y in (138, 152, 166))
+        return grow(page + lines, GROW[app])
     blades, hexagon = iris()
     tones = ''.join(f'<path d="{b}" fill="{"#5FD58C" if i % 2 == 0 else "#38AE64"}"/>' for i, b in enumerate(blades))
     glint = '' if small else (
@@ -214,8 +273,8 @@ def main(argv):
     stale = []
     for path, text in outputs().items():
         rel = os.path.relpath(path, ROOT).replace(os.sep, '/')
-        with open(path, encoding='utf-8') as fh:
-            same = fh.read() == text
+        # A file not written yet (a newly added app) is stale, never an error.
+        same = os.path.exists(path) and open(path, encoding='utf-8').read() == text
         if check:
             if not same:
                 stale.append(rel)

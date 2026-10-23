@@ -7,6 +7,9 @@ The icons of the three Isotone apps: Stilus, Gesso, and Albumen. The design is D
 | Stilus | A Bezier curve between two square anchor points | Cyan `#29C5E6` |
 | Gesso | A paintbrush laying down a tapered stroke (the brush alone below 40 px) | Orange `#F5923E` |
 | Albumen | A six-blade iris in its lens rim | Green `#4CC47A` |
+| Tinctura (planned) | A ring of twelve hues | Violet `#B45CFF` (default) |
+| Capio (planned) | Four crop corners around a crosshair | Red `#FF4D6D` (default) |
+| Folium (planned) | A layout page: header, columns, and a placeholder frame | Blue `#5B7CFF` (default) |
 | Isotone (the suite) | Three Lights: the three app colors as overlapping lights, mixed by the screen formula | All three |
 
 The accents are the ones `standards/shared.md` names for each app.

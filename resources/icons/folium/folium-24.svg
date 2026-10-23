@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<defs>
+<linearGradient id="folium-c-s24-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D3E45"/><stop offset="1" stop-color="#18191D"/></linearGradient>
+<linearGradient id="folium-c-s24-spec" x1="1" y1="0" x2="23" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.000" stop-color="#FF4D6D"/><stop offset="0.167" stop-color="#FF9A3C"/><stop offset="0.333" stop-color="#FFD84A"/><stop offset="0.500" stop-color="#4CC47A"/><stop offset="0.667" stop-color="#29C5E6"/><stop offset="0.833" stop-color="#5B7CFF"/><stop offset="1.000" stop-color="#B45CFF"/></linearGradient>
+<clipPath id="folium-c-s24-clip"><rect x="1" y="1" width="22" height="22" rx="4"/></clipPath>
+<linearGradient id="folium-c-s24-paper" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="#F2F3F5"/><stop offset="0.5" stop-color="#D9DEE6"/></linearGradient><linearGradient id="folium-c-s24-blue" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="#5B7CFF"/><stop offset="0.5" stop-color="#3550D6"/></linearGradient>
+</defs>
+<rect x="1" y="1" width="22" height="22" rx="4" fill="url(#folium-c-s24-tile)"/>
+<rect x="1" y="20.5" width="22" height="2.5" fill="url(#folium-c-s24-spec)" clip-path="url(#folium-c-s24-clip)"/>
+<g transform="translate(12.000 11.010) scale(0.0926) translate(-129.00 -116.00)"><g transform="translate(128 116) scale(1.0) translate(-128 -116)"><path d="M64 44C64 39 68 36 72 36H164L194 66V188C194 193 190 196 186 196H72C68 196 64 193 64 188Z" fill="url(#folium-c-s24-paper)"/><path d="M164 36V60C164 63 166 66 170 66H194Z" fill="#B9C0CC"/><rect x="80" y="54" width="70" height="14" rx="4" fill="url(#folium-c-s24-blue)"/><rect x="134" y="84" width="44" height="40" rx="3" fill="#A3B5FF"/><path d="M134 84L178 124M178 84L134 124" stroke="#3550D6" stroke-width="5"/><rect x="134" y="84" width="44" height="40" rx="3" fill="none" stroke="#3550D6" stroke-width="5"/><path d="M80 100H122" stroke="#8A93A6" stroke-width="10" stroke-linecap="round"/><path d="M80 128H122" stroke="#8A93A6" stroke-width="10" stroke-linecap="round"/><path d="M80 156H122" stroke="#8A93A6" stroke-width="10" stroke-linecap="round"/><path d="M136 152H176" stroke="#8A93A6" stroke-width="10" stroke-linecap="round"/></g></g>
+</svg>
