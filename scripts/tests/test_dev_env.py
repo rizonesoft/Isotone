@@ -27,7 +27,8 @@ WRONG = {
     "wrong-toolset.json": (("msvc", "toolset"), "14.99.99999", "MSVC toolset"),
     "wrong-cmake.json": (("cmake",), "3.0.0", "cmake"),
     "wrong-clang-cl.json": (("llvm", "clang-cl"), "1.0.0", "clang-cl"),
-    "wrong-sdk.json": (("windows_sdk",), "10.0.22621.0", "Windows SDK"),
+    # A version no Windows SDK has shipped, so the fixture is absent on every machine, not only this one.
+    "wrong-sdk.json": (("windows_sdk",), "10.0.99998.0", "Windows SDK"),
     "wrong-compiler.json": (("msvc", "compiler"), "19.99.99999", "MSVC compiler"),
     "wrong-ninja.json": (("ninja",), "1.0.0", "ninja"),
     "wrong-clang-tidy.json": (("llvm", "clang-tidy"), "1.0.0", "clang-tidy"),
