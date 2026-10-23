@@ -24,6 +24,7 @@ import re
 import sys
 
 import resvg_py
+from xml.etree import ElementTree
 from PIL import Image
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
@@ -33,6 +34,7 @@ SPEC = ['#FF4D6D', '#FF9A3C', '#FFD84A', '#4CC47A', '#29C5E6', '#5B7CFF', '#B45C
 TILE_TOP, TILE_BOTTOM = '#3D3E45', '#18191D'
 BAND = 'M0 230C64 220 120 240 176 230S236 218 256 222'
 WHITE = '#F2F3F5'
+SVG_TAG = '{http://www.w3.org/2000/svg}svg'
 
 # The glyph area above the band; every glyph is grown about its optical centre.
 CX, CY = 128, 116
@@ -247,10 +249,11 @@ def splash(app, current):
     inner = master(app).split('\n', 1)[1].rsplit('</svg>', 1)[0]
     nested = f'<svg x="56" y="92" width="136" height="136" viewBox="0 0 256 256">\n{inner}</svg>'
     pattern = re.compile(r'<svg x="56" y="92" width="136" height="136" viewBox="0 0 256 256">.*?\n</svg>', re.S)
-    # Counted before replacing, by element, not by one exact tag: a second nested icon (an old one left behind,
+    # Counted before replacing, by parsed element (namespace and local name), not by tag text: a second nested icon (an old one left behind,
     # whatever its attributes) would otherwise survive under the new. The card is the root svg; the icon its only
     # nested one.
-    nested_svgs = len(re.findall(r'<svg\b', current)) - 1
+    root = ElementTree.fromstring(current)
+    nested_svgs = sum(1 for el in root.iter(SVG_TAG)) - 1  # every SVG element under any prefix, the root excluded
     if nested_svgs != 1 or len(pattern.findall(current)) != 1:
         raise SystemExit(f'{app}-splash.svg holds {nested_svgs} nested svg elements; it must hold exactly one, the '
                          f'master icon at x 56, y 92')

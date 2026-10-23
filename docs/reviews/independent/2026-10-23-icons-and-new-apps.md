@@ -125,3 +125,32 @@ Every finding was verified and is real; record approved.
 2. P3, the AppIcon preview's caption still said `rx 48`: verified. It says `rx 52`, and the design page is regenerated.
 3. P2, the `pydeps` leg and its repair looked only for `python`: verified. `tools/provision.ps1` has one `Get-Python3` that tries `python` then `python3`, and the python leg, the pydeps check, and its repair all use it.
 4. P2, a nested icon with different attributes escaped the splash count: verified. The check counts every nested `<svg` element (the card is the root) and requires exactly one, the master at x 56, y 92; a probe adding a second icon with `class="old-icon"` now fails naming the count.
+
+## Round 5: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T08:59:23Z
+- Effort: xhigh
+- Lines: 14
+- Digest: 511363d7e4153929
+
+adversarial: approve
+
+consistency: approve
+
+integration: approve
+
+source-defect: needs-attention
+
+1. P2 `scripts/build-app-icons.py:253`: The splash guard counts literal `<svg` tags, missing namespace-prefixed SVG elements. In an in-memory probe, appending the pre-Solid Gesso icon inside `<s:svg xmlns:s="http://www.w3.org/2000/svg">` at the splash’s icon coordinates produced two nested SVG elements and changed 14,513 rendered pixels, yet `main(['build-app-icons.py', '--check'])` returned 0 with `app icons: 0 stale`. Count SVG elements structurally by their namespace and local name.
+
+record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 4
+
+Four lenses approved; the one finding was verified and is real.
+
+1. P2, a namespace-prefixed nested SVG escaped the splash count: verified. `scripts/build-app-icons.py` now parses the splash with `xml.etree.ElementTree` and counts every element whose expanded name is `{http://www.w3.org/2000/svg}svg`, whatever its prefix, below the root card; probes adding a second icon as `<s:svg xmlns:s=...>` and as `<svg class="old">` both fail naming two nested elements, and the committed splashes pass.
