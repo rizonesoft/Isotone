@@ -57,7 +57,7 @@ track: W5
 |   4   |   §4    | The format, clang-tidy, and /analyze gates | §3 |  [x]   |
 |   5   |   §5    | The AddressSanitizer lane | §3 |  [x]   |
 |   6   |   §6    | The import and size gates | §3 |  [x]   |
-|   7   |   §7    | The native stages of check-all and the gate card | §4, §5, §6 |  [ ]   |
+|   7   |   §7    | The native stages of check-all and the gate card | §4, §5, §6 |  [x]   |
 |   8   |   §8    | CI for x64 and ARM64 | §7, D00 T04 §1 |  [ ]   |
 |   9   |   §9    | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget | §5, §8 |  [ ]   |
 |  10   |   §10   | The proof standard for C++ | §7, §9 |  [ ]   |
@@ -203,6 +203,8 @@ Each app's executable may import only Windows system DLLs, and each app's publis
 
 ## 7. The Native Stages of check-all and the Gate Card
 
+> **Started:** 2026-10-23T15:31:12Z (recovered at the stamp from the creation time of the first file this section wrote, `scripts/tests/fixtures/native-artifact-gate/dependents-malformed.txt`; the line was missed at the first resolve, which followed the D00 T05 §6 stamp at 15:26:01Z)
+
 One command runs every gate locally (AGENTS.md, Validation). The native stages join the existing .NET and Python stages, which stay while C# code remains.
 
 - [x] Extend `scripts/check-all.ps1` with native stages, each through `Invoke-Gate` inside `scripts/dev-env.ps1`: `native toolchain` (`-Check`), `native x64-debug`, `native x64-release`, `native arm64-debug` and `native arm64-release` (build only on an x64 host), `native std` (`native-std-check.py` over each build folder), `native x64-asan`, `native arm64-asan` (build only on an x64 host, where §5 found it supported), `native format`, `native tidy`, `native analyze`, and `native artifacts` (the import gate over every `.exe` and `.dll` in every x64 and ARM64 Debug and Release build folder, as §6 requires, and the size gate in its default mode over every app publish folder under `artifacts/publish/` that `native/size-budget.json` names, failing when a named app's folder is missing once that app's release section has added it), and the Python gates `test_dev_env.py`, `native-std-check.py --self-test`, and `native-artifact-gate.py --self-test`; add `-SkipNative` beside `-SkipBuild`, and list every stage in the header comment. Done when: `pwsh scripts/check-all.ps1` lists each native stage as PASS. Done 2026-10-23: the stages run after the .NET and Python gates, each inside `scripts/dev-env.ps1` where it builds or inspects, with its full output in `build/check-all/<stage>.log` and its last lines printed on failure; `-SkipNative` beside `-SkipBuild`, and the header comment lists every stage. **Corrected 2026-10-23:** the stage list also holds `native x64-dist` and `native arm64-dist` (D00-T05-S6-PR2), `native analyze` builds `x64-analyze` and `arm64-analyze` (D00-T05-S4-PR2), the import gate runs as `native artifacts` and `native artifacts asan` (D00-T05-S5-PR7) beside `native asan-coverage` (D00-T05-S5-PR1), `native pe` joins (filed by D00 T05 §3), and the Python gates also run `native-pe-check.py --self-test`, `test_native_format.py`, `test_native_tidy.py`, and `test_native_asan.py`.
@@ -228,6 +230,12 @@ One command runs every gate locally (AGENTS.md, Validation). The native stages j
 - [ ] Commit: `"workspace: run the native gates in check-all"`
 
 **Test checkpoint:** Driven run with evidence: `pwsh scripts/check-all.ps1` exits 0 with every native stage PASS (the summary quoted); a probe failing assertion in `build_info_test.cpp` makes it exit 1 with `native x64-debug` FAIL while the later stages still run (quoted, then reverted). Cheaper substitute that fails: native gates that must be remembered and run by hand.
+
+> **Verified:** 2026-10-23 | §7 | D00 T05 §7 at `fe23917`: `pwsh scripts/check-all.ps1` runs the native stages after the .NET and Python gates, each inside `scripts/dev-env.ps1` where it builds or inspects, with its log under `build/check-all/` and `-SkipNative`: native toolchain, x64-debug, x64-release, x64-asan, arm64-debug, arm64-release, arm64-asan, x64-dist, arm64-dist, analyze (with the new `arm64-analyze`), std, pe, format, tidy, artifacts, artifacts asan, asan-coverage, and the native Python gates; `check-all: all gates passed`; a failing assertion in `build_info_test.cpp` fails `native x64-debug` (exit 8) while every later stage runs; each filed item's probe fails as its stage runs it and each new test fails under its mutant; the gate card, `AGENTS.md`, and `native/README.md` name every stage
+> **Review:** round 1, candidate `4abbd44..fe23917` -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 1 of cap 33, gpt-6.1-sol medium). Independent: gpt-6.1-sol medium via `scripts/review-dispatch.py`, three rounds (F1 fixed in a3db545, F2 and F3 in fe23917), the third approving every lens. Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T05-s7.md. Attestation: docs/reviews/00-workspace/D00-T05-s7.attest.json
+> **Plan review:** gpt medium, filed D00 T05 §8, D00 T05 §10 (10 findings: 6 filed and backlog B-072 and B-073 in ab9cb31, 1 duplicate, 1 rejected) (run 20261023-D00-T05-S7-gpt)
+> **CRUD:** not applicable (the local gate runner, its stages, and the gates' tests, with no user record, document, or setting)
+> **Duration:** 2026-10-23T15:31:12Z to 2026-10-23T17:29:13Z
 
 ## 8. CI for x64 and ARM64
 

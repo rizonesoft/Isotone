@@ -4,26 +4,27 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**209 findings across 17 sections.**
+**218 findings across 18 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 81 | fails under hostile or unexpected input |
-| `integration` | 64 | a consumer, caller, or downstream artifact no longer holds |
+| `adversarial` | 82 | fails under hostile or unexpected input |
+| `integration` | 66 | a consumer, caller, or downstream artifact no longer holds |
 | `source-defect` | 20 | a Win32 contract, registry layout, or other source read wrongly |
+| `correctness` | 20 | the code does the wrong thing |
 | `record` | 18 | the plan or the evidence misdescribes what happened |
-| `correctness` | 16 | the code does the wrong thing |
-| `consistency` | 10 | disagrees with the rest of the suite, its naming, or its layout |
+| `consistency` | 11 | disagrees with the rest of the suite, its naming, or its layout |
+| `reproducibility` | 1 | the same input does not produce the same output |
 
 ## By severity
 
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 107 | wrong behavior in code, plan, or record |
-| `minor` | 102 | polish or wording, or no surviving defect |
+| `major` | 108 | wrong behavior in code, plan, or record |
+| `minor` | 110 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -238,3 +239,12 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §6` | F7 | minor | `integration` | fixed | independent | a preset's vcpkg root was skipped with its absent build folder |
 | `D00 T05 §6` | F8 | minor | `integration` | fixed | independent | every image under CMakeFiles was left out |
 | `D00 T05 §6` | F9 | minor | `correctness` | fixed | self | a root holding only a DLL exited as if nothing was checked |
+| `D00 T05 §7` | F1 | minor | `integration` | fixed | independent | the missing-SDK fixture pinned an SDK many machines have |
+| `D00 T05 §7` | F2 | minor | `adversarial` | fixed | independent | budgeted publish folders were not checked for app-local system DLLs |
+| `D00 T05 §7` | F3 | minor | `integration` | fixed | independent | the tidy test split a source path with spaces |
+| `D00 T05 §7` | F4 | major | `correctness` | fixed | self | dev-env read back an SDK that is not installed |
+| `D00 T05 §7` | F5 | minor | `correctness` | fixed | self | native-tidy dropped every unit under an 8.3 short root |
+| `D00 T05 §7` | F6 | minor | `reproducibility` | fixed | self | a sanitizer abort dialog held CTest for ten minutes |
+| `D00 T05 §7` | F7 | minor | `correctness` | fixed | self | two defects in the first check-all native stages |
+| `D00 T05 §7` | F8 | minor | `correctness` | fixed | self | native-tidy missed a command-line error with no file prefix |
+| `D00 T05 §7` | F9 | minor | `consistency` | fixed | self | the PE check skipped every image under CMakeFiles |
