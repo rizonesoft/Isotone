@@ -1,0 +1,7 @@
+# Recorded 2026-10-23: dumpbin /dependents of a text file named broken.exe (a malformed image); dumpbin exited 0.
+
+Dump of file build\malformed-probe\broken.exe
+build\malformed-probe\broken.exe : warning LNK4048: Invalid format file; ignored
+
+  Summary
+

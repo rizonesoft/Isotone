@@ -54,6 +54,13 @@
     { "name": "arm64-debug", "inherits": "arm64", "displayName": "ARM64 Debug", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
     { "name": "arm64-release", "inherits": "arm64", "displayName": "ARM64 Release", "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
     {
+      "name": "arm64-analyze",
+      "inherits": "arm64-release",
+      "displayName": "ARM64 /analyze",
+      "description": "ARM64 Release with MSVC code analysis on every first-party target, so NDEBUG and ARM64-only paths are analyzed.",
+      "cacheVariables": { "ISOTONE_ANALYZE": "ON" }
+    },
+    {
       "name": "arm64-asan",
       "inherits": "arm64",
       "displayName": "ARM64 AddressSanitizer",
@@ -86,6 +93,7 @@
     { "name": "x64-analyze", "configurePreset": "x64-analyze" },
     { "name": "arm64-debug", "configurePreset": "arm64-debug" },
     { "name": "arm64-release", "configurePreset": "arm64-release" },
+    { "name": "arm64-analyze", "configurePreset": "arm64-analyze" },
     { "name": "arm64-asan", "configurePreset": "arm64-asan" },
     { "name": "x64-dist", "configurePreset": "x64-dist" },
     { "name": "arm64-dist", "configurePreset": "arm64-dist" }
@@ -95,7 +103,7 @@
       "name": "base",
       "hidden": true,
       "output": { "outputOnFailure": true },
-      "execution": { "noTestsAction": "error" }
+      "execution": { "noTestsAction": "error", "timeout": 300 }
     },
     { "name": "x64-debug", "inherits": "base", "configurePreset": "x64-debug" },
     { "name": "x64-release", "inherits": "base", "configurePreset": "x64-release" },

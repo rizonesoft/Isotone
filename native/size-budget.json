@@ -2,8 +2,11 @@
   "decision": "The output size budget",
   "default_mb": 30,
   "unit": "decimal megabytes: 1 MB is 1,000,000 bytes",
-  "excluded": ["*.pdb"],
+  "excluded": [
+    "*.pdb"
+  ],
+  "publish_root": "artifacts/publish/native",
   "optional_content": [],
   "apps": {},
-  "about": "Read by scripts/native-artifact-gate.py (D00 T05 §6). A publish folder's size is the sum of its files except the excluded patterns (program databases ship as a separate symbols archive) and the optional_content paths (relative glob patterns a release section names for content a user may leave out). An app's own budget goes under apps as {\"<app>\": {\"mb\": <n>, \"decision\": \"<heading>\", \"publish\": [\"<folder>\", ...]}}, and each budget needs a docs/dev/decisions.md entry whose **Budget:** line states the same number."
+  "about": "Read by scripts/native-artifact-gate.py (D00 T05 §6, §7). A publish folder's size is the sum of its files except the excluded patterns (program databases ship as a separate symbols archive) and the optional_content entries, each {\"glob\": \"<relative glob inside the publish folder>\", \"decision\": \"<docs/dev/decisions.md heading that lets it ship separately>\"}. Native apps publish to <publish_root>/<App>/<runtime>/ (the C# apps' artifacts/publish/<App>/<runtime>/ is not the native gate's), and every folder there must be named by an app entry: {\"<app>\": {\"mb\": <n>, \"decision\": \"<heading>\", \"publish\": [\"<folder>\", ...]}}, each budget backed by a decisions.md entry whose **Budget:** line states the same number."
 }

@@ -21,6 +21,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 
 | Path | Purpose |
 | ---- | ------- |
+| `native/` | The C++23 suite: the toolchain pin, the vcpkg manifest and triplets, the CMake build and presets, `isotone::core`, and the tests (`native/README.md`) |
 | `src/Stilus/` | Stilus, the vector editor |
 | `src/Gesso/` | Gesso, the raster editor (`src/` projects and `tests/` test projects inside it) |
 | `src/Albumen/` | Albumen, the darkroom (planned) |
@@ -140,7 +141,11 @@ Answer from source first: the code, the format specification, Microsoft Learn, o
 ## Validation
 
 ```powershell
-pwsh scripts/check-all.ps1                   # build Debug and Release, test, and every TODO gate below that it runs
+pwsh scripts/check-all.ps1                   # build Debug and Release, test, every TODO gate below that it runs, and the native stages (-SkipNative leaves them out)
+pwsh scripts/dev-env.ps1 -Check -Arch x64    # the machine matches the native toolchain pin (also -Arch arm64)
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --workflow --preset x64-release'   # one native preset: configure, build, test
+pwsh scripts/native-format.ps1 -Check        # clang-format on every native source; native-tidy.ps1 runs clang-tidy
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'python scripts/native-artifact-gate.py --policy shipping --require-built'   # imports, static CRT, every preset built
 dotnet build Isotone.slnx -c Release          # the build alone
 dotnet test Isotone.slnx                      # the whole suite; iterate with --filter
 ```

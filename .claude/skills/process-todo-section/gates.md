@@ -12,6 +12,27 @@ pwsh scripts/check-all.ps1
 
 It builds `Isotone.slnx` in Debug and Release with warnings as errors, runs `dotnet test`, and runs the TODO gates (`todo-graph.py validate`, `todo-graph.py plan --check`, `todo-claims.py`, `campaign_guard.py --self-test`). Every gate runs even after an earlier one fails, and it prints a table of gate results; green means exit 0 with every gate `PASS`. A `SKIP` row (no Python, a script absent) is not green: quote it and fix the cause. `-SkipBuild` reuses the last build for a re-run of the tests and gates only, while iterating, never for the commit-time run; `-Config Debug` runs the tests against the Debug build instead of the default Release.
 
+## Native sections: the native stages
+
+`pwsh scripts/check-all.ps1` runs them after the .NET and Python gates (D00 T05 §7), each inside `scripts/dev-env.ps1` where it builds or inspects, with its full output in `build/check-all/<stage>.log`; `-SkipNative` leaves them out while iterating on non-native work, never for the commit-time run of a section that touches `native/`, a native script, or the toolchain. A section cites each stage it owes by its check-all name and quotes its row:
+
+| Stage | Proves |
+| ----- | ------ |
+| `native toolchain` | The machine matches `native/toolchain.json` for x64 and ARM64 (`dev-env.ps1 -Check`) |
+| `native x64-debug`, `native x64-release` | The build and the CTest suite on x64 (`cmake --workflow`: configure, build, test) |
+| `native x64-asan` | The CTest suite under AddressSanitizer, its `asan_probe` passing on the sanitizer's own report |
+| `native arm64-debug`, `native arm64-release`, `native arm64-asan` | The ARM64 build; its tests run on ARM64 in CI (D00 T05 §8), never here |
+| `native x64-dist`, `native arm64-dist` | The configurations an app release builds from: Release, no tests |
+| `native analyze` | MSVC `/analyze` on every first-party target, x64 Debug and ARM64 Release |
+| `native std` | Every C++ compile carries exactly one standard switch, the pinned one |
+| `native pe` | Every linked image has control-flow guard, and CET on x64 |
+| `native format`, `native tidy` | clang-format and clang-tidy at zero findings |
+| `native artifacts`, `native artifacts asan` | Imports are Windows system DLLs only (the sanitizer runtime too in the sanitizer presets), vcpkg packages are static on the static CRT, and every preset was built |
+| `native asan-coverage` | Every sanitized compile and every sanitized package is instrumented |
+| `native-std-check self-test`, `native-pe-check self-test`, `native-artifact-gate self-test`, `dev-env tests`, `native format tests`, `native tidy tests`, `native asan tests` | The gates themselves fail on what they must refuse |
+
+A failing stage prints the last lines of its log; quote them with the stage name, and fix the cause rather than re-running.
+
 ## Delegated sections: nothing written, and the pin held
 
 When the section dispatched any delegate (`standards/delegation.md`):

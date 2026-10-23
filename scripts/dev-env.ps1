@@ -131,7 +131,13 @@ if ($vs) {
   $dump = & cmd.exe /d /c "`"$vcvars`" $vcArch $($Pin.windows_sdk) -vcvars_ver=$($Pin.msvc.toolset) >nul 2>&1 && set"
   $entered = $LASTEXITCODE -eq 0 -and ($dump | Where-Object { $_ -like 'VCToolsVersion=*' })
   if (-not $entered) {
-    Add-Row 'MSVC toolset' $Pin.msvc.toolset "not installed (vcvarsall $vcArch could not enter it)"
+    if (-not (Test-Path (Join-Path $SdkInclude $Pin.windows_sdk))) {
+      # vcvarsall cannot enter a Windows SDK that is not installed; name the SDK, not the toolset it never reached.
+      Add-Row 'Windows SDK' $Pin.windows_sdk 'not installed'
+    }
+    else {
+      Add-Row 'MSVC toolset' $Pin.msvc.toolset "not installed (vcvarsall $vcArch could not enter it)"
+    }
   }
   else {
     foreach ($line in $dump) {
@@ -167,7 +173,11 @@ if ($vs) {
     Add-Row 'MSVC compiler' $Pin.msvc.compiler (Read-Version $banner 'Version (\d+\.\d+\.\d+)')
     $clTarget = Read-Version $banner 'Version \S+ for (\w+)'
     Add-Row 'MSVC target' ($(if ($Arch -eq 'arm64') { 'ARM64' } else { 'x64' })) $clTarget
-    Add-Row 'Windows SDK' $Pin.windows_sdk ("$env:WindowsSDKVersion".TrimEnd('\'))
+    # vcvarsall sets WindowsSDKVersion to the version it was asked for even when that SDK is not installed, so the
+    # row reads the version back only when its include folder exists.
+    $sdkFound = "$env:WindowsSDKVersion".TrimEnd('\')
+    if ($sdkFound -and -not (Test-Path (Join-Path $SdkInclude $sdkFound))) { $sdkFound = "$sdkFound (not installed)" }
+    Add-Row 'Windows SDK' $Pin.windows_sdk $sdkFound
     Add-BundledToolRow 'cmake' $Pin.cmake 'cmake' 'cmake version (\S+)' $vs
     Add-BundledToolRow 'ninja' $Pin.ninja 'ninja' '^(\S+)' $vs
     Add-BundledToolRow 'clang-tidy' $Pin.llvm.'clang-tidy' 'clang-tidy' 'LLVM version (\S+)' $vs

@@ -13,6 +13,7 @@ import argparse
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -29,11 +30,19 @@ def judge(headers):
     return problems
 
 
+def compiler_id_probe(path, folder):
+    """CMake's compiler-identification executable (CMakeFiles/<CMake version>/CompilerId<language>/), which CMake builds
+    with its own default flags before the project's apply; it is CMake's probe, never a build output (the same rule as
+    scripts/native-artifact-gate.py)."""
+    parts = Path(path).relative_to(folder).parts
+    return len(parts) == 4 and parts[0] == "CMakeFiles" and parts[2].startswith("CompilerId")
+
+
 def images(paths):
     for raw in paths:
         p = Path(raw)
         if p.is_dir():
-            yield from sorted(x for x in p.rglob("*.exe") if "CMakeFiles" not in x.parts)
+            yield from sorted(x for x in p.rglob("*.exe") if not compiler_id_probe(x, p))
         else:
             yield p
 
@@ -90,6 +99,15 @@ def self_test():
     check("an x64 image without CET fails", judge(x64.replace(" CET compatible\n", "")),
           ["x64 image is not CET compatible (link without /CETCOMPAT)"])
     check("an unknown machine fails", judge("14C machine (x86)\n Control Flow Guard\n"), ["no x64 or ARM64 machine type"])
+    with tempfile.TemporaryDirectory() as tmp:
+        build = Path(tmp)
+        for rel in ("CMakeFiles/4.3.1-msvc1/CompilerIdCXX/CMakeCXXCompilerId.exe", "CMakeFiles/other/stray.exe",
+                    "tests/core/build_info_test.exe"):
+            (build / rel).parent.mkdir(parents=True, exist_ok=True)
+            (build / rel).write_bytes(b"MZ")
+        check("every executable but CMake's compiler-identification probe is checked",
+              sorted(x.relative_to(build).as_posix() for x in images([build])),
+              sorted(["CMakeFiles/other/stray.exe", "tests/core/build_info_test.exe"]))
     print(f"native-pe-check self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
 

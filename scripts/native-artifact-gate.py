@@ -11,6 +11,10 @@ named optional content excluded), and every budget is backed by a docs/dev/decis
 states the same number.
 
 Usage: python scripts/native-artifact-gate.py                       every preset folder, its vcpkg root, the budgets
+       python scripts/native-artifact-gate.py --policy shipping --require-built   the check-all and CI form: one policy's
+                                                                    presets, each of which must have been built
+       python scripts/native-artifact-gate.py --asan-coverage --require-built   every sanitizer preset instrumented:
+                                                                    each C or C++ compile and each installed library
        python scripts/native-artifact-gate.py <folder>...           these build folders (the preset's policy by name)
        python scripts/native-artifact-gate.py --publish <folder> [--app <name>] [--budget-mb <n>]
        python scripts/native-artifact-gate.py --self-test
@@ -54,7 +58,8 @@ def allowed(name, patterns):
 
 
 def parse_dependents(text):
-    """(imports, delay-loaded imports) from `dumpbin /dependents` output."""
+    """(imports, delay-loaded imports) from `dumpbin /dependents` output, or None when it holds no dependency list: dumpbin
+    exits 0 on a malformed image (warning LNK4048) and prints none, and a format change would print none either."""
     lists = {"Image has the following dependencies:": [], "Image has the following delay load dependencies:": []}
     current = None
     for raw in text.splitlines():
@@ -65,11 +70,18 @@ def parse_dependents(text):
             current = None
         elif current is not None and line and not line.startswith("#"):
             current.append(line)
+    if not any(line.strip() == "Image has the following dependencies:" for line in text.splitlines()):
+        return None
     return tuple(lists.values())
 
 
 def import_findings(image, text, patterns):
-    imports, delayed = parse_dependents(text)
+    parsed = parse_dependents(text)
+    if parsed is None:
+        first = next((line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")
+                      and not line.strip().startswith("Dump of file")), "no output")
+        return [f"{image}:inspection-failed:dumpbin listed no dependencies: {first}"]
+    imports, delayed = parsed
     found = [f"{image}:import-not-system:{name} is not a Windows system DLL" for name in imports
              if not allowed(name, patterns)]
     found += [f"{image}:import-not-system:{name} (delay-loaded) is not a Windows system DLL" for name in delayed
@@ -166,6 +178,17 @@ def budget_findings(budget_path=BUDGET, decisions_path=DECISIONS):
     entries += [(app.get("decision", budget["decision"]), app["mb"], f"apps.{name}.mb")
                 for name, app in budget.get("apps", {}).items()]
     found = []
+    for i, entry in enumerate(budget.get("optional_content", [])):
+        glob = entry.get("glob", "") if isinstance(entry, dict) else ""
+        heading = entry.get("decision", "") if isinstance(entry, dict) else ""
+        if not glob or os.path.isabs(glob) or re.match(r"^[A-Za-z]:", glob) or ".." in Path(glob).parts:
+            found.append(f"{budget_path}:budget-undocumented:optional_content[{i}] must be a relative glob inside the "
+                         f"publish folder, got {glob!r}")
+        if not heading:
+            found.append(f"{budget_path}:budget-undocumented:optional_content[{i}] names no decision")
+        elif not re.search(rf"^## [^\n]*: {re.escape(heading)}[ \t]*$", text, re.M):
+            found.append(f"{budget_path}:budget-undocumented:optional_content[{i}] names \"{heading}\", which has no "
+                         f"entry in {decisions_path}")
     for heading, mb, key in entries:
         m = re.search(rf"^## [^\n]*: {re.escape(heading)}[ \t]*$(?P<body>.*?)(?=^## |\Z)", text, re.M | re.S)
         if not m:
@@ -188,7 +211,7 @@ def size_findings(folder, budget_mb, excluded=("*.pdb",), optional=()):
         rel = path.relative_to(folder).as_posix()
         if any(fnmatch.fnmatch(path.name.lower(), e.lower()) for e in excluded):
             continue
-        if any(fnmatch.fnmatch(rel, o) for o in optional):
+        if any(fnmatch.fnmatch(rel, o.get("glob", "") if isinstance(o, dict) else o) for o in optional):
             continue
         sizes.append((path.stat().st_size, rel))
     total = sum(s for s, _ in sizes)
@@ -199,7 +222,8 @@ def size_findings(folder, budget_mb, excluded=("*.pdb",), optional=()):
 
 
 RULES = ("import-not-system", "crt-not-static", "dll-in-vcpkg-tree", "over-budget", "budget-undocumented",
-         "publish-missing", "inspection-failed", "input-missing")
+         "publish-missing", "inspection-failed", "input-missing", "system-dll-shadowed", "publish-unbudgeted",
+         "not-instrumented")
 RULE_RE = re.compile(":(" + "|".join(RULES) + "):")
 
 
@@ -216,6 +240,7 @@ def check_targets(targets, policies, dependents, directives, say=print):
     for name, folder, policy, vcpkg in targets:
         if folder.is_dir():
             found_images = images(folder)
+            findings += shadow_findings(found_images, policies["shipping"])
             for image in found_images:
                 code, text = dependents(image)
                 findings += inspected(image, code, text,
@@ -230,6 +255,64 @@ def check_targets(targets, policies, dependents, directives, say=print):
             vcpkg_files += files
             say(f"native-artifact-gate: {name}: vcpkg {vcpkg.name}: {files} file(s)")
     return findings, checked, vcpkg_files
+
+
+def shadow_findings(images_found, patterns):
+    """system-dll-shadowed for an image named like an allowed system DLL: the loader takes an app-local copy before the
+    system's (all but the KnownDLLs), so the allowed list would no longer mean the Windows copy."""
+    return [f"{image}:system-dll-shadowed:{Path(image).name} is a Windows system DLL's name; the system's copy must load"
+            for image in images_found if allowed(Path(image).name, patterns)]
+
+
+def unbudgeted_findings(publish_root, budget):
+    """publish-unbudgeted for a native publish folder (<root>/<App>/<runtime>) no app entry of the budget names."""
+    root = Path(publish_root)
+    if not root.is_dir():
+        return []
+    named = {os.path.normcase(os.path.normpath(ROOT / folder)) for app in budget.get("apps", {}).values()
+             for folder in app.get("publish", [])}
+    return [f"{folder}:publish-unbudgeted:no app entry in native/size-budget.json names this publish folder"
+            for app_dir in sorted(root.iterdir()) if app_dir.is_dir()
+            for folder in sorted(app_dir.iterdir()) if folder.is_dir()
+            and os.path.normcase(os.path.normpath(folder)) not in named]
+
+
+def unbuilt_findings(targets):
+    """input-missing for a preset folder that was never built (no CMakeCache.txt or no .ninja_log), for the check-all
+    and CI stages, which build every preset first; a developer's plain run may skip an unbuilt preset."""
+    return [f"{folder}:input-missing:preset {name} was not built" for name, folder, _, _ in targets
+            if not (folder / "CMakeCache.txt").is_file() or not (folder / ".ninja_log").is_file()]
+
+
+SANITIZE_RE = re.compile(r"(?:^|\s)[/-]fsanitize=address(?=\s|$)")
+SOURCE_RE = re.compile(r"\.(c|cc|cpp|cxx|c\+\+|ixx)$", re.IGNORECASE)
+
+
+def coverage_findings(folder, triplet_root, symbols):
+    """(findings, commands checked, libraries checked) for one sanitizer preset: every C or C++ command of its compile
+    database carries /fsanitize=address, and every library its vcpkg root installed references AddressSanitizer's
+    __asan_ entry points (`symbols` maps a .lib to `dumpbin /symbols`'s exit code and output). The library check reads
+    the binary itself, so it holds for a package restored from vcpkg's binary cache, which leaves no build log."""
+    found, commands, libs = [], 0, 0
+    database = Path(folder) / "compile_commands.json"
+    if not database.is_file():
+        found.append(f"{database}:input-missing:no compile database; configure the preset first")
+    else:
+        for entry in json.loads(database.read_text(encoding="utf-8")):
+            source = entry.get("file", "")
+            if not SOURCE_RE.search(source):
+                continue
+            commands += 1
+            command = entry.get("command") or " ".join(entry.get("arguments", []))
+            if not SANITIZE_RE.search(command):
+                found.append(f"{source}:not-instrumented:compiled without /fsanitize=address")
+    if triplet_root is not None and Path(triplet_root).is_dir():
+        for lib in sorted(Path(triplet_root).glob("lib/**/*.lib")) + sorted(Path(triplet_root).glob("debug/lib/**/*.lib")):
+            libs += 1
+            code, text = symbols(lib)
+            found += inspected(lib, code, text, lambda out, lib=lib: [] if "__asan_" in out else
+                               [f"{lib}:not-instrumented:references no AddressSanitizer entry point"])
+    return found, commands, libs
 
 
 def missing_inputs(folders, vcpkg_roots):
@@ -260,6 +343,12 @@ def main(argv=None):
     parser.add_argument("--publish")
     parser.add_argument("--vcpkg-root", action="append", default=[],
                         help="an installed triplet folder to check besides (or, with no build folder, instead of) the presets'")
+    parser.add_argument("--policy", choices=("shipping", "asan"),
+                        help="the default run over the presets of one policy only (the check-all and CI stages)")
+    parser.add_argument("--require-built", action="store_true",
+                        help="a selected preset that was never built fails input-missing instead of being skipped")
+    parser.add_argument("--asan-coverage", action="store_true",
+                        help="prove every sanitizer preset instrumented instead of checking imports")
     parser.add_argument("--app")
     parser.add_argument("--budget-mb", type=float, help="a budget for probes only; the gate reads native/size-budget.json")
     parser.add_argument("--self-test", action="store_true")
@@ -280,6 +369,7 @@ def main(argv=None):
         found, total = size_findings(args.publish, mb, budget.get("excluded", ["*.pdb"]),
                                      budget.get("optional_content", []))
         findings += found
+        findings += shadow_findings(images(args.publish), read_allowed(SYSTEM_DLLS))
         print(f"native-artifact-gate: {args.publish}: {total / 1_000_000:.2f} MB of {mb} MB")
         for line in findings:
             print(line)
@@ -293,6 +383,25 @@ def main(argv=None):
     if not shutil.which("dumpbin"):
         print("native-artifact-gate: dumpbin is not on PATH; run inside scripts/dev-env.ps1")
         return 2
+    if args.asan_coverage:
+        targets = [target for target in preset_folders() if target[2] == "asan"]
+        if args.folders:
+            wanted = {Path(raw).resolve() for raw in args.folders}
+            targets = [target for target in targets if target[1].resolve() in wanted]
+        if args.require_built:
+            findings += unbuilt_findings(targets)
+        commands = libraries = 0
+        for name, folder, _, vcpkg in targets:
+            found, c, n = coverage_findings(folder, vcpkg, lambda lib: dumpbin("/symbols", lib))
+            findings += found
+            commands += c
+            libraries += n
+            print(f"native-artifact-gate: {name}: {c} compile command(s), {n} librar(ies)")
+        for line in findings:
+            print(line)
+        print(f"native-artifact-gate: asan coverage: {commands} compile command(s), {libraries} librar(ies), "
+              f"{len(findings)} finding(s)")
+        return 1 if findings or commands + libraries == 0 else 0
     policies = {"shipping": read_allowed(SYSTEM_DLLS)}
     policies["asan"] = policies["shipping"] + read_allowed(SANITIZER_DLLS)
     presets = preset_folders()
@@ -306,7 +415,10 @@ def main(argv=None):
             name, _, policy, vcpkg = by_folder.get(folder, (folder.name, folder, "shipping", None))
             targets.append((name, folder, policy, vcpkg))
     else:
-        targets = presets
+        targets = [target for target in presets if args.policy in (None, target[2])]
+        if args.require_built:
+            findings += unbuilt_findings(targets)
+        findings += unbudgeted_findings(ROOT / budget.get("publish_root", "artifacts/publish/native"), budget)
         for app in budget.get("apps", {}).values():
             for folder in app.get("publish", []):
                 if not (ROOT / folder).is_dir():
@@ -463,6 +575,73 @@ def self_test():
         missing.write_text(json.dumps({"decision": "A budget nobody decided", "default_mb": 30}), encoding="utf-8")
         check("a budget naming a missing heading fails",
               [rule_of(line) for line in budget_findings(missing, decisions)], ["budget-undocumented"])
+    check("output with no dependency list fails closed",
+          [rule_of(line) for line in import_findings("x", fixture("dependents-unrecognized.txt"), shipping)],
+          ["inspection-failed"])
+    check("a malformed image, which dumpbin passes with exit 0, fails closed",
+          [rule_of(line) for line in import_findings("x", fixture("dependents-malformed.txt"), shipping)],
+          ["inspection-failed"])
+    check("an app-local copy of a system DLL is refused",
+          [rule_of(line) for line in shadow_findings([Path("b/kernel32.dll"), Path("b/api-ms-win-crt-runtime-l1-1-0.dll"),
+                                                      Path("b/build_info_test.exe")], shipping)],
+          ["system-dll-shadowed", "system-dll-shadowed"])
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        for app in ("Stilus", "Probe"):
+            (tmp / "publish" / app / "win-x64").mkdir(parents=True)
+        named = {"apps": {"stilus": {"mb": 30, "publish": [str(tmp / "publish" / "Stilus" / "win-x64")]}}}
+        check("a native publish folder no budget names is refused",
+              [line.split(":publish-unbudgeted:")[0] for line in unbudgeted_findings(tmp / "publish", named)],
+              [str(tmp / "publish" / "Probe" / "win-x64")])
+        built = tmp / "built"
+        built.mkdir()
+        (built / "CMakeCache.txt").write_text("", encoding="utf-8")
+        (built / ".ninja_log").write_text("", encoding="utf-8")
+        configured = tmp / "configured"
+        configured.mkdir()
+        (configured / "CMakeCache.txt").write_text("", encoding="utf-8")
+        check("a preset never built fails when builds are required",
+              [line.split(":input-missing:")[1] for line in unbuilt_findings(
+                  [("a", built, "shipping", None), ("b", configured, "shipping", None), ("c", tmp / "none", "shipping", None)])],
+              ["preset b was not built", "preset c was not built"])
+        decisions = tmp / "decisions.md"
+        decisions.write_text("# Decisions\n\n## 2026-10-23: The output size budget\n\n- **Budget:** 30 MB\n\n"
+                             "## 2026-10-23: Optional language packs\n\n- text\n", encoding="utf-8")
+        for name, entry, want in (
+                ("an optional entry outside the folder", {"glob": "../other/*.dat", "decision": "Optional language packs"}, 1),
+                ("an absolute optional entry", {"glob": "C:/data/*.dat", "decision": "Optional language packs"}, 1),
+                ("an optional entry naming no decision", {"glob": "packs/*.pak"}, 1),
+                ("an optional entry naming an undocumented decision", {"glob": "packs/*.pak", "decision": "Nobody decided"}, 1),
+                ("a documented optional entry", {"glob": "packs/*.pak", "decision": "Optional language packs"}, 0)):
+            spec = tmp / "budget.json"
+            spec.write_text(json.dumps({"decision": "The output size budget", "default_mb": 30,
+                                        "optional_content": [entry]}), encoding="utf-8")
+            check(f"{name} is {'refused' if want else 'accepted'}", len(budget_findings(spec, decisions)), want)
+        packs = tmp / "packs-folder"
+        (packs / "packs").mkdir(parents=True)
+        with open(packs / "packs" / "fr.pak", "wb") as f:
+            f.truncate(31_000_000)
+        check("documented optional content does not count",
+              size_findings(packs, 30, optional=[{"glob": "packs/*.pak", "decision": "Optional language packs"}])[0], [])
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        (tmp / "compile_commands.json").write_text(json.dumps([
+            {"file": "a.cpp", "command": "cl /nologo /fsanitize=address /c a.cpp"},
+            {"file": "b.cpp", "command": "cl /nologo -fsanitize=address /c b.cpp"},
+            {"file": "c.cpp", "command": "cl /nologo /c c.cpp"},
+            {"file": "d.rc", "command": "rc d.rc"}]), encoding="utf-8")
+        (tmp / "pkgs" / "lib").mkdir(parents=True)
+        (tmp / "pkgs" / "lib" / "good.lib").write_bytes(b"!<arch>")
+        (tmp / "pkgs" / "lib" / "bare.lib").write_bytes(b"!<arch>")
+        found, commands, libs = coverage_findings(
+            tmp, tmp / "pkgs",
+            lambda lib: (0, "UNDEF notype External | __asan_report_store1" if lib.name == "good.lib" else "UNDEF | memcpy"))
+        check("an uninstrumented compile and an uninstrumented library are named",
+              (sorted(line.split(":not-instrumented:")[0].rsplit("\\", 1)[-1].rsplit("/", 1)[-1] for line in found),
+               commands, libs), (["bare.lib", "c.cpp"], 3, 2))
+        check("a library dumpbin cannot read fails coverage",
+              [rule_of(line) for line in coverage_findings(tmp / "none", tmp / "pkgs", lambda lib: (1181, "LNK1181"))[0]],
+              ["input-missing", "inspection-failed", "inspection-failed"])
     check("the repository's budget is documented", budget_findings(), [])
     print(f"native-artifact-gate self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0

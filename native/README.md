@@ -39,9 +39,10 @@ pwsh scripts/dev-env.ps1 -Arch arm64 -Run 'Push-Location native; cmake --workflo
 | `x64-release`, `arm64-release` | Release | yes | Full PDBs, `/OPT:REF`, `/OPT:ICF` |
 | `x64-asan` | RelWithDebInfo | yes | `/fsanitize=address` and `/INCREMENTAL:NO` on every target, packages from the `isotone-x64-asan` triplet; Debug's `/RTC` refuses AddressSanitizer |
 | `arm64-asan` | RelWithDebInfo | on ARM64 | The same for ARM64, packages from `isotone-arm64-asan`; built on x64, its tests run on ARM64 |
+| `x64-analyze`, `arm64-analyze` | Debug, Release | no | MSVC `/analyze` on every first-party target (`ISOTONE_ANALYZE`), its warnings errors |
 | `x64-dist`, `arm64-dist` | Release | no | What an app release builds from: `BUILD_TESTING` off and the vcpkg `test` feature unrequested, so GoogleTest is never installed or linked |
 
-Every target goes through `isotone_add_library` or `isotone_add_test` (`cmake/IsotoneTargets.cmake`), which apply `/W4 /WX /permissive- /utf-8 /Zc:__cplusplus /Zc:preprocessor /EHsc /external:anglebrackets /external:W0`, control-flow guard on the compiler and the linker, and `/CETCOMPAT` on x64 (Microsoft Learn documents it for x64 only). C++23 is the one switch `/std:c++23preview`, never the `/std:c++latest` CMake emits by default. A test preset with no registered test fails (`noTestsAction: error`), configure fails on any executable under `tests/` that `isotone_add_test` did not register, and GoogleTest discovery runs at test time, so a build never runs an ARM64 test executable on x64. MSVC's `CL` and `_CL_` environment variables are refused at configure and on every build (`cmake/CheckCompilerEnvironment.cmake`), because cl would add them to every compile; `scripts/dev-env.ps1` clears them on entry.
+Every target goes through `isotone_add_library` or `isotone_add_test` (`cmake/IsotoneTargets.cmake`), which apply `/W4 /WX /permissive- /utf-8 /Zc:__cplusplus /Zc:preprocessor /EHsc /external:anglebrackets /external:W0`, control-flow guard on the compiler and the linker, and `/CETCOMPAT` on x64 (Microsoft Learn documents it for x64 only). C++23 is the one switch `/std:c++23preview`, never the `/std:c++latest` CMake emits by default. A test preset with no registered test fails (`noTestsAction: error`), a test that runs past 300 seconds fails (so a blocked process never stalls a run), configure fails on any executable under `tests/` that `isotone_add_test` did not register, and GoogleTest discovery runs at test time, so a build never runs an ARM64 test executable on x64. MSVC's `CL` and `_CL_` environment variables are refused at configure and on every build (`cmake/CheckCompilerEnvironment.cmake`), because cl would add them to every compile; `scripts/dev-env.ps1` clears them on entry.
 
 The build id (`isotone::core::build_id()`) is the commit's first 12 hex digits, plus `-dirty` when tracked files differ from it. `cmake/WriteBuildId.cmake` rewrites it on every build, so a commit or an edit changes it without reconfiguring; a `git archive` source tree has no `.git`, and reads the commit from `BUILD_ID.txt`, which `export-subst` stamps.
 
@@ -63,11 +64,11 @@ The whole CTest suite also runs under AddressSanitizer, its dependencies built b
 
 Both lanes are required. The `x64-asan` test preset puts the toolset's runtime folder (`bin/Hostx64/x64`, which holds `clang_rt.asan_dynamic-x86_64.dll`) first on `PATH` and sets `ASAN_OPTIONS=halt_on_error=1:detect_leaks=0` (MSVC's AddressSanitizer has no leak detection). ARM64 executables cannot run on x64, so `arm64-asan` builds here and its tests run on ARM64, with `clang_rt.asan_dynamic-aarch64.dll` carried beside them (`D00 T05 §8`).
 
-`tests/sanitizer/asan_probe_test.cpp` writes one byte past a heap allocation. The `asan_probe` test (label `asan-probe`) passes only when `AddressSanitizer: heap-buffer-overflow` appears in its output, so a build that is not instrumented runs to its end without the report and fails; it is built only in the sanitizer presets.
+`tests/sanitizer/asan_probe_test.cpp` writes one byte past a heap allocation. The `asan_probe` test (label `asan-probe`) passes only when the sanitizer's `SUMMARY: AddressSanitizer: heap-buffer-overflow` line naming `asan_probe_test.cpp` appears in its output, so a build that is not instrumented runs to its end without the report and fails; it is built only in the sanitizer presets.
 
 ## Format and analysis
 
-Every first-party source is formatted by `.clang-format` and checked by `.clang-tidy` (the seven families the spec names, every warning an error) and by MSVC code analysis; all three start at zero findings, with no baseline to grow into:
+Every first-party source is formatted by `.clang-format` and checked by `.clang-tidy` (`native-tidy.ps1` removes the two MSVC switches clang-cl does not implement, so any other unknown switch still fails) (the seven families the spec names, every warning an error) and by MSVC code analysis; all three start at zero findings, with no baseline to grow into:
 
 ```powershell
 pwsh scripts/native-format.ps1 -Check     # clang-format on every source the next commit would carry (-Fix rewrites them)
@@ -91,7 +92,9 @@ python scripts/native-artifact-gate.py --publish artifacts/publish/<App>/<rid>  
 - The vcpkg root of every preset holds no DLL, and every installed library names the static CRT (`LIBCMT` or `LIBCMTD`, never `MSVCRT`).
 - `size-budget.json` sets 30 decimal megabytes per app, program databases and named optional content excluded, and the gate fails `budget-undocumented` unless `docs/dev/decisions.md` ("2026-10-23: The output size budget") states the same number.
 
-The folders are the configure presets of `CMakePresets.json`, never a sweep of `artifacts/native/`, so a stale or probe folder never decides a result.
+The folders are the configure presets of `CMakePresets.json`, never a sweep of `artifacts/native/`, so a stale or probe folder never decides a result. `--policy shipping` or `--policy asan` limits a run to one policy's presets, `--require-built` fails a preset that was never built, and `--asan-coverage` proves every sanitized compile and package instrumented; a dumpbin result the gate cannot read (a malformed image, a format change) fails, an app-local copy of a system DLL fails, and a folder under `artifacts/publish/native/` that no budget names fails.
+
+`pwsh scripts/check-all.ps1` runs every native stage after the .NET and Python gates (`.claude/skills/process-todo-section/gates.md` lists what each proves); `-SkipNative` leaves them out.
 
 ## Packages
 

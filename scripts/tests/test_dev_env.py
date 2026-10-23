@@ -27,6 +27,12 @@ WRONG = {
     "wrong-toolset.json": (("msvc", "toolset"), "14.99.99999", "MSVC toolset"),
     "wrong-cmake.json": (("cmake",), "3.0.0", "cmake"),
     "wrong-clang-cl.json": (("llvm", "clang-cl"), "1.0.0", "clang-cl"),
+    "wrong-sdk.json": (("windows_sdk",), "10.0.22621.0", "Windows SDK"),
+    "wrong-compiler.json": (("msvc", "compiler"), "19.99.99999", "MSVC compiler"),
+    "wrong-ninja.json": (("ninja",), "1.0.0", "ninja"),
+    "wrong-clang-tidy.json": (("llvm", "clang-tidy"), "1.0.0", "clang-tidy"),
+    "wrong-clang-format.json": (("llvm", "clang-format"), "1.0.0", "clang-format"),
+    "wrong-vcpkg.json": (("vcpkg",), "2000-01-01", "vcpkg"),
 }
 
 
@@ -84,7 +90,8 @@ class DevEnvCheckTest(unittest.TestCase):
 
     def test_each_tool_is_compared_on_its_own(self):
         # Every other line stays ok, so the exit 1 comes from that tool's comparison and nothing else.
-        for name in ("wrong-cmake.json", "wrong-clang-cl.json"):
+        for name in ("wrong-cmake.json", "wrong-clang-cl.json", "wrong-compiler.json", "wrong-ninja.json",
+                     "wrong-clang-tidy.json", "wrong-clang-format.json", "wrong-vcpkg.json"):
             with self.subTest(name=name):
                 item = WRONG[name][2]
                 code, rows = check(FIXTURES / name)
@@ -92,6 +99,33 @@ class DevEnvCheckTest(unittest.TestCase):
                 self.assertFalse(rows[item][1], rows[item][0])
                 self.assertEqual([k for k, (_, ok) in rows.items() if not ok], [item])
 
+
+    def test_a_windows_sdk_that_is_not_installed_is_named(self):
+        # An SDK that is not installed fails the SDK rows, never the toolset: vcvarsall enters it by name and sets
+        # WindowsSDKVersion to it, so the row must read the version back only when its include folder exists.
+        code, rows = check(FIXTURES / "wrong-sdk.json")
+        self.assertEqual(code, 1)
+        self.assertEqual(sorted(k for k, (_, ok) in rows.items() if not ok),
+                         ["Windows SDK", "Windows SDK newest installed"], rows)
+        self.assertIn("not installed", rows["Windows SDK"][0])
+
+    def test_the_arm64_environment_targets_arm64(self):
+        code, rows = check(PIN, arch="arm64")
+        self.assertEqual(code, 0, rows)
+        self.assertIn("found ARM64", rows["MSVC target"][0])
+
+    def test_a_pin_mismatch_refuses_before_the_block_runs(self):
+        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Arch", "x64", "-PinFile",
+                               str(FIXTURES / "wrong-cmake.json"), "-Run", '"BLOCK RAN"'],
+                              capture_output=True, text=True, timeout=300, cwd=ROOT)
+        self.assertNotEqual(proc.returncode, 0, proc.stdout)
+        self.assertNotIn("BLOCK RAN", proc.stdout)
+        self.assertIn("does not match the pin", proc.stdout + proc.stderr)
+
+    def test_the_block_exit_code_is_the_script_exit_code(self):
+        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Arch", "x64", "-Run", "exit 7"],
+                              capture_output=True, text=True, timeout=300, cwd=ROOT)
+        self.assertEqual(proc.returncode, 7, proc.stdout + proc.stderr)
 
     def test_a_triplet_off_the_pin_is_refused(self):
         # vcpkg builds each dependency with its triplet's toolset, so a triplet off the pin fails only its own row.
