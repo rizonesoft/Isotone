@@ -5145,9 +5145,10 @@ BACKLOG_REMOVED_RE = re.compile(
 )
 BACKLOG_REMOVED_ATTEMPT_RE = re.compile(r"^\s*[-*+]\s+B-\d")
 BACKLOG_REMOVED_GRAMMAR = '`- B-NNN <source> -- removed YYYY-MM-DD -- operator: "<the operator\'s words>"`'
-# The release tags an app release pushes; `isotone` is the suite release.
-RELEASE_APPS = ("stilus", "gesso", "albumen", "isotone")
-RELEASE_TAG_PATTERN = r"(?:stilus|gesso|albumen|isotone)-v\d+\.\d+\.\d+"
+# The release tags an app release pushes; `isotone` is the suite release. The three apps planned on 2026-10-23
+# (Tinctura, Capio, Folium) release on their own tags too, so their releases meet the same backlog gate.
+RELEASE_APPS = ("stilus", "gesso", "albumen", "tinctura", "capio", "folium", "isotone")
+RELEASE_TAG_PATTERN = r"(?:" + "|".join(RELEASE_APPS) + r")-v\d+\.\d+\.\d+"
 # A release's backlog review, one `reviewed:` field per release per entry:
 # `reviewed: <tag> <YYYY-MM-DD> promoted DNN TNN §N` (part of it became that
 # section) or `reviewed: <tag> <YYYY-MM-DD> deferred by operator: "<words>"`.
@@ -6004,8 +6005,10 @@ DESIGN_BASELINE_NAME = ".design-baseline"
 DESIGN_BASELINE_REF_RE = re.compile(r"^D\d{2} T\d{2} §\d+$")
 # The checklist item that ships an app release: pushing its tag (`isotone` is
 # the suite release, which no design deviation gates but the backlog gate does).
-RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<tag>(?P<app>stilus|gesso|albumen|isotone)-v\d+\.\d+\.\d+)`")
-DESIGN_DOMAIN_APPS = {"01": ("stilus", "gesso", "albumen"), "02": ("stilus",), "03": ("gesso",), "04": ("albumen",)}
+RELEASE_ITEM_RE = re.compile(r"^Push (?:the tag )?`(?P<tag>(?P<app>" + "|".join(RELEASE_APPS) + r")-v\d+\.\d+\.\d+)`")
+# Which app releases a domain's open design deviations gate: the shared core gates every app.
+DESIGN_DOMAIN_APPS = {"01": ("stilus", "gesso", "albumen", "tinctura", "capio", "folium"), "02": ("stilus",),
+                      "03": ("gesso",), "04": ("albumen",), "07": ("tinctura",), "08": ("capio",), "09": ("folium",)}
 
 
 def design_root() -> Path:
@@ -10056,6 +10059,12 @@ An oversized section: the clean single-WARN shape (over-30-items).
                 cmd_query(argparse.Namespace(what="ready", all=False))
             check("a blank Review pending marker still parks without a crash",
                   "malformed marker" in blank_buf.getvalue() and "1 review pending" in blank_buf.getvalue(), True)
+            for planned in ("tinctura", "capio", "folium"):
+                check(f"the release gates know {planned}",
+                      (bool(RELEASE_ITEM_RE.match(f"Push the tag `{planned}-v0.1.0`")),
+                       bool(BACKLOG_REVIEWED_RE.match(f'{planned}-v0.1.0 2026-10-23 deferred by operator: "later"')),
+                       any(planned in apps for d, apps in DESIGN_DOMAIN_APPS.items() if d != "01")),
+                      (True, True, True))
             check("pending_since names a malformed marker instead of raising", pending_since("   "),
                   "an unreadable time (malformed marker)")
             check("pending_since reads a well-formed marker",

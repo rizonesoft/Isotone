@@ -52,3 +52,38 @@ Round 1 first returned no review (the reviewer was at capacity, recorded above a
 5. P2, `generate-small-icons.py` kept dead app extractors and its planned `--check` still claimed the app variants: verified. It now writes only the suite icon, and `D00 T03 §3` scopes its `--check` to the suite icon beside `build-app-icons.py --check`, which guards every app icon.
 6. P2, a duplicated nested icon passed the splash check: verified. The splash must hold exactly one nested master, counted before replacement; a probe with a duplicate now fails naming the count.
 7. P2, the supersession map kept 63 old phase numbers: verified. All 63 rows moved by six; a cross-check of every map row against the plan's tables reports no mismatch.
+
+## Round 3: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T08:27:07Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 94b1473371d407eb
+
+adversarial: needs-attention
+
+1. P1 `todo/07-tinctura/TODO-01-tinctura-plan.md:137`: The checkpoint falsely claims `validate` refuses parity features deferred without the operator’s words. An in-memory probe routed IP-0001 to a new backlog entry with `why deferred: cheaper to skip it`, updated the totals, and received zero parity or budget findings. The checks establish that the entry exists, not that the operator approved deferral. Capio §6 and Folium §6 repeat this unenforced acceptance claim.
+
+consistency: needs-attention
+
+2. P2 `todo/07-tinctura/TODO-01-tinctura-plan.md:92`: §3 requires two phase-specific `to-author` counts in the Totals table, but its schema permits one aggregate `to-author` row, containing Features and Source rows. Adding a second row produces `parity-totals-drift`; qualifying its label with the authoring reference produces a malformed Totals row. Capio line 92 and Folium line 91 repeat this contradiction. The phase split needs a separately defined representation and check.
+
+integration: needs-attention
+
+3. P1 `scripts/todo-graph.py:6007`: The release and design gates still recognize only the original three apps and the suite. In-memory release sections containing `Push the tag tinctura-v0.1.0`, `capio-v0.1.0`, or `folium-v0.1.0` return no entries from `release_sections()`, bypassing mandatory backlog checks. Their valid `reviewed:` records are also rejected by the tag grammar at line 5150, and domains 07 to 09 are absent from `DESIGN_DOMAIN_APPS`. The new planning sections schedule parity registration but never assign this release-gate integration.
+
+source-defect: approve
+
+record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 2
+
+Every finding was verified and is real; source-defect and record approved.
+
+1. P1, each §6 checkpoint claimed `validate` refuses a deferral without the operator's words: verified, it does not. The checkpoints now name the real guards: the completion review, and the release's backlog review (`release-backlog-unreviewed`), which refuses the `<app>-v1.0.0` stamp until every backlog entry for the app is promoted or quotes the operator; §6's Done-when keeps deferral to the operator's own words and has an unattended run plan the row instead.
+2. P2, §3 asked for two phase-specific `to-author` rows the Totals schema does not allow: verified. The proof is now a count of rows reading `to-author <ref> §5` and `§6` against the section design's two phase totals, with the Totals table's one `to-author` row equal to their sum.
+3. P1, the release and design gates knew only the first three apps: verified. `RELEASE_APPS` now names Tinctura, Capio, and Folium and drives `RELEASE_TAG_PATTERN` and `RELEASE_ITEM_RE`, so their release sections meet the backlog gate and their `reviewed:` records parse; `DESIGN_DOMAIN_APPS` maps domains 07 to 09 and the shared core to every app; self-test cases cover each new app. Each plan's §5 now extends every remaining app list in the tooling (`release-manifest.ps1`, `build-design-site.py`, and any other the named `git grep` prints), and `todo/README.md` lists the new status forms.
