@@ -64,6 +64,8 @@ track: W5
 
 ## 1. The Toolchain Pin and the Developer Environment
 
+> **Started:** 2026-10-23T10:00:32Z
+
 Ninja cannot select an MSVC toolset by itself, and "whatever Visual Studio is installed" makes builds differ between machines, so one script enters the pinned developer environment and every build, script, and CI job runs inside it (spec, "Pinning the toolchain"). The pin is chosen where the development machine and the CI runner images meet; this section measures both rather than assuming them. It must not touch the .NET build.
 
 - [ ] Read the toolsets the CI images provide: the Visual Studio version, MSVC toolsets, and Windows SDKs listed in the `actions/runner-images` readme for the x64 Windows image `.github/workflows/build.yml` will use and for `windows-11-vs2026-arm` (or `windows-11-arm` if it carries Visual Studio 2026), quoting each readme's commit or date. Done when: the commit message of this section quotes both images' lists. Cheaper substitute that fails: pinning the development machine's toolset without checking CI has it.

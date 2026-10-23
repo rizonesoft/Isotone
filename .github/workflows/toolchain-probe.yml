@@ -1,0 +1,49 @@
+name: toolchain-probe
+
+# Prints the native toolchain each Visual Studio 2026 runner image provides: the Visual Studio version, every MSVC
+# toolset folder (the selector -vcvars_ver and the native pin take), the default toolset vcvarsall enters, the Windows
+# SDKs, and the bundled CMake, Ninja, LLVM, and vcpkg versions. The pin in native/toolchain.json is chosen where these
+# images and the development machine meet (D00 T05 §1); run this before re-pinning, after a runner image update.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-2025-vs2026, windows-11-vs2026-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Read the toolchain
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -version '[18.0,19.0)' -latest -property installationPath
+          $ver = & $vswhere -version '[18.0,19.0)' -latest -property installationVersion
+          $lines = @("probe: runner ${{ matrix.runner }}", "probe: visual-studio $ver $vs")
+          foreach ($d in Get-ChildItem "$vs\VC\Tools\MSVC" -Directory) { $lines += "probe: msvc-toolset $($d.Name)" }
+          # A tool the image lacks prints as missing: the pin is read from what is there and what is not.
+          function Probe($name, $path, [scriptblock]$read) {
+            if (-not (Test-Path $path)) { return "probe: $name missing ($path)" }
+            # An ARM64 binary on an x64 host is installed but cannot run there; that is reported, not dropped.
+            try { "probe: $name " + ((& $read $path) -join ' ' -replace '\s+', ' ') }
+            catch { "probe: $name present, not runnable on this host ($($_.Exception.Message.Split([Environment]::NewLine)[0]))" }
+          }
+          $lines += Probe 'msvc-default' "$vs\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt" { param($f) Get-Content $f | Select-Object -First 1 }
+          foreach ($d in Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\Include" -Directory) { $lines += "probe: windows-sdk $($d.Name)" }
+          $lines += Probe 'cmake' "$vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" { param($f) & $f --version | Select-Object -First 1 }
+          $lines += Probe 'ninja' "$vs\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe" { param($f) & $f --version }
+          foreach ($tool in 'clang-cl', 'clang-format', 'clang-tidy') {
+            foreach ($host_ in 'x64', 'ARM64') {
+              $lines += Probe "$tool-$host_" "$vs\VC\Tools\Llvm\$host_\bin\$tool.exe" { param($f) & $f --version }
+            }
+          }
+          $lines += Probe 'vcpkg' "$vs\VC\vcpkg\vcpkg.exe" { param($f) & $f --version | Select-Object -First 1 }
+          $lines | ForEach-Object { Write-Output $_ }
+          $lines | ForEach-Object { "- ``$_``" } | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
