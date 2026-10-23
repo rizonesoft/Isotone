@@ -14,4 +14,10 @@ evidence: "<quoted from the deciding record>"
 as-of: <commit sha>
 ```
 
-No transitions are recorded yet.
+transition: D00-T05-S2-F2
+date: 2026-10-23
+from: raised
+to: refuted
+why: "Refuted: the output is in the commit bodies of `aa4746d` and `6189d31`, which Round 1's chunk (a plain `git diff`) did not carry"
+evidence: "Round 2's chunk carried each commit message with its diff (`git log -p`) and approved every lens."
+as-of: b455e7053748a3c3c36a457c4a516907bdbb783b
