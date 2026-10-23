@@ -6766,7 +6766,7 @@ def _self_test() -> int:
             ("skill-arch-round", "--prompt $RUNDIR/arch-prompt.md --keep $RUNDIR/arch-<N>"),
             ("skill-grok-cutoff", "on any later stamp it fails validation, because Grok left the panel"),
             ("skill-no-fallback", "re-runs nothing on another family, because the route has no fallback"),
-            ("skill-no-third-rung", "the writer's family never fills a round"),
+            ("skill-no-third-rung", "The writer's family never fills a round"),
             ("skill-holds-period",
              "The period is part of the verdict."),
             ("skill-refusal-rerun",

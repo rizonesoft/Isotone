@@ -99,6 +99,8 @@ BARE_TODO_RE = re.compile(r"(?<![\w§])(?:D\d{2}\s+)?T\d{2}(?!\s*§)(?![\w-])")
 STAMP_RE = re.compile(
     r"^>\s*\*\*(?P<kind>Verified|Deferred|Resolved|Review|Duration|CRUD|Verification|Implementer|Moved|Review pending|Plan review|Reopened):\*\*\s*(?P<body>.+?)\s*$"
 )
+# `> **Review pending:**` with nothing after it, which STAMP_RE (a body is required) does not match.
+REVIEW_PENDING_EMPTY_RE = re.compile(r"^>\s*\*\*Review pending:\*\*\s*$")
 # A reopened section names the finding that voided its proof: `<YYYY-MM-DD> |
 # <finding ref> | <reason>`. The validator requires the date, the bar, and a
 # resolvable §ref in the rest.
@@ -482,6 +484,10 @@ def parse_todo(path: Path) -> Todo:
     in_order_table = False
     for lineno, line in enumerate(text.splitlines(), start=1):
         stamp = STAMP_RE.match(line)
+        if not stamp and REVIEW_PENDING_EMPTY_RE.match(line) and current is not None:
+            # A Review pending marker with no body at all still parks its section; validate names it malformed.
+            current.review_pending = "(empty)"
+            continue
         if stamp:
             body = stamp.group("body")
             kind = stamp.group("kind")
@@ -10051,6 +10057,16 @@ An oversized section: the clean single-WARN shape (over-30-items).
             check("query plan reports a pending review as blocked",
                   next((r["status"] for r in pending_doc["sections"] if r["ref"] == "D93 T05 §2"), None), "blocked")
             # A blank marker still parks the section, never crashes a query, and is FATAL until rewritten.
+            moved_path.write_text(SELF_TEST_TODO_MOVED.replace(
+                "## 2. Depends on the moved thing\n",
+                "## 2. Depends on the moved thing\n\n> **Review pending:**   \n", 1), encoding="utf-8")
+            for bare in ("> **Review pending:**", "> **Review pending:**   "):
+                moved_path.write_text(SELF_TEST_TODO_MOVED.replace(
+                    "## 2. Depends on the moved thing\n", f"## 2. Depends on the moved thing\n\n{bare}\n", 1),
+                    encoding="utf-8")
+                bare_todo = parse_todo(moved_path)
+                check(f"a Review pending marker {bare[-3:]!r} with no body still parks the section",
+                      bare_todo.sections[2].review_pending, "(empty)")
             moved_path.write_text(SELF_TEST_TODO_MOVED.replace(
                 "## 2. Depends on the moved thing\n",
                 "## 2. Depends on the moved thing\n\n> **Review pending:**   \n", 1), encoding="utf-8")

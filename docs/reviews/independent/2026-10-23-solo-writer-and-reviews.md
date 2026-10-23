@@ -390,3 +390,37 @@ Every finding was verified and is real; source-defect and record approved.
 1. P3, a blank `> **Review pending:**` marker crashed the queries: verified. The parser keeps a blank marker as `(empty)` so the section still parks, `pending_since()` reads the time without ever raising, and `validate` raises the new FATAL `review-pending-malformed` for any marker not in the `<UTC> candidate <base>..<head>: <reason>` shape (self-test cases, the README severity table, and a driven run on a temporary blank marker that printed the FATAL and `1 review pending`).
 2. P2, the marker was removed before the stamp: verified. The marker now stays through the resumed rounds and is removed in the stamp commit that adds the run block, matching the run check's exemption.
 3. P2, parking left the findings ledger stale: verified. Parking regenerates the ledger with `python scripts/todo-findings.py --write` and commits it with the marker and the findings file.
+
+## Round 12: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T08:37:42Z
+- Effort: xhigh
+- Lines: 16
+- Digest: 06b44ec80e6a463c
+
+## adversarial: needs-attention
+
+1. P3 `scripts/todo-graph.py:100`: an empty `> **Review pending:**` with no trailing spaces is ignored because `STAMP_RE` requires a nonempty body. An in-memory parse returns `review_pending=''`, so the section does not park and `review-pending-malformed` never fires. Round 10 fixes the whitespace-only variant, but this empty variant remains.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P3 `.claude/skills/review-todo-section/SKILL.md:153`: changing the sentence to “The writer's family never fills a round” breaks the case-sensitive `skill-no-third-rung` assertion in `scripts/review_prompt.py:6771`, which expects lowercase “the”. Executing that self-test block against both snapshots reproduces zero failures before the candidate and one failure at `3d27223`. Update the assertion to preserve its intended behavioral check.
+
+## source-defect: approve
+
+## record: approve
+
+HIGHEST: P3
+OVERALL: needs-attention
+
+## Response to round 11
+
+Both findings were verified and are real; consistency, source-defect, and record approved. Round 11 is past round 9 and every finding is P3, so it closes the loop (`review-todo-section`, The loop); both are fixed here rather than filed, since each is a few lines.
+
+1. P3, a `> **Review pending:**` line with no body at all did not park: verified (`STAMP_RE` requires a body). The parser now matches that bare form too and parks the section as `(empty)`, which `validate` reports as `review-pending-malformed`; self-test cases cover the bare and the whitespace-only forms, and a mutant without the branch fails.
+2. P3, the `skill-no-third-rung` assertion in `scripts/review_prompt.py` still expected the lowercase sentence: verified. It now checks "The writer's family never fills a round", the sentence as the skill states it; the review-prompt self-test passes (500 cases).
+
+The tooling review is complete: eleven rounds, the last with no finding above P3.
