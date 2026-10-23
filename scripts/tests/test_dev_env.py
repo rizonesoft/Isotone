@@ -123,6 +123,16 @@ class DevEnvCheckTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout)
         self.assertIn("MSVC compiler pinned", proc.stdout)
 
+    def test_compiler_options_in_the_environment_are_cleared_on_entry(self):
+        # _CL_ follows cl's own command line, so _CL_=/std:c++20 would override the pinned standard in every compile.
+        env = dict(os.environ, CL="/nologo", _CL_="/std:c++20")
+        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Arch", "x64",
+                               "-Run", '"CL=[$env:CL] _CL_=[$env:_CL_]"'],
+                              capture_output=True, text=True, timeout=300, env=env, cwd=ROOT)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("CL=[] _CL_=[]", proc.stdout)
+        self.assertIn("dev-env: cleared _CL_=/std:c++20", proc.stderr)
+
     def test_reentering_keeps_the_environment_bounded(self):
         # Four entries in one process, alternating architectures: each starts from the first entry's environment, so
         # PATH never grows past what one entry adds and the last check still enters the pinned toolset.

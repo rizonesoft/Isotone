@@ -27,6 +27,7 @@ set(ISOTONE_VERSION "0.0.0" CACHE STRING "The version the build reports until ve
 set(ISOTONE_SANITIZE "" CACHE STRING "A sanitizer every target builds with: empty, or address")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(CheckCompilerEnvironment)
 include(IsotoneTargets)
 
 # BUILD_TESTING is on by default; the dist presets an app release builds from turn it off, with the vcpkg test feature

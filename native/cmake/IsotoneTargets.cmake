@@ -10,7 +10,15 @@ else()
   set(ISOTONE_TARGET_ARCH x64)
 endif()
 
+# The compiler environment is checked on every build, not only at configure: a build can run in another environment
+# than the one that configured it.
+add_custom_target(isotone_compiler_environment
+  COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_LIST_DIR}/CheckCompilerEnvironment.cmake"
+  COMMENT "Checking the compiler environment"
+  VERBATIM)
+
 function(isotone_apply_flags target)
+  add_dependencies(${target} isotone_compiler_environment)
   target_compile_options(${target} PRIVATE
     /W4 /WX /permissive- /utf-8 /Zc:__cplusplus /Zc:preprocessor /EHsc /external:anglebrackets /external:W0
     # Control-flow guard needs the compiler to emit the checks and the linker to set the image flag.
@@ -46,4 +54,24 @@ function(isotone_add_test name)
   target_link_libraries(${name} PRIVATE ${ARG_LINK} GTest::gtest GTest::gtest_main)
   isotone_apply_flags(${name})
   gtest_discover_tests(${name} DISCOVERY_MODE PRE_TEST)
+  set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
+endfunction()
+
+# isotone_require_registered_tests(<dir>): every executable under a tests folder went through isotone_add_test. A test
+# executable added any other way builds and never runs, and CTest still passes on the other tests, so noTestsAction
+# alone cannot see it. Called at the end of native/tests/CMakeLists.txt.
+function(isotone_require_registered_tests dir)
+  get_property(targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
+  foreach(target IN LISTS targets)
+    get_target_property(type ${target} TYPE)
+    get_target_property(registered ${target} ISOTONE_REGISTERED_TEST)
+    if(type STREQUAL "EXECUTABLE" AND NOT registered)
+      message(FATAL_ERROR "${target} is an executable under ${dir} that isotone_add_test did not register, so its "
+                          "tests would never run")
+    endif()
+  endforeach()
+  get_property(subdirs DIRECTORY "${dir}" PROPERTY SUBDIRECTORIES)
+  foreach(subdir IN LISTS subdirs)
+    isotone_require_registered_tests("${subdir}")
+  endforeach()
 endfunction()

@@ -149,13 +149,21 @@ if ($vs) {
       (Join-Path $vs 'VC\vcpkg'))
     $env:PATH = (@($bundled) + @($env:PATH -split ';' | Where-Object { $_ -and $_ -notin $bundled })) -join ';'
 
+    # cl adds the options in CL before and _CL_ after its own command line on every run (Microsoft Learn, "CL
+    # environment variables"), so a developer's `_CL_=/std:c++20` would override the pinned standard and `/nologo`
+    # would hide the banner read below. The pinned environment takes its options from the build description only;
+    # native/cmake/CheckCompilerEnvironment.cmake refuses them again at configure and on every build.
+    foreach ($name in 'CL', '_CL_') {
+      $value = [Environment]::GetEnvironmentVariable($name)
+      if ($value) {
+        [Console]::Error.WriteLine("dev-env: cleared $name=$value (MSVC would add it to every compile)")
+        [Environment]::SetEnvironmentVariable($name, $null)
+      }
+    }
+
     # 3. What the environment actually runs.
     Add-Row 'MSVC toolset' $Pin.msvc.toolset $env:VCToolsVersion
-    # cl reads extra options from CL and _CL_ on every run (a developer's /nologo hides the banner), so it is
-    # identified with both cleared for this one call and the developer's values restored after it.
-    $savedCl, $savedClTail = $env:CL, $env:_CL_
-    $env:CL, $env:_CL_ = $null, $null
-    try { $banner = Invoke-Tool 'cl' @() } finally { $env:CL, $env:_CL_ = $savedCl, $savedClTail }
+    $banner = Invoke-Tool 'cl' @()
     Add-Row 'MSVC compiler' $Pin.msvc.compiler (Read-Version $banner 'Version (\d+\.\d+\.\d+)')
     $clTarget = Read-Version $banner 'Version \S+ for (\w+)'
     Add-Row 'MSVC target' ($(if ($Arch -eq 'arm64') { 'ARM64' } else { 'x64' })) $clTarget
