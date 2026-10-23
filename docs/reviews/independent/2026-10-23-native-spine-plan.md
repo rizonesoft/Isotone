@@ -422,3 +422,32 @@ Every finding was verified against the files and the cited documentation and is 
 2. P1, the "nothing to exceed" exemption let a feature skip the improvement: verified. Every feature section must name an improvement; only non-feature work (tooling, infrastructure, documentation, release mechanics) carries no `**Exceed:**` paragraph and says so, in the re-plan rules and in `process-todo-section`.
 3. P2, `docs/design/` still names WPF, XAML, SkiaSharp, and AvalonDock with no owner: verified (`components/Canvas/README.md`, `components/Panel/README.md`, `shell-layout.md`). `D00 T07 §2` rewrites the design-system implementation notes for the native toolkit with every token and value unchanged and regenerates the design page; `D00 T06`'s scan excludes `docs/design/` like the other paths that section owns.
 4. P2, deferred test discovery embeds the producer's CMake path: verified against CMake's GoogleTest module. The ARM64 job reads `CMAKE_ROOT` and the CMake version from each restored cache and installs the pinned CMake at exactly that prefix when the image lacks it, failing when it cannot.
+
+## Round 10: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T06:13:15Z
+- Effort: xhigh
+- Lines: 14
+- Digest: c215b2b7831b8db0
+
+### adversarial: needs-attention
+
+1. P2 `todo/00-workspace/TODO-04-native-code-policy.md:65`: `test-only-linked` checks only the two Release graphs. Link an app to `GTest::gtest` inside `if(CMAKE_BUILD_TYPE STREQUAL "Debug")`: both inspected graphs remain unchanged, registration and feature-placement checks pass, and static linking introduces no prohibited DLL import. The required gate therefore accepts a forbidden app dependency in Debug. Check Debug and Release on both architectures, with a Debug-only negative fixture. [CMake configuration semantics](https://cmake.org/cmake/help/v4.3/variable/CMAKE_BUILD_TYPE.html).
+
+### consistency: approve
+
+### integration: approve
+
+### source-defect: approve
+
+### record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 10
+
+The finding was verified and is real; the other four lenses approved.
+
+1. P2, the test-only link check read only the Release graphs: verified (a link inside `if(CMAKE_BUILD_TYPE STREQUAL "Debug")` changes neither). `test-only-linked` reads the link graphs of all four configurations (`x64-debug`, `x64-release`, `arm64-debug`, `arm64-release`), with a Debug-only fixture failing beside the x64-only and ARM64-only ones.
