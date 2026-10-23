@@ -157,3 +157,42 @@ Every finding was verified against the code and the cited documentation and is r
 1. P1, workflows were deduplicated by display name: verified. Runs carry `workflowDatabaseId` and are keyed by it, so two workflows sharing a name stay apart; a self-test case and a mutant keyed by name cover it.
 2. P2, a panel retry reused its round's keep folder: verified. Each retry of a round runs in its own folder, `$RUNDIR/round-<N>-retry-<K>`, with its own summary, created first.
 3. P1, `gh` calls were not bound to this repository: verified (an inherited `GH_REPO` redirects them). `ci_watch.py` reads the repository from `origin` (https or ssh), refuses a non-GitHub origin, passes `--repo owner/name` on every call, and removes `GH_REPO` from the call's environment; self-test cases and a mutant cover the binding.
+
+## Round 5: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T01:49:19Z
+- Effort: xhigh
+- Lines: 21
+- Digest: 41ed313149bfd654
+
+## adversarial: needs-attention
+
+1. P1 `scripts/todo-graph.py:5461`: `Review pending:` does not invalidate a checked row. An in-memory probe adding it to `D00 T01 §1` returned resolve exit 3, plan status `verified`, and validation exit 0. This matters for `.claude/skills/review-todo-section/SKILL.md:289`, whose stamp-outage path starts after the stamp and row flip are staged. Parking must explicitly unwind that state, and validation must reject a pending review alongside a verified row.
+
+2. P3 `scripts/ci_watch.py:85`: workflow enumeration retains GitHub CLI’s implicit 50-workflow limit. A fixture with 51 active workflows, only the last failing, produced `checked=50`, `red=0`, exit 0. The per-workflow run queries therefore still cannot guarantee that every workflow was checked. [GitHub CLI workflow-list documentation](https://cli.github.com/manual/gh_workflow_list)
+
+## consistency: approve
+
+## integration: needs-attention
+
+3. P2 `scripts/ci_watch.py:117`: dispatch verification returns exit 0 for `skipped` and `neutral`, but `scripts/campaign_guard.py:736` accepts repair evidence only for `success`. In-memory probes reproduced exit 0 followed by `green_evidence=False` for both conclusions. The prescribed repair path therefore reports green but cannot close its repair episode.
+
+## source-defect: needs-attention
+
+4. P1 `scripts/ci_watch.py:47`: repository binding still inherits `GH_HOST`. A probe with `GH_HOST=github.corp.example` produced `--repo rizonesoft/Isotone` while preserving that host override. GitHub CLI resolves this hostless repository argument against its default host, so monitoring and repair dispatches can target another server’s repository. Round 4 settles `GH_REPO`, but the hostname must also be bound explicitly. [GitHub CLI repository resolution](https://github.com/cli/cli/blob/v2.102.0/internal/ghrepo/repo.go#L36-L49), [environment documentation](https://cli.github.com/manual/gh_help_environment)
+
+## record: approve
+
+HIGHEST: P1
+
+OVERALL: needs-attention
+
+## Response to round 5
+
+Every finding was verified against the code and the cited documentation and is real.
+
+1. P1, `Review pending:` on a verified row was neither refused nor unwound: verified. `validate` raises the new FATAL class `review-pending-verified` (in `todo/README.md`'s severity table), with a self-test case that fails on a mutant without the rule; the stamp-review outage path first unwinds the staged stamp, row flip, and plan sync (`git restore --staged --worktree`) before writing the marker.
+2. P3, `gh workflow list` stops at 50 workflows: verified. The list asks for up to 1000; a fixture with 51 workflows, only the last red, must report it, and a mutant without the limit fails.
+3. P2, a dispatched `skipped` or `neutral` run exited 0 but cannot close a repair: verified. Only `success` exits 0; `skipped` and `neutral` are unverifiable (exit 2), since they ran nothing that could fail; self-test cases and a mutant cover both.
+4. P1, `GH_HOST` still redirected a hostless `--repo`: verified. The repository is bound as `host/owner/name` from `origin`, and `GH_HOST` is removed from the call's environment with `GH_REPO`; self-test cases and a mutant cover it.

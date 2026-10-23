@@ -32,19 +32,22 @@ import time
 GREEN = {"success", "skipped", "neutral"}
 FIELDS = "databaseId,workflowDatabaseId,workflowName,status,conclusion,createdAt,event,headSha,url"
 # The repository every call is bound to comes from origin, never from an inherited GH_REPO.
-GITHUB_REMOTE = re.compile(r"github\.com[:/](?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
+GITHUB_REMOTE = re.compile(r"(?P<host>github\.com)[:/](?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
+# More workflows than gh lists by default (50) must never drop one from the watch.
+WORKFLOW_LIMIT = "1000"
 
 
 def origin_repo(url):
-    """`owner/name` from a GitHub remote URL (https or ssh), or None."""
+    """`host/owner/name` from a GitHub remote URL (https or ssh), or None: the host is named too, because a hostless
+    `--repo` resolves against GH_HOST or gh's default host, which could be another server."""
     match = GITHUB_REMOTE.search((url or "").strip())
-    return match.group("repo") if match else None
+    return f"{match.group('host')}/{match.group('repo')}" if match else None
 
 
 def gh_command(args, repo):
     """The argv and environment for one `gh` call bound to `repo`: `--repo` on the command, and an inherited GH_REPO
-    removed, so neither monitoring nor a repair dispatch can reach another repository."""
-    env = {k: v for k, v in os.environ.items() if k != "GH_REPO"}
+    and GH_HOST removed, so neither monitoring nor a repair dispatch can reach another repository or server."""
+    env = {k: v for k, v in os.environ.items() if k not in ("GH_REPO", "GH_HOST")}
     return ["gh", *args, "--repo", repo], env
 
 
@@ -82,7 +85,8 @@ def red_runs(runs):
 def fetch(runner, per_workflow=20):
     """Every active workflow's recent runs on main, read one workflow at a time."""
     runs = []
-    for workflow in gh_json(runner, ["workflow", "list", "--json", "id,name,state,path"]) or []:
+    for workflow in gh_json(runner, ["workflow", "list", "--limit", WORKFLOW_LIMIT, "--json",
+                                     "id,name,state,path"]) or []:
         if workflow.get("state") != "active":
             continue
         runs += gh_json(runner, ["run", "list", "--workflow", str(workflow["id"]), "--branch", "main",
@@ -114,7 +118,13 @@ def dispatch_and_wait(workflow, runner, now=lambda: datetime.now(timezone.utc), 
     while now() < deadline:
         run = gh_json(runner, ["run", "view", run_id, "--json", FIELDS])
         if run and run.get("status") == "completed":
-            return (0 if run.get("conclusion") in GREEN else 1), run
+            # Only success proves a repair: skipped or neutral ran nothing that could fail, and campaign_guard's
+            # repair close accepts only success.
+            if run.get("conclusion") == "success":
+                return 0, run
+            if run.get("conclusion") in ("skipped", "neutral"):
+                return 2, f"the dispatched run {run_id} of {workflow} ended {run.get('conclusion')}, which proves nothing"
+            return 1, run
         sleep(poll)
     return 2, f"the dispatched run {run_id} of {workflow} did not complete within {timeout} s"
 
@@ -230,22 +240,39 @@ def self_test():
     twins = [dict(run(1, "checks", "2026-10-22T00:00:00Z", "success"), workflowDatabaseId=10),
              dict(run(2, "checks", "2026-10-21T00:00:00Z", "failure"), workflowDatabaseId=11)]
     check("two workflows sharing a name are kept apart", [r["databaseId"] for r in red_runs(twins)[0]], [2])
-    check("an https remote names its repository", origin_repo("https://github.com/rizonesoft/Isotone.git"),
-          "rizonesoft/Isotone")
-    check("an ssh remote names its repository", origin_repo("git@github.com:rizonesoft/Isotone.git\n"),
-          "rizonesoft/Isotone")
+    check("an https remote names its host and repository", origin_repo("https://github.com/rizonesoft/Isotone.git"),
+          "github.com/rizonesoft/Isotone")
+    check("an ssh remote names its host and repository", origin_repo("git@github.com:rizonesoft/Isotone.git\n"),
+          "github.com/rizonesoft/Isotone")
     check("a remote that is not GitHub names none", origin_repo("https://example.com/a/b.git"), None)
-    saved = os.environ.get("GH_REPO")
-    os.environ["GH_REPO"] = "example/other"
+    saved = {k: os.environ.get(k) for k in ("GH_REPO", "GH_HOST")}
+    os.environ.update({"GH_REPO": "example/other", "GH_HOST": "github.corp.example"})
     try:
-        argv, env = gh_command(["run", "list"], "rizonesoft/Isotone")
+        argv, env = gh_command(["run", "list"], "github.com/rizonesoft/Isotone")
     finally:
-        if saved is None:
-            os.environ.pop("GH_REPO", None)
-        else:
-            os.environ["GH_REPO"] = saved
-    check("every gh call names the bound repository", argv[-2:], ["--repo", "rizonesoft/Isotone"])
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    check("every gh call names the bound host and repository", argv[-2:], ["--repo", "github.com/rizonesoft/Isotone"])
     check("an inherited GH_REPO never reaches gh", "GH_REPO" in env, False)
+    check("an inherited GH_HOST never reaches gh", "GH_HOST" in env, False)
+
+    def many_workflows(args):
+        if args[:2] == ["workflow", "list"]:
+            limit = int(args[args.index("--limit") + 1]) if "--limit" in args else 50
+            flows = [{"id": n, "name": f"w{n}", "state": "active", "path": f".github/workflows/w{n}.yml"}
+                     for n in range(1, 52)]
+            return json.dumps(flows[:limit])
+        workflow = int(args[args.index("--workflow") + 1])
+        return json.dumps([dict(run(workflow, f"w{workflow}", "2026-10-22T00:00:00Z",
+                                    "failure" if workflow == 51 else "success"), workflowDatabaseId=workflow)])
+    red, checked = red_runs(fetch(many_workflows))
+    check("a 51st workflow is still watched", ([r["workflowName"] for r in red], checked), (["w51"], 51))
+    for ending in ("skipped", "neutral"):
+        check(f"a dispatched run that ends {ending} proves nothing",
+              dispatch_and_wait("pins.yml", dispatcher(ending), fake_now, fake_sleep)[0], 2)
     print(f"ci_watch self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
 

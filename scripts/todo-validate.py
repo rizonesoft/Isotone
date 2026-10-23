@@ -867,6 +867,14 @@ def validate(graph, _args) -> int:
                         f"{t.path}:{s.line}: §{num} carries a Moved: marker that names no "
                         f"existing file ({s.moved[:80]!r}); the work it points at cannot be found",
                     )
+            if s.status == "x" and s.review_pending:
+                # A parked review means the stamp never landed: review-todo-section unwinds a staged stamp and row
+                # flip before writing the marker, so a verified row carrying one is a stamp nobody reviewed.
+                flag(
+                    "review-pending-verified",
+                    f"{t.path}:{s.line}: §{num} is [x] but carries a Review pending: marker; a section whose review "
+                    f"is pending has no stamp, so unwind the row flip and the stamp or remove the marker",
+                )
             if s.status == "x":
                 partial_flip_scan(t, num, s)
             if (

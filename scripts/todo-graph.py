@@ -898,6 +898,8 @@ SEVERITY_MAP: dict[str, str] = {
     # the section is excluded from ready/plan/progress on the strength of
     # that pointer, so a dead pointer would hide work (writers-and-reviewers §2).
     "moved-target-missing": "fatal",
+    # a verified row carrying `> **Review pending:**`: a parked review has no stamp (review-todo-section).
+    "review-pending-verified": "fatal",
     "pending-control-contract": "fatal",
     # a stamp dated after the Opus-panel rule landed whose findings carry no
     # panel verdicts reads as reviewed evidence while verifying nothing --
@@ -10076,6 +10078,21 @@ An oversized section: the clean single-WARN shape (over-30-items).
             check(
                 "validate: a Moved marker naming a missing file is FATAL",
                 any(l.startswith("FATAL") and "TODO-05-moved.md" in l and "carries a Moved: marker" in l for l in vbuf.getvalue().splitlines()),
+                True,
+            )
+            # validate: a verified row carrying `Review pending:` is FATAL (a parked review has no stamp).
+            moved_path.write_text(SELF_TEST_TODO_MOVED.replace(
+                "|   2   |   §2    | Depends on the moved thing | §1 |  [ ]   |",
+                "|   2   |   §2    | Depends on the moved thing | §1 |  [x]   |").replace(
+                "## 2. Depends on the moved thing\n",
+                "## 2. Depends on the moved thing\n\n> **Review pending:** 2026-10-23T00:00:00Z candidate abc1234..def5678: reviewer unreachable\n",
+                1), encoding="utf-8")
+            vbuf = _io.StringIO()
+            with _ctx.redirect_stdout(vbuf), _ctx.redirect_stderr(_io.StringIO()):
+                cmd_validate(None)
+            check(
+                "validate: a verified row carrying Review pending is FATAL",
+                any(l.startswith("FATAL") and "carries a Review pending: marker" in l for l in vbuf.getvalue().splitlines()),
                 True,
             )
         finally:
