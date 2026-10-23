@@ -170,6 +170,7 @@ python scripts/weakening-scan.py --snapshot <file>; python scripts/weakening-sca
 python scripts/weakening-scan.py --self-test  # the scan's own fixtures
 python scripts/ci_watch.py                    # every workflow's latest run on main, scheduled ones included, red ones named (campaign section boundaries)
 python scripts/ci_watch.py --self-test        # the watch's own fixtures
+python scripts/completion_check.py --self-test  # the completion review's reply gate
 python scripts/tests/test_automations.py      # the scheduled tasks, their runner, alert, and installers
 python scripts/tests/test_pin_automations.py  # the pin checks, the notice and pull-request plumbing, and the settings hook scripts
 python scripts/check-dotnet-pin.py check      # the .NET SDK pin is the newest release of its channel

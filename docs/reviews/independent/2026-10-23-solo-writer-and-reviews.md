@@ -206,3 +206,43 @@ Every finding was verified against the code and the cited documentation and is r
 - Digest: 0555d87060386853
 
 No reviewer returned a review. This round is not an approval.
+
+## Round 7: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T06:01:08Z
+- Effort: xhigh
+- Lines: 21
+- Digest: 05719cb506e95e61
+
+## adversarial: needs-attention
+
+1. P1 `scripts/ci_watch.py:92` and `scripts/ci_watch.py:80`: a successful PR run can conceal a failed `main` push. Branch filtering does not exclude PR events. An in-memory fixture with one failed push followed by a successful PR from a fork’s `main`, sharing the workflow ID, returned `([], 1)`, permitting exit 0 without repairing main. [GitHub CLI source](https://github.com/cli/cli/blob/v2.102.0/pkg/cmd/run/shared/shared.go#L348-L374)
+2. P1 `.claude/skills/review-todo-section/SKILL.md:179` and `docs/completion-review-prompt.md:33`: completion review lacks an output-validation gate or a retry rule for malformed responses. A mocked successful reviewer returning only `OVERALL: complete`, without the required `HIGHEST` line or evidence of consuming the candidate, was accepted by the dispatcher. Unlike panel review, this path has no subsequent checker to reject truncated output before recording completion.
+
+## consistency: needs-attention
+
+3. P2 `.claude/skills/process-todo-section/SKILL.md:149` and `docs/plans/2026-10-23-native-replan.md:45`: at `571cb71`, “genuinely nothing to exceed” permits an unrestricted exception to the mandatory improvement. A competitor-facing feature can claim that exception without an improvement or proof checkpoint, contradicting `AGENTS.md` and `docs/dev/decisions.md:77`. The exception must distinguish non-feature work.
+
+## integration: approve
+
+## source-defect: needs-attention
+
+4. P2 `scripts/ci_watch.py:43`: repository parsing searches for a substring instead of validating the URL’s host. Both `https://notgithub.com/rizonesoft/Isotone.git` and `https://example.com/github.com/rizonesoft/Isotone.git` returned `github.com/rizonesoft/Isotone` in probes. Consequently, monitoring and repair dispatch can target a GitHub repository unrelated to the actual origin instead of refusing it.
+
+## record: needs-attention
+
+5. P3 `docs/dev/decisions.md:79`: “the sections already written carry their paragraphs” is false at the reviewed commit. `git grep -n -F '**Exceed:**' 571cb71 -- todo` returned no matches, exit 1. The record should describe the paragraphs as work still owed by correction and re-planning.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 6
+
+Round 6 ran at `571cb71` after the capacity outage recorded above. Every finding was verified; finding 3 was already answered by `d3774c1`.
+
+1. P1, a green pull request run could hide a red push on `main`: verified (branch filtering keeps pull request events). The watch keeps only events about `main` itself (push, schedule, dispatch, repository dispatch, workflow run, merge group); a self-test case and a mutant cover it.
+2. P1, the completion review had no output gate: verified. `scripts/completion_check.py` requires a `CANDIDATE: <sha>` receipt matching the tip, well-formed numbered findings tagged `in-scope` or `out-of-scope`, a `HIGHEST:` line, a final `OVERALL:` line, and a verdict that agrees with the findings; a FAIL is a round with no review and is retried, never a pass. Its self-test has ten cases and fails on two mutants; the prompt states the receipt, step 5a runs the check, and check-all runs the self-test.
+3. P2, the unrestricted "nothing to exceed" exception: already answered by `d3774c1` (only non-feature work is exempt).
+4. P2, the repository match accepted look-alike hosts: verified. The whole remote URL is matched, scheme and host included; `notgithub.com` and a path containing `github.com` name no repository, with self-test cases.
+5. P3, the decision record said existing sections carry the paragraph: verified false. It now says no section carries it yet and each gains it when corrected before building or rewritten by its re-plan section.

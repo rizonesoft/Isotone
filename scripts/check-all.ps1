@@ -108,6 +108,7 @@ try {
     Invoke-PythonGate 'pin automations tests' 'tests/test_pin_automations.py' @()
     Invoke-PythonGate 'merge prs tests' 'tests/test_merge_prs.py' @()
     Invoke-PythonGate 'ci_watch self-test' 'ci_watch.py' @('--self-test')
+    Invoke-PythonGate 'completion_check self-test' 'completion_check.py' @('--self-test')
     Invoke-PythonGate 'build props tests' 'tests/test_build_props.py' @()
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'

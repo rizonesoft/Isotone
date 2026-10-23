@@ -32,7 +32,12 @@ import time
 GREEN = {"success", "skipped", "neutral"}
 FIELDS = "databaseId,workflowDatabaseId,workflowName,status,conclusion,createdAt,event,headSha,url"
 # The repository every call is bound to comes from origin, never from an inherited GH_REPO.
-GITHUB_REMOTE = re.compile(r"(?P<host>github\.com)[:/](?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
+# The whole URL is matched, scheme and host included, so a look-alike host (notgithub.com) or a path that merely
+# contains github.com never names a GitHub repository.
+GITHUB_REMOTE = re.compile(r"^(?:https://(?:[^@/]+@)?|ssh://git@|git@)(?P<host>github\.com)[:/]"
+                           r"(?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
+# Runs that say something about main itself: a pull request run, even from a fork's branch named main, never does.
+MAIN_EVENTS = {"push", "schedule", "workflow_dispatch", "repository_dispatch", "workflow_run", "merge_group"}
 # More workflows than gh lists by default (50) must never drop one from the watch.
 WORKFLOW_LIMIT = "1000"
 
@@ -74,7 +79,7 @@ def red_runs(runs):
     """The newest completed run of each workflow, when it is red, newest first; and how many workflows had one."""
     latest = {}
     for run in sorted(runs, key=lambda r: r["createdAt"], reverse=True):
-        if run.get("status") != "completed":
+        if run.get("status") != "completed" or run.get("event") not in MAIN_EVENTS:
             continue
         # Keyed by the workflow's identity: two workflows may share a display name.
         latest.setdefault(run.get("workflowDatabaseId") or run["workflowName"], run)
@@ -245,6 +250,12 @@ def self_test():
     check("an ssh remote names its host and repository", origin_repo("git@github.com:rizonesoft/Isotone.git\n"),
           "github.com/rizonesoft/Isotone")
     check("a remote that is not GitHub names none", origin_repo("https://example.com/a/b.git"), None)
+    check("a look-alike host names none", origin_repo("https://notgithub.com/rizonesoft/Isotone.git"), None)
+    check("github.com inside another host's path names none",
+          origin_repo("https://example.com/github.com/rizonesoft/Isotone.git"), None)
+    masked = [run(1, "build", "2026-10-22T00:00:00Z", "failure", event="push"),
+              run(2, "build", "2026-10-22T01:00:00Z", "success", event="pull_request")]
+    check("a green pull request run never hides a red push on main", [r["databaseId"] for r in red_runs(masked)[0]], [1])
     saved = {k: os.environ.get(k) for k in ("GH_REPO", "GH_HOST")}
     os.environ.update({"GH_REPO": "example/other", "GH_HOST": "github.corp.example"})
     try:
