@@ -154,3 +154,35 @@ OVERALL: needs-attention
 Four lenses approved; the one finding was verified and is real.
 
 1. P2, a namespace-prefixed nested SVG escaped the splash count: verified. `scripts/build-app-icons.py` now parses the splash with `xml.etree.ElementTree` and counts every element whose expanded name is `{http://www.w3.org/2000/svg}svg`, whatever its prefix, below the root card; probes adding a second icon as `<s:svg xmlns:s=...>` and as `<svg class="old">` both fail naming two nested elements, and the committed splashes pass.
+
+## Round 6: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T09:07:46Z
+- Effort: xhigh
+- Lines: 16
+- Digest: 6744958bdd582e64
+
+adversarial: approve
+
+consistency: needs-attention
+
+1. P2 `todo/09-folium/TODO-01-folium-plan.md:87`: §3 prescribes “master pages” while requiring exact current InDesign terminology. Adobe calls these “Parent Pages,” explicitly identifying “Master Page” as the former name. Following the prescribed terminology would put obsolete labels into Folium’s layout map, contradicting native-replan requirement 4. Use “Parent Pages” for the UI terminology. Demonstration: compare this line with [Adobe’s current documentation](https://helpx.adobe.com/indesign/desktop/create-and-organize-pages/create-and-manage-parent-pages/about-parent-pages.html).
+
+integration: needs-attention
+
+2. P3 `docs/parity/gesso-section-design.md:424`: The renumbering missed the active RAW-import references here and at line 3494, which still say “Phase 31, now 41.” `D03 T07 §11` now belongs to Phase 47 (`todo/implementation-plan.md:1254`); Phase 41 is Tinctura’s foundation. Reproduce with `rg -n 'now 41' docs/parity/gesso-section-design.md`. Update both references to Phase 47.
+
+source-defect: approve
+
+record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 5
+
+Both findings were verified and are real; adversarial, source-defect, and record approved.
+
+1. P2, Folium's §3 prescribed "master pages", the term InDesign retired: verified against Adobe's documentation, which calls them Parent Pages and names Master Page as the former term. §3 now requires the terminology of the current InDesign release taken from Adobe's current documentation, never memory, and both Folium terms say parent pages.
+2. P3, two references in `docs/parity/gesso-section-design.md` still said "Phase 31, now 41": verified. Both say "Phase 31, then 41, now 47", and the historical renumbering note in `docs/parity/albumen-section-design.md` records the second move; `git grep -E "now 4[1-5]"` over `todo/` and `docs/parity/` finds nothing.
