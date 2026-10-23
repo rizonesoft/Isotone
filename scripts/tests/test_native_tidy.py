@@ -40,15 +40,17 @@ class NativeTidyTest(unittest.TestCase):
         self.build.mkdir(parents=True)
 
     def database(self, sources):
-        """Write the sources under native/ and a compile database that compiles each of them with cl, in the form CMake
-        writes (`-c`, and the two switches native-tidy.ps1 removes)."""
+        """Write the sources under native/ and a compile database that compiles each of them with cl, with the switches
+        CMake writes (`-c`, and the two switches native-tidy.ps1 removes)."""
         entries = []
         for name, text in sources.items():
             path = self.root / "native" / name
             path.write_text(text, encoding="utf-8", newline="\n")
+            # An arguments array, so a path with spaces (a TEMP under "Program Data") stays one argument.
             entries.append({"directory": str(self.build), "file": str(path),
-                            "command": f"cl.exe /nologo /TP /EHsc /std:c++23preview /W4 /WX /permissive- /utf-8 "
-                                       f"/Zc:preprocessor /external:anglebrackets /external:W0 -c {path}"})
+                            "arguments": ["cl.exe", "/nologo", "/TP", "/EHsc", "/std:c++23preview", "/W4", "/WX",
+                                          "/permissive-", "/utf-8", "/Zc:preprocessor", "/external:anglebrackets",
+                                          "/external:W0", "-c", str(path)]})
         (self.build / "compile_commands.json").write_text(json.dumps(entries), encoding="utf-8")
 
     def run_tidy(self):

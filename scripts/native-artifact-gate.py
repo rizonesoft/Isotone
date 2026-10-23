@@ -315,6 +315,13 @@ def coverage_findings(folder, triplet_root, symbols):
     return found, commands, libs
 
 
+def publish_findings(folder, mb, budget, shipping):
+    """(findings, total bytes) for one publish folder, the same checks whichever way it is named: its size against its
+    budget, and no app-local copy of a system DLL among its images."""
+    found, total = size_findings(folder, mb, budget.get("excluded", ["*.pdb"]), budget.get("optional_content", []))
+    return found + shadow_findings(images(folder), shipping), total
+
+
 def missing_inputs(folders, vcpkg_roots):
     """input-missing for every build folder or vcpkg root named on the command line that is not an existing folder: an
     input asked for by name is checked or refused, never skipped while another input passes."""
@@ -366,10 +373,8 @@ def main(argv=None):
             return 1
         app = budget.get("apps", {}).get(args.app, {}) if args.app else {}
         mb = args.budget_mb if args.budget_mb is not None else app.get("mb", budget["default_mb"])
-        found, total = size_findings(args.publish, mb, budget.get("excluded", ["*.pdb"]),
-                                     budget.get("optional_content", []))
+        found, total = publish_findings(args.publish, mb, budget, read_allowed(SYSTEM_DLLS))
         findings += found
-        findings += shadow_findings(images(args.publish), read_allowed(SYSTEM_DLLS))
         print(f"native-artifact-gate: {args.publish}: {total / 1_000_000:.2f} MB of {mb} MB")
         for line in findings:
             print(line)
@@ -424,8 +429,7 @@ def main(argv=None):
                 if not (ROOT / folder).is_dir():
                     findings.append(f"{folder}:publish-missing:a budgeted app's publish folder does not exist")
                 else:
-                    findings += size_findings(ROOT / folder, app["mb"], budget.get("excluded", ["*.pdb"]),
-                                              budget.get("optional_content", []))[0]
+                    findings += publish_findings(ROOT / folder, app["mb"], budget, read_allowed(SYSTEM_DLLS))[0]
     found, checked, vcpkg_files = check_targets(targets, policies, lambda image: dumpbin("/dependents", image),
                                                 lambda lib: dumpbin("/directives", lib))
     findings += found
@@ -642,6 +646,12 @@ def self_test():
         check("a library dumpbin cannot read fails coverage",
               [rule_of(line) for line in coverage_findings(tmp / "none", tmp / "pkgs", lambda lib: (1181, "LNK1181"))[0]],
               ["input-missing", "inspection-failed", "inspection-failed"])
+    with tempfile.TemporaryDirectory() as tmp:
+        published = Path(tmp)
+        (published / "Stilus.exe").write_bytes(b"MZ")
+        (published / "api-ms-win-crt-runtime-l1-1-0.dll").write_bytes(b"MZ")
+        check("a publish folder holding an app-local system DLL fails",
+              [rule_of(line) for line in publish_findings(published, 30, {}, shipping)[0]], ["system-dll-shadowed"])
     check("the repository's budget is documented", budget_findings(), [])
     print(f"native-artifact-gate self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
