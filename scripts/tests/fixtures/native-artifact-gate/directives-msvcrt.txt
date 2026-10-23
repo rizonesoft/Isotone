@@ -1,0 +1,31 @@
+# Recorded 2026-10-23: dumpbin /directives of gtest_main.lib from the x64-windows-static-md triplet (/MD, a probe).
+
+Dump of file artifacts\vcpkg_installed\probe-md\x64-windows-static-md\lib\manual-link\gtest_main.lib
+
+File Type: LIBRARY
+
+   Linker Directives
+   -----------------
+   /FAILIFMISMATCH:_CRT_STDIO_ISO_WIDE_SPECIFIERS=0
+   /alternatename:_Avx2WmemEnabled=_Avx2WmemEnabledWeakValue
+   /FAILIFMISMATCH:_MSC_VER=1900
+   /FAILIFMISMATCH:_ITERATOR_DEBUG_LEVEL=0
+   /FAILIFMISMATCH:RuntimeLibrary=MD_DynamicRelease
+   /DEFAULTLIB:msvcprt
+   /FAILIFMISMATCH:annotate_string=0
+   /FAILIFMISMATCH:annotate_vector=0
+   /FAILIFMISMATCH:annotate_optional=0
+   /DEFAULTLIB:MSVCRT
+   /DEFAULTLIB:OLDNAMES
+
+  Summary
+
+           C .bss
+         180 .chks64
+       17370 .debug$S
+       825D4 .debug$T
+         19D .drectve
+          54 .pdata
+         30A .rdata
+         3CC .text$mn
+          74 .xdata

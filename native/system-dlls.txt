@@ -1,0 +1,8 @@
+# The DLLs an Isotone executable may import, read by scripts/native-artifact-gate.py (D00 T05 §6). Every entry is a
+# Windows system DLL, so an app runs on a clean Windows install with nothing else installed; the static CRT (/MT) keeps
+# VCRUNTIME140.dll, MSVCP140.dll, and ucrtbase.dll out. One entry per line: the DLL name, then `#` and its reason and the
+# section that needs it. A section that imports another system DLL adds it here in its own commit. Names are compared
+# without case; `*` matches any run of characters.
+KERNEL32.dll             # every Win32 process: process, memory, file, and synchronization APIs (D00 T05 §3, the test executables)
+api-ms-win-*             # Windows API sets, which the loader resolves to system DLLs (Microsoft Learn, "Windows API sets")
+ext-ms-win-*             # Windows extension API sets, resolved by the loader the same way (Microsoft Learn, "Windows API sets")

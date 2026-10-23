@@ -1,0 +1,31 @@
+# Recorded 2026-10-23: dumpbin /dependents of build_info_test.exe built /MD (a probe: x64-release with the dynamic CRT and the x64-windows-static-md triplet).
+
+Dump of file artifacts\native\probe-md\tests\core\build_info_test.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    MSVCP140.dll
+    VCRUNTIME140.dll
+    VCRUNTIME140_1.dll
+    api-ms-win-crt-heap-l1-1-0.dll
+    api-ms-win-crt-string-l1-1-0.dll
+    api-ms-win-crt-runtime-l1-1-0.dll
+    api-ms-win-crt-stdio-l1-1-0.dll
+    api-ms-win-crt-filesystem-l1-1-0.dll
+    api-ms-win-crt-math-l1-1-0.dll
+    api-ms-win-crt-convert-l1-1-0.dll
+    api-ms-win-crt-environment-l1-1-0.dll
+    api-ms-win-crt-time-l1-1-0.dll
+    api-ms-win-crt-locale-l1-1-0.dll
+
+  Summary
+
+        2000 .data
+        3000 .pdata
+       14000 .rdata
+        1000 .reloc
+        1000 .rsrc
+       3A000 .text

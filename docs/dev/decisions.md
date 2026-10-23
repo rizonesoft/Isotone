@@ -119,3 +119,10 @@ Each entry holds:
 - **Decision (a default, D00 T05 §4):** `native/.clang-format` is clang-format's `Microsoft` base style with three deviations: `ColumnLimit: 120` (the suite's line length elsewhere), `PointerAlignment: Left` (`int* p`, the type owns the star), and `IncludeBlocks: Regroup` (includes grouped by kind, sorted within each group). `scripts/native-format.ps1 -Check` enforces it on every first-party source the next commit would carry, and the C++ standard (`D00 T04 §1`) cites it.
 - **Why a default:** no source or operator decision prefers one style; Microsoft's base matches the Windows code the suite reads most (the SDK and Microsoft Learn samples), and the deviations follow the rest of the repository.
 - **Cost of changing:** edit `native/.clang-format`, run `pwsh scripts/native-format.ps1 -Fix`, and commit the reformat as one commit; nothing else depends on the style.
+
+## 2026-10-23: The output size budget
+
+- **Decision:** each app's publish folder stays at or under 30 MB before optional content, the operator's answer the native stack design records (`docs/specs/2026-10-22-native-stack-design.md`, "Operator answers recorded here (2026-10-22)": "each app's publish folder has a 30 MB budget"; "Goals and how each is measured", Output size: "Each app's publish folder at or under 30 MB before optional content (operator answer)").
+- **Budget:** 30 MB
+- **Measure:** decimal megabytes (1 MB is 1,000,000 bytes) over the files an installer ships, program databases excluded (they ship as a separate symbols archive) and optional content excluded by name (`native/size-budget.json`, `optional_content`). `scripts/native-artifact-gate.py` fails `over-budget` above it and `budget-undocumented` when this entry is missing or states another number than `native/size-budget.json` (D00 T05 §6).
+- **Cost of changing:** exceeding the budget needs a new decision entry with the operator's words and the new number on its **Budget:** line, and the same number in `native/size-budget.json`; never a quiet increase (the spec's row).

@@ -77,6 +77,22 @@ pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --preset x6
 
 The tests take the same clang-tidy checks as the libraries. Under `/analyze`, test executables turn off C6326 alone, which GoogleTest's assertion macros raise in every test (`cmake/IsotoneTargets.cmake`).
 
+## Imports and size
+
+An app runs on a clean Windows install with nothing else installed, and its publish folder stays within the budget the operator set:
+
+```powershell
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'python scripts/native-artifact-gate.py'                                    # every preset folder and its vcpkg root
+python scripts/native-artifact-gate.py --publish artifacts/publish/<App>/<rid>                                        # one publish folder against its budget
+```
+
+- `system-dlls.txt` names every DLL an executable may import, each with its reason and the section that needs it, plus the `api-ms-win-*` and `ext-ms-win-*` API sets. A section that imports another system DLL adds it in its own commit. Delay-loaded imports are held to the same list.
+- `sanitizer-dlls.txt` adds the toolset's AddressSanitizer runtime for the sanitizer presets only; the shipping policy never reads it.
+- The vcpkg root of every preset holds no DLL, and every installed library names the static CRT (`LIBCMT` or `LIBCMTD`, never `MSVCRT`).
+- `size-budget.json` sets 30 decimal megabytes per app, program databases and named optional content excluded, and the gate fails `budget-undocumented` unless `docs/dev/decisions.md` ("2026-10-23: The output size budget") states the same number.
+
+The folders are the configure presets of `CMakePresets.json`, never a sweep of `artifacts/native/`, so a stale or probe folder never decides a result.
+
 ## Packages
 
 vcpkg in manifest mode: `vcpkg.json` pins every port to one `builtin-baseline` (the registry commit `9eec002df1cd109f8f104cd966a763daf9751489`, release `2026.10.16`), and `vcpkg-configuration.json` adds the overlay triplets and no registry, so that baseline stays the only one. Every library links statically against the static CRT (`/MT`), built with the pinned MSVC toolset (each triplet sets `VCPKG_PLATFORM_TOOLSET_VERSION` to the pin's selector, which `dev-env.ps1 -Check` enforces). The `test` feature holds GoogleTest; an app build never requests it.

@@ -1,0 +1,22 @@
+# Recorded 2026-10-23: dumpbin /dependents of the x64-asan build_info_test.exe (/MT, AddressSanitizer).
+
+Dump of file artifacts\native\x64-asan\tests\core\build_info_test.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    clang_rt.asan_dynamic-x86_64.dll
+
+  Summary
+
+        1000 .INTR
+        1000 .WEAK
+       11000 .data
+        1000 .fptable
+       1A000 .pdata
+       6B000 .rdata
+        3000 .reloc
+        1000 .rsrc
+      1F3000 .text

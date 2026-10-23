@@ -1,0 +1,37 @@
+# Recorded 2026-10-23: dumpbin /directives of gtest_main.lib from the isotone-x64 triplet, Debug (/MTd).
+
+Dump of file artifacts\vcpkg_installed\x64-release\isotone-x64\debug\lib\manual-link\gtest_main.lib
+
+File Type: LIBRARY
+
+   Linker Directives
+   -----------------
+   /FAILIFMISMATCH:_CRT_STDIO_ISO_WIDE_SPECIFIERS=0
+   /alternatename:_Avx2WmemEnabled=_Avx2WmemEnabledWeakValue
+   /FAILIFMISMATCH:_MSC_VER=1900
+   /FAILIFMISMATCH:_ITERATOR_DEBUG_LEVEL=2
+   /FAILIFMISMATCH:RuntimeLibrary=MTd_StaticDebug
+   /DEFAULTLIB:libcpmtd
+   /FAILIFMISMATCH:annotate_string=0
+   /FAILIFMISMATCH:annotate_vector=0
+   /FAILIFMISMATCH:annotate_optional=0
+   /include:?id@?$num_put@DV?$ostreambuf_iterator@DU?$char_traits@D@std@@@std@@@std@@2V0locale@2@A
+   /include:?id@?$numpunct@D@std@@2V0locale@2@A
+   /DEFAULTLIB:LIBCMTD
+   /DEFAULTLIB:OLDNAMES
+
+  Summary
+
+          10 .CRT$XCU
+          1C .bss
+         240 .chks64
+       15C2C .debug$S
+       6F560 .debug$T
+         22A .drectve
+          9C .pdata
+         624 .rdata
+           8 .rtc$IMZ
+           8 .rtc$TMZ
+          32 .text$di
+         18E .text$mn
+          68 .xdata

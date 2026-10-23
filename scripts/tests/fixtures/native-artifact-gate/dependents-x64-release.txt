@@ -1,0 +1,19 @@
+# Recorded 2026-10-23: dumpbin /dependents of the x64-release build_info_test.exe (/MT).
+
+Dump of file artifacts\native\x64-release\tests\core\build_info_test.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+
+  Summary
+
+        5000 .data
+        1000 .fptable
+        7000 .pdata
+       27000 .rdata
+        2000 .reloc
+        1000 .rsrc
+       A1000 .text

@@ -1,0 +1,21 @@
+# Derived 2026-10-23 from dependents-x64-release.txt with two API set dependencies added, which the API set patterns allow.
+
+Dump of file artifacts\native\x64-release\tests\core\build_info_test.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    api-ms-win-core-synch-l1-2-0.dll
+    ext-ms-win-ntuser-window-l1-1-0.dll
+
+  Summary
+
+        5000 .data
+        1000 .fptable
+        7000 .pdata
+       27000 .rdata
+        2000 .reloc
+        1000 .rsrc
+       A1000 .text

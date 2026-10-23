@@ -1,0 +1,4 @@
+# The DLLs an AddressSanitizer build may import beyond native/system-dlls.txt, read by scripts/native-artifact-gate.py
+# for the sanitizer presets only (D00 T05 §6). A sanitizer build never ships; the shipping policy never reads this file.
+clang_rt.asan_dynamic-x86_64.dll    # the pinned toolset's x64 AddressSanitizer runtime, linked for /MT (D00 T05 §5)
+clang_rt.asan_dynamic-aarch64.dll   # the pinned toolset's ARM64 AddressSanitizer runtime, linked for /MT (D00 T05 §5)
