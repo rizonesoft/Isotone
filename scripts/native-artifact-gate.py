@@ -40,6 +40,7 @@ SANITIZER_DLLS = ROOT / "native" / "sanitizer-dlls.txt"
 PRESETS = ROOT / "native" / "CMakePresets.json"
 BUDGET = ROOT / "native" / "size-budget.json"
 DECISIONS = ROOT / "docs" / "dev" / "decisions.md"
+REGISTER = ROOT / "docs" / "dev" / "native-libraries.md"
 FIXTURES = ROOT / "scripts" / "tests" / "fixtures" / "native-artifact-gate"
 
 
@@ -92,14 +93,49 @@ def import_findings(image, text, patterns):
 DEFAULTLIB_RE = re.compile(r'/DEFAULTLIB:"?([^"\s]+)"?', re.IGNORECASE)
 
 
-def crt_findings(library, text):
-    """A static library names the static CRT (LIBCMT or LIBCMTD) and never the DLL one (MSVCRT or MSVCRTD)."""
+def crt_findings(library, text, crt_none=False):
+    """A static library names the static CRT (LIBCMT or LIBCMTD) and never the DLL one (MSVCRT or MSVCRTD). One that
+    names no CRT at all (assembly only, or built /Zl) passes only when `crt_none`: its port's register row says so."""
     libs = {m.group(1).lower().removesuffix(".lib") for m in DEFAULTLIB_RE.finditer(text)}
     if libs & {"msvcrt", "msvcrtd"}:
         return [f"{library}:crt-not-static:names {', '.join(sorted(libs & {'msvcrt', 'msvcrtd'}))}, the DLL CRT"]
-    if not libs & {"libcmt", "libcmtd"}:
-        return [f"{library}:crt-not-static:names neither LIBCMT nor LIBCMTD"]
+    if not libs & {"libcmt", "libcmtd"} and not crt_none:
+        return [f"{library}:crt-not-static:names neither LIBCMT nor LIBCMTD, and its port's register row does not "
+                f"say it has no CRT"]
     return []
+
+
+def crt_none_ports(register_path=REGISTER):
+    """The ports whose register row has CRT `none: <reason>` (docs/dev/native-libraries.md)."""
+    if not Path(register_path).is_file():
+        return set()
+    lines = Path(register_path).read_text(encoding="utf-8").splitlines()
+    header_at = next((i for i, line in enumerate(lines) if line.strip().startswith("| Library |")), None)
+    if header_at is None:
+        return set()
+    header = [cell.strip() for cell in lines[header_at].strip().strip("|").split("|")]
+    if "vcpkg port" not in header or "CRT" not in header:
+        return set()
+    ports = set()
+    for line in lines[header_at + 2:]:
+        if not line.strip().startswith("|"):
+            break
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        row = dict(zip(header, cells))
+        if row.get("CRT", "").startswith("none:"):
+            ports.add(row.get("vcpkg port", ""))
+    return ports
+
+
+def port_files(installed_root):
+    """{installed file path, lowercased and relative to the installed root: port} from vcpkg's info lists."""
+    files = {}
+    for listing in sorted((Path(installed_root) / "vcpkg" / "info").glob("*.list")):
+        port = listing.name.split("_", 1)[0]
+        for line in listing.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                files[line.strip().lower()] = port
+    return files
 
 
 def preset_folders(presets_path=PRESETS):
@@ -156,7 +192,7 @@ def images(folder):
                   and p.is_file() and not compiler_id_probe(p, folder))
 
 
-def vcpkg_findings(triplet_root, directives):
+def vcpkg_findings(triplet_root, directives, crt_none=frozenset()):
     """(findings, files read): no DLL in the installed tree, and every installed library on the static CRT.
     `directives` maps a .lib to `dumpbin /directives`'s (exit code, output)."""
     dlls = [dll for sub in ("bin", "debug/bin") if (triplet_root / sub).is_dir()
@@ -164,9 +200,11 @@ def vcpkg_findings(triplet_root, directives):
     found = [f"{dll}:dll-in-vcpkg-tree:an installed package ships a DLL" for dll in dlls]
     libs = [lib for sub in ("lib", "debug/lib") if (triplet_root / sub).is_dir()
             for lib in sorted((triplet_root / sub).glob("**/*.lib"))]
+    owners = port_files(Path(triplet_root).parent) if crt_none else {}
     for lib in libs:
         code, text = directives(lib)
-        found += inspected(lib, code, text, lambda out, lib=lib: crt_findings(lib, out))
+        owner = owners.get(Path(lib).relative_to(Path(triplet_root).parent).as_posix().lower())
+        found += inspected(lib, code, text, lambda out, lib=lib, owner=owner: crt_findings(lib, out, owner in crt_none))
     return found, len(libs) + len(dlls)
 
 
@@ -232,7 +270,7 @@ def rule_of(finding):
     return RULE_RE.search(finding).group(1)
 
 
-def check_targets(targets, policies, dependents, directives, say=print):
+def check_targets(targets, policies, dependents, directives, say=print, crt_none=frozenset()):
     """(findings, images checked, vcpkg files checked) over [(name, build folder, policy, vcpkg root)]. `dependents` and
     `directives` map a file to dumpbin's (exit code, output). A preset whose build folder is absent has no images to
     check, but its vcpkg root, kept apart from the build folder, is still checked."""
@@ -250,7 +288,7 @@ def check_targets(targets, policies, dependents, directives, say=print):
         else:
             say(f"native-artifact-gate: {name}: {folder} not built, its images skipped")
         if vcpkg is not None and vcpkg.is_dir():
-            found, files = vcpkg_findings(vcpkg, directives)
+            found, files = vcpkg_findings(vcpkg, directives, crt_none)
             findings += found
             vcpkg_files += files
             say(f"native-artifact-gate: {name}: vcpkg {vcpkg.name}: {files} file(s)")
@@ -356,6 +394,8 @@ def main(argv=None):
                         help="a selected preset that was never built fails input-missing instead of being skipped")
     parser.add_argument("--asan-coverage", action="store_true",
                         help="prove every sanitizer preset instrumented instead of checking imports")
+    parser.add_argument("--register", default=str(REGISTER),
+                        help="the dependency register whose CRT column names the libraries built without a CRT")
     parser.add_argument("--app")
     parser.add_argument("--budget-mb", type=float, help="a budget for probes only; the gate reads native/size-budget.json")
     parser.add_argument("--self-test", action="store_true")
@@ -430,11 +470,12 @@ def main(argv=None):
                     findings.append(f"{folder}:publish-missing:a budgeted app's publish folder does not exist")
                 else:
                     findings += publish_findings(ROOT / folder, app["mb"], budget, read_allowed(SYSTEM_DLLS))[0]
+    crt_none = crt_none_ports(args.register)
     found, checked, vcpkg_files = check_targets(targets, policies, lambda image: dumpbin("/dependents", image),
-                                                lambda lib: dumpbin("/directives", lib))
+                                                lambda lib: dumpbin("/directives", lib), crt_none=crt_none)
     findings += found
     for raw in args.vcpkg_root:
-        found, libs = vcpkg_findings(Path(raw), lambda lib: dumpbin("/directives", lib))
+        found, libs = vcpkg_findings(Path(raw), lambda lib: dumpbin("/directives", lib), crt_none)
         findings += found
         vcpkg_files += libs
         print(f"native-artifact-gate: {raw}: {libs} file(s)")
@@ -485,8 +526,27 @@ def self_test():
     check("a library on LIBCMTD passes", crt_findings("l", fixture("directives-libcmtd.txt")), [])
     check("a library on MSVCRT fails", crt_findings("l", fixture("directives-msvcrt.txt")),
           ["l:crt-not-static:names msvcrt, the DLL CRT"])
-    check("a library naming no CRT fails", crt_findings("l", "/DEFAULTLIB:OLDNAMES"),
-          ["l:crt-not-static:names neither LIBCMT nor LIBCMTD"])
+    check("a library naming no CRT fails", [rule_of(x) for x in crt_findings("l", "/DEFAULTLIB:OLDNAMES")],
+          ["crt-not-static"])
+    check("a library naming no CRT passes when its register row says it has none",
+          crt_findings("l", "/DEFAULTLIB:OLDNAMES", crt_none=True), [])
+    check("a registered CRT-free library naming MSVCRT still fails",
+          [rule_of(x) for x in crt_findings("l", "/DEFAULTLIB:MSVCRT", crt_none=True)], ["crt-not-static"])
+    with tempfile.TemporaryDirectory() as tmp:
+        reg = Path(tmp) / "register.md"
+        reg.write_text("| Library | vcpkg port | CRT |\n| --- | --- | --- |\n| Probe | probe | none: assembly only |\n"
+                       "| Other | other | static |\n", encoding="utf-8")
+        check("the register's CRT-free ports are read", crt_none_ports(reg), {"probe"})
+        root = Path(tmp) / "installed"
+        (root / "isotone-x64" / "lib").mkdir(parents=True)
+        (root / "vcpkg" / "info").mkdir(parents=True)
+        for name in ("probe", "other"):
+            (root / "isotone-x64" / "lib" / f"{name}.lib").write_bytes(b"!<arch>")
+            (root / "vcpkg" / "info" / f"{name}_1.0_isotone-x64.list").write_text(
+                f"isotone-x64/\nisotone-x64/lib/{name}.lib\n", encoding="utf-8")
+        found, _ = vcpkg_findings(root / "isotone-x64", lambda lib: (0, "/DEFAULTLIB:OLDNAMES"), {"probe"})
+        check("only the registered CRT-free port's library passes",
+              [Path(line.split(":crt-not-static:")[0]).name for line in found], ["other.lib"])
 
     presets = {name: (folder, policy) for name, folder, policy, _ in preset_folders()}
     check("the repository's presets build under artifacts/native/",

@@ -13,6 +13,7 @@ Cross-cutting standards for every app in the Isotone Graphics Suite (Stilus, Ges
 | Logging | Serilog | Configured once per app through `Isotone.Core` |
 | Rendering | SkiaSharp (all apps), ComputeSharp (Gesso GPU path) | |
 | Tests | xUnit v3, AwesomeAssertions | See [`testing.md`](testing.md) |
+| Native (C++) | C++23 with MSVC, CMake and Ninja, vcpkg, GoogleTest | See [`cpp.md`](cpp.md) and the register `docs/dev/native-libraries.md`; the native stack replaces the rows above app by app (`docs/specs/2026-10-22-native-stack-design.md`) |
 | JSON | System.Text.Json with source-generated contexts | Newtonsoft.Json is not used |
 
 **A dependency is a decision.** A package outside this table is added by a section that records why, and its license is checked against GPL-3.0 before it lands: permissive (MIT, BSD, Apache-2.0) and LGPL are compatible; a license that forbids redistribution, needs a paid key, or restricts field of use is not.

@@ -4,6 +4,7 @@ The standards every change in the Isotone Graphics Suite answers to. [`AGENTS.md
 
 | File | Covers |
 | ---- | ------ |
+| [`cpp.md`](cpp.md) | The **C++ standard** for the native suite: the language, ownership and lifetimes, errors, threading, calling Windows, untrusted input, SIMD, formatting and suppressions, testing, and libraries |
 | [`shared.md`](shared.md) | Everything all apps share: the stack, C# style, MVVM, DI, logging, errors, documents, performance, commits, and a pointer to the design contract |
 | [`design-contract.md`](design-contract.md) | The **design contract**, binding: docs/design is the source and code implements it 1:1, what fidelity means (exact tokens, geometry within 1 DIP, every state and theme, approved goldens), deviations, the enforcement gates, and the definition of done for a UI section |
 | [`ui.md`](ui.md) | The **UI standard** every surface answers to: themes, the Highlight color and app accents, type, density, focus, icons, window anatomy, accessibility, and the WPF mapping, summarizing the design system in [`docs/design/`](../docs/design/README.md) |

@@ -34,13 +34,15 @@
   21. python scripts/ci_watch.py --self-test (the section-boundary watch over
       every workflow's latest run on main, scheduled ones included)
   22. python scripts/tests/test_build_props.py (a WPF temporary project shares
-      its parent's artifacts folders, D00 T02 §3; asks the pinned SDK)
+      its parent's artifacts folders, D00 T02 §3; asks the pinned SDK), then
+      python scripts/native-deps-lint.py --self-test (D00 T04 §1)
   23. The native stages (skipped with -SkipNative), each inside scripts/dev-env.ps1
       where it builds or inspects, its full output in build/check-all/<stage>.log:
       native toolchain (dev-env.ps1 -Check for x64 and arm64); native x64-debug,
       x64-release, and x64-asan (cmake --workflow: configure, build, test); native
       arm64-debug, arm64-release, and arm64-asan (configure and build: an ARM64
-      test runs on ARM64, D00 T05 §8); native x64-dist and arm64-dist; native
+      test runs on ARM64, D00 T05 §8); native x64-dist and arm64-dist; native deps
+      (native-deps-lint.py: the register and the link graphs, D00 T04 §1); native
       analyze (x64-analyze and arm64-analyze); native std (native-std-check.py
       over every preset folder); native pe (native-pe-check.py over every preset
       folder); native format (native-format.ps1 -Check); native tidy
@@ -145,6 +147,7 @@ try {
     Invoke-PythonGate 'ci_watch self-test' 'ci_watch.py' @('--self-test')
     Invoke-PythonGate 'completion_check self-test' 'completion_check.py' @('--self-test')
     Invoke-PythonGate 'build props tests' 'tests/test_build_props.py' @()
+    Invoke-PythonGate 'native-deps-lint self-test' 'native-deps-lint.py' @('--self-test')
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'
     $results.Add([pscustomobject]@{ Gate = 'python gates'; Status = 'SKIP (no python)'; Seconds = 0 })
@@ -157,6 +160,10 @@ try {
     foreach ($preset in 'x64-debug', 'x64-release', 'x64-asan', 'arm64-debug', 'arm64-release', 'arm64-asan', 'x64-dist', 'arm64-dist') {
       $arch = $preset.Split('-')[0]
       Invoke-InNative "native $preset" $arch "Push-Location native; cmake --workflow --preset $preset; `$c = `$LASTEXITCODE; Pop-Location; exit `$c"
+    }
+    if ($script:Python) {
+      # The register against what the configures above installed, and the link graph of every architecture (D00 T04 §1).
+      Invoke-NativeGate 'native deps' @($script:Python, (Join-Path $RepoRoot 'scripts/native-deps-lint.py'))
     }
     Invoke-NativeGate 'native analyze' @('pwsh', '-NoProfile', '-Command',
       "& '$devEnv' -Arch x64 -Run 'Push-Location native; cmake --preset x64-analyze; `$c = `$LASTEXITCODE; if (-not `$c) { cmake --build --preset x64-analyze; `$c = `$LASTEXITCODE }; Pop-Location; exit `$c'; `$a = `$LASTEXITCODE; " +

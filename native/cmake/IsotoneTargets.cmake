@@ -69,6 +69,7 @@ function(isotone_add_test name)
   endif()
   gtest_discover_tests(${name} DISCOVERY_MODE PRE_TEST)
   set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
+  set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${name})
 endfunction()
 
 # isotone_add_sanitizer_probe(<name> <source> <report>): an executable that commits one memory error on purpose, registered with
@@ -81,6 +82,17 @@ function(isotone_add_sanitizer_probe name source report)
   add_test(NAME ${name} COMMAND ${name})
   set_tests_properties(${name} PROPERTIES LABELS asan-probe PASS_REGULAR_EXPRESSION "${report}")
   set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
+  set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${name})
+endfunction()
+
+# isotone_write_dev_targets(): the developer-only targets (tests, probes, and benchmarks) into
+# ${CMAKE_BINARY_DIR}/isotone-dev-targets.txt, one per line, which scripts/native-deps-lint.py reads: only these may link a
+# test-only or developer-only library (D00 T04 §1, test-only-linked). Called at the end of native/CMakeLists.txt.
+function(isotone_write_dev_targets)
+  get_property(targets GLOBAL PROPERTY ISOTONE_DEV_TARGETS)
+  list(SORT targets)
+  string(JOIN "\n" text ${targets})
+  file(WRITE "${CMAKE_BINARY_DIR}/isotone-dev-targets.txt" "${text}\n")
 endfunction()
 
 # isotone_require_registered_tests(<dir>): every executable under a tests folder went through isotone_add_test. A test

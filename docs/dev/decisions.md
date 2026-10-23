@@ -26,6 +26,15 @@ Each entry holds:
 - **Cost of change:** one `using` per test file (five today), the `PackageReference` in each of the two Gesso test projects (`Gesso.Core.Tests.csproj`, `Gesso.Rendering.Tests.csproj`), and the `PackageVersion` line in `Directory.Packages.props`; moving to plain `Assert` instead would mean rewriting those files' assertions.
 - **Owner:** `D00 T02 §5`.
 
+## 2026-09-30: Native code in a C# suite
+
+- **Date and question:** decided by the operator on 2026-09-30, asked as whether C# loses optimization against C or C++, and whether the languages can be mixed in the suite.
+- **Options then:** all managed code; managed code plus C++/CLI; managed code plus native code admitted by rule over a flat C ABI; a C++ core under a C# shell.
+- **Decision:** managed code plus native code by rule: a native library entered only through a register (its version, provenance, license, advisory identity, and owner), checked against vulnerability advisories, and called through rules for the operating system. The operator: "yes, add all to the todos, sounds good".
+- **Record:** this entry was owed by the 2026-09-30 version of `D00 T04 §1` and never written; it is recorded on 2026-10-23 as history.
+
+**Superseded:** 2026-10-22 by "The native stack"; the register, the advisory requirement, and the rules for calling Windows carry over into standards/cpp.md and docs/dev/native-libraries.md (D00 T04 §1)
+
 ## 2026-10-22: The native stack, C++20 with our own UI
 
 - **Date:** decided by the operator on 2026-10-22, the same day the operator first wrote "please note that we will stay with WPF" and then reopened the question: "Then I do dissagree with you about staying with C# and WPF. We can do so much more, and if we get it rignt it will be eppic, if we move to C++ 20 and WinUI3."; asked "What will give us the most control and speed. + small output sizes and dependencies?"; and concluded "I feel that C++ and our own UI will get is much closer to Photoshop quality.", confirming "Yes, record it and spec it" to the question "Make C++20 with our own UI (Win32, Direct2D, DirectWrite, Direct3D) the suite's stack, and start the architecture spec?". It replaces the WPF-only decision in `AGENTS.md` (The decisions this project runs on) and that day's "stay with WPF" note.
