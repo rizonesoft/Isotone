@@ -11,7 +11,7 @@ The glyphs are one geometry drawn two ways: the master (Stilus: the Bezier curve
 Gesso: the paintbrush laying a tapered stroke; Albumen: the six-blade iris in its rim; Tinctura: a twelve-hue ring;
 Capio: four crop corners around a crosshair; Folium: a page with a header, columns, and a placeholder frame) and the
 small glyph (the curve heavier, the brush alone, the iris without its glints, the ring with wider gaps, the corners and
-crosshair heavier, the page with three heavy lines). Edit this script, never the SVGs.
+crosshair heavier, the page with four heavy lines in place of its text columns). Edit this script, never the SVGs.
 Usage: python scripts/build-app-icons.py          rewrite the files
        python scripts/build-app-icons.py --check  exit 1 when a committed file differs from what this script writes
 Requires resvg-py and Pillow (the small variants are fitted to the rendered glyph bounds).

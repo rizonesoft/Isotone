@@ -60,7 +60,7 @@ At taskbar and title-bar sizes an icon is recognized by its silhouette, so below
 - Albumen: the rim, the blades and the opening, without the glints.
 - Tinctura: the hue ring with 3 degrees between segments, so the colors stay apart.
 - Capio: the corners at a 22 unit stroke and the crosshair at 10.
-- Folium: the page, the header, the frame, and three heavy lines in place of the text columns.
+- Folium: the page, the header, and the frame, with four heavy lines in place of the text columns: three in the left column and one under the frame.
 - The glyph is scaled to fill a box inset from the tile (1.5 px at 16, 2.6 px at 24, 3.2 px at 32) and centered above the band.
 - The tile keeps the master's graphite gradient with a smaller corner radius (3, 4, 6), and the spectrum band is a straight bar 2, 2.5, and 3.5 px tall, clipped to the tile corners; the inner highlight and the band crest are dropped.
 - The masters, the variants and the icon inside each `<app>-splash.svg` are written by `scripts/build-app-icons.py` from one geometry, so a change to a glyph carries through every size; edit the script, never the SVGs, and `python scripts/build-app-icons.py --check` fails when a committed file differs from what it writes. The suite icon's variants come from `scripts/generate-small-icons.py`.

@@ -225,3 +225,32 @@ OVERALL: needs-attention
 Round 6 first returned no review (the reviewer was at capacity, recorded above as `none`); its retry after the 15-minute backoff, at the newly pinned medium effort, is the round. Four lenses approved; the one finding was verified and is real.
 
 1. P3, two AppIcon preview captions still said 48 px: verified. The ladder heading says `40 and up the master` and the Don't caption says `below 40 px`; the design page is regenerated and its check passes.
+
+## Round 9: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T09:36:57Z
+- Effort: medium
+- Lines: 14
+- Digest: cea4a88fdbe18ffa
+
+adversarial: approve
+
+consistency: approve
+
+integration: approve
+
+source-defect: needs-attention
+
+1. P3 `scripts/build-app-icons.py:173`: Folium’s small glyph adds a fourth heavy text line, while `docs/design/app-icons.md:63` specifies three. Demonstration: parse each generated Folium small SVG and count paths with stroke `#8A93A6`: all three sizes contain four, yet `python scripts/build-app-icons.py --check` passes. Reconcile the generator and canonical spec.
+
+record: approve
+
+HIGHEST: P3
+OVERALL: needs-attention
+
+## Response to round 7
+
+Four lenses approved; the one finding was verified and is real.
+
+1. P3, the spec said Folium's small glyph has three heavy lines while the generator draws four: verified. The rendered four (three in the left column, one under the frame) are what the operator saw, so `docs/design/app-icons.md` and the generator's docstring now say four; `build-app-icons.py --check` and the design page check pass.
