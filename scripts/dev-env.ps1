@@ -141,7 +141,11 @@ if ($vs) {
 
     # 3. What the environment actually runs.
     Add-Row 'MSVC toolset' $Pin.msvc.toolset $env:VCToolsVersion
-    $banner = Invoke-Tool 'cl' @()
+    # cl reads extra options from CL and _CL_ on every run (a developer's /nologo hides the banner), so it is
+    # identified with both cleared for this one call and the developer's values restored after it.
+    $savedCl, $savedClTail = $env:CL, $env:_CL_
+    $env:CL, $env:_CL_ = $null, $null
+    try { $banner = Invoke-Tool 'cl' @() } finally { $env:CL, $env:_CL_ = $savedCl, $savedClTail }
     Add-Row 'MSVC compiler' $Pin.msvc.compiler (Read-Version $banner 'Version (\d+\.\d+\.\d+)')
     $clTarget = Read-Version $banner 'Version \S+ for (\w+)'
     Add-Row 'MSVC target' ($(if ($Arch -eq 'arm64') { 'ARM64' } else { 'x64' })) $clTarget

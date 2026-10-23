@@ -91,6 +91,14 @@ class DevEnvCheckTest(unittest.TestCase):
                 self.assertEqual([k for k, (_, ok) in rows.items() if not ok], [item])
 
 
+    def test_compiler_options_in_the_environment_do_not_hide_the_compiler(self):
+        # CL and _CL_ are the developer's own compiler options; /nologo there must not hide the banner the check reads.
+        env = dict(os.environ, CL="/nologo", _CL_="/nologo")
+        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Check", "-Arch", "x64"],
+                              capture_output=True, text=True, timeout=300, env=env)
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+        self.assertIn("MSVC compiler pinned", proc.stdout)
+
     def test_reentering_keeps_the_environment_bounded(self):
         # Four entries in one process, alternating architectures: each starts from the first entry's environment, so
         # PATH never grows past what one entry adds and the last check still enters the pinned toolset.
