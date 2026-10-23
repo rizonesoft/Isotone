@@ -55,7 +55,7 @@ track: W5
 |   2   |   §2    | The vcpkg manifest, baseline, and triplets | §1 |  [x]   |
 |   3   |   §3    | The CMake build, presets, and the test harness | §2 |  [x]   |
 |   4   |   §4    | The format, clang-tidy, and /analyze gates | §3 |  [x]   |
-|   5   |   §5    | The AddressSanitizer lane | §3 |  [ ]   |
+|   5   |   §5    | The AddressSanitizer lane | §3 |  [x]   |
 |   6   |   §6    | The import and size gates | §3 |  [ ]   |
 |   7   |   §7    | The native stages of check-all and the gate card | §4, §5, §6 |  [ ]   |
 |   8   |   §8    | CI for x64 and ARM64 | §7, D00 T04 §1 |  [ ]   |
@@ -168,6 +168,12 @@ The whole CTest suite also runs under AddressSanitizer with dependencies built b
 - [ ] Commit: `"workspace: the AddressSanitizer lane with its negative probe"`
 
 **Test checkpoint:** Driven run with evidence: `cmake --workflow --preset x64-asan` exits 0 with `asan_probe` reported as passing because the expected `heap-buffer-overflow` report appeared (quoted); building the probe without `/fsanitize=address` (a scratch preset) makes it fail, proving the check depends on instrumentation (quoted, then removed). Cheaper substitute that fails: a sanitizer preset that nothing proves is instrumenting.
+
+> **Verified:** 2026-10-23 | §5 | D00 T05 §5 at `68a72aa`: x64 AddressSanitizer supported and ARM64 supported in preview for the pinned toolset (Microsoft Learn, recorded in `native/README.md`), so both lanes are required; `native/triplets/isotone-arm64-asan.cmake` and the `arm64-asan` presets beside `x64-asan`, `/INCREMENTAL:NO` on every sanitized target, the `x64-asan` test preset's runtime `PATH` and `ASAN_OPTIONS`; `cmake --workflow --preset x64-asan` passes 5 of 5 with `asan_probe` passing on `ERROR: AddressSanitizer: heap-buffer-overflow`; `arm64-asan` builds and its probe imports `clang_rt.asan_dynamic-aarch64.dll`; built without `/fsanitize=address`, `asan_probe` fails with `Required regular expression not found`; `dev-env.ps1 -Check`: 23 checked, 0 mismatch on x64 and arm64; check-all: all gates passed
+> **Review:** round 1, candidate `1cd7c9e..68a72aa` -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 1 of cap 33, gpt-6.1-sol medium). Independent: gpt-6.1-sol medium via `scripts/review-dispatch.py`, one round approving every lens. Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T05-s5.md. Attestation: docs/reviews/00-workspace/D00-T05-s5.attest.json
+> **Plan review:** gpt medium, filed D00 T05 §7, D00 T05 §8 (10 findings: 8 filed in 174c23d, 1 accepted and corrected in place in D00 T05 §6, 1 rejected) (run 20261023-D00-T05-S5-gpt)
+> **CRUD:** not applicable (build presets, a triplet, and a test probe, with no user record, document, or setting)
+> **Duration:** 2026-10-23T14:06:36Z to 2026-10-23T14:27:54Z
 
 ## 6. The Import and Size Gates
 
