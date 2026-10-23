@@ -343,3 +343,44 @@ Every finding was verified against the files, the machine, or the cited document
 5. P2, the C# removal consumed the C++ proof standard without depending on it: verified. `D00 T06 §3` depends on `D00 T05 §10`.
 6. P2, the pin conflated the toolset selector with the compiler version: verified on this machine (`cl.exe` in toolset folder 14.51.36231 reports 19.51.36260). `native/toolchain.json` records the selector, which `-vcvars_ver` and the triplets take, and the compiler version `cl` prints, and `dev-env` checks each against its own source.
 7. P3, the Python gate count was 19: verified (20 since `ci_watch.py` joined). Corrected.
+
+## Round 8: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T01:53:05Z
+- Effort: xhigh
+- Lines: 22
+- Digest: 4c251485c9e0d1ac
+
+### adversarial: needs-attention
+
+1. P1 `todo/00-workspace/TODO-04-native-code-policy.md:65`: `test-only-linked` inspects only the `x64-release` link graph. An ARM64-only link from an app to `GTest::gtest` leaves that graph unchanged; registration, feature placement, and system-import checks still accept it. Require link-closure checks and negative fixtures for both architectures.
+
+### consistency: needs-attention
+
+2. P1 `todo/00-workspace/TODO-07-native-replan.md:122`: Phase 1 must build menu-bar and docking foundations, but §4 leaves their layout maps in Phase 2 and the conformance helpers in Phase 3. Requirement 4 of the re-plan demands maps and conformance tests for every such surface. Following both instructions requires later-phase prerequisites. Move the necessary map work earlier or explicitly define the foundation test-host exemption.
+
+### integration: needs-attention
+
+3. P2 `todo/00-workspace/TODO-06-retire-csharp.md:97`: Retirement leaves the tracked `tests/Isotone.runsettings` behind. Neither §3’s deletion list, the `managed-source` extensions, nor the final filename scan includes `.runsettings`. All prescribed checks can therefore pass with .NET test configuration remaining, contradicting the Goal. Remove it and cover its reintroduction.
+
+4. P2 `todo/00-workspace/TODO-06-retire-csharp.md:75`: The required `python scripts/check-local-tools.py` invocation lacks its mandatory mode. Running it returns exit 2: “the following arguments are required: mode”. Removing the SDK branch does not change that parser contract. Specify `check` in this item and its checkpoint.
+
+### source-defect: needs-attention
+
+5. P2 `todo/00-workspace/TODO-05-native-spine.md:159`: The ARM64 command ends with `--output-junit` without its required filename, leaving the promised report invocation incomplete. Specify a distinct report path per configuration and upload those paths. [CTest’s documented syntax](https://cmake.org/cmake/help/latest/manual/ctest.1.html#cmdoption-ctest-output-junit) is `--output-junit <file>`.
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 8
+
+Every finding was verified against the files and the cited documentation and is real.
+
+1. P1, the test-only link check read only the x64 graph: verified. `test-only-linked` reads both the `x64-release` and `arm64-release` link graphs, with fixtures failing on an x64-only and an ARM64-only link.
+2. P1, the Phase 1 foundations would need layout maps that come later: verified. The re-plan rules now scope requirement 4 to product sections (app sections, and Isotone UI controls and docking as an app uses them); the foundations prove their mechanisms in a test host with placeholder menus and panels and cite no map, as `D00 T07 §3` now says.
+3. P2, `tests/Isotone.runsettings` survived the removal: verified (the only .NET-only file outside `src/` and the root .NET files). It is in the deletion list and the Outcome's `git ls-files` check, and `managed-source` also refuses `.runsettings`, `.ruleset`, `.nuspec`, and `packages.lock.json`.
+4. P2, `check-local-tools.py` needs its mode: verified (`mode` is required). The item and checkpoint run `check-local-tools.py check`.
+5. P2, `--output-junit` needs a file: verified against CTest. Each configuration writes `<folder>/junit-<configuration>.xml`.
