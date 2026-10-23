@@ -247,10 +247,13 @@ def splash(app, current):
     inner = master(app).split('\n', 1)[1].rsplit('</svg>', 1)[0]
     nested = f'<svg x="56" y="92" width="136" height="136" viewBox="0 0 256 256">\n{inner}</svg>'
     pattern = re.compile(r'<svg x="56" y="92" width="136" height="136" viewBox="0 0 256 256">.*?\n</svg>', re.S)
-    # Counted before replacing: a second nested icon (an old one left behind) would otherwise survive under the new.
-    found = len(pattern.findall(current))
-    if found != 1:
-        raise SystemExit(f'{app}-splash.svg holds {found} nested master icons; it must hold exactly one')
+    # Counted before replacing, by element, not by one exact tag: a second nested icon (an old one left behind,
+    # whatever its attributes) would otherwise survive under the new. The card is the root svg; the icon its only
+    # nested one.
+    nested_svgs = len(re.findall(r'<svg\b', current)) - 1
+    if nested_svgs != 1 or len(pattern.findall(current)) != 1:
+        raise SystemExit(f'{app}-splash.svg holds {nested_svgs} nested svg elements; it must hold exactly one, the '
+                         f'master icon at x 56, y 92')
     return pattern.sub(lambda _: nested, current)
 
 

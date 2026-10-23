@@ -157,14 +157,21 @@ function Repair-Hooks {
   Write-Host 'provision: core.hooksPath = tools/githooks'
 }
 
-function Test-PythonLeg {
+function Get-Python3 {
+  # The first of python and python3 that runs Python 3: the python leg, the pydeps leg, and its repair all use it.
   foreach ($name in @('python', 'python3')) {
     $cmd = Get-Command $name -ErrorAction SilentlyContinue
     if ($cmd) {
       $v = (& $cmd.Source --version 2>&1) -join ' '
-      if ($v -match 'Python 3\.') { return @{ Name = 'python'; Ok = $true; Detail = $v.Trim() } }
+      if ($v -match 'Python 3\.') { return @{ Path = $cmd.Source; Version = $v.Trim() } }
     }
   }
+  return $null
+}
+
+function Test-PythonLeg {
+  $py = Get-Python3
+  if ($py) { return @{ Name = 'python'; Ok = $true; Detail = $py.Version } }
   return @{ Name = 'python'; Ok = $false; Detail = 'Python 3 not on PATH (install from python.org or winget Python.Python.3.14)' }
 }
 
@@ -174,12 +181,12 @@ function Get-PinnedPyDeps {
 }
 
 function Test-PyDepsLeg {
-  $py = Get-Command python -ErrorAction SilentlyContinue
+  $py = Get-Python3
   if (-not $py) { return @{ Name = 'pydeps'; Ok = $false; Detail = 'no python to check (see the python leg)' } }
   $wrong = @()
   foreach ($pin in Get-PinnedPyDeps) {
     $name, $want = $pin -split '=='
-    $got = (& $py.Source -c "import importlib.metadata as m`ntry: print(m.version('$name'))`nexcept m.PackageNotFoundError: print('missing')" 2>$null) -join ''
+    $got = (& $py.Path -c "import importlib.metadata as m`ntry: print(m.version('$name'))`nexcept m.PackageNotFoundError: print('missing')" 2>$null) -join ''
     if ($got.Trim() -ne $want) { $wrong += "$name $($got.Trim()) (want $want)" }
   }
   if ($wrong.Count -eq 0) { return @{ Name = 'pydeps'; Ok = $true; Detail = "$((Get-PinnedPyDeps).Count) pinned packages" } }
@@ -187,9 +194,9 @@ function Test-PyDepsLeg {
 }
 
 function Install-PyDeps {
-  $py = (Get-Command python -ErrorAction SilentlyContinue).Source
-  if (-not $py) { Write-Warning 'provision: pydeps needs python on PATH first'; return }
-  & $py -m pip install --disable-pip-version-check -r (Join-Path $Root 'scripts\requirements-icons.txt')
+  $py = Get-Python3
+  if (-not $py) { Write-Warning 'provision: pydeps needs Python 3 on PATH first'; return }
+  & $py.Path -m pip install --disable-pip-version-check -r (Join-Path $Root 'scripts\requirements-icons.txt')
 }
 
 function Test-All {

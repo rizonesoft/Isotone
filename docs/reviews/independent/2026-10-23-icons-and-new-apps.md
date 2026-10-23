@@ -87,3 +87,41 @@ Every finding was verified and is real; source-defect and record approved.
 1. P1, each §6 checkpoint claimed `validate` refuses a deferral without the operator's words: verified, it does not. The checkpoints now name the real guards: the completion review, and the release's backlog review (`release-backlog-unreviewed`), which refuses the `<app>-v1.0.0` stamp until every backlog entry for the app is promoted or quotes the operator; §6's Done-when keeps deferral to the operator's own words and has an unattended run plan the row instead.
 2. P2, §3 asked for two phase-specific `to-author` rows the Totals schema does not allow: verified. The proof is now a count of rows reading `to-author <ref> §5` and `§6` against the section design's two phase totals, with the Totals table's one `to-author` row equal to their sum.
 3. P1, the release and design gates knew only the first three apps: verified. `RELEASE_APPS` now names Tinctura, Capio, and Folium and drives `RELEASE_TAG_PATTERN` and `RELEASE_ITEM_RE`, so their release sections meet the backlog gate and their `reviewed:` records parse; `DESIGN_DOMAIN_APPS` maps domains 07 to 09 and the shared core to every app; self-test cases cover each new app. Each plan's §5 now extends every remaining app list in the tooling (`release-manifest.ps1`, `build-design-site.py`, and any other the named `git grep` prints), and `todo/README.md` lists the new status forms.
+
+## Round 4: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T08:51:08Z
+- Effort: xhigh
+- Lines: 20
+- Digest: d64a34a1b2c4de08
+
+adversarial: needs-attention
+
+1. P1 `todo/07-tinctura/TODO-01-tinctura-plan.md:121`: §5 gates §6 on the published `tinctura-v0.1.0`, contradicting native-replan requirement 6, which forbids later phases depending on publication. An in-memory split with the release candidate complete and publication awaiting operator credentials makes `resolve 'D07 T01 §6'` return 4; depending on the release candidate returns 0. Capio and Folium repeat this conflict. Gate parity planning on the completed release candidate and adjust the “shipped” wording.
+
+consistency: needs-attention
+
+2. P3 `docs/design/components/AppIcon/preview.html:56`: The published construction caption still specifies tile `rx 48`, while the updated spec and generated masters use `rx 52`. Regenerating the design page preserves this contradiction because the caption remains in its source.
+
+integration: needs-attention
+
+3. P2 `tools/provision.ps1:177`: The new package verification and installation functions recognize only `python`, although the existing Python leg and `check-all.ps1` support `python3`. A mock exposing the interpreter only as `python3` returns Python-leg `OK=True` and package-leg `OK=False`, with “no python to check”; repair also selects only `python`. Reuse the interpreter selection across these functions.
+
+source-defect: needs-attention
+
+4. P2 `scripts/build-app-icons.py:249`: The duplicate-splash check counts only SVGs matching one exact opening tag. In an in-memory probe, inserting the pre-Solid Gesso nested icon with an added `class="old-icon"` attribute leaves two nested icons, yet `main(['build-app-icons.py', '--check'])` returns 0 and prints `app icons: 0 stale`. Count nested icons structurally so harmless attribute differences cannot hide an overlaid stale glyph.
+
+record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 3
+
+Every finding was verified and is real; record approved.
+
+1. P1, each §6 waited on the published 0.1.0, which requirement 6 forbids: verified. §5 now adds the 0.1.0 release-candidate section (built, tested, packaged, signing-ready) to §6's Depends On, never the publication section that may wait on the operator's credentials; the §6 wording and the three Phase 42, 44, and 46 paragraphs say "the completed 0.1.0 release candidate".
+2. P3, the AppIcon preview's caption still said `rx 48`: verified. It says `rx 52`, and the design page is regenerated.
+3. P2, the `pydeps` leg and its repair looked only for `python`: verified. `tools/provision.ps1` has one `Get-Python3` that tries `python` then `python3`, and the python leg, the pydeps check, and its repair all use it.
+4. P2, a nested icon with different attributes escaped the splash count: verified. The check counts every nested `<svg` element (the card is the root) and requires exactly one, the master at x 56, y 92; a probe adding a second icon with `class="old-icon"` now fails naming the count.

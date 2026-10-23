@@ -1199,7 +1199,7 @@ Tinctura, the color picker and color studio, is one of the three apps the operat
 
 ### Phase 42 -- Tinctura parity and Tinctura 1.0.0
 
-With `tinctura-v0.1.0` shipped, `D07 T01 §6` authors this phase's files against what shipped: every remaining row of `docs/parity/tinctura-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `tinctura-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
+With the `tinctura-v0.1.0` release candidate complete (its publication may still wait on the operator's credentials, which never holds this phase), `D07 T01 §6` authors this phase's files against it: every remaining row of `docs/parity/tinctura-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `tinctura-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
 
 |  ✔  | Section      | Deliverable                                 | Items |
 | :-: | ------------ | ------------------------------------------- | :---: |
@@ -1219,7 +1219,7 @@ Capio, the screenshot and screen recording app, is one of the three apps the ope
 
 ### Phase 44 -- Capio parity and Capio 1.0.0
 
-With `capio-v0.1.0` shipped, `D08 T01 §6` authors this phase's files against what shipped: every remaining row of `docs/parity/capio-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `capio-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
+With the `capio-v0.1.0` release candidate complete (its publication may still wait on the operator's credentials, which never holds this phase), `D08 T01 §6` authors this phase's files against it: every remaining row of `docs/parity/capio-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `capio-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
 
 |  ✔  | Section      | Deliverable                              | Items |
 | :-: | ------------ | ---------------------------------------- | :---: |
@@ -1239,7 +1239,7 @@ Folium, the page layout and publishing app, is one of the three apps the operato
 
 ### Phase 46 -- Folium parity and Folium 1.0.0
 
-With `folium-v0.1.0` shipped, `D09 T01 §6` authors this phase's files against what shipped: every remaining row of `docs/parity/folium-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `folium-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
+With the `folium-v0.1.0` release candidate complete (its publication may still wait on the operator's credentials, which never holds this phase), `D09 T01 §6` authors this phase's files against it: every remaining row of `docs/parity/folium-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `folium-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
 
 |  ✔  | Section      | Deliverable                               | Items |
 | :-: | ------------ | ----------------------------------------- | :---: |
