@@ -186,3 +186,42 @@ Both findings were verified and are real; adversarial, source-defect, and record
 
 1. P2, Folium's §3 prescribed "master pages", the term InDesign retired: verified against Adobe's documentation, which calls them Parent Pages and names Master Page as the former term. §3 now requires the terminology of the current InDesign release taken from Adobe's current documentation, never memory, and both Folium terms say parent pages.
 2. P3, two references in `docs/parity/gesso-section-design.md` still said "Phase 31, now 41": verified. Both say "Phase 31, then 41, now 47", and the historical renumbering note in `docs/parity/albumen-section-design.md` records the second move; `git grep -E "now 4[1-5]"` over `todo/` and `docs/parity/` finds nothing.
+
+## Round 7: none
+
+- Writer: claude
+- Run: 2026-10-23T09:14:39Z
+- Skipped: sol (exited 1)
+- Lines: 1
+- Digest: 0555d87060386853
+
+No reviewer returned a review. This round is not an approval.
+
+## Round 8: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T09:33:49Z
+- Effort: medium
+- Lines: 14
+- Digest: e38a642a1e70080b
+
+adversarial: approve
+
+consistency: needs-attention
+
+1. P3 `docs/design/components/AppIcon/preview.html:66`: The published “Don't” caption still prohibits drawing the master below 48 px, contradicting the corrected rule requiring the master from 40 px. Line 47 repeats the old threshold. Demonstration: `python scripts/build-design-site.py --check` passes while the generated page retains “Draw the master below 48 px”. Update both captions to 40 px and regenerate the page. The actual file-selection correction from round 1 is settled; these remaining captions contradict it.
+
+integration: approve
+
+source-defect: approve
+
+record: approve
+
+HIGHEST: P3
+OVERALL: needs-attention
+
+## Response to round 6
+
+Round 6 first returned no review (the reviewer was at capacity, recorded above as `none`); its retry after the 15-minute backoff, at the newly pinned medium effort, is the round. Four lenses approved; the one finding was verified and is real.
+
+1. P3, two AppIcon preview captions still said 48 px: verified. The ladder heading says `40 and up the master` and the Don't caption says `below 40 px`; the design page is regenerated and its check passes.
