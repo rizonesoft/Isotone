@@ -185,9 +185,9 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T05 §10` | The proof standard for C++                                                               |   4   |
 | [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |   9   |
 | [ ] | `D00 T04 §3`  | The native advisory job                                                                  |   6   |
-| [ ] | `D00 T06 §1`  | Tag csharp-final and remove the C# trees and the .NET build                              |   8   |
-| [ ] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   7   |
-| [ ] | `D00 T06 §3`  | Retarget the tooling, agents, skills, and root documents, and guard against managed code |   8   |
+| [ ] | `D00 T06 §1`  | Retarget the gates that read the C# sources                                              |   3   |
+| [ ] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   8   |
+| [ ] | `D00 T06 §3`  | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code |  12   |
 | [ ] | `D00 T07 §1`  | Re-plan the workspace files                                                              |   8   |
 | [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |   7   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |   7   |
@@ -1260,7 +1260,7 @@ Two accelerations wait for the apps to be complete (operator decision 2026-09-27
 
 |  ✔  | Section       | Deliverable                                                                | Items |
 | :-: | ------------- | -------------------------------------------------------------------------- | :---: |
-| [ ] | `D00 T07 §42` | Re-plan Phase 44: On-device models and the GPU develop path                |   6   |
+| [ ] | `D00 T07 §42` | Re-plan Phase 44: On-device models and the GPU develop path                |   8   |
 | [ ] | `D01 T12 §1`  | The local inference runtime                                                |  14   |
 | [ ] | `D01 T12 §2`  | The model catalog, downloads, and license records                          |  15   |
 | [ ] | `D01 T12 §3`  | The Model Manager surface in Isotone.UI                                    |  14   |

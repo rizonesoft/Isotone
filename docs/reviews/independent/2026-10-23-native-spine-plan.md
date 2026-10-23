@@ -198,3 +198,56 @@ Every finding was verified against the repository or the cited documentation and
 4. P1, GoogleTest's `cxx_std_17` would add a second standard switch: verified against CMake's compile-feature propagation. The build uses `CMAKE_CXX_STANDARD 23` with `CMAKE_CXX23_STANDARD_COMPILE_OPTION` set to the pinned switch, so feature negotiation is satisfied by the one switch; the standard check proves it on the GoogleTest consumer.
 5. P2, registry helper ports have no upstream release: verified. The register carries them as build-time helpers with `microsoft/vcpkg` at the baseline commit and no advisory identity, checked exactly, with fixtures.
 6. P2, `builtin-baseline` and `default-registry` together make the manifest baseline ineffective: verified against the pinned vcpkg tool. `vcpkg-configuration.json` holds only the overlay triplets, and the configure must show no baseline warning.
+
+## Round 5: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T01:04:47Z
+- Effort: xhigh
+- Lines: 28
+- Digest: dc28074ed9b2fc0a
+
+### adversarial: needs-attention
+
+1. P1 `todo/00-workspace/TODO-05-native-spine.md:98`: The x64 test presets lack an empty-suite failure policy. Suppress test registration for x64 Debug and Release while retaining the executable builds and ARM64 registration: ordinary CTest can return success with no tests, leaving these check-all stages green. Require `execution.noTestsAction: "error"` and an empty-suite negative probe. [CTest behavior](https://cmake.org/cmake/help/v4.3/manual/ctest.1.html#cmdoption-ctest-no-tests).
+
+### consistency: needs-attention
+
+2. P1 `todo/00-workspace/TODO-04-native-code-policy.md:95`: Round 4 introduces mandatory helper rows with Advisory identity `none: build-time helper, not linked`, but §3 still requires an OSV or feed query for every row and rejects missing identities. GoogleTest’s helper rows therefore cannot satisfy the real-register checkpoint as written. Carry the validated helper exemption into the advisory algorithm and its fixtures.
+3. P1 `todo/00-workspace/TODO-06-retire-csharp.md:97`: The checkpoint requires no active-stack references outside history and parked TODOs, but line 16 explicitly leaves standards and developer-document rewrites to `D00 T07 §2`, which depends transitively on this section. Following those ownership assignments leaves references in `standards/` and `docs/dev/build.md`, making this checkpoint impossible before its dependent work runs.
+4. P2 `todo/00-workspace/TODO-07-native-replan.md:114`: The checkpoint demands empty stack-grep output over every owned file, while §2 owns developer documentation containing preserved decision history. Line 107 permits history matches, but the checkpoint does not. Running the prescribed expression against `docs/dev/decisions.md` demonstrates the contradiction. Apply the history exception consistently.
+5. P2 `todo/00-workspace/TODO-07-native-replan.md:675`: The last re-plan section omits the terminal `groom-plan` sweep and whole-tree plan review required by the governing plan’s Acceptance section. Every listed checkpoint can pass without that final review returning no P1 or P2. Assign both requirements an explicit step and checkpoint.
+
+### integration: needs-attention
+
+6. P1 `todo/00-workspace/TODO-06-retire-csharp.md:62`: Deleting `src/` precedes the gate repairs assigned to §3. Evaluating the unchanged design baseline against the removed sources produces 1,479 stale entries covering 2,046 findings, so the commit hook refuses §1; parked source claims also fail check-all until §3. Removing `global.json` additionally breaks the still-scheduled .NET pin jobs until §2. These dependent changes must share the removal boundary to keep the campaign running.
+7. P1 `todo/00-workspace/TODO-06-retire-csharp.md:88`: Excluding blocked and superseded files from coverage leaves five Current state blocks against the existing absolute `COVERAGE_FLOOR = 78`. The specified filtering therefore fails even with every eligible block covered, and the governing rules forbid simply lowering the floor to pass. Define the coverage migration and test it against the actual parked-tree shape.
+8. P1 `todo/00-workspace/TODO-04-native-code-policy.md:54`: Round 4 adds a mandatory ARM64 CI smoke run and failing NEON probe to §2, but its dependencies still stop at `D00 T05 §7`. After those prerequisites ship, §2 is graph-ready while the required ARM64 job from `D00 T05 §8` may not exist. Add §8 as a prerequisite.
+9. P2 `todo/00-workspace/TODO-06-retire-csharp.md:77`: The cleanup never assigns removal of the SDK branch in `scripts/check-local-tools.py`. That retained script unconditionally reads `global.json`; a read-only simulation of its removal raises `Unreadable`. The mixed CLI/Python/SDK task must be retargeted explicitly, with its SDK fixtures updated, rather than only changing automation descriptions or deleting whole tasks.
+
+### source-defect: needs-attention
+
+10. P2 `todo/00-workspace/TODO-05-native-spine.md:98`: The preset still sets `VCPKG_OVERLAY_TRIPLETS` to `native/triplets`, although commands run from `native/`. This command-line overlay resolves to `<repo>/native/native/triplets`. The corrected configuration-file overlay can conceal the invalid preset value, so existing successful-install checkpoints do not prove it works. Use `${sourceDir}/triplets` or remove the duplicate override. [CMake integration](https://learn.microsoft.com/en-us/vcpkg/users/buildsystems/cmake-integration#vcpkg_overlay_triplets), [pinned path resolution](https://github.com/microsoft/vcpkg-tool/blob/98d7cb0cf1f4686a3e43aa5672b6230c1d56bce8/src/vcpkg/vcpkgpaths.cpp#L92-L130).
+
+### record: needs-attention
+
+11. P2 `todo/00-workspace/TODO-06-retire-csharp.md:68`: The required readback names `csharp-final:src/Stilus/Bezier.sln`, but that file is absent from the candidate. `git ls-files '*.sln' '*.slnx'` lists only `Isotone.slnx`, and no preceding spine section creates the named solution. Tagging the prescribed HEAD cannot make this checkpoint pass. Read back an existing tracked reference file.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 5
+
+This record's round 5 covers `D00 T05` and `D00 T04` after round 4, and the new `D00 T06` and `D00 T07`. Every finding was verified against the files, the repository, or the cited documentation and is real.
+
+1. P1, an empty test suite passes CTest: verified. Every test preset sets `execution.noTestsAction` to `error`, with a probe that registers no test and must fail.
+2. P1, helper rows would fail the advisory job as unmapped: verified. A validated helper row with the exact `none: build-time helper, not linked` identity is reported `helper` and not queried; a non-helper row with that identity stays `unmapped`; fixtures cover both.
+3. P1, `D00 T06`'s grep would hit the standards and developer docs `D00 T07 §2` rewrites later: verified. The Outcome and checkpoint exclude `standards/` and `docs/dev/`, which `D00 T07 §2` owns.
+4. P2, the re-plan checkpoint forbade the history lines its item allows: verified. Every `D00 T07` checkpoint now accepts lines that name the C# code as history and requires them to be listed.
+5. P2, the final groom and whole-tree plan review had no owner: verified. The last re-plan section runs `groom-plan` over the whole tree and a whole-tree plan review to a round with no P1 or P2.
+6. P1, deleting `src/` first would make the commit hook, the claims gate, and the .NET pin jobs fail before their repairs: verified (1,479 stale baseline entries). `D00 T06` is reordered so every commit stays green: §1 retargets design-lint with an empty baseline and defers parked claims while the sources exist, §2 retires the .NET automations while `global.json` exists, and §3 tags and deletes last.
+7. P1, excluding parked files from coverage would break the absolute floor: verified (`COVERAGE_FLOOR = 78`). Deferred claims are not re-measured but still count toward coverage, so the floor holds unchanged; self-test cases and mutants cover both halves.
+8. P1, the benchmark section needs the ARM64 CI job: verified. `D00 T04 §2` now depends on `D00 T05 §8`.
+9. P2, `check-local-tools.py` reads `global.json` unconditionally: verified. `D00 T06 §2` removes its SDK branch with fixtures and proves it on a tree without `global.json`.
+10. P2, the preset's overlay path resolved against `native/`: verified. The preset sets no `VCPKG_OVERLAY_TRIPLETS`; the configuration file's relative overlay is the one source.
+11. P2, the readback named a solution that does not exist: verified. It reads `csharp-final:src/Stilus/Bezier.Core/Bezier.Core.csproj`, which is tracked and claimed.
