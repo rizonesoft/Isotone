@@ -355,3 +355,38 @@ Every finding was verified and is real; adversarial, source-defect, and record a
 1. P2, pending-review recovery ignored phase scope: verified. `process-phase` step 1 resumes only the pending sections in its own phase's table and never stamps another phase's; the heartbeat's resume step does the same for scope=phase; `process-plan` drains every phase's pending reviews as its audit's step 7.
 2. P1, a parked section's independent findings still failed coverage: verified. `todo-runs.py` exempts the independent findings of a section parked by `> **Review pending:**` as it exempts its missing run block (cases `review-pending-findings-owe-no-run` and `unparked-findings-still-need-a-run`; a mutant without the exemption fails).
 3. P2, a fresh start with only pending reviews left halted before the drain: verified. `process-plan` halts only when no phase has a ready row and no review is pending; with reviews pending it starts the guard, resumes each once, and leaves the heartbeat retrying any that still return nothing.
+
+## Round 11: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T07:27:06Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 7367497c72406e7a
+
+## adversarial: needs-attention
+
+1. P3 `scripts/todo-graph.py:622` and `:3871`: a whitespace-only `> **Review pending:**   ` stores `' '` as the marker body, then `.split()[0]` raises `IndexError`. An in-memory parse reproduced this crash. Reject malformed markers before queries consume them.
+
+## consistency: needs-attention
+
+2. P2 `.claude/skills/review-todo-section/SKILL.md:153`: removing the marker “in the commit that resumes it” contradicts line 323, which keeps it until the stamp adds the run block. Following the earlier removal instruction restores both run-record errors before stamping. An in-memory `cross_check` probe passed while parked and reported missing run coverage immediately after marker removal. Keep the marker through the stamp commit.
+
+## integration: needs-attention
+
+3. P2 `.claude/skills/review-todo-section/SKILL.md:153`: parking commits the findings file without prescribing ledger regeneration; that command appears later in the stamp path at line 243. If earlier rounds produced findings, the next section’s required `check-all.ps1` fails its findings-ledger gate. An in-memory probe reproduced `FIND-003`, exit 1, despite the parking exemption for run records. Regenerate and commit the ledger when parking.
+
+## source-defect: approve
+
+## record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 10
+
+Every finding was verified and is real; source-defect and record approved.
+
+1. P3, a blank `> **Review pending:**` marker crashed the queries: verified. The parser keeps a blank marker as `(empty)` so the section still parks, `pending_since()` reads the time without ever raising, and `validate` raises the new FATAL `review-pending-malformed` for any marker not in the `<UTC> candidate <base>..<head>: <reason>` shape (self-test cases, the README severity table, and a driven run on a temporary blank marker that printed the FATAL and `1 review pending`).
+2. P2, the marker was removed before the stamp: verified. The marker now stays through the resumed rounds and is removed in the stamp commit that adds the run block, matching the run check's exemption.
+3. P2, parking left the findings ledger stale: verified. Parking regenerates the ledger with `python scripts/todo-findings.py --write` and commits it with the marker and the findings file.

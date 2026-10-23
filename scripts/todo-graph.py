@@ -619,7 +619,8 @@ def parse_todo(path: Path) -> Todo:
             elif kind == "Review pending" and current is not None:
                 # review-todo-section: the reviewer stayed unreachable through every retry, so the section is parked
                 # until its review resumes; it is never ready meanwhile.
-                current.review_pending = body
+                # A blank body still parks the section: the marker is there, so it is never silently ready.
+                current.review_pending = body.strip() or "(empty)"
             elif kind in ("Deferred", "Resolved"):
                 ref = DEFER_REF_RE.search(body)
                 item = DEFER_ITEM_RE.search(body)
@@ -900,6 +901,9 @@ SEVERITY_MAP: dict[str, str] = {
     "moved-target-missing": "fatal",
     # a verified row carrying `> **Review pending:**`: a parked review has no stamp (review-todo-section).
     "review-pending-verified": "fatal",
+    # a Review pending marker whose body is not `<UTC> candidate <base>..<head>: <reason>`: it still parks the
+    # section, but nobody can tell when or why, so it blocks until it is rewritten.
+    "review-pending-malformed": "fatal",
     "pending-control-contract": "fatal",
     # a stamp dated after the Opus-panel rule landed whose findings carry no
     # panel verdicts reads as reviewed evidence while verifying nothing --
@@ -3737,7 +3741,7 @@ def cmd_query(args) -> int:
             if t.status in ("blocked", "superseded"):
                 missing.insert(0, f"file status {t.status}")
             if s.review_pending:
-                missing.insert(0, f"review pending since {s.review_pending.split()[0]}")
+                missing.insert(0, f"review pending since {pending_since(s.review_pending)}")
             rows.append((t, num, s, missing))
 
     if what == "ready":
@@ -3772,7 +3776,7 @@ def cmd_query(args) -> int:
         if pending:
             print("\nreview pending (resume its review through review-todo-section):")
             for t, num, s, _ in pending:
-                print(f"{t.domain}/{Path(t.path).name} §{num}  {s.deliverable}  since {s.review_pending.split()[0]}")
+                print(f"{t.domain}/{Path(t.path).name} §{num}  {s.deliverable}  since {pending_since(s.review_pending)}")
         print(f"\n{len(now)} runnable now, {len(elsewhere)} runnable elsewhere, {len(pending)} review pending")
     else:  # blocked
         blocked = [r for r in rows if r[3]]
@@ -3861,6 +3865,16 @@ def resolve_exit_code(raw: str, todos: list[Todo]) -> int:
     return 4 if unmet_dependencies(target, sec, todos, by_key) or parked_reason(target, s) else 0
 
 
+# `> **Review pending:** <UTC> candidate <base>..<head>: <reason>`, the shape review-todo-section writes.
+REVIEW_PENDING_RE = re.compile(r"^(?P<since>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?Z) candidate \S+\.\.\S+: \S.*$")
+
+
+def pending_since(body: str) -> str:
+    """The UTC time a Review pending marker was written, or a phrase naming a malformed marker; never raises."""
+    m = REVIEW_PENDING_RE.match(body or "")
+    return m.group("since") if m else "an unreadable time (malformed marker)"
+
+
 def parked_reason(todo, section) -> str:
     """Why a section with its dependencies met is still not runnable, or "": its file is parked (blocked or superseded,
     deferred as query ready and query plan treat it) or its review is pending (review-todo-section). `resolve`,
@@ -3868,7 +3882,7 @@ def parked_reason(todo, section) -> str:
     if todo.status in ("blocked", "superseded"):
         return f"file status {todo.status}"
     if section.review_pending:
-        return f"review pending since {section.review_pending.split()[0]}"
+        return f"review pending since {pending_since(section.review_pending)}"
     return ""
 
 
@@ -10031,6 +10045,20 @@ An oversized section: the clean single-WARN shape (over-30-items).
             pending_doc = plan_document(_pt, _pkey, _pid)
             check("query plan reports a pending review as blocked",
                   next((r["status"] for r in pending_doc["sections"] if r["ref"] == "D93 T05 §2"), None), "blocked")
+            # A blank marker still parks the section, never crashes a query, and is FATAL until rewritten.
+            moved_path.write_text(SELF_TEST_TODO_MOVED.replace(
+                "## 2. Depends on the moved thing\n",
+                "## 2. Depends on the moved thing\n\n> **Review pending:**   \n", 1), encoding="utf-8")
+            blank_buf = _io.StringIO()
+            with _ctx.redirect_stdout(blank_buf), _ctx.redirect_stderr(_io.StringIO()):
+                cmd_query(argparse.Namespace(what="ready", all=False))
+            check("a blank Review pending marker still parks without a crash",
+                  "malformed marker" in blank_buf.getvalue() and "1 review pending" in blank_buf.getvalue(), True)
+            check("pending_since names a malformed marker instead of raising", pending_since("   "),
+                  "an unreadable time (malformed marker)")
+            check("pending_since reads a well-formed marker",
+                  pending_since("2026-10-23T00:00:00Z candidate abc1234..def5678: reviewer unreachable"),
+                  "2026-10-23T00:00:00Z")
             moved_path.write_text(SELF_TEST_TODO_MOVED, encoding="utf-8")
             sbuf = _io.StringIO()
             with _ctx.redirect_stdout(sbuf), _ctx.redirect_stderr(_io.StringIO()):

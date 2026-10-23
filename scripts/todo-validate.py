@@ -875,6 +875,13 @@ def validate(graph, _args) -> int:
                     f"{t.path}:{s.line}: §{num} is [x] but carries a Review pending: marker; a section whose review "
                     f"is pending has no stamp, so unwind the row flip and the stamp or remove the marker",
                 )
+            if s.review_pending and not graph.REVIEW_PENDING_RE.match(s.review_pending):
+                flag(
+                    "review-pending-malformed",
+                    f"{t.path}:{s.line}: §{num} carries a Review pending: marker that is not "
+                    f"'<UTC> candidate <base>..<head>: <reason>' ({s.review_pending[:60]!r}); it parks the section, "
+                    f"so rewrite it in that shape",
+                )
             if s.status == "x":
                 partial_flip_scan(t, num, s)
             if (
