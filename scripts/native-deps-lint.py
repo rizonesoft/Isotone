@@ -320,15 +320,26 @@ def suppression_findings(path, text):
                 found.append(finding(path, n, "suppression-unreasoned", "a NOLINT names exactly one check"))
             elif len(rest.strip(" :-").strip()) < 3:
                 found.append(finding(path, n, "suppression-unreasoned", "a NOLINT carries its reason on the same line"))
-        # #pragma, __pragma, and _Pragma are one directive to MSVC; disable and a level push both silence warnings.
-        if re.search(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*disable", line):
+    # #pragma, __pragma, and _Pragma are one directive to MSVC, and a directive may span lines, so the whole text is
+    # matched (\s crosses line ends); disable and a level push both silence warnings.
+    for m in PRAGMA_WARNING_RE.finditer(text):
+        n = text.count("\n", 0, m.start()) + 1
+        kind = m.group(2)
+        if kind == "disable":
             found.append(finding(path, n, "suppression-unreasoned", "warning(disable) is not allowed in a source"))
-        if re.search(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*push\s*,", line):
+        elif kind == "push" and m.group(3):
             found.append(finding(path, n, "suppression-unreasoned", "warning(push, <level>) lowers the warning level; not allowed"))
-        m = re.search(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*suppress\s*:[^)]*\)[)\"\s]*(.*)", line)
-        if m and len(m.group(2).strip(" /:-").strip()) < 3:
-            found.append(finding(path, n, "suppression-unreasoned", "warning(suppress) carries its reason on the same line"))
+        elif kind == "suppress":
+            # The reason is a comment after the directive on the line it ends, never the code that follows it.
+            rest = text[m.end():].split("\n", 1)[0]
+            reason = re.match(r"[)\"\s]*(//|/\*)\s*(.*)", rest)
+            if not reason or len(reason.group(2).strip(" /*:-").strip()) < 3:
+                found.append(finding(path, n, "suppression-unreasoned", "warning(suppress) carries its reason in a comment on the same line"))
     return found
+
+
+PRAGMA_WARNING_RE = re.compile(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*(disable|push|suppress)\s*"
+                               r"(,)?[^)]*\)")
 
 
 def cmake_suppression_findings(path, text):
@@ -364,6 +375,26 @@ def call_text(text, start):
     return text[start + 1:]
 
 
+def call_arguments(args):
+    """The top-level, comma-separated arguments of a call's argument text."""
+    parts, depth, start = [], 0, 0
+    for i, ch in enumerate(args):
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            parts.append(args[start:i].strip())
+            start = i + 1
+    parts.append(args[start:].strip())
+    return parts
+
+
+# The dwFlags constants LoadLibraryExW documents; a flags argument resolves only when it is these, joined by |.
+LOAD_FLAG_RE = re.compile(r"^(LOAD_LIBRARY_\w+|LOAD_WITH_ALTERED_SEARCH_PATH|LOAD_IGNORE_CODE_AUTHZ_LEVEL|"
+                          r"DONT_RESOLVE_DLL_REFERENCES)$")
+
+
 def loadlibrary_findings(path, text, system_patterns, modules):
     found = []
     for m in LOAD_RE.finditer(text):
@@ -385,7 +416,13 @@ def loadlibrary_findings(path, text, system_patterns, modules):
             # A system DLL loads from System32, a registered module from the app's own folder: the search flags must be
             # exactly that one, never widened (LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, a user directory, the altered path).
             want = "LOAD_LIBRARY_SEARCH_SYSTEM32" if system else "LOAD_LIBRARY_SEARCH_APPLICATION_DIR"
-            search = set(re.findall(r"LOAD_LIBRARY_SEARCH_\w+|LOAD_WITH_ALTERED_SEARCH_PATH", args))
+            parts = call_arguments(args)
+            tokens = [tok.strip().strip("()").strip() for tok in parts[2].split("|")] if len(parts) == 3 else []
+            if not tokens or not all(LOAD_FLAG_RE.match(tok) for tok in tokens):
+                found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} loads {name} with flags the lint "
+                                     f"cannot resolve; name the LOAD_* constants in the call, joined by |"))
+                continue
+            search = {tok for tok in tokens if tok.startswith("LOAD_LIBRARY_SEARCH_") or tok == "LOAD_WITH_ALTERED_SEARCH_PATH"}
             if search != {want}:
                 found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} loads {name} with search flags "
                                      f"{sorted(search) or 'none'}, want exactly {want}"))
@@ -561,6 +598,20 @@ def self_test():
     check("/Wv outside native/cmake/ fails",
           rules(cmake_suppression_findings("native/core/CMakeLists.txt", "target_compile_options(isotone_core PRIVATE /Wv:19.00)")),
           ["suppression-unreasoned"])
+    check("a multiline __pragma(warning(disable)) fails",
+          rules(suppression_findings("native/probe.cpp", "__pragma(warning(\ndisable: 4996))")), ["suppression-unreasoned"])
+    check("code after warning(suppress) is not its reason",
+          rules(suppression_findings("native/probe.cpp", "__pragma(warning(suppress: 6011)) int value = *p;")),
+          ["suppression-unreasoned"])
+    check("#pragma warning(suppress) with a comment reason passes",
+          suppression_findings("native/probe.cpp", "#pragma warning(suppress: 6011) // the guard above proves p non-null"), [])
+    check("flags moved into a variable do not resolve",
+          rules(loadlibrary_findings("native/probe.cpp", 'DWORD extra = LOAD_LIBRARY_SEARCH_DEFAULT_DIRS; '
+                                     'LoadLibraryExW(L"isoplug.dll", nullptr, LOAD_LIBRARY_SEARCH_APPLICATION_DIR | extra);',
+                                     [], {"isoplug.dll"})), ["loadlibrary-unresolved"])
+    check("an exact flag with a non-search LOAD_ constant passes",
+          loadlibrary_findings("native/probe.cpp", 'LoadLibraryExW(L"isoplug.dll", nullptr, '
+                               'LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_REQUIRE_SIGNED_TARGET);', [], {"isoplug.dll"}), [])
     check("#pragma warning(push) alone, with no level, passes", suppression_findings("native/a.cpp", "#pragma warning(push)"), [])
     for text in ("target_compile_options(isotone_core PRIVATE -wd4996)", "target_compile_options(isotone_core PRIVATE /W1)",
                  "target_compile_options(isotone_core PRIVATE -w)"):
