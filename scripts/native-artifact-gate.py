@@ -200,6 +200,30 @@ def rule_of(finding):
     return RULE_RE.search(finding).group(1)
 
 
+def check_targets(targets, policies, dependents, directives, say=print):
+    """(findings, images checked, vcpkg files checked) over [(name, build folder, policy, vcpkg root)]. `dependents` and
+    `directives` map a file to dumpbin's (exit code, output). A preset whose build folder is absent has no images to
+    check, but its vcpkg root, kept apart from the build folder, is still checked."""
+    findings, checked, vcpkg_files = [], 0, 0
+    for name, folder, policy, vcpkg in targets:
+        if folder.is_dir():
+            found_images = images(folder)
+            for image in found_images:
+                code, text = dependents(image)
+                findings += inspected(image, code, text,
+                                      lambda out, image=image, policy=policy: import_findings(image, out, policies[policy]))
+            checked += len(found_images)
+            say(f"native-artifact-gate: {name}: {len(found_images)} image(s), {policy} policy")
+        else:
+            say(f"native-artifact-gate: {name}: {folder} not built, its images skipped")
+        if vcpkg is not None and vcpkg.is_dir():
+            found, files = vcpkg_findings(vcpkg, directives)
+            findings += found
+            vcpkg_files += files
+            say(f"native-artifact-gate: {name}: vcpkg {vcpkg.name}: {files} file(s)")
+    return findings, checked, vcpkg_files
+
+
 def missing_inputs(folders, vcpkg_roots):
     """input-missing for every build folder or vcpkg root named on the command line that is not an existing folder: an
     input asked for by name is checked or refused, never skipped while another input passes."""
@@ -282,24 +306,9 @@ def main(argv=None):
                 else:
                     findings += size_findings(ROOT / folder, app["mb"], budget.get("excluded", ["*.pdb"]),
                                               budget.get("optional_content", []))[0]
-    checked = 0
-    vcpkg_files = 0
-    for name, folder, policy, vcpkg in targets:
-        if not folder.is_dir():
-            print(f"native-artifact-gate: {name}: {folder} not built, skipped")
-            continue
-        found_images = images(folder)
-        for image in found_images:
-            code, text = dumpbin("/dependents", image)
-            findings += inspected(image, code, text,
-                                  lambda out, image=image, policy=policy: import_findings(image, out, policies[policy]))
-        checked += len(found_images)
-        print(f"native-artifact-gate: {name}: {len(found_images)} image(s), {policy} policy")
-        if vcpkg is not None and vcpkg.is_dir():
-            found, libs = vcpkg_findings(vcpkg, lambda lib: dumpbin("/directives", lib))
-            findings += found
-            vcpkg_files += libs
-            print(f"native-artifact-gate: {name}: vcpkg {vcpkg.name}: {libs} file(s)")
+    found, checked, vcpkg_files = check_targets(targets, policies, lambda image: dumpbin("/dependents", image),
+                                                lambda lib: dumpbin("/directives", lib))
+    findings += found
     for raw in args.vcpkg_root:
         found, libs = vcpkg_findings(Path(raw), lambda lib: dumpbin("/directives", lib))
         findings += found
@@ -405,6 +414,14 @@ def self_test():
               [rule_of(line) for line in missing_inputs([str(tmp), str(tmp / "arm64-releas")], [str(tmp / "no-root")])],
               ["input-missing", "input-missing"])
         check("a missing named input fails the run before any inspection", quiet_main([str(tmp / "arm64-releas")]), 1)
+        cleaned = tmp / "pkgs" / "x64-release" / "isotone-x64"
+        (cleaned / "bin").mkdir(parents=True)
+        (cleaned / "bin" / "zlib1.dll").write_bytes(b"MZ")
+        found, images_checked, files = check_targets(
+            [("x64-release", tmp / "never-built", "shipping", cleaned)], {"shipping": shipping},
+            lambda image: (0, ""), lambda lib: (0, ""), say=lambda line: None)
+        check("a preset's vcpkg root is checked when its build folder is absent",
+              ([rule_of(line) for line in found], images_checked, files), (["dll-in-vcpkg-tree"], 0, 1))
         relocated = tmp / "source" / "CMakePresets.json"
         relocated.parent.mkdir()
         relocated.write_text(json.dumps({"version": 6, "configurePresets": [
