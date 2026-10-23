@@ -178,9 +178,9 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T05 §4`  | The format, clang-tidy, and /analyze gates                                               |   6   |
 | [ ] | `D00 T05 §5`  | The AddressSanitizer lane                                                                |   4   |
 | [ ] | `D00 T05 §6`  | The import and size gates                                                                |  11   |
-| [ ] | `D00 T05 §7`  | The native stages of check-all and the gate card                                         |  10   |
+| [ ] | `D00 T05 §7`  | The native stages of check-all and the gate card                                         |  14   |
 | [ ] | `D00 T04 §1`  | The C++ standard, the dependency register, and the register gate                         |  10   |
-| [ ] | `D00 T05 §8`  | CI for x64 and ARM64                                                                     |   9   |
+| [ ] | `D00 T05 §8`  | CI for x64 and ARM64                                                                     |  13   |
 | [ ] | `D00 T05 §9`  | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget              |   6   |
 | [ ] | `D00 T05 §10` | The proof standard for C++                                                               |   4   |
 | [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |  13   |
