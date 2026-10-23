@@ -328,6 +328,21 @@ def ready_rows(root: str, timeout: float = 300.0, phase: int | None = None) -> t
     return int(counts[-1]), (lines[0] if lines else "")
 
 
+def review_pending(root: str, timeout: float = 300.0) -> int:
+    """How many sections `query ready` lists as parked for a review the reviewer has not returned (its
+    `N review pending` count; a graph that prints no such count has none). A failed query raises GuardError."""
+    try:
+        proc = subprocess.run([sys.executable, os.path.join(root, "scripts", "todo-graph.py"), "query", "ready"],
+                              capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=root,
+                              timeout=max(timeout, 1.0), env=dict(os.environ, PYTHONIOENCODING="utf-8"))
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise GuardError(f"query ready could not run: {type(exc).__name__}: {exc}") from None
+    if proc.returncode != 0:
+        raise GuardError(f"query ready exited {proc.returncode}: {(proc.stderr or proc.stdout).strip()[-200:]}")
+    counts = re.findall(r"(\d+) review pending", proc.stdout)
+    return int(counts[-1]) if counts else 0
+
+
 def marker_run(line: str) -> str | None:
     m = re.search(r"\brun=([0-9a-f]{6,})\b", line)
     return m.group(1) if m else None
@@ -365,6 +380,9 @@ def end(root: str, session: str, reason: str) -> str:
     except GuardError:
         already = False
     ready = ready_rows(root)[0] if reason == "plan-done" and not already else None
+    if ready == 0 and review_pending(root):
+        # A parked review is unfinished work: the reviewer may answer later, and the heartbeat retries it.
+        raise GuardError(f"plan-done needs no review pending; query ready reads {review_pending(root)}")
     with _Lock(root):
         return _end_locked(root, session, reason, ready)
 
@@ -1244,7 +1262,9 @@ def _workspace(tmpd: str) -> str:
                  "if n != '0':\n"
                  "    print('00-workspace/TODO-01-bootstrap.md §3  Red CI repaired, not waited on')\n"
                  "print()\n"
-                 "print(f'{n} runnable now, 0 runnable elsewhere')\n")
+                 "pf = os.path.join(os.path.dirname(__file__), 'pending.txt')\n"
+                 "p = open(pf).read().strip() if os.path.exists(pf) else '0'\n"
+                 "print(f'{n} runnable now, 0 runnable elsewhere, {p} review pending')\n")
     _set_ready(root, 3)
     with open(os.path.join(root, RUN_FILE), "w", encoding="utf-8") as fh:
         fh.write("# Phase run: Phase 0\n\n## Sections log\n")
@@ -1660,6 +1680,15 @@ def _self_test() -> int:
             code, out, _ = run_hook(root, SESSION)
             check(f"end-{reason}-leaves-nothing-behind",
                   gone and "CronDelete job-9" in msg and code == 0 and out is None, f"{msg} {gone} {out}")
+        _fresh("# r\n", 0)
+        with open(os.path.join(root, "scripts", "pending.txt"), "w", encoding="utf-8") as fh:
+            fh.write("2")
+        try:
+            end(root, SESSION, "plan-done")
+            check("plan-done-refuses-a-pending-review", False)
+        except GuardError as exc:
+            check("plan-done-refuses-a-pending-review", "review pending" in str(exc), str(exc))
+        os.remove(os.path.join(root, "scripts", "pending.txt"))
         _fresh("# r\n", 3)
         try:
             end(root, SESSION, "stall")

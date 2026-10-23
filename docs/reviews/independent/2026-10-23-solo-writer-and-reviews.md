@@ -282,3 +282,41 @@ Every finding was verified against the code and the cited documentation and is r
 1. P1, pull request filtering ran after the fetch limit: verified. Each workflow is read in widening windows (20, 100, 500, 1000 completed runs on `main`) until one is about `main` itself or its history ends; a fixture with a red push behind twenty pull request runs must report it, and a mutant with one window fails.
 2. P2, the event allow-list dropped `check_suite` and other main workflows: verified. The watch now excludes only pull request events and keeps every other event, with a `check_suite` case.
 3. P2, the remote pattern accepted hosts hidden behind `#@` or `?@`: verified. The remote is parsed with `urlsplit` (scheme `https` or `ssh`, host exactly `github.com`, no query or fragment, a strict `owner/name` path) or matched as a strict scp-like form; both spoofs and a GitHub URL with a fragment name no repository, and mutants fail.
+
+## Round 9: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T06:45:29Z
+- Effort: xhigh
+- Lines: 20
+- Digest: 13b5682cbc770862
+
+## adversarial: needs-attention
+
+1. P1 `scripts/ci_watch.py:122`: the final 1,000-run window still permits a false green. An in-memory fixture with 1,000 completed PR runs followed by a failed main push reproduced exit 0, `"checked": 0`, and `"red": []`; the full history reports the failure. Round 7’s answer enlarges the blind spot’s threshold without closing it. Reaching the limit without an eligible run must remain unverifiable. [GitHub CLI limit semantics](https://cli.github.com/manual/gh_run_list)
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P1 `.claude/skills/review-todo-section/SKILL.md:153` and `:323`: parking commits a section’s findings file, but its run block is prescribed only after stamping. `scripts/todo-runs.py:460` rejects every review file without that block. Adding one pending review file to the checker’s inventory reproduced `RUN-004: ... has a review file but no run block`. Consequently, the next independent section’s required `check-all.ps1` sweep fails, defeating per-section parking.
+
+3. P2 `.claude/skills/process-phase/SKILL.md:67`: pending reviews are retried only at a boundary after another section stamps. When pending reviews and their dependents are the only remaining work, `query ready` reports `0 runnable now`; `process-plan/SKILL.md:25` selects no phase, and its heartbeat at `:97` terminates. A later campaign invocation still selects no phase after the reviewer recovers. There is no prescribed startup or resume step that drains pending reviews before ready-row selection.
+
+## source-defect: needs-attention
+
+4. P3 `scripts/ci_watch.py:65`: reading `parts.port` occurs outside the URL parser’s `ValueError` handler, and origin parsing at `:347` also precedes the main exception handler. Probing `https://github.com:invalid/o/r.git` and port `65536` raises uncaught `ValueError`; `main(["--json"])` therefore crashes instead of returning the documented unverifiable result and JSON error.
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 8
+
+Every finding was verified against the code and is real.
+
+1. P1, the widest window could still hide a red `main`: verified. A workflow whose 1,000-run window is still all pull request runs is now unverifiable (`RuntimeError`, exit 2), never green; a fixture with 1,000 pull request runs before a red push must be unverifiable, and a mutant that skips the raise fails.
+2. P1, a parked section's findings file failed `todo-runs.py` (`RUN-004`): verified. The run check reads the `> **Review pending:**` markers through todo-graph's parser and exempts those sections until their stamp adds the run block (case `review-pending-owes-no-run`, mutant killed); `review-todo-section` states the rule.
+3. P2, pending reviews were retried only after another section stamped: verified. `query ready` now lists pending reviews and prints `N review pending`; `campaign_guard.py end --reason plan-done` refuses while any is pending (case `plan-done-refuses-a-pending-review`); `process-phase` step 1 drains them at a run's start and every resume, and the heartbeat (process-plan step 5) retries them when nothing else is runnable and waits instead of ending.
+4. P3, an invalid port raised outside the parser's handler: verified. The port is read inside the `ValueError` handler; both probes name no repository.

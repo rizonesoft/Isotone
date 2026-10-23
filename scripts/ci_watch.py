@@ -58,11 +58,11 @@ def origin_repo(url):
     else:
         try:
             parts = urlsplit(url)
-            host = parts.hostname
+            host, port = parts.hostname, parts.port
         except ValueError:
             return None
         if parts.scheme not in ("https", "ssh") or host != "github.com" or parts.query or parts.fragment \
-                or (parts.port not in (None, 443, 22)):
+                or port not in (None, 443, 22):
             return None
         path = parts.path.lstrip("/")
     match = REPO_PATH.match(path)
@@ -110,7 +110,8 @@ def red_runs(runs):
 def fetch(runner, per_workflow=20):
     """Every active workflow's recent completed runs on main, read one workflow at a time. A workflow whose window
     holds no run about main itself (only pull request runs) is read again in a wider window, up to the largest, until
-    one is found or its history ends, so pull request runs can never push main's latest run out of view."""
+    one is found or its history ends, so pull request runs can never push main's latest run out of view. A workflow
+    whose widest window is still all pull request runs is unverifiable (RuntimeError, exit 2), never skipped."""
     runs = []
     for workflow in gh_json(runner, ["workflow", "list", "--limit", WORKFLOW_LIMIT, "--json",
                                      "id,name,state,path"]) or []:
@@ -119,9 +120,12 @@ def fetch(runner, per_workflow=20):
         for window in sorted({max(per_workflow, 1), *WINDOWS}):
             got = gh_json(runner, ["run", "list", "--workflow", str(workflow["id"]), "--branch", "main",
                                    "--status", "completed", "--limit", str(window), "--json", FIELDS]) or []
-            if any(r.get("event") not in PR_EVENTS for r in got) or len(got) < window or window == max(WINDOWS):
+            if any(r.get("event") not in PR_EVENTS for r in got) or len(got) < window:
                 runs += got
                 break
+            if window == max(WINDOWS):
+                raise RuntimeError(f"workflow {workflow.get('name')} ({workflow['id']}): its last {window} completed "
+                                   f"runs on main are all pull request runs, so main's latest run cannot be read")
     return runs
 
 
@@ -296,6 +300,22 @@ def self_test():
         return json.dumps(history[:limit])
     check("a red push behind twenty pull request runs is still found",
           [r["databaseId"] for r in red_runs(fetch(pr_flood))[0]], [1])
+
+    def pr_deluge(args):
+        if args[:2] == ["workflow", "list"]:
+            return json.dumps([{"id": 1, "name": "build", "state": "active", "path": ".github/workflows/build.yml"}])
+        limit = int(args[args.index("--limit") + 1])
+        history = [run(100 + i, "build", "2026-10-22T00:00:00Z", "success", event="pull_request")
+                   for i in range(max(WINDOWS))] + [run(1, "build", "2026-10-21T00:00:00Z", "failure", event="push")]
+        return json.dumps(history[:limit])
+    try:
+        fetch(pr_deluge)
+        deluge = "green"
+    except RuntimeError:
+        deluge = "unverifiable"
+    check("a widest window of only pull request runs is unverifiable, never green", deluge, "unverifiable")
+    for bad_port in ("https://github.com:invalid/rizonesoft/Isotone.git", "https://github.com:65536/rizonesoft/Isotone.git"):
+        check(f"an invalid port names none ({bad_port.split(':')[2].split('/')[0]})", origin_repo(bad_port), None)
     masked = [run(1, "build", "2026-10-22T00:00:00Z", "failure", event="push"),
               run(2, "build", "2026-10-22T01:00:00Z", "success", event="pull_request")]
     check("a green pull request run never hides a red push on main", [r["databaseId"] for r in red_runs(masked)[0]], [1])

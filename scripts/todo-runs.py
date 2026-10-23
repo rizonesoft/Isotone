@@ -422,7 +422,21 @@ def _review_files():
     return sections
 
 
-def cross_check(runs, collected=None, review_sections=None):
+def _pending_sections():
+    """Compact sections parked by a `> **Review pending:**` marker: built, their findings file committed, but the
+    reviewer stayed unreachable, so no review has stamped them and they owe no run block yet (review-todo-section).
+    Read through todo-graph's own parser, loaded by path like the findings tool."""
+    mod = sys.modules.get("todo_graph")
+    if mod is None:
+        spec = importlib.util.spec_from_file_location("todo_graph", HERE / "todo-graph.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["todo_graph"] = mod
+        spec.loader.exec_module(mod)
+    return {f"D{todo.domain[:2]}-T{todo.number}-S{num}"
+            for todo in mod.load_todos() for num, section in todo.sections.items() if section.review_pending}
+
+
+def cross_check(runs, collected=None, review_sections=None, pending_sections=None):
     """Refs resolve, marks are covered exactly once, every file has a run.
 
     `collected` and `review_sections` override the tree reads for tests.
@@ -457,7 +471,9 @@ def cross_check(runs, collected=None, review_sections=None):
             errors.append((0, f"{ref} carries (independent) but no run lists it"))
     have_runs = {run.section for run in runs}
     files = review_sections if review_sections is not None else _review_files()
-    for section in sorted(files - have_runs):
+    pending = pending_sections if pending_sections is not None else (
+        set() if review_sections is not None else _pending_sections())
+    for section in sorted(files - have_runs - pending):
         errors.append((0, f"{section} has a review file but no run block; "
                           f"a deleted engagement changes the counts silently"))
     for run in runs:
@@ -1248,6 +1264,9 @@ refuted: 0
     _r, _e = parse_runs(only_self)
     cc = cross_check(_r, collected=fixture, review_sections=sections | {"D00-T01-S9"})
     check("missing-run-reported", any("no run block" in m for _, m in cc), f"{cc}")
+    cc = cross_check(_r, collected=fixture, review_sections=sections | {"D00-T01-S9"},
+                     pending_sections={"D00-T01-S9"})
+    check("review-pending-owes-no-run", not any("no run block" in m for _, m in cc), f"{cc}")
 
     runs_u, errors_u = run_check(Path("/tmp/nope-does-not-exist.md"))
     check("unreadable-reported",

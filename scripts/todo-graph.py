@@ -3766,7 +3766,14 @@ def cmd_query(args) -> int:
                 flag = " 🔒" if t.frozen else ""
                 reqs = ", ".join(s.requires + [f"unknown:{v}" for v in s.requires_unknown]) or s.requires_raw
                 print(f"{t.domain}/{Path(t.path).name} §{num}{flag}  {s.deliverable}  requires {reqs} (missing: {', '.join(missing)})")
-        print(f"\n{len(now)} runnable now, {len(elsewhere)} runnable elsewhere")
+        # Parked for a review the reviewer could not return: built, so its review resumes whatever its dependencies
+        # say, and a run is not over while one waits (review-todo-section; process-plan resumes them first).
+        pending = [r for r in rows if r[2].review_pending]
+        if pending:
+            print("\nreview pending (resume its review through review-todo-section):")
+            for t, num, s, _ in pending:
+                print(f"{t.domain}/{Path(t.path).name} §{num}  {s.deliverable}  since {s.review_pending.split()[0]}")
+        print(f"\n{len(now)} runnable now, {len(elsewhere)} runnable elsewhere, {len(pending)} review pending")
     else:  # blocked
         blocked = [r for r in rows if r[3]]
         for t, num, s, missing in sorted(blocked, key=lambda r: (r[0].domain, r[0].number, r[1])):
@@ -10013,7 +10020,10 @@ An oversized section: the clean single-WARN shape (over-30-items).
                 cmd_query(argparse.Namespace(what="ready", all=False))
             with _ctx.redirect_stdout(bbuf), _ctx.redirect_stderr(_io.StringIO()):
                 cmd_query(argparse.Namespace(what="blocked", all=False))
-            check("query ready excludes a section whose review is pending", "Depends on the moved thing" in rbuf.getvalue(), False)
+            _runnable, _, _parked = rbuf.getvalue().partition("review pending (resume its review")
+            check("query ready excludes a section whose review is pending", "Depends on the moved thing" in _runnable, False)
+            check("query ready lists the pending review to resume", "§2" in _parked and "since 2026-10-23T00:00:00Z" in _parked, True)
+            check("query ready counts the pending review", "1 review pending" in rbuf.getvalue(), True)
             check("query blocked names the pending review", "waiting on: review pending since 2026-10-23T00:00:00Z" in bbuf.getvalue(), True)
             check("resolve refuses a section whose review is pending", resolve_exit_code("D93 T05 §2", load_todos()), 4)
             _pt = load_todos()
