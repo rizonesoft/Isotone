@@ -63,6 +63,8 @@ Nothing else configures the build. The nested `global.json`, `Directory.Packages
 | `artifacts/publish/<App>/<rid>-symbols/` | PDBs split out of the publish folder |
 | `artifacts/dist/` | Installers, portable ZIPs, `SHA256SUMS` |
 | `artifacts/TestResults/` | Test results |
+| `artifacts/native/<preset>/` | One native CMake build folder per preset in `native/CMakePresets.json` (its `compile_commands.json`, executables, and PDBs) |
+| `artifacts/vcpkg_installed/<preset>/` | The vcpkg packages that preset installed, one root per preset |
 
 The repository-root `build/` folder is a gitignored scratch area used by the Claude automation (for example `build/todo-cache.json`). Do not put tracked files there.
 

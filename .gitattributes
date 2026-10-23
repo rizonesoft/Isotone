@@ -59,3 +59,7 @@ docs/reviews/** text eol=lf
 *.exe binary
 *.snk binary
 *.pfx binary
+
+# A source archive (git archive) carries its commit in this file, which native/cmake/WriteBuildId.cmake reads when
+# there is no .git (D00 T05 §3).
+native/BUILD_ID.txt export-subst

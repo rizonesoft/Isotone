@@ -13,7 +13,7 @@ The C++23 half of the Isotone Graphics Suite: the shared libraries and the apps,
 | `triplets/` | The vcpkg overlay triplets `isotone-x64`, `isotone-arm64`, and `isotone-x64-asan` |
 | `cmake/` | The shared CMake helpers |
 
-`tinctura/`, `capio/`, and `folium/` join them when their plans (`todo/07-tinctura/`, `todo/08-capio/`, `todo/09-folium/`) build them. Today the folder holds the toolchain pin, the vcpkg manifest and configuration, and the triplets; the CMake build and the code arrive with `D00 T05 §3` onward.
+`tinctura/`, `capio/`, and `folium/` join them when their plans (`todo/07-tinctura/`, `todo/08-capio/`, `todo/09-folium/`) build them. Today the folder holds the toolchain pin, the vcpkg manifest and configuration, the triplets, the CMake build, and `isotone::core`'s build identity with its test; the apps and the UI toolkit arrive with their own sections.
 
 ## Entering the environment
 
@@ -22,6 +22,33 @@ Every build runs inside the pinned toolchain (`toolchain.json`), entered by `scr
 ```powershell
 pwsh scripts/dev-env.ps1 -Check -Arch x64        # the machine matches the pin (it also checks the triplets and the SDK)
 . ./scripts/dev-env.ps1 -Arch arm64              # this session, inside the ARM64 cross environment
+```
+
+## Building
+
+`CMakePresets.json` holds one configure, build, test, and workflow preset per configuration, each with the Ninja generator, `cl` as the compiler, and its folder under `artifacts/native/<preset>/`. The presets live here, so a block that runs them enters `native/` first:
+
+```powershell
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --workflow --preset x64-debug'      # configure, build, test
+pwsh scripts/dev-env.ps1 -Arch arm64 -Run 'Push-Location native; cmake --workflow --preset arm64-release' # configure, build (an ARM64 test runs on ARM64)
+```
+
+| Preset | Build type | Tests | Notes |
+| ------ | ---------- | ----- | ----- |
+| `x64-debug`, `arm64-debug` | Debug | yes | |
+| `x64-release`, `arm64-release` | Release | yes | Full PDBs, `/OPT:REF`, `/OPT:ICF` |
+| `x64-asan` | RelWithDebInfo | yes | `/fsanitize=address` on every target, packages from the `isotone-x64-asan` triplet; Debug's `/RTC` refuses AddressSanitizer |
+| `x64-dist`, `arm64-dist` | Release | no | What an app release builds from: `BUILD_TESTING` off and the vcpkg `test` feature unrequested, so GoogleTest is never installed or linked |
+
+Every target goes through `isotone_add_library` or `isotone_add_test` (`cmake/IsotoneTargets.cmake`), which apply `/W4 /WX /permissive- /utf-8 /Zc:__cplusplus /Zc:preprocessor /EHsc /external:anglebrackets /external:W0`, control-flow guard on the compiler and the linker, and `/CETCOMPAT` on x64 (Microsoft Learn documents it for x64 only). C++23 is the one switch `/std:c++23preview`, never the `/std:c++latest` CMake emits by default. A test preset with no registered test fails (`noTestsAction: error`), and GoogleTest discovery runs at test time, so a build never runs an ARM64 test executable on x64.
+
+The build id (`isotone::core::build_id()`) is the commit's first 12 hex digits, plus `-dirty` when tracked files differ from it. `cmake/WriteBuildId.cmake` rewrites it on every build, so a commit or an edit changes it without reconfiguring; a `git archive` source tree has no `.git`, and reads the commit from `BUILD_ID.txt`, which `export-subst` stamps.
+
+Two checks prove what the flags cannot show on their own:
+
+```powershell
+python scripts/native-std-check.py artifacts/native/x64-debug                                     # every C++ compile carries exactly one standard switch, the pinned one
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'python scripts/native-pe-check.py artifacts/native/x64-release'  # every executable has control-flow guard, and CET on x64
 ```
 
 ## Packages

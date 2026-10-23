@@ -1,0 +1,140 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 4, "minor": 3, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../artifacts/native/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/../artifacts/vcpkg_installed/${presetName}",
+        "VCPKG_MANIFEST_FEATURES": "test"
+      }
+    },
+    {
+      "name": "x64",
+      "hidden": true,
+      "inherits": "base",
+      "architecture": { "value": "x64", "strategy": "external" },
+      "toolset": { "value": "host=x64", "strategy": "external" },
+      "cacheVariables": { "VCPKG_TARGET_TRIPLET": "isotone-x64" }
+    },
+    {
+      "name": "arm64",
+      "hidden": true,
+      "inherits": "base",
+      "architecture": { "value": "arm64", "strategy": "external" },
+      "toolset": { "value": "host=x64", "strategy": "external" },
+      "cacheVariables": { "VCPKG_TARGET_TRIPLET": "isotone-arm64" }
+    },
+    { "name": "x64-debug", "inherits": "x64", "displayName": "x64 Debug", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "x64-release", "inherits": "x64", "displayName": "x64 Release", "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
+    {
+      "name": "x64-asan",
+      "inherits": "x64",
+      "displayName": "x64 AddressSanitizer",
+      "description": "RelWithDebInfo, because AddressSanitizer refuses the /RTC a Debug build carries.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ISOTONE_SANITIZE": "address",
+        "VCPKG_TARGET_TRIPLET": "isotone-x64-asan"
+      }
+    },
+    { "name": "arm64-debug", "inherits": "arm64", "displayName": "ARM64 Debug", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "arm64-release", "inherits": "arm64", "displayName": "ARM64 Release", "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
+    {
+      "name": "x64-dist",
+      "inherits": "x64",
+      "displayName": "x64 distribution",
+      "description": "What an app release builds from: Release, no tests, and the vcpkg test feature unrequested.",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "BUILD_TESTING": "OFF", "VCPKG_MANIFEST_FEATURES": "" }
+    },
+    {
+      "name": "arm64-dist",
+      "inherits": "arm64",
+      "displayName": "ARM64 distribution",
+      "description": "What an app release builds from: Release, no tests, and the vcpkg test feature unrequested.",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "BUILD_TESTING": "OFF", "VCPKG_MANIFEST_FEATURES": "" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "x64-debug", "configurePreset": "x64-debug" },
+    { "name": "x64-release", "configurePreset": "x64-release" },
+    { "name": "x64-asan", "configurePreset": "x64-asan" },
+    { "name": "arm64-debug", "configurePreset": "arm64-debug" },
+    { "name": "arm64-release", "configurePreset": "arm64-release" },
+    { "name": "x64-dist", "configurePreset": "x64-dist" },
+    { "name": "arm64-dist", "configurePreset": "arm64-dist" }
+  ],
+  "testPresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" }
+    },
+    { "name": "x64-debug", "inherits": "base", "configurePreset": "x64-debug" },
+    { "name": "x64-release", "inherits": "base", "configurePreset": "x64-release" },
+    { "name": "x64-asan", "inherits": "base", "configurePreset": "x64-asan" },
+    { "name": "arm64-debug", "inherits": "base", "configurePreset": "arm64-debug" },
+    { "name": "arm64-release", "inherits": "base", "configurePreset": "arm64-release" }
+  ],
+  "workflowPresets": [
+    {
+      "name": "x64-debug",
+      "steps": [
+        { "type": "configure", "name": "x64-debug" },
+        { "type": "build", "name": "x64-debug" },
+        { "type": "test", "name": "x64-debug" }
+      ]
+    },
+    {
+      "name": "x64-release",
+      "steps": [
+        { "type": "configure", "name": "x64-release" },
+        { "type": "build", "name": "x64-release" },
+        { "type": "test", "name": "x64-release" }
+      ]
+    },
+    {
+      "name": "x64-asan",
+      "steps": [
+        { "type": "configure", "name": "x64-asan" },
+        { "type": "build", "name": "x64-asan" },
+        { "type": "test", "name": "x64-asan" }
+      ]
+    },
+    {
+      "name": "arm64-debug",
+      "steps": [
+        { "type": "configure", "name": "arm64-debug" },
+        { "type": "build", "name": "arm64-debug" }
+      ]
+    },
+    {
+      "name": "arm64-release",
+      "steps": [
+        { "type": "configure", "name": "arm64-release" },
+        { "type": "build", "name": "arm64-release" }
+      ]
+    },
+    {
+      "name": "x64-dist",
+      "steps": [
+        { "type": "configure", "name": "x64-dist" },
+        { "type": "build", "name": "x64-dist" }
+      ]
+    },
+    {
+      "name": "arm64-dist",
+      "steps": [
+        { "type": "configure", "name": "arm64-dist" },
+        { "type": "build", "name": "arm64-dist" }
+      ]
+    }
+  ]
+}

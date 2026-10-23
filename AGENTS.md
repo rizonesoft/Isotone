@@ -44,7 +44,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `.claude/` | Claude Code skills, the delegate agent definitions under `agents/`, the output and safety rule under `rules/`, the Stop hook, the agent-routing hook, and settings. Every file here is Isotone's own: the operator cut the link to the Conclave SDK on 2026-10-21, so nothing is synced from, compared with, or refreshed from another repository |
 | `.conclave/reviewers.toml` | The reviewer pin (schema 2: one `[writer]`, Claude Code on Opus 5.5, and one `[reviewer]` with its CLI, model, and effort, no fallback), read by `scripts/review-dispatch.py`, which runs every review round |
 | `.conclave/automations/` | The scheduled jobs (Windows Task Scheduler, under `\Isotone\`, in RectoPDF's shape): the task list `tasks.json` with the checks only this PC can see and the `isotone-pr-merge` fallback, the runner, alert, and installers, and the README listing both those and what the daily `.github/workflows/pins.yml` and Dependabot keep current on GitHub (the .NET 11 SDK with its runtime packages, vulnerable packages, NuGet, Actions) |
-| `artifacts/` | Build output (`UseArtifactsOutput`); ignored, never authoritative |
+| `artifacts/` | Build output (`UseArtifactsOutput` for the C# code; the native build's preset folders under `artifacts/native/` and its vcpkg roots under `artifacts/vcpkg_installed/`); ignored, never authoritative |
 | `build/` | Scratch, caches, and campaign guard state; ignored, never authoritative |
 
 Everything here is Windows-only. The TODO tooling is stdlib Python 3 (`python` on Windows) and needs no install step.
