@@ -121,13 +121,19 @@ def parse_status(text):
 
 
 def spdx_source(text):
-    """(repository URL, ref) of the upstream source a port's vcpkg.spdx.json records, or None when it names none."""
+    """(repository URL, ref) of the upstream source a port's vcpkg.spdx.json records: a Git source gives its repository
+    and tag; an archive download (vcpkg_download_distfile) gives the archive's URL and None, the URL itself naming the
+    release. None when it names neither."""
     doc = json.loads(text)
     for package in doc.get("packages", []):
         location = package.get("downloadLocation", "")
         m = re.match(r"^git\+(https://[^@]+?)(?:\.git)?@(.+)$", location)
         if m and not m.group(1).rstrip("/").endswith("microsoft/vcpkg"):
             return m.group(1).rstrip("/"), m.group(2)
+    for package in doc.get("packages", []):
+        location = package.get("downloadLocation", "")
+        if re.match(r"^https://", location) and "github.com/microsoft/vcpkg" not in location:
+            return location, None
     return None
 
 
@@ -164,8 +170,8 @@ def register_findings(rows, installed, spdx, direct, features, baseline, target_
     found = []
     by_port = {row["vcpkg port"]: row for row in rows}
     ports = {}
-    for (port, triplet), version in installed.items():
-        ports.setdefault(port, {})[triplet] = version
+    for (port, triplet), versions in installed.items():
+        ports.setdefault(port, {}).setdefault(triplet, set()).update({versions} if isinstance(versions, str) else versions)
     for port in sorted(ports):
         if port not in by_port:
             found.append(finding(path, 1, "unregistered", f"{port} is installed ({', '.join(sorted(ports[port]))}) with no row"))
@@ -174,8 +180,8 @@ def register_findings(rows, installed, spdx, direct, features, baseline, target_
         if port not in ports:
             found.append(finding(path, line, "orphan-row", f"{port} is installed for no triplet"))
             continue
-        versions = set(ports[port].values())
-        if row["Version"] not in versions:
+        versions = set().union(*ports[port].values())
+        if versions != {row["Version"]}:
             found.append(finding(path, line, "version-mismatch", f"{port}: the row says {row['Version']}, installed {', '.join(sorted(versions))}"))
         license_id = row["License"]
         if license_id not in ALLOWED_LICENSES:
@@ -195,6 +201,14 @@ def register_findings(rows, installed, spdx, direct, features, baseline, target_
         identity = f"osv-git:{row['Upstream repository']}@{row['Released tag']}"
         if source is None:
             found.append(finding(path, line, "identity-mismatch", f"{port}: its vcpkg.spdx.json names no upstream source"))
+        elif source[1] is None:
+            # An archive download: the row names the archive's URL, and its advisory identity is the library's feed.
+            if row["Upstream repository"] != source[0]:
+                found.append(finding(path, line, "identity-mismatch", f"{port}: the row names {row['Upstream repository']}, "
+                                     f"the port was built from the archive {source[0]}"))
+            if not row["Advisory identity"].startswith("feed:"):
+                found.append(finding(path, line, "identity-mismatch", f"{port}: an archive-built port's Advisory identity "
+                                     f"is its feed (feed:<url>), not {row['Advisory identity']}"))
         elif (row["Upstream repository"], row["Released tag"]) != source:
             found.append(finding(path, line, "identity-mismatch", f"{port}: the row names {row['Upstream repository']}@"
                                  f"{row['Released tag']}, the port was built from {source[0]}@{source[1]}"))
@@ -287,7 +301,8 @@ def suppression_findings(path, text):
 
 
 def cmake_suppression_findings(path, text):
-    """A target-wide warning switch (/wdNNNN) in native/cmake/ carries a WORKAROUND comment within the 5 lines above."""
+    """A target-wide warning switch (/wdNNNN) in any CMake file under native/ carries a WORKAROUND comment within the 5
+    lines above."""
     lines = text.splitlines()
     return [finding(path, n + 1, "suppression-unreasoned", "a target-wide /wd needs a WORKAROUND comment above it")
             for n, line in enumerate(lines) if re.search(r"/wd\d+", line) and not line.lstrip().startswith("#")
@@ -322,9 +337,11 @@ def loadlibrary_findings(path, text, system_patterns, modules):
         if not (system or registered):
             found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} loads {name or 'a computed name'}, "
                                  f"neither a system DLL in native/system-dlls.txt nor a registered Runtime module"))
-        elif "Ex" in m.group(1) and not re.search(r"LOAD_LIBRARY_SEARCH_(SYSTEM32|APPLICATION_DIR)", args):
-            found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} passes no LOAD_LIBRARY_SEARCH_SYSTEM32 "
-                                 f"or LOAD_LIBRARY_SEARCH_APPLICATION_DIR flag"))
+        elif "Ex" in m.group(1):
+            # A system DLL loads from System32, a registered module from the app's own folder: the flag must match.
+            want = "LOAD_LIBRARY_SEARCH_SYSTEM32" if system else "LOAD_LIBRARY_SEARCH_APPLICATION_DIR"
+            if want not in args:
+                found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} loads {name} without {want}"))
     return found
 
 
@@ -341,7 +358,7 @@ def source_findings(files, rows):
         if f.startswith("native/") and f.lower().endswith(SOURCE_EXTENSIONS):
             text = (ROOT / f).read_text(encoding="utf-8", errors="replace")
             found += suppression_findings(f, text) + loadlibrary_findings(f, text, patterns, modules)
-        elif f.startswith("native/cmake/") and f.endswith(".cmake"):
+        elif f.startswith("native/") and (f.endswith(".cmake") or f.endswith("CMakeLists.txt")):
             found += cmake_suppression_findings(f, (ROOT / f).read_text(encoding="utf-8", errors="replace"))
     return found
 
@@ -378,7 +395,9 @@ def main(argv=None):
         return 2
     installed, spdx = {}, {}
     for _, root in roots:
-        installed.update(parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8")))
+        # Every root's versions are kept: two roots holding the same triplet at different versions both count.
+        for key, version in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8")).items():
+            installed.setdefault(key, set()).add(version)
         for share in root.glob("*/share/*/vcpkg.spdx.json"):
             spdx.setdefault(share.parent.name, spdx_source(share.read_text(encoding="utf-8")))
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
@@ -444,6 +463,29 @@ def self_test():
     check("the register matching the tree is clean", lint(table(gtest, helper)), [])
     check("a transitive port with no row", rules(lint(table(gtest))), ["unregistered"])
     check("a port nothing installs", rules(lint(table(gtest, helper, webp))), ["orphan-row"])
+    check("one root at another version than the row fails, though another root matches it",
+          rules(lint(table(gtest, helper), inst={("gtest", "isotone-x64"): {"1.18.0"}, ("gtest", "isotone-arm64"): {"1.19.0"},
+                                                 ("vcpkg-cmake", "x64-windows"): {"2025-08-07"}})), ["version-mismatch"])
+    check("two roots of one triplet at different versions fail",
+          rules(lint(table(gtest, helper), inst={("gtest", "isotone-x64"): {"1.18.0", "1.19.0"},
+                                                 ("vcpkg-cmake", "x64-windows"): {"2025-08-07"}})), ["version-mismatch"])
+    sqlite = ["SQLite", "sqlite3", "3.46.0", "blessing", "u", "yes", "none", "x64, arm64",
+              "https://sqlite.org/2024/sqlite-amalgamation-3460000.zip", "3.46.0", "feed:https://www.sqlite.org/cves.html",
+              "yes", "albumen", "direct", "D04 T01 §1", "static", "none"]
+    archive_inst = {**installed, ("sqlite3", "isotone-x64"): "3.46.0"}
+    archive_spdx = {**spdx, "sqlite3": ("https://sqlite.org/2024/sqlite-amalgamation-3460000.zip", None)}
+    check("an archive-built port matching its archive URL and naming its feed has no identity finding",
+          [x for x in rules(lint(table(gtest, helper, sqlite), inst=archive_inst, sp=archive_spdx)) if x != "license-not-allowed"], [])
+    check("an archive-built port naming another archive fails",
+          [x for x in rules(lint(table(gtest, helper, [*sqlite[:8], "https://sqlite.org/old.zip", *sqlite[9:]]),
+                                 inst=archive_inst, sp=archive_spdx)) if x != "license-not-allowed"], ["identity-mismatch"])
+    check("an archive download is read as its URL", spdx_source(json.dumps({"packages": [
+        {"downloadLocation": "git+https://github.com/microsoft/vcpkg@17742fd"},
+        {"downloadLocation": "https://sqlite.org/2024/sqlite-amalgamation-3460000.zip"}]})),
+          ("https://sqlite.org/2024/sqlite-amalgamation-3460000.zip", None))
+    check("a /wd in a CMakeLists.txt with no WORKAROUND fails",
+          rules(cmake_suppression_findings("native/core/CMakeLists.txt", "target_compile_options(isotone_core PRIVATE /wd4996)")),
+          ["suppression-unreasoned"])
     check("a baseline bump leaves the row behind",
           rules(lint(table(gtest, helper), inst={**installed, ("gtest", "isotone-x64"): "1.19.0"})), ["version-mismatch"])
     check("an identity naming a patched tag the port was not built from",
@@ -499,7 +541,11 @@ def self_test():
                        ('auto m = LoadLibraryW(L"helper.dll");', ["loadlibrary-unresolved"]),
                        ('auto m = LoadLibraryW(name.c_str());', ["loadlibrary-unresolved"]),
                        ('auto m = LoadLibraryExW(L"kernel32.dll", nullptr, 0);', ["loadlibrary-unresolved"]),
-                       ('auto m = LoadLibraryExW(L"isoplug.dll", nullptr, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);', [])):
+                       ('auto m = LoadLibraryExW(L"isoplug.dll", nullptr, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);', []),
+                       ('auto m = LoadLibraryExW(L"kernel32.dll", nullptr, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);',
+                        ["loadlibrary-unresolved"]),
+                       ('auto m = LoadLibraryExW(L"isoplug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);',
+                        ["loadlibrary-unresolved"])):
         check(f"loadlibrary: {text}", rules(loadlibrary_findings("native/a.cpp", text, patterns, {"isoplug.dll"})), want)
 
     status = ("Package: gtest\nVersion: 1.18.0\nPort-Version: 2\nArchitecture: isotone-x64\nStatus: install ok installed\n\n"
