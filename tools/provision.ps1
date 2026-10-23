@@ -15,6 +15,9 @@
     python  Python 3 on PATH (plan gates in scripts/check-all.ps1).
     pydeps  the icon generators' packages at the versions scripts/requirements-icons.txt pins
             (scripts/check-all.ps1 runs build-app-icons.py --check). Repair installs them with pip.
+    native  the pinned native toolchain (native/toolchain.json), read by scripts/dev-env.ps1 -Check for x64 and
+            arm64. Repair never changes Visual Studio: it prints the exact vs_installer.exe command for each
+            missing component, for the operator to run.
   -Verify runs the checks only: exit 0 when all legs are green, 1 otherwise.
   Without -Verify, failing legs are repaired, then verified again.
   Run: pwsh tools/provision.ps1 [-Verify] [-SkipInno]
@@ -199,6 +202,34 @@ function Install-PyDeps {
   & $py.Path -m pip install --disable-pip-version-check -r (Join-Path $Root 'scripts\requirements-icons.txt')
 }
 
+function Test-NativeLeg {
+  $script = Join-Path $Root 'scripts\dev-env.ps1'
+  $faults = @()
+  foreach ($arch in 'x64', 'arm64') {
+    $out = & pwsh -NoProfile -File $script -Check -Arch $arch 2>&1
+    $out | ForEach-Object { Write-Host "provision: native $arch | $_" }
+    if ($LASTEXITCODE -ne 0) { $faults += "$arch $(@($out | Where-Object { $_ -clike '* MISMATCH' }).Count) mismatch" }
+  }
+  if ($faults.Count -eq 0) { return @{ Name = 'native'; Ok = $true; Detail = 'x64 and arm64 match native/toolchain.json' } }
+  return @{ Name = 'native'; Ok = $false; Detail = ($faults -join '; ') }
+}
+
+function Show-NativeRepair {
+  # Never runs the installer: a Visual Studio change is the operator's, so the exact command is printed instead.
+  $pin = Get-Content -Raw (Join-Path $Root 'native\toolchain.json') | ConvertFrom-Json
+  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+  $vs = & $vswhere -version $pin.visual_studio.version_range -latest -products * -property installationPath
+  if (-not $vs) {
+    Write-Host "provision: native: no Visual Studio in $($pin.visual_studio.version_range); install Visual Studio 2026 with the components in native/toolchain.json"
+    return
+  }
+  $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+  foreach ($component in $pin.visual_studio.components) {
+    $has = & $vswhere -version $pin.visual_studio.version_range -latest -products * -requires $component -property installationPath
+    if (-not $has) { Write-Host "provision: native: run  & `"$installer`" modify --installPath `"$vs`" --add $component" }
+  }
+}
+
 function Test-All {
   $r = @()
   $r += Test-SdkLeg
@@ -206,6 +237,7 @@ function Test-All {
   $r += Test-HooksLeg
   $r += Test-PythonLeg
   $r += Test-PyDepsLeg
+  $r += Test-NativeLeg
   return $r
 }
 
@@ -226,6 +258,7 @@ if (-not $Verify) {
   if ($faults -contains 'inno') { Install-Inno }
   if ($faults -contains 'hooks path') { Repair-Hooks }
   if ($faults -contains 'pydeps') { Install-PyDeps }
+  if ($faults -contains 'native') { Show-NativeRepair }
   if ($faults.Count -gt 0) { $results = @(Test-All) }
 }
 if (Show-Results $results) { exit 0 } else { exit 1 }

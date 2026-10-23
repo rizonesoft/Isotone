@@ -9,7 +9,8 @@ How the Isotone Graphics Suite builds from the repository root: one solution, on
 | .NET SDK | 11.0.100-rc.2.26504.105 (exact) | Pinned in `global.json` with `allowPrerelease: true` and `rollForward: disable`: the .NET 11 release candidate (go-live), by operator decision on 2026-09-26, moved from RC 1 to RC 2 on 2026-10-19 (operator request). `D00 T02 §8` moves the pin to the GA SDK when .NET 11 ships in November 2026. Builds print `NETSDK1057` ("You are using a preview version of .NET") until then; it is a message, not a warning. |
 | PowerShell | 7.x | All `scripts/*.ps1` require `pwsh`. |
 | Inno Setup | 7.1 or newer | Only for installers. `scripts/_common.ps1` finds `ISCC.exe` under `Inno Setup 7` (or `$env:ISCC`) and refuses Inno Setup 6. CI installs 7.1.0 from the official release, hash-pinned. |
-| Python | 3.x | Plan gates (`scripts/todo-graph.py` and friends). |
+| Python | 3.x | Plan gates (`scripts/todo-graph.py` and friends); the icon generators' packages are pinned in `scripts/requirements-icons.txt`. |
+| Visual Studio 2026 | 18.11 or later, with the components `native/toolchain.json` lists | The native toolchain; see Native toolchain below. |
 
 `tools/provision.ps1` checks all of this and repairs what it can:
 
@@ -18,7 +19,21 @@ pwsh tools/provision.ps1 -Verify   # report only; exit 1 on any fault
 pwsh tools/provision.ps1           # repair, then verify
 ```
 
-Repairs: downloads the pinned SDK into `.tools/dotnet-win-x64` (SHA512 verified) when no matching SDK is installed, installs Inno Setup 7 through winget (`JRSoftware.InnoSetup.7`) with the official `innosetup-7.1.0-x64.exe` (SHA256 pinned) as the fallback (Chocolatey has no Inno Setup 7 package), and sets `git config core.hooksPath tools/githooks`. A hooks path that already points somewhere else is left alone.
+Repairs: installs the icon packages from `scripts/requirements-icons.txt` with pip, downloads the pinned SDK into `.tools/dotnet-win-x64` (SHA512 verified) when no matching SDK is installed, installs Inno Setup 7 through winget (`JRSoftware.InnoSetup.7`) with the official `innosetup-7.1.0-x64.exe` (SHA256 pinned) as the fallback (Chocolatey has no Inno Setup 7 package), and sets `git config core.hooksPath tools/githooks`. A hooks path that already points somewhere else is left alone. The `native` leg never changes Visual Studio: it prints the exact `vs_installer.exe modify --add <component>` command for each component the pin needs and the machine lacks.
+
+### Native toolchain
+
+The C++ apps build with one exact toolchain, pinned in `native/toolchain.json` (`docs/dev/decisions.md`, "2026-10-23: The native toolchain pin"): the MSVC toolset 14.51.36231 (compiler 19.51.36260), Windows SDK 10.0.26100.0, CMake 4.3.1-msvc1, Ninja 1.13.2, LLVM 22.1.3 (clang-tidy, clang-format, clang-cl), and the vcpkg tool 2026-07-27, all bundled with Visual Studio 2026 18.11. It is the toolchain the development machine and both CI images (`windows-2025-vs2026`, `windows-11-vs2026-arm`) share, read by the `toolchain-probe` workflow.
+
+`scripts/dev-env.ps1` enters it and refuses anything else. It finds Visual Studio with `vswhere`, enters the toolset through `vcvarsall.bat -vcvars_ver=<toolset>` with the pinned SDK (`Launch-VsDevShell.ps1` cannot select a toolset), sets `VCPKG_ROOT` to the bundled vcpkg, and compares what the environment runs with the pin:
+
+```powershell
+pwsh scripts/dev-env.ps1 -Check -Arch x64     # one line per item, exit 1 on any mismatch or missing component
+. ./scripts/dev-env.ps1 -Arch arm64           # this session, inside the ARM64 cross environment
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'cmake --version'   # one command inside it
+```
+
+Re-pinning after a Visual Studio or runner image update: run the `toolchain-probe` workflow, choose the newest toolset all three machines share, update `native/toolchain.json` and the decision record, and regenerate the test fixtures with `python scripts/tests/test_dev_env.py --write-fixtures`.
 
 ## One build configuration
 

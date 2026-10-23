@@ -40,6 +40,8 @@ If your change is not covered by an existing section, open an issue first so it 
 
 You need Windows 11 (x64; Windows 10 22H2 may work but is unsupported), [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows), and Git. The .NET SDK is pinned to **11.0.100-rc.2.26504.105** in `global.json`; the provisioning script installs it, and Inno Setup 7 for building installers.
 
+For the native C++ apps you also need **Visual Studio 2026, version 18.11 or later** (any edition) with these components, exactly as `native/toolchain.json` pins them: `Microsoft.VisualStudio.Component.VC.Tools.x86.x64`, `Microsoft.VisualStudio.Component.VC.Tools.ARM64`, `Microsoft.VisualStudio.Component.VC.CMake.Project` (the bundled CMake and Ninja), `Microsoft.VisualStudio.Component.VC.Llvm.Clang` (clang-tidy, clang-format, clang-cl), `Microsoft.VisualStudio.Component.Windows11SDK.26100`, `Microsoft.VisualStudio.Component.Vcpkg`, and `Microsoft.VisualStudio.Component.VC.ASAN`. The pin also names the exact MSVC toolset (14.51.36231) and tool versions; `pwsh scripts/dev-env.ps1 -Check` compares your machine with it, and `tools/provision.ps1` prints the Visual Studio Installer command for any component you lack.
+
 ```powershell
 git clone https://github.com/rizonesoft/Isotone.git
 cd Isotone

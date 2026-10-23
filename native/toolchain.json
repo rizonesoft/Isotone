@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "about": "The native toolchain pin (D00 T05 §1; docs/dev/decisions.md, 2026-10-23: The native toolchain pin). scripts/dev-env.ps1 enters exactly this and refuses anything else.",
+  "visual_studio": {
+    "version_range": "[18.11,19.0)",
+    "components": [
+      "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+      "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
+      "Microsoft.VisualStudio.Component.VC.CMake.Project",
+      "Microsoft.VisualStudio.Component.VC.Llvm.Clang",
+      "Microsoft.VisualStudio.Component.Windows11SDK.26100",
+      "Microsoft.VisualStudio.Component.Vcpkg",
+      "Microsoft.VisualStudio.Component.VC.ASAN"
+    ]
+  },
+  "msvc": {
+    "toolset": "14.51.36231",
+    "compiler": "19.51.36260"
+  },
+  "windows_sdk": "10.0.26100.0",
+  "cmake": "4.3.1-msvc1",
+  "ninja": "1.13.2",
+  "llvm": {
+    "clang-tidy": "22.1.3",
+    "clang-format": "22.1.3",
+    "clang-cl": "22.1.3"
+  },
+  "vcpkg": "2026-07-27-98d7cb0cf1f4686a3e43aa5672b6230c1d56bce8"
+}
