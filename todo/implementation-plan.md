@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **14 of 828 sections complete (2%).** 828 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **14 of 846 sections complete (2%).** 846 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -96,9 +96,9 @@ Nothing in this plan has been built, but the tree is not empty.
 
 **Stilus parity** is planned, not built: on 2026-09-26 the operator decided Stilus gets every CorelDRAW and every Illustrator feature, the catalog in [`../docs/parity/stilus-parity.md`](../docs/parity/stilus-parity.md) routes each of their 4,335 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 4 to 13 run the sections between Stilus 0.1.0 and Gesso's foundation.
 
-**Gesso parity** is planned, not built: the same day the operator decided Gesso gets every Photoshop feature and those of at least two other popular raster editors, chosen as Affinity Photo (Affinity 3.3) and GIMP 3.2.6; the catalog in [`../docs/parity/gesso-parity.md`](../docs/parity/gesso-parity.md) routes each of their 10,829 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 16 to 27 run the sections between Gesso 0.1.0 and Albumen's foundation. Scripting, macros, batch processing, video, and animation run after the first release, in Phases 42 and 43, with scripting and macros as one suite-wide system.
+**Gesso parity** is planned, not built: the same day the operator decided Gesso gets every Photoshop feature and those of at least two other popular raster editors, chosen as Affinity Photo (Affinity 3.3) and GIMP 3.2.6; the catalog in [`../docs/parity/gesso-parity.md`](../docs/parity/gesso-parity.md) routes each of their 10,829 inventory rows to a section, a backlog entry, an exclusion, or another app, and Phases 16 to 27 run the sections between Gesso 0.1.0 and Albumen's foundation. Scripting, macros, batch processing, video, and animation run after the first release, in Phases 48 and 49, with scripting and macros as one suite-wide system.
 
-**After the first release** is planned, not built: on 2026-09-27 the operator worried "features will be left behind" and chose to plan the work once deferred to after the first release as real sections rather than backlog entries. Phases 42 to 45 run it after the suite bundle and the shared-decoder imports: suite automation (actions, C# scripting, the automation and MCP servers, extensions, the command line, and batch with droplets), video and audio with frame animation, on-device models beside the OpenRouter default with the GPU develop path, and Albumen's remaining formats (SWF, an optional user-installed GDAL for ECW, MrSID, JPM, and MRC, and clean-room analysis of four undocumented layered formats), each phase ending in app releases and the last in `isotone-v1.1.0`; Albumen's CAD and plotter drawings land earlier, in Phase 30, on Stilus's readers moved to `Isotone.Core`.
+**After the first release** is planned, not built: on 2026-09-27 the operator worried "features will be left behind" and chose to plan the work once deferred to after the first release as real sections rather than backlog entries. Phases 48 to 51 run it after the suite bundle and the shared-decoder imports: suite automation (actions, C# scripting, the automation and MCP servers, extensions, the command line, and batch with droplets), video and audio with frame animation, on-device models beside the OpenRouter default with the GPU develop path, and Albumen's remaining formats (SWF, an optional user-installed GDAL for ECW, MrSID, JPM, and MRC, and clean-room analysis of four undocumented layered formats), each phase ending in app releases and the last in `isotone-v1.1.0`; Albumen's CAD and plotter drawings land earlier, in Phase 30, on Stilus's readers moved to `Isotone.Core`.
 
 **The workspace** has a pinned SDK, one solution, one build configuration, scripts, installers, and CI workflows written on 2026-09-26, committed and running green on GitHub since that day (the first recorded runs are `D00 T01 §5`'s to cite).
 
@@ -1185,7 +1185,67 @@ With all three apps released, Albumen at its parity release 1.0.0 (Phase 39), di
 | [ ] | `D06 T02 §2` | README images from real captures    |   3   |
 | [ ] | `D06 T02 §3` | The user guides as a published site |   4   |
 
-### Phase 41 -- Gesso and Stilus after their releases: imports through shared decoders
+### Phase 41 -- Tinctura foundation: the plan, the identity, and Tinctura 0.1.0
+
+Tinctura, the color picker and color studio, is one of the three apps the operator added on 2026-10-23 ("let's als oinclude planning for 3 more additions to the suite"), after the first suite release and before the post-release phases. Tinctura runs first of the three new apps because it is the smallest and because its system-wide picker is the one Capio moves into `Isotone.Core` next. The campaign plans it here, just ahead of building it (`D07 T01`): the name pre-screen, the job and fence, the competitor survey and parity catalog, the layout map and section design, and the accent, icon, and splash, design first; then `D07 T01 §5` authors this phase's remaining files, from the app spine to `tinctura-v0.1.0`, and places them in this table after it.
+
+|  ✔  | Section      | Deliverable                                                  | Items |
+| :-: | ------------ | ------------------------------------------------------------ | :---: |
+| [ ] | `D07 T01 §1` | Tinctura: the name, the job, and the identity                |   7   |
+| [ ] | `D07 T01 §2` | Tinctura: the competitor survey and the parity catalog       |   6   |
+| [ ] | `D07 T01 §3` | Tinctura: the section design and the layout map              |   5   |
+| [ ] | `D07 T01 §4` | Tinctura: the accent, the icon, and the splash, design first |   5   |
+| [ ] | `D07 T01 §5` | Tinctura: author the foundation and 0.1.0 files              |   7   |
+
+### Phase 42 -- Tinctura parity and Tinctura 1.0.0
+
+With `tinctura-v0.1.0` shipped, `D07 T01 §6` authors this phase's files against what shipped: every remaining row of `docs/parity/tinctura-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `tinctura-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
+
+|  ✔  | Section      | Deliverable                                 | Items |
+| :-: | ------------ | ------------------------------------------- | :---: |
+| [ ] | `D07 T01 §6` | Tinctura: author the parity and 1.0.0 files |   6   |
+
+### Phase 43 -- Capio foundation: the plan, the identity, and Capio 0.1.0
+
+Capio, the screenshot and screen recording app, is one of the three apps the operator added on 2026-10-23 ("let's als oinclude planning for 3 more additions to the suite"), after the first suite release and before the post-release phases. Capio follows Tinctura, whose picker it moves into `Isotone.Core` instead of copying. The campaign plans it here, just ahead of building it (`D08 T01`): the name pre-screen, the job and fence, the competitor survey and parity catalog, the layout map and section design, and the accent, icon, and splash, design first; then `D08 T01 §5` authors this phase's remaining files, from the app spine to `capio-v0.1.0`, and places them in this table after it.
+
+|  ✔  | Section      | Deliverable                                               | Items |
+| :-: | ------------ | --------------------------------------------------------- | :---: |
+| [ ] | `D08 T01 §1` | Capio: the name, the job, and the identity                |   7   |
+| [ ] | `D08 T01 §2` | Capio: the competitor survey and the parity catalog       |   6   |
+| [ ] | `D08 T01 §3` | Capio: the section design and the layout map              |   5   |
+| [ ] | `D08 T01 §4` | Capio: the accent, the icon, and the splash, design first |   5   |
+| [ ] | `D08 T01 §5` | Capio: author the foundation and 0.1.0 files              |   7   |
+
+### Phase 44 -- Capio parity and Capio 1.0.0
+
+With `capio-v0.1.0` shipped, `D08 T01 §6` authors this phase's files against what shipped: every remaining row of `docs/parity/capio-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `capio-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
+
+|  ✔  | Section      | Deliverable                              | Items |
+| :-: | ------------ | ---------------------------------------- | :---: |
+| [ ] | `D08 T01 §6` | Capio: author the parity and 1.0.0 files |   6   |
+
+### Phase 45 -- Folium foundation: the plan, the identity, and Folium 0.1.0
+
+Folium, the page layout and publishing app, is one of the three apps the operator added on 2026-10-23 ("let's als oinclude planning for 3 more additions to the suite"), after the first suite release and before the post-release phases. Folium, the largest of the three, comes last, on the type engine, PDF writer, color management, and decoders the suite already has. The campaign plans it here, just ahead of building it (`D09 T01`): the name pre-screen, the job and fence, the competitor survey and parity catalog, the layout map and section design, and the accent, icon, and splash, design first; then `D09 T01 §5` authors this phase's remaining files, from the app spine to `folium-v0.1.0`, and places them in this table after it.
+
+|  ✔  | Section      | Deliverable                                                | Items |
+| :-: | ------------ | ---------------------------------------------------------- | :---: |
+| [ ] | `D09 T01 §1` | Folium: the name, the job, and the identity                |   7   |
+| [ ] | `D09 T01 §2` | Folium: the competitor survey and the parity catalog       |   6   |
+| [ ] | `D09 T01 §3` | Folium: the section design and the layout map              |   5   |
+| [ ] | `D09 T01 §4` | Folium: the accent, the icon, and the splash, design first |   5   |
+| [ ] | `D09 T01 §5` | Folium: author the foundation and 0.1.0 files              |   7   |
+
+### Phase 46 -- Folium parity and Folium 1.0.0
+
+With `folium-v0.1.0` shipped, `D09 T01 §6` authors this phase's files against what shipped: every remaining row of `docs/parity/folium-parity.md`, the workspace, preferences, and help, the accessibility and localization audit, and the releases through `folium-v1.0.0`, which joins the `isotone-v1.1.0` suite bundle (`D05 T01 §7`). The authored sections follow it in this table.
+
+|  ✔  | Section      | Deliverable                               | Items |
+| :-: | ------------ | ----------------------------------------- | :---: |
+| [ ] | `D09 T01 §6` | Folium: author the parity and 1.0.0 files |   6   |
+
+### Phase 47 -- Gesso and Stilus after their releases: imports through shared decoders
 
 After the suite release (Phase 40), Gesso opens camera RAW files through the decoder Albumen shares once it moves to `Isotone.Core` (`D04 T01 §4`), developing them through the suite develop engine (`D01 T07 §1`) into Gesso's Develop studio; until then the Camera Raw filter of Phase 23 works on open layers. Three of this phase's former rows moved into the Gesso parity phases on 2026-09-26 without changing address: the filter catalog (`D03 T07 §3`) to Phase 21, and workspaces (`D03 T07 §17`) and the accessibility and localization audit (`D03 T07 §16`) to Phase 27. The legacy Gesso roadmap's other entries were promoted into the parity phases or wait in [`backlog.md`](./backlog.md). Stilus follows on the same shared code (operator decision 2026-09-27, "Group 1: plan them all"): GIMP XCF import on the XCF core it moves out of Gesso's reader (`D02 T18 §9`) and camera RAW import with the RAW Lab on the moved decoder and the develop engine (`D02 T18 §10`), released as `stilus-v1.1.0` (`D02 T17 §11`); neither can run before Stilus 1.0.0 without copying another app's code, so they wait here rather than in a new phase.
 
@@ -1194,15 +1254,15 @@ After the suite release (Phase 40), Gesso opens camera RAW files through the dec
 | [ ] | `D03 T07 §11` | RAW import through the shared decoder            |   4   |
 | [ ] | `D02 T18 §9`  | GIMP XCF import in Stilus on the shared XCF core |   9   |
 | [ ] | `D02 T18 §10` | Camera RAW import and the RAW Lab                |  15   |
-| [ ] | `D02 T17 §11` | Stilus 1.1.0 (Phase 41)                          |  14   |
+| [ ] | `D02 T17 §11` | Stilus 1.1.0 (Phase 47)                          |  14   |
 
-### Phase 42 -- Suite automation after the first release: actions, scripting, extensions, the command line, and batch
+### Phase 48 -- Suite automation after the first release: actions, scripting, extensions, the command line, and batch
 
-With every app released, the suite bundled (Phase 40), and the shared-decoder imports shipped (Phase 41), the automation the operator deferred to after the first release on 2026-09-26 runs as real sections, because on 2026-09-27 the operator worried "features will be left behind" and chose to plan it rather than keep it in the backlog. It is one suite-wide system in `Isotone.Core` and `Isotone.UI` (`D01 T10`), built first because all three apps consume it: recorded actions with conditional steps and playback as one undo step, the Actions panel and action files (Photoshop ATN import; Isotone action files are the format), C# scripting through Roslyn (MIT, already referenced by Gesso's scripting project; the one scripting language, chosen over Python through pythonnet and JavaScript through Jint or ClearScript, with every other language driving the apps through the automation server), the script editor and console, the automation server with the MCP server behind per-category permissions, the extension SDK beside the 8BF host of `D01 T09`, the command line, and the batch runner with droplets on Albumen's job engine moved to `Isotone.Core` (Albumen's own batch tools stay in `D04 T11`). Each app then gets its object model and automation surfaces (`D02 T19`, `D03 T22`, `D04 T17`), and the phase ends with `stilus-v1.2.0`, `gesso-v1.1.0`, and `albumen-v1.1.0`.
+With every app released, the suite bundled (Phase 40), and the shared-decoder imports shipped (Phase 47), the automation the operator deferred to after the first release on 2026-09-26 runs as real sections, because on 2026-09-27 the operator worried "features will be left behind" and chose to plan it rather than keep it in the backlog. It is one suite-wide system in `Isotone.Core` and `Isotone.UI` (`D01 T10`), built first because all three apps consume it: recorded actions with conditional steps and playback as one undo step, the Actions panel and action files (Photoshop ATN import; Isotone action files are the format), C# scripting through Roslyn (MIT, already referenced by Gesso's scripting project; the one scripting language, chosen over Python through pythonnet and JavaScript through Jint or ClearScript, with every other language driving the apps through the automation server), the script editor and console, the automation server with the MCP server behind per-category permissions, the extension SDK beside the 8BF host of `D01 T09`, the command line, and the batch runner with droplets on Albumen's job engine moved to `Isotone.Core` (Albumen's own batch tools stay in `D04 T11`). Each app then gets its object model and automation surfaces (`D02 T19`, `D03 T22`, `D04 T17`), and the phase ends with `stilus-v1.2.0`, `gesso-v1.1.0`, and `albumen-v1.1.0`.
 
 |  ✔  | Section       | Deliverable                                                                                                             | Items |
 | :-: | ------------- | ----------------------------------------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D00 T07 §40` | Re-plan Phase 42: Suite automation after the first release: actions, scripting, extensions, the command line, and batch |  11   |
+| [ ] | `D00 T07 §40` | Re-plan Phase 48: Suite automation after the first release: actions, scripting, extensions, the command line, and batch |  11   |
 | [ ] | `D01 T10 §1`  | The action model, the recorder, and playback                                                                            |  18   |
 | [ ] | `D01 T10 §2`  | The Actions panel in Isotone.UI                                                                                         |  15   |
 | [ ] | `D01 T10 §3`  | Action files and the action library                                                                                     |  16   |
@@ -1215,26 +1275,26 @@ With every app released, the suite bundled (Phase 40), and the shared-decoder im
 | [ ] | `D02 T19 §1`  | The Stilus object model and recordable commands                                                                         |  15   |
 | [ ] | `D02 T19 §2`  | Scripts, extensions, and macros in Stilus documents                                                                     |  14   |
 | [ ] | `D02 T19 §3`  | Batch processing and the command line in Stilus                                                                         |  12   |
-| [ ] | `D02 T17 §12` | Stilus 1.2.0 (Phase 42)                                                                                                 |  16   |
+| [ ] | `D02 T17 §12` | Stilus 1.2.0 (Phase 48)                                                                                                 |  16   |
 | [ ] | `D03 T22 §1`  | The Gesso object model, recordable commands, and actions in Gesso                                                       |  17   |
 | [ ] | `D03 T22 §2`  | Scripts in Gesso                                                                                                        |  14   |
 | [ ] | `D03 T22 §3`  | Procedures and plug-ins in Gesso                                                                                        |  16   |
 | [ ] | `D03 T22 §4`  | Extensions, the MCP server, and remote connections in Gesso                                                             |  12   |
 | [ ] | `D03 T22 §5`  | Batch, droplets, the Image Processor, and headless runs                                                                 |  14   |
 | [ ] | `D03 T22 §6`  | Variables and data sets                                                                                                 |  10   |
-| [ ] | `D03 T21 §13` | Gesso 1.1.0 (Phase 42)                                                                                                  |  18   |
+| [ ] | `D03 T21 §13` | Gesso 1.1.0 (Phase 48)                                                                                                  |  18   |
 | [ ] | `D04 T17 §1`  | Recorded actions in Albumen                                                                                             |  16   |
 | [ ] | `D04 T17 §2`  | Albumen extension points                                                                                                |  14   |
 | [ ] | `D04 T17 §3`  | The Albumen command line                                                                                                |  15   |
-| [ ] | `D04 T15 §11` | Albumen 1.1.0 (Phase 42)                                                                                                |  19   |
+| [ ] | `D04 T15 §11` | Albumen 1.1.0 (Phase 48)                                                                                                |  19   |
 
-### Phase 43 -- Video, audio, and animation after the first release
+### Phase 49 -- Video, audio, and animation after the first release
 
 Video, audio, and frame animation were deferred with automation and are planned the same way (operator decision 2026-09-27, "features will be left behind"). The suite media stack comes first (`D01 T11`): Windows Media Foundation through Vortice.MediaFoundation (MIT, part of the Vortice.Windows family the operator approved on 2026-09-27) for decoding, encoding, and playback, XAudio2 through Vortice.XAudio2 for mixed audio, and an optional FFmpeg the user installs, run as an external process and never bundled or linked, for the containers Media Foundation cannot read (FLV among them), so either an LGPL or a GPL build is compatible and no patent-encumbered codec ships in Isotone's installers. Gesso then gains video layers, the Timeline, audio tracks, Render Video, frame animation with onion skin and tweening, animated GIF, APNG, WebP, MNG, and FLI authoring, and the animation filters (`D03 T23`); Albumen gains video and audio in the library, browse, the viewer, Media mode, image audio, trimming and frame extraction, and video slideshows, always writing new files unless the originals opt-in is on (`D04 T16`). It ends with `gesso-v1.2.0` and `albumen-v1.2.0`.
 
 |  ✔  | Section       | Deliverable                                                           | Items |
 | :-: | ------------- | --------------------------------------------------------------------- | :---: |
-| [ ] | `D00 T07 §41` | Re-plan Phase 43: Video, audio, and animation after the first release |   9   |
+| [ ] | `D00 T07 §41` | Re-plan Phase 49: Video, audio, and animation after the first release |   9   |
 | [ ] | `D01 T11 §1`  | The media stack decision and decoding                                 |  17   |
 | [ ] | `D01 T11 §2`  | Playback, the audio engine, and the media clock                       |  14   |
 | [ ] | `D01 T11 §3`  | Encoding: render video and audio                                      |  15   |
@@ -1245,22 +1305,22 @@ Video, audio, and frame animation were deferred with automation and are planned 
 | [ ] | `D03 T23 §4`  | Frame animation, onion skin, and tweening                             |  18   |
 | [ ] | `D03 T23 §5`  | Animated formats: GIF, APNG, WebP, MNG, and FLI authoring             |  16   |
 | [ ] | `D03 T23 §6`  | Animation filters and temporal blur                                   |  13   |
-| [ ] | `D03 T21 §14` | Gesso 1.2.0 (Phase 43)                                                |  18   |
+| [ ] | `D03 T21 §14` | Gesso 1.2.0 (Phase 49)                                                |  18   |
 | [ ] | `D04 T16 §1`  | Video and audio in the library and browse                             |  14   |
 | [ ] | `D04 T16 §2`  | Video and audio playback in the viewer and the loupe                  |  16   |
 | [ ] | `D04 T16 §3`  | Trim, poster frame, frame extraction, and video export                |  14   |
 | [ ] | `D04 T16 §4`  | Media mode                                                            |  14   |
 | [ ] | `D04 T16 §5`  | Image audio                                                           |  14   |
 | [ ] | `D04 T16 §6`  | Video in slideshows and slideshow video export                        |  12   |
-| [ ] | `D04 T15 §12` | Albumen 1.2.0 (Phase 43)                                              |  19   |
+| [ ] | `D04 T15 §12` | Albumen 1.2.0 (Phase 49)                                              |  19   |
 
-### Phase 44 -- On-device models and the GPU develop path
+### Phase 50 -- On-device models and the GPU develop path
 
 Two accelerations wait for the apps to be complete (operator decision 2026-09-27, "features will be left behind"). On-device models (`D01 T12`) run through ONNX Runtime with the DirectML execution provider (MIT) and a CPU fallback, behind the same AI task seam as the OpenRouter path of `D01 T05`, which stays the default: a model catalog records each model's source, SHA-256, and license, accepts only permissive or GPL-compatible licenses, downloads only on an explicit user action, and tests run on tiny fixture models; Gesso (`D03 T19 §16`, `§17`) and Albumen (`D04 T10 §13`) consume it. The GPU develop path (`D01 T07 §10` to `§12`) moves the ComputeSharp device of `D03 T02 §5` into `Isotone.Core` and runs every develop stage on the GPU with CPU parity within 1/255 and measured budgets. It ends with `gesso-v1.3.0` and `albumen-v1.3.0`.
 
 |  ✔  | Section       | Deliverable                                                                | Items |
 | :-: | ------------- | -------------------------------------------------------------------------- | :---: |
-| [ ] | `D00 T07 §42` | Re-plan Phase 44: On-device models and the GPU develop path                |   9   |
+| [ ] | `D00 T07 §42` | Re-plan Phase 50: On-device models and the GPU develop path                |   9   |
 | [ ] | `D01 T12 §1`  | The local inference runtime                                                |  14   |
 | [ ] | `D01 T12 §2`  | The model catalog, downloads, and license records                          |  15   |
 | [ ] | `D01 T12 §3`  | The Model Manager surface in Isotone.UI                                    |  14   |
@@ -1270,20 +1330,20 @@ Two accelerations wait for the apps to be complete (operator decision 2026-09-27
 | [ ] | `D01 T07 §12` | GPU masks, the extended stages, and measured budgets                       |  13   |
 | [ ] | `D03 T19 §16` | On-device models in Gesso: remove, selection, star separation, and normals |  17   |
 | [ ] | `D03 T19 §17` | On-device photo models: motion blur reduction, mixed light, and SDR to HDR |  13   |
-| [ ] | `D03 T21 §15` | Gesso 1.3.0 (Phase 44)                                                     |  19   |
+| [ ] | `D03 T21 §15` | Gesso 1.3.0 (Phase 50)                                                     |  19   |
 | [ ] | `D04 T10 §13` | On-device models in Albumen: offline denoise, keywords, and similarity     |  16   |
-| [ ] | `D04 T15 §13` | Albumen 1.3.0 (Phase 44)                                                   |  19   |
+| [ ] | `D04 T15 §13` | Albumen 1.3.0 (Phase 50)                                                   |  19   |
 
-### Phase 45 -- Albumen's remaining formats and the Isotone suite 1.1.0
+### Phase 51 -- Albumen's remaining formats and the Isotone suite 1.1.0
 
-The last formats IrfanView and ACDSee open that had no GPL-compatible reader are planned by the routes the operator chose on 2026-09-27 ("features will be left behind"): Flash SWF's first frame through an own parser (FLV already plays through Phase 43's media stack), ECW, MrSID, JPM, and MRC through an optional GDAL the user installs with its driver plug-ins, run as an external process and never bundled (the Ghostscript pattern of `D02 T14 §9`), disabled and explained when absent, and the undocumented layered formats of Artweaver, BodyPaint 3D, Gemstone, and ACDSee through clean-room analysis of sample files (operator approval 2026-09-27), each with an exit that reroutes a format whose structure or driver cannot be established; CAD and plotter drawings already landed in Phase 30 (`D04 T13 §9`) on Stilus's moved readers. Albumen releases `albumen-v1.4.0`, and the second suite bundle, `isotone-v1.1.0`, carries Stilus 1.2.0, Gesso 1.3.0, and Albumen 1.4.0 at their own versions.
+The last formats IrfanView and ACDSee open that had no GPL-compatible reader are planned by the routes the operator chose on 2026-09-27 ("features will be left behind"): Flash SWF's first frame through an own parser (FLV already plays through Phase 49's media stack), ECW, MrSID, JPM, and MRC through an optional GDAL the user installs with its driver plug-ins, run as an external process and never bundled (the Ghostscript pattern of `D02 T14 §9`), disabled and explained when absent, and the undocumented layered formats of Artweaver, BodyPaint 3D, Gemstone, and ACDSee through clean-room analysis of sample files (operator approval 2026-09-27), each with an exit that reroutes a format whose structure or driver cannot be established; CAD and plotter drawings already landed in Phase 30 (`D04 T13 §9`) on Stilus's moved readers. Albumen releases `albumen-v1.4.0`, and the second suite bundle, `isotone-v1.1.0`, carries Stilus 1.2.0, Gesso 1.3.0, and Albumen 1.4.0 at their own versions.
 
 |  ✔  | Section       | Deliverable                                                                        | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------- | :---: |
 | [ ] | `D04 T13 §10` | Flash SWF: the first frame through an own parser                                   |  15   |
 | [ ] | `D04 T13 §11` | ECW, MrSID, JPM, and MRC through an optional GDAL                                  |  16   |
 | [ ] | `D04 T13 §12` | Artweaver, BodyPaint 3D, Gemstone GSD, and ACDSee ACDC through clean-room analysis |  17   |
-| [ ] | `D04 T15 §14` | Albumen 1.4.0 (Phase 45)                                                           |  19   |
+| [ ] | `D04 T15 §14` | Albumen 1.4.0 (Phase 51)                                                           |  19   |
 | [ ] | `D05 T01 §7`  | The suite bundle: isotone-v1.1.0                                                   |   9   |
 
 ### Phase 99 -- Manual: operator-only steps

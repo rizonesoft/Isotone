@@ -294,7 +294,7 @@ The ten Albumen parity phases sit after Phase 29 (Albumen 0.1.0) and before the 
 | 32 | -- | leaves the plan: its only row, `D04 T02 §9`, moves to Phase 39 |
 | 99 | 99 | Manual: operator-only steps |
 
-Prose that names an old phase number (`todo/implementation-plan.md` headings and paragraphs, including Phase 29's and Phase 41's paragraphs; the domain `INDEX.md` phase lines, where `todo/04-albumen/INDEX.md` becomes "Phases 28 to 39" and `todo/03-gesso/INDEX.md` changes "31" to "41"; `todo/TODO-00-INDEX.md`; `AGENTS.md`; the `D04 T01` and `D04 T02` Goal, non-goals, and Outcome sentences that name Phase 32 or list maps, printing, face recognition, and tethered capture as non-goals) is updated in the same commit; no section ref changes. The redesigned budget (schema 2 of `todo/budget.json`) has no per-phase ceiling, so no budget entry is written for the new, renumbered, or removed phases; phases have no size limit and these operator-directed sections carry no Origin line.
+Prose that names an old phase number (`todo/implementation-plan.md` headings and paragraphs, including Phase 29's and Phase 47's paragraphs; the domain `INDEX.md` phase lines, where `todo/04-albumen/INDEX.md` becomes "Phases 28 to 39" and `todo/03-gesso/INDEX.md` changes "31" to "41"; `todo/TODO-00-INDEX.md`; `AGENTS.md`; the `D04 T01` and `D04 T02` Goal, non-goals, and Outcome sentences that name Phase 32 or list maps, printing, face recognition, and tethered capture as non-goals) is updated in the same commit; no section ref changes. The redesigned budget (schema 2 of `todo/budget.json`) has no per-phase ceiling, so no budget entry is written for the new, renumbered, or removed phases; phases have no size limit and these operator-directed sections carry no Origin line.
 
 ## Acceptance bar additions
 
@@ -380,7 +380,7 @@ The last parity phase customizes and audits the whole surface once it exists: mo
 
 Unchanged in content; its paragraph now says it runs after Albumen 1.0.0, so the first suite bundle carries Albumen at its parity release.
 
-### Phase 41 -- Gesso after 0.1.0: RAW import through the shared decoder (was Phase 31)
+### Phase 47 -- Gesso after 0.1.0: RAW import through the shared decoder (was Phase 31)
 
 Unchanged in content; its paragraph's phase numbers are updated (the moved Gesso rows now sit in Phases 21 and 27, and the suite release is Phase 40).
 

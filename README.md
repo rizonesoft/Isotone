@@ -132,6 +132,14 @@ Stilus began life as the Bezier project and was imported here with its full hist
 | Browse without importing | 📋 | Open any folder, no import step |
 | Batch tools | 📋 | Rename, convert, resize, and develop in bulk |
 
+### Three more apps, after the first suite release
+
+| App | What it is | Status |
+| --- | ---------- | :----: |
+| Tinctura | A color picker and color studio: a system-wide eyedropper, every color space, palettes and harmonies, contrast and color-blindness checks | 📋 |
+| Capio | Screenshots and screen recording: every capture mode, a full annotation editor, OCR, pin to screen, and recording to MP4 and GIF | 📋 |
+| Folium | Page layout and publishing, an InDesign alternative | 📋 |
+
 ## Architecture
 
 Isotone follows one rule: **develop together, distribute separately.** All three apps live in one repository and one solution so shared code can be refactored in a single change and debugged end to end. Each app is still compiled into its own self-contained directory with its own copy of the core, so updating Gesso can never break an installed Stilus.

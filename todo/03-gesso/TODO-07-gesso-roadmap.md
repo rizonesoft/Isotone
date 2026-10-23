@@ -10,7 +10,7 @@ track: I7
 
 # TODO-07 -- Gesso after 0.1.0: Deferral Owners and Accessibility
 
-> **Goal:** The Gesso work after its first release that the plan is already committed to: the rest of the filter catalog that the 0.1.0 Filter menu names for its disabled items, RAW import through the decoder Albumen shares, and the workspaces, Preferences, accessibility, and localization work the acceptance bar requires. When this file closes, no Gesso menu item is disabled as planned, and Gesso works without a mouse or eyes. On 2026-09-26 the Gesso parity plan relocated three of these sections into its phases without changing their addresses: the filter catalog (§3) runs first in Phase 21, where the filter surfaces and engine extensions extend it, workspaces and Preferences (§17) run first in Phase 27, and the accessibility and localization audit (§16) runs last in Phase 27 so it covers every parity surface; RAW import (§11) stays in Phase 41, after Albumen's decoder ships.
+> **Goal:** The Gesso work after its first release that the plan is already committed to: the rest of the filter catalog that the 0.1.0 Filter menu names for its disabled items, RAW import through the decoder Albumen shares, and the workspaces, Preferences, accessibility, and localization work the acceptance bar requires. When this file closes, no Gesso menu item is disabled as planned, and Gesso works without a mouse or eyes. On 2026-09-26 the Gesso parity plan relocated three of these sections into its phases without changing their addresses: the filter catalog (§3) runs first in Phase 21, where the filter surfaces and engine extensions extend it, workspaces and Preferences (§17) run first in Phase 27, and the accessibility and localization audit (§16) runs last in Phase 27 so it covers every parity surface; RAW import (§11) stays in Phase 47, after Albumen's decoder ships.
 
 > **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
@@ -28,7 +28,7 @@ track: I7
 - -> XREF: D01 T07 §1 -- the suite develop engine cites §11: Gesso's RAW open dialog develops through D01 T07 §1 instead of its own exposure and white balance code
 - -> XREF: D03 T08 §1 -- Gesso parity document and view cites §17: workspaces the panels there dock into
 - -> XREF: D03 T14 §2 -- Gesso parity filters cites §3: the legacy filter catalog whose disabled items D03 T14 §2 resolves
-- -> XREF: D03 T15 §12 -- Gesso parity photo (Camera Raw and merges) cites §11: RAW import: opens RAW into D03 T15 §12's studio and supplies camera RAW sources to RAW layers, merges, and astro frames when it ships in Phase 41
+- -> XREF: D03 T15 §12 -- Gesso parity photo (Camera Raw and merges) cites §11: RAW import: opens RAW into D03 T15 §12's studio and supplies camera RAW sources to RAW layers, merges, and astro frames when it ships in Phase 47
 - -> XREF: D03 T20 §9 -- Gesso parity workspace cites §17: workspaces and the Preferences dialog it extends; §16: the accessibility and localization audit that consumes D03 T20 §9's settings
 - -> XREF: D03 T21 §12 -- the Gesso parity releases cites §16: the accessibility and localization audit D03 T21 §12 depends on, so 1.0.0 ships no unaudited surface
 - -> XREF: D02 T18 §10 -- Stilus's camera RAW import cites §11: it consumes the RAW decoder §11 moves to `Isotone.Core`, never a copy

@@ -10,7 +10,7 @@ track: R1
 
 # TODO-01 -- Distribution: Clean-Machine Proof, Signing, arm64, Updates, winget, and the Suite Bundle
 
-> **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Isotone Graphics Suite (`isotone-v1.0.0`, then `isotone-v1.1.0` after the post-release phases 42 to 45) without any app's version moving.
+> **Goal:** Every app release is proven on a machine that has never seen .NET, signed once a certificate exists, published for x64 and arm64, discoverable through winget, able to tell its user when a newer version is out, and bundled with its siblings as the Isotone Graphics Suite (`isotone-v1.0.0`, then `isotone-v1.1.0` after the post-release phases 48 to 51) without any app's version moving.
 
 > **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
 
@@ -45,6 +45,12 @@ track: R1
 - -> XREF: D01 T10 §1 -- the suite automation system that starts after §6's first bundle and that §7's bundle installs once for all three apps
 - -> XREF: D01 T11 §1 -- the suite media stack that starts after §6's first bundle and that §7's bundle installs once
 - -> XREF: D01 T12 §1 -- the on-device model runtime that starts after §6's first bundle and that §7's bundle installs once, with no model weight in any package
+- -> XREF: D07 T01 §1 -- Tinctura's planning starts after §6's first bundle
+- -> XREF: D07 T01 §6 -- adds Tinctura 1.0.0 to §7's bundle
+- -> XREF: D08 T01 §1 -- Capio's planning starts after §6's first bundle
+- -> XREF: D08 T01 §6 -- adds Capio 1.0.0 to §7's bundle
+- -> XREF: D09 T01 §1 -- Folium's planning starts after §6's first bundle
+- -> XREF: D09 T01 §6 -- adds Folium 1.0.0 to §7's bundle
 
 ## Outcome
 
@@ -175,7 +181,7 @@ The suite bundle packages all three apps in one installer and one ZIP without ch
 
 ## 7. The Suite Bundle: isotone-v1.1.0
 
-The second suite bundle carries the apps at the versions the post-release phases ship: Stilus 1.2.0 (`D02 T17 §12`, Phase 42), Gesso 1.3.0 (`D03 T21 §15`, Phase 44), and Albumen 1.4.0 (`D04 T15 §14`, Phase 45), after the operator planned the work deferred "after the first release" (suite automation, video and audio, animation, on-device models, the GPU develop path, and Albumen's remaining formats) as real sections on 2026-09-27 because features must not be left behind. Like `§6` it changes no app's version: the tag `isotone-v1.1.0` is the bundle's version, and each app keeps its own tag and About version. It also proves the shared pieces those phases added to `Isotone.Core` and `Isotone.UI` (the automation system of `D01 T10`, the media stack of `D01 T11`, the on-device model runtime of `D01 T12`) install once side by side without one app's uninstall breaking another. -> SOURCE: parity-suite-release-1.1.0
+The second suite bundle carries the apps at the versions the post-release phases ship: Stilus 1.2.0 (`D02 T17 §12`, Phase 48), Gesso 1.3.0 (`D03 T21 §15`, Phase 50), and Albumen 1.4.0 (`D04 T15 §14`, Phase 51), after the operator planned the work deferred "after the first release" (suite automation, video and audio, animation, on-device models, the GPU develop path, and Albumen's remaining formats) as real sections on 2026-09-27 because features must not be left behind. Like `§6` it changes no app's version: the tag `isotone-v1.1.0` is the bundle's version, and each app keeps its own tag and About version. It also proves the shared pieces those phases added to `Isotone.Core` and `Isotone.UI` (the automation system of `D01 T10`, the media stack of `D01 T11`, the on-device model runtime of `D01 T12`) install once side by side without one app's uninstall breaking another. -> SOURCE: parity-suite-release-1.1.0
 
 **Needs:** Clean Windows machine (no .NET SDK)
 

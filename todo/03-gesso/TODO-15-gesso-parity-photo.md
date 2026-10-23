@@ -63,7 +63,7 @@ track: I15
 - -> XREF: D03 T13 §1 -- the clone source model the §9 Sources panel feeds
 - -> XREF: D03 T13 §3 -- content-aware fill for panorama edges and missing areas
 - -> XREF: D03 T14 §1 -- the smart and live filter host the Camera Raw filter, tone map layer, alignment filter, and astro stretch register in
-- -> XREF: D03 T07 §11 -- RAW import: opens RAW into §12's studio and supplies camera RAW sources to RAW layers, merges, and astro frames when it ships in Phase 41
+- -> XREF: D03 T07 §11 -- RAW import: opens RAW into §12's studio and supplies camera RAW sources to RAW layers, merges, and astro frames when it ships in Phase 47
 - -> XREF: D03 T17 §6 -- FITS and OpenEXR codecs astro frames and HDR output use when they ship in Phase 25
 - -> XREF: D03 T17 §10 -- EXIF exposure values for bracket EVs and the metadata panel
 - -> XREF: D03 T18 §10 -- OCIO configuration management that later replaces §4's per-view config file choice
