@@ -50,7 +50,7 @@ track: W5
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The toolchain pin and the developer environment | -- |  [ ]   |
+|   1   |   §1    | The toolchain pin and the developer environment | -- |  [x]   |
 |   2   |   §2    | The vcpkg manifest, baseline, and triplets | §1 |  [ ]   |
 |   3   |   §3    | The CMake build, presets, and the test harness | §2 |  [ ]   |
 |   4   |   §4    | The format, clang-tidy, and /analyze gates | §3 |  [ ]   |
@@ -79,6 +79,12 @@ Ninja cannot select an MSVC toolset by itself, and "whatever Visual Studio is in
 - [ ] Commit: `"workspace: pin the native toolchain and enter it through dev-env"`
 
 **Test checkpoint:** Driven run with evidence: `pwsh scripts/dev-env.ps1 -Check -Arch x64` and `-Arch arm64` print every pinned tool as `ok` (quoted); `pwsh scripts/dev-env.ps1 -Check -PinFile scripts/tests/fixtures/toolchain/wrong-toolset.json` exits 1 with the `MSVC toolset` line marked `MISMATCH` (quoted); `python scripts/tests/test_dev_env.py` passes. Cheaper substitute that fails: a README line naming the Visual Studio version, which nothing checks.
+
+> **Verified:** 2026-10-23 | §1 | D00 T05 §1 at `2ae0d69`: `native/toolchain.json` pins MSVC 14.51.36231 (compiler 19.51.36260), Windows SDK 10.0.26100.0, CMake 4.3.1-msvc1, Ninja 1.13.2, LLVM 22.1.3, and vcpkg 2026-07-27, where the development machine and both Visual Studio 2026 images meet (`toolchain-probe` run 39936405119; `docs/dev/decisions.md`, "2026-10-23: The native toolchain pin"); `pwsh scripts/dev-env.ps1 -Check -Arch x64` and `-Arch arm64` each print 18 checked, 0 mismatch; the `scripts/tests/fixtures/toolchain/wrong-toolset.json` fixture exits 1 with `MSVC toolset pinned 14.99.99999 found not installed (vcvarsall x64 could not enter it) MISMATCH`; `python scripts/tests/test_dev_env.py` runs 10 tests, OK, with mutants for the CMake comparison, the per-installation components, the installer check, the complete-installation choice, the tool order, the re-entry restore, and the CL isolation each failing; `tools/provision.ps1 -Verify`: native OK, 7/7 green; check-all at `2ae0d69`: all gates passed
+> **Review:** round 2, candidate `200bb9f..9f4d9c0`(round 1), `200bb9f..2ae0d69`(round 2) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 2 of cap 33, gpt-6.1-sol medium; Round 1's adversarial P2, F6, fixed in 2ae0d69). Independent: gpt-6.1-sol medium via `scripts/review-dispatch.py`, four rounds (F1 to F5 fixed in 846118c, feb58bf, 9f4d9c0), the fourth approving every lens. Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T05-s1.md. Attestation: docs/reviews/00-workspace/D00-T05-s1.attest.json
+> **Plan review:** gpt medium, filed D00 T05 §2, D00 T05 §3, D00 T05 §7, D00 T05 §8, D00 T06 §3 (11 findings: 8 filed in 495af39, 2 rejected, 1 duplicate) (run 20261023-D00-T05-S1-gpt)
+> **CRUD:** not applicable (a toolchain pin and a developer script, with no user record, document, or setting)
+> **Duration:** 2026-10-23T10:00:32Z to 2026-10-23T11:16:29Z
 
 ## 2. The vcpkg Manifest, Baseline, and Triplets
 

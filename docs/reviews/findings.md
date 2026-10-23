@@ -4,7 +4,7 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**176 findings across 11 sections.**
+**184 findings across 12 sections.**
 
 ## By category
 
@@ -14,16 +14,16 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `integration` | 56 | a consumer, caller, or downstream artifact no longer holds |
 | `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
 | `record` | 14 | the plan or the evidence misdescribes what happened |
-| `consistency` | 8 | disagrees with the rest of the suite, its naming, or its layout |
-| `correctness` | 1 | the code does the wrong thing |
+| `consistency` | 9 | disagrees with the rest of the suite, its naming, or its layout |
+| `correctness` | 8 | the code does the wrong thing |
 
 ## By severity
 
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 96 | wrong behavior in code, plan, or record |
-| `minor` | 80 | polish or wording, or no surviving defect |
+| `major` | 102 | wrong behavior in code, plan, or record |
+| `minor` | 82 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -205,3 +205,11 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T02 §2` | F2 | minor | `record` | fixed | independent | the using count said four more global usings where 14 directives were removed |
 | `D00 T02 §2` | F3 | major | `integration` | fixed | independent | the struck item lacked the Deferred marker validate needs once the row flips |
 | `D00 T02 §4` | F1 | minor | `consistency` | fixed | independent | 'none is ticked without the review stamp' contradicted the ticked items |
+| `D00 T05 §1` | F1 | major | `correctness` | fixed | independent | a machine without the Visual Studio Installer threw instead of reporting it |
+| `D00 T05 §1` | F2 | major | `correctness` | fixed | independent | component checks searched every installation, not the selected one |
+| `D00 T05 §1` | F3 | major | `correctness` | fixed | independent | each re-entry grew PATH, INCLUDE, and LIB until cmd.exe refused the line |
+| `D00 T05 §1` | F4 | major | `correctness` | fixed | independent | the tools that ran were whichever came first on PATH |
+| `D00 T05 §1` | F5 | major | `correctness` | fixed | independent | a developer's CL options hid the compiler banner |
+| `D00 T05 §1` | F6 | major | `correctness` | fixed | independent | a newer incomplete installation was chosen over an older complete one |
+| `D00 T05 §1` | F7 | minor | `correctness` | fixed | self | the provisioning leg counted the summary line as a mismatch |
+| `D00 T05 §1` | F8 | minor | `consistency` | fixed | self | the probe dropped a missing or unrunnable tool silently |
