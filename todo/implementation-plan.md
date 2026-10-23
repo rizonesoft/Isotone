@@ -183,8 +183,8 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T05 §8`  | CI for x64 and ARM64                                                        |   5   |
 | [ ] | `D00 T05 §9`  | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget |   6   |
 | [ ] | `D00 T05 §10` | The proof standard for C++                                                  |   4   |
-| [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record          |   8   |
-| [ ] | `D00 T04 §3`  | The native advisory job                                                     |   5   |
+| [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record          |   9   |
+| [ ] | `D00 T04 §3`  | The native advisory job                                                     |   6   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                            |   7   |
 | [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                            |   7   |
 | [ ] | `D00 T01 §9`  | The design contract gates                                                   |  10   |

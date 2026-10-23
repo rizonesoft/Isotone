@@ -28,7 +28,7 @@ All performance numbers are measured on one recorded reference machine and displ
 | Dependencies | The executable imports only Windows system DLLs; every library is linked statically and registered | A gate reads the executable's import table (`dumpbin /dependents`) and the dependency register |
 | Work lost to a crash | The saved file never; unsaved work at most the edits since the last checkpoint (see Document safety) | The crash tests in Document safety |
 
-The fixture documents (a small, a typical, and a large document per app, the large one at the plan's documented limits) are committed with the first benchmark section.
+The fixture documents (a small, a typical, and a large document per app, the large one at the plan's documented limits) are committed with each app's first performance section, since a document needs its app's format (amended 2026-10-23 by the native re-plan's wave 1 review: the first benchmark section, `D00 T04 §2`, runs before any app format exists).
 
 ## The toolchain
 

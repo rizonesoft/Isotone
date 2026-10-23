@@ -112,3 +112,47 @@ Every finding was verified against the repository or the cited documentation and
 8. P1, Ninja presets never set the build type: verified. Each configure preset sets `CMAKE_BUILD_TYPE`, checked in `CMakeCache.txt`.
 9. P1, the overlay path in `vcpkg-configuration.json` resolves relative to the file: verified. It is `triplets`, and a configure without a command-line overlay must find the triplets.
 10. P2, `vcpkg list` pointed at a triplet folder: verified. The lint reads the common root's database and filters by triplet.
+
+## Round 3: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T00:05:59Z
+- Effort: xhigh
+- Lines: 23
+- Digest: 84bd1e2bf39f76be
+
+### adversarial: needs-attention
+
+1. P1 `todo/00-workspace/TODO-05-native-spine.md:100`: The standard checker specifies `/std:` switches, but CMake actually emits `-std:c++latest`. A command containing `/std:c++23preview -std:c++latest` satisfies the prescribed slash-only check while selecting the forbidden standard. Verified with the installed compiler using `/Zs /W4 /WX`: D9025, exit 0. Normalize both switch prefixes and test the spelling CMake generates. [CMake implementation](https://github.com/Kitware/CMake/blob/v4.3.1/Modules/Compiler/MSVC-CXX.cmake#L40-L43).
+2. P1 `todo/00-workspace/TODO-04-native-code-policy.md:94`: Advisory identities are not checked against the installed source version. Demonstration: register installed libwebp 1.3.1 with Version `1.3.1`, but Released tag and advisory identity pointing to `v1.3.2`. The prescribed dependency lint accepts the matching Version; the advisory checker queries the patched tag and can miss CVE-2023-4863. The existing fixture supplies a correct identity and cannot expose this mismatch. Derive or validate the advisory identity against the resolved port source. [OSV queries use the supplied tag](https://google.github.io/osv.dev/post-v1-query/#queries-for-git-records).
+
+### consistency: needs-attention
+
+3. P1 `todo/00-workspace/TODO-05-native-spine.md:146`: ARM64 sanitizer execution disappears from the integration contract. Section 5 conditionally creates `arm64-asan`, but check-all lists only `native x64-asan`, and section 8 transfers only ARM64 Debug and Release executables. All prescribed checkpoints can pass without executing ARM64 sanitized tests, contrary to the spec’s requirement at line 118. This affects the stated toolchain: Microsoft documents ARM64 ASan support in Visual Studio 2026. Add its build, runtime transfer, execution, and negative probe to the ARM64 path. [Microsoft announcement](https://devblogs.microsoft.com/cppblog/introducing-msvc-addresssanitizer-for-arm64-targets/).
+4. P2 `todo/00-workspace/TODO-04-native-code-policy.md:94`: The scheduled dependency job implements advisory queries but omits the vcpkg baseline check required by the spec’s “Dependencies and their upkeep”. Changing the committed baseline while leaving register versions unchanged is invisible to this job because it neither resolves that baseline nor compares its versions. Add the comparison and a baseline/register mismatch fixture.
+5. P2 `todo/00-workspace/TODO-04-native-code-policy.md:83`: The first benchmark section never identifies or commits the document fixtures required by the spec at line 31: small, typical, and large documents per app, with the large ones at documented limits. Every checklist item and checkpoint here can pass with only the generated premultiply tile. Add the document fixture paths, limits, and existence verification, or explicitly assign an approved successor.
+
+### integration: needs-attention
+
+6. P1 `todo/00-workspace/TODO-05-native-spine.md:83`: The literal install command conflicts with section 3’s working-directory convention at line 94. Inside dev-env’s default `native/` directory, `--x-manifest-root=native` resolves to `native/native`, while `--x-install-root=artifacts/vcpkg_installed` places output under `native/artifacts`. The manifest lookup fails and the installation destination violates this item’s own requirement. Specify repository-root `-WorkingDirectory` for this command or correct its paths for execution from `native/`.
+
+### source-defect: needs-attention
+
+7. P1 `todo/00-workspace/TODO-05-native-spine.md:98`: All presets share one manifest installation root, but manifest installs synchronize that entire root rather than accumulate independent triplets. Demonstration: configure x64, then ARM64, then ASan against that root; each subsequent installation removes packages outside its current plan, leaving earlier build folders pointing at removed dependencies. Release-only `bench` selection adds another incompatible installation state. Isolate installation roots by configuration requirements and aggregate their inventories explicitly. The pinned vcpkg implementation removes installed packages whose ABIs are absent from the new plan. [Manifest-mode behavior](https://learn.microsoft.com/en-us/vcpkg/commands/install#manifest-mode), [pinned removal logic](https://github.com/microsoft/vcpkg-tool/blob/98d7cb0cf1f4686a3e43aa5672b6230c1d56bce8/src/vcpkg/commands.set-installed.cpp#L127-L150).
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 3
+
+Every finding was verified against the repository or the cited documentation and is real.
+
+1. P1, CMake emits `-std:`, which a slash-only check misses: verified against CMake's MSVC module. `native-std-check.py` reads both spellings, with a `/std:c++23preview -std:c++latest` fixture.
+2. P1, an advisory identity could name a different tag than the installed source: verified. `native-deps-lint` gains `identity-mismatch`, comparing the register's repository and tag with the installed port's `vcpkg.spdx.json`, with a libwebp 1.3.1 row naming `v1.3.2` as its fixture.
+3. P1, ARM64 sanitized tests were never run: verified (Microsoft announced AddressSanitizer for ARM64 with Visual Studio 2026). For every architecture §5 finds supported, the lane is required: `arm64-asan` is built in check-all and CI, and its tests, its probe, and the ARM64 runtime run on ARM64.
+4. P2, the scheduled job omitted the baseline check: verified against the spec. §3 adds `baseline-mismatch` against the committed baseline's `versions/baseline.json`, and reports newer fixing versions in the current registry.
+5. P2, the per-app fixture documents had no owner: verified. They need each app's document format, so the spec is amended to place them in each app's first performance section; the re-plan records the requirement for waves 3, 5, and 6, and `docs/benchmarks/README.md` will name the path.
+6. P1, the manual install command's paths assumed the root while dev-env defaults to `native/`: verified. The command runs with `-WorkingDirectory .` and its own install root.
+7. P1, a shared manifest install root removes other presets' packages: verified against vcpkg's manifest-mode install. Each preset has its own installed root, the lint aggregates them, and the checkpoint shows the x64 root intact after an ARM64 install.

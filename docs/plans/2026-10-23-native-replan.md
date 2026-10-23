@@ -36,6 +36,8 @@ Until a file is re-planned, its frontmatter is `status: blocked` and a line unde
 | W8 | The release and documentation domains, the standards (`standards/*.md` for C++), and AGENTS.md's stack bullets once the spine has landed | across |
 | W9 | `groom-plan` over the whole tree, then a plan review of the result | all |
 
+Requirements a later wave must carry, recorded as earlier waves find them: each app's first performance section (waves 3, 5, and 6, for Stilus, Gesso, and Albumen) commits that app's small, typical, and large fixture documents under `native/tests/fixtures/<app>/benchmark/`, the large one at the plan's documented limits, and measures the spec's goals on them (`D00 T04 §2`, spec "Goals and how each is measured").
+
 Each wave unparks only the files it finishes. A wave's files are authored through the `create-todo` and `add-todo` skills, validated (`python scripts/todo-graph.py validate`, `plan --sync`, `python scripts/todo-claims.py`), reviewed through `python scripts/review-dispatch.py --writer claude` on the pinned route, and committed; nothing in a wave is marked done without that record.
 
 ## Acceptance
