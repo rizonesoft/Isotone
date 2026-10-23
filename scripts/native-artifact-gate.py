@@ -88,29 +88,44 @@ def crt_findings(library, text):
     return []
 
 
-def preset_folders(presets_path=PRESETS, root=ROOT):
-    """[(name, build folder, policy, vcpkg triplet root)] for every configure preset that is not hidden."""
-    data = json.loads(Path(presets_path).read_text(encoding="utf-8"))
+def preset_folders(presets_path=PRESETS):
+    """[(name, build folder, policy, vcpkg triplet root)] for every configure preset that is not hidden, each folder
+    read from the preset's inherited `binaryDir` and `VCPKG_INSTALLED_DIR` with CMake's macros expanded."""
+    presets_path = Path(presets_path)
+    source = presets_path.parent
+    data = json.loads(presets_path.read_text(encoding="utf-8"))
     by_name = {p["name"]: p for p in data.get("configurePresets", [])}
 
-    def cache(name):
+    def merged(name):
+        """The preset's fields and cache variables, a parent's overridden by the child's."""
         preset = by_name[name]
-        merged = {}
+        fields, cache = {}, {}
         parents = preset.get("inherits", [])
         for parent in [parents] if isinstance(parents, str) else parents:
-            merged.update(cache(parent))
-        merged.update(preset.get("cacheVariables", {}))
-        return merged
+            parent_fields, parent_cache = merged(parent)
+            fields.update(parent_fields)
+            cache.update(parent_cache)
+        fields.update({k: v for k, v in preset.items() if k != "cacheVariables"})
+        for key, value in preset.get("cacheVariables", {}).items():
+            cache[key] = value.get("value") if isinstance(value, dict) else value
+        return fields, cache
+
+    def expand(value, name):
+        for macro, text in (("${sourceDir}", str(source)), ("${sourceParentDir}", str(source.parent)),
+                            ("${sourceDirName}", source.name), ("${presetName}", name)):
+            value = value.replace(macro, text)
+        return Path(os.path.normpath(value if os.path.isabs(value) else source / value))
 
     out = []
     for name, preset in by_name.items():
         if preset.get("hidden"):
             continue
-        variables = cache(name)
-        policy = "asan" if variables.get("ISOTONE_SANITIZE") == "address" else "shipping"
-        triplet = variables.get("VCPKG_TARGET_TRIPLET")
-        vcpkg = root / "artifacts" / "vcpkg_installed" / name / triplet if triplet else None
-        out.append((name, root / "artifacts" / "native" / name, policy, vcpkg))
+        fields, cache = merged(name)
+        policy = "asan" if cache.get("ISOTONE_SANITIZE") == "address" else "shipping"
+        triplet = cache.get("VCPKG_TARGET_TRIPLET")
+        installed = cache.get("VCPKG_INSTALLED_DIR")
+        vcpkg = expand(installed, name) / triplet if triplet and installed else None
+        out.append((name, expand(fields["binaryDir"], name), policy, vcpkg))
     return out
 
 
@@ -121,14 +136,15 @@ def images(folder):
 
 def vcpkg_findings(triplet_root, directives):
     """(findings, files read): no DLL in the installed tree, and every installed library on the static CRT.
-    `directives` maps a .lib to its `dumpbin /directives` text."""
+    `directives` maps a .lib to `dumpbin /directives`'s (exit code, output)."""
     dlls = [dll for sub in ("bin", "debug/bin") if (triplet_root / sub).is_dir()
             for dll in sorted((triplet_root / sub).glob("**/*.dll"))]
     found = [f"{dll}:dll-in-vcpkg-tree:an installed package ships a DLL" for dll in dlls]
     libs = [lib for sub in ("lib", "debug/lib") if (triplet_root / sub).is_dir()
             for lib in sorted((triplet_root / sub).glob("**/*.lib"))]
     for lib in libs:
-        found += crt_findings(lib, directives(lib))
+        code, text = directives(lib)
+        found += inspected(lib, code, text, lambda out, lib=lib: crt_findings(lib, out))
     return found, len(libs) + len(dlls)
 
 
@@ -173,7 +189,7 @@ def size_findings(folder, budget_mb, excluded=("*.pdb",), optional=()):
 
 
 RULES = ("import-not-system", "crt-not-static", "dll-in-vcpkg-tree", "over-budget", "budget-undocumented",
-         "publish-missing")
+         "publish-missing", "inspection-failed")
 RULE_RE = re.compile(":(" + "|".join(RULES) + "):")
 
 
@@ -182,9 +198,20 @@ def rule_of(finding):
     return RULE_RE.search(finding).group(1)
 
 
+def inspected(path, code, text, check):
+    """`check` over dumpbin's output, or inspection-failed when dumpbin did not succeed: an image removed between listing
+    and inspection, or one dumpbin cannot read, must never pass as an image with no imports."""
+    if code != 0:
+        first = next((line.strip() for line in text.splitlines() if line.strip()), "no output")
+        return [f"{path}:inspection-failed:dumpbin exited {code}: {first}"]
+    return check(text)
+
+
 def dumpbin(*args):
+    """(exit code, stdout and stderr) of one dumpbin call."""
     exe = shutil.which("dumpbin")
-    return subprocess.run([exe, "/nologo", *map(str, args)], capture_output=True, text=True, errors="replace").stdout
+    proc = subprocess.run([exe, "/nologo", *map(str, args)], capture_output=True, text=True, errors="replace")
+    return proc.returncode, proc.stdout + proc.stderr
 
 
 def main(argv=None):
@@ -203,6 +230,11 @@ def main(argv=None):
     findings = budget_findings()
     budget = json.loads(BUDGET.read_text(encoding="utf-8"))
     if args.publish:
+        if not Path(args.publish).is_dir():
+            findings.append(f"{args.publish}:publish-missing:not an existing folder, so there is nothing to measure")
+            for line in findings:
+                print(line)
+            return 1
         app = budget.get("apps", {}).get(args.app, {}) if args.app else {}
         mb = args.budget_mb if args.budget_mb is not None else app.get("mb", budget["default_mb"])
         found, total = size_findings(args.publish, mb, budget.get("excluded", ["*.pdb"]),
@@ -245,7 +277,9 @@ def main(argv=None):
             continue
         found_images = images(folder)
         for image in found_images:
-            findings += import_findings(image, dumpbin("/dependents", image), policies[policy])
+            code, text = dumpbin("/dependents", image)
+            findings += inspected(image, code, text,
+                                  lambda out, image=image, policy=policy: import_findings(image, out, policies[policy]))
         checked += len(found_images)
         print(f"native-artifact-gate: {name}: {len(found_images)} image(s), {policy} policy")
         if vcpkg is not None and vcpkg.is_dir():
@@ -309,6 +343,8 @@ def self_test():
           ["l:crt-not-static:names neither LIBCMT nor LIBCMTD"])
 
     presets = {name: (folder, policy) for name, folder, policy, _ in preset_folders()}
+    check("the repository's presets build under artifacts/native/",
+          presets["x64-release"][0], ROOT / "artifacts" / "native" / "x64-release")
     check("the sanitizer presets take the sanitizer policy",
           sorted(n for n, (_, p) in presets.items() if p == "asan"), ["arm64-asan", "x64-asan"])
     check("x64-release is read from the presets", "x64-release" in presets, True)
@@ -336,7 +372,28 @@ def self_test():
         (tree / "debug" / "bin").mkdir(parents=True)
         (tree / "debug" / "bin" / "gtest.dll").write_bytes(b"MZ")
         check("a DLL in an installed debug/bin fails",
-              [rule_of(line) for line in vcpkg_findings(tree, lambda lib: "")[0]], ["dll-in-vcpkg-tree"])
+              [rule_of(line) for line in vcpkg_findings(tree, lambda lib: (0, ""))[0]], ["dll-in-vcpkg-tree"])
+        lib_tree = tmp / "vcpkg" / "isotone-arm64"
+        (lib_tree / "lib").mkdir(parents=True)
+        (lib_tree / "lib" / "gone.lib").write_bytes(b"!<arch>")
+        check("a library dumpbin cannot read fails",
+              [rule_of(line) for line in vcpkg_findings(lib_tree, lambda lib: (1181, "LINK : fatal error LNK1181"))[0]],
+              ["inspection-failed"])
+        check("an image dumpbin cannot read fails, never passes as one with no imports",
+              [rule_of(line) for line in inspected("x.exe", 1181, "LINK : fatal error LNK1181: cannot open input file",
+                                                   lambda out: import_findings("x.exe", out, shipping))],
+              ["inspection-failed"])
+        check("a missing publish folder fails", main(["--publish", str(tmp / "no-such-folder")]), 1)
+        relocated = tmp / "source" / "CMakePresets.json"
+        relocated.parent.mkdir()
+        relocated.write_text(json.dumps({"version": 6, "configurePresets": [
+            {"name": "base", "hidden": True, "binaryDir": "${sourceDir}/out/${presetName}",
+             "cacheVariables": {"VCPKG_INSTALLED_DIR": {"type": "PATH", "value": "${sourceParentDir}/pkgs/${presetName}"}}},
+            {"name": "rel", "inherits": "base", "cacheVariables": {"VCPKG_TARGET_TRIPLET": "isotone-x64"}}]}),
+            encoding="utf-8")
+        check("the folders come from the presets' binaryDir and VCPKG_INSTALLED_DIR",
+              [(n, f, v) for n, f, _, v in preset_folders(relocated)],
+              [("rel", tmp / "source" / "out" / "rel", tmp / "pkgs" / "rel" / "isotone-x64")])
 
         decisions = tmp / "decisions.md"
         decisions.write_text("# Decisions\n\n## 2026-10-23: The output size budget\n\n- **Budget:** 30 MB\n",
