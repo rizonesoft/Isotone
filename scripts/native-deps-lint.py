@@ -154,12 +154,18 @@ def installed_roots():
 
 
 def manifest_features(text):
-    """(direct dependency names, {feature: dependency names}) from native/vcpkg.json."""
+    """(the dependencies every build installs, {feature: dependency names}) from native/vcpkg.json. The first holds the
+    direct dependencies and those of every default feature, which a build gets unless it opts out of defaults, so a
+    test-only port in a default feature counts as shipped."""
     doc = json.loads(text)
 
     def names(deps):
         return {d if isinstance(d, str) else d["name"] for d in deps}
-    return names(doc.get("dependencies", [])), {f: names(v.get("dependencies", [])) for f, v in doc.get("features", {}).items()}
+    features = {f: names(v.get("dependencies", [])) for f, v in doc.get("features", {}).items()}
+    shipped = names(doc.get("dependencies", []))
+    for default in doc.get("default-features", []):
+        shipped |= features.get(default if isinstance(default, str) else default.get("name", ""), set())
+    return shipped, features
 
 
 # The register against what is installed -------------------------------------------------------------------------------
@@ -349,10 +355,13 @@ def loadlibrary_findings(path, text, system_patterns, modules):
             found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} cannot load the app-local module {name}; "
                                  f"use LoadLibraryExW with LOAD_LIBRARY_SEARCH_APPLICATION_DIR"))
         elif "Ex" in m.group(1):
-            # A system DLL loads from System32, a registered module from the app's own folder: the flag must match.
+            # A system DLL loads from System32, a registered module from the app's own folder: the search flags must be
+            # exactly that one, never widened (LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, a user directory, the altered path).
             want = "LOAD_LIBRARY_SEARCH_SYSTEM32" if system else "LOAD_LIBRARY_SEARCH_APPLICATION_DIR"
-            if want not in args:
-                found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} loads {name} without {want}"))
+            search = set(re.findall(r"LOAD_LIBRARY_SEARCH_\w+|LOAD_WITH_ALTERED_SEARCH_PATH", args))
+            if search != {want}:
+                found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} loads {name} with search flags "
+                                     f"{sorted(search) or 'none'}, want exactly {want}"))
     return found
 
 
@@ -501,6 +510,14 @@ def self_test():
     check("a plain LoadLibraryW of a registered app-local module fails",
           rules(loadlibrary_findings("native/probe.cpp", 'LoadLibraryW(L"isoplug.dll");', [], {"isoplug.dll"})),
           ["loadlibrary-unresolved"])
+    check("a search widened by LOAD_LIBRARY_SEARCH_DEFAULT_DIRS fails",
+          rules(loadlibrary_findings("native/probe.cpp", 'LoadLibraryExW(L"isoplug.dll", nullptr, '
+                                     'LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);', [],
+                                     {"isoplug.dll"})), ["loadlibrary-unresolved"])
+    shipped, feats = manifest_features(json.dumps({"dependencies": [], "default-features": ["test"],
+                                                   "features": {"test": {"dependencies": ["gtest"]}}}))
+    check("a test-only port in a default feature counts as shipped",
+          rules(lint(table(gtest, helper), direct=shipped, feats=feats)), ["test-only-shipped"])
     check("a plain LoadLibraryW of a system DLL passes",
           loadlibrary_findings("native/probe.cpp", 'LoadLibraryW(L"kernel32.dll");', ["kernel32.dll"], set()), [])
     check("a /wd in a CMakeLists.txt with no WORKAROUND fails",
