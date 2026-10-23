@@ -301,12 +301,18 @@ def suppression_findings(path, text):
 
 
 def cmake_suppression_findings(path, text):
-    """A target-wide warning switch (/wdNNNN) in any CMake file under native/ carries a WORKAROUND comment within the 5
-    lines above."""
+    """A target-wide warning switch (/wdNNNN) lives only in native/cmake/ (standards/cpp.md), with a WORKAROUND comment
+    within the 5 lines above; anywhere else under native/ it is refused whatever its comment."""
     lines = text.splitlines()
-    return [finding(path, n + 1, "suppression-unreasoned", "a target-wide /wd needs a WORKAROUND comment above it")
-            for n, line in enumerate(lines) if re.search(r"/wd\d+", line) and not line.lstrip().startswith("#")
-            and not any("WORKAROUND:" in prior for prior in lines[max(0, n - 5):n])]
+    found = []
+    for n, line in enumerate(lines):
+        if not re.search(r"/wd\d+", line) or line.lstrip().startswith("#"):
+            continue
+        if not path.replace("\\", "/").startswith("native/cmake/"):
+            found.append(finding(path, n + 1, "suppression-unreasoned", "a target-wide /wd lives only in native/cmake/"))
+        elif not any("WORKAROUND:" in prior for prior in lines[max(0, n - 5):n]):
+            found.append(finding(path, n + 1, "suppression-unreasoned", "a target-wide /wd needs a WORKAROUND comment above it"))
+    return found
 
 
 LOAD_RE = re.compile(r"\b(LoadLibrary(?:Ex)?[AW]?|LoadPackagedLibrary)\s*\(")
@@ -337,6 +343,11 @@ def loadlibrary_findings(path, text, system_patterns, modules):
         if not (system or registered):
             found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} loads {name or 'a computed name'}, "
                                  f"neither a system DLL in native/system-dlls.txt nor a registered Runtime module"))
+        elif registered and not system and "Ex" not in m.group(1):
+            # With SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32), a plain LoadLibrary never searches the app's
+            # folder, so a registered app-local module loads only through LoadLibraryEx with the application-directory flag.
+            found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} cannot load the app-local module {name}; "
+                                 f"use LoadLibraryExW with LOAD_LIBRARY_SEARCH_APPLICATION_DIR"))
         elif "Ex" in m.group(1):
             # A system DLL loads from System32, a registered module from the app's own folder: the flag must match.
             want = "LOAD_LIBRARY_SEARCH_SYSTEM32" if system else "LOAD_LIBRARY_SEARCH_APPLICATION_DIR"
@@ -483,6 +494,15 @@ def self_test():
         {"downloadLocation": "git+https://github.com/microsoft/vcpkg@17742fd"},
         {"downloadLocation": "https://sqlite.org/2024/sqlite-amalgamation-3460000.zip"}]})),
           ("https://sqlite.org/2024/sqlite-amalgamation-3460000.zip", None))
+    check("a /wd outside native/cmake/ fails even with a WORKAROUND",
+          rules(cmake_suppression_findings("native/core/CMakeLists.txt",
+                                           "# WORKAROUND: analyzer false positive\ntarget_compile_options(isotone_core PRIVATE /wd6326)")),
+          ["suppression-unreasoned"])
+    check("a plain LoadLibraryW of a registered app-local module fails",
+          rules(loadlibrary_findings("native/probe.cpp", 'LoadLibraryW(L"isoplug.dll");', [], {"isoplug.dll"})),
+          ["loadlibrary-unresolved"])
+    check("a plain LoadLibraryW of a system DLL passes",
+          loadlibrary_findings("native/probe.cpp", 'LoadLibraryW(L"kernel32.dll");', ["kernel32.dll"], set()), [])
     check("a /wd in a CMakeLists.txt with no WORKAROUND fails",
           rules(cmake_suppression_findings("native/core/CMakeLists.txt", "target_compile_options(isotone_core PRIVATE /wd4996)")),
           ["suppression-unreasoned"])
