@@ -67,7 +67,7 @@ COLUMNS = ["Library", "vcpkg port", "Version", "License", "License text URL", "G
 DEV_LINKED = {"tests", "bench"}
 # The imported CMake targets each test-only or developer-only port provides.
 DEV_TARGET_PREFIXES = {"gtest": ("GTest::",), "benchmark": ("benchmark::",)}
-GRAPH_PRESETS = ("x64-debug", "x64-release", "arm64-debug", "arm64-release")
+GRAPH_PRESETS = ("x64-debug", "x64-release", "arm64-debug", "arm64-release", "x64-dist", "arm64-dist")
 HELPER_REPOSITORY = "https://github.com/microsoft/vcpkg"
 HELPER_IDENTITY = "none: build-time helper, not linked"
 SOURCE_EXTENSIONS = (".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hh", ".hpp", ".hxx", ".ixx", ".inl", ".ipp")
@@ -142,6 +142,28 @@ def load_artifact_gate():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def distribution_presets(presets_path=ROOT / "native" / "CMakePresets.json"):
+    """The configure presets an app release builds from: those whose inherited BUILD_TESTING is OFF."""
+    by_name = {p["name"]: p for p in json.loads(Path(presets_path).read_text(encoding="utf-8")).get("configurePresets", [])}
+
+    def cache(name):
+        preset = by_name[name]
+        merged = {}
+        parents = preset.get("inherits", [])
+        for parent in [parents] if isinstance(parents, str) else parents:
+            merged.update(cache(parent))
+        merged.update(preset.get("cacheVariables", {}))
+        return merged
+    return {name for name, p in by_name.items() if not p.get("hidden") and str(cache(name).get("BUILD_TESTING", "")).upper() == "OFF"}
+
+
+def distribution_findings(rows, dist_installed, path=REGISTER):
+    """test-only-shipped for a test-only or developer-only port installed in a distribution preset's root."""
+    dev_ports = {row["vcpkg port"] for row in rows if row["Linked by"] in DEV_LINKED}
+    return [finding(path, 1, "test-only-shipped", f"{port} is installed in the {preset} root, which an app release builds from")
+            for preset, ports in sorted(dist_installed.items()) for port in sorted(ports & dev_ports)]
 
 
 def installed_roots():
@@ -298,8 +320,11 @@ def suppression_findings(path, text):
                 found.append(finding(path, n, "suppression-unreasoned", "a NOLINT names exactly one check"))
             elif len(rest.strip(" :-").strip()) < 3:
                 found.append(finding(path, n, "suppression-unreasoned", "a NOLINT carries its reason on the same line"))
-        if re.search(r"#\s*pragma\s+warning\s*\(\s*disable", line):
-            found.append(finding(path, n, "suppression-unreasoned", "#pragma warning(disable) is not allowed in a source"))
+        # #pragma, __pragma, and _Pragma are one directive to MSVC; disable and a level push both silence warnings.
+        if re.search(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*disable", line):
+            found.append(finding(path, n, "suppression-unreasoned", "warning(disable) is not allowed in a source"))
+        if re.search(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*push\s*,", line):
+            found.append(finding(path, n, "suppression-unreasoned", "warning(push, <level>) lowers the warning level; not allowed"))
         m = re.search(r"#\s*pragma\s+warning\s*\(\s*suppress\s*:[^)]*\)(.*)", line)
         if m and len(m.group(1).strip(" /:-").strip()) < 3:
             found.append(finding(path, n, "suppression-unreasoned", "#pragma warning(suppress) carries its reason on the same line"))
@@ -312,7 +337,8 @@ def cmake_suppression_findings(path, text):
     lines = text.splitlines()
     found = []
     for n, line in enumerate(lines):
-        if not re.search(r"/wd\d+", line) or line.lstrip().startswith("#"):
+        # MSVC takes each switch with / or -: a warning disabled (wd), all warnings off (w), or a level below 4 (W0 to W3).
+        if not re.search(r"(?<![\w/-])[/-](wd\d+|w\b|W[0-3]\b)", line) or line.lstrip().startswith("#"):
             continue
         if not path.replace("\\", "/").startswith("native/cmake/"):
             found.append(finding(path, n + 1, "suppression-unreasoned", "a target-wide /wd lives only in native/cmake/"))
@@ -414,7 +440,11 @@ def main(argv=None):
         print("native-deps-lint: no preset's vcpkg root is installed; configure a preset first")
         return 2
     installed, spdx = {}, {}
-    for _, root in roots:
+    dist = distribution_presets()
+    dist_installed = {}
+    for name, root in roots:
+        if name in dist:
+            dist_installed[name] = {port for port, _ in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8"))}
         # Every root's versions are kept: two roots holding the same triplet at different versions both count.
         for key, version in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8")).items():
             installed.setdefault(key, set()).add(version)
@@ -425,6 +455,7 @@ def main(argv=None):
     target_triplets = {t.stem for t in (ROOT / "native" / "triplets").glob("*.cmake")}
     found += register_findings(rows, installed, spdx, direct, features, manifest.get("builtin-baseline", ""),
                                target_triplets)
+    found += distribution_findings(rows, dist_installed)
     prefixes = tuple(p for row in rows if row["Linked by"] in DEV_LINKED for p in DEV_TARGET_PREFIXES.get(row["vcpkg port"], ()))
     for preset, text in graphs.items():
         if text is None:
@@ -520,6 +551,19 @@ def self_test():
           rules(lint(table(gtest, helper), direct=shipped, feats=feats)), ["test-only-shipped"])
     check("a plain LoadLibraryW of a system DLL passes",
           loadlibrary_findings("native/probe.cpp", 'LoadLibraryW(L"kernel32.dll");', ["kernel32.dll"], set()), [])
+    for text in ("__pragma(warning(disable: 4996))", '_Pragma("warning(disable: 4996)")', "#pragma warning(push, 0)"):
+        check(f"suppression: {text}", rules(suppression_findings("native/a.cpp", text)), ["suppression-unreasoned"])
+    check("#pragma warning(push) alone, with no level, passes", suppression_findings("native/a.cpp", "#pragma warning(push)"), [])
+    for text in ("target_compile_options(isotone_core PRIVATE -wd4996)", "target_compile_options(isotone_core PRIVATE /W1)",
+                 "target_compile_options(isotone_core PRIVATE -w)"):
+        check(f"a warning switch outside native/cmake/: {text}",
+              rules(cmake_suppression_findings("native/core/CMakeLists.txt", text)), ["suppression-unreasoned"])
+    check("/W4 /WX are not suppressions", cmake_suppression_findings("native/core/CMakeLists.txt",
+                                                                    "target_compile_options(t PRIVATE /W4 /WX)"), [])
+    check("a test-only port in a distribution root is shipped",
+          rules(distribution_findings(parse_register(table(gtest, helper))[0], {"x64-dist": {"gtest", "vcpkg-cmake"}})),
+          ["test-only-shipped"])
+    check("the distribution presets are the ones with BUILD_TESTING off", distribution_presets(), {"x64-dist", "arm64-dist"})
     check("a /wd in a CMakeLists.txt with no WORKAROUND fails",
           rules(cmake_suppression_findings("native/core/CMakeLists.txt", "target_compile_options(isotone_core PRIVATE /wd4996)")),
           ["suppression-unreasoned"])
