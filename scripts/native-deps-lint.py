@@ -192,6 +192,9 @@ def manifest_features(text):
 
 # The register against what is installed -------------------------------------------------------------------------------
 
+FEED_RE = re.compile(r"^feed:https://[^\s/]+\.[^\s/]+/\S*$")
+
+
 def register_findings(rows, installed, spdx, direct, features, baseline, target_triplets, path=REGISTER):
     """Findings for the register against `installed` {(port, triplet): version}, `spdx` {port: (repo, ref) or None},
     the manifest's direct and per-feature dependencies, its builtin-baseline, and the suite's target triplets."""
@@ -234,15 +237,16 @@ def register_findings(rows, installed, spdx, direct, features, baseline, target_
             if row["Upstream repository"] != source[0]:
                 found.append(finding(path, line, "identity-mismatch", f"{port}: the row names {row['Upstream repository']}, "
                                      f"the port was built from the archive {source[0]}"))
-            if not row["Advisory identity"].startswith("feed:"):
+            if not FEED_RE.match(row["Advisory identity"]):
                 found.append(finding(path, line, "identity-mismatch", f"{port}: an archive-built port's Advisory identity "
-                                     f"is its feed (feed:<url>), not {row['Advisory identity']}"))
+                                     f"is its feed (feed:https://...), not {row['Advisory identity']}"))
         elif (row["Upstream repository"], row["Released tag"]) != source:
             found.append(finding(path, line, "identity-mismatch", f"{port}: the row names {row['Upstream repository']}@"
                                  f"{row['Released tag']}, the port was built from {source[0]}@{source[1]}"))
-        if row["Advisory identity"].startswith("osv-git:") and row["Advisory identity"] != identity:
+        elif row["Advisory identity"] != identity and not FEED_RE.match(row["Advisory identity"]):
+            # A Git-built library is checked by its osv-git identity or by its own feed; nothing else is usable.
             found.append(finding(path, line, "identity-mismatch", f"{port}: Advisory identity {row['Advisory identity']} "
-                                 f"does not match {identity}"))
+                                 f"is neither {identity} nor a feed:https://... URL"))
         if row["Linked by"] in DEV_LINKED:
             in_dev_feature = any(port in features.get(f, set()) for f in ("test", "bench"))
             if port in direct or not (in_dev_feature or row["Pulled in by"] != "direct"):
@@ -324,7 +328,7 @@ def suppression_findings(path, text):
     # same length, so offsets and line numbers hold), the directive's parentheses are balanced across lines, and each
     # semicolon-separated clause is judged by its specifier: disable and a level push silence warnings, and suppress
     # needs its reason in a comment on the line the directive ends.
-    spliced = re.sub(r"\\\r?\n", lambda s: " " * len(s.group(0)), text)
+    spliced = blank_comments(re.sub(r"\\\r?\n", lambda s: " " * len(s.group(0)), text))
     for m in PRAGMA_WARNING_RE.finditer(spliced):
         n = text.count("\n", 0, m.start()) + 1
         body = call_text(spliced, m.end() - 1)
@@ -337,6 +341,8 @@ def suppression_findings(path, text):
             elif spec.startswith("push") and "," in spec:
                 found.append(finding(path, n, "suppression-unreasoned", "warning(push, <level>) lowers the warning level; not allowed"))
             elif spec == "suppress":
+                if len(rest.split()) != 1:
+                    found.append(finding(path, n, "suppression-unreasoned", "warning(suppress) names exactly one warning"))
                 after = text[end + 1:].split("\n", 1)[0]
                 reason = re.match(r"[)\"\s]*(//|/\*)\s*(.*)", after)
                 if not reason or len(reason.group(2).strip(" /*:-").strip()) < 3:
@@ -366,6 +372,33 @@ def cmake_suppression_findings(path, text):
 
 
 LOAD_RE = re.compile(r"\b(LoadLibrary(?:Ex)?[AW]?|LoadPackagedLibrary)\s*\(")
+
+
+def blank_comments(text):
+    """`text` with every // and /* */ comment replaced by spaces (line ends kept, so offsets and line numbers hold);
+    string and character literals are skipped, so a // inside one is not a comment."""
+    out = list(text)
+    i, n = 0, len(text)
+    while i < n:
+        ch = text[i]
+        if ch in "\"'":
+            j = i + 1
+            while j < n and text[j] != ch and text[j] != "\n":
+                j += 2 if text[j] == "\\" else 1
+            i = j + 1
+        elif text.startswith("//", i):
+            j = text.find("\n", i)
+            j = n if j < 0 else j
+            out[i:j] = " " * (j - i)
+            i = j
+        elif text.startswith("/*", i):
+            j = text.find("*/", i + 2)
+            j = n if j < 0 else j + 2
+            out[i:j] = [c if c == "\n" else " " for c in text[i:j]]
+            i = j
+        else:
+            i += 1
+    return "".join(out)
 
 
 def call_text(text, start):
@@ -403,6 +436,7 @@ LOAD_FLAG_RE = re.compile(r"^(LOAD_LIBRARY_\w+|LOAD_WITH_ALTERED_SEARCH_PATH|LOA
 
 def loadlibrary_findings(path, text, system_patterns, modules):
     found = []
+    text = blank_comments(text)
     for m in LOAD_RE.finditer(text):
         line = text.count("\n", 0, m.start()) + 1
         args = call_text(text, m.end() - 1)
@@ -628,6 +662,22 @@ def self_test():
     check("a computed module name beginning with a literal does not resolve",
           rules(loadlibrary_findings("native/probe.cpp", 'LoadLibraryExW(L"kernel32.dll" + offset, nullptr, '
                                      'LOAD_LIBRARY_SEARCH_SYSTEM32);', ["kernel32.dll"], set())), ["loadlibrary-unresolved"])
+    check("a suppress naming two warnings fails",
+          rules(suppression_findings("native/probe.cpp", "#pragma warning(suppress: 6011 6387) // caller checks pointer")),
+          ["suppression-unreasoned"])
+    check("LoadLibraryW in a comment is not a call",
+          loadlibrary_findings("native/a.cpp", "// Call LoadLibraryW(name) only after checking policy.\n/* LoadLibraryW(x) */",
+                               [], set()), [])
+    check("a disable in a comment is not a directive",
+          suppression_findings("native/a.cpp", "// never write #pragma warning(disable: 4996) here"), [])
+    check("a // inside a string literal is not a comment",
+          rules(loadlibrary_findings("native/a.cpp", 'auto u = L"https://x"; LoadLibraryW(name);', [], set())),
+          ["loadlibrary-unresolved"])
+    for bad in ("none: build-time helper, not linked", "feed:", "feed:nothing"):
+        check(f"a linked library's Advisory identity {bad!r} fails",
+              rules(lint(table([*gtest[:10], bad, *gtest[11:]], helper))), ["identity-mismatch"])
+    check("a Git-built library may name its own feed",
+          lint(table([*gtest[:10], "feed:https://github.com/google/googletest/security/advisories", *gtest[11:]], helper)), [])
     check("#pragma warning(push) alone, with no level, passes", suppression_findings("native/a.cpp", "#pragma warning(push)"), [])
     for text in ("target_compile_options(isotone_core PRIVATE -wd4996)", "target_compile_options(isotone_core PRIVATE /W1)",
                  "target_compile_options(isotone_core PRIVATE -w)"):
