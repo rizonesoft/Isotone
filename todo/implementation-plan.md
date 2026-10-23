@@ -184,7 +184,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T05 §9`  | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget              |   6   |
 | [ ] | `D00 T05 §10` | The proof standard for C++                                                               |   5   |
 | [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |  18   |
-| [ ] | `D00 T04 §3`  | The native advisory job                                                                  |  11   |
+| [ ] | `D00 T04 §3`  | The native advisory job                                                                  |  13   |
 | [ ] | `D00 T06 §1`  | Retarget the gates that read the C# sources                                              |   4   |
 | [ ] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   8   |
 | [ ] | `D00 T06 §3`  | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code |  13   |
