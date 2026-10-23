@@ -131,9 +131,17 @@ def preset_folders(presets_path=PRESETS):
     return out
 
 
+def compiler_id_probe(path, folder):
+    """CMake's compiler-identification executable (CMakeFiles/<CMake version>/CompilerId<language>/), which CMake builds
+    with its own default flags before the project's apply; it is CMake's probe, never a build output."""
+    parts = Path(path).relative_to(folder).parts
+    return len(parts) == 4 and parts[0] == "CMakeFiles" and parts[2].startswith("CompilerId")
+
+
 def images(folder):
+    """Every .exe and .dll the build produced under `folder`: everything but CMake's compiler-identification probes."""
     return sorted(p for p in Path(folder).rglob("*") if p.suffix.lower() in (".exe", ".dll")
-                  and p.is_file() and "CMakeFiles" not in p.parts)
+                  and p.is_file() and not compiler_id_probe(p, folder))
 
 
 def vcpkg_findings(triplet_root, directives):
@@ -409,6 +417,14 @@ def self_test():
             with contextlib.redirect_stdout(io.StringIO()):
                 return main(argv)
 
+        build = tmp / "build"
+        for rel in ("CMakeFiles/4.3.1-msvc1/CompilerIdCXX/CMakeCXXCompilerId.exe", "CMakeFiles/other/stray.exe",
+                    "tests/core/build_info_test.exe", "bin/helper.dll"):
+            (build / rel).parent.mkdir(parents=True, exist_ok=True)
+            (build / rel).write_bytes(b"MZ")
+        check("every image but CMake's compiler-identification probe is checked",
+              sorted(p.relative_to(build).as_posix() for p in images(build)),
+              sorted(["CMakeFiles/other/stray.exe", "bin/helper.dll", "tests/core/build_info_test.exe"]))
         check("a missing publish folder fails", quiet_main(["--publish", str(tmp / "no-such-folder")]), 1)
         check("a named build folder or vcpkg root that does not exist fails, beside one that does",
               [rule_of(line) for line in missing_inputs([str(tmp), str(tmp / "arm64-releas")], [str(tmp / "no-root")])],
