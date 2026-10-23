@@ -12,7 +12,7 @@
   Dot-sourced (. scripts/dev-env.ps1 -Arch x64), it leaves the session in that environment and throws on a mismatch.
   -Run { ... } (or its text, from another process) runs a block inside it and returns the block's exit code. -Check prints one line per item
   (`<item> pinned <value> found <value> ok|MISMATCH`) and exits 1 on any mismatch or missing component.
-  -PinFile reads another pin (the tests' fixtures).
+  -PinFile reads another pin (the tests' fixtures); -VsWhere another vswhere (the tests' stand-ins).
 .EXAMPLE
   pwsh scripts/dev-env.ps1 -Check -Arch arm64
 #>
@@ -20,6 +20,8 @@
 param(
   [ValidateSet('x64', 'arm64')][string]$Arch = 'x64',
   [string]$PinFile = (Join-Path (Split-Path -Parent $PSScriptRoot) 'native\toolchain.json'),
+  # The installer's vswhere; the tests point it at a missing path or a stand-in that reports a chosen installation.
+  [string]$VsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe",
   [switch]$Check,
   # A script block, or its text when the script runs in its own process (pwsh -File ... -Run 'cmake --preset x64').
   [object]$Run
@@ -27,11 +29,11 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $Pin = Get-Content -Raw $PinFile | ConvertFrom-Json
-$VsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $Rows = [System.Collections.Generic.List[object]]::new()
 
-function Add-Row([string]$Item, [string]$Pinned, [string]$Found) {
-  $Rows.Add([pscustomobject]@{ Item = $Item; Pinned = $Pinned; Found = $Found; Ok = ($Pinned -eq $Found) })
+function Add-Row([string]$Item, [string]$Pinned, [string]$Found, [object]$Ok = $null) {
+  $isOk = if ($null -eq $Ok) { $Pinned -eq $Found } else { [bool]$Ok }
+  $Rows.Add([pscustomobject]@{ Item = $Item; Pinned = $Pinned; Found = $Found; Ok = $isOk })
 }
 
 function Get-HostArch {
@@ -59,21 +61,32 @@ function Invoke-Tool([string]$Name, [string[]]$ToolArgs) {
   return @(& $cmd.Source @ToolArgs 2>&1 | ForEach-Object { "$_" })
 }
 
-# 1. Visual Studio: the pinned range, with every pinned component.
+# 1. Visual Studio: one installation, the newest in the pinned range, holding every pinned component itself. A
+# component in a second installation does not count: the developer environment is entered from one installation.
 $range = $Pin.visual_studio.version_range
-$vs = & $VsWhere -version $range -latest -products * -requires $Pin.visual_studio.components -property installationPath
-if (-not $vs) {
-  foreach ($component in $Pin.visual_studio.components) {
-    $has = & $VsWhere -version $range -latest -products * -requires $component -property installationPath
-    Add-Row "component $component" 'installed' ($(if ($has) { 'installed' } else { 'missing' }))
-  }
-  $any = & $VsWhere -version $range -latest -products * -property installationVersion
-  Add-Row 'Visual Studio' $range ($(if ($any) { "$any (components missing)" } else { 'none in range' }))
+$vs = $null
+if (-not (Test-Path $VsWhere)) {
+  Add-Row 'Visual Studio Installer' 'installed' "missing ($VsWhere): install Visual Studio 2026 first" $false
 }
 else {
-  Add-Row 'Visual Studio' $range $range
-  foreach ($component in $Pin.visual_studio.components) { Add-Row "component $component" 'installed' 'installed' }
-
+  $install = @(& $VsWhere -version $range -latest -products * -include packages -format json | ConvertFrom-Json) | Select-Object -First 1
+  if (-not $install) {
+    Add-Row 'Visual Studio' $range 'none in range' $false
+  }
+  else {
+    # The selected installation, by path: provision prints its repair commands against exactly this one.
+    Add-Row 'Visual Studio' $range "$($install.installationVersion) at $($install.installationPath)" $true
+    $ids = [System.Collections.Generic.HashSet[string]]::new([string[]]@($install.packages | ForEach-Object { $_.id }))
+    $complete = $true
+    foreach ($component in $Pin.visual_studio.components) {
+      $has = $ids.Contains($component)
+      $complete = $complete -and $has
+      Add-Row "component $component" 'installed' ($(if ($has) { 'installed' } else { 'missing' }))
+    }
+    if ($complete) { $vs = $install.installationPath }
+  }
+}
+if ($vs) {
   # 2. Enter the pinned toolset and SDK through vcvarsall, and import its environment into this process.
   $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvarsall.bat'
   $vcArch = Get-VcvarsArch (Get-HostArch) $Arch

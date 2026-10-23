@@ -43,10 +43,12 @@ def fixture(name):
     return json.dumps(pin, indent=2) + "\n"
 
 
-def check(pin_path, arch="x64"):
-    """(exit code, {item: (line, ok)}) from dev-env.ps1 -Check against one pin."""
-    proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Check", "-Arch", arch, "-PinFile", str(pin_path)],
-                          capture_output=True, text=True, timeout=300)
+def check(pin_path, arch="x64", vswhere=None):
+    """(exit code, {item: (line, ok)}) from dev-env.ps1 -Check against one pin (and, given, another vswhere)."""
+    cmd = ["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Check", "-Arch", arch, "-PinFile", str(pin_path)]
+    if vswhere:
+        cmd += ["-VsWhere", str(vswhere)]
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     rows = {}
     for line in proc.stdout.splitlines():
         if line.endswith(" ok") or line.endswith(" MISMATCH"):
@@ -87,6 +89,34 @@ class DevEnvCheckTest(unittest.TestCase):
                 self.assertEqual(code, 1)
                 self.assertFalse(rows[item][1], rows[item][0])
                 self.assertEqual([k for k, (_, ok) in rows.items() if not ok], [item])
+
+
+@unittest.skipUnless(sys.platform == "win32" and shutil.which("pwsh"), "needs Windows and pwsh")
+class InstallationTest(unittest.TestCase):
+    """Which installation dev-env judges, with no real Visual Studio involved."""
+
+    def test_a_missing_installer_is_reported_not_thrown(self):
+        code, rows = check(PIN, vswhere=Path(tempfile.gettempdir()) / "no-such-dir" / "vswhere.exe")
+        self.assertEqual(code, 1)
+        self.assertFalse(rows["Visual Studio Installer"][1], rows)
+
+    def test_a_component_in_another_installation_does_not_count(self):
+        # The stand-in vswhere reports the selected installation without one pinned component; that component lives
+        # in no other installation dev-env may borrow from, so it is missing and the toolset is never entered.
+        pin = json.loads(PIN.read_text(encoding="utf-8"))
+        components = pin["visual_studio"]["components"]
+        install = [{"installationPath": "C:\\VS\\Community", "installationVersion": "18.11.0.0",
+                    "packages": [{"id": c, "type": "Component"} for c in components[1:]]}]
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, "install.json").write_text(json.dumps(install), encoding="utf-8")
+            stand_in = Path(tmp, "vswhere.cmd")
+            stand_in.write_text('@type "%~dp0install.json"\r\n', encoding="utf-8")
+            code, rows = check(PIN, vswhere=stand_in)
+        self.assertEqual(code, 1)
+        self.assertFalse(rows[f"component {components[0]}"][1], rows)
+        self.assertTrue(all(rows[f"component {c}"][1] for c in components[1:]), rows)
+        self.assertNotIn("MSVC toolset", rows)
+        self.assertIn("C:\\VS\\Community", rows["Visual Studio"][0])
 
 
 if __name__ == "__main__":

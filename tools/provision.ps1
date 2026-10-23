@@ -215,18 +215,25 @@ function Test-NativeLeg {
 }
 
 function Show-NativeRepair {
-  # Never runs the installer: a Visual Studio change is the operator's, so the exact command is printed instead.
-  $pin = Get-Content -Raw (Join-Path $Root 'native\toolchain.json') | ConvertFrom-Json
-  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-  $vs = & $vswhere -version $pin.visual_studio.version_range -latest -products * -property installationPath
-  if (-not $vs) {
-    Write-Host "provision: native: no Visual Studio in $($pin.visual_studio.version_range); install Visual Studio 2026 with the components in native/toolchain.json"
+  # Never runs the installer: a Visual Studio change is the operator's, so the exact command is printed instead. The
+  # installation and its missing components are dev-env.ps1's own verdict (one installation, judged by its packages),
+  # so the commands make that installation whole rather than counting a component another installation holds.
+  $rows = & pwsh -NoProfile -File (Join-Path $Root 'scripts\dev-env.ps1') -Check -Arch x64 2>&1 | ForEach-Object { "$_" }
+  $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+  if ($rows | Where-Object { $_ -clike 'Visual Studio Installer *MISMATCH' }) {
+    Write-Host 'provision: native: the Visual Studio Installer is missing; install Visual Studio 2026 (18.11 or later) with the components in native/toolchain.json'
     return
   }
-  $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
-  foreach ($component in $pin.visual_studio.components) {
-    $has = & $vswhere -version $pin.visual_studio.version_range -latest -products * -requires $component -property installationPath
-    if (-not $has) { Write-Host "provision: native: run  & `"$installer`" modify --installPath `"$vs`" --add $component" }
+  if ($rows | Where-Object { $_ -clike 'Visual Studio pinned * found none in range MISMATCH' }) {
+    Write-Host 'provision: native: no Visual Studio 2026 in the pinned range; install it with the components in native/toolchain.json'
+    return
+  }
+  $selected = $rows | Where-Object { $_ -cmatch '^Visual Studio pinned \S+ found \S+ at (.+) ok$' } | Select-Object -First 1
+  $path = if ($selected -cmatch ' at (.+) ok$') { $Matches[1] } else { $null }
+  foreach ($row in $rows) {
+    if ($path -and $row -cmatch '^component (\S+) pinned installed found missing MISMATCH$') {
+      Write-Host "provision: native: run  & `"$installer`" modify --installPath `"$path`" --add $($Matches[1])"
+    }
   }
 }
 
