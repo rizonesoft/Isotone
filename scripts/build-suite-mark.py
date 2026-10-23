@@ -9,7 +9,8 @@ The wordmark stands alone: it is never locked up with the suite icon (operator d
 
 The letters are outlines of Sora (SIL Open Font License 1.1, resources/brand/fonts/), so the files never depend on an
 installed font. The three lights mix by the screen formula, precomputed per overlap, so no renderer needs blend modes.
-Usage: python scripts/build-suite-mark.py   (then python scripts/generate-small-icons.py --in-place for 16/24/32)
+Usage: python scripts/build-suite-mark.py   (then python scripts/generate-small-icons.py --in-place for 16/24/32;
+the three app icons are built by scripts/build-app-icons.py, on the same tile and band)
 Requires fonttools.
 """
 import os
@@ -56,17 +57,17 @@ def icon():
     ldefs, lbody = lights(128, 114, 45, 25, 'isotone-c')
     return f'''<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256" viewBox="0 0 256 256">
   <defs>
-    <linearGradient id="isotone-c-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34353B"/><stop offset="1" stop-color="#1E1F23"/></linearGradient>
+    <linearGradient id="isotone-c-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D3E45"/><stop offset="1" stop-color="#18191D"/></linearGradient>
     <linearGradient id="isotone-c-spec" x1="8" y1="0" x2="248" y2="0" gradientUnits="userSpaceOnUse">{stops}</linearGradient>
-    <clipPath id="isotone-c-clip"><rect x="8" y="8" width="240" height="240" rx="48"/></clipPath>
+    <clipPath id="isotone-c-clip"><rect x="8" y="8" width="240" height="240" rx="52"/></clipPath>
     {ldefs}
   </defs>
-  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#isotone-c-bg)"/>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#isotone-c-bg)"/>
   <g clip-path="url(#isotone-c-clip)">
-    <path d="M0 226C64 214 120 238 176 226S236 212 256 216V256H0Z" fill="url(#isotone-c-spec)"/>
-    <path d="M0 226C64 214 120 238 176 226S236 212 256 216" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
+    <path d="M0 230C64 220 120 240 176 230S236 218 256 222V256H0Z" fill="url(#isotone-c-spec)"/>
+    <path d="M0 230C64 220 120 240 176 230S236 218 256 222" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
   </g>
-  <rect x="9" y="9" width="238" height="238" rx="47" fill="none" stroke="#FFFFFF" stroke-opacity=".09" stroke-width="2"/>
+  <rect x="9" y="9" width="238" height="238" rx="51" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="2"/>
   <g id="isotone-glyph">{lbody}</g>
 </svg>
 '''

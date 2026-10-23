@@ -10,7 +10,7 @@ The suite draws every icon from one family: Lucide geometry (ISC license, compat
 - Every icon-only control has a tooltip and an `AutomationProperties.Name`; decorative icons are hidden from UIA.
 - New icons: take Lucide's if one exists; otherwise draw one on the same grid (2px padding, 1.5 stroke) and add it to the catalog with a name and a note.
 - Tool icons match the tool, not the command (Photoshop's names for Photoshop tools).
-- The app marks (pen nib, paintbrush, aperture) are the apps' own icon files, not catalog icons.
+- The app marks (Bezier curve, paintbrush, iris) are the apps' own icon files, not catalog icons.
 
 ## Catalog (preview names)
 

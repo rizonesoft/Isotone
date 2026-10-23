@@ -1,27 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
 <defs>
-<linearGradient id="albumen-c-s16-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34353B"/><stop offset="1" stop-color="#1E1F23"/></linearGradient>
+<linearGradient id="albumen-c-s16-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D3E45"/><stop offset="1" stop-color="#18191D"/></linearGradient>
 <linearGradient id="albumen-c-s16-spec" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.000" stop-color="#FF4D6D"/><stop offset="0.167" stop-color="#FF9A3C"/><stop offset="0.333" stop-color="#FFD84A"/><stop offset="0.500" stop-color="#4CC47A"/><stop offset="0.667" stop-color="#29C5E6"/><stop offset="0.833" stop-color="#5B7CFF"/><stop offset="1.000" stop-color="#B45CFF"/></linearGradient>
 <clipPath id="albumen-c-s16-clip"><rect x="0" y="0" width="16" height="16" rx="3"/></clipPath>
-
+<linearGradient id="albumen-c-s16-ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6A707A"/><stop offset="1" stop-color="#25272C"/></linearGradient>
 </defs>
 <rect x="0" y="0" width="16" height="16" rx="3" fill="url(#albumen-c-s16-tile)"/>
 <rect x="0" y="14" width="16" height="2" fill="url(#albumen-c-s16-spec)" clip-path="url(#albumen-c-s16-clip)"/>
-<g transform="translate(8.000 7.150) scale(0.0991) translate(-128.00 -128.00)"><circle cx="128" cy="128" r="57" fill="#1B7A3D"/>
-    <path d="M144.45 118.5L177.12 137.36A50 50 0 0 1 144.45 175.21Z" fill="#9BE8B6"/>
-    <path d="M144.45 137.5L144.45 175.21A50 50 0 0 1 95.34 165.86Z" fill="#4CC47A"/>
-    <path d="M128 147L95.34 165.86A50 50 0 0 1 78.88 118.64Z" fill="#9BE8B6"/>
-    <path d="M111.55 137.5L78.88 118.64A50 50 0 0 1 111.55 80.79Z" fill="#4CC47A"/>
-    <path d="M111.55 118.5L111.55 80.79A50 50 0 0 1 160.66 90.14Z" fill="#9BE8B6"/>
-    <path d="M128 109L160.66 90.14A50 50 0 0 1 177.12 137.36Z" fill="#4CC47A"/>
-    <g stroke="#1B7A3D" stroke-width="7" stroke-linecap="round">
-      <path d="M128 109L177.12 137.36"/>
-      <path d="M144.45 118.5L144.45 175.21"/>
-      <path d="M144.45 137.5L95.34 165.86"/>
-      <path d="M128 147L78.88 118.64"/>
-      <path d="M111.55 137.5L111.55 80.79"/>
-      <path d="M111.55 118.5L160.66 90.14"/>
-    </g>
-    <path d="M128 109L144.45 118.5L144.45 137.5L128 147L111.55 137.5L111.55 118.5Z" fill="#0E2A18"/>
-    </g>
+<g transform="translate(8.000 7.150) scale(0.0702) translate(-128.00 -116.00)"><g transform="translate(128 116) scale(1.22) translate(-128 -116)"><circle cx="128" cy="116" r="66" fill="url(#albumen-c-s16-ring)"/><circle cx="128" cy="116" r="56" fill="#0B0D10"/><path d="M147.05 105L183.13 125.83A56 56 0 0 1 147.05 168.66Z" fill="#5FD58C"/><path d="M147.05 127L147.05 168.66A56 56 0 0 1 91.92 158.83Z" fill="#38AE64"/><path d="M128 138L91.92 158.83A56 56 0 0 1 72.87 106.17Z" fill="#5FD58C"/><path d="M108.95 127L72.87 106.17A56 56 0 0 1 108.95 63.34Z" fill="#38AE64"/><path d="M108.95 105L108.95 63.34A56 56 0 0 1 164.08 73.17Z" fill="#5FD58C"/><path d="M128 94L164.08 73.17A56 56 0 0 1 183.13 125.83Z" fill="#38AE64"/><path d="M128 94L147.05 105L147.05 127L128 138L108.95 127L108.95 105Z" fill="#0B2414"/></g></g>
 </svg>

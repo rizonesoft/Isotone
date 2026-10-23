@@ -1,6 +1,6 @@
 # App icons
 
-Stilus, Gesso and Albumen share one app icon system: Direction C, the suite tile, chosen on 2026-09-27. The splash is the Suite card (operator decision 2026-09-27), a 640 x 360 graphite card that carries the master icon; its spec is the Splash component guide. Direction A, the neon art, is retired and no longer in the repository.
+Stilus, Gesso and Albumen share one app icon system: Direction C, the suite tile, chosen on 2026-09-27, with the Solid glyphs chosen on 2026-10-23 (operator decision: concept 2 of five, then refined: the Stilus handles removed and the curve enlarged and weighted, the brush given less material and lighter bristles and enlarged, the lens enlarged, and the stroke dropped from Gesso below 40 px). The splash is the Suite card (operator decision 2026-09-27), a 640 x 360 graphite card that carries the master icon; its spec is the Splash component guide. Direction A, the neon art, is retired and no longer in the repository.
 
 The app icons are separate from the UI icon catalog: catalog icons are Lucide-style strokes that draw commands and tools in the chrome, while app icons are full-color files that identify an app to Windows and to the person using it.
 
@@ -10,7 +10,7 @@ Every icon is built from three layers, and each layer has one job.
 
 - **Graphite tile.** The same dark rounded square for every app, so the three read as one suite in a taskbar or a Start menu folder.
 - **Spectrum band.** A wave of the seven suite colors along the foot of the tile: the Isotone signature, identical in every app.
-- **Accent glyph.** The app's own mark in its accent color: a pen nib on an anchor path for Stilus (`accent-stilus` cyan), a paintbrush with scattered pixels for Gesso (`accent-gesso` orange), an aperture inside viewfinder corners for Albumen (`accent-albumen` green).
+- **Accent glyph.** The app's own object in its accent color, drawn as a two-tone solid lit from the top left, with no cast shadow or glare: for Stilus a Bezier curve between two square anchor points, as a vector editor draws a path (`accent-stilus` cyan); for Gesso a paintbrush laying down a tapered stroke (`accent-gesso` orange); for Albumen a six-blade iris inside its lens rim (`accent-albumen` green). A pen nib was retired for Stilus because it says writing, not vector; the path itself is what vector work is.
 
 The glyph is the only thing that changes between apps; the tile and band never do.
 
@@ -19,15 +19,21 @@ The glyph is the only thing that changes between apps; the tile and band never d
 | Part | Geometry |
 | --- | --- |
 | Canvas | 256 x 256 viewBox, 8 px transparent margin on every side |
-| Tile | `rect` x 8, y 8, 240 x 240 (8 to 248), `rx` 48, vertical gradient #34353B to #1E1F23 |
-| Inner highlight | `rect` x 9, y 9, 238 x 238, `rx` 47, white stroke 2 at 9 percent opacity (reads as a 1 px inner edge) |
-| Spectrum band | path `M0 226C64 214 120 238 176 226S236 212 256 216V256H0Z`, clipped to the tile, horizontal gradient from x 8 to 248 |
+| Tile | `rect` x 8, y 8, 240 x 240 (8 to 248), `rx` 52, vertical gradient #3D3E45 to #18191D |
+| Inner highlight | `rect` x 9, y 9, 238 x 238, `rx` 51, white stroke 2 at 12 percent opacity (reads as a 1 px inner edge) |
+| Spectrum band | path `M0 230C64 220 120 240 176 230S236 218 256 222V256H0Z`, clipped to the tile, horizontal gradient from x 8 to 248 |
 | Band crest | the same curve as a stroke, white 2 px at 35 percent opacity |
 | Glyph safe box | about x 36 to 220, y 28 to 204, centred at (128, 116), above the band |
 
 The glyph is centred at (128, 116), not at the tile centre, so it sits optically in the middle of the graphite area above the band.
 
-Optical balancing makes the three glyphs look the same size although their shapes differ: relative to the original drawings, the Stilus line glyph is scaled up 25 percent (group scale 1.125), Gesso 10 percent (0.990) and Albumen 8 percent (0.972). Stilus gets the most because a thin line drawing reads smallest.
+Optical balancing makes the three glyphs look the same size and weight although their shapes differ: each is grown about (128, 116), Stilus by 1.2, Gesso by 1.12 and Albumen by 1.22, and the Stilus curve is drawn heavier (an 18.5 unit body under an 11.5 unit face) because a line reads lighter than a brush or a disc.
+
+| Glyph | Geometry (256 space, before the growth) |
+| --- | --- |
+| Stilus | the curve `M68 168C82 92 174 140 188 64` as a #127EA0 body, a #29C5E6 face offset (-1, -2) and a #C7F4FC highlight offset (-3, -5); two 22 unit square anchors at its ends, white #F2F3F5 with a 4 unit #29C5E6 edge, corner radius 3 |
+| Gesso | a brush at `translate(124 112) rotate(45)`: handle two-tone #F5923E and #D9741F, ferrule two-tone #E3E6EA and #AEB4BD with one #7D838D crimp, bristles from #B8763E through #E88A3A to a #FFC861 tip; a tapered stroke from the tip, #E0701C through #F5923E to #FFD15A, with one white gloss line at 40 percent |
+| Albumen | a lens rim of radius 66 (#6A707A to #25272C), a black well of radius 56, six blades alternating #5FD58C and #38AE64 that extend the sides of a radius 22 hexagon opening (#0B2414) to the well, so they tile it exactly; a glint arc and a rim edge in white |
 
 Each master keeps its gradient and clip ids prefixed with the app (`stilus-c-bg`, `gesso-c-spec`...) so several icons can be inlined in one document without collisions.
 
@@ -44,26 +50,25 @@ Sizes in between are rendered from the next smaller file's grid only when it is 
 
 ## The small variants (16, 24, 32)
 
-At taskbar and title-bar sizes an icon is recognized by its silhouette, so the small variants carry the app's main object alone, enlarged to fill the space above the band (operator decision, 2026-09-27: less detail at 32, 24 and 16).
+At taskbar and title-bar sizes an icon is recognized by its silhouette, so below 40 px each app shows its simplified glyph, enlarged to fill the space above the band (operator decisions 2026-09-27, less detail at 32, 24 and 16, and 2026-10-23, no stroke on Gesso below 40 px).
 
-- Stilus: the pen nib alone (no Bezier curve, handle, or anchor nodes). The breather hole stays at 24 and 32; at 16 the nib is solid with only the slit.
-- Gesso: the paintbrush alone (no pixel squares). The light ferrule band stays at every size, since it is what makes the shape read as a brush.
-- Albumen: the six-blade aperture alone (no viewfinder corners); at 16 the blade separators are heavier so the blades stay distinct.
+- Stilus: the curve and its two anchors, heavier (a 25 unit body, 32 unit anchors with a 6 unit edge), without the highlight.
+- Gesso: the paintbrush alone, without the stroke or the crimp line; the light ferrule stays, since it is what makes the shape read as a brush.
+- Albumen: the rim, the blades and the opening, without the glints.
 - The glyph is scaled to fill a box inset from the tile (1.5 px at 16, 2.6 px at 24, 3.2 px at 32) and centered above the band.
 - The tile keeps the master's graphite gradient with a smaller corner radius (3, 4, 6), and the spectrum band is a straight bar 2, 2.5, and 3.5 px tall, clipped to the tile corners; the inner highlight and the band crest are dropped.
-- The variants are generated from the masters' glyph shapes by `scripts/generate-small-icons.py`, so a change to a master glyph carries through; regenerate them after editing a master.
+- The masters, the variants and the icon inside each `<app>-splash.svg` are written by `scripts/build-app-icons.py` from one geometry, so a change to a glyph carries through every size; edit the script, never the SVGs, and `python scripts/build-app-icons.py --check` fails when a committed file differs from what it writes. The suite icon's variants come from `scripts/generate-small-icons.py`.
 - Accent colors stay the same hex values as the master, so an icon reads as the same app at every size.
 
 ## Colors
 
 | Role | Values |
 | --- | --- |
-| Tile (master) | vertical gradient #34353B (top) to #1E1F23 (bottom) |
-| Tile (16 to 32) | flat #2B2C31 |
+| Tile (every size) | vertical gradient #3D3E45 (top) to #18191D (bottom) |
 | Spectrum band | stops at 0, 0.17, 0.33, 0.5, 0.67, 0.83 and 1: #FF4D6D, #FF9A3C, #FFD84A, #4CC47A, #29C5E6, #5B7CFF, #B45CFF |
-| Stilus glyph | `accent-stilus` #29C5E6, light facet #8BE6F7, ferrule #1597BA, anchors white (48 px and up) |
-| Gesso glyph | `accent-gesso` #F5923E, highlight #FFC98F, tuft to #FFE08A, pixels #FFD84A and warm neighbours |
-| Albumen glyph | `accent-albumen` #4CC47A, light blades #9BE8B6, dark body #1B7A3D and #0B3A1C, viewfinder white |
+| Stilus glyph | `accent-stilus` #29C5E6 face, #127EA0 body, #C7F4FC highlight, anchors #F2F3F5 edged in #29C5E6 |
+| Gesso glyph | `accent-gesso` #F5923E and #D9741F handle, #E3E6EA and #AEB4BD ferrule, bristles #B8763E to #FFC861, stroke #E0701C to #FFD15A |
+| Albumen glyph | `accent-albumen` family: blades #5FD58C and #38AE64, opening #0B2414, rim #6A707A to #25272C |
 
 The accents are the dark-theme values of the `accent-<app>` tokens; the icon keeps them in every theme, because it is an image on its own tile, not chrome.
 

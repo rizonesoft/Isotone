@@ -1,7 +1,7 @@
-"""Generate the 16, 24 and 32 px app icon variants from the master SVGs.
+"""Generate the 16, 24 and 32 px variants of the suite icon from its master SVG.
 
-Each variant carries the main glyph alone (Stilus nib, Gesso brush, Albumen aperture, the suite's three lights),
-scaled to fill the space above the spectrum band (operator decision 2026-09-27).
+Each variant carries the three lights alone, scaled to fill the space above the spectrum band (operator decision
+2026-09-27). The three app icons and their small variants are built by scripts/build-app-icons.py.
 Usage: python scripts/generate-small-icons.py --in-place   (rewrites resources/icons/<app>/<app>-{16,24,32}.svg)
 Requires resvg-py and Pillow (see scripts/requirements-icons.txt once D00 T03 §3 ships).
 """
@@ -51,7 +51,7 @@ def small(app,sz):
     d=re.sub(r'id="'+app+r'-c-', f'id="{app}-c-s{sz}-', d); fr=frag(app,sz).replace(f'url(#{app}-c-',f'url(#{app}-c-s{sz}-')
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {sz} {sz}" width="{sz}" height="{sz}">
 <defs>
-<linearGradient id="{app}-c-s{sz}-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34353B"/><stop offset="1" stop-color="#1E1F23"/></linearGradient>
+<linearGradient id="{app}-c-s{sz}-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D3E45"/><stop offset="1" stop-color="#18191D"/></linearGradient>
 <linearGradient id="{app}-c-s{sz}-spec" x1="{x0}" y1="0" x2="{x0+w}" y2="0" gradientUnits="userSpaceOnUse">{stops}</linearGradient>
 <clipPath id="{app}-c-s{sz}-clip"><rect x="{x0}" y="{x0}" width="{w}" height="{w}" rx="{rx}"/></clipPath>
 {d}
@@ -65,7 +65,7 @@ import sys
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit('usage: generate-small-icons.py --in-place | <out-dir>')
-    for app in ['stilus', 'gesso', 'albumen', 'isotone']:
+    for app in ['isotone']:
         out = os.path.join(R, app) if sys.argv[1] == '--in-place' else sys.argv[1]
         for sz in (16, 24, 32):
             with open(os.path.join(out, f'{app}-{sz}.svg'), 'w', encoding='utf-8', newline='\n') as f:

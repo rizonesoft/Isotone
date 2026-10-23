@@ -1,6 +1,6 @@
 # App icon
 
-The app icons of Stilus, Gesso and Albumen: Direction C, the suite tile, a shared graphite tile with the spectrum band along its foot and the app's accent glyph, in a 256 master and hand-tuned 16, 24 and 32 variants.
+The app icons of Stilus, Gesso and Albumen: Direction C, the suite tile, a shared graphite tile with the spectrum band along its foot and the app's accent glyph (the Solid glyphs since 2026-10-23: a Bezier curve with its anchors, a paintbrush and its stroke, an iris in its rim), in a 256 master and 16, 24 and 32 variants that show the simplified glyph below 40 px, all written by `scripts/build-app-icons.py`.
 
 The full guide (construction, colors, pixel-grid rules, export) is the App icons section of the brand book; the files are the App icons asset group.
 

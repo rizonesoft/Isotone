@@ -12,7 +12,8 @@
   7. python scripts/todo-findings.py --check
   8. python scripts/todo-runs.py --check
   9. python scripts/campaign_guard.py --self-test
-  10. python scripts/build-design-site.py --check (docs/design/index.html is current)
+  10. python scripts/build-design-site.py --check (docs/design/index.html is current), then
+      python scripts/build-app-icons.py --check (the app icon SVGs match their generator)
   11. python scripts/design-lint.py --self-test
   12. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
       (no new design-contract violation in the UI sources; standards/design-contract.md)
@@ -97,6 +98,7 @@ try {
     Invoke-PythonGate 'todo-runs --check' 'todo-runs.py' @('--check')
     Invoke-PythonGate 'campaign_guard self-test' 'campaign_guard.py' @('--self-test')
     Invoke-PythonGate 'design site --check' 'build-design-site.py' @('--check')
+    Invoke-PythonGate 'app icons --check' 'build-app-icons.py' @('--check')
     Invoke-PythonGate 'design-lint self-test' 'design-lint.py' @('--self-test')
     Invoke-PythonGate 'design-lint baseline' 'design-lint.py' @('--baseline', 'docs/design/.lint-baseline.json')
     Invoke-PythonGate 'panel_slots self-test' 'panel_slots.py' @('--self-test')

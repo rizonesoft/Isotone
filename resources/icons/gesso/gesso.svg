@@ -1,55 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256" viewBox="0 0 256 256">
   <defs>
-    <linearGradient id="gesso-c-bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#34353B"/>
-      <stop offset="1" stop-color="#1E1F23"/>
-    </linearGradient>
-    <linearGradient id="gesso-c-spec" x1="8" y1="0" x2="248" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FF4D6D"/>
-      <stop offset="0.17" stop-color="#FF9A3C"/>
-      <stop offset="0.33" stop-color="#FFD84A"/>
-      <stop offset="0.5" stop-color="#4CC47A"/>
-      <stop offset="0.67" stop-color="#29C5E6"/>
-      <stop offset="0.83" stop-color="#5B7CFF"/>
-      <stop offset="1" stop-color="#B45CFF"/>
-    </linearGradient>
-    <clipPath id="gesso-c-clip">
-      <rect x="8" y="8" width="240" height="240" rx="48"/>
-    </clipPath>
-    <linearGradient id="gesso-c-hdl" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#FFC98F"/>
-      <stop offset="0.5" stop-color="#FFC98F"/>
-      <stop offset="0.5" stop-color="#F5923E"/>
-      <stop offset="1" stop-color="#F5923E"/>
-    </linearGradient>
-    <linearGradient id="gesso-c-fer" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#F2F2F2"/>
-      <stop offset="0.5" stop-color="#F2F2F2"/>
-      <stop offset="0.5" stop-color="#BFC3C9"/>
-      <stop offset="1" stop-color="#BFC3C9"/>
-    </linearGradient>
-    <linearGradient id="gesso-c-tuft" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#FFE08A"/>
-      <stop offset="1" stop-color="#F5923E"/>
-    </linearGradient>
+    <linearGradient id="gesso-c-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D3E45"/><stop offset="1" stop-color="#18191D"/></linearGradient>
+    <linearGradient id="gesso-c-spec" x1="8" y1="0" x2="248" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0.00" stop-color="#FF4D6D"/><stop offset="0.17" stop-color="#FF9A3C"/><stop offset="0.33" stop-color="#FFD84A"/><stop offset="0.50" stop-color="#4CC47A"/><stop offset="0.67" stop-color="#29C5E6"/><stop offset="0.83" stop-color="#5B7CFF"/><stop offset="1.00" stop-color="#B45CFF"/></linearGradient>
+    <clipPath id="gesso-c-clip"><rect x="8" y="8" width="240" height="240" rx="52"/></clipPath>
+    <linearGradient id="gesso-c-wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="#F5923E"/><stop offset="0.5" stop-color="#D9741F"/></linearGradient><linearGradient id="gesso-c-metal" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="#E3E6EA"/><stop offset="0.5" stop-color="#AEB4BD"/></linearGradient><linearGradient id="gesso-c-bristle" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B8763E"/><stop offset="0.45" stop-color="#E88A3A"/><stop offset="1" stop-color="#FFC861"/></linearGradient><linearGradient id="gesso-c-paint" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E0701C"/><stop offset="0.55" stop-color="#F5923E"/><stop offset="1" stop-color="#FFD15A"/></linearGradient>
   </defs>
-  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#gesso-c-bg)"/>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#gesso-c-bg)"/>
   <g clip-path="url(#gesso-c-clip)">
-    <path d="M0 226C64 214 120 238 176 226S236 212 256 216V256H0Z" fill="url(#gesso-c-spec)"/>
-    <path d="M0 226C64 214 120 238 176 226S236 212 256 216" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
+    <path d="M0 230C64 220 120 240 176 230S236 218 256 222V256H0Z" fill="url(#gesso-c-spec)"/>
+    <path d="M0 230C64 220 120 240 176 230S236 218 256 222" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
   </g>
-  <rect x="9" y="9" width="238" height="238" rx="47" fill="none" stroke="#FFFFFF" stroke-opacity=".09" stroke-width="2"/>
-  <g transform="translate(128 116) scale(0.990) translate(-117.78 -139.00)">
-    <g transform="translate(78 180) rotate(45) scale(0.94)">
-      <path d="M-15 -84L15 -84L9 -182Q0 -200 -9 -182Z" fill="url(#gesso-c-hdl)"/>
-      <rect x="-21" y="-78" width="42" height="26" rx="5" fill="url(#gesso-c-fer)"/>
-      <path d="M0 0C17 -7 28 -25 23 -48L-23 -48C-28 -22 -15 -6 0 0Z" fill="url(#gesso-c-tuft)"/>
-    </g>
-    <rect x="39.2" y="185.2" width="17.6" height="17.6" rx="2" fill="#FFD84A"/>
-    <rect x="65.4" y="209.4" width="13.2" height="13.2" rx="2" fill="#F5923E"/>
-    <rect x="33.95" y="157.95" width="12.1" height="12.1" rx="2" fill="#FF6B6B"/>
-    <rect x="29.05" y="215.05" width="9.9" height="9.9" rx="2" fill="#FFB347"/>
-    <rect x="93.6" y="217.6" width="8.8" height="8.8" rx="2" fill="#FFD84A"/>
-    <rect x="54.15" y="138.15" width="7.7" height="7.7" rx="2" fill="#D86C1A"/>
-  </g>
+  <rect x="9" y="9" width="238" height="238" rx="51" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="2"/>
+  <g transform="translate(128 116) scale(1.12) translate(-128 -116)"><path d="M66 166C96 186 136 160 186 172C191 173 191 180 186 181C138 174 102 206 60 188C52 184 56 164 66 166Z" fill="url(#gesso-c-paint)"/><path d="M70 172C98 188 132 166 176 174" fill="none" stroke="#FFFFFF" stroke-opacity=".4" stroke-width="2.5" stroke-linecap="round"/><g transform="translate(124 112) rotate(45)"><path d="M-6 -100C-6 -106 6 -106 6 -100L10 -24H-10Z" fill="url(#gesso-c-wood)"/><path d="M-11 -24H11L13 4H-13Z" fill="url(#gesso-c-metal)"/><path d="M-12 -10H12" stroke="#7D838D" stroke-width="2.5"/><path d="M-13 4C-17 30 -9 54 0 74C9 54 17 30 13 4Z" fill="url(#gesso-c-bristle)"/></g></g>
 </svg>
