@@ -54,7 +54,7 @@ track: W5
 |   1   |   §1    | The toolchain pin and the developer environment | -- |  [x]   |
 |   2   |   §2    | The vcpkg manifest, baseline, and triplets | §1 |  [x]   |
 |   3   |   §3    | The CMake build, presets, and the test harness | §2 |  [x]   |
-|   4   |   §4    | The format, clang-tidy, and /analyze gates | §3 |  [ ]   |
+|   4   |   §4    | The format, clang-tidy, and /analyze gates | §3 |  [x]   |
 |   5   |   §5    | The AddressSanitizer lane | §3 |  [ ]   |
 |   6   |   §6    | The import and size gates | §3 |  [ ]   |
 |   7   |   §7    | The native stages of check-all and the gate card | §4, §5, §6 |  [ ]   |
@@ -149,6 +149,12 @@ The C++ equivalents of today's `dotnet format` and analyzer gates (spec, "Warnin
 - [ ] Commit: `"workspace: the native format, clang-tidy, and /analyze gates"`
 
 **Test checkpoint:** Static analysis clean: `pwsh scripts/native-format.ps1 -Check`, `pwsh scripts/native-tidy.ps1`, and `cmake --build --preset x64-analyze` exit 0 on the tree; a probe misindented line fails the format gate, a probe `std::move` of a value used afterwards fails clang-tidy with `bugprone-use-after-move`, and a probe dereference of a possibly null pointer fails `/analyze` with `C6011` (each quoted, then reverted). Cheaper substitute that fails: running clang-format in the editor only, which nothing enforces.
+
+> **Verified:** 2026-10-23 | §4 | D00 T05 §4 at `c33b2af`: `native/.clang-format` (Microsoft base, three deviations), `native/.clang-tidy` (seven families, three reasoned exclusions, every warning an error), `scripts/native-format.ps1` over every source the next commit would carry (`git ls-files -z`, UTF-8, existing files only), `scripts/native-tidy.ps1` over every first-party translation unit, and the `x64-analyze` presets; `native-format: 3 file(s) checked, 0 need formatting`, `native-tidy: 2 translation unit(s), 0 with diagnostics`, and the analyze build exit 0; probes fail on a misindented line, on an unstaged misformatted `native/core/src/format_probe.cpp`, on `bugprone-use-after-move`, and on `C6011`; `scripts/tests/test_native_format.py` runs 3 tests, OK, each guard proved by a mutant; check-all: all gates passed
+> **Review:** round 2, candidate `132f637..44975ea`(round 1), `132f637..c33b2af`(round 2) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 2 of cap 33, gpt-6.1-sol medium; Round 1's consistency advisory, F3, fixed in c33b2af). Independent: gpt-6.1-sol medium via `scripts/review-dispatch.py`, two rounds (F1 and F2 fixed in 44975ea), the second approving every lens. Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T05-s4.md. Attestation: docs/reviews/00-workspace/D00-T05-s4.attest.json
+> **Plan review:** gpt medium, filed D00 T05 §7, D00 T04 §1 (8 findings: 4 filed in decc9c5, 4 rejected) (run 20261023-D00-T05-S4-gpt)
+> **CRUD:** not applicable (format and analysis configuration and two gate scripts, with no user record, document, or setting)
+> **Duration:** 2026-10-23T13:21:59Z to 2026-10-23T13:59:07Z
 
 ## 5. The AddressSanitizer Lane
 

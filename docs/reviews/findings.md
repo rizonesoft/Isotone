@@ -4,18 +4,18 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**193 findings across 14 sections.**
+**198 findings across 15 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 79 | fails under hostile or unexpected input |
-| `integration` | 57 | a consumer, caller, or downstream artifact no longer holds |
+| `adversarial` | 80 | fails under hostile or unexpected input |
+| `integration` | 58 | a consumer, caller, or downstream artifact no longer holds |
 | `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
 | `record` | 17 | the plan or the evidence misdescribes what happened |
-| `correctness` | 12 | the code does the wrong thing |
-| `consistency` | 9 | disagrees with the rest of the suite, its naming, or its layout |
+| `correctness` | 14 | the code does the wrong thing |
+| `consistency` | 10 | disagrees with the rest of the suite, its naming, or its layout |
 
 ## By severity
 
@@ -23,7 +23,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
 | `major` | 105 | wrong behavior in code, plan, or record |
-| `minor` | 88 | polish or wording, or no surviving defect |
+| `minor` | 93 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -222,3 +222,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §3` | F4 | minor | `correctness` | fixed | self | CMake picked the bundled clang++ instead of cl |
 | `D00 T05 §3` | F5 | major | `correctness` | fixed | self | an archive unpacked inside a work tree reported that tree's commit |
 | `D00 T05 §3` | F6 | minor | `correctness` | fixed | self | CMake's regular expressions have no repetition count |
+| `D00 T05 §4` | F1 | minor | `adversarial` | fixed | independent | git's quoting hid a non-ASCII file name from the format gate |
+| `D00 T05 §4` | F2 | minor | `integration` | fixed | independent | a tracked file deleted before staging broke both modes |
+| `D00 T05 §4` | F3 | minor | `consistency` | fixed | independent | the format decision counted four deviations where it lists three |
+| `D00 T05 §4` | F4 | minor | `correctness` | fixed | self | clang-cl rejected two MSVC switches before any check ran |
+| `D00 T05 §4` | F5 | minor | `correctness` | fixed | self | GoogleTest's assertion macros raise C6326 under /analyze |
