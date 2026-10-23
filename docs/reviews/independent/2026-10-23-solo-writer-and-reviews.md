@@ -121,3 +121,39 @@ Every finding was verified against the code and the cited documentation and is r
 2. P1, queued runs could fill the per-workflow limit and hide a completed failure: verified. The run list asks `gh` for completed runs only (`--status completed`); the fake run list returns twenty queued runs unless that filter is passed, and a mutant without it fails.
 3. P2, the independent pass and the plan review kept the old outage rules: verified. The independent pass follows the full retry-then-`Review pending:` rule; the plan review retries with the same backoff and, being advisory, records a persistent outage and continues, while the panel and stamp rounds that need the reviewer still park.
 4. P2, `--dispatch` could not supply workflow inputs: verified (`release.yml` requires `tag`). `--field name=value` passes inputs through, `process-phase` says to re-dispatch with the inputs the failed run used, and a mutant that drops them fails the self-test.
+
+## Round 4: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T01:40:51Z
+- Effort: xhigh
+- Lines: 19
+- Digest: 308e3f2f9a6fb593
+
+## adversarial: needs-attention
+
+1. P1 `scripts/ci_watch.py:54`: workflows are deduplicated by display name instead of identity. An in-memory probe with two active workflow IDs named `checks`, one newer success and one older failure, returned `([], 1)`, hiding the failed workflow and permitting exit 0. Preserve each workflow’s ID when aggregating; `gh` exposes `workflowDatabaseId`. [GitHub CLI fields](https://cli.github.com/manual/gh_run_list)
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P2 `.claude/skills/review-todo-section/SKILL.md:153` and `:128`: the main panel’s outage rule says to retry the same round, but its keep folder is allocated per round. After a timeout leaves `sol.stderr.txt`, repeating the prescribed `round-N` invocation returns exit 2, “use a fresh folder per attempt,” before starting a reviewer. Allocate separate attempt folders for panel retries, as the corrected completion path does.
+
+## source-defect: needs-attention
+
+3. P1 `scripts/ci_watch.py:37`: GitHub commands do not pin the repository. An inherited `GH_REPO` redirects both monitoring and repair dispatches. A mocked subprocess probe with `GH_REPO=example/other` returned exit 0 using that repository’s green runs; `--dispatch` likewise targets the other repository. Bind every call to the validated repository explicitly. [GitHub CLI environment semantics](https://cli.github.com/manual/gh_help_environment)
+
+## record: approve
+
+HIGHEST: P1
+
+OVERALL: needs-attention
+
+## Response to round 4
+
+Every finding was verified against the code and the cited documentation and is real.
+
+1. P1, workflows were deduplicated by display name: verified. Runs carry `workflowDatabaseId` and are keyed by it, so two workflows sharing a name stay apart; a self-test case and a mutant keyed by name cover it.
+2. P2, a panel retry reused its round's keep folder: verified. Each retry of a round runs in its own folder, `$RUNDIR/round-<N>-retry-<K>`, with its own summary, created first.
+3. P1, `gh` calls were not bound to this repository: verified (an inherited `GH_REPO` redirects them). `ci_watch.py` reads the repository from `origin` (https or ssh), refuses a non-GitHub origin, passes `--repo owner/name` on every call, and removes `GH_REPO` from the call's environment; self-test cases and a mutant cover the binding.

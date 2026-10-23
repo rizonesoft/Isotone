@@ -23,18 +23,40 @@ is exit 2, never a green report. Stdlib only.
 import argparse
 from datetime import datetime, timedelta, timezone
 import json
+import os
 import re
 import subprocess
 import sys
 import time
 
 GREEN = {"success", "skipped", "neutral"}
-FIELDS = "databaseId,workflowName,status,conclusion,createdAt,event,headSha,url"
+FIELDS = "databaseId,workflowDatabaseId,workflowName,status,conclusion,createdAt,event,headSha,url"
+# The repository every call is bound to comes from origin, never from an inherited GH_REPO.
+GITHUB_REMOTE = re.compile(r"github\.com[:/](?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
 
 
-def gh(args):
-    """Run `gh` with these arguments and return its stdout as text; each caller parses what it expects."""
-    result = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=120)
+def origin_repo(url):
+    """`owner/name` from a GitHub remote URL (https or ssh), or None."""
+    match = GITHUB_REMOTE.search((url or "").strip())
+    return match.group("repo") if match else None
+
+
+def gh_command(args, repo):
+    """The argv and environment for one `gh` call bound to `repo`: `--repo` on the command, and an inherited GH_REPO
+    removed, so neither monitoring nor a repair dispatch can reach another repository."""
+    env = {k: v for k, v in os.environ.items() if k != "GH_REPO"}
+    return ["gh", *args, "--repo", repo], env
+
+
+def bound(repo):
+    """A runner for `fetch` and `dispatch_and_wait` whose every `gh` call names `repo`."""
+    return lambda args: gh(args, repo)
+
+
+def gh(args, repo):
+    """Run `gh` bound to `repo` and return its stdout as text; each caller parses what it expects."""
+    argv, env = gh_command(args, repo)
+    result = subprocess.run(argv, capture_output=True, text=True, timeout=120, env=env)
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or f"gh {' '.join(args[:2])} exited {result.returncode}")
     return result.stdout
@@ -51,12 +73,13 @@ def red_runs(runs):
     for run in sorted(runs, key=lambda r: r["createdAt"], reverse=True):
         if run.get("status") != "completed":
             continue
-        latest.setdefault(run["workflowName"], run)
+        # Keyed by the workflow's identity: two workflows may share a display name.
+        latest.setdefault(run.get("workflowDatabaseId") or run["workflowName"], run)
     red = [r for r in latest.values() if r.get("conclusion") not in GREEN]
     return sorted(red, key=lambda r: r["createdAt"], reverse=True), len(latest)
 
 
-def fetch(runner=gh, per_workflow=20):
+def fetch(runner, per_workflow=20):
     """Every active workflow's recent runs on main, read one workflow at a time."""
     runs = []
     for workflow in gh_json(runner, ["workflow", "list", "--json", "id,name,state,path"]) or []:
@@ -70,7 +93,7 @@ def fetch(runner=gh, per_workflow=20):
 RUN_URL = re.compile(r"/actions/runs/(\d+)")
 
 
-def dispatch_and_wait(workflow, runner=gh, now=lambda: datetime.now(timezone.utc), sleep=time.sleep,
+def dispatch_and_wait(workflow, runner, now=lambda: datetime.now(timezone.utc), sleep=time.sleep,
                       timeout=3600, poll=20, fields=()):
     """Start `workflow` on main with `fields` as its inputs and wait for exactly the run it started.
     Returns (exit code, run or reason).
@@ -204,6 +227,25 @@ def self_test():
     green = dispatch_and_wait("pins.yml", dispatcher("success"), fake_now, fake_sleep)[1]
     check("the evidence line is the one campaign_guard repair close accepts",
           evidence_line(green).startswith(f"ci-watch: {'a' * 40} pins success run 77 "), True)
+    twins = [dict(run(1, "checks", "2026-10-22T00:00:00Z", "success"), workflowDatabaseId=10),
+             dict(run(2, "checks", "2026-10-21T00:00:00Z", "failure"), workflowDatabaseId=11)]
+    check("two workflows sharing a name are kept apart", [r["databaseId"] for r in red_runs(twins)[0]], [2])
+    check("an https remote names its repository", origin_repo("https://github.com/rizonesoft/Isotone.git"),
+          "rizonesoft/Isotone")
+    check("an ssh remote names its repository", origin_repo("git@github.com:rizonesoft/Isotone.git\n"),
+          "rizonesoft/Isotone")
+    check("a remote that is not GitHub names none", origin_repo("https://example.com/a/b.git"), None)
+    saved = os.environ.get("GH_REPO")
+    os.environ["GH_REPO"] = "example/other"
+    try:
+        argv, env = gh_command(["run", "list"], "rizonesoft/Isotone")
+    finally:
+        if saved is None:
+            os.environ.pop("GH_REPO", None)
+        else:
+            os.environ["GH_REPO"] = saved
+    check("every gh call names the bound repository", argv[-2:], ["--repo", "rizonesoft/Isotone"])
+    check("an inherited GH_REPO never reaches gh", "GH_REPO" in env, False)
     print(f"ci_watch self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
 
@@ -220,9 +262,16 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.self_test:
         return self_test()
+    remote = subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True, text=True)
+    repo = origin_repo(remote.stdout) if remote.returncode == 0 else None
+    if not repo:
+        print(json.dumps({"error": "origin is not a GitHub repository"}) if args.json
+              else "ci_watch: origin is not a GitHub repository; nothing to watch")
+        return 2
+    runner = bound(repo)
     try:
         if args.dispatch:
-            code, outcome = dispatch_and_wait(args.dispatch, timeout=args.timeout, fields=args.field)
+            code, outcome = dispatch_and_wait(args.dispatch, runner, timeout=args.timeout, fields=args.field)
             if args.json:
                 print(json.dumps({"exit": code, "run": outcome}, indent=2))
             elif code == 2:
@@ -230,7 +279,7 @@ def main(argv=None):
             else:
                 print(evidence_line(outcome))
             return code
-        runs = fetch(per_workflow=args.per_workflow)
+        runs = fetch(runner, per_workflow=args.per_workflow)
     except (RuntimeError, OSError, subprocess.TimeoutExpired, json.JSONDecodeError, KeyError, ValueError) as exc:
         print(json.dumps({"error": str(exc)}) if args.json else f"ci_watch: could not read runs: {exc}")
         return 2
