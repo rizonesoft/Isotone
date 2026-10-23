@@ -251,3 +251,50 @@ This record's round 5 covers `D00 T05` and `D00 T04` after round 4, and the new 
 9. P2, `check-local-tools.py` reads `global.json` unconditionally: verified. `D00 T06 §2` removes its SDK branch with fixtures and proves it on a tree without `global.json`.
 10. P2, the preset's overlay path resolved against `native/`: verified. The preset sets no `VCPKG_OVERLAY_TRIPLETS`; the configuration file's relative overlay is the one source.
 11. P2, the readback named a solution that does not exist: verified. It reads `csharp-final:src/Stilus/Bezier.Core/Bezier.Core.csproj`, which is tracked and claimed.
+
+## Round 6: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T01:18:41Z
+- Effort: xhigh
+- Lines: 26
+- Digest: c0153b649bd72af8
+
+### adversarial: needs-attention
+
+1. P1 `todo/00-workspace/TODO-06-retire-csharp.md:63`: Retargeting design-lint while keeping its existing rules creates a gate that passes native token violations. An in-memory probe using the current scanner returned zero findings for literal `D2D1::ColorF` colors and `D2D1::RectF` geometry. Native rules arrive only in T07 §5, after §3’s UI foundations. Require native rules and failing literal probes before those foundations run.
+
+### consistency: needs-attention
+
+2. P1 `todo/00-workspace/TODO-06-retire-csharp.md:100`: The repository-wide empty-grep checkpoint still matches the retirement TODO itself. T06 is neither parked nor among the excluded history paths; its instructions contain `dotnet`, `nuget`, `xaml`, and other prohibited terms. Running the specified pattern against this file demonstrates the contradiction. Define an executable-content scope or explicitly permit recorded migration instructions.
+
+3. P2 `todo/00-workspace/TODO-07-native-replan.md:670`: The final groom requires every parked file to be unparked, and the following whole-tree review requires Acceptance to hold, but this section unparks its last owned file only at line 672. Executing the checklist in order reaches both audits with `TODO-12-isotone-local-ml.md` still parked. Move the final audits after its rewrite, map update, and validation.
+
+### integration: needs-attention
+
+4. P1 `todo/00-workspace/TODO-07-native-replan.md:138`: Unparking rewritten files is not coupled to a dependency on their owning re-plan section’s verification. If §4’s review is parked after its implementation commit, rewritten work can run before that plan is approved. An in-memory graph check showed D01 T02 §1 has no unmet dependencies once its earlier prerequisites complete, while T07 §4 remains unchecked. Require dependency edges from the rewritten entry rows to their re-plan owner.
+
+5. P1 `todo/00-workspace/TODO-06-retire-csharp.md:73`: This removes both existing `pins.yml` jobs while retaining the native advisory job only “if that section has landed.” T06 does not depend on T04 §3. Park that advisory section during review and continue with otherwise-ready retirement work: the prescribed edit leaves a workflow with no jobs, making its required successful dispatch impossible. Require the replacement job first or provide an explicit valid retirement path.
+
+### source-defect: needs-attention
+
+6. P2 `todo/00-workspace/TODO-05-native-spine.md:71`: The required component list omits `Microsoft.VisualStudio.Component.VC.CMake.Project`, although the environment requires Visual Studio’s bundled CMake and Ninja. Installing only the declared components can therefore leave `-Check` failing without provisioning identifying the missing CMake component. Include it in the pin and prerequisite checks. [Microsoft’s component catalog](https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-community?view=vs-2026).
+
+7. P2 `todo/00-workspace/TODO-05-native-spine.md:86`: The triplets pin MSVC but do not carry or verify the Windows SDK pin inside dependency builds. vcpkg constructs an isolated environment and invokes its own `vcvarsall`; checking the parent shell’s SDK does not establish the SDK used there. With an older pinned SDK and a newer installed SDK, inspect dependency include/library paths: this can drift while `dev-env -Check` passes. Require SDK selection and readback inside that build environment. [vcpkg environment rules](https://learn.microsoft.com/en-us/vcpkg/users/triplets#vcpkg_env_passthrough), [pinned tool implementation](https://github.com/microsoft/vcpkg-tool/blob/98d7cb0cf1f4686a3e43aa5672b6230c1d56bce8/src/vcpkg/commands.build.cpp#L653-L676).
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 6
+
+Every finding was verified against the files, the scripts, or the cited documentation and is real.
+
+1. P1, design-lint retargeted without C++ rules would pass native literals: verified (the current scanner finds nothing in `D2D1::ColorF` or `D2D1::RectF`). `D00 T06 §1` now adds the C++ rules (literal colors, geometry, and fonts in UI sources, with token reads passing) and failing probes, before any foundation draws; the UI toolkit's re-plan adds only what the components need beyond them.
+2. P1, the repository-wide grep matched `D00 T06` itself: verified. The Outcome and checkpoint exclude `todo/`, whose files are parked or name the retired stack only as migration instructions; the command states its exclusions as pathspecs.
+3. P2, the final audits ran before the last file was unparked: verified. The last re-plan section rewrites, maps, edges, and validates its file first, then runs `groom-plan` and the whole-tree review.
+4. P1, rewritten rows could run before their re-plan section was stamped: verified. Each re-plan section adds itself to the Depends On of every entry section of the files it rewrites, so `resolve` exits 4 on them until it is stamped, even when its review is parked.
+5. P1, retiring the .NET pins jobs could leave `pins.yml` with no jobs: verified. `D00 T06 §2` now depends on `D00 T04 §3`, so the native advisory job exists first.
+6. P2, the CMake component was missing from the pin: verified against Microsoft's component catalog. `Microsoft.VisualStudio.Component.VC.CMake.Project` is in the required components.
+7. P2, vcpkg's dependency builds can take a different Windows SDK: verified (vcpkg runs its own `vcvarsall`). `dev-env -Check` fails when an SDK newer than the pin is installed, so the pin is the newest on every build machine, and the §2 checkpoint reads the SDK version in the dependency builds' include and library paths.
