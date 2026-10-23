@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Run one independent review round with the reviewers pinned in .conclave/reviewers.toml, failing over in order.
+"""Run one independent review round with the reviewer pinned in .conclave/reviewers.toml.
 
     python3 scripts/review-dispatch.py --writer claude --prompt review-prompt.md --record docs/reviews/x.md
     python3 scripts/review-dispatch.py --check-pin [--json] [--pin <path>]     the pin's verdict; runs no reviewer
     python3 scripts/review-dispatch.py --list-rounds [--json] [--records <dir>]  recorded rounds; runs no reviewer
 
-`--writer` is the agent whose work is under review (claude, codex or gemini); its route in the pin lists one reviewer
-of a different model family and at most one fallback, also of a different family. The first reviewer that runs and
-returns a review is the round. One that is not installed, exits non-zero, times out, returns nothing, or ends its
-reply `OVERALL: blocked` (it could not reach the candidate, for example a sandbox that cannot read the repository) is
-skipped and the reason recorded. When every reviewer fails there is no review: exit 1, which never counts as approval.
-A review that finds problems is still a review (exit 0).
+The pin (schema 2) names one writer, Claude Code (`[writer]`, agent `claude`, operator decision 2026-10-23: Opus 5.5 is
+always the solo writer), and one reviewer of a different model family (`[reviewer]`), with no fallback. `--writer`
+accepts only `claude`. A reviewer that is not installed, exits non-zero, times out, returns nothing, or ends its reply
+`OVERALL: blocked` (it could not reach the candidate, for example a sandbox that cannot read the repository) returns no
+review, and the reason is recorded: exit 1, which never counts as approval. A review that finds problems is still a
+review (exit 0).
 
 `--keep DIR` also keeps each reviewer's raw stdout and stderr in DIR as `<reviewer>.stdout.txt`
 and `<reviewer>.stderr.txt`, and the returned review as `review.md`, so a round's evidence outlives the dispatcher's
@@ -18,11 +18,11 @@ scratch: Codex prints the model it served and the tokens it used on stderr, whic
 records read. Without it stderr is discarded.
 
 `--check-pin` loads the pin with `load_pin`, the only place the rules live, and reports without running anything:
-with `--json`, `{"ok": true, "schema_version", "reviewers", "routes", "clis": {cli: on PATH}}` and exit 0, or
+with `--json`, `{"ok": true, "schema_version", "writer", "reviewers", "routes", "clis": {cli: on PATH}}` and exit 0, or
 `{"ok": false, "error": "<the Refused message>"}` and exit 2; without `--json`, `ok` or `refused: <message>`.
 
 Reviewers run read-only in the repository root: Codex in its read-only sandbox, Antigravity in plan mode inside its
-sandbox, Claude Code in plan mode. The script prints a JSON summary; `--record` also appends a `## Round N` section to
+sandbox. The script prints a JSON summary; `--record` also appends a `## Round N` section to
 the findings file with an atomic write, and writes nothing (exit 2, the summary still printed) to a findings file it
 cannot read back. Works the same from PowerShell and from WSL. Stdlib only.
 """
@@ -44,12 +44,14 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 PIN = ROOT / ".conclave" / "reviewers.toml"
-WRITERS = ("claude", "codex", "gemini")
-CLIS = ("codex", "agy", "claude")
+# Claude Code is the only writer (operator decision 2026-10-23: Opus 5.5 is always the solo writer), so the pin has one
+# writer and one reviewer, and a reviewer CLI of the writer's family does not exist here.
+WRITERS = ("claude",)
+CLIS = ("codex", "agy")
 # A reviewer is never of the writer's own model family: its CLI names the family, and so does the writer.
-FAMILY = {"codex": "openai", "agy": "google", "claude": "anthropic"}
-WRITER_FAMILY = {"claude": "anthropic", "codex": "openai", "gemini": "google"}
-EFFORTS = {"codex": ("low", "medium", "high", "xhigh"), "claude": ("low", "medium", "high", "xhigh", "max")}
+FAMILY = {"codex": "openai", "agy": "google"}
+WRITER_FAMILY = {"claude": "anthropic"}
+EFFORTS = {"codex": ("low", "medium", "high", "xhigh")}
 MODEL = re.compile(r"^[a-z0-9][a-z0-9.-]*$")
 NAME = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 # Antigravity takes the prompt only as the -p value. Past this size it gets a pointer to the prompt file instead.
@@ -87,44 +89,38 @@ def load_pin(path=PIN):
     except RecursionError:
         raise Refused("unreadable reviewer pin: nested too deeply to read") from None
     # `type(...) is int`: TOML true is Python True (an int subclass) and 1.0 == 1, so `!= 1` alone let both load.
-    if set(pin) != {"schema_version", "reviewers", "routes"} or type(pin["schema_version"]) is not int \
-            or pin["schema_version"] != 1:
-        raise Refused("the reviewer pin needs exactly schema_version = 1, [reviewers.*] and [routes]")
-    reviewers = pin["reviewers"]
-    if not isinstance(reviewers, dict) or not reviewers:
-        raise Refused("the reviewer pin defines no reviewers")
-    for name, entry in reviewers.items():
-        # fullmatch: `$` alone also matches before a trailing newline, which would then break the round heading.
-        if not NAME.fullmatch(name) or not isinstance(entry, dict):
-            raise Refused(f"invalid reviewer {name!r}")
-        unknown = set(entry) - {"cli", "model", "effort"}
-        if unknown:
-            raise Refused(f"reviewer {name!r} has unknown keys: {', '.join(sorted(unknown))}")
-        cli, model, effort = entry.get("cli"), entry.get("model"), entry.get("effort")
-        if cli not in CLIS:
-            raise Refused(f"reviewer {name!r} needs cli = one of {', '.join(CLIS)}")
-        if not isinstance(model, str) or not MODEL.fullmatch(model):
-            raise Refused(f"reviewer {name!r} has a malformed model")
-        if cli == "agy":
-            if effort is not None:
-                raise Refused(f"reviewer {name!r}: Antigravity carries the effort in the model name, so set no effort")
-        elif effort not in EFFORTS[cli]:
-            raise Refused(f"reviewer {name!r} needs effort = one of {', '.join(EFFORTS[cli])}")
-    routes = pin["routes"]
-    if not isinstance(routes, dict) or set(routes) - set(WRITERS):
-        raise Refused(f"[routes] may only name the writers {', '.join(WRITERS)}")
-    for writer, chain in routes.items():
-        if not isinstance(chain, list) or not 1 <= len(chain) <= 2 or not all(isinstance(r, str) for r in chain):
-            raise Refused(f"route {writer!r} must list one reviewer and at most one fallback")
-        if any(r not in reviewers for r in chain) or len(set(chain)) != len(chain):
-            raise Refused(f"route {writer!r} must list defined reviewers, each once")
-        same = [r for r in chain if FAMILY[reviewers[r]["cli"]] == WRITER_FAMILY[writer]]
-        if same:
-            raise Refused(f"route {writer!r} names {', '.join(same)}, of the writer's own family; "
-                          f"a review comes from a different family")
-        if len({FAMILY[reviewers[r]["cli"]] for r in chain}) != len(chain):
-            raise Refused(f"route {writer!r}: the fallback must be of a third family, not the reviewer's own")
-    return pin
+    if set(pin) != {"schema_version", "writer", "reviewer"} or type(pin["schema_version"]) is not int \
+            or pin["schema_version"] != 2:
+        raise Refused("the reviewer pin needs exactly schema_version = 2, [writer] and [reviewer]")
+    writer = pin["writer"]
+    if not isinstance(writer, dict) or set(writer) != {"agent", "model"} or writer["agent"] not in WRITERS \
+            or not isinstance(writer["model"], str) or not MODEL.fullmatch(writer["model"]):
+        raise Refused(f"[writer] needs exactly agent = one of {', '.join(WRITERS)} and a model: Claude Code is the "
+                      f"only writer")
+    entry = pin["reviewer"]
+    name = entry.get("name") if isinstance(entry, dict) else None
+    # fullmatch: `$` alone also matches before a trailing newline, which would then break the round heading.
+    if not isinstance(name, str) or not NAME.fullmatch(name):
+        raise Refused(f"invalid reviewer {name!r}")
+    unknown = set(entry) - {"name", "cli", "model", "effort"}
+    if unknown:
+        raise Refused(f"reviewer {name!r} has unknown keys: {', '.join(sorted(unknown))}")
+    cli, model, effort = entry.get("cli"), entry.get("model"), entry.get("effort")
+    if cli not in CLIS:
+        raise Refused(f"reviewer {name!r} needs cli = one of {', '.join(CLIS)}")
+    if not isinstance(model, str) or not MODEL.fullmatch(model):
+        raise Refused(f"reviewer {name!r} has a malformed model")
+    if cli == "agy":
+        if effort is not None:
+            raise Refused(f"reviewer {name!r}: Antigravity carries the effort in the model name, so set no effort")
+    elif effort not in EFFORTS[cli]:
+        raise Refused(f"reviewer {name!r} needs effort = one of {', '.join(EFFORTS[cli])}")
+    if FAMILY[cli] == WRITER_FAMILY[writer["agent"]]:
+        raise Refused(f"reviewer {name!r} is of the writer's own family; a review comes from a different family")
+    # One writer, one reviewer, no fallback: the route the rest of the dispatcher walks is that single reviewer.
+    reviewer = {key: value for key, value in entry.items() if key != "name"}
+    return {"schema_version": 2, "writer": dict(writer), "reviewers": {name: reviewer},
+            "routes": {writer["agent"]: [name]}}
 
 
 EXTENSION = re.compile(r"\.[A-Za-z0-9]+")
@@ -169,8 +165,6 @@ def command(reviewer, executable, prompt, prompt_path, output_path, timeout):
     if cli == "codex":
         return [executable, "exec", "-m", model, "-c", f"model_reasoning_effort={effort}", "--sandbox", "read-only",
                 "--ephemeral", "--skip-git-repo-check", "-o", str(output_path), "-"], prompt
-    if cli == "claude":
-        return [executable, "-p", "--model", model, "--effort", effort, "--permission-mode", "plan"], prompt
     text = prompt
     # A Windows .cmd or .bat shim re-parses its arguments through cmd.exe, so prose there could become commands:
     # it only ever gets a pointer to the prompt file. So does a prompt too long for a command line.
@@ -542,8 +536,8 @@ def main(argv=None):
             print(json.dumps({"ok": False, "error": str(exc)}) if args.json else f"refused: {exc}")
             return 2
         clis = {cli: find_cli(cli) is not None for cli in CLIS}
-        print(json.dumps({"ok": True, "schema_version": pin["schema_version"], "reviewers": pin["reviewers"],
-                          "routes": pin["routes"], "clis": clis}) if args.json else "ok")
+        print(json.dumps({"ok": True, "schema_version": pin["schema_version"], "writer": pin["writer"],
+                          "reviewers": pin["reviewers"], "routes": pin["routes"], "clis": clis}) if args.json else "ok")
         return 0
     if args.list_rounds:
         listing = list_rounds(args.records)

@@ -1,6 +1,6 @@
 """The writer's delegation guard and the reviewer pin's Isotone rules (D00 T04 §27, §29).
 
-`.conclave/reviewers.toml` is the reviewer pin (`schema_version`, `[reviewers.*]`, `[routes]`),
+`.conclave/reviewers.toml` is the reviewer pin (`schema_version = 2`, `[writer]`, `[reviewer]`),
 loaded only through `scripts/review-dispatch.py`'s `load_pin`, where its rules live; every review round runs through
 that dispatcher (operator decision 2026-10-21, "Full adoption", which retired the panel slots this module used to
 resolve). This module adds Isotone's own rules on top and guards the writer's subagents:
@@ -108,6 +108,10 @@ def load(path: str | None = None) -> dict:
         pin = dispatch.load_pin(path or toml_path())
     except dispatch.Refused as exc:
         raise PanelSlotsError(f"reviewer pin refused: {exc}")
+    if pin["writer"]["model"] != WRITER["model"]:
+        raise PanelSlotsError(
+            f"reviewer pin names the writer model {pin['writer']['model']!r}, but the writer is {WRITER['model']!r} "
+            f"(operator decision 2026-10-23: Opus 5.5 is always the solo writer); re-pin both together")
     routes = pin["routes"]
     if set(routes) != {WRITER_ROUTE}:
         raise PanelSlotsError(
@@ -1126,15 +1130,17 @@ def shell_gate(raw: str, out, err) -> int:
 
 # --- self-test ---------------------------------------------------------------
 
-GOOD_PIN = """schema_version = 1
+GOOD_PIN = f"""schema_version = 2
 
-[reviewers.astra]
+[writer]
+agent = "claude"
+model = "{WRITER['model']}"
+
+[reviewer]
+name = "astra"
 cli = "codex"
 model = "g-one"
 effort = "high"
-
-[routes]
-claude = ["astra"]
 """
 
 
@@ -1176,18 +1182,16 @@ def _self_test() -> int:
     refuses("the dispatcher's rules refuse first", GOOD_PIN.replace('effort = "high"', 'effort = "extreme"'),
             "reviewer pin refused: reviewer 'astra' needs effort")
     refuses("the old slot table is refused", '[writer]\nmodel = "w"\n', "reviewer pin refused: the reviewer pin needs")
-    refuses("the writer's family never reviews",
-            GOOD_PIN.replace('cli = "codex"\nmodel = "g-one"\neffort = "high"',
-                             'cli = "claude"\nmodel = "c-one"\neffort = "high"'), "of the writer's own family")
-    refuses("a fallback is refused",
-            GOOD_PIN.replace('claude = ["astra"]', 'claude = ["astra", "gemini"]')
-            + '\n[reviewers.gemini]\ncli = "agy"\nmodel = "gm-one"\n', "names a fallback (gemini)")
-    refuses("a second writer is refused", GOOD_PIN + 'codex = ["astra"]\n'.replace('["astra"]', '["sonnet"]')
-            + '\n[reviewers.sonnet]\ncli = "claude"\nmodel = "s-one"\neffort = "high"\n', "only writer")
-    refuses("no writer route is refused",
-            GOOD_PIN.replace('claude = ["astra"]', 'gemini = ["astra"]'), "routes 'claude' alone")
-    refuses("an unrouted reviewer is refused",
-            GOOD_PIN + '\n[reviewers.spare]\ncli = "codex"\nmodel = "g-two"\neffort = "high"\n', "spare")
+    refuses("the old route shape is refused",
+            'schema_version = 1\n\n[reviewers.astra]\ncli = "codex"\nmodel = "g-one"\neffort = "high"\n\n'
+            '[routes]\nclaude = ["astra"]\n', "reviewer pin refused: the reviewer pin needs exactly schema_version = 2")
+    refuses("a reviewer CLI of the writer's family does not exist",
+            GOOD_PIN.replace('cli = "codex"', 'cli = "claude"'), "needs cli = one of codex, agy")
+    refuses("a second writer is refused", GOOD_PIN.replace('agent = "claude"', 'agent = "codex"'), "only writer")
+    refuses("a second reviewer is refused", GOOD_PIN + '\n[fallback]\nname = "gemini"\ncli = "agy"\nmodel = "gm"\n',
+            "the reviewer pin needs exactly")
+    refuses("the writer model must be the recorded writer",
+            GOOD_PIN.replace(f'model = "{WRITER["model"]}"', 'model = "claude-sonnet-5-5"'), "solo writer")
     refuses("a missing pin is refused", "", "reviewer pin refused")
     check("the writer and the delegate are one family", WRITER["family"] == DELEGATE["family"] == "claude"
           and DELEGATE["alias"] in DELEGATE_ALIASES and DELEGATE["effort"] in DELEGATE_EFFORTS)

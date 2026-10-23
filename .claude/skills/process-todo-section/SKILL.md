@@ -140,6 +140,10 @@ python scripts/todo-graph.py query deferred
 
 Read the `Verified:` stamps on the sections this one depends on. They record what actually shipped, which is frequently narrower than what was planned: and a section built on the plan rather than on the stamp inherits the gap.
 
+#### Completeness, before building
+
+Check the planned scope against the completion checklist in `docs/completion-review-prompt.md` (operator decision 2026-10-23): for each capability the section adds, every entry point and companion the layout map and the design specs place for it (menu items and shortcuts, buttons on the tool rail, options bar, panels, and context menus, dialogs and their controls, states, undo, persistence, file round trips, accessibility, the user guide entry, and the log line). An entry point the contract covers but the checklist forgot becomes an item in this section (step 3); one another section owns is confirmed by resolving its ref, and one nobody owns is filed through `add-todo` before building, so the build never leaves a dead menu item or button. The completion review after the loop (`review-todo-section`, step 5a) checks the result.
+
 **Anything unclear at this point becomes a question you answer from the source, not a decision you defer.** Where the source is silent, take the industry-standard option, record that it is a default, and carry on with the cost of changing it noted. A section that stalls waiting for an answer is worse than one built on a recorded assumption.
 
 ### 3. Correct the section when validation fails
