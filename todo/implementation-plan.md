@@ -189,7 +189,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   8   |
 | [ ] | `D00 T06 §3`  | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code |  12   |
 | [ ] | `D00 T07 §1`  | Re-plan the workspace files                                                              |   9   |
-| [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |   7   |
+| [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |   8   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |   7   |
 | [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |   7   |
 | [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |

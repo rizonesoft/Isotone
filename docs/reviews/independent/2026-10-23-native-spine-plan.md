@@ -384,3 +384,41 @@ Every finding was verified against the files and the cited documentation and is 
 3. P2, `tests/Isotone.runsettings` survived the removal: verified (the only .NET-only file outside `src/` and the root .NET files). It is in the deletion list and the Outcome's `git ls-files` check, and `managed-source` also refuses `.runsettings`, `.ruleset`, `.nuspec`, and `packages.lock.json`.
 4. P2, `check-local-tools.py` needs its mode: verified (`mode` is required). The item and checkpoint run `check-local-tools.py check`.
 5. P2, `--output-junit` needs a file: verified against CTest. Each configuration writes `<folder>/junit-<configuration>.xml`.
+
+## Round 9: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T05:51:02Z
+- Effort: xhigh
+- Lines: 20
+- Digest: 8c12a16f8ce2b5e1
+
+### adversarial: needs-attention
+
+1. P1 `todo/00-workspace/TODO-07-native-replan.md:127`: The stamp dependency covers files this section “re-plans”, but §3 also authors new foundation files. Its checkpoint likewise checks only rewritten files. Park §3’s review after committing a new foundation: that foundation can run before its authoring section is approved. An in-memory check of `unmet_dependencies` confirmed this; explicitly adding `D00 T07 §3` blocks it.
+
+### consistency: needs-attention
+
+2. P1 `docs/plans/2026-10-23-native-replan.md:45`: “A section with genuinely nothing to exceed says why” exempts feature sections from the mandatory improvement required by `AGENTS.md:51` and `docs/dev/decisions.md:77`. A feature can declare that matching its competitor is sufficient and supply no improvement checkpoint. Completion review item 11 checks what was promised, so this exemption defeats enforcement. Restrict exemptions to non-feature work.
+
+### integration: needs-attention
+
+3. P2 `todo/00-workspace/TODO-06-retire-csharp.md:101`: The final repository scan includes active `docs/design/` instructions, but their conversion has no assigned step. For example, `components/Canvas/README.md:30` requires SkiaSharp and WPF, `components/Panel/README.md:30` requires AvalonDock, and `shell-layout.md:76` requires XAML. Following the listed retirement edits leaves this checkpoint failing; T07 §2 assigns only standards and developer documentation.
+
+### source-defect: needs-attention
+
+4. P2 `todo/00-workspace/TODO-05-native-spine.md:159`: Matching workspace paths does not make deferred GoogleTest discovery portable. The installed CMake module embeds an absolute `${CMAKE_ROOT}/Modules/GoogleTestAddTests.cmake` include. Transfer the build to ARM64 with the same workspace but a different CMake installation prefix: the workspace check passes, then discovery fails before running tests. The plan must cover the producer’s discovery-module dependency. [CMake implementation](https://github.com/Kitware/CMake/blob/master/Modules/GoogleTest.cmake).
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 9
+
+Every finding was verified against the files and the cited documentation and is real.
+
+1. P1, new foundation files were not gated on their authoring section: verified. `D00 T07 §3` now makes every open entry section of each new foundation file depend on it, and its Done when checks `resolve` exits 4 on them.
+2. P1, the "nothing to exceed" exemption let a feature skip the improvement: verified. Every feature section must name an improvement; only non-feature work (tooling, infrastructure, documentation, release mechanics) carries no `**Exceed:**` paragraph and says so, in the re-plan rules and in `process-todo-section`.
+3. P2, `docs/design/` still names WPF, XAML, SkiaSharp, and AvalonDock with no owner: verified (`components/Canvas/README.md`, `components/Panel/README.md`, `shell-layout.md`). `D00 T07 §2` rewrites the design-system implementation notes for the native toolkit with every token and value unchanged and regenerates the design page; `D00 T06`'s scan excludes `docs/design/` like the other paths that section owns.
+4. P2, deferred test discovery embeds the producer's CMake path: verified against CMake's GoogleTest module. The ARM64 job reads `CMAKE_ROOT` and the CMake version from each restored cache and installs the pinned CMake at exactly that prefix when the image lacks it, failing when it cannot.
