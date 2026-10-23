@@ -26,6 +26,7 @@ For each capability the section adds or changes, check every entry point and com
 8. Accessibility (UI Automation names and patterns, a keyboard path) and localizable strings.
 9. The user guide entry and the log line for each action that changes a document or a setting.
 10. Anything the feature needs from another part of the suite that does not exist yet.
+11. Better, not a clone: whether the section's `**Exceed:**` improvement is real, built, and proved (its target measured against the competitor, its removed step gone, its added capability working), or whether the feature merely matches the competitor where the section promised to beat it.
 
 ## Reply format
 

@@ -23,7 +23,7 @@ Decide the home with a reason: the one app that needs it, or `Isotone.Core` beca
 
 Find two or three applications that do this job today, from Photoshop, Illustrator, Lightroom, the Affinity suite (Designer, Photo), Inkscape, GIMP, and darktable, whichever genuinely do it. Use each one, and write the feature table: their surfaces, their behaviors, their finer details (empty states, failure messages, keyboard shortcuts and modifiers, on-canvas handles and snapping, first-run, presets, export, undo granularity), and what each does badly. Every row names the version used. Where an application cannot be run here, cite its documentation page and say so in the row.
 
-The table is the bar: the plan matches every detail that matters and names what beats each competitor, feature by feature. A plan written without touching the competition invents a market that does not exist.
+The table is the bar: the plan matches every detail that matters and names what beats each competitor, feature by feature. A plan written without touching the competition invents a market that does not exist. Every section the plan authors carries an `**Exceed:**` paragraph naming its measurable improvement over the competitor, with the item that builds it and the checkpoint that proves it (`AGENTS.md`, "We build a better product, not a clone").
 
 The survey may fan out to `isotone-researcher` subagents, one per competitor, in parallel (`standards/delegation.md`); each returns rows with the version and source, and the session verifies, merges, and owns the table.
 
