@@ -21,6 +21,7 @@ question 2026-10-23, "During the campaign, are we keeping an eye on CI runs and 
 is exit 2, never a green report. Stdlib only.
 """
 import argparse
+from urllib.parse import urlsplit
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -32,21 +33,40 @@ import time
 GREEN = {"success", "skipped", "neutral"}
 FIELDS = "databaseId,workflowDatabaseId,workflowName,status,conclusion,createdAt,event,headSha,url"
 # The repository every call is bound to comes from origin, never from an inherited GH_REPO.
-# The whole URL is matched, scheme and host included, so a look-alike host (notgithub.com) or a path that merely
-# contains github.com never names a GitHub repository.
-GITHUB_REMOTE = re.compile(r"^(?:https://(?:[^@/]+@)?|ssh://git@|git@)(?P<host>github\.com)[:/]"
-                           r"(?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
-# Runs that say something about main itself: a pull request run, even from a fork's branch named main, never does.
-MAIN_EVENTS = {"push", "schedule", "workflow_dispatch", "repository_dispatch", "workflow_run", "merge_group"}
+# owner/name, exactly, as a GitHub path holds it.
+REPO_PATH = re.compile(r"^(?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?$")
+# scp-like ssh, the one remote form urlsplit cannot parse.
+SCP_REMOTE = re.compile(r"^git@github\.com:(?P<path>[^/?#]+/[^/?#]+)$")
+# A pull request run says nothing about main, even from a fork's branch named main. Every other event is kept, so
+# no workflow that runs on main (check_suite among them) is silently left out.
+PR_EVENTS = {"pull_request", "pull_request_target", "pull_request_review", "pull_request_review_comment"}
+# Widening windows per workflow: a red run on main behind many pull request runs is still found.
+WINDOWS = (20, 100, 500, 1000)
 # More workflows than gh lists by default (50) must never drop one from the watch.
 WORKFLOW_LIMIT = "1000"
 
 
 def origin_repo(url):
-    """`host/owner/name` from a GitHub remote URL (https or ssh), or None: the host is named too, because a hostless
-    `--repo` resolves against GH_HOST or gh's default host, which could be another server."""
-    match = GITHUB_REMOTE.search((url or "").strip())
-    return f"{match.group('host')}/{match.group('repo')}" if match else None
+    """`github.com/owner/name` from a GitHub remote URL (https, ssh, or scp-like), or None. The URL is parsed, not
+    pattern-matched, so a look-alike host, a host hidden behind `#@` or `?@`, or a path that merely contains
+    github.com never names a repository; the host is named in the result because a hostless `--repo` resolves against
+    GH_HOST or gh's default host."""
+    url = (url or "").strip()
+    scp = SCP_REMOTE.match(url)
+    if scp:
+        path = scp.group("path")
+    else:
+        try:
+            parts = urlsplit(url)
+            host = parts.hostname
+        except ValueError:
+            return None
+        if parts.scheme not in ("https", "ssh") or host != "github.com" or parts.query or parts.fragment \
+                or (parts.port not in (None, 443, 22)):
+            return None
+        path = parts.path.lstrip("/")
+    match = REPO_PATH.match(path)
+    return f"github.com/{match.group('repo')}" if match else None
 
 
 def gh_command(args, repo):
@@ -79,7 +99,7 @@ def red_runs(runs):
     """The newest completed run of each workflow, when it is red, newest first; and how many workflows had one."""
     latest = {}
     for run in sorted(runs, key=lambda r: r["createdAt"], reverse=True):
-        if run.get("status") != "completed" or run.get("event") not in MAIN_EVENTS:
+        if run.get("status") != "completed" or run.get("event") in PR_EVENTS:
             continue
         # Keyed by the workflow's identity: two workflows may share a display name.
         latest.setdefault(run.get("workflowDatabaseId") or run["workflowName"], run)
@@ -88,14 +108,20 @@ def red_runs(runs):
 
 
 def fetch(runner, per_workflow=20):
-    """Every active workflow's recent runs on main, read one workflow at a time."""
+    """Every active workflow's recent completed runs on main, read one workflow at a time. A workflow whose window
+    holds no run about main itself (only pull request runs) is read again in a wider window, up to the largest, until
+    one is found or its history ends, so pull request runs can never push main's latest run out of view."""
     runs = []
     for workflow in gh_json(runner, ["workflow", "list", "--limit", WORKFLOW_LIMIT, "--json",
                                      "id,name,state,path"]) or []:
         if workflow.get("state") != "active":
             continue
-        runs += gh_json(runner, ["run", "list", "--workflow", str(workflow["id"]), "--branch", "main",
-                                 "--status", "completed", "--limit", str(per_workflow), "--json", FIELDS]) or []
+        for window in sorted({max(per_workflow, 1), *WINDOWS}):
+            got = gh_json(runner, ["run", "list", "--workflow", str(workflow["id"]), "--branch", "main",
+                                   "--status", "completed", "--limit", str(window), "--json", FIELDS]) or []
+            if any(r.get("event") not in PR_EVENTS for r in got) or len(got) < window or window == max(WINDOWS):
+                runs += got
+                break
     return runs
 
 
@@ -253,6 +279,23 @@ def self_test():
     check("a look-alike host names none", origin_repo("https://notgithub.com/rizonesoft/Isotone.git"), None)
     check("github.com inside another host's path names none",
           origin_repo("https://example.com/github.com/rizonesoft/Isotone.git"), None)
+    for spoof in ("https://example.com#@github.com/rizonesoft/Isotone.git",
+                  "https://example.com?@github.com/rizonesoft/Isotone.git"):
+        check(f"a host hidden behind {spoof[19:21]} names none", origin_repo(spoof), None)
+    check("a GitHub URL carrying a fragment names none", origin_repo("https://github.com/rizonesoft/Isotone.git#main"), None)
+    check("a check_suite run on main is watched",
+          [r["databaseId"] for r in red_runs([run(7, "suite", "2026-10-22T00:00:00Z", "failure", event="check_suite")])[0]],
+          [7])
+
+    def pr_flood(args):
+        if args[:2] == ["workflow", "list"]:
+            return json.dumps([{"id": 1, "name": "build", "state": "active", "path": ".github/workflows/build.yml"}])
+        limit = int(args[args.index("--limit") + 1])
+        history = [run(100 + i, "build", f"2026-10-22T{i % 24:02d}:{i % 60:02d}:00Z", "success", event="pull_request")
+                   for i in range(20)] + [run(1, "build", "2026-10-21T00:00:00Z", "failure", event="push")]
+        return json.dumps(history[:limit])
+    check("a red push behind twenty pull request runs is still found",
+          [r["databaseId"] for r in red_runs(fetch(pr_flood))[0]], [1])
     masked = [run(1, "build", "2026-10-22T00:00:00Z", "failure", event="push"),
               run(2, "build", "2026-10-22T01:00:00Z", "success", event="pull_request")]
     check("a green pull request run never hides a red push on main", [r["databaseId"] for r in red_runs(masked)[0]], [1])

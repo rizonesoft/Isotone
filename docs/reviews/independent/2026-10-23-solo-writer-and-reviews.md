@@ -246,3 +246,39 @@ Round 6 ran at `571cb71` after the capacity outage recorded above. Every finding
 3. P2, the unrestricted "nothing to exceed" exception: already answered by `d3774c1` (only non-feature work is exempt).
 4. P2, the repository match accepted look-alike hosts: verified. The whole remote URL is matched, scheme and host included; `notgithub.com` and a path containing `github.com` name no repository, with self-test cases.
 5. P3, the decision record said existing sections carry the paragraph: verified false. It now says no section carries it yet and each gains it when corrected before building or rewritten by its re-plan section.
+
+## Round 8: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T06:24:35Z
+- Effort: xhigh
+- Lines: 19
+- Digest: b28f906066e25c6a
+
+## adversarial: needs-attention
+
+1. P1 `scripts/ci_watch.py:97` and `:82`: PR filtering happens after the 20-run fetch limit. A fixture containing one failed main push followed by twenty completed PR runs for the same workflow reproduced exit 0 and `0 workflow(s) checked, 0 red`; processing the full history correctly reported the failure. Round 6’s answer therefore protects only failures still inside the fetched window. Paginate until an eligible run is found, or filter events before limiting. [GitHub CLI limit semantics](https://cli.github.com/manual/gh_run_list)
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P2 `scripts/ci_watch.py:40` and `:82`: the event whitelist silently excludes legitimate workflows running on main. A completed failed `check_suite` run passed to `red_runs` returned `([], 0)`, allowing a green report without checking that workflow. GitHub documents `check_suite` workflows as running against the default branch. Excluding PR runs must not silently exclude other main workflows. [GitHub event documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#check_suite)
+
+## source-defect: needs-attention
+
+3. P2 `scripts/ci_watch.py:37`: anchoring the remote regex still does not validate the URL’s hostname. Both `https://example.com#@github.com/rizonesoft/Isotone.git` and its `?@github.com` variant returned `github.com/rizonesoft/Isotone`, while URL parsing identifies `example.com` as their host. The optional userinfo expression consumes query and fragment delimiters, so monitoring and repair dispatch can still target a repository unrelated to origin. Parse and validate URL components before constructing the repository binding. [Python URL parsing](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlsplit)
+
+## record: approve
+
+HIGHEST: P1
+
+OVERALL: needs-attention
+
+## Response to round 7
+
+Every finding was verified against the code and the cited documentation and is real.
+
+1. P1, pull request filtering ran after the fetch limit: verified. Each workflow is read in widening windows (20, 100, 500, 1000 completed runs on `main`) until one is about `main` itself or its history ends; a fixture with a red push behind twenty pull request runs must report it, and a mutant with one window fails.
+2. P2, the event allow-list dropped `check_suite` and other main workflows: verified. The watch now excludes only pull request events and keeps every other event, with a `check_suite` case.
+3. P2, the remote pattern accepted hosts hidden behind `#@` or `?@`: verified. The remote is parsed with `urlsplit` (scheme `https` or `ssh`, host exactly `github.com`, no query or fragment, a strict `owner/name` path) or matched as a strict scp-like form; both spoofs and a GitHub URL with a fragment name no repository, and mutants fail.
