@@ -1193,9 +1193,9 @@ Tinctura, the color picker and color studio, is one of the three apps the operat
 | :-: | ------------ | ------------------------------------------------------------ | :---: |
 | [ ] | `D07 T01 §1` | Tinctura: the name, the job, and the identity                |   7   |
 | [ ] | `D07 T01 §2` | Tinctura: the competitor survey and the parity catalog       |   6   |
-| [ ] | `D07 T01 §3` | Tinctura: the section design and the layout map              |   5   |
+| [ ] | `D07 T01 §3` | Tinctura: the section design and the layout map              |   6   |
 | [ ] | `D07 T01 §4` | Tinctura: the accent, the icon, and the splash, design first |   5   |
-| [ ] | `D07 T01 §5` | Tinctura: author the foundation and 0.1.0 files              |   7   |
+| [ ] | `D07 T01 §5` | Tinctura: author the foundation and 0.1.0 files              |   8   |
 
 ### Phase 42 -- Tinctura parity and Tinctura 1.0.0
 
@@ -1213,9 +1213,9 @@ Capio, the screenshot and screen recording app, is one of the three apps the ope
 | :-: | ------------ | --------------------------------------------------------- | :---: |
 | [ ] | `D08 T01 §1` | Capio: the name, the job, and the identity                |   7   |
 | [ ] | `D08 T01 §2` | Capio: the competitor survey and the parity catalog       |   6   |
-| [ ] | `D08 T01 §3` | Capio: the section design and the layout map              |   5   |
+| [ ] | `D08 T01 §3` | Capio: the section design and the layout map              |   6   |
 | [ ] | `D08 T01 §4` | Capio: the accent, the icon, and the splash, design first |   5   |
-| [ ] | `D08 T01 §5` | Capio: author the foundation and 0.1.0 files              |   7   |
+| [ ] | `D08 T01 §5` | Capio: author the foundation and 0.1.0 files              |   8   |
 
 ### Phase 44 -- Capio parity and Capio 1.0.0
 
@@ -1233,9 +1233,9 @@ Folium, the page layout and publishing app, is one of the three apps the operato
 | :-: | ------------ | ---------------------------------------------------------- | :---: |
 | [ ] | `D09 T01 §1` | Folium: the name, the job, and the identity                |   7   |
 | [ ] | `D09 T01 §2` | Folium: the competitor survey and the parity catalog       |   6   |
-| [ ] | `D09 T01 §3` | Folium: the section design and the layout map              |   5   |
+| [ ] | `D09 T01 §3` | Folium: the section design and the layout map              |   6   |
 | [ ] | `D09 T01 §4` | Folium: the accent, the icon, and the splash, design first |   5   |
-| [ ] | `D09 T01 §5` | Folium: author the foundation and 0.1.0 files              |   7   |
+| [ ] | `D09 T01 §5` | Folium: author the foundation and 0.1.0 files              |   8   |
 
 ### Phase 46 -- Folium parity and Folium 1.0.0
 

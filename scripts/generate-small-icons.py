@@ -17,22 +17,9 @@ def defs(app):
     keep=[m.group(0) for m in re.finditer('<(linearGradient|radialGradient|clipPath)[^>]*id="([^"]+)"[^>]*>.*?</'+chr(92)+'1>',d,re.S) if not re.search('-(bg|spec|clip)"',m.group(0).split('>')[0])]
     return '<defs>'+''.join(keep)+'</defs>'
 def frag(app, sz):
-    m=master(app)
-    if app=='stilus':
-        g=re.search(r'<g transform="translate\(104 183\) rotate\(45\) scale\(1\)">.*?</g>',m,re.S).group(0)
-        if sz==16:  # solid nib: drop the keyhole, keep a slit
-            g=g.replace(' fill-rule="evenodd"','').replace('ZM-3.5 -43.57A11 11 0 1 1 3.5 -43.57L1.2 -10L-1.2 -10Z','Z')
-            g=g.replace('</g>','<path d="M0 -6V-58" stroke="#1E1F23" stroke-width="9" stroke-linecap="round"/></g>')
-        return g
-    if app=='gesso':
-        return re.search(r'<g transform="translate\(78 180\) rotate\(45\) scale\(0.94\)">.*?</g>',m,re.S).group(0)
+    m=master(app)  # the suite icon only: the app icons are built by build-app-icons.py
     if app=='isotone':
         return re.search(r'<g id="isotone-glyph">.*</g>',m,re.S).group(0)
-    if app=='albumen':
-        body=m[m.index('<circle cx="128" cy="128" r="57"'):m.index('</g>\n</svg>') if '</g>\n</svg>' in m else m.rindex('</g>')]
-        body=body.split('<circle cx="123" cy="122"')[0]  # drop the highlight dot
-        if sz==16: body=body.replace('stroke-width="4"','stroke-width="7"')
-        return body
 def bbox(app,sz):
     svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="1024" height="1024">{defs(app)}{frag(app,sz)}</svg>'
     a=Image.open(io.BytesIO(bytes(resvg_py.svg_to_bytes(svg_string=svg)))).split()[-1]

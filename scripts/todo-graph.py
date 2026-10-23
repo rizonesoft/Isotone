@@ -1033,6 +1033,8 @@ SEVERITY_MAP: dict[str, str] = {
     "parity-backlog-dead": "fatal",
     "parity-input-damaged": "fatal",
     "parity-totals-drift": "fatal",
+    # a `to-author` catalog row whose authoring section is gone or stamped without rerouting it (todo-parity.py).
+    "parity-to-author-stale": "fatal",
     # THE DESIGN CONTRACT (standards/design-contract.md, operator 2026-09-27).
     # A surface section without its `**Design:**` line, outside the baseline
     # of 2026-09-27: a surface built from a guess instead of the spec.
@@ -11406,7 +11408,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
         _gtotals = (
             "| Status | Features | Source rows |\n| ------ | -------: | ----------: |\n| `plan` | 1 | 2 |\n"
             "| `shipped-scope` | 1 | 1 |\n| `backlog` | 1 | 1 |\n| `excluded` | 1 | 1 |\n| `other-app` | 1 | 1 |\n"
-            "| **Total** | **5** | **6** |\n"
+            "| `to-author` | 0 | 0 |\n| **Total** | **5** | **6** |\n"
         )
         _gareas = "## Areas\n\n- [Pixels](#pixels) (3)\n- [Elsewhere](#elsewhere) (2)\n"
         _gcat = "# Gesso parity\n\n" + _gtotals + "\n" + _gareas + "\n" + _gbody
@@ -11602,10 +11604,10 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a repeated Totals row", _gcat.replace("| `backlog` | 1 | 1 |\n", "| `backlog` | 1 | 1 |\n| `backlog` | 1 | 1 |\n"), "Totals row `backlog` at line 8 repeats the one at line 7"),
                 ("a malformed Totals row", _gcat.replace("| `excluded` | 1 | 1 |", "| `excluded` | one | 1 |"), "is not a status kind or Total with two counts"),
                 ("a deleted Totals table", _gcat.replace(_gtotals, ""), "has 0 Totals tables"),
-                ("a repeated Areas entry", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", "- [Elsewhere](#elsewhere) (2)\n- [Elsewhere](#elsewhere) (2)\n"), "Areas entry `Elsewhere` at line 16 repeats the one at line 15"),
+                ("a repeated Areas entry", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", "- [Elsewhere](#elsewhere) (2)\n- [Elsewhere](#elsewhere) (2)\n"), "Areas entry `Elsewhere` at line 17 repeats the one at line 16"),
                 ("a deleted Areas entry", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", ""), "area `Elsewhere` holds 2 rows but the Areas list has no entry for it"),
                 ("a malformed Areas entry", _gcat.replace("- [Elsewhere](#elsewhere) (2)", "- Elsewhere (2)"), "is not `- [Name](#anchor) (N)`"),
-                ("an Areas entry naming no area", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", "- [Elsewhere](#elsewhere) (2)\n- [Gone](#gone) (0)\n"), "Areas entry `Gone` (line 16) names no area heading with rows"),
+                ("an Areas entry naming no area", _gcat.replace("- [Elsewhere](#elsewhere) (2)\n", "- [Elsewhere](#elsewhere) (2)\n- [Gone](#gone) (0)\n"), "Areas entry `Gone` (line 17) names no area heading with rows"),
                 ("a deleted Areas list", _gcat.replace(_gareas + "\n", ""), "has 0 `## Areas` lists"),
                 # Independent review round 1: the separator is checked, a
                 # heading counts once, a count is bounded, and a link opens
@@ -11703,10 +11705,23 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             __import__("shutil").rmtree(proot / "docs")
             check("parity: a tree with no docs/parity/ has nothing to check", _pfind(), [])
             _pwrite()
+            check("parity: to-author, excluded: scope, and the planned apps parse",
+                  [par.parse_status(s)[0] for s in ("to-author D94 T01 §1", "excluded: scope upload destinations",
+                                                    "other-app: Capio its screen picker", "to-author D94")],
+                  ["to-author", "excluded", "other-app", "malformed"])
+            _pwrite(cat=_pcat.replace("shipped-scope D94 T01 §2", "to-author D94 T01 §2"))
+            check("parity: to-author naming an open section is clean", _pfind(), [])
+            for ref, why in (("D94 T01 §9", "no section"), ("D94 T01 §1", "a stamped section"),
+                             ("D94 T01 §3", "a moved section")):
+                _pwrite(cat=_pcat.replace("shipped-scope D94 T01 §2", f"to-author {ref}"))
+                check(f"parity: to-author naming {why} is parity-to-author-stale",
+                      sorted({c for c, _ in _pfind()}), ["parity-to-author-stale"])
+            _pwrite()
             rep = par.parity_report(sys.modules[__name__], load_todos())["catalogs"]["stilus"]
             check("parity: the report keeps features, sections, and stamped sections apart, and names unplaced rows",
                   (rep["totals"], {p: (b["features"], b["sections"], b["stamped_sections"]) for p, b in rep["phases"].items()}),
-                  ({"plan": 2, "shipped-scope": 1, "backlog": 1, "excluded": 1, "other-app": 1, "malformed": 0},
+                  ({"plan": 2, "shipped-scope": 1, "backlog": 1, "excluded": 1, "other-app": 1, "to-author": 0,
+                    "malformed": 0},
                    {"4": (2, 2, 1), "unplaced": (1, 1, 0)}))
             pbuf = _pio.StringIO()
             with _pctx.redirect_stdout(pbuf):
@@ -11735,7 +11750,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("parity: query parity --catalog all lists both catalogs, each with its totals",
                   (acode, list(ajson["catalogs"]), ajson["catalogs"]["gesso"]["totals"]),
                   (0, ["stilus", "gesso"], {"plan": 1, "shipped-scope": 1, "backlog": 1, "excluded": 1,
-                                            "other-app": 1, "malformed": 0}))
+                                            "other-app": 1, "to-author": 0, "malformed": 0}))
             ecode, _e, eerr = _pquery(catalog="")
             check("parity: an empty --catalog is refused, not read as all (independent review round 3)",
                   (ecode, "names no catalog" in eerr), (2, True))

@@ -11,6 +11,7 @@ Every Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2) feature, 
 | `backlog` | 0 | 0 |
 | `excluded` | 24 | 105 |
 | `other-app` | 17 | 17 |
+| `to-author` | 0 | 0 |
 | **Total** | **2,802** | **4,335** |
 
 ## Areas

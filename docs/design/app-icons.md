@@ -46,10 +46,10 @@ Each master keeps its gradient and clip ids prefixed with the app (`stilus-c-bg`
 | --- | --- | --- |
 | 16 and 20 px | `<app>-16.svg` | 16 grid, tile fills the canvas, `rx` 3 |
 | 24 and 30 px | `<app>-24.svg` | 24 grid, tile x/y 1 to 23, `rx` 4 |
-| 32 to 40 px | `<app>-32.svg` | 32 grid, tile x/y 1 to 31, `rx` 6 |
-| 48 px and up | `<app>.svg` (the master) | 48, 64, 96, 128, 256 |
+| 32 to 39 px | `<app>-32.svg` | 32 grid, tile x/y 1 to 31, `rx` 6 |
+| 40 px and up | `<app>.svg` (the master) | 40, 48, 64, 96, 128, 256 |
 
-Sizes in between are rendered from the next smaller file's grid only when it is an exact multiple (20 from 16 at 125 percent, 30 from 24, 40 from 32); never scale a small variant up past its range.
+Sizes in between are rendered from the next smaller file's grid only when it is an exact multiple (20 from 16 at 125 percent, 30 from 24, 36 from 32); never scale a small variant up past its range. 40 px renders from the master, because the simplified glyph is for sizes below 40 px only (operator decision 2026-10-23, the Gesso stroke).
 
 ## The small variants (16, 24, 32)
 
@@ -112,7 +112,7 @@ The splash shows the master icon at 136 px on a graphite card (640 x 360, radius
 - Do keep clear space around the icon of at least one eighth of its size (the 8 px margin of the master) on every side.
 - Do place the icon as is on any theme's `frame` or `surface-panel`: the graphite tile carries its own contrast.
 - Do not recolor a glyph, tint it with the Highlight color, or swap one app's accent for another's.
-- Do not draw the master below 48 px: its band crest and highlight turn to mush; use the small variants.
+- Do not draw the master below 40 px: its band crest and highlight turn to mush; use the small variants.
 - Do not add text, a version number or a badge to the tile.
 - Do not drop or reorder the spectrum band, or change its colors per app.
 - Do not use a catalog icon (`pen-tool`, `brush`, `aperture`) as a stand-in for an app icon.

@@ -246,11 +246,12 @@ def splash(app, current):
     """The Suite card reference design with its nested master icon replaced; the card itself is hand-authored."""
     inner = master(app).split('\n', 1)[1].rsplit('</svg>', 1)[0]
     nested = f'<svg x="56" y="92" width="136" height="136" viewBox="0 0 256 256">\n{inner}</svg>'
-    updated, count = re.subn(r'<svg x="56" y="92" width="136" height="136" viewBox="0 0 256 256">.*?\n</svg>',
-                             lambda _: nested, current, count=1, flags=re.S)
-    if count != 1:
-        raise SystemExit(f'{app}-splash.svg: the nested master icon was not found')
-    return updated
+    pattern = re.compile(r'<svg x="56" y="92" width="136" height="136" viewBox="0 0 256 256">.*?\n</svg>', re.S)
+    # Counted before replacing: a second nested icon (an old one left behind) would otherwise survive under the new.
+    found = len(pattern.findall(current))
+    if found != 1:
+        raise SystemExit(f'{app}-splash.svg holds {found} nested master icons; it must hold exactly one')
+    return pattern.sub(lambda _: nested, current)
 
 
 def outputs():

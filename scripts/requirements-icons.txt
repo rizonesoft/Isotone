@@ -1,0 +1,8 @@
+# The icon generators' Python packages: scripts/build-app-icons.py, scripts/generate-small-icons.py, and
+# scripts/build-suite-mark.py. tools/provision.ps1 installs exactly these; scripts/check-all.ps1 runs the generators.
+# resvg-py: MPL-2.0, over resvg (Apache-2.0 or MIT)
+resvg-py==0.5.0
+# Pillow: MIT-CMU
+Pillow==12.3.0
+# fonttools: MIT
+fonttools==4.66.0

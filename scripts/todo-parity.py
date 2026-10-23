@@ -24,6 +24,8 @@ Every finding is FATAL (`SEVERITY_MAP` in `scripts/todo-graph.py`, mirrored in `
   shrinks the denominator quietly: it fails naming the file and line.
 - `parity-totals-drift`: the catalog's Totals table or Areas list disagrees with its rows, or is missing, repeated,
   or malformed in part (D00 T01 §7), so the summary a reader trusts is the one the rows add up to.
+- `parity-to-author-stale`: a `to-author` ref naming no open section: the authoring section it waits on does not
+  exist, moved, or was stamped without rerouting the row to the section it authored.
 
 Every message opens with its catalog's name (`stilus:`, `gesso:`), since one validator reads every catalog. A tree
 with no `docs/parity/` at all (a bare export of `todo/`) has nothing to check and validates; with `docs/parity/`
@@ -74,17 +76,21 @@ PARITY_CLASSES = (
     "parity-backlog-dead",
     "parity-input-damaged",
     "parity-totals-drift",
+    "parity-to-author-stale",
 )
 
-STATUS_KINDS = ("plan", "shipped-scope", "backlog", "excluded", "other-app")
+STATUS_KINDS = ("plan", "shipped-scope", "backlog", "excluded", "other-app", "to-author")
 _REF = r"D\d{2} T\d{2} §\d+"
 _STATUS_RES = (
     ("plan", re.compile(rf"^plan ({_REF})$")),
     ("shipped-scope", re.compile(rf"^shipped-scope ({_REF})$")),
     ("backlog", re.compile(r"^backlog (B-\d{3})$")),
     # The three reasons of docs/parity/README.md, each optionally explained (D00 T01 §7).
-    ("excluded", re.compile(r"^excluded: ((?:cloud|platform|removed)(?: \S.*)?)$")),
-    ("other-app", re.compile(r"^other-app: ((?:Stilus|Gesso|Albumen|none) \S.*)$")),
+    ("excluded", re.compile(r"^excluded: ((?:cloud|platform|removed|scope)(?: \S.*)?)$")),
+    ("other-app", re.compile(r"^other-app: ((?:Stilus|Gesso|Albumen|Tinctura|Capio|Folium|none) \S.*)$")),
+    # A planned app's feature whose owning section a later planning section authors (2026-10-23): the ref names
+    # that authoring section, which must stay open until it reroutes the row to `plan`.
+    ("to-author", re.compile(rf"^to-author ({_REF})$")),
 )
 # A cell separator is a pipe no backslash escapes, so `a \| b` stays one cell.
 _CELL_SPLIT_RE = re.compile(r"(?<!\\)\|")
@@ -518,6 +524,12 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None) -> list[
                 elif hit[2].moved:
                     found.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that moved out of the "
                                                    f"tree (`> **Moved:**`); point the row at its new owner"))
+            elif kind == "to-author":
+                hit = sections.get(" ".join(arg.split()))
+                if hit is None or hit[2].moved or hit[2].status == "x":
+                    why = ("names no section in todo/" if hit is None else "names a section that moved out of the tree"
+                           if hit[2].moved else "names a stamped section, which should have rerouted it to `plan`")
+                    found.append(("parity-to-author-stale", f"{where} to-author {arg} {why}"))
             elif kind == "backlog" and arg not in backlog:
                 found.append(("parity-backlog-dead", f"{where} backlog {arg} names no live entry in todo/backlog.md"))
             for column in spec["columns"]:

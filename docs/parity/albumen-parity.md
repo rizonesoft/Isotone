@@ -11,6 +11,7 @@ Every Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and Irf
 | `backlog` | 21 | 144 |
 | `excluded` | 24 | 209 |
 | `other-app` | 399 | 1,630 |
+| `to-author` | 0 | 0 |
 | **Total** | **1,622** | **8,919** |
 
 ## Areas

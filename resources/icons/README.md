@@ -20,13 +20,13 @@ Each app has one folder, `resources/icons/<app>/`, where `<app>` is `stilus`, `g
 
 | File | Used for |
 | ---- | -------- |
-| `<app>.svg` | The master, drawn on a 256 by 256 grid. It is the source for every size from 48 px up, including 256 and 512. |
+| `<app>.svg` | The master, drawn on a 256 by 256 grid. It is the source for every size from 40 px up, including 256 and 512. |
 | `<app>-16.svg` | 16 px variant on its own grid, also the source for 20 px. |
 | `<app>-24.svg` | 24 px variant on its own grid, also the source for 30 px. |
-| `<app>-32.svg` | 32 px variant on its own grid, also the source for 36 and 40 px. |
+| `<app>-32.svg` | 32 px variant on its own grid, also the source for 36 px (40 px takes the master, where the full glyph starts). |
 | `<app>-splash.svg` | The Suite card splash, 640 by 360: the reference design for the splash window, which the app builds in XAML to the spec in `docs/design/components/Splash/README.md` so its version, status, and progress are live, and a marketing image. It is not an app icon, is not drawn into the ICO, and the app never loads it. |
 
-The small variants exist because the master's detail turns to mush below 48 px: each one redraws the tile and the glyph for its own pixel grid instead of scaling the master down.
+The small variants exist because the master's detail turns to mush below 40 px: each one redraws the tile and the glyph for its own pixel grid instead of scaling the master down.
 
 Raster output (PNG sizes and the multi-resolution `<app>.ico`) is generated from these SVGs, never drawn by hand. The export is planned as `D00 T03 §3`: one committed script renders every size, builds each ICO, and renders each `<app>-splash.svg` at 640 by 360, 960 by 540, and 1280 by 720 (`PNG/<app>_splash_{640,960,1280}.png`, for marketing only), and a check re-renders and compares, so a stale raster fails the gates.
 

@@ -705,69 +705,69 @@ Generated from `python scripts/todo-graph.py query plan` on 2026-10-23 and edite
 | D05 T01 §6 | 40 | The suite bundle: isotone-v1.0.0 | pending (W8) |  |
 | D06 T02 §2 | 40 | README images from real captures | pending (W8) |  |
 | D06 T02 §3 | 40 | The user guides as a published site | pending (W8) |  |
-| D03 T07 §11 | 41 | RAW import through the shared decoder | pending (W7) |  |
-| D02 T18 §9 | 41 | GIMP XCF import in Stilus on the shared XCF core | pending (W7) |  |
-| D02 T18 §10 | 41 | Camera RAW import and the RAW Lab | pending (W7) |  |
-| D02 T17 §11 | 41 | Stilus 1.1.0 (Phase 47) | pending (W7) |  |
-| D01 T10 §1 | 42 | The action model, the recorder, and playback | pending (W7) |  |
-| D01 T10 §2 | 42 | The Actions panel in Isotone.UI | pending (W7) |  |
-| D01 T10 §3 | 42 | Action files and the action library | pending (W7) |  |
-| D01 T10 §4 | 42 | The scripting host | pending (W7) |  |
-| D01 T10 §5 | 42 | The script editor and console | pending (W7) |  |
-| D01 T10 §6 | 42 | The automation server and the MCP server | pending (W7) |  |
-| D01 T10 §7 | 42 | The extension SDK and the extension manager | pending (W7) |  |
-| D01 T10 §8 | 42 | The command line | pending (W7) |  |
-| D01 T10 §9 | 42 | The suite batch runner and droplets | pending (W7) |  |
-| D02 T19 §1 | 42 | The Stilus object model and recordable commands | pending (W7) |  |
-| D02 T19 §2 | 42 | Scripts, extensions, and macros in Stilus documents | pending (W7) |  |
-| D02 T19 §3 | 42 | Batch processing and the command line in Stilus | pending (W7) |  |
-| D02 T17 §12 | 42 | Stilus 1.2.0 (Phase 48) | pending (W7) |  |
-| D03 T22 §1 | 42 | The Gesso object model, recordable commands, and actions in Gesso | pending (W7) |  |
-| D03 T22 §2 | 42 | Scripts in Gesso | pending (W7) |  |
-| D03 T22 §3 | 42 | Procedures and plug-ins in Gesso | pending (W7) |  |
-| D03 T22 §4 | 42 | Extensions, the MCP server, and remote connections in Gesso | pending (W7) |  |
-| D03 T22 §5 | 42 | Batch, droplets, the Image Processor, and headless runs | pending (W7) |  |
-| D03 T22 §6 | 42 | Variables and data sets | pending (W7) |  |
-| D03 T21 §13 | 42 | Gesso 1.1.0 (Phase 48) | pending (W7) |  |
-| D04 T17 §1 | 42 | Recorded actions in Albumen | pending (W7) |  |
-| D04 T17 §2 | 42 | Albumen extension points | pending (W7) |  |
-| D04 T17 §3 | 42 | The Albumen command line | pending (W7) |  |
-| D04 T15 §11 | 42 | Albumen 1.1.0 (Phase 48) | pending (W7) |  |
-| D01 T11 §1 | 43 | The media stack decision and decoding | pending (W7) |  |
-| D01 T11 §2 | 43 | Playback, the audio engine, and the media clock | pending (W7) |  |
-| D01 T11 §3 | 43 | Encoding: render video and audio | pending (W7) |  |
-| D01 T11 §4 | 43 | The MediaTransport surface in Isotone.UI | pending (W7) |  |
-| D03 T23 §1 | 43 | Video layers and opening video | pending (W7) |  |
-| D03 T23 §2 | 43 | The Timeline panel | pending (W7) |  |
-| D03 T23 §3 | 43 | Audio tracks and render video | pending (W7) |  |
-| D03 T23 §4 | 43 | Frame animation, onion skin, and tweening | pending (W7) |  |
-| D03 T23 §5 | 43 | Animated formats: GIF, APNG, WebP, MNG, and FLI authoring | pending (W7) |  |
-| D03 T23 §6 | 43 | Animation filters and temporal blur | pending (W7) |  |
-| D03 T21 §14 | 43 | Gesso 1.2.0 (Phase 49) | pending (W7) |  |
-| D04 T16 §1 | 43 | Video and audio in the library and browse | pending (W7) |  |
-| D04 T16 §2 | 43 | Video and audio playback in the viewer and the loupe | pending (W7) |  |
-| D04 T16 §3 | 43 | Trim, poster frame, frame extraction, and video export | pending (W7) |  |
-| D04 T16 §4 | 43 | Media mode | pending (W7) |  |
-| D04 T16 §5 | 43 | Image audio | pending (W7) |  |
-| D04 T16 §6 | 43 | Video in slideshows and slideshow video export | pending (W7) |  |
-| D04 T15 §12 | 43 | Albumen 1.2.0 (Phase 49) | pending (W7) |  |
-| D01 T12 §1 | 44 | The local inference runtime | pending (W7) |  |
-| D01 T12 §2 | 44 | The model catalog, downloads, and license records | pending (W7) |  |
-| D01 T12 §3 | 44 | The Model Manager surface in Isotone.UI | pending (W7) |  |
-| D01 T12 §4 | 44 | Task adapters: segmentation, inpainting, upscaling, denoise, and depth | pending (W7) |  |
-| D01 T07 §10 | 44 | The GPU compute device in Isotone.Core | pending (W7) |  |
-| D01 T07 §11 | 44 | Develop stages on the GPU with CPU parity | pending (W7) |  |
-| D01 T07 §12 | 44 | GPU masks, the extended stages, and measured budgets | pending (W7) |  |
-| D03 T19 §16 | 44 | On-device models in Gesso: remove, selection, star separation, and normals | pending (W7) |  |
-| D03 T19 §17 | 44 | On-device photo models: motion blur reduction, mixed light, and SDR to HDR | pending (W7) |  |
-| D03 T21 §15 | 44 | Gesso 1.3.0 (Phase 50) | pending (W7) |  |
-| D04 T10 §13 | 44 | On-device models in Albumen: offline denoise, keywords, and similarity | pending (W7) |  |
-| D04 T15 §13 | 44 | Albumen 1.3.0 (Phase 50) | pending (W7) |  |
-| D04 T13 §10 | 45 | Flash SWF: the first frame through an own parser | pending (W7) |  |
-| D04 T13 §11 | 45 | ECW, MrSID, JPM, and MRC through an optional GDAL | pending (W7) |  |
-| D04 T13 §12 | 45 | Artweaver, BodyPaint 3D, Gemstone GSD, and ACDSee ACDC through clean-room analysis | pending (W7) |  |
-| D04 T15 §14 | 45 | Albumen 1.4.0 (Phase 51) | pending (W7) |  |
-| D05 T01 §7 | 45 | The suite bundle: isotone-v1.1.0 | pending (W8) |  |
+| D03 T07 §11 | 47 | RAW import through the shared decoder | pending (W7) |  |
+| D02 T18 §9 | 47 | GIMP XCF import in Stilus on the shared XCF core | pending (W7) |  |
+| D02 T18 §10 | 47 | Camera RAW import and the RAW Lab | pending (W7) |  |
+| D02 T17 §11 | 47 | Stilus 1.1.0 (Phase 47) | pending (W7) |  |
+| D01 T10 §1 | 48 | The action model, the recorder, and playback | pending (W7) |  |
+| D01 T10 §2 | 48 | The Actions panel in Isotone.UI | pending (W7) |  |
+| D01 T10 §3 | 48 | Action files and the action library | pending (W7) |  |
+| D01 T10 §4 | 48 | The scripting host | pending (W7) |  |
+| D01 T10 §5 | 48 | The script editor and console | pending (W7) |  |
+| D01 T10 §6 | 48 | The automation server and the MCP server | pending (W7) |  |
+| D01 T10 §7 | 48 | The extension SDK and the extension manager | pending (W7) |  |
+| D01 T10 §8 | 48 | The command line | pending (W7) |  |
+| D01 T10 §9 | 48 | The suite batch runner and droplets | pending (W7) |  |
+| D02 T19 §1 | 48 | The Stilus object model and recordable commands | pending (W7) |  |
+| D02 T19 §2 | 48 | Scripts, extensions, and macros in Stilus documents | pending (W7) |  |
+| D02 T19 §3 | 48 | Batch processing and the command line in Stilus | pending (W7) |  |
+| D02 T17 §12 | 48 | Stilus 1.2.0 (Phase 48) | pending (W7) |  |
+| D03 T22 §1 | 48 | The Gesso object model, recordable commands, and actions in Gesso | pending (W7) |  |
+| D03 T22 §2 | 48 | Scripts in Gesso | pending (W7) |  |
+| D03 T22 §3 | 48 | Procedures and plug-ins in Gesso | pending (W7) |  |
+| D03 T22 §4 | 48 | Extensions, the MCP server, and remote connections in Gesso | pending (W7) |  |
+| D03 T22 §5 | 48 | Batch, droplets, the Image Processor, and headless runs | pending (W7) |  |
+| D03 T22 §6 | 48 | Variables and data sets | pending (W7) |  |
+| D03 T21 §13 | 48 | Gesso 1.1.0 (Phase 48) | pending (W7) |  |
+| D04 T17 §1 | 48 | Recorded actions in Albumen | pending (W7) |  |
+| D04 T17 §2 | 48 | Albumen extension points | pending (W7) |  |
+| D04 T17 §3 | 48 | The Albumen command line | pending (W7) |  |
+| D04 T15 §11 | 48 | Albumen 1.1.0 (Phase 48) | pending (W7) |  |
+| D01 T11 §1 | 49 | The media stack decision and decoding | pending (W7) |  |
+| D01 T11 §2 | 49 | Playback, the audio engine, and the media clock | pending (W7) |  |
+| D01 T11 §3 | 49 | Encoding: render video and audio | pending (W7) |  |
+| D01 T11 §4 | 49 | The MediaTransport surface in Isotone.UI | pending (W7) |  |
+| D03 T23 §1 | 49 | Video layers and opening video | pending (W7) |  |
+| D03 T23 §2 | 49 | The Timeline panel | pending (W7) |  |
+| D03 T23 §3 | 49 | Audio tracks and render video | pending (W7) |  |
+| D03 T23 §4 | 49 | Frame animation, onion skin, and tweening | pending (W7) |  |
+| D03 T23 §5 | 49 | Animated formats: GIF, APNG, WebP, MNG, and FLI authoring | pending (W7) |  |
+| D03 T23 §6 | 49 | Animation filters and temporal blur | pending (W7) |  |
+| D03 T21 §14 | 49 | Gesso 1.2.0 (Phase 49) | pending (W7) |  |
+| D04 T16 §1 | 49 | Video and audio in the library and browse | pending (W7) |  |
+| D04 T16 §2 | 49 | Video and audio playback in the viewer and the loupe | pending (W7) |  |
+| D04 T16 §3 | 49 | Trim, poster frame, frame extraction, and video export | pending (W7) |  |
+| D04 T16 §4 | 49 | Media mode | pending (W7) |  |
+| D04 T16 §5 | 49 | Image audio | pending (W7) |  |
+| D04 T16 §6 | 49 | Video in slideshows and slideshow video export | pending (W7) |  |
+| D04 T15 §12 | 49 | Albumen 1.2.0 (Phase 49) | pending (W7) |  |
+| D01 T12 §1 | 50 | The local inference runtime | pending (W7) |  |
+| D01 T12 §2 | 50 | The model catalog, downloads, and license records | pending (W7) |  |
+| D01 T12 §3 | 50 | The Model Manager surface in Isotone.UI | pending (W7) |  |
+| D01 T12 §4 | 50 | Task adapters: segmentation, inpainting, upscaling, denoise, and depth | pending (W7) |  |
+| D01 T07 §10 | 50 | The GPU compute device in Isotone.Core | pending (W7) |  |
+| D01 T07 §11 | 50 | Develop stages on the GPU with CPU parity | pending (W7) |  |
+| D01 T07 §12 | 50 | GPU masks, the extended stages, and measured budgets | pending (W7) |  |
+| D03 T19 §16 | 50 | On-device models in Gesso: remove, selection, star separation, and normals | pending (W7) |  |
+| D03 T19 §17 | 50 | On-device photo models: motion blur reduction, mixed light, and SDR to HDR | pending (W7) |  |
+| D03 T21 §15 | 50 | Gesso 1.3.0 (Phase 50) | pending (W7) |  |
+| D04 T10 §13 | 50 | On-device models in Albumen: offline denoise, keywords, and similarity | pending (W7) |  |
+| D04 T15 §13 | 50 | Albumen 1.3.0 (Phase 50) | pending (W7) |  |
+| D04 T13 §10 | 51 | Flash SWF: the first frame through an own parser | pending (W7) |  |
+| D04 T13 §11 | 51 | ECW, MrSID, JPM, and MRC through an optional GDAL | pending (W7) |  |
+| D04 T13 §12 | 51 | Artweaver, BodyPaint 3D, Gemstone GSD, and ACDSee ACDC through clean-room analysis | pending (W7) |  |
+| D04 T15 §14 | 51 | Albumen 1.4.0 (Phase 51) | pending (W7) |  |
+| D05 T01 §7 | 51 | The suite bundle: isotone-v1.1.0 | pending (W8) |  |
 | D99 T01 §1 | 99 | About bar, topics, and social preview | kept | operator row; stack-neutral |
 | D99 T01 §2 | 99 | Branch protection with the required checks | kept | operator row; stack-neutral |
 | D99 T01 §3 | 99 | A code-signing certificate | kept | operator row; stack-neutral |

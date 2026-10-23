@@ -11,6 +11,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | `backlog` | 6 | 11 |
 | `excluded` | 54 | 129 |
 | `other-app` | 11 | 19 |
+| `to-author` | 0 | 0 |
 | **Total** | **2,385** | **10,829** |
 
 ## Areas

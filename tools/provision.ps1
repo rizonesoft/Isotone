@@ -13,6 +13,8 @@
             installer ($InnoVersion, SHA256 verified). Chocolatey has no Inno 7.
     hooks   git core.hooksPath = tools/githooks and tools/githooks/pre-commit present.
     python  Python 3 on PATH (plan gates in scripts/check-all.ps1).
+    pydeps  the icon generators' packages at the versions scripts/requirements-icons.txt pins
+            (scripts/check-all.ps1 runs build-app-icons.py --check). Repair installs them with pip.
   -Verify runs the checks only: exit 0 when all legs are green, 1 otherwise.
   Without -Verify, failing legs are repaired, then verified again.
   Run: pwsh tools/provision.ps1 [-Verify] [-SkipInno]
@@ -166,12 +168,37 @@ function Test-PythonLeg {
   return @{ Name = 'python'; Ok = $false; Detail = 'Python 3 not on PATH (install from python.org or winget Python.Python.3.14)' }
 }
 
+function Get-PinnedPyDeps {
+  $file = Join-Path $Root 'scripts\requirements-icons.txt'
+  return @(Get-Content $file | Where-Object { $_ -match '^[A-Za-z0-9_.-]+==\S+$' })
+}
+
+function Test-PyDepsLeg {
+  $py = Get-Command python -ErrorAction SilentlyContinue
+  if (-not $py) { return @{ Name = 'pydeps'; Ok = $false; Detail = 'no python to check (see the python leg)' } }
+  $wrong = @()
+  foreach ($pin in Get-PinnedPyDeps) {
+    $name, $want = $pin -split '=='
+    $got = (& $py.Source -c "import importlib.metadata as m`ntry: print(m.version('$name'))`nexcept m.PackageNotFoundError: print('missing')" 2>$null) -join ''
+    if ($got.Trim() -ne $want) { $wrong += "$name $($got.Trim()) (want $want)" }
+  }
+  if ($wrong.Count -eq 0) { return @{ Name = 'pydeps'; Ok = $true; Detail = "$((Get-PinnedPyDeps).Count) pinned packages" } }
+  return @{ Name = 'pydeps'; Ok = $false; Detail = ($wrong -join '; ') }
+}
+
+function Install-PyDeps {
+  $py = (Get-Command python -ErrorAction SilentlyContinue).Source
+  if (-not $py) { Write-Warning 'provision: pydeps needs python on PATH first'; return }
+  & $py -m pip install --disable-pip-version-check -r (Join-Path $Root 'scripts\requirements-icons.txt')
+}
+
 function Test-All {
   $r = @()
   $r += Test-SdkLeg
   $r += Test-InnoLeg
   $r += Test-HooksLeg
   $r += Test-PythonLeg
+  $r += Test-PyDepsLeg
   return $r
 }
 
@@ -191,6 +218,7 @@ if (-not $Verify) {
   if ($faults -contains 'sdk') { Install-Sdk }
   if ($faults -contains 'inno') { Install-Inno }
   if ($faults -contains 'hooks path') { Repair-Hooks }
+  if ($faults -contains 'pydeps') { Install-PyDeps }
   if ($faults.Count -gt 0) { $results = @(Test-All) }
 }
 if (Show-Results $results) { exit 0 } else { exit 1 }
