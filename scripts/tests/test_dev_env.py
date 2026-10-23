@@ -91,6 +91,34 @@ class DevEnvCheckTest(unittest.TestCase):
                 self.assertEqual([k for k, (_, ok) in rows.items() if not ok], [item])
 
 
+    def test_reentering_keeps_the_environment_bounded(self):
+        # Four entries in one process, alternating architectures: each starts from the first entry's environment, so
+        # PATH never grows past what one entry adds and the last check still enters the pinned toolset.
+        block = ('"len " + $env:PATH.Length; . ./scripts/dev-env.ps1 -Arch arm64; "len " + $env:PATH.Length; '
+                 '. ./scripts/dev-env.ps1 -Arch x64; "len " + $env:PATH.Length; . ./scripts/dev-env.ps1 -Arch arm64; '
+                 '"len " + $env:PATH.Length; & ./scripts/dev-env.ps1 -Arch x64 -Check | Select-Object -Last 1')
+        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Arch", "x64", "-Run", block],
+                              capture_output=True, text=True, timeout=600, cwd=ROOT)
+        lengths = [int(line.split()[1]) for line in proc.stdout.splitlines() if line.startswith("len ")]
+        self.assertEqual(len(lengths), 4, proc.stdout + proc.stderr)
+        self.assertEqual(lengths[0], lengths[2], lengths)
+        self.assertEqual(lengths[1], lengths[3], lengths)
+        self.assertIn("0 mismatch", proc.stdout.splitlines()[-1], proc.stdout + proc.stderr)
+
+    def test_the_installations_bundled_tools_come_first(self):
+        # Standalone cmake and ninja earlier on PATH, reporting other versions: the bundled ones must still run.
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, "cmake.cmd").write_text("@echo cmake version 0.0.1\r\n", encoding="utf-8")
+            Path(tmp, "ninja.cmd").write_text("@echo 0.0.1\r\n", encoding="utf-8")
+            env = dict(os.environ, PATH=tmp + os.pathsep + os.environ["PATH"])
+            proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT), "-Check", "-Arch", "x64"],
+                                  capture_output=True, text=True, timeout=300, env=env)
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+        for tool in ("cmake", "ninja"):
+            line = next(ln for ln in proc.stdout.splitlines() if ln.startswith(tool + " pinned"))
+            self.assertTrue(line.endswith(" ok"), line)
+
+
 @unittest.skipUnless(sys.platform == "win32" and shutil.which("pwsh"), "needs Windows and pwsh")
 class InstallationTest(unittest.TestCase):
     """Which installation dev-env judges, with no real Visual Studio involved."""

@@ -61,6 +61,33 @@ function Invoke-Tool([string]$Name, [string[]]$ToolArgs) {
   return @(& $cmd.Source @ToolArgs 2>&1 | ForEach-Object { "$_" })
 }
 
+# A bundled tool's row: its version, and that the binary PATH resolves is the selected installation's own, never a
+# standalone copy (a WinGet Ninja, a separately installed CMake or LLVM) that happens to come first.
+function Add-BundledToolRow([string]$Item, [string]$Pinned, [string]$Name, [string]$Pattern, [string]$Under) {
+  $cmd = Get-Command $Name -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+  if (-not $cmd) { Add-Row $Item $Pinned 'not on PATH'; return }
+  $found = Read-Version (Invoke-Tool $Name @('--version')) $Pattern
+  if ($cmd.Source.StartsWith($Under, [StringComparison]::OrdinalIgnoreCase)) { Add-Row $Item $Pinned $found; return }
+  Add-Row $Item $Pinned "$found from $($cmd.Source), not the selected installation" $false
+}
+
+# vcvarsall prepends to these each time it runs, so a second entry in one process would grow them until cmd.exe
+# refuses the line; every entry starts from the values the first entry found, kept in the process environment so a
+# nested entry (a dot-sourced re-entry, a -Run that enters again) sees them too.
+$Accumulated = 'PATH', 'INCLUDE', 'LIB', 'LIBPATH', 'EXTERNAL_INCLUDE'
+$Unset = '::unset::'
+function Restore-PreEntryEnvironment {
+  foreach ($name in $Accumulated) {
+    $saved = "ISOTONE_DEVENV_PRE_$name"
+    $now = [Environment]::GetEnvironmentVariable($name)
+    if ($null -eq [Environment]::GetEnvironmentVariable($saved)) {
+      [Environment]::SetEnvironmentVariable($saved, $(if ($now) { $now } else { $Unset }))
+    }
+    $pre = [Environment]::GetEnvironmentVariable($saved)
+    [Environment]::SetEnvironmentVariable($name, $(if ($pre -eq $Unset) { $null } else { $pre }))
+  }
+}
+
 # 1. Visual Studio: one installation, the newest in the pinned range, holding every pinned component itself. A
 # component in a second installation does not count: the developer environment is entered from one installation.
 $range = $Pin.visual_studio.version_range
@@ -90,6 +117,7 @@ if ($vs) {
   # 2. Enter the pinned toolset and SDK through vcvarsall, and import its environment into this process.
   $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvarsall.bat'
   $vcArch = Get-VcvarsArch (Get-HostArch) $Arch
+  Restore-PreEntryEnvironment
   $dump = & cmd.exe /d /c "`"$vcvars`" $vcArch $($Pin.windows_sdk) -vcvars_ver=$($Pin.msvc.toolset) >nul 2>&1 && set"
   $entered = $LASTEXITCODE -eq 0 -and ($dump | Where-Object { $_ -like 'VCToolsVersion=*' })
   if (-not $entered) {
@@ -101,6 +129,15 @@ if ($vs) {
       if ($i -gt 0) { Set-Item -Path "env:$($line.Substring(0, $i))" -Value $line.Substring($i + 1) }
     }
     $env:VCPKG_ROOT = Join-Path $vs 'VC\vcpkg'
+    # The selected installation's bundled tools come first: vcvarsall appends their folders, so a standalone copy
+    # earlier on PATH would otherwise run instead.
+    $llvmHost = if ((Get-HostArch) -eq 'arm64') { 'ARM64' } else { 'x64' }
+    $bundled = @(
+      (Join-Path $vs 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin'),
+      (Join-Path $vs 'Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja'),
+      (Join-Path $vs "VC\Tools\Llvm\$llvmHost\bin"),
+      (Join-Path $vs 'VC\vcpkg'))
+    $env:PATH = (@($bundled) + @($env:PATH -split ';' | Where-Object { $_ -and $_ -notin $bundled })) -join ';'
 
     # 3. What the environment actually runs.
     Add-Row 'MSVC toolset' $Pin.msvc.toolset $env:VCToolsVersion
@@ -109,12 +146,12 @@ if ($vs) {
     $clTarget = Read-Version $banner 'Version \S+ for (\w+)'
     Add-Row 'MSVC target' ($(if ($Arch -eq 'arm64') { 'ARM64' } else { 'x64' })) $clTarget
     Add-Row 'Windows SDK' $Pin.windows_sdk ("$env:WindowsSDKVersion".TrimEnd('\'))
-    Add-Row 'cmake' $Pin.cmake (Read-Version (Invoke-Tool 'cmake' @('--version')) 'cmake version (\S+)')
-    Add-Row 'ninja' $Pin.ninja (Read-Version (Invoke-Tool 'ninja' @('--version')) '^(\S+)')
-    Add-Row 'clang-tidy' $Pin.llvm.'clang-tidy' (Read-Version (Invoke-Tool 'clang-tidy' @('--version')) 'LLVM version (\S+)')
-    Add-Row 'clang-format' $Pin.llvm.'clang-format' (Read-Version (Invoke-Tool 'clang-format' @('--version')) 'clang-format version (\S+)')
-    Add-Row 'clang-cl' $Pin.llvm.'clang-cl' (Read-Version (Invoke-Tool 'clang-cl' @('--version')) 'clang version (\S+)')
-    Add-Row 'vcpkg' $Pin.vcpkg (Read-Version (Invoke-Tool 'vcpkg' @('--version')) 'program version (\S+)')
+    Add-BundledToolRow 'cmake' $Pin.cmake 'cmake' 'cmake version (\S+)' $vs
+    Add-BundledToolRow 'ninja' $Pin.ninja 'ninja' '^(\S+)' $vs
+    Add-BundledToolRow 'clang-tidy' $Pin.llvm.'clang-tidy' 'clang-tidy' 'LLVM version (\S+)' $vs
+    Add-BundledToolRow 'clang-format' $Pin.llvm.'clang-format' 'clang-format' 'clang-format version (\S+)' $vs
+    Add-BundledToolRow 'clang-cl' $Pin.llvm.'clang-cl' 'clang-cl' 'clang version (\S+)' $vs
+    Add-BundledToolRow 'vcpkg' $Pin.vcpkg 'vcpkg' 'program version (\S+)' $vs
   }
 }
 
