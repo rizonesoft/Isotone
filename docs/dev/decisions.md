@@ -116,6 +116,6 @@ Each entry holds:
 
 ## 2026-10-23: The native format style
 
-- **Decision (a default, D00 T05 §4):** `native/.clang-format` is clang-format's `Microsoft` base style with four deviations: `ColumnLimit: 120` (the suite's line length elsewhere), `PointerAlignment: Left` (`int* p`, the type owns the star), and `IncludeBlocks: Regroup` (includes grouped by kind, sorted within each group). `scripts/native-format.ps1 -Check` enforces it on every first-party source the next commit would carry, and the C++ standard (`D00 T04 §1`) cites it.
+- **Decision (a default, D00 T05 §4):** `native/.clang-format` is clang-format's `Microsoft` base style with three deviations: `ColumnLimit: 120` (the suite's line length elsewhere), `PointerAlignment: Left` (`int* p`, the type owns the star), and `IncludeBlocks: Regroup` (includes grouped by kind, sorted within each group). `scripts/native-format.ps1 -Check` enforces it on every first-party source the next commit would carry, and the C++ standard (`D00 T04 §1`) cites it.
 - **Why a default:** no source or operator decision prefers one style; Microsoft's base matches the Windows code the suite reads most (the SDK and Microsoft Learn samples), and the deviations follow the rest of the repository.
 - **Cost of changing:** edit `native/.clang-format`, run `pwsh scripts/native-format.ps1 -Fix`, and commit the reformat as one commit; nothing else depends on the style.
