@@ -88,15 +88,20 @@ function Restore-PreEntryEnvironment {
   }
 }
 
-# 1. Visual Studio: one installation, the newest in the pinned range, holding every pinned component itself. A
-# component in a second installation does not count: the developer environment is entered from one installation.
+# 1. Visual Studio: one installation, the newest in the pinned range that holds every pinned component itself (vswhere
+# -requires matches all of them in one instance). A component in a second installation does not count: the developer
+# environment is entered from one installation. When none qualifies, the newest in range is reported, to name what it
+# lacks.
 $range = $Pin.visual_studio.version_range
 $vs = $null
 if (-not (Test-Path $VsWhere)) {
   Add-Row 'Visual Studio Installer' 'installed' "missing ($VsWhere): install Visual Studio 2026 first" $false
 }
 else {
-  $install = @(& $VsWhere -version $range -latest -products * -include packages -format json | ConvertFrom-Json) | Select-Object -First 1
+  $query = @('-version', $range, '-products', '*', '-include', 'packages', '-format', 'json')
+  $complete = @(& $VsWhere @query -requires @($Pin.visual_studio.components) | ConvertFrom-Json) |
+    Sort-Object { [version]$_.installationVersion } -Descending | Select-Object -First 1
+  $install = if ($complete) { $complete } else { @(& $VsWhere @query -latest | ConvertFrom-Json) | Select-Object -First 1 }
   if (-not $install) {
     Add-Row 'Visual Studio' $range 'none in range' $false
   }

@@ -127,8 +127,31 @@ class DevEnvCheckTest(unittest.TestCase):
             self.assertTrue(line.endswith(" ok"), line)
 
 
+def vswhere_stand_in(folder, complete, newest):
+    """A vswhere that answers like the real one: a query with -requires lists only the installations holding every
+    required component (`complete`), and the unrestricted query lists the newest in range (`newest`)."""
+    Path(folder, "complete.json").write_text(json.dumps(complete), encoding="utf-8")
+    Path(folder, "newest.json").write_text(json.dumps(newest), encoding="utf-8")
+    stand_in = Path(folder, "vswhere.cmd")
+    stand_in.write_text('@echo %* | findstr /c:"-requires" >nul && (type "%~dp0complete.json") || (type "%~dp0newest.json")\r\n',
+                        encoding="utf-8")
+    return stand_in
+
+
 @unittest.skipUnless(sys.platform == "win32" and shutil.which("pwsh"), "needs Windows and pwsh")
 class InstallationTest(unittest.TestCase):
+    def test_a_complete_older_installation_wins_over_a_newer_incomplete_one(self):
+        # Newer Build Tools lacking a component beside an older complete Professional: the complete one is chosen.
+        components = json.loads(PIN.read_text(encoding="utf-8"))["visual_studio"]["components"]
+        full = {"installationPath": "C:\\VS\\Professional", "installationVersion": "18.11.0.0",
+                "packages": [{"id": c, "type": "Component"} for c in components]}
+        partial = {"installationPath": "C:\\VS\\BuildTools", "installationVersion": "18.12.0.0",
+                   "packages": [{"id": c, "type": "Component"} for c in components[1:]]}
+        with tempfile.TemporaryDirectory() as tmp:
+            code, rows = check(PIN, vswhere=vswhere_stand_in(tmp, complete=[full], newest=[partial]))
+        self.assertIn("C:\\VS\\Professional", rows["Visual Studio"][0])
+        self.assertTrue(all(rows[f"component {c}"][1] for c in components), rows)
+
     """Which installation dev-env judges, with no real Visual Studio involved."""
 
     def test_a_missing_installer_is_reported_not_thrown(self):
@@ -144,9 +167,7 @@ class InstallationTest(unittest.TestCase):
         install = [{"installationPath": "C:\\VS\\Community", "installationVersion": "18.11.0.0",
                     "packages": [{"id": c, "type": "Component"} for c in components[1:]]}]
         with tempfile.TemporaryDirectory() as tmp:
-            Path(tmp, "install.json").write_text(json.dumps(install), encoding="utf-8")
-            stand_in = Path(tmp, "vswhere.cmd")
-            stand_in.write_text('@type "%~dp0install.json"\r\n', encoding="utf-8")
+            stand_in = vswhere_stand_in(tmp, complete=[], newest=install)
             code, rows = check(PIN, vswhere=stand_in)
         self.assertEqual(code, 1)
         self.assertFalse(rows[f"component {components[0]}"][1], rows)
