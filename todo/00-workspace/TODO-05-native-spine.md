@@ -51,7 +51,7 @@ track: W5
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | The toolchain pin and the developer environment | -- |  [x]   |
-|   2   |   §2    | The vcpkg manifest, baseline, and triplets | §1 |  [ ]   |
+|   2   |   §2    | The vcpkg manifest, baseline, and triplets | §1 |  [x]   |
 |   3   |   §3    | The CMake build, presets, and the test harness | §2 |  [ ]   |
 |   4   |   §4    | The format, clang-tidy, and /analyze gates | §3 |  [ ]   |
 |   5   |   §5    | The AddressSanitizer lane | §3 |  [ ]   |
@@ -101,6 +101,12 @@ Every library is linked statically and comes from one committed baseline, so a b
 - [ ] Commit: `"workspace: the vcpkg manifest, baseline, and static triplets"`
 
 **Test checkpoint:** Driven run with evidence: inside `scripts/dev-env.ps1 -Run`, `vcpkg install` in manifest mode with the `test` feature succeeds for `isotone-x64`, `isotone-arm64`, and `isotone-x64-asan` (the tail of each log quoted); `Get-ChildItem artifacts/vcpkg_installed/*/*/bin -Filter *.dll` lists nothing; installing `isotone-arm64` into its own root leaves the `isotone-x64` root's packages in place (listed before and after); the asan triplet's build log for `gtest` shows `/fsanitize=address` and no `/RTC` on its compile lines, and every triplet's log names the pinned toolset version and, in its include and library paths, the pinned Windows SDK version (quoted); `Test-Path native/vcpkg_installed` is false. Cheaper substitute that fails: installing GoogleTest by hand, which pins nothing.
+
+> **Verified:** 2026-10-23 | §2 | D00 T05 §2 at `6189d31`: `native/vcpkg.json` (builtin-baseline `9eec002df1cd109f8f104cd966a763daf9751489`, the registry release 2026.10.16; GoogleTest only in the `test` feature), `native/vcpkg-configuration.json` (the overlay folder `triplets`, no registry), and `native/triplets/isotone-x64.cmake`, `isotone-arm64.cmake`, `isotone-x64-asan.cmake` (static linkage and CRT, the pinned toolset); manifest installs for all three triplets complete successfully, no DLL in any installed tree, the x64 root unchanged by the ARM64 install, every port built with MSVC 14.51.36231 against SDK 10.0.26100.0, the asan triplet release only with `/fsanitize=address` and no `/RTC`; a CMake consumer with no command-line overlay loads the triplet through the configuration with no baseline warning; the binary cache restores 3 packages warm and rebuilds under a new key for a changed triplet; `dev-env.ps1 -Check`: 22 checked, 0 mismatch for x64 and arm64, with `python scripts/tests/test_dev_env.py` running 12 tests, OK; check-all at `aa4746d`: all gates passed
+> **Review:** round 2, candidate `adacaed..6189d31`(round 2) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 2 of cap 33, gpt-6.1-sol medium; Round 1's record P2, F2, refuted: its chunk lacked the commit bodies holding the evidence). Independent: gpt-6.1-sol medium via `scripts/review-dispatch.py`, two rounds (F1 fixed in 6189d31), the second approving every lens. Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T05-s2.md. Attestation: docs/reviews/00-workspace/D00-T05-s2.attest.json
+> **Plan review:** gpt medium, filed D00 T05 §3, D00 T05 §6, D00 T05 §8, D00 T04 §3 (9 findings: 4 filed in 0fbffbd, 4 rejected, 1 duplicate) (run 20261023-D00-T05-S2-gpt)
+> **CRUD:** not applicable (a package manifest and build triplets, with no user record, document, or setting)
+> **Duration:** 2026-10-23T11:30:12Z to 2026-10-23T12:09:02Z
 
 ## 3. The CMake Build, Presets, and the Test Harness
 

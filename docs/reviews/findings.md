@@ -4,7 +4,7 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**184 findings across 12 sections.**
+**187 findings across 13 sections.**
 
 ## By category
 
@@ -13,9 +13,9 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `adversarial` | 78 | fails under hostile or unexpected input |
 | `integration` | 56 | a consumer, caller, or downstream artifact no longer holds |
 | `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 14 | the plan or the evidence misdescribes what happened |
+| `record` | 16 | the plan or the evidence misdescribes what happened |
 | `consistency` | 9 | disagrees with the rest of the suite, its naming, or its layout |
-| `correctness` | 8 | the code does the wrong thing |
+| `correctness` | 9 | the code does the wrong thing |
 
 ## By severity
 
@@ -23,7 +23,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
 | `major` | 102 | wrong behavior in code, plan, or record |
-| `minor` | 82 | polish or wording, or no surviving defect |
+| `minor` | 85 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -213,3 +213,6 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §1` | F6 | major | `correctness` | fixed | independent | a newer incomplete installation was chosen over an older complete one |
 | `D00 T05 §1` | F7 | minor | `correctness` | fixed | self | the provisioning leg counted the summary line as a mismatch |
 | `D00 T05 §1` | F8 | minor | `consistency` | fixed | self | the probe dropped a missing or unrunnable tool silently |
+| `D00 T05 §2` | F1 | minor | `record` | fixed | independent | the CMake configures were proved with vcpkg install, not through CMake |
+| `D00 T05 §2` | F2 | minor | `record` | refuted | independent | the installation and cache proofs looked unrecorded |
+| `D00 T05 §2` | F3 | minor | `correctness` | fixed | self | vcpkg refused the triplets' Visual Studio path |
