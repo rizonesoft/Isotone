@@ -83,3 +83,41 @@ Every finding was verified against the code and is real.
 3. P2, `resolve` ignored the parking rules: verified. One function, `parked_reason`, now serves `resolve`, `resolve_exit_code`, and the queries: a section of a blocked or superseded file, or with `Review pending:`, exits 4 with its reason. Self-test cases fail on a mutant without it, and a live `resolve` of a parked section exits 4.
 4. P2, `repair close` could not accept a dispatched run's read-back: verified. `campaign_guard.py` checks evidence through `green_evidence`, which accepts the `ci-wait:` push line or the `ci-watch:` line `--dispatch` prints, both bound to the sha and the workflow and saying `success`, with self-test cases for both and for a red, another workflow, another sha, and another prefix; `process-phase` names the line as the repair's evidence.
 5. P2, `gh workflow run` prints a URL, not JSON: verified. `gh()` returns text and each caller parses what it expects; the dispatch fixture now returns the plain URL gh 2.102 prints.
+
+## Round 3: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T01:26:16Z
+- Effort: xhigh
+- Lines: 20
+- Digest: 4be46224a9059574
+
+## adversarial: needs-attention
+
+1. P1 `scripts/ci_watch.py:90`: the no-URL dispatch fallback still accepts an unrelated run. Against `76e14bf`, an in-memory probe dispatched at `12:00:00`, returned no URL, and listed only a successful run created at `11:59:57`. `dispatch_and_wait` returned exit 0 for that older run before seeing the dispatched run. A single visible concurrent run also passes. Counting visible candidates does not establish identity, and GitHub CLI explicitly supports dispatch responses without run details. [GitHub CLI source](https://github.com/cli/cli/blob/v2.102.0/pkg/cmd/workflow/run/run.go#L328-L335)
+
+2. P1 `scripts/ci_watch.py:63`: the per-workflow limit is applied before filtering completed runs, so queued runs can conceal the latest completed failure. A probe against `76e14bf` with twenty newer queued runs followed by one completed failure produced `0 red, 0 checked`, allowing exit 0. Fetch completed runs explicitly or continue fetching until the relevant completed run is found. [GitHub CLI run-list options](https://cli.github.com/manual/gh_run_list)
+
+## consistency: needs-attention
+
+3. P2 `.claude/skills/process-todo-section/SKILL.md:258` and `.claude/skills/review-todo-section/SKILL.md:226`: independent and plan-review outages retain the old continuation rules instead of the new retry-and-park policy in `docs/dev/decisions.md:60`. Demonstrate with a transient outage during the independent pass, followed by successful panel rounds: the instructions permit recording the missing pass in the stamp without retrying it. The plan-review path likewise explicitly records an outage and continues without the prescribed backoff.
+
+## integration: needs-attention
+
+4. P2 `scripts/ci_watch.py:79` and `.claude/skills/process-phase/SKILL.md:67`: the prescribed repair dispatch cannot supply workflow inputs. A failed draft `release` run on `main` is monitored, but `.github/workflows/release.yml:41` requires `tag`; `ci_watch.py --dispatch release.yml` sends no inputs and exposes no way to provide them. The runner must invent another dispatch and verification path to finish that repair. [GitHub CLI workflow-input options](https://cli.github.com/manual/gh_workflow_run)
+
+## source-defect: approve
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 3
+
+Every finding was verified against the code and the cited documentation and is real.
+
+1. P1, the no-URL dispatch fallback could accept an unrelated run: verified (the GitHub CLI can return a dispatch without run details). Counting candidates cannot prove identity, so the fallback is removed: a dispatch `gh` does not name by URL is unverifiable (exit 2), never a guess. The self-test's no-URL case must return 2.
+2. P1, queued runs could fill the per-workflow limit and hide a completed failure: verified. The run list asks `gh` for completed runs only (`--status completed`); the fake run list returns twenty queued runs unless that filter is passed, and a mutant without it fails.
+3. P2, the independent pass and the plan review kept the old outage rules: verified. The independent pass follows the full retry-then-`Review pending:` rule; the plan review retries with the same backoff and, being advisory, records a persistent outage and continues, while the panel and stamp rounds that need the reviewer still park.
+4. P2, `--dispatch` could not supply workflow inputs: verified (`release.yml` requires `tag`). `--field name=value` passes inputs through, `process-phase` says to re-dispatch with the inputs the failed run used, and a mutant that drops them fails the self-test.

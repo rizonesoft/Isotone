@@ -4,8 +4,10 @@
     python scripts/ci_watch.py                       exit 0 when every active workflow's latest completed run on main
                                                      is green, 1 naming each red one, 2 when the runs cannot be read
     python scripts/ci_watch.py --json                the same as JSON: {"red": [...], "checked": <n>}
-    python scripts/ci_watch.py --dispatch <file>     run that workflow on main now (`gh workflow run`) and wait for the
-                                                     run it started: exit 0 green, 1 red, 2 unverifiable
+    python scripts/ci_watch.py --dispatch <file> [--field name=value ...]
+                                                     run that workflow on main now (`gh workflow run`, with the
+                                                     inputs the failed run used) and wait for the run it started:
+                                                     exit 0 green, 1 red, 2 unverifiable
     python scripts/ci_watch.py --self-test           fixtures only; needs no network
 
 A campaign reads back the CI run its own push started (`review-todo-section`), but scheduled and dispatched workflows
@@ -61,7 +63,7 @@ def fetch(runner=gh, per_workflow=20):
         if workflow.get("state") != "active":
             continue
         runs += gh_json(runner, ["run", "list", "--workflow", str(workflow["id"]), "--branch", "main",
-                                 "--limit", str(per_workflow), "--json", FIELDS]) or []
+                                 "--status", "completed", "--limit", str(per_workflow), "--json", FIELDS]) or []
     return runs
 
 
@@ -69,33 +71,29 @@ RUN_URL = re.compile(r"/actions/runs/(\d+)")
 
 
 def dispatch_and_wait(workflow, runner=gh, now=lambda: datetime.now(timezone.utc), sleep=time.sleep,
-                      timeout=3600, poll=20):
-    """Start `workflow` on main and wait for exactly the run it started. Returns (exit code, run or reason).
+                      timeout=3600, poll=20, fields=()):
+    """Start `workflow` on main with `fields` as its inputs and wait for exactly the run it started.
+    Returns (exit code, run or reason).
 
-    The run is identified by the URL `gh workflow run` prints for the run it created. Without that URL, the run is the
-    only `workflow_dispatch` run of the workflow created after the dispatch; when there is more than one, the result is
-    unverifiable (exit 2), never a guess, so an older or a concurrent run can never answer for this one."""
-    started = now()
-    output = runner(["workflow", "run", workflow, "--ref", "main"]) or ""
+    The run is the one `gh workflow run` names by URL in its output. When gh names no run (the GitHub CLI can return a
+    dispatch without run details), no listed run can be proved to be this one, so the result is unverifiable (exit 2),
+    never a guess: an older or a concurrent run can never answer for a repair."""
+    args = ["workflow", "run", workflow, "--ref", "main"]
+    for field in fields:
+        args += ["-f", field]
+    output = runner(args) or ""
     match = RUN_URL.search(output)
-    run_id = match.group(1) if match else None
+    if not match:
+        return 2, (f"gh did not name the run it started for {workflow}, so the run cannot be identified; "
+                   f"use a GitHub CLI that prints the created run's URL")
+    run_id = match.group(1)
     deadline = now() + timedelta(seconds=timeout)
     while now() < deadline:
-        if run_id:
-            run = gh_json(runner, ["run", "view", run_id, "--json", FIELDS])
-        else:
-            runs = gh_json(runner, ["run", "list", "--workflow", workflow, "--branch", "main", "--event",
-                                    "workflow_dispatch", "--limit", "10", "--json", FIELDS]) or []
-            mine = [r for r in runs
-                    if datetime.fromisoformat(r["createdAt"].replace("Z", "+00:00")) >= started - timedelta(seconds=5)]
-            if len(mine) > 1:
-                return 2, (f"{len(mine)} workflow_dispatch runs of {workflow} started after the dispatch and gh named "
-                           f"none of them; cannot tell which is this one")
-            run = mine[0] if mine else None
+        run = gh_json(runner, ["run", "view", run_id, "--json", FIELDS])
         if run and run.get("status") == "completed":
             return (0 if run.get("conclusion") in GREEN else 1), run
         sleep(poll)
-    return 2, f"the dispatched run of {workflow} did not complete within {timeout} s"
+    return 2, f"the dispatched run {run_id} of {workflow} did not complete within {timeout} s"
 
 
 def evidence_line(run):
@@ -139,6 +137,11 @@ def self_test():
                                {"id": 2, "name": "pins", "state": "active", "path": ".github/workflows/pins.yml"},
                                {"id": 3, "name": "old", "state": "disabled_manually", "path": ".github/workflows/old.yml"}])
         workflow = args[args.index("--workflow") + 1]
+        queued = [run(500 + i, "pins" if workflow == "2" else "build", f"2026-10-23T{i % 24:02d}:00:00Z", None,
+                      status="queued") for i in range(20)]
+        if "--status" not in args or args[args.index("--status") + 1] != "completed":
+            # Without the completed filter, twenty newer queued runs fill the limit and hide the red one.
+            return json.dumps(queued)
         if workflow == "1":
             return json.dumps([run(100 + i, "build", f"2026-10-22T{i % 24:02d}:00:00Z", "success", event="push")
                                for i in range(100)])
@@ -187,11 +190,17 @@ def self_test():
           dispatch_and_wait("pins.yml", dispatcher(None), fake_now, fake_sleep, timeout=300)[0], 2)
     check("with a URL, the named run answers even beside a concurrent one",
           dispatch_and_wait("pins.yml", dispatcher("failure", concurrent=True), fake_now, fake_sleep)[0], 1)
-    check("without a URL, the one run after the dispatch answers",
-          dispatch_and_wait("pins.yml", dispatcher("failure", prints_url=False), fake_now, fake_sleep)[0], 1)
-    check("without a URL, two candidate runs are unverifiable, never a guess",
-          dispatch_and_wait("pins.yml", dispatcher("failure", prints_url=False, concurrent=True), fake_now,
-                            fake_sleep)[0], 2)
+    check("without a URL, no listed run answers: unverifiable, never a guess",
+          dispatch_and_wait("pins.yml", dispatcher("success", prints_url=False), fake_now, fake_sleep)[0], 2)
+    sent = []
+
+    inner = dispatcher("success")
+
+    def recording(args):
+        sent.append(args)
+        return inner(args)
+    dispatch_and_wait("release.yml", recording, fake_now, fake_sleep, fields=("tag=stilus-v0.1.0-rc.1",))
+    check("workflow inputs reach gh workflow run", sent[0][-2:], ["-f", "tag=stilus-v0.1.0-rc.1"])
     green = dispatch_and_wait("pins.yml", dispatcher("success"), fake_now, fake_sleep)[1]
     check("the evidence line is the one campaign_guard repair close accepts",
           evidence_line(green).startswith(f"ci-watch: {'a' * 40} pins success run 77 "), True)
@@ -205,13 +214,15 @@ def main(argv=None):
     parser.add_argument("--per-workflow", type=int, default=20, help="How many recent runs on main to read per workflow")
     parser.add_argument("--dispatch", metavar="WORKFLOW", help="Run this workflow on main and wait for its verdict")
     parser.add_argument("--timeout", type=int, default=3600, help="With --dispatch, seconds to wait for the run")
+    parser.add_argument("--field", action="append", default=[], metavar="NAME=VALUE",
+                        help="With --dispatch, a workflow input, as the failed run was started with (repeatable)")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args(argv)
     if args.self_test:
         return self_test()
     try:
         if args.dispatch:
-            code, outcome = dispatch_and_wait(args.dispatch, timeout=args.timeout)
+            code, outcome = dispatch_and_wait(args.dispatch, timeout=args.timeout, fields=args.field)
             if args.json:
                 print(json.dumps({"exit": code, "run": outcome}, indent=2))
             elif code == 2:

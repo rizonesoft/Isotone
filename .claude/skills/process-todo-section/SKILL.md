@@ -255,7 +255,7 @@ Then act on what it returns:
 - **A finding that is wrong** gets one line in the stamp saying so and why. Record it; do not silently discard it.
 - **A finding that is right but out of scope** gets filed with its own owner and dependency, per the guardrail below. Do not widen the section to absorb it.
 
-If `codex` is unavailable on this machine, say so plainly in the report and in the stamp. A missing reviewer is a recorded gap, never a silent pass.
+If the independent pass returns no review (`codex` missing, an auth failure, a timeout, or `OVERALL: blocked`), it follows the outage matrix of `review-todo-section`: retried with backoff (15 minutes, 30 minutes, 1 hour, 2 hours, then 4 hours), and if every retry fails the section takes the `> **Review pending:**` marker and is not stamped until the pass returns (operator decision 2026-10-23). A missing reviewer is never a gap a stamp passes over, and never a silent pass.
 
 ### 9. Stamp, then push the stamp
 
