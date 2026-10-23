@@ -451,3 +451,32 @@ OVERALL: needs-attention
 The finding was verified and is real; the other four lenses approved.
 
 1. P2, the test-only link check read only the Release graphs: verified (a link inside `if(CMAKE_BUILD_TYPE STREQUAL "Debug")` changes neither). `test-only-linked` reads the link graphs of all four configurations (`x64-debug`, `x64-release`, `arm64-debug`, `arm64-release`), with a Debug-only fixture failing beside the x64-only and ARM64-only ones.
+
+## Round 11: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T06:36:26Z
+- Effort: xhigh
+- Lines: 14
+- Digest: c6d4bda950a4a986
+
+### adversarial: needs-attention
+
+1. P2 `todo/00-workspace/TODO-06-retire-csharp.md:63`: The prescribed design-lint scan covers only `.h`, `.hpp`, and `.cpp`, leaving ordinary C++ extensions outside the gate. Demonstration: compile `native/ui/probe.cc` containing `D2D1::ColorF(D2D1::ColorF::Red)`. CMake accepts `.cc`, but the required scan omits it, so every prescribed negative probe can pass while this hardcoded color escapes detection. Cover all supported native source and header extensions, including included `.inl` files, and require a failing fixture outside `.cpp`. [CMake’s recognized extensions](https://github.com/Kitware/CMake/blob/v4.3.1/Modules/CMakeCXXCompiler.cmake.in#L48-L49).
+
+### consistency: approve
+
+### integration: approve
+
+### source-defect: approve
+
+### record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 11
+
+The finding was verified and is real; the other four lenses approved.
+
+1. P2, design-lint's native scan covered only `.h`, `.hpp`, and `.cpp`: verified against CMake's recognized C++ extensions. The scan covers every C and C++ source and header extension CMake compiles plus included implementation files (`.c`, `.cc`, `.cpp`, `.cxx`, `.c++`, `.h`, `.hh`, `.hpp`, `.hxx`, `.h++`, `.inl`, `.ipp`), and the probes now include a `.cc` and an `.inl` file.
