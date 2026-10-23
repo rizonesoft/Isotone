@@ -466,13 +466,15 @@ def cross_check(runs, collected=None, review_sections=None, pending_sections=Non
     for ref, sections in claimed.items():
         if len(sections) > 1:
             errors.append((0, f"{ref} claimed by {len(sections)} runs: {', '.join(sections)}"))
-    for ref, fs in sorted(by_ref.items()):
-        if fs[0].source == "independent" and ref not in claimed:
-            errors.append((0, f"{ref} carries (independent) but no run lists it"))
-    have_runs = {run.section for run in runs}
     files = review_sections if review_sections is not None else _review_files()
     pending = pending_sections if pending_sections is not None else (
         set() if review_sections is not None else _pending_sections())
+    for ref, fs in sorted(by_ref.items()):
+        # A section parked for a pending review has no run block yet, so its independent findings have no run to
+        # list them until the stamp that removes the marker adds one.
+        if fs[0].source == "independent" and ref not in claimed and _section_of_ref(ref) not in pending:
+            errors.append((0, f"{ref} carries (independent) but no run lists it"))
+    have_runs = {run.section for run in runs}
     for section in sorted(files - have_runs - pending):
         errors.append((0, f"{section} has a review file but no run block; "
                           f"a deleted engagement changes the counts silently"))
@@ -1267,6 +1269,12 @@ refuted: 0
     cc = cross_check(_r, collected=fixture, review_sections=sections | {"D00-T01-S9"},
                      pending_sections={"D00-T01-S9"})
     check("review-pending-owes-no-run", not any("no run block" in m for _, m in cc), f"{cc}")
+    parked = TF.Finding("D00 T01 §9", None, 1, "F1", "s", "record", "fixed", None, "independent")
+    cc = cross_check(_r, collected=([ind, slf, parked], []), review_sections=sections | {"D00-T01-S9"},
+                     pending_sections={"D00-T01-S9"})
+    check("review-pending-findings-owe-no-run", not any("D00-T01-S9-F" in m for _, m in cc), f"{cc}")
+    cc = cross_check(_r, collected=([ind, slf, parked], []), review_sections=sections | {"D00-T01-S9"})
+    check("unparked-findings-still-need-a-run", any("D00-T01-S9-F" in m for _, m in cc), f"{cc}")
 
     runs_u, errors_u = run_check(Path("/tmp/nope-does-not-exist.md"))
     check("unreadable-reported",

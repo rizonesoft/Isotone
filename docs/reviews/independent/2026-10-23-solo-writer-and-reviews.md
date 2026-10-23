@@ -320,3 +320,38 @@ Every finding was verified against the code and is real.
 2. P1, a parked section's findings file failed `todo-runs.py` (`RUN-004`): verified. The run check reads the `> **Review pending:**` markers through todo-graph's parser and exempts those sections until their stamp adds the run block (case `review-pending-owes-no-run`, mutant killed); `review-todo-section` states the rule.
 3. P2, pending reviews were retried only after another section stamped: verified. `query ready` now lists pending reviews and prints `N review pending`; `campaign_guard.py end --reason plan-done` refuses while any is pending (case `plan-done-refuses-a-pending-review`); `process-phase` step 1 drains them at a run's start and every resume, and the heartbeat (process-plan step 5) retries them when nothing else is runnable and waits instead of ending.
 4. P3, an invalid port raised outside the parser's handler: verified. The port is read inside the `ValueError` handler; both probes name no repository.
+
+## Round 10: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T06:59:49Z
+- Effort: xhigh
+- Lines: 18
+- Digest: 4d5434175f19b2d3
+
+## adversarial: approve
+
+## consistency: needs-attention
+
+1. P2 `.claude/skills/process-phase/SKILL.md:45` and `.claude/skills/process-plan/SKILL.md:99`: pending-review recovery ignores phase scope. Start a standalone phase while another phase has a pending review: these instructions resume every globally listed pending section and can stamp work outside the requested phase, contradicting the standalone phase contract.
+
+## integration: needs-attention
+
+2. P1 `scripts/todo-runs.py:475`: the parking exemption covers missing run blocks but leaves independent-finding coverage mandatory at lines 469-471. An in-memory `run_check` probe adding an independent finding to a pending section without a run block returned `RUN-004: D00-T01-S99-F1 carries (independent) but no run lists it`. Parking after an earlier review produced findings therefore still breaks the next section’s required gate.
+
+3. P2 `.claude/skills/process-plan/SKILL.md:52`: fresh startup still stops before reaching the new pending-review drain. With only pending reviews remaining, an in-memory graph probe printed `0 runnable now, 0 runnable elsewhere, 1 review pending`. Line 25 selects no phase, and line 52 explicitly stops before guard creation or `process-phase` step 1. Without an existing heartbeat, reviewer recovery never gets attempted.
+
+## source-defect: approve
+
+## record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 9
+
+Every finding was verified and is real; adversarial, source-defect, and record approved.
+
+1. P2, pending-review recovery ignored phase scope: verified. `process-phase` step 1 resumes only the pending sections in its own phase's table and never stamps another phase's; the heartbeat's resume step does the same for scope=phase; `process-plan` drains every phase's pending reviews as its audit's step 7.
+2. P1, a parked section's independent findings still failed coverage: verified. `todo-runs.py` exempts the independent findings of a section parked by `> **Review pending:**` as it exempts its missing run block (cases `review-pending-findings-owe-no-run` and `unparked-findings-still-need-a-run`; a mutant without the exemption fails).
+3. P2, a fresh start with only pending reviews left halted before the drain: verified. `process-plan` halts only when no phase has a ready row and no review is pending; with reviews pending it starts the guard, resumes each once, and leaves the heartbeat retrying any that still return nothing.

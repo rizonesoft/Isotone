@@ -42,7 +42,7 @@ Run guard: if this session entered through `process-plan`, the plan owns the gua
 
 The phase table is a plan, and plans drift. Fix it before building on it. In order:
 
-1. `python scripts/todo-graph.py validate`: fix every FATAL now. Then resume every section `query ready` lists under review pending (a section parked by `> **Review pending:**` when its reviewer stayed unreachable) through `review-todo-section`, once each, before choosing a row: a run's start and every resume drain them first, so they never wait for another section's boundary.
+1. `python scripts/todo-graph.py validate`: fix every FATAL now. Then resume each section `query ready` lists under review pending (a section parked by `> **Review pending:**` when its reviewer stayed unreachable) **that sits in this phase's table** through `review-todo-section`, once each, before choosing a row: a run's start and every resume drain them first, so they never wait for another section's boundary. A phase run never resumes, and so never stamps, a pending section of another phase; under `process-plan`, the plan drains those (its audit and its heartbeat).
 2. `python scripts/todo-graph.py plan --check`: if stale, `plan --sync`.
 3. For EVERY open row in the phase: `python scripts/todo-graph.py resolve '<ref>'`. Record the exit code.
    - Exit 4 with unmet deps **outside this phase** is a **leftover, not a stall**. Leave the row here, ship every exit-0 runnable-now row, and park when only leftovers remain. Do not drag a later phase's dependency into this one, and do not loop back hoping the answer changes.
