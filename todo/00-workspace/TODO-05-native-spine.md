@@ -31,6 +31,7 @@ track: W5
 - Microsoft Learn: "Use the Microsoft C++ toolset from the command line" (`vcvarsall.bat` and `-vcvars_ver`), "/std (Specify Language Standard Version)", "AddressSanitizer" (`/fsanitize=address`, supported architectures), "/fsanitize=fuzzer", "DUMPBIN /DEPENDENTS"; CMake "cmake-presets(7)" (toolset and architecture strategy `external`); vcpkg "Manifest mode", "Triplet files", and "Binary caching" -- the sources each section reads before it writes
 - -> XREF: D00 T04 §1 -- the C++ standard and the dependency register read §2's manifest and §3's build; the register's gate joins §7's runner and §8's CI
 - -> XREF: D00 T04 §2 -- the benchmark harness builds through §3's presets and links Google Benchmark through §2's manifest
+- -> XREF: D00 T06 §1 -- removes the .NET stages and jobs once §7's native stages and §8's native CI are green, so no gate goes empty
 
 ## Outcome
 

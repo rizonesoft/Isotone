@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **14 of 783 sections complete (2%).** 783 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **14 of 828 sections complete (2%).** 828 sections (6 discovered); backlog 24 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -150,173 +150,183 @@ The copyright holder is Rizonetech (Pty) Ltd and Rizonesoft is its brand; the re
 
 Nothing in this plan can be proven until the gates run on every clone and every push, so this phase wires the commit hook, marks operator-only rows, raises the claims ratchet, proves the review panel, and reads back the first green CI runs. It also retires the import debt that belongs to the workspace (the test quarantine, Gesso's excused diagnostics, unused packages, the assertion library's license), records before captures of the imported apps (a record of the legacy look, never a fidelity source), lands the design contract gates (the `**Design:**` line and its shrink-only baseline, design-lint over the UI sources, the design reference renders; operator decisions 2026-09-27) so every later UI section is held to `docs/design/`, and dry-runs the release pipeline as a draft release that is deleted after inspection (operator decision 2026-09-27). Since the operator moved the suite to C++ (2026-10-22) and approved the native stack spec (2026-10-23), this phase also lays the native spine (`D00 T05`: the pinned toolchain, the CMake presets and vcpkg baseline, the C++ gates, native CI for x64 and ARM64, fuzzing, and the proof standard for C++) and writes the C++ standard, the dependency register, the benchmark harness, and the advisory job (`D00 T04`, rewritten in place from the 2026-09-30 native-code policy). The C#-era rows here are parked until the native re-plan reaches them (`docs/plans/2026-10-23-native-replan.md`). Every row here is ready on day one or depends only on another row here.
 
-|  ✔  | Section       | Deliverable                                                                 | Items |
-| :-: | ------------- | --------------------------------------------------------------------------- | :---: |
-| [x] | `D00 T01 §1`  | Wire the TODO gate into every clone                                         |   4   |
-| [x] | `D00 T01 §2`  | The operator requirement for manual rows                                    |   6   |
-| [x] | `D00 T01 §11` | The manual-row invariant                                                    |   5   |
-| [x] | `D00 T01 §3`  | Raise the claims coverage floor                                             |   3   |
-| [x] | `D00 T01 §4`  | Prove the review panel end to end                                           |   7   |
-| [x] | `D00 T01 §6`  | The parity catalog validator                                                |  22   |
-| [x] | `D00 T01 §12` | Merge dependency PRs at section boundaries                                  |  10   |
-| [x] | `D00 T01 §15` | Unattended merges read main's CI back                                       |   4   |
-| [x] | `D00 T01 §13` | Run-guard robustness                                                        |   8   |
-| [x] | `D00 T01 §14` | Retire the unused verify-agent-tiers.mjs                                    |   5   |
-| [x] | `D00 T01 §16` | Unattended merger health                                                    |   9   |
-| [x] | `D00 T01 §17` | Time the guard's deadline cases on the walk                                 |   4   |
-| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                                |  27   |
-| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                              |  29   |
-| [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine                          |   5   |
-| [ ] | `D00 T02 §9`  | Point every Stilus test at a temporary app data                             |   8   |
-| [x] | `D00 T02 §2`  | Gesso diagnostics to zero                                                   |   5   |
-| [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                                      |   5   |
-| [x] | `D00 T02 §4`  | Prune packages no code uses                                                 |   7   |
-| [ ] | `D00 T02 §5`  | The assertion library decision and the decision log                         |   5   |
-| [ ] | `D00 T05 §1`  | The toolchain pin and the developer environment                             |   8   |
-| [ ] | `D00 T05 §2`  | The vcpkg manifest, baseline, and triplets                                  |   6   |
-| [ ] | `D00 T05 §3`  | The CMake build, presets, and the test harness                              |   7   |
-| [ ] | `D00 T05 §4`  | The format, clang-tidy, and /analyze gates                                  |   5   |
-| [ ] | `D00 T05 §5`  | The AddressSanitizer lane                                                   |   4   |
-| [ ] | `D00 T05 §6`  | The import and size gates                                                   |   6   |
-| [ ] | `D00 T05 §7`  | The native stages of check-all and the gate card                            |   4   |
-| [ ] | `D00 T04 §1`  | The C++ standard, the dependency register, and the register gate            |   9   |
-| [ ] | `D00 T05 §8`  | CI for x64 and ARM64                                                        |   5   |
-| [ ] | `D00 T05 §9`  | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget |   6   |
-| [ ] | `D00 T05 §10` | The proof standard for C++                                                  |   4   |
-| [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record          |   9   |
-| [ ] | `D00 T04 §3`  | The native advisory job                                                     |   6   |
-| [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                            |   7   |
-| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                            |   7   |
-| [ ] | `D00 T01 §9`  | The design contract gates                                                   |  10   |
-| [ ] | `D00 T01 §10` | The drift gates                                                             |  10   |
-| [ ] | `D00 T01 §5`  | First push: CI green and read back                                          |   7   |
-| [ ] | `D00 T02 §7`  | Release pipeline dry run as a draft release                                 |  10   |
+|  ✔  | Section       | Deliverable                                                                              | Items |
+| :-: | ------------- | ---------------------------------------------------------------------------------------- | :---: |
+| [x] | `D00 T01 §1`  | Wire the TODO gate into every clone                                                      |   4   |
+| [x] | `D00 T01 §2`  | The operator requirement for manual rows                                                 |   6   |
+| [x] | `D00 T01 §11` | The manual-row invariant                                                                 |   5   |
+| [x] | `D00 T01 §3`  | Raise the claims coverage floor                                                          |   3   |
+| [x] | `D00 T01 §4`  | Prove the review panel end to end                                                        |   7   |
+| [x] | `D00 T01 §6`  | The parity catalog validator                                                             |  22   |
+| [x] | `D00 T01 §12` | Merge dependency PRs at section boundaries                                               |  10   |
+| [x] | `D00 T01 §15` | Unattended merges read main's CI back                                                    |   4   |
+| [x] | `D00 T01 §13` | Run-guard robustness                                                                     |   8   |
+| [x] | `D00 T01 §14` | Retire the unused verify-agent-tiers.mjs                                                 |   5   |
+| [x] | `D00 T01 §16` | Unattended merger health                                                                 |   9   |
+| [x] | `D00 T01 §17` | Time the guard's deadline cases on the walk                                              |   4   |
+| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                                             |  27   |
+| [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                                           |  29   |
+| [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine                                       |   5   |
+| [ ] | `D00 T02 §9`  | Point every Stilus test at a temporary app data                                          |   8   |
+| [x] | `D00 T02 §2`  | Gesso diagnostics to zero                                                                |   5   |
+| [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                                                   |   5   |
+| [x] | `D00 T02 §4`  | Prune packages no code uses                                                              |   7   |
+| [ ] | `D00 T02 §5`  | The assertion library decision and the decision log                                      |   5   |
+| [ ] | `D00 T05 §1`  | The toolchain pin and the developer environment                                          |   8   |
+| [ ] | `D00 T05 §2`  | The vcpkg manifest, baseline, and triplets                                               |   6   |
+| [ ] | `D00 T05 §3`  | The CMake build, presets, and the test harness                                           |   7   |
+| [ ] | `D00 T05 §4`  | The format, clang-tidy, and /analyze gates                                               |   5   |
+| [ ] | `D00 T05 §5`  | The AddressSanitizer lane                                                                |   4   |
+| [ ] | `D00 T05 §6`  | The import and size gates                                                                |   6   |
+| [ ] | `D00 T05 §7`  | The native stages of check-all and the gate card                                         |   4   |
+| [ ] | `D00 T04 §1`  | The C++ standard, the dependency register, and the register gate                         |   9   |
+| [ ] | `D00 T05 §8`  | CI for x64 and ARM64                                                                     |   5   |
+| [ ] | `D00 T05 §9`  | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget              |   6   |
+| [ ] | `D00 T05 §10` | The proof standard for C++                                                               |   4   |
+| [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |   9   |
+| [ ] | `D00 T04 §3`  | The native advisory job                                                                  |   6   |
+| [ ] | `D00 T06 §1`  | Tag csharp-final and remove the C# trees and the .NET build                              |   8   |
+| [ ] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   7   |
+| [ ] | `D00 T06 §3`  | Retarget the tooling, agents, skills, and root documents, and guard against managed code |   8   |
+| [ ] | `D00 T07 §1`  | Re-plan the workspace files                                                              |   8   |
+| [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |   7   |
+| [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |   7   |
+| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |   7   |
+| [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |
+| [ ] | `D00 T01 §10` | The drift gates                                                                          |  10   |
+| [ ] | `D00 T01 §5`  | First push: CI green and read back                                                       |   7   |
+| [ ] | `D00 T02 §7`  | Release pipeline dry run as a draft release                                              |  10   |
 
 ### Phase 1 -- Suite layout and names
 
 Every later section names files, so both imported apps move into the suite layout and take their Isotone names before anything else is written against their paths: Bezier becomes `Isotone.Stilus` and ships `Stilus.exe`, Gesso becomes `Isotone.Gesso`, and Gesso gets its icon. The icon rasters come first: the operator chose the icon design on 2026-09-27 (Direction C, SVG sources in `resources/icons/`), and `D00 T03 §3` generates every PNG and ICO for all three apps from those sources with a check that keeps them in step, so each rename wires the generated files instead of sourcing icon art of its own. The renames change names only, so they are cheap to review and keep git history intact.
 
-|  ✔  | Section      | Deliverable                                      | Items |
-| :-: | ------------ | ------------------------------------------------ | :---: |
-| [ ] | `D00 T03 §3` | Export the app icon rasters from the SVG sources |  15   |
-| [ ] | `D02 T01 §1` | Rename Bezier to Isotone.Stilus                  |  10   |
-| [ ] | `D03 T01 §1` | Restructure and rename Gesso to Isotone.Gesso    |   7   |
-| [ ] | `D03 T01 §4` | The Gesso icon                                   |   5   |
+|  ✔  | Section      | Deliverable                                                  | Items |
+| :-: | ------------ | ------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §3` | Author the native foundations and settle the structure files |   8   |
+| [ ] | `D00 T03 §3` | Export the app icon rasters from the SVG sources             |  15   |
+| [ ] | `D02 T01 §1` | Rename Bezier to Isotone.Stilus                              |  10   |
+| [ ] | `D03 T01 §1` | Restructure and rename Gesso to Isotone.Gesso                |   7   |
+| [ ] | `D03 T01 §4` | The Gesso icon                                               |   5   |
 
 ### Phase 2 -- Stilus foundation: composition, hygiene, triage, correctness
 
 Stilus goes first among the apps. This phase gives it a real composition root on the Generic Host and the first `Isotone.Core` services (logging and settings, which Gesso already needs, so the library is born with two consumers), clears the analyzer backlog through the SkiaSharp 4 migration until warnings are errors, triages the orphan services and the three SVG stacks down to one render path, puts selection under one owner, records resize and rotate as undo steps, splits the god view model, makes saving atomic, and proves the SVG round trip against fixtures. xUnit v3 lands here, after both renames moved the test projects.
 
-|  ✔  | Section      | Deliverable                                         | Items |
-| :-: | ------------ | --------------------------------------------------- | :---: |
-| [ ] | `D01 T13 §1` | The layout-map format and the binding rule          |   7   |
-| [ ] | `D01 T13 §2` | The layout-map checker                              |   5   |
-| [ ] | `D01 T13 §7` | Every layout section cites its map                  |   4   |
-| [ ] | `D01 T13 §3` | The Stilus map from a driven Illustrator run        |   6   |
-| [ ] | `D01 T02 §1` | Create Isotone.Core with app-data paths and logging |   7   |
-| [ ] | `D01 T02 §2` | The settings store                                  |   6   |
-| [ ] | `D02 T01 §2` | Composition root on the Generic Host                |   5   |
-| [ ] | `D02 T01 §3` | The debug console reads the Serilog pipeline        |   5   |
-| [ ] | `D02 T01 §4` | Culture-safe formatting and comparisons             |   5   |
-| [ ] | `D02 T01 §5` | The rest of the analyzer backlog                    |   4   |
-| [ ] | `D02 T02 §1` | The triage record and the delete group              |   4   |
-| [ ] | `D02 T02 §2` | One SVG render path                                 |   7   |
-| [ ] | `D02 T01 §6` | SkiaSharp 4                                         |   6   |
-| [ ] | `D02 T01 §7` | Warnings are errors in Stilus                       |   4   |
-| [ ] | `D02 T02 §3` | Selection has one owner                             |   5   |
-| [ ] | `D02 T03 §1` | Undo for resize and rotate                          |   8   |
-| [ ] | `D02 T03 §2` | Split the main window view model                    |   7   |
-| [ ] | `D02 T04 §1` | Atomic save and dirty tracking                      |   9   |
-| [ ] | `D02 T04 §2` | SVG round-trip fidelity fixtures                    |  14   |
-| [ ] | `D00 T02 §6` | xUnit v3                                            |   8   |
+|  ✔  | Section      | Deliverable                                                                   | Items |
+| :-: | ------------ | ----------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §4` | Re-plan Phase 2: Stilus foundation: composition, hygiene, triage, correctness |  12   |
+| [ ] | `D01 T13 §1` | The layout-map format and the binding rule                                    |   7   |
+| [ ] | `D01 T13 §2` | The layout-map checker                                                        |   5   |
+| [ ] | `D01 T13 §7` | Every layout section cites its map                                            |   4   |
+| [ ] | `D01 T13 §3` | The Stilus map from a driven Illustrator run                                  |   6   |
+| [ ] | `D01 T02 §1` | Create Isotone.Core with app-data paths and logging                           |   7   |
+| [ ] | `D01 T02 §2` | The settings store                                                            |   6   |
+| [ ] | `D02 T01 §2` | Composition root on the Generic Host                                          |   5   |
+| [ ] | `D02 T01 §3` | The debug console reads the Serilog pipeline                                  |   5   |
+| [ ] | `D02 T01 §4` | Culture-safe formatting and comparisons                                       |   5   |
+| [ ] | `D02 T01 §5` | The rest of the analyzer backlog                                              |   4   |
+| [ ] | `D02 T02 §1` | The triage record and the delete group                                        |   4   |
+| [ ] | `D02 T02 §2` | One SVG render path                                                           |   7   |
+| [ ] | `D02 T01 §6` | SkiaSharp 4                                                                   |   6   |
+| [ ] | `D02 T01 §7` | Warnings are errors in Stilus                                                 |   4   |
+| [ ] | `D02 T02 §3` | Selection has one owner                                                       |   5   |
+| [ ] | `D02 T03 §1` | Undo for resize and rotate                                                    |   8   |
+| [ ] | `D02 T03 §2` | Split the main window view model                                              |   7   |
+| [ ] | `D02 T04 §1` | Atomic save and dirty tracking                                                |   9   |
+| [ ] | `D02 T04 §2` | SVG round-trip fidelity fixtures                                              |  14   |
+| [ ] | `D00 T02 §6` | xUnit v3                                                                      |   8   |
 
 ### Phase 3 -- Stilus 0.1.0: shared UI, complete editing, documents, release
 
 With its foundation sound, Stilus becomes a complete first release: `Isotone.Core` takes the suite undo history and the atomic document writer (`D01 T02 §4` and `§5`, moved here from Phase 15 by operator decision on 2026-09-28, because the parity phases and `Isotone.Core`'s own writers build on them), `Isotone.UI` takes the controls and windows Stilus and Gesso duplicate, the suite theme, the visual regression harness whose review-approved goldens every control and chrome section then earns (`D01 T01 §9`), the implicit control styles, and the shared window chrome (title bar with Snap Layouts, document tabs, dock theme, status bar), single instance moves to `Isotone.Core`, the triaged services are wired (arrange, align, booleans on `SKPath.Op`, layers, snapping, one keymap), the clipboard and property edits are undoable, exports and recovery work, every menu item works or names its owner, the About, shortcuts, and Help surfaces exist, the user guide is written, the SDK pin moves from the .NET 11 release candidate to GA (`D00 T02 §8`, which waits for the November 2026 GA and parks with that blocker named until then), the clean-machine procedure is proven on Windows 11, and `stilus-v0.1.0` ships.
 
-|  ✔  | Section      | Deliverable                                                     | Items |
-| :-: | ------------ | --------------------------------------------------------------- | :---: |
-| [ ] | `D01 T01 §1` | Create Isotone.UI with the icon catalog                         |   9   |
-| [ ] | `D01 T13 §6` | The shared layout conformance test helpers                      |   4   |
-| [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Isotone.UI           |   8   |
-| [ ] | `D01 T01 §3` | The suite theme resources                                       |  19   |
-| [ ] | `D01 T01 §9` | The visual regression harness and goldens                       |  13   |
-| [ ] | `D01 T01 §5` | Implicit control styles: buttons and inputs                     |  24   |
-| [ ] | `D01 T01 §6` | Implicit control styles: navigation, data, menus, and feedback  |  27   |
-| [ ] | `D01 T01 §7` | Shared window chrome: title bar and caption buttons             |  16   |
-| [ ] | `D01 T01 §8` | Shared window chrome: document tabs, dock theme, and status bar |  20   |
-| [ ] | `D01 T02 §3` | Single instance and file-open forwarding                        |   4   |
-| [ ] | `D02 T02 §4` | Arrange, align, distribute, rotate, and flip                    |   8   |
-| [ ] | `D02 T02 §5` | Boolean path operations on SKPath.Op                            |   5   |
-| [ ] | `D02 T02 §6` | The layers panel on LayerManager                                |   7   |
-| [ ] | `D02 T02 §7` | Snapping on SnapManager                                         |   5   |
-| [ ] | `D02 T02 §8` | One keymap on ShortcutManager                                   |   4   |
-| [ ] | `D02 T03 §3` | Clipboard and the Edit menu                                     |   6   |
-| [ ] | `D02 T03 §4` | Property edits are undo steps                                   |   5   |
-| [ ] | `D02 T04 §3` | PNG and JPEG export                                             |   7   |
-| [ ] | `D02 T04 §4` | PDF export                                                      |   5   |
-| [ ] | `D02 T04 §5` | Recent files, autosave, and crash recovery                      |   7   |
-| [ ] | `D02 T04 §6` | Open from the command line and the .svg association             |   5   |
-| [ ] | `D02 T03 §5` | Every menu command works or names its owner                     |   5   |
-| [ ] | `D02 T03 §6` | The main window follows the Illustrator layout map              |   8   |
-| [ ] | `D02 T05 §1` | The About dialog                                                |   6   |
-| [ ] | `D02 T05 §2` | The keyboard shortcuts dialog                                   |   4   |
-| [ ] | `D02 T05 §3` | The Help menu                                                   |   3   |
-| [ ] | `D06 T01 §1` | The Stilus user guide                                           |   4   |
-| [ ] | `D06 T02 §1` | The architecture page matches the tree                          |   5   |
-| [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                                          |  10   |
-| [ ] | `D05 T01 §1` | The clean-machine install procedure                             |   3   |
-| [ ] | `D05 T01 §8` | Third-party notices in every package                            |   5   |
-| [ ] | `D02 T05 §4` | Stilus 0.1.0                                                    |  11   |
-| [ ] | `D01 T02 §4` | One undo history for the suite                                  |   6   |
-| [ ] | `D01 T02 §5` | The atomic document writer moves to Isotone.Core                |   5   |
+|  ✔  | Section      | Deliverable                                                                    | Items |
+| :-: | ------------ | ------------------------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §5` | Re-plan Phase 3: Stilus 0.1.0: shared UI, complete editing, documents, release |  14   |
+| [ ] | `D01 T01 §1` | Create Isotone.UI with the icon catalog                                        |   9   |
+| [ ] | `D01 T13 §6` | The shared layout conformance test helpers                                     |   4   |
+| [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Isotone.UI                          |   8   |
+| [ ] | `D01 T01 §3` | The suite theme resources                                                      |  19   |
+| [ ] | `D01 T01 §9` | The visual regression harness and goldens                                      |  13   |
+| [ ] | `D01 T01 §5` | Implicit control styles: buttons and inputs                                    |  24   |
+| [ ] | `D01 T01 §6` | Implicit control styles: navigation, data, menus, and feedback                 |  27   |
+| [ ] | `D01 T01 §7` | Shared window chrome: title bar and caption buttons                            |  16   |
+| [ ] | `D01 T01 §8` | Shared window chrome: document tabs, dock theme, and status bar                |  20   |
+| [ ] | `D01 T02 §3` | Single instance and file-open forwarding                                       |   4   |
+| [ ] | `D02 T02 §4` | Arrange, align, distribute, rotate, and flip                                   |   8   |
+| [ ] | `D02 T02 §5` | Boolean path operations on SKPath.Op                                           |   5   |
+| [ ] | `D02 T02 §6` | The layers panel on LayerManager                                               |   7   |
+| [ ] | `D02 T02 §7` | Snapping on SnapManager                                                        |   5   |
+| [ ] | `D02 T02 §8` | One keymap on ShortcutManager                                                  |   4   |
+| [ ] | `D02 T03 §3` | Clipboard and the Edit menu                                                    |   6   |
+| [ ] | `D02 T03 §4` | Property edits are undo steps                                                  |   5   |
+| [ ] | `D02 T04 §3` | PNG and JPEG export                                                            |   7   |
+| [ ] | `D02 T04 §4` | PDF export                                                                     |   5   |
+| [ ] | `D02 T04 §5` | Recent files, autosave, and crash recovery                                     |   7   |
+| [ ] | `D02 T04 §6` | Open from the command line and the .svg association                            |   5   |
+| [ ] | `D02 T03 §5` | Every menu command works or names its owner                                    |   5   |
+| [ ] | `D02 T03 §6` | The main window follows the Illustrator layout map                             |   8   |
+| [ ] | `D02 T05 §1` | The About dialog                                                               |   6   |
+| [ ] | `D02 T05 §2` | The keyboard shortcuts dialog                                                  |   4   |
+| [ ] | `D02 T05 §3` | The Help menu                                                                  |   3   |
+| [ ] | `D06 T01 §1` | The Stilus user guide                                                          |   4   |
+| [ ] | `D06 T02 §1` | The architecture page matches the tree                                         |   5   |
+| [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                                                         |  10   |
+| [ ] | `D05 T01 §1` | The clean-machine install procedure                                            |   3   |
+| [ ] | `D05 T01 §8` | Third-party notices in every package                                           |   5   |
+| [ ] | `D02 T05 §4` | Stilus 0.1.0                                                                   |  11   |
+| [ ] | `D01 T02 §4` | One undo history for the suite                                                 |   6   |
+| [ ] | `D01 T02 §5` | The atomic document writer moves to Isotone.Core                               |   5   |
 
 ### Phase 4 -- Stilus parity I: document model, pages, layers, selection, and view
 
 Parity starts where every later feature stands. This phase fixes how live objects persist in SVG (the `stilus:` namespace with an expanded fallback), gives the canvas a spatial index so documents with thousands of objects stay interactive, unifies CorelDRAW pages and Illustrator artboards into one model with its panel, and completes layers and the Objects panel, selection, isolation and focus mode, the Properties panel and property bar, rulers, guides, grids, snapping, view modes, history, and the New Document dialog with templates. Tabs and nested layers (`D02 T06 §7`) move here first because pages and layers build on them. It ends with `stilus-v0.2.0`.
 
-|  ✔  | Section       | Deliverable                                                        | Items |
-| :-: | ------------- | ------------------------------------------------------------------ | :---: |
-| [ ] | `D02 T06 §7`  | Documents in tabs, saved layouts, nested layers                    |   7   |
-| [ ] | `D02 T07 §1`  | The live-object contract in the stilus namespace                   |  20   |
-| [ ] | `D02 T07 §2`  | Spatial index, culling, and dirty-region rendering                 |  19   |
-| [ ] | `D02 T07 §3`  | Pages and artboards: one model, panel, and commands                |  22   |
-| [ ] | `D02 T07 §4`  | Multipage views, page background, page numbers, navigation         |  24   |
-| [ ] | `D02 T07 §5`  | Layers, master layers, lock and hide, the Objects panel            |  23   |
-| [ ] | `D02 T07 §6`  | Selection: Select menu, Select Same, wand, lasso, saved selections |  19   |
-| [ ] | `D02 T07 §7`  | Isolation mode and focus mode                                      |  12   |
-| [ ] | `D02 T07 §8`  | The Properties panel and the contextual property bar               |  15   |
-| [ ] | `D02 T07 §9`  | Rulers, units, drawing scale, and grids                            |  13   |
-| [ ] | `D02 T07 §10` | Guides, the Guides panel, the measure tool, the Info panel         |  15   |
-| [ ] | `D02 T07 §11` | Snapping modes, smart guides, dynamic and alignment guides         |  19   |
-| [ ] | `D02 T07 §12` | View modes, zoom, rotate view, saved views, windows                |  18   |
-| [ ] | `D02 T07 §13` | History panel, repeat, paste variants, quick duplicates            |  14   |
-| [ ] | `D02 T07 §14` | New Document dialog, presets, templates, document information      |  20   |
-| [ ] | `D02 T17 §1`  | Stilus 0.2.0 (Phase 4)                                             |  17   |
+|  ✔  | Section       | Deliverable                                                                          | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §6`  | Re-plan Phase 4: Stilus parity I: document model, pages, layers, selection, and view |   8   |
+| [ ] | `D02 T06 §7`  | Documents in tabs, saved layouts, nested layers                                      |   7   |
+| [ ] | `D02 T07 §1`  | The live-object contract in the stilus namespace                                     |  20   |
+| [ ] | `D02 T07 §2`  | Spatial index, culling, and dirty-region rendering                                   |  19   |
+| [ ] | `D02 T07 §3`  | Pages and artboards: one model, panel, and commands                                  |  22   |
+| [ ] | `D02 T07 §4`  | Multipage views, page background, page numbers, navigation                           |  24   |
+| [ ] | `D02 T07 §5`  | Layers, master layers, lock and hide, the Objects panel                              |  23   |
+| [ ] | `D02 T07 §6`  | Selection: Select menu, Select Same, wand, lasso, saved selections                   |  19   |
+| [ ] | `D02 T07 §7`  | Isolation mode and focus mode                                                        |  12   |
+| [ ] | `D02 T07 §8`  | The Properties panel and the contextual property bar                                 |  15   |
+| [ ] | `D02 T07 §9`  | Rulers, units, drawing scale, and grids                                              |  13   |
+| [ ] | `D02 T07 §10` | Guides, the Guides panel, the measure tool, the Info panel                           |  15   |
+| [ ] | `D02 T07 §11` | Snapping modes, smart guides, dynamic and alignment guides                           |  19   |
+| [ ] | `D02 T07 §12` | View modes, zoom, rotate view, saved views, windows                                  |  18   |
+| [ ] | `D02 T07 §13` | History panel, repeat, paste variants, quick duplicates                              |  14   |
+| [ ] | `D02 T07 §14` | New Document dialog, presets, templates, document information                        |  20   |
+| [ ] | `D02 T17 §1`  | Stilus 0.2.0 (Phase 4)                                                               |  17   |
 
 ### Phase 5 -- Stilus parity II: drawing, paths, shapes, shaping, and transform
 
 With the document model settled, the drawing layer catches up: every pen, curve, freehand, and smart-drawing tool, live shapes with editable parameters and live corners, full node editing, cutting and erasing, liquify and shape-editing brushes, Pathfinder and the shape builder, compound paths and clipping masks, precise transforms and Transform Each, align and distribute extensions, and dimensions and connectors. Path editing (`D02 T06 §2`) moves here first because node editing extends it. It ends with `stilus-v0.3.0`.
 
-|  ✔  | Section       | Deliverable                                                                  | Items |
-| :-: | ------------- | ---------------------------------------------------------------------------- | :---: |
-| [ ] | `D02 T06 §2`  | Path editing: continue, join, break, reverse, simplify                       |   4   |
-| [ ] | `D02 T08 §1`  | Pen, Bezier, and anchor point tools                                          |  14   |
-| [ ] | `D02 T08 §2`  | Curvature, B-spline, polyline, 3-point, line and arc tools, parallel drawing |  14   |
-| [ ] | `D02 T08 §3`  | Pencil, freehand, smooth, path eraser, join, and smart drawing               |  17   |
-| [ ] | `D02 T08 §4`  | Live shapes and live corners                                                 |  20   |
-| [ ] | `D02 T08 §5`  | Grid, graph paper, flare, common shapes, and impact tools                    |  16   |
-| [ ] | `D02 T08 §6`  | Node editing: types, transforms, align, distribute, reduce                   |  20   |
-| [ ] | `D02 T08 §7`  | Join curves, average, offset, anchors, clean up, split into grid             |  14   |
-| [ ] | `D02 T08 §8`  | Knife, scissors, eraser, virtual segment delete, crop                        |  15   |
-| [ ] | `D02 T08 §9`  | Liquify and shape-editing brushes                                            |  17   |
-| [ ] | `D02 T08 §10` | Pathfinder, shaping, and the shape builder                                   |  18   |
-| [ ] | `D02 T08 §11` | Compound paths, clipping masks, draw inside and behind, intertwine           |  14   |
-| [ ] | `D02 T08 §12` | The Transform panel, dialogs, Transform Again, Transform Each                |  17   |
-| [ ] | `D02 T08 §13` | Rotate, reflect, scale, shear, reshape, and free transform tools             |  14   |
-| [ ] | `D02 T08 §14` | Align, distribute, arrange, and step and repeat extensions                   |  16   |
-| [ ] | `D02 T08 §15` | Dimensions, connectors, and callouts                                         |  17   |
-| [ ] | `D02 T17 §2`  | Stilus 0.3.0 (Phase 5)                                                       |  13   |
+|  ✔  | Section       | Deliverable                                                                       | Items |
+| :-: | ------------- | --------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §7`  | Re-plan Phase 5: Stilus parity II: drawing, paths, shapes, shaping, and transform |   6   |
+| [ ] | `D02 T06 §2`  | Path editing: continue, join, break, reverse, simplify                            |   4   |
+| [ ] | `D02 T08 §1`  | Pen, Bezier, and anchor point tools                                               |  14   |
+| [ ] | `D02 T08 §2`  | Curvature, B-spline, polyline, 3-point, line and arc tools, parallel drawing      |  14   |
+| [ ] | `D02 T08 §3`  | Pencil, freehand, smooth, path eraser, join, and smart drawing                    |  17   |
+| [ ] | `D02 T08 §4`  | Live shapes and live corners                                                      |  20   |
+| [ ] | `D02 T08 §5`  | Grid, graph paper, flare, common shapes, and impact tools                         |  16   |
+| [ ] | `D02 T08 §6`  | Node editing: types, transforms, align, distribute, reduce                        |  20   |
+| [ ] | `D02 T08 §7`  | Join curves, average, offset, anchors, clean up, split into grid                  |  14   |
+| [ ] | `D02 T08 §8`  | Knife, scissors, eraser, virtual segment delete, crop                             |  15   |
+| [ ] | `D02 T08 §9`  | Liquify and shape-editing brushes                                                 |  17   |
+| [ ] | `D02 T08 §10` | Pathfinder, shaping, and the shape builder                                        |  18   |
+| [ ] | `D02 T08 §11` | Compound paths, clipping masks, draw inside and behind, intertwine                |  14   |
+| [ ] | `D02 T08 §12` | The Transform panel, dialogs, Transform Again, Transform Each                     |  17   |
+| [ ] | `D02 T08 §13` | Rotate, reflect, scale, shear, reshape, and free transform tools                  |  14   |
+| [ ] | `D02 T08 §14` | Align, distribute, arrange, and step and repeat extensions                        |  16   |
+| [ ] | `D02 T08 §15` | Dimensions, connectors, and callouts                                              |  17   |
+| [ ] | `D02 T17 §2`  | Stilus 0.3.0 (Phase 5)                                                            |  13   |
 
 ### Phase 6 -- Stilus parity III: color, fills, strokes, brushes, transparency, styles, and symbols
 
@@ -324,6 +334,7 @@ Appearance comes next because every effect and every format carries it. `Isotone
 
 |  ✔  | Section       | Deliverable                                                                                                  | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §8`  | Re-plan Phase 6: Stilus parity III: color, fills, strokes, brushes, transparency, styles, and symbols        |   7   |
 | [ ] | `D02 T06 §11` | Symbols and the asset library                                                                                |   5   |
 | [ ] | `D01 T04 §1`  | The engine decision, the lcms2 wrapper, profiles, the profile store, and RGB, CMYK, gray, and Lab transforms |  19   |
 | [ ] | `D01 T04 §2`  | Rendering intents, black point compensation, proofing transforms, and gamut checks                           |  14   |
@@ -357,6 +368,7 @@ Type is its own discipline, so it gets its own phase: HarfBuzz shaping with bidi
 
 |  ✔  | Section       | Deliverable                                                                            | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §9`  | Re-plan Phase 7: Stilus parity IV: type, tables, and graphs                            |   6   |
 | [ ] | `D02 T06 §3`  | Text: area text, text on path, text to path                                            |   6   |
 | [ ] | `D02 T10 §1`  | The text shaping engine: HarfBuzzSharp, bidi, script runs, and font fallback           |  23   |
 | [ ] | `D02 T10 §2`  | The rich text model and text objects: point, area, path, and vertical                  |  24   |
@@ -382,6 +394,7 @@ Effects sit on the Appearance stack and the live-object contract, both shipped b
 
 |  ✔  | Section       | Deliverable                                                                                  | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §10` | Re-plan Phase 8: Stilus parity V: interactive and live effects                               |   6   |
 | [ ] | `D02 T11 §1`  | The live-effect framework: effect stack, parameters, copy, clone, clear, and expand          |  19   |
 | [ ] | `D02 T11 §2`  | Blend: tool, steps, spacing, easing, and color acceleration                                  |  17   |
 | [ ] | `D02 T11 §3`  | Blend on a path, node mapping, split, fuse, compound blends, and presets                     |  15   |
@@ -409,6 +422,7 @@ Bitmaps arrive once vectors are complete. `Isotone.Core` gains the pixel engine 
 
 |  ✔  | Section       | Deliverable                                                                                | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §11` | Re-plan Phase 9: Stilus parity VI: bitmaps, tracing, and the shared pixel engine           |   8   |
 | [ ] | `D02 T06 §14` | More formats and the export dialog                                                         |   6   |
 | [ ] | `D01 T03 §1`  | Pixel buffers, the effect contract, and the golden harness                                 |  25   |
 | [ ] | `D01 T03 §2`  | Resampling, rotation, straighten, perspective, and lens correction                         |  14   |
@@ -443,6 +457,7 @@ Output comes after everything it has to print exists. Bitmap color modes finish 
 
 |  ✔  | Section       | Deliverable                                                                      | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §12` | Re-plan Phase 10: Stilus parity VII: color management, print, prepress, and PDF  |   6   |
 | [ ] | `D01 T04 §3`  | Bitmap color modes, duotone, and multichannel, with the Stilus Duotone dialog    |  18   |
 | [ ] | `D02 T13 §1`  | Document color settings: profiles, policies, assign, convert, and embed          |  20   |
 | [ ] | `D02 T13 §2`  | The print dialog: printers, range, copies, placement, scaling, and preview       |  21   |
@@ -469,6 +484,7 @@ Formats come after the object model they must carry is complete, so each reader 
 
 |  ✔  | Section       | Deliverable                                                                 | Items |
 | :-: | ------------- | --------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §13` | Re-plan Phase 11: Stilus parity VIII: file formats, export, and web         |   6   |
 | [ ] | `D02 T14 §1`  | SVG options: SVGZ, styling modes, CSS export, and SVG code                  |  17   |
 | [ ] | `D02 T14 §2`  | PDF import                                                                  |  19   |
 | [ ] | `D02 T14 §3`  | Illustrator import: PDF-compatible .ai files                                |   9   |
@@ -496,6 +512,7 @@ The AI features are Stilus's own and come after the object model, formats, and t
 
 |  ✔  | Section       | Deliverable                                                                    | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §14` | Re-plan Phase 12: Stilus AI: editable, suite-aware, reproducible               |   7   |
 | [ ] | `D01 T05 §1`  | The OpenRouter client: chat, structured output, images, streaming, and models  |  22   |
 | [ ] | `D01 T05 §2`  | API keys with DPAPI and the AI settings contract                               |  15   |
 | [ ] | `D01 T05 §3`  | The AI provenance record                                                       |  14   |
@@ -520,6 +537,7 @@ The last parity phase first reads and writes the legacy formats the operator ask
 
 |  ✔  | Section       | Deliverable                                                                                                         | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §15` | Re-plan Phase 13: Stilus parity IX: legacy formats, workspace, customization, preferences, and Stilus 1.0.0         |   8   |
 | [ ] | `D02 T06 §12` | The command palette and the on-canvas HUD                                                                           |   5   |
 | [ ] | `D02 T06 §13` | Preferences and shortcut remapping                                                                                  |   4   |
 | [ ] | `D02 T16 §1`  | Workspaces: presets, save, reset, import, and export                                                                |  17   |
@@ -553,101 +571,105 @@ The last parity phase first reads and writes the legacy formats the operator ask
 
 Gesso starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity phases. The December 2025 snapshot's canvas, ruler, and container are ported onto `main` and the branch deleted, WPF-UI leaves the suite for good, Gesso starts through the shared logging and settings, its layers become tile-backed, the viewport renders the tiled composite at any zoom, the render graph composites every blend mode against reference goldens, and a ComputeSharp path matches the CPU. The codec decision is made here so file work can start the moment editing exists.
 
-|  ✔  | Section      | Deliverable                                       | Items |
-| :-: | ------------ | ------------------------------------------------- | :---: |
-| [ ] | `D01 T13 §4` | The Gesso map from a driven Photoshop run         |   4   |
-| [ ] | `D03 T01 §2` | Port the snapshot canvas, ruler, and container    |   8   |
-| [ ] | `D03 T01 §3` | WPF-UI out of Gesso                               |   8   |
-| [ ] | `D03 T01 §5` | Composition root on Isotone.Core                  |   4   |
-| [ ] | `D03 T02 §1` | The tiled image store                             |   6   |
-| [ ] | `D03 T02 §2` | The viewport on the tiled document                |   6   |
-| [ ] | `D03 T02 §3` | The render graph composites layers                |   4   |
-| [ ] | `D03 T02 §4` | Blend modes with golden tests                     |   4   |
-| [ ] | `D03 T02 §5` | The ComputeSharp compositing path with CPU parity |   5   |
-| [ ] | `D03 T04 §1` | The codec decision                                |   4   |
+|  ✔  | Section       | Deliverable                                                                     | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §16` | Re-plan Phase 14: Gesso foundation: snapshot port, WPF-UI out, tiles, rendering |   8   |
+| [ ] | `D01 T13 §4`  | The Gesso map from a driven Photoshop run                                       |   4   |
+| [ ] | `D03 T01 §2`  | Port the snapshot canvas, ruler, and container                                  |   8   |
+| [ ] | `D03 T01 §3`  | WPF-UI out of Gesso                                                             |   8   |
+| [ ] | `D03 T01 §5`  | Composition root on Isotone.Core                                                |   4   |
+| [ ] | `D03 T02 §1`  | The tiled image store                                                           |   6   |
+| [ ] | `D03 T02 §2`  | The viewport on the tiled document                                              |   6   |
+| [ ] | `D03 T02 §3`  | The render graph composites layers                                              |   4   |
+| [ ] | `D03 T02 §4`  | Blend modes with golden tests                                                   |   4   |
+| [ ] | `D03 T02 §5`  | The ComputeSharp compositing path with CPU parity                               |   5   |
+| [ ] | `D03 T04 §1`  | The codec decision                                                              |   4   |
 
 ### Phase 15 -- Gesso 0.1.0: editing, files, filters, release
 
 Gesso becomes a complete first release: Gesso records into the suite undo history and saves through the atomic document writer, both in `Isotone.Core` since Phase 3 (**Corrected 2026-09-28:** they moved there from this phase by operator decision), the About and shortcuts dialogs move to `Isotone.UI`, documents open in tabs with every edit in the history, the layers panel and core tools work, PNG, JPEG, TIFF, the native layered format, and PSD import are proven by round trips, autosave and recovery work, the core adjustments and blurs match reference goldens, the user guide is written, and `gesso-v0.1.0` ships.
 
-|  ✔  | Section      | Deliverable                                       | Items |
-| :-: | ------------ | ------------------------------------------------- | :---: |
-| [ ] | `D01 T01 §4` | About and shortcuts dialogs move to Isotone.UI    |   7   |
-| [ ] | `D03 T03 §1` | Documents in tabs with dirty tracking             |   5   |
-| [ ] | `D03 T03 §2` | Every edit in the suite history                   |   5   |
-| [ ] | `D03 T03 §3` | The layers panel                                  |   4   |
-| [ ] | `D03 T03 §4` | The tool system: move, hand, and zoom             |   4   |
-| [ ] | `D03 T03 §5` | Selection tools                                   |   5   |
-| [ ] | `D03 T03 §6` | Brush and eraser                                  |   4   |
-| [ ] | `D03 T03 §7` | Transform, crop, image size, and canvas size      |   4   |
-| [ ] | `D03 T03 §8` | Fill, gradient, eyedropper, and the color panel   |   4   |
-| [ ] | `D03 T04 §2` | PNG and JPEG open and save                        |   8   |
-| [ ] | `D03 T04 §3` | TIFF open and save                                |   5   |
-| [ ] | `D03 T04 §4` | The native layered format                         |   6   |
-| [ ] | `D03 T04 §5` | PSD import                                        |   5   |
-| [ ] | `D03 T04 §6` | Autosave and crash recovery                       |   5   |
-| [ ] | `D03 T05 §1` | The filter pipeline                               |   4   |
-| [ ] | `D03 T05 §2` | Core adjustments                                  |   6   |
-| [ ] | `D03 T05 §3` | Blur and sharpen                                  |   5   |
-| [ ] | `D03 T06 §1` | About, shortcuts, and help in Gesso               |   3   |
-| [ ] | `D03 T06 §2` | Every Gesso menu command works or names its owner |   3   |
-| [ ] | `D03 T06 §4` | Gesso's window follows the Photoshop layout map   |   8   |
-| [ ] | `D06 T01 §2` | The Gesso user guide                              |   4   |
-| [ ] | `D03 T06 §3` | Gesso 0.1.0                                       |   8   |
+|  ✔  | Section       | Deliverable                                                     | Items |
+| :-: | ------------- | --------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §17` | Re-plan Phase 15: Gesso 0.1.0: editing, files, filters, release |   8   |
+| [ ] | `D01 T01 §4`  | About and shortcuts dialogs move to Isotone.UI                  |   7   |
+| [ ] | `D03 T03 §1`  | Documents in tabs with dirty tracking                           |   5   |
+| [ ] | `D03 T03 §2`  | Every edit in the suite history                                 |   5   |
+| [ ] | `D03 T03 §3`  | The layers panel                                                |   4   |
+| [ ] | `D03 T03 §4`  | The tool system: move, hand, and zoom                           |   4   |
+| [ ] | `D03 T03 §5`  | Selection tools                                                 |   5   |
+| [ ] | `D03 T03 §6`  | Brush and eraser                                                |   4   |
+| [ ] | `D03 T03 §7`  | Transform, crop, image size, and canvas size                    |   4   |
+| [ ] | `D03 T03 §8`  | Fill, gradient, eyedropper, and the color panel                 |   4   |
+| [ ] | `D03 T04 §2`  | PNG and JPEG open and save                                      |   8   |
+| [ ] | `D03 T04 §3`  | TIFF open and save                                              |   5   |
+| [ ] | `D03 T04 §4`  | The native layered format                                       |   6   |
+| [ ] | `D03 T04 §5`  | PSD import                                                      |   5   |
+| [ ] | `D03 T04 §6`  | Autosave and crash recovery                                     |   5   |
+| [ ] | `D03 T05 §1`  | The filter pipeline                                             |   4   |
+| [ ] | `D03 T05 §2`  | Core adjustments                                                |   6   |
+| [ ] | `D03 T05 §3`  | Blur and sharpen                                                |   5   |
+| [ ] | `D03 T06 §1`  | About, shortcuts, and help in Gesso                             |   3   |
+| [ ] | `D03 T06 §2`  | Every Gesso menu command works or names its owner               |   3   |
+| [ ] | `D03 T06 §4`  | Gesso's window follows the Photoshop layout map                 |   8   |
+| [ ] | `D06 T01 §2`  | The Gesso user guide                                            |   4   |
+| [ ] | `D03 T06 §3`  | Gesso 0.1.0                                                     |   8   |
 
 ### Phase 16 -- Gesso parity I: document, canvas, view, history, and layers
 
 Parity starts where every later feature stands. This phase fixes how live content persists in `.gesso` (the `gesso:` namespace beside a rendered PNG fallback, so GIMP and Krita still open every file), completes the document model (8, 16, and 32-bit float, precision, pixel aspect), new-document presets and templates, every view (zoom, rotate, flip, screen modes, windows, view modes, display filters, the navigator), rulers, guides, grids, snapping, measurement, the info and histogram panels and scopes, snapshots and non-linear history, the Image menu, paste variants, and crop, then the layer model with every layer kind, the Layers panel and Layer menu, masks, clipping and vector masks, blending options with Blend If, and every blend mode the three competitors ship. It ends with `gesso-v0.2.0`.
 
-|  ✔  | Section       | Deliverable                                                             | Items |
-| :-: | ------------- | ----------------------------------------------------------------------- | :---: |
-| [ ] | `D03 T08 §1`  | The document model and the native-format contract for live content      |  17   |
-| [ ] | `D03 T08 §12` | Image properties, document setup, pixel aspect, and duplicate           |  12   |
-| [ ] | `D03 T08 §2`  | New document, presets, and templates                                    |  22   |
-| [ ] | `D03 T08 §3`  | Zoom, rotate view, flip view, and screen modes                          |  18   |
-| [ ] | `D03 T08 §13` | Navigation gestures, print size, window behaviors, and view preferences |  14   |
-| [ ] | `D03 T08 §10` | Windows, arrangement, view modes, display filters, and the navigator    |  17   |
-| [ ] | `D03 T08 §4`  | Rulers, units, and guides                                               |  16   |
-| [ ] | `D03 T08 §14` | Grids, axis grids, and snapping on the shared core                      |  14   |
-| [ ] | `D03 T08 §5`  | Measure, protractor, count, and notes                                   |  19   |
-| [ ] | `D03 T08 §11` | Info, histogram, sample points, and scopes                              |  24   |
-| [ ] | `D03 T08 §6`  | History extensions: snapshots, non-linear history, and saved history    |  21   |
-| [ ] | `D03 T08 §7`  | The Image menu: canvas, rotation, trim, reveal, and resampling          |  25   |
-| [ ] | `D03 T08 §8`  | Clipboard and paste variants                                            |  19   |
-| [ ] | `D03 T08 §9`  | Crop and straighten extensions                                          |  19   |
-| [ ] | `D03 T09 §1`  | Every layer kind, locks, labels, tags, and panel filtering              |  20   |
-| [ ] | `D03 T09 §2`  | Layers panel selection, linking, visibility, order, and options         |  21   |
-| [ ] | `D03 T09 §14` | Merge, stamp, rasterize with revert, matting, and boundaries            |  21   |
-| [ ] | `D03 T09 §3`  | Layer masks, mask stacks, and live masks                                |  20   |
-| [ ] | `D03 T09 §4`  | Clipping masks, child clipping, and vector masks                        |  15   |
-| [ ] | `D03 T09 §5`  | Blending options, Blend If, and blend ranges                            |  18   |
-| [ ] | `D03 T09 §6`  | GIMP, Affinity, and Porter-Duff blend modes                             |  18   |
-| [ ] | `D03 T21 §1`  | Gesso 0.2.0 (Phase 16)                                                  |  15   |
+|  ✔  | Section       | Deliverable                                                                   | Items |
+| :-: | ------------- | ----------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §18` | Re-plan Phase 16: Gesso parity I: document, canvas, view, history, and layers |   8   |
+| [ ] | `D03 T08 §1`  | The document model and the native-format contract for live content            |  17   |
+| [ ] | `D03 T08 §12` | Image properties, document setup, pixel aspect, and duplicate                 |  12   |
+| [ ] | `D03 T08 §2`  | New document, presets, and templates                                          |  22   |
+| [ ] | `D03 T08 §3`  | Zoom, rotate view, flip view, and screen modes                                |  18   |
+| [ ] | `D03 T08 §13` | Navigation gestures, print size, window behaviors, and view preferences       |  14   |
+| [ ] | `D03 T08 §10` | Windows, arrangement, view modes, display filters, and the navigator          |  17   |
+| [ ] | `D03 T08 §4`  | Rulers, units, and guides                                                     |  16   |
+| [ ] | `D03 T08 §14` | Grids, axis grids, and snapping on the shared core                            |  14   |
+| [ ] | `D03 T08 §5`  | Measure, protractor, count, and notes                                         |  19   |
+| [ ] | `D03 T08 §11` | Info, histogram, sample points, and scopes                                    |  24   |
+| [ ] | `D03 T08 §6`  | History extensions: snapshots, non-linear history, and saved history          |  21   |
+| [ ] | `D03 T08 §7`  | The Image menu: canvas, rotation, trim, reveal, and resampling                |  25   |
+| [ ] | `D03 T08 §8`  | Clipboard and paste variants                                                  |  19   |
+| [ ] | `D03 T08 §9`  | Crop and straighten extensions                                                |  19   |
+| [ ] | `D03 T09 §1`  | Every layer kind, locks, labels, tags, and panel filtering                    |  20   |
+| [ ] | `D03 T09 §2`  | Layers panel selection, linking, visibility, order, and options               |  21   |
+| [ ] | `D03 T09 §14` | Merge, stamp, rasterize with revert, matting, and boundaries                  |  21   |
+| [ ] | `D03 T09 §3`  | Layer masks, mask stacks, and live masks                                      |  20   |
+| [ ] | `D03 T09 §4`  | Clipping masks, child clipping, and vector masks                              |  15   |
+| [ ] | `D03 T09 §5`  | Blending options, Blend If, and blend ranges                                  |  18   |
+| [ ] | `D03 T09 §6`  | GIMP, Affinity, and Porter-Duff blend modes                                   |  18   |
+| [ ] | `D03 T21 §1`  | Gesso 0.2.0 (Phase 16)                                                        |  15   |
 
 ### Phase 17 -- Gesso parity II: selection, channels, styles, smart objects, and artboards
 
 With layers and masks in place, selection catches up: soft and saved selections, every marquee and lasso, the magic wand and selection by color, Color Range, the local segmentation engine and Focus Area, quick selection, foreground select and intelligent scissors, Select and Mask, modify and transform selection, and the Channels panel with spot channels and quick mask. The same phase finishes the layer stack's richer content: layer styles, embedded and linked smart objects, layer comps, align and distribute, and artboards. It ends with `gesso-v0.3.0`.
 
-|  ✔  | Section       | Deliverable                                                                      | Items |
-| :-: | ------------- | -------------------------------------------------------------------------------- | :---: |
-| [ ] | `D03 T10 §1`  | The selection model: soft selections, saved selections, and the selection editor |  20   |
-| [ ] | `D03 T10 §2`  | Marquee and lasso extensions                                                     |  16   |
-| [ ] | `D03 T10 §3`  | Magic wand and select by color                                                   |  16   |
-| [ ] | `D03 T10 §4`  | Color Range and tonal selection                                                  |  17   |
-| [ ] | `D03 T10 §6`  | The local segmentation engine and Focus Area                                     |  16   |
-| [ ] | `D03 T10 §5`  | Quick selection, selection brush, foreground select, and intelligent scissors    |  13   |
-| [ ] | `D03 T10 §7`  | Select and Mask and refine selection                                             |  22   |
-| [ ] | `D03 T10 §8`  | Modify and transform selection                                                   |  15   |
-| [ ] | `D03 T10 §9`  | Select menu extensions                                                           |  10   |
-| [ ] | `D03 T10 §10` | The Channels panel, spot channels, and quick mask options                        |  21   |
-| [ ] | `D03 T09 §7`  | Layer styles I: framework, shadows, glows, stroke, satin                         |  26   |
-| [ ] | `D03 T09 §8`  | Layer styles II: bevel, overlays, contours, Styles panel, ASL                    |  22   |
-| [ ] | `D03 T09 §9`  | Embedded smart objects                                                           |  16   |
-| [ ] | `D03 T09 §10` | Linked smart objects, link layers, and the Resource Manager                      |  14   |
-| [ ] | `D03 T09 §11` | Layer comps and states                                                           |  13   |
-| [ ] | `D03 T09 §12` | Align, distribute, and move-tool extensions                                      |  16   |
-| [ ] | `D03 T09 §13` | Artboards with constraints                                                       |  16   |
-| [ ] | `D03 T21 §2`  | Gesso 0.3.0 (Phase 17)                                                           |  15   |
+|  ✔  | Section       | Deliverable                                                                                  | Items |
+| :-: | ------------- | -------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §19` | Re-plan Phase 17: Gesso parity II: selection, channels, styles, smart objects, and artboards |   6   |
+| [ ] | `D03 T10 §1`  | The selection model: soft selections, saved selections, and the selection editor             |  20   |
+| [ ] | `D03 T10 §2`  | Marquee and lasso extensions                                                                 |  16   |
+| [ ] | `D03 T10 §3`  | Magic wand and select by color                                                               |  16   |
+| [ ] | `D03 T10 §4`  | Color Range and tonal selection                                                              |  17   |
+| [ ] | `D03 T10 §6`  | The local segmentation engine and Focus Area                                                 |  16   |
+| [ ] | `D03 T10 §5`  | Quick selection, selection brush, foreground select, and intelligent scissors                |  13   |
+| [ ] | `D03 T10 §7`  | Select and Mask and refine selection                                                         |  22   |
+| [ ] | `D03 T10 §8`  | Modify and transform selection                                                               |  15   |
+| [ ] | `D03 T10 §9`  | Select menu extensions                                                                       |  10   |
+| [ ] | `D03 T10 §10` | The Channels panel, spot channels, and quick mask options                                    |  21   |
+| [ ] | `D03 T09 §7`  | Layer styles I: framework, shadows, glows, stroke, satin                                     |  26   |
+| [ ] | `D03 T09 §8`  | Layer styles II: bevel, overlays, contours, Styles panel, ASL                                |  22   |
+| [ ] | `D03 T09 §9`  | Embedded smart objects                                                                       |  16   |
+| [ ] | `D03 T09 §10` | Linked smart objects, link layers, and the Resource Manager                                  |  14   |
+| [ ] | `D03 T09 §11` | Layer comps and states                                                                       |  13   |
+| [ ] | `D03 T09 §12` | Align, distribute, and move-tool extensions                                                  |  16   |
+| [ ] | `D03 T09 §13` | Artboards with constraints                                                                   |  16   |
+| [ ] | `D03 T21 §2`  | Gesso 0.3.0 (Phase 17)                                                                       |  15   |
 
 ### Phase 18 -- Gesso parity III: adjustment layers, adjustments, modes, and color
 
@@ -655,6 +677,7 @@ Adjustments become non-destructive layers over the suite pixel engine: every ton
 
 |  ✔  | Section       | Deliverable                                                                                                | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §20` | Re-plan Phase 18: Gesso parity III: adjustment layers, adjustments, modes, and color                       |   6   |
 | [ ] | `D03 T11 §1`  | Adjustment layers and the Adjustments and Properties panels                                                |  26   |
 | [ ] | `D03 T11 §2`  | Tonal adjustment extensions: brightness and contrast, light, levels, and curves                            |  16   |
 | [ ] | `D03 T11 §11` | Auto corrections, exposure, shadows and highlights, Light EQ, and GIMP tone operations                     |  15   |
@@ -673,63 +696,66 @@ Adjustments become non-destructive layers over the suite pixel engine: every ton
 
 Painting is judged on its brush engine, so it gets its own phase: tips, smoothing, wet media, full dynamics, presets with ABR, Affinity, and GIMP brush import, MyPaint brushes, every painting tool, mixer and smudge, erasers, fill and stroke including GIMP's line-art fill, gradients with an on-canvas editor, patterns, and symmetry painting. It ends with `gesso-v0.5.0`.
 
-|  ✔  | Section       | Deliverable                                                 | Items |
-| :-: | ------------- | ----------------------------------------------------------- | :---: |
-| [ ] | `D03 T12 §1`  | The brush engine I: tips, spacing, smoothing, and wet media |  20   |
-| [ ] | `D03 T12 §2`  | The brush engine II: dynamics                               |  17   |
-| [ ] | `D03 T12 §3`  | Brush presets, libraries, and tool presets                  |  24   |
-| [ ] | `D03 T12 §4`  | MyPaint brushes                                             |  13   |
-| [ ] | `D03 T12 §5`  | Painting tools and history brushes                          |  19   |
-| [ ] | `D03 T12 §6`  | Mixer brush, smudge, and color replacement                  |  12   |
-| [ ] | `D03 T12 §7`  | Erasers                                                     |  11   |
-| [ ] | `D03 T12 §8`  | Fill and stroke                                             |  18   |
-| [ ] | `D03 T12 §9`  | Gradients and the gradient editor                           |  25   |
-| [ ] | `D03 T12 §10` | Patterns                                                    |  17   |
-| [ ] | `D03 T12 §11` | Symmetry painting                                           |  11   |
-| [ ] | `D03 T21 §4`  | Gesso 0.5.0 (Phase 19)                                      |  15   |
+|  ✔  | Section       | Deliverable                                                                                   | Items |
+| :-: | ------------- | --------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §21` | Re-plan Phase 19: Gesso parity IV: the brush engine, painting, fills, gradients, and patterns |   6   |
+| [ ] | `D03 T12 §1`  | The brush engine I: tips, spacing, smoothing, and wet media                                   |  20   |
+| [ ] | `D03 T12 §2`  | The brush engine II: dynamics                                                                 |  17   |
+| [ ] | `D03 T12 §3`  | Brush presets, libraries, and tool presets                                                    |  24   |
+| [ ] | `D03 T12 §4`  | MyPaint brushes                                                                               |  13   |
+| [ ] | `D03 T12 §5`  | Painting tools and history brushes                                                            |  19   |
+| [ ] | `D03 T12 §6`  | Mixer brush, smudge, and color replacement                                                    |  12   |
+| [ ] | `D03 T12 §7`  | Erasers                                                                                       |  11   |
+| [ ] | `D03 T12 §8`  | Fill and stroke                                                                               |  18   |
+| [ ] | `D03 T12 §9`  | Gradients and the gradient editor                                                             |  25   |
+| [ ] | `D03 T12 §10` | Patterns                                                                                      |  17   |
+| [ ] | `D03 T12 §11` | Symmetry painting                                                                             |  11   |
+| [ ] | `D03 T21 §4`  | Gesso 0.5.0 (Phase 19)                                                                        |  15   |
 
 ### Phase 20 -- Gesso parity V: retouching, content-aware tools, transform, warp, and liquify
 
 Retouching builds on painting: clone and the clone source panel, healing, patch, blemish and inpainting, the content-aware engine for fill, scale, and move, toning tools, every transform tool of the three apps, warp, puppet warp and cage, perspective warp, Liquify, and frequency separation. It ends with `gesso-v0.6.0`.
 
-|  ✔  | Section       | Deliverable                                       | Items |
-| :-: | ------------- | ------------------------------------------------- | :---: |
-| [ ] | `D03 T13 §1`  | Clone stamp and the clone source panel            |  16   |
-| [ ] | `D03 T13 §2`  | Healing, patch, blemish, inpainting, and red eye  |  18   |
-| [ ] | `D03 T13 §3`  | The content-aware engine: fill, scale, and move   |  17   |
-| [ ] | `D03 T13 §4`  | Toning and focus tools                            |  15   |
-| [ ] | `D03 T13 §5`  | Free Transform and move-tool transform extensions |  18   |
-| [ ] | `D03 T13 §11` | The GIMP transform tools                          |  16   |
-| [ ] | `D03 T13 §6`  | Warp and mesh warp                                |  13   |
-| [ ] | `D03 T13 §7`  | Puppet warp, cage transform, and pins             |  14   |
-| [ ] | `D03 T13 §8`  | Perspective warp                                  |  11   |
-| [ ] | `D03 T13 §9`  | Liquify                                           |  19   |
-| [ ] | `D03 T13 §10` | Frequency separation and retouching workflows     |  11   |
-| [ ] | `D03 T21 §5`  | Gesso 0.6.0 (Phase 20)                            |  15   |
+|  ✔  | Section       | Deliverable                                                                                     | Items |
+| :-: | ------------- | ----------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §22` | Re-plan Phase 20: Gesso parity V: retouching, content-aware tools, transform, warp, and liquify |   6   |
+| [ ] | `D03 T13 §1`  | Clone stamp and the clone source panel                                                          |  16   |
+| [ ] | `D03 T13 §2`  | Healing, patch, blemish, inpainting, and red eye                                                |  18   |
+| [ ] | `D03 T13 §3`  | The content-aware engine: fill, scale, and move                                                 |  17   |
+| [ ] | `D03 T13 §4`  | Toning and focus tools                                                                          |  15   |
+| [ ] | `D03 T13 §5`  | Free Transform and move-tool transform extensions                                               |  18   |
+| [ ] | `D03 T13 §11` | The GIMP transform tools                                                                        |  16   |
+| [ ] | `D03 T13 §6`  | Warp and mesh warp                                                                              |  13   |
+| [ ] | `D03 T13 §7`  | Puppet warp, cage transform, and pins                                                           |  14   |
+| [ ] | `D03 T13 §8`  | Perspective warp                                                                                |  11   |
+| [ ] | `D03 T13 §9`  | Liquify                                                                                         |  19   |
+| [ ] | `D03 T13 §10` | Frequency separation and retouching workflows                                                   |  11   |
+| [ ] | `D03 T21 §5`  | Gesso 0.6.0 (Phase 20)                                                                          |  15   |
 
 ### Phase 21 -- Gesso parity VI: filters I, the filter surfaces and the engine extensions for blur, sharpen, noise, distort, and pixelate
 
 Filters come once the layer stack can host them non-destructively. The relocated filter-catalog section (`D03 T07 §3`) runs first, then `Isotone.Core` gains the engine extensions contract and the blur, lens-blur, sharpen, denoise, distort, map, and pixelate families, and Gesso gets smart filters and live filter layers, the Filter menu with generated dialogs for every engine effect, the Filter Gallery, the Blur Gallery surface, Lens Correction and Adaptive Wide Angle, and Vanishing Point. Third-party Photoshop-compatible filter, format, and acquire plug-ins reach Gesso's Filter menu through the `D01 T09` host (`D03 T14 §11`) once the Filter menu exists. It ends with `gesso-v0.7.0`.
 
-|  ✔  | Section       | Deliverable                                                                                    | Items |
-| :-: | ------------- | ---------------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D03 T07 §3`  | The rest of the filter catalog                                                                 |   4   |
-| [ ] | `D01 T06 §1`  | The extensions contract: float processing, abyss policies, GEGL op ids, and on-canvas controls |  17   |
-| [ ] | `D01 T06 §2`  | Blur extensions                                                                                |  18   |
-| [ ] | `D01 T06 §3`  | Lens blur, bokeh, and the blur-gallery kernels                                                 |  18   |
-| [ ] | `D01 T06 §4`  | Sharpen and deconvolution                                                                      |  17   |
-| [ ] | `D01 T06 §5`  | Noise and denoise extensions                                                                   |  16   |
-| [ ] | `D01 T06 §6`  | Distort and projection extensions                                                              |  25   |
-| [ ] | `D01 T06 §7`  | Map extensions                                                                                 |  16   |
-| [ ] | `D01 T06 §14` | Pixelate and halftone extensions                                                               |  12   |
-| [ ] | `D03 T14 §1`  | Smart filters, live filter layers, and non-destructive layer filters                           |  25   |
-| [ ] | `D03 T14 §2`  | The Filter menu, generated dialogs, presets, and Fade                                          |  22   |
-| [ ] | `D03 T14 §11` | Photoshop-compatible plug-in filters, formats, and acquire in Gesso                            |  12   |
-| [ ] | `D03 T14 §3`  | The Filter Gallery                                                                             |   9   |
-| [ ] | `D03 T14 §4`  | The Blur Gallery surface                                                                       |  14   |
-| [ ] | `D03 T14 §6`  | Lens Correction and Adaptive Wide Angle                                                        |  22   |
-| [ ] | `D03 T14 §7`  | Vanishing Point and live projections                                                           |  14   |
-| [ ] | `D03 T21 §6`  | Gesso 0.7.0 (Phase 21)                                                                         |  15   |
+|  ✔  | Section       | Deliverable                                                                                                                                 | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §23` | Re-plan Phase 21: Gesso parity VI: filters I, the filter surfaces and the engine extensions for blur, sharpen, noise, distort, and pixelate |   8   |
+| [ ] | `D03 T07 §3`  | The rest of the filter catalog                                                                                                              |   4   |
+| [ ] | `D01 T06 §1`  | The extensions contract: float processing, abyss policies, GEGL op ids, and on-canvas controls                                              |  17   |
+| [ ] | `D01 T06 §2`  | Blur extensions                                                                                                                             |  18   |
+| [ ] | `D01 T06 §3`  | Lens blur, bokeh, and the blur-gallery kernels                                                                                              |  18   |
+| [ ] | `D01 T06 §4`  | Sharpen and deconvolution                                                                                                                   |  17   |
+| [ ] | `D01 T06 §5`  | Noise and denoise extensions                                                                                                                |  16   |
+| [ ] | `D01 T06 §6`  | Distort and projection extensions                                                                                                           |  25   |
+| [ ] | `D01 T06 §7`  | Map extensions                                                                                                                              |  16   |
+| [ ] | `D01 T06 §14` | Pixelate and halftone extensions                                                                                                            |  12   |
+| [ ] | `D03 T14 §1`  | Smart filters, live filter layers, and non-destructive layer filters                                                                        |  25   |
+| [ ] | `D03 T14 §2`  | The Filter menu, generated dialogs, presets, and Fade                                                                                       |  22   |
+| [ ] | `D03 T14 §11` | Photoshop-compatible plug-in filters, formats, and acquire in Gesso                                                                         |  12   |
+| [ ] | `D03 T14 §3`  | The Filter Gallery                                                                                                                          |   9   |
+| [ ] | `D03 T14 §4`  | The Blur Gallery surface                                                                                                                    |  14   |
+| [ ] | `D03 T14 §6`  | Lens Correction and Adaptive Wide Angle                                                                                                     |  22   |
+| [ ] | `D03 T14 §7`  | Vanishing Point and live projections                                                                                                        |  14   |
+| [ ] | `D03 T21 §6`  | Gesso 0.7.0 (Phase 21)                                                                                                                      |  15   |
 
 ### Phase 22 -- Gesso parity VII: filters II, render, light, stylize, artistic, generic, and GEGL
 
@@ -755,30 +781,31 @@ The second filter phase completes the long tail GIMP and GEGL bring: light and s
 
 Photography gets its own phase. `Isotone.Core` gains the scene-referred develop engine that Albumen will reuse, and Gesso gets the Camera Raw filter and Affinity's Develop studio with local masks, 32-bit editing and HDR display, tone mapping, the alignment engine, Merge to HDR, panoramas, image stacks and auto-blend, focus merge, astrophotography stacking, and splitting scanned photos. RAW files themselves open once Albumen's decoder is shared (`D03 T07 §11`, Phase 31). It ends with `gesso-v0.9.0`.
 
-|  ✔  | Section       | Deliverable                                                                                 | Items |
-| :-: | ------------- | ------------------------------------------------------------------------------------------- | :---: |
-| [ ] | `D01 T07 §1`  | The develop pipeline core: white balance, exposure, tone, and curves                        |  29   |
-| [ ] | `D01 T07 §2`  | Presence and color: texture, clarity, dehaze, color mixer, and grading                      |  18   |
-| [ ] | `D01 T07 §3`  | Detail and optics: sharpening, noise, grain, vignette, lens, and geometry                   |  25   |
-| [ ] | `D01 T07 §4`  | The local masking engine                                                                    |  19   |
-| [ ] | `D01 T07 §5`  | Spot removal, red eye, and pet eye                                                          |  13   |
-| [ ] | `D01 T07 §6`  | Presets, snapshots, and XMP settings exchange                                               |  16   |
-| [ ] | `D01 T07 §7`  | The tone equalizer stage                                                                    |  18   |
-| [ ] | `D03 T15 §1`  | The Camera Raw filter dialog                                                                |  17   |
-| [ ] | `D03 T15 §13` | Camera Raw reports, overlays, view tools, workflow, presets, and Render to DNG              |  14   |
-| [ ] | `D03 T15 §12` | The Develop studio and RAW layers                                                           |  21   |
-| [ ] | `D03 T15 §2`  | Develop masking and local adjustments surface                                               |  14   |
-| [ ] | `D03 T15 §4`  | 32-bit HDR editing and HDR display                                                          |  19   |
-| [ ] | `D03 T15 §3`  | Tone mapping and HDR Toning                                                                 |  20   |
-| [ ] | `D03 T15 §5`  | The image alignment engine and auto-align layers                                            |  16   |
-| [ ] | `D03 T15 §6`  | Merge to HDR                                                                                |  16   |
-| [ ] | `D03 T15 §7`  | Panorama                                                                                    |  18   |
-| [ ] | `D03 T15 §8`  | Image stacks and auto-blend layers                                                          |  19   |
-| [ ] | `D03 T15 §9`  | Focus merge                                                                                 |  13   |
-| [ ] | `D03 T15 §10` | Astrophotography stacking                                                                   |  20   |
-| [ ] | `D03 T15 §14` | Astro filters: stretches, background extraction, calibration, color mapping, and separation |  10   |
-| [ ] | `D03 T15 §11` | Crop and straighten scanned photos                                                          |  10   |
-| [ ] | `D03 T21 §8`  | Gesso 0.9.0 (Phase 23)                                                                      |  15   |
+|  ✔  | Section       | Deliverable                                                                                                      | Items |
+| :-: | ------------- | ---------------------------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §24` | Re-plan Phase 23: Gesso parity VIII: the develop engine, Camera Raw, HDR, panorama, stacks, and astrophotography |   7   |
+| [ ] | `D01 T07 §1`  | The develop pipeline core: white balance, exposure, tone, and curves                                             |  29   |
+| [ ] | `D01 T07 §2`  | Presence and color: texture, clarity, dehaze, color mixer, and grading                                           |  18   |
+| [ ] | `D01 T07 §3`  | Detail and optics: sharpening, noise, grain, vignette, lens, and geometry                                        |  25   |
+| [ ] | `D01 T07 §4`  | The local masking engine                                                                                         |  19   |
+| [ ] | `D01 T07 §5`  | Spot removal, red eye, and pet eye                                                                               |  13   |
+| [ ] | `D01 T07 §6`  | Presets, snapshots, and XMP settings exchange                                                                    |  16   |
+| [ ] | `D01 T07 §7`  | The tone equalizer stage                                                                                         |  18   |
+| [ ] | `D03 T15 §1`  | The Camera Raw filter dialog                                                                                     |  17   |
+| [ ] | `D03 T15 §13` | Camera Raw reports, overlays, view tools, workflow, presets, and Render to DNG                                   |  14   |
+| [ ] | `D03 T15 §12` | The Develop studio and RAW layers                                                                                |  21   |
+| [ ] | `D03 T15 §2`  | Develop masking and local adjustments surface                                                                    |  14   |
+| [ ] | `D03 T15 §4`  | 32-bit HDR editing and HDR display                                                                               |  19   |
+| [ ] | `D03 T15 §3`  | Tone mapping and HDR Toning                                                                                      |  20   |
+| [ ] | `D03 T15 §5`  | The image alignment engine and auto-align layers                                                                 |  16   |
+| [ ] | `D03 T15 §6`  | Merge to HDR                                                                                                     |  16   |
+| [ ] | `D03 T15 §7`  | Panorama                                                                                                         |  18   |
+| [ ] | `D03 T15 §8`  | Image stacks and auto-blend layers                                                                               |  19   |
+| [ ] | `D03 T15 §9`  | Focus merge                                                                                                      |  13   |
+| [ ] | `D03 T15 §10` | Astrophotography stacking                                                                                        |  20   |
+| [ ] | `D03 T15 §14` | Astro filters: stretches, background extraction, calibration, color mapping, and separation                      |  10   |
+| [ ] | `D03 T15 §11` | Crop and straighten scanned photos                                                                               |  10   |
+| [ ] | `D03 T21 §8`  | Gesso 0.9.0 (Phase 23)                                                                                           |  15   |
 
 ### Phase 24 -- Gesso parity IX: type, paths, shapes, and vectors
 
@@ -786,6 +813,7 @@ Type and vectors come after the layer stack and styles they live in. The suite t
 
 |  ✔  | Section       | Deliverable                                                                            | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §25` | Re-plan Phase 24: Gesso parity IX: type, paths, shapes, and vectors                    |   6   |
 | [ ] | `D03 T16 §1`  | Text layers on the shared text engine                                                  |  18   |
 | [ ] | `D03 T16 §9`  | Type tools and on-canvas text editing                                                  |  11   |
 | [ ] | `D03 T16 §5`  | Paths, the Paths panel, and path geometry in Isotone.Core                              |  20   |
@@ -805,6 +833,7 @@ Formats come after the document model they must carry is complete, so each reade
 
 |  ✔  | Section       | Deliverable                                                                                   | Items |
 | :-: | ------------- | --------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §26` | Re-plan Phase 25: Gesso parity X: formats, export, color management, and print                |   7   |
 | [ ] | `D03 T17 §1`  | File menu extensions: open, revert, close, and save a copy                                    |  21   |
 | [ ] | `D03 T17 §15` | Place, export and overwrite semantics, notes import, Load Files into Stack, and watermarks    |  12   |
 | [ ] | `D03 T17 §12` | Create from clipboard, screenshots, scanners, URLs, and archives                              |  16   |
@@ -839,6 +868,7 @@ The AI features are Gesso's own and come after the layers, masks, selections, re
 
 |  ✔  | Section       | Deliverable                                                          | Items |
 | :-: | ------------- | -------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §27` | Re-plan Phase 26: Gesso AI: editable, suite-aware, reproducible      |   6   |
 | [ ] | `D03 T19 §1`  | AI in Gesso: the AI menu, settings, usage, and the provenance panel  |  22   |
 | [ ] | `D03 T19 §2`  | The image-generation adapter                                         |  17   |
 | [ ] | `D03 T19 §3`  | Generative fill and generative remove                                |  17   |
@@ -860,59 +890,62 @@ The AI features are Gesso's own and come after the layers, masks, selections, re
 
 The last parity phase customizes and audits the whole surface once it exists: workspaces and Preferences (`D03 T07 §17`) move here first, then workspace presets, the toolbar and options bar, menus, shortcuts, and command search, every preference page, interface appearance and language, pen and touch input, the presets manager and resource libraries, help and diagnostics, the measured performance work (`D03 T07 §18` to `§20`: a benchmark harness with a budget gate, memory, SIMD hot paths, and cold start, promoted from the backlog by operator decision on 2026-09-27), and the accessibility and localization audit (`D03 T07 §16`) over every parity surface. It ends with `gesso-v1.0.0`, which declares the parity catalog complete.
 
-|  ✔  | Section       | Deliverable                                                                       | Items |
-| :-: | ------------- | --------------------------------------------------------------------------------- | :---: |
-| [ ] | `D03 T07 §17` | Workspaces, panels, and preferences                                               |   3   |
-| [ ] | `D03 T20 §1`  | Workspaces, panels, the Properties panel, and the Contextual Task Bar             |  27   |
-| [ ] | `D03 T20 §2`  | The toolbar and the options bar                                                   |  16   |
-| [ ] | `D03 T20 §3`  | Menus, shortcuts, and command search                                              |  15   |
-| [ ] | `D03 T20 §4`  | Preferences I: general, tools, cursors, units, guides, and type                   |  23   |
-| [ ] | `D03 T20 §9`  | Interface appearance, language, and accessibility display preferences             |  18   |
-| [ ] | `D03 T20 §5`  | Preferences II: files, performance, memory, and resources                         |  17   |
-| [ ] | `D03 T20 §6`  | Pen, touch, and input devices                                                     |  16   |
-| [ ] | `D03 T20 §7`  | The presets manager and resource libraries                                        |  15   |
-| [ ] | `D03 T20 §8`  | Help, learning, and diagnostics                                                   |  20   |
-| [ ] | `D03 T07 §18` | Performance I: the benchmark harness and the Gesso performance budget             |   9   |
-| [ ] | `D03 T07 §19` | Performance II: memory: tile cache, compression, history, and large-document open |  10   |
-| [ ] | `D03 T07 §20` | Performance III: SIMD hot paths, parallel compositing, and cold start             |  10   |
-| [ ] | `D03 T07 §16` | Accessibility and localization                                                    |   4   |
-| [ ] | `D03 T21 §12` | Gesso 1.0.0 (Phase 27): the parity catalog complete                               |  19   |
+|  ✔  | Section       | Deliverable                                                                               | Items |
+| :-: | ------------- | ----------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §28` | Re-plan Phase 27: Gesso parity XI: workspace, customization, preferences, and Gesso 1.0.0 |   6   |
+| [ ] | `D03 T07 §17` | Workspaces, panels, and preferences                                                       |   3   |
+| [ ] | `D03 T20 §1`  | Workspaces, panels, the Properties panel, and the Contextual Task Bar                     |  27   |
+| [ ] | `D03 T20 §2`  | The toolbar and the options bar                                                           |  16   |
+| [ ] | `D03 T20 §3`  | Menus, shortcuts, and command search                                                      |  15   |
+| [ ] | `D03 T20 §4`  | Preferences I: general, tools, cursors, units, guides, and type                           |  23   |
+| [ ] | `D03 T20 §9`  | Interface appearance, language, and accessibility display preferences                     |  18   |
+| [ ] | `D03 T20 §5`  | Preferences II: files, performance, memory, and resources                                 |  17   |
+| [ ] | `D03 T20 §6`  | Pen, touch, and input devices                                                             |  16   |
+| [ ] | `D03 T20 §7`  | The presets manager and resource libraries                                                |  15   |
+| [ ] | `D03 T20 §8`  | Help, learning, and diagnostics                                                           |  20   |
+| [ ] | `D03 T07 §18` | Performance I: the benchmark harness and the Gesso performance budget                     |   9   |
+| [ ] | `D03 T07 §19` | Performance II: memory: tile cache, compression, history, and large-document open         |  10   |
+| [ ] | `D03 T07 §20` | Performance III: SIMD hot paths, parallel compositing, and cold start                     |  10   |
+| [ ] | `D03 T07 §16` | Accessibility and localization                                                            |   4   |
+| [ ] | `D03 T21 §12` | Gesso 1.0.0 (Phase 27): the parity catalog complete                                       |  19   |
 
 ### Phase 28 -- Albumen foundation: spine, catalog, import, RAW, library
 
 Albumen is planned from nothing with `plan-new-feature` rigor and built on the spine the other two apps proved. The competitor survey is driven first so the plan is corrected by evidence; then the app is created on `Isotone.Core` and `Isotone.UI`, the RAW decoder is chosen with coverage, speed, and license measured, decoding is proven against a reference, the SQLite catalog and safe import land (the original-file guard joins the frozen set), and the preview cache, grid, and loupe make a 50,000-photo library usable.
 
-|  ✔  | Section      | Deliverable                                            | Items |
-| :-: | ------------ | ------------------------------------------------------ | :---: |
-| [ ] | `D01 T13 §5` | The Albumen map from Lightroom Classic's documentation |   5   |
-| [ ] | `D04 T01 §1` | The competitor survey, driven                          |   4   |
-| [ ] | `D04 T01 §2` | Create the Albumen app                                 |   8   |
-| [ ] | `D04 T01 §3` | The RAW decoder decision                               |   4   |
-| [ ] | `D04 T01 §4` | RAW decode with fidelity fixtures                      |   5   |
-| [ ] | `D04 T01 §5` | The catalog database                                   |   5   |
-| [ ] | `D04 T01 §6` | Import                                                 |   7   |
-| [ ] | `D04 T01 §7` | Thumbnails and the preview cache                       |   4   |
-| [ ] | `D04 T01 §8` | The library grid                                       |   6   |
-| [ ] | `D04 T01 §9` | Loupe, compare, and filmstrip                          |   6   |
+|  ✔  | Section       | Deliverable                                                                | Items |
+| :-: | ------------- | -------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §29` | Re-plan Phase 28: Albumen foundation: spine, catalog, import, RAW, library |   6   |
+| [ ] | `D01 T13 §5`  | The Albumen map from Lightroom Classic's documentation                     |   5   |
+| [ ] | `D04 T01 §1`  | The competitor survey, driven                                              |   4   |
+| [ ] | `D04 T01 §2`  | Create the Albumen app                                                     |   8   |
+| [ ] | `D04 T01 §3`  | The RAW decoder decision                                                   |   4   |
+| [ ] | `D04 T01 §4`  | RAW decode with fidelity fixtures                                          |   5   |
+| [ ] | `D04 T01 §5`  | The catalog database                                                       |   5   |
+| [ ] | `D04 T01 §6`  | Import                                                                     |   7   |
+| [ ] | `D04 T01 §7`  | Thumbnails and the preview cache                                           |   4   |
+| [ ] | `D04 T01 §8`  | The library grid                                                           |   6   |
+| [ ] | `D04 T01 §9`  | Loupe, compare, and filmstrip                                              |   6   |
 
 ### Phase 29 -- Albumen 0.1.0: develop, export, Edit in Gesso, release
 
 Albumen becomes a complete first release: keywords, collections, culling, and XMP sidecars finish the library; the edit stack, the develop pipeline on the suite develop engine that Phase 23 builds (`D01 T07`), the develop panel, crop, presets, and export make it a darkroom; Edit in Gesso hands photos to Gesso over files, never over assemblies; the user guide is written; and `albumen-v0.1.0` ships with the original-file guard proven on the installed build. The Albumen parity phases (30 to 39) follow before distribution.
 
-|  ✔  | Section       | Deliverable                                        | Items |
-| :-: | ------------- | -------------------------------------------------- | :---: |
-| [ ] | `D04 T01 §10` | Keywords, collections, and smart collections       |   4   |
-| [ ] | `D04 T01 §11` | Ratings, flags, labels, and XMP sidecars           |   4   |
-| [ ] | `D04 T01 §12` | Albumen's window follows the Lightroom Classic map |  10   |
-| [ ] | `D04 T02 §1`  | The edit stack                                     |   4   |
-| [ ] | `D04 T02 §2`  | The develop pipeline on the suite develop engine   |   6   |
-| [ ] | `D04 T02 §3`  | The develop panel                                  |   6   |
-| [ ] | `D04 T02 §4`  | Crop and straighten                                |   4   |
-| [ ] | `D04 T02 §5`  | Presets, copy and paste settings, and sync         |   3   |
-| [ ] | `D04 T02 §6`  | Export                                             |   4   |
-| [ ] | `D06 T01 §3`  | The Albumen user guide                             |   4   |
-| [ ] | `D04 T02 §7`  | Edit in Gesso                                      |   4   |
-| [ ] | `D04 T02 §8`  | Albumen 0.1.0                                      |   8   |
+|  ✔  | Section       | Deliverable                                                              | Items |
+| :-: | ------------- | ------------------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §30` | Re-plan Phase 29: Albumen 0.1.0: develop, export, Edit in Gesso, release |   6   |
+| [ ] | `D04 T01 §10` | Keywords, collections, and smart collections                             |   4   |
+| [ ] | `D04 T01 §11` | Ratings, flags, labels, and XMP sidecars                                 |   4   |
+| [ ] | `D04 T01 §12` | Albumen's window follows the Lightroom Classic map                       |  10   |
+| [ ] | `D04 T02 §1`  | The edit stack                                                           |   4   |
+| [ ] | `D04 T02 §2`  | The develop pipeline on the suite develop engine                         |   6   |
+| [ ] | `D04 T02 §3`  | The develop panel                                                        |   6   |
+| [ ] | `D04 T02 §4`  | Crop and straighten                                                      |   4   |
+| [ ] | `D04 T02 §5`  | Presets, copy and paste settings, and sync                               |   3   |
+| [ ] | `D04 T02 §6`  | Export                                                                   |   4   |
+| [ ] | `D06 T01 §3`  | The Albumen user guide                                                   |   4   |
+| [ ] | `D04 T02 §7`  | Edit in Gesso                                                            |   4   |
+| [ ] | `D04 T02 §8`  | Albumen 0.1.0                                                            |   8   |
 
 ### Phase 30 -- Albumen parity I: shared formats and the fast default viewer
 
@@ -920,6 +953,7 @@ The first pillar comes first. CAD and plotter drawings (DXF, DWG, HPGL, and CGM,
 
 |  ✔  | Section       | Deliverable                                                                               | Items |
 | :-: | ------------- | ----------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §31` | Re-plan Phase 30: Albumen parity I: shared formats and the fast default viewer            |   8   |
 | [ ] | `D04 T13 §1`  | The shared codec registry in Isotone.Core                                                 |  19   |
 | [ ] | `D04 T13 §2`  | Modern and HDR formats in Albumen                                                         |  15   |
 | [ ] | `D04 T13 §3`  | Common legacy and special raster formats                                                  |  18   |
@@ -947,6 +981,7 @@ The third pillar follows, because the viewer's quick edits run its operations. A
 
 |  ✔  | Section       | Deliverable                                                                      | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §32` | Re-plan Phase 31: Albumen parity II: batch tools and viewer quick edits          |   6   |
 | [ ] | `D04 T11 §1`  | The batch engine, the original-write policy, and the Activity Manager            |  21   |
 | [ ] | `D04 T11 §2`  | The token engine                                                                 |  20   |
 | [ ] | `D04 T11 §3`  | Batch rename                                                                     |  18   |
@@ -973,6 +1008,7 @@ The second pillar: any folder opens in Albumen without an import, with browsed p
 
 |  ✔  | Section       | Deliverable                                                          | Items |
 | :-: | ------------- | -------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §33` | Re-plan Phase 32: Albumen parity III: browse without importing       |   6   |
 | [ ] | `D04 T05 §1`  | The browse model: folders without import, browsed and library photos |  17   |
 | [ ] | `D04 T05 §2`  | The background indexer                                               |  16   |
 | [ ] | `D04 T05 §3`  | The folder tree, favorites, address bar, tabs, and home page         |  14   |
@@ -993,6 +1029,7 @@ Lightroom's and ACDSee's library catches up over both browsed and imported photo
 
 |  ✔  | Section       | Deliverable                                                                                    | Items |
 | :-: | ------------- | ---------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §34` | Re-plan Phase 33: Albumen parity IV: library, collections, search, and the catalog             |   6   |
 | [ ] | `D04 T06 §1`  | Library view extensions: cell styles, overlays, survey, and a second window                    |  21   |
 | [ ] | `D04 T06 §2`  | Culling extensions: label sets, flag and rating cycles, tagging, and auto advance              |  16   |
 | [ ] | `D04 T06 §3`  | Stacks, versions, and virtual copies                                                           |  13   |
@@ -1012,26 +1049,27 @@ Lightroom's and ACDSee's library catches up over both browsed and imported photo
 
 Metadata comes before the import extensions that apply it: every EXIF, IPTC, and XMP field read and tracked, sidecar and exported-copy writing, the opt-in embedding into originals through metadata-only rewriters, the metadata panel and properties pane, metadata presets, capture time editing, and keyword extensions; then the import window, file handling, import presets, phones and cameras over Windows Portable Devices, watched-folder auto import (the tethered workflow; tethering itself is backlog B-048), DNG conversion, scanning, and screen capture; then the map view with offline reverse geocoding and track logs. It ends with `albumen-v0.6.0`.
 
-|  ✔  | Section      | Deliverable                                                                         | Items |
-| :-: | ------------ | ----------------------------------------------------------------------------------- | :---: |
-| [ ] | `D04 T08 §1` | The metadata model: every EXIF, IPTC, and XMP field read and tracked                |  18   |
-| [ ] | `D04 T08 §8` | Writing metadata: sidecars, pending writes, and exported copies                     |  21   |
-| [ ] | `D04 T08 §9` | Embedding metadata into originals, opt-in                                           |  23   |
-| [ ] | `D04 T08 §2` | The metadata panel and properties pane                                              |  20   |
-| [ ] | `D04 T08 §3` | Metadata presets and synchronizing metadata                                         |  11   |
-| [ ] | `D04 T08 §4` | Capture time editing                                                                |  12   |
-| [ ] | `D04 T08 §5` | Keyword extensions                                                                  |  17   |
-| [ ] | `D04 T07 §1` | The import window extended                                                          |  16   |
-| [ ] | `D04 T07 §2` | File handling on import: previews, backup copies, renaming, and destination folders |  16   |
-| [ ] | `D04 T07 §3` | Apply during import and import presets                                              |  13   |
-| [ ] | `D04 T07 §4` | Phones and cameras over Windows Portable Devices                                    |  12   |
-| [ ] | `D04 T07 §5` | Auto import from watched folders                                                    |  11   |
-| [ ] | `D04 T07 §6` | Convert to DNG                                                                      |  10   |
-| [ ] | `D04 T07 §7` | Scanning and Copy Shop                                                              |  13   |
-| [ ] | `D04 T07 §8` | Screen capture                                                                      |  12   |
-| [ ] | `D04 T08 §6` | The map view and places                                                             |  20   |
-| [ ] | `D04 T08 §7` | Track logs, geotagging, and offline reverse geocoding                               |  13   |
-| [ ] | `D04 T15 §5` | Albumen 0.6.0 (Phase 34)                                                            |  16   |
+|  ✔  | Section       | Deliverable                                                                         | Items |
+| :-: | ------------- | ----------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §35` | Re-plan Phase 34: Albumen parity V: metadata, keywords, places, import, and capture |   7   |
+| [ ] | `D04 T08 §1`  | The metadata model: every EXIF, IPTC, and XMP field read and tracked                |  18   |
+| [ ] | `D04 T08 §8`  | Writing metadata: sidecars, pending writes, and exported copies                     |  21   |
+| [ ] | `D04 T08 §9`  | Embedding metadata into originals, opt-in                                           |  23   |
+| [ ] | `D04 T08 §2`  | The metadata panel and properties pane                                              |  20   |
+| [ ] | `D04 T08 §3`  | Metadata presets and synchronizing metadata                                         |  11   |
+| [ ] | `D04 T08 §4`  | Capture time editing                                                                |  12   |
+| [ ] | `D04 T08 §5`  | Keyword extensions                                                                  |  17   |
+| [ ] | `D04 T07 §1`  | The import window extended                                                          |  16   |
+| [ ] | `D04 T07 §2`  | File handling on import: previews, backup copies, renaming, and destination folders |  16   |
+| [ ] | `D04 T07 §3`  | Apply during import and import presets                                              |  13   |
+| [ ] | `D04 T07 §4`  | Phones and cameras over Windows Portable Devices                                    |  12   |
+| [ ] | `D04 T07 §5`  | Auto import from watched folders                                                    |  11   |
+| [ ] | `D04 T07 §6`  | Convert to DNG                                                                      |  10   |
+| [ ] | `D04 T07 §7`  | Scanning and Copy Shop                                                              |  13   |
+| [ ] | `D04 T07 §8`  | Screen capture                                                                      |  12   |
+| [ ] | `D04 T08 §6`  | The map view and places                                                             |  20   |
+| [ ] | `D04 T08 §7`  | Track logs, geotagging, and offline reverse geocoding                               |  13   |
+| [ ] | `D04 T15 §5`  | Albumen 0.6.0 (Phase 34)                                                            |  16   |
 
 ### Phase 35 -- Albumen parity VI: develop I, the panels
 
@@ -1039,6 +1077,7 @@ Develop's panels reach Lightroom and ACDSee on the suite develop engine: the ext
 
 |  ✔  | Section       | Deliverable                                                                                  | Items |
 | :-: | ------------- | -------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §36` | Re-plan Phase 35: Albumen parity VI: develop I, the panels                                   |   6   |
 | [ ] | `D04 T09 §1`  | The develop workspace extended: tool strip, views, reference, and overlays                   |  22   |
 | [ ] | `D04 T09 §2`  | History, snapshots, and the before state                                                     |  13   |
 | [ ] | `D04 T09 §17` | Saving develop results: leaving develop, new files, sidecars, and opt-in writes to originals |  17   |
@@ -1072,62 +1111,65 @@ Local work and the stages only ACDSee has: masking with brushes, gradients, rang
 
 AI comes after the library, metadata, and develop surfaces it feeds. Albumen maps every competitor AI job to a non-destructive, explainable feature on the shared AI core: the AI menu with the send gate and provenance, face detection through the vision model on explicit send with face naming, person keywords, and person search (recognition and the People view are backlog B-052 by the operator's decision of 2026-09-27), faces in the viewer and face regions in XMP, AI keywords, captions, and alt text, similar photos, assisted culling, AI develop masks, Enhance (denoise, raw details, super resolution), generative and distraction removal, lens blur with estimated depth, and adaptive presets with natural-language search. It ends with `albumen-v0.9.0`.
 
-|  ✔  | Section       | Deliverable                                                                  | Items |
-| :-: | ------------- | ---------------------------------------------------------------------------- | :---: |
-| [ ] | `D04 T10 §1`  | AI in Albumen: the AI menu, the send gate, provenance, and the AI data store |  21   |
-| [ ] | `D04 T10 §2`  | Face detection through the vision model                                      |  13   |
-| [ ] | `D04 T10 §3`  | Face naming, person keywords, and person search                              |  12   |
-| [ ] | `D04 T10 §12` | Faces in the viewer and face regions in XMP                                  |  14   |
-| [ ] | `D04 T10 §4`  | AI keywords, captions, alt text, and OCR                                     |  14   |
-| [ ] | `D04 T10 §5`  | Similar photos and visual duplicates                                         |  15   |
-| [ ] | `D04 T10 §6`  | Assisted culling                                                             |  12   |
-| [ ] | `D04 T10 §7`  | AI masks in develop                                                          |  15   |
-| [ ] | `D04 T10 §8`  | Enhance: denoise, raw details, and super resolution                          |  16   |
-| [ ] | `D04 T10 §9`  | Generative and distraction removal                                           |  10   |
-| [ ] | `D04 T10 §10` | Lens blur and depth                                                          |  12   |
-| [ ] | `D04 T10 §11` | Adaptive presets, AI auto settings, and natural-language search              |   9   |
-| [ ] | `D04 T15 §8`  | Albumen 0.9.0 (Phase 37)                                                     |  17   |
+|  ✔  | Section       | Deliverable                                                                   | Items |
+| :-: | ------------- | ----------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §37` | Re-plan Phase 37: Albumen AI: faces, keywords, similarity, culling, and masks |   6   |
+| [ ] | `D04 T10 §1`  | AI in Albumen: the AI menu, the send gate, provenance, and the AI data store  |  21   |
+| [ ] | `D04 T10 §2`  | Face detection through the vision model                                       |  13   |
+| [ ] | `D04 T10 §3`  | Face naming, person keywords, and person search                               |  12   |
+| [ ] | `D04 T10 §12` | Faces in the viewer and face regions in XMP                                   |  14   |
+| [ ] | `D04 T10 §4`  | AI keywords, captions, alt text, and OCR                                      |  14   |
+| [ ] | `D04 T10 §5`  | Similar photos and visual duplicates                                          |  15   |
+| [ ] | `D04 T10 §6`  | Assisted culling                                                              |  12   |
+| [ ] | `D04 T10 §7`  | AI masks in develop                                                           |  15   |
+| [ ] | `D04 T10 §8`  | Enhance: denoise, raw details, and super resolution                           |  16   |
+| [ ] | `D04 T10 §9`  | Generative and distraction removal                                            |  10   |
+| [ ] | `D04 T10 §10` | Lens blur and depth                                                           |  12   |
+| [ ] | `D04 T10 §11` | Adaptive presets, AI auto settings, and natural-language search               |   9   |
+| [ ] | `D04 T15 §8`  | Albumen 0.9.0 (Phase 37)                                                      |  17   |
 
 ### Phase 38 -- Albumen parity VIII: export, print, slideshows, web galleries, and books
 
 Output catches up with Lightroom's modules and ACDSee's creation tools: the extended export dialog, presets, metadata, watermarks, and post-processing, more export formats and DNG output, local publish folders, the print module with packages and templates, contact sheets, slideshows with music and PDF export (self-running EXE and screen-saver shows are backlog B-049), web galleries with upload to the user's own server, books, PDF and PowerPoint creation, and email. It ends with `albumen-v0.10.0`.
 
-|  ✔  | Section       | Deliverable                                                       | Items |
-| :-: | ------------- | ----------------------------------------------------------------- | :---: |
-| [ ] | `D04 T12 §1`  | Export extended: destinations, naming, formats, sizing, and color |  16   |
-| [ ] | `D04 T12 §13` | Export presets, metadata, watermarks, and post-processing         |  19   |
-| [ ] | `D04 T12 §2`  | Export formats and DNG output                                     |  12   |
-| [ ] | `D04 T12 §3`  | Publish to local folders                                          |  11   |
-| [ ] | `D04 T12 §4`  | Print I: the print module, page setup, and the print job          |  17   |
-| [ ] | `D04 T12 §5`  | Print II: packages, overlays, templates, and document printing    |  17   |
-| [ ] | `D04 T12 §6`  | Contact sheets                                                    |  14   |
-| [ ] | `D04 T12 §7`  | Slideshow I: templates, layout, overlays, and titles              |  14   |
-| [ ] | `D04 T12 §8`  | Slideshow II: playback, music, transitions, and export            |  16   |
-| [ ] | `D04 T12 §9`  | Web galleries                                                     |  17   |
-| [ ] | `D04 T12 §10` | Books                                                             |  14   |
-| [ ] | `D04 T12 §11` | PDF and PowerPoint creation                                       |  14   |
-| [ ] | `D04 T12 §12` | Email and local sharing                                           |  11   |
-| [ ] | `D04 T15 §9`  | Albumen 0.10.0 (Phase 38)                                         |  16   |
+|  ✔  | Section       | Deliverable                                                                                | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §38` | Re-plan Phase 38: Albumen parity VIII: export, print, slideshows, web galleries, and books |   6   |
+| [ ] | `D04 T12 §1`  | Export extended: destinations, naming, formats, sizing, and color                          |  16   |
+| [ ] | `D04 T12 §13` | Export presets, metadata, watermarks, and post-processing                                  |  19   |
+| [ ] | `D04 T12 §2`  | Export formats and DNG output                                                              |  12   |
+| [ ] | `D04 T12 §3`  | Publish to local folders                                                                   |  11   |
+| [ ] | `D04 T12 §4`  | Print I: the print module, page setup, and the print job                                   |  17   |
+| [ ] | `D04 T12 §5`  | Print II: packages, overlays, templates, and document printing                             |  17   |
+| [ ] | `D04 T12 §6`  | Contact sheets                                                                             |  14   |
+| [ ] | `D04 T12 §7`  | Slideshow I: templates, layout, overlays, and titles                                       |  14   |
+| [ ] | `D04 T12 §8`  | Slideshow II: playback, music, transitions, and export                                     |  16   |
+| [ ] | `D04 T12 §9`  | Web galleries                                                                              |  17   |
+| [ ] | `D04 T12 §10` | Books                                                                                      |  14   |
+| [ ] | `D04 T12 §11` | PDF and PowerPoint creation                                                                |  14   |
+| [ ] | `D04 T12 §12` | Email and local sharing                                                                    |  11   |
+| [ ] | `D04 T15 §9`  | Albumen 0.10.0 (Phase 38)                                                                  |  16   |
 
 ### Phase 39 -- Albumen parity IX: workspace, preferences, help, and Albumen 1.0.0
 
 The last parity phase customizes and audits the whole surface once it exists: modes and the module picker, toolbars, menus, pane layout, saved workspaces, and touch, the keymap with its alternative key sets, every preference page with the Originals group over the one opt-in policy, settings storage and portable mode with the administrator overlay that can lock the opt-ins off, help, languages, and updates, themes, external editors (with the suite's opt-in update check, `D05 T01 §4`, moved here from the distribution phase on 2026-09-27 because Albumen's Help menu is its first consumer), and the accessibility and localization audit (`D04 T02 §9`, moved here from the old Phase 32) over every parity surface. It ends with `albumen-v1.0.0`, which declares the parity catalog complete.
 
-|  ✔  | Section       | Deliverable                                                                       | Items |
-| :-: | ------------- | --------------------------------------------------------------------------------- | :---: |
-| [ ] | `D04 T14 §1`  | Modes, the module picker, and panels                                              |  12   |
-| [ ] | `D04 T14 §2`  | Toolbars, menus, pane layout, saved workspaces, and touch                         |  17   |
-| [ ] | `D04 T14 §3`  | The keymap and shortcuts                                                          |  15   |
-| [ ] | `D04 T14 §4`  | Preferences I: general, interface, file handling, and the viewer and browse pages |  15   |
-| [ ] | `D04 T14 §5`  | Preferences II: performance, caches, color management, and display                |  12   |
-| [ ] | `D04 T14 §6`  | Settings storage, portable mode, and migration                                    |  13   |
-| [ ] | `D04 T14 §10` | Originals: the opt-in write settings                                              |  12   |
-| [ ] | `D05 T01 §4`  | The update check                                                                  |   4   |
-| [ ] | `D04 T14 §7`  | Help, learning, languages, and updates                                            |  13   |
-| [ ] | `D04 T14 §8`  | Themes and appearance                                                             |   8   |
-| [ ] | `D04 T14 §9`  | External editors                                                                  |  15   |
-| [ ] | `D04 T02 §9`  | Accessibility and localization                                                    |   3   |
-| [ ] | `D04 T15 §10` | Albumen 1.0.0 (Phase 39): the parity catalog complete                             |  19   |
+|  ✔  | Section       | Deliverable                                                                          | Items |
+| :-: | ------------- | ------------------------------------------------------------------------------------ | :---: |
+| [ ] | `D00 T07 §39` | Re-plan Phase 39: Albumen parity IX: workspace, preferences, help, and Albumen 1.0.0 |   6   |
+| [ ] | `D04 T14 §1`  | Modes, the module picker, and panels                                                 |  12   |
+| [ ] | `D04 T14 §2`  | Toolbars, menus, pane layout, saved workspaces, and touch                            |  17   |
+| [ ] | `D04 T14 §3`  | The keymap and shortcuts                                                             |  15   |
+| [ ] | `D04 T14 §4`  | Preferences I: general, interface, file handling, and the viewer and browse pages    |  15   |
+| [ ] | `D04 T14 §5`  | Preferences II: performance, caches, color management, and display                   |  12   |
+| [ ] | `D04 T14 §6`  | Settings storage, portable mode, and migration                                       |  13   |
+| [ ] | `D04 T14 §10` | Originals: the opt-in write settings                                                 |  12   |
+| [ ] | `D05 T01 §4`  | The update check                                                                     |   4   |
+| [ ] | `D04 T14 §7`  | Help, learning, languages, and updates                                               |  13   |
+| [ ] | `D04 T14 §8`  | Themes and appearance                                                                |   8   |
+| [ ] | `D04 T14 §9`  | External editors                                                                     |  15   |
+| [ ] | `D04 T02 §9`  | Accessibility and localization                                                       |   3   |
+| [ ] | `D04 T15 §10` | Albumen 1.0.0 (Phase 39): the parity catalog complete                                |  19   |
 
 ### Phase 40 -- Distribution and the suite bundle
 
@@ -1158,57 +1200,59 @@ After the suite release (Phase 40), Gesso opens camera RAW files through the dec
 
 With every app released, the suite bundled (Phase 40), and the shared-decoder imports shipped (Phase 41), the automation the operator deferred to after the first release on 2026-09-26 runs as real sections, because on 2026-09-27 the operator worried "features will be left behind" and chose to plan it rather than keep it in the backlog. It is one suite-wide system in `Isotone.Core` and `Isotone.UI` (`D01 T10`), built first because all three apps consume it: recorded actions with conditional steps and playback as one undo step, the Actions panel and action files (Photoshop ATN import; Isotone action files are the format), C# scripting through Roslyn (MIT, already referenced by Gesso's scripting project; the one scripting language, chosen over Python through pythonnet and JavaScript through Jint or ClearScript, with every other language driving the apps through the automation server), the script editor and console, the automation server with the MCP server behind per-category permissions, the extension SDK beside the 8BF host of `D01 T09`, the command line, and the batch runner with droplets on Albumen's job engine moved to `Isotone.Core` (Albumen's own batch tools stay in `D04 T11`). Each app then gets its object model and automation surfaces (`D02 T19`, `D03 T22`, `D04 T17`), and the phase ends with `stilus-v1.2.0`, `gesso-v1.1.0`, and `albumen-v1.1.0`.
 
-|  ✔  | Section       | Deliverable                                                       | Items |
-| :-: | ------------- | ----------------------------------------------------------------- | :---: |
-| [ ] | `D01 T10 §1`  | The action model, the recorder, and playback                      |  18   |
-| [ ] | `D01 T10 §2`  | The Actions panel in Isotone.UI                                   |  15   |
-| [ ] | `D01 T10 §3`  | Action files and the action library                               |  16   |
-| [ ] | `D01 T10 §4`  | The scripting host                                                |  18   |
-| [ ] | `D01 T10 §5`  | The script editor and console                                     |  17   |
-| [ ] | `D01 T10 §6`  | The automation server and the MCP server                          |  15   |
-| [ ] | `D01 T10 §7`  | The extension SDK and the extension manager                       |  16   |
-| [ ] | `D01 T10 §8`  | The command line                                                  |  13   |
-| [ ] | `D01 T10 §9`  | The suite batch runner and droplets                               |  17   |
-| [ ] | `D02 T19 §1`  | The Stilus object model and recordable commands                   |  15   |
-| [ ] | `D02 T19 §2`  | Scripts, extensions, and macros in Stilus documents               |  14   |
-| [ ] | `D02 T19 §3`  | Batch processing and the command line in Stilus                   |  12   |
-| [ ] | `D02 T17 §12` | Stilus 1.2.0 (Phase 42)                                           |  16   |
-| [ ] | `D03 T22 §1`  | The Gesso object model, recordable commands, and actions in Gesso |  17   |
-| [ ] | `D03 T22 §2`  | Scripts in Gesso                                                  |  14   |
-| [ ] | `D03 T22 §3`  | Procedures and plug-ins in Gesso                                  |  16   |
-| [ ] | `D03 T22 §4`  | Extensions, the MCP server, and remote connections in Gesso       |  12   |
-| [ ] | `D03 T22 §5`  | Batch, droplets, the Image Processor, and headless runs           |  14   |
-| [ ] | `D03 T22 §6`  | Variables and data sets                                           |  10   |
-| [ ] | `D03 T21 §13` | Gesso 1.1.0 (Phase 42)                                            |  18   |
-| [ ] | `D04 T17 §1`  | Recorded actions in Albumen                                       |  16   |
-| [ ] | `D04 T17 §2`  | Albumen extension points                                          |  14   |
-| [ ] | `D04 T17 §3`  | The Albumen command line                                          |  15   |
-| [ ] | `D04 T15 §11` | Albumen 1.1.0 (Phase 42)                                          |  19   |
+|  ✔  | Section       | Deliverable                                                                                                             | Items |
+| :-: | ------------- | ----------------------------------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §40` | Re-plan Phase 42: Suite automation after the first release: actions, scripting, extensions, the command line, and batch |  10   |
+| [ ] | `D01 T10 §1`  | The action model, the recorder, and playback                                                                            |  18   |
+| [ ] | `D01 T10 §2`  | The Actions panel in Isotone.UI                                                                                         |  15   |
+| [ ] | `D01 T10 §3`  | Action files and the action library                                                                                     |  16   |
+| [ ] | `D01 T10 §4`  | The scripting host                                                                                                      |  18   |
+| [ ] | `D01 T10 §5`  | The script editor and console                                                                                           |  17   |
+| [ ] | `D01 T10 §6`  | The automation server and the MCP server                                                                                |  15   |
+| [ ] | `D01 T10 §7`  | The extension SDK and the extension manager                                                                             |  16   |
+| [ ] | `D01 T10 §8`  | The command line                                                                                                        |  13   |
+| [ ] | `D01 T10 §9`  | The suite batch runner and droplets                                                                                     |  17   |
+| [ ] | `D02 T19 §1`  | The Stilus object model and recordable commands                                                                         |  15   |
+| [ ] | `D02 T19 §2`  | Scripts, extensions, and macros in Stilus documents                                                                     |  14   |
+| [ ] | `D02 T19 §3`  | Batch processing and the command line in Stilus                                                                         |  12   |
+| [ ] | `D02 T17 §12` | Stilus 1.2.0 (Phase 42)                                                                                                 |  16   |
+| [ ] | `D03 T22 §1`  | The Gesso object model, recordable commands, and actions in Gesso                                                       |  17   |
+| [ ] | `D03 T22 §2`  | Scripts in Gesso                                                                                                        |  14   |
+| [ ] | `D03 T22 §3`  | Procedures and plug-ins in Gesso                                                                                        |  16   |
+| [ ] | `D03 T22 §4`  | Extensions, the MCP server, and remote connections in Gesso                                                             |  12   |
+| [ ] | `D03 T22 §5`  | Batch, droplets, the Image Processor, and headless runs                                                                 |  14   |
+| [ ] | `D03 T22 §6`  | Variables and data sets                                                                                                 |  10   |
+| [ ] | `D03 T21 §13` | Gesso 1.1.0 (Phase 42)                                                                                                  |  18   |
+| [ ] | `D04 T17 §1`  | Recorded actions in Albumen                                                                                             |  16   |
+| [ ] | `D04 T17 §2`  | Albumen extension points                                                                                                |  14   |
+| [ ] | `D04 T17 §3`  | The Albumen command line                                                                                                |  15   |
+| [ ] | `D04 T15 §11` | Albumen 1.1.0 (Phase 42)                                                                                                |  19   |
 
 ### Phase 43 -- Video, audio, and animation after the first release
 
 Video, audio, and frame animation were deferred with automation and are planned the same way (operator decision 2026-09-27, "features will be left behind"). The suite media stack comes first (`D01 T11`): Windows Media Foundation through Vortice.MediaFoundation (MIT, part of the Vortice.Windows family the operator approved on 2026-09-27) for decoding, encoding, and playback, XAudio2 through Vortice.XAudio2 for mixed audio, and an optional FFmpeg the user installs, run as an external process and never bundled or linked, for the containers Media Foundation cannot read (FLV among them), so either an LGPL or a GPL build is compatible and no patent-encumbered codec ships in Isotone's installers. Gesso then gains video layers, the Timeline, audio tracks, Render Video, frame animation with onion skin and tweening, animated GIF, APNG, WebP, MNG, and FLI authoring, and the animation filters (`D03 T23`); Albumen gains video and audio in the library, browse, the viewer, Media mode, image audio, trimming and frame extraction, and video slideshows, always writing new files unless the originals opt-in is on (`D04 T16`). It ends with `gesso-v1.2.0` and `albumen-v1.2.0`.
 
-|  ✔  | Section       | Deliverable                                               | Items |
-| :-: | ------------- | --------------------------------------------------------- | :---: |
-| [ ] | `D01 T11 §1`  | The media stack decision and decoding                     |  17   |
-| [ ] | `D01 T11 §2`  | Playback, the audio engine, and the media clock           |  14   |
-| [ ] | `D01 T11 §3`  | Encoding: render video and audio                          |  15   |
-| [ ] | `D01 T11 §4`  | The MediaTransport surface in Isotone.UI                  |  13   |
-| [ ] | `D03 T23 §1`  | Video layers and opening video                            |  21   |
-| [ ] | `D03 T23 §2`  | The Timeline panel                                        |  17   |
-| [ ] | `D03 T23 §3`  | Audio tracks and render video                             |  16   |
-| [ ] | `D03 T23 §4`  | Frame animation, onion skin, and tweening                 |  18   |
-| [ ] | `D03 T23 §5`  | Animated formats: GIF, APNG, WebP, MNG, and FLI authoring |  16   |
-| [ ] | `D03 T23 §6`  | Animation filters and temporal blur                       |  13   |
-| [ ] | `D03 T21 §14` | Gesso 1.2.0 (Phase 43)                                    |  18   |
-| [ ] | `D04 T16 §1`  | Video and audio in the library and browse                 |  14   |
-| [ ] | `D04 T16 §2`  | Video and audio playback in the viewer and the loupe      |  16   |
-| [ ] | `D04 T16 §3`  | Trim, poster frame, frame extraction, and video export    |  14   |
-| [ ] | `D04 T16 §4`  | Media mode                                                |  14   |
-| [ ] | `D04 T16 §5`  | Image audio                                               |  14   |
-| [ ] | `D04 T16 §6`  | Video in slideshows and slideshow video export            |  12   |
-| [ ] | `D04 T15 §12` | Albumen 1.2.0 (Phase 43)                                  |  19   |
+|  ✔  | Section       | Deliverable                                                           | Items |
+| :-: | ------------- | --------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §41` | Re-plan Phase 43: Video, audio, and animation after the first release |   8   |
+| [ ] | `D01 T11 §1`  | The media stack decision and decoding                                 |  17   |
+| [ ] | `D01 T11 §2`  | Playback, the audio engine, and the media clock                       |  14   |
+| [ ] | `D01 T11 §3`  | Encoding: render video and audio                                      |  15   |
+| [ ] | `D01 T11 §4`  | The MediaTransport surface in Isotone.UI                              |  13   |
+| [ ] | `D03 T23 §1`  | Video layers and opening video                                        |  21   |
+| [ ] | `D03 T23 §2`  | The Timeline panel                                                    |  17   |
+| [ ] | `D03 T23 §3`  | Audio tracks and render video                                         |  16   |
+| [ ] | `D03 T23 §4`  | Frame animation, onion skin, and tweening                             |  18   |
+| [ ] | `D03 T23 §5`  | Animated formats: GIF, APNG, WebP, MNG, and FLI authoring             |  16   |
+| [ ] | `D03 T23 §6`  | Animation filters and temporal blur                                   |  13   |
+| [ ] | `D03 T21 §14` | Gesso 1.2.0 (Phase 43)                                                |  18   |
+| [ ] | `D04 T16 §1`  | Video and audio in the library and browse                             |  14   |
+| [ ] | `D04 T16 §2`  | Video and audio playback in the viewer and the loupe                  |  16   |
+| [ ] | `D04 T16 §3`  | Trim, poster frame, frame extraction, and video export                |  14   |
+| [ ] | `D04 T16 §4`  | Media mode                                                            |  14   |
+| [ ] | `D04 T16 §5`  | Image audio                                                           |  14   |
+| [ ] | `D04 T16 §6`  | Video in slideshows and slideshow video export                        |  12   |
+| [ ] | `D04 T15 §12` | Albumen 1.2.0 (Phase 43)                                              |  19   |
 
 ### Phase 44 -- On-device models and the GPU develop path
 
@@ -1216,6 +1260,7 @@ Two accelerations wait for the apps to be complete (operator decision 2026-09-27
 
 |  ✔  | Section       | Deliverable                                                                | Items |
 | :-: | ------------- | -------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §42` | Re-plan Phase 44: On-device models and the GPU develop path                |   6   |
 | [ ] | `D01 T12 §1`  | The local inference runtime                                                |  14   |
 | [ ] | `D01 T12 §2`  | The model catalog, downloads, and license records                          |  15   |
 | [ ] | `D01 T12 §3`  | The Model Manager surface in Isotone.UI                                    |  14   |
