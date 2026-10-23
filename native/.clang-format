@@ -1,0 +1,7 @@
+# The native C and C++ format (D00 T05 §4), checked by scripts/native-format.ps1. A default: Microsoft's base style with
+# four deviations, which the C++ standard (D00 T04 §1) cites; changing it costs one reformat commit
+# (docs/dev/decisions.md, "2026-10-23: The native format style").
+BasedOnStyle: Microsoft
+ColumnLimit: 120
+PointerAlignment: Left
+IncludeBlocks: Regroup

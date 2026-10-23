@@ -25,6 +25,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(ISOTONE_VERSION "0.0.0" CACHE STRING "The version the build reports until versioning computes it from the tag")
 set(ISOTONE_SANITIZE "" CACHE STRING "A sanitizer every target builds with: empty, or address")
+option(ISOTONE_ANALYZE "Run MSVC code analysis (/analyze) on every target, its warnings errors under /WX" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CheckCompilerEnvironment)

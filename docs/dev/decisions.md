@@ -114,3 +114,8 @@ Each entry holds:
 - **Alternatives:** 14.52 (`/std:c++23`), still a release candidate due with Visual Studio 18.12, so not generally available on any of the three (it moves the standard switch when it is: `2026-10-22: The C++ language standard`); 14.44.35207, on both images but not on the development machine, and older; installing a toolset on the runner at every job, which costs minutes per job and drifts from what the images ship.
 - **Cost of changing:** when the images or the development machine move to a newer Visual Studio, run `toolchain-probe`, choose the newest toolset all three share, edit `native/toolchain.json` and this entry, and regenerate the test fixtures (`python scripts/tests/test_dev_env.py --write-fixtures`); `scripts/dev-env.ps1 -Check` refuses every build until the pin and the machine agree.
 
+## 2026-10-23: The native format style
+
+- **Decision (a default, D00 T05 §4):** `native/.clang-format` is clang-format's `Microsoft` base style with four deviations: `ColumnLimit: 120` (the suite's line length elsewhere), `PointerAlignment: Left` (`int* p`, the type owns the star), and `IncludeBlocks: Regroup` (includes grouped by kind, sorted within each group). `scripts/native-format.ps1 -Check` enforces it on every first-party source the next commit would carry, and the C++ standard (`D00 T04 §1`) cites it.
+- **Why a default:** no source or operator decision prefers one style; Microsoft's base matches the Windows code the suite reads most (the SDK and Microsoft Learn samples), and the deviations follow the rest of the repository.
+- **Cost of changing:** edit `native/.clang-format`, run `pwsh scripts/native-format.ps1 -Fix`, and commit the reformat as one commit; nothing else depends on the style.

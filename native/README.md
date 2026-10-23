@@ -51,6 +51,18 @@ python scripts/native-std-check.py artifacts/native/x64-debug                   
 pwsh scripts/dev-env.ps1 -Arch x64 -Run 'python scripts/native-pe-check.py artifacts/native/x64-release'  # every executable has control-flow guard, and CET on x64
 ```
 
+## Format and analysis
+
+Every first-party source is formatted by `.clang-format` and checked by `.clang-tidy` (the seven families the spec names, every warning an error) and by MSVC code analysis; all three start at zero findings, with no baseline to grow into:
+
+```powershell
+pwsh scripts/native-format.ps1 -Check     # clang-format on every source the next commit would carry (-Fix rewrites them)
+pwsh scripts/native-tidy.ps1              # clang-tidy over every translation unit in the x64 Debug compile database
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --preset x64-analyze; cmake --build --preset x64-analyze'   # /analyze
+```
+
+The tests take the same clang-tidy checks as the libraries. Under `/analyze`, test executables turn off C6326 alone, which GoogleTest's assertion macros raise in every test (`cmake/IsotoneTargets.cmake`).
+
 ## Packages
 
 vcpkg in manifest mode: `vcpkg.json` pins every port to one `builtin-baseline` (the registry commit `9eec002df1cd109f8f104cd966a763daf9751489`, release `2026.10.16`), and `vcpkg-configuration.json` adds the overlay triplets and no registry, so that baseline stays the only one. Every library links statically against the static CRT (`/MT`), built with the pinned MSVC toolset (each triplet sets `VCPKG_PLATFORM_TOOLSET_VERSION` to the pin's selector, which `dev-env.ps1 -Check` enforces). The `test` feature holds GoogleTest; an app build never requests it.

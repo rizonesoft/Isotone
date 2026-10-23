@@ -28,6 +28,11 @@ function(isotone_apply_flags target)
     # Microsoft Learn documents CET shadow-stack compatibility for x64 only.
     target_link_options(${target} PRIVATE /CETCOMPAT)
   endif()
+  if(ISOTONE_ANALYZE)
+    # Code analysis of first-party code only: headers included with angle brackets are external (/external:anglebrackets),
+    # and /analyze:external- skips them. /WX makes every analysis warning an error.
+    target_compile_options(${target} PRIVATE /analyze /analyze:external-)
+  endif()
   if(ISOTONE_SANITIZE STREQUAL "address")
     target_compile_options(${target} PRIVATE /fsanitize=address)
   elseif(NOT ISOTONE_SANITIZE STREQUAL "")
@@ -53,6 +58,12 @@ function(isotone_add_test name)
   add_executable(${name} ${ARG_UNPARSED_ARGUMENTS})
   target_link_libraries(${name} PRIVATE ${ARG_LINK} GTest::gtest GTest::gtest_main)
   isotone_apply_flags(${name})
+  if(ISOTONE_ANALYZE)
+    # WORKAROUND: GoogleTest's assertion macros expand `switch (0) case 0: default:` into the test's own source, which
+    # /analyze reports as C6326 (a constant compared with a constant) on every assertion; /analyze:external- covers
+    # external headers, not macro expansions, so the one warning is off for test executables only.
+    target_compile_options(${name} PRIVATE /wd6326)
+  endif()
   gtest_discover_tests(${name} DISCOVERY_MODE PRE_TEST)
   set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
 endfunction()

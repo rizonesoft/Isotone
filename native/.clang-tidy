@@ -1,0 +1,26 @@
+# The native clang-tidy checks (D00 T05 §4), run by scripts/native-tidy.ps1 over the x64 Debug compile database: the
+# seven families the spec names ("Warnings and analysis"), every warning an error, and headers reported only when they
+# live under native/ and outside the build tree. Each exclusion and its reason:
+#   modernize-use-trailing-return-type: the house style declares the return type first (D00 T04 §1).
+#   cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers: imaging code is full of format-defined constants;
+#     review asks for a named constant where a value carries meaning, which a lexical check cannot tell.
+#   portability-avoid-pragma-once: the suite builds with MSVC only, which supports #pragma once.
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,
+  -portability-avoid-pragma-once
+WarningsAsErrors: '*'
+HeaderFilterRegex: '[/\\]native[/\\]'
+ExcludeHeaderFilterRegex: '[/\\]artifacts[/\\]'
+# WORKAROUND: clang-cl does not implement MSVC's /Zc:preprocessor and /external:anglebrackets, which the compile
+# database carries for cl; it reports them unused, and the database's /WX makes that an error before any check runs.
+ExtraArgs: ['-Wno-unused-command-line-argument']
