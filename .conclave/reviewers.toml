@@ -16,12 +16,13 @@ schema_version = 2
 agent = "claude"
 model = "claude-opus-5-5"
 
-# GPT-6.1 Sol through the Codex CLI at xhigh, the highest effort Codex accepts, read-only sandbox (owner decision
-# 2026-10-22). It replaces GPT-6 Astra at medium (the 2026-10-21 pin): in Recto's three-way trial
-# (.conclave/reviewer-trial-2026-10-22.md there), Sol at xhigh found all three verified defects and the other two
-# pins two each, at about 2.3x Astra's wall time.
+# GPT-6.1 Sol through the Codex CLI at medium effort, read-only sandbox (operator decision 2026-10-23: "set the
+# reviewer effort level to medium", after two capacity outages at xhigh that day). Sol was pinned at xhigh, the highest
+# effort Codex accepts, on 2026-10-22, replacing GPT-6 Astra at medium (the 2026-10-21 pin): in Recto's three-way
+# trial (.conclave/reviewer-trial-2026-10-22.md there), Sol at xhigh found all three verified defects and the other
+# two pins two each, at about 2.3x Astra's wall time.
 [reviewer]
 name = "sol"
 cli = "codex"
 model = "gpt-6.1-sol"
-effort = "xhigh"
+effort = "medium"

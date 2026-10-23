@@ -95,3 +95,9 @@ Each entry holds:
 - **Decision:** the three planned apps take Solid icons on the same tile and band, chosen from three options each: "I think for Tinctura, C without the little black and white circle an without the pruple core. For folium, B. For Capio, A, without the red dot in the crosshairs." Tinctura is a ring of twelve hues, Capio four crop corners around a white crosshair, Folium a layout page with a header, columns, and InDesign's crossed placeholder frame.
 - **Where:** `scripts/build-app-icons.py` (now six apps; a file not written yet counts as stale instead of failing), `resources/icons/tinctura/`, `capio/`, `folium/` with each Suite card splash, `docs/design/app-icons.md`, and `resources/icons/README.md`. Each app's `§4` keeps the icon and still adds its accent tokens.
 
+## 2026-10-23: The reviewer at medium effort
+
+- **Decision:** the reviewer stays GPT-6.1 Sol through the Codex CLI, now at medium effort instead of xhigh (the operator: "set the reviewer effort level to medium"), after the reviewer returned "Selected model is at capacity" on two rounds that day.
+- **Where:** `effort = "medium"` in `.conclave/reviewers.toml`, the one review pin; `AGENTS.md` and the `independent-review` skill describe it. Every round from now on runs at medium: the independent pass, the panel, the completion review, the architecture gate, the plan review, and the stamp review.
+- **Cost of changing:** one value in the pin; the 2026-10-22 trial that chose xhigh (Sol found all three verified defects there) is the evidence for moving back if medium rounds miss defects.
+

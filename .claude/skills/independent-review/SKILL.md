@@ -9,7 +9,7 @@ Your own review is not enough for a nontrivial change: a different model reviews
 
 | Work written by | Reviewer | Fallback |
 | --- | --- | --- |
-| Claude Code on Opus 5.5 (the solo writer) | GPT-6.1 Sol, xhigh effort | none: a round Sol cannot return is retried with backoff and then parked |
+| Claude Code on Opus 5.5 (the solo writer) | GPT-6.1 Sol, medium effort | none: a round Sol cannot return is retried with backoff and then parked |
 
 The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` refuses a fallback or a second writer route (operator decisions 2026-09-25 and 2026-10-21). A TODO section never uses this skill: its panel, architecture, plan, stamp, and independent rounds run through the same dispatcher inside `review-todo-section` and `process-todo-section`.
 
