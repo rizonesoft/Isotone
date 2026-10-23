@@ -4,17 +4,17 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**200 findings across 16 sections.**
+**209 findings across 17 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 80 | fails under hostile or unexpected input |
-| `integration` | 59 | a consumer, caller, or downstream artifact no longer holds |
-| `source-defect` | 19 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 17 | the plan or the evidence misdescribes what happened |
-| `correctness` | 15 | the code does the wrong thing |
+| `adversarial` | 81 | fails under hostile or unexpected input |
+| `integration` | 64 | a consumer, caller, or downstream artifact no longer holds |
+| `source-defect` | 20 | a Win32 contract, registry layout, or other source read wrongly |
+| `record` | 18 | the plan or the evidence misdescribes what happened |
+| `correctness` | 16 | the code does the wrong thing |
 | `consistency` | 10 | disagrees with the rest of the suite, its naming, or its layout |
 
 ## By severity
@@ -22,8 +22,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 105 | wrong behavior in code, plan, or record |
-| `minor` | 95 | polish or wording, or no surviving defect |
+| `major` | 107 | wrong behavior in code, plan, or record |
+| `minor` | 102 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -229,3 +229,12 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §4` | F5 | minor | `correctness` | fixed | self | GoogleTest's assertion macros raise C6326 under /analyze |
 | `D00 T05 §5` | F1 | minor | `correctness` | fixed | self | the sanitized builds linked incrementally |
 | `D00 T05 §5` | F2 | minor | `integration` | fixed | self | the probe executable would have failed the registration guard |
+| `D00 T05 §6` | F1 | major | `adversarial` | fixed | independent | a failed dumpbin inspection passed as an image with no imports |
+| `D00 T05 §6` | F2 | major | `integration` | fixed | independent | a missing publish folder passed at 0.00 MB |
+| `D00 T05 §6` | F3 | minor | `source-defect` | fixed | independent | the build and vcpkg folders were assumed |
+| `D00 T05 §6` | F4 | minor | `integration` | fixed | independent | a missing named build folder was skipped beside one that passed |
+| `D00 T05 §6` | F5 | minor | `integration` | fixed | independent | a missing named vcpkg root was skipped beside a folder that passed |
+| `D00 T05 §6` | F6 | minor | `record` | fixed | independent | the delay-load fixture was derived, not recorded |
+| `D00 T05 §6` | F7 | minor | `integration` | fixed | independent | a preset's vcpkg root was skipped with its absent build folder |
+| `D00 T05 §6` | F8 | minor | `integration` | fixed | independent | every image under CMakeFiles was left out |
+| `D00 T05 §6` | F9 | minor | `correctness` | fixed | self | a root holding only a DLL exited as if nothing was checked |

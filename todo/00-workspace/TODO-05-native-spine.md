@@ -56,7 +56,7 @@ track: W5
 |   3   |   §3    | The CMake build, presets, and the test harness | §2 |  [x]   |
 |   4   |   §4    | The format, clang-tidy, and /analyze gates | §3 |  [x]   |
 |   5   |   §5    | The AddressSanitizer lane | §3 |  [x]   |
-|   6   |   §6    | The import and size gates | §3 |  [ ]   |
+|   6   |   §6    | The import and size gates | §3 |  [x]   |
 |   7   |   §7    | The native stages of check-all and the gate card | §4, §5, §6 |  [ ]   |
 |   8   |   §8    | CI for x64 and ARM64 | §7, D00 T04 §1 |  [ ]   |
 |   9   |   §9    | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget | §5, §8 |  [ ]   |
@@ -194,6 +194,12 @@ Each app's executable may import only Windows system DLLs, and each app's publis
 - [ ] Commit: `"workspace: the native import and size gates"`
 
 **Test checkpoint:** Driven run with evidence: the gate passes on `artifacts/native/x64-release` and `arm64-release` (quoted); a probe build of the test executable with `/MD` fails with `import-not-system` naming `VCRUNTIME140.dll` (quoted, then reverted); `--budget-mb 0.001` fails with `over-budget` (quoted); the self-test prints `0 failed`. Cheaper substitute that fails: a size check by eye in a release section, after the budget has already been blown.
+
+> **Verified:** 2026-10-23 | §6 | D00 T05 §6 at `6db6690`: `scripts/native-artifact-gate.py` checks every image the build produced in every configure preset's folder (read from `native/CMakePresets.json`) against `native/system-dlls.txt`, delay-loaded imports included, the sanitizer presets also against `native/sanitizer-dlls.txt`, every preset's vcpkg root (no DLL, static CRT only), and publish folders against `native/size-budget.json` (30 decimal MB, program databases excluded) backed by "2026-10-23: The output size budget"; the default run reads `9 image(s), 48 vcpkg file(s), 0 finding(s)`, x64 and ARM64 Release pass; the `/MD` test executable fails `import-not-system` naming `VCRUNTIME140.dll`, its libraries fail `crt-not-static`, a planted DLL fails `dll-in-vcpkg-tree`, a real `/DELAYLOAD` probe fails naming `isotone_plugin.dll (delay-loaded)`, missing named inputs fail `input-missing`, `--budget-mb 0.001` fails `over-budget`; the self-test prints `33 cases, 0 failed`; check-all: all gates passed
+> **Review:** round 2, candidate `0cc205d..c5ce4f6`(round 1), `0cc205d..6db6690`(round 2) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 2 of cap 33, gpt-6.1-sol medium; Round 1's integration P2, F8, fixed in 6db6690). Independent: gpt-6.1-sol medium via `scripts/review-dispatch.py`, four rounds (F1 to F7 fixed in b1d238b, d391658, and c5ce4f6), the fourth approving every lens. Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T05-s6.md. Attestation: docs/reviews/00-workspace/D00-T05-s6.attest.json
+> **Plan review:** gpt medium, filed D00 T05 §7, D00 T05 §8, D00 T04 §1 (12 findings: 10 filed and 1 backlog entry B-071 in 82cf784, 1 rejected) (run 20261023-D00-T05-S6-gpt)
+> **CRUD:** not applicable (a build gate and its policy files, with no user record, document, or setting)
+> **Duration:** 2026-10-23T14:34:59Z to 2026-10-23T15:22:33Z
 
 ## 7. The Native Stages of check-all and the Gate Card
 
