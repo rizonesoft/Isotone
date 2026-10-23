@@ -97,7 +97,7 @@ REVIEW_OID_RE = re.compile(
 )
 BARE_TODO_RE = re.compile(r"(?<![\w§])(?:D\d{2}\s+)?T\d{2}(?!\s*§)(?![\w-])")
 STAMP_RE = re.compile(
-    r"^>\s*\*\*(?P<kind>Verified|Deferred|Resolved|Review|Duration|CRUD|Verification|Implementer|Moved|Plan review|Reopened):\*\*\s*(?P<body>.+?)\s*$"
+    r"^>\s*\*\*(?P<kind>Verified|Deferred|Resolved|Review|Duration|CRUD|Verification|Implementer|Moved|Review pending|Plan review|Reopened):\*\*\s*(?P<body>.+?)\s*$"
 )
 # A reopened section names the finding that voided its proof: `<YYYY-MM-DD> |
 # <finding ref> | <reason>`. The validator requires the date, the bar, and a
@@ -384,6 +384,9 @@ class Section:
     # OUTSIDE the tree, in the file the body names (writers-and-reviewers §2).
     # The row and the cross-references stay; ready, plan and progress skip it.
     moved: str = ""
+    # `> **Review pending:** <UTC> candidate <range>: <reason>`: built, but the reviewer stayed unreachable through
+    # every retry (review-todo-section); never ready until the marker is removed when its review resumes.
+    review_pending: str = ""
 
 
 @dataclass
@@ -613,6 +616,10 @@ def parse_todo(path: Path) -> Todo:
                     target.implementer_body = body
             elif kind == "Moved" and current is not None:
                 current.moved = body
+            elif kind == "Review pending" and current is not None:
+                # review-todo-section: the reviewer stayed unreachable through every retry, so the section is parked
+                # until its review resumes; it is never ready meanwhile.
+                current.review_pending = body
             elif kind in ("Deferred", "Resolved"):
                 ref = DEFER_REF_RE.search(body)
                 item = DEFER_ITEM_RE.search(body)
@@ -3727,6 +3734,8 @@ def cmd_query(args) -> int:
             # A blocked or superseded file defers its sections, as plan_document does.
             if t.status in ("blocked", "superseded"):
                 missing.insert(0, f"file status {t.status}")
+            if s.review_pending:
+                missing.insert(0, f"review pending since {s.review_pending.split()[0]}")
             rows.append((t, num, s, missing))
 
     if what == "ready":
@@ -5434,6 +5443,8 @@ def plan_document(todos: list[Todo], by_key, by_id) -> dict:
                 status = "verified"
             elif s.moved or t.status in ("blocked", "superseded"):
                 status = "deferred"
+            elif s.review_pending:
+                status = "blocked"
             else:
                 status = "blocked" if unmet_dependencies(t, num, todos, by_key, by_id=by_id) else "ready"
             sections.append({"ref": ref, "path": t.path, "title": s.deliverable, "phase": int(phase),
@@ -9973,6 +9984,24 @@ An oversized section: the clean single-WARN shape (over-30-items).
                     cmd_query(argparse.Namespace(what="blocked", all=False))
                 check(f"query ready excludes a section of a {file_status} file", "Depends on the moved thing" in rbuf.getvalue(), False)
                 check(f"query blocked names the {file_status} file as the wait", f"waiting on: file status {file_status}" in bbuf.getvalue(), True)
+            # A section whose review is pending (the reviewer was unreachable, review-todo-section) is never ready and is
+            # listed as blocked with that reason, in query ready, query blocked, and query plan alike.
+            moved_path.write_text(SELF_TEST_TODO_MOVED.replace(
+                "## 2. Depends on the moved thing\n",
+                "## 2. Depends on the moved thing\n\n> **Review pending:** 2026-10-23T00:00:00Z candidate abc1234..def5678: reviewer unreachable\n",
+                1), encoding="utf-8")
+            rbuf, bbuf = _io.StringIO(), _io.StringIO()
+            with _ctx.redirect_stdout(rbuf), _ctx.redirect_stderr(_io.StringIO()):
+                cmd_query(argparse.Namespace(what="ready", all=False))
+            with _ctx.redirect_stdout(bbuf), _ctx.redirect_stderr(_io.StringIO()):
+                cmd_query(argparse.Namespace(what="blocked", all=False))
+            check("query ready excludes a section whose review is pending", "Depends on the moved thing" in rbuf.getvalue(), False)
+            check("query blocked names the pending review", "waiting on: review pending since 2026-10-23T00:00:00Z" in bbuf.getvalue(), True)
+            _pt = load_todos()
+            _pid, _pkey, _ = _section_state(_pt)
+            pending_doc = plan_document(_pt, _pkey, _pid)
+            check("query plan reports a pending review as blocked",
+                  next((r["status"] for r in pending_doc["sections"] if r["ref"] == "D93 T05 §2"), None), "blocked")
             moved_path.write_text(SELF_TEST_TODO_MOVED, encoding="utf-8")
             sbuf = _io.StringIO()
             with _ctx.redirect_stdout(sbuf), _ctx.redirect_stderr(_io.StringIO()):
