@@ -341,8 +341,9 @@ def suppression_findings(path, text):
             elif spec.startswith("push") and "," in spec:
                 found.append(finding(path, n, "suppression-unreasoned", "warning(push, <level>) lowers the warning level; not allowed"))
             elif spec == "suppress":
-                if len(rest.split()) != 1:
-                    found.append(finding(path, n, "suppression-unreasoned", "warning(suppress) names exactly one warning"))
+                # One numeric warning literal: a macro (ALL_CODE_ANALYSIS_WARNINGS) can expand to hundreds.
+                if not re.fullmatch(r"\s*\d+\s*", rest):
+                    found.append(finding(path, n, "suppression-unreasoned", "warning(suppress) names exactly one warning number"))
                 after = text[end + 1:].split("\n", 1)[0]
                 reason = re.match(r"[)\"\s]*(//|/\*)\s*(.*)", after)
                 if not reason or len(reason.group(2).strip(" /*:-").strip()) < 3:
@@ -665,6 +666,10 @@ def self_test():
     check("a suppress naming two warnings fails",
           rules(suppression_findings("native/probe.cpp", "#pragma warning(suppress: 6011 6387) // caller checks pointer")),
           ["suppression-unreasoned"])
+    for text in ("#pragma warning(suppress: ALL_CODE_ANALYSIS_WARNINGS) // caller validates arguments",
+                 "#pragma warning(suppress: ALL_CPPCORECHECK_WARNINGS) // caller validates arguments"):
+        check(f"a warning-group macro in suppress fails: {text[24:50]}",
+              rules(suppression_findings("native/probe.cpp", text)), ["suppression-unreasoned"])
     check("LoadLibraryW in a comment is not a call",
           loadlibrary_findings("native/a.cpp", "// Call LoadLibraryW(name) only after checking policy.\n/* LoadLibraryW(x) */",
                                [], set()), [])
