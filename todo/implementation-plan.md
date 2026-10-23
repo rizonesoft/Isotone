@@ -174,17 +174,17 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T02 §5`  | The assertion library decision and the decision log                                      |   5   |
 | [x] | `D00 T05 §1`  | The toolchain pin and the developer environment                                          |   8   |
 | [ ] | `D00 T05 §2`  | The vcpkg manifest, baseline, and triplets                                               |   7   |
-| [ ] | `D00 T05 §3`  | The CMake build, presets, and the test harness                                           |  10   |
+| [ ] | `D00 T05 §3`  | The CMake build, presets, and the test harness                                           |  11   |
 | [ ] | `D00 T05 §4`  | The format, clang-tidy, and /analyze gates                                               |   5   |
 | [ ] | `D00 T05 §5`  | The AddressSanitizer lane                                                                |   4   |
-| [ ] | `D00 T05 §6`  | The import and size gates                                                                |   6   |
+| [ ] | `D00 T05 §6`  | The import and size gates                                                                |   7   |
 | [ ] | `D00 T05 §7`  | The native stages of check-all and the gate card                                         |   5   |
 | [ ] | `D00 T04 §1`  | The C++ standard, the dependency register, and the register gate                         |   9   |
-| [ ] | `D00 T05 §8`  | CI for x64 and ARM64                                                                     |   7   |
+| [ ] | `D00 T05 §8`  | CI for x64 and ARM64                                                                     |   8   |
 | [ ] | `D00 T05 §9`  | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget              |   6   |
 | [ ] | `D00 T05 §10` | The proof standard for C++                                                               |   4   |
 | [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |   9   |
-| [ ] | `D00 T04 §3`  | The native advisory job                                                                  |   6   |
+| [ ] | `D00 T04 §3`  | The native advisory job                                                                  |   7   |
 | [ ] | `D00 T06 §1`  | Retarget the gates that read the C# sources                                              |   4   |
 | [ ] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   8   |
 | [ ] | `D00 T06 §3`  | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code |  13   |
