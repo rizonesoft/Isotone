@@ -320,26 +320,32 @@ def suppression_findings(path, text):
                 found.append(finding(path, n, "suppression-unreasoned", "a NOLINT names exactly one check"))
             elif len(rest.strip(" :-").strip()) < 3:
                 found.append(finding(path, n, "suppression-unreasoned", "a NOLINT carries its reason on the same line"))
-    # #pragma, __pragma, and _Pragma are one directive to MSVC, and a directive may span lines, so the whole text is
-    # matched (\s crosses line ends); disable and a level push both silence warnings.
-    for m in PRAGMA_WARNING_RE.finditer(text):
+    # #pragma, __pragma, and _Pragma are one directive to MSVC. Line splices are joined (each replaced by spaces of the
+    # same length, so offsets and line numbers hold), the directive's parentheses are balanced across lines, and each
+    # semicolon-separated clause is judged by its specifier: disable and a level push silence warnings, and suppress
+    # needs its reason in a comment on the line the directive ends.
+    spliced = re.sub(r"\\\r?\n", lambda s: " " * len(s.group(0)), text)
+    for m in PRAGMA_WARNING_RE.finditer(spliced):
         n = text.count("\n", 0, m.start()) + 1
-        kind = m.group(2)
-        if kind == "disable":
-            found.append(finding(path, n, "suppression-unreasoned", "warning(disable) is not allowed in a source"))
-        elif kind == "push" and m.group(3):
-            found.append(finding(path, n, "suppression-unreasoned", "warning(push, <level>) lowers the warning level; not allowed"))
-        elif kind == "suppress":
-            # The reason is a comment after the directive on the line it ends, never the code that follows it.
-            rest = text[m.end():].split("\n", 1)[0]
-            reason = re.match(r"[)\"\s]*(//|/\*)\s*(.*)", rest)
-            if not reason or len(reason.group(2).strip(" /*:-").strip()) < 3:
-                found.append(finding(path, n, "suppression-unreasoned", "warning(suppress) carries its reason in a comment on the same line"))
+        body = call_text(spliced, m.end() - 1)
+        end = m.end() + len(body)
+        for clause in body.split(";"):
+            spec, _, rest = clause.partition(":")
+            spec = spec.strip()
+            if spec == "disable":
+                found.append(finding(path, n, "suppression-unreasoned", "warning(disable) is not allowed in a source"))
+            elif spec.startswith("push") and "," in spec:
+                found.append(finding(path, n, "suppression-unreasoned", "warning(push, <level>) lowers the warning level; not allowed"))
+            elif spec == "suppress":
+                after = text[end + 1:].split("\n", 1)[0]
+                reason = re.match(r"[)\"\s]*(//|/\*)\s*(.*)", after)
+                if not reason or len(reason.group(2).strip(" /*:-").strip()) < 3:
+                    found.append(finding(path, n, "suppression-unreasoned",
+                                         "warning(suppress) carries its reason in a comment on the line the directive ends"))
     return found
 
 
-PRAGMA_WARNING_RE = re.compile(r"(#\s*pragma|__pragma\s*\(|_Pragma\s*\(\s*\")\s*warning\s*\(\s*(disable|push|suppress)\s*"
-                               r"(,)?[^)]*\)")
+PRAGMA_WARNING_RE = re.compile(r"(#\s*pragma\s+|__pragma\s*\(\s*|_Pragma\s*\(\s*\")warning\s*\(")
 
 
 def cmake_suppression_findings(path, text):
@@ -400,7 +406,7 @@ def loadlibrary_findings(path, text, system_patterns, modules):
     for m in LOAD_RE.finditer(text):
         line = text.count("\n", 0, m.start()) + 1
         args = call_text(text, m.end() - 1)
-        literal = re.match(r'\s*L?"([^"]+)"', args)
+        literal = re.fullmatch(r'L?"([^"]+)"', call_arguments(args)[0])
         name = literal.group(1) if literal else None
         system = name is not None and any(fnmatch.fnmatchcase(name.lower(), p) for p in system_patterns)
         registered = name is not None and name.lower() in modules
@@ -612,6 +618,16 @@ def self_test():
     check("an exact flag with a non-search LOAD_ constant passes",
           loadlibrary_findings("native/probe.cpp", 'LoadLibraryExW(L"isoplug.dll", nullptr, '
                                'LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_REQUIRE_SIGNED_TARGET);', [], {"isoplug.dll"}), [])
+    check("a compound pragma's disable clause fails",
+          rules(suppression_findings("native/probe.cpp", "#pragma warning(default: 6011; disable: 6387)")),
+          ["suppression-unreasoned"])
+    check("a backslash-continued disable fails",
+          rules(suppression_findings("native/probe.cpp", "#pragma warning(" + chr(92) + "\ndisable: 4996)")),
+          ["suppression-unreasoned"])
+    check("a level change of one warning passes", suppression_findings("native/probe.cpp", "#pragma warning(4: 4996)"), [])
+    check("a computed module name beginning with a literal does not resolve",
+          rules(loadlibrary_findings("native/probe.cpp", 'LoadLibraryExW(L"kernel32.dll" + offset, nullptr, '
+                                     'LOAD_LIBRARY_SEARCH_SYSTEM32);', ["kernel32.dll"], set())), ["loadlibrary-unresolved"])
     check("#pragma warning(push) alone, with no level, passes", suppression_findings("native/a.cpp", "#pragma warning(push)"), [])
     for text in ("target_compile_options(isotone_core PRIVATE -wd4996)", "target_compile_options(isotone_core PRIVATE /W1)",
                  "target_compile_options(isotone_core PRIVATE -w)"):
