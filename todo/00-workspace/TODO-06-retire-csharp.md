@@ -51,7 +51,7 @@ track: W6
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | Retarget the gates that read the C# sources | D00 T05 §8, D00 T04 §1 |  [ ]   |
 |   2   |   §2    | Retire the .NET release path, pins, Dependabot ecosystem, and automations | §1, D00 T04 §3 |  [ ]   |
-|   3   |   §3    | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code | §2 |  [ ]   |
+|   3   |   §3    | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code | §2, D00 T05 §10 |  [ ]   |
 
 ---
 

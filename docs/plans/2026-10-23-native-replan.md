@@ -48,7 +48,7 @@ A re-plan section is done only when all of these hold for the files it owns, and
 
 - Every section is in the map below with a final treatment, and no open section names WPF, XAML, .NET, `dotnet`, or a C# project as its implementation.
 - Every Test checkpoint cites a gate that exists or that an earlier section in the dependency graph creates.
-- `validate` reports no FATAL and no new WARN, `plan --check` and `todo-claims.py` pass, every parity catalog row resolves, and `query ready` starts with the native spine.
+- `validate` reports no FATAL and no new WARN, `plan --check` and `todo-claims.py` pass, every parity catalog row resolves, no file is parked for the re-plan and no map row reads `pending`, and every row `query ready` lists is written for the native stack.
 - The last re-plan section runs `groom-plan` over the whole tree and a plan review whose final round returns no P1 or P2.
 
 ## The supersession map

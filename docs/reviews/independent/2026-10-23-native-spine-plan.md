@@ -298,3 +298,48 @@ Every finding was verified against the files, the scripts, or the cited document
 5. P1, retiring the .NET pins jobs could leave `pins.yml` with no jobs: verified. `D00 T06 §2` now depends on `D00 T04 §3`, so the native advisory job exists first.
 6. P2, the CMake component was missing from the pin: verified against Microsoft's component catalog. `Microsoft.VisualStudio.Component.VC.CMake.Project` is in the required components.
 7. P2, vcpkg's dependency builds can take a different Windows SDK: verified (vcpkg runs its own `vcvarsall`). `dev-env -Check` fails when an SDK newer than the pin is installed, so the pin is the newest on every build machine, and the §2 checkpoint reads the SDK version in the dependency builds' include and library paths.
+
+## Round 7: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T01:36:38Z
+- Effort: xhigh
+- Lines: 24
+- Digest: 7e83a281d92f2712
+
+### adversarial: needs-attention
+
+1. P1 `todo/00-workspace/TODO-07-native-replan.md:97`: Gating only sections without internal dependencies leaves open successors of stamped sections unguarded. Applying this rule in memory leaves `D00 T01 §5`, `§7`, `§9`, and `§10` resolving with exit 0 while `D00 T07 §1` remains unstamped. Their stamped prerequisites do not propagate the new dependency. Gate the open entry points without changing stamped sections.
+2. P2 `todo/00-workspace/TODO-05-native-spine.md:72`: The environment check omits `clang-cl`, although line 71 explicitly pins it and §9 uses it for fallback fuzzing. Selecting a different `clang-cl` while retaining matching `clang-tidy` and `clang-format` passes the prescribed comparisons. Require its version check and a mismatch fixture.
+
+### consistency: needs-attention
+
+3. P1 `todo/00-workspace/TODO-07-native-replan.md:151`: The checkpoint requires rewritten work in `query ready` before its owner can be stamped, while line 147 requires that work to remain blocked until that stamp. An in-memory `D01 T02 §1` check returns 4 before the owner’s stamp and 0 afterward. This repeated checkpoint needs separate pre-stamp and post-stamp expectations.
+4. P2 `todo/00-workspace/TODO-07-native-replan.md:717`: Requiring the plan document’s entire Acceptance to hold makes the final audit impossible. Its line 51 still requires `query ready` to start with the native spine, which will already be completed by Phase 44. Replace that initial-state condition with a completion-state condition.
+
+### integration: needs-attention
+
+5. P2 `todo/00-workspace/TODO-06-retire-csharp.md:95`: This consumes the proof standard from `D00 T05 §10` without depending on it. With §9 and §10 unfinished and the other prerequisites completed, `D00 T06 §3` resolves with exit 0. A parked fuzzing review can therefore let retirement switch the authoring skills before their canonical proof migration lands. Add the prerequisite edge.
+
+### source-defect: needs-attention
+
+6. P2 `todo/00-workspace/TODO-05-native-spine.md:71`: The pin conflates the compiler’s reported version with the toolset selector passed to `-vcvars_ver` and vcpkg. Here, `cl` reports `19.51.36260`, while its toolset directory is `14.51.36231`. Microsoft requires `-vcvars_ver` to match the toolset directory version. Record the selector and expected compiler version separately. [Microsoft’s selection rules](https://learn.microsoft.com/en-us/cpp/overview/acquire-msvc?view=msvc-170#visual-studio-command-prompt).
+
+### record: needs-attention
+
+7. P3 `todo/00-workspace/TODO-05-native-spine.md:16`: The Current state records 19 Python gates, but `scripts/check-all.ps1` contains 20 `Invoke-PythonGate` invocations. Counting those calls reproduces the discrepancy.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 7
+
+Every finding was verified against the files, the machine, or the cited documentation and is real.
+
+1. P1, gating only internal entry sections left open successors of stamped sections unguarded: verified (`D00 T01 §5`, `§7`, `§9`, `§10`). The edge now goes on every open section whose Depends On names no other open section of its own file, stamped sections untouched.
+2. P2, `clang-cl` was pinned but never checked: verified. `dev-env -Check` reads its version, with a mismatch fixture.
+3. P1, the re-plan checkpoint required a row to be ready before the stamp that unblocks it: verified. Before the stamp, `resolve` on each open entry point must exit 4 naming the section; the stamp step re-runs it afterwards.
+4. P2, the final audit required an initial-state condition: verified. The plan document's Acceptance now states completion conditions (no parked file, no pending map row, every listed ready row native), and the final audit checks those.
+5. P2, the C# removal consumed the C++ proof standard without depending on it: verified. `D00 T06 §3` depends on `D00 T05 §10`.
+6. P2, the pin conflated the toolset selector with the compiler version: verified on this machine (`cl.exe` in toolset folder 14.51.36231 reports 19.51.36260). `native/toolchain.json` records the selector, which `-vcvars_ver` and the triplets take, and the compiler version `cl` prints, and `dev-env` checks each against its own source.
+7. P3, the Python gate count was 19: verified (20 since `ci_watch.py` joined). Corrected.
