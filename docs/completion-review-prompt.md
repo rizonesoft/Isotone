@@ -30,4 +30,6 @@ For each capability the section adds or changes, check every entry point and com
 
 ## Reply format
 
+A gap is something a real user of the app would hit: an entry point, companion, or behavior the shipped feature lacks in real use, never a contrived scenario (a forged file, a tampered clock, an attacker who already controls the machine).
+
 First line: `CANDIDATE: <the commit range's tip sha>`, the receipt that you read this candidate. Then one numbered line per gap, numbered from 1, tagged right after its number `in-scope` (the section's contract or its parity rows cover it) or `out-of-scope` (another section must own it), naming the missing entry point or behavior and the file and line where it should be, or the map entry it fails. Then `HIGHEST: P1`, `P2`, `P3`, or `none` (a missing entry point a user needs to reach the feature is P1), and a final line `OVERALL: complete` or `OVERALL: incomplete`. Continue a finding only on indented lines. `OVERALL: complete` means no gap and `HIGHEST: none`. `scripts/completion_check.py` refuses any other shape. If you could not read the candidate, say why in one line and end with `OVERALL: blocked`.

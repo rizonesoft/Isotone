@@ -101,3 +101,9 @@ Each entry holds:
 - **Where:** `effort = "medium"` in `.conclave/reviewers.toml`, the one review pin; `AGENTS.md` and the `independent-review` skill describe it. Every round from now on runs at medium: the independent pass, the panel, the completion review, the architecture gate, the plan review, and the stamp review.
 - **Cost of changing:** one value in the pin; the 2026-10-22 trial that chose xhigh (Sol found all three verified defects there) is the evidence for moving back if medium rounds miss defects.
 
+## 2026-10-23: Proportional review findings
+
+- **Decision:** with the reviewer at medium effort, every review prompt carries a proportionality rule (the operator chose "Medium + proportionality": "a finding must be a failure that can happen in this repo's real operation; contrived attacker/clock-tampering scenarios are P3 (so the loop stops on them from round 9)"). A scenario that needs an attacker who already controls the machine or repository, a tampered or replayed clock, a hand-forged file, record, or tag, or an input no real program produces is `P3` at most, and every `P1` or `P2` names the real path that triggers it. The completion review counts only gaps a real user would hit.
+- **Where:** the severity paragraph of `docs/review-round-prompt.md` (the independent, plan, and stamp rounds), the panel prompt in `.claude/skills/review-todo-section/SKILL.md`, and `docs/completion-review-prompt.md`.
+- **Cost of changing:** one paragraph in each of those three prompts.
+
