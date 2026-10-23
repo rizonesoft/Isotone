@@ -5,10 +5,11 @@ loaded only through `scripts/review-dispatch.py`'s `load_pin`, where its rules l
 that dispatcher (operator decision 2026-10-21, "Full adoption", which retired the panel slots this module used to
 resolve). This module adds Isotone's own rules on top and guards the writer's subagents:
 
-- Claude Code is the only writer (operator decision), so the pin routes `claude` and nothing else.
-- The claude route names one reviewer and no fallback (operator decisions 2026-09-25 and 2026-10-21): a round that
-  reviewer cannot return waits for the operator, and the writer's family never reviews (the dispatcher refuses a
-  same-family reviewer on its own).
+- Claude Code on Opus 5.5 is always the solo writer (operator decision 2026-10-23), so the pin (schema 2) holds one
+  `[writer]`, and this module refuses a pin whose writer model is not WRITER.
+- The pin holds one `[reviewer]` and no fallback (operator decisions 2026-09-25 and 2026-10-21): a round that reviewer
+  cannot return is retried with backoff and then parks only its section (operator decision 2026-10-23), and the
+  writer's family never reviews (the dispatcher refuses a same-family reviewer on its own).
 - The delegate pin (operator decision 2026-10-01): every `.claude/agents/*.md` definition names the `sonnet` alias
   and `high` effort explicitly (a bare `model: sonnet` override ran at medium, measured 2026-10-01). DELEGATE_ALIASES
   and DELEGATE_EFFORTS are closed. DELEGATE holds what the alias served at the last `delegate-probe`, and WRITER the

@@ -733,6 +733,14 @@ def _episode_from_run_file(root: str, run_file: str) -> list[tuple[str, str, str
     return out
 
 
+def green_evidence(evidence: str, green: str, workflow: str) -> bool:
+    """Whether `evidence` is a green read-back of `workflow` at `green`: the `ci-wait:` line a push read-back prints, or
+    the `ci-watch:` line `scripts/ci_watch.py --dispatch` prints for a scheduled workflow it re-ran on main (a repair
+    push never re-runs one, operator question 2026-10-23). Both name the sha and the workflow and say `success`."""
+    want = re.compile(rf"\Aci-wa(?:it|tch): {re.escape(green[:12])}[0-9a-f]* {re.escape(workflow)} success\b")
+    return bool(green) and bool(workflow) and bool(want.match(evidence or ""))
+
+
 def repair(root: str, action: str, red: str = "", commit: str = "", green: str = "",
            workflow: str = "", run_file: str = "", evidence: str = "", run_id: str = "") -> tuple[int, str]:
     """The CI repair episode, persisted beside the guard state so a
@@ -821,10 +829,10 @@ def repair(root: str, action: str, red: str = "", commit: str = "", green: str =
                 raise GuardError("repair close needs --green <sha>")
             if not ep:
                 return 0, "repair: no open episode to close"
-            want = re.compile(rf"\Aci-wait: {re.escape(green[:12])}[0-9a-f]* {re.escape(workflow or ep.get('workflow', ''))} success\b")
-            if not want.match(evidence or ""):
+            if not green_evidence(evidence, green, workflow or ep.get("workflow", "")):
                 raise GuardError("repair close needs --evidence with the green ci-wait line for this sha and "
-                                 "workflow (an authorized no-run is not green)")
+                                 "workflow, or the green ci-watch line of a dispatched run (an authorized no-run is "
+                                 "not green)")
             last = ep["attempts"][-1]["commit"] if ep["attempts"] else ep["episode"]
             rc, _ = _git_text(root, "merge-base", "--is-ancestor", last, green)
             if rc != 0:
@@ -1275,6 +1283,15 @@ def _self_test() -> int:
         else:
             failed += 1
             print(f"FAIL {name} {detail}")
+
+    sha = "0123456789abcdef0123456789abcdef01234567"
+    check("evidence-ci-wait-green", green_evidence(f"ci-wait: {sha[:12]} build success https://x", sha, "build"))
+    check("evidence-ci-watch-dispatched-green",
+          green_evidence(f"ci-watch: {sha} pins success run 42 https://x", sha, "pins"))
+    check("evidence-refuses-a-red-dispatch", not green_evidence(f"ci-watch: {sha} pins failure run 42", sha, "pins"))
+    check("evidence-refuses-another-workflow", not green_evidence(f"ci-watch: {sha} fuzz success", sha, "pins"))
+    check("evidence-refuses-another-sha", not green_evidence(f"ci-watch: {'f' * 40} pins success", sha, "pins"))
+    check("evidence-refuses-another-prefix", not green_evidence(f"ci-wa: {sha} pins success", sha, "pins"))
 
     with tempfile.TemporaryDirectory(prefix="campaign-guard-") as tmpd:
         root = _workspace(tmpd)

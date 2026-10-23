@@ -21,6 +21,7 @@ is exit 2, never a green report. Stdlib only.
 import argparse
 from datetime import datetime, timedelta, timezone
 import json
+import re
 import subprocess
 import sys
 import time
@@ -30,11 +31,16 @@ FIELDS = "databaseId,workflowName,status,conclusion,createdAt,event,headSha,url"
 
 
 def gh(args):
-    """Run `gh` with these arguments and return its parsed JSON output (None when it prints nothing)."""
+    """Run `gh` with these arguments and return its stdout as text; each caller parses what it expects."""
     result = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=120)
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or f"gh {' '.join(args[:2])} exited {result.returncode}")
-    return json.loads(result.stdout) if result.stdout.strip() else None
+    return result.stdout
+
+
+def gh_json(runner, args):
+    text = runner(args)
+    return json.loads(text) if text and text.strip() else None
 
 
 def red_runs(runs):
@@ -51,30 +57,51 @@ def red_runs(runs):
 def fetch(runner=gh, per_workflow=20):
     """Every active workflow's recent runs on main, read one workflow at a time."""
     runs = []
-    for workflow in runner(["workflow", "list", "--json", "id,name,state,path"]) or []:
+    for workflow in gh_json(runner, ["workflow", "list", "--json", "id,name,state,path"]) or []:
         if workflow.get("state") != "active":
             continue
-        runs += runner(["run", "list", "--workflow", str(workflow["id"]), "--branch", "main",
-                        "--limit", str(per_workflow), "--json", FIELDS]) or []
+        runs += gh_json(runner, ["run", "list", "--workflow", str(workflow["id"]), "--branch", "main",
+                                 "--limit", str(per_workflow), "--json", FIELDS]) or []
     return runs
+
+
+RUN_URL = re.compile(r"/actions/runs/(\d+)")
 
 
 def dispatch_and_wait(workflow, runner=gh, now=lambda: datetime.now(timezone.utc), sleep=time.sleep,
                       timeout=3600, poll=20):
-    """Start `workflow` on main and wait for the run it started. Returns (exit code, run or reason)."""
-    started = now() - timedelta(seconds=60)  # tolerate clock skew between this machine and GitHub
-    runner(["workflow", "run", workflow, "--ref", "main"])
+    """Start `workflow` on main and wait for exactly the run it started. Returns (exit code, run or reason).
+
+    The run is identified by the URL `gh workflow run` prints for the run it created. Without that URL, the run is the
+    only `workflow_dispatch` run of the workflow created after the dispatch; when there is more than one, the result is
+    unverifiable (exit 2), never a guess, so an older or a concurrent run can never answer for this one."""
+    started = now()
+    output = runner(["workflow", "run", workflow, "--ref", "main"]) or ""
+    match = RUN_URL.search(output)
+    run_id = match.group(1) if match else None
     deadline = now() + timedelta(seconds=timeout)
     while now() < deadline:
-        runs = runner(["run", "list", "--workflow", workflow, "--branch", "main", "--event", "workflow_dispatch",
-                       "--limit", "5", "--json", FIELDS]) or []
-        mine = sorted((r for r in runs if datetime.fromisoformat(r["createdAt"].replace("Z", "+00:00")) >= started),
-                      key=lambda r: r["createdAt"])
-        if mine and mine[0].get("status") == "completed":
-            run = mine[0]
+        if run_id:
+            run = gh_json(runner, ["run", "view", run_id, "--json", FIELDS])
+        else:
+            runs = gh_json(runner, ["run", "list", "--workflow", workflow, "--branch", "main", "--event",
+                                    "workflow_dispatch", "--limit", "10", "--json", FIELDS]) or []
+            mine = [r for r in runs
+                    if datetime.fromisoformat(r["createdAt"].replace("Z", "+00:00")) >= started - timedelta(seconds=5)]
+            if len(mine) > 1:
+                return 2, (f"{len(mine)} workflow_dispatch runs of {workflow} started after the dispatch and gh named "
+                           f"none of them; cannot tell which is this one")
+            run = mine[0] if mine else None
+        if run and run.get("status") == "completed":
             return (0 if run.get("conclusion") in GREEN else 1), run
         sleep(poll)
-    return 2, f"no completed workflow_dispatch run of {workflow} within {timeout} s"
+    return 2, f"the dispatched run of {workflow} did not complete within {timeout} s"
+
+
+def evidence_line(run):
+    """The read-back line `campaign_guard.py repair close --evidence` accepts for a dispatched run."""
+    return (f"ci-watch: {run['headSha']} {run['workflowName']} {run['conclusion']} run {run['databaseId']} "
+            f"{run['url']}")
 
 
 def self_test():
@@ -108,20 +135,21 @@ def self_test():
     # Runs are read per workflow: a hundred green build runs cannot push the one red pins run out of view.
     def per_workflow_runner(args):
         if args[:2] == ["workflow", "list"]:
-            return [{"id": 1, "name": "build", "state": "active", "path": ".github/workflows/build.yml"},
-                    {"id": 2, "name": "pins", "state": "active", "path": ".github/workflows/pins.yml"},
-                    {"id": 3, "name": "old", "state": "disabled_manually", "path": ".github/workflows/old.yml"}]
+            return json.dumps([{"id": 1, "name": "build", "state": "active", "path": ".github/workflows/build.yml"},
+                               {"id": 2, "name": "pins", "state": "active", "path": ".github/workflows/pins.yml"},
+                               {"id": 3, "name": "old", "state": "disabled_manually", "path": ".github/workflows/old.yml"}])
         workflow = args[args.index("--workflow") + 1]
         if workflow == "1":
-            return [run(100 + i, "build", f"2026-10-22T{i % 24:02d}:00:00Z", "success", event="push") for i in range(100)]
+            return json.dumps([run(100 + i, "build", f"2026-10-22T{i % 24:02d}:00:00Z", "success", event="push")
+                               for i in range(100)])
         if workflow == "2":
-            return [run(9, "pins", "2026-10-20T00:00:00Z", "failure")]
+            return json.dumps([run(9, "pins", "2026-10-20T00:00:00Z", "failure")])
         raise AssertionError("a disabled workflow was read")
     red, checked = red_runs(fetch(per_workflow_runner))
     check("a red workflow behind a busy one is still reported", [r["workflowName"] for r in red], ["pins"])
     check("disabled workflows are skipped", checked, 2)
 
-    # --dispatch: start the run, then wait for the run it started, not an older one.
+    # --dispatch waits for exactly the run it started.
     clock = [datetime(2026, 10, 23, 12, 0, 0, tzinfo=timezone.utc)]
 
     def fake_now():
@@ -130,24 +158,43 @@ def self_test():
     def fake_sleep(seconds):
         clock[0] += timedelta(seconds=seconds)
 
-    def dispatcher(outcome):
+    def dispatcher(outcome, prints_url=True, concurrent=False):
+        clock[0] = datetime(2026, 10, 23, 12, 0, 0, tzinfo=timezone.utc)  # each case dispatches at 12:00:00
         polls = [0]
+        mine = run(77, "pins", "2026-10-23T12:00:30Z", outcome, event="workflow_dispatch")
+        older = run(1, "pins", "2026-10-23T11:59:30Z", "success", event="workflow_dispatch")
+        other = run(78, "pins", "2026-10-23T12:00:40Z", "success", event="workflow_dispatch")
 
         def runner(args):
             if args[:2] == ["workflow", "run"]:
-                return None
+                # gh 2.102 prints the created run's URL as plain text, never JSON.
+                return "https://github.com/o/r/actions/runs/77\n" if prints_url else ""
             polls[0] += 1
-            old = run(1, "pins", "2026-10-22T00:00:00Z", "success", event="workflow_dispatch")
-            if polls[0] < 3 or outcome is None:
-                return [old]
-            return [run(2, "pins", "2026-10-23T12:00:30Z", outcome, event="workflow_dispatch"), old]
+            done = polls[0] >= 3 and outcome is not None
+            current = dict(mine, status="completed" if done else "in_progress", conclusion=outcome if done else None)
+            if args[:2] == ["run", "view"]:
+                if args[2] != "77":
+                    raise AssertionError("viewed a run other than the one gh named")
+                return json.dumps(current)
+            listed = [older, current] + ([other] if concurrent else [])
+            return json.dumps(listed)
         return runner
     check("a dispatched run that goes green exits 0",
           dispatch_and_wait("pins.yml", dispatcher("success"), fake_now, fake_sleep)[0], 0)
-    check("a dispatched run that goes red exits 1",
+    check("a dispatched run that goes red exits 1, even beside an earlier green one",
           dispatch_and_wait("pins.yml", dispatcher("failure"), fake_now, fake_sleep)[0], 1)
-    check("an older green run never answers for the dispatched one",
+    check("a run that never completes is unverifiable",
           dispatch_and_wait("pins.yml", dispatcher(None), fake_now, fake_sleep, timeout=300)[0], 2)
+    check("with a URL, the named run answers even beside a concurrent one",
+          dispatch_and_wait("pins.yml", dispatcher("failure", concurrent=True), fake_now, fake_sleep)[0], 1)
+    check("without a URL, the one run after the dispatch answers",
+          dispatch_and_wait("pins.yml", dispatcher("failure", prints_url=False), fake_now, fake_sleep)[0], 1)
+    check("without a URL, two candidate runs are unverifiable, never a guess",
+          dispatch_and_wait("pins.yml", dispatcher("failure", prints_url=False, concurrent=True), fake_now,
+                            fake_sleep)[0], 2)
+    green = dispatch_and_wait("pins.yml", dispatcher("success"), fake_now, fake_sleep)[1]
+    check("the evidence line is the one campaign_guard repair close accepts",
+          evidence_line(green).startswith(f"ci-watch: {'a' * 40} pins success run 77 "), True)
     print(f"ci_watch self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
 
@@ -170,8 +217,7 @@ def main(argv=None):
             elif code == 2:
                 print(f"ci_watch: {outcome}")
             else:
-                print(f"{'GREEN' if code == 0 else 'RED'} {outcome['workflowName']} run {outcome['databaseId']}: "
-                      f"{outcome['conclusion']} {outcome['url']}")
+                print(evidence_line(outcome))
             return code
         runs = fetch(per_workflow=args.per_workflow)
     except (RuntimeError, OSError, subprocess.TimeoutExpired, json.JSONDecodeError, KeyError, ValueError) as exc:

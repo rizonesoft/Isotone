@@ -3849,7 +3849,18 @@ def resolve_exit_code(raw: str, todos: list[Todo]) -> int:
     # whole-TODO edges, identical to `query blocked`. Before this, only the
     # row edges were walked here, so a section could be blocked in `query`
     # and exit 0 from `resolve`/`classify`/the operator snapshot.
-    return 4 if unmet_dependencies(target, sec, todos, by_key) else 0
+    return 4 if unmet_dependencies(target, sec, todos, by_key) or parked_reason(target, s) else 0
+
+
+def parked_reason(todo, section) -> str:
+    """Why a section with its dependencies met is still not runnable, or "": its file is parked (blocked or superseded,
+    deferred as query ready and query plan treat it) or its review is pending (review-todo-section). `resolve`,
+    `resolve_exit_code`, and the queries share this one rule."""
+    if todo.status in ("blocked", "superseded"):
+        return f"file status {todo.status}"
+    if section.review_pending:
+        return f"review pending since {section.review_pending.split()[0]}"
+    return ""
 
 
 def needs_for_ref(raw: str, todos: list[Todo]) -> list[str]:
@@ -4056,6 +4067,10 @@ def cmd_resolve(args: argparse.Namespace) -> int:
             "its dependency gate unless these are shipped first.",
             file=sys.stderr,
         )
+        return 4
+    parked = parked_reason(target, s)
+    if parked:
+        print(f"\nNOTE: §{sec} is not runnable: {parked}.", file=sys.stderr)
         return 4
     return 0
 
@@ -9984,6 +9999,7 @@ An oversized section: the clean single-WARN shape (over-30-items).
                     cmd_query(argparse.Namespace(what="blocked", all=False))
                 check(f"query ready excludes a section of a {file_status} file", "Depends on the moved thing" in rbuf.getvalue(), False)
                 check(f"query blocked names the {file_status} file as the wait", f"waiting on: file status {file_status}" in bbuf.getvalue(), True)
+                check(f"resolve refuses a section of a {file_status} file", resolve_exit_code("D93 T05 §2", load_todos()), 4)
             # A section whose review is pending (the reviewer was unreachable, review-todo-section) is never ready and is
             # listed as blocked with that reason, in query ready, query blocked, and query plan alike.
             moved_path.write_text(SELF_TEST_TODO_MOVED.replace(
@@ -9997,6 +10013,7 @@ An oversized section: the clean single-WARN shape (over-30-items).
                 cmd_query(argparse.Namespace(what="blocked", all=False))
             check("query ready excludes a section whose review is pending", "Depends on the moved thing" in rbuf.getvalue(), False)
             check("query blocked names the pending review", "waiting on: review pending since 2026-10-23T00:00:00Z" in bbuf.getvalue(), True)
+            check("resolve refuses a section whose review is pending", resolve_exit_code("D93 T05 §2", load_todos()), 4)
             _pt = load_todos()
             _pid, _pkey, _ = _section_state(_pt)
             pending_doc = plan_document(_pt, _pkey, _pid)
