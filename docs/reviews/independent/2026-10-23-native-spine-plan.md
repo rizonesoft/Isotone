@@ -156,3 +156,45 @@ Every finding was verified against the repository or the cited documentation and
 5. P2, the per-app fixture documents had no owner: verified. They need each app's document format, so the spec is amended to place them in each app's first performance section; the re-plan records the requirement for waves 3, 5, and 6, and `docs/benchmarks/README.md` will name the path.
 6. P1, the manual install command's paths assumed the root while dev-env defaults to `native/`: verified. The command runs with `-WorkingDirectory .` and its own install root.
 7. P1, a shared manifest install root removes other presets' packages: verified against vcpkg's manifest-mode install. Each preset has its own installed root, the lint aggregates them, and the checkpoint shows the x64 root intact after an ARM64 install.
+
+## Round 4: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-10-23T00:19:47Z
+- Effort: xhigh
+- Lines: 22
+- Digest: b01ef3985500cd40
+
+### adversarial: needs-attention
+
+1. P1 `todo/00-workspace/TODO-04-native-code-policy.md:65`: `test-only-shipped` checks feature placement, not which executable links the library. An app can link `GTest::gtest` while GoogleTest remains in the `test` feature with `Linked by: tests`; every prescribed dependency rule still passes. Require verification of the app’s dependency closure and a negative fixture for this case.
+2. P1 `todo/00-workspace/TODO-04-native-code-policy.md:86`: No required execution covers the NEON correctness guard. The smoke stage runs locally on x64, while the ARM64 job transfers test executables, not `isotone_benchmarks`. Change NEON’s rounding: the x64 smoke checkpoint and prescribed ARM64 tests can remain green. Add ARM64 smoke execution and its failing mutation probe.
+
+### consistency: approve
+
+### integration: needs-attention
+
+3. P1 `todo/00-workspace/TODO-05-native-spine.md:158`: Running transferred executables with only `--gtest_output=xml` does not preserve the CTest contract. Section 9 adds replay tests requiring committed corpus and regression files, but neither those files nor their CTest arguments and working directories are transferred. Demonstrate this with a replay test whose corpus directory is supplied through `add_test`: the ARM64 invocation cannot reproduce it. Require a portable test package that preserves these inputs and invocation metadata. [CTest invocation options](https://cmake.org/cmake/help/latest/module/GoogleTest.html).
+
+### source-defect: needs-attention
+
+4. P1 `todo/00-workspace/TODO-05-native-spine.md:96`: Applying the explicit standard switch through the prescribed helpers does not tell CMake that targets use C++23. GoogleTest exports `cxx_std_17`; CMake can therefore add `-std:c++17` to the consuming test target alongside `/std:c++23preview`, making the normal skeleton fail §3’s exactly-one-switch checker. Generate the prescribed GoogleTest consumer and inspect its compile database. Specify how CMake’s feature negotiation and the pinned switch are reconciled. [GoogleTest requirement](https://github.com/google/googletest/blob/v1.18.0/googletest/cmake/internal_utils.cmake#L205), [CMake feature propagation](https://cmake.org/cmake/help/latest/manual/cmake-compile-features.7.html).
+5. P2 `todo/00-workspace/TODO-04-native-code-policy.md:65`: The new provenance comparison lacks a rule for registry-owned helper ports. GoogleTest necessarily installs `vcpkg-cmake` and `vcpkg-cmake-config`; these contain registry scripts rather than separately downloaded upstream releases. Their provenance cannot satisfy the required upstream released-tag comparison as written. Define their registry provenance and advisory mapping, with fixtures, instead of leaving the runner to invent an exception. [GoogleTest dependencies](https://github.com/microsoft/vcpkg/blob/master/ports/gtest/vcpkg.json), [helper recipe](https://github.com/microsoft/vcpkg/blob/master/ports/vcpkg-cmake/portfile.cmake).
+6. P2 `todo/00-workspace/TODO-05-native-spine.md:84`: Specifying both the manifest’s `builtin-baseline` and the configuration’s `default-registry` produces a warning and makes the manifest baseline ineffective. This contradicts §3’s warning-free configure requirement; it also makes T04 §3’s advisory job read a field that does not control installation. The pinned vcpkg implementation explicitly warns and retains the configured registry. Choose one authoritative baseline and make the advisory check read it. [Pinned selection logic](https://github.com/microsoft/vcpkg-tool/blob/98d7cb0cf1f4686a3e43aa5672b6230c1d56bce8/src/vcpkg/vcpkgpaths.cpp#L170-L194).
+
+### record: approve
+
+HIGHEST: P1
+
+OVERALL: needs-attention
+
+## Response to round 4
+
+Every finding was verified against the repository or the cited documentation and is real.
+
+1. P1, a test-only library linked by an app escaped the feature check: verified. `native-deps-lint` gains `test-only-linked`, reading the `x64-release` link graph from `cmake --graphviz`, with a fixture of an app linking `GTest::gtest`.
+2. P1, the NEON guard never ran on ARM64: verified. `D00 T04 §2` runs the benchmark smoke in the ARM64 CI job, with a failing NEON probe on a dispatched branch.
+3. P1, transferred executables lost CTest's arguments, working directories, and inputs: verified. The ARM64 job restores whole build folders into the same workspace path GitHub's Windows runners share, beside a checkout of the same commit, checks the recorded path, and runs `ctest --test-dir` with the image's CTest.
+4. P1, GoogleTest's `cxx_std_17` would add a second standard switch: verified against CMake's compile-feature propagation. The build uses `CMAKE_CXX_STANDARD 23` with `CMAKE_CXX23_STANDARD_COMPILE_OPTION` set to the pinned switch, so feature negotiation is satisfied by the one switch; the standard check proves it on the GoogleTest consumer.
+5. P2, registry helper ports have no upstream release: verified. The register carries them as build-time helpers with `microsoft/vcpkg` at the baseline commit and no advisory identity, checked exactly, with fixtures.
+6. P2, `builtin-baseline` and `default-registry` together make the manifest baseline ineffective: verified against the pinned vcpkg tool. `vcpkg-configuration.json` holds only the overlay triplets, and the configure must show no baseline warning.
