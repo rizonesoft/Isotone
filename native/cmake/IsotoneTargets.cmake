@@ -35,6 +35,9 @@ function(isotone_apply_flags target)
   endif()
   if(ISOTONE_SANITIZE STREQUAL "address")
     target_compile_options(${target} PRIVATE /fsanitize=address)
+    # AddressSanitizer does not support incremental linking (Microsoft Learn, "AddressSanitizer"), which CMake's
+    # RelWithDebInfo defaults turn on; the linker takes the last /INCREMENTAL option.
+    target_link_options(${target} PRIVATE /INCREMENTAL:NO)
   elseif(NOT ISOTONE_SANITIZE STREQUAL "")
     message(FATAL_ERROR "ISOTONE_SANITIZE is '${ISOTONE_SANITIZE}': only empty or address is supported")
   endif()
@@ -65,6 +68,18 @@ function(isotone_add_test name)
     target_compile_options(${name} PRIVATE /wd6326)
   endif()
   gtest_discover_tests(${name} DISCOVERY_MODE PRE_TEST)
+  set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
+endfunction()
+
+# isotone_add_sanitizer_probe(<name> <source> <report>): an executable that commits one memory error on purpose, registered with
+# CTest under the asan-probe label. It passes only when <report>, AddressSanitizer's report for that error, appears in its output
+# (PASS_REGULAR_EXPRESSION, without WILL_FAIL, which would invert the verdict), so an uninstrumented build, which runs
+# to its end without a report, fails. Built only in the sanitizer presets (native/tests/CMakeLists.txt).
+function(isotone_add_sanitizer_probe name source report)
+  add_executable(${name} ${source})
+  isotone_apply_flags(${name})
+  add_test(NAME ${name} COMMAND ${name})
+  set_tests_properties(${name} PROPERTIES LABELS asan-probe PASS_REGULAR_EXPRESSION "${report}")
   set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
 endfunction()
 

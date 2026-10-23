@@ -54,6 +54,17 @@
     { "name": "arm64-debug", "inherits": "arm64", "displayName": "ARM64 Debug", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
     { "name": "arm64-release", "inherits": "arm64", "displayName": "ARM64 Release", "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
     {
+      "name": "arm64-asan",
+      "inherits": "arm64",
+      "displayName": "ARM64 AddressSanitizer",
+      "description": "RelWithDebInfo, as x64-asan; AddressSanitizer for ARM64 is in preview in the pinned toolset. Built on x64, tested on ARM64.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ISOTONE_SANITIZE": "address",
+        "VCPKG_TARGET_TRIPLET": "isotone-arm64-asan"
+      }
+    },
+    {
       "name": "x64-dist",
       "inherits": "x64",
       "displayName": "x64 distribution",
@@ -75,6 +86,7 @@
     { "name": "x64-analyze", "configurePreset": "x64-analyze" },
     { "name": "arm64-debug", "configurePreset": "arm64-debug" },
     { "name": "arm64-release", "configurePreset": "arm64-release" },
+    { "name": "arm64-asan", "configurePreset": "arm64-asan" },
     { "name": "x64-dist", "configurePreset": "x64-dist" },
     { "name": "arm64-dist", "configurePreset": "arm64-dist" }
   ],
@@ -87,7 +99,16 @@
     },
     { "name": "x64-debug", "inherits": "base", "configurePreset": "x64-debug" },
     { "name": "x64-release", "inherits": "base", "configurePreset": "x64-release" },
-    { "name": "x64-asan", "inherits": "base", "configurePreset": "x64-asan" },
+    {
+      "name": "x64-asan",
+      "inherits": "base",
+      "configurePreset": "x64-asan",
+      "description": "The toolset's AddressSanitizer runtime first on PATH; leak detection off, which MSVC's AddressSanitizer does not support.",
+      "environment": {
+        "PATH": "$env{VCToolsInstallDir}bin\\Hostx64\\x64;$penv{PATH}",
+        "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=0"
+      }
+    },
     { "name": "arm64-debug", "inherits": "base", "configurePreset": "arm64-debug" },
     { "name": "arm64-release", "inherits": "base", "configurePreset": "arm64-release" }
   ],
@@ -114,6 +135,13 @@
         { "type": "configure", "name": "x64-asan" },
         { "type": "build", "name": "x64-asan" },
         { "type": "test", "name": "x64-asan" }
+      ]
+    },
+    {
+      "name": "arm64-asan",
+      "steps": [
+        { "type": "configure", "name": "arm64-asan" },
+        { "type": "build", "name": "arm64-asan" }
       ]
     },
     {

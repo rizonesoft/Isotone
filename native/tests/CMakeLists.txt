@@ -8,4 +8,8 @@ add_test(NAME cmake.compiler_environment
   COMMAND "${CMAKE_COMMAND}" "-DSCRIPT=${PROJECT_SOURCE_DIR}/cmake/CheckCompilerEnvironment.cmake"
           -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compiler_environment_test.cmake")
 
+if(ISOTONE_SANITIZE STREQUAL "address")
+  add_subdirectory(sanitizer)
+endif()
+
 isotone_require_registered_tests("${CMAKE_CURRENT_SOURCE_DIR}")

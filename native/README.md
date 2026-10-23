@@ -10,7 +10,7 @@ The C++23 half of the Isotone Graphics Suite: the shared libraries and the apps,
 | `ui/` | `isotone::ui`, the shared UI toolkit |
 | `stilus/`, `gesso/`, `albumen/` | The three apps, each its own executable that links its own copy of the libraries |
 | `tests/` | The GoogleTest suites and fuzz corpora, under one folder per library or app |
-| `triplets/` | The vcpkg overlay triplets `isotone-x64`, `isotone-arm64`, and `isotone-x64-asan` |
+| `triplets/` | The vcpkg overlay triplets `isotone-x64`, `isotone-arm64`, `isotone-x64-asan`, and `isotone-arm64-asan` |
 | `cmake/` | The shared CMake helpers |
 
 `tinctura/`, `capio/`, and `folium/` join them when their plans (`todo/07-tinctura/`, `todo/08-capio/`, `todo/09-folium/`) build them. Today the folder holds the toolchain pin, the vcpkg manifest and configuration, the triplets, the CMake build, and `isotone::core`'s build identity with its test; the apps and the UI toolkit arrive with their own sections.
@@ -37,7 +37,8 @@ pwsh scripts/dev-env.ps1 -Arch arm64 -Run 'Push-Location native; cmake --workflo
 | ------ | ---------- | ----- | ----- |
 | `x64-debug`, `arm64-debug` | Debug | yes | |
 | `x64-release`, `arm64-release` | Release | yes | Full PDBs, `/OPT:REF`, `/OPT:ICF` |
-| `x64-asan` | RelWithDebInfo | yes | `/fsanitize=address` on every target, packages from the `isotone-x64-asan` triplet; Debug's `/RTC` refuses AddressSanitizer |
+| `x64-asan` | RelWithDebInfo | yes | `/fsanitize=address` and `/INCREMENTAL:NO` on every target, packages from the `isotone-x64-asan` triplet; Debug's `/RTC` refuses AddressSanitizer |
+| `arm64-asan` | RelWithDebInfo | on ARM64 | The same for ARM64, packages from `isotone-arm64-asan`; built on x64, its tests run on ARM64 |
 | `x64-dist`, `arm64-dist` | Release | no | What an app release builds from: `BUILD_TESTING` off and the vcpkg `test` feature unrequested, so GoogleTest is never installed or linked |
 
 Every target goes through `isotone_add_library` or `isotone_add_test` (`cmake/IsotoneTargets.cmake`), which apply `/W4 /WX /permissive- /utf-8 /Zc:__cplusplus /Zc:preprocessor /EHsc /external:anglebrackets /external:W0`, control-flow guard on the compiler and the linker, and `/CETCOMPAT` on x64 (Microsoft Learn documents it for x64 only). C++23 is the one switch `/std:c++23preview`, never the `/std:c++latest` CMake emits by default. A test preset with no registered test fails (`noTestsAction: error`), configure fails on any executable under `tests/` that `isotone_add_test` did not register, and GoogleTest discovery runs at test time, so a build never runs an ARM64 test executable on x64. MSVC's `CL` and `_CL_` environment variables are refused at configure and on every build (`cmake/CheckCompilerEnvironment.cmake`), because cl would add them to every compile; `scripts/dev-env.ps1` clears them on entry.
@@ -50,6 +51,19 @@ Two checks prove what the flags cannot show on their own:
 python scripts/native-std-check.py artifacts/native/x64-debug                                     # every C++ compile carries exactly one standard switch, the pinned one
 pwsh scripts/dev-env.ps1 -Arch x64 -Run 'python scripts/native-pe-check.py artifacts/native/x64-release'  # every executable has control-flow guard, and CET on x64
 ```
+
+## The AddressSanitizer lane
+
+The whole CTest suite also runs under AddressSanitizer, its dependencies built by the sanitizer triplets. Support in the pinned toolset (MSVC 14.51):
+
+| Architecture | Status | Source |
+| ------------ | ------ | ------ |
+| x64 | Supported | Microsoft Learn, "AddressSanitizer" (x86 and x64) |
+| ARM64 | Supported, in preview | Microsoft Learn, Visual Studio 2026 release notes: 18.0 ("You can now use AddressSanitizer with MSVC to target ARM64. This feature is in preview") and 18.6 (the MSVC 14.51 release, "Improved ASan for ARM64 support with comprehensive library packaging"); the toolset ships `lib/arm64/clang_rt.asan_dynamic-aarch64.lib`, `clang_rt.asan_static_runtime_thunk-aarch64.lib`, and `bin/HostArm64/arm64/clang_rt.asan_dynamic-aarch64.dll`, and the `arm64-asan` probe build links |
+
+Both lanes are required. The `x64-asan` test preset puts the toolset's runtime folder (`bin/Hostx64/x64`, which holds `clang_rt.asan_dynamic-x86_64.dll`) first on `PATH` and sets `ASAN_OPTIONS=halt_on_error=1:detect_leaks=0` (MSVC's AddressSanitizer has no leak detection). ARM64 executables cannot run on x64, so `arm64-asan` builds here and its tests run on ARM64, with `clang_rt.asan_dynamic-aarch64.dll` carried beside them (`D00 T05 §8`).
+
+`tests/sanitizer/asan_probe_test.cpp` writes one byte past a heap allocation. The `asan_probe` test (label `asan-probe`) passes only when `AddressSanitizer: heap-buffer-overflow` appears in its output, so a build that is not instrumented runs to its end without the report and fails; it is built only in the sanitizer presets.
 
 ## Format and analysis
 
