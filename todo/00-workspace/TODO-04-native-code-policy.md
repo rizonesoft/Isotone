@@ -50,7 +50,7 @@ track: W4
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The C++ standard, the dependency register, and the register gate | D00 T05 §7 |  [ ]   |
+|   1   |   §1    | The C++ standard, the dependency register, and the register gate | D00 T05 §7 |  [x]   |
 |   2   |   §2    | The benchmark harness, the reference machine, and the first record | §1, D00 T05 §8 |  [ ]   |
 |   3   |   §3    | The native advisory job | §1 |  [ ]   |
 
@@ -76,6 +76,12 @@ The suite is C++ now, so the question this file once answered ("when may native 
 - [ ] Commit: `"workspace: the C++ standard, the dependency register, and native-deps-lint"`
 
 **Test checkpoint:** Driven run with evidence: `python scripts/native-deps-lint.py --self-test` prints `0 failed`; `python scripts/native-deps-lint.py` prints `0 findings`; a probe dependency `zlib` added to `native/vcpkg.json` without a row fails with `unregistered` (quoted, then reverted); a probe `.cpp` under `src/` fails with `native-source-outside` (quoted, then reverted); `pwsh scripts/check-all.ps1` exits 0 with both gates PASS. Static evidence: `standards/cpp.md` carries every heading the first item names. Cheaper substitute that fails: a register nothing compares with the manifest, which the first probe would pass.
+
+> **Verified:** 2026-10-23 | §1 | D00 T04 §1 at `b10fd4e`: `standards/cpp.md` sets the suite's C++ rules (language, ownership, errors, threading, calling Windows with run-time loading, untrusted input, SIMD, formatting and suppressions, testing, libraries); `docs/dev/native-libraries.md` registers GoogleTest 1.18.0 and the two build-time helper ports; `python scripts/native-deps-lint.py` reads `3 row(s), 10 vcpkg root(s), 6 link graph(s): 0 findings` and its `--self-test` `80 cases, 0 failed`; probes fail as each rule says (zlib installed with no row: `unregistered`; a `.cpp` under `src/`: `native-source-outside`; a bare `NOLINT`: `suppression-unreasoned`; `LoadLibraryW(L"helper.dll")`: `loadlibrary-unresolved`; a `/Zl` library: `crt-not-static` without its register row, 0 findings with it), and both self-test mutants fail it; `pwsh scripts/check-all.ps1`: `check-all: all gates passed` with `native deps` and `native-deps-lint self-test` PASS
+> **Review:** round 1, candidate `8ea7839..b10fd4e` -- `adversarial` approve · `consistency` advisory · `integration` advisory · `record` approve (rounds spent 1 of cap 33, gpt-6.1-sol medium; the advisories are F25 and F26, filed on D00 T04 §3). Independent: gpt-6.1-sol medium via `scripts/review-dispatch.py`, ten rounds (F1 to F24 fixed in c945507, 74d75b1, 7f96819, 5b688ce, 9da00f0, d5a8f90, 290eb84, 29f562a, b10fd4e), the tenth all P3 (the severity stop; F25 and F26 filed on D00 T04 §3 in 3d99af2). Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T04-s1.md. Attestation: docs/reviews/00-workspace/D00-T04-s1.attest.json
+> **Plan review:** gpt medium, filed D00 T04 §2, D00 T04 §3 (16 findings: 9 filed and backlog B-074 to B-077 in 58a6794, 3 rejected) (run 20261023-D00-T04-S1-gpt)
+> **CRUD:** not applicable (a coding standard, a dependency register, and a lint over the build tree, with no user record, document, or setting)
+> **Duration:** 2026-10-23T17:35:53Z to 2026-10-23T19:42:19Z
 
 ## 2. The Benchmark Harness, the Reference Machine, and the First Record
 

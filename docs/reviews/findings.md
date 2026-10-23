@@ -4,18 +4,18 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**218 findings across 18 sections.**
+**247 findings across 19 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 82 | fails under hostile or unexpected input |
-| `integration` | 66 | a consumer, caller, or downstream artifact no longer holds |
-| `source-defect` | 20 | a Win32 contract, registry layout, or other source read wrongly |
-| `correctness` | 20 | the code does the wrong thing |
-| `record` | 18 | the plan or the evidence misdescribes what happened |
-| `consistency` | 11 | disagrees with the rest of the suite, its naming, or its layout |
+| `adversarial` | 86 | fails under hostile or unexpected input |
+| `integration` | 72 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 25 | disagrees with the rest of the suite, its naming, or its layout |
+| `correctness` | 23 | the code does the wrong thing |
+| `source-defect` | 21 | a Win32 contract, registry layout, or other source read wrongly |
+| `record` | 19 | the plan or the evidence misdescribes what happened |
 | `reproducibility` | 1 | the same input does not produce the same output |
 
 ## By severity
@@ -23,8 +23,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 108 | wrong behavior in code, plan, or record |
-| `minor` | 110 | polish or wording, or no surviving defect |
+| `major` | 119 | wrong behavior in code, plan, or record |
+| `minor` | 128 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -206,6 +206,35 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T02 §2` | F2 | minor | `record` | fixed | independent | the using count said four more global usings where 14 directives were removed |
 | `D00 T02 §2` | F3 | major | `integration` | fixed | independent | the struck item lacked the Deferred marker validate needs once the row flips |
 | `D00 T02 §4` | F1 | minor | `consistency` | fixed | independent | 'none is ticked without the review stamp' contradicted the ticked items |
+| `D00 T04 §1` | F1 | major | `adversarial` | fixed | independent | LoadLibraryEx passed with either search flag, whatever the module |
+| `D00 T04 §1` | F2 | major | `consistency` | fixed | independent | the target-wide /wd check skipped every CMakeLists.txt |
+| `D00 T04 §1` | F3 | major | `integration` | fixed | independent | one root's version could mask another's |
+| `D00 T04 §1` | F4 | minor | `source-defect` | fixed | independent | archive-built ports had no readable source and always failed identity |
+| `D00 T04 §1` | F5 | minor | `record` | fixed | independent | the Current state contradicted the claims the section turned to exists |
+| `D00 T04 §1` | F6 | minor | `consistency` | fixed | independent | a /wd outside native/cmake/ passed with a WORKAROUND comment |
+| `D00 T04 §1` | F7 | minor | `integration` | fixed | independent | a plain LoadLibraryW of an app-local module passed but cannot load it |
+| `D00 T04 §1` | F8 | major | `adversarial` | fixed | independent | a widened LoadLibraryEx search passed |
+| `D00 T04 §1` | F9 | major | `integration` | fixed | independent | default features were ignored, so a default test feature passed |
+| `D00 T04 §1` | F10 | major | `consistency` | fixed | independent | __pragma, _Pragma, and a level push passed the source check |
+| `D00 T04 §1` | F11 | major | `consistency` | fixed | independent | -wd, /w, and /W0 to /W3 passed the target-wide check |
+| `D00 T04 §1` | F12 | major | `integration` | fixed | independent | the distribution presets were never inspected |
+| `D00 T04 §1` | F13 | minor | `consistency` | fixed | independent | a macro warning(suppress) passed with no reason |
+| `D00 T04 §1` | F14 | minor | `consistency` | fixed | independent | /Wv passed the target-wide check |
+| `D00 T04 §1` | F15 | major | `adversarial` | fixed | independent | LoadLibraryEx flags moved into a variable resolved |
+| `D00 T04 §1` | F16 | minor | `consistency` | fixed | independent | a warning directive split across lines passed |
+| `D00 T04 §1` | F17 | minor | `consistency` | fixed | independent | code after an inline warning(suppress) counted as its reason |
+| `D00 T04 §1` | F18 | minor | `consistency` | fixed | independent | a compound pragma's disable clause passed |
+| `D00 T04 §1` | F19 | minor | `consistency` | fixed | independent | a backslash-continued disable passed |
+| `D00 T04 §1` | F20 | minor | `adversarial` | fixed | independent | a computed module name beginning with a literal resolved |
+| `D00 T04 §1` | F21 | minor | `consistency` | fixed | independent | a suppress naming two warnings passed |
+| `D00 T04 §1` | F22 | minor | `consistency` | fixed | independent | LoadLibraryW mentioned in a comment failed the gate |
+| `D00 T04 §1` | F23 | minor | `integration` | fixed | independent | a linked library's unusable Advisory identity passed |
+| `D00 T04 §1` | F24 | minor | `consistency` | fixed | independent | a warning-group macro in suppress passed as one warning |
+| `D00 T04 §1` | F25 | minor | `consistency` | filed | independent | string literal contents are read as loader calls and directives |
+| `D00 T04 §1` | F26 | minor | `integration` | filed | independent | one root's SPDX source is read for every root |
+| `D00 T04 §1` | F27 | major | `correctness` | fixed | self | the lint read what vcpkg installed before the configures that change it |
+| `D00 T04 §1` | F28 | major | `correctness` | fixed | self | the ARM64 link graphs failed in the x64 environment |
+| `D00 T04 §1` | F29 | minor | `correctness` | fixed | self | the self-test split rules on a colon and broke on drive letters |
 | `D00 T05 §1` | F1 | major | `correctness` | fixed | independent | a machine without the Visual Studio Installer threw instead of reporting it |
 | `D00 T05 §1` | F2 | major | `correctness` | fixed | independent | component checks searched every installation, not the selected one |
 | `D00 T05 §1` | F3 | major | `correctness` | fixed | independent | each re-entry grew PATH, INCLUDE, and LIB until cmd.exe refused the line |
