@@ -4,7 +4,7 @@
     without a Version; the version lives here, once. Versions checked against
     nuget.org on 2026-09-26. Dependabot (.github/dependabot.yml) keeps them current.
     Microsoft.Extensions.* track the .NET runtime the SDK in global.json ships
-    (11.0.0-rc.2 until .NET 11 GA; see D00 T02 §8).
+    (11.0.0-rc.3 until .NET 11 GA; see D00 T02 §8).
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -41,8 +41,8 @@
   </ItemGroup>
 
   <ItemGroup Label="Hosting and DI">
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-rc.2.26504.105" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-rc.3.26522.148" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0-rc.3.26522.148" />
   </ItemGroup>
 
   <ItemGroup Label="Logging">

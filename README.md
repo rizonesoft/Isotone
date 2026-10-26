@@ -20,7 +20,7 @@
 [![Download](https://img.shields.io/badge/download-rizonesoft.com-2EA043)](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-badge)
 <br>
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-[![.NET 11 RC](https://img.shields.io/badge/.NET-11.0.100--rc.2-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/11.0)
+[![.NET 11 RC](https://img.shields.io/badge/.NET-11.0.100--rc.3-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/11.0)
 [![Inno Setup 7](https://img.shields.io/badge/Inno%20Setup-7.1-264B99)](https://jrsoftware.org/isinfo.php)
 [![Windows 11](https://img.shields.io/badge/Windows-11%20x64-0078D4?logo=windows&logoColor=white)](#download-and-install)
 
@@ -180,7 +180,7 @@ flowchart TB
 
 | Piece | Choice |
 | ----- | ------ |
-| Runtime | .NET 11 (SDK pinned to 11.0.100-rc.2 until .NET 11 ships in November 2026) |
+| Runtime | .NET 11 (SDK pinned to 11.0.100-rc.3 until .NET 11 ships in November 2026) |
 | UI | WPF with standard controls and custom theming; no third-party UI framework once Gesso's WPF-UI leaves (planned, `D03 T01`) |
 | Rendering | SkiaSharp |
 | MVVM | CommunityToolkit.Mvvm |
@@ -240,7 +240,7 @@ Every app ships on its own, in two forms:
 - Windows 11 (23H2 or later), x64. Windows 10 22H2 may work but is unsupported.
 - [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) (`pwsh`)
 - [Git](https://git-scm.com/)
-- .NET SDK **11.0.100-rc.2.26504.105** (the .NET 11 release candidate), pinned in `global.json`. The provisioning script installs it for you.
+- .NET SDK **11.0.100-rc.3.26522.148** (the .NET 11 release candidate), pinned in `global.json`. The provisioning script installs it for you.
 - Optional: [Inno Setup 7.1](https://jrsoftware.org/isinfo.php) or newer to build installers locally (the provisioning script installs it)
 
 </details>
