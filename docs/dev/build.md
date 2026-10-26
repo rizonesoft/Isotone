@@ -6,7 +6,7 @@ How the Isotone Graphics Suite builds from the repository root: one solution, on
 
 | Tool | Version | Notes |
 | ---- | ------- | ----- |
-| .NET SDK | 11.0.100-rc.2.26504.105 (exact) | Pinned in `global.json` with `allowPrerelease: true` and `rollForward: disable`: the .NET 11 release candidate (go-live), by operator decision on 2026-09-26, moved from RC 1 to RC 2 on 2026-10-19 (operator request). `D00 T02 §8` moves the pin to the GA SDK when .NET 11 ships in November 2026. Builds print `NETSDK1057` ("You are using a preview version of .NET") until then; it is a message, not a warning. |
+| .NET SDK | 11.0.100-rc.3.26522.148 (exact) | Pinned in `global.json` with `allowPrerelease: true` and `rollForward: disable`: the .NET 11 release candidate (go-live), by operator decision on 2026-09-26, moved from RC 1 to RC 2 on 2026-10-19 (operator request). `D00 T02 §8` moves the pin to the GA SDK when .NET 11 ships in November 2026. Builds print `NETSDK1057` ("You are using a preview version of .NET") until then; it is a message, not a warning. |
 | PowerShell | 7.x | All `scripts/*.ps1` require `pwsh`. |
 | Inno Setup | 7.1 or newer | Only for installers. `scripts/_common.ps1` finds `ISCC.exe` under `Inno Setup 7` (or `$env:ISCC`) and refuses Inno Setup 6. CI installs 7.1.0 from the official release, hash-pinned. |
 | Python | 3.x | Plan gates (`scripts/todo-graph.py` and friends); the icon generators' packages are pinned in `scripts/requirements-icons.txt`. |
@@ -162,11 +162,11 @@ Checked against nuget.org on 2026-09-26 (`dotnet list Isotone.slnx package --out
 
 | Package | Pinned | Why |
 | ------- | ------ | --- |
-| Microsoft.Extensions.DependencyInjection, .Hosting | 11.0.0-rc.2.26504.105 | Match the .NET 11 RC runtime of the pinned SDK. They move to 11.0.x stable with the GA SDK pin (`D00 T02 §8`). |
+| Microsoft.Extensions.DependencyInjection, .Hosting | 11.0.0-rc.3.26522.148 | Match the .NET 11 RC runtime of the pinned SDK. They move to 11.0.x stable with the GA SDK pin (`D00 T02 §8`). |
 | SkiaSharp, SkiaSharp.Views.WPF | 4.152.1 | Latest stable; 4.153 and 4.154 are previews. |
 | xunit.v3.mtp-off | 4.0.1 | xUnit v3 without Microsoft.Testing.Platform. The plain `xunit.v3` 4.x package brings `xunit.v3.mtp-v2`, and the .NET 10+ SDK then refuses VSTest `dotnet test` ("Testing with VSTest target is no longer supported by Microsoft.Testing.Platform"). The mtp-off flavor keeps `dotnet test` on VSTest through `xunit.runner.visualstudio` 4.0.0, so `tests/Isotone.runsettings` (results folder, quarantine filter) still applies. Test projects set `OutputType` `Exe`. |
 | AwesomeAssertions | 9.6.0 | Replaces FluentAssertions 8 (Xceed non-commercial community license); Apache-2.0 fork of FluentAssertions 7 with the same API. The decision and its evidence: [decisions.md](decisions.md#2026-09-26-the-assertion-library). |
-| Serilog.Extensions.Logging, .Hosting | 10.0.0 | Latest stable; they depend on Microsoft.Extensions.* abstractions, which central transitive pinning lifts to 11.0.0-rc.2. |
+| Serilog.Extensions.Logging, .Hosting | 10.0.0 | Latest stable; they depend on Microsoft.Extensions.* abstractions, which central transitive pinning lifts to 11.0.0-rc.3. |
 | Dirkster.AvalonDock (+ Themes.VS2013) | 5.0.0 | Latest stable; 5.0.1 is a preview. Ms-PL, the only GPL-incompatible license in the stack; the suite conveys it under the GPL section 7 additional permission in `LICENSE-EXCEPTION.md` (2026-10-19). |
 | SharpVectors.Wpf | 1.8.6 | Latest. Used only by the Stilus splash logo (`SplashWindow.xaml`, `svgc:SvgViewbox`); `D02 T02 §2` replaces it and drops the package. |
 | WPF-UI | 4.3.0 | Latest. Gesso only; removal is planned. |
@@ -220,5 +220,5 @@ The quarantine is empty: `D00 T02 §1` fixed the three legacy tests it held (202
 - Gesso has no icon yet: `src/Gesso/src/Gesso.UI/Assets/gesso-icon.png` is an empty file, and `installer/Gesso.iss` points at `resources/icons/gesso/gesso.ico`, which does not exist yet. The icon design is chosen and its SVG sources are committed (`resources/icons/README.md`); `D00 T03 §3` generates `gesso.ico` and the PNGs for all three apps from those SVGs, and `D03 T01 §4` wires Gesso's into the executable.
 - Only x64 is published. There is no win-arm64 publish or installer yet.
 - Code is not signed (installers and binaries).
-- The SDK is the .NET 11 release candidate (`11.0.100-rc.2.26504.105`) and Microsoft.Extensions.* are `11.0.0-rc.2`; `D00 T02 §8` pins GA when it ships (November 2026), and the first product release waits for it.
+- The SDK is the .NET 11 release candidate (`11.0.100-rc.3.26522.148`) and Microsoft.Extensions.* are `11.0.0-rc.3`; `D00 T02 §8` pins GA when it ships (November 2026), and the first product release waits for it.
 - SharpVectors.Wpf ships only for the Stilus splash logo; `D02 T02 §2` replaces the `SvgViewbox` and drops it.
