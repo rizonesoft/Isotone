@@ -106,11 +106,24 @@ class FuzzTargetTest(unittest.TestCase):
         self.assertNotEqual(fail_code, 0, fail_out)
         self.assertRegex(fail_out, r"fuzz\.qualify\s+\.+\*\*\*Failed")
 
-        _, pass_code, pass_out = self.configure_and_build(
+        build, pass_code, pass_out = self.configure_and_build(
             "replay-bug-off", ["-DISOTONE_SANITIZE=address", "-DISOTONE_FUZZ=OFF", "-DISOTONE_FUZZ_QUALIFY=OFF"],
             run_ctest=True)
         self.assertEqual(pass_code, 0, pass_out)
         self.assertRegex(pass_out, r"fuzz\.qualify\s+\.+\s+Passed")
+
+        # Wide-path check: replay from a checkout path containing characters outside Windows code page 1252.
+        unicode_dir = self.tmp / "开发_тест_αβγ"
+        shutil.copytree(self.project / "tests" / "fuzz" / "qualify" / "corpus", unicode_dir / "corpus")
+        shutil.copytree(self.project / "tests" / "fuzz" / "qualify" / "regressions", unicode_dir / "regressions")
+        replay_exe = build / "tests" / "fuzz" / "qualify" / "qualify_fuzz_replay.exe"
+        block = (f"$env:PATH = \"$env:VCToolsInstallDir`bin\\Hostx64\\x64;$env:PATH\"; "
+                 f"$env:ASAN_OPTIONS = 'halt_on_error=1:detect_leaks=0'; "
+                 f"& '{replay_exe}' '{unicode_dir / 'corpus'}' '{unicode_dir / 'regressions'}'")
+        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(DEV_ENV), "-Arch", "x64", "-Run", block],
+                              capture_output=True, text=True, timeout=120, cwd=ROOT)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("fuzz-replay: replayed 2 input(s)", proc.stdout + proc.stderr)
 
     def test_dist_mode_emits_no_fuzz_or_replay_executable(self):
         build, code, out = self.configure_and_build(
