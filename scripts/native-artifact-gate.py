@@ -315,24 +315,86 @@ def unbudgeted_findings(publish_root, budget):
             and os.path.normcase(os.path.normpath(folder)) not in named]
 
 
+NINJA_BUILD_RE = re.compile(r"^build\s+(.+?):\s+(\S+)", re.MULTILINE)
+
+
+def expected_ninja_images(ninja_text):
+    """Relative paths of every non-phony .exe and .dll target declared by a build.ninja file."""
+    out = []
+    for m in NINJA_BUILD_RE.finditer(ninja_text):
+        outputs_raw, rule = m.group(1), m.group(2)
+        if rule == "phony":
+            continue
+        for part in outputs_raw.replace("$:", ":").replace("$ ", " ").replace("$$", "$").split("|"):
+            for token in part.split():
+                if token.lower().endswith((".exe", ".dll")) and token not in out:
+                    out.append(token)
+    return out
+
+
+def is_explicitly_empty_dist(cache_text):
+    """A distribution preset builds with BUILD_TESTING=OFF and may legitimately have zero image targets until a shipping
+    native executable is added."""
+    return bool(re.search(r"^BUILD_TESTING:BOOL=(?:OFF|FALSE|0)\s*$", cache_text, re.MULTILINE | re.IGNORECASE))
+
+
 def unbuilt_findings(targets):
-    """input-missing for a preset folder that was never built (no CMakeCache.txt or no .ninja_log), for the check-all
-    and CI stages, which build every preset first; a developer's plain run may skip an unbuilt preset."""
-    return [f"{folder}:input-missing:preset {name} was not built" for name, folder, _, _ in targets
-            if not (folder / "CMakeCache.txt").is_file() or not (folder / ".ninja_log").is_file()]
+    """input-missing for a preset folder that was never built, has missing expected .exe/.dll outputs from build.ninja,
+    or has outputs older than build.ninja (D00-T05-S7-PR1). Explicitly empty distribution presets (BUILD_TESTING=OFF)
+    pass when configured and built."""
+    found = []
+    for name, folder, _, _ in targets:
+        cache = folder / "CMakeCache.txt"
+        ninja = folder / "build.ninja"
+        log = folder / ".ninja_log"
+        if not cache.is_file() or not log.is_file() or not ninja.is_file():
+            found.append(f"{folder}:input-missing:preset {name} was not built")
+            continue
+        expected = expected_ninja_images(ninja.read_text(encoding="utf-8", errors="replace"))
+        if not expected:
+            if not is_explicitly_empty_dist(cache.read_text(encoding="utf-8", errors="replace")):
+                found.append(f"{folder}:input-missing:preset {name} declares no executable or DLL targets in build.ninja")
+            continue
+        ninja_mtime = ninja.stat().st_mtime_ns
+        for rel in expected:
+            image = folder / rel
+            if not image.is_file():
+                found.append(f"{image}:input-missing:expected target of preset {name} does not exist")
+            elif image.stat().st_mtime_ns < ninja_mtime:
+                found.append(f"{image}:input-missing:expected target of preset {name} is older than build.ninja")
+    return found
 
 
 SANITIZE_RE = re.compile(r"(?:^|\s)[/-]fsanitize=address(?=\s|$)")
 SOURCE_RE = re.compile(r"\.(c|cc|cpp|cxx|c\+\+|ixx)$", re.IGNORECASE)
+ARCHIVE_MEMBER_RE = re.compile(r"^Archive member name at [0-9A-Fa-f]+:\s*(.+?)\s*$", re.MULTILINE)
+
+
+def archive_member_findings(lib, text):
+    """not-instrumented for any archive member in `dumpbin /archivemembers /symbols` output that lacks `__asan_`
+    (D00-T05-S7-PR2), or for the whole library when no member headers are present and `__asan_` is absent."""
+    matches = list(ARCHIVE_MEMBER_RE.finditer(text))
+    if not matches:
+        return [] if "__asan_" in text else [f"{lib}:not-instrumented:references no AddressSanitizer entry point"]
+    found = []
+    for i, m in enumerate(matches):
+        raw_name = m.group(1)
+        member = re.sub(r"^/\d+\s+", "", raw_name).rstrip("/").strip() or raw_name
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        section = text[m.end():end]
+        if "__asan_" not in section:
+            found.append(f"{lib}:not-instrumented:member {member} references no AddressSanitizer entry point")
+    return found
 
 
 def coverage_findings(folder, triplet_root, symbols):
     """(findings, commands checked, libraries checked) for one sanitizer preset: every C or C++ command of its compile
-    database carries /fsanitize=address, and every library its vcpkg root installed references AddressSanitizer's
-    __asan_ entry points (`symbols` maps a .lib to `dumpbin /symbols`'s exit code and output). The library check reads
-    the binary itself, so it holds for a package restored from vcpkg's binary cache, which leaves no build log."""
+    database carries /fsanitize=address, and every archive member of every static library in the build folder or vcpkg
+    root references AddressSanitizer's __asan_ entry points (`symbols` maps a .lib to `dumpbin /archivemembers /symbols`'s
+    exit code and output)."""
     found, commands, libs = [], 0, 0
-    database = Path(folder) / "compile_commands.json"
+    folder = Path(folder)
+    database = folder / "compile_commands.json"
     if not database.is_file():
         found.append(f"{database}:input-missing:no compile database; configure the preset first")
     else:
@@ -344,12 +406,21 @@ def coverage_findings(folder, triplet_root, symbols):
             command = entry.get("command") or " ".join(entry.get("arguments", []))
             if not SANITIZE_RE.search(command):
                 found.append(f"{source}:not-instrumented:compiled without /fsanitize=address")
-    if triplet_root is not None and Path(triplet_root).is_dir():
-        for lib in sorted(Path(triplet_root).glob("lib/**/*.lib")) + sorted(Path(triplet_root).glob("debug/lib/**/*.lib")):
-            libs += 1
-            code, text = symbols(lib)
-            found += inspected(lib, code, text, lambda out, lib=lib: [] if "__asan_" in out else
-                               [f"{lib}:not-instrumented:references no AddressSanitizer entry point"])
+    triplet_path = Path(triplet_root).resolve() if triplet_root is not None and Path(triplet_root).is_dir() else None
+    build_libs = []
+    if folder.is_dir():
+        for candidate in sorted(folder.rglob("*.lib")):
+            if "CMakeFiles" in candidate.parts:
+                continue
+            if triplet_path is not None and triplet_path in candidate.resolve().parents:
+                continue
+            build_libs.append(candidate)
+    vcpkg_libs = (sorted(Path(triplet_root).glob("lib/**/*.lib")) + sorted(Path(triplet_root).glob("debug/lib/**/*.lib"))
+                  if triplet_root is not None and Path(triplet_root).is_dir() else [])
+    for lib in build_libs + vcpkg_libs:
+        libs += 1
+        code, text = symbols(lib)
+        found += inspected(lib, code, text, lambda out, lib=lib: archive_member_findings(lib, out))
     return found, commands, libs
 
 
@@ -437,7 +508,7 @@ def main(argv=None):
             findings += unbuilt_findings(targets)
         commands = libraries = 0
         for name, folder, _, vcpkg in targets:
-            found, c, n = coverage_findings(folder, vcpkg, lambda lib: dumpbin("/symbols", lib))
+            found, c, n = coverage_findings(folder, vcpkg, lambda lib: dumpbin("/archivemembers", "/symbols", lib))
             findings += found
             commands += c
             libraries += n
@@ -659,15 +730,47 @@ def self_test():
               [str(tmp / "publish" / "Probe" / "win-x64")])
         built = tmp / "built"
         built.mkdir()
-        (built / "CMakeCache.txt").write_text("", encoding="utf-8")
+        (built / "CMakeCache.txt").write_text("BUILD_TESTING:BOOL=ON\n", encoding="utf-8")
         (built / ".ninja_log").write_text("", encoding="utf-8")
+        (built / "build.ninja").write_text(
+            "build tests\\core\\build_info_test.exe: CXX_EXECUTABLE_LINKER__build_info_test\n"
+            "build build_info_test.exe: phony tests\\core\\build_info_test.exe\n",
+            encoding="utf-8")
+        (built / "tests" / "core").mkdir(parents=True)
+        out_exe = built / "tests" / "core" / "build_info_test.exe"
+        out_exe.write_bytes(b"MZ")
+        ninja_ns = (built / "build.ninja").stat().st_mtime_ns
+        os.utime(out_exe, ns=(ninja_ns + 1_000_000_000, ninja_ns + 1_000_000_000))
         configured = tmp / "configured"
         configured.mkdir()
-        (configured / "CMakeCache.txt").write_text("", encoding="utf-8")
+        (configured / "CMakeCache.txt").write_text("BUILD_TESTING:BOOL=ON\n", encoding="utf-8")
         check("a preset never built fails when builds are required",
               [line.split(":input-missing:")[1] for line in unbuilt_findings(
                   [("a", built, "shipping", None), ("b", configured, "shipping", None), ("c", tmp / "none", "shipping", None)])],
               ["preset b was not built", "preset c was not built"])
+        os.utime(out_exe, ns=(ninja_ns - 1_000_000_000, ninja_ns - 1_000_000_000))
+        check("an expected output older than build.ninja fails when builds are required",
+              [line.split(":input-missing:")[1] for line in unbuilt_findings([("a", built, "shipping", None)])],
+              ["expected target of preset a is older than build.ninja"])
+        out_exe.unlink()
+        check("a deleted expected output fails when builds are required",
+              [line.split(":input-missing:")[1] for line in unbuilt_findings([("a", built, "shipping", None)])],
+              ["expected target of preset a does not exist"])
+        empty_dist = tmp / "dist"
+        empty_dist.mkdir()
+        (empty_dist / "CMakeCache.txt").write_text("BUILD_TESTING:BOOL=OFF\n", encoding="utf-8")
+        (empty_dist / ".ninja_log").write_text("", encoding="utf-8")
+        (empty_dist / "build.ninja").write_text("build core/isotone_core.lib: CXX_STATIC_LIBRARY_LINKER\n", encoding="utf-8")
+        check("an explicitly empty distribution preset passes when builds are required",
+              unbuilt_findings([("x64-dist", empty_dist, "shipping", None)]), [])
+        empty_test = tmp / "empty-test"
+        empty_test.mkdir()
+        (empty_test / "CMakeCache.txt").write_text("BUILD_TESTING:BOOL=ON\n", encoding="utf-8")
+        (empty_test / ".ninja_log").write_text("", encoding="utf-8")
+        (empty_test / "build.ninja").write_text("build core/isotone_core.lib: CXX_STATIC_LIBRARY_LINKER\n", encoding="utf-8")
+        check("a non-distribution preset with no expected executable or DLL target fails",
+              [line.split(":input-missing:")[1] for line in unbuilt_findings([("x64-debug", empty_test, "shipping", None)])],
+              ["preset x64-debug declares no executable or DLL targets in build.ninja"])
         decisions = tmp / "decisions.md"
         decisions.write_text("# Decisions\n\n## 2026-10-23: The output size budget\n\n- **Budget:** 30 MB\n\n"
                              "## 2026-10-23: Optional language packs\n\n- text\n", encoding="utf-8")
@@ -706,6 +809,15 @@ def self_test():
         check("a library dumpbin cannot read fails coverage",
               [rule_of(line) for line in coverage_findings(tmp / "none", tmp / "pkgs", lambda lib: (1181, "LNK1181"))[0]],
               ["input-missing", "inspection-failed", "inspection-failed"])
+        mixed_dumpbin = (
+            "Archive member name at 8: /0              src\\instrumented.cpp.obj\n"
+            "COFF SYMBOL TABLE\n001 00000000 UNDEF notype External | __asan_report_store1\n\n"
+            "Archive member name at 410: /25             src\\uninstrumented.cpp.obj\n"
+            "COFF SYMBOL TABLE\n001 00000000 UNDEF notype External | memcpy\n"
+        )
+        check("a mixed archive fails naming the uninstrumented member",
+              archive_member_findings(Path("mixed.lib"), mixed_dumpbin),
+              ["mixed.lib:not-instrumented:member src\\uninstrumented.cpp.obj references no AddressSanitizer entry point"])
     with tempfile.TemporaryDirectory() as tmp:
         published = Path(tmp)
         (published / "Stilus.exe").write_bytes(b"MZ")

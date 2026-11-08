@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 <#
 .SYNOPSIS
   Runs every local gate: build (Debug and Release), tests, and the plan tooling.
@@ -38,21 +38,22 @@
       python scripts/native-deps-lint.py --self-test (D00 T04 §1)
   23. The native stages (skipped with -SkipNative), each inside scripts/dev-env.ps1
       where it builds or inspects, its full output in build/check-all/<stage>.log:
-      native toolchain (dev-env.ps1 -Check for x64 and arm64); native x64-debug,
-      x64-release, and x64-asan (cmake --workflow: configure, build, test); native
-      arm64-debug, arm64-release, and arm64-asan (configure and build: an ARM64
-      test runs on ARM64, D00 T05 §8); native x64-dist and arm64-dist; native deps
-      (native-deps-lint.py: the register and the link graphs, D00 T04 §1); native
-      analyze (x64-analyze and arm64-analyze); native std (native-std-check.py
-      over every preset folder); native pe (native-pe-check.py over every preset
-      folder); native format (native-format.ps1 -Check); native tidy
-      (native-tidy.ps1); native artifacts (native-artifact-gate.py --policy
-      shipping --require-built: Debug, Release, analyze, and dist); native
-      artifacts asan (--policy asan --require-built); native asan-coverage
-      (--asan-coverage --require-built); and the native Python gates, the
-      self-tests of native-std-check.py, native-pe-check.py, and
+      native presets (every non-hidden configure preset in native/CMakePresets.json
+      is owned by a build stage, D00-T05-S7-PR7); native toolchain (dev-env.ps1
+      -Check for x64 and arm64); native x64-debug, x64-release, and x64-asan
+      (cmake --workflow: configure, build, test); native arm64-debug, arm64-release,
+      and arm64-asan (configure and build: an ARM64 test runs on ARM64, D00 T05 §8);
+      native x64-dist and arm64-dist; native deps (native-deps-lint.py: the register
+      and the link graphs, D00 T04 §1); native analyze (x64-analyze and
+      arm64-analyze); native std (native-std-check.py over every preset folder);
+      native pe (native-pe-check.py over every preset folder); native format
+      (native-format.ps1 -Check); native tidy (native-tidy.ps1); native artifacts
+      (native-artifact-gate.py --policy shipping --require-built: Debug, Release,
+      analyze, and dist); native artifacts asan (--policy asan --require-built);
+      native asan-coverage (--asan-coverage --require-built); and the native Python
+      gates, the self-tests of native-std-check.py, native-pe-check.py, and
       native-artifact-gate.py, then test_dev_env.py, test_native_format.py,
-      test_native_tidy.py, and test_native_asan.py.
+      test_native_tidy.py, test_native_asan.py, and test_run_arm64_tests.py.
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
 .EXAMPLE
@@ -155,9 +156,19 @@ try {
 
   if (-not $SkipNative) {
     $devEnv = Join-Path $RepoRoot 'scripts/dev-env.ps1'
+    $workflowPresets = @('x64-debug', 'x64-release', 'x64-asan', 'arm64-debug', 'arm64-release', 'arm64-asan', 'x64-dist', 'arm64-dist')
+    $analyzePresets = @('x64-analyze', 'arm64-analyze')
+    $ownedPresets = @($workflowPresets + $analyzePresets)
+    $configurePresets = @((Get-Content -Raw (Join-Path $RepoRoot 'native/CMakePresets.json') | ConvertFrom-Json).configurePresets |
+      Where-Object { -not ($_.PSObject.Properties['hidden'] -and $_.hidden) } | ForEach-Object { $_.name })
+    Invoke-NativeGate 'native presets' @('pwsh', '-NoProfile', '-Command',
+      "`$owned = @('$($ownedPresets -join "','")'); `$cfg = @('$($configurePresets -join "','")'); " +
+      "`$unowned = @(`$cfg | Where-Object { `$owned -notcontains `$_ }); " +
+      "if (`$unowned) { `$unowned | ForEach-Object { `"native-presets: configure preset '`$_' has no owning build stage in scripts/check-all.ps1`" }; exit 1 }; " +
+      "`"native-presets: `$(`$cfg.Count) configure preset(s) owned by build stages`"")
     Invoke-NativeGate 'native toolchain' @('pwsh', '-NoProfile', '-Command',
       "& '$devEnv' -Check -Arch x64; `$a = `$LASTEXITCODE; & '$devEnv' -Check -Arch arm64; exit [Math]::Max(`$a, `$LASTEXITCODE)")
-    foreach ($preset in 'x64-debug', 'x64-release', 'x64-asan', 'arm64-debug', 'arm64-release', 'arm64-asan', 'x64-dist', 'arm64-dist') {
+    foreach ($preset in $workflowPresets) {
       $arch = $preset.Split('-')[0]
       Invoke-InNative "native $preset" $arch "Push-Location native; cmake --workflow --preset $preset; `$c = `$LASTEXITCODE; Pop-Location; exit `$c"
     }
@@ -168,8 +179,7 @@ try {
     Invoke-NativeGate 'native analyze' @('pwsh', '-NoProfile', '-Command',
       "& '$devEnv' -Arch x64 -Run 'Push-Location native; cmake --preset x64-analyze; `$c = `$LASTEXITCODE; if (-not `$c) { cmake --build --preset x64-analyze; `$c = `$LASTEXITCODE }; Pop-Location; exit `$c'; `$a = `$LASTEXITCODE; " +
       "& '$devEnv' -Arch arm64 -Run 'Push-Location native; cmake --preset arm64-analyze; `$c = `$LASTEXITCODE; if (-not `$c) { cmake --build --preset arm64-analyze; `$c = `$LASTEXITCODE }; Pop-Location; exit `$c'; exit [Math]::Max(`$a, `$LASTEXITCODE)")
-    $presetFolders = @((Get-Content -Raw (Join-Path $RepoRoot 'native/CMakePresets.json') | ConvertFrom-Json).configurePresets |
-      Where-Object { -not ($_.PSObject.Properties['hidden'] -and $_.hidden) } | ForEach-Object { "artifacts/native/$($_.name)" })
+    $presetFolders = @($configurePresets | ForEach-Object { "artifacts/native/$_" })
     if ($script:Python) {
       Invoke-NativeGate 'native std' (@($script:Python, (Join-Path $RepoRoot 'scripts/native-std-check.py')) + $presetFolders)
       Invoke-InNative 'native pe' 'x64' ("python scripts/native-pe-check.py $($presetFolders -join ' '); exit `$LASTEXITCODE")
@@ -187,6 +197,7 @@ try {
       Invoke-PythonGate 'native format tests' 'tests/test_native_format.py' @()
       Invoke-PythonGate 'native tidy tests' 'tests/test_native_tidy.py' @()
       Invoke-PythonGate 'native asan tests' 'tests/test_native_asan.py' @()
+      Invoke-PythonGate 'arm64 test runner tests' 'tests/test_run_arm64_tests.py' @()
     }
   } else {
     $results.Add([pscustomobject]@{ Gate = 'native stages'; Status = 'SKIP (-SkipNative)'; Seconds = 0 })

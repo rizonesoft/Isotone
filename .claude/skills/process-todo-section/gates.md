@@ -18,18 +18,20 @@ It builds `Isotone.slnx` in Debug and Release with warnings as errors, runs `dot
 
 | Stage | Proves |
 | ----- | ------ |
+| `native presets` | Every non-hidden configure preset in `native/CMakePresets.json` is owned by a build stage |
 | `native toolchain` | The machine matches `native/toolchain.json` for x64 and ARM64 (`dev-env.ps1 -Check`) |
 | `native x64-debug`, `native x64-release` | The build and the CTest suite on x64 (`cmake --workflow`: configure, build, test) |
 | `native x64-asan` | The CTest suite under AddressSanitizer, its `asan_probe` passing on the sanitizer's own report |
 | `native arm64-debug`, `native arm64-release`, `native arm64-asan` | The ARM64 build; its tests run on ARM64 in CI (D00 T05 §8), never here |
 | `native x64-dist`, `native arm64-dist` | The configurations an app release builds from: Release, no tests |
+| `native deps` | `docs/dev/native-libraries.md` matches the installed vcpkg trees and link graphs (`native-deps-lint.py`) |
 | `native analyze` | MSVC `/analyze` on every first-party target, x64 Debug and ARM64 Release |
 | `native std` | Every C++ compile carries exactly one standard switch, the pinned one |
 | `native pe` | Every linked image has control-flow guard, and CET on x64 |
 | `native format`, `native tidy` | clang-format and clang-tidy at zero findings |
-| `native artifacts`, `native artifacts asan` | Imports are Windows system DLLs only (the sanitizer runtime too in the sanitizer presets), vcpkg packages are static on the static CRT, and every preset was built |
-| `native asan-coverage` | Every sanitized compile and every sanitized package is instrumented |
-| `native-std-check self-test`, `native-pe-check self-test`, `native-artifact-gate self-test`, `dev-env tests`, `native format tests`, `native tidy tests`, `native asan tests` | The gates themselves fail on what they must refuse |
+| `native artifacts`, `native artifacts asan` | Imports are Windows system DLLs only (the sanitizer runtime too in the sanitizer presets), vcpkg packages are static on the static CRT, and every preset's expected build graph outputs exist and are current |
+| `native asan-coverage` | Every sanitized compile and every archive member of every sanitized library is instrumented |
+| `native-std-check self-test`, `native-pe-check self-test`, `native-artifact-gate self-test`, `dev-env tests`, `native format tests`, `native tidy tests`, `native asan tests`, `arm64 test runner tests` | The gates themselves fail on what they must refuse |
 
 A failing stage prints the last lines of its log; quote them with the stage name, and fix the cause rather than re-running.
 

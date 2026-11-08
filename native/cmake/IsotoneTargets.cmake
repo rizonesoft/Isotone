@@ -41,6 +41,14 @@ function(isotone_apply_flags target)
   elseif(NOT ISOTONE_SANITIZE STREQUAL "")
     message(FATAL_ERROR "ISOTONE_SANITIZE is '${ISOTONE_SANITIZE}': only empty or address is supported")
   endif()
+  # Keep every linked image at least as new as build.ninja when CMake reconfigures an already-built tree without
+  # source changes, so native-artifact-gate --require-built can verify every expected image belongs to the current graph.
+  get_target_property(isotone_target_type ${target} TYPE)
+  if(isotone_target_type STREQUAL "EXECUTABLE"
+     OR isotone_target_type STREQUAL "SHARED_LIBRARY"
+     OR isotone_target_type STREQUAL "MODULE_LIBRARY")
+    set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS "${CMAKE_BINARY_DIR}/build.ninja")
+  endif()
 endfunction()
 
 # isotone_add_library(<name> <sources>... [PUBLIC_INCLUDE <dir>]): a static library with the suite's flags.
@@ -79,7 +87,12 @@ endfunction()
 function(isotone_add_sanitizer_probe name source report)
   add_executable(${name} ${source})
   isotone_apply_flags(${name})
-  add_test(NAME ${name} COMMAND ${name})
+  add_test(
+    NAME ${name}
+    COMMAND
+      "${CMAKE_COMMAND}"
+      "-DPROBE=$<TARGET_FILE:${name}>"
+      -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/RunSanitizerProbe.cmake")
   set_tests_properties(${name} PROPERTIES LABELS asan-probe PASS_REGULAR_EXPRESSION "${report}")
   set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
   set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${name})

@@ -102,23 +102,48 @@
     {
       "name": "base",
       "hidden": true,
-      "output": { "outputOnFailure": true },
+      "output": { "outputOnFailure": true, "outputJUnitFile": "junit-${presetName}.xml" },
       "execution": { "noTestsAction": "error", "timeout": 300 }
     },
     { "name": "x64-debug", "inherits": "base", "configurePreset": "x64-debug" },
     { "name": "x64-release", "inherits": "base", "configurePreset": "x64-release" },
     {
-      "name": "x64-asan",
+      "name": "asan",
+      "hidden": true,
       "inherits": "base",
-      "configurePreset": "x64-asan",
-      "description": "The toolset's AddressSanitizer runtime first on PATH; leak detection off, which MSVC's AddressSanitizer does not support.",
+      "description": "Shared AddressSanitizer test environment: abort on first error, leak detection off (which MSVC's AddressSanitizer does not support), and reports retained at asan.log.<pid>.",
       "environment": {
-        "PATH": "$env{VCToolsInstallDir}bin\\Hostx64\\x64;$penv{PATH}",
-        "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=0"
+        "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=0:log_path=asan.log"
       }
     },
-    { "name": "arm64-debug", "inherits": "base", "configurePreset": "arm64-debug" },
-    { "name": "arm64-release", "inherits": "base", "configurePreset": "arm64-release" }
+    {
+      "name": "x64-asan",
+      "inherits": "asan",
+      "configurePreset": "x64-asan",
+      "description": "The toolset's x64 AddressSanitizer runtime first on PATH with the shared sanitizer environment.",
+      "environment": {
+        "PATH": "$env{VCToolsInstallDir}bin\\Hostx64\\x64;$penv{PATH}"
+      }
+    },
+    {
+      "name": "arm64-debug",
+      "inherits": "base",
+      "configurePreset": "arm64-debug"
+    },
+    {
+      "name": "arm64-release",
+      "inherits": "base",
+      "configurePreset": "arm64-release"
+    },
+    {
+      "name": "arm64-asan",
+      "inherits": "asan",
+      "configurePreset": "arm64-asan",
+      "description": "The staged or toolset ARM64 AddressSanitizer runtime first on PATH with the shared sanitizer environment.",
+      "environment": {
+        "PATH": "${sourceDir}/../artifacts/native/arm64-asan-runtime;$env{VCToolsInstallDir}bin\\HostArm64\\arm64;$env{VCToolsInstallDir}bin\\Hostx64\\arm64;$penv{PATH}"
+      }
+    }
   ],
   "workflowPresets": [
     {

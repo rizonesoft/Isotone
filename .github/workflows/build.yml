@@ -84,3 +84,174 @@ jobs:
           path: build/design-reference/
           if-no-files-found: warn
           retention-days: 14
+
+  native:
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 45
+    outputs:
+      arm64_staged: ${{ steps.stage_arm64.outcome == 'success' }}
+    env:
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}\build\vcpkg-cache,readwrite
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Cache vcpkg packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/vcpkg-cache
+          key: vcpkg-${{ runner.os }}-isotone-x64-arm64-asan-9eec002df1cd109f8f104cd966a763daf9751489-${{ hashFiles('native/vcpkg.json', 'native/vcpkg-configuration.json', 'native/triplets/**', 'native/toolchain.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-isotone-x64-arm64-asan-9eec002df1cd109f8f104cd966a763daf9751489-
+      - name: Check the pinned native toolchain (x64 and ARM64)
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Check -Arch x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Check -Arch arm64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build and test x64 and ARM64 native presets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path build/vcpkg-cache -Force | Out-Null
+          $workflowPresets = @('x64-debug', 'x64-release', 'x64-asan', 'arm64-debug', 'arm64-release', 'arm64-asan', 'x64-dist', 'arm64-dist')
+          $analyzePresets = @('x64-analyze', 'arm64-analyze')
+          $ownedPresets = @($workflowPresets + $analyzePresets)
+          $configurePresets = @((Get-Content -Raw native/CMakePresets.json | ConvertFrom-Json).configurePresets |
+            Where-Object { -not ($_.PSObject.Properties['hidden'] -and $_.hidden) } | ForEach-Object { $_.name })
+          $unowned = @($configurePresets | Where-Object { $ownedPresets -notcontains $_ })
+          if ($unowned) {
+            $unowned | ForEach-Object { Write-Error "native-presets: configure preset '$_' has no owning build stage" }
+            exit 1
+          }
+          $failedPresets = @()
+          foreach ($preset in $workflowPresets) {
+            $arch = $preset.Split('-')[0]
+            Write-Host "=== native $preset ==="
+            pwsh -NoProfile -File scripts/dev-env.ps1 -Arch $arch -Run "Push-Location native; cmake --workflow --preset $preset; `$c = `$LASTEXITCODE; Pop-Location; exit `$c"
+            if ($LASTEXITCODE -ne 0) { $failedPresets += $preset }
+          }
+          if ($failedPresets) {
+            Write-Error "native workflow preset(s) failed: $($failedPresets -join ', ')"
+            exit 1
+          }
+      - name: Check native dependency register and link graphs
+        shell: pwsh
+        run: python -B scripts/native-deps-lint.py
+      - name: Run MSVC /analyze (x64 and ARM64)
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --preset x64-analyze; $c = $LASTEXITCODE; if (-not $c) { cmake --build --preset x64-analyze; $c = $LASTEXITCODE }; Pop-Location; exit $c'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Arch arm64 -Run 'Push-Location native; cmake --preset arm64-analyze; $c = $LASTEXITCODE; if (-not $c) { cmake --build --preset arm64-analyze; $c = $LASTEXITCODE }; Pop-Location; exit $c'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run native standard, PE, format, tidy, import, size, and sanitizer coverage gates
+        shell: pwsh
+        run: |
+          $presetFolders = @((Get-Content -Raw native/CMakePresets.json | ConvertFrom-Json).configurePresets |
+            Where-Object { -not ($_.PSObject.Properties['hidden'] -and $_.hidden) } | ForEach-Object { "artifacts/native/$($_.name)" })
+          python -B scripts/native-std-check.py @presetFolders
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Arch x64 -Run "python -B scripts/native-pe-check.py $($presetFolders -join ' '); exit `$LASTEXITCODE"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/native-format.ps1 -Check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/native-tidy.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Arch x64 -Run 'python -B scripts/native-artifact-gate.py --policy shipping --require-built; exit $LASTEXITCODE'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Arch x64 -Run 'python -B scripts/native-artifact-gate.py --policy asan --require-built; exit $LASTEXITCODE'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Arch x64 -Run 'python -B scripts/native-artifact-gate.py --asan-coverage --require-built; exit $LASTEXITCODE'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run native Python self-tests and unit tests
+        shell: pwsh
+        run: |
+          $pyGates = @(
+            @('scripts/native-deps-lint.py', '--self-test'),
+            @('scripts/native-std-check.py', '--self-test'),
+            @('scripts/native-pe-check.py', '--self-test'),
+            @('scripts/native-artifact-gate.py', '--self-test'),
+            @('-m', 'unittest', 'scripts/tests/test_dev_env.py'),
+            @('-m', 'unittest', 'scripts/tests/test_native_format.py'),
+            @('-m', 'unittest', 'scripts/tests/test_native_tidy.py'),
+            @('-m', 'unittest', 'scripts/tests/test_native_asan.py'),
+            @('-m', 'unittest', 'scripts/tests/test_run_arm64_tests.py')
+          )
+          foreach ($gate in $pyGates) {
+            python -B @gate
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - name: Stage ARM64 build artifact and candidate manifest
+        id: stage_arm64
+        if: always()
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/run-arm64-tests.ps1 -StageProducer -Commit "${{ github.sha }}"
+      - name: Upload x64 test reports, CTest logs, and sanitizer reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-x64-test-results
+          path: |
+            artifacts/native/x64-*/junit*.xml
+            artifacts/native/x64-*/Testing/Temporary/LastTest.log
+            artifacts/native/x64-*/**/asan.log.*
+          if-no-files-found: warn
+      - name: Upload ARM64 build for native-arm64-tests
+        if: always() && steps.stage_arm64.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-arm64-build
+          path: |
+            artifacts/native/arm64-debug/
+            artifacts/native/arm64-release/
+            artifacts/native/arm64-asan/
+            artifacts/native/arm64-asan-runtime/
+            artifacts/native/arm64-artifact.json
+          if-no-files-found: error
+          retention-days: 5
+
+  native-arm64-tests:
+    needs: native
+    if: always() && needs.native.outputs.arm64_staged == 'true'
+    runs-on: windows-11-vs2026-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check the pinned native toolchain (ARM64)
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/dev-env.ps1 -Check -Arch arm64
+      - name: Download ARM64 build artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-arm64-build
+          path: artifacts/native
+      - name: Verify processor architecture and run ARM64 CTest suites
+        shell: pwsh
+        run: |
+          $manifest = Get-Content -LiteralPath artifacts/native/arm64-artifact.json -Raw | ConvertFrom-Json
+          $producerDrive = [System.IO.Path]::GetPathRoot($manifest.workspace)
+          $runnerDrive = [System.IO.Path]::GetPathRoot($env:GITHUB_WORKSPACE)
+          $workspace = $env:GITHUB_WORKSPACE
+          if ($producerDrive -and $runnerDrive -and ($producerDrive.ToLowerInvariant() -ne $runnerDrive.ToLowerInvariant())) {
+            $driveLetter = $producerDrive.TrimEnd('\')
+            if (-not (Test-Path -LiteralPath $producerDrive)) {
+              subst $driveLetter $runnerDrive
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+            $workspace = $driveLetter + $env:GITHUB_WORKSPACE.Substring($driveLetter.Length)
+          }
+          pwsh -NoProfile -File "$workspace/scripts/run-arm64-tests.ps1" -Root $workspace -Commit "${{ github.sha }}"
+      - name: Upload ARM64 test reports, CTest logs, sanitizer reports, and receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-arm64-test-results
+          path: |
+            artifacts/native/arm64-*/junit*.xml
+            artifacts/native/arm64-*/Testing/Temporary/LastTest.log
+            artifacts/native/arm64-*/**/asan.log.*
+            artifacts/native/arm64-test-receipt.json
+          if-no-files-found: warn

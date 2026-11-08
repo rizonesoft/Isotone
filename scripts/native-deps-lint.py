@@ -497,10 +497,16 @@ def graph_for(preset):
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.is_file():
         out.unlink()
+    ninja = ROOT / "artifacts" / "native" / preset / "build.ninja"
+    before = (ninja.read_bytes(), ninja.stat()) if ninja.is_file() else None
     block = (f"Push-Location native; cmake --preset {preset} '--graphviz={out}' *> $null; $c = $LASTEXITCODE; "
              f"Pop-Location; exit $c")
     proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(ROOT / "scripts" / "dev-env.ps1"), "-Arch",
                            preset.split("-")[0], "-Run", block], cwd=ROOT, capture_output=True, text=True, errors="replace")
+    # CMake's Ninja generator rewrites build.ninja on every configure even when its contents are unchanged; preserve its
+    # timestamp when the graph did not change so an already-built preset's outputs do not appear stale to --require-built.
+    if before is not None and ninja.is_file() and ninja.read_bytes() == before[0]:
+        os.utime(ninja, ns=(before[1].st_atime_ns, before[1].st_mtime_ns))
     return out.read_text(encoding="utf-8") if proc.returncode == 0 and out.is_file() else None
 
 

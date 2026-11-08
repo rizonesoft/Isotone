@@ -7,6 +7,8 @@ name: toolchain-probe
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '20 5 * * 1'
 
 permissions:
   contents: read
@@ -20,6 +22,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Read the toolchain
         shell: pwsh
         run: |
@@ -47,3 +50,10 @@ jobs:
           $lines += Probe 'vcpkg' "$vs\VC\vcpkg\vcpkg.exe" { param($f) & $f --version | Select-Object -First 1 }
           $lines | ForEach-Object { Write-Output $_ }
           $lines | ForEach-Object { "- ``$_``" } | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+      - name: Check the pinned native toolchain (x64 and ARM64)
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Check -Arch x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Check -Arch arm64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

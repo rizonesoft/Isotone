@@ -7,6 +7,7 @@ and fails; and a probe that exits nonzero without any report fails too, so a ver
 (WILL_FAIL) would be caught. It needs the pinned toolchain, so it skips where Visual Studio is not installed.
 Usage: python scripts/tests/test_native_asan.py
 """
+import json
 import os
 import re
 import shutil
@@ -18,6 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DEV_ENV = ROOT / "scripts" / "dev-env.ps1"
+PRESETS = ROOT / "native" / "CMakePresets.json"
 VSWHERE = Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
 
 EXIT_WITHOUT_REPORT = "int main()\n{\n    return 3;\n}\n"
@@ -44,6 +46,8 @@ class SanitizerProbeTest(unittest.TestCase):
             "isotone_add_sanitizer_probe(exit_probe exit_probe.cpp \"AddressSanitizer: heap-buffer-overflow\")\n",
             encoding="utf-8")
         cls.instrumented = cls.verdicts(project, cls.tmp / "instrumented", "address")
+        cls.instrumented_log = cls.verdicts(
+            project, cls.tmp / "instrumented-log", "address", "halt_on_error=1:detect_leaks=0:log_path=asan.log")
         cls.uninstrumented = cls.verdicts(project, cls.tmp / "uninstrumented", "")
 
     @classmethod
@@ -51,10 +55,10 @@ class SanitizerProbeTest(unittest.TestCase):
         shutil.rmtree(cls.tmp, ignore_errors=True)
 
     @staticmethod
-    def verdicts(project, build, sanitize):
+    def verdicts(project, build, sanitize, asan_options="halt_on_error=1:detect_leaks=0"):
         """{test name: Passed or Failed} from configuring, building, and running the scratch project."""
-        # RelWithDebInfo and the options of the x64-asan test preset, as the real lane runs it.
-        block = (f"$env:ASAN_OPTIONS = 'halt_on_error=1:detect_leaks=0'; "
+        # RelWithDebInfo and the options of the sanitizer test presets, as the real lane runs it.
+        block = (f"$env:ASAN_OPTIONS = '{asan_options}'; "
                  f"cmake -S '{project}' -B '{build}' -G Ninja -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl "
                  f"-DCMAKE_BUILD_TYPE=RelWithDebInfo "
                  f"\"-DISOTONE_SANITIZE={sanitize}\" *> $null; if ($LASTEXITCODE -ne 0) {{ 'configure failed'; exit 3 }}; "
@@ -71,11 +75,34 @@ class SanitizerProbeTest(unittest.TestCase):
     def test_the_instrumented_probe_passes_on_its_report(self):
         self.assertEqual(self.instrumented.get("asan_probe"), "Passed", self.instrumented)
 
+    def test_the_instrumented_probe_passes_and_retains_report_when_log_path_is_set(self):
+        self.assertEqual(self.instrumented_log.get("asan_probe"), "Passed", self.instrumented_log)
+        self.assertEqual(self.instrumented_log.get("exit_probe"), "Failed", self.instrumented_log)
+        reports = sorted((self.tmp / "instrumented-log" / "sanitizer").glob("asan.log.*"))
+        self.assertEqual(len(reports), 1, reports)
+        text = reports[0].read_text(encoding="utf-8", errors="replace")
+        self.assertIn("SUMMARY: AddressSanitizer: heap-buffer-overflow", text)
+        self.assertIn("asan_probe_test.cpp", text)
+
     def test_the_uninstrumented_probe_fails(self):
         self.assertEqual(self.uninstrumented.get("asan_probe"), "Failed", self.uninstrumented)
 
     def test_a_probe_that_exits_nonzero_without_a_report_fails(self):
         self.assertEqual(self.instrumented.get("exit_probe"), "Failed", self.instrumented)
+
+    def test_the_shared_asan_test_preset_defines_asan_options_once_for_x64_and_arm64(self):
+        data = json.loads(PRESETS.read_text(encoding="utf-8"))
+        by_name = {p["name"]: p for p in data["testPresets"]}
+        self.assertIn("asan", by_name)
+        self.assertTrue(by_name["asan"].get("hidden"))
+        self.assertEqual(
+            by_name["asan"]["environment"]["ASAN_OPTIONS"],
+            "halt_on_error=1:detect_leaks=0:log_path=asan.log",
+        )
+        for name in ("x64-asan", "arm64-asan"):
+            self.assertIn(name, by_name)
+            self.assertEqual(by_name[name].get("inherits"), "asan")
+            self.assertNotIn("ASAN_OPTIONS", by_name[name].get("environment", {}))
 
 
 if __name__ == "__main__":
