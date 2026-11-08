@@ -97,8 +97,23 @@ if (-not $SkipDevEnv) {
   Enter-Arm64Environment
 }
 
+$checkoutHead = ''
+if (Test-Path -LiteralPath (Join-Path $repoRoot '.git')) {
+  $gitHead = (git -C $repoRoot rev-parse HEAD 2>&1 | Out-String).Trim()
+  if ($LASTEXITCODE -eq 0 -and $gitHead) {
+    $checkoutHead = $gitHead
+  }
+}
 if (-not $Commit) {
-  $Commit = (git -C $repoRoot rev-parse HEAD 2>&1 | Out-String).Trim()
+  $Commit = $checkoutHead
+}
+if (-not $Commit) {
+  Write-Host "run-arm64-tests: could not determine candidate commit at $repoRoot"
+  exit 1
+}
+if ($checkoutHead -and $checkoutHead -ne $Commit) {
+  Write-Host "run-arm64-tests: checkout commit mismatch: checkout HEAD is '$checkoutHead', expected '$Commit'"
+  exit 1
 }
 
 if ($StageProducer) {

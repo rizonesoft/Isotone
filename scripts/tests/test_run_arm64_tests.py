@@ -128,6 +128,21 @@ class RunArm64TestsPreflightTest(unittest.TestCase):
             self.assertNotEqual(res.returncode, 0)
             self.assertIn("commit mismatch", res.stdout + res.stderr)
 
+    def test_stale_checkout_head_is_refused_even_when_commit_matches_manifest(self):
+        with tempfile.TemporaryDirectory(prefix="arm64-preflight-") as raw:
+            tmp = Path(raw).resolve()
+            commit = self.make_tree(tmp)
+            subprocess.run(["git", "init", "-q"], cwd=tmp, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp, check=True)
+            subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp, check=True)
+            (tmp / "README.md").write_text("stale checkout\n", encoding="utf-8")
+            subprocess.run(["git", "add", "README.md"], cwd=tmp, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "stale"], cwd=tmp, check=True)
+            host_arch = os.environ.get("PROCESSOR_ARCHITECTURE", "AMD64")
+            res = self.run_script(tmp, "-Commit", commit, "-ExpectedArch", host_arch, "-VerifyOnly", "-SkipDevEnv")
+            self.assertNotEqual(res.returncode, 0)
+            self.assertIn("checkout commit mismatch", res.stdout + res.stderr)
+
     def test_modified_binary_is_refused_by_artifact_digest(self):
         with tempfile.TemporaryDirectory(prefix="arm64-preflight-") as raw:
             tmp = Path(raw).resolve()
