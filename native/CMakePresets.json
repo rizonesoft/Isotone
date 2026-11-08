@@ -45,6 +45,15 @@
       }
     },
     {
+      "name": "x64-fuzz-msvc",
+      "inherits": "x64-asan",
+      "displayName": "x64 libFuzzer (MSVC)",
+      "description": "x64 RelWithDebInfo with MSVC /fsanitize=address /fsanitize=fuzzer on every fuzz target and its first-party library closure.",
+      "cacheVariables": {
+        "ISOTONE_FUZZ": "ON"
+      }
+    },
+    {
       "name": "x64-analyze",
       "inherits": "x64-debug",
       "displayName": "x64 /analyze",
@@ -90,6 +99,7 @@
     { "name": "x64-debug", "configurePreset": "x64-debug" },
     { "name": "x64-release", "configurePreset": "x64-release" },
     { "name": "x64-asan", "configurePreset": "x64-asan" },
+    { "name": "x64-fuzz-msvc", "configurePreset": "x64-fuzz-msvc" },
     { "name": "x64-analyze", "configurePreset": "x64-analyze" },
     { "name": "arm64-debug", "configurePreset": "arm64-debug" },
     { "name": "arm64-release", "configurePreset": "arm64-release" },
@@ -124,6 +134,12 @@
       "environment": {
         "PATH": "$env{VCToolsInstallDir}bin\\Hostx64\\x64;$penv{PATH}"
       }
+    },
+    {
+      "name": "x64-fuzz-msvc",
+      "inherits": "x64-asan",
+      "configurePreset": "x64-fuzz-msvc",
+      "description": "The x64 AddressSanitizer and libFuzzer test environment."
     },
     {
       "name": "arm64-debug",
@@ -168,6 +184,14 @@
         { "type": "configure", "name": "x64-asan" },
         { "type": "build", "name": "x64-asan" },
         { "type": "test", "name": "x64-asan" }
+      ]
+    },
+    {
+      "name": "x64-fuzz-msvc",
+      "steps": [
+        { "type": "configure", "name": "x64-fuzz-msvc" },
+        { "type": "build", "name": "x64-fuzz-msvc" },
+        { "type": "test", "name": "x64-fuzz-msvc" }
       ]
     },
     {

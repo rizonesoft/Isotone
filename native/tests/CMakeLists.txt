@@ -12,4 +12,6 @@ if(ISOTONE_SANITIZE STREQUAL "address")
   add_subdirectory(sanitizer)
 endif()
 
+add_subdirectory(fuzz)
+
 isotone_require_registered_tests("${CMAKE_CURRENT_SOURCE_DIR}")

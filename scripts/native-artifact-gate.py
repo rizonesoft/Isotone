@@ -624,7 +624,7 @@ def self_test():
     check("the repository's presets build under artifacts/native/",
           presets["x64-release"][0], ROOT / "artifacts" / "native" / "x64-release")
     check("the sanitizer presets take the sanitizer policy",
-          sorted(n for n, (_, p) in presets.items() if p == "asan"), ["arm64-asan", "x64-asan"])
+          sorted(n for n, (_, p) in presets.items() if p == "asan"), ["arm64-asan", "x64-asan", "x64-fuzz-msvc"])
     check("x64-release is read from the presets", "x64-release" in presets, True)
     check("no probe folder is a preset", [n for n in presets if n.startswith("probe")], [])
 

@@ -1,0 +1,105 @@
+name: fuzz
+
+# Nightly and on-demand libFuzzer campaign over every registered native fuzz target (D00 T05 §9;
+# docs/specs/2026-10-22-native-stack-design.md, "Fuzzing"). Builds x64-fuzz-msvc inside scripts/dev-env.ps1, runs each
+# target for its 5-minute (300-second) budget with -rss_limit_mb=2048 and -timeout=10 over its committed seed corpus
+# and regression inputs, uploads any crash, timeout, or OOM input as an artifact, and fails the run when any target
+# faults.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 2 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 45
+    env:
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}\build\vcpkg-cache,readwrite
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Cache vcpkg packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/vcpkg-cache
+          key: vcpkg-${{ runner.os }}-isotone-x64-arm64-asan-9eec002df1cd109f8f104cd966a763daf9751489-${{ hashFiles('native/vcpkg.json', 'native/vcpkg-configuration.json', 'native/triplets/**', 'native/toolchain.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-isotone-x64-arm64-asan-9eec002df1cd109f8f104cd966a763daf9751489-
+      - name: Check the pinned native toolchain (x64)
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/dev-env.ps1 -Check -Arch x64
+      - name: Configure and build x64-fuzz-msvc
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path build/vcpkg-cache -Force | Out-Null
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Arch x64 -Run '
+            Push-Location native
+            cmake --preset x64-fuzz-msvc
+            $c = $LASTEXITCODE
+            if (-not $c) {
+              cmake --build --preset x64-fuzz-msvc
+              $c = $LASTEXITCODE
+            }
+            Pop-Location
+            exit $c
+          '
+      - name: Run every registered fuzz target for 5 minutes
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/dev-env.ps1 -Arch x64 -Run '
+            $manifest = "artifacts/native/x64-fuzz-msvc/isotone-fuzz-targets.txt"
+            if (-not (Test-Path -LiteralPath $manifest)) {
+              Write-Error "fuzz: missing fuzz target manifest at $manifest"
+              exit 1
+            }
+            $entries = @(Get-Content -LiteralPath $manifest | Where-Object { $_.Trim() })
+            if ($entries.Count -eq 0) {
+              Write-Error "fuzz: $manifest listed no fuzz targets"
+              exit 1
+            }
+            $env:PATH = "$env:VCToolsInstallDir`bin\Hostx64\x64;$env:PATH"
+            $env:ASAN_OPTIONS = "halt_on_error=1:detect_leaks=0"
+            $failed = @()
+            foreach ($line in $entries) {
+              $parts = $line.Split("|")
+              $name = $parts[0]
+              $exe = $parts[1]
+              $corpus = $parts[2]
+              $regressions = $parts[3]
+              $workCorpus = Join-Path "build/fuzz-corpus" $name
+              $artifactDir = (Join-Path "build/fuzz-artifacts" $name) + "/"
+              New-Item -ItemType Directory -Path $workCorpus -Force | Out-Null
+              New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
+              Write-Host "=== fuzz.$name ($exe) ==="
+              & $exe -max_total_time=300 -rss_limit_mb=2048 -timeout=10 "-artifact_prefix=$artifactDir" $workCorpus $corpus $regressions
+              $code = $LASTEXITCODE
+              $crashes = @(Get-ChildItem -LiteralPath $artifactDir -File -ErrorAction SilentlyContinue)
+              if ($code -ne 0 -or $crashes.Count -gt 0) {
+                Write-Host "fuzz.$name FAILED (exit $code, $($crashes.Count) artifact(s))"
+                $failed += $name
+              } else {
+                Write-Host "fuzz.$name PASSED (300s budget completed)"
+              }
+            }
+            if ($failed.Count -gt 0) {
+              Write-Error "fuzz target(s) failed: $($failed -join '', '')"
+              exit 1
+            }
+          '
+      - name: Upload crash, timeout, or OOM inputs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-crash-inputs
+          path: build/fuzz-artifacts/
+          if-no-files-found: warn

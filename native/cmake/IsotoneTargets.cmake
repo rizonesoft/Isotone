@@ -58,7 +58,171 @@ function(isotone_add_library name)
   if(ARG_PUBLIC_INCLUDE)
     target_include_directories(${name} PUBLIC ${ARG_PUBLIC_INCLUDE})
   endif()
+  set_property(TARGET ${name} PROPERTY ISOTONE_FIRST_PARTY_LIBRARY TRUE)
+  set_property(TARGET ${name} PROPERTY ISOTONE_LIBRARY_SOURCES "${ARG_UNPARSED_ARGUMENTS}")
+  set_property(TARGET ${name} PROPERTY ISOTONE_LIBRARY_PUBLIC_INCLUDE "${ARG_PUBLIC_INCLUDE}")
   isotone_apply_flags(${name})
+endfunction()
+
+# isotone_apply_fuzz_flags(<target> <LIBRARY|EXECUTABLE>): coverage and AddressSanitizer instrumentation for a fuzz
+# executable or a static library in its first-party closure (D00 T05 §9).
+function(isotone_apply_fuzz_flags target kind)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(${target} PRIVATE /fsanitize=address /fsanitize=fuzzer)
+    if(kind STREQUAL "EXECUTABLE")
+      target_link_options(${target} PRIVATE /INCREMENTAL:NO)
+    endif()
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(kind STREQUAL "LIBRARY")
+      target_compile_options(${target} PRIVATE -fsanitize=fuzzer-no-link,address)
+    else()
+      target_compile_options(${target} PRIVATE -fsanitize=fuzzer,address)
+      target_link_options(${target} PRIVATE -fsanitize=fuzzer,address /INCREMENTAL:NO)
+    endif()
+  else()
+    message(FATAL_ERROR "Unsupported compiler for fuzzing: ${CMAKE_CXX_COMPILER_ID}")
+  endif()
+endfunction()
+
+# isotone_ensure_fuzz_library(<lib> <out_var>): walks the transitive LINK_LIBRARIES closure of a first-party static
+# library and builds each in a `<lib>_fuzz` variant with coverage and AddressSanitizer instrumentation (D00-T05-S8-PR10).
+function(isotone_ensure_fuzz_library lib out_var)
+  if(NOT TARGET "${lib}")
+    set(${out_var} "${lib}" PARENT_SCOPE)
+    return()
+  endif()
+  get_target_property(aliased "${lib}" ALIASED_TARGET)
+  if(aliased)
+    set(lib "${aliased}")
+  endif()
+  get_target_property(is_first_party "${lib}" ISOTONE_FIRST_PARTY_LIBRARY)
+  if(NOT is_first_party)
+    set(${out_var} "${lib}" PARENT_SCOPE)
+    return()
+  endif()
+
+  set(fuzz_lib "${lib}_fuzz")
+  if(NOT TARGET "${fuzz_lib}")
+    set(raw_deps "")
+    get_target_property(link_libs "${lib}" LINK_LIBRARIES)
+    if(link_libs)
+      list(APPEND raw_deps ${link_libs})
+    endif()
+    get_target_property(iface_libs "${lib}" INTERFACE_LINK_LIBRARIES)
+    if(iface_libs)
+      list(APPEND raw_deps ${iface_libs})
+    endif()
+    list(REMOVE_DUPLICATES raw_deps)
+
+    set(mapped_deps "")
+    foreach(dep IN LISTS raw_deps)
+      isotone_ensure_fuzz_library("${dep}" mapped_dep)
+      list(APPEND mapped_deps "${mapped_dep}")
+    endforeach()
+
+    get_target_property(lib_source_dir "${lib}" SOURCE_DIR)
+    get_target_property(lib_sources "${lib}" ISOTONE_LIBRARY_SOURCES)
+    set(resolved_sources "")
+    foreach(src IN LISTS lib_sources)
+      if(IS_ABSOLUTE "${src}")
+        list(APPEND resolved_sources "${src}")
+      else()
+        list(APPEND resolved_sources "${lib_source_dir}/${src}")
+      endif()
+    endforeach()
+
+    add_library(${fuzz_lib} STATIC ${resolved_sources})
+    get_target_property(manual_deps "${lib}" MANUALLY_ADDED_DEPENDENCIES)
+    if(manual_deps)
+      add_dependencies(${fuzz_lib} ${manual_deps})
+    endif()
+    get_target_property(pub_inc "${lib}" ISOTONE_LIBRARY_PUBLIC_INCLUDE)
+    if(pub_inc)
+      target_include_directories(${fuzz_lib} PUBLIC "${pub_inc}")
+    endif()
+    get_target_property(inc_dirs "${lib}" INCLUDE_DIRECTORIES)
+    if(inc_dirs)
+      target_include_directories(${fuzz_lib} PRIVATE ${inc_dirs})
+    endif()
+    get_target_property(iface_inc_dirs "${lib}" INTERFACE_INCLUDE_DIRECTORIES)
+    if(iface_inc_dirs)
+      target_include_directories(${fuzz_lib} PUBLIC ${iface_inc_dirs})
+    endif()
+    get_target_property(compile_defs "${lib}" COMPILE_DEFINITIONS)
+    if(compile_defs)
+      target_compile_definitions(${fuzz_lib} PRIVATE ${compile_defs})
+    endif()
+    get_target_property(iface_defs "${lib}" INTERFACE_COMPILE_DEFINITIONS)
+    if(iface_defs)
+      target_compile_definitions(${fuzz_lib} PUBLIC ${iface_defs})
+    endif()
+    if(mapped_deps)
+      target_link_libraries(${fuzz_lib} PUBLIC ${mapped_deps})
+    endif()
+    isotone_apply_flags(${fuzz_lib})
+    isotone_apply_fuzz_flags(${fuzz_lib} LIBRARY)
+    set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${fuzz_lib})
+  endif()
+
+  set(${out_var} "${fuzz_lib}" PARENT_SCOPE)
+endfunction()
+
+# isotone_add_fuzz_target(<name> SOURCES <sources>... LIBRARIES <libraries>...): in a fuzz preset (ISOTONE_FUZZ=ON),
+# builds a libFuzzer executable `<name>_fuzz` and compiles the transitive first-party static library closure of
+# LIBRARIES in `<lib>_fuzz` variants with coverage and AddressSanitizer instrumentation; in every other test-capable
+# preset (BUILD_TESTING=ON, never the dist presets), builds a deterministic replay executable `<name>_fuzz_replay` that
+# runs LLVMFuzzerTestOneInput once on every file under `native/tests/fuzz/<name>/corpus/` and `regressions/`, registered
+# with CTest as `fuzz.<name>` (D00 T05 §9, D00-T05-S8-PR9, D00-T05-S8-PR10).
+function(isotone_add_fuzz_target name)
+  cmake_parse_arguments(ARG "" "" "SOURCES;LIBRARIES" ${ARGN})
+  if(NOT ARG_SOURCES)
+    message(FATAL_ERROR "isotone_add_fuzz_target(${name}): SOURCES is required")
+  endif()
+  set(corpus_dir "${PROJECT_SOURCE_DIR}/tests/fuzz/${name}/corpus")
+  set(regressions_dir "${PROJECT_SOURCE_DIR}/tests/fuzz/${name}/regressions")
+
+  if(ISOTONE_FUZZ)
+    set(fuzz_libs "")
+    foreach(lib IN LISTS ARG_LIBRARIES)
+      isotone_ensure_fuzz_library("${lib}" mapped_lib)
+      list(APPEND fuzz_libs "${mapped_lib}")
+    endforeach()
+    set(exe_target "${name}_fuzz")
+    add_executable(${exe_target} ${ARG_SOURCES})
+    set_target_properties(
+      ${exe_target}
+      PROPERTIES
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${exe_target}.dir")
+    if(fuzz_libs)
+      target_link_libraries(${exe_target} PRIVATE ${fuzz_libs})
+    endif()
+    isotone_apply_flags(${exe_target})
+    isotone_apply_fuzz_flags(${exe_target} EXECUTABLE)
+    add_test(
+      NAME "fuzz.${name}"
+      COMMAND "${exe_target}" -runs=0 "${corpus_dir}" "${regressions_dir}")
+    set_property(TARGET ${exe_target} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
+    set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${exe_target})
+    set_property(
+      GLOBAL APPEND PROPERTY ISOTONE_FUZZ_TARGETS
+      "${name}|$<TARGET_FILE:${exe_target}>|${corpus_dir}|${regressions_dir}")
+  elseif(BUILD_TESTING)
+    if(NOT TARGET isotone_fuzz_replay_main)
+      isotone_add_library(
+        isotone_fuzz_replay_main
+        "${PROJECT_SOURCE_DIR}/tests/fuzz/fuzz_replay_main.cpp")
+      set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS isotone_fuzz_replay_main)
+    endif()
+    set(exe_target "${name}_fuzz_replay")
+    add_executable(${exe_target} ${ARG_SOURCES})
+    target_link_libraries(${exe_target} PRIVATE ${ARG_LIBRARIES} isotone_fuzz_replay_main)
+    isotone_apply_flags(${exe_target})
+    add_test(
+      NAME "fuzz.${name}"
+      COMMAND "${exe_target}" "${corpus_dir}" "${regressions_dir}")
+    set_property(TARGET ${exe_target} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
+    set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${exe_target})
+  endif()
 endfunction()
 
 # isotone_add_test(<name> <sources>... LINK <libraries>...): a GoogleTest executable registered with CTest. Discovery
@@ -106,6 +270,16 @@ function(isotone_write_dev_targets)
   list(SORT targets)
   string(JOIN "\n" text ${targets})
   file(WRITE "${CMAKE_BINARY_DIR}/isotone-dev-targets.txt" "${text}\n")
+endfunction()
+
+# isotone_write_fuzz_targets(): in a fuzz preset, writes ${CMAKE_BINARY_DIR}/isotone-fuzz-targets.txt with one line per
+# registered fuzz target (`<name>|<executable>|<corpus_dir>|<regressions_dir>`) for the nightly fuzz workflow.
+function(isotone_write_fuzz_targets)
+  get_property(entries GLOBAL PROPERTY ISOTONE_FUZZ_TARGETS)
+  if(entries)
+    string(JOIN "\n" text ${entries})
+    file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/isotone-fuzz-targets.txt" CONTENT "${text}\n")
+  endif()
 endfunction()
 
 # isotone_require_registered_tests(<dir>): every executable under a tests folder went through isotone_add_test. A test

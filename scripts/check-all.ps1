@@ -40,9 +40,10 @@
       where it builds or inspects, its full output in build/check-all/<stage>.log:
       native presets (every non-hidden configure preset in native/CMakePresets.json
       is owned by a build stage, D00-T05-S7-PR7); native toolchain (dev-env.ps1
-      -Check for x64 and arm64); native x64-debug, x64-release, and x64-asan
-      (cmake --workflow: configure, build, test); native arm64-debug, arm64-release,
-      and arm64-asan (configure and build: an ARM64 test runs on ARM64, D00 T05 §8);
+      -Check for x64 and arm64); native x64-debug, x64-release, x64-asan, and
+      x64-fuzz-msvc (cmake --workflow: configure, build, test); native arm64-debug,
+      arm64-release, and arm64-asan (configure and build: an ARM64 test runs on
+      ARM64, D00 T05 §8);
       native x64-dist and arm64-dist; native deps (native-deps-lint.py: the register
       and the link graphs, D00 T04 §1); native analyze (x64-analyze and
       arm64-analyze); native std (native-std-check.py over every preset folder);
@@ -53,7 +54,8 @@
       native asan-coverage (--asan-coverage --require-built); and the native Python
       gates, the self-tests of native-std-check.py, native-pe-check.py, and
       native-artifact-gate.py, then test_dev_env.py, test_native_format.py,
-      test_native_tidy.py, test_native_asan.py, and test_run_arm64_tests.py.
+      test_native_tidy.py, test_native_asan.py, test_native_fuzz.py, and
+      test_run_arm64_tests.py.
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
 .EXAMPLE
@@ -156,7 +158,7 @@ try {
 
   if (-not $SkipNative) {
     $devEnv = Join-Path $RepoRoot 'scripts/dev-env.ps1'
-    $workflowPresets = @('x64-debug', 'x64-release', 'x64-asan', 'arm64-debug', 'arm64-release', 'arm64-asan', 'x64-dist', 'arm64-dist')
+    $workflowPresets = @('x64-debug', 'x64-release', 'x64-asan', 'x64-fuzz-msvc', 'arm64-debug', 'arm64-release', 'arm64-asan', 'x64-dist', 'arm64-dist')
     $analyzePresets = @('x64-analyze', 'arm64-analyze')
     $ownedPresets = @($workflowPresets + $analyzePresets)
     $configurePresets = @((Get-Content -Raw (Join-Path $RepoRoot 'native/CMakePresets.json') | ConvertFrom-Json).configurePresets |
@@ -197,6 +199,7 @@ try {
       Invoke-PythonGate 'native format tests' 'tests/test_native_format.py' @()
       Invoke-PythonGate 'native tidy tests' 'tests/test_native_tidy.py' @()
       Invoke-PythonGate 'native asan tests' 'tests/test_native_asan.py' @()
+      Invoke-PythonGate 'native fuzz tests' 'tests/test_native_fuzz.py' @()
       Invoke-PythonGate 'arm64 test runner tests' 'tests/test_run_arm64_tests.py' @()
     }
   } else {

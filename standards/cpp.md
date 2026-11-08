@@ -9,7 +9,7 @@ Follows the spec's "The toolchain".
 - C++23 by the one switch `D00 T05 §3` sets (`/std:c++23preview`, moving to `/std:c++23` when the pinned MSVC ships it), never `/std:c++latest`; `scripts/native-std-check.py` holds every compile to it.
 - Headers and source files, no C++20 modules: the toolchain's module support is uneven across MSVC, clang-tidy, and clang-format, which all must read the same code.
 - `/permissive-`, `/Zc:__cplusplus`, `/Zc:preprocessor`, `/utf-8`; no compiler extension outside what the Windows SDK headers themselves need.
-- Every target is added through `isotone_add_library`, `isotone_add_test`, or `isotone_add_sanitizer_probe` (`native/cmake/IsotoneTargets.cmake`), so it takes the suite's flags; `/W4 /WX` makes every warning an error.
+- Every target is added through `isotone_add_library`, `isotone_add_test`, `isotone_add_sanitizer_probe`, or `isotone_add_fuzz_target` (`native/cmake/IsotoneTargets.cmake`), so it takes the suite's flags; `/W4 /WX` makes every warning an error.
 
 ## Ownership and lifetimes
 

@@ -114,7 +114,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path build/vcpkg-cache -Force | Out-Null
-          $workflowPresets = @('x64-debug', 'x64-release', 'x64-asan', 'arm64-debug', 'arm64-release', 'arm64-asan', 'x64-dist', 'arm64-dist')
+          $workflowPresets = @('x64-debug', 'x64-release', 'x64-asan', 'x64-fuzz-msvc', 'arm64-debug', 'arm64-release', 'arm64-asan', 'x64-dist', 'arm64-dist')
           $analyzePresets = @('x64-analyze', 'arm64-analyze')
           $ownedPresets = @($workflowPresets + $analyzePresets)
           $configurePresets = @((Get-Content -Raw native/CMakePresets.json | ConvertFrom-Json).configurePresets |
@@ -176,6 +176,7 @@ jobs:
             @('-m', 'unittest', 'scripts/tests/test_native_format.py'),
             @('-m', 'unittest', 'scripts/tests/test_native_tidy.py'),
             @('-m', 'unittest', 'scripts/tests/test_native_asan.py'),
+            @('-m', 'unittest', 'scripts/tests/test_native_fuzz.py'),
             @('-m', 'unittest', 'scripts/tests/test_run_arm64_tests.py')
           )
           foreach ($gate in $pyGates) {
