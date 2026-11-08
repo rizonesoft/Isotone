@@ -327,8 +327,9 @@ def expected_ninja_images(ninja_text):
             continue
         for part in outputs_raw.replace("$:", ":").replace("$ ", " ").replace("$$", "$").split("|"):
             for token in part.split():
-                if token.lower().endswith((".exe", ".dll")) and token not in out:
-                    out.append(token)
+                norm = token.replace("\\", "/")
+                if norm.lower().endswith((".exe", ".dll")) and norm not in out:
+                    out.append(norm)
     return out
 
 
