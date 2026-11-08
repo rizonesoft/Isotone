@@ -4,18 +4,18 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**247 findings across 19 sections.**
+**255 findings across 20 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
 | `adversarial` | 86 | fails under hostile or unexpected input |
-| `integration` | 72 | a consumer, caller, or downstream artifact no longer holds |
-| `consistency` | 25 | disagrees with the rest of the suite, its naming, or its layout |
-| `correctness` | 23 | the code does the wrong thing |
+| `integration` | 77 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 26 | disagrees with the rest of the suite, its naming, or its layout |
+| `correctness` | 24 | the code does the wrong thing |
 | `source-defect` | 21 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 19 | the plan or the evidence misdescribes what happened |
+| `record` | 20 | the plan or the evidence misdescribes what happened |
 | `reproducibility` | 1 | the same input does not produce the same output |
 
 ## By severity
@@ -23,8 +23,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 119 | wrong behavior in code, plan, or record |
-| `minor` | 128 | polish or wording, or no surviving defect |
+| `major` | 122 | wrong behavior in code, plan, or record |
+| `minor` | 133 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -277,3 +277,11 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §7` | F7 | minor | `correctness` | fixed | self | two defects in the first check-all native stages |
 | `D00 T05 §7` | F8 | minor | `correctness` | fixed | self | native-tidy missed a command-line error with no file prefix |
 | `D00 T05 §7` | F9 | minor | `consistency` | fixed | self | the PE check skipped every image under CMakeFiles |
+| `D00 T05 §8` | F1 | minor | `consistency` | cleared | independent | Implementer line records Gemini 4 Argon |
+| `D00 T05 §8` | F2 | major | `integration` | fixed | independent | native-deps-lint restored build.ninja unconditionally after graphviz |
+| `D00 T05 §8` | F3 | minor | `record` | fixed | independent | completion note in D00 T05 §8 named cron 17 4 * * 1 instead of 20 5 * * 1 |
+| `D00 T05 §8` | F4 | minor | `integration` | fixed | independent | RunSanitizerProbe.cmake deleted reports sharing log_path across probes in one directory |
+| `D00 T05 §8` | F5 | minor | `integration` | fixed | independent | run-arm64-tests.ps1 allowed -Commit to bypass checking the checkout's HEAD |
+| `D00 T05 §8` | F6 | major | `integration` | fixed | self | windows-11-vs2026-arm checks out on C:\ while windows-2025-vs2026 builds on D:\ |
+| `D00 T05 §8` | F7 | minor | `correctness` | fixed | self | expected_ninja_images did not normalize Windows backslashes on POSIX |
+| `D00 T05 §8` | F8 | major | `integration` | fixed | self | cmake --graphviz rewrote build.ninja on a fresh CI build |
