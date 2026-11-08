@@ -43,6 +43,7 @@ class SanitizerProbeTest(unittest.TestCase):
             "set(CMAKE_MSVC_RUNTIME_LIBRARY \"MultiThreaded$<$<CONFIG:Debug>:Debug>\")\n"
             f"list(APPEND CMAKE_MODULE_PATH \"{native}/cmake\")\ninclude(IsotoneTargets)\nenable_testing()\n"
             f"add_subdirectory(\"{native}/tests/sanitizer\" sanitizer)\n"
+            f"isotone_add_sanitizer_probe(first_probe \"{native}/tests/sanitizer/asan_probe_test.cpp\" \"AddressSanitizer: heap-buffer-overflow\")\n"
             "isotone_add_sanitizer_probe(exit_probe exit_probe.cpp \"AddressSanitizer: heap-buffer-overflow\")\n",
             encoding="utf-8")
         cls.instrumented = cls.verdicts(project, cls.tmp / "instrumented", "address")
@@ -77,12 +78,14 @@ class SanitizerProbeTest(unittest.TestCase):
 
     def test_the_instrumented_probe_passes_and_retains_report_when_log_path_is_set(self):
         self.assertEqual(self.instrumented_log.get("asan_probe"), "Passed", self.instrumented_log)
+        self.assertEqual(self.instrumented_log.get("first_probe"), "Passed", self.instrumented_log)
         self.assertEqual(self.instrumented_log.get("exit_probe"), "Failed", self.instrumented_log)
-        reports = sorted((self.tmp / "instrumented-log" / "sanitizer").glob("asan.log.*"))
-        self.assertEqual(len(reports), 1, reports)
-        text = reports[0].read_text(encoding="utf-8", errors="replace")
-        self.assertIn("SUMMARY: AddressSanitizer: heap-buffer-overflow", text)
-        self.assertIn("asan_probe_test.cpp", text)
+        for folder in (self.tmp / "instrumented-log" / "sanitizer", self.tmp / "instrumented-log"):
+            reports = sorted(folder.glob("asan.log.*"))
+            self.assertEqual(len(reports), 1, (folder, reports))
+            text = reports[0].read_text(encoding="utf-8", errors="replace")
+            self.assertIn("SUMMARY: AddressSanitizer: heap-buffer-overflow", text)
+            self.assertIn("asan_probe_test.cpp", text)
 
     def test_the_uninstrumented_probe_fails(self):
         self.assertEqual(self.uninstrumented.get("asan_probe"), "Failed", self.uninstrumented)
