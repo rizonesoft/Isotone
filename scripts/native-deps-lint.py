@@ -490,6 +490,24 @@ def source_findings(files, rows):
 
 # The run --------------------------------------------------------------------------------------------------------------
 
+RERUN_CMAKE_BLOCK_RE = re.compile(
+    r"(?ms)^# Re-run CMake if any of its inputs changed\.\n.*?(?=^# Clean all the built files\.)"
+)
+
+
+def build_graph_signature(ninja_text):
+    """Everything in build.ninja outside CMake's RERUN_CMAKE and missing-input phony blocks, which drop compiler-detection
+    modules on the second configure of a fresh build folder even when no build rule or target changed."""
+    return RERUN_CMAKE_BLOCK_RE.sub("", ninja_text.replace("\r\n", "\n"))
+
+
+def cmake_inputs_newer_than(mtime_ns):
+    native = ROOT / "native"
+    patterns = ("CMakeLists.txt", "CMakePresets.json", "vcpkg.json", "vcpkg-configuration.json",
+                "**/CMakeLists.txt", "cmake/*.cmake", "triplets/*.cmake")
+    return any(p.is_file() and p.stat().st_mtime_ns > mtime_ns for pat in patterns for p in native.glob(pat))
+
+
 def graph_for(preset):
     """`cmake --graphviz` of one preset, configured inside scripts/dev-env.ps1 for the preset's own architecture (an
     ARM64 build folder cannot be reconfigured in the x64 environment), or None if it fails."""
@@ -498,18 +516,20 @@ def graph_for(preset):
     if out.is_file():
         out.unlink()
     ninja = ROOT / "artifacts" / "native" / preset / "build.ninja"
-    before = (ninja.read_bytes(), ninja.stat()) if ninja.is_file() else None
+    before = (ninja.read_text(encoding="utf-8", errors="replace"), ninja.stat()) if ninja.is_file() else None
     block = (f"Push-Location native; cmake --preset {preset} '--graphviz={out}' *> $null; $c = $LASTEXITCODE; "
              f"Pop-Location; exit $c")
     proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(ROOT / "scripts" / "dev-env.ps1"), "-Arch",
                            preset.split("-")[0], "-Run", block], cwd=ROOT, capture_output=True, text=True, errors="replace")
-    # CMake's Ninja generator rewrites build.ninja on every configure (and injects --graphviz into RERUN_CMAKE); restore
-    # build.ninja's bytes and timestamp so inspecting the link graph never mutates the build file or makes built outputs
-    # appear older than build.ninja to --require-built.
+    # CMake's Ninja generator rewrites build.ninja on every configure (dropping compiler-detection modules from RERUN_CMAKE
+    # on the second configure of a fresh build folder). Restore build.ninja's timestamp only when no CMake input changed
+    # since the build and the build graph outside RERUN_CMAKE is identical, so a genuine CMake graph edit is still caught
+    # by native-artifact-gate.py --require-built.
     if before is not None and proc.returncode == 0 and ninja.is_file():
-        if ninja.read_bytes() != before[0]:
-            ninja.write_bytes(before[0])
-        os.utime(ninja, ns=(before[1].st_atime_ns, before[1].st_mtime_ns))
+        after_text = ninja.read_text(encoding="utf-8", errors="replace")
+        if (not cmake_inputs_newer_than(before[1].st_mtime_ns)
+                and build_graph_signature(after_text) == build_graph_signature(before[0])):
+            os.utime(ninja, ns=(before[1].st_atime_ns, before[1].st_mtime_ns))
     return out.read_text(encoding="utf-8") if proc.returncode == 0 and out.is_file() else None
 
 
@@ -777,6 +797,37 @@ def self_test():
         {"downloadLocation": "git+https://github.com/microsoft/vcpkg@17742fd"},
         {"downloadLocation": "git+https://github.com/google/googletest@v1.18.0"}]})),
           ("https://github.com/google/googletest", "v1.18.0"))
+    ninja_before = (
+        "build tests\\core\\all: phony tests\\core\\build_info_test.exe\n"
+        "# Re-run CMake if any of its inputs changed.\n"
+        "build build.ninja: RERUN_CMAKE | CMakeDetermineCCompiler.cmake CMakeLists.txt\n"
+        "# A missing CMake input file is not an error.\n"
+        "build CMakeDetermineCCompiler.cmake CMakeLists.txt: phony\n"
+        "# Clean all the built files.\n"
+        "build clean: CLEAN\n"
+    )
+    ninja_after_rerun_only = (
+        "build tests\\core\\all: phony tests\\core\\build_info_test.exe\n"
+        "# Re-run CMake if any of its inputs changed.\n"
+        "build build.ninja: RERUN_CMAKE | CMakeLists.txt\n"
+        "# A missing CMake input file is not an error.\n"
+        "build CMakeLists.txt: phony\n"
+        "# Clean all the built files.\n"
+        "build clean: CLEAN\n"
+    )
+    ninja_after_new_target = (
+        "build tests\\core\\all: phony tests\\core\\build_info_test.exe tests\\core\\extra_test.exe\n"
+        "# Re-run CMake if any of its inputs changed.\n"
+        "build build.ninja: RERUN_CMAKE | CMakeLists.txt\n"
+        "# A missing CMake input file is not an error.\n"
+        "build CMakeLists.txt: phony\n"
+        "# Clean all the built files.\n"
+        "build clean: CLEAN\n"
+    )
+    check("build_graph_signature ignores RERUN_CMAKE input trimming",
+          build_graph_signature(ninja_before) == build_graph_signature(ninja_after_rerun_only), True)
+    check("build_graph_signature detects a changed target in build.ninja",
+          build_graph_signature(ninja_before) == build_graph_signature(ninja_after_new_target), False)
     print(f"native-deps-lint self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
 
