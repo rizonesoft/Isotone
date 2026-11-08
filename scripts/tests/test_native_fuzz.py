@@ -39,6 +39,13 @@ class FuzzTargetTest(unittest.TestCase):
                         project / "tests" / "fuzz" / "fuzz_replay_main.cpp")
         shutil.copytree(ROOT / "native" / "tests" / "fuzz" / "qualify",
                         project / "tests" / "fuzz" / "qualify")
+        qualify_cmake = project / "tests" / "fuzz" / "qualify" / "CMakeLists.txt"
+        qualify_text = qualify_cmake.read_text(encoding="utf-8").replace(
+            "target_link_libraries(qualify_parser PUBLIC qualify_wire)",
+            'target_link_libraries(qualify_parser PUBLIC "$<$<CONFIG:RelWithDebInfo>:qualify_wire>")\n'
+            'target_compile_options(qualify_wire PUBLIC /DISOTONE_FUZZ_IFACE_OPT=1)\n'
+            'target_compile_options(qualify_parser PRIVATE /DISOTONE_FUZZ_PRIV_OPT=1)')
+        qualify_cmake.write_text(qualify_text, encoding="utf-8")
         cmake_dir = (ROOT / "native" / "cmake").as_posix()
         (project / "CMakeLists.txt").write_text(
             "cmake_minimum_required(VERSION 4.3)\nproject(FuzzProbe LANGUAGES C CXX)\n"
@@ -96,6 +103,8 @@ class FuzzTargetTest(unittest.TestCase):
             self.assertIn(target, fuzz_Targets, commands)
             self.assertRegex(fuzz_Targets[target], r"(?:^|\s)/fsanitize=address(?:\s|$)")
             self.assertRegex(fuzz_Targets[target], r"(?:^|\s)/fsanitize=fuzzer(?:\s|$)")
+            self.assertIn("/DISOTONE_FUZZ_IFACE_OPT=1", fuzz_Targets[target])
+        self.assertIn("/DISOTONE_FUZZ_PRIV_OPT=1", fuzz_Targets["qualify_parser_fuzz"])
         manifest = (build / "isotone-fuzz-targets.txt").read_text(encoding="utf-8").strip()
         self.assertTrue(manifest.startswith("qualify|"), manifest)
 

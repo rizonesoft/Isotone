@@ -85,9 +85,38 @@ function(isotone_apply_fuzz_flags target kind)
 endfunction()
 
 # isotone_ensure_fuzz_library(<lib> <out_var>): walks the transitive LINK_LIBRARIES closure of a first-party static
-# library and builds each in a `<lib>_fuzz` variant with coverage and AddressSanitizer instrumentation (D00-T05-S8-PR10).
+# library (including targets wrapped in CMake generator expressions) and builds each in a `<lib>_fuzz` variant with
+# coverage and AddressSanitizer instrumentation while preserving the library's compile, include, and link properties
+# (D00-T05-S8-PR10).
 function(isotone_ensure_fuzz_library lib out_var)
   if(NOT TARGET "${lib}")
+    if("${lib}" MATCHES "\\$<")
+      set(rewritten "${lib}")
+      string(REGEX MATCHALL "[A-Za-z0-9_.-]+" candidate_tokens "${lib}")
+      list(REMOVE_DUPLICATES candidate_tokens)
+      foreach(tok IN LISTS candidate_tokens)
+        if(TARGET "${tok}")
+          isotone_ensure_fuzz_library("${tok}" mapped_tok)
+          if(NOT "${mapped_tok}" STREQUAL "${tok}")
+            string(REGEX REPLACE "([.+*?^$()\\[\\]{}|\\\\])" "\\\\\\1" tok_escaped "${tok}")
+            string(
+              REGEX REPLACE
+              "(^|[^A-Za-z0-9_.-])${tok_escaped}($|[^A-Za-z0-9_.-])"
+              "\\1${mapped_tok}\\2"
+              rewritten
+              "${rewritten}")
+            string(
+              REGEX REPLACE
+              "(^|[^A-Za-z0-9_.-])${tok_escaped}($|[^A-Za-z0-9_.-])"
+              "\\1${mapped_tok}\\2"
+              rewritten
+              "${rewritten}")
+          endif()
+        endif()
+      endforeach()
+      set(${out_var} "${rewritten}" PARENT_SCOPE)
+      return()
+    endif()
     set(${out_var} "${lib}" PARENT_SCOPE)
     return()
   endif()
@@ -103,22 +132,23 @@ function(isotone_ensure_fuzz_library lib out_var)
 
   set(fuzz_lib "${lib}_fuzz")
   if(NOT TARGET "${fuzz_lib}")
-    set(raw_deps "")
+    set(mapped_link_libs "")
     get_target_property(link_libs "${lib}" LINK_LIBRARIES)
     if(link_libs)
-      list(APPEND raw_deps ${link_libs})
+      foreach(dep IN LISTS link_libs)
+        isotone_ensure_fuzz_library("${dep}" mapped_dep)
+        list(APPEND mapped_link_libs "${mapped_dep}")
+      endforeach()
     endif()
+
+    set(mapped_iface_libs "")
     get_target_property(iface_libs "${lib}" INTERFACE_LINK_LIBRARIES)
     if(iface_libs)
-      list(APPEND raw_deps ${iface_libs})
+      foreach(dep IN LISTS iface_libs)
+        isotone_ensure_fuzz_library("${dep}" mapped_dep)
+        list(APPEND mapped_iface_libs "${mapped_dep}")
+      endforeach()
     endif()
-    list(REMOVE_DUPLICATES raw_deps)
-
-    set(mapped_deps "")
-    foreach(dep IN LISTS raw_deps)
-      isotone_ensure_fuzz_library("${dep}" mapped_dep)
-      list(APPEND mapped_deps "${mapped_dep}")
-    endforeach()
 
     get_target_property(lib_source_dir "${lib}" SOURCE_DIR)
     get_target_property(lib_sources "${lib}" ISOTONE_LIBRARY_SOURCES)
@@ -136,30 +166,31 @@ function(isotone_ensure_fuzz_library lib out_var)
     if(manual_deps)
       add_dependencies(${fuzz_lib} ${manual_deps})
     endif()
-    get_target_property(pub_inc "${lib}" ISOTONE_LIBRARY_PUBLIC_INCLUDE)
-    if(pub_inc)
-      target_include_directories(${fuzz_lib} PUBLIC "${pub_inc}")
+    foreach(
+      prop_name
+      IN ITEMS
+        INCLUDE_DIRECTORIES
+        INTERFACE_INCLUDE_DIRECTORIES
+        INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+        COMPILE_DEFINITIONS
+        INTERFACE_COMPILE_DEFINITIONS
+        COMPILE_OPTIONS
+        INTERFACE_COMPILE_OPTIONS
+        COMPILE_FEATURES
+        INTERFACE_COMPILE_FEATURES
+        LINK_OPTIONS
+        INTERFACE_LINK_OPTIONS)
+      get_target_property(prop_val "${lib}" ${prop_name})
+      if(prop_val)
+        set_property(TARGET ${fuzz_lib} PROPERTY ${prop_name} ${prop_val})
+      endif()
+    endforeach()
+    if(mapped_link_libs)
+      set_property(TARGET ${fuzz_lib} PROPERTY LINK_LIBRARIES ${mapped_link_libs})
     endif()
-    get_target_property(inc_dirs "${lib}" INCLUDE_DIRECTORIES)
-    if(inc_dirs)
-      target_include_directories(${fuzz_lib} PRIVATE ${inc_dirs})
+    if(mapped_iface_libs)
+      set_property(TARGET ${fuzz_lib} PROPERTY INTERFACE_LINK_LIBRARIES ${mapped_iface_libs})
     endif()
-    get_target_property(iface_inc_dirs "${lib}" INTERFACE_INCLUDE_DIRECTORIES)
-    if(iface_inc_dirs)
-      target_include_directories(${fuzz_lib} PUBLIC ${iface_inc_dirs})
-    endif()
-    get_target_property(compile_defs "${lib}" COMPILE_DEFINITIONS)
-    if(compile_defs)
-      target_compile_definitions(${fuzz_lib} PRIVATE ${compile_defs})
-    endif()
-    get_target_property(iface_defs "${lib}" INTERFACE_COMPILE_DEFINITIONS)
-    if(iface_defs)
-      target_compile_definitions(${fuzz_lib} PUBLIC ${iface_defs})
-    endif()
-    if(mapped_deps)
-      target_link_libraries(${fuzz_lib} PUBLIC ${mapped_deps})
-    endif()
-    isotone_apply_flags(${fuzz_lib})
     isotone_apply_fuzz_flags(${fuzz_lib} LIBRARY)
     set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${fuzz_lib})
   endif()
