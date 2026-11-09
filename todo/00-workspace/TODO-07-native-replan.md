@@ -24,6 +24,7 @@ track: W7
 - [`docs/design/`](../../docs/design/) and `docs/design/layout-maps/` -- the design and the layout every surface section answers to
 - [`docs/parity/`](../../docs/parity/) -- the catalogs whose rows must keep resolving
 - The tag `csharp-final` -- the C# apps' behavior, read with `git show csharp-final:<path>`
+- -> XREF: D00 T04 §2 -- the premultiply kernels and pixel-layout contract §11 re-plans D01 T03 §1 onto
 - -> XREF: D00 T05 §10 -- the C++ proof table and checkpoint-proof-unusable validator rules that §2 and §3 update
 - -> XREF: D00 T06 §3 -- the tree, the claims rule for parked files, and the retargeted design-lint these sections start from
 

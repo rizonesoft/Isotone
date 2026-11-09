@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **25 of 846 sections complete (3%).** 846 sections (6 discovered); backlog 43 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **26 of 846 sections complete (3%).** 846 sections (6 discovered); backlog 43 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -183,7 +183,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T05 §8`  | CI for x64 and ARM64                                                                     |  19   |
 | [x] | `D00 T05 §9`  | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget              |   7   |
 | [x] | `D00 T05 §10` | The proof standard for C++                                                               |   7   |
-| [ ] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |  18   |
+| [x] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |  18   |
 | [ ] | `D00 T04 §3`  | The native advisory job                                                                  |  13   |
 | [ ] | `D00 T06 §1`  | Retarget the gates that read the C# sources                                              |   4   |
 | [ ] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   8   |

@@ -4,18 +4,18 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**263 findings across 22 sections.**
+**266 findings across 23 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
 | `adversarial` | 87 | fails under hostile or unexpected input |
-| `integration` | 81 | a consumer, caller, or downstream artifact no longer holds |
-| `consistency` | 27 | disagrees with the rest of the suite, its naming, or its layout |
+| `integration` | 82 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 28 | disagrees with the rest of the suite, its naming, or its layout |
 | `correctness` | 24 | the code does the wrong thing |
 | `source-defect` | 22 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 21 | the plan or the evidence misdescribes what happened |
+| `record` | 22 | the plan or the evidence misdescribes what happened |
 | `reproducibility` | 1 | the same input does not produce the same output |
 
 ## By severity
@@ -24,7 +24,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
 | `major` | 123 | wrong behavior in code, plan, or record |
-| `minor` | 140 | polish or wording, or no surviving defect |
+| `minor` | 143 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -235,6 +235,9 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T04 §1` | F27 | major | `correctness` | fixed | self | the lint read what vcpkg installed before the configures that change it |
 | `D00 T04 §1` | F28 | major | `correctness` | fixed | self | the ARM64 link graphs failed in the x64 environment |
 | `D00 T04 §1` | F29 | minor | `correctness` | fixed | self | the self-test split rules on a colon and broke on drive letters |
+| `D00 T04 §2` | F1 | minor | `consistency` | fixed | independent | L2Buffer512x512 occupied 2 MiB on a 512 KiB per-core L2 CPU |
+| `D00 T04 §2` | F2 | minor | `integration` | fixed | independent | native-tidy.ps1 skipped rebuilding x64-release when compile_commands.json already existed |
+| `D00 T04 §2` | F3 | minor | `record` | fixed | independent | D00 T04 §2 completion note summarized a different CPU and GPU than reference-machine.md |
 | `D00 T05 §1` | F1 | major | `correctness` | fixed | independent | a machine without the Visual Studio Installer threw instead of reporting it |
 | `D00 T05 §1` | F2 | major | `correctness` | fixed | independent | component checks searched every installation, not the selected one |
 | `D00 T05 §1` | F3 | major | `correctness` | fixed | independent | each re-entry grew PATH, INCLUDE, and LIB until cmd.exe refused the line |

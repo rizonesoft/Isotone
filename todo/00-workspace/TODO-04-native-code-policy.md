@@ -34,6 +34,7 @@ track: W4
 - OSV (https://osv.dev/, API https://api.osv.dev/v1/query, Git ecosystem queries) -- §3's advisory source; Google Benchmark (https://github.com/google/benchmark, Apache-2.0) -- §2's harness
 - -> XREF: D00 T05 §2 -- the vcpkg manifest §1's register and gate mirror
 - -> XREF: D00 T05 §3 -- the presets §2's harness builds through
+- -> XREF: D00 T07 §11 -- re-plans D01 T03 §1 onto the native stack using §2's premultiply kernels and pixel-layout contract
 - -> XREF: D01 T03 §1 -- the pixel engine's kernels follow §1's untrusted-input and SIMD rules, and its benchmarks are §2's next records
 - -> XREF: D01 T04 §1 -- LittleCMS, an early shipped library, takes a register row by §1's rules
 
@@ -53,7 +54,7 @@ track: W4
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | The C++ standard, the dependency register, and the register gate | D00 T05 §7 |  [x]   |
-|   2   |   §2    | The benchmark harness, the reference machine, and the first record | §1, D00 T05 §8 |  [ ]   |
+|   2   |   §2    | The benchmark harness, the reference machine, and the first record | §1, D00 T05 §8 |  [x]   |
 |   3   |   §3    | The native advisory job | §1 |  [ ]   |
 
 ---
@@ -111,6 +112,12 @@ Every performance goal in the spec is a number measured on one recorded referenc
 - [x] Commit: `"workspace: the benchmark harness, the reference machine, and the premultiply record"`
 
 **Test checkpoint:** Driven run with evidence: `isotone_benchmarks --benchmark_filter=Premultiply` prints the table the committed record quotes; `--smoke` exits 0, and exits 1 naming `Avx2` when a probe changes that variant's rounding (quoted, then reverted); `pwsh scripts/check-all.ps1` exits 0 with `native benchmarks smoke` PASS. Cheaper substitute that fails: a timing loop inside a unit test, which reports no variance and no instruction set.
+
+> **Verified:** 2026-11-09 | §2 | D00 T04 §2 at `72148bede85a`: `native/vcpkg.json` (`bench` feature holding `benchmark`), `docs/dev/native-libraries.md` (Google Benchmark 1.9.5 row, Linked by `bench`), `native/CMakePresets.json` (`VCPKG_MANIFEST_FEATURES` `test;bench` in `x64-release` and `arm64-release`, empty in `x64-dist` and `arm64-dist`), `scripts/native-deps-lint.py` (`bench` developer-only and preset-features rules: `4 row(s), 11 vcpkg root(s), 6 link graph(s): 0 findings`, `--self-test` `89 cases, 0 failed`), `native/cmake/IsotoneTargets.cmake` (`isotone_add_executable` and `isotone_require_registered_targets`), `isotone::core::imaging::Bgra8` and `premultiply_bgra8` (`native/core/include/isotone/core/imaging/premultiply.h` and `native/core/src/imaging/premultiply.cpp`), `native/tests/core/premultiply_test.cpp` (`Premultiply.AlphaBoundaryLiteralVectors`, `Premultiply.ZeroLengthDoesNotTouchDestination`, `Premultiply.TailShorterThanOneVectorMatchesReference`, `Premultiply.UnalignedStartMatchesReference`, `Premultiply.ForcedInstructionSetsMatchScalarAcrossAllBytePairs`, and `Premultiply.RuntimeDispatchSelectsBestSupportedAndMatchesScalar`), `native/benchmarks/` (`isotone_benchmarks` built in Release presets only, linked to `isotone_core` and `benchmark::benchmark`), `docs/dev/reference-machine.md` (2026-11-09 entry: `11th Gen Intel(R) Core(TM) i5-11600K`, `NVIDIA GeForce RTX 2060`, 32 GiB RAM, Windows 11 26H2 build `26300.9818`), `docs/benchmarks/README.md`, `docs/benchmarks/2026-11-09-premultiply.md` (9 repetitions: `Tile256x256/Avx2` median `16.4 us` vs `Scalar` `139 us`, `8.48x` wall speedup, passing `< 20.0 us`; `L2Buffer256x192/Avx2` median `13.1 us` vs `Scalar` `120 us`, `9.16x` wall speedup, passing `< 16.0 us`; `WholeImage100MP/Avx2` median `95.7 ms` wall / `78.1 ms` CPU vs `Scalar` `246 ms` wall / `245 ms` CPU, `2.57x` wall / `3.14x` CPU speedup, passing `< 100.0 ms`), `standards/testing.md` (`## Benchmarks`), `scripts/check-all.ps1` (`native benchmarks smoke` PASS, all 56 gates passing), and ARM64 `isotone_benchmarks_smoke` CTest execution in `native-arm64-tests` (`D00 T05 §8`, proved failing on `Neon` rounding probe in run `42568427744`, branch deleted; green on `72148bede85a` in `plan-gates` run `42577349410` and `build` run `42577349430`)
+> **Review:** round 2, candidate `eb80b9ce7fbc..d4f013ca6150`(round 1), `eb80b9ce7fbc..72148bede85a`(round 2) -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 2 of cap 33, gpt-6.1-sol medium; Round 1's consistency, integration, and record P2 findings, F1 to F3, fixed in 72148bede85a). Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T04-s2.md. Attestation: docs/reviews/00-workspace/D00-T04-s2.attest.json
+> **Plan review:** gpt medium, filed D00 T07 §11 (11 findings: 4 filed as 1 item on D00 T07 §11 and backlog B-087 to B-089 in 22d11bfff9ba, 1 rejected) (run 20261109-D00-T04-S2-gpt)
+> **CRUD:** not applicable (a microbenchmark harness, a reference machine record, a benchmark record specification, and the premultiply kernel benchmark, with no user record, document, or setting)
+> **Duration:** 2026-11-09T04:17:06Z to 2026-11-09T07:30:00Z
 
 ## 3. The Native Advisory Job
 
