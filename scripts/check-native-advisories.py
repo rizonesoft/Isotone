@@ -255,6 +255,49 @@ def default_http_get(url: str) -> str:
 
 # OSV query and version evaluation -------------------------------------------------------------------------------------
 
+def validate_osv_affected(vuln: dict) -> list[dict]:
+    """Validate an OSV vulnerability entry's `affected` array and fail closed on any malformed shape."""
+    vid = vuln.get("id", "<unknown>")
+    affected_list = vuln.get("affected")
+    if not isinstance(affected_list, list) or not affected_list:
+        raise ValueError(f"OSV advisory {vid} lacks a non-empty list 'affected'")
+    for aff in affected_list:
+        if not isinstance(aff, dict):
+            raise ValueError(f"OSV advisory {vid} has non-dict affected entry")
+        ranges = aff.get("ranges")
+        versions = aff.get("versions")
+        if ranges is not None and not isinstance(ranges, list):
+            raise ValueError(f"OSV advisory {vid} has non-list 'ranges'")
+        if versions is not None and (
+            not isinstance(versions, list) or any(not isinstance(v, str) or not v.strip() for v in versions)
+        ):
+            raise ValueError(f"OSV advisory {vid} has malformed 'versions'")
+        if not (ranges or versions):
+            raise ValueError(f"OSV advisory {vid} affected entry has neither non-empty 'ranges' nor 'versions'")
+        for rng in ranges or []:
+            if not isinstance(rng, dict):
+                raise ValueError(f"OSV advisory {vid} has non-dict range")
+            events = rng.get("events")
+            if not isinstance(events, list) or not events:
+                raise ValueError(f"OSV advisory {vid} range lacks a non-empty 'events' list")
+            for ev in events:
+                if (
+                    not isinstance(ev, dict)
+                    or not ev
+                    or any(not isinstance(k, str) or not isinstance(val, str) or not val.strip() for k, val in ev.items())
+                ):
+                    raise ValueError(f"OSV advisory {vid} range event is malformed")
+            db = rng.get("database_specific")
+            if db is not None:
+                if not isinstance(db, dict):
+                    raise ValueError(f"OSV advisory {vid} range has non-dict 'database_specific'")
+                ext_events = db.get("extracted_events")
+                if ext_events is not None:
+                    if not isinstance(ext_events, list) or any(not isinstance(ext, dict) for ext in ext_events):
+                        raise ValueError(f"OSV advisory {vid} range has malformed 'extracted_events'")
+    return affected_list
+
+
 def query_osv_paginated(base_payload: dict, osv_post) -> list[dict]:
     """Query OSV following `next_page_token` until the response carries none; raise on any page error or bad shape."""
     vulns: list[dict] = []
@@ -267,20 +310,27 @@ def query_osv_paginated(base_payload: dict, osv_post) -> list[dict]:
         doc = osv_post(payload)
         if not isinstance(doc, dict):
             raise ValueError("OSV page response is not a JSON object")
-        page_vulns = doc.get("vulns", [])
-        if page_vulns is None or not isinstance(page_vulns, list):
-            raise ValueError("OSV page response 'vulns' is not a list")
+        unknown_keys = set(doc) - {"vulns", "next_page_token"}
+        if unknown_keys:
+            raise ValueError(f"OSV page response contains unexpected keys: {sorted(unknown_keys)}")
+        if "vulns" in doc:
+            page_vulns = doc["vulns"]
+            if not isinstance(page_vulns, list):
+                raise ValueError("OSV page response 'vulns' is not a list")
+        else:
+            page_vulns = []
         for v in page_vulns:
             if not isinstance(v, dict) or not isinstance(v.get("id"), str) or not v["id"].strip():
                 raise ValueError("OSV vulnerability entry lacks a string 'id'")
             summary = (v.get("summary") or v.get("details") or "").strip()
             if not summary:
                 raise ValueError(f"OSV vulnerability {v['id']} lacks both 'summary' and 'details'")
+            validate_osv_affected(v)
             vulns.append(v)
-        next_token = doc.get("next_page_token")
-        if not next_token:
+        if "next_page_token" not in doc or doc["next_page_token"] is None:
             break
-        if not isinstance(next_token, str) or next_token in seen_tokens:
+        next_token = doc["next_page_token"]
+        if not isinstance(next_token, str) or not next_token.strip() or next_token in seen_tokens:
             raise ValueError(f"invalid or repeating OSV next_page_token {next_token!r}")
         seen_tokens.add(next_token)
         page_token = next_token
@@ -289,16 +339,10 @@ def query_osv_paginated(base_payload: dict, osv_post) -> list[dict]:
 
 def extract_fixed_version_from_osv(vuln: dict) -> str | None:
     """Best-effort extraction of the fixing version from an OSV advisory's GIT ranges or extracted_events."""
-    for aff in vuln.get("affected") or []:
-        if not isinstance(aff, dict):
-            continue
+    for aff in validate_osv_affected(vuln):
         for rng in aff.get("ranges") or []:
-            if not isinstance(rng, dict):
-                continue
             db = rng.get("database_specific") or {}
             for ext in db.get("extracted_events") or []:
-                if not isinstance(ext, dict):
-                    continue
                 orig_tag = ext.get("original_tag")
                 if isinstance(orig_tag, str) and parse_version_tuple(orig_tag) is not None:
                     return orig_tag.lstrip("vV")
@@ -312,15 +356,9 @@ def extract_fixed_version_from_osv(vuln: dict) -> str | None:
 
 def advisory_affects_git(vuln: dict, version: str, tag: str, commit: str, from_commit_query: bool) -> bool:
     """Determine whether an OSV advisory affects `(version, tag, commit)`."""
-    affected_list = vuln.get("affected")
-    if not affected_list:
-        return from_commit_query
-    if not isinstance(affected_list, list):
-        raise ValueError(f"OSV advisory {vuln.get('id')} has non-list 'affected'")
+    affected_list = validate_osv_affected(vuln)
     clean_ver = version.split("#", 1)[0].strip()
     for aff in affected_list:
-        if not isinstance(aff, dict):
-            continue
         ranges = aff.get("ranges") or []
         fixed_commits: set[str] = set()
         introduced_commits: set[str] = set()
@@ -328,18 +366,13 @@ def advisory_affects_git(vuln: dict, version: str, tag: str, commit: str, from_c
         ref_tag_fixed: list[str] = []
         version_ranges: list[tuple[str | None, str | None, str | None]] = []
         for rng in ranges:
-            if not isinstance(rng, dict):
-                continue
             for ev in rng.get("events") or []:
-                if isinstance(ev, dict):
-                    if isinstance(ev.get("fixed"), str):
-                        fixed_commits.add(ev["fixed"])
-                    if isinstance(ev.get("introduced"), str):
-                        introduced_commits.add(ev["introduced"])
+                if isinstance(ev.get("fixed"), str):
+                    fixed_commits.add(ev["fixed"])
+                if isinstance(ev.get("introduced"), str):
+                    introduced_commits.add(ev["introduced"])
             db = rng.get("database_specific") or {}
             for ext in db.get("extracted_events") or []:
-                if not isinstance(ext, dict):
-                    continue
                 if ext.get("strategy") == "StandaloneSingleVersion":
                     has_standalone_single = True
                 if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str):
@@ -357,7 +390,7 @@ def advisory_affects_git(vuln: dict, version: str, tag: str, commit: str, from_c
         if commit in fixed_commits and not (commit in introduced_commits and has_standalone_single):
             continue
         # OSV cvelistV5 conversion case (such as CVE-2023-4863): REFERENCES_TAG names the fixing release tag (e.g. v1.3.2)
-        # while StandaloneSingleVersion set introduced=last_affected=1.3.2. Every version strictly beloworiginal_tag is affected.
+        # while StandaloneSingleVersion set introduced=last_affected=1.3.2. Every version strictly below original_tag is affected.
         if ref_tag_fixed:
             if any(version_lt(clean_ver, ft) for ft in ref_tag_fixed):
                 return True
@@ -380,7 +413,7 @@ def advisory_affects_git(vuln: dict, version: str, tag: str, commit: str, from_c
         if versions and not has_standalone_single:
             if clean_ver in versions or f"v{clean_ver}" in versions or tag in versions:
                 return True
-        if from_commit_query:
+        if from_commit_query or (introduced_commits and not fixed_commits):
             return True
     return False
 
@@ -462,6 +495,7 @@ def evaluate_register(
     baseline_mismatch: list[str] = []
     helpers: list[str] = []
     baseline_updates: list[str] = []
+    checked_ports: list[str] = []
 
     rows, parse_findings = DEPS_LINT.parse_register(register_text, path=register_path)
     for pf in parse_findings:
@@ -533,20 +567,25 @@ def evaluate_register(
             unmapped.append(f"unmapped: {library or '<unnamed>'}: missing port or version")
             continue
 
+        row_baseline_ok = True
         if default_baseline is not None:
             base_entry = default_baseline.get(port)
             if not isinstance(base_entry, dict) or "baseline" not in base_entry:
                 baseline_mismatch.append(f"baseline-mismatch: {port}: not present in committed baseline {baseline[:12]}")
+                row_baseline_ok = False
             else:
                 expected_version = baseline_port_version(base_entry)
                 if version != expected_version:
                     baseline_mismatch.append(
                         f"baseline-mismatch: {port}: register Version is {version}, committed baseline {baseline[:12]} resolves {expected_version}"
                     )
+                    row_baseline_ok = False
 
         if identity == DEPS_LINT.HELPER_IDENTITY or identity.startswith("none:"):
             if is_validated_helper(row, baseline, manifest_ports, target_installed_ports):
                 helpers.append(f"helper: {port} {version}")
+                if row_baseline_ok:
+                    checked_ports.append(port)
             else:
                 unmapped.append(
                     f"unmapped: {port} {version}: carries helper identity {identity!r} but is not a validated build-time helper"
@@ -586,7 +625,7 @@ def evaluate_register(
             try:
                 for v in commit_vulns:
                     vid = v["id"].strip()
-                    if vid not in seen_ids and advisory_affects_git(v, version, id_tag, commit, from_commit_query=True):
+                    if advisory_affects_git(v, version, id_tag, commit, from_commit_query=True) and vid not in seen_ids:
                         seen_ids.add(vid)
                         advisories.append({
                             "library": library,
@@ -601,7 +640,7 @@ def evaluate_register(
                         })
                 for v in repo_vulns:
                     vid = v["id"].strip()
-                    if vid not in seen_ids and advisory_affects_git(v, version, id_tag, commit, from_commit_query=False):
+                    if advisory_affects_git(v, version, id_tag, commit, from_commit_query=False) and vid not in seen_ids:
                         seen_ids.add(vid)
                         advisories.append({
                             "library": library,
@@ -617,6 +656,8 @@ def evaluate_register(
             except Exception as exc:
                 unchecked.append(f"unchecked: {port} {version}: malformed OSV advisory entry ({exc})")
                 continue
+            if row_baseline_ok:
+                checked_ports.append(port)
 
         elif feed_match:
             feed_url = feed_match.group(1)
@@ -653,6 +694,8 @@ def evaluate_register(
             except Exception as exc:
                 unchecked.append(f"unchecked: {port} {version}: feed {feed_url} check failed ({exc})")
                 continue
+            if row_baseline_ok:
+                checked_ports.append(port)
         else:
             unmapped.append(f"unmapped: {port} {version}: invalid or empty Advisory identity {identity!r}")
 
@@ -679,7 +722,7 @@ def evaluate_register(
                 fixed_ids = [
                     a["id"]
                     for a in port_advs
-                    if a.get("fixed_version") is None or version_ge(head_ver, a["fixed_version"])
+                    if a.get("fixed_version") is not None and version_ge(head_ver, a["fixed_version"])
                 ]
                 if fixed_ids:
                     for a in port_advs:
@@ -699,6 +742,7 @@ def evaluate_register(
         "unchecked": unchecked,
         "baseline_mismatch": baseline_mismatch,
         "baseline_updates": baseline_updates,
+        "checked_ports": checked_ports,
     }
 
 
@@ -744,6 +788,25 @@ def current_run_reference() -> str:
     if run_id:
         return f"{server}/{repo}/actions/runs/{run_id}"
     return "local run (`python scripts/check-native-advisories.py issue`)"
+
+
+def upsert_issue(*, root: Path, check: str, title: str, body: str, run_gh=pin_proposal.gh) -> int:
+    """Create or reopen the `pins:<check>` issue through `pin_proposal.file_issue`, and refresh its body when already open."""
+    label = f"pins:{check}"
+    existing = json.loads(
+        run_gh("issue", "list", "--label", label, "--state", "all", "--limit", "100", "--json", "number,title,body,state,labels", cwd=root)
+        or "[]"
+    )
+    same = [i for i in existing if i.get("title") == title]
+    pin_proposal.file_issue(root=root, check=check, title=title, body=body, run_gh=run_gh)
+    if same:
+        issue = same[0]
+        names = {lab.get("name") for lab in (issue.get("labels") or []) if isinstance(lab, dict)}
+        is_active = issue.get("state") == "OPEN" or (issue.get("state") != "OPEN" and pin_proposal.RESOLVED in names)
+        if is_active and issue.get("body") != body:
+            run_gh("issue", "edit", str(issue["number"]), "--body", body, cwd=root)
+            print(f"updated #{issue['number']}: {title}")
+    return 0
 
 
 def sync_issues(result: dict, rows: list[dict], *, root: Path = ROOT, run_gh=pin_proposal.gh) -> int:
@@ -793,7 +856,7 @@ def sync_issues(result: dict, rows: list[dict], *, root: Path = ROOT, run_gh=pin
                 f"- **Run:** {run_ref}",
                 f"- **Recovery:** {recovery}",
             ])
-            pin_proposal.file_issue(root=root, check=check_name, title=title, body=body, run_gh=run_gh)
+            upsert_issue(root=root, check=check_name, title=title, body=body, run_gh=run_gh)
         else:
             pin_proposal.resolve_issues(root=root, check=check_name, message=resolved_msg, run_gh=run_gh)
 
@@ -803,6 +866,15 @@ def sync_issues(result: dict, rows: list[dict], *, root: Path = ROOT, run_gh=pin
         active_by_port.setdefault(adv["port"], []).append(adv)
 
     known_ports = sorted({r.get("vcpkg port", "").strip() for r in rows if r.get("vcpkg port", "").strip()} | set(active_by_port))
+    failed_entries = [*result.get("unmapped", ()), *result.get("unchecked", ()), *result.get("baseline_mismatch", ())]
+    if "checked_ports" in result:
+        cleanly_checked_ports = set(result["checked_ports"])
+    else:
+        cleanly_checked_ports = {
+            p for p in known_ports
+            if not any(f": {p} " in entry or f": {p}:" in entry for entry in failed_entries)
+        }
+
     for port in known_ports:
         port_advs = active_by_port.get(port, [])
         active_checks: set[str] = set()
@@ -828,9 +900,11 @@ def sync_issues(result: dict, rows: list[dict], *, root: Path = ROOT, run_gh=pin
                 "rebuild, and release every affected app. This issue closes automatically once the registered version "
                 "is no longer affected.",
             ])
-            pin_proposal.file_issue(root=root, check=check_name, title=title, body=body, run_gh=run_gh)
+            upsert_issue(root=root, check=check_name, title=title, body=body, run_gh=run_gh)
 
-        # If all advisories for this port are cleared, close any open `pins:native-advisory-<port>-*` issues
+        # Close open `pins:native-advisory-<port>-*` issues only when this port's query completed cleanly
+        if port not in cleanly_checked_ports:
+            continue
         open_pins = json.loads(
             run_gh("issue", "list", "--label", "pins", "--state", "open", "--limit", "100", "--json", "number,title,labels", cwd=root)
             or "[]"
@@ -1207,10 +1281,11 @@ def self_test() -> int:
                 return json.dumps(matched)
             if args[:2] == ("issue", "create"):
                 title = args[args.index("--title") + 1]
+                body = args[args.index("--body") + 1] if "--body" in args else ""
                 labels = [{"name": args[i + 1]} for i, a in enumerate(args) if a == "--label"]
                 num = self._next
                 self._next += 1
-                self.issues.append({"number": num, "title": title, "state": "OPEN", "labels": labels})
+                self.issues.append({"number": num, "title": title, "body": body, "state": "OPEN", "labels": labels})
                 return f"https://github.com/rizonesoft/Isotone/issues/{num}\n"
             if args[:2] == ("issue", "close"):
                 num = int(args[2])
@@ -1225,6 +1300,8 @@ def self_test() -> int:
                         if "--add-label" in args:
                             lab = args[args.index("--add-label") + 1]
                             iss["labels"].append({"name": lab})
+                        if "--body" in args:
+                            iss["body"] = args[args.index("--body") + 1]
                 return ""
             return ""
 
@@ -1246,6 +1323,82 @@ def self_test() -> int:
         [(1, "CLOSED")],
     )
 
+    # 12. Malformed OSV responses (affected=[None] or next_page_token=0) fail closed as unchecked (F1)
+    for bad_label, bad_doc in (
+        ("affected=[None]", {"vulns": [{"id": "CVE-2099-1234", "summary": "Malformed affected", "affected": [None]}]}),
+        ("next_page_token=0", {"next_page_token": 0}),
+    ):
+        res_bad_osv = evaluate_register(
+            register_text=table(gtest_row),
+            manifest_text=manifest_clean,
+            config_text="{}",
+            resolve_tag=fake_resolve,
+            osv_post=lambda _payload, doc=bad_doc: doc,
+            committed_baseline_doc=committed_baseline,
+            target_installed_ports={"gtest"},
+        )
+        check(f"malformed OSV response ({bad_label}) fails closed as unchecked", (res_bad_osv["ok"], len(res_bad_osv["unchecked"])), (False, 1))
+
+    # 13. Failed query does not close an existing advisory issue for that port (F2)
+    gh_outage = FakeGh()
+    gh_outage.issues.append({
+        "number": 7,
+        "title": "native advisory: GoogleTest (gtest 1.18.0) CVE-2099-1234",
+        "body": "old body",
+        "state": "OPEN",
+        "labels": [{"name": "pins"}, {"name": "pins:native-advisory-gtest-cve-2099-1234"}],
+    })
+    rows_gtest, _ = DEPS_LINT.parse_register(table(gtest_row))
+    with contextlib.redirect_stdout(io.StringIO()):
+        sync_issues(res_fail_query, rows_gtest, run_gh=gh_outage)
+    check(
+        "failed query preserves open advisory issue for the unchecked port",
+        next(i["state"] for i in gh_outage.issues if i["number"] == 7),
+        "OPEN",
+    )
+
+    # 14. Unknown fixing version is not reported as a confirmed baseline fix (F3)
+    unfixed_osv = {
+        "vulns": [{
+            "id": "CVE-2099-9999",
+            "summary": "Unfixed vulnerability",
+            "affected": [{"ranges": [{"type": "GIT", "events": [{"introduced": "0"}]}]}],
+        }]
+    }
+    res_unfixed = evaluate_register(
+        register_text=table(webp_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda _payload: unfixed_osv,
+        committed_baseline_doc=committed_baseline,
+        current_baseline_doc=bumped_baseline,
+        target_installed_ports={"libwebp"},
+    )
+    check(
+        "unknown fixing version is not reported as a confirmed baseline fix",
+        (res_unfixed["baseline_updates"], res_unfixed["advisories"][0].get("baseline_fix")),
+        ([], None),
+    )
+
+    # 15. Same-title persistent cause issue updates its body when the failing library changes (F4)
+    gh_update = FakeGh()
+    res_unchecked_1 = {**res_fail_query, "unchecked": ["unchecked: gtest 1.18.0: first failure"]}
+    res_unchecked_2 = {**res_fail_query, "unchecked": ["unchecked: benchmark 1.9.5: second failure"]}
+    with contextlib.redirect_stdout(io.StringIO()):
+        sync_issues(res_unchecked_1, rows_gtest, run_gh=gh_update)
+        sync_issues(res_unchecked_2, rows_gtest, run_gh=gh_update)
+    check(
+        "persistent cause issue refreshes its body when the failing library changes",
+        "benchmark 1.9.5: second failure" in gh_update.issues[0]["body"],
+        True,
+    )
+
+    # 16. --release-gate combined with --self-test is rejected (F7)
+    with contextlib.redirect_stderr(io.StringIO()):
+        rc_combo = main(["--release-gate", "--self-test"])
+    check("--release-gate --self-test is rejected", rc_combo != 0, True)
+
     print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
 
@@ -1265,6 +1418,22 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT, run_gh=pin_proposa
     args = parser.parse_args(argv)
 
     if args.self_test:
+        if (
+            args.release_gate
+            or args.json
+            or args.mode != "check"
+            or args.register is not None
+            or args.manifest is not None
+            or args.vcpkg_configuration is not None
+            or args.baseline_file is not None
+            or args.current_baseline_file is not None
+            or args.osv_fixture is not None
+        ):
+            print(
+                "check-native-advisories: --self-test cannot be combined with --release-gate, issue mode, or file overrides",
+                file=sys.stderr,
+            )
+            return 2
         return self_test()
 
     root_path = Path(root)

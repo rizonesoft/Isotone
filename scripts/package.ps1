@@ -34,12 +34,8 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 Write-Step 'native advisory release gate (scripts/check-native-advisories.py --release-gate)'
-$advisoryArgs = @((Join-Path $PSScriptRoot 'check-native-advisories.py'), '--release-gate')
-if ($env:ISOTONE_ADVISORY_ARGS) {
-  $advisoryArgs += ($env:ISOTONE_ADVISORY_ARGS -split '\s+' | Where-Object { $_ -ne '' })
-}
 $global:LASTEXITCODE = 0
-& python @advisoryArgs
+& python (Join-Path $PSScriptRoot 'check-native-advisories.py') '--release-gate'
 if ($LASTEXITCODE -ne 0) {
   throw "package.ps1: native advisory release gate failed (exit $LASTEXITCODE); release blocked."
 }

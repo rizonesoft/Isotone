@@ -39,6 +39,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -429,7 +430,14 @@ def lex_views(text):
                 blank(no_strings, raw.start(2), raw.end(2))
                 blank(code_only, raw.start(2), raw.end(2))
                 i = raw.end(0)
-            elif spliced[i] in "\"'":
+            elif spliced[i] == '"' or (
+                spliced[i] == "'"
+                and (
+                    i == 0
+                    or not (spliced[i - 1].isalnum() or spliced[i - 1] == "_")
+                    or bool(re.search(r"(?<![0-9A-Za-z_.])(?:u8|u|U|L)$", spliced[:i]))
+                )
+            ):
                 ch = spliced[i]
                 j = i + 1
                 while j < n and spliced[j] != ch and spliced[j] != "\n":
@@ -656,6 +664,29 @@ def graph_for(preset):
     return out.read_text(encoding="utf-8") if proc.returncode == 0 and out.is_file() else None
 
 
+def collect_installed_roots(roots, dist=frozenset()):
+    """Read (installed, spdx, dist_installed) across all `(name, root)` pairs in `roots`."""
+    installed, spdx, dist_installed = {}, {}, {}
+    for name, root in roots:
+        status_map = parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8"))
+        if name in dist:
+            status_ports = {port for port, _ in status_map}
+            list_ports = set(load_artifact_gate().port_files(root).values())
+            dist_installed[name] = status_ports | list_ports
+        # Every root's versions and SPDX sources are kept: two roots holding the same triplet at different versions or
+        # built from different upstream sources (or one missing its SPDX provenance file) both count.
+        for (port, triplet), version in status_map.items():
+            installed.setdefault((port, triplet), set()).add(version)
+            spdx_file = root / triplet / "share" / port / "vcpkg.spdx.json"
+            if spdx_file.is_file():
+                spdx.setdefault(port, set()).add(spdx_source(spdx_file.read_text(encoding="utf-8")))
+            else:
+                spdx.setdefault(port, set()).add(None)
+        for share in root.glob("*/share/*/vcpkg.spdx.json"):
+            spdx.setdefault(share.parent.name, set()).add(spdx_source(share.read_text(encoding="utf-8")))
+    return installed, spdx, dist_installed
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--self-test", action="store_true")
@@ -670,20 +701,8 @@ def main(argv=None):
     if not roots:
         print("native-deps-lint: no preset's vcpkg root is installed; configure a preset first")
         return 2
-    installed, spdx = {}, {}
     dist = distribution_presets()
-    dist_installed = {}
-    for name, root in roots:
-        if name in dist:
-            status_ports = {port for port, _ in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8"))}
-            list_ports = set(load_artifact_gate().port_files(root).values())
-            dist_installed[name] = status_ports | list_ports
-        # Every root's versions and SPDX sources are kept: two roots holding the same triplet at different versions or
-        # built from different upstream sources both count.
-        for key, version in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8")).items():
-            installed.setdefault(key, set()).add(version)
-        for share in root.glob("*/share/*/vcpkg.spdx.json"):
-            spdx.setdefault(share.parent.name, set()).add(spdx_source(share.read_text(encoding="utf-8")))
+    installed, spdx, dist_installed = collect_installed_roots(roots, dist)
     manifest_text = MANIFEST.read_text(encoding="utf-8")
     manifest = json.loads(manifest_text)
     direct, features = manifest_features(manifest_text)
@@ -991,6 +1010,29 @@ def self_test():
     check("two roots where one SPDX source is None fail identity-mismatch",
           rules(lint(table(gtest, helper), sp={"gtest": {("https://github.com/google/googletest", "v1.18.0"), None}})),
           ["identity-mismatch"])
+    with tempfile.TemporaryDirectory() as tmp_roots:
+        r1 = Path(tmp_roots) / "r1"
+        r2 = Path(tmp_roots) / "r2"
+        status_text = (
+            "Package: gtest\nVersion: 1.18.0\nArchitecture: isotone-x64\nStatus: install ok installed\n\n"
+            "Package: vcpkg-cmake\nVersion: 2025-08-07\nArchitecture: x64-windows\nStatus: install ok installed\n"
+        )
+        for root_dir in (r1, r2):
+            (root_dir / "vcpkg").mkdir(parents=True)
+            (root_dir / "vcpkg" / "status").write_text(status_text, encoding="utf-8")
+        spdx_path = r1 / "isotone-x64" / "share" / "gtest" / "vcpkg.spdx.json"
+        spdx_path.parent.mkdir(parents=True)
+        spdx_path.write_text(json.dumps({"packages": [
+            {"downloadLocation": "git+https://github.com/google/googletest@v1.18.0"}
+        ]}), encoding="utf-8")
+        col_inst, col_spdx, _ = collect_installed_roots([("x64-debug", r1), ("x64-release", r2)])
+        check("collect_installed_roots records None when a root lacks vcpkg.spdx.json and fails identity-mismatch",
+              rules(lint(table(gtest, helper), inst=col_inst, sp=col_spdx)),
+              ["identity-mismatch"])
+    check("digit separator does not hide LoadLibraryW or NOLINT",
+          rules(suppression_findings("native/a.cpp", "auto count = 1'000; LoadLibraryW(name); // NOLINT")
+                + loadlibrary_findings("native/a.cpp", "auto count = 1'000; LoadLibraryW(name); // NOLINT", patterns, set())),
+          ["loadlibrary-unresolved", "suppression-unreasoned"])
     for lit_case in ('constexpr auto help = "LoadLibraryW(name)";',
                      'constexpr auto help = L"LoadLibraryExW(L\\"kernel32.dll\\", nullptr, 0)";',
                      'constexpr auto help = R"(LoadLibraryW(name) // NOLINT\n#pragma warning(disable: 4996))";',
