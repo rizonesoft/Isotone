@@ -46,7 +46,6 @@ The Phase column is the coarse domain grouping, not an executable schedule. Curr
 | [TODO-02](./00-workspace/TODO-02-build-and-test-debt.md) | 00-workspace | Build and Test Debt from the Import |
 | [TODO-03](./00-workspace/TODO-03-repo-layout.md) | 00-workspace | Repository Layout, Visual Baselines, and App Icon Export |
 | [TODO-04](./00-workspace/TODO-04-native-code-policy.md) | 00-workspace | The C++ Standard, the Dependency Register, the Benchmark Harness, and the Advisory Job |
-| [TODO-05](./00-workspace/TODO-05-native-spine.md) | 00-workspace | The Native Spine: Toolchain, Build, Gates, and CI |
 | [TODO-06](./00-workspace/TODO-06-retire-csharp.md) | 00-workspace | Retire the C# Code and the .NET Toolchain |
 | [TODO-07](./00-workspace/TODO-07-native-replan.md) | 00-workspace | The Native Re-plan, Phase by Phase |
 | [TODO-01](./02-stilus/TODO-01-stilus-structure.md) | 02-stilus | Stilus Layout, Names, and Composition Root |

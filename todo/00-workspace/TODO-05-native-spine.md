@@ -2,7 +2,7 @@
 schema_version: 1
 id: native-spine
 domain: 00-workspace
-status: draft
+status: done
 title: "TODO-05 -- The Native Spine: Toolchain, Build, Gates, and CI"
 depends_on: []
 track: W5
@@ -320,8 +320,8 @@ A Test checkpoint may cite only a gate that exists (AGENTS.md, What counts as pr
 
 ## Verification
 
-- [ ] `pwsh scripts/check-all.ps1` exits 0 with every native stage PASS
-- [ ] `pwsh scripts/dev-env.ps1 -Check -Arch x64` and `-Arch arm64` exit 0
-- [ ] The latest CI run on `main` shows `native` green, the ARM64 tests pass on the path the decision log names (the `native-arm64-tests` job or the recorded ARM64 machine), and the latest nightly `fuzz.yml` run is green
-- [ ] `docs/dev/decisions.md` holds "The native toolchain pin" and "The fuzzing toolchain"
-- [ ] `python scripts/todo-graph.py validate` clean
+- [x] `pwsh scripts/check-all.ps1` exits 0 with every native stage PASS (`check-all: all gates passed`, 55/55 gates PASS including `native presets`, `native toolchain`, `native x64-debug`, `native x64-release`, `native x64-asan`, `native x64-fuzz-msvc`, `native arm64-debug`, `native arm64-release`, `native arm64-asan`, `native x64-dist`, `native arm64-dist`, `native deps`, `native analyze`, `native std`, `native pe`, `native format`, `native tidy`, `native artifacts`, `native artifacts asan`, `native asan-coverage`, and all native self-tests and unit tests; `dotnet test Isotone.slnx` unfiltered: `Gesso.Core.Tests`, `Gesso.Rendering.Tests`, and `Bezier.Tests` 995 passed, 0 failed)
+- [x] `pwsh scripts/dev-env.ps1 -Check -Arch x64` and `-Arch arm64` exit 0 (`dev-env: toolchain ok (x64, 23 checked, 0 mismatch)` and `dev-env: toolchain ok (arm64, 23 checked, 0 mismatch)`)
+- [x] The latest CI run on `main` shows `native` green, the ARM64 tests pass on the path the decision log names (the `native-arm64-tests` job or the recorded ARM64 machine), and the latest nightly `fuzz.yml` run is green (`build` run `42557366699` on `681864e6f45d`: `native` and `native-arm64-tests` on `windows-11-vs2026-arm` both `success`; `plan-gates` run `42557366612` `success`; `fuzz.yml` run `42532304572` `success`; `python scripts/ci_watch.py`: `ci_watch: 7 workflow(s) checked, 0 red`)
+- [x] `docs/dev/decisions.md` holds "The native toolchain pin" and "The fuzzing toolchain" (`## 2026-10-23: The native toolchain pin` and `## 2026-11-08: The fuzzing toolchain`, plus `## 2026-11-08: The ARM64 test path`)
+- [x] `python scripts/todo-graph.py validate` clean (`85 todos, 846 sections -- 0 fatal, 0 warning(s)`)
