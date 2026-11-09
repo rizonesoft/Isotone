@@ -4,7 +4,7 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**308 findings across 25 sections.**
+**310 findings across 26 sections.**
 
 ## By category
 
@@ -14,7 +14,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `integration` | 88 | a consumer, caller, or downstream artifact no longer holds |
 | `consistency` | 35 | disagrees with the rest of the suite, its naming, or its layout |
 | `source-defect` | 30 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 28 | the plan or the evidence misdescribes what happened |
+| `record` | 30 | the plan or the evidence misdescribes what happened |
 | `correctness` | 24 | the code does the wrong thing |
 | `reproducibility` | 1 | the same input does not produce the same output |
 
@@ -24,7 +24,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
 | `major` | 142 | wrong behavior in code, plan, or record |
-| `minor` | 166 | polish or wording, or no surviving defect |
+| `minor` | 168 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -338,3 +338,5 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T06 §1` | F10 | minor | `record` | fixed | independent | section checkpoint evidence not yet recorded in docs/phase-runs/2026-11-08-phase-0.md |
 | `D00 T06 §1` | F11 | major | `adversarial` | fixed | independent | camelCase directional padding and margin declarations and setters bypass geometry detection |
 | `D00 T06 §1` | F12 | major | `adversarial` | fixed | independent | template angle-bracket commas and integer counts in RHS expressions truncate or falsely trigger geometry and font rules |
+| `D00 T06 §2` | F1 | minor | `record` | fixed | independent | completion evidence in D00 T06 §2 items 2 and 3 cites non-existent CLI flag and test method name |
+| `D00 T06 §2` | F2 | minor | `record` | fixed | independent | D00 T06 §2 item 2 completion note omits the quoted pins.yml dispatch and ci_watch.py outputs |

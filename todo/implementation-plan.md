@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **28 of 846 sections complete (3%).** 846 sections (6 discovered); backlog 48 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **29 of 846 sections complete (3%).** 846 sections (6 discovered); backlog 48 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -186,9 +186,9 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |  18   |
 | [x] | `D00 T04 §3`  | The native advisory job                                                                  |  13   |
 | [x] | `D00 T06 §1`  | Retarget the gates that read the C# sources                                              |   4   |
-| [ ] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   9   |
+| [x] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   9   |
 | [ ] | `D00 T06 §3`  | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code |  15   |
-| [ ] | `D00 T07 §1`  | Re-plan the workspace files                                                              |   9   |
+| [ ] | `D00 T07 §1`  | Re-plan the workspace files                                                              |  10   |
 | [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |   9   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |   7   |
 | [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |   7   |
