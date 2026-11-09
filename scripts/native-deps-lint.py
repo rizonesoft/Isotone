@@ -494,9 +494,11 @@ def suppression_findings(path, text):
     """suppression-unreasoned for one native source (`standards/cpp.md`, Formatting and analysis)."""
     found = []
     _, no_comments, no_strings, code_only = lex_views(text)
-    for n, line in enumerate(no_strings.splitlines(), 1):
+    for line_match in re.finditer(r"[^\r\n]*", no_strings):
+        line = line_match.group(0)
         m = NOLINT_RE.search(line)
         if m:
+            n = text.count("\n", 0, line_match.start() + m.start()) + 1
             kind, checks, rest = m.group(1), m.group(3), m.group(4)
             if kind in ("BEGIN", "END"):
                 found.append(finding(path, n, "suppression-unreasoned", f"NOLINT{kind} blocks are not allowed"))
@@ -1053,6 +1055,9 @@ def self_test():
           rules(suppression_findings("native/a.cpp", "auto count = 1'000; LoadLibraryW(name); // NOLINT")
                 + loadlibrary_findings("native/a.cpp", "auto count = 1'000; LoadLibraryW(name); // NOLINT", patterns, set())),
           ["loadlibrary-unresolved", "suppression-unreasoned"])
+    check("line splice before comment preserves physical line number for NOLINT reporting",
+          suppression_findings("native/a.cpp", "auto n = 1; \\\n// next line\n// NOLINT"),
+          ["native/a.cpp:3:suppression-unreasoned:a NOLINT names exactly one check"])
     for lit_case in ('constexpr auto help = "LoadLibraryW(name)";',
                      'constexpr auto help = L"LoadLibraryExW(L\\"kernel32.dll\\", nullptr, 0)";',
                      'constexpr auto help = R"(LoadLibraryW(name) // NOLINT\n#pragma warning(disable: 4996))";',

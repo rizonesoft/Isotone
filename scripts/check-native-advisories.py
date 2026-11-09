@@ -688,7 +688,12 @@ def advisory_affects_git(
                     return True
                 if "0" in rng_intro and not (rng_fixed or rng_last_affected or rng_limits):
                     return True
-            elif git_open:
+            elif (
+                git_open
+                or any(i != "0" for i in rng_intro)
+                or (len(rng_fixed) + len(rng_last_affected) > len(rng_ref_tags) and not rng_cpe_ranges)
+                or not (rng_ref_tags or rng_cpe_ranges)
+            ):
                 return True
 
             if rng_ref_tags and any(version_lt(clean_ver, ft) for ft in rng_ref_tags):
@@ -777,7 +782,7 @@ def evaluate_register(
     helpers: list[str] = []
     baseline_updates: list[str] = []
     checked_ports: list[str] = []
-    osv_vuln_by_port_id: dict[tuple[str, str], tuple[dict, str]] = {}
+    osv_vuln_by_port_id: dict[tuple[str, str], tuple[dict, str, str]] = {}
     feed_entries_by_port_id: dict[tuple[str, str], tuple[FeedAdapter, list[FeedEntry]]] = {}
 
     rows, parse_findings = DEPS_LINT.parse_register(register_text, path=register_path)
@@ -911,7 +916,7 @@ def evaluate_register(
                     vid = v["id"].strip()
                     if advisory_affects_git(v, version, id_tag, commit, from_commit_query=True, repo=id_repo) and vid not in seen_ids:
                         seen_ids.add(vid)
-                        osv_vuln_by_port_id[(port, vid)] = (v, id_repo)
+                        osv_vuln_by_port_id[(port, vid)] = (v, id_repo, id_tag)
                         advisories.append({
                             "library": library,
                             "port": port,
@@ -927,7 +932,7 @@ def evaluate_register(
                     vid = v["id"].strip()
                     if advisory_affects_git(v, version, id_tag, commit, from_commit_query=False, repo=id_repo) and vid not in seen_ids:
                         seen_ids.add(vid)
-                        osv_vuln_by_port_id[(port, vid)] = (v, id_repo)
+                        osv_vuln_by_port_id[(port, vid)] = (v, id_repo, id_tag)
                         advisories.append({
                             "library": library,
                             "port": port,
@@ -1021,9 +1026,21 @@ def evaluate_register(
                         continue
                     osv_pair = osv_vuln_by_port_id.get((port, a["id"]))
                     if osv_pair is not None:
-                        v_doc, v_repo = osv_pair
+                        v_doc, v_repo, reg_tag = osv_pair
+                        reg_clean = reg_ver.split("#", 1)[0].strip()
+                        if reg_tag.endswith(reg_clean):
+                            head_tag = reg_tag[: len(reg_tag) - len(reg_clean)] + head_clean
+                        else:
+                            head_tag = f"v{head_clean}"
+                        try:
+                            resolved_head = resolve_tag(v_repo, head_tag)
+                            head_commit = resolved_head if COMMIT_RE.match(resolved_head) else ""
+                        except Exception:
+                            head_commit = ""
                         if advisory_affects_git(
-                            v_doc, head_ver, tag=f"v{head_clean}", commit="", from_commit_query=False, repo=v_repo
+                            v_doc, head_ver, tag=head_tag, commit=head_commit, from_commit_query=False, repo=v_repo
+                        ) or advisory_affects_git(
+                            v_doc, head_ver, tag=head_tag, commit="", from_commit_query=False, repo=v_repo
                         ):
                             continue
                     feed_pair = feed_entries_by_port_id.get((port, a["id"]))
@@ -2183,6 +2200,45 @@ def self_test() -> int:
         "multiple GIT limit events do not suppress positive commit-query match when another limit differs",
         [(a["port"], a["id"]) for a in res_multi_git_limit["advisories"]],
         [("gtest", "CVE-2099-8894")],
+    )
+
+    # 31. Closed GIT reintroduction interval is not reported fixed by earlier REFERENCES_TAG or candidate baseline commit (F26)
+    closed_reintro_git_osv = {
+        "vulns": [{
+            "id": "CVE-2099-9998",
+            "summary": "Closed GIT reintroduction after v1.20.0",
+            "affected": [{
+                "ranges": [{
+                    "type": "GIT",
+                    "repo": "https://github.com/google/googletest",
+                    "events": [
+                        {"introduced": "0"},
+                        {"fixed": "b" * 40},
+                        {"introduced": "c" * 40},
+                        {"fixed": "d" * 40},
+                    ],
+                    "database_specific": {"extracted_events": [{"source": "REFERENCES_TAG", "original_tag": "v1.20.0"}]},
+                }]
+            }],
+        }]
+    }
+    res_closed_reintro_git = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=lambda repo, tag: "c" * 40 if tag == "v1.22.0" else fake_resolve(repo, tag),
+        osv_post=lambda payload: closed_reintro_git_osv if "commit" in payload else {"vulns": []},
+        committed_baseline_doc=committed_baseline,
+        current_baseline_doc=gtest_122_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "closed GIT reintroduction is not marked fixed by earlier REFERENCES_TAG or candidate baseline commit",
+        (
+            [(a["port"], a["id"], a.get("fixed_version")) for a in res_closed_reintro_git["advisories"]],
+            res_closed_reintro_git["baseline_updates"],
+        ),
+        ([("gtest", "CVE-2099-9998", None)], []),
     )
 
     print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
