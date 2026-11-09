@@ -396,10 +396,30 @@ PRAGMA_OP_RE = re.compile(r"\b_Pragma\s*\(")
 RAW_STR_RE = re.compile(r'(?:L|u8|u|U)?R"([^ ()\\\t\v\f\r\n]*)\((.*?)\)\1"', re.S)
 
 
-def lex_views(text):
-    """(spliced, no_comments, no_strings, code_only), all aligned character-for-character with `text` after joining line
-    splices with spaces of the same length, so line numbers and offsets hold across every view."""
-    spliced = re.sub(r"\\\r?\n", lambda s: " " * len(s.group(0)), text)
+def lex_views_with_map(text):
+    """Return `(spliced, no_comments, no_strings, code_only, pos_map)` where C++ phase-2 backslash-newline splices
+    (`\\\r?\n` outside raw string literals) are deleted and `pos_map[i]` maps each offset `i` in the views back to its
+    physical character offset in `text`."""
+    spliced_chars = []
+    pos_map = []
+    idx, total = 0, len(text)
+    while idx < total:
+        raw = RAW_STR_RE.match(text, idx)
+        if raw:
+            for k in range(raw.start(0), raw.end(0)):
+                spliced_chars.append(text[k])
+                pos_map.append(k)
+            idx = raw.end(0)
+        elif text[idx] == "\\" and idx + 1 < total and text[idx + 1] == "\n":
+            idx += 2
+        elif text[idx] == "\\" and idx + 2 < total and text[idx + 1 : idx + 3] == "\r\n":
+            idx += 3
+        else:
+            spliced_chars.append(text[idx])
+            pos_map.append(idx)
+            idx += 1
+    pos_map.append(total)
+    spliced = "".join(spliced_chars)
     no_comments = list(spliced)
     no_strings = list(spliced)
     code_only = list(spliced)
@@ -446,7 +466,12 @@ def lex_views(text):
                 i = min(j + 1, n)
             else:
                 i += 1
-    return spliced, "".join(no_comments), "".join(no_strings), "".join(code_only)
+    return spliced, "".join(no_comments), "".join(no_strings), "".join(code_only), pos_map
+
+
+def lex_views(text):
+    """`(spliced, no_comments, no_strings, code_only)` after deleting C++ phase-2 backslash-newline splices."""
+    return lex_views_with_map(text)[:4]
 
 
 def blank_comments(text):
@@ -493,12 +518,12 @@ def call_arguments(args, structure=None):
 def suppression_findings(path, text):
     """suppression-unreasoned for one native source (`standards/cpp.md`, Formatting and analysis)."""
     found = []
-    _, no_comments, no_strings, code_only = lex_views(text)
+    _, no_comments, no_strings, code_only, pos_map = lex_views_with_map(text)
     for line_match in re.finditer(r"[^\r\n]*", no_strings):
         line = line_match.group(0)
         m = NOLINT_RE.search(line)
         if m:
-            n = text.count("\n", 0, line_match.start() + m.start()) + 1
+            n = text.count("\n", 0, pos_map[line_match.start() + m.start()]) + 1
             kind, checks, rest = m.group(1), m.group(3), m.group(4)
             if kind in ("BEGIN", "END"):
                 found.append(finding(path, n, "suppression-unreasoned", f"NOLINT{kind} blocks are not allowed"))
@@ -523,7 +548,7 @@ def suppression_findings(path, text):
             if wm:
                 directives.append((m.start(), wm.group(1), b))
     for start_pos, body, end in sorted(directives, key=lambda item: item[0]):
-        n = text.count("\n", 0, start_pos) + 1
+        n = text.count("\n", 0, pos_map[start_pos]) + 1
         for clause in body.split(";"):
             spec, _, rest = clause.partition(":")
             spec = spec.strip()
@@ -569,9 +594,9 @@ LOAD_FLAG_RE = re.compile(r"^(LOAD_LIBRARY_\w+|LOAD_WITH_ALTERED_SEARCH_PATH|LOA
 
 def loadlibrary_findings(path, text, system_patterns, modules):
     found = []
-    _, no_comments, _, code_only = lex_views(text)
+    _, no_comments, _, code_only, pos_map = lex_views_with_map(text)
     for m in LOAD_RE.finditer(code_only):
-        line = text.count("\n", 0, m.start()) + 1
+        line = text.count("\n", 0, pos_map[m.start()]) + 1
         a, b = call_span(code_only, m.end() - 1)
         parts = call_arguments(no_comments[a:b], code_only[a:b])
         literal = re.fullmatch(r'L?"([^"]+)"', parts[0])
@@ -1058,6 +1083,12 @@ def self_test():
     check("line splice before comment preserves physical line number for NOLINT reporting",
           suppression_findings("native/a.cpp", "auto n = 1; \\\n// next line\n// NOLINT"),
           ["native/a.cpp:3:suppression-unreasoned:a NOLINT names exactly one check"])
+    check("backslash-newline splice inside LoadLibraryW identifier is caught on its starting line",
+          loadlibrary_findings("native/a.cpp", "int x = 0;\nLoadLib\\\nraryW(name);", patterns, set()),
+          ["native/a.cpp:2:loadlibrary-unresolved:LoadLibraryW loads a computed name, neither a system DLL in native/system-dlls.txt nor a registered Runtime module"])
+    check("backslash-newline splice inside #pragma warning(disable) identifier is caught on its starting line",
+          suppression_findings("native/a.cpp", "int x = 0;\n#prag\\\nma warning(disable: 4996)"),
+          ["native/a.cpp:2:suppression-unreasoned:warning(disable) is not allowed in a source"])
     for lit_case in ('constexpr auto help = "LoadLibraryW(name)";',
                      'constexpr auto help = L"LoadLibraryExW(L\\"kernel32.dll\\", nullptr, 0)";',
                      'constexpr auto help = R"(LoadLibraryW(name) // NOLINT\n#pragma warning(disable: 4996))";',
