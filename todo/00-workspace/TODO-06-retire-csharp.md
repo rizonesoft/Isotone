@@ -32,6 +32,7 @@ track: W6
 - [`docs/dev/decisions.md`](../../docs/dev/decisions.md) "2026-10-23: The unattended campaign" -- the removal decision and its tag
 - [`docs/specs/2026-10-22-native-stack-design.md`](../../docs/specs/2026-10-22-native-stack-design.md) "The repository during the move" and "Dependencies and their upkeep" (the AvalonDock exception's retirement) -- what this file replaces and what it retires
 - [`docs/plans/2026-10-23-native-replan.md`](../../docs/plans/2026-10-23-native-replan.md) -- the parking rule §1's claims change follows
+- -> XREF: D00 T04 §3 -- the native advisory job in `.github/workflows/pins.yml` and its `--release-gate` check that §2 preserves
 - -> XREF: D00 T05 §8 -- the native CI job must be green before the .NET jobs go, so CI never builds nothing
 - -> XREF: D00 T07 §1 -- the workspace re-plan supersedes the .NET build and test debt list and rewrites the repository-layout file against the tree this file leaves
 

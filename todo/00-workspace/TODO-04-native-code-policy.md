@@ -34,6 +34,7 @@ track: W4
 - OSV (https://osv.dev/, API https://api.osv.dev/v1/query, Git ecosystem queries) -- §3's advisory source; Google Benchmark (https://github.com/google/benchmark, Apache-2.0) -- §2's harness
 - -> XREF: D00 T05 §2 -- the vcpkg manifest §1's register and gate mirror
 - -> XREF: D00 T05 §3 -- the presets §2's harness builds through
+- -> XREF: D00 T06 §2 -- preserves §3's native advisory release gate when retiring the .NET packaging and release scripts
 - -> XREF: D00 T07 §11 -- re-plans D01 T03 §1 onto the native stack using §2's premultiply kernels and pixel-layout contract
 - -> XREF: D01 T03 §1 -- the pixel engine's kernels follow §1's untrusted-input and SIMD rules, and its benchmarks are §2's next records
 - -> XREF: D01 T04 §1 -- LittleCMS, an early shipped library, takes a register row by §1's rules
@@ -55,7 +56,7 @@ track: W4
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | The C++ standard, the dependency register, and the register gate | D00 T05 §7 |  [x]   |
 |   2   |   §2    | The benchmark harness, the reference machine, and the first record | §1, D00 T05 §8 |  [x]   |
-|   3   |   §3    | The native advisory job | §1 |  [ ]   |
+|   3   |   §3    | The native advisory job | §1 |  [x]   |
 
 ---
 
@@ -140,6 +141,12 @@ Libraries are linked statically, so a vulnerable library is fixed only by rebuil
 - [x] Commit: `"workspace: the native advisory job"`
 
 **Test checkpoint:** Driven run with evidence: `python scripts/check-native-advisories.py --self-test` prints `0 failed`; a live run against a scratch register holding libwebp 1.3.1 reports CVE-2023-4863 and exits 1 (quoted); the live run against the real register exits 0; a dispatched `pins.yml` run is green (run id quoted). Cheaper substitute that fails: Dependabot, which does not see vcpkg ports.
+
+> **Verified:** 2026-11-09 | §3 | D00 T04 §3 at `9fdbaa549cf9`: `scripts/check-native-advisories.py` (resolving `osv-git` tags to 40-hex commits via `git ls-remote --tags`, paginated OSV commit and repo/tag range queries, registered `feed:` adapters, build-time helper validation, `builtin-baseline` comparison against `native/vcpkg.json` and `native/vcpkg-configuration.json`, `--json`, `--release-gate` blocking on `unmapped`, `unchecked`, `baseline-mismatch`, and `advisory`, and `issue` mode syncing persistent failure and advisory issues; live run on `docs/dev/native-libraries.md`: `check-native-advisories: 0 advisories, 0 unchecked`, exit 0; live run on scratch register holding libwebp 1.3.1: reports `CVE-2023-4863`, exit 1; `--self-test` against `scripts/tests/fixtures/osv/`: `48 cases, 0 failed`), `scripts/native-deps-lint.py` (`resolution-policy` refusing `overrides` or non-default registries, per-root SPDX provenance comparison, C++ phase-2 splice deletion with physical-line mapping, and string/character literal blanking with `PP_NUMBER_RE`: `0 findings`, `--self-test` `116 cases, 0 failed`), `.github/workflows/pins.yml` (`native-advisories` job, green in dispatched run `42598052637`, job `129095511416`), `.github/workflows/plan.yml` and `scripts/check-all.ps1` (`check-native-advisories self-test` PASS, all 57 gates passing), `standards/release.md`, `scripts/package.ps1`, `.github/workflows/release.yml`, and `scripts/tests/test_pin_automations.py` (green on `9fdbaa549cf9` in `plan-gates` run `42616104691` and `build` run `42616104536`)
+> **Review:** round 1, candidate `d261732133a7..9fdbaa549cf9` -- `adversarial` approve · `consistency` approve · `integration` approve · `record` approve (rounds spent 1 of cap 33, gpt-6.1-sol medium). Independent: gpt-6.1-sol medium via `scripts/review-dispatch.py`, 13 rounds (F1 to F30 fixed in aab5a5337664, 2852ca5fb975, e8ede19802d6, 4712a83865ef, 24c502ef1cf8, cc774c45e4f1, 1a0bc8cee2fe, f0b4c4e5ea14, 4bb1e2337e3b, 375caec3492c, 88cc5a67d46b, 9fdbaa549cf9; Round 13 approved all five lenses). Completion: complete. Raw findings: docs/reviews/00-workspace/D00-T04-s3.md. Attestation: docs/reviews/00-workspace/D00-T04-s3.attest.json
+> **Plan review:** gpt medium, filed D00 T06 §2 (12 findings: 1 filed on D00 T06 §2 and backlog B-090 to B-092 in 6fe87e3cd02e, 2 rejected) (run 20261109-D00-T04-S3-gpt)
+> **CRUD:** not applicable (a daily native advisory and baseline gate, dependency-lint extensions, and release-gate checks, with no user record, document, or setting)
+> **Duration:** 2026-11-09T07:56:00Z to 2026-11-09T12:45:00Z
 
 ## Verification
 

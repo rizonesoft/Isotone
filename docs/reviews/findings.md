@@ -4,18 +4,18 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**266 findings across 23 sections.**
+**296 findings across 24 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 87 | fails under hostile or unexpected input |
-| `integration` | 82 | a consumer, caller, or downstream artifact no longer holds |
-| `consistency` | 28 | disagrees with the rest of the suite, its naming, or its layout |
+| `adversarial` | 98 | fails under hostile or unexpected input |
+| `integration` | 85 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 32 | disagrees with the rest of the suite, its naming, or its layout |
+| `source-defect` | 29 | a Win32 contract, registry layout, or other source read wrongly |
+| `record` | 27 | the plan or the evidence misdescribes what happened |
 | `correctness` | 24 | the code does the wrong thing |
-| `source-defect` | 22 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 22 | the plan or the evidence misdescribes what happened |
 | `reproducibility` | 1 | the same input does not produce the same output |
 
 ## By severity
@@ -23,8 +23,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 123 | wrong behavior in code, plan, or record |
-| `minor` | 143 | polish or wording, or no surviving defect |
+| `major` | 134 | wrong behavior in code, plan, or record |
+| `minor` | 162 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -238,6 +238,36 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T04 §2` | F1 | minor | `consistency` | fixed | independent | L2Buffer512x512 occupied 2 MiB on a 512 KiB per-core L2 CPU |
 | `D00 T04 §2` | F2 | minor | `integration` | fixed | independent | native-tidy.ps1 skipped rebuilding x64-release when compile_commands.json already existed |
 | `D00 T04 §2` | F3 | minor | `record` | fixed | independent | D00 T04 §2 completion note summarized a different CPU and GPU than reference-machine.md |
+| `D00 T04 §3` | F1 | major | `adversarial` | fixed | independent | malformed OSV affected entries or falsey pagination tokens pass as clean |
+| `D00 T04 §3` | F2 | minor | `integration` | fixed | independent | failed queries close open advisory issues in sync_issues |
+| `D00 T04 §3` | F3 | minor | `source-defect` | fixed | independent | advisories with fixed_version None are reported as fixed by a newer baseline |
+| `D00 T04 §3` | F4 | minor | `record` | fixed | independent | persistent failure and advisory issues are not updated in place when findings change |
+| `D00 T04 §3` | F5 | minor | `consistency` | fixed | independent | C++ numeric digit separators cause the lexical scanner to blank subsequent code as a character literal |
+| `D00 T04 §3` | F6 | minor | `source-defect` | fixed | independent | collect_installed_roots omits roots that lack vcpkg.spdx.json |
+| `D00 T04 §3` | F7 | minor | `integration` | fixed | independent | scripts/package.ps1 accepts arbitrary ISOTONE_ADVISORY_ARGS such as --self-test |
+| `D00 T04 §3` | F8 | minor | `record` | fixed | independent | dispatched pins.yml run ID not quoted in section completion evidence |
+| `D00 T04 §3` | F9 | major | `adversarial` | fixed | independent | unknown OSV event keys pass validation and evaluate clean |
+| `D00 T04 §3` | F10 | major | `source-defect` | fixed | independent | open-ended CPE ranges without an upper bound suppress positive advisory matches |
+| `D00 T04 §3` | F11 | minor | `source-defect` | fixed | independent | fixing versions are extracted from unrelated affected entries or foreign GIT repos |
+| `D00 T04 §3` | F12 | major | `adversarial` | fixed | independent | unparseable version strings silently fall back to (0,) and misclassify advisories |
+| `D00 T04 §3` | F13 | major | `integration` | fixed | independent | a non-matching range alongside a matching range in the same affected entry suppresses an advisory |
+| `D00 T04 §3` | F14 | minor | `consistency` | fixed | independent | accepted OSV limit events are ignored during version range evaluation |
+| `D00 T04 §3` | F15 | minor | `consistency` | fixed | independent | out-of-order OSV events depend on array order rather than semantic version order |
+| `D00 T04 §3` | F16 | minor | `record` | fixed | independent | baseline-update declares an advisory fixed without re-evaluating the candidate baseline version against the advisory's full ranges |
+| `D00 T04 §3` | F17 | major | `adversarial` | fixed | independent | multiple introduced events in one OSV range overwrite lower_v instead of evaluating intervals |
+| `D00 T04 §3` | F18 | major | `source-defect` | fixed | independent | GIT range evaluation compares commit hashes against tag version tuples |
+| `D00 T04 §3` | F19 | major | `adversarial` | fixed | independent | a later commit-hash introduction after an earlier fixed tag is masked in advisory_affects_git |
+| `D00 T04 §3` | F20 | major | `adversarial` | fixed | independent | a closed commit-hash GIT range with a single tag event is misclassified as fixed |
+| `D00 T04 §3` | F21 | major | `consistency` | fixed | independent | foreign-package OSV affected entries with unparseable versions trigger false unchecked failures |
+| `D00 T04 §3` | F22 | major | `adversarial` | fixed | independent | GIT commit equality with fixed or limit events is treated as unaffected even when another interval remains open |
+| `D00 T04 §3` | F23 | minor | `source-defect` | fixed | independent | standalone database_specific.versions lists bypass version validation when ranges are empty |
+| `D00 T04 §3` | F24 | minor | `record` | fixed | independent | eight self-test error assertions check only ok is False without asserting the specific diagnostic substring |
+| `D00 T04 §3` | F25 | minor | `source-defect` | fixed | independent | native-deps-lint blanks raw-string body contents but leaves R"delim( and )delim" delimiters visible |
+| `D00 T04 §3` | F26 | minor | `adversarial` | fixed | independent | baseline-update passes commit="" when checking a candidate baseline version, bypassing commit-range uncertainty checks |
+| `D00 T04 §3` | F27 | minor | `record` | fixed | independent | suppression_findings reports line numbers after splice removal instead of physical source lines |
+| `D00 T04 §3` | F28 | minor | `adversarial` | fixed | independent | replacing backslash-newline splices with spaces splits spliced identifiers and pragmas in native-deps-lint |
+| `D00 T04 §3` | F29 | minor | `adversarial` | fixed | independent | pre-scanning raw strings before comments allows // R"( and // )" in comments to shield spliced code |
+| `D00 T04 §3` | F30 | minor | `adversarial` | fixed | independent | treating any apostrophe after an identifier character as a digit separator lets return'"'; mask subsequent code |
 | `D00 T05 §1` | F1 | major | `correctness` | fixed | independent | a machine without the Visual Studio Installer threw instead of reporting it |
 | `D00 T05 §1` | F2 | major | `correctness` | fixed | independent | component checks searched every installation, not the selected one |
 | `D00 T05 §1` | F3 | major | `correctness` | fixed | independent | each re-entry grew PATH, INCLUDE, and LIB until cmd.exe refused the line |

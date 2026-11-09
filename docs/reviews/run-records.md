@@ -369,3 +369,24 @@ round: 1 model: gpt-6.1-sol effort: medium outcome: findings candidate: d4f013c 
 round: 2 model: gpt-6.1-sol effort: medium outcome: empty candidate: 72148be provider: openai version: gpt-6.1-sol cost: 59647tokens latency: 51s opportunity: full-scope purpose: section-review provenance: recorded findings:
 empty: 1
 refuted: 0
+
+run: D00-T04-S3
+date: 2026-11-09
+runner: panel
+rounds: 14
+round: 1 model: gpt-6.1-sol effort: medium outcome: independent candidate: 4aa5f04 provider: openai version: gpt-6.1-sol cost: 109252tokens latency: 185s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F1, D00-T04-S3-F2, D00-T04-S3-F3, D00-T04-S3-F4, D00-T04-S3-F5, D00-T04-S3-F6, D00-T04-S3-F7, D00-T04-S3-F8
+round: 2 model: gpt-6.1-sol effort: medium outcome: independent candidate: aab5a53 provider: openai version: gpt-6.1-sol cost: 118001tokens latency: 192s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F9, D00-T04-S3-F10, D00-T04-S3-F11
+round: 3 model: gpt-6.1-sol effort: medium outcome: independent candidate: 2852ca5 provider: openai version: gpt-6.1-sol cost: 116427tokens latency: 174s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F12, D00-T04-S3-F13, D00-T04-S3-F14, D00-T04-S3-F15, D00-T04-S3-F16
+round: 4 model: gpt-6.1-sol effort: medium outcome: independent candidate: e8ede19 provider: openai version: gpt-6.1-sol cost: 107261tokens latency: 158s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F17, D00-T04-S3-F18
+round: 5 model: gpt-6.1-sol effort: medium outcome: independent candidate: 4712a83 provider: openai version: gpt-6.1-sol cost: 127928tokens latency: 188s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F19
+round: 6 model: gpt-6.1-sol effort: medium outcome: independent candidate: 24c502e provider: openai version: gpt-6.1-sol cost: 96473tokens latency: 134s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F20
+round: 7 model: gpt-6.1-sol effort: medium outcome: independent candidate: cc774c4 provider: openai version: gpt-6.1-sol cost: 117308tokens latency: 162s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F21, D00-T04-S3-F22
+round: 8 model: gpt-6.1-sol effort: medium outcome: independent candidate: 1a0bc8c provider: openai version: gpt-6.1-sol cost: 125163tokens latency: 179s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F23, D00-T04-S3-F24, D00-T04-S3-F25
+round: 9 model: gpt-6.1-sol effort: medium outcome: independent candidate: f0b4c4e provider: openai version: gpt-6.1-sol cost: 123365tokens latency: 171s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F26, D00-T04-S3-F27
+round: 10 model: gpt-6.1-sol effort: medium outcome: independent candidate: 4bb1e23 provider: openai version: gpt-6.1-sol cost: 122436tokens latency: 168s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F28
+round: 11 model: gpt-6.1-sol effort: medium outcome: independent candidate: 375caec provider: openai version: gpt-6.1-sol cost: 130762tokens latency: 184s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F29
+round: 12 model: gpt-6.1-sol effort: medium outcome: independent candidate: 88cc5a6 provider: openai version: gpt-6.1-sol cost: 95295tokens latency: 129s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T04-S3-F30
+round: 13 model: gpt-6.1-sol effort: medium outcome: independent candidate: 9fdbaa5 provider: openai version: gpt-6.1-sol cost: 114307tokens latency: 152s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 14 model: gpt-6.1-sol effort: medium outcome: empty candidate: 9fdbaa5 provider: openai version: gpt-6.1-sol cost: 133658tokens latency: 54s opportunity: full-scope purpose: section-review provenance: recorded findings:
+empty: 1
+refuted: 0
