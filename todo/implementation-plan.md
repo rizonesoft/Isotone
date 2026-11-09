@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **25 of 846 sections complete (3%).** 846 sections (6 discovered); backlog 40 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **25 of 846 sections complete (3%).** 846 sections (6 discovered); backlog 43 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -422,7 +422,7 @@ Bitmaps arrive once vectors are complete. `Isotone.Core` gains the pixel engine 
 
 |  ✔  | Section       | Deliverable                                                                                | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------------------ | :---: |
-| [ ] | `D00 T07 §11` | Re-plan Phase 9: Stilus parity VI: bitmaps, tracing, and the shared pixel engine           |   9   |
+| [ ] | `D00 T07 §11` | Re-plan Phase 9: Stilus parity VI: bitmaps, tracing, and the shared pixel engine           |  10   |
 | [ ] | `D02 T06 §14` | More formats and the export dialog                                                         |   6   |
 | [ ] | `D01 T03 §1`  | Pixel buffers, the effect contract, and the golden harness                                 |  25   |
 | [ ] | `D01 T03 §2`  | Resampling, rotation, straighten, perspective, and lens correction                         |  14   |
