@@ -255,6 +255,61 @@ def default_http_get(url: str) -> str:
 
 # OSV query and version evaluation -------------------------------------------------------------------------------------
 
+VALID_OSV_RANGE_TYPES = {"GIT", "SEMVER", "ECOSYSTEM"}
+VALID_OSV_EVENT_KEYS = {"introduced", "fixed", "last_affected", "limit"}
+
+
+def norm_repo_url(url: str) -> str:
+    return url.strip().rstrip("/").removesuffix(".git").lower()
+
+
+def allowed_repo_urls(repo: str | None) -> set[str] | None:
+    if not repo or not repo.strip():
+        return None
+    return {norm_repo_url(repo), *(norm_repo_url(m) for m in REPO_MIRRORS.get(repo, ()))}
+
+
+def aff_matches_repo(aff: dict, allowed: set[str] | None) -> bool:
+    if allowed is None:
+        return True
+    pkg = aff.get("package")
+    if isinstance(pkg, dict) and isinstance(pkg.get("name"), str) and pkg["name"].strip():
+        if pkg.get("ecosystem") == "GIT" or pkg["name"].startswith(("http://", "https://")):
+            if norm_repo_url(pkg["name"]) not in allowed:
+                return False
+    ranges = aff.get("ranges") or []
+    git_repos = [
+        norm_repo_url(r["repo"])
+        for r in ranges
+        if isinstance(r, dict) and isinstance(r.get("repo"), str) and r["repo"].strip()
+    ]
+    if git_repos and not any(gr in allowed for gr in git_repos):
+        return False
+    return True
+
+
+def iter_version_subranges(events_list: list[dict]) -> list[tuple[str | None, str | None, str | None]]:
+    """Convert an OSV event list into `(introduced, fixed, last_affected)` subranges, preserving open-ended ranges."""
+    subranges: list[tuple[str | None, str | None, str | None]] = []
+    cur_intro: str | None = None
+    for item in events_list:
+        if not isinstance(item, dict):
+            continue
+        if "introduced" in item:
+            if cur_intro is not None:
+                subranges.append((cur_intro, None, None))
+            cur_intro = str(item["introduced"])
+        elif "fixed" in item:
+            subranges.append((cur_intro, str(item["fixed"]), None))
+            cur_intro = None
+        elif "last_affected" in item:
+            subranges.append((cur_intro, None, str(item["last_affected"])))
+            cur_intro = None
+    if cur_intro is not None:
+        subranges.append((cur_intro, None, None))
+    return subranges
+
+
 def validate_osv_affected(vuln: dict) -> list[dict]:
     """Validate an OSV vulnerability entry's `affected` array and fail closed on any malformed shape."""
     vid = vuln.get("id", "<unknown>")
@@ -277,16 +332,33 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
         for rng in ranges or []:
             if not isinstance(rng, dict):
                 raise ValueError(f"OSV advisory {vid} has non-dict range")
+            rng_type = rng.get("type")
+            if not isinstance(rng_type, str) or rng_type not in VALID_OSV_RANGE_TYPES:
+                raise ValueError(f"OSV advisory {vid} range has unsupported type {rng_type!r}")
+            if "repo" in rng and rng["repo"] is not None:
+                if not isinstance(rng["repo"], str) or not rng["repo"].strip():
+                    raise ValueError(f"OSV advisory {vid} range has invalid 'repo'")
             events = rng.get("events")
             if not isinstance(events, list) or not events:
                 raise ValueError(f"OSV advisory {vid} range lacks a non-empty 'events' list")
+            has_introduced = False
             for ev in events:
                 if (
                     not isinstance(ev, dict)
-                    or not ev
-                    or any(not isinstance(k, str) or not isinstance(val, str) or not val.strip() for k, val in ev.items())
+                    or len(ev) != 1
+                    or any(
+                        not isinstance(k, str)
+                        or k not in VALID_OSV_EVENT_KEYS
+                        or not isinstance(val, str)
+                        or not val.strip()
+                        for k, val in ev.items()
+                    )
                 ):
-                    raise ValueError(f"OSV advisory {vid} range event is malformed")
+                    raise ValueError(f"OSV advisory {vid} range event is malformed: {ev!r}")
+                if "introduced" in ev:
+                    has_introduced = True
+            if not has_introduced:
+                raise ValueError(f"OSV advisory {vid} range events lack an 'introduced' entry")
             db = rng.get("database_specific")
             if db is not None:
                 if not isinstance(db, dict):
@@ -295,6 +367,27 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
                 if ext_events is not None:
                     if not isinstance(ext_events, list) or any(not isinstance(ext, dict) for ext in ext_events):
                         raise ValueError(f"OSV advisory {vid} range has malformed 'extracted_events'")
+                    for ext in ext_events:
+                        if "original_tag" in ext and ext["original_tag"] is not None:
+                            if not isinstance(ext["original_tag"], str) or not ext["original_tag"].strip():
+                                raise ValueError(f"OSV advisory {vid} extracted_event has invalid 'original_tag'")
+                        if "range" in ext and ext["range"] is not None:
+                            ext_range = ext["range"]
+                            if not isinstance(ext_range, list) or not ext_range:
+                                raise ValueError(f"OSV advisory {vid} extracted_event has invalid 'range'")
+                            for item in ext_range:
+                                if (
+                                    not isinstance(item, dict)
+                                    or len(item) != 1
+                                    or any(
+                                        not isinstance(k, str)
+                                        or k not in VALID_OSV_EVENT_KEYS
+                                        or not isinstance(val, str)
+                                        or not val.strip()
+                                        for k, val in item.items()
+                                    )
+                                ):
+                                    raise ValueError(f"OSV advisory {vid} extracted_event range item is malformed")
     return affected_list
 
 
@@ -337,40 +430,75 @@ def query_osv_paginated(base_payload: dict, osv_post) -> list[dict]:
     return vulns
 
 
-def extract_fixed_version_from_osv(vuln: dict) -> str | None:
-    """Best-effort extraction of the fixing version from an OSV advisory's GIT ranges or extracted_events."""
+def extract_fixed_version_from_osv(vuln: dict, repo: str | None = None, version: str | None = None) -> str | None:
+    """Extract the fixing version from an OSV advisory's ranges or extracted_events scoped to `repo`."""
+    allowed = allowed_repo_urls(repo)
+    clean_ver = version.split("#", 1)[0].strip() if version else None
+    candidates: list[str] = []
     for aff in validate_osv_affected(vuln):
+        if not aff_matches_repo(aff, allowed):
+            continue
         for rng in aff.get("ranges") or []:
+            if allowed is not None and isinstance(rng.get("repo"), str) and rng["repo"].strip():
+                if norm_repo_url(rng["repo"]) not in allowed:
+                    continue
+            if rng.get("type") in ("SEMVER", "ECOSYSTEM"):
+                for ev in rng.get("events") or []:
+                    if isinstance(ev, dict) and isinstance(ev.get("fixed"), str):
+                        cand = ev["fixed"].strip()
+                        if parse_version_tuple(cand) is not None and not COMMIT_RE.match(cand):
+                            candidates.append(cand.lstrip("vV"))
             db = rng.get("database_specific") or {}
             for ext in db.get("extracted_events") or []:
                 orig_tag = ext.get("original_tag")
                 if isinstance(orig_tag, str) and parse_version_tuple(orig_tag) is not None:
-                    return orig_tag.lstrip("vV")
+                    candidates.append(orig_tag.lstrip("vV"))
                 for ev in ext.get("range") or []:
                     if isinstance(ev, dict) and isinstance(ev.get("fixed"), str):
-                        cand = ev["fixed"]
+                        cand = ev["fixed"].strip()
                         if parse_version_tuple(cand) is not None and not COMMIT_RE.match(cand):
-                            return cand.lstrip("vV")
-    return None
+                            candidates.append(cand.lstrip("vV"))
+    if clean_ver is not None:
+        above = [c for c in candidates if version_lt(clean_ver, c)]
+        if above:
+            candidates = above
+        else:
+            return None
+    if not candidates:
+        return None
+    return max(candidates, key=lambda c: parse_version_tuple(c) or (0,))
 
 
-def advisory_affects_git(vuln: dict, version: str, tag: str, commit: str, from_commit_query: bool) -> bool:
-    """Determine whether an OSV advisory affects `(version, tag, commit)`."""
+def advisory_affects_git(
+    vuln: dict, version: str, tag: str, commit: str, from_commit_query: bool, repo: str | None = None
+) -> bool:
+    """Determine whether an OSV advisory affects `(version, tag, commit)` for `repo`."""
     affected_list = validate_osv_affected(vuln)
+    allowed = allowed_repo_urls(repo)
     clean_ver = version.split("#", 1)[0].strip()
     for aff in affected_list:
+        if not aff_matches_repo(aff, allowed):
+            continue
         ranges = aff.get("ranges") or []
         fixed_commits: set[str] = set()
         introduced_commits: set[str] = set()
         has_standalone_single = False
         ref_tag_fixed: list[str] = []
         version_ranges: list[tuple[str | None, str | None, str | None]] = []
+        matched_any_rng = False
         for rng in ranges:
-            for ev in rng.get("events") or []:
-                if isinstance(ev.get("fixed"), str):
-                    fixed_commits.add(ev["fixed"])
-                if isinstance(ev.get("introduced"), str):
-                    introduced_commits.add(ev["introduced"])
+            if allowed is not None and isinstance(rng.get("repo"), str) and rng["repo"].strip():
+                if norm_repo_url(rng["repo"]) not in allowed:
+                    continue
+            matched_any_rng = True
+            if rng.get("type") in ("SEMVER", "ECOSYSTEM"):
+                version_ranges.extend(iter_version_subranges(rng.get("events") or []))
+            else:
+                for ev in rng.get("events") or []:
+                    if isinstance(ev.get("fixed"), str):
+                        fixed_commits.add(ev["fixed"])
+                    if isinstance(ev.get("introduced"), str):
+                        introduced_commits.add(ev["introduced"])
             db = rng.get("database_specific") or {}
             for ext in db.get("extracted_events") or []:
                 if ext.get("strategy") == "StandaloneSingleVersion":
@@ -378,17 +506,18 @@ def advisory_affects_git(vuln: dict, version: str, tag: str, commit: str, from_c
                 if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str):
                     ref_tag_fixed.append(ext["original_tag"])
                 if ext.get("source") in ("CPE_RANGE", "CPE_STRING"):
-                    intro_v, fixed_v, last_v = None, None, None
-                    for item in ext.get("range") or []:
-                        if isinstance(item, dict):
-                            intro_v = item.get("introduced", intro_v)
-                            fixed_v = item.get("fixed", fixed_v)
-                            last_v = item.get("last_affected", last_v)
-                    version_ranges.append((intro_v, fixed_v, last_v))
+                    version_ranges.extend(iter_version_subranges(ext.get("range") or []))
+        if ranges and not matched_any_rng:
+            continue
         # If the queried commit is explicitly the fixing commit (and not a StandaloneSingleVersion conversion artifact),
         # this release fixed the vulnerability.
         if commit in fixed_commits and not (commit in introduced_commits and has_standalone_single):
             continue
+        # Explicit affected versions list (OSV defines ranges and versions as independent union matches).
+        versions = [str(v) for v in (aff.get("versions") or [])]
+        if versions and not has_standalone_single:
+            if clean_ver in versions or f"v{clean_ver}" in versions or tag in versions:
+                return True
         # OSV cvelistV5 conversion case (such as CVE-2023-4863): REFERENCES_TAG names the fixing release tag (e.g. v1.3.2)
         # while StandaloneSingleVersion set introduced=last_affected=1.3.2. Every version strictly below original_tag is affected.
         if ref_tag_fixed:
@@ -406,13 +535,11 @@ def advisory_affects_git(vuln: dict, version: str, tag: str, commit: str, from_c
                 elif last_v is not None:
                     if intro_ok and version_le(clean_ver, last_v):
                         matched_range = True
+                elif intro_ok:
+                    matched_range = True
             if matched_range:
                 return True
             continue
-        versions = [str(v) for v in (aff.get("versions") or [])]
-        if versions and not has_standalone_single:
-            if clean_ver in versions or f"v{clean_ver}" in versions or tag in versions:
-                return True
         if from_commit_query or (introduced_commits and not fixed_commits):
             return True
     return False
@@ -625,7 +752,7 @@ def evaluate_register(
             try:
                 for v in commit_vulns:
                     vid = v["id"].strip()
-                    if advisory_affects_git(v, version, id_tag, commit, from_commit_query=True) and vid not in seen_ids:
+                    if advisory_affects_git(v, version, id_tag, commit, from_commit_query=True, repo=id_repo) and vid not in seen_ids:
                         seen_ids.add(vid)
                         advisories.append({
                             "library": library,
@@ -635,12 +762,12 @@ def evaluate_register(
                             "summary": summary_line(v),
                             "linked_by": affected_consumers(row, rows),
                             "owning_section": row.get("Owning section", ""),
-                            "fixed_version": extract_fixed_version_from_osv(v),
+                            "fixed_version": extract_fixed_version_from_osv(v, repo=id_repo, version=version),
                             "line": f"{port} {version} {vid} {summary_line(v)}",
                         })
                 for v in repo_vulns:
                     vid = v["id"].strip()
-                    if advisory_affects_git(v, version, id_tag, commit, from_commit_query=False) and vid not in seen_ids:
+                    if advisory_affects_git(v, version, id_tag, commit, from_commit_query=False, repo=id_repo) and vid not in seen_ids:
                         seen_ids.add(vid)
                         advisories.append({
                             "library": library,
@@ -650,7 +777,7 @@ def evaluate_register(
                             "summary": summary_line(v),
                             "linked_by": affected_consumers(row, rows),
                             "owning_section": row.get("Owning section", ""),
-                            "fixed_version": extract_fixed_version_from_osv(v),
+                            "fixed_version": extract_fixed_version_from_osv(v, repo=id_repo, version=version),
                             "line": f"{port} {version} {vid} {summary_line(v)}",
                         })
             except Exception as exc:
@@ -1398,6 +1525,103 @@ def self_test() -> int:
     with contextlib.redirect_stderr(io.StringIO()):
         rc_combo = main(["--release-gate", "--self-test"])
     check("--release-gate --self-test is rejected", rc_combo != 0, True)
+
+    # 17. Malformed OSV event keys or unsupported range types fail closed as unchecked (F9)
+    bad_event_osv = {
+        "vulns": [{
+            "id": "CVE-2099-1234",
+            "summary": "Malformed event",
+            "affected": [{"ranges": [{"type": "GIT", "repo": "https://github.com/google/googletest", "events": [{"broken": "bad"}]}]}],
+        }]
+    }
+    res_bad_event = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv if "commit" in payload else bad_event_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "malformed OSV event key fails closed as unchecked",
+        (res_bad_event["ok"], len(res_bad_event["unchecked"]), res_bad_event["checked_ports"]),
+        (False, 1, []),
+    )
+
+    # 18. Open-ended CPE range and explicit affected versions match as affected (F10)
+    open_cpe_osv = {
+        "vulns": [{
+            "id": "CVE-2099-5555",
+            "summary": "Open-ended CPE range",
+            "affected": [{
+                "ranges": [{
+                    "type": "GIT",
+                    "repo": "https://github.com/google/googletest",
+                    "events": [{"introduced": "0"}],
+                    "database_specific": {"extracted_events": [{"source": "CPE_RANGE", "range": [{"introduced": "1.0.0"}]}]},
+                }],
+            }],
+        }]
+    }
+    res_open_cpe = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda _payload: open_cpe_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "open-ended CPE range matches affected version",
+        [(a["port"], a["id"]) for a in res_open_cpe["advisories"]],
+        [("gtest", "CVE-2099-5555")],
+    )
+
+    # 19. Fixing versions are scoped to the matching repository and affected range (F11)
+    multi_repo_osv = {
+        "vulns": [{
+            "id": "CVE-2099-7777",
+            "summary": "Multi-repo advisory",
+            "affected": [
+                {
+                    "ranges": [{
+                        "type": "GIT",
+                        "repo": "https://github.com/other/product",
+                        "events": [{"introduced": "0"}, {"fixed": "1111111111111111111111111111111111111111"}],
+                        "database_specific": {"extracted_events": [{"source": "REFERENCES_TAG", "original_tag": "v1.0.0"}]},
+                    }],
+                },
+                {
+                    "ranges": [{
+                        "type": "GIT",
+                        "repo": "https://github.com/google/googletest",
+                        "events": [{"introduced": "0"}, {"fixed": "2222222222222222222222222222222222222222"}],
+                        "database_specific": {"extracted_events": [{"source": "REFERENCES_TAG", "original_tag": "v1.20.0"}]},
+                    }],
+                },
+            ],
+        }]
+    }
+    gtest_119_baseline = {
+        "default": {**committed_baseline["default"], "gtest": {"baseline": "1.19.0", "port-version": 0}}
+    }
+    res_multi_repo = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda _payload: multi_repo_osv,
+        committed_baseline_doc=committed_baseline,
+        current_baseline_doc=gtest_119_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "unrelated affected repo fixed at v1.0.0 does not falsely claim gtest 1.19.0 fixes v1.20.0 advisory",
+        (res_multi_repo["advisories"][0]["fixed_version"], res_multi_repo["baseline_updates"]),
+        ("1.20.0", []),
+    )
 
     print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0

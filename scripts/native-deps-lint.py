@@ -39,7 +39,6 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -1010,25 +1009,46 @@ def self_test():
     check("two roots where one SPDX source is None fail identity-mismatch",
           rules(lint(table(gtest, helper), sp={"gtest": {("https://github.com/google/googletest", "v1.18.0"), None}})),
           ["identity-mismatch"])
-    with tempfile.TemporaryDirectory() as tmp_roots:
-        r1 = Path(tmp_roots) / "r1"
-        r2 = Path(tmp_roots) / "r2"
-        status_text = (
-            "Package: gtest\nVersion: 1.18.0\nArchitecture: isotone-x64\nStatus: install ok installed\n\n"
-            "Package: vcpkg-cmake\nVersion: 2025-08-07\nArchitecture: x64-windows\nStatus: install ok installed\n"
-        )
-        for root_dir in (r1, r2):
-            (root_dir / "vcpkg").mkdir(parents=True)
-            (root_dir / "vcpkg" / "status").write_text(status_text, encoding="utf-8")
-        spdx_path = r1 / "isotone-x64" / "share" / "gtest" / "vcpkg.spdx.json"
-        spdx_path.parent.mkdir(parents=True)
-        spdx_path.write_text(json.dumps({"packages": [
-            {"downloadLocation": "git+https://github.com/google/googletest@v1.18.0"}
-        ]}), encoding="utf-8")
-        col_inst, col_spdx, _ = collect_installed_roots([("x64-debug", r1), ("x64-release", r2)])
-        check("collect_installed_roots records None when a root lacks vcpkg.spdx.json and fails identity-mismatch",
-              rules(lint(table(gtest, helper), inst=col_inst, sp=col_spdx)),
-              ["identity-mismatch"])
+
+    class FakePath:
+        def __init__(self, files, rel=""):
+            self._files = files
+            self._rel = rel.strip("/")
+
+        def __truediv__(self, part):
+            return FakePath(self._files, f"{self._rel}/{part}" if self._rel else str(part))
+
+        def is_file(self):
+            return self._rel in self._files
+
+        def read_text(self, encoding="utf-8"):
+            return self._files[self._rel]
+
+        @property
+        def parent(self):
+            return FakePath(self._files, self._rel.rsplit("/", 1)[0] if "/" in self._rel else "")
+
+        @property
+        def name(self):
+            return self._rel.rsplit("/", 1)[-1]
+
+        def glob(self, pattern):
+            return [FakePath(self._files, k) for k in sorted(self._files) if fnmatch.fnmatchcase(k, pattern)]
+
+    status_text = (
+        "Package: gtest\nVersion: 1.18.0\nArchitecture: isotone-x64\nStatus: install ok installed\n\n"
+        "Package: vcpkg-cmake\nVersion: 2025-08-07\nArchitecture: x64-windows\nStatus: install ok installed\n"
+    )
+    spdx_json = json.dumps({"packages": [{"downloadLocation": "git+https://github.com/google/googletest@v1.18.0"}]})
+    r1 = FakePath({
+        "vcpkg/status": status_text,
+        "isotone-x64/share/gtest/vcpkg.spdx.json": spdx_json,
+    })
+    r2 = FakePath({"vcpkg/status": status_text})
+    col_inst, col_spdx, _ = collect_installed_roots([("x64-debug", r1), ("x64-release", r2)])
+    check("collect_installed_roots records None when a root lacks vcpkg.spdx.json and fails identity-mismatch",
+          rules(lint(table(gtest, helper), inst=col_inst, sp=col_spdx)),
+          ["identity-mismatch"])
     check("digit separator does not hide LoadLibraryW or NOLINT",
           rules(suppression_findings("native/a.cpp", "auto count = 1'000; LoadLibraryW(name); // NOLINT")
                 + loadlibrary_findings("native/a.cpp", "auto count = 1'000; LoadLibraryW(name); // NOLINT", patterns, set())),
