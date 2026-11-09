@@ -76,39 +76,70 @@ def load_deps_lint():
 DEPS_LINT = load_deps_lint()
 
 
-def parse_version_tuple(ver: str) -> tuple[int, ...] | None:
-    """Parse a numeric dotted version (stripping `#<port-version>` and leading `v`) into an int tuple, or None."""
-    base = ver.split("#", 1)[0].strip()
+def parse_semver_key(ver: str) -> tuple[tuple[int, ...], int, tuple[tuple[int, int | str], ...]] | None:
+    """Parse a version (stripping `#<port-version>` and leading `v`) into a SemVer-ordered key, or None if invalid."""
+    if not isinstance(ver, str):
+        return None
+    raw = ver.strip()
+    if "#" in raw:
+        base, pv = raw.split("#", 1)
+        if not re.match(r"^\d+$", pv.strip()):
+            return None
+        base = base.strip()
+    else:
+        base = raw
     if base.startswith(("v", "V")):
         base = base[1:]
-    m = re.match(r"^(\d+(?:\.\d+)+)", base)
+    if base == "0":
+        return ((-1,), 0, ())
+    m = re.match(r"^(\d+(?:\.\d+)+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$", base)
     if not m:
         return None
-    return tuple(int(part) for part in m.group(1).split("."))
+    nums = [int(part) for part in m.group(1).split(".")]
+    while len(nums) > 1 and nums[-1] == 0:
+        nums.pop()
+    pre = m.group(2)
+    if pre is None:
+        is_release = 1
+        pre_key: tuple[tuple[int, int | str], ...] = ()
+    else:
+        pre_parts = pre.split(".")
+        if any(not p for p in pre_parts):
+            return None
+        is_release = 0
+        pre_key = tuple((0, int(p)) if p.isdigit() else (1, p) for p in pre_parts)
+    build = m.group(3)
+    if build is not None and any(not p for p in build.split(".")):
+        return None
+    return (tuple(nums), is_release, pre_key)
+
+
+def parse_version_tuple(ver: str) -> tuple[int, ...] | None:
+    """Parse a version into its normalized numeric release tuple, or None if invalid."""
+    key = parse_semver_key(ver)
+    return key[0] if key is not None else None
+
+
+def _require_semver_keys(a: str, b: str):
+    ka, kb = parse_semver_key(a), parse_semver_key(b)
+    if ka is None or kb is None:
+        raise ValueError(f"cannot compare unsupported version {a!r} against {b!r}")
+    return ka, kb
 
 
 def version_lt(a: str, b: str) -> bool:
-    ta, tb = parse_version_tuple(a), parse_version_tuple(b)
-    if ta is None or tb is None:
-        return False
-    width = max(len(ta), len(tb))
-    return ta + (0,) * (width - len(ta)) < tb + (0,) * (width - len(tb))
+    ka, kb = _require_semver_keys(a, b)
+    return ka < kb
 
 
 def version_ge(a: str, b: str) -> bool:
-    ta, tb = parse_version_tuple(a), parse_version_tuple(b)
-    if ta is None or tb is None:
-        return False
-    width = max(len(ta), len(tb))
-    return ta + (0,) * (width - len(ta)) >= tb + (0,) * (width - len(tb))
+    ka, kb = _require_semver_keys(a, b)
+    return ka >= kb
 
 
 def version_le(a: str, b: str) -> bool:
-    ta, tb = parse_version_tuple(a), parse_version_tuple(b)
-    if ta is None or tb is None:
-        return False
-    width = max(len(ta), len(tb))
-    return ta + (0,) * (width - len(ta)) <= tb + (0,) * (width - len(tb))
+    ka, kb = _require_semver_keys(a, b)
+    return ka <= kb
 
 
 # Feed adapters (D00-T04-S1-PR9) ---------------------------------------------------------------------------------------
@@ -288,26 +319,56 @@ def aff_matches_repo(aff: dict, allowed: set[str] | None) -> bool:
     return True
 
 
+EVENT_KIND_ORDER = {"introduced": 0, "last_affected": 1, "fixed": 2, "limit": 3}
+
+
 def iter_version_subranges(events_list: list[dict]) -> list[tuple[str | None, str | None, str | None]]:
-    """Convert an OSV event list into `(introduced, fixed, last_affected)` subranges, preserving open-ended ranges."""
+    """Sort an OSV version event list and convert it into `(introduced, fixed_or_limit, last_affected)` subranges."""
+    parsed_events: list[tuple[tuple, int, str, str]] = []
+    for item in events_list:
+        if not isinstance(item, dict) or len(item) != 1:
+            raise ValueError(f"malformed OSV version event {item!r}")
+        k, val = next(iter(item.items()))
+        if k not in EVENT_KIND_ORDER or not isinstance(val, str):
+            raise ValueError(f"unsupported OSV version event {item!r}")
+        vkey = parse_semver_key(val)
+        if vkey is None:
+            raise ValueError(f"unsupported OSV event version {val!r} in {item!r}")
+        parsed_events.append((vkey, EVENT_KIND_ORDER[k], k, val.strip()))
+    parsed_events.sort(key=lambda entry: (entry[0], entry[1]))
     subranges: list[tuple[str | None, str | None, str | None]] = []
     cur_intro: str | None = None
-    for item in events_list:
-        if not isinstance(item, dict):
-            continue
-        if "introduced" in item:
+    for _vkey, _order, k, val in parsed_events:
+        if k == "introduced":
+            if cur_intro is None:
+                cur_intro = val
+        elif k in ("fixed", "limit"):
             if cur_intro is not None:
-                subranges.append((cur_intro, None, None))
-            cur_intro = str(item["introduced"])
-        elif "fixed" in item:
-            subranges.append((cur_intro, str(item["fixed"]), None))
-            cur_intro = None
-        elif "last_affected" in item:
-            subranges.append((cur_intro, None, str(item["last_affected"])))
-            cur_intro = None
+                subranges.append((cur_intro, val, None))
+                cur_intro = None
+        elif k == "last_affected":
+            if cur_intro is not None:
+                subranges.append((cur_intro, None, val))
+                cur_intro = None
     if cur_intro is not None:
         subranges.append((cur_intro, None, None))
     return subranges
+
+
+def _version_matches_subranges(
+    clean_ver: str, subranges: list[tuple[str | None, str | None, str | None]]
+) -> bool:
+    for intro_v, fixed_v, last_v in subranges:
+        intro_ok = intro_v in (None, "0") or version_ge(clean_ver, intro_v)
+        if fixed_v is not None:
+            if intro_ok and version_lt(clean_ver, fixed_v):
+                return True
+        elif last_v is not None:
+            if intro_ok and version_le(clean_ver, last_v):
+                return True
+        elif intro_ok:
+            return True
+    return False
 
 
 def validate_osv_affected(vuln: dict) -> list[dict]:
@@ -355,8 +416,11 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
                     )
                 ):
                     raise ValueError(f"OSV advisory {vid} range event is malformed: {ev!r}")
-                if "introduced" in ev:
+                k, val = next(iter(ev.items()))
+                if k == "introduced":
                     has_introduced = True
+                if rng_type in ("SEMVER", "ECOSYSTEM") and parse_semver_key(val) is None:
+                    raise ValueError(f"OSV advisory {vid} {rng_type} range event {k!r} has unsupported version {val!r}")
             if not has_introduced:
                 raise ValueError(f"OSV advisory {vid} range events lack an 'introduced' entry")
             db = rng.get("database_specific")
@@ -371,6 +435,10 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
                         if "original_tag" in ext and ext["original_tag"] is not None:
                             if not isinstance(ext["original_tag"], str) or not ext["original_tag"].strip():
                                 raise ValueError(f"OSV advisory {vid} extracted_event has invalid 'original_tag'")
+                            if ext.get("source") == "REFERENCES_TAG" and parse_semver_key(ext["original_tag"]) is None:
+                                raise ValueError(
+                                    f"OSV advisory {vid} REFERENCES_TAG has unsupported version {ext['original_tag']!r}"
+                                )
                         if "range" in ext and ext["range"] is not None:
                             ext_range = ext["range"]
                             if not isinstance(ext_range, list) or not ext_range:
@@ -388,6 +456,11 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
                                     )
                                 ):
                                     raise ValueError(f"OSV advisory {vid} extracted_event range item is malformed")
+                                k, val = next(iter(item.items()))
+                                if ext.get("source") in ("CPE_RANGE", "CPE_STRING") and parse_semver_key(val) is None:
+                                    raise ValueError(
+                                        f"OSV advisory {vid} {ext.get('source')} event {k!r} has unsupported version {val!r}"
+                                    )
     return affected_list
 
 
@@ -446,102 +519,115 @@ def extract_fixed_version_from_osv(vuln: dict, repo: str | None = None, version:
                 for ev in rng.get("events") or []:
                     if isinstance(ev, dict) and isinstance(ev.get("fixed"), str):
                         cand = ev["fixed"].strip()
-                        if parse_version_tuple(cand) is not None and not COMMIT_RE.match(cand):
+                        if parse_semver_key(cand) is not None and not COMMIT_RE.match(cand):
                             candidates.append(cand.lstrip("vV"))
             db = rng.get("database_specific") or {}
             for ext in db.get("extracted_events") or []:
                 orig_tag = ext.get("original_tag")
-                if isinstance(orig_tag, str) and parse_version_tuple(orig_tag) is not None:
+                if isinstance(orig_tag, str) and parse_semver_key(orig_tag) is not None:
                     candidates.append(orig_tag.lstrip("vV"))
                 for ev in ext.get("range") or []:
                     if isinstance(ev, dict) and isinstance(ev.get("fixed"), str):
                         cand = ev["fixed"].strip()
-                        if parse_version_tuple(cand) is not None and not COMMIT_RE.match(cand):
+                        if parse_semver_key(cand) is not None and not COMMIT_RE.match(cand):
                             candidates.append(cand.lstrip("vV"))
     if clean_ver is not None:
-        above = [c for c in candidates if version_lt(clean_ver, c)]
+        above = [
+            c
+            for c in candidates
+            if version_lt(clean_ver, c)
+            and not advisory_affects_git(vuln, c, tag=f"v{c}", commit="", from_commit_query=False, repo=repo)
+        ]
         if above:
-            candidates = above
-        else:
-            return None
+            return min(above, key=lambda c: parse_semver_key(c) or ((-1,), 0, ()))
+        return None
     if not candidates:
         return None
-    return max(candidates, key=lambda c: parse_version_tuple(c) or (0,))
+    return max(candidates, key=lambda c: parse_semver_key(c) or ((-1,), 0, ()))
 
 
 def advisory_affects_git(
     vuln: dict, version: str, tag: str, commit: str, from_commit_query: bool, repo: str | None = None
 ) -> bool:
-    """Determine whether an OSV advisory affects `(version, tag, commit)` for `repo`."""
+    """Determine whether an OSV advisory affects `(version, tag, commit)` for `repo` under OSV union semantics."""
     affected_list = validate_osv_affected(vuln)
+    if parse_semver_key(version) is None:
+        raise ValueError(f"unsupported registered version {version!r}")
     allowed = allowed_repo_urls(repo)
     clean_ver = version.split("#", 1)[0].strip()
+    clean_key = parse_semver_key(clean_ver)
     for aff in affected_list:
         if not aff_matches_repo(aff, allowed):
             continue
         ranges = aff.get("ranges") or []
-        fixed_commits: set[str] = set()
-        introduced_commits: set[str] = set()
-        has_standalone_single = False
-        ref_tag_fixed: list[str] = []
-        version_ranges: list[tuple[str | None, str | None, str | None]] = []
-        matched_any_rng = False
+        matched_any_rng_repo = False
+        all_standalone_single = True
         for rng in ranges:
             if allowed is not None and isinstance(rng.get("repo"), str) and rng["repo"].strip():
                 if norm_repo_url(rng["repo"]) not in allowed:
                     continue
-            matched_any_rng = True
-            if rng.get("type") in ("SEMVER", "ECOSYSTEM"):
-                version_ranges.extend(iter_version_subranges(rng.get("events") or []))
-            else:
-                for ev in rng.get("events") or []:
-                    if isinstance(ev.get("fixed"), str):
-                        fixed_commits.add(ev["fixed"])
-                    if isinstance(ev.get("introduced"), str):
-                        introduced_commits.add(ev["introduced"])
+            matched_any_rng_repo = True
+            rng_type = rng.get("type")
+            if rng_type in ("SEMVER", "ECOSYSTEM"):
+                all_standalone_single = False
+                subranges = iter_version_subranges(rng.get("events") or [])
+                if _version_matches_subranges(clean_ver, subranges):
+                    return True
+                continue
+
+            # GIT range: evaluate commit membership, REFERENCES_TAG, and CPE_RANGE/CPE_STRING subranges.
+            rng_fixed = {ev["fixed"] for ev in (rng.get("events") or []) if isinstance(ev.get("fixed"), str)}
+            rng_intro = {ev["introduced"] for ev in (rng.get("events") or []) if isinstance(ev.get("introduced"), str)}
             db = rng.get("database_specific") or {}
-            for ext in db.get("extracted_events") or []:
-                if ext.get("strategy") == "StandaloneSingleVersion":
-                    has_standalone_single = True
-                if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str):
-                    ref_tag_fixed.append(ext["original_tag"])
+            ext_events = db.get("extracted_events") or []
+            rng_standalone = any(ext.get("strategy") == "StandaloneSingleVersion" for ext in ext_events)
+            if not rng_standalone:
+                all_standalone_single = False
+            rng_ref_tags = [
+                ext["original_tag"]
+                for ext in ext_events
+                if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str)
+            ]
+            rng_cpe_subranges: list[tuple[str | None, str | None, str | None]] = []
+            for ext in ext_events:
                 if ext.get("source") in ("CPE_RANGE", "CPE_STRING"):
-                    version_ranges.extend(iter_version_subranges(ext.get("range") or []))
-        if ranges and not matched_any_rng:
+                    rng_cpe_subranges.extend(iter_version_subranges(ext.get("range") or []))
+
+            if commit and commit in rng_fixed and not (commit in rng_intro and rng_standalone):
+                continue
+
+            if rng_ref_tags:
+                if any(version_lt(clean_ver, ft) for ft in rng_ref_tags):
+                    return True
+                if all(version_ge(clean_ver, ft) for ft in rng_ref_tags):
+                    if rng_cpe_subranges and _version_matches_subranges(clean_ver, rng_cpe_subranges):
+                        return True
+                    continue
+
+            if rng_cpe_subranges:
+                if _version_matches_subranges(clean_ver, rng_cpe_subranges):
+                    return True
+                if rng_standalone or not commit:
+                    continue
+
+            if not rng_standalone and (
+                (commit and from_commit_query) or (rng_intro and not rng_fixed and not rng_cpe_subranges)
+            ):
+                return True
+
+        if ranges and not matched_any_rng_repo:
             continue
-        # If the queried commit is explicitly the fixing commit (and not a StandaloneSingleVersion conversion artifact),
-        # this release fixed the vulnerability.
-        if commit in fixed_commits and not (commit in introduced_commits and has_standalone_single):
-            continue
+
         # Explicit affected versions list (OSV defines ranges and versions as independent union matches).
         versions = [str(v) for v in (aff.get("versions") or [])]
-        if versions and not has_standalone_single:
-            if clean_ver in versions or f"v{clean_ver}" in versions or tag in versions:
+        if versions and not (ranges and all_standalone_single):
+            if (
+                clean_ver in versions
+                or f"v{clean_ver}" in versions
+                or (tag and tag in versions)
+                or any(parse_semver_key(v) is not None and parse_semver_key(v) == clean_key for v in versions)
+            ):
                 return True
-        # OSV cvelistV5 conversion case (such as CVE-2023-4863): REFERENCES_TAG names the fixing release tag (e.g. v1.3.2)
-        # while StandaloneSingleVersion set introduced=last_affected=1.3.2. Every version strictly below original_tag is affected.
-        if ref_tag_fixed:
-            if any(version_lt(clean_ver, ft) for ft in ref_tag_fixed):
-                return True
-            if all(version_ge(clean_ver, ft) for ft in ref_tag_fixed):
-                continue
-        if version_ranges:
-            matched_range = False
-            for intro_v, fixed_v, last_v in version_ranges:
-                intro_ok = intro_v in (None, "0") or version_ge(clean_ver, intro_v)
-                if fixed_v is not None:
-                    if intro_ok and version_lt(clean_ver, fixed_v):
-                        matched_range = True
-                elif last_v is not None:
-                    if intro_ok and version_le(clean_ver, last_v):
-                        matched_range = True
-                elif intro_ok:
-                    matched_range = True
-            if matched_range:
-                return True
-            continue
-        if from_commit_query or (introduced_commits and not fixed_commits):
-            return True
     return False
 
 
@@ -623,6 +709,8 @@ def evaluate_register(
     helpers: list[str] = []
     baseline_updates: list[str] = []
     checked_ports: list[str] = []
+    osv_vuln_by_port_id: dict[tuple[str, str], tuple[dict, str]] = {}
+    feed_entries_by_port_id: dict[tuple[str, str], tuple[FeedAdapter, list[FeedEntry]]] = {}
 
     rows, parse_findings = DEPS_LINT.parse_register(register_text, path=register_path)
     for pf in parse_findings:
@@ -754,6 +842,7 @@ def evaluate_register(
                     vid = v["id"].strip()
                     if advisory_affects_git(v, version, id_tag, commit, from_commit_query=True, repo=id_repo) and vid not in seen_ids:
                         seen_ids.add(vid)
+                        osv_vuln_by_port_id[(port, vid)] = (v, id_repo)
                         advisories.append({
                             "library": library,
                             "port": port,
@@ -769,6 +858,7 @@ def evaluate_register(
                     vid = v["id"].strip()
                     if advisory_affects_git(v, version, id_tag, commit, from_commit_query=False, repo=id_repo) and vid not in seen_ids:
                         seen_ids.add(vid)
+                        osv_vuln_by_port_id[(port, vid)] = (v, id_repo)
                         advisories.append({
                             "library": library,
                             "port": port,
@@ -807,6 +897,10 @@ def evaluate_register(
                 for entry in entries:
                     if entry.advisory_id not in seen_ids and adapter.affects(version, entry):
                         seen_ids.add(entry.advisory_id)
+                        feed_entries_by_port_id[(port, entry.advisory_id)] = (
+                            adapter,
+                            [e for e in entries if e.advisory_id == entry.advisory_id],
+                        )
                         advisories.append({
                             "library": library,
                             "port": port,
@@ -844,13 +938,31 @@ def evaluate_register(
                     continue
                 head_ver = baseline_port_version(cur_entry)
                 reg_ver = port_advs[0]["version"]
+                if parse_semver_key(head_ver) is None or parse_semver_key(reg_ver) is None:
+                    continue
                 if not version_lt(reg_ver, head_ver):
                     continue
-                fixed_ids = [
-                    a["id"]
-                    for a in port_advs
-                    if a.get("fixed_version") is not None and version_ge(head_ver, a["fixed_version"])
-                ]
+                head_clean = head_ver.split("#", 1)[0].strip()
+                fixed_ids: list[str] = []
+                for a in port_advs:
+                    fix_ver = a.get("fixed_version")
+                    if fix_ver is None or parse_semver_key(fix_ver) is None:
+                        continue
+                    if not version_ge(head_ver, fix_ver):
+                        continue
+                    osv_pair = osv_vuln_by_port_id.get((port, a["id"]))
+                    if osv_pair is not None:
+                        v_doc, v_repo = osv_pair
+                        if advisory_affects_git(
+                            v_doc, head_ver, tag=f"v{head_clean}", commit="", from_commit_query=False, repo=v_repo
+                        ):
+                            continue
+                    feed_pair = feed_entries_by_port_id.get((port, a["id"]))
+                    if feed_pair is not None:
+                        f_adapter, f_entries = feed_pair
+                        if any(f_adapter.affects(head_ver, fe) for fe in f_entries):
+                            continue
+                    fixed_ids.append(a["id"])
                 if fixed_ids:
                     for a in port_advs:
                         if a["id"] in fixed_ids:
@@ -1621,6 +1733,123 @@ def self_test() -> int:
         "unrelated affected repo fixed at v1.0.0 does not falsely claim gtest 1.19.0 fixes v1.20.0 advisory",
         (res_multi_repo["advisories"][0]["fixed_version"], res_multi_repo["baseline_updates"]),
         ("1.20.0", []),
+    )
+
+    # 20. Unsupported event version boundary fails closed as unchecked; prerelease versions compare below release (F12)
+    banana_osv = {
+        "vulns": [{
+            "id": "CVE-2099-8881",
+            "summary": "Unparseable version event boundary",
+            "affected": [{"ranges": [{"type": "SEMVER", "events": [{"introduced": "banana"}, {"fixed": "2.0.0"}]}]}],
+        }]
+    }
+    res_banana = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda _payload: banana_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "unparseable SEMVER event version fails closed as unchecked",
+        (res_banana["ok"], len(res_banana["unchecked"]), res_banana["checked_ports"], version_lt("1.18.0-rc.1", "1.18.0")),
+        (False, 1, [], True),
+    )
+
+    # 21. Union evaluation across ranges in an affected entry does not let a non-matching SEMVER range mask a GIT commit match (F13)
+    union_osv = {
+        "vulns": [{
+            "id": "CVE-2099-8882",
+            "summary": "Union GIT + SEMVER range",
+            "affected": [{
+                "ranges": [
+                    {
+                        "type": "GIT",
+                        "repo": "https://github.com/google/googletest",
+                        "events": [{"introduced": "0"}, {"fixed": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}],
+                    },
+                    {"type": "SEMVER", "events": [{"introduced": "0"}, {"fixed": "1.0.0"}]},
+                ]
+            }],
+        }]
+    }
+    res_union = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: union_osv if "commit" in payload else {"vulns": []},
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "non-matching SEMVER range does not suppress positive GIT commit-query match",
+        [(a["port"], a["id"]) for a in res_union["advisories"]],
+        [("gtest", "CVE-2099-8882")],
+    )
+
+    # 22. OSV limit events and unsorted event lists are evaluated accurately (F14, F15)
+    limit_and_unsorted_osv = {
+        "vulns": [
+            {
+                "id": "CVE-2099-8883",
+                "summary": "Bounded by limit 1.10.0",
+                "affected": [{"ranges": [{"type": "SEMVER", "events": [{"introduced": "0"}, {"limit": "1.10.0"}]}]}],
+            },
+            {
+                "id": "CVE-2099-8884",
+                "summary": "Unsorted fixed before introduced",
+                "affected": [{"ranges": [{"type": "SEMVER", "events": [{"fixed": "1.10.0"}, {"introduced": "0"}]}]}],
+            },
+        ]
+    }
+    res_limit = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda _payload: limit_and_unsorted_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "limit event and unsorted events do not falsely flag unaffected 1.18.0",
+        (res_limit["ok"], res_limit["advisories"]),
+        (True, []),
+    )
+
+    # 23. Reintroduced vulnerability in current baseline is not declared fixed by baseline-update (F16)
+    reintro_osv = {
+        "vulns": [{
+            "id": "CVE-2099-8885",
+            "summary": "Reintroduced after 1.20.0 at 1.21.0",
+            "affected": [{
+                "ranges": [{
+                    "type": "SEMVER",
+                    "events": [{"introduced": "0"}, {"fixed": "1.20.0"}, {"introduced": "1.21.0"}],
+                }]
+            }],
+        }]
+    }
+    gtest_122_baseline = {
+        "default": {**committed_baseline["default"], "gtest": {"baseline": "1.22.0", "port-version": 0}}
+    }
+    res_reintro = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda _payload: reintro_osv,
+        committed_baseline_doc=committed_baseline,
+        current_baseline_doc=gtest_122_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "baseline version inside reintroduced vulnerable range is not reported as baseline-update fix",
+        (len(res_reintro["advisories"]), res_reintro["advisories"][0].get("baseline_fix"), res_reintro["baseline_updates"]),
+        (1, None, []),
     )
 
     print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
