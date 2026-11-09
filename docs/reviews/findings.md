@@ -4,17 +4,17 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**255 findings across 20 sections.**
+**261 findings across 21 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
 | `adversarial` | 86 | fails under hostile or unexpected input |
-| `integration` | 77 | a consumer, caller, or downstream artifact no longer holds |
-| `consistency` | 26 | disagrees with the rest of the suite, its naming, or its layout |
+| `integration` | 81 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 27 | disagrees with the rest of the suite, its naming, or its layout |
 | `correctness` | 24 | the code does the wrong thing |
-| `source-defect` | 21 | a Win32 contract, registry layout, or other source read wrongly |
+| `source-defect` | 22 | a Win32 contract, registry layout, or other source read wrongly |
 | `record` | 20 | the plan or the evidence misdescribes what happened |
 | `reproducibility` | 1 | the same input does not produce the same output |
 
@@ -24,7 +24,7 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
 | `major` | 122 | wrong behavior in code, plan, or record |
-| `minor` | 133 | polish or wording, or no surviving defect |
+| `minor` | 139 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -285,3 +285,9 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §8` | F6 | major | `integration` | fixed | self | windows-11-vs2026-arm checks out on C:\ while windows-2025-vs2026 builds on D:\ |
 | `D00 T05 §8` | F7 | minor | `correctness` | fixed | self | expected_ninja_images did not normalize Windows backslashes on POSIX |
 | `D00 T05 §8` | F8 | major | `integration` | fixed | self | cmake --graphviz rewrote build.ninja on a fresh CI build |
+| `D00 T05 §9` | F1 | minor | `integration` | fixed | independent | fuzz_replay_main used narrow argv and ANSI Win32 file APIs |
+| `D00 T05 §9` | F2 | minor | `source-defect` | fixed | independent | decisions.md understated the clang-cl fallback switching cost |
+| `D00 T05 §9` | F3 | minor | `consistency` | fixed | independent | isotone_ensure_fuzz_library discarded target COMPILE_OPTIONS and INTERFACE_COMPILE_OPTIONS |
+| `D00 T05 §9` | F4 | minor | `integration` | fixed | independent | generator-expression dependencies in LINK_LIBRARIES bypassed fuzz instrumentation |
+| `D00 T05 §9` | F5 | minor | `integration` | fixed | independent | generator-expression target tokenizer split on :: namespace separators |
+| `D00 T05 §9` | F6 | minor | `integration` | fixed | self | qualify_fuzz.exe import library in binary dir lacked __asan_ symbols |

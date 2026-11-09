@@ -337,3 +337,15 @@ round: 5 model: gpt-6.1-sol effort: medium outcome: findings candidate: c186f8b 
 round: 6 model: gpt-6.1-sol effort: medium outcome: empty candidate: ef1fe24 provider: openai version: gpt-6.1-sol cost: 62622tokens latency: 29s opportunity: full-scope purpose: section-review provenance: recorded findings:
 empty: 1
 refuted: 0
+
+run: D00-T05-S9
+date: 2026-11-09
+runner: panel
+rounds: 5
+round: 1 model: gpt-6.1-sol effort: medium outcome: independent candidate: 316e8fc provider: openai version: gpt-6.1-sol cost: 73527tokens latency: 121s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T05-S9-F1, D00-T05-S9-F2
+round: 2 model: gpt-6.1-sol effort: medium outcome: independent candidate: 34bcbb1 provider: openai version: gpt-6.1-sol cost: 86765tokens latency: 147s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T05-S9-F3, D00-T05-S9-F4
+round: 3 model: gpt-6.1-sol effort: medium outcome: independent candidate: fb84f84 provider: openai version: gpt-6.1-sol cost: 76264tokens latency: 118s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T05-S9-F5
+round: 4 model: gpt-6.1-sol effort: medium outcome: independent candidate: 0b0b719 provider: openai version: gpt-6.1-sol cost: 69752tokens latency: 78s opportunity: full-scope purpose: section-review provenance: recorded findings:
+round: 5 model: gpt-6.1-sol effort: medium outcome: empty candidate: 0b0b719 provider: openai version: gpt-6.1-sol cost: 51977tokens latency: 34s opportunity: full-scope purpose: section-review provenance: recorded findings:
+empty: 1
+refuted: 0
