@@ -4,18 +4,18 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**261 findings across 21 sections.**
+**263 findings across 22 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 86 | fails under hostile or unexpected input |
+| `adversarial` | 87 | fails under hostile or unexpected input |
 | `integration` | 81 | a consumer, caller, or downstream artifact no longer holds |
 | `consistency` | 27 | disagrees with the rest of the suite, its naming, or its layout |
 | `correctness` | 24 | the code does the wrong thing |
 | `source-defect` | 22 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 20 | the plan or the evidence misdescribes what happened |
+| `record` | 21 | the plan or the evidence misdescribes what happened |
 | `reproducibility` | 1 | the same input does not produce the same output |
 
 ## By severity
@@ -23,8 +23,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 122 | wrong behavior in code, plan, or record |
-| `minor` | 139 | polish or wording, or no surviving defect |
+| `major` | 123 | wrong behavior in code, plan, or record |
+| `minor` | 140 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -243,6 +243,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §1` | F6 | major | `correctness` | fixed | independent | a newer incomplete installation was chosen over an older complete one |
 | `D00 T05 §1` | F7 | minor | `correctness` | fixed | self | the provisioning leg counted the summary line as a mismatch |
 | `D00 T05 §1` | F8 | minor | `consistency` | fixed | self | the probe dropped a missing or unrunnable tool silently |
+| `D00 T05 §10` | F1 | major | `adversarial` | fixed | independent | _sub_runner_pattern missed plain-English "synthetic pointer injection" sub-runner citations |
+| `D00 T05 §10` | F2 | minor | `record` | fixed | independent | todo/README.md, AGENTS.md, and PROOF_RUNNER_TOKEN_RE cited nonexistent run-arm64-tests.py, run-fuzz-regressions.py, and run-fuzz.ps1 |
 | `D00 T05 §2` | F1 | minor | `record` | fixed | independent | the CMake configures were proved with vcpkg install, not through CMake |
 | `D00 T05 §2` | F2 | minor | `record` | refuted | independent | the installation and cache proofs looked unrecorded |
 | `D00 T05 §2` | F3 | minor | `correctness` | fixed | self | vcpkg refused the triplets' Visual Studio path |
