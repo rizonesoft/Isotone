@@ -4,17 +4,17 @@
 
 Derived from the per-section findings files under `docs/reviews/`, which stay authoritative. This file is a view, not a record: editing it changes nothing and is overwritten on the next run. `review-todo-section` regenerates it after every stamp.
 
-**296 findings across 24 sections.**
+**308 findings across 25 sections.**
 
 ## By category
 
 | Category | Count | What it means |
 | --- | ---: | --- |
-| `adversarial` | 98 | fails under hostile or unexpected input |
-| `integration` | 85 | a consumer, caller, or downstream artifact no longer holds |
-| `consistency` | 32 | disagrees with the rest of the suite, its naming, or its layout |
-| `source-defect` | 29 | a Win32 contract, registry layout, or other source read wrongly |
-| `record` | 27 | the plan or the evidence misdescribes what happened |
+| `adversarial` | 102 | fails under hostile or unexpected input |
+| `integration` | 88 | a consumer, caller, or downstream artifact no longer holds |
+| `consistency` | 35 | disagrees with the rest of the suite, its naming, or its layout |
+| `source-defect` | 30 | a Win32 contract, registry layout, or other source read wrongly |
+| `record` | 28 | the plan or the evidence misdescribes what happened |
 | `correctness` | 24 | the code does the wrong thing |
 | `reproducibility` | 1 | the same input does not produce the same output |
 
@@ -23,8 +23,8 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | Severity | Count | What it means |
 | --- | ---: | --- |
 | `critical` | 0 | invalidates safety, data integrity, or the stamp |
-| `major` | 134 | wrong behavior in code, plan, or record |
-| `minor` | 162 | polish or wording, or no surviving defect |
+| `major` | 142 | wrong behavior in code, plan, or record |
+| `minor` | 166 | polish or wording, or no surviving defect |
 
 ## Every finding
 
@@ -326,3 +326,15 @@ Derived from the per-section findings files under `docs/reviews/`, which stay au
 | `D00 T05 §9` | F4 | minor | `integration` | fixed | independent | generator-expression dependencies in LINK_LIBRARIES bypassed fuzz instrumentation |
 | `D00 T05 §9` | F5 | minor | `integration` | fixed | independent | generator-expression target tokenizer split on :: namespace separators |
 | `D00 T05 §9` | F6 | minor | `integration` | fixed | self | qualify_fuzz.exe import library in binary dir lacked __asan_ symbols |
+| `D00 T06 §1` | F1 | minor | `consistency` | fixed | independent | camelCase property declarations fontSize, fontFamily, and strokeWidth bypass C++ design-lint regexes |
+| `D00 T06 §1` | F2 | major | `integration` | fixed | independent | copy-list initialization of D2D1::ColorF and D2D1::RectF bypasses brace-init regexes |
+| `D00 T06 §1` | F3 | major | `adversarial` | fixed | independent | _generated() header check matches consumer files that mention the generator banner in a comment |
+| `D00 T06 §1` | F4 | major | `integration` | fixed | independent | SetFontFamilyName setter is missed by FONT_FAMILY_CALL_RE |
+| `D00 T06 §1` | F5 | major | `source-defect` | fixed | independent | C99 compound literals (D2D1_COLOR_F){...} and (D2D1_RECT_F){...} bypass brace-init detection |
+| `D00 T06 §1` | F6 | major | `consistency` | fixed | independent | array declarators const D2D1_COLOR_F palette[] = {...} and const D2D1_RECT_F rects[] = {...} bypass brace-init detection |
+| `D00 T06 §1` | F7 | minor | `integration` | fixed | independent | numeric token-table indices such as theme.font_sizes[1] are misclassified as literal font sizes or geometry |
+| `D00 T06 §1` | F8 | major | `adversarial` | fixed | independent | assignment RHS expressions are truncated at the first comma inside function calls |
+| `D00 T06 §1` | F9 | minor | `consistency` | fixed | independent | RGB macro calls built from generated token channels are reported without numeric literals |
+| `D00 T06 §1` | F10 | minor | `record` | fixed | independent | section checkpoint evidence not yet recorded in docs/phase-runs/2026-11-08-phase-0.md |
+| `D00 T06 §1` | F11 | major | `adversarial` | fixed | independent | camelCase directional padding and margin declarations and setters bypass geometry detection |
+| `D00 T06 §1` | F12 | major | `adversarial` | fixed | independent | template angle-bracket commas and integer counts in RHS expressions truncate or falsely trigger geometry and font rules |

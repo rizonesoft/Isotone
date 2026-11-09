@@ -390,3 +390,17 @@ round: 13 model: gpt-6.1-sol effort: medium outcome: independent candidate: 9fdb
 round: 14 model: gpt-6.1-sol effort: medium outcome: empty candidate: 9fdbaa5 provider: openai version: gpt-6.1-sol cost: 133658tokens latency: 54s opportunity: full-scope purpose: section-review provenance: recorded findings:
 empty: 1
 refuted: 0
+
+run: D00-T06-S1
+date: 2026-11-09
+runner: panel
+rounds: 7
+round: 1 model: gpt-6.1-sol effort: medium outcome: independent candidate: a52a874 provider: openai version: gpt-6.1-sol cost: 66251tokens latency: 95s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T06-S1-F1, D00-T06-S1-F2
+round: 2 model: gpt-6.1-sol effort: medium outcome: independent candidate: e92acd3 provider: openai version: gpt-6.1-sol cost: 70438tokens latency: 102s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T06-S1-F3, D00-T06-S1-F4, D00-T06-S1-F5
+round: 3 model: gpt-6.1-sol effort: medium outcome: independent candidate: 8c30478 provider: openai version: gpt-6.1-sol cost: 62957tokens latency: 111s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T06-S1-F6, D00-T06-S1-F7
+round: 4 model: gpt-6.1-sol effort: medium outcome: findings candidate: eabe2e3 provider: openai version: gpt-6.1-sol cost: 132185tokens latency: 76s opportunity: full-scope purpose: section-review provenance: recorded findings: D00-T06-S1-F8, D00-T06-S1-F9, D00-T06-S1-F10
+round: 5 model: gpt-6.1-sol effort: medium outcome: findings candidate: 15798f7 provider: openai version: gpt-6.1-sol cost: 137763tokens latency: 70s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T06-S1-F11
+round: 6 model: gpt-6.1-sol effort: medium outcome: findings candidate: 836217c provider: openai version: gpt-6.1-sol cost: 139605tokens latency: 101s opportunity: delta-plus-regressions purpose: fix-loop provenance: recorded findings: D00-T06-S1-F12
+round: 7 model: gpt-6.1-sol effort: medium outcome: empty candidate: 635ae0e provider: openai version: gpt-6.1-sol cost: 137869tokens latency: 67s opportunity: delta-plus-regressions purpose: sign-off provenance: recorded findings:
+empty: 1
+refuted: 0
