@@ -395,6 +395,7 @@ PRAGMA_DIRECT_RE = re.compile(r"(#\s*pragma\s+|__pragma\s*\(\s*)warning\s*\(")
 PRAGMA_OP_RE = re.compile(r"\b_Pragma\s*\(")
 RAW_PREFIX_RE = re.compile(r'(?:L|u8|u|U)?R"')
 RAW_BODY_RE = re.compile(r'"([^ ()\\\t\v\f\r\n]*)\((.*?)\)\1"', re.S)
+PP_NUMBER_RE = re.compile(r"(?:\.[0-9]|[0-9])(?:[0-9A-Za-z_.]|'[0-9A-Za-z_]|[eEpP][+-])*")
 
 
 def lex_views_with_map(text):
@@ -439,16 +440,14 @@ def lex_views_with_map(text):
             blank(code_only, i, j)
             i = j
         else:
-            raw_prefix = (
-                RAW_PREFIX_RE.match(spliced, i)
-                if (i == 0 or not (spliced[i - 1].isalnum() or spliced[i - 1] == "_"))
-                else None
-            )
+            at_token_start = i == 0 or not (spliced[i - 1].isalnum() or spliced[i - 1] == "_")
+            raw_prefix = RAW_PREFIX_RE.match(spliced, i) if at_token_start else None
             raw_body = (
                 RAW_BODY_RE.match(text, pos_map[raw_prefix.end(0) - 1])
                 if raw_prefix is not None
                 else None
             )
+            pp_num = PP_NUMBER_RE.match(spliced, i) if (at_token_start and raw_body is None) else None
             if raw_body is not None:
                 raw_end_text = raw_body.end(0)
                 j = raw_prefix.end(0)
@@ -457,14 +456,9 @@ def lex_views_with_map(text):
                 blank(no_strings, i, j)
                 blank(code_only, i, j)
                 i = j
-            elif spliced[i] == '"' or (
-                spliced[i] == "'"
-                and (
-                    i == 0
-                    or not (spliced[i - 1].isalnum() or spliced[i - 1] == "_")
-                    or bool(re.search(r"(?<![0-9A-Za-z_.])(?:u8|u|U|L)$", spliced[:i]))
-                )
-            ):
+            elif pp_num is not None:
+                i = pp_num.end(0)
+            elif spliced[i] in ('"', "'"):
                 ch = spliced[i]
                 j = i + 1
                 while j < n and spliced[j] != ch and spliced[j] != "\n":
@@ -1103,6 +1097,12 @@ def self_test():
     check("commented R\"( does not mask spliced #pragma warning(disable) between comments",
           suppression_findings("native/probe.cpp", '// R"(\n#prag\\\nma warning(disable: 4996)\n// )"'),
           ["native/probe.cpp:2:suppression-unreasoned:warning(disable) is not allowed in a source"])
+    check("character literal immediately after keyword return does not mask LoadLibraryW",
+          loadlibrary_findings("native/probe.cpp", 'auto f = [] { return\'"\'; }; LoadLibraryW(name);', [], set()),
+          ["native/probe.cpp:1:loadlibrary-unresolved:LoadLibraryW loads a computed name, neither a system DLL in native/system-dlls.txt nor a registered Runtime module"])
+    check("character literal immediately after keyword return does not mask __pragma(warning(disable))",
+          suppression_findings("native/probe.cpp", 'auto f = [] { return\'"\'; }; __pragma(warning(disable: 4996))'),
+          ["native/probe.cpp:1:suppression-unreasoned:warning(disable) is not allowed in a source"])
     for lit_case in ('constexpr auto help = "LoadLibraryW(name)";',
                      'constexpr auto help = L"LoadLibraryExW(L\\"kernel32.dll\\", nullptr, 0)";',
                      'constexpr auto help = R"(LoadLibraryW(name) // NOLINT\n#pragma warning(disable: 4996))";',
