@@ -645,15 +645,16 @@ def advisory_affects_git(
             ):
                 continue
 
-            # Authoritative commit-query match or an unbounded root/exact-commit introduction on a real
-            # (non-StandaloneSingleVersion) GIT range is never suppressed by database_specific conversion metadata.
+            # Authoritative commit-query match, inclusive GIT boundary match (introduced / last_affected), or
+            # unbounded root introduction on a real (non-StandaloneSingleVersion) GIT range is never suppressed
+            # by database_specific conversion metadata.
             if not rng_standalone:
                 if commit:
                     if from_commit_query:
                         return True
-                    if ("0" in rng_intro or commit in rng_intro) and not (
-                        rng_fixed or rng_last_affected or rng_limits
-                    ):
+                    if commit in rng_intro or commit in rng_last_affected:
+                        return True
+                    if "0" in rng_intro and not (rng_fixed or rng_last_affected or rng_limits):
                         return True
                 elif git_open:
                     return True
@@ -2031,7 +2032,7 @@ def self_test() -> int:
         register_text=table(gtest_row),
         manifest_text=manifest_clean,
         config_text="{}",
-        resolve_tag=fake_resolve,
+        resolve_tag=lambda _repo, _tag: "a" * 40,
         osv_post=lambda payload: {"vulns": []} if "commit" in payload else git_limit_and_unrelated_osv,
         committed_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
@@ -2040,6 +2041,48 @@ def self_test() -> int:
         "exclusive GIT limit at queried commit and lone unrelated commit introduction do not falsely match",
         (res_git_limit["ok"], res_git_limit["advisories"], res_git_limit["unchecked"]),
         (True, [], []),
+    )
+
+    # 28. Inclusive GIT boundaries (introduced == commit with upper fixed bound, or last_affected == commit) match on repo query (F20)
+    git_inclusive_boundaries_osv = {
+        "vulns": [
+            {
+                "id": "CVE-2099-8891",
+                "summary": "Exact introduced commit with later fixed commit",
+                "affected": [{
+                    "ranges": [{
+                        "type": "GIT",
+                        "repo": "https://github.com/google/googletest",
+                        "events": [{"introduced": "a" * 40}, {"fixed": "b" * 40}],
+                    }]
+                }],
+            },
+            {
+                "id": "CVE-2099-8892",
+                "summary": "Exact last_affected commit",
+                "affected": [{
+                    "ranges": [{
+                        "type": "GIT",
+                        "repo": "https://github.com/google/googletest",
+                        "events": [{"introduced": "0"}, {"last_affected": "a" * 40}],
+                    }]
+                }],
+            },
+        ]
+    }
+    res_git_inclusive = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=lambda _repo, _tag: "a" * 40,
+        osv_post=lambda payload: {"vulns": []} if "commit" in payload else git_inclusive_boundaries_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "inclusive GIT introduced and last_affected boundaries match queried commit on repo query",
+        [(a["port"], a["id"]) for a in res_git_inclusive["advisories"]],
+        [("gtest", "CVE-2099-8891"), ("gtest", "CVE-2099-8892")],
     )
 
     print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
