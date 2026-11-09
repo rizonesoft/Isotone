@@ -249,6 +249,19 @@ try {
     Write-Host "run-arm64-tests: running ctest --preset $preset --timeout 300 --output-junit $junitPath"
     ctest --preset $preset --timeout 300 --output-junit $junitPath
     $code = $LASTEXITCODE
+    if ($preset -eq 'arm64-release') {
+      $benchExe = Join-Path $presetDir 'benchmarks/isotone_benchmarks.exe'
+      if (-not (Test-Path -LiteralPath $benchExe)) {
+        Write-Host "run-arm64-tests: missing benchmark executable at $benchExe"
+        $code = 1
+      } else {
+        Write-Host "run-arm64-tests: running $benchExe --smoke"
+        & $benchExe --smoke
+        if ($LASTEXITCODE -ne 0) {
+          $code = $LASTEXITCODE
+        }
+      }
+    }
     $presetResults[$preset] = ($code -eq 0)
     if ($code -ne 0) {
       $allPassed = $false

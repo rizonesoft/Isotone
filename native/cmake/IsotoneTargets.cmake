@@ -59,9 +59,30 @@ function(isotone_add_library name)
     target_include_directories(${name} PUBLIC ${ARG_PUBLIC_INCLUDE})
   endif()
   set_property(TARGET ${name} PROPERTY ISOTONE_FIRST_PARTY_LIBRARY TRUE)
+  set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TARGET TRUE)
   set_property(TARGET ${name} PROPERTY ISOTONE_LIBRARY_SOURCES "${ARG_UNPARSED_ARGUMENTS}")
   set_property(TARGET ${name} PROPERTY ISOTONE_LIBRARY_PUBLIC_INCLUDE "${ARG_PUBLIC_INCLUDE}")
   isotone_apply_flags(${name})
+endfunction()
+
+# isotone_add_executable(<name> <sources>... [LINK <libraries>...] [DEV_ONLY] [WIN32]): a first-party executable with
+# the suite's flags, compiler environment check, and link hardening (D00 T04 §2, D00-T05-S3-PR5). Pass DEV_ONLY for a
+# developer-only executable (such as isotone_benchmarks) so native-deps-lint allows it to link developer-only libraries.
+function(isotone_add_executable name)
+  cmake_parse_arguments(ARG "DEV_ONLY;WIN32" "" "LINK" ${ARGN})
+  if(ARG_WIN32)
+    add_executable(${name} WIN32 ${ARG_UNPARSED_ARGUMENTS})
+  else()
+    add_executable(${name} ${ARG_UNPARSED_ARGUMENTS})
+  endif()
+  if(ARG_LINK)
+    target_link_libraries(${name} PRIVATE ${ARG_LINK})
+  endif()
+  isotone_apply_flags(${name})
+  set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TARGET TRUE)
+  if(ARG_DEV_ONLY)
+    set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${name})
+  endif()
 endfunction()
 
 # isotone_apply_fuzz_flags(<target> <LIBRARY|EXECUTABLE>): coverage and AddressSanitizer instrumentation for a fuzz
@@ -194,6 +215,7 @@ function(isotone_ensure_fuzz_library lib out_var)
       set_property(TARGET ${fuzz_lib} PROPERTY INTERFACE_LINK_LIBRARIES ${mapped_iface_libs})
     endif()
     isotone_apply_fuzz_flags(${fuzz_lib} LIBRARY)
+    set_property(TARGET ${fuzz_lib} PROPERTY ISOTONE_REGISTERED_TARGET TRUE)
     set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${fuzz_lib})
   endif()
 
@@ -234,6 +256,7 @@ function(isotone_add_fuzz_target name)
     add_test(
       NAME "fuzz.${name}"
       COMMAND "${exe_target}" -runs=0 "${corpus_dir}" "${regressions_dir}")
+    set_property(TARGET ${exe_target} PROPERTY ISOTONE_REGISTERED_TARGET TRUE)
     set_property(TARGET ${exe_target} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
     set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${exe_target})
     set_property(
@@ -253,6 +276,7 @@ function(isotone_add_fuzz_target name)
     add_test(
       NAME "fuzz.${name}"
       COMMAND "${exe_target}" "${corpus_dir}" "${regressions_dir}")
+    set_property(TARGET ${exe_target} PROPERTY ISOTONE_REGISTERED_TARGET TRUE)
     set_property(TARGET ${exe_target} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
     set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${exe_target})
   endif()
@@ -273,6 +297,7 @@ function(isotone_add_test name)
     target_compile_options(${name} PRIVATE /wd6326)
   endif()
   gtest_discover_tests(${name} DISCOVERY_MODE PRE_TEST)
+  set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TARGET TRUE)
   set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
   set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${name})
 endfunction()
@@ -291,6 +316,7 @@ function(isotone_add_sanitizer_probe name source report)
       "-DPROBE=$<TARGET_FILE:${name}>"
       -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/RunSanitizerProbe.cmake")
   set_tests_properties(${name} PROPERTIES LABELS asan-probe PASS_REGULAR_EXPRESSION "${report}")
+  set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TARGET TRUE)
   set_property(TARGET ${name} PROPERTY ISOTONE_REGISTERED_TEST TRUE)
   set_property(GLOBAL APPEND PROPERTY ISOTONE_DEV_TARGETS ${name})
 endfunction()
@@ -331,5 +357,25 @@ function(isotone_require_registered_tests dir)
   get_property(subdirs DIRECTORY "${dir}" PROPERTY SUBDIRECTORIES)
   foreach(subdir IN LISTS subdirs)
     isotone_require_registered_tests("${subdir}")
+  endforeach()
+endfunction()
+
+# isotone_require_registered_targets(<dir>): every first-party build target under <dir> went through an isotone_*
+# helper (isotone_add_library, isotone_add_executable, isotone_add_test, isotone_add_sanitizer_probe, or
+# isotone_add_fuzz_target), so no library or executable bypasses the pinned flags, compiler environment check, or link
+# hardening (D00 T04 §2, D00-T05-S3-PR5). Called at the end of native/CMakeLists.txt.
+function(isotone_require_registered_targets dir)
+  get_property(targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
+  foreach(target IN LISTS targets)
+    get_target_property(type ${target} TYPE)
+    get_target_property(registered ${target} ISOTONE_REGISTERED_TARGET)
+    if(NOT type STREQUAL "UTILITY" AND NOT registered)
+      message(FATAL_ERROR "${target} (${type}) under ${dir} was not created through an isotone_* target helper, "
+                          "so it would bypass the pinned flags and hardening")
+    endif()
+  endforeach()
+  get_property(subdirs DIRECTORY "${dir}" PROPERTY SUBDIRECTORIES)
+  foreach(subdir IN LISTS subdirs)
+    isotone_require_registered_targets("${subdir}")
   endforeach()
 endfunction()

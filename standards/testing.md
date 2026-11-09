@@ -36,3 +36,9 @@ Until a UI test suite exists, a surface is proven by the launch smoke in the gat
 ## Coverage
 
 Coverage is measured (`coverlet.collector`) and reported, not gated by a percentage. A section that adds logic adds the tests that pin it; review refuses logic without them.
+
+## Benchmarks
+
+- Native microbenchmarks and working-set benchmarks live under `native/benchmarks/` and build into `isotone_benchmarks` in the test-capable Release presets (`x64-release` and `arm64-release`) only (`D00 T04 §2`), linked against Google Benchmark from the `bench` feature of `native/vcpkg.json` (never installed or linked in `x64-dist` or `arm64-dist`).
+- Benchmarks are not timed gates in CI: timing runs execute on the recorded reference machine (`docs/dev/reference-machine.md`), write raw outputs to the gitignored `build/benchmarks/`, and commit an immutable record at `docs/benchmarks/<YYYY-MM-DD>-<name>.md` following `docs/benchmarks/README.md` (`standards/cpp.md`, "SIMD and performance").
+- Every benchmark registers a deterministic correctness guard under `isotone_benchmarks --smoke` that compares `Scalar` against an independent reference and every supported SIMD variant (`Sse41` and `Avx2` on x64; `Neon` on ARM64) against `Scalar`. `isotone_benchmarks --smoke` runs in `pwsh scripts/check-all.ps1` (`native benchmarks smoke`) after the native Release build, in the `x64-release` CTest suite, and in the `arm64-release` CTest suite staged by `scripts/run-arm64-tests.ps1` and executed on ARM64 hardware by `.github/workflows/build.yml` (`native-arm64-tests`).

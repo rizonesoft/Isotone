@@ -4,5 +4,6 @@
 # section that needs it. A section that imports another system DLL adds it here in its own commit. Names are compared
 # without case; `*` matches any run of characters.
 KERNEL32.dll             # every Win32 process: process, memory, file, and synchronization APIs (D00 T05 §3, the test executables)
+SHLWAPI.dll              # Shell lightweight utility APIs imported by Google Benchmark's sysinfo (D00 T04 §2, isotone_benchmarks)
 api-ms-win-*             # Windows API sets, which the loader resolves to system DLLs (Microsoft Learn, "Windows API sets")
 ext-ms-win-*             # Windows extension API sets, resolved by the loader the same way (Microsoft Learn, "Windows API sets")

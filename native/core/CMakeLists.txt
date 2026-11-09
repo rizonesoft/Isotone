@@ -7,7 +7,10 @@ add_custom_target(isotone_build_id
   COMMENT "Writing the build id"
   VERBATIM)
 
-isotone_add_library(isotone_core src/build_info.cpp PUBLIC_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+isotone_add_library(isotone_core
+  src/build_info.cpp
+  src/imaging/premultiply.cpp
+  PUBLIC_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 add_library(isotone::core ALIAS isotone_core)
 add_dependencies(isotone_core isotone_build_id)
 target_include_directories(isotone_core PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")

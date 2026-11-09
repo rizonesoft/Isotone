@@ -135,6 +135,9 @@ jobs:
             Write-Error "native workflow preset(s) failed: $($failedPresets -join ', ')"
             exit 1
           }
+          Write-Host "=== native benchmarks smoke ==="
+          & artifacts/native/x64-release/benchmarks/isotone_benchmarks.exe --smoke
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Check native dependency register and link graphs
         shell: pwsh
         run: python -B scripts/native-deps-lint.py

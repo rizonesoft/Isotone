@@ -91,6 +91,22 @@ class NativeTidyTest(unittest.TestCase):
         self.assertEqual(code, 2, out)
         self.assertIn("no compile database", out)
 
+    def test_release_only_translation_unit_is_checked_alongside_x64_debug(self):
+        self.database({"clean.cpp": CLEAN})
+        rel_build = self.root / "artifacts" / "native" / "x64-release"
+        rel_build.mkdir(parents=True)
+        bench_src = self.root / "native" / "bench_moved.cpp"
+        bench_src.write_text(MOVED, encoding="utf-8", newline="\n")
+        rel_entries = [{"directory": str(rel_build), "file": str(bench_src),
+                        "arguments": ["cl.exe", "/nologo", "/TP", "/EHsc", "/std:c++23preview", "/W4", "/WX",
+                                      "/permissive-", "/utf-8", "/Zc:preprocessor", "/external:anglebrackets",
+                                      "/external:W0", "-c", str(bench_src)]}]
+        (rel_build / "compile_commands.json").write_text(json.dumps(rel_entries), encoding="utf-8")
+        code, out = self.run_tidy()
+        self.assertEqual(code, 1, out)
+        self.assertIn("FAIL native\\bench_moved.cpp", out)
+        self.assertIn("2 translation unit(s), 1 with diagnostics", out)
+
     def test_an_analyze_build_with_a_possible_null_dereference_fails(self):
         project = self.root / "analyze"
         project.mkdir()
