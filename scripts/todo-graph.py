@@ -6458,6 +6458,21 @@ def _sub_runner_pattern(subject: str) -> re.Pattern[str]:
             tokens.append(re.escape(tok))
     if re.search(r"\bUI\s+Automation\b", subject, re.IGNORECASE):
         tokens.append(r"UI\s+Automation")
+    if re.search(
+        r"\bsynthetic\s+pointer\b|CreateSyntheticPointerDevice|InjectSyntheticPointerInput",
+        subject,
+        re.IGNORECASE,
+    ):
+        tokens.append(r"synthetic\s+pointer(?:\s+injection)?")
+    plain = re.sub(r"`[^`]*`|\([^()]*\)", " ", subject)
+    plain = re.sub(r"^\s*native\s+", "", plain, flags=re.IGNORECASE)
+    plain = re.sub(r"\s+(?:surface\s+)?runner\s*$", "", plain, flags=re.IGNORECASE)
+    for part in re.split(r"[,/]|\b(?:and|or)\b", plain, flags=re.IGNORECASE):
+        words = [re.escape(w) for w in part.strip().split() if w]
+        if len(words) >= 2:
+            pat = r"\s+".join(words)
+            if pat not in tokens:
+                tokens.append(pat)
     if not tokens:
         cleaned = re.sub(r"`", "", subject).strip()
         tokens.append(re.escape(cleaned))
@@ -12526,11 +12541,17 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("proof: a checkpoint citing Golden render while marked unusable is checkpoint-proof-unusable",
                   (_pf_classes(), any("cites proof 'Golden render'" in m and "D00 T07 §3" in m for m in _pf_msgs())),
                   (["checkpoint-proof-unusable"], True))
-            # Refusing a checkpoint that cites a sub-runner marked unusable (UI Automation / SendInput).
+            # Refusing a checkpoint that cites a sub-runner marked unusable (UI Automation / SendInput / synthetic pointer injection).
             _pf_write_todo(
                 s1_cp="Driven run with evidence: drive the dialog through UI Automation and `SendInput`."
             )
             check("proof: a checkpoint citing UI Automation or SendInput while marked unusable is refused",
+                  (_pf_classes(), any("Driven run with evidence" in m and "D00 T07 §3" in m for m in _pf_msgs())),
+                  (["checkpoint-proof-unusable"], True))
+            _pf_write_todo(
+                s1_cp="Driven run with evidence: exercise pen input through synthetic pointer injection."
+            )
+            check("proof: a checkpoint citing synthetic pointer injection while marked unusable is refused",
                   (_pf_classes(), any("Driven run with evidence" in m and "D00 T07 §3" in m for m in _pf_msgs())),
                   (["checkpoint-proof-unusable"], True))
             # Naming an unusable proof only inside 'Cheaper substitute that fails:' is allowed.
