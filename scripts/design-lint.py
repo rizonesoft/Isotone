@@ -304,26 +304,39 @@ def _split_top_level_args(arg_text: str) -> list[str]:
     return parts
 
 
+TEMPLATE_ARGS_RE = re.compile(r"\b[A-Za-z_]\w*\s*<[^;{}()]*>")
+
+
 def _rhs_expr(text: str, start: int) -> str:
     """Return the RHS expression starting at `start` up to a top-level ';', ',', or '}'."""
     depth = 0
+    angle_depth = 0
     i, n = start, len(text)
     while i < n:
         ch = text[i]
+        prev = text[i - 1] if i > 0 else ""
+        nxt = text[i + 1] if i + 1 < n else ""
         if ch in "({[":
             depth += 1
         elif ch in ")}]":
             if depth == 0:
                 break
             depth -= 1
-        elif depth == 0 and ch in ";,":
+        elif depth == 0 and ch == "<" and (prev.isalnum() or prev == "_") and nxt not in "<=":
+            angle_depth += 1
+        elif depth == 0 and angle_depth > 0 and ch == ">" and prev != "-":
+            angle_depth -= 1
+        elif depth == 0 and ch == ";":
+            break
+        elif depth == 0 and angle_depth == 0 and ch == ",":
             break
         i += 1
     return text[start:i]
 
 
 def _strip_subscripts(expr: str) -> str:
-    """Blank [...] subscript index expressions so table lookups like theme.font_sizes[1] are not treated as literal values."""
+    """Blank [...] subscripts and template <...> arguments so indices/counts like theme.font_sizes[1] or std::array<float, 4> are not treated as literal values."""
+    expr = TEMPLATE_ARGS_RE.sub(" ", expr)
     out: list[str] = []
     depth = 0
     for ch in expr:
@@ -823,6 +836,8 @@ def self_test() -> int:
             "  float paddingLeft = 8.0f;\n"                                                   # 38 literal-geometry
             "  float marginTop = 12.0f;\n"                                                    # 39 literal-geometry
             "  SetPaddingLeft(8.0f);\n"                                                       # 40 literal-geometry
+            "  const auto ok_arr_padding = std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f};\n"   # 41 zero std::array: clean
+            "  const auto bad_arr_padding = std::array<float, 4>{8.0f, 8.0f, 8.0f, 8.0f};\n"  # 42 literal-geometry
             "}\n"
         )
         (ui_dir / "panel.cpp").write_text(panel_cpp, encoding="utf-8")
@@ -861,6 +876,7 @@ def self_test() -> int:
             (38, "literal-geometry"),
             (39, "literal-geometry"),
             (40, "literal-geometry"),
+            (42, "literal-geometry"),
         ])
         check("panel.cpp flags every literal kind and passes every token form", panel_got, panel_want)
         check("non-UI core, tests, and generated token files produce no findings",
