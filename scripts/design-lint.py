@@ -1,69 +1,40 @@
 #!/usr/bin/env python3
-"""design-lint: the design contract's static gate over the WPF sources.
+"""design-lint: the design contract's static gate over the native C and C++ sources.
 
-standards/design-contract.md (operator decisions 2026-09-27) makes
-docs/design/ the source every surface implements 1:1: every color, size,
-radius, spacing, font, and duration comes from docs/design/tokens.json
-through the Isotone.UI dictionaries, colors through DynamicResource. This
-script reads (never edits) src/**/*.xaml and src/**/*.cs of every UI
-project (a csproj with <UseWPF>true</UseWPF> that is not a test project)
-and reports each departure as
+standards/design-contract.md (operator decisions 2026-09-27 and 2026-10-22)
+makes docs/design/ the source every surface implements 1:1: every color, size,
+radius, spacing, font, and duration comes from docs/design/tokens.json through
+the generated token tables. This script reads (never edits) every C and C++
+source and header under native/ (.c, .cc, .cpp, .cxx, .c++, .h, .hh, .hpp,
+.hxx, .h++, .inl, .ipp) and reports each departure in UI sources (native/ui/
+and each app's UI folders) as
 
     <file>:<line>:<rule>:<message>
 
-Rules (error unless marked warn):
+Rules:
 
-  color-literal          a #RGB, #ARGB, #RRGGBB, or #AARRGGBB value in XAML
-                         (attribute or element text) or in a C# string
-  named-color            a named color (White, Red, ...) on a XAML brush or
-                         color property; Transparent is allowed (hit testing)
-  color-api              C# Color.FromRgb/FromArgb/FromScRgb, Colors.X,
-                         Brushes.X (Transparent allowed), a new
-                         SolidColorBrush built from a literal, or
-                         ColorConverter.ConvertFromString
-  static-color-resource  {StaticResource K} where K is a color or brush (a
-                         color token, a key defined as a Color or Brush, a
-                         key ending in Brush or Color, or any key on a brush
-                         property): colors are DynamicResource so a theme,
-                         Highlight, or density switch restyles live
-  non-token-color        a color or brush resource key that is not a color
-                         token of docs/design/tokens.json (nor Isotone.App.*)
-  unknown-resource-key   (warn) a resource key defined nowhere: not a token,
-                         not a neutral density key, not an x:Key in any
-                         scanned XAML, not added from C#. App-local style,
-                         template, and converter keys are defined in the
-                         app's own XAML and are therefore never reported.
-  literal-size           a literal FontSize, Margin, Padding, CornerRadius,
-                         or Height in XAML (attribute or Setter). Allowed:
-                         0 in every component, Auto, NaN, and star sizes
-                         (*, 2*), because they are layout-neutral; anything
-                         else is a token reference
-  font-family-literal    a FontFamily set to a literal in XAML, or
-                         new FontFamily("...") in C#: families are tokens
-  forbidden-framework    WPF-UI (Wpf.Ui, lepo.co) or FluentIcons usage
-  emoji                  an emoji glyph in XAML text or a C# string: emoji
-                         are never icons (standards/ui.md, Icons)
+  color-literal          a 6- or 8-digit hex color literal (0xRRGGBB or
+                         0xAARRGGBB in code, or #RRGGBB / #AARRGGBB in a
+                         string literal)
+  named-color            a D2D1::ColorF:: or ColorF:: named color constant
+  color-api              D2D1::ColorF / ColorF / D2D1_COLOR_F built from
+                         numeric literals, or RGB( / RGBA( / PALETTERGB(
+  literal-geometry       D2D1::RectF, SizeF, Point2F, RoundedRect (or their
+                         D2D1_* C structs), or a corner radius, stroke width,
+                         padding, margin, or spacing built from numeric
+                         literals other than 0
+  literal-size           a font size built from a numeric literal other than 0
+                         (in CreateTextFormat or a font-size assignment/setter)
+  font-family-literal    a literal font family string (in CreateTextFormat or
+                         a font-family assignment/setter)
+  emoji                  an emoji glyph in a string literal: emoji are never
+                         icons (standards/ui.md, Icons)
   backdrop               Mica, Acrylic, or a DWM system backdrop: docked
                          chrome is flat token surfaces
 
-Files the theme generator writes (a header naming scripts/generate-theme.py
-as generated) are skipped: they are the one place token values are literal.
-Comments are ignored in both languages.
-
-Legacy code (operator decision 2026-09-27: "Record existing violations,
-fail new ones"): --baseline docs/design/.lint-baseline.json records the
-violations of 2026-09-27 keyed by file, rule, and the normalized text of
-the line (whitespace collapsed), with a count, so moving a line does not
-break it. A run with --baseline passes recorded violations, fails every
-new one, and fails a recorded entry that no longer occurs (stale: the
-baseline only shrinks). --update-baseline rewrites the file removing
-stale entries and never adds; --allow-add --reason "<text>" also adds the
-current new violations and appends the reason to the file's history,
-which requires a review-approved reason (review-todo-section records it
-in the stamp). Every --baseline run also compares the file with HEAD: an
-entry that grew without a new history entry carrying a reason, or an
-edited history, fails. Warn-level findings never fail and are never
-baselined.
+Files the theme generator writes (a header naming scripts/generate-theme.py or
+docs/design/tokens.json as generated) are skipped: they are the one place token
+values are literal. Comments are ignored.
 
 Usage:
   python scripts/design-lint.py                               # every finding, exit 1 on any error
@@ -85,90 +56,110 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 DEFAULT_BASELINE = "docs/design/.lint-baseline.json"
 
-WARN_RULES = {"unknown-resource-key"}
-
-BRUSH_PROPS = {
-    "Background", "Foreground", "BorderBrush", "Fill", "Stroke", "Color", "Brush", "CaretBrush",
-    "SelectionBrush", "SelectionTextBrush", "OpacityMask", "GlowColor", "ShadowColor", "TextBrush",
-    "HighlightBrush", "SeparatorBrush", "VerticalGridLinesBrush", "HorizontalGridLinesBrush",
-    "AlternatingRowBackground", "RowBackground", "GridLinesBrush",
-}
-SIZE_PROPS = {"FontSize", "Margin", "Padding", "CornerRadius", "Height"}
-
-# The WPF Colors class (System.Windows.Media.Colors), lower-cased.
-NAMED_COLORS = {c.lower() for c in """
-AliceBlue AntiqueWhite Aqua Aquamarine Azure Beige Bisque Black BlanchedAlmond Blue BlueViolet Brown
-BurlyWood CadetBlue Chartreuse Chocolate Coral CornflowerBlue Cornsilk Crimson Cyan DarkBlue DarkCyan
-DarkGoldenrod DarkGray DarkGreen DarkKhaki DarkMagenta DarkOliveGreen DarkOrange DarkOrchid DarkRed
-DarkSalmon DarkSeaGreen DarkSlateBlue DarkSlateGray DarkTurquoise DarkViolet DeepPink DeepSkyBlue DimGray
-DodgerBlue Firebrick FloralWhite ForestGreen Fuchsia Gainsboro GhostWhite Gold Goldenrod Gray Green
-GreenYellow Honeydew HotPink IndianRed Indigo Ivory Khaki Lavender LavenderBlush LawnGreen LemonChiffon
-LightBlue LightCoral LightCyan LightGoldenrodYellow LightGray LightGreen LightPink LightSalmon
-LightSeaGreen LightSkyBlue LightSlateGray LightSteelBlue LightYellow Lime LimeGreen Linen Magenta Maroon
-MediumAquamarine MediumBlue MediumOrchid MediumPurple MediumSeaGreen MediumSlateBlue MediumSpringGreen
-MediumTurquoise MediumVioletRed MidnightBlue MintCream MistyRose Moccasin NavajoWhite Navy OldLace Olive
-OliveDrab Orange OrangeRed Orchid PaleGoldenrod PaleGreen PaleTurquoise PaleVioletRed PapayaWhip
-PeachPuff Peru Pink Plum PowderBlue Purple Red RosyBrown RoyalBlue SaddleBrown Salmon SandyBrown SeaGreen
-SeaShell Sienna Silver SkyBlue SlateBlue SlateGray Snow SpringGreen SteelBlue Tan Teal Thistle Tomato
-Turquoise Violet Wheat White WhiteSmoke Yellow YellowGreen
-""".split()}
-
-HEX_VALUE_RE = re.compile(r"^#(?:[0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
-HEX_IN_TEXT_RE = re.compile(r"(?<![\w&#])#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3,4})(?![0-9A-Za-z])")
-ATTR_RE = re.compile(r"(?P<prop>[A-Za-z_][\w.:]*)\s*=\s*\"(?P<val>[^\"]*)\"")
-TAG_RE = re.compile(r"<(?P<name>[A-Za-z_][\w.:]*)(?P<attrs>(?:[^<>\"]|\"[^\"]*\")*)/?>")
-ELEMENT_TEXT_RE = re.compile(r">(?P<text>[^<>]+)<")
-RESOURCE_RE = re.compile(r"\{(?P<kind>StaticResource|DynamicResource)\s+(?:ResourceKey=)?(?P<key>[A-Za-z_][\w.\-]*)\s*\}")
-KEY_DEF_RE = re.compile(r"<(?P<type>[A-Za-z_][\w.:]*)\b[^<>]*?\bx:Key\s*=\s*\"(?P<key>[^\"]+)\"")
-CS_RESOURCE_ADD_RE = re.compile(r"Resources\s*(?:\[\s*\"(?P<a>[^\"]+)\"\s*\]\s*=|\.Add\(\s*\"(?P<b>[^\"]+)\")")
-FORBIDDEN_RE = re.compile(r"(?:\bWpf\.Ui\b|schemas\.lepo\.co|\bwpfui\b|FluentIcons|FluentIcon\b|\bui:SymbolIcon\b)", re.IGNORECASE)
-BACKDROP_RE = re.compile(r"\b(?:Mica(?:Alt)?|Acrylic\w*|SystemBackdrop\w*|WindowBackdropType|DWMWA_SYSTEMBACKDROP_TYPE|DWMSBT_\w+)\b")
-CS_COLOR_API_RE = re.compile(
-    r"\bColor\.From(?:Rgb|Argb|ScRgb)\s*\(|\b(?:Colors|Brushes)\.(?!Transparent\b)[A-Z]\w*|"
-    r"\bnew\s+SolidColorBrush\s*\(\s*(?:Color\.|Colors\.|\(Color\)|ColorConverter)|\bColorConverter\.ConvertFromString\s*\("
+NATIVE_EXTS = (
+    ".c", ".cc", ".cpp", ".cxx", ".c++",
+    ".h", ".hh", ".hpp", ".hxx", ".h++",
+    ".inl", ".ipp",
 )
-CS_FONT_RE = re.compile(r"\bnew\s+FontFamily\s*\(\s*\"")
+SKIP_DIRS = frozenset({"CMakeFiles", "vcpkg_installed", "build", "out"})
+TEST_DIRS = frozenset({"tests", "test"})
+UI_DIRS = frozenset({
+    "ui", "views", "dialogs", "panels", "controls", "chrome", "shell", "windows",
+    "widgets", "theme", "themes", "styles",
+})
+
+WARN_RULES: set[str] = set()
+
+GENERATED_MARK_RE = re.compile(r"(?:generate-theme\.py|docs/design/tokens\.json)", re.IGNORECASE)
 EMOJI_RE = re.compile(
     "[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U00002B00-\U00002BFF\U0000231A-\U0000231B\U000023E9-\U000023FA"
     "\U0000FE0F\U0001F1E6-\U0001F1FF]"
 )
-GENERATED_MARK_RE = re.compile(r"generate-theme\.py", re.IGNORECASE)
-NUMBER_LIST_RE = re.compile(r"^-?\d+(?:\.\d+)?(?:\s*[, ]\s*-?\d+(?:\.\d+)?){0,3}$")
+BACKDROP_RE = re.compile(
+    r"\b(?:Mica(?:Alt)?|Acrylic\w*|SystemBackdrop\w*|WindowBackdropType|DWMWA_SYSTEMBACKDROP_TYPE|DWMSBT_\w+)\b"
+)
+HEX_IN_STRING_RE = re.compile(r"(?<![\w&#])#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6})(?![0-9A-Za-z])")
+HEX_LITERAL_RE = re.compile(r"\b0[xX]([0-9A-Fa-f][0-9A-Fa-f']*[0-9A-Fa-f])[uUlL]*\b")
+NAMED_COLOR_RE = re.compile(r"\b(?:D2D1::)?ColorF::(?!ColorF\b)[A-Za-z_]\w*")
+RGB_MACRO_RE = re.compile(r"\b(?:PALETTE)?RGB(?:A)?\s*\(")
+COLORF_HEAD_RE = re.compile(
+    r"\b(?:(?:D2D1::)?ColorF(?:\s+[A-Za-z_]\w*)?\s*([({])"
+    r"|D2D1_COLOR_F(?:\s+[A-Za-z_]\w*(?:\s*=)?)?\s*(\{))"
+)
+GEOM_TYPE_HEAD_RE = re.compile(
+    r"\b(?:(?:D2D1::)?(?:RectF|RectU|RectL|SizeF|SizeU|Point2F|Point2U|Point2L|RoundedRect)"
+    r"|D2D1_(?:RECT_F|RECT_U|RECT_L|SIZE_F|SIZE_U|POINT_2F|POINT_2U|POINT_2L|ROUNDED_RECT))"
+    r"(?:\s+[A-Za-z_]\w*(?:\s*=)?)?\s*([({])"
+)
+GEOM_PROP_ASSIGN_RE = re.compile(
+    r"\b(?P<name>(?:[A-Za-z_]\w*_)?(?:corner_?radius|radius(?:_[xy]|[XY])?|stroke_?width|border_?width"
+    r"|padding(?:_(?:left|right|top|bottom|h|v|x|y))?"
+    r"|margin(?:_(?:left|right|top|bottom|h|v|x|y))?"
+    r"|spacing|item_?spacing|(?:row|col|column)_?gap|gap)"
+    r"|[A-Za-z_]\w*(?:CornerRadius|Radius[XY]?|StrokeWidth|BorderWidth|Padding|Margin|Spacing|Gap))"
+    r"\s*(?:=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})"
+)
+GEOM_PROP_CALL_RE = re.compile(
+    r"\b(?P<name>set_?(?:corner_?radius|radius|stroke_?width|border_?width|padding|margin|spacing|gap)"
+    r"|Set(?:CornerRadius|Radius|StrokeWidth|BorderWidth|Padding|Margin|Spacing|Gap)"
+    r"|CornerRadius|StrokeWidth|BorderWidth|Padding|Margin|Insets|Thickness|Spacing)\s*([({])"
+)
+FONT_SIZE_ASSIGN_RE = re.compile(
+    r"\b(?P<name>(?:[A-Za-z_]\w*_)?(?:font_?size|text_?size)|[A-Za-z_]\w*(?:FontSize|TextSize))"
+    r"\s*(?:=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})"
+)
+FONT_SIZE_CALL_RE = re.compile(
+    r"\b(?P<name>set_?(?:font_?size|text_?size)|Set(?:FontSize|TextSize)|FontSize|TextSize)\s*([({])"
+)
+FONT_FAMILY_ASSIGN_RE = re.compile(
+    r"\b(?P<name>(?:[A-Za-z_]\w*_)?(?:font_?family|family_?name)|[A-Za-z_]\w*(?:FontFamily|FamilyName))"
+    r"\s*(?:=|\{)\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\""
+)
+FONT_FAMILY_CALL_RE = re.compile(
+    r"\b(?P<name>set_?font_?family|SetFontFamily|FontFamily)\s*[({]\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\""
+)
+CREATE_TEXT_FORMAT_RE = re.compile(r"\bCreateTextFormat\s*\(")
+STRING_TOKEN_RE = re.compile(r"(?:L|u8|u|U|R)?\"")
+NUM_LITERAL_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:0[xX][0-9A-Fa-f']+|\d[\d']*(?:\.[\d']*)?|\.[\d']+)(?:[eE][+-]?[\d']+)?[fFlLuU]*"
+)
 
 
 # ---------------------------------------------------------------- inputs
 
-def ui_projects(root: Path) -> list[Path]:
-    """Directories of the UI projects: UseWPF true, not a test project."""
-    out = []
-    for proj in sorted((root / "src").rglob("*.csproj")):
-        if any(part in ("bin", "obj") for part in proj.parts):
-            continue
-        try:
-            text = proj.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            continue
-        if not re.search(r"<UseWPF>\s*true\s*</UseWPF>", text, re.IGNORECASE):
-            continue
-        name = proj.stem
-        if re.search(r"<IsTestProject>\s*true", text, re.IGNORECASE) or name.endswith(".Tests") or name.endswith("Tests"):
-            continue
-        out.append(proj.parent)
-    return out
+def _has_native_ext(path: Path) -> bool:
+    name = path.name.lower()
+    return any(name.endswith(ext) for ext in NATIVE_EXTS)
 
 
 def source_files(root: Path) -> list[Path]:
-    files: set[Path] = set()
-    for d in ui_projects(root):
-        for ext in ("*.xaml", "*.cs"):
-            for f in d.rglob(ext):
-                rel = f.relative_to(d).parts
-                if any(p in ("bin", "obj") for p in rel):
-                    continue
-                if f.name.endswith((".g.cs", ".g.i.cs", ".Designer.cs", "AssemblyInfo.cs")):
-                    continue
-                files.add(f)
-    return sorted(files)
+    """Every C and C++ source and header under native/."""
+    native_root = root / "native"
+    if not native_root.exists():
+        return []
+    files: list[Path] = []
+    for f in sorted(native_root.rglob("*")):
+        if not f.is_file() or not _has_native_ext(f):
+            continue
+        rel_parts = f.relative_to(native_root).parts
+        if any(p in SKIP_DIRS for p in rel_parts):
+            continue
+        files.append(f)
+    return files
+
+
+def is_ui_source(rel: str) -> bool:
+    """True when `rel` (POSIX path from repo root) is in native/ui/ or an app's UI folders."""
+    parts = Path(rel).parts
+    if len(parts) < 2 or parts[0] != "native":
+        return False
+    if any(p.lower() in TEST_DIRS for p in parts[1:]):
+        return False
+    if parts[1].lower() == "ui":
+        return True
+    if parts[1].lower() == "core":
+        return False
+    return any(p.lower() in UI_DIRS for p in parts[1:-1])
 
 
 def load_tokens(root: Path) -> tuple[set[str], set[str]]:
@@ -188,7 +179,7 @@ def load_tokens(root: Path) -> tuple[set[str], set[str]]:
             others.add(name)
             for suffix in ("-compact", "-comfortable"):
                 if name.endswith(suffix):
-                    others.add(name[: -len(suffix)])  # the neutral density key
+                    others.add(name[: -len(suffix)])
     for fam in tj.get("type", {}).get("families", {}):
         others.add(f"font-{fam}")
     for g in tj.get("type", {}).get("groups", []):
@@ -198,14 +189,10 @@ def load_tokens(root: Path) -> tuple[set[str], set[str]]:
     return colors, others
 
 
-# ---------------------------------------------------------------- comment blanking
+# ---------------------------------------------------------------- comment & string splitting
 
-def blank_xml_comments(text: str) -> str:
-    return re.sub(r"<!--.*?-->", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text, flags=re.S)
-
-
-def split_cs(text: str) -> tuple[str, list[tuple[int, int]]]:
-    """(text with comments blanked, spans of string and char literal contents)."""
+def split_cpp(text: str) -> tuple[str, list[tuple[int, int]]]:
+    """Return (text with comments blanked, spans of string literal contents)."""
     out = list(text)
     spans: list[tuple[int, int]] = []
     i, n = 0, len(text)
@@ -227,38 +214,100 @@ def split_cs(text: str) -> tuple[str, list[tuple[int, int]]]:
                     out[k] = " "
             i = j
             continue
-        if text.startswith('"""', i):
-            j = text.find('"""', i + 3)
-            j = n if j < 0 else j
-            spans.append((i + 3, j))
-            i = j + 3
-            continue
-        if c == '"' or (c in "@$" and nxt == '"') or (c in "@$" and nxt in "@$" and i + 2 < n and text[i + 2] == '"'):
-            verbatim = "@" in text[i:i + 2]
-            start = text.find('"', i) + 1
+        # C++ raw string literal: R"delim(...)delim"
+        if c == "R" and nxt == '"':
+            paren = text.find("(", i + 2)
+            if 0 <= paren <= i + 18 and "\n" not in text[i + 2:paren]:
+                delim = text[i + 2:paren]
+                close_seq = f"){delim}\""
+                end = text.find(close_seq, paren + 1)
+                if end < 0:
+                    end = n
+                spans.append((paren + 1, end))
+                i = min(n, end + len(close_seq))
+                continue
+        if c == '"':
+            start = i + 1
             j = start
             while j < n:
-                if verbatim and text[j] == '"' and j + 1 < n and text[j + 1] == '"':
+                if text[j] == "\\":
                     j += 2
                     continue
-                if not verbatim and text[j] == "\\":
-                    j += 2
-                    continue
-                if text[j] == '"' or (not verbatim and text[j] == "\n"):
+                if text[j] == '"' or text[j] == "\n":
                     break
                 j += 1
             spans.append((start, j))
             i = j + 1
             continue
         if c == "'":
+            # C++14 digit separator: e.g. 0xFF'1E'2E or 1'000
+            prev_ch = text[i - 1] if i > 0 else ""
+            if (prev_ch.isalnum() or prev_ch == "_") and nxt.isalnum():
+                i += 1
+                continue
             j = i + 1
             while j < n and text[j] != "'" and text[j] != "\n":
                 j += 2 if text[j] == "\\" else 1
-            spans.append((i + 1, j))
             i = j + 1
             continue
         i += 1
     return "".join(out), spans
+
+
+def _balanced_body(text: str, open_pos: int) -> tuple[str, int]:
+    """Given the index of '(' or '{', return (inner slice, close index)."""
+    opener = text[open_pos]
+    closer = ")" if opener == "(" else "}"
+    depth = 1
+    i = open_pos + 1
+    n = len(text)
+    while i < n and depth > 0:
+        ch = text[i]
+        if ch == opener:
+            depth += 1
+        elif ch == closer:
+            depth -= 1
+            if depth == 0:
+                return text[open_pos + 1:i], i
+        i += 1
+    return text[open_pos + 1:], n
+
+
+def _split_top_level_args(arg_text: str) -> list[str]:
+    """Split a call's inner text on top-level commas."""
+    parts: list[str] = []
+    cur: list[str] = []
+    depth = 0
+    for ch in arg_text:
+        if ch in "({[":
+            depth += 1
+        elif ch in ")}]" and depth > 0:
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    parts.append("".join(cur))
+    return parts
+
+
+def _numeric_literals(expr: str) -> list[str]:
+    return [m.group(0) for m in NUM_LITERAL_RE.finditer(expr)]
+
+
+def _is_zero_literal(tok: str) -> bool:
+    s = tok.replace("'", "").rstrip("fFlLuU")
+    try:
+        if s.lower().startswith("0x"):
+            return int(s, 16) == 0
+        return float(s) == 0.0
+    except ValueError:
+        return False
+
+
+def _has_nonzero_literal(expr: str) -> bool:
+    return any(not _is_zero_literal(tok) for tok in _numeric_literals(expr))
 
 
 # ---------------------------------------------------------------- scanning
@@ -289,160 +338,137 @@ def _line_of(text: str, offset: int) -> int:
     return text.count("\n", 0, offset) + 1
 
 
-def _layout_neutral(val: str) -> bool:
-    v = val.strip()
-    if v in ("Auto", "NaN", "*") or re.fullmatch(r"\d*(?:\.\d+)?\*", v):
-        return True
-    if NUMBER_LIST_RE.match(v):
-        return all(float(p) == 0 for p in re.split(r"[\s,]+", v) if p)
-    return False
-
-
 class Context:
     def __init__(self, root: Path):
         self.root = root
         self.color_tokens, self.other_tokens = load_tokens(root)
         self.files = source_files(root)
-        self.defined: dict[str, str] = {}   # key -> defining element type
-        self.cs_defined: set[str] = set()
         self.texts: dict[Path, str] = {}
         for f in self.files:
             try:
-                raw = f.read_text(encoding="utf-8", errors="replace")
+                self.texts[f] = f.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
-            self.texts[f] = raw
-            if f.suffix == ".xaml":
-                for m in KEY_DEF_RE.finditer(blank_xml_comments(raw)):
-                    self.defined.setdefault(m.group("key"), m.group("type").split(":")[-1])
-            else:
-                for m in CS_RESOURCE_ADD_RE.finditer(raw):
-                    self.cs_defined.add(m.group("a") or m.group("b"))
-
-    def is_colorish(self, key: str, prop: str | None) -> bool:
-        if key in self.color_tokens or key.startswith("Isotone.App."):
-            return True
-        kind = self.defined.get(key, "")
-        if kind in ("Color", "SolidColorBrush", "LinearGradientBrush", "RadialGradientBrush", "Brush", "DrawingBrush"):
-            return True
-        if re.search(r"(?:Brush|Color)$", key):
-            return True
-        if prop in BRUSH_PROPS and not re.search(r"(?:Style|Template|Converter|Selector)$", key):
-            return True
-        return False
-
-    def known(self, key: str) -> bool:
-        return (key in self.color_tokens or key in self.other_tokens or key in self.defined
-                or key in self.cs_defined or key.startswith("Isotone."))
 
 
 def _generated(raw: str) -> bool:
-    head = "\n".join(raw.split("\n")[:8])
+    head = "\n".join(raw.split("\n")[:12])
     return bool(GENERATED_MARK_RE.search(head)) and "generated" in head.lower()
 
 
-def scan_xaml(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
+def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
+    if not is_ui_source(rel):
+        return []
     out: list[Finding] = []
-    text = blank_xml_comments(raw)
-    lines = raw.split("\n")
-
-    def add(offset: int, rule: str, msg: str) -> None:
-        ln = _line_of(text, offset)
-        out.append(Finding(rel, ln, rule, msg, _norm(lines[ln - 1] if ln - 1 < len(lines) else "")))
-
-    for tag in TAG_RE.finditer(text):
-        name = tag.group("name")
-        local = name.split(":")[-1]
-        attrs = list(ATTR_RE.finditer(tag.group("attrs")))
-        base = tag.start("attrs")
-        amap = {a.group("prop"): a for a in attrs}
-        setter_prop = None
-        if local == "Setter" and "Property" in amap:
-            setter_prop = amap["Property"].group("val").split(".")[-1]
-        for a in attrs:
-            full = a.group("prop")
-            prop = full.split(".")[-1].split(":")[-1]
-            val = a.group("val")
-            off = base + a.start()
-            if full.startswith("xmlns"):
-                if FORBIDDEN_RE.search(val):
-                    add(off, "forbidden-framework", f"`{full}` imports `{val}`; WPF-UI and FluentIcons leave the suite")
-                continue
-            eff_prop = setter_prop if (local == "Setter" and prop == "Value") else prop
-            if HEX_VALUE_RE.match(val.strip()):
-                add(off, "color-literal", f"`{full}=\"{val}\"` is a literal color; bind a color token through DynamicResource")
-            elif eff_prop in BRUSH_PROPS and val.strip().lower() in NAMED_COLORS:
-                add(off, "named-color", f"`{eff_prop}` is the named color `{val}`; bind a color token through DynamicResource")
-            for r in RESOURCE_RE.finditer(val):
-                key, kind = r.group("key"), r.group("kind")
-                colorish = ctx.is_colorish(key, eff_prop)
-                if kind == "StaticResource" and colorish:
-                    add(off, "static-color-resource",
-                        f"`{{StaticResource {key}}}` on `{eff_prop}` freezes a color; use DynamicResource")
-                if colorish and key not in ctx.color_tokens and not key.startswith("Isotone.App."):
-                    add(off, "non-token-color",
-                        f"`{key}` is a color or brush key that is not a color token of docs/design/tokens.json")
-                elif not ctx.known(key):
-                    add(off, "unknown-resource-key", f"`{key}` is defined nowhere the lint can see")
-            if eff_prop in SIZE_PROPS and "{" not in val and not _layout_neutral(val):
-                if NUMBER_LIST_RE.match(val.strip()):
-                    add(off, "literal-size", f"`{eff_prop}=\"{val}\"` is a literal size; use a size, spacing, radius, or type token")
-            if eff_prop == "FontFamily" and "{" not in val and val.strip():
-                add(off, "font-family-literal", f"`FontFamily=\"{val}\"` is a literal family; use the font token")
-            if EMOJI_RE.search(val):
-                add(off, "emoji", f"`{full}` carries an emoji glyph; emoji are never icons, use the icon catalog")
-            if BACKDROP_RE.search(val):
-                add(off, "backdrop", f"`{full}=\"{val}\"` asks for a system backdrop; chrome is flat token surfaces")
-        if FORBIDDEN_RE.search(name):
-            add(tag.start(), "forbidden-framework", f"`<{name}>` is a WPF-UI or FluentIcons element")
-        if BACKDROP_RE.search(local):
-            add(tag.start(), "backdrop", f"`<{name}>` is a system backdrop; chrome is flat token surfaces")
-    for m in ELEMENT_TEXT_RE.finditer(text):
-        body = m.group("text")
-        if not body.strip():
-            continue
-        off = m.start("text")
-        stripped = body.strip()
-        if HEX_VALUE_RE.match(stripped):
-            add(off + body.index(stripped), "color-literal",
-                f"element text `{stripped}` is a literal color; colors come from the generated token dictionaries")
-        if EMOJI_RE.search(body):
-            add(off + EMOJI_RE.search(body).start(), "emoji", "element text carries an emoji glyph; emoji are never icons")
-    return out
-
-
-def scan_cs(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
-    out: list[Finding] = []
-    code, spans = split_cs(raw)
+    code, spans = split_cpp(raw)
     lines = raw.split("\n")
 
     def add(offset: int, rule: str, msg: str) -> None:
         ln = _line_of(raw, offset)
         out.append(Finding(rel, ln, rule, msg, _norm(lines[ln - 1] if ln - 1 < len(lines) else "")))
 
-    # Code outside strings: blank string contents so API names inside strings do not match.
+    # Blank string literal contents in `code_only_s` so identifiers inside strings do not match code rules.
     code_only = list(code)
     for a, b in spans:
-        for k in range(a, min(b, len(code_only))):
+        for k in range(max(0, a - 1), min(b + 1, len(code_only))):
             if code_only[k] != "\n":
                 code_only[k] = " "
     code_only_s = "".join(code_only)
-    for m in CS_COLOR_API_RE.finditer(code_only_s):
-        add(m.start(), "color-api", f"`{m.group(0).strip()}` builds a literal color; resolve a color token resource instead")
-    for m in CS_FONT_RE.finditer(code):
-        add(m.start(), "font-family-literal", "`new FontFamily(\"...\")` is a literal family; use the font token")
-    for m in FORBIDDEN_RE.finditer(code_only_s):
-        add(m.start(), "forbidden-framework", f"`{m.group(0)}` is WPF-UI or FluentIcons")
+
+    # 1. Named colors: D2D1::ColorF::Red, ColorF::White, etc.
+    for m in NAMED_COLOR_RE.finditer(code_only_s):
+        add(m.start(), "named-color",
+            f"`{m.group(0)}` is a named color constant; resolve a color token from the generated token tables")
+
+    # 2. Color APIs: D2D1::ColorF / D2D1_COLOR_F built from numeric literals, and RGB( / RGBA(
+    colorf_spans: list[tuple[int, int]] = []
+    for m in COLORF_HEAD_RE.finditer(code_only_s):
+        open_pos = m.start(1) if m.group(1) else m.start(2)
+        body, end_pos = _balanced_body(code_only_s, open_pos)
+        if _numeric_literals(body):
+            colorf_spans.append((m.start(), end_pos))
+            snippet = _norm(code[m.start(): min(end_pos + 1, len(code))])
+            add(m.start(), "color-api",
+                f"`{snippet}` builds a literal color from numbers; resolve a color token from the generated token tables")
+    for m in RGB_MACRO_RE.finditer(code_only_s):
+        add(m.start(), "color-api",
+            f"`{m.group(0).strip()}` builds a literal color; resolve a color token from the generated token tables")
+
+    # 3. 6- or 8-digit hex color literals in code (outside ColorF calls already reported above)
+    for m in HEX_LITERAL_RE.finditer(code_only_s):
+        digits = m.group(1).replace("'", "")
+        if len(digits) in (6, 8) and not any(a <= m.start() <= b for a, b in colorf_spans):
+            add(m.start(), "color-literal",
+                f"`{m.group(0)}` is a {len(digits)}-digit hex color literal; resolve a color token instead")
+
+    # 4. Literal geometry: D2D1::RectF, SizeF, Point2F, RoundedRect (and D2D1_* structs) with non-zero numeric literals
+    for m in GEOM_TYPE_HEAD_RE.finditer(code_only_s):
+        body, end_pos = _balanced_body(code_only_s, m.start(1))
+        if _has_nonzero_literal(body):
+            snippet = _norm(code[m.start(): min(end_pos + 1, len(code))])
+            add(m.start(), "literal-geometry",
+                f"`{snippet}` builds geometry from a non-zero numeric literal; use a size, spacing, or radius token")
+
+    # Corner radius, stroke width, padding, margin, or spacing built from numeric literals other than 0
+    for m in GEOM_PROP_ASSIGN_RE.finditer(code_only_s):
+        rhs = m.group("rhs") or m.group("brace") or ""
+        if _has_nonzero_literal(rhs):
+            add(m.start(), "literal-geometry",
+                f"`{m.group('name')}` is set from a non-zero numeric literal; use a size, spacing, or radius token")
+    for m in GEOM_PROP_CALL_RE.finditer(code_only_s):
+        body, _ = _balanced_body(code_only_s, m.start(2))
+        if _has_nonzero_literal(body):
+            add(m.start(), "literal-geometry",
+                f"`{m.group('name')}(...)` is called with a non-zero numeric literal; use a size, spacing, or radius token")
+
+    # 5. Literal font family and font size
+    for m in CREATE_TEXT_FORMAT_RE.finditer(code):
+        open_paren = m.end() - 1
+        body_code, _ = _balanced_body(code, open_paren)
+        body_clean, _ = _balanced_body(code_only_s, open_paren)
+        args_code = _split_top_level_args(body_code)
+        args_clean = _split_top_level_args(body_clean)
+        if args_code and STRING_TOKEN_RE.search(args_code[0]):
+            add(m.start(), "font-family-literal",
+                "`CreateTextFormat` uses a literal font family; resolve a font family token instead")
+        if len(args_clean) >= 6 and _has_nonzero_literal(args_clean[5]):
+            add(m.start(), "literal-size",
+                "`CreateTextFormat` uses a literal font size; resolve a type size token instead")
+
+    for m in FONT_FAMILY_ASSIGN_RE.finditer(code):
+        add(m.start(), "font-family-literal",
+            f"`{m.group('name')}` is set to literal family `\"{m.group('val')}\"`; use a font token")
+    for m in FONT_FAMILY_CALL_RE.finditer(code):
+        add(m.start(), "font-family-literal",
+            f"`{m.group('name')}` is called with literal family `\"{m.group('val')}\"`; use a font token")
+
+    for m in FONT_SIZE_ASSIGN_RE.finditer(code_only_s):
+        rhs = m.group("rhs") or m.group("brace") or ""
+        if _has_nonzero_literal(rhs):
+            add(m.start(), "literal-size",
+                f"`{m.group('name')}` is set from a non-zero numeric literal; use a type size token")
+    for m in FONT_SIZE_CALL_RE.finditer(code_only_s):
+        body, _ = _balanced_body(code_only_s, m.start(2))
+        if _has_nonzero_literal(body):
+            add(m.start(), "literal-size",
+                f"`{m.group('name')}(...)` is called with a non-zero numeric literal; use a type size token")
+
+    # 6. System backdrops
     for m in BACKDROP_RE.finditer(code_only_s):
-        add(m.start(), "backdrop", f"`{m.group(0)}` asks for a system backdrop; chrome is flat token surfaces")
+        add(m.start(), "backdrop",
+            f"`{m.group(0)}` asks for a system backdrop; chrome is flat token surfaces")
+
+    # 7. String literals: 6- or 8-digit hex color strings and emoji glyphs
     for a, b in spans:
         s = raw[a:b]
-        for m in HEX_IN_TEXT_RE.finditer(s):
-            if HEX_VALUE_RE.match(m.group(0)):
-                add(a + m.start(), "color-literal", f"string `{m.group(0)}` is a literal color; resolve a color token instead")
+        for m in HEX_IN_STRING_RE.finditer(s):
+            add(a + m.start(), "color-literal",
+                f"string `{m.group(0)}` is a literal hex color; resolve a color token instead")
         e = EMOJI_RE.search(s)
         if e:
-            add(a + e.start(), "emoji", "a string carries an emoji glyph; emoji are never icons, use the icon catalog")
+            add(a + e.start(), "emoji",
+                "a string carries an emoji glyph; emoji are never icons, use the icon catalog")
+
     return out
 
 
@@ -453,10 +479,7 @@ def scan(root: Path) -> list[Finding]:
         if _generated(raw):
             continue
         rel = f.relative_to(root).as_posix()
-        if f.suffix == ".xaml":
-            findings += scan_xaml(ctx, f, rel, raw)
-        else:
-            findings += scan_cs(ctx, f, rel, raw)
+        findings += scan_cpp(ctx, f, rel, raw)
     findings.sort(key=lambda x: (x.file, x.line, x.rule, x.message))
     return findings
 
@@ -624,11 +647,13 @@ def head_growth(root: Path, bpath: Path, data: dict, head_text: str | None = Non
 # ---------------------------------------------------------------- self-test
 
 def self_test() -> int:
+    import contextlib
+    import io
     import tempfile
 
     cases: list[tuple[str, object, object]] = []
 
-    def check(name, got, want):
+    def check(name: str, got: object, want: object) -> None:
         cases.append((name, got, want))
 
     with tempfile.TemporaryDirectory(prefix="design-lint-selftest-") as tmp:
@@ -638,100 +663,110 @@ def self_test() -> int:
             "color": {"tokens": [{"name": "surface-panel"}, {"name": "text-primary"}]},
             "size": {"tokens": [{"name": "control-h-compact"}, {"name": "control-h-comfortable"}]},
             "spacing": {"tokens": [{"name": "space-2"}]},
+            "radius": {"tokens": [{"name": "radius-md"}]},
             "type": {"families": {"sans": "x"}, "groups": [{"styles": [{"name": "body"}]}]},
         }), encoding="utf-8")
-        app = root / "src" / "App"
-        app.mkdir(parents=True)
-        (app / "App.csproj").write_text("<Project><PropertyGroup><UseWPF>true</UseWPF></PropertyGroup></Project>", encoding="utf-8")
-        tests = root / "src" / "App.Tests"
-        tests.mkdir(parents=True)
-        (tests / "App.Tests.csproj").write_text("<Project><PropertyGroup><UseWPF>true</UseWPF></PropertyGroup></Project>", encoding="utf-8")
-        (tests / "Bad.xaml").write_text('<Border Background="#FF0000"/>\n', encoding="utf-8")
-        (app / "obj").mkdir()
-        (app / "obj" / "Gen.xaml").write_text('<Border Background="#FF0000"/>\n', encoding="utf-8")
-        xaml = (
-            '<Window xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">\n'                    # 1 forbidden
-            '  <Window.Resources>\n'
-            '    <SolidColorBrush x:Key="Base">#1E1E2E</SolidColorBrush>\n'                    # 3 color-literal
-            '    <Style x:Key="LocalStyle" TargetType="Button"/>\n'
-            '  </Window.Resources>\n'
-            '  <!-- <Border Background="#123456"/> -->\n'                                       # 6 comment: nothing
-            '  <Border Background="{StaticResource Base}" Margin="0" Padding="0,0,0,0"/>\n'    # 7 static + non-token
-            '  <Border Background="{DynamicResource surface-panel}" Height="Auto"/>\n'          # 8 clean
-            '  <Border Background="White" BorderBrush="Transparent" Style="{StaticResource LocalStyle}"/>\n'  # 9 named
-            '  <TextBlock FontSize="12" Margin="8,4" FontFamily="Segoe UI" Text="Done ✅"/>\n'   # 10 size x2, font, emoji
-            '  <Setter Property="Background" Value="{StaticResource surface-panel}"/>\n'       # 11 static only
-            '  <Setter Property="Height" Value="24"/>\n'                                       # 12 literal-size
-            '  <Border Height="{DynamicResource control-h}" Width="100"/>\n'                   # 13 clean
-            '  <Border Tag="{DynamicResource NoSuchKey}"/>\n'                                  # 14 warn unknown
-            '  <RowDefinition Height="2*"/>\n'                                                 # 15 clean
-            '  <ui:SymbolIcon Symbol="Home"/>\n'                                               # 16 forbidden element
-            '</Window>\n'
-        )
-        (app / "Main.xaml").write_text(xaml, encoding="utf-8")
-        cs = (
-            "using Wpf.Ui.Controls;\n"                                                  # 1 forbidden
-            "class A {\n"
-            "  // var c = Colors.Red; Color.FromRgb(1,2,3);\n"                          # 3 comment: nothing
-            "  void M() {\n"
-            "    var b = new SolidColorBrush(Color.FromRgb(1, 2, 3));\n"                # 5 color-api x2
-            "    var t = Brushes.Transparent;\n"                                         # 6 clean
-            "    var s = \"#FF6B35\"; var e = \"✖ close\";\n"                        # 7 color-literal + emoji
-            "    var f = new FontFamily(\"Segoe UI\");\n"                                 # 8 font
-            "    var m = \"Colors.Red is fine in a string\";\n"                          # 9 clean
-            "    Resources[\"FromCode\"] = null; /* Mica */\n"                            # 10 clean
-            "    window.WindowBackdropType = 2;\n"                                        # 11 backdrop
-            "  }\n}\n"
-        )
-        (app / "A.cs").write_text(cs, encoding="utf-8")
-        (app / "Themes").mkdir()
-        (app / "Themes" / "Dark.xaml").write_text(
-            "<!-- Generated from docs/design/tokens.json by scripts/generate-theme.py. Do not hand-edit. -->\n"
-            '<ResourceDictionary><SolidColorBrush x:Key="surface-panel" Color="#323232"/></ResourceDictionary>\n',
-            encoding="utf-8")
-        found = scan(root)
-        got = sorted((f.file.split("/")[-1], f.line, f.rule) for f in found)
-        want = sorted([
-            ("Main.xaml", 1, "forbidden-framework"),
-            ("Main.xaml", 3, "color-literal"),
-            ("Main.xaml", 7, "static-color-resource"),
-            ("Main.xaml", 7, "non-token-color"),
-            ("Main.xaml", 9, "named-color"),
-            ("Main.xaml", 10, "literal-size"),
-            ("Main.xaml", 10, "literal-size"),
-            ("Main.xaml", 10, "font-family-literal"),
-            ("Main.xaml", 10, "emoji"),
-            ("Main.xaml", 11, "static-color-resource"),
-            ("Main.xaml", 12, "literal-size"),
-            ("Main.xaml", 14, "unknown-resource-key"),
-            ("Main.xaml", 16, "forbidden-framework"),
-            ("A.cs", 1, "forbidden-framework"),
-            ("A.cs", 5, "color-api"),
-            ("A.cs", 7, "color-literal"),
-            ("A.cs", 7, "emoji"),
-            ("A.cs", 8, "font-family-literal"),
-            ("A.cs", 11, "backdrop"),
-        ])
-        check("scan finds exactly the fixture's violations", got, want)
-        check("test projects, obj/, and generated theme files are skipped",
-              [f.file for f in found if "Tests" in f.file or "/obj/" in f.file or "Themes" in f.file], [])
-        check("unknown-resource-key is warn-level",
-              {f.severity for f in found if f.rule == "unknown-resource-key"}, {"warn"})
-        check("render is file:line:rule:message",
-              next(f.render() for f in found if f.rule == "backdrop").startswith("src/App/A.cs:11:backdrop:"), True)
-        check("layout-neutral values", [_layout_neutral(v) for v in ("0", "0,0,0,0", "Auto", "*", "3*", "NaN", "4", "0,1")],
-              [True, True, True, True, True, True, False, False])
 
-        class A:  # argparse stand-in
+        ui_dir = root / "native" / "ui"
+        ui_dir.mkdir(parents=True)
+        app_ui_dir = root / "native" / "stilus" / "ui"
+        app_ui_dir.mkdir(parents=True)
+        core_dir = root / "native" / "core" / "src"
+        core_dir.mkdir(parents=True)
+        test_dir = root / "native" / "tests"
+        test_dir.mkdir(parents=True)
+
+        # Non-UI core and test files are scanned into Context.files but exempt from UI surface rules.
+        (core_dir / "math.cpp").write_text("int k = 0x1E1E2E;\n", encoding="utf-8")
+        (test_dir / "ui_test.cpp").write_text("auto c = D2D1::ColorF(0.2f, 0.4f, 0.8f);\n", encoding="utf-8")
+
+        # Generated token table file is skipped.
+        (ui_dir / "generated_tokens.hpp").write_text(
+            "// Generated from docs/design/tokens.json by scripts/generate-theme.py. Do not edit.\n"
+            "inline constexpr auto kPanel = D2D1::ColorF(0.2f, 0.2f, 0.2f);\n",
+            encoding="utf-8",
+        )
+
+        # Cover every C/C++ extension CMake compiles plus included implementation files:
+        # .c, .cc, .cpp, .cxx, .c++, .h, .hh, .hpp, .hxx, .h++, .inl, .ipp
+        ext_probes: list[tuple[Path, str, str]] = [
+            (ui_dir / "probe_c.c", "unsigned long c = RGB(30, 30, 46);\n", "color-api"),
+            (ui_dir / "probe_cc.cc", "auto r = D2D1::RectF(0, 0, 24, 24);\n", "literal-geometry"),
+            (ui_dir / "probe_cpp.cpp", "auto c = D2D1::ColorF(0.2f, 0.4f, 0.8f);\n", "color-api"),
+            (ui_dir / "probe_cxx.cxx", "D2D1_COLOR_F raw_c{0.1f, 0.2f, 0.3f, 1.0f};\n", "color-api"),
+            (ui_dir / "probe_cpp_plus.c++", "uint32_t hex6 = 0x1E1E2E;\n", "color-literal"),
+            (ui_dir / "probe_h.h", "uint32_t hex8 = 0xFF1E1E2E;\n", "color-literal"),
+            (ui_dir / "probe_hh.hh", "const char* css = \"#1E1E2E\";\n", "color-literal"),
+            (ui_dir / "probe_hpp.hpp", "auto sz = D2D1::SizeF(120.0f, 28.0f);\n", "literal-geometry"),
+            (ui_dir / "probe_hxx.hxx", "auto pt = D2D1::Point2F(8.0f, 12.0f);\n", "literal-geometry"),
+            (ui_dir / "probe_hpp_plus.h++", "auto rr = D2D1::RoundedRect(bounds, 4.0f, 4.0f);\n", "literal-geometry"),
+            (ui_dir / "probe_inl.inl", "auto named = D2D1::ColorF(D2D1::ColorF::Red);\n", "named-color"),
+            (app_ui_dir / "probe_ipp.ipp", "float padding = 8.0f;\n", "literal-geometry"),
+        ]
+        for path, body, _ in ext_probes:
+            path.write_text(body, encoding="utf-8")
+
+        # Comprehensive UI fixture covering remaining literal kinds AND passing token forms.
+        panel_cpp = (
+            "// D2D1::ColorF(1.0f, 0.0f, 0.0f); /* 0xFF0000 D2D1::RectF(0, 0, 10, 10) */\n"  # 1 comment: clean
+            "void draw_panel() {\n"
+            "  auto ok_col = tokens.color(ColorToken::SurfacePanel);\n"                       # 3 token color: clean
+            "  auto ok_zero = D2D1::RectF(0, 0, 0, 0);\n"                                     # 4 zero rect: clean
+            "  auto ok_rect = D2D1::RectF(0.0f, 0.0f, tokens.size(SizeToken::ControlH), tokens.size(SizeToken::ControlH));\n"  # 5 token rect: clean
+            "  auto ok_pt = D2D1::Point2F(tokens.space(SpaceToken::Space2), 0.0f);\n"         # 6 token point: clean
+            "  auto ok_rr = D2D1::RoundedRect(ok_rect, tokens.radius(RadiusToken::Md), tokens.radius(RadiusToken::Md));\n"  # 7 token rounded: clean
+            "  float corner_radius = tokens.radius(RadiusToken::Md);\n"                       # 8 token radius: clean
+            "  float stroke_width = tokens.size(SizeToken::Hairline);\n"                      # 9 token stroke: clean
+            "  float margin = 0.0f;\n"                                                        # 10 zero margin: clean
+            "  float spacing = tokens.space(SpaceToken::Space2);\n"                           # 11 token spacing: clean
+            "  dwrite->CreateTextFormat(tokens.font_family(FontToken::Sans), nullptr, w, s, st, tokens.font_size(TypeToken::Body), L\"en-us\", &fmt);\n"  # 12 token font: clean
+            "  float corner_radius = 4.0f;\n"                                                 # 13 literal-geometry
+            "  float stroke_width = 1.5f;\n"                                                  # 14 literal-geometry
+            "  float margin = 12.0f;\n"                                                       # 15 literal-geometry
+            "  float spacing = 6.0f;\n"                                                       # 16 literal-geometry
+            "  dwrite->CreateTextFormat(L\"Segoe UI\", nullptr, w, s, st, 12.0f, L\"en-us\", &fmt);\n"  # 17 font-family-literal + literal-size
+            "  const wchar_t* font_family = L\"Inter\";\n"                                    # 18 font-family-literal
+            "  float font_size = 14.0f;\n"                                                    # 19 literal-size
+            "  const char* bad_emoji = \"Done ✅\";\n"                                         # 20 emoji
+            "  int bd = DWMWA_SYSTEMBACKDROP_TYPE;\n"                                         # 21 backdrop
+            "}\n"
+        )
+        (ui_dir / "panel.cpp").write_text(panel_cpp, encoding="utf-8")
+
+        found = scan(root)
+        by_file_rule = {(Path(f.file).name, f.line, f.rule) for f in found}
+        for path, _, expected_rule in ext_probes:
+            check(f"extension {path.suffix} scanned and flagged ({expected_rule})",
+                  (path.name, 1, expected_rule) in by_file_rule, True)
+
+        panel_got = sorted((f.line, f.rule) for f in found if Path(f.file).name == "panel.cpp")
+        panel_want = sorted([
+            (13, "literal-geometry"),
+            (14, "literal-geometry"),
+            (15, "literal-geometry"),
+            (16, "literal-geometry"),
+            (17, "font-family-literal"),
+            (17, "literal-size"),
+            (18, "font-family-literal"),
+            (19, "literal-size"),
+            (20, "emoji"),
+            (21, "backdrop"),
+        ])
+        check("panel.cpp flags every literal kind and passes every token form", panel_got, panel_want)
+        check("non-UI core, tests, and generated token files produce no findings",
+              [f.file for f in found if "core/" in f.file or "tests/" in f.file or "generated_tokens" in f.file],
+              [])
+        check("render is file:line:rule:message",
+              next(f.render() for f in found if f.rule == "backdrop").startswith("native/ui/panel.cpp:21:backdrop:"),
+              True)
+
+        class A:
             summary = False
             verbose = False
             update_baseline = False
             allow_add = False
             reason = ""
             baseline = "docs/design/.lint-baseline.json"
-
-        import io
-        import contextlib
 
         def _run(**kw) -> tuple[int, str]:
             a = A()
@@ -742,6 +777,7 @@ def self_test() -> int:
                 code = run(root, a)
             return code, buf.getvalue()
 
+        total_errors = len(found)
         bl = root / "docs" / "design" / ".lint-baseline.json"
         code, out = _run()
         check("no baseline file: every error is new, exit 1", (code, "0 recorded" in out), (1, True))
@@ -749,29 +785,26 @@ def self_test() -> int:
         check("--update-baseline never adds without --allow-add", (code, json.loads(bl.read_text())["entries"]), (1, []))
         code, out = _run(update_baseline=True, allow_add=True)
         check("--allow-add without a reason writes nothing", (code, "needs --reason" in out), (1, True))
-        code, out = _run(update_baseline=True, allow_add=True, reason="fixture: record the legacy violations")
+        code, out = _run(update_baseline=True, allow_add=True, reason="fixture: record violations")
         data = json.loads(bl.read_text())
         check("--allow-add --reason records every error and the reason",
               (code, sum(e["count"] for e in data["entries"]), data["history"][-1]["reason"]),
-              (0, 18, "fixture: record the legacy violations"))
+              (0, total_errors, "fixture: record violations"))
         code, out = _run()
         check("recorded violations pass", (code, " 0 new, 0 stale" in out), (0, True))
-        # Move a line: insert a blank line at the top of Main.xaml; keys are line text, not numbers.
-        (app / "Main.xaml").write_text("\n" + xaml.replace("\n", "\n", 1), encoding="utf-8")
+        # Move a line: insert a blank line at the top of probe_cpp.cpp; keys are line text, not numbers.
+        (ui_dir / "probe_cpp.cpp").write_text("\nauto c = D2D1::ColorF(0.2f, 0.4f, 0.8f);\n", encoding="utf-8")
         code, out = _run()
         check("a moved line still matches its baseline entry", code, 0)
         # A new violation fails.
-        (app / "Main.xaml").write_text(xaml.replace("</Window>", '  <Border Background="#00FF00"/>\n</Window>'), encoding="utf-8")
+        (ui_dir / "probe_cpp.cpp").write_text(
+            "auto c = D2D1::ColorF(0.2f, 0.4f, 0.8f);\nauto c2 = D2D1::ColorF(0.9f, 0.1f, 0.1f);\n",
+            encoding="utf-8",
+        )
         code, out = _run()
-        check("a new violation fails naming it", (code, ':color-literal:`Background="#00FF00"`' in out), (1, True))
-        # A second copy of a recorded line is new too (counts, not presence).
-        (app / "Main.xaml").write_text(xaml.replace("</Window>", '  <Setter Property="Height" Value="24"/>\n</Window>'), encoding="utf-8")
-        code, out = _run()
-        check("a second copy of a recorded line is new", (code, " 1 new" in out), (1, True))
+        check("a new violation fails naming it", (code, ":color-api:" in out and "0.9f" in out), (1, True))
         # A fixed violation leaves a stale entry, which fails until the baseline shrinks.
-        (app / "Main.xaml").write_text(xaml.replace('    <SolidColorBrush x:Key="Base">#1E1E2E</SolidColorBrush>\n',
-                                                    '    <SolidColorBrush x:Key="Base" Color="{DynamicResource surface-panel}"/>\n'),
-                                       encoding="utf-8")
+        (ui_dir / "probe_cpp.cpp").write_text("auto c = tokens.color(ColorToken::SurfacePanel);\n", encoding="utf-8")
         code, out = _run()
         check("a fixed violation is a stale entry and fails", (code, "stale baseline entry" in out), (1, True))
         before = sum(e["count"] for e in json.loads(bl.read_text())["entries"])
@@ -782,10 +815,10 @@ def self_test() -> int:
         # HEAD comparison: growth needs a new history entry with a reason; history is append-only.
         head = json.loads(bl.read_text())
         grown = json.loads(bl.read_text())
-        grown["entries"].append({"file": "src/App/Main.xaml", "rule": "color-literal", "text": "<x/>", "count": 1})
+        grown["entries"].append({"file": "native/ui/x.cpp", "rule": "color-literal", "text": "int c = 0x112233;", "count": 1})
         check("an entry added against HEAD without a reasoned history entry is refused",
               any("without a history entry" in p for p in head_growth(root, bl, grown, json.dumps(head))), True)
-        grown["history"].append({"date": "2026-09-27", "removed": 0, "added": 1, "reason": "review-approved: fixture"})
+        grown["history"].append({"date": "2026-11-09", "removed": 0, "added": 1, "reason": "review-approved: fixture"})
         check("an entry added with a reasoned history entry passes", head_growth(root, bl, grown, json.dumps(head)), [])
         edited = json.loads(bl.read_text())
         edited["history"][0]["reason"] = "rewritten"
@@ -800,22 +833,19 @@ def self_test() -> int:
     return 1 if failed else 0
 
 
-def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--root", default=str(REPO), help="checkout root (default: this repository)")
-    ap.add_argument("--baseline", help=f"recorded violations, e.g. {DEFAULT_BASELINE}")
-    ap.add_argument("--update-baseline", action="store_true", help="rewrite the baseline, removing entries that no longer occur")
-    ap.add_argument("--allow-add", action="store_true", help="with --update-baseline: also record new violations (needs --reason)")
-    ap.add_argument("--reason", help="the review-approved reason recorded when --allow-add adds entries")
-    ap.add_argument("--summary", action="store_true", help="print counts by rule")
-    ap.add_argument("--verbose", action="store_true", help="with --baseline: also print warn-level findings")
-    ap.add_argument("--self-test", action="store_true", help="run the fixture suite")
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Static design-contract lint over the native C and C++ UI sources.")
+    ap.add_argument("--baseline", help="compare against (or update) a baseline JSON file")
+    ap.add_argument("--update-baseline", action="store_true", help="shrink the baseline to the current violations")
+    ap.add_argument("--allow-add", action="store_true", help="with --update-baseline, also record new violations")
+    ap.add_argument("--reason", help="review-approved reason required with --allow-add")
+    ap.add_argument("--summary", action="store_true", help="print rule counts")
+    ap.add_argument("--verbose", action="store_true", help="also print warning findings in --baseline mode")
+    ap.add_argument("--self-test", action="store_true", help="run the built-in self-test")
     args = ap.parse_args(argv)
     if args.self_test:
         return self_test()
-    if (args.update_baseline or args.allow_add) and not args.baseline:
-        ap.error("--update-baseline and --allow-add need --baseline")
-    return run(Path(args.root).resolve(), args)
+    return run(REPO, args)
 
 
 if __name__ == "__main__":

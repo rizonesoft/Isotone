@@ -70,6 +70,7 @@ CITED_PATH_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./\-]*[A-Za-z0-9_/])`")
 # measured, not wished.
 COVERAGE_FLOOR = 78
 DEFAULT_ROOT = "todo"
+DEFERRED_STATUSES = ("blocked", "superseded")
 
 
 class Stale(Exception):
@@ -78,6 +79,40 @@ class Stale(Exception):
 
 class Malformed(Exception):
     """A claim could not be parsed, which is a defect in the TODO, not in the repo."""
+
+
+def _display_rel(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _file_status(text: str) -> str:
+    """Return the frontmatter `status` scalar, or '' when absent or unclosed."""
+    norm = text.replace("\r\n", "\n")
+    if not norm.startswith("---"):
+        return ""
+    end = norm.find("\n---", 3)
+    if end == -1:
+        return ""
+    for raw in norm[3:end].strip("\n").splitlines():
+        line = raw.rstrip()
+        if not line.strip() or line.lstrip().startswith("#") or ":" not in line:
+            continue
+        key, _, val = line.partition(":")
+        if key.strip() == "status":
+            return val.strip().strip("\"'")
+    return ""
+
+
+def is_deferred_file(path: Path) -> bool:
+    """True when `path` is parked (`status: blocked` or `status: superseded`)."""
+    try:
+        text = io.open(path, encoding="utf-8", errors="replace").read()
+    except OSError:
+        return False
+    return _file_status(text) in DEFERRED_STATUSES
 
 
 def _resolve(pattern: str) -> list[Path]:
@@ -367,9 +402,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.self_test:
         return _self_test()
 
-    files = sorted((ROOT / args.root).rglob("*.md"))
+    root_arg = Path(args.root)
+    scan_dir = root_arg if root_arg.is_absolute() else (ROOT / args.root)
+    files = sorted(scan_dir.rglob("*.md"))
     # The floor describes the whole plan. A --root subtree is scanned without it.
-    scoped_floor = args.root.strip("/") == DEFAULT_ROOT
+    scoped_floor = not root_arg.is_absolute() and args.root.strip("/") == DEFAULT_ROOT
 
     if args.coverage:
         covered, total, problems = run_coverage(
@@ -403,8 +440,17 @@ def main(argv: list[str] | None = None) -> int:
                # comments that were never in `claims`, so subtracting its
                # length from the claim total reports a number that is wrong
                # in both directions at once.
+    deferred = 0
+    deferred_by_path: dict[Path, bool] = {}
     for path, lineno, claim in claims:
-        rel = path.relative_to(ROOT).as_posix()
+        rel = _display_rel(path)
+        if path not in deferred_by_path:
+            deferred_by_path[path] = is_deferred_file(path)
+        if deferred_by_path[path]:
+            deferred += 1
+            if not args.quiet:
+                print(f"  defer {rel}:{lineno}  {claim}")
+            continue
         try:
             ok = evaluate(claim)
             held += 1
@@ -416,7 +462,7 @@ def main(argv: list[str] | None = None) -> int:
             malformed.append((rel, lineno, str(exc)))
 
     for path, lineno, snippet in unterminated:
-        rel = path.relative_to(ROOT).as_posix()
+        rel = _display_rel(path)
         malformed.append((rel, lineno, f"claim opened and not closed on this line: {snippet}"))
 
     for rel, lineno, msg in malformed:
@@ -433,7 +479,7 @@ def main(argv: list[str] | None = None) -> int:
     floor_note = "" if scoped_floor else "  (floor not applied: --root selects a subtree)"
     print(
         f"\ntodo-claims: {len(claims)} claim(s) -- "
-        f"{held} hold, "
+        f"{held} hold, {deferred} deferred, "
         f"{len(stale)} stale, {len(malformed)} malformed; "
         f"coverage {covered}/{total}, floor {COVERAGE_FLOOR}{floor_note}"
     )
@@ -605,11 +651,102 @@ def _self_test() -> int:
         print("  FAIL  a deleted cited path was filtered out before the git check")
         failed += 1
 
-    for f in (fixture, split, whole, cov, prose, gone):
+    # D00 T06 §1: parked files (status: blocked or superseded) defer claim
+    # re-measurement while still counting toward coverage, and COVERAGE_FLOOR
+    # stays 78 across the tree.
+    if COVERAGE_FLOOR != 78:
+        print(f"  FAIL  coverage floor changed from 78 to {COVERAGE_FLOOR}")
+        failed += 1
+
+    import contextlib
+
+    parked_root = tmp / "parked_tree"
+    parked_todo = parked_root / "todo"
+    parked_todo.mkdir(parents=True)
+    parked_md = parked_todo / "parked.md"
+    super_md = parked_todo / "super.md"
+    parked_md.write_text(
+        "---\nschema_version: 1\nid: parked\ndomain: 02-stilus\nstatus: blocked\n"
+        "title: \"Parked\"\ndepends_on: []\n---\n\n# Parked\n\n"
+        "> **Current state (verified 2026-01-01):** cites `src/Missing.cs`.\n"
+        "<!-- claim: exists src/Missing.cs -->\n",
+        encoding="utf-8",
+    )
+    super_md.write_text(
+        "---\nschema_version: 1\nid: super\ndomain: 00-workspace\nstatus: superseded\n"
+        "superseded_by: replacement\ntitle: \"Superseded\"\ndepends_on: []\n---\n\n# Superseded\n\n"
+        "> **Current state (verified 2026-01-01):** cites `src/Old.cs`.\n"
+        "<!-- claim: lines src/Old.cs = 12 -->\n",
+        encoding="utf-8",
+    )
+    saved_root2, saved_floor2 = ROOT, COVERAGE_FLOOR
+    ROOT = parked_root
+    globals()["COVERAGE_FLOOR"] = 2
+    try:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc_parked = main(["--quiet"])
+        out_parked = buf.getvalue()
+        cov_parked, tot_parked, probs_parked = run_coverage(
+            [parked_md, super_md], quiet=True, apply_floor=True, check_dates=False
+        )
+        if rc_parked != 0 or "0 hold, 2 deferred, 0 stale, 0 malformed; coverage 2/2, floor 2" not in out_parked:
+            print(f"  FAIL  parked files with missing paths should pass as deferred: rc={rc_parked} out={out_parked!r}")
+            failed += 1
+        if (cov_parked, tot_parked, probs_parked) != (2, 2, []):
+            print(f"  FAIL  parked files must still count toward coverage: {(cov_parked, tot_parked, probs_parked)}")
+            failed += 1
+
+        # Unpark parked.md (`status: draft`): the missing path now fails as stale,
+        # while coverage is unchanged.
+        parked_md.write_text(
+            parked_md.read_text(encoding="utf-8").replace("status: blocked", "status: draft"),
+            encoding="utf-8",
+        )
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc_unparked = main(["--quiet"])
+        out_unparked = buf.getvalue()
+        cov_unparked, tot_unparked, probs_unparked = run_coverage(
+            [parked_md, super_md], quiet=True, apply_floor=True, check_dates=False
+        )
+        if (
+            rc_unparked != 1
+            or "0 hold, 1 deferred, 1 stale, 0 malformed; coverage 2/2, floor 2" not in out_unparked
+            or "STALE     todo/parked.md:" not in out_unparked
+        ):
+            print(f"  FAIL  unparked file with missing path should fail as stale: rc={rc_unparked} out={out_unparked!r}")
+            failed += 1
+        if (cov_unparked, tot_unparked, probs_unparked) != (cov_parked, tot_parked, probs_parked):
+            print(
+                f"  FAIL  coverage changed when unparking: parked={(cov_parked, tot_parked)} "
+                f"unparked={(cov_unparked, tot_unparked)}"
+            )
+            failed += 1
+
+        # Unpark super.md (`status: active`): its missing path also fails as stale.
+        super_md.write_text(
+            super_md.read_text(encoding="utf-8").replace("status: superseded", "status: active"),
+            encoding="utf-8",
+        )
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc_both = main(["--quiet"])
+        out_both = buf.getvalue()
+        if rc_both != 1 or "0 hold, 0 deferred, 2 stale, 0 malformed; coverage 2/2, floor 2" not in out_both:
+            print(f"  FAIL  unparked superseded file should fail as stale: rc={rc_both} out={out_both!r}")
+            failed += 1
+    finally:
+        ROOT = saved_root2
+        globals()["COVERAGE_FLOOR"] = saved_floor2
+
+    for f in (fixture, split, whole, cov, prose, gone, parked_md, super_md):
         f.unlink()
+    parked_todo.rmdir()
+    parked_root.rmdir()
     tmp.rmdir()
 
-    total = len(cases) + 3 + 10
+    total = len(cases) + 3 + 16
     print(f"todo-claims self-test: {total} cases, {failed} failed")
     return 1 if failed else 0
 
