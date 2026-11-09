@@ -393,24 +393,19 @@ def outside_findings(files):
 NOLINT_RE = re.compile(r"\bNOLINT(NEXTLINE|BEGIN|END)?\b(\(([^)]*)\))?(.*)")
 PRAGMA_DIRECT_RE = re.compile(r"(#\s*pragma\s+|__pragma\s*\(\s*)warning\s*\(")
 PRAGMA_OP_RE = re.compile(r"\b_Pragma\s*\(")
-RAW_STR_RE = re.compile(r'(?:L|u8|u|U)?R"([^ ()\\\t\v\f\r\n]*)\((.*?)\)\1"', re.S)
+RAW_PREFIX_RE = re.compile(r'(?:L|u8|u|U)?R"')
+RAW_BODY_RE = re.compile(r'"([^ ()\\\t\v\f\r\n]*)\((.*?)\)\1"', re.S)
 
 
 def lex_views_with_map(text):
     """Return `(spliced, no_comments, no_strings, code_only, pos_map)` where C++ phase-2 backslash-newline splices
-    (`\\\r?\n` outside raw string literals) are deleted and `pos_map[i]` maps each offset `i` in the views back to its
+    (`\\\r?\n` outside raw-string bodies) are deleted and `pos_map[i]` maps each offset `i` in the views back to its
     physical character offset in `text`."""
     spliced_chars = []
     pos_map = []
     idx, total = 0, len(text)
     while idx < total:
-        raw = RAW_STR_RE.match(text, idx)
-        if raw:
-            for k in range(raw.start(0), raw.end(0)):
-                spliced_chars.append(text[k])
-                pos_map.append(k)
-            idx = raw.end(0)
-        elif text[idx] == "\\" and idx + 1 < total and text[idx + 1] == "\n":
+        if text[idx] == "\\" and idx + 1 < total and text[idx + 1] == "\n":
             idx += 2
         elif text[idx] == "\\" and idx + 2 < total and text[idx + 1 : idx + 3] == "\r\n":
             idx += 3
@@ -444,11 +439,24 @@ def lex_views_with_map(text):
             blank(code_only, i, j)
             i = j
         else:
-            raw = RAW_STR_RE.match(spliced, i)
-            if raw:
-                blank(no_strings, raw.start(0), raw.end(0))
-                blank(code_only, raw.start(0), raw.end(0))
-                i = raw.end(0)
+            raw_prefix = (
+                RAW_PREFIX_RE.match(spliced, i)
+                if (i == 0 or not (spliced[i - 1].isalnum() or spliced[i - 1] == "_"))
+                else None
+            )
+            raw_body = (
+                RAW_BODY_RE.match(text, pos_map[raw_prefix.end(0) - 1])
+                if raw_prefix is not None
+                else None
+            )
+            if raw_body is not None:
+                raw_end_text = raw_body.end(0)
+                j = raw_prefix.end(0)
+                while j < n and pos_map[j] < raw_end_text:
+                    j += 1
+                blank(no_strings, i, j)
+                blank(code_only, i, j)
+                i = j
             elif spliced[i] == '"' or (
                 spliced[i] == "'"
                 and (
@@ -1089,6 +1097,12 @@ def self_test():
     check("backslash-newline splice inside #pragma warning(disable) identifier is caught on its starting line",
           suppression_findings("native/a.cpp", "int x = 0;\n#prag\\\nma warning(disable: 4996)"),
           ["native/a.cpp:2:suppression-unreasoned:warning(disable) is not allowed in a source"])
+    check("commented R\"( does not mask spliced LoadLibraryW between comments",
+          loadlibrary_findings("native/probe.cpp", '// R"(\nLoadLib\\\nraryW(name);\n// )"', [], set()),
+          ["native/probe.cpp:2:loadlibrary-unresolved:LoadLibraryW loads a computed name, neither a system DLL in native/system-dlls.txt nor a registered Runtime module"])
+    check("commented R\"( does not mask spliced #pragma warning(disable) between comments",
+          suppression_findings("native/probe.cpp", '// R"(\n#prag\\\nma warning(disable: 4996)\n// )"'),
+          ["native/probe.cpp:2:suppression-unreasoned:warning(disable) is not allowed in a source"])
     for lit_case in ('constexpr auto help = "LoadLibraryW(name)";',
                      'constexpr auto help = L"LoadLibraryExW(L\\"kernel32.dll\\", nullptr, 0)";',
                      'constexpr auto help = R"(LoadLibraryW(name) // NOLINT\n#pragma warning(disable: 4996))";',
