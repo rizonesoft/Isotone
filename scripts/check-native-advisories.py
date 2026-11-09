@@ -319,17 +319,38 @@ def aff_matches_repo(aff: dict, allowed: set[str] | None) -> bool:
     return True
 
 
-EVENT_KIND_ORDER = {"introduced": 0, "last_affected": 1, "fixed": 2, "limit": 3}
+EVENT_KIND_ORDER = {"introduced": 0, "last_affected": 1, "fixed": 2}
+
+
+def before_limits(clean_ver: str, events_list: list[dict]) -> bool:
+    """Implement OSV's `BeforeLimits` predicate: True when `events_list` has no `limit` or `clean_ver` is below any limit."""
+    limits: list[str] = []
+    for item in events_list:
+        if isinstance(item, dict) and len(item) == 1 and "limit" in item:
+            lim = str(item["limit"]).strip()
+            if lim != "*" and parse_semver_key(lim) is None:
+                raise ValueError(f"unsupported OSV limit version {lim!r} in {item!r}")
+            limits.append(lim)
+    if not limits:
+        return True
+    return any(lim == "*" or version_lt(clean_ver, lim) for lim in limits)
 
 
 def iter_version_subranges(events_list: list[dict]) -> list[tuple[str | None, str | None, str | None]]:
-    """Sort an OSV version event list and convert it into `(introduced, fixed_or_limit, last_affected)` subranges."""
+    """Sort an OSV version event list (excluding `limit`) and convert it into `(introduced, fixed, last_affected)` subranges."""
     parsed_events: list[tuple[tuple, int, str, str]] = []
     for item in events_list:
         if not isinstance(item, dict) or len(item) != 1:
             raise ValueError(f"malformed OSV version event {item!r}")
         k, val = next(iter(item.items()))
-        if k not in EVENT_KIND_ORDER or not isinstance(val, str):
+        if not isinstance(val, str):
+            raise ValueError(f"unsupported OSV version event {item!r}")
+        if k == "limit":
+            lim = val.strip()
+            if lim != "*" and parse_semver_key(lim) is None:
+                raise ValueError(f"unsupported OSV limit version {val!r} in {item!r}")
+            continue
+        if k not in EVENT_KIND_ORDER:
             raise ValueError(f"unsupported OSV version event {item!r}")
         vkey = parse_semver_key(val)
         if vkey is None:
@@ -342,7 +363,7 @@ def iter_version_subranges(events_list: list[dict]) -> list[tuple[str | None, st
         if k == "introduced":
             if cur_intro is None:
                 cur_intro = val
-        elif k in ("fixed", "limit"):
+        elif k == "fixed":
             if cur_intro is not None:
                 subranges.append((cur_intro, val, None))
                 cur_intro = None
@@ -369,6 +390,13 @@ def _version_matches_subranges(
         elif intro_ok:
             return True
     return False
+
+
+def version_matches_events(clean_ver: str, events_list: list[dict]) -> bool:
+    """Evaluate an OSV version event list against `clean_ver` using OSV's `BeforeLimits` + sorted timeline rules."""
+    if not before_limits(clean_ver, events_list):
+        return False
+    return _version_matches_subranges(clean_ver, iter_version_subranges(events_list))
 
 
 def validate_osv_affected(vuln: dict) -> list[dict]:
@@ -419,8 +447,11 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
                 k, val = next(iter(ev.items()))
                 if k == "introduced":
                     has_introduced = True
-                if rng_type in ("SEMVER", "ECOSYSTEM") and parse_semver_key(val) is None:
-                    raise ValueError(f"OSV advisory {vid} {rng_type} range event {k!r} has unsupported version {val!r}")
+                if rng_type in ("SEMVER", "ECOSYSTEM"):
+                    if not (k == "limit" and val.strip() == "*") and parse_semver_key(val) is None:
+                        raise ValueError(
+                            f"OSV advisory {vid} {rng_type} range event {k!r} has unsupported version {val!r}"
+                        )
             if not has_introduced:
                 raise ValueError(f"OSV advisory {vid} range events lack an 'introduced' entry")
             db = rng.get("database_specific")
@@ -457,10 +488,11 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
                                 ):
                                     raise ValueError(f"OSV advisory {vid} extracted_event range item is malformed")
                                 k, val = next(iter(item.items()))
-                                if ext.get("source") in ("CPE_RANGE", "CPE_STRING") and parse_semver_key(val) is None:
-                                    raise ValueError(
-                                        f"OSV advisory {vid} {ext.get('source')} event {k!r} has unsupported version {val!r}"
-                                    )
+                                if ext.get("source") in ("CPE_RANGE", "CPE_STRING"):
+                                    if not (k == "limit" and val.strip() == "*") and parse_semver_key(val) is None:
+                                        raise ValueError(
+                                            f"OSV advisory {vid} {ext.get('source')} event {k!r} has unsupported version {val!r}"
+                                        )
     return affected_list
 
 
@@ -570,14 +602,20 @@ def advisory_affects_git(
             rng_type = rng.get("type")
             if rng_type in ("SEMVER", "ECOSYSTEM"):
                 all_standalone_single = False
-                subranges = iter_version_subranges(rng.get("events") or [])
-                if _version_matches_subranges(clean_ver, subranges):
+                if version_matches_events(clean_ver, rng.get("events") or []):
                     return True
                 continue
 
-            # GIT range: evaluate commit membership, REFERENCES_TAG, and CPE_RANGE/CPE_STRING subranges.
-            rng_fixed = {ev["fixed"] for ev in (rng.get("events") or []) if isinstance(ev.get("fixed"), str)}
-            rng_intro = {ev["introduced"] for ev in (rng.get("events") or []) if isinstance(ev.get("introduced"), str)}
+            # GIT range: evaluate commit membership, unclosed introductions, and conversion metadata.
+            rng_events = rng.get("events") or []
+            rng_fixed = {ev["fixed"] for ev in rng_events if isinstance(ev.get("fixed"), str)}
+            rng_intro = {ev["introduced"] for ev in rng_events if isinstance(ev.get("introduced"), str)}
+            git_open = False
+            for ev in rng_events:
+                if "introduced" in ev:
+                    git_open = True
+                elif "fixed" in ev or "last_affected" in ev:
+                    git_open = False
             db = rng.get("database_specific") or {}
             ext_events = db.get("extracted_events") or []
             rng_standalone = any(ext.get("strategy") == "StandaloneSingleVersion" for ext in ext_events)
@@ -588,31 +626,27 @@ def advisory_affects_git(
                 for ext in ext_events
                 if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str)
             ]
-            rng_cpe_subranges: list[tuple[str | None, str | None, str | None]] = []
-            for ext in ext_events:
-                if ext.get("source") in ("CPE_RANGE", "CPE_STRING"):
-                    rng_cpe_subranges.extend(iter_version_subranges(ext.get("range") or []))
+            rng_cpe_ranges = [
+                ext.get("range") or []
+                for ext in ext_events
+                if ext.get("source") in ("CPE_RANGE", "CPE_STRING")
+            ]
 
             if commit and commit in rng_fixed and not (commit in rng_intro and rng_standalone):
                 continue
 
-            if rng_ref_tags:
-                if any(version_lt(clean_ver, ft) for ft in rng_ref_tags):
-                    return True
-                if all(version_ge(clean_ver, ft) for ft in rng_ref_tags):
-                    if rng_cpe_subranges and _version_matches_subranges(clean_ver, rng_cpe_subranges):
-                        return True
-                    continue
-
-            if rng_cpe_subranges:
-                if _version_matches_subranges(clean_ver, rng_cpe_subranges):
-                    return True
-                if rng_standalone or not commit:
-                    continue
-
+            # Authoritative commit-query match or unclosed GIT introduction on a real (non-StandaloneSingleVersion)
+            # GIT range is never suppressed by database_specific conversion metadata.
             if not rng_standalone and (
-                (commit and from_commit_query) or (rng_intro and not rng_fixed and not rng_cpe_subranges)
+                (commit and from_commit_query)
+                or (git_open and (not rng_cpe_ranges or any(version_matches_events(clean_ver, r) for r in rng_cpe_ranges)))
             ):
+                return True
+
+            if rng_ref_tags and any(version_lt(clean_ver, ft) for ft in rng_ref_tags):
+                return True
+
+            if rng_cpe_ranges and any(version_matches_events(clean_ver, r) for r in rng_cpe_ranges):
                 return True
 
         if ranges and not matched_any_rng_repo:
@@ -1850,6 +1884,69 @@ def self_test() -> int:
         "baseline version inside reintroduced vulnerable range is not reported as baseline-update fix",
         (len(res_reintro["advisories"]), res_reintro["advisories"][0].get("baseline_fix"), res_reintro["baseline_updates"]),
         (1, None, []),
+    )
+
+    # 24. Multiple OSV limit events use BeforeLimits semantics: version below any limit remains in range (F17)
+    multi_limit_osv = {
+        "vulns": [{
+            "id": "CVE-2099-8886",
+            "summary": "Multiple limit events 1.10.0 and 2.0.0",
+            "affected": [{
+                "ranges": [{
+                    "type": "SEMVER",
+                    "events": [{"introduced": "0"}, {"limit": "1.10.0"}, {"limit": "2.0.0"}],
+                }]
+            }],
+        }]
+    }
+    res_multi_limit = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda _payload: multi_limit_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "multiple limit events match version 1.18.0 below upper limit 2.0.0",
+        [(a["port"], a["id"]) for a in res_multi_limit["advisories"]],
+        [("gtest", "CVE-2099-8886")],
+    )
+
+    # 25. REFERENCES_TAG metadata for an earlier fix does not suppress a positive commit query or reintroduced GIT range (F18)
+    reintro_git_osv = {
+        "vulns": [{
+            "id": "CVE-2099-8887",
+            "summary": "Reintroduced GIT advisory with earlier REFERENCES_TAG v1.0.0",
+            "affected": [{
+                "ranges": [{
+                    "type": "GIT",
+                    "repo": "https://github.com/google/googletest",
+                    "events": [
+                        {"introduced": "0"},
+                        {"fixed": "b" * 40},
+                        {"introduced": "c" * 40},
+                    ],
+                    "database_specific": {"extracted_events": [{"source": "REFERENCES_TAG", "original_tag": "v1.0.0"}]},
+                }]
+            }],
+        }]
+    }
+    res_reintro_git = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: reintro_git_osv if "commit" in payload else {"vulns": []},
+        committed_baseline_doc=committed_baseline,
+        current_baseline_doc=gtest_122_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "earlier REFERENCES_TAG v1.0.0 does not suppress positive commit query or mark reintroduced GIT range fixed",
+        ([(a["port"], a["id"], a.get("fixed_version")) for a in res_reintro_git["advisories"]], res_reintro_git["baseline_updates"]),
+        ([("gtest", "CVE-2099-8887", None)], []),
     )
 
     print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
