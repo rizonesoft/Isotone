@@ -99,16 +99,17 @@ D2D_DRAW_STROKE_RE = re.compile(
     r"\b(?P<fn>DrawLine|DrawRectangle|DrawRoundedRectangle|DrawEllipse|DrawGeometry)\s*\("
 )
 GEOM_PROP_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:corner_?radi(?:us|i)|radi(?:us|i)(?:_[xy]|[XY])?|stroke_?widths?|border_?widths?"
-    r"|paddings?(?:_(?:left|right|top|bottom|h|v|x|y))?"
-    r"|margins?(?:_(?:left|right|top|bottom|h|v|x|y))?"
-    r"|spacings?|item_?spacings?|(?:row|col|column)_?gaps?|gaps?))"
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:corner_?radi(?:us|i)|radi(?:us|i)|stroke_?widths?|border_?widths?"
+    r"|paddings?|margins?|insets?|thickness(?:es)?"
+    r"|spacings?|item_?spacings?|(?:row|col|column)_?gaps?|gaps?)"
+    r"(?:_?(?:left|right|top|bottom|horizontal|vertical|h|v|x|y))?)"
     r"(?:\s*\[[^\]]*\])*\s*(?:(?P<brace>\{)|(?<![=!<>])=(?!=))",
     re.IGNORECASE,
 )
 GEOM_PROP_CALL_RE = re.compile(
-    r"\b(?P<name>set_?(?:corner_?radius|radius|stroke_?width|border_?width|padding|margin|spacing|gap)"
-    r"|corner_?radius|stroke_?width|border_?width|padding|margin|insets|thickness|spacing)\s*([({])",
+    r"\b(?P<name>(?:set_?)?(?:corner_?radi(?:us|i)|radi(?:us|i)|stroke_?widths?|border_?widths?"
+    r"|paddings?|margins?|insets?|thickness(?:es)?|spacings?|item_?spacings?|(?:row|col|column)_?gaps?|gaps?)"
+    r"(?:_?(?:left|right|top|bottom|horizontal|vertical|h|v|x|y))?)\s*([({])",
     re.IGNORECASE,
 )
 FONT_SIZE_ASSIGN_RE = re.compile(
@@ -819,6 +820,9 @@ def self_test() -> int:
             "  const auto ok_rgb = RGB(theme.red, theme.green, theme.blue);\n"                # 35 token RGB: clean
             "  float max_padding = std::max(theme.padding, 8.0f);\n"                          # 36 literal-geometry
             "  float max_font_size = std::max(theme.font_size, 12.0f);\n"                     # 37 literal-size
+            "  float paddingLeft = 8.0f;\n"                                                   # 38 literal-geometry
+            "  float marginTop = 12.0f;\n"                                                    # 39 literal-geometry
+            "  SetPaddingLeft(8.0f);\n"                                                       # 40 literal-geometry
             "}\n"
         )
         (ui_dir / "panel.cpp").write_text(panel_cpp, encoding="utf-8")
@@ -854,6 +858,9 @@ def self_test() -> int:
             (33, "literal-geometry"),
             (36, "literal-geometry"),
             (37, "literal-size"),
+            (38, "literal-geometry"),
+            (39, "literal-geometry"),
+            (40, "literal-geometry"),
         ])
         check("panel.cpp flags every literal kind and passes every token form", panel_got, panel_want)
         check("non-UI core, tests, and generated token files produce no findings",
