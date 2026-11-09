@@ -11,7 +11,6 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 | [TODO-01](./TODO-01-dev-automation.md) | Dev-Automation Wiring | draft |
 | [TODO-02](./TODO-02-build-and-test-debt.md) | Build and Test Debt from the Import | draft |
 | [TODO-03](./TODO-03-repo-layout.md) | Repository Layout, Visual Baselines, and App Icon Export | draft |
-| [TODO-04](./TODO-04-native-code-policy.md) | The C++ Standard, the Dependency Register, the Benchmark Harness, and the Advisory Job | draft |
 | [TODO-06](./TODO-06-retire-csharp.md) | Retire the C# Code and the .NET Toolchain | draft |
 | [TODO-07](./TODO-07-native-replan.md) | The Native Re-plan, Phase by Phase | draft |
 
@@ -19,6 +18,7 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 
 | TODO | Title | Completed |
 | ---- | ----- | :-------: |
+| [TODO-04](./TODO-04-native-code-policy.md) | The C++ Standard, the Dependency Register, the Benchmark Harness, and the Advisory Job | 2026-11-09 |
 | [TODO-05](./TODO-05-native-spine.md) | The Native Spine: Toolchain, Build, Gates, and CI | 2026-11-09 |
 
 ## In scope

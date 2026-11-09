@@ -2,7 +2,7 @@
 schema_version: 1
 id: native-code-policy
 domain: 00-workspace
-status: draft
+status: done
 title: "TODO-04 -- The C++ Standard, the Dependency Register, the Benchmark Harness, and the Advisory Job"
 depends_on: []
 track: W4
