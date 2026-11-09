@@ -1059,6 +1059,14 @@ SEVERITY_MAP: dict[str, str] = {
     # a Design deviation still open (its follow-up not [x]) in a file whose
     # app has a release section stamped on or after the day it opened.
     "design-deviation-open-at-release": "fatal",
+    # the proof table in todo/README.md missing, lacking its Runner column,
+    # omitting or duplicating one of the eight C++ proof kinds, leaving a
+    # Runner cell blank, or marking a runner unusable outside the grammar
+    # `unusable for a stamp until DNN TNN §N lands` with a live open ref.
+    "proof-table-malformed": "fatal",
+    # a Test checkpoint citing a proof kind or sub-runner marked unusable
+    # for a stamp in todo/README.md (D00 T05 §10).
+    "checkpoint-proof-unusable": "fatal",
 }
 
 
@@ -6334,6 +6342,393 @@ def design_findings(todos: list[Todo]) -> list[tuple[str, str]]:
                                     f"{dev['where']}: the Design deviation opened {dev['day']} is still open "
                                     f"(follow-up {dev['follow']} is not [x]) while the {app} release {rel_ref} "
                                     f"is stamped {stamped_on}; close it before the release stamps"))
+    return out
+
+
+# ------------------------------------------------ the proof table (D00 T05 §10)
+
+PROOF_HEADING = "## Proof: what a Test checkpoint may cite"
+PROOF_HEADER_CELLS = ("Proof", "What it is", "Runner", "What it cannot prove")
+PROOF_REQUIRED_KINDS: tuple[str, ...] = (
+    "builds clean",
+    "static analysis clean",
+    "unit test",
+    "driven run with evidence",
+    "format fidelity proof",
+    "input safety",
+    "fuzzing",
+    "golden render",
+)
+PROOF_PLACEHOLDER_RE = re.compile(r"^(?:--|—|–|-|n/?a|none|tbd|\?)$", re.IGNORECASE)
+PROOF_RUNNER_TOKEN_RE = re.compile(
+    r"(?:check-all\.ps1|\.github/workflows/[A-Za-z0-9._-]+\.yml|\bctest\b|"
+    r"dev-env\.ps1|run-arm64-tests\.py|run-fuzz\.ps1|run-fuzz-regressions\.py|"
+    r"native-artifact-gate\.py|native-format\.ps1|native-tidy\.ps1|"
+    r"native-std-check\.py|native-pe-check\.py|native-deps-lint\.py|"
+    r"design-lint\.py|visual-tests\.ps1|\bdotnet\b)"
+)
+PROOF_UNUSABLE_FULL_RE = re.compile(
+    r"^unusable for a stamp until `?(?P<ref>D\d{2} T\d{2} §\d+)`? lands(?:\s*\([^()]+\))?\.?$",
+    re.IGNORECASE,
+)
+PROOF_UNUSABLE_SUB_RE = re.compile(
+    r"^(?P<subject>.+?)\s+unusable for a stamp until `?(?P<ref>D\d{2} T\d{2} §\d+)`? lands(?:\s*\([^()]+\))?\.?$",
+    re.IGNORECASE,
+)
+PROOF_CITATION_PATTERNS: dict[str, re.Pattern[str]] = {
+    "builds clean": re.compile(r"\bbuilds?\s+clean\b", re.IGNORECASE),
+    "static analysis clean": re.compile(r"\bstatic\s+analysis(?:\s+clean)?\b", re.IGNORECASE),
+    "unit test": re.compile(r"\bunit\s+tests?\b", re.IGNORECASE),
+    "driven run with evidence": re.compile(r"\bdriven\s+run(?:\s+with\s+evidence)?\b", re.IGNORECASE),
+    "format fidelity proof": re.compile(r"\bformat[- ]fidelity(?:\s+proof)?\b", re.IGNORECASE),
+    "input safety": re.compile(r"\binput[- ]safety(?:\s+proof)?\b", re.IGNORECASE),
+    "fuzzing": re.compile(r"\bfuzz(?:ing|\s+target|\s+proof)?\b|\bisotone_add_fuzz_target\b", re.IGNORECASE),
+    "golden render": re.compile(
+        r"\bgolden\s+renders?\b|\bgolden\s+diffs?\b|\bapproved\s+goldens?\b|"
+        r"docs/captures/golden/|\bvisual-tests\.ps1\b|\bIsotone\.UI\.VisualTests\b",
+        re.IGNORECASE,
+    ),
+}
+
+
+def _split_md_table_row(line: str) -> list[str] | None:
+    s = line.strip()
+    if not (s.startswith("|") and s.endswith("|") and len(s) >= 2):
+        return None
+    inner = s[1:-1]
+    cells: list[str] = []
+    cur: list[str] = []
+    in_code = False
+    i = 0
+    while i < len(inner):
+        ch = inner[i]
+        if ch == "\\" and i + 1 < len(inner):
+            cur.append(inner[i : i + 2])
+            i += 2
+            continue
+        if ch == "`":
+            in_code = not in_code
+            cur.append(ch)
+            i += 1
+            continue
+        if ch == "|" and not in_code:
+            cells.append("".join(cur).strip())
+            cur = []
+            i += 1
+            continue
+        cur.append(ch)
+        i += 1
+    cells.append("".join(cur).strip())
+    return cells
+
+
+def _split_top_level_semicolons(text: str) -> list[str]:
+    clauses: list[str] = []
+    cur: list[str] = []
+    in_code = False
+    paren_depth = 0
+    for ch in text:
+        if ch == "`":
+            in_code = not in_code
+            cur.append(ch)
+        elif not in_code and ch == "(":
+            paren_depth += 1
+            cur.append(ch)
+        elif not in_code and ch == ")" and paren_depth > 0:
+            paren_depth -= 1
+            cur.append(ch)
+        elif not in_code and paren_depth == 0 and ch == ";":
+            part = "".join(cur).strip()
+            if part:
+                clauses.append(part)
+            cur = []
+        else:
+            cur.append(ch)
+    tail = "".join(cur).strip()
+    if tail:
+        clauses.append(tail)
+    return clauses
+
+
+def _sub_runner_pattern(subject: str) -> re.Pattern[str]:
+    tokens: list[str] = []
+    for m in re.finditer(r"`([^`]+)`", subject):
+        tok = m.group(1).strip()
+        if tok:
+            tokens.append(re.escape(tok))
+    if re.search(r"\bUI\s+Automation\b", subject, re.IGNORECASE):
+        tokens.append(r"UI\s+Automation")
+    if not tokens:
+        cleaned = re.sub(r"`", "", subject).strip()
+        tokens.append(re.escape(cleaned))
+    return re.compile(r"\b(?:" + "|".join(tokens) + r")\b", re.IGNORECASE)
+
+
+def parse_proof_table(text: str) -> tuple[list[dict], list[tuple[str, str]]]:
+    """Parse the proof table under `## Proof: what a Test checkpoint may cite` in todo/README.md."""
+    problems: list[tuple[str, str]] = []
+    raw = text.replace("\r\n", "\n").split("\n")
+    kept, _ = _fenced_flags(raw)
+
+    headings = [
+        idx for idx, line in enumerate(raw)
+        if (idx >= len(kept) or kept[idx]) and line.strip() == PROOF_HEADING
+    ]
+    if not headings:
+        return [], [("proof-table-malformed", f"todo/README.md has no `{PROOF_HEADING}` heading")]
+    if len(headings) > 1:
+        return [], [("proof-table-malformed", f"todo/README.md has {len(headings)} `{PROOF_HEADING}` headings; keep one")]
+
+    start = headings[0] + 1
+    end = len(raw)
+    for idx in range(start, len(raw)):
+        if idx < len(kept) and not kept[idx]:
+            continue
+        if re.match(r"^#{1,2}\s+", raw[idx]):
+            end = idx
+            break
+
+    table_lines: list[tuple[int, str]] = []
+    in_table = False
+    for idx in range(start, end):
+        if idx < len(kept) and not kept[idx]:
+            continue
+        stripped = raw[idx].strip()
+        if stripped.startswith("|"):
+            table_lines.append((idx + 1, stripped))
+            in_table = True
+        elif in_table:
+            break
+
+    if len(table_lines) < 3:
+        return [], [("proof-table-malformed", f"todo/README.md `{PROOF_HEADING}` has no proof table")]
+
+    header_lineno, header_raw = table_lines[0]
+    header_cells = _split_md_table_row(header_raw)
+    if header_cells is None or tuple(header_cells) != PROOF_HEADER_CELLS:
+        return [], [(
+            "proof-table-malformed",
+            f"todo/README.md:{header_lineno}: proof table header must be "
+            f"`| {' | '.join(PROOF_HEADER_CELLS)} |`",
+        )]
+
+    sep_lineno, sep_raw = table_lines[1]
+    sep_cells = _split_md_table_row(sep_raw)
+    if sep_cells is None or len(sep_cells) != 4 or not all(re.match(r"^:?-{3,}:?$", c) for c in sep_cells):
+        return [], [(
+            "proof-table-malformed",
+            f"todo/README.md:{sep_lineno}: proof table has no four-column separator row under its header",
+        )]
+
+    rows: list[dict] = []
+    seen_kinds: list[str] = []
+    for lineno, row_raw in table_lines[2:]:
+        cells = _split_md_table_row(row_raw)
+        if cells is None or len(cells) != 4:
+            problems.append((
+                "proof-table-malformed",
+                f"todo/README.md:{lineno}: proof row has {0 if cells is None else len(cells)} cells; expected 4",
+            ))
+            continue
+        proof_cell, what_cell, runner_cell, cannot_cell = cells
+        kind = re.sub(r"\s+", " ", proof_cell.replace("*", "").strip()).lower()
+        seen_kinds.append(kind)
+        if not what_cell or PROOF_PLACEHOLDER_RE.match(what_cell):
+            problems.append(("proof-table-malformed", f"todo/README.md:{lineno}: proof `{proof_cell}` has an empty `What it is` cell"))
+        if not cannot_cell or PROOF_PLACEHOLDER_RE.match(cannot_cell):
+            problems.append(("proof-table-malformed", f"todo/README.md:{lineno}: proof `{proof_cell}` has an empty `What it cannot prove` cell"))
+        if not runner_cell or PROOF_PLACEHOLDER_RE.match(runner_cell):
+            problems.append(("proof-table-malformed", f"todo/README.md:{lineno}: proof `{proof_cell}` has a blank or placeholder `Runner` cell"))
+            continue
+
+        row_unusable_ref: str | None = None
+        sub_unusable: list[tuple[str, str, re.Pattern[str]]] = []
+        clauses = _split_top_level_semicolons(runner_cell)
+        has_executable = False
+        for idx_c, clause in enumerate(clauses):
+            full_m = PROOF_UNUSABLE_FULL_RE.match(clause)
+            if full_m:
+                if idx_c == 0 and len(clauses) == 1:
+                    row_unusable_ref = full_m.group("ref")
+                else:
+                    problems.append((
+                        "proof-table-malformed",
+                        f"todo/README.md:{lineno}: proof `{proof_cell}` combines a whole-row `unusable` marker "
+                        "with another Runner clause; either the whole row is unusable or a named sub-runner is",
+                    ))
+                continue
+            if "unusable" in clause.lower():
+                sub_m = PROOF_UNUSABLE_SUB_RE.match(clause)
+                if not sub_m:
+                    problems.append((
+                        "proof-table-malformed",
+                        f"todo/README.md:{lineno}: proof `{proof_cell}` uses `unusable` outside "
+                        "`<runner> unusable for a stamp until DNN TNN §N lands`",
+                    ))
+                else:
+                    subj = sub_m.group("subject").strip()
+                    ref = sub_m.group("ref")
+                    sub_unusable.append((subj, ref, _sub_runner_pattern(subj)))
+            elif PROOF_RUNNER_TOKEN_RE.search(clause):
+                has_executable = True
+        if row_unusable_ref is None and not has_executable:
+            problems.append((
+                "proof-table-malformed",
+                f"todo/README.md:{lineno}: proof `{proof_cell}` Runner cell names no executable gate or CI workflow "
+                "and is not marked `unusable for a stamp until DNN TNN §N lands`",
+            ))
+
+        rows.append({
+            "lineno": lineno,
+            "label": proof_cell.replace("*", "").strip(),
+            "kind": kind,
+            "runner": runner_cell,
+            "unusable_ref": row_unusable_ref,
+            "sub_unusable": sub_unusable,
+        })
+
+    if tuple(seen_kinds) != PROOF_REQUIRED_KINDS:
+        problems.append((
+            "proof-table-malformed",
+            f"todo/README.md:{header_lineno}: proof table rows are {seen_kinds}, "
+            f"expected {list(PROOF_REQUIRED_KINDS)} in order",
+        ))
+
+    return rows, problems
+
+
+def proof_findings(todos: list[Todo]) -> list[tuple[str, str]]:
+    """Validate todo/README.md's proof table and refuse checkpoints citing proofs marked unusable."""
+    readme_path = TODO_DIR / "README.md"
+    if not readme_path.exists():
+        if _live_tree():
+            return [("proof-table-malformed", "todo/README.md is missing")]
+        return []
+    if not readme_path.is_file():
+        return [("proof-table-malformed", "todo/README.md exists but is not a file")]
+    try:
+        readme_text = readme_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return [("proof-table-malformed", f"todo/README.md is unreadable: {exc}")]
+
+    rows, out = parse_proof_table(readme_text)
+    sections = {
+        f"D{t.domain.split('-')[0]} T{t.number} §{num}": (t, num, s)
+        for t in todos
+        for num, s in t.sections.items()
+    }
+
+    active_unusable: list[tuple[str, str, re.Pattern[str]]] = []
+    for row in rows:
+        lineno = row["lineno"]
+        label = row["label"]
+        kind = row["kind"]
+        ref = row["unusable_ref"]
+        if ref is not None:
+            target = sections.get(ref)
+            if target is None or not target[2].has_body or target[2].moved or target[0].status in ("blocked", "superseded"):
+                out.append((
+                    "proof-table-malformed",
+                    f"todo/README.md:{lineno}: proof `{label}` marks its runner unusable until {ref}, "
+                    "which names no live active section",
+                ))
+            elif target[2].status == "x":
+                out.append((
+                    "proof-table-malformed",
+                    f"todo/README.md:{lineno}: proof `{label}` still marks its runner unusable until {ref}, "
+                    "which is already stamped [x]; replace the marker with the landed gate",
+                ))
+            pat = PROOF_CITATION_PATTERNS.get(kind)
+            if pat is not None:
+                active_unusable.append((f"proof '{label}'", ref, pat))
+        for subj, sub_ref, sub_pat in row["sub_unusable"]:
+            target = sections.get(sub_ref)
+            if target is None or not target[2].has_body or target[2].moved or target[0].status in ("blocked", "superseded"):
+                out.append((
+                    "proof-table-malformed",
+                    f"todo/README.md:{lineno}: proof `{label}` marks `{subj}` unusable until {sub_ref}, "
+                    "which names no live active section",
+                ))
+            elif target[2].status == "x":
+                out.append((
+                    "proof-table-malformed",
+                    f"todo/README.md:{lineno}: proof `{label}` still marks `{subj}` unusable until {sub_ref}, "
+                    "which is already stamped [x]; replace the marker with the landed gate",
+                ))
+            clean_subj = subj.replace("`", "")
+            active_unusable.append((f"proof '{label}' ({clean_subj})", sub_ref, sub_pat))
+
+    if not active_unusable:
+        return out
+
+    for t in todos:
+        is_deferred_file = t.status in ("blocked", "superseded")
+        sec_checkpoints: dict[int, list[str]] = {}
+        file_path = REPO / t.path if (REPO / t.path).is_file() else Path(t.path)
+        if file_path.is_file():
+            raw_lines = file_path.read_text(encoding="utf-8").replace("\r\n", "\n").split("\n")
+            kept_flags, _ = _fenced_flags(raw_lines)
+            cur_sec: int | None = None
+            in_cp = False
+            cur_cp: list[str] = []
+            for idx_l, raw_line in enumerate(raw_lines):
+                if idx_l < len(kept_flags) and not kept_flags[idx_l]:
+                    continue
+                hm = BODY_RE.match(raw_line)
+                if hm:
+                    if cur_sec is not None and cur_cp:
+                        sec_checkpoints.setdefault(cur_sec, []).append(" ".join(cur_cp))
+                    cur_sec = int(hm.group("num"))
+                    in_cp = False
+                    cur_cp = []
+                    continue
+                if raw_line.startswith("## "):
+                    if cur_sec is not None and cur_cp:
+                        sec_checkpoints.setdefault(cur_sec, []).append(" ".join(cur_cp))
+                    cur_sec = None
+                    in_cp = False
+                    cur_cp = []
+                    continue
+                if cur_sec is None:
+                    continue
+                st_line = raw_line.strip()
+                if "**Test checkpoint:**" in raw_line:
+                    if cur_cp:
+                        sec_checkpoints.setdefault(cur_sec, []).append(" ".join(cur_cp))
+                    in_cp = True
+                    cur_cp = [st_line]
+                elif in_cp:
+                    if not st_line or st_line.startswith(">") or st_line.startswith("- [") or st_line.startswith("**"):
+                        sec_checkpoints.setdefault(cur_sec, []).append(" ".join(cur_cp))
+                        in_cp = False
+                        cur_cp = []
+                    else:
+                        cur_cp.append(st_line)
+            if cur_sec is not None and cur_cp:
+                sec_checkpoints.setdefault(cur_sec, []).append(" ".join(cur_cp))
+
+        for num, s in sorted(t.sections.items()):
+            if not s.has_body or s.moved or not s.has_test_checkpoint:
+                continue
+            if is_deferred_file and s.status != "x":
+                continue
+            cp_blocks = sec_checkpoints.get(num) or [s.test_checkpoint_text]
+            reported: set[tuple[str, str]] = set()
+            for cp_text in cp_blocks:
+                cp_main = re.split(
+                    r"\bCheaper\s+substitute\b",
+                    cp_text,
+                    maxsplit=1,
+                    flags=re.IGNORECASE,
+                )[0]
+                for desc, ref, pat in active_unusable:
+                    if (desc, ref) not in reported and pat.search(cp_main):
+                        reported.add((desc, ref))
+                        out.append((
+                            "checkpoint-proof-unusable",
+                            f"{t.path}:{s.line}: §{num} Test checkpoint cites {desc}, "
+                            f"which todo/README.md marks unusable for a stamp until {ref} lands",
+                        ))
     return out
 
 
@@ -12067,6 +12462,165 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             globals()["_design_baseline_committed_text"] = _real_dcommitted
             TODO_DIR, PLAN = saved_d
             __import__("shutil").rmtree(droot, ignore_errors=True)
+
+        # --- the proof table and unusable-proof gate (D00 T05 §10) ------------
+        pf_root = root / "proof-fixture"
+        pf_todo = pf_root / "todo"
+        (pf_todo / "00-workspace").mkdir(parents=True)
+        _pf_prefix = "TO" + "DO"
+        (pf_todo / "00-workspace" / "INDEX.md").write_text(
+            f"# 00 Workspace\n\n| {_pf_prefix} | Title |\n| --- | --- |\n"
+            f"| [{_pf_prefix}-07](./{_pf_prefix}-07-replan.md) | Replan |\n",
+            encoding="utf-8",
+        )
+        _pf_readme = (REPO / "todo" / "README.md").read_text(encoding="utf-8")
+
+        def _pf_write_readme(content: str = _pf_readme) -> None:
+            (pf_todo / "README.md").write_text(content, encoding="utf-8")
+
+        def _pf_write_todo(
+            s1_cp: str = "Static evidence: `python scripts/todo-graph.py validate` exits 0.",
+            s3_status: str = " ",
+            file_status: str = "draft",
+        ) -> None:
+            s3_stamp = "\n> **Verified:** 2026-11-09 | §3 | fixture\n" if s3_status == "x" else ""
+            s3_box = "x" if s3_status == "x" else " "
+            body = (
+                f"---\nschema_version: 1\nid: proof-replan\ndomain: 00-workspace\nstatus: {file_status}\n"
+                f"title: \"{_pf_prefix}-07 -- Replan fixture\"\n---\n\n# {_pf_prefix}-07 -- Replan fixture\n\n"
+                "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
+                "| :---: | :-----: | ----------- | ---------- | :----: |\n"
+                "| 1 | §1 | Consumer | -- | [ ] |\n"
+                "| 2 | §2 | Mid | §1 | [ ] |\n"
+                f"| 3 | §3 | Foundations | §2 | [{s3_status}] |\n\n---\n\n"
+                f"## 1. Consumer\n\nContext.\n\n- [ ] Step 1\n- [ ] Commit: `\"selftest: consumer\"`\n\n"
+                f"**Test checkpoint:** {s1_cp}\n\n"
+                f"## 2. Mid\n\nContext.\n\n- [ ] Step 2\n- [ ] Commit: `\"selftest: mid\"`\n\n"
+                "**Test checkpoint:** `true`\n\n"
+                f"## 3. Foundations\n\nContext.\n\n- [{s3_box}] Step 3\n- [{s3_box}] Commit: `\"selftest: foundations\"`\n\n"
+                f"**Test checkpoint:** `true`\n{s3_stamp}"
+            )
+            (pf_todo / "00-workspace" / f"{_pf_prefix}-07-replan.md").write_text(body, encoding="utf-8")
+
+        def _pf_classes() -> list[str]:
+            return sorted({cls for cls, _ in proof_findings(load_todos())})
+
+        def _pf_msgs() -> list[str]:
+            return [msg for _, msg in proof_findings(load_todos())]
+
+        saved_pf = (TODO_DIR, PLAN)
+        try:
+            TODO_DIR = pf_todo
+            PLAN = pf_todo / "implementation-plan.md"
+            check("proof: both proof classes are FATAL",
+                  [SEVERITY_MAP.get("proof-table-malformed"), SEVERITY_MAP.get("checkpoint-proof-unusable")],
+                  ["fatal", "fatal"])
+            _pf_write_readme()
+            _pf_write_todo()
+            check("proof: the repository todo/README.md proof table and a clean checkpoint validate clean",
+                  _pf_classes(), [])
+            # Refusing a checkpoint that cites a whole proof row marked unusable (Golden render).
+            _pf_write_todo(
+                s1_cp="Golden render: `pwsh scripts/visual-tests.ps1 -Filter Button` matches `docs/captures/golden/isotone-ui/Button/`."
+            )
+            check("proof: a checkpoint citing Golden render while marked unusable is checkpoint-proof-unusable",
+                  (_pf_classes(), any("cites proof 'Golden render'" in m and "D00 T07 §3" in m for m in _pf_msgs())),
+                  (["checkpoint-proof-unusable"], True))
+            # Refusing a checkpoint that cites a sub-runner marked unusable (UI Automation / SendInput).
+            _pf_write_todo(
+                s1_cp="Driven run with evidence: drive the dialog through UI Automation and `SendInput`."
+            )
+            check("proof: a checkpoint citing UI Automation or SendInput while marked unusable is refused",
+                  (_pf_classes(), any("Driven run with evidence" in m and "D00 T07 §3" in m for m in _pf_msgs())),
+                  (["checkpoint-proof-unusable"], True))
+            # Naming an unusable proof only inside 'Cheaper substitute that fails:' is allowed.
+            _pf_write_todo(
+                s1_cp="Unit test: `BuildInfo.BuildIdShape` passes through CTest. "
+                      "Cheaper substitute that fails: Golden render or UI Automation before `D00 T07 §3` lands."
+            )
+            check("proof: naming an unusable proof inside Cheaper substitute does not trip checkpoint-proof-unusable",
+                  _pf_classes(), [])
+            # Deferred (status: blocked) files do not trip on open sections, but do trip on stamped sections.
+            _pf_write_todo()
+            (pf_todo / "02-stilus").mkdir(parents=True, exist_ok=True)
+            (pf_todo / "02-stilus" / "INDEX.md").write_text(
+                f"# 02 Stilus\n\n| {_pf_prefix} | Title |\n| --- | --- |\n"
+                f"| [{_pf_prefix}-01](./{_pf_prefix}-01-parked.md) | Parked |\n",
+                encoding="utf-8",
+            )
+            _parked_path = pf_todo / "02-stilus" / f"{_pf_prefix}-01-parked.md"
+            _parked_path.write_text(
+                f"---\nschema_version: 1\nid: stilus-parked\ndomain: 02-stilus\nstatus: blocked\n"
+                f"title: \"{_pf_prefix}-01 -- Parked\"\n---\n\n# {_pf_prefix}-01 -- Parked\n\n"
+                "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
+                "| :---: | :-----: | ----------- | ---------- | :----: |\n"
+                "| 1 | §1 | Parked row | -- | [ ] |\n\n---\n\n"
+                "## 1. Parked row\n\nContext.\n\n- [ ] Step 1\n- [ ] Commit: `\"selftest: parked\"`\n\n"
+                "**Test checkpoint:** Golden render: `docs/captures/golden/isotone-ui/Button/`.\n",
+                encoding="utf-8",
+            )
+            check("proof: an open section in a parked (blocked) file is deferred until re-plan",
+                  _pf_classes(), [])
+            _parked_path.write_text(
+                f"---\nschema_version: 1\nid: stilus-parked\ndomain: 02-stilus\nstatus: blocked\n"
+                f"title: \"{_pf_prefix}-01 -- Parked\"\n---\n\n# {_pf_prefix}-01 -- Parked\n\n"
+                "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
+                "| :---: | :-----: | ----------- | ---------- | :----: |\n"
+                "| 1 | §1 | Parked row | -- | [x] |\n\n---\n\n"
+                "## 1. Parked row\n\nContext.\n\n- [x] Step 1\n- [x] Commit: `\"selftest: parked\"`\n\n"
+                "**Test checkpoint:** Golden render: `docs/captures/golden/isotone-ui/Button/`.\n\n"
+                "> **Verified:** 2026-11-09 | §1 | fixture\n",
+                encoding="utf-8",
+            )
+            check("proof: a stamped [x] section in a parked (blocked) file citing an unusable proof is refused",
+                  _pf_classes(), ["checkpoint-proof-unusable"])
+            _parked_path.unlink()
+            # Also check that an unusable Runner ref pointing into a blocked file is proof-table-malformed.
+            _pf_write_todo(file_status="blocked")
+            check("proof: an unusable Runner ref whose owning file is blocked is proof-table-malformed",
+                  (_pf_classes(), any("names no live active section" in m for m in _pf_msgs())),
+                  (["proof-table-malformed"], True))
+            # Malformed proof table cases.
+            _pf_write_todo()
+            _pf_write_readme(_pf_readme.replace("| Proof | What it is | Runner | What it cannot prove |",
+                                                "| Proof | What it is | What it cannot prove |"))
+            check("proof: a proof table without its Runner column is proof-table-malformed",
+                  _pf_classes(), ["proof-table-malformed"])
+            _pf_write_readme(re.sub(
+                r"(\| \*\*Golden render\*\* \| [^|]+ \| )[^|]+( \| [^|]+ \|)",
+                r"\1   \2",
+                _pf_readme,
+            ))
+            check("proof: a blank Runner cell is proof-table-malformed",
+                  (_pf_classes(), any("blank or placeholder `Runner` cell" in m for m in _pf_msgs())),
+                  (["proof-table-malformed"], True))
+            _pf_write_readme(re.sub(
+                r"(\| \*\*Golden render\*\* \| [^|]+ \| )[^|]+( \| [^|]+ \|)",
+                r"\1unusable until later\2",
+                _pf_readme,
+            ))
+            check("proof: an unusable Runner cell without `unusable for a stamp until DNN TNN §N lands` is malformed",
+                  _pf_classes(), ["proof-table-malformed"])
+            _pf_write_readme(_pf_readme.replace("until `D00 T07 §3` lands", "until `D00 T07 §99` lands"))
+            check("proof: an unusable Runner ref naming no live section is proof-table-malformed",
+                  (_pf_classes(), any("names no live active section" in m for m in _pf_msgs())),
+                  (["proof-table-malformed"], True))
+            _pf_write_readme(_pf_readme.replace("until `D00 T07 §3` lands.", "until `D00 T07 §3` lands maybe later."))
+            check("proof: trailing words after `until DNN TNN §N lands` outside parentheses is proof-table-malformed",
+                  _pf_classes(), ["proof-table-malformed"])
+            _pf_write_readme()
+            _pf_write_todo(
+                s1_cp="`true`\n\n**Test checkpoint:** Golden render: `docs/captures/golden/isotone-ui/Button/`."
+            )
+            check("proof: a second Test checkpoint line in one section cannot hide an unusable proof citation",
+                  _pf_classes(), ["checkpoint-proof-unusable"])
+            _pf_write_todo(s3_status="x")
+            check("proof: an unusable Runner ref whose owning section is already stamped [x] is proof-table-malformed",
+                  (_pf_classes(), any("already stamped [x]" in m for m in _pf_msgs())),
+                  (["proof-table-malformed"], True))
+        finally:
+            TODO_DIR, PLAN = saved_pf
+            __import__("shutil").rmtree(pf_root, ignore_errors=True)
 
     finally:
         TODO_DIR, PLAN, SKILLS_DIR = saved_todo_dir, saved_plan, saved_skills

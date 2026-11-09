@@ -2511,6 +2511,12 @@ def validate(graph, _args) -> int:
     for cls, msg in graph.design_findings(todos):
         flag(cls, msg)
 
+    # THE PROOF TABLE (D00 T05 §10): every proof kind in todo/README.md maps to
+    # its check-all stage or CI job with no blank Runner cell, and a checkpoint
+    # citing a proof or sub-runner marked unusable is refused.
+    for cls, msg in graph.proof_findings(todos):
+        flag(cls, msg)
+
     # Internal self-tests deliberately point TODO_DIR at a standalone fixture.
     # Normal checkout validation always inspects its actual platform sources.
     # Resolute day-1 port: the coming-soon inspector is not ported

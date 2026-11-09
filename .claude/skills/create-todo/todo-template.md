@@ -66,7 +66,9 @@ A surface with no spec yet writes `new surface: docs/design/components/<Name>/RE
 
 ## Verification
 
-- [ ] `pwsh scripts/check-all.ps1` -- exits 0: Debug and Release build with warnings as errors, tests pass, TODO gates green
-- [ ] `dotnet test Isotone.slnx` exits 0 with this file's test classes reporting
-- [ ] CHANGEME: file-level checks this file owes as a whole (fidelity round trips, captures refreshed, clean-machine publish)
+- [ ] `pwsh scripts/check-all.ps1` -- exits 0: every native, Python, and TODO gate PASS
+- [ ] `pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; try { cmake --workflow --preset x64-release } finally { Pop-Location }'` exits 0 with this file's GoogleTest `Suite.Case` cases reporting through CTest
+- [ ] `pwsh scripts/dev-env.ps1 -Arch x64 -Run 'python scripts/native-artifact-gate.py --policy shipping --require-built'` exits 0
+- [ ] `dotnet test Isotone.slnx` exits 0 with this file's test classes reporting (while C# remains)
+- [ ] CHANGEME: file-level checks this file owes as a whole (fidelity round trips, fuzz regression replay, captures or goldens refreshed, clean-machine publish)
 - [ ] `python scripts/todo-graph.py validate` clean
