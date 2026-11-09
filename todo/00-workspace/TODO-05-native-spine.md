@@ -36,6 +36,8 @@ track: W5
 - -> XREF: D00 T04 §1 -- the C++ standard and the dependency register read §2's manifest and §3's build; the register's gate joins §7's runner and §8's CI
 - -> XREF: D00 T04 §2 -- the benchmark harness builds through §3's presets and links Google Benchmark through §2's manifest
 - -> XREF: D00 T06 §1 -- removes the .NET stages and jobs once §7's native stages and §8's native CI are green, so no gate goes empty
+- -> XREF: D00 T07 §2 -- rewrites the standards and developer docs onto the C++ proofs §10 defines
+- -> XREF: D00 T07 §3 -- authors the native UI Automation, synthetic input, and golden-render foundation sections and re-points §10's unusable-proof markers to them
 
 ## Outcome
 

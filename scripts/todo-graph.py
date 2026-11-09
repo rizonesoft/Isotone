@@ -6362,7 +6362,7 @@ PROOF_REQUIRED_KINDS: tuple[str, ...] = (
 PROOF_PLACEHOLDER_RE = re.compile(r"^(?:--|—|–|-|n/?a|none|tbd|\?)$", re.IGNORECASE)
 PROOF_RUNNER_TOKEN_RE = re.compile(
     r"(?:check-all\.ps1|\.github/workflows/[A-Za-z0-9._-]+\.yml|\bctest\b|"
-    r"dev-env\.ps1|run-arm64-tests\.py|run-fuzz\.ps1|run-fuzz-regressions\.py|"
+    r"dev-env\.ps1|run-arm64-tests\.ps1|test_native_fuzz\.py|fuzz_replay_main\.cpp|"
     r"native-artifact-gate\.py|native-format\.ps1|native-tidy\.ps1|"
     r"native-std-check\.py|native-pe-check\.py|native-deps-lint\.py|"
     r"design-lint\.py|visual-tests\.ps1|\bdotnet\b)"
