@@ -80,43 +80,51 @@ BACKDROP_RE = re.compile(
 )
 HEX_IN_STRING_RE = re.compile(r"(?<![\w&#])#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6})(?![0-9A-Za-z])")
 HEX_LITERAL_RE = re.compile(r"\b0[xX]([0-9A-Fa-f][0-9A-Fa-f']*[0-9A-Fa-f])[uUlL]*\b")
-NAMED_COLOR_RE = re.compile(r"\b(?:D2D1::)?ColorF::(?!ColorF\b)[A-Za-z_]\w*")
+NAMED_COLOR_RE = re.compile(r"\b(?:D2D1::)?ColorF::(?:Enum::)?(?!ColorF\b|Enum\b)[A-Za-z_]\w*")
 RGB_MACRO_RE = re.compile(r"\b(?:PALETTE)?RGB(?:A)?\s*\(")
 COLORF_HEAD_RE = re.compile(
-    r"\b(?:(?:D2D1::)?ColorF(?:\s+[A-Za-z_]\w*)?\s*([({])"
-    r"|D2D1_COLOR_F(?:\s+[A-Za-z_]\w*(?:\s*=)?)?\s*(\{))"
+    r"\b(?:(?:D2D1::)?ColorF|D2D1_COLOR_F)"
+    r"(?:\s+[A-Za-z_]\w*(?:\s*=\s*(?=\{))?)?\s*([({])"
 )
+CREATE_BRUSH_RE = re.compile(r"\bCreateSolidColorBrush\s*\(")
 GEOM_TYPE_HEAD_RE = re.compile(
     r"\b(?:(?:D2D1::)?(?:RectF|RectU|RectL|SizeF|SizeU|Point2F|Point2U|Point2L|RoundedRect)"
     r"|D2D1_(?:RECT_F|RECT_U|RECT_L|SIZE_F|SIZE_U|POINT_2F|POINT_2U|POINT_2L|ROUNDED_RECT))"
-    r"(?:\s+[A-Za-z_]\w*(?:\s*=)?)?\s*([({])"
+    r"(?:\s+[A-Za-z_]\w*(?:\s*=\s*(?=\{))?)?\s*([({])"
+)
+D2D_DRAW_STROKE_RE = re.compile(
+    r"\b(?P<fn>DrawLine|DrawRectangle|DrawRoundedRectangle|DrawEllipse|DrawGeometry)\s*\("
 )
 GEOM_PROP_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_)?(?:corner_?radius|radius(?:_[xy]|[XY])?|stroke_?width|border_?width"
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:corner_?radius|radius(?:_[xy]|[XY])?|stroke_?width|border_?width"
     r"|padding(?:_(?:left|right|top|bottom|h|v|x|y))?"
     r"|margin(?:_(?:left|right|top|bottom|h|v|x|y))?"
-    r"|spacing|item_?spacing|(?:row|col|column)_?gap|gap)"
-    r"|[A-Za-z_]\w*(?:CornerRadius|Radius[XY]?|StrokeWidth|BorderWidth|Padding|Margin|Spacing|Gap))"
-    r"\s*(?:=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})"
+    r"|spacing|item_?spacing|(?:row|col|column)_?gap|gap))"
+    r"\s*(?:=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})",
+    re.IGNORECASE,
 )
 GEOM_PROP_CALL_RE = re.compile(
     r"\b(?P<name>set_?(?:corner_?radius|radius|stroke_?width|border_?width|padding|margin|spacing|gap)"
-    r"|Set(?:CornerRadius|Radius|StrokeWidth|BorderWidth|Padding|Margin|Spacing|Gap)"
-    r"|CornerRadius|StrokeWidth|BorderWidth|Padding|Margin|Insets|Thickness|Spacing)\s*([({])"
+    r"|corner_?radius|stroke_?width|border_?width|padding|margin|insets|thickness|spacing)\s*([({])",
+    re.IGNORECASE,
 )
 FONT_SIZE_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_)?(?:font_?size|text_?size)|[A-Za-z_]\w*(?:FontSize|TextSize))"
-    r"\s*(?:=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})"
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?size|text_?size))"
+    r"\s*(?:=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})",
+    re.IGNORECASE,
 )
 FONT_SIZE_CALL_RE = re.compile(
-    r"\b(?P<name>set_?(?:font_?size|text_?size)|Set(?:FontSize|TextSize)|FontSize|TextSize)\s*([({])"
+    r"\b(?P<name>set_?(?:font_?size|text_?size)|font_?size|text_?size)\s*([({])",
+    re.IGNORECASE,
 )
 FONT_FAMILY_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_)?(?:font_?family|family_?name)|[A-Za-z_]\w*(?:FontFamily|FamilyName))"
-    r"\s*(?:=|\{)\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\""
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?family|family_?name))"
+    r"\s*(?:=|\{)\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\"",
+    re.IGNORECASE,
 )
 FONT_FAMILY_CALL_RE = re.compile(
-    r"\b(?P<name>set_?font_?family|SetFontFamily|FontFamily)\s*[({]\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\""
+    r"\b(?P<name>set_?font_?family|font_?family)\s*[({]\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\"",
+    re.IGNORECASE,
 )
 CREATE_TEXT_FORMAT_RE = re.compile(r"\bCreateTextFormat\s*\(")
 STRING_TOKEN_RE = re.compile(r"(?:L|u8|u|U|R)?\"")
@@ -380,16 +388,24 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
         add(m.start(), "named-color",
             f"`{m.group(0)}` is a named color constant; resolve a color token from the generated token tables")
 
-    # 2. Color APIs: D2D1::ColorF / D2D1_COLOR_F built from numeric literals, and RGB( / RGBA(
+    # 2. Color APIs: D2D1::ColorF / D2D1_COLOR_F / CreateSolidColorBrush built from numeric literals, and RGB( / RGBA(
     colorf_spans: list[tuple[int, int]] = []
     for m in COLORF_HEAD_RE.finditer(code_only_s):
-        open_pos = m.start(1) if m.group(1) else m.start(2)
+        open_pos = m.start(1)
         body, end_pos = _balanced_body(code_only_s, open_pos)
         if _numeric_literals(body):
             colorf_spans.append((m.start(), end_pos))
             snippet = _norm(code[m.start(): min(end_pos + 1, len(code))])
             add(m.start(), "color-api",
                 f"`{snippet}` builds a literal color from numbers; resolve a color token from the generated token tables")
+    for m in CREATE_BRUSH_RE.finditer(code_only_s):
+        open_paren = m.end() - 1
+        body_clean, end_pos = _balanced_body(code_only_s, open_paren)
+        args_clean = _split_top_level_args(body_clean)
+        if args_clean and _numeric_literals(args_clean[0]) and not any(a <= m.start() <= b or m.start() <= a <= end_pos for a, b in colorf_spans):
+            colorf_spans.append((m.start(), end_pos))
+            add(m.start(), "color-api",
+                "`CreateSolidColorBrush` builds a literal color from numbers; resolve a color token from the generated token tables")
     for m in RGB_MACRO_RE.finditer(code_only_s):
         add(m.start(), "color-api",
             f"`{m.group(0).strip()}` builds a literal color; resolve a color token from the generated token tables")
@@ -408,6 +424,14 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
             snippet = _norm(code[m.start(): min(end_pos + 1, len(code))])
             add(m.start(), "literal-geometry",
                 f"`{snippet}` builds geometry from a non-zero numeric literal; use a size, spacing, or radius token")
+    for m in D2D_DRAW_STROKE_RE.finditer(code_only_s):
+        open_paren = m.end() - 1
+        body_clean, _ = _balanced_body(code_only_s, open_paren)
+        args_clean = _split_top_level_args(body_clean)
+        stroke_idx = 3 if m.group("fn") == "DrawLine" else 2
+        if len(args_clean) > stroke_idx and _has_nonzero_literal(args_clean[stroke_idx]):
+            add(m.start(), "literal-geometry",
+                f"`{m.group('fn')}` uses a literal stroke width; resolve a size token instead")
 
     # Corner radius, stroke width, padding, margin, or spacing built from numeric literals other than 0
     for m in GEOM_PROP_ASSIGN_RE.finditer(code_only_s):
@@ -729,6 +753,10 @@ def self_test() -> int:
             "  float font_size = 14.0f;\n"                                                    # 19 literal-size
             "  const char* bad_emoji = \"Done ✅\";\n"                                         # 20 emoji
             "  int bd = DWMWA_SYSTEMBACKDROP_TYPE;\n"                                         # 21 backdrop
+            "  D2D1::ColorF copy_c = {0.2f, 0.4f, 0.8f};\n"                                   # 22 color-api
+            "  float strokeWidth = 1.5f;\n"                                                   # 23 literal-geometry
+            "  const wchar_t* fontFamily = L\"Inter\";\n"                                     # 24 font-family-literal
+            "  float fontSize = 14.0f;\n"                                                     # 25 literal-size
             "}\n"
         )
         (ui_dir / "panel.cpp").write_text(panel_cpp, encoding="utf-8")
@@ -751,6 +779,10 @@ def self_test() -> int:
             (19, "literal-size"),
             (20, "emoji"),
             (21, "backdrop"),
+            (22, "color-api"),
+            (23, "literal-geometry"),
+            (24, "font-family-literal"),
+            (25, "literal-size"),
         ])
         check("panel.cpp flags every literal kind and passes every token form", panel_got, panel_want)
         check("non-UI core, tests, and generated token files produce no findings",
