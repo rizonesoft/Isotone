@@ -42,7 +42,8 @@ class FuzzTargetTest(unittest.TestCase):
         qualify_cmake = project / "tests" / "fuzz" / "qualify" / "CMakeLists.txt"
         qualify_text = qualify_cmake.read_text(encoding="utf-8").replace(
             "target_link_libraries(qualify_parser PUBLIC qualify_wire)",
-            'target_link_libraries(qualify_parser PUBLIC "$<$<CONFIG:RelWithDebInfo>:qualify_wire>")\n'
+            'add_library(isotone::qualify_wire ALIAS qualify_wire)\n'
+            'target_link_libraries(qualify_parser PUBLIC "$<$<CONFIG:RelWithDebInfo>:isotone::qualify_wire>")\n'
             'target_compile_options(qualify_wire PUBLIC /DISOTONE_FUZZ_IFACE_OPT=1)\n'
             'target_compile_options(qualify_parser PRIVATE /DISOTONE_FUZZ_PRIV_OPT=1)')
         qualify_cmake.write_text(qualify_text, encoding="utf-8")
