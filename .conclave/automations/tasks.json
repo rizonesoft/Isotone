@@ -11,7 +11,7 @@
     },
     {
       "name": "isotone-local-tools",
-      "description": "Email once when this PC's codex or claude CLI, Python, or pinned .NET SDK is behind",
+      "description": "Email once when this PC's codex or claude CLI or Python is behind",
       "command": ["python", "scripts/check-local-tools.py", "notify"],
       "trigger": {"weekly": "Monday", "at": "07:05"},
       "timeout_minutes": 5

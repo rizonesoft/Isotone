@@ -1,17 +1,10 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 <#
 .SYNOPSIS
-  Publishes one app as a self-contained, single-folder, ReadyToRun build.
+  Publishes one app into artifacts/publish/<App>/<Runtime>/.
 .DESCRIPTION
-  Output: artifacts/publish/<App>/<Runtime>/ (symbols moved to
-  artifacts/publish/<App>/<Runtime>-symbols/ so installers and ZIPs ship without
-  them), with LICENSE and LICENSE-EXCEPTION.md copied in beside the app. MinVerTagPrefix
-  is passed as a global property, so every project in the
-  app's closure, including shared libraries, carries the app's version. -Version
-  overrides MinVer (MinVerVersionOverride) for re-builds of a known version.
-.EXAMPLE
-  pwsh scripts/publish.ps1 -App Stilus
-  pwsh scripts/publish.ps1 -App Gesso -Runtime win-arm64
+  Retired during C# removal (D00 T06 §2). Native CMake distribution staging is
+  re-planned in D00 T07 §5.
 #>
 [CmdletBinding()]
 param(
@@ -27,45 +20,6 @@ param(
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/_common.ps1"
 
-$spec = Get-AppSpec $App
-if (-not $spec.Shipping) { throw "$App is not shipping yet (no code); publish refused." }
-
-$project = Join-Path $RepoRoot $spec.Project
-$out = Join-Path $RepoRoot "artifacts/publish/$App/$Runtime"
-$symbols = "$out-symbols"
-foreach ($dir in @($out, $symbols)) {
-  if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
-}
-
-$props = @(
-  "-p:MinVerTagPrefix=$($spec.TagPrefix)",
-  '-p:SelfContained=true',
-  '-p:PublishSingleFile=false',
-  "-p:PublishReadyToRun=$((-not $NoReadyToRun).ToString().ToLowerInvariant())",
-  '-p:SatelliteResourceLanguages=en'
-)
-if ($Version) { $props += "-p:MinVerVersionOverride=$Version" }
-
-Push-Location $RepoRoot
-try {
-  Write-Step "publish $App ($Config, $Runtime, self-contained)"
-  Invoke-Native dotnet publish $project -c $Config -r $Runtime -o $out -nologo @props
-
-  $pdbs = @(Get-ChildItem $out -Filter *.pdb -Recurse)
-  if ($pdbs.Count -gt 0) {
-    New-Item -ItemType Directory -Force -Path $symbols | Out-Null
-    $pdbs | Move-Item -Destination $symbols -Force
-  }
-  $exe = Join-Path $out $spec.Exe
-  if (-not (Test-Path $exe)) { throw "publish produced no $($spec.Exe) in $out" }
-  # The license travels with the object code (GPL-3.0 sections 4 and 6), with its section 7 additional permission,
-  # so every installer and portable ZIP built from this folder carries both.
-  foreach ($file in @('LICENSE', 'LICENSE-EXCEPTION.md')) {
-    Copy-Item -Path (Join-Path $RepoRoot $file) -Destination $out -Force
-  }
-  $size = (Get-ChildItem $out -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
-  $ver = (Get-Item $exe).VersionInfo
-  Write-Host ("publish.ps1: {0} {1} (file {2}) -> {3} ({4:N1} MB)" -f $App, $ver.ProductVersion, $ver.FileVersion, $out, $size) -ForegroundColor Green
-} finally {
-  Pop-Location
-}
+$null = Get-AppSpec $App
+Write-Error "publish.ps1: has no native work yet; native publish and release packaging are re-planned in D00 T07 §5." -ErrorAction Continue
+exit 1

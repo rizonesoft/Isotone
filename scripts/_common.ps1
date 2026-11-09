@@ -28,18 +28,6 @@ function Get-ShippingApps {
   return @($script:Apps.Keys | Where-Object { $script:Apps[$_].Shipping } | Sort-Object)
 }
 
-function Get-AppVersion {
-  # Asks MinVer (through MSBuild) for the version of an app's project, using the
-  # app's tag prefix. Returns the SemVer string, e.g. 1.2.3 or 0.0.0-alpha.0.5.
-  param([Parameter(Mandatory)][string]$Project, [Parameter(Mandatory)][string]$TagPrefix)
-  $path = Join-Path $script:RepoRoot $Project
-  $out = & dotnet msbuild $path -nologo -v:q -t:MinVer "-p:MinVerTagPrefix=$TagPrefix" -getProperty:MinVerVersion 2>&1
-  if ($LASTEXITCODE -ne 0) { throw "MinVer version query failed for ${Project}: $out" }
-  $version = ($out | Where-Object { $_ -match '^\d+\.\d+\.\d+' } | Select-Object -Last 1)
-  if (-not $version) { throw "MinVer returned no version for ${Project}: $out" }
-  return $version.Trim()
-}
-
 function Get-FileVersion([string]$SemVer) {
   # Four-part Win32 file version: Major.Minor.Patch.<CI run number or 0>.
   $core = ($SemVer -split '[-+]')[0]

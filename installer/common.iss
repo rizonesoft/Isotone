@@ -4,12 +4,12 @@
 ; then includes this file. scripts/package.ps1 passes the build inputs:
 ;   /DAppVersion=1.2.3[-pre]     SemVer shown to users (default 0.0.0-dev)
 ;   /DAppFileVersion=1.2.3.45    four-part Win32 version (default 0.0.0.0)
-;   /DSourceDir=<publish dir>    self-contained publish output for the app
+;   /DAppSourceDir=<stage dir>   staged distribution output for the app
 ;   /DOutputDir=<dist dir>       where the Setup.exe is written
 ;
 ; Required defines from the including script:
 ;   AppName, AppExeName, AppIdGuid (no braces), AppIcon (path, may be absent)
-; Optional: AppDescription, AppSourceDir (default artifacts\publish\<AppName>\win-x64)
+; Optional: AppDescription, AppSourceDir (staged by the native release pipeline in D00 T07 §5)
 
 #define RepoRoot AddBackslash(SourcePath) + ".."
 ; Rizonesoft is a brand of Rizonetech (Pty) Ltd, the copyright holder. The publisher
@@ -52,12 +52,12 @@ VersionInfoCopyright={#Copyright}
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 ; 64-bit only: a 64-bit Setup (Inno 7 SetupArchitecture) installing in 64-bit mode.
-; The .NET runtime ships inside the app (self-contained): no prerequisites.
+; Static CRT and Windows system DLLs only: no external runtime prerequisites.
 SetupArchitecture=x64
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-; Supported: Windows 11. Windows 10 (1809 or later) may install and run but is
-; unsupported by .NET 11; the wizard says so on build < 22000 (see [Code]).
+; Supported: Windows 11. Windows 10 (1809 or later) may install and run; the wizard
+; shows a non-blocking notice on build < 22000 (see [Code]).
 MinVersion=10.0.17763
 ; Inno 7: follow the system light or dark theme.
 WizardStyle=modern dynamic
@@ -85,10 +85,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 ; directory; nothing is shared between apps (or with the suite installer).
 ; ---------------------------------------------------------------------------
 #ifndef AppSourceDir
-  #define AppSourceDir RepoRoot + "\artifacts\publish\" + AppName + "\" + Runtime
+  #error AppSourceDir is not defined; native release staging is re-planned in D00 T07 §5.
 #endif
 #if !FileExists(AppSourceDir + "\" + AppExeName)
-  #error AppSourceDir has no AppExeName. Run: pwsh scripts/publish.ps1 -App <App>
+  #error AppSourceDir has no AppExeName; native release staging is re-planned in D00 T07 §5.
 #endif
 
 [Setup]
@@ -126,11 +126,10 @@ Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; F
 #endif
 
 [Code]
-// Windows 10 is not on the .NET 11 supported-OS list (only Windows 11 and the
-// Windows 10 LTSC/IoT editions are), so on build < 22000 the wizard shows one
-// non-blocking notice page. Silent installs (/SILENT, /VERYSILENT) never show
-// wizard pages, so they skip it. Event attributes keep this composable with any
-// InitializeWizard or ShouldSkipPage an including script adds.
+// Windows 11 is the target operating system; on Windows 10 (build < 22000) the
+// wizard shows one non-blocking notice page. Silent installs (/SILENT, /VERYSILENT)
+// never show wizard pages, so they skip it. Event attributes keep this composable
+// with any InitializeWizard or ShouldSkipPage an including script adds.
 var
   IsotoneWin10Page: TOutputMsgWizardPage;
 
@@ -148,8 +147,8 @@ begin
   IsotoneWin10Page := CreateOutputMsgPage(wpWelcome,
     'Windows 10 is not officially supported',
     '{#AppName} is built for Windows 11.',
-    'Windows 10 is not officially supported by .NET 11, which {#AppName} is built on. ' +
-    '{#AppName} may work, but it is untested on Windows 10.' + #13#10#13#10 +
+    '{#AppName} targets Windows 11. {#AppName} may work on Windows 10, ' +
+    'but it is untested on Windows 10.' + #13#10#13#10 +
     'Click Next to continue anyway, or Cancel to exit Setup.');
 end;
 

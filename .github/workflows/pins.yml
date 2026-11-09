@@ -1,15 +1,13 @@
 name: pins
 
-# Keeps every repository pin on its newest release (operator request 2026-10-21, the RectoPDF shape). Daily, each check
-# runs the same script the developer runs locally. A newer release becomes a pull request whose build.yml and plan.yml
-# runs are dispatched on its branch (a PR opened with the workflow token does not start them by itself); a finding that
-# needs the owner becomes one issue that the next clean run closes. GitHub's notifications tell the owner, and a failed
-# job here (a source could not be read, a pin is malformed) emails whoever last edited this schedule.
-# NuGet packages and GitHub Actions are updated by Dependabot (.github/dependabot.yml), except the Microsoft.Extensions.*
-# packages that track the SDK's runtime, which the dotnet check moves with the SDK. Checks only this PC can see (its
-# CLIs, Python, installed SDK) stay in .conclave/automations.
-# Each job holds only the token permissions its check uses (independent review 2026-10-21): the dotnet job pushes a
-# branch, opens a PR, labels it, and dispatches CI; the vulnerable-packages and native-advisories jobs file issues.
+# Keeps every repository pin and dependency advisory check current (operator request 2026-10-21, the RectoPDF shape).
+# Daily, each check runs the same script the developer runs locally. A finding that needs the owner becomes one issue
+# that the next clean run closes. GitHub's notifications tell the owner, and a failed job here (a source could not be
+# read, a pin is malformed) emails whoever last edited this schedule.
+# GitHub Actions are updated by Dependabot (.github/dependabot.yml). Checks only this PC can see (its CLIs and Python)
+# stay in .conclave/automations.
+# Each job holds only the token permissions its check uses (independent review 2026-10-21): the native-advisories job
+# reads the repository and files issues.
 
 on:
   schedule:
@@ -23,63 +21,9 @@ concurrency:
   group: pins
   cancel-in-progress: false
 
-env:
-  DOTNET_NOLOGO: 'true'
-  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
-
 jobs:
-  dotnet:
-    name: dotnet
-    runs-on: ubuntu-26.04
-    timeout-minutes: 15
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      actions: write
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Run the check
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python3 scripts/check-dotnet-pin.py pr
-
-  vulnerable-packages:
-    name: vulnerable-packages
-    needs: dotnet
-    if: always()
-    runs-on: windows-2025
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      issues: write
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: main
-          persist-credentials: false
-
-      - name: Set up .NET (global.json)
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
-        with:
-          global-json-file: global.json
-
-      - name: Run the check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python scripts/check-vulnerable-packages.py issue
-
   native-advisories:
     name: native-advisories
-    needs: dotnet
-    if: always()
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:

@@ -1,22 +1,25 @@
-# Suite app manifest: the one place scripts/*.ps1 and CI learn about each app.
-# Shipping = $false means the app has no code yet; publish and package refuse it.
+﻿# Suite app manifest: the one place scripts/*.ps1 and CI learn about each app.
+# Shipping = $false means the app has no native shipping binary yet; D00 T07 §5 re-plans release packaging.
 @{
   Stilus = @{
-    Project   = 'src/Stilus/Bezier.Desktop/Bezier.Desktop.csproj'
-    Exe       = 'Bezier.Desktop.exe'
+    Name      = 'Stilus'
+    Slug      = 'stilus'
+    Exe       = 'Stilus.exe'
     TagPrefix = 'stilus-v'
     Installer = 'installer/Stilus.iss'
-    Shipping  = $true
+    Shipping  = $false
   }
   Gesso = @{
-    Project   = 'src/Gesso/src/Gesso.UI/Gesso.UI.csproj'
+    Name      = 'Gesso'
+    Slug      = 'gesso'
     Exe       = 'Gesso.exe'
     TagPrefix = 'gesso-v'
     Installer = 'installer/Gesso.iss'
-    Shipping  = $true
+    Shipping  = $false
   }
   Albumen = @{
-    Project   = 'src/Albumen/Albumen.UI/Albumen.UI.csproj'
+    Name      = 'Albumen'
+    Slug      = 'albumen'
     Exe       = 'Albumen.exe'
     TagPrefix = 'albumen-v'
     Installer = 'installer/Albumen.iss'

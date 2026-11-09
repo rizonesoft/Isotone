@@ -27,11 +27,11 @@ HEAD = "a" * 40
 def pr(number=1, **over):
     base = {
         "number": number, "author": {"login": "app/dependabot"}, "labels": [{"name": "dependencies"}],
-        "baseRefName": "main", "isDraft": False, "headRefName": f"dependabot/nuget/x-{number}",
+        "baseRefName": "main", "isDraft": False, "headRefName": f"dependabot/github_actions/x-{number}",
         "headRefOid": f"{number:040d}", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
         "statusCheckRollup": [{"__typename": "CheckRun", "name": "build-windows", "status": "COMPLETED",
                                "conclusion": "SUCCESS", "workflowName": "build"}],
-        "files": [{"path": "Directory.Packages.props", "changeType": "MODIFIED"}], "changedFiles": 1, "createdAt": f"2026-10-2{number}T00:00:00Z",
+        "files": [{"path": ".github/workflows/build.yml", "changeType": "MODIFIED"}], "changedFiles": 1, "createdAt": f"2026-10-2{number}T00:00:00Z",
     }
     base.update(over)
     return base
@@ -303,8 +303,6 @@ class EligibilityTests(unittest.TestCase):
         cases = [
             ({"author": {"login": "someone"}}, "neither Dependabot"),
             ({"labels": [{"name": "github_actions"}]}, "neither dependencies nor pins"),
-            ({"headRefName": "pins/dotnet-11.0.100"}, ".NET SDK pin"),
-            ({"files": [{"path": "global.json"}]}, ".NET SDK pin"),
             ({"baseRefName": "release"}, "targets release"),
             ({"isDraft": True}, "draft"),
             ({"statusCheckRollup": []}, "no checks"),
@@ -328,7 +326,7 @@ class EligibilityTests(unittest.TestCase):
     def test_a_rename_or_copy_is_refused(self):
         for kind in ("RENAMED", "COPIED"):
             with self.subTest(kind=kind):
-                ok, why = self.reason(files=[{"path": "old-global.json", "changeType": kind}])
+                ok, why = self.reason(files=[{"path": "old-pin.json", "changeType": kind}])
                 self.assertEqual((ok, "renames or copies" in why), (False, True))
 
     def test_every_expected_workflow_must_have_reported(self):
@@ -358,7 +356,7 @@ class EligibilityTests(unittest.TestCase):
                 self.assertEqual((ok, needle in why), (want, True))
 
     def test_the_expected_workflows_follow_the_path_filters(self):
-        self.assertEqual(mp.expected_workflows(REPO, ["Directory.Packages.props"]), ["build"])
+        self.assertEqual(mp.expected_workflows(REPO, [".github/workflows/build.yml"]), ["build"])
         self.assertEqual(mp.expected_workflows(REPO, ["todo/README.md"]), ["build", "plan-gates"])
 
     def test_skipped_and_neutral_checks_pass(self):
@@ -815,7 +813,7 @@ class MergeTests(Base):
         runs = {"plan.yml": self.run_on("e" * 40, n=1) + newer + head,
                 "build.yml": self.run_on(c, n=2) + newer + head}
         outcomes = []
-        for touched in (["Directory.Packages.props"], ["todo/x.md"]):
+        for touched in ([".github/workflows/build.yml"], ["todo/x.md"]):
             (self.root / mp.HEALTH).unlink(missing_ok=True)
             self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
             self.assertEqual(self.health()["merged"]["base"], HEAD)
@@ -824,7 +822,7 @@ class MergeTests(Base):
         self.assertEqual(outcomes, [(0, True, True), (0, False, False)])
 
     def test_a_merges_own_push_is_compared_at_its_endpoints(self):
-        # Independent review round 6: the merge's commits edit todo/ and revert it, leaving a package change; GitHub
+        # Independent review round 6: the merge's commits edit todo/ and revert it, leaving a workflow change; GitHub
         # compares the one push's endpoints, so plan-gates never runs, and the merge does not wait for it.
         c = "c" * 40
         wf = self.root / ".github" / "workflows"
@@ -834,8 +832,8 @@ class MergeTests(Base):
                                      encoding="utf-8")
         self.call(["run", "--task"], FakeGh([pr(1)]), FakeGit())
         runs = {"plan.yml": self.run_on(HEAD, n=1), "build.yml": self.run_on(c, n=2) + self.run_on(HEAD, n=3)}
-        git = FakeGit(changed=["todo/x.md", "todo/x.md", "Directory.Packages.props"],
-                      diffed=["Directory.Packages.props"])
+        git = FakeGit(changed=["todo/x.md", "todo/x.md", ".github/workflows/build.yml"],
+                      diffed=[".github/workflows/build.yml"])
         code, out = self.call(["run", "--task"], FakeGh([], main_runs=runs), git)
         self.assertEqual((code, "reads green" in out, self.health()["merged"]), (0, True, None), out)
 
@@ -858,13 +856,13 @@ class MergeTests(Base):
         (wf / "plan.yml").write_text("on:" + nl + "  push:" + nl + "    paths:" + nl + "      - 'todo/**'" + nl,
                                      encoding="utf-8")
         runs = {"plan.yml": self.run_on(older, n=1), "build.yml": self.run_on(HEAD, n=2)}
-        commits = ["todo/x.md", "todo/x.md", "Directory.Packages.props"]
-        cases = [("one push", [(older, HEAD)], {(older, HEAD): ["Directory.Packages.props"]}, 1),
+        commits = ["todo/x.md", "todo/x.md", ".github/workflows/build.yml"]
+        cases = [("one push", [(older, HEAD)], {(older, HEAD): [".github/workflows/build.yml"]}, 1),
                  ("two pushes", [(mid, HEAD), (older, mid)],
-                  {(older, mid): ["docs/a.md"], (mid, HEAD): ["Directory.Packages.props"]}, 1),
+                  {(older, mid): ["docs/a.md"], (mid, HEAD): [".github/workflows/build.yml"]}, 1),
                  ("a push that touched todo/", [(mid, HEAD), (older, mid)],
-                  {(older, mid): ["todo/x.md"], (mid, HEAD): ["Directory.Packages.props"]}, 0),
-                 ("a broken chain", [(mid, HEAD)], {(mid, HEAD): ["Directory.Packages.props"]}, 0),
+                  {(older, mid): ["todo/x.md"], (mid, HEAD): [".github/workflows/build.yml"]}, 0),
+                 ("a broken chain", [(mid, HEAD)], {(mid, HEAD): [".github/workflows/build.yml"]}, 0),
                  ("no push history", [], {}, 0)]
         for name, pushes, diffed, merges in cases:
             with self.subTest(name=name):
@@ -1178,7 +1176,7 @@ class MergeTests(Base):
 
         def dirty_on_list(*args, cwd=None):
             if args[:2] == ("pr", "list"):
-                git.status = " M src/edit.cs\n"
+                git.status = " M native/edit.cpp\n"
             return real(*args, cwd=cwd)
         code, out = self.call(["run", "--campaign"], dirty_on_list, git)
         # A busy clone at the final preflight stays a busy clone (exit 2 here), never a failure (D00 T01 §15).
@@ -1193,7 +1191,7 @@ class MergeTests(Base):
         def dirty_on_merge(*args, cwd=None):
             out = real(*args, cwd=cwd)
             if args[:2] == ("pr", "merge"):
-                git.status = " M src/edit.cs\n"
+                git.status = " M native/edit.cpp\n"
             return out
         code, out = self.call(["run", "--campaign"], dirty_on_merge, git)
         self.assertEqual((code, len(gh.merges()), [c for c in git.calls if c[0] == "pull"],

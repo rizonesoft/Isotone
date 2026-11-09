@@ -21,8 +21,7 @@ then asks to retry. `--campaign` is the in-loop call, whose caller is the campai
 A pull request is eligible when its author is Dependabot, or the pins workflow on a `pins/` branch; it carries
 `dependencies` or `pins`; it targets `main` and is not a draft; it has at least one check and every check passed
 (`SUCCESS`, `SKIPPED` or `NEUTRAL`, none pending or failing); GitHub reports it `MERGEABLE` and `CLEAN`; and its full
-list of changed files was read (a list shorter than `changedFiles` is refused). A .NET SDK pin (a `pins/dotnet-` branch,
-or a change to `global.json`) is never eligible: `D00 T02 §8` owns it.
+list of changed files was read (a list shorter than `changedFiles` is refused).
 
 Every GitHub call names the repository `origin` points at (`gh --repo <owner>/<name>`), so `GH_REPO` or a second
 remote can never redirect a merge away from the clone preflight checked. The merge is
@@ -870,15 +869,12 @@ def eligible(pr: dict, root: Path = ROOT) -> tuple[bool, str]:
     ok, why = identity(pr)
     if not ok:
         return False, why
-    branch = pr.get("headRefName", "")
     files = pr.get("files") or []
     if not isinstance(pr.get("changedFiles"), int) or len(files) < pr["changedFiles"]:
-        # The file list GitHub returns is capped; an incomplete one could hide a global.json change.
+        # The file list GitHub returns is capped; an incomplete one could hide a workflow-filtered path change.
         return False, f"its file list is incomplete ({len(files)} of {pr.get('changedFiles')} files read)"
-    if branch.startswith("pins/dotnet-") or any(f.get("path") == "global.json" for f in files):
-        return False, "a .NET SDK pin is D00 T02 §8's section work"
     if any(str(f.get("changeType", "")).upper() not in ("ADDED", "MODIFIED", "DELETED") for f in files):
-        # A rename or copy hides its old path from this list, so a renamed global.json could pass; neither bot
+        # A rename or copy hides its old path from this list; neither bot
         # renames files, so any such change waits for a person (independent review round 11).
         return False, "it renames or copies a file, which the bots never do"
     if pr.get("baseRefName") != "main":
