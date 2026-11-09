@@ -107,6 +107,11 @@ class NativeTidyTest(unittest.TestCase):
         self.assertIn("FAIL native\\bench_moved.cpp", out)
         self.assertIn("2 translation unit(s), 1 with diagnostics", out)
 
+    def test_stale_release_compile_database_is_refreshed_when_not_skipping_build(self):
+        text = TIDY.read_text(encoding="utf-8")
+        self.assertIn("if (-not $SkipBuild -and (Test-Path (Join-Path $root 'native\\benchmarks\\CMakeLists.txt'))) {", text)
+        self.assertNotIn("-and -not (Test-Path $relDatabase)", text)
+
     def test_an_analyze_build_with_a_possible_null_dereference_fails(self):
         project = self.root / "analyze"
         project.mkdir()

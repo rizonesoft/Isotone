@@ -30,7 +30,7 @@ using isotone::core::imaging::PremultiplyKernel;
 
 constexpr std::size_t kCacheLineAlignment = 64;
 constexpr std::size_t kTilePixels = 256ULL * 256ULL;
-constexpr std::size_t kL2BufferPixels = 512ULL * 512ULL;
+constexpr std::size_t kL2BufferPixels = 256ULL * 192ULL;
 constexpr std::size_t kWholeImage100MPPixels = 10000ULL * 10000ULL;
 constexpr int kBenchmarkRepetitions = 9;
 
@@ -183,7 +183,7 @@ template <std::size_t PixelCount> void register_working_set(std::string_view wor
 void register_premultiply_benchmarks()
 {
     register_working_set<kTilePixels>("Tile256x256", benchmark::kMicrosecond);
-    register_working_set<kL2BufferPixels>("L2Buffer512x512", benchmark::kMicrosecond);
+    register_working_set<kL2BufferPixels>("L2Buffer256x192", benchmark::kMicrosecond);
     register_working_set<kWholeImage100MPPixels>("WholeImage100MP", benchmark::kMillisecond);
 }
 

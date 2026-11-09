@@ -56,7 +56,7 @@ foreach ($e in $entries) {
 if ($Preset -eq 'x64-debug') {
   $relBuildDir = Join-Path $root 'artifacts\native\x64-release'
   $relDatabase = Join-Path $relBuildDir 'compile_commands.json'
-  if (-not $SkipBuild -and (Test-Path (Join-Path $root 'native\benchmarks\CMakeLists.txt')) -and -not (Test-Path $relDatabase)) {
+  if (-not $SkipBuild -and (Test-Path (Join-Path $root 'native\benchmarks\CMakeLists.txt'))) {
     Push-Location (Join-Path $root 'native')
     try {
       $configure = cmake --preset x64-release 2>&1

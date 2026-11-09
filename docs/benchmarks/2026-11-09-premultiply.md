@@ -13,9 +13,9 @@
 
 Each working set is budgeted and evaluated independently on its own measurement (`D00-T04-S1-PR15`); the whole-image latency claim rests solely on the `WholeImage100MP` run and is never extrapolated by multiplying the cache-resident tile time:
 
-1. **Cache-resident tile (`Tile256x256`, 256 x 256 `Bgra8` pixels = 65,536 pixels = 256 KiB input + 256 KiB output):** under `20.0 us` median on one core.
-2. **L2-sized buffer (`L2Buffer512x512`, 512 x 512 `Bgra8` pixels = 262,144 pixels = 1 MiB input + 1 MiB output):** under `80.0 us` median on one core.
-3. **Whole-image buffer (`WholeImage100MP`, 10,000 x 10,000 `Bgra8` pixels = 100,000,000 pixels = 400 MB input + 400 MB output):** under `100.0 ms` single-core DRAM-bound median (whereas a naive extrapolation of `1,526 x 16.3 us = 24.9 ms` from L1/L2 tile speed ignores DRAM read/write-allocate bandwidth once the 800 MB working set spills past the 12 MiB L3 cache).
+1. **Cache-resident tile (`Tile256x256`, 256 x 256 `Bgra8` pixels = 65,536 pixels = 256 KiB input + 256 KiB output = 512 KiB working set):** under `20.0 us` median on one core.
+2. **L2-sized buffer (`L2Buffer256x192`, 256 x 192 `Bgra8` pixels = 49,152 pixels = 192 KiB input + 192 KiB output = 384 KiB working set, fitting strictly inside a single core's 512 KiB unified L2 cache on the reference machine alongside code and stack):** under `16.0 us` median on one core.
+3. **Whole-image buffer (`WholeImage100MP`, 10,000 x 10,000 `Bgra8` pixels = 100,000,000 pixels = 400 MB input + 400 MB output):** under `100.0 ms` single-core DRAM-bound median (whereas a naive extrapolation of `1,526 x 16.4 us = 25.0 ms` from L1/L2 tile speed ignores DRAM read/write-allocate bandwidth once the 800 MB working set spills past the 12 MiB L3 cache).
 
 ## Exported Table (9 Repetitions per Variant)
 
@@ -23,24 +23,24 @@ Raw console and JSON outputs were written to `build/benchmarks/2026-11-09-premul
 
 | Benchmark | Repetitions | Mean (Wall) | Median (Wall) | Median (CPU) | Stddev (Wall) | Spread (`max - min`) | Throughput (Median) | Speedup vs. `Scalar` (Median Wall) |
 | --------- | :---------: | ----------: | ------------: | -----------: | ------------: | -------------------: | ------------------: | ---------------------------------: |
-| `Premultiply/Tile256x256/Scalar` | 9 | `145 us` | `149 us` | `148 us` | `16.8 us` | `51.4 us` | `1.65 GiB/s` (`443.2 MP/s`) | `1.00x` |
-| `Premultiply/Tile256x256/Sse41` | 9 | `33.1 us` | `33.1 us` | `33.0 us` | `2.05 us` | `6.36 us` | `7.40 GiB/s` (`1.99 GP/s`) | `4.50x` |
-| `Premultiply/Tile256x256/Avx2` | 9 | `16.4 us` | `16.3 us` | `16.0 us` | `0.420 us` | `1.24 us` | `15.25 GiB/s` (`4.09 GP/s`) | `9.14x` (`9.25x` CPU) |
-| `Premultiply/L2Buffer512x512/Scalar` | 9 | `641 us` | `629 us` | `628 us` | `30.3 us` | `103 us` | `1.56 GiB/s` (`417.6 MP/s`) | `1.00x` |
-| `Premultiply/L2Buffer512x512/Sse41` | 9 | `128 us` | `126 us` | `127 us` | `6.87 us` | `20.2 us` | `7.69 GiB/s` (`2.06 GP/s`) | `4.99x` |
-| `Premultiply/L2Buffer512x512/Avx2` | 9 | `63.5 us` | `64.1 us` | `61.4 us` | `3.11 us` | `8.52 us` | `15.91 GiB/s` (`4.27 GP/s`) | `9.81x` (`10.23x` CPU) |
-| `Premultiply/WholeImage100MP/Scalar` | 9 | `271 ms` | `273 ms` | `260 ms` | `8.35 ms` | `27.5 ms` | `1.43 GiB/s` (`384.0 MP/s`) | `1.00x` |
-| `Premultiply/WholeImage100MP/Sse41` | 9 | `95.4 ms` | `95.5 ms` | `91.5 ms` | `1.45 ms` | `4.48 ms` | `4.07 GiB/s` (`1.09 GP/s`) | `2.86x` |
-| `Premultiply/WholeImage100MP/Avx2` | 9 | `83.5 ms` | `83.1 ms` | `81.6 ms` | `3.11 ms` | `9.59 ms` | `4.57 GiB/s` (`1.23 GP/s`) | `3.29x` (`3.19x` CPU) |
+| `Premultiply/Tile256x256/Scalar` | 9 | `140 us` | `139 us` | `135 us` | `12.0 us` | `35.1 us` | `1.81 GiB/s` (`485.6 MP/s`) | `1.00x` |
+| `Premultiply/Tile256x256/Sse41` | 9 | `30.9 us` | `30.4 us` | `30.1 us` | `1.67 us` | `6.11 us` | `8.10 GiB/s` (`2.17 GP/s`) | `4.57x` |
+| `Premultiply/Tile256x256/Avx2` | 9 | `16.4 us` | `16.4 us` | `16.0 us` | `0.533 us` | `1.85 us` | `15.22 GiB/s` (`4.08 GP/s`) | `8.48x` (`8.44x` CPU) |
+| `Premultiply/L2Buffer256x192/Scalar` | 9 | `120 us` | `120 us` | `120 us` | `3.38 us` | `9.04 us` | `1.53 GiB/s` (`410.9 MP/s`) | `1.00x` |
+| `Premultiply/L2Buffer256x192/Sse41` | 9 | `23.7 us` | `23.1 us` | `23.1 us` | `1.76 us` | `5.71 us` | `7.92 GiB/s` (`2.13 GP/s`) | `5.19x` |
+| `Premultiply/L2Buffer256x192/Avx2` | 9 | `13.3 us` | `13.1 us` | `13.2 us` | `0.761 us` | `2.39 us` | `13.89 GiB/s` (`3.73 GP/s`) | `9.16x` (`9.09x` CPU) |
+| `Premultiply/WholeImage100MP/Scalar` | 9 | `272 ms` | `246 ms` | `245 ms` | `47.5 ms` | `142 ms` | `1.52 GiB/s` (`408.5 MP/s`) | `1.00x` |
+| `Premultiply/WholeImage100MP/Sse41` | 9 | `97.5 ms` | `101 ms` | `88.5 ms` | `10.3 ms` | `30.7 ms` | `4.21 GiB/s` (`1.13 GP/s`) | `2.44x` (`2.77x` CPU) |
+| `Premultiply/WholeImage100MP/Avx2` | 9 | `97.6 ms` | `95.7 ms` | `78.1 ms` | `7.69 ms` | `22.2 ms` | `4.77 GiB/s` (`1.28 GP/s`) | `2.57x` (`3.14x` CPU) |
 
 ## Verdict
 
 - **Acceptance rule (`Scalar_median - Variant_median > max(Scalar_spread, Variant_spread)`):**
-  - `Tile256x256`: `Sse41` beats `Scalar` by `149 - 33.1 = 115.9 us > 51.4 us` (`4.50x`); `Avx2` beats `Scalar` by `149 - 16.3 = 132.7 us > 51.4 us` (`9.14x` wall, `9.25x` CPU) and beats `Sse41` by `33.1 - 16.3 = 16.8 us > 6.36 us` (`2.03x`).
-  - `L2Buffer512x512`: `Sse41` beats `Scalar` by `629 - 126 = 503 us > 103 us` (`4.99x`); `Avx2` beats `Scalar` by `629 - 64.1 = 564.9 us > 103 us` (`9.81x` wall, `10.23x` CPU) and beats `Sse41` by `126 - 64.1 = 61.9 us > 20.2 us` (`1.97x`).
-  - `WholeImage100MP`: `Sse41` beats `Scalar` by `273 - 95.5 = 177.5 ms > 27.5 ms` (`2.86x`); `Avx2` beats `Scalar` by `273 - 83.1 = 189.9 ms > 27.5 ms` (`3.29x` wall, `3.19x` CPU) and beats `Sse41` by `95.5 - 83.1 = 12.4 ms > 9.59 ms` (`1.15x`).
+  - `Tile256x256`: `Sse41` beats `Scalar` by `139 - 30.4 = 108.6 us > 35.1 us` (`4.57x`); `Avx2` beats `Scalar` by `139 - 16.4 = 122.6 us > 35.1 us` (`8.48x` wall, `8.44x` CPU) and beats `Sse41` by `30.4 - 16.4 = 14.0 us > 6.11 us` (`1.85x`).
+  - `L2Buffer256x192`: `Sse41` beats `Scalar` by `120 - 23.1 = 96.9 us > 9.04 us` (`5.19x`); `Avx2` beats `Scalar` by `120 - 13.1 = 106.9 us > 9.04 us` (`9.16x` wall, `9.09x` CPU) and beats `Sse41` by `23.1 - 13.1 = 10.0 us > 5.71 us` (`1.76x`).
+  - `WholeImage100MP`: `Sse41` beats `Scalar` by `246 - 101 = 145 ms > 142 ms` (`2.44x` wall; `245 - 88.5 = 156.5 ms > 78.1 ms`, `2.77x` CPU); `Avx2` beats `Scalar` by `246 - 95.7 = 150.3 ms > 142 ms` (`2.57x` wall; `245 - 78.1 = 166.9 ms > 78.1 ms`, `3.14x` CPU).
 - **Budget check:**
-  - `Tile256x256`: `Avx2` median `16.3 us` (`16.0 us` CPU) is under the `20.0 us` tile budget (**PASS**).
-  - `L2Buffer512x512`: `Avx2` median `64.1 us` (`61.4 us` CPU) is under the `80.0 us` L2 buffer budget (**PASS**).
-  - `WholeImage100MP`: `Avx2` median `83.1 ms` (`81.6 ms` CPU) is under the `100.0 ms` single-core DRAM-bound whole-image budget (**PASS**).
-- **Overall verdict:** **PASS** (`Avx2` is the winning x64 variant across all three working sets, at `9.14x` `Scalar` on `Tile256x256`, `9.81x` on `L2Buffer512x512`, and `3.29x` on `WholeImage100MP`, with bit-exact agreement verified by `isotone_benchmarks --smoke` and `Premultiply.*`).
+  - `Tile256x256`: `Avx2` median `16.4 us` (`16.0 us` CPU) is under the `20.0 us` tile budget (**PASS**).
+  - `L2Buffer256x192`: `Avx2` median `13.1 us` (`13.2 us` CPU) is under the `16.0 us` L2 buffer budget (**PASS**).
+  - `WholeImage100MP`: `Avx2` median `95.7 ms` (`78.1 ms` CPU) is under the `100.0 ms` single-core DRAM-bound whole-image budget (**PASS**).
+- **Overall verdict:** **PASS** (`Avx2` is the winning x64 variant across all three working sets, at `8.48x` `Scalar` on `Tile256x256`, `9.16x` on `L2Buffer256x192`, and `2.57x` wall / `3.14x` CPU on `WholeImage100MP`, with bit-exact agreement verified by `isotone_benchmarks --smoke` and `Premultiply.*`).
