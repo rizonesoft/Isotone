@@ -62,6 +62,8 @@ jobs:
         run: python3 scripts/design-lint.py --self-test
       - name: Self-test the native dependency lint
         run: python3 scripts/native-deps-lint.py --self-test
+      - name: Self-test the native advisory check
+        run: python3 scripts/check-native-advisories.py --self-test
       - name: Self-test the native standard-switch check
         run: python3 scripts/native-std-check.py --self-test
       - name: Self-test the native PE hardening check

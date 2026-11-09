@@ -22,6 +22,7 @@ A weekly task starts when available: a run missed while this PC was off fires at
 | --- | --- | --- |
 | .NET SDK (`global.json`) with the Microsoft.Extensions.* packages that track its runtime | `scripts/check-dotnet-pin.py pr` | a pull request on `pins/dotnet-<sdk>` for each newer release of the pinned channel: the next .NET 11 release candidate now, the GA SDK the day it ships (that PR is `D00 T02 §8`'s file edits; run its gates on the branch) |
 | Vulnerable NuGet packages, direct or transitive | `scripts/check-vulnerable-packages.py issue` | one issue labelled `pins:vulnerable-packages` per vulnerable set; closed automatically on the first clean run |
+| Native C++ libraries in `docs/dev/native-libraries.md` and `native/vcpkg.json` | `scripts/check-native-advisories.py issue` | one issue labelled `pins:native-advisory-<port>-<id>` per vulnerability advisory and one issue per unclearable failure cause (`pins:native-advisories-unmapped`, `pins:native-advisories-unchecked`, `pins:native-advisories-baseline-mismatch`), closed automatically when cleared |
 | NuGet packages in `Directory.Packages.props` | Dependabot (`.github/dependabot.yml`), daily | a Dependabot pull request per group (Microsoft, SkiaSharp, testing, Serilog, minor and patch) |
 | GitHub Actions | Dependabot, daily | a Dependabot pull request bumping each pinned SHA and its tag comment |
 

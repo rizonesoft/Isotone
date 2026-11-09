@@ -166,6 +166,8 @@ jobs:
           exit 0
       - name: Test
         run: dotnet test Isotone.slnx -c Release
+      - name: Native advisory release gate
+        run: python scripts/check-native-advisories.py --release-gate
       - name: Package
         run: |
           # package.ps1 passes ISOTONE_SITE_URL to the installer as its publisher URL.

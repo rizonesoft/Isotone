@@ -52,9 +52,10 @@ Binaries and installers are not signed yet: there is no certificate. When one ex
 A release tag is pushed only when every line holds, each quoted from a real run in the release section's evidence:
 
 1. `pwsh scripts/check-all.ps1` exits 0 at the commit being tagged.
-2. The app's `CHANGELOG.md` section is headed by the tag and lists every user-visible change since the last release.
-3. The app's user guide under `docs/user/` covers every surface the release ships.
-4. `pwsh scripts/package.ps1 -App <App>` produces the installer and the portable ZIP locally.
-5. The installer installs, launches, and uninstalls on a clean Windows 11 machine with no .NET SDK or runtime, per-user and all-users, and an upgrade over the previous release keeps the user's settings. An extra smoke on Windows 10 22H2 is optional and best-effort: a failure there is recorded, never a release blocker.
-6. The portable ZIP runs from an empty folder.
-7. After the tag is pushed, the `release` workflow is green; the installer, the ZIP, and `SHA256SUMS` download from `https://download.rizonesoft.com/<slug>/<version>/` and their hashes match `SHA256SUMS`; the GitHub release has no attached files and its body links those downloads, lists the same hashes, and links the tag's source; and `https://download.rizonesoft.com/update/<slug>.json` (or `<slug>-prerelease.json`) names the new version.
+2. `python scripts/check-native-advisories.py --release-gate` exits 0 at the commit being tagged (enforced before packaging by `scripts/package.ps1` and `.github/workflows/release.yml`): a release section may not tag while the job reports an `advisory` for a library its app links, or while the job fails with an `unmapped` advisory identity, an `unchecked` failed or partial OSV/feed/baseline query, or a `baseline-mismatch` between `docs/dev/native-libraries.md` and `native/vcpkg.json`'s committed `builtin-baseline`; each failing outcome blocks the release with its own `release-gate blocked (<outcome>): ...` message (`D00 T04 §3`).
+3. The app's `CHANGELOG.md` section is headed by the tag and lists every user-visible change since the last release.
+4. The app's user guide under `docs/user/` covers every surface the release ships.
+5. `pwsh scripts/package.ps1 -App <App>` produces the installer and the portable ZIP locally.
+6. The installer installs, launches, and uninstalls on a clean Windows 11 machine with no .NET SDK or runtime, per-user and all-users, and an upgrade over the previous release keeps the user's settings. An extra smoke on Windows 10 22H2 is optional and best-effort: a failure there is recorded, never a release blocker.
+7. The portable ZIP runs from an empty folder.
+8. After the tag is pushed, the `release` workflow is green; the installer, the ZIP, and `SHA256SUMS` download from `https://download.rizonesoft.com/<slug>/<version>/` and their hashes match `SHA256SUMS`; the GitHub release has no attached files and its body links those downloads, lists the same hashes, and links the tag's source; and `https://download.rizonesoft.com/update/<slug>.json` (or `<slug>-prerelease.json`) names the new version.

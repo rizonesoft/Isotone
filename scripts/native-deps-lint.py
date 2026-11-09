@@ -23,6 +23,8 @@ a lexical check can hold. Rules, each reported as `file:line:rule:message`:
   loadlibrary-unresolved a LoadLibrary* or LoadPackagedLibrary call in a native source whose module is not a string
                         literal naming a system DLL (native/system-dlls.txt) or a registered Runtime module, or a
                         LoadLibraryEx without a LOAD_LIBRARY_SEARCH_SYSTEM32 or LOAD_LIBRARY_SEARCH_APPLICATION_DIR flag
+  resolution-policy     a vcpkg.json with overrides, embedded vcpkg-configuration, or version constraints, or a
+                        vcpkg-configuration.json with registries, default-registry, or overlay-ports
 
 Usage: python scripts/native-deps-lint.py               after the presets are configured (it enters scripts/dev-env.ps1
                                                         itself for each link graph)
@@ -42,6 +44,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REGISTER = ROOT / "docs" / "dev" / "native-libraries.md"
 MANIFEST = ROOT / "native" / "vcpkg.json"
+VCPKG_CONFIG = ROOT / "native" / "vcpkg-configuration.json"
 SYSTEM_DLLS = ROOT / "native" / "system-dlls.txt"
 GRAPH_DIR = ROOT / "build" / "native-deps-lint"
 
@@ -222,14 +225,47 @@ def manifest_features(text):
     return shipped, features
 
 
+def resolution_policy_findings(manifest_text, config_text=None, manifest_path=MANIFEST, config_path=VCPKG_CONFIG):
+    """resolution-policy when native/vcpkg.json or native/vcpkg-configuration.json departs from the single builtin
+    baseline resolution policy (no overrides, no version constraints, no extra registries or overlay ports; D00 T04 §3)."""
+    found = []
+    doc = json.loads(manifest_text)
+    if not doc.get("builtin-baseline"):
+        found.append(finding(manifest_path, 1, "resolution-policy", "vcpkg.json must define builtin-baseline"))
+    if "overrides" in doc:
+        found.append(finding(manifest_path, 1, "resolution-policy",
+                             "vcpkg.json defines 'overrides'; every port must resolve from builtin-baseline"))
+    if "vcpkg-configuration" in doc:
+        found.append(finding(manifest_path, 1, "resolution-policy",
+                             "vcpkg.json defines embedded 'vcpkg-configuration'; registries outside vcpkg-configuration.json's default are not allowed"))
+    all_deps = list(doc.get("dependencies", []))
+    for feat in doc.get("features", {}).values():
+        all_deps.extend(feat.get("dependencies", []))
+    for dep in all_deps:
+        if isinstance(dep, dict):
+            for key in sorted(dep):
+                if key.startswith("version"):
+                    found.append(finding(manifest_path, 1, "resolution-policy",
+                                         f"dependency {dep.get('name', '?')} defines {key!r}; every port must resolve from builtin-baseline"))
+    if config_text is None and Path(config_path).is_file():
+        config_text = Path(config_path).read_text(encoding="utf-8")
+    if config_text:
+        cfg = json.loads(config_text)
+        for key in ("registries", "default-registry", "overlay-ports"):
+            if key in cfg:
+                found.append(finding(config_path, 1, "resolution-policy",
+                                     f"vcpkg-configuration.json defines '{key}'; no registry or port source outside the builtin baseline is allowed"))
+    return found
+
+
 # The register against what is installed -------------------------------------------------------------------------------
 
 FEED_RE = re.compile(r"^feed:https://[^\s/]+\.[^\s/]+/\S*$")
 
 
 def register_findings(rows, installed, spdx, direct, features, baseline, target_triplets, path=REGISTER):
-    """Findings for the register against `installed` {(port, triplet): version}, `spdx` {port: (repo, ref) or None},
-    the manifest's direct and per-feature dependencies, its builtin-baseline, and the suite's target triplets."""
+    """Findings for the register against `installed` {(port, triplet): version}, `spdx` {port: (repo, ref), set of them,
+    or None}, the manifest's direct and per-feature dependencies, its builtin-baseline, and the suite's target triplets."""
     found = []
     by_port = {row["vcpkg port"]: row for row in rows}
     ports = {}
@@ -260,25 +296,37 @@ def register_findings(rows, installed, spdx, direct, features, baseline, target_
             for problem in wrong:
                 found.append(finding(path, line, "helper-port", f"{port}: {problem}"))
             continue
-        source = spdx.get(port)
+        raw_source = spdx.get(port)
+        if raw_source is None:
+            sources = {None}
+        elif isinstance(raw_source, tuple):
+            sources = {raw_source}
+        else:
+            sources = set(raw_source) or {None}
         identity = f"osv-git:{row['Upstream repository']}@{row['Released tag']}"
-        if source is None:
+        if None in sources:
             found.append(finding(path, line, "identity-mismatch", f"{port}: its vcpkg.spdx.json names no upstream source"))
-        elif source[1] is None:
-            # An archive download: the row names the archive's URL, and its advisory identity is the library's feed.
-            if row["Upstream repository"] != source[0]:
-                found.append(finding(path, line, "identity-mismatch", f"{port}: the row names {row['Upstream repository']}, "
-                                     f"the port was built from the archive {source[0]}"))
-            if not FEED_RE.match(row["Advisory identity"]):
-                found.append(finding(path, line, "identity-mismatch", f"{port}: an archive-built port's Advisory identity "
-                                     f"is its feed (feed:https://...), not {row['Advisory identity']}"))
-        elif (row["Upstream repository"], row["Released tag"]) != source:
-            found.append(finding(path, line, "identity-mismatch", f"{port}: the row names {row['Upstream repository']}@"
-                                 f"{row['Released tag']}, the port was built from {source[0]}@{source[1]}"))
-        elif row["Advisory identity"] != identity and not FEED_RE.match(row["Advisory identity"]):
-            # A Git-built library is checked by its osv-git identity or by its own feed; nothing else is usable.
-            found.append(finding(path, line, "identity-mismatch", f"{port}: Advisory identity {row['Advisory identity']} "
-                                 f"is neither {identity} nor a feed:https://... URL"))
+        elif len(sources) > 1:
+            listed = ", ".join(sorted(f"{s[0]}@{s[1]}" if s[1] is not None else s[0] for s in sources))
+            found.append(finding(path, line, "identity-mismatch",
+                                 f"{port}: installed roots disagree on upstream source ({listed})"))
+        else:
+            source = next(iter(sources))
+            if source[1] is None:
+                # An archive download: the row names the archive's URL, and its advisory identity is the library's feed.
+                if row["Upstream repository"] != source[0]:
+                    found.append(finding(path, line, "identity-mismatch", f"{port}: the row names {row['Upstream repository']}, "
+                                         f"the port was built from the archive {source[0]}"))
+                if not FEED_RE.match(row["Advisory identity"]):
+                    found.append(finding(path, line, "identity-mismatch", f"{port}: an archive-built port's Advisory identity "
+                                         f"is its feed (feed:https://...), not {row['Advisory identity']}"))
+            elif (row["Upstream repository"], row["Released tag"]) != source:
+                found.append(finding(path, line, "identity-mismatch", f"{port}: the row names {row['Upstream repository']}@"
+                                     f"{row['Released tag']}, the port was built from {source[0]}@{source[1]}"))
+            elif row["Advisory identity"] != identity and not FEED_RE.match(row["Advisory identity"]):
+                # A Git-built library is checked by its osv-git identity or by its own feed; nothing else is usable.
+                found.append(finding(path, line, "identity-mismatch", f"{port}: Advisory identity {row['Advisory identity']} "
+                                     f"is neither {identity} nor a feed:https://... URL"))
         if row["Linked by"] in DEV_LINKED:
             want_feature = DEV_FEATURE_FOR_LINKED[row["Linked by"]]
             in_want_feature = port in features.get(want_feature, set())
@@ -343,12 +391,103 @@ def outside_findings(files):
 
 
 NOLINT_RE = re.compile(r"\bNOLINT(NEXTLINE|BEGIN|END)?\b(\(([^)]*)\))?(.*)")
+PRAGMA_DIRECT_RE = re.compile(r"(#\s*pragma\s+|__pragma\s*\(\s*)warning\s*\(")
+PRAGMA_OP_RE = re.compile(r"\b_Pragma\s*\(")
+RAW_STR_RE = re.compile(r'(?:L|u8|u|U)?R"([^ ()\\\t\v\f\r\n]*)\((.*?)\)\1"', re.S)
+
+
+def lex_views(text):
+    """(spliced, no_comments, no_strings, code_only), all aligned character-for-character with `text` after joining line
+    splices with spaces of the same length, so line numbers and offsets hold across every view."""
+    spliced = re.sub(r"\\\r?\n", lambda s: " " * len(s.group(0)), text)
+    no_comments = list(spliced)
+    no_strings = list(spliced)
+    code_only = list(spliced)
+    i, n = 0, len(spliced)
+
+    def blank(buf, start, stop):
+        for k in range(start, stop):
+            if buf[k] != "\n":
+                buf[k] = " "
+
+    while i < n:
+        if spliced.startswith("//", i):
+            j = spliced.find("\n", i)
+            j = n if j < 0 else j
+            blank(no_comments, i, j)
+            blank(code_only, i, j)
+            i = j
+        elif spliced.startswith("/*", i):
+            j = spliced.find("*/", i + 2)
+            j = n if j < 0 else j + 2
+            blank(no_comments, i, j)
+            blank(code_only, i, j)
+            i = j
+        else:
+            raw = RAW_STR_RE.match(spliced, i)
+            if raw:
+                blank(no_strings, raw.start(2), raw.end(2))
+                blank(code_only, raw.start(2), raw.end(2))
+                i = raw.end(0)
+            elif spliced[i] in "\"'":
+                ch = spliced[i]
+                j = i + 1
+                while j < n and spliced[j] != ch and spliced[j] != "\n":
+                    j += 2 if spliced[j] == "\\" else 1
+                blank(no_strings, i + 1, min(j, n))
+                blank(code_only, i + 1, min(j, n))
+                i = min(j + 1, n)
+            else:
+                i += 1
+    return spliced, "".join(no_comments), "".join(no_strings), "".join(code_only)
+
+
+def blank_comments(text):
+    """`text` with every // and /* */ comment replaced by spaces (line ends kept, so offsets and line numbers hold);
+    string and character literals are skipped, so a // inside one is not a comment."""
+    return lex_views(text)[1]
+
+
+def call_span(text, start):
+    """(start + 1, close_index) for the call whose open parenthesis is at `start`."""
+    depth = 0
+    for i in range(start, len(text)):
+        if text[i] == "(":
+            depth += 1
+        elif text[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return start + 1, i
+    return start + 1, len(text)
+
+
+def call_text(text, start):
+    """The argument text of the call whose open parenthesis is at `start`."""
+    a, b = call_span(text, start)
+    return text[a:b]
+
+
+def call_arguments(args, structure=None):
+    """The top-level, comma-separated arguments of `args`, splitting commas and parentheses on `structure` when given."""
+    scan = structure if structure is not None else args
+    parts, depth, start = [], 0, 0
+    for i, ch in enumerate(scan):
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            parts.append(args[start:i].strip())
+            start = i + 1
+    parts.append(args[start:].strip())
+    return parts
 
 
 def suppression_findings(path, text):
     """suppression-unreasoned for one native source (`standards/cpp.md`, Formatting and analysis)."""
     found = []
-    for n, line in enumerate(text.splitlines(), 1):
+    _, no_comments, no_strings, code_only = lex_views(text)
+    for n, line in enumerate(no_strings.splitlines(), 1):
         m = NOLINT_RE.search(line)
         if m:
             kind, checks, rest = m.group(1), m.group(3), m.group(4)
@@ -358,15 +497,24 @@ def suppression_findings(path, text):
                 found.append(finding(path, n, "suppression-unreasoned", "a NOLINT names exactly one check"))
             elif len(rest.strip(" :-").strip()) < 3:
                 found.append(finding(path, n, "suppression-unreasoned", "a NOLINT carries its reason on the same line"))
-    # #pragma, __pragma, and _Pragma are one directive to MSVC. Line splices are joined (each replaced by spaces of the
-    # same length, so offsets and line numbers hold), the directive's parentheses are balanced across lines, and each
-    # semicolon-separated clause is judged by its specifier: disable and a level push silence warnings, and suppress
-    # needs its reason in a comment on the line the directive ends.
-    spliced = blank_comments(re.sub(r"\\\r?\n", lambda s: " " * len(s.group(0)), text))
-    for m in PRAGMA_WARNING_RE.finditer(spliced):
-        n = text.count("\n", 0, m.start()) + 1
-        body = call_text(spliced, m.end() - 1)
-        end = m.end() + len(body)
+    # #pragma, __pragma, and _Pragma are one directive to MSVC. Line splices are joined, string literal contents are
+    # skipped so diagnostic strings quoting a pragma do not fire, the directive's parentheses are balanced across lines,
+    # and each semicolon-separated clause is judged by its specifier: disable and a level push silence warnings, and
+    # suppress needs its reason in a comment on the line the directive ends.
+    directives = []
+    for m in PRAGMA_DIRECT_RE.finditer(code_only):
+        a, b = call_span(code_only, m.end() - 1)
+        directives.append((m.start(), no_comments[a:b], b))
+    for m in PRAGMA_OP_RE.finditer(code_only):
+        a, b = call_span(code_only, m.end() - 1)
+        lit = re.fullmatch(r'\s*(?:L|u8|u|U)?"(.*)"\s*', no_comments[a:b], re.S)
+        if lit:
+            inner = lit.group(1).replace(r'\"', '"').replace(r"\\", "\\")
+            wm = re.match(r"^\s*warning\s*\((.*)\)\s*$", inner, re.S)
+            if wm:
+                directives.append((m.start(), wm.group(1), b))
+    for start_pos, body, end in sorted(directives, key=lambda item: item[0]):
+        n = text.count("\n", 0, start_pos) + 1
         for clause in body.split(";"):
             spec, _, rest = clause.partition(":")
             spec = spec.strip()
@@ -378,15 +526,12 @@ def suppression_findings(path, text):
                 # One numeric warning literal: a macro (ALL_CODE_ANALYSIS_WARNINGS) can expand to hundreds.
                 if not re.fullmatch(r"\s*\d+\s*", rest):
                     found.append(finding(path, n, "suppression-unreasoned", "warning(suppress) names exactly one warning number"))
-                after = text[end + 1:].split("\n", 1)[0]
+                after = no_strings[end + 1:].split("\n", 1)[0]
                 reason = re.match(r"[)\"\s]*(//|/\*)\s*(.*)", after)
                 if not reason or len(reason.group(2).strip(" /*:-").strip()) < 3:
                     found.append(finding(path, n, "suppression-unreasoned",
                                          "warning(suppress) carries its reason in a comment on the line the directive ends"))
     return found
-
-
-PRAGMA_WARNING_RE = re.compile(r"(#\s*pragma\s+|__pragma\s*\(\s*|_Pragma\s*\(\s*\")warning\s*\(")
 
 
 def cmake_suppression_findings(path, text):
@@ -408,62 +553,6 @@ def cmake_suppression_findings(path, text):
 
 LOAD_RE = re.compile(r"\b(LoadLibrary(?:Ex)?[AW]?|LoadPackagedLibrary)\s*\(")
 
-
-def blank_comments(text):
-    """`text` with every // and /* */ comment replaced by spaces (line ends kept, so offsets and line numbers hold);
-    string and character literals are skipped, so a // inside one is not a comment."""
-    out = list(text)
-    i, n = 0, len(text)
-    while i < n:
-        ch = text[i]
-        if ch in "\"'":
-            j = i + 1
-            while j < n and text[j] != ch and text[j] != "\n":
-                j += 2 if text[j] == "\\" else 1
-            i = j + 1
-        elif text.startswith("//", i):
-            j = text.find("\n", i)
-            j = n if j < 0 else j
-            out[i:j] = " " * (j - i)
-            i = j
-        elif text.startswith("/*", i):
-            j = text.find("*/", i + 2)
-            j = n if j < 0 else j + 2
-            out[i:j] = [c if c == "\n" else " " for c in text[i:j]]
-            i = j
-        else:
-            i += 1
-    return "".join(out)
-
-
-def call_text(text, start):
-    """The argument text of the call whose open parenthesis is at `start`."""
-    depth = 0
-    for i in range(start, len(text)):
-        if text[i] == "(":
-            depth += 1
-        elif text[i] == ")":
-            depth -= 1
-            if depth == 0:
-                return text[start + 1:i]
-    return text[start + 1:]
-
-
-def call_arguments(args):
-    """The top-level, comma-separated arguments of a call's argument text."""
-    parts, depth, start = [], 0, 0
-    for i, ch in enumerate(args):
-        if ch in "([{":
-            depth += 1
-        elif ch in ")]}":
-            depth -= 1
-        elif ch == "," and depth == 0:
-            parts.append(args[start:i].strip())
-            start = i + 1
-    parts.append(args[start:].strip())
-    return parts
-
-
 # The dwFlags constants LoadLibraryExW documents; a flags argument resolves only when it is these, joined by |.
 LOAD_FLAG_RE = re.compile(r"^(LOAD_LIBRARY_\w+|LOAD_WITH_ALTERED_SEARCH_PATH|LOAD_IGNORE_CODE_AUTHZ_LEVEL|"
                           r"DONT_RESOLVE_DLL_REFERENCES)$")
@@ -471,11 +560,12 @@ LOAD_FLAG_RE = re.compile(r"^(LOAD_LIBRARY_\w+|LOAD_WITH_ALTERED_SEARCH_PATH|LOA
 
 def loadlibrary_findings(path, text, system_patterns, modules):
     found = []
-    text = blank_comments(text)
-    for m in LOAD_RE.finditer(text):
+    _, no_comments, _, code_only = lex_views(text)
+    for m in LOAD_RE.finditer(code_only):
         line = text.count("\n", 0, m.start()) + 1
-        args = call_text(text, m.end() - 1)
-        literal = re.fullmatch(r'L?"([^"]+)"', call_arguments(args)[0])
+        a, b = call_span(code_only, m.end() - 1)
+        parts = call_arguments(no_comments[a:b], code_only[a:b])
+        literal = re.fullmatch(r'L?"([^"]+)"', parts[0])
         name = literal.group(1) if literal else None
         system = name is not None and any(fnmatch.fnmatchcase(name.lower(), p) for p in system_patterns)
         registered = name is not None and name.lower() in modules
@@ -491,7 +581,6 @@ def loadlibrary_findings(path, text, system_patterns, modules):
             # A system DLL loads from System32, a registered module from the app's own folder: the search flags must be
             # exactly that one, never widened (LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, a user directory, the altered path).
             want = "LOAD_LIBRARY_SEARCH_SYSTEM32" if system else "LOAD_LIBRARY_SEARCH_APPLICATION_DIR"
-            parts = call_arguments(args)
             tokens = [tok.strip().strip("()").strip() for tok in parts[2].split("|")] if len(parts) == 3 else []
             if not tokens or not all(LOAD_FLAG_RE.match(tok) for tok in tokens):
                 found.append(finding(path, line, "loadlibrary-unresolved", f"{m.group(1)} loads {name} with flags the lint "
@@ -589,14 +678,17 @@ def main(argv=None):
             status_ports = {port for port, _ in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8"))}
             list_ports = set(load_artifact_gate().port_files(root).values())
             dist_installed[name] = status_ports | list_ports
-        # Every root's versions are kept: two roots holding the same triplet at different versions both count.
+        # Every root's versions and SPDX sources are kept: two roots holding the same triplet at different versions or
+        # built from different upstream sources both count.
         for key, version in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8")).items():
             installed.setdefault(key, set()).add(version)
         for share in root.glob("*/share/*/vcpkg.spdx.json"):
-            spdx.setdefault(share.parent.name, spdx_source(share.read_text(encoding="utf-8")))
-    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    direct, features = manifest_features(MANIFEST.read_text(encoding="utf-8"))
+            spdx.setdefault(share.parent.name, set()).add(spdx_source(share.read_text(encoding="utf-8")))
+    manifest_text = MANIFEST.read_text(encoding="utf-8")
+    manifest = json.loads(manifest_text)
+    direct, features = manifest_features(manifest_text)
     target_triplets = {t.stem for t in (ROOT / "native" / "triplets").glob("*.cmake")}
+    found += resolution_policy_findings(manifest_text)
     found += register_findings(rows, installed, spdx, direct, features, manifest.get("builtin-baseline", ""),
                                target_triplets)
     found += preset_feature_findings()
@@ -892,6 +984,42 @@ def self_test():
           build_graph_signature(ninja_before) == build_graph_signature(ninja_after_rerun_only), True)
     check("build_graph_signature detects a changed target in build.ninja",
           build_graph_signature(ninja_before) == build_graph_signature(ninja_after_new_target), False)
+    check("two roots at one version but different SPDX sources fail identity-mismatch",
+          rules(lint(table(gtest, helper), sp={"gtest": {("https://github.com/google/googletest", "v1.18.0"),
+                                                         ("https://github.com/google/googletest", "v1.17.0")}})),
+          ["identity-mismatch"])
+    check("two roots where one SPDX source is None fail identity-mismatch",
+          rules(lint(table(gtest, helper), sp={"gtest": {("https://github.com/google/googletest", "v1.18.0"), None}})),
+          ["identity-mismatch"])
+    for lit_case in ('constexpr auto help = "LoadLibraryW(name)";',
+                     'constexpr auto help = L"LoadLibraryExW(L\\"kernel32.dll\\", nullptr, 0)";',
+                     'constexpr auto help = R"(LoadLibraryW(name) // NOLINT\n#pragma warning(disable: 4996))";',
+                     'constexpr auto help = "// NOLINT";',
+                     'constexpr auto help = "NOLINTBEGIN(bugprone-foo)";',
+                     'constexpr auto help = "#pragma warning(disable: 4996)";',
+                     'constexpr auto help = "__pragma(warning(disable: 4996))";',
+                     'constexpr auto help = "_Pragma(\\"warning(disable: 4996)\\")";'):
+        check(f"string literal skipped: {lit_case[:42]}",
+              suppression_findings("native/a.cpp", lit_case) + loadlibrary_findings("native/a.cpp", lit_case, patterns, set()), [])
+    check("the committed manifest and vcpkg-configuration pass resolution-policy",
+          resolution_policy_findings(MANIFEST.read_text(encoding="utf-8")), [])
+    check("an overrides entry in vcpkg.json fails resolution-policy",
+          rules(resolution_policy_findings(json.dumps({"builtin-baseline": base, "dependencies": [],
+                                                       "overrides": [{"name": "gtest", "version": "1.18.0"}]}), "{}")),
+          ["resolution-policy"])
+    check("an embedded vcpkg-configuration in vcpkg.json fails resolution-policy",
+          rules(resolution_policy_findings(json.dumps({"builtin-baseline": base, "dependencies": [],
+                                                       "vcpkg-configuration": {"registries": []}}), "{}")),
+          ["resolution-policy"])
+    check("a dependency version constraint in vcpkg.json fails resolution-policy",
+          rules(resolution_policy_findings(json.dumps({"builtin-baseline": base,
+                                                       "dependencies": [{"name": "gtest", "version>=": "1.18.0"}]}), "{}")),
+          ["resolution-policy"])
+    for cfg_key in ("registries", "default-registry", "overlay-ports"):
+        check(f"{cfg_key} in vcpkg-configuration.json fails resolution-policy",
+              rules(resolution_policy_findings(json.dumps({"builtin-baseline": base, "dependencies": []}),
+                                               json.dumps({cfg_key: []}))),
+              ["resolution-policy"])
     print(f"native-deps-lint self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
 

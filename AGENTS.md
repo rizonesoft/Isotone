@@ -27,7 +27,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `src/Albumen/` | Albumen, the darkroom (planned) |
 | `src/Isotone.Core/`, `src/Isotone.UI/` | Shared libraries, only what two apps need (planned); the target layout is in `docs/dev/architecture.md` |
 | `Isotone.slnx` | The one solution every build, test, and publish goes through |
-| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, the native toolchain and gates (`dev-env.ps1`, `native-format.ps1`, `native-tidy.ps1`, `native-std-check.py`, `native-pe-check.py`, `native-artifact-gate.py`, `native-deps-lint.py`), and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots and delegation checks, weakening scan, campaign guard, the parity checks `todo-parity.py`), the dependency pull request merger `merge_prs.py`, the section-boundary CI watch `ci_watch.py`, the pin checks `check-dotnet-pin.py`, `check-vulnerable-packages.py`, and `check-local-tools.py` with their shared `lib/pin_proposal.py` and `lib/pin_sources.py`, with tests under `tests/` |
+| `scripts/` | `build.ps1`, `publish.ps1`, `package.ps1`, `release-manifest.ps1` (release body and update feed), `check-all.ps1`, the native toolchain and gates (`dev-env.ps1`, `native-format.ps1`, `native-tidy.ps1`, `native-std-check.py`, `native-pe-check.py`, `native-artifact-gate.py`, `native-deps-lint.py`, `check-native-advisories.py`), and the stdlib Python TODO tooling (`todo-graph.py`, validator, claims, findings, runs, review prompt, panel slots and delegation checks, weakening scan, campaign guard, the parity checks `todo-parity.py`), the dependency pull request merger `merge_prs.py`, the section-boundary CI watch `ci_watch.py`, the pin checks `check-dotnet-pin.py`, `check-vulnerable-packages.py`, `check-native-advisories.py`, and `check-local-tools.py` with their shared `lib/pin_proposal.py` and `lib/pin_sources.py`, with tests under `tests/` |
 | `tools/` | `provision.ps1` (sets up a clone, including the commit hook) and `githooks/pre-commit` |
 | `todo/` | The live execution plan; read `todo/README.md` before authoring or implementing |
 | `todo/implementation-plan.md` | Ordered phase plan; its boxes are synchronized through `scripts/todo-graph.py` |
@@ -44,7 +44,7 @@ Agent instructions for this repository. Human orientation lives in `README.md`. 
 | `resources/` | Brand, icons, screens |
 | `.claude/` | Claude Code skills, the delegate agent definitions under `agents/`, the output and safety rule under `rules/`, the Stop hook, the agent-routing hook, and settings. Every file here is Isotone's own: the operator cut the link to the Conclave SDK on 2026-10-21, so nothing is synced from, compared with, or refreshed from another repository |
 | `.conclave/reviewers.toml` | The reviewer pin (schema 2: one `[writer]`, Claude Code on Opus 5.5, and one `[reviewer]` with its CLI, model, and effort, no fallback), read by `scripts/review-dispatch.py`, which runs every review round |
-| `.conclave/automations/` | The scheduled jobs (Windows Task Scheduler, under `\Isotone\`, in RectoPDF's shape): the task list `tasks.json` with the checks only this PC can see and the `isotone-pr-merge` fallback, the runner, alert, and installers, and the README listing both those and what the daily `.github/workflows/pins.yml` and Dependabot keep current on GitHub (the .NET 11 SDK with its runtime packages, vulnerable packages, NuGet, Actions) |
+| `.conclave/automations/` | The scheduled jobs (Windows Task Scheduler, under `\Isotone\`, in RectoPDF's shape): the task list `tasks.json` with the checks only this PC can see and the `isotone-pr-merge` fallback, the runner, alert, and installers, and the README listing both those and what the daily `.github/workflows/pins.yml` and Dependabot keep current on GitHub (the .NET 11 SDK with its runtime packages, vulnerable packages, native advisories, NuGet, Actions) |
 | `artifacts/` | Build output (`UseArtifactsOutput` for the C# code; the native build's preset folders under `artifacts/native/` and its vcpkg roots under `artifacts/vcpkg_installed/`); ignored, never authoritative |
 | `build/` | Scratch, caches, and campaign guard state; ignored, never authoritative |
 
@@ -150,6 +150,8 @@ pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --workflow 
 pwsh scripts/native-format.ps1 -Check        # clang-format on every native source; native-tidy.ps1 runs clang-tidy
 python scripts/native-deps-lint.py            # the dependency register against what vcpkg installed, the link graphs, and standards/cpp.md's lexical rules
 python scripts/native-deps-lint.py --self-test   # the lint's own fixtures, no installed tree needed
+python scripts/check-native-advisories.py     # every registered native library against OSV / feed advisories and the committed vcpkg baseline
+python scripts/check-native-advisories.py --self-test   # the advisory check's recorded fixtures, no network needed
 pwsh scripts/dev-env.ps1 -Arch x64 -Run 'python scripts/native-artifact-gate.py --policy shipping --require-built'   # imports, static CRT, every preset built
 dotnet build Isotone.slnx -c Release          # the build alone
 dotnet test Isotone.slnx                      # the whole suite; iterate with --filter

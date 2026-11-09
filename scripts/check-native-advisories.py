@@ -1,0 +1,1327 @@
+"""Check every registered native library in docs/dev/native-libraries.md against vulnerability advisories and the vcpkg baseline (D00 T04 §3).
+
+Usage:
+    python scripts/check-native-advisories.py [check] [--json] [--release-gate]
+    python scripts/check-native-advisories.py issue
+    python scripts/check-native-advisories.py --self-test
+
+For each row in docs/dev/native-libraries.md:
+  - A validated vcpkg registry helper row (Advisory identity `none: build-time helper, not linked`, Linked by
+    `build-time`, Upstream repository `https://github.com/microsoft/vcpkg`, Released tag equal to `builtin-baseline`,
+    CRT `none:...`, Runtime module `none`, and not a shipped/feature manifest dependency or target-triplet install) is
+    reported as `helper` and not queried. Any other row carrying `none:...` or lacking a valid identity is `unmapped`.
+  - An `osv-git:<repo>@<tag>` row resolves `<tag>` in `<repo>` to an immutable commit SHA through `git ls-remote`
+    (failing closed as `unchecked` when the tag cannot be resolved) and queries OSV (`https://api.osv.dev/v1/query`),
+    following `next_page_token` until none (any page failure or malformed response counting as `unchecked`).
+  - A `feed:<url>` row dispatches to its registered adapter in `FEED_ADAPTERS` (with stated format, version-range
+    semantics, pagination, and fail-closed malformed-entry behavior; an unregistered feed URL is `unmapped`).
+  - The committed `builtin-baseline` of `native/vcpkg.json` is checked against `versions/baseline.json` in the vcpkg
+    registry, and the single dependency-resolution policy (no `overrides`, no version constraints, and no extra
+    registries or overlay ports in `native/vcpkg.json` or `native/vcpkg-configuration.json`) is enforced; any drift is
+    `baseline-mismatch`. When advisories are found, any newer version in the registry's current baseline that fixes
+    them is reported without failing.
+
+Exits 0 only when `0 advisories, 0 unchecked`, `0 unmapped`, and `0 baseline-mismatch`; exits 1 on any finding.
+Stdlib only.
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import html as html_lib
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+from typing import NamedTuple
+import urllib.error
+import urllib.parse
+import urllib.request
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+import pin_proposal  # noqa: E402
+
+REGISTER = ROOT / "docs" / "dev" / "native-libraries.md"
+MANIFEST = ROOT / "native" / "vcpkg.json"
+VCPKG_CONFIG = ROOT / "native" / "vcpkg-configuration.json"
+FIXTURES = ROOT / "scripts" / "tests" / "fixtures" / "osv"
+OSV_QUERY_URL = "https://api.osv.dev/v1/query"
+VCPKG_BASELINE_URL = "https://raw.githubusercontent.com/microsoft/vcpkg/{ref}/versions/baseline.json"
+NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
+COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+OSV_GIT_RE = re.compile(r"^osv-git:(https://[^\s@]+)@([^\s@]+)$")
+FEED_ID_RE = re.compile(r"^feed:(https://[^\s/]+\.[^\s/]+/\S*)$")
+CVE_ID_RE = re.compile(r"\bCVE-\d{4}-\d{4,}\b")
+
+# Upstream Git mirrors that OSV indexes under the GitHub mirror repository name as well as the canonical host.
+REPO_MIRRORS = {
+    "https://chromium.googlesource.com/webm/libwebp": ("https://github.com/webmproject/libwebp",),
+    "https://github.com/webmproject/libwebp": ("https://chromium.googlesource.com/webm/libwebp",),
+}
+
+
+def load_deps_lint():
+    spec = importlib.util.spec_from_file_location("native_deps_lint", ROOT / "scripts" / "native-deps-lint.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+DEPS_LINT = load_deps_lint()
+
+
+def parse_version_tuple(ver: str) -> tuple[int, ...] | None:
+    """Parse a numeric dotted version (stripping `#<port-version>` and leading `v`) into an int tuple, or None."""
+    base = ver.split("#", 1)[0].strip()
+    if base.startswith(("v", "V")):
+        base = base[1:]
+    m = re.match(r"^(\d+(?:\.\d+)+)", base)
+    if not m:
+        return None
+    return tuple(int(part) for part in m.group(1).split("."))
+
+
+def version_lt(a: str, b: str) -> bool:
+    ta, tb = parse_version_tuple(a), parse_version_tuple(b)
+    if ta is None or tb is None:
+        return False
+    width = max(len(ta), len(tb))
+    return ta + (0,) * (width - len(ta)) < tb + (0,) * (width - len(tb))
+
+
+def version_ge(a: str, b: str) -> bool:
+    ta, tb = parse_version_tuple(a), parse_version_tuple(b)
+    if ta is None or tb is None:
+        return False
+    width = max(len(ta), len(tb))
+    return ta + (0,) * (width - len(ta)) >= tb + (0,) * (width - len(tb))
+
+
+def version_le(a: str, b: str) -> bool:
+    ta, tb = parse_version_tuple(a), parse_version_tuple(b)
+    if ta is None or tb is None:
+        return False
+    width = max(len(ta), len(tb))
+    return ta + (0,) * (width - len(ta)) <= tb + (0,) * (width - len(tb))
+
+
+# Feed adapters (D00-T04-S1-PR9) ---------------------------------------------------------------------------------------
+
+class FeedEntry(NamedTuple):
+    advisory_id: str
+    fixed_version: str | None  # None when explicitly marked not a vulnerability in the library
+    summary: str
+
+
+class FeedAdapter(NamedTuple):
+    url: str
+    format: str
+    version_range_semantics: str
+    pagination: str
+    malformed_entry_behavior: str
+    parse_page: object  # (text: str, page_url: str) -> tuple[list[FeedEntry], str | None]
+
+    def affects(self, registered_version: str, entry: FeedEntry) -> bool:
+        if entry.fixed_version is None:
+            return False
+        if parse_version_tuple(registered_version) is None or parse_version_tuple(entry.fixed_version) is None:
+            raise ValueError(f"cannot compare version {registered_version!r} against feed fix {entry.fixed_version!r}")
+        return version_lt(registered_version, entry.fixed_version)
+
+
+def _strip_html(fragment: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", fragment)
+    return re.sub(r"\s+", " ", html_lib.unescape(text)).strip()
+
+
+def parse_sqlite_cves_page(text: str, page_url: str) -> tuple[list[FeedEntry], str | None]:
+    """Parse SQLite's https://www.sqlite.org/cves.html advisory table (fail-closed on missing table or malformed row)."""
+    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", text, re.S | re.I)
+    if not rows:
+        raise ValueError(f"{page_url}: no <tr> rows in SQLite CVE feed")
+    headers = [_strip_html(th).lower() for th in re.findall(r"<th[^>]*>(.*?)</th>", rows[0], re.S | re.I)]
+    if headers != ["cve number", "fix", "comments"]:
+        raise ValueError(f"{page_url}: unexpected table headers {headers!r}, want ['cve number', 'fix', 'comments']")
+    if len(rows) < 2:
+        raise ValueError(f"{page_url}: SQLite CVE table has no advisory rows")
+    entries: list[FeedEntry] = []
+    for index, row_html in enumerate(rows[1:], start=2):
+        cells = [_strip_html(td) for td in re.findall(r"<td[^>]*>(.*?)</td>", row_html, re.S | re.I)]
+        if len(cells) != 3:
+            raise ValueError(f"{page_url}: row {index} has {len(cells)} cell(s), want 3")
+        cve_ids = CVE_ID_RE.findall(cells[0])
+        if not cve_ids:
+            raise ValueError(f"{page_url}: row {index} names no CVE identifier in {cells[0]!r}")
+        fix_cell, comments = cells[1], cells[2]
+        if not comments:
+            raise ValueError(f"{page_url}: row {index} ({cve_ids[0]}) has an empty Comments cell")
+        fix_match = re.match(r"^(\d+\.\d+\.\d+)(?:\s*\(\d{4}-\d{2}-\d{2}\))?$", fix_cell)
+        disputed = re.match(r"^Not a bug in (?:the core )?SQLite(?: library)?$", fix_cell, re.I)
+        if fix_match:
+            fixed_version: str | None = fix_match.group(1)
+        elif disputed:
+            fixed_version = None
+        else:
+            raise ValueError(f"{page_url}: row {index} ({cve_ids[0]}) has unparseable Fix cell {fix_cell!r}")
+        for cve_id in cve_ids:
+            entries.append(FeedEntry(advisory_id=cve_id, fixed_version=fixed_version, summary=comments))
+    next_match = re.search(r'<(?:a|link)\b[^>]*\brel=["\']next["\'][^>]*\bhref=["\']([^"\']+)["\']', text, re.I)
+    if not next_match:
+        next_match = re.search(r'<(?:a|link)\b[^>]*\bhref=["\']([^"\']+)["\'][^>]*\brel=["\']next["\']', text, re.I)
+    next_url = urllib.parse.urljoin(page_url, next_match.group(1)) if next_match else None
+    return entries, next_url
+
+
+FEED_ADAPTERS: dict[str, FeedAdapter] = {
+    "https://www.sqlite.org/cves.html": FeedAdapter(
+        url="https://www.sqlite.org/cves.html",
+        format="SQLite CVE HTML table (columns: CVE Number, Fix, Comments)",
+        version_range_semantics=(
+            "semver < Fix: each row with a numeric Fix version M.m.p affects versions strictly below M.m.p; "
+            "rows marked 'Not a bug in SQLite' or 'Not a bug in the core SQLite library' affect no version"
+        ),
+        pagination="follow <link rel='next' href='...'> or <a rel='next' href='...'> until absent; fail on cycle",
+        malformed_entry_behavior=(
+            "fail closed as unchecked if the table headers are not ['cve number', 'fix', 'comments'], if there are "
+            "no data rows, or if any row lacks a CVE-YYYY-NNNN+ id, a valid Fix cell, or a non-empty Comments cell"
+        ),
+        parse_page=parse_sqlite_cves_page,
+    ),
+}
+
+
+# Network and Git resolution -------------------------------------------------------------------------------------------
+
+def default_resolve_tag(repo: str, tag: str) -> str:
+    """Resolve `refs/tags/<tag>` on `repo` to an immutable 40-hex commit SHA via `git ls-remote` (preferring `^{}`)."""
+    proc = subprocess.run(
+        ["git", "ls-remote", "--tags", repo, f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=60,
+        creationflags=NO_WINDOW,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"git ls-remote {repo} {tag} failed ({proc.returncode}): {(proc.stderr or proc.stdout).strip()}")
+    direct = None
+    peeled = None
+    for line in proc.stdout.splitlines():
+        parts = line.strip().split()
+        if len(parts) != 2:
+            continue
+        sha, ref = parts
+        if not COMMIT_RE.match(sha):
+            continue
+        if ref == f"refs/tags/{tag}^{{}}":
+            peeled = sha
+        elif ref == f"refs/tags/{tag}":
+            direct = sha
+    commit = peeled or direct
+    if not commit:
+        raise RuntimeError(f"tag {tag!r} resolved to no commit in {repo}")
+    return commit
+
+
+def default_osv_post(payload: dict) -> dict:
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        OSV_QUERY_URL,
+        data=body,
+        headers={"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "Isotone-Advisory-Check/1.0"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        raw = resp.read().decode("utf-8")
+    doc = json.loads(raw)
+    if not isinstance(doc, dict):
+        raise ValueError("OSV response is not a JSON object")
+    return doc
+
+
+def default_http_get(url: str) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": "Isotone-Advisory-Check/1.0"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return resp.read().decode("utf-8")
+
+
+# OSV query and version evaluation -------------------------------------------------------------------------------------
+
+def query_osv_paginated(base_payload: dict, osv_post) -> list[dict]:
+    """Query OSV following `next_page_token` until the response carries none; raise on any page error or bad shape."""
+    vulns: list[dict] = []
+    seen_tokens: set[str] = set()
+    page_token: str | None = None
+    while True:
+        payload = dict(base_payload)
+        if page_token is not None:
+            payload["page_token"] = page_token
+        doc = osv_post(payload)
+        if not isinstance(doc, dict):
+            raise ValueError("OSV page response is not a JSON object")
+        page_vulns = doc.get("vulns", [])
+        if page_vulns is None or not isinstance(page_vulns, list):
+            raise ValueError("OSV page response 'vulns' is not a list")
+        for v in page_vulns:
+            if not isinstance(v, dict) or not isinstance(v.get("id"), str) or not v["id"].strip():
+                raise ValueError("OSV vulnerability entry lacks a string 'id'")
+            summary = (v.get("summary") or v.get("details") or "").strip()
+            if not summary:
+                raise ValueError(f"OSV vulnerability {v['id']} lacks both 'summary' and 'details'")
+            vulns.append(v)
+        next_token = doc.get("next_page_token")
+        if not next_token:
+            break
+        if not isinstance(next_token, str) or next_token in seen_tokens:
+            raise ValueError(f"invalid or repeating OSV next_page_token {next_token!r}")
+        seen_tokens.add(next_token)
+        page_token = next_token
+    return vulns
+
+
+def extract_fixed_version_from_osv(vuln: dict) -> str | None:
+    """Best-effort extraction of the fixing version from an OSV advisory's GIT ranges or extracted_events."""
+    for aff in vuln.get("affected") or []:
+        if not isinstance(aff, dict):
+            continue
+        for rng in aff.get("ranges") or []:
+            if not isinstance(rng, dict):
+                continue
+            db = rng.get("database_specific") or {}
+            for ext in db.get("extracted_events") or []:
+                if not isinstance(ext, dict):
+                    continue
+                orig_tag = ext.get("original_tag")
+                if isinstance(orig_tag, str) and parse_version_tuple(orig_tag) is not None:
+                    return orig_tag.lstrip("vV")
+                for ev in ext.get("range") or []:
+                    if isinstance(ev, dict) and isinstance(ev.get("fixed"), str):
+                        cand = ev["fixed"]
+                        if parse_version_tuple(cand) is not None and not COMMIT_RE.match(cand):
+                            return cand.lstrip("vV")
+    return None
+
+
+def advisory_affects_git(vuln: dict, version: str, tag: str, commit: str, from_commit_query: bool) -> bool:
+    """Determine whether an OSV advisory affects `(version, tag, commit)`."""
+    affected_list = vuln.get("affected")
+    if not affected_list:
+        return from_commit_query
+    if not isinstance(affected_list, list):
+        raise ValueError(f"OSV advisory {vuln.get('id')} has non-list 'affected'")
+    clean_ver = version.split("#", 1)[0].strip()
+    for aff in affected_list:
+        if not isinstance(aff, dict):
+            continue
+        ranges = aff.get("ranges") or []
+        fixed_commits: set[str] = set()
+        introduced_commits: set[str] = set()
+        has_standalone_single = False
+        ref_tag_fixed: list[str] = []
+        version_ranges: list[tuple[str | None, str | None, str | None]] = []
+        for rng in ranges:
+            if not isinstance(rng, dict):
+                continue
+            for ev in rng.get("events") or []:
+                if isinstance(ev, dict):
+                    if isinstance(ev.get("fixed"), str):
+                        fixed_commits.add(ev["fixed"])
+                    if isinstance(ev.get("introduced"), str):
+                        introduced_commits.add(ev["introduced"])
+            db = rng.get("database_specific") or {}
+            for ext in db.get("extracted_events") or []:
+                if not isinstance(ext, dict):
+                    continue
+                if ext.get("strategy") == "StandaloneSingleVersion":
+                    has_standalone_single = True
+                if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str):
+                    ref_tag_fixed.append(ext["original_tag"])
+                if ext.get("source") in ("CPE_RANGE", "CPE_STRING"):
+                    intro_v, fixed_v, last_v = None, None, None
+                    for item in ext.get("range") or []:
+                        if isinstance(item, dict):
+                            intro_v = item.get("introduced", intro_v)
+                            fixed_v = item.get("fixed", fixed_v)
+                            last_v = item.get("last_affected", last_v)
+                    version_ranges.append((intro_v, fixed_v, last_v))
+        # If the queried commit is explicitly the fixing commit (and not a StandaloneSingleVersion conversion artifact),
+        # this release fixed the vulnerability.
+        if commit in fixed_commits and not (commit in introduced_commits and has_standalone_single):
+            continue
+        # OSV cvelistV5 conversion case (such as CVE-2023-4863): REFERENCES_TAG names the fixing release tag (e.g. v1.3.2)
+        # while StandaloneSingleVersion set introduced=last_affected=1.3.2. Every version strictly beloworiginal_tag is affected.
+        if ref_tag_fixed:
+            if any(version_lt(clean_ver, ft) for ft in ref_tag_fixed):
+                return True
+            if all(version_ge(clean_ver, ft) for ft in ref_tag_fixed):
+                continue
+        if version_ranges:
+            matched_range = False
+            for intro_v, fixed_v, last_v in version_ranges:
+                intro_ok = intro_v in (None, "0") or version_ge(clean_ver, intro_v)
+                if fixed_v is not None:
+                    if intro_ok and version_lt(clean_ver, fixed_v):
+                        matched_range = True
+                elif last_v is not None:
+                    if intro_ok and version_le(clean_ver, last_v):
+                        matched_range = True
+            if matched_range:
+                return True
+            continue
+        versions = [str(v) for v in (aff.get("versions") or [])]
+        if versions and not has_standalone_single:
+            if clean_ver in versions or f"v{clean_ver}" in versions or tag in versions:
+                return True
+        if from_commit_query:
+            return True
+    return False
+
+
+# Helper validation and transitive consumer resolution -----------------------------------------------------------------
+
+def is_validated_helper(row: dict, baseline: str, shipped_and_feature_ports: set[str], target_installed_ports: set[str]) -> bool:
+    """True only when `row` satisfies every helper-port invariant of D00 T04 §1."""
+    port = row.get("vcpkg port", "")
+    return (
+        row.get("Advisory identity") == DEPS_LINT.HELPER_IDENTITY
+        and row.get("Linked by") == "build-time"
+        and row.get("Upstream repository") == DEPS_LINT.HELPER_REPOSITORY
+        and row.get("Released tag") == baseline
+        and row.get("CRT", "").startswith("none:")
+        and row.get("Runtime module") == "none"
+        and port not in shipped_and_feature_ports
+        and port not in target_installed_ports
+    )
+
+
+def affected_consumers(row: dict, rows: list[dict]) -> str:
+    """Return the apps/targets linking `row`, following `Pulled in by` transitively across the register."""
+    by_port = {r.get("vcpkg port", ""): r for r in rows}
+    seen: set[str] = set()
+    linked: list[str] = []
+    stack = [row.get("vcpkg port", "")]
+    while stack:
+        port = stack.pop()
+        if not port or port in seen:
+            continue
+        seen.add(port)
+        cur = by_port.get(port)
+        if not cur:
+            continue
+        for item in (p.strip() for p in cur.get("Linked by", "").split(",") if p.strip()):
+            if item not in linked:
+                linked.append(item)
+        for parent in (p.strip() for p in cur.get("Pulled in by", "").split(",") if p.strip() and p.strip() != "direct"):
+            if parent not in seen:
+                stack.append(parent)
+    return ", ".join(linked) if linked else row.get("Linked by", "unknown")
+
+
+def summary_line(vuln: dict) -> str:
+    raw = (vuln.get("summary") or vuln.get("details") or "").strip()
+    return re.sub(r"\s+", " ", raw.splitlines()[0]).strip()
+
+
+def baseline_port_version(entry: dict) -> str:
+    ver = str(entry["baseline"])
+    pv = entry.get("port-version", 0)
+    if pv not in (0, "0", "", None):
+        return f"{ver}#{pv}"
+    return ver
+
+
+# Core check -----------------------------------------------------------------------------------------------------------
+
+def evaluate_register(
+    *,
+    register_text: str,
+    manifest_text: str,
+    config_text: str | None = None,
+    register_path: Path = REGISTER,
+    manifest_path: Path = MANIFEST,
+    config_path: Path = VCPKG_CONFIG,
+    resolve_tag=default_resolve_tag,
+    osv_post=default_osv_post,
+    http_get=default_http_get,
+    committed_baseline_doc: dict | None = None,
+    current_baseline_doc: dict | None = None,
+    target_installed_ports: set[str] | None = None,
+) -> dict:
+    """Evaluate the register, baseline, OSV, and feeds; return a structured result dictionary."""
+    advisories: list[dict] = []
+    unmapped: list[str] = []
+    unchecked: list[str] = []
+    baseline_mismatch: list[str] = []
+    helpers: list[str] = []
+    baseline_updates: list[str] = []
+
+    rows, parse_findings = DEPS_LINT.parse_register(register_text, path=register_path)
+    for pf in parse_findings:
+        if ": Advisory identity is empty" not in pf:
+            unmapped.append(f"unmapped: {pf}")
+    if not rows and not unmapped:
+        unmapped.append(f"unmapped: {register_path}: register contains 0 rows")
+
+    try:
+        manifest_doc = json.loads(manifest_text)
+    except ValueError as exc:
+        baseline_mismatch.append(f"baseline-mismatch: {manifest_path}: invalid JSON ({exc})")
+        manifest_doc = {}
+
+    baseline = str(manifest_doc.get("builtin-baseline", "")).strip()
+    try:
+        pol_findings = DEPS_LINT.resolution_policy_findings(
+            manifest_text, config_text=config_text, manifest_path=manifest_path, config_path=config_path
+        )
+        for pf in pol_findings:
+            baseline_mismatch.append(f"baseline-mismatch: {pf}")
+    except ValueError as exc:
+        baseline_mismatch.append(f"baseline-mismatch: {config_path}: invalid JSON ({exc})")
+
+    shipped_ports, feature_map = set(), {}
+    if isinstance(manifest_doc, dict) and manifest_doc:
+        try:
+            shipped_ports, feature_map = DEPS_LINT.manifest_features(manifest_text)
+        except Exception:
+            pass
+    manifest_ports = set(shipped_ports)
+    for fdeps in feature_map.values():
+        manifest_ports |= set(fdeps)
+
+    if target_installed_ports is None:
+        target_installed_ports = set()
+        if Path(register_path).resolve() == REGISTER.resolve() and Path(manifest_path).resolve() == MANIFEST.resolve():
+            target_triplets = {t.stem for t in (ROOT / "native" / "triplets").glob("*.cmake")}
+            for _, root in DEPS_LINT.installed_roots():
+                status_file = root / "vcpkg" / "status"
+                if status_file.is_file():
+                    for port, triplet in DEPS_LINT.parse_status(status_file.read_text(encoding="utf-8")):
+                        if triplet in target_triplets:
+                            target_installed_ports.add(port)
+
+    # 1. Baseline verification against the committed builtin-baseline's versions/baseline.json
+    if committed_baseline_doc is None and baseline:
+        try:
+            raw_base = http_get(VCPKG_BASELINE_URL.format(ref=baseline))
+            committed_baseline_doc = json.loads(raw_base)
+        except Exception as exc:
+            unchecked.append(f"unchecked: baseline {baseline[:12]}: could not fetch versions/baseline.json ({exc})")
+
+    default_baseline = committed_baseline_doc.get("default") if isinstance(committed_baseline_doc, dict) else None
+    if committed_baseline_doc is not None and not isinstance(default_baseline, dict):
+        unchecked.append(f"unchecked: baseline {baseline[:12]}: versions/baseline.json lacks a 'default' object")
+        default_baseline = None
+
+    # 2. Evaluate each register row
+    for row in rows:
+        port = row.get("vcpkg port", "").strip()
+        library = row.get("Library", "").strip() or port
+        version = row.get("Version", "").strip()
+        repo = row.get("Upstream repository", "").strip()
+        tag = row.get("Released tag", "").strip()
+        identity = row.get("Advisory identity", "").strip()
+
+        if not port or not version:
+            unmapped.append(f"unmapped: {library or '<unnamed>'}: missing port or version")
+            continue
+
+        if default_baseline is not None:
+            base_entry = default_baseline.get(port)
+            if not isinstance(base_entry, dict) or "baseline" not in base_entry:
+                baseline_mismatch.append(f"baseline-mismatch: {port}: not present in committed baseline {baseline[:12]}")
+            else:
+                expected_version = baseline_port_version(base_entry)
+                if version != expected_version:
+                    baseline_mismatch.append(
+                        f"baseline-mismatch: {port}: register Version is {version}, committed baseline {baseline[:12]} resolves {expected_version}"
+                    )
+
+        if identity == DEPS_LINT.HELPER_IDENTITY or identity.startswith("none:"):
+            if is_validated_helper(row, baseline, manifest_ports, target_installed_ports):
+                helpers.append(f"helper: {port} {version}")
+            else:
+                unmapped.append(
+                    f"unmapped: {port} {version}: carries helper identity {identity!r} but is not a validated build-time helper"
+                )
+            continue
+
+        osv_match = OSV_GIT_RE.match(identity)
+        feed_match = FEED_ID_RE.match(identity)
+        if osv_match:
+            id_repo, id_tag = osv_match.group(1), osv_match.group(2)
+            if id_repo != repo or id_tag != tag:
+                unmapped.append(
+                    f"unmapped: {port} {version}: Advisory identity {identity!r} does not match {repo}@{tag}"
+                )
+                continue
+            try:
+                commit = resolve_tag(id_repo, id_tag)
+                if not COMMIT_RE.match(commit):
+                    raise ValueError(f"resolved commit {commit!r} is not a 40-hex SHA")
+            except Exception as exc:
+                unchecked.append(f"unchecked: {port} {version}: could not resolve {id_repo}@{id_tag} ({exc})")
+                continue
+
+            try:
+                commit_vulns = query_osv_paginated({"commit": commit}, osv_post)
+                repo_vulns: list[dict] = []
+                repos_to_query = (id_repo, *REPO_MIRRORS.get(id_repo, ()))
+                for query_repo in repos_to_query:
+                    repo_vulns.extend(
+                        query_osv_paginated({"package": {"name": query_repo, "ecosystem": "GIT"}}, osv_post)
+                    )
+            except Exception as exc:
+                unchecked.append(f"unchecked: {port} {version}: OSV query failed for {identity} ({exc})")
+                continue
+
+            seen_ids: set[str] = set()
+            try:
+                for v in commit_vulns:
+                    vid = v["id"].strip()
+                    if vid not in seen_ids and advisory_affects_git(v, version, id_tag, commit, from_commit_query=True):
+                        seen_ids.add(vid)
+                        advisories.append({
+                            "library": library,
+                            "port": port,
+                            "version": version,
+                            "id": vid,
+                            "summary": summary_line(v),
+                            "linked_by": affected_consumers(row, rows),
+                            "owning_section": row.get("Owning section", ""),
+                            "fixed_version": extract_fixed_version_from_osv(v),
+                            "line": f"{port} {version} {vid} {summary_line(v)}",
+                        })
+                for v in repo_vulns:
+                    vid = v["id"].strip()
+                    if vid not in seen_ids and advisory_affects_git(v, version, id_tag, commit, from_commit_query=False):
+                        seen_ids.add(vid)
+                        advisories.append({
+                            "library": library,
+                            "port": port,
+                            "version": version,
+                            "id": vid,
+                            "summary": summary_line(v),
+                            "linked_by": affected_consumers(row, rows),
+                            "owning_section": row.get("Owning section", ""),
+                            "fixed_version": extract_fixed_version_from_osv(v),
+                            "line": f"{port} {version} {vid} {summary_line(v)}",
+                        })
+            except Exception as exc:
+                unchecked.append(f"unchecked: {port} {version}: malformed OSV advisory entry ({exc})")
+                continue
+
+        elif feed_match:
+            feed_url = feed_match.group(1)
+            adapter = FEED_ADAPTERS.get(feed_url)
+            if adapter is None:
+                unmapped.append(f"unmapped: {port} {version}: feed {feed_url} has no registered adapter in FEED_ADAPTERS")
+                continue
+            try:
+                entries: list[FeedEntry] = []
+                visited_urls: set[str] = set()
+                next_url: str | None = feed_url
+                while next_url is not None:
+                    if next_url in visited_urls:
+                        raise ValueError(f"feed pagination cycle at {next_url}")
+                    visited_urls.add(next_url)
+                    page_text = http_get(next_url)
+                    page_entries, next_url = adapter.parse_page(page_text, next_url)
+                    entries.extend(page_entries)
+                seen_ids = set()
+                for entry in entries:
+                    if entry.advisory_id not in seen_ids and adapter.affects(version, entry):
+                        seen_ids.add(entry.advisory_id)
+                        advisories.append({
+                            "library": library,
+                            "port": port,
+                            "version": version,
+                            "id": entry.advisory_id,
+                            "summary": entry.summary,
+                            "linked_by": affected_consumers(row, rows),
+                            "owning_section": row.get("Owning section", ""),
+                            "fixed_version": entry.fixed_version,
+                            "line": f"{port} {version} {entry.advisory_id} {entry.summary}",
+                        })
+            except Exception as exc:
+                unchecked.append(f"unchecked: {port} {version}: feed {feed_url} check failed ({exc})")
+                continue
+        else:
+            unmapped.append(f"unmapped: {port} {version}: invalid or empty Advisory identity {identity!r}")
+
+    # 3. Check if the registry's current (HEAD) baseline offers a newer version that fixes any found advisory
+    if advisories:
+        if current_baseline_doc is None:
+            try:
+                current_baseline_doc = json.loads(http_get(VCPKG_BASELINE_URL.format(ref="HEAD")))
+            except Exception:
+                current_baseline_doc = None
+        cur_default = current_baseline_doc.get("default") if isinstance(current_baseline_doc, dict) else None
+        if isinstance(cur_default, dict):
+            by_port_advs: dict[str, list[dict]] = {}
+            for adv in advisories:
+                by_port_advs.setdefault(adv["port"], []).append(adv)
+            for port, port_advs in sorted(by_port_advs.items()):
+                cur_entry = cur_default.get(port)
+                if not isinstance(cur_entry, dict) or "baseline" not in cur_entry:
+                    continue
+                head_ver = baseline_port_version(cur_entry)
+                reg_ver = port_advs[0]["version"]
+                if not version_lt(reg_ver, head_ver):
+                    continue
+                fixed_ids = [
+                    a["id"]
+                    for a in port_advs
+                    if a.get("fixed_version") is None or version_ge(head_ver, a["fixed_version"])
+                ]
+                if fixed_ids:
+                    for a in port_advs:
+                        if a["id"] in fixed_ids:
+                            a["baseline_fix"] = head_ver
+                    baseline_updates.append(
+                        f"baseline-update: {port} {reg_ver} -> {head_ver} in current vcpkg baseline fixes {', '.join(fixed_ids)}"
+                    )
+
+    ok = not (advisories or unmapped or unchecked or baseline_mismatch)
+    return {
+        "ok": ok,
+        "rows": len(rows),
+        "helpers": helpers,
+        "advisories": advisories,
+        "unmapped": unmapped,
+        "unchecked": unchecked,
+        "baseline_mismatch": baseline_mismatch,
+        "baseline_updates": baseline_updates,
+    }
+
+
+def format_report(result: dict, release_gate: bool = False) -> list[str]:
+    lines: list[str] = []
+    for h in result["helpers"]:
+        lines.append(h)
+    for u in result["unmapped"]:
+        lines.append(u)
+    for b in result["baseline_mismatch"]:
+        lines.append(b)
+    for c in result["unchecked"]:
+        lines.append(c)
+    for a in result["advisories"]:
+        lines.append(a["line"])
+    for up in result["baseline_updates"]:
+        lines.append(up)
+    if release_gate:
+        if result["advisories"]:
+            ids = ", ".join(f"{a['port']} {a['version']} {a['id']}" for a in result["advisories"])
+            lines.append(f"release-gate blocked (advisory): {len(result['advisories'])} advisory finding(s) affect registered libraries ({ids})")
+        if result["unmapped"]:
+            lines.append(f"release-gate blocked (unmapped): {len(result['unmapped'])} unmapped advisory identity finding(s) ({'; '.join(result['unmapped'])})")
+        if result["unchecked"]:
+            lines.append(f"release-gate blocked (unchecked): {len(result['unchecked'])} failed or partial advisory query finding(s) ({'; '.join(result['unchecked'])})")
+        if result["baseline_mismatch"]:
+            lines.append(f"release-gate blocked (baseline-mismatch): {len(result['baseline_mismatch'])} baseline mismatch finding(s) ({'; '.join(result['baseline_mismatch'])})")
+    summary = f"check-native-advisories: {len(result['advisories'])} advisories, {len(result['unchecked'])} unchecked"
+    if result["unmapped"]:
+        summary += f", {len(result['unmapped'])} unmapped"
+    if result["baseline_mismatch"]:
+        summary += f", {len(result['baseline_mismatch'])} baseline-mismatch"
+    lines.append(summary)
+    return lines
+
+
+# Persistent GitHub issue synchronization (D00-T04-S1-PR10) ------------------------------------------------------------
+
+def current_run_reference() -> str:
+    server = os.environ.get("GITHUB_SERVER_URL", "https://github.com").rstrip("/")
+    repo = os.environ.get("GITHUB_REPOSITORY", "rizonesoft/Isotone")
+    run_id = os.environ.get("GITHUB_RUN_ID", "")
+    if run_id:
+        return f"{server}/{repo}/actions/runs/{run_id}"
+    return "local run (`python scripts/check-native-advisories.py issue`)"
+
+
+def sync_issues(result: dict, rows: list[dict], *, root: Path = ROOT, run_gh=pin_proposal.gh) -> int:
+    """Open or update one GitHub issue per advisory and one per unclearable failure cause, and close resolved ones."""
+    run_ref = current_run_reference()
+
+    # 1. Unclearable failure causes: unmapped, unchecked, baseline-mismatch
+    causes = (
+        (
+            "native-advisories-unmapped",
+            result["unmapped"],
+            "unmapped native library advisory identity",
+            "Give every row in `docs/dev/native-libraries.md` a valid `osv-git:<repo>@<tag>` or registered `feed:<url>` "
+            "identity matching its `Upstream repository` and `Released tag` (or validate build-time helpers), then "
+            "re-run `python scripts/check-native-advisories.py`. This issue closes automatically on the next run that "
+            "clears the unmapped identity.",
+            "all registered native libraries have valid advisory identities.",
+        ),
+        (
+            "native-advisories-unchecked",
+            result["unchecked"],
+            "unchecked native library advisory query",
+            "Restore tag resolution (`git ls-remote`), OSV pagination, feed parsing, or baseline fetch for the "
+            "affected row(s), then re-run `python scripts/check-native-advisories.py`. This issue closes automatically "
+            "on the next run that completes every query cleanly.",
+            "all native library advisory and baseline queries completed cleanly.",
+        ),
+        (
+            "native-advisories-baseline-mismatch",
+            result["baseline_mismatch"],
+            "native library register baseline mismatch",
+            "Reconcile `docs/dev/native-libraries.md` Version cells and `native/vcpkg.json` / "
+            "`native/vcpkg-configuration.json` with the committed `builtin-baseline`, then re-run "
+            "`python scripts/check-native-advisories.py`. This issue closes automatically on the next run where the "
+            "register matches the committed baseline.",
+            "the native library register matches the committed vcpkg builtin-baseline.",
+        ),
+    )
+    for check_name, items, label_desc, recovery, resolved_msg in causes:
+        if items:
+            title = f"{len(items)} {label_desc} failure(s)"
+            body = "\n".join([
+                f"`python scripts/check-native-advisories.py` failed with {len(items)} {label_desc} finding(s):",
+                "",
+                *(f"- `{item}`" for item in items),
+                "",
+                f"- **Run:** {run_ref}",
+                f"- **Recovery:** {recovery}",
+            ])
+            pin_proposal.file_issue(root=root, check=check_name, title=title, body=body, run_gh=run_gh)
+        else:
+            pin_proposal.resolve_issues(root=root, check=check_name, message=resolved_msg, run_gh=run_gh)
+
+    # 2. One issue per advisory per library port
+    active_by_port: dict[str, list[dict]] = {}
+    for adv in result["advisories"]:
+        active_by_port.setdefault(adv["port"], []).append(adv)
+
+    known_ports = sorted({r.get("vcpkg port", "").strip() for r in rows if r.get("vcpkg port", "").strip()} | set(active_by_port))
+    for port in known_ports:
+        port_advs = active_by_port.get(port, [])
+        active_checks: set[str] = set()
+        for adv in port_advs:
+            check_name = f"native-advisory-{port}-{adv['id'].lower()}"
+            active_checks.add(check_name)
+            title = f"native advisory: {adv['library']} ({port} {adv['version']}) {adv['id']}"
+            fix_line = (
+                f"vcpkg current baseline offers `{adv['baseline_fix']}` fixing `{adv['id']}`"
+                if adv.get("baseline_fix")
+                else "check upstream / vcpkg baseline for a fixed version"
+            )
+            body = "\n".join([
+                f"`python scripts/check-native-advisories.py` reported a vulnerability advisory for `{adv['library']}`:",
+                "",
+                f"- **Library:** {adv['library']} (`{port}` `{adv['version']}`)",
+                f"- **Advisory:** `{adv['id']}` -- {adv['summary']}",
+                f"- **Apps / targets linking it:** `{adv['linked_by']}`",
+                f"- **Owning section:** `{adv['owning_section']}`",
+                f"- **Baseline fix status:** {fix_line}",
+                f"- **Run:** {run_ref}",
+                "- **Recovery:** File an update section through `add-todo` under the owning section to update the port, "
+                "rebuild, and release every affected app. This issue closes automatically once the registered version "
+                "is no longer affected.",
+            ])
+            pin_proposal.file_issue(root=root, check=check_name, title=title, body=body, run_gh=run_gh)
+
+        # If all advisories for this port are cleared, close any open `pins:native-advisory-<port>-*` issues
+        open_pins = json.loads(
+            run_gh("issue", "list", "--label", "pins", "--state", "open", "--limit", "100", "--json", "number,title,labels", cwd=root)
+            or "[]"
+        )
+        prefix = f"pins:native-advisory-{port}-"
+        for issue in open_pins:
+            labels = {lab.get("name", "") for lab in (issue.get("labels") or []) if isinstance(lab, dict)}
+            matching = [lab for lab in labels if lab.startswith(prefix)]
+            for lab in matching:
+                check_key = lab[len("pins:"):]
+                if check_key not in active_checks:
+                    pin_proposal.resolve_issues(
+                        root=root,
+                        check=check_key,
+                        message=f"{port} no longer reports advisory {check_key.removeprefix(f'native-advisory-{port}-').upper()}.",
+                        run_gh=run_gh,
+                    )
+    return 0 if result["ok"] else 1
+
+
+# Self-test ------------------------------------------------------------------------------------------------------------
+
+def self_test() -> int:
+    cases = 0
+    failed = 0
+
+    def check(name: str, got, want):
+        nonlocal cases, failed
+        cases += 1
+        if got != want:
+            failed += 1
+            print(f"FAIL {name}: got {got!r}, want {want!r}")
+
+    base_sha = "9eec002df1cd109f8f104cd966a763daf9751489"
+    manifest_clean = json.dumps({
+        "name": "isotone",
+        "version-semver": "0.0.0",
+        "builtin-baseline": base_sha,
+        "dependencies": [],
+        "features": {
+            "test": {"dependencies": ["gtest"]},
+            "bench": {"dependencies": ["benchmark"]},
+        },
+    })
+    committed_baseline = json.loads((FIXTURES / "baseline-committed.json").read_text(encoding="utf-8"))
+    bumped_baseline = json.loads((FIXTURES / "baseline-bumped-libwebp.json").read_text(encoding="utf-8"))
+    libwebp_osv = json.loads((FIXTURES / "libwebp-1.3.1.json").read_text(encoding="utf-8"))
+    clean_osv = json.loads((FIXTURES / "clean.json").read_text(encoding="utf-8"))
+    two_page_1 = json.loads((FIXTURES / "two-page-1.json").read_text(encoding="utf-8"))
+    two_page_2 = json.loads((FIXTURES / "two-page-2.json").read_text(encoding="utf-8"))
+    sqlite_clean_html = (FIXTURES / "sqlite-cves-clean.html").read_text(encoding="utf-8")
+    sqlite_malformed_html = (FIXTURES / "sqlite-cves-malformed.html").read_text(encoding="utf-8")
+    sqlite_page1_html = (FIXTURES / "sqlite-cves-page1.html").read_text(encoding="utf-8")
+    sqlite_page2_html = (FIXTURES / "sqlite-cves-page2.html").read_text(encoding="utf-8")
+
+    def table(*rows):
+        head = "| " + " | ".join(DEPS_LINT.COLUMNS) + " |\n|" + "---|" * len(DEPS_LINT.COLUMNS) + "\n"
+        return "# Register\n\n" + head + "".join("| " + " | ".join(r) + " |\n" for r in rows)
+
+    gtest_row = [
+        "GoogleTest", "gtest", "1.18.0", "BSD-3-Clause", "u", "yes", "none", "x64, arm64",
+        "https://github.com/google/googletest", "v1.18.0", "osv-git:https://github.com/google/googletest@v1.18.0",
+        "no", "tests", "direct", "D00 T05 §2", "static", "none",
+    ]
+    helper_row = [
+        "vcpkg CMake helpers", "vcpkg-cmake", "2025-08-07", "MIT", "u", "yes", "none", "host (x64-windows)",
+        DEPS_LINT.HELPER_REPOSITORY, base_sha, DEPS_LINT.HELPER_IDENTITY,
+        "no", "build-time", "gtest", "D00 T05 §2", "none: CMake scripts, no library", "none",
+    ]
+    webp_row = [
+        "libwebp", "libwebp", "1.3.1", "BSD-3-Clause", "u", "yes", "notice", "x64, arm64",
+        "https://github.com/webmproject/libwebp", "v1.3.1", "osv-git:https://github.com/webmproject/libwebp@v1.3.1",
+        "yes", "gesso", "direct", "D01 T05 §1", "static", "none",
+    ]
+    sqlite_clean_row = [
+        "SQLite", "sqlite3", "3.53.4#2", "BSD-3-Clause", "u", "yes", "none", "x64, arm64",
+        "https://sqlite.org/2026/sqlite-amalgamation-3530400.zip", "3.53.4", "feed:https://www.sqlite.org/cves.html",
+        "yes", "albumen", "direct", "D04 T01 §1", "static", "none",
+    ]
+
+    tag_commits = {
+        ("https://github.com/google/googletest", "v1.18.0"): "063de7e9578f82b369302001269680b4b1553359",
+        ("https://github.com/webmproject/libwebp", "v1.3.1"): "fd7bb21c0cb56e8a82e9bfa376164b842f433f3b",
+    }
+
+    def fake_resolve(repo: str, tag: str) -> str:
+        if (repo, tag) not in tag_commits:
+            raise RuntimeError(f"tag {tag!r} resolved to no commit in {repo}")
+        return tag_commits[(repo, tag)]
+
+    # 1. Clean version + validated helper row
+    res_clean = evaluate_register(
+        register_text=table(gtest_row, helper_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check("clean register + helper is ok", res_clean["ok"], True)
+    check("helper row is reported as helper and not unmapped", res_clean["helpers"], ["helper: vcpkg-cmake 2025-08-07"])
+    check("clean register has 0 advisories and 0 unchecked", (res_clean["advisories"], res_clean["unchecked"], res_clean["unmapped"]), ([], [], []))
+
+    # 2. Known-vulnerable libwebp 1.3.1 fixture must report CVE-2023-4863 and prove the exact commit request
+    seen_payloads: list[dict] = []
+
+    def osv_webp(payload: dict) -> dict:
+        seen_payloads.append(payload)
+        if payload == {"commit": "fd7bb21c0cb56e8a82e9bfa376164b842f433f3b"}:
+            return libwebp_osv
+        return clean_osv
+
+    res_webp = evaluate_register(
+        register_text=table(webp_row, helper_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=osv_webp,
+        committed_baseline_doc=committed_baseline,
+        current_baseline_doc=bumped_baseline,
+        target_installed_ports={"libwebp"},
+    )
+    check("libwebp 1.3.1 fails", res_webp["ok"], False)
+    check(
+        "libwebp 1.3.1 queries OSV by the resolved immutable commit first",
+        seen_payloads[0],
+        {"commit": "fd7bb21c0cb56e8a82e9bfa376164b842f433f3b"},
+    )
+    check(
+        "libwebp 1.3.1 reports CVE-2023-4863",
+        [(a["port"], a["version"], a["id"]) for a in res_webp["advisories"]],
+        [("libwebp", "1.3.1", "CVE-2023-4863")],
+    )
+    check(
+        "current baseline fix 1.3.2 is reported without baseline-mismatch",
+        (res_webp["baseline_mismatch"], res_webp["baseline_updates"]),
+        ([], ["baseline-update: libwebp 1.3.1 -> 1.3.2 in current vcpkg baseline fixes CVE-2023-4863"]),
+    )
+
+    # 3. Unmapped row & non-helper carrying none: identity
+    unmapped_row = [*gtest_row[:10], "", *gtest_row[11:]]
+    spoof_helper = [*webp_row[:10], DEPS_LINT.HELPER_IDENTITY, *webp_row[11:]]
+    res_unmapped = evaluate_register(
+        register_text=table(helper_row, unmapped_row, spoof_helper),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest", "libwebp"},
+    )
+    check("unmapped row and non-helper with none: identity fail", res_unmapped["ok"], False)
+    check("vcpkg-cmake helper stays helper beside spoofed non-helper", res_unmapped["helpers"], ["helper: vcpkg-cmake 2025-08-07"])
+    check(
+        "both empty identity and spoofed none: identity on non-helper are reported unmapped",
+        any("libwebp 1.3.1: carries helper identity" in u for u in res_unmapped["unmapped"])
+        and any("gtest" in u for u in res_unmapped["unmapped"]),
+        True,
+    )
+
+    # 4. Failing OSV query
+    def osv_fail(_payload: dict) -> dict:
+        raise urllib.error.URLError("simulated network failure")
+
+    res_fail_query = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=osv_fail,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check("a failing OSV query fails as unchecked", (res_fail_query["ok"], len(res_fail_query["unchecked"])), (False, 1))
+
+    # 5. Unknown tag failing git ls-remote (D00-T04-S1-PR8)
+    unknown_tag_row = [*gtest_row[:9], "v9.9.9-nonexistent", "osv-git:https://github.com/google/googletest@v9.9.9-nonexistent", *gtest_row[11:]]
+    res_unknown_tag = evaluate_register(
+        register_text=table(unknown_tag_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "an unknown tag failing git ls-remote fails closed as unchecked",
+        (res_unknown_tag["ok"], any("v9.9.9-nonexistent" in c for c in res_unknown_tag["unchecked"])),
+        (False, True),
+    )
+
+    # 6. Two-page OSV response with advisory on page 2, and failing second page
+    def osv_two_page(payload: dict) -> dict:
+        if payload.get("commit") == "fd7bb21c0cb56e8a82e9bfa376164b842f433f3b":
+            return two_page_2 if payload.get("page_token") == "page-2-token" else two_page_1
+        return clean_osv
+
+    res_two_page = evaluate_register(
+        register_text=table(webp_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=osv_two_page,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"libwebp"},
+    )
+    check(
+        "two-page OSV response finds advisory on page 2",
+        [(a["port"], a["id"]) for a in res_two_page["advisories"]],
+        [("libwebp", "CVE-2023-4863")],
+    )
+
+    def osv_fail_second_page(payload: dict) -> dict:
+        if payload.get("page_token") == "page-2-token":
+            raise urllib.error.URLError("second page timed out")
+        return two_page_1
+
+    res_fail_page2 = evaluate_register(
+        register_text=table(webp_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=osv_fail_second_page,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"libwebp"},
+    )
+    check("a failing second OSV page fails as unchecked", (res_fail_page2["ok"], len(res_fail_page2["unchecked"])), (False, 1))
+
+    # 7. Baseline mismatch when baseline has bumped libwebp 1.3.2 beside unchanged libwebp 1.3.1 row
+    res_base_mismatch = evaluate_register(
+        register_text=table(gtest_row, webp_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        committed_baseline_doc=bumped_baseline,
+        target_installed_ports={"gtest", "libwebp"},
+    )
+    check("bumped libwebp in baseline beside 1.3.1 row fails baseline-mismatch", res_base_mismatch["ok"], False)
+    check(
+        "baseline-mismatch names libwebp 1.3.1 vs 1.3.2",
+        any("baseline-mismatch: libwebp: register Version is 1.3.1" in b and "1.3.2" in b for b in res_base_mismatch["baseline_mismatch"]),
+        True,
+    )
+
+    # 8. Dependency-resolution policy: overrides or extra registries refused (D00-T04-S1-PR3)
+    res_overrides = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=json.dumps({
+            "builtin-baseline": base_sha,
+            "dependencies": [],
+            "overrides": [{"name": "gtest", "version": "1.18.0"}],
+        }),
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "vcpkg.json with overrides fails baseline-mismatch",
+        (res_overrides["ok"], any("overrides" in b for b in res_overrides["baseline_mismatch"])),
+        (False, True),
+    )
+
+    # 9. Feed adapter contract: passing, vulnerable, paginated, and malformed fixtures (D00-T04-S1-PR9)
+    res_feed_clean = evaluate_register(
+        register_text=table(sqlite_clean_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        http_get=lambda url: sqlite_clean_html,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"sqlite3"},
+    )
+    check("SQLite 3.53.4#2 against clean feed fixture passes", (res_feed_clean["ok"], res_feed_clean["advisories"]), (True, []))
+
+    sqlite_old_row = [*sqlite_clean_row[:2], "3.50.1", *sqlite_clean_row[3:]]
+    old_sqlite_baseline = {
+        "default": {**committed_baseline["default"], "sqlite3": {"baseline": "3.50.1", "port-version": 0}}
+    }
+    res_feed_vuln = evaluate_register(
+        register_text=table(sqlite_old_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        http_get=lambda url: sqlite_page2_html if url.endswith("cves-page2.html") else sqlite_page1_html,
+        committed_baseline_doc=old_sqlite_baseline,
+        target_installed_ports={"sqlite3"},
+    )
+    check(
+        "SQLite 3.50.1 against two-page feed fixture reports CVE-2025-6965 from page 2",
+        [(a["port"], a["id"]) for a in res_feed_vuln["advisories"]],
+        [("sqlite3", "CVE-2025-6965")],
+    )
+
+    res_feed_malformed = evaluate_register(
+        register_text=table(sqlite_clean_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        http_get=lambda url: sqlite_malformed_html,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"sqlite3"},
+    )
+    check(
+        "SQLite feed with malformed Fix cell fails closed as unchecked",
+        (res_feed_malformed["ok"], len(res_feed_malformed["unchecked"])),
+        (False, 1),
+    )
+
+    unknown_feed_row = [*sqlite_clean_row[:10], "feed:https://example.invalid/advisories.xml", *sqlite_clean_row[11:]]
+    res_feed_unmapped = evaluate_register(
+        register_text=table(unknown_feed_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: clean_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"sqlite3"},
+    )
+    check(
+        "unregistered feed URL fails as unmapped",
+        (res_feed_unmapped["ok"], len(res_feed_unmapped["unmapped"])),
+        (False, 1),
+    )
+
+    # 10. Release gate distinct blocker messages (D00-T05-S2-PR9)
+    check(
+        "release-gate message for advisory",
+        any(line.startswith("release-gate blocked (advisory):") for line in format_report(res_webp, release_gate=True)),
+        True,
+    )
+    check(
+        "release-gate message for unmapped",
+        any(line.startswith("release-gate blocked (unmapped):") for line in format_report(res_unmapped, release_gate=True)),
+        True,
+    )
+    check(
+        "release-gate message for unchecked",
+        any(line.startswith("release-gate blocked (unchecked):") for line in format_report(res_fail_query, release_gate=True)),
+        True,
+    )
+    check(
+        "release-gate message for baseline-mismatch",
+        any(line.startswith("release-gate blocked (baseline-mismatch):") for line in format_report(res_base_mismatch, release_gate=True)),
+        True,
+    )
+
+    # 11. Persistent issue lifecycle: unmapped opens issue, fixing it closes issue on next run (D00-T04-S1-PR10)
+    class FakeGh:
+        def __init__(self):
+            self.issues: list[dict] = []
+            self.actions: list[tuple] = []
+            self._next = 1
+
+        def __call__(self, *args, cwd):
+            self.actions.append(args)
+            if args[:2] == ("issue", "list"):
+                label = args[args.index("--label") + 1] if "--label" in args else None
+                state = args[args.index("--state") + 1] if "--state" in args else "all"
+                matched = []
+                for iss in self.issues:
+                    if state == "open" and iss["state"] != "OPEN":
+                        continue
+                    names = {lab["name"] for lab in iss["labels"]}
+                    if label is None or label in names:
+                        matched.append(iss)
+                return json.dumps(matched)
+            if args[:2] == ("issue", "create"):
+                title = args[args.index("--title") + 1]
+                labels = [{"name": args[i + 1]} for i, a in enumerate(args) if a == "--label"]
+                num = self._next
+                self._next += 1
+                self.issues.append({"number": num, "title": title, "state": "OPEN", "labels": labels})
+                return f"https://github.com/rizonesoft/Isotone/issues/{num}\n"
+            if args[:2] == ("issue", "close"):
+                num = int(args[2])
+                for iss in self.issues:
+                    if iss["number"] == num:
+                        iss["state"] = "CLOSED"
+                return ""
+            if args[:2] == ("issue", "edit"):
+                num = int(args[2])
+                for iss in self.issues:
+                    if iss["number"] == num:
+                        if "--add-label" in args:
+                            lab = args[args.index("--add-label") + 1]
+                            iss["labels"].append({"name": lab})
+                return ""
+            return ""
+
+    gh = FakeGh()
+    rows_unmapped, _ = DEPS_LINT.parse_register(table(unmapped_row))
+    with contextlib.redirect_stdout(io.StringIO()):
+        sync_issues(res_unmapped, rows_unmapped, run_gh=gh)
+    check(
+        "unmapped identity opens a pins:native-advisories-unmapped issue",
+        [(i["number"], i["state"], i["title"]) for i in gh.issues],
+        [(1, "OPEN", "2 unmapped native library advisory identity failure(s)")],
+    )
+    rows_clean, _ = DEPS_LINT.parse_register(table(gtest_row, helper_row))
+    with contextlib.redirect_stdout(io.StringIO()):
+        sync_issues(res_clean, rows_clean, run_gh=gh)
+    check(
+        "fixing the unmapped identity closes the issue on the next run",
+        [(i["number"], i["state"]) for i in gh.issues],
+        [(1, "CLOSED")],
+    )
+
+    print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
+    return 1 if failed else 0
+
+
+def main(argv: list[str] | None = None, *, root: Path = ROOT, run_gh=pin_proposal.gh, resolve_tag=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("mode", nargs="?", choices=("check", "issue"), default="check")
+    parser.add_argument("--self-test", action="store_true", help="run offline fixture self-tests")
+    parser.add_argument("--json", action="store_true", help="print the structured report as JSON")
+    parser.add_argument("--release-gate", action="store_true", help="emit distinct release-gate blocker messages on failure")
+    parser.add_argument("--register", type=Path, default=None, help="path to native-libraries.md")
+    parser.add_argument("--manifest", type=Path, default=None, help="path to native/vcpkg.json")
+    parser.add_argument("--vcpkg-configuration", type=Path, default=None, help="path to native/vcpkg-configuration.json")
+    parser.add_argument("--baseline-file", type=Path, help="optional local versions/baseline.json for the committed baseline")
+    parser.add_argument("--current-baseline-file", type=Path, help="optional local versions/baseline.json for the current baseline")
+    parser.add_argument("--osv-fixture", type=Path, help="optional recorded OSV response JSON file for offline probing")
+    args = parser.parse_args(argv)
+
+    if args.self_test:
+        return self_test()
+
+    root_path = Path(root)
+    reg_path = args.register if args.register is not None else (root_path / "docs" / "dev" / "native-libraries.md")
+    man_path = args.manifest if args.manifest is not None else (root_path / "native" / "vcpkg.json")
+    cfg_path = args.vcpkg_configuration if args.vcpkg_configuration is not None else (root_path / "native" / "vcpkg-configuration.json")
+
+    try:
+        register_text = reg_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        print(f"unmapped: {reg_path}: {exc}")
+        if args.release_gate:
+            print(f"release-gate blocked (unmapped): could not read {reg_path} ({exc})")
+        return 1
+
+    try:
+        manifest_text = man_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        print(f"baseline-mismatch: {man_path}: {exc}")
+        if args.release_gate:
+            print(f"release-gate blocked (baseline-mismatch): could not read {man_path} ({exc})")
+        return 1
+
+    config_text = cfg_path.read_text(encoding="utf-8") if cfg_path.is_file() else None
+    committed_baseline_doc = json.loads(args.baseline_file.read_text(encoding="utf-8")) if args.baseline_file else None
+    current_baseline_doc = json.loads(args.current_baseline_file.read_text(encoding="utf-8")) if args.current_baseline_file else None
+
+    osv_post = default_osv_post
+    if args.osv_fixture:
+        fixture_doc = json.loads(args.osv_fixture.read_text(encoding="utf-8"))
+        osv_post = lambda _payload: fixture_doc  # noqa: E731
+
+    result = evaluate_register(
+        register_text=register_text,
+        manifest_text=manifest_text,
+        config_text=config_text,
+        register_path=reg_path,
+        manifest_path=man_path,
+        config_path=cfg_path,
+        resolve_tag=resolve_tag or default_resolve_tag,
+        osv_post=osv_post,
+        committed_baseline_doc=committed_baseline_doc,
+        current_baseline_doc=current_baseline_doc,
+    )
+
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        for line in format_report(result, release_gate=args.release_gate):
+            print(line)
+
+    if args.mode == "issue":
+        rows, _ = DEPS_LINT.parse_register(register_text, path=reg_path)
+        return sync_issues(result, rows, root=root_path, run_gh=run_gh)
+
+    return 0 if result["ok"] else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

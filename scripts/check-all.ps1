@@ -35,7 +35,8 @@
       every workflow's latest run on main, scheduled ones included)
   22. python scripts/tests/test_build_props.py (a WPF temporary project shares
       its parent's artifacts folders, D00 T02 §3; asks the pinned SDK), then
-      python scripts/native-deps-lint.py --self-test (D00 T04 §1)
+      python scripts/native-deps-lint.py --self-test (D00 T04 §1) and
+      python scripts/check-native-advisories.py --self-test (D00 T04 §3)
   23. The native stages (skipped with -SkipNative), each inside scripts/dev-env.ps1
       where it builds or inspects, its full output in build/check-all/<stage>.log:
       native presets (every non-hidden configure preset in native/CMakePresets.json
@@ -151,6 +152,7 @@ try {
     Invoke-PythonGate 'completion_check self-test' 'completion_check.py' @('--self-test')
     Invoke-PythonGate 'build props tests' 'tests/test_build_props.py' @()
     Invoke-PythonGate 'native-deps-lint self-test' 'native-deps-lint.py' @('--self-test')
+    Invoke-PythonGate 'check-native-advisories self-test' 'check-native-advisories.py' @('--self-test')
   } else {
     Write-Warning 'check-all: python not found on PATH; skipping plan gates'
     $results.Add([pscustomobject]@{ Gate = 'python gates'; Status = 'SKIP (no python)'; Seconds = 0 })

@@ -9,7 +9,7 @@ name: pins
 # packages that track the SDK's runtime, which the dotnet check moves with the SDK. Checks only this PC can see (its
 # CLIs, Python, installed SDK) stay in .conclave/automations.
 # Each job holds only the token permissions its check uses (independent review 2026-10-21): the dotnet job pushes a
-# branch, opens a PR, labels it, and dispatches CI; the vulnerable-packages job restores the solution and files issues.
+# branch, opens a PR, labels it, and dispatches CI; the vulnerable-packages and native-advisories jobs file issues.
 
 on:
   schedule:
@@ -75,3 +75,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/check-vulnerable-packages.py issue
+
+  native-advisories:
+    name: native-advisories
+    needs: dotnet
+    if: always()
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Run the check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/check-native-advisories.py issue

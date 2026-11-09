@@ -1,0 +1,108 @@
+{
+  "vulns": [
+    {
+      "id": "CVE-2023-4863",
+      "details": "Heap buffer overflow in libwebp in Google Chrome prior to 116.0.5845.187 and libwebp 1.3.2 allowed a remote attacker to perform an out of bounds memory write via a crafted HTML page. (Chromium security severity: Critical)",
+      "aliases": [
+        "A-299477569",
+        "ASB-A-299477569",
+        "CVE-2023-5129",
+        "GHSA-j7hp-h8jx-5ppr",
+        "PYSEC-2026-1794",
+        "RUSTSEC-2023-0060",
+        "RUSTSEC-2023-0061"
+      ],
+      "modified": "2026-10-28T10:36:03.943454592Z",
+      "published": "2023-09-12T14:24:59.275Z",
+      "database_specific": {
+        "cna_assigner": "Chrome",
+        "osv_generated_from": "https://github.com/CVEProject/cvelistV5/tree/main/cves/2023/4xxx/CVE-2023-4863.json"
+      },
+      "references": [
+        {
+          "type": "WEB",
+          "url": "https://crbug.com/1479274"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/webmproject/libwebp/releases/tag/v1.3.2"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-4863"
+        },
+        {
+          "type": "FIX",
+          "url": "https://github.com/webmproject/libwebp/commit/902bc9190331343b2017211debcec8d2ab87e17a"
+        }
+      ],
+      "affected": [
+        {
+          "ranges": [
+            {
+              "type": "GIT",
+              "repo": "https://github.com/webmproject/libwebp",
+              "events": [
+                {
+                  "introduced": "ca332209cb5567c9b249c86788cb2dbf8847e760"
+                },
+                {
+                  "fixed": "902bc9190331343b2017211debcec8d2ab87e17a"
+                },
+                {
+                  "fixed": "ca332209cb5567c9b249c86788cb2dbf8847e760"
+                }
+              ],
+              "database_specific": {
+                "extracted_events": [
+                  {
+                    "source": "AFFECTED_FIELD",
+                    "strategy": "StandaloneSingleVersion",
+                    "range": [
+                      {
+                        "introduced": "1.3.2"
+                      },
+                      {
+                        "last_affected": "1.3.2"
+                      }
+                    ]
+                  },
+                  {
+                    "source": "REFERENCES_COMMIT",
+                    "range": [
+                      {
+                        "fixed": "902bc9190331343b2017211debcec8d2ab87e17a"
+                      }
+                    ]
+                  },
+                  {
+                    "original_tag": "v1.3.2",
+                    "range": [
+                      {
+                        "fixed": "ca332209cb5567c9b249c86788cb2dbf8847e760"
+                      }
+                    ],
+                    "source": "REFERENCES_TAG"
+                  }
+                ]
+              }
+            }
+          ],
+          "versions": [
+            "1.3.2"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/cve-osv-conversion/osv-output/CVE-2023-4863.json"
+          }
+        }
+      ],
+      "schema_version": "1.9.2",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+        }
+      ]
+    }
+  ]
+}

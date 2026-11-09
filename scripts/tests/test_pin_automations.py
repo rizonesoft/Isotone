@@ -447,10 +447,77 @@ class ReviewRound3Tests(DotnetFixture):
 
     def test_each_pins_job_holds_only_its_permissions(self):
         workflow = (REPO / ".github" / "workflows" / "pins.yml").read_text(encoding="utf-8")
-        job = workflow.split("\n  vulnerable-packages:\n", 1)[1]
-        block = job.split("permissions:\n", 1)[1].split("\n    steps:", 1)[0]
-        self.assertEqual(sorted(line.strip() for line in block.splitlines() if line.strip()),
-                         ["contents: read", "issues: write"])
+        for job_name in ("vulnerable-packages", "native-advisories"):
+            job = workflow.split(f"\n  {job_name}:\n", 1)[1]
+            block = job.split("permissions:\n", 1)[1].split("\n    steps:", 1)[0]
+            with self.subTest(job=job_name):
+                self.assertEqual(sorted(line.strip() for line in block.splitlines() if line.strip()),
+                                 ["contents: read", "issues: write"])
+
+
+class NativeAdvisoriesTests(GitRepo):
+    def setUp(self):
+        super().setUp()
+        self.mod = load("check-native-advisories")
+        self.base_sha = "9eec002df1cd109f8f104cd966a763daf9751489"
+        self.write("native/vcpkg.json", json.dumps({
+            "name": "isotone",
+            "version-semver": "0.0.0",
+            "builtin-baseline": self.base_sha,
+            "dependencies": [],
+            "features": {"test": {"dependencies": ["gtest"]}},
+        }, indent=2) + "\n")
+        self.write("native/vcpkg-configuration.json", json.dumps({
+            "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-configuration.schema.json",
+        }, indent=2) + "\n")
+        self.baseline_file = str(REPO / "scripts" / "tests" / "fixtures" / "osv" / "baseline-committed.json")
+
+    def table(self, *rows):
+        cols = self.mod.DEPS_LINT.COLUMNS
+        head = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
+        return "# Register\n\n" + head + "".join("| " + " | ".join(r) + " |\n" for r in rows)
+
+    def test_clean_and_vulnerable_and_unmapped_issue_mode(self):
+        gtest_row = [
+            "GoogleTest", "gtest", "1.18.0", "BSD-3-Clause", "u", "yes", "none", "x64, arm64",
+            "https://github.com/google/googletest", "v1.18.0", "osv-git:https://github.com/google/googletest@v1.18.0",
+            "no", "tests", "direct", "D00 T05 §2", "static", "none",
+        ]
+        clean_reg = self.table(gtest_row)
+        self.write("docs/dev/native-libraries.md", clean_reg)
+        self.commit()
+        clean_osv = str(REPO / "scripts" / "tests" / "fixtures" / "osv" / "clean.json")
+        with mock.patch.object(self.mod, "default_resolve_tag", return_value="a" * 40):
+            self.assertEqual(self.mod.main(
+                ["check", "--baseline-file", self.baseline_file, "--osv-fixture", clean_osv],
+                root=self.root), 0)
+
+        unmapped_row = [
+            "GoogleTest", "gtest", "1.18.0", "BSD-3-Clause", "u", "yes", "none", "x64, arm64",
+            "https://github.com/google/googletest", "v1.18.0", "none: build-time helper, not linked",
+            "no", "tests", "direct", "D00 T05 §2", "static", "none",
+        ]
+        self.write("docs/dev/native-libraries.md", self.table(unmapped_row))
+        gh = FakeGh()
+        self.assertEqual(self.mod.main(
+            ["issue", "--baseline-file", self.baseline_file, "--osv-fixture", clean_osv],
+            root=self.root, run_gh=gh), 1)
+        (create,) = gh.made("issue", "create")
+        self.assertIn("pins:native-advisories-unmapped", create)
+        title = create[create.index("--title") + 1]
+
+        self.write("docs/dev/native-libraries.md", clean_reg)
+        gh2 = FakeGh(issues=json.dumps([{
+            "number": 12,
+            "title": title,
+            "state": "OPEN",
+            "labels": [{"name": "pins"}, {"name": "pins:native-advisories-unmapped"}],
+        }]))
+        with mock.patch.object(self.mod, "default_resolve_tag", return_value="a" * 40):
+            self.assertEqual(self.mod.main(
+                ["issue", "--baseline-file", self.baseline_file, "--osv-fixture", clean_osv],
+                root=self.root, run_gh=gh2), 0)
+        self.assertIn("12", [c[2] for c in gh2.made("issue", "close")])
 
 
 class WorkspaceHooks(unittest.TestCase):
