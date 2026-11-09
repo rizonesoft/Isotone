@@ -306,8 +306,7 @@ def aff_matches_repo(aff: dict, allowed: set[str] | None) -> bool:
     pkg = aff.get("package")
     if isinstance(pkg, dict) and isinstance(pkg.get("name"), str) and pkg["name"].strip():
         if pkg.get("ecosystem") == "GIT" or pkg["name"].startswith(("http://", "https://")):
-            if norm_repo_url(pkg["name"]) not in allowed:
-                return False
+            return norm_repo_url(pkg["name"]) in allowed
     ranges = aff.get("ranges") or []
     git_repos = [
         norm_repo_url(r["repo"])
@@ -413,7 +412,8 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
         if ranges is not None and not isinstance(ranges, list):
             raise ValueError(f"OSV advisory {vid} has non-list 'ranges'")
         if versions is not None and (
-            not isinstance(versions, list) or any(not isinstance(v, str) or not v.strip() for v in versions)
+            not isinstance(versions, list)
+            or any(not isinstance(v, str) or not v.strip() or parse_semver_key(v) is None for v in versions)
         ):
             raise ValueError(f"OSV advisory {vid} has malformed 'versions'")
         if not (ranges or versions):
@@ -451,6 +451,22 @@ def validate_osv_affected(vuln: dict) -> list[dict]:
                     if not (k == "limit" and val.strip() == "*") and parse_semver_key(val) is None:
                         raise ValueError(
                             f"OSV advisory {vid} {rng_type} range event {k!r} has unsupported version {val!r}"
+                        )
+                elif rng_type == "GIT":
+                    sval = val.strip()
+                    if k == "introduced":
+                        if sval != "0" and not COMMIT_RE.match(sval):
+                            raise ValueError(
+                                f"OSV advisory {vid} GIT range event 'introduced' has invalid commit {val!r}"
+                            )
+                    elif k == "limit":
+                        if sval != "*" and not COMMIT_RE.match(sval):
+                            raise ValueError(
+                                f"OSV advisory {vid} GIT range event 'limit' has invalid commit {val!r}"
+                            )
+                    elif not COMMIT_RE.match(sval):
+                        raise ValueError(
+                            f"OSV advisory {vid} GIT range event {k!r} has invalid commit {val!r}"
                         )
             if not has_introduced:
                 raise ValueError(f"OSV advisory {vid} range events lack an 'introduced' entry")
@@ -535,6 +551,67 @@ def query_osv_paginated(base_payload: dict, osv_post) -> list[dict]:
     return vulns
 
 
+def _candidate_version_reintroduced(vuln: dict, cand_ver: str, repo: str | None = None) -> bool:
+    """Return True when candidate fix version `cand_ver` remains affected by an open or reintroduced range in `vuln`."""
+    allowed = allowed_repo_urls(repo)
+    clean_cand = cand_ver.split("#", 1)[0].strip()
+    cand_key = parse_semver_key(clean_cand)
+    if cand_key is None:
+        return True
+    for aff in validate_osv_affected(vuln):
+        if not aff_matches_repo(aff, allowed):
+            continue
+        self_cancelled_tags: set[tuple] = set()
+        for rng in aff.get("ranges") or []:
+            if allowed is not None and isinstance(rng.get("repo"), str) and rng["repo"].strip():
+                if norm_repo_url(rng["repo"]) not in allowed:
+                    continue
+            rng_type = rng.get("type")
+            if rng_type in ("SEMVER", "ECOSYSTEM"):
+                if version_matches_events(clean_cand, rng.get("events") or []):
+                    return True
+                continue
+            rng_events = rng.get("events") or []
+            rng_intro = {ev["introduced"].strip() for ev in rng_events if isinstance(ev.get("introduced"), str)}
+            rng_fixed = {ev["fixed"].strip() for ev in rng_events if isinstance(ev.get("fixed"), str)}
+            git_open = False
+            for ev in rng_events:
+                if "introduced" in ev:
+                    git_open = True
+                elif "fixed" in ev or "last_affected" in ev:
+                    git_open = False
+            if git_open:
+                return True
+            db = rng.get("database_specific") or {}
+            ext_events = db.get("extracted_events") or []
+            rng_ref_tags = [
+                ext["original_tag"]
+                for ext in ext_events
+                if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str)
+            ]
+            rng_cpe_ranges = [
+                ext.get("range") or []
+                for ext in ext_events
+                if ext.get("source") in ("CPE_RANGE", "CPE_STRING")
+            ]
+            if rng_ref_tags and any(version_lt(clean_cand, ft) for ft in rng_ref_tags):
+                return True
+            if rng_cpe_ranges and any(version_matches_events(clean_cand, r) for r in rng_cpe_ranges):
+                return True
+            has_standalone = any(ext.get("strategy") == "StandaloneSingleVersion" for ext in ext_events)
+            if has_standalone and (rng_intro & rng_fixed):
+                for ext in ext_events:
+                    if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str):
+                        tkey = parse_semver_key(ext["original_tag"])
+                        if tkey is not None:
+                            self_cancelled_tags.add(tkey)
+        for v in aff.get("versions") or []:
+            vkey = parse_semver_key(str(v))
+            if vkey == cand_key and vkey not in self_cancelled_tags:
+                return True
+    return False
+
+
 def extract_fixed_version_from_osv(vuln: dict, repo: str | None = None, version: str | None = None) -> str | None:
     """Extract the fixing version from an OSV advisory's ranges or extracted_events scoped to `repo`."""
     allowed = allowed_repo_urls(repo)
@@ -568,7 +645,7 @@ def extract_fixed_version_from_osv(vuln: dict, repo: str | None = None, version:
             c
             for c in candidates
             if version_lt(clean_ver, c)
-            and not advisory_affects_git(vuln, c, tag=f"v{c}", commit="", from_commit_query=False, repo=repo)
+            and not _candidate_version_reintroduced(vuln, c, repo=repo)
         ]
         if above:
             return min(above, key=lambda c: parse_semver_key(c) or ((-1,), 0, ()))
@@ -591,44 +668,63 @@ def advisory_affects_git(
     for aff in affected_list:
         if not aff_matches_repo(aff, allowed):
             continue
-        ranges = aff.get("ranges") or []
-        matched_any_rng_repo = False
-        all_standalone_single = True
-        for rng in ranges:
+        # Explicit affected versions list (OSV defines ranges and versions as independent union matches).
+        versions = [str(v) for v in (aff.get("versions") or [])]
+        if versions:
+            if (
+                clean_ver in versions
+                or f"v{clean_ver}" in versions
+                or (tag and tag in versions)
+                or any(parse_semver_key(v) is not None and parse_semver_key(v) == clean_key for v in versions)
+            ):
+                return True
+
+        for rng in aff.get("ranges") or []:
             if allowed is not None and isinstance(rng.get("repo"), str) and rng["repo"].strip():
                 if norm_repo_url(rng["repo"]) not in allowed:
                     continue
-            matched_any_rng_repo = True
             rng_type = rng.get("type")
             if rng_type in ("SEMVER", "ECOSYSTEM"):
-                all_standalone_single = False
                 if version_matches_events(clean_ver, rng.get("events") or []):
                     return True
                 continue
 
             # GIT range: evaluate commit membership, GIT limits, unclosed introductions, and conversion metadata.
             rng_events = rng.get("events") or []
-            rng_fixed = {ev["fixed"] for ev in rng_events if isinstance(ev.get("fixed"), str)}
-            rng_limits = {
-                ev["limit"]
-                for ev in rng_events
-                if isinstance(ev.get("limit"), str) and ev["limit"].strip() != "*"
-            }
+            rng_fixed = {ev["fixed"].strip() for ev in rng_events if isinstance(ev.get("fixed"), str)}
+            has_star_limit = any(
+                isinstance(ev.get("limit"), str) and ev["limit"].strip() == "*" for ev in rng_events
+            )
+            rng_limits = (
+                set()
+                if has_star_limit
+                else {
+                    ev["limit"].strip()
+                    for ev in rng_events
+                    if isinstance(ev.get("limit"), str) and ev["limit"].strip() != "*"
+                }
+            )
             rng_last_affected = {
-                ev["last_affected"] for ev in rng_events if isinstance(ev.get("last_affected"), str)
+                ev["last_affected"].strip() for ev in rng_events if isinstance(ev.get("last_affected"), str)
             }
-            rng_intro = {ev["introduced"] for ev in rng_events if isinstance(ev.get("introduced"), str)}
+            rng_intro = {ev["introduced"].strip() for ev in rng_events if isinstance(ev.get("introduced"), str)}
             git_open = False
+            commit_state: str | None = None
             for ev in rng_events:
                 if "introduced" in ev:
                     git_open = True
-                elif "fixed" in ev or "last_affected" in ev:
+                    if commit and ev["introduced"].strip() == commit:
+                        commit_state = "introduced"
+                elif "last_affected" in ev:
                     git_open = False
+                    if commit and ev["last_affected"].strip() == commit:
+                        commit_state = "last_affected"
+                elif "fixed" in ev:
+                    git_open = False
+                    if commit and ev["fixed"].strip() == commit:
+                        commit_state = "fixed"
             db = rng.get("database_specific") or {}
             ext_events = db.get("extracted_events") or []
-            rng_standalone = any(ext.get("strategy") == "StandaloneSingleVersion" for ext in ext_events)
-            if not rng_standalone:
-                all_standalone_single = False
             rng_ref_tags = [
                 ext["original_tag"]
                 for ext in ext_events
@@ -640,43 +736,26 @@ def advisory_affects_git(
                 if ext.get("source") in ("CPE_RANGE", "CPE_STRING")
             ]
 
-            if commit and (commit in rng_fixed or commit in rng_limits) and not (
-                commit in rng_intro and rng_standalone
-            ):
+            excluded_by_limits = bool(commit and rng_limits and all(lim == commit for lim in rng_limits))
+            if excluded_by_limits or commit_state == "fixed":
                 continue
 
             # Authoritative commit-query match, inclusive GIT boundary match (introduced / last_affected), or
-            # unbounded root introduction on a real (non-StandaloneSingleVersion) GIT range is never suppressed
-            # by database_specific conversion metadata.
-            if not rng_standalone:
-                if commit:
-                    if from_commit_query:
-                        return True
-                    if commit in rng_intro or commit in rng_last_affected:
-                        return True
-                    if "0" in rng_intro and not (rng_fixed or rng_last_affected or rng_limits):
-                        return True
-                elif git_open:
+            # unbounded root introduction on a GIT range is never suppressed by database_specific metadata.
+            if commit:
+                if from_commit_query:
                     return True
+                if commit_state in ("introduced", "last_affected"):
+                    return True
+                if "0" in rng_intro and not (rng_fixed or rng_last_affected or rng_limits):
+                    return True
+            elif git_open:
+                return True
 
             if rng_ref_tags and any(version_lt(clean_ver, ft) for ft in rng_ref_tags):
                 return True
 
             if rng_cpe_ranges and any(version_matches_events(clean_ver, r) for r in rng_cpe_ranges):
-                return True
-
-        if ranges and not matched_any_rng_repo:
-            continue
-
-        # Explicit affected versions list (OSV defines ranges and versions as independent union matches).
-        versions = [str(v) for v in (aff.get("versions") or [])]
-        if versions and not (ranges and all_standalone_single):
-            if (
-                clean_ver in versions
-                or f"v{clean_ver}" in versions
-                or (tag and tag in versions)
-                or any(parse_semver_key(v) is not None and parse_semver_key(v) == clean_key for v in versions)
-            ):
                 return True
     return False
 
@@ -1004,9 +1083,7 @@ def evaluate_register(
                     osv_pair = osv_vuln_by_port_id.get((port, a["id"]))
                     if osv_pair is not None:
                         v_doc, v_repo = osv_pair
-                        if advisory_affects_git(
-                            v_doc, head_ver, tag=f"v{head_clean}", commit="", from_commit_query=False, repo=v_repo
-                        ):
+                        if _candidate_version_reintroduced(v_doc, head_ver, repo=v_repo):
                             continue
                     feed_pair = feed_entries_by_port_id.get((port, a["id"]))
                     if feed_pair is not None:
@@ -2083,6 +2160,72 @@ def self_test() -> int:
         "inclusive GIT introduced and last_affected boundaries match queried commit on repo query",
         [(a["port"], a["id"]) for a in res_git_inclusive["advisories"]],
         [("gtest", "CVE-2099-8891"), ("gtest", "CVE-2099-8892")],
+    )
+
+    # 29. StandaloneSingleVersion metadata does not suppress positive commit query or explicit affected version (F21)
+    standalone_meta_osv = {
+        "vulns": [{
+            "id": "CVE-2099-8893",
+            "summary": "StandaloneSingleVersion metadata on affected version and commit",
+            "affected": [{
+                "ranges": [{
+                    "type": "GIT",
+                    "repo": "https://github.com/google/googletest",
+                    "events": [{"introduced": "a" * 40}, {"fixed": "b" * 40}],
+                    "database_specific": {
+                        "extracted_events": [{
+                            "source": "AFFECTED_FIELD",
+                            "strategy": "StandaloneSingleVersion",
+                            "range": [{"introduced": "1.18.0"}, {"last_affected": "1.18.0"}],
+                        }]
+                    },
+                }],
+                "versions": ["1.18.0"],
+            }],
+        }]
+    }
+    res_standalone_meta = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=lambda _repo, _tag: "a" * 40,
+        osv_post=lambda payload: {"vulns": []} if "commit" in payload else standalone_meta_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "StandaloneSingleVersion metadata does not suppress explicit affected version or range match",
+        [(a["port"], a["id"]) for a in res_standalone_meta["advisories"]],
+        [("gtest", "CVE-2099-8893")],
+    )
+
+    # 30. Multiple GIT limit events preserve positive commit-query match when another limit differs from queried commit (F22)
+    multi_git_limit_osv = {
+        "vulns": [{
+            "id": "CVE-2099-8894",
+            "summary": "Multiple GIT limits where queried commit is ancestor of second limit",
+            "affected": [{
+                "ranges": [{
+                    "type": "GIT",
+                    "repo": "https://github.com/google/googletest",
+                    "events": [{"introduced": "0"}, {"limit": "a" * 40}, {"limit": "b" * 40}],
+                }]
+            }],
+        }]
+    }
+    res_multi_git_limit = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=lambda _repo, _tag: "a" * 40,
+        osv_post=lambda payload: multi_git_limit_osv if "commit" in payload else {"vulns": []},
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "multiple GIT limit events do not suppress positive commit-query match when another limit differs",
+        [(a["port"], a["id"]) for a in res_multi_git_limit["advisories"]],
+        [("gtest", "CVE-2099-8894")],
     )
 
     print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
