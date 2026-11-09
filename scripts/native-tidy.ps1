@@ -1,4 +1,4 @@
-#Requires -Version 7.2
+﻿#Requires -Version 7.2
 <#
 .SYNOPSIS
   Runs the pinned clang-tidy over every native translation unit in the x64 Debug compile database (D00 T05 §4).
@@ -46,9 +46,37 @@ $database = Join-Path $buildDir 'compile_commands.json'
 if (-not (Test-Path $database)) { "native-tidy: no compile database at $database"; exit 2 }
 $native = (Join-Path $root 'native') + [IO.Path]::DirectorySeparatorChar
 $entries = @(Get-Content -Raw $database | ConvertFrom-Json)
-$units = @($entries | ForEach-Object { [IO.Path]::GetFullPath($_.file, $buildDir) } |
-  Where-Object { $_.StartsWith($native, [StringComparison]::OrdinalIgnoreCase) } |
-  Sort-Object -Unique)
+$unitMap = @{}
+foreach ($e in $entries) {
+  $full = [IO.Path]::GetFullPath($e.file, $buildDir)
+  if ($full.StartsWith($native, [StringComparison]::OrdinalIgnoreCase) -and -not $unitMap.ContainsKey($full)) {
+    $unitMap[$full] = $buildDir
+  }
+}
+if ($Preset -eq 'x64-debug') {
+  $relBuildDir = Join-Path $root 'artifacts\native\x64-release'
+  $relDatabase = Join-Path $relBuildDir 'compile_commands.json'
+  if (-not $SkipBuild -and (Test-Path (Join-Path $root 'native\benchmarks\CMakeLists.txt')) -and -not (Test-Path $relDatabase)) {
+    Push-Location (Join-Path $root 'native')
+    try {
+      $configure = cmake --preset x64-release 2>&1
+      if ($LASTEXITCODE -ne 0) { $configure | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: configuring x64-release failed"; exit 2 }
+      $build = cmake --build --preset x64-release 2>&1
+      if ($LASTEXITCODE -ne 0) { $build | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: building x64-release failed"; exit 2 }
+    }
+    finally { Pop-Location }
+  }
+  if (Test-Path $relDatabase) {
+    $relEntries = @(Get-Content -Raw $relDatabase | ConvertFrom-Json)
+    foreach ($e in $relEntries) {
+      $full = [IO.Path]::GetFullPath($e.file, $relBuildDir)
+      if ($full.StartsWith($native, [StringComparison]::OrdinalIgnoreCase) -and -not $unitMap.ContainsKey($full)) {
+        $unitMap[$full] = $relBuildDir
+      }
+    }
+  }
+}
+$units = @($unitMap.Keys | Sort-Object -Unique)
 if (-not $units) { "native-tidy: no translation unit under native/ in $database"; exit 2 }
 
 # WORKAROUND: clang-cl does not implement MSVC's /Zc:preprocessor and /external:anglebrackets, which the database carries
@@ -56,7 +84,8 @@ if (-not $units) { "native-tidy: no translation unit under native/ in $database"
 # exactly these two keeps the unused-argument error live for any other switch clang-cl does not know.
 $removed = @('--removed-arg=/Zc:preprocessor', '--removed-arg=/external:anglebrackets')
 $results = $units | ForEach-Object -ThrottleLimit ([Environment]::ProcessorCount) -Parallel {
-  $out = clang-tidy -p $using:buildDir --quiet @using:removed $_ 2>&1 | ForEach-Object { "$_" }
+  $unitBuildDir = ($using:unitMap)[$_]
+  $out = clang-tidy -p $unitBuildDir --quiet @using:removed $_ 2>&1 | ForEach-Object { "$_" }
   # A diagnostic is `file:line:col: error: ...` or, for a command-line problem, `error: ...` at the start of the line.
   [pscustomobject]@{ File = $_; Code = $LASTEXITCODE; Diagnostics = @($out | Where-Object { $_ -match '(^|: )(warning|error): ' }) }
 }

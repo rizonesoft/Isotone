@@ -65,6 +65,7 @@ COLUMNS = ["Library", "vcpkg port", "Version", "License", "License text URL", "G
            "Architectures", "Upstream repository", "Released tag", "Advisory identity", "Untrusted input", "Linked by",
            "Pulled in by", "Owning section", "CRT", "Runtime module"]
 DEV_LINKED = {"tests", "bench"}
+DEV_FEATURE_FOR_LINKED = {"tests": "test", "bench": "bench"}
 # The imported CMake targets each test-only or developer-only port provides.
 DEV_TARGET_PREFIXES = {"gtest": ("GTest::",), "benchmark": ("benchmark::",)}
 GRAPH_PRESETS = ("x64-debug", "x64-release", "arm64-debug", "arm64-release", "x64-dist", "arm64-dist")
@@ -159,6 +160,37 @@ def distribution_presets(presets_path=ROOT / "native" / "CMakePresets.json"):
     return {name for name, p in by_name.items() if not p.get("hidden") and str(cache(name).get("BUILD_TESTING", "")).upper() == "OFF"}
 
 
+def preset_feature_findings(presets_path=ROOT / "native" / "CMakePresets.json"):
+    """test-only-shipped when a distribution preset requests test or bench, or when a non-Release preset requests bench."""
+    by_name = {p["name"]: p for p in json.loads(Path(presets_path).read_text(encoding="utf-8")).get("configurePresets", [])}
+
+    def cache(name):
+        preset = by_name[name]
+        merged = {}
+        parents = preset.get("inherits", [])
+        for parent in [parents] if isinstance(parents, str) else parents:
+            merged.update(cache(parent))
+        merged.update(preset.get("cacheVariables", {}))
+        return merged
+
+    found = []
+    for name, p in sorted(by_name.items()):
+        if p.get("hidden"):
+            continue
+        merged = cache(name)
+        feats = {f.strip() for f in str(merged.get("VCPKG_MANIFEST_FEATURES", "")).replace(",", ";").split(";") if f.strip()}
+        testing_off = str(merged.get("BUILD_TESTING", "")).upper() == "OFF"
+        build_type = str(merged.get("CMAKE_BUILD_TYPE", ""))
+        if testing_off and (feats & {"test", "bench"}):
+            dev_feats = ", ".join(sorted(feats & {"test", "bench"}))
+            found.append(finding(presets_path, 1, "test-only-shipped",
+                                 f"distribution preset {name} requests developer feature(s) {dev_feats}"))
+        if "bench" in feats and (testing_off or build_type != "Release"):
+            found.append(finding(presets_path, 1, "test-only-shipped",
+                                 f"preset {name} requests bench feature outside a test-capable Release preset"))
+    return found
+
+
 def distribution_findings(rows, dist_installed, path=REGISTER):
     """test-only-shipped for a test-only or developer-only port installed in a distribution preset's root."""
     dev_ports = {row["vcpkg port"] for row in rows if row["Linked by"] in DEV_LINKED}
@@ -248,10 +280,12 @@ def register_findings(rows, installed, spdx, direct, features, baseline, target_
             found.append(finding(path, line, "identity-mismatch", f"{port}: Advisory identity {row['Advisory identity']} "
                                  f"is neither {identity} nor a feed:https://... URL"))
         if row["Linked by"] in DEV_LINKED:
-            in_dev_feature = any(port in features.get(f, set()) for f in ("test", "bench"))
-            if port in direct or not (in_dev_feature or row["Pulled in by"] != "direct"):
+            want_feature = DEV_FEATURE_FOR_LINKED[row["Linked by"]]
+            in_want_feature = port in features.get(want_feature, set())
+            in_other_feature = any(port in deps for f, deps in features.items() if f != want_feature)
+            if port in direct or in_other_feature or not (in_want_feature or row["Pulled in by"] != "direct"):
                 found.append(finding(path, line, "test-only-shipped", f"{port} is Linked by {row['Linked by']} but is a "
-                                     f"dependency outside the manifest's test and bench features"))
+                                     f"dependency outside the manifest's {want_feature} feature"))
             if port not in DEV_TARGET_PREFIXES:
                 found.append(finding(path, line, "test-only-unmapped", f"{port}: name its imported CMake targets in "
                                      f"DEV_TARGET_PREFIXES so test-only-linked can follow them"))
@@ -552,7 +586,9 @@ def main(argv=None):
     dist_installed = {}
     for name, root in roots:
         if name in dist:
-            dist_installed[name] = {port for port, _ in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8"))}
+            status_ports = {port for port, _ in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8"))}
+            list_ports = set(load_artifact_gate().port_files(root).values())
+            dist_installed[name] = status_ports | list_ports
         # Every root's versions are kept: two roots holding the same triplet at different versions both count.
         for key, version in parse_status((root / "vcpkg" / "status").read_text(encoding="utf-8")).items():
             installed.setdefault(key, set()).add(version)
@@ -563,6 +599,7 @@ def main(argv=None):
     target_triplets = {t.stem for t in (ROOT / "native" / "triplets").glob("*.cmake")}
     found += register_findings(rows, installed, spdx, direct, features, manifest.get("builtin-baseline", ""),
                                target_triplets)
+    found += preset_feature_findings()
     found += distribution_findings(rows, dist_installed)
     prefixes = tuple(p for row in rows if row["Linked by"] in DEV_LINKED for p in DEV_TARGET_PREFIXES.get(row["vcpkg port"], ()))
     for preset, text in graphs.items():
@@ -722,7 +759,26 @@ def self_test():
     check("a test-only port in a distribution root is shipped",
           rules(distribution_findings(parse_register(table(gtest, helper))[0], {"x64-dist": {"gtest", "vcpkg-cmake"}})),
           ["test-only-shipped"])
+    bench_row = ["Google Benchmark", "benchmark", "1.9.5", "Apache-2.0", "u", "yes", "none", "x64, arm64",
+                 "https://github.com/google/benchmark", "v1.9.5", "osv-git:https://github.com/google/benchmark@v1.9.5",
+                 "no", "bench", "direct", "D00 T04 §2", "static", "none"]
+    bench_inst = {**installed, ("benchmark", "isotone-x64"): "1.9.5"}
+    bench_spdx = {**spdx, "benchmark": ("https://github.com/google/benchmark", "v1.9.5")}
+    check("a bench port in the bench feature passes",
+          lint(table(gtest, bench_row, helper), inst=bench_inst, sp=bench_spdx,
+               feats={"test": {"gtest"}, "bench": {"benchmark"}}), [])
+    check("a bench port in the test feature fails test-only-shipped",
+          rules(lint(table(gtest, bench_row, helper), inst=bench_inst, sp=bench_spdx,
+                     feats={"test": {"gtest", "benchmark"}, "bench": set()})), ["test-only-shipped"])
+    check("a bench port among the shipped dependencies fails test-only-shipped",
+          rules(lint(table(gtest, bench_row, helper), inst=bench_inst, sp=bench_spdx, direct={"benchmark"},
+                     feats={"test": {"gtest"}, "bench": {"benchmark"}})), ["test-only-shipped"])
+    check("a bench port in a distribution root is shipped",
+          rules(distribution_findings(parse_register(table(gtest, bench_row, helper))[0],
+                                      {"x64-dist": {"benchmark", "vcpkg-cmake"}})), ["test-only-shipped"])
     check("the distribution presets are the ones with BUILD_TESTING off", distribution_presets(), {"x64-dist", "arm64-dist"})
+    check("the committed presets request bench only on Release test presets and neither on dist",
+          preset_feature_findings(), [])
     check("a /wd in a CMakeLists.txt with no WORKAROUND fails",
           rules(cmake_suppression_findings("native/core/CMakeLists.txt", "target_compile_options(isotone_core PRIVATE /wd4996)")),
           ["suppression-unreasoned"])
@@ -759,6 +815,14 @@ def self_test():
         check(f"an app reaching GoogleTest through a library fails, the app and the library both ({arch_case})",
               rules(linked_findings(leaked, {"build_info_test"}, ("GTest::",), arch_case)),
               ["test-only-linked", "test-only-linked"])
+    bench_graph = ('"node0" [ label = "isotone_benchmarks", shape = egg ];\n'
+                   '"node1" [ label = "benchmark::benchmark", shape = octagon ];\n'
+                   '"node0" -> "node1"\n"node2" [ label = "stilus", shape = egg ];\n')
+    check("benchmarks may link Google Benchmark",
+          linked_findings(bench_graph, {"isotone_benchmarks"}, ("GTest::", "benchmark::"), "x64-release"), [])
+    check("an app linking Google Benchmark fails test-only-linked",
+          rules(linked_findings(bench_graph + '"node2" -> "node1"\n', {"isotone_benchmarks"},
+                                ("GTest::", "benchmark::"), "x64-release")), ["test-only-linked"])
 
     files = ["native/core/src/a.cpp", "src/Stilus/x.cpp", "artifacts/native/x64-debug/gen.h", "build/p/x.c", "README.md"]
     check("a C++ source outside native/", rules(outside_findings(files)), ["native-source-outside"])

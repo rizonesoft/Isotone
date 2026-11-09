@@ -173,6 +173,9 @@ try {
     foreach ($preset in $workflowPresets) {
       $arch = $preset.Split('-')[0]
       Invoke-InNative "native $preset" $arch "Push-Location native; cmake --workflow --preset $preset; `$c = `$LASTEXITCODE; Pop-Location; exit `$c"
+      if ($preset -eq 'x64-release') {
+        Invoke-InNative 'native benchmarks smoke' 'x64' '.\artifacts\native\x64-release\benchmarks\isotone_benchmarks.exe --smoke; exit $LASTEXITCODE'
+      }
     }
     if ($script:Python) {
       # The register against what the configures above installed, and the link graph of every architecture (D00 T04 §1).

@@ -10,6 +10,12 @@
       "dependencies": [
         "gtest"
       ]
+    },
+    "bench": {
+      "description": "The benchmark harness: Google Benchmark, for Release benchmarks only; an app build never requests this feature.",
+      "dependencies": [
+        "benchmark"
+      ]
     }
   }
 }
