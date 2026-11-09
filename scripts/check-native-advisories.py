@@ -606,9 +606,17 @@ def advisory_affects_git(
                     return True
                 continue
 
-            # GIT range: evaluate commit membership, unclosed introductions, and conversion metadata.
+            # GIT range: evaluate commit membership, GIT limits, unclosed introductions, and conversion metadata.
             rng_events = rng.get("events") or []
             rng_fixed = {ev["fixed"] for ev in rng_events if isinstance(ev.get("fixed"), str)}
+            rng_limits = {
+                ev["limit"]
+                for ev in rng_events
+                if isinstance(ev.get("limit"), str) and ev["limit"].strip() != "*"
+            }
+            rng_last_affected = {
+                ev["last_affected"] for ev in rng_events if isinstance(ev.get("last_affected"), str)
+            }
             rng_intro = {ev["introduced"] for ev in rng_events if isinstance(ev.get("introduced"), str)}
             git_open = False
             for ev in rng_events:
@@ -632,16 +640,23 @@ def advisory_affects_git(
                 if ext.get("source") in ("CPE_RANGE", "CPE_STRING")
             ]
 
-            if commit and commit in rng_fixed and not (commit in rng_intro and rng_standalone):
+            if commit and (commit in rng_fixed or commit in rng_limits) and not (
+                commit in rng_intro and rng_standalone
+            ):
                 continue
 
-            # Authoritative commit-query match or unclosed GIT introduction on a real (non-StandaloneSingleVersion)
-            # GIT range is never suppressed by database_specific conversion metadata.
-            if not rng_standalone and (
-                (commit and from_commit_query)
-                or (git_open and (not rng_cpe_ranges or any(version_matches_events(clean_ver, r) for r in rng_cpe_ranges)))
-            ):
-                return True
+            # Authoritative commit-query match or an unbounded root/exact-commit introduction on a real
+            # (non-StandaloneSingleVersion) GIT range is never suppressed by database_specific conversion metadata.
+            if not rng_standalone:
+                if commit:
+                    if from_commit_query:
+                        return True
+                    if ("0" in rng_intro or commit in rng_intro) and not (
+                        rng_fixed or rng_last_affected or rng_limits
+                    ):
+                        return True
+                elif git_open:
+                    return True
 
             if rng_ref_tags and any(version_lt(clean_ver, ft) for ft in rng_ref_tags):
                 return True
@@ -781,14 +796,15 @@ def evaluate_register(
 
     if target_installed_ports is None:
         target_installed_ports = set()
-        if Path(register_path).resolve() == REGISTER.resolve() and Path(manifest_path).resolve() == MANIFEST.resolve():
-            target_triplets = {t.stem for t in (ROOT / "native" / "triplets").glob("*.cmake")}
-            for _, root in DEPS_LINT.installed_roots():
-                status_file = root / "vcpkg" / "status"
-                if status_file.is_file():
-                    for port, triplet in DEPS_LINT.parse_status(status_file.read_text(encoding="utf-8")):
-                        if triplet in target_triplets:
-                            target_installed_ports.add(port)
+        if isinstance(register_path, Path) and isinstance(manifest_path, Path):
+            if register_path.resolve() == REGISTER.resolve() and manifest_path.resolve() == MANIFEST.resolve():
+                target_triplets = {t.stem for t in (ROOT / "native" / "triplets").glob("*.cmake")}
+                for _, root in DEPS_LINT.installed_roots():
+                    status_file = root / "vcpkg" / "status"
+                    if status_file.is_file():
+                        for port, triplet in DEPS_LINT.parse_status(status_file.read_text(encoding="utf-8")):
+                            if triplet in target_triplets:
+                                target_installed_ports.add(port)
 
     # 1. Baseline verification against the committed builtin-baseline's versions/baseline.json
     if committed_baseline_doc is None and baseline:
@@ -1949,6 +1965,83 @@ def self_test() -> int:
         ([("gtest", "CVE-2099-8887", None)], []),
     )
 
+    # 26. CPE_RANGE conversion metadata does not suppress an unbounded GIT root introduction [{"introduced": "0"}] (Round 5 F18)
+    open_git_cpe_osv = {
+        "vulns": [{
+            "id": "CVE-2099-8888",
+            "summary": "Open GIT root introduction with narrower CPE_RANGE metadata",
+            "affected": [{
+                "ranges": [{
+                    "type": "GIT",
+                    "repo": "https://github.com/google/googletest",
+                    "events": [{"introduced": "0"}],
+                    "database_specific": {
+                        "extracted_events": [{
+                            "source": "CPE_RANGE",
+                            "range": [{"introduced": "0"}, {"fixed": "1.0.0"}],
+                        }]
+                    },
+                }]
+            }],
+        }]
+    }
+    res_open_git_cpe = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: {"vulns": []} if "commit" in payload else open_git_cpe_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "narrower CPE_RANGE metadata does not suppress canonical open GIT root introduction",
+        [(a["port"], a["id"]) for a in res_open_git_cpe["advisories"]],
+        [("gtest", "CVE-2099-8888")],
+    )
+
+    # 27. Exclusive GIT limit at queried commit and lone non-root introduction on repo query do not falsely match (Round 5 P2)
+    git_limit_and_unrelated_osv = {
+        "vulns": [
+            {
+                "id": "CVE-2099-8889",
+                "summary": "Bounded by exclusive GIT limit at queried commit",
+                "affected": [{
+                    "ranges": [{
+                        "type": "GIT",
+                        "repo": "https://github.com/google/googletest",
+                        "events": [{"introduced": "0"}, {"limit": "a" * 40}],
+                    }]
+                }],
+            },
+            {
+                "id": "CVE-2099-8890",
+                "summary": "Lone introduction at unrelated commit",
+                "affected": [{
+                    "ranges": [{
+                        "type": "GIT",
+                        "repo": "https://github.com/google/googletest",
+                        "events": [{"introduced": "d" * 40}],
+                    }]
+                }],
+            },
+        ]
+    }
+    res_git_limit = evaluate_register(
+        register_text=table(gtest_row),
+        manifest_text=manifest_clean,
+        config_text="{}",
+        resolve_tag=fake_resolve,
+        osv_post=lambda payload: {"vulns": []} if "commit" in payload else git_limit_and_unrelated_osv,
+        committed_baseline_doc=committed_baseline,
+        target_installed_ports={"gtest"},
+    )
+    check(
+        "exclusive GIT limit at queried commit and lone unrelated commit introduction do not falsely match",
+        (res_git_limit["ok"], res_git_limit["advisories"], res_git_limit["unchecked"]),
+        (True, [], []),
+    )
+
     print(f"check-native-advisories self-test: {cases} cases, {failed} failed")
     return 1 if failed else 0
 
@@ -1986,7 +2079,7 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT, run_gh=pin_proposa
             return 2
         return self_test()
 
-    root_path = Path(root)
+    root_path = Path(root) if isinstance(root, (str, Path)) else root
     reg_path = args.register if args.register is not None else (root_path / "docs" / "dev" / "native-libraries.md")
     man_path = args.manifest if args.manifest is not None else (root_path / "native" / "vcpkg.json")
     cfg_path = args.vcpkg_configuration if args.vcpkg_configuration is not None else (root_path / "native" / "vcpkg-configuration.json")

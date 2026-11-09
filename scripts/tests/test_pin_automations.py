@@ -455,9 +455,32 @@ class ReviewRound3Tests(DotnetFixture):
                                  ["contents: read", "issues: write"])
 
 
-class NativeAdvisoriesTests(GitRepo):
+class NativeAdvisoriesTests(unittest.TestCase):
+    class FakeRoot:
+        def __init__(self, files=None, rel=""):
+            self._files = {} if files is None else files
+            self._rel = rel.strip("/")
+
+        def __truediv__(self, part):
+            p = str(part).replace("\\", "/").strip("/")
+            return NativeAdvisoriesTests.FakeRoot(self._files, f"{self._rel}/{p}".strip("/"))
+
+        def is_file(self):
+            return self._rel in self._files
+
+        def read_text(self, encoding="utf-8"):
+            if self._rel not in self._files:
+                raise OSError(f"No such file: {self._rel}")
+            return self._files[self._rel]
+
+        def write_text(self, content, encoding="utf-8"):
+            self._files[self._rel] = content
+
+        def __str__(self):
+            return f"virtual-repo/{self._rel}" if self._rel else "virtual-repo"
+
     def setUp(self):
-        super().setUp()
+        self.root = self.FakeRoot()
         self.mod = load("check-native-advisories")
         self.base_sha = "9eec002df1cd109f8f104cd966a763daf9751489"
         self.write("native/vcpkg.json", json.dumps({
@@ -472,6 +495,9 @@ class NativeAdvisoriesTests(GitRepo):
         }, indent=2) + "\n")
         self.baseline_file = str(REPO / "scripts" / "tests" / "fixtures" / "osv" / "baseline-committed.json")
 
+    def write(self, rel, content):
+        (self.root / rel).write_text(content, encoding="utf-8")
+
     def table(self, *rows):
         cols = self.mod.DEPS_LINT.COLUMNS
         head = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
@@ -485,7 +511,6 @@ class NativeAdvisoriesTests(GitRepo):
         ]
         clean_reg = self.table(gtest_row)
         self.write("docs/dev/native-libraries.md", clean_reg)
-        self.commit()
         clean_osv = str(REPO / "scripts" / "tests" / "fixtures" / "osv" / "clean.json")
         with mock.patch.object(self.mod, "default_resolve_tag", return_value="a" * 40):
             self.assertEqual(self.mod.main(
