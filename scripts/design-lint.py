@@ -70,7 +70,10 @@ UI_DIRS = frozenset({
 
 WARN_RULES: set[str] = set()
 
-GENERATED_MARK_RE = re.compile(r"(?:generate-theme\.py|docs/design/tokens\.json)", re.IGNORECASE)
+GENERATED_MARK_RE = re.compile(
+    r"(?:auto-)?generated\s+(?:from|by)\s+(?:docs/design/tokens\.json|scripts/generate-theme\.py)",
+    re.IGNORECASE,
+)
 EMOJI_RE = re.compile(
     "[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U00002B00-\U00002BFF\U0000231A-\U0000231B\U000023E9-\U000023FA"
     "\U0000FE0F\U0001F1E6-\U0001F1FF]"
@@ -84,13 +87,13 @@ NAMED_COLOR_RE = re.compile(r"\b(?:D2D1::)?ColorF::(?:Enum::)?(?!ColorF\b|Enum\b
 RGB_MACRO_RE = re.compile(r"\b(?:PALETTE)?RGB(?:A)?\s*\(")
 COLORF_HEAD_RE = re.compile(
     r"\b(?:(?:D2D1::)?ColorF|D2D1_COLOR_F)"
-    r"(?:\s+[A-Za-z_]\w*(?:\s*=\s*(?=\{))?)?\s*([({])"
+    r"(?:\s*\)?(?=\s*\{)|(?:\s*[&*]+)?\s+[A-Za-z_]\w*(?:\s*=\s*(?=\{))?)?\s*([({])"
 )
 CREATE_BRUSH_RE = re.compile(r"\bCreateSolidColorBrush\s*\(")
 GEOM_TYPE_HEAD_RE = re.compile(
-    r"\b(?:(?:D2D1::)?(?:RectF|RectU|RectL|SizeF|SizeU|Point2F|Point2U|Point2L|RoundedRect)"
-    r"|D2D1_(?:RECT_F|RECT_U|RECT_L|SIZE_F|SIZE_U|POINT_2F|POINT_2U|POINT_2L|ROUNDED_RECT))"
-    r"(?:\s+[A-Za-z_]\w*(?:\s*=\s*(?=\{))?)?\s*([({])"
+    r"\b(?:(?:D2D1::)?(?:RectF|RectU|RectL|SizeF|SizeU|Point2F|Point2U|Point2L|RoundedRect|Ellipse)"
+    r"|D2D1_(?:RECT_F|RECT_U|RECT_L|SIZE_F|SIZE_U|POINT_2F|POINT_2U|POINT_2L|ROUNDED_RECT|ELLIPSE))"
+    r"(?:\s*\)?(?=\s*\{)|(?:\s*[&*]+)?\s+[A-Za-z_]\w*(?:\s*=\s*(?=\{))?)?\s*([({])"
 )
 D2D_DRAW_STROKE_RE = re.compile(
     r"\b(?P<fn>DrawLine|DrawRectangle|DrawRoundedRectangle|DrawEllipse|DrawGeometry)\s*\("
@@ -100,7 +103,7 @@ GEOM_PROP_ASSIGN_RE = re.compile(
     r"|padding(?:_(?:left|right|top|bottom|h|v|x|y))?"
     r"|margin(?:_(?:left|right|top|bottom|h|v|x|y))?"
     r"|spacing|item_?spacing|(?:row|col|column)_?gap|gap))"
-    r"\s*(?:=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})",
+    r"\s*(?:=\s*\{\s*(?P<eq_brace>[^;}\n]+)\}|=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})",
     re.IGNORECASE,
 )
 GEOM_PROP_CALL_RE = re.compile(
@@ -109,8 +112,8 @@ GEOM_PROP_CALL_RE = re.compile(
     re.IGNORECASE,
 )
 FONT_SIZE_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?size|text_?size))"
-    r"\s*(?:=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})",
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?size|text_?size|lfHeight))"
+    r"\s*(?:=\s*\{\s*(?P<eq_brace>[^;}\n]+)\}|=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})",
     re.IGNORECASE,
 )
 FONT_SIZE_CALL_RE = re.compile(
@@ -118,12 +121,12 @@ FONT_SIZE_CALL_RE = re.compile(
     re.IGNORECASE,
 )
 FONT_FAMILY_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?family|family_?name))"
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?family(?:_?name)?|family_?name|lfFaceName))"
     r"\s*(?:=|\{)\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\"",
     re.IGNORECASE,
 )
 FONT_FAMILY_CALL_RE = re.compile(
-    r"\b(?P<name>set_?font_?family|font_?family)\s*[({]\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\"",
+    r"\b(?P<name>set_?(?:font_?family(?:_?name)?|family_?name)|font_?family(?:_?name)?|family_?name)\s*[({]\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\"",
     re.IGNORECASE,
 )
 CREATE_TEXT_FORMAT_RE = re.compile(r"\bCreateTextFormat\s*\(")
@@ -435,7 +438,7 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
 
     # Corner radius, stroke width, padding, margin, or spacing built from numeric literals other than 0
     for m in GEOM_PROP_ASSIGN_RE.finditer(code_only_s):
-        rhs = m.group("rhs") or m.group("brace") or ""
+        rhs = m.group("eq_brace") or m.group("rhs") or m.group("brace") or ""
         if _has_nonzero_literal(rhs):
             add(m.start(), "literal-geometry",
                 f"`{m.group('name')}` is set from a non-zero numeric literal; use a size, spacing, or radius token")
@@ -467,13 +470,14 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
             f"`{m.group('name')}` is called with literal family `\"{m.group('val')}\"`; use a font token")
 
     for m in FONT_SIZE_ASSIGN_RE.finditer(code_only_s):
-        rhs = m.group("rhs") or m.group("brace") or ""
+        rhs = m.group("eq_brace") or m.group("rhs") or m.group("brace") or ""
         if _has_nonzero_literal(rhs):
             add(m.start(), "literal-size",
                 f"`{m.group('name')}` is set from a non-zero numeric literal; use a type size token")
     for m in FONT_SIZE_CALL_RE.finditer(code_only_s):
         body, _ = _balanced_body(code_only_s, m.start(2))
-        if _has_nonzero_literal(body):
+        args_clean = _split_top_level_args(body)
+        if args_clean and _has_nonzero_literal(args_clean[0]):
             add(m.start(), "literal-size",
                 f"`{m.group('name')}(...)` is called with a non-zero numeric literal; use a type size token")
 
@@ -732,7 +736,7 @@ def self_test() -> int:
 
         # Comprehensive UI fixture covering remaining literal kinds AND passing token forms.
         panel_cpp = (
-            "// D2D1::ColorF(1.0f, 0.0f, 0.0f); /* 0xFF0000 D2D1::RectF(0, 0, 10, 10) */\n"  # 1 comment: clean
+            "// Uses generated token tables from docs/design/tokens.json. /* D2D1::ColorF(1.0f, 0.0f, 0.0f); */\n"  # 1 comment: clean (not generated)
             "void draw_panel() {\n"
             "  auto ok_col = tokens.color(ColorToken::SurfacePanel);\n"                       # 3 token color: clean
             "  auto ok_zero = D2D1::RectF(0, 0, 0, 0);\n"                                     # 4 zero rect: clean
@@ -757,6 +761,12 @@ def self_test() -> int:
             "  float strokeWidth = 1.5f;\n"                                                   # 23 literal-geometry
             "  const wchar_t* fontFamily = L\"Inter\";\n"                                     # 24 font-family-literal
             "  float fontSize = 14.0f;\n"                                                     # 25 literal-size
+            "  layout->SetFontFamilyName(L\"Arial\", range);\n"                               # 26 font-family-literal
+            "  layout->SetFontSize(tokens.font_size(TypeToken::Body), DWRITE_TEXT_RANGE{0, 10});\n"  # 27 token font size with range: clean
+            "  layout->SetFontSize(14.0f, DWRITE_TEXT_RANGE{0, 10});\n"                       # 28 literal-size
+            "  D2D1_COLOR_F comp_c = (D2D1_COLOR_F){0.2f, 0.4f, 0.8f, 1.0f};\n"               # 29 color-api
+            "  D2D1_RECT_F comp_r = (D2D1_RECT_F){0, 0, 24, 24};\n"                           # 30 literal-geometry
+            "  Thickness padding = {0.0f, 8.0f, 0.0f, 8.0f};\n"                               # 31 literal-geometry
             "}\n"
         )
         (ui_dir / "panel.cpp").write_text(panel_cpp, encoding="utf-8")
@@ -783,6 +793,11 @@ def self_test() -> int:
             (23, "literal-geometry"),
             (24, "font-family-literal"),
             (25, "literal-size"),
+            (26, "font-family-literal"),
+            (28, "literal-size"),
+            (29, "color-api"),
+            (30, "literal-geometry"),
+            (31, "literal-geometry"),
         ])
         check("panel.cpp flags every literal kind and passes every token form", panel_got, panel_want)
         check("non-UI core, tests, and generated token files produce no findings",
