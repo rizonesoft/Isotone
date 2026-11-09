@@ -426,8 +426,8 @@ def lex_views(text):
         else:
             raw = RAW_STR_RE.match(spliced, i)
             if raw:
-                blank(no_strings, raw.start(2), raw.end(2))
-                blank(code_only, raw.start(2), raw.end(2))
+                blank(no_strings, raw.start(0), raw.end(0))
+                blank(code_only, raw.start(0), raw.end(0))
                 i = raw.end(0)
             elif spliced[i] == '"' or (
                 spliced[i] == "'"
@@ -1056,6 +1056,7 @@ def self_test():
     for lit_case in ('constexpr auto help = "LoadLibraryW(name)";',
                      'constexpr auto help = L"LoadLibraryExW(L\\"kernel32.dll\\", nullptr, 0)";',
                      'constexpr auto help = R"(LoadLibraryW(name) // NOLINT\n#pragma warning(disable: 4996))";',
+                     'constexpr auto help = R"NOLINT(hello)NOLINT";',
                      'constexpr auto help = "// NOLINT";',
                      'constexpr auto help = "NOLINTBEGIN(bugprone-foo)";',
                      'constexpr auto help = "#pragma warning(disable: 4996)";',

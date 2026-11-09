@@ -551,67 +551,6 @@ def query_osv_paginated(base_payload: dict, osv_post) -> list[dict]:
     return vulns
 
 
-def _candidate_version_reintroduced(vuln: dict, cand_ver: str, repo: str | None = None) -> bool:
-    """Return True when candidate fix version `cand_ver` remains affected by an open or reintroduced range in `vuln`."""
-    allowed = allowed_repo_urls(repo)
-    clean_cand = cand_ver.split("#", 1)[0].strip()
-    cand_key = parse_semver_key(clean_cand)
-    if cand_key is None:
-        return True
-    for aff in validate_osv_affected(vuln):
-        if not aff_matches_repo(aff, allowed):
-            continue
-        self_cancelled_tags: set[tuple] = set()
-        for rng in aff.get("ranges") or []:
-            if allowed is not None and isinstance(rng.get("repo"), str) and rng["repo"].strip():
-                if norm_repo_url(rng["repo"]) not in allowed:
-                    continue
-            rng_type = rng.get("type")
-            if rng_type in ("SEMVER", "ECOSYSTEM"):
-                if version_matches_events(clean_cand, rng.get("events") or []):
-                    return True
-                continue
-            rng_events = rng.get("events") or []
-            rng_intro = {ev["introduced"].strip() for ev in rng_events if isinstance(ev.get("introduced"), str)}
-            rng_fixed = {ev["fixed"].strip() for ev in rng_events if isinstance(ev.get("fixed"), str)}
-            git_open = False
-            for ev in rng_events:
-                if "introduced" in ev:
-                    git_open = True
-                elif "fixed" in ev or "last_affected" in ev:
-                    git_open = False
-            if git_open:
-                return True
-            db = rng.get("database_specific") or {}
-            ext_events = db.get("extracted_events") or []
-            rng_ref_tags = [
-                ext["original_tag"]
-                for ext in ext_events
-                if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str)
-            ]
-            rng_cpe_ranges = [
-                ext.get("range") or []
-                for ext in ext_events
-                if ext.get("source") in ("CPE_RANGE", "CPE_STRING")
-            ]
-            if rng_ref_tags and any(version_lt(clean_cand, ft) for ft in rng_ref_tags):
-                return True
-            if rng_cpe_ranges and any(version_matches_events(clean_cand, r) for r in rng_cpe_ranges):
-                return True
-            has_standalone = any(ext.get("strategy") == "StandaloneSingleVersion" for ext in ext_events)
-            if has_standalone and (rng_intro & rng_fixed):
-                for ext in ext_events:
-                    if ext.get("source") == "REFERENCES_TAG" and isinstance(ext.get("original_tag"), str):
-                        tkey = parse_semver_key(ext["original_tag"])
-                        if tkey is not None:
-                            self_cancelled_tags.add(tkey)
-        for v in aff.get("versions") or []:
-            vkey = parse_semver_key(str(v))
-            if vkey == cand_key and vkey not in self_cancelled_tags:
-                return True
-    return False
-
-
 def extract_fixed_version_from_osv(vuln: dict, repo: str | None = None, version: str | None = None) -> str | None:
     """Extract the fixing version from an OSV advisory's ranges or extracted_events scoped to `repo`."""
     allowed = allowed_repo_urls(repo)
@@ -645,7 +584,7 @@ def extract_fixed_version_from_osv(vuln: dict, repo: str | None = None, version:
             c
             for c in candidates
             if version_lt(clean_ver, c)
-            and not _candidate_version_reintroduced(vuln, c, repo=repo)
+            and not advisory_affects_git(vuln, c, tag=f"v{c}", commit="", from_commit_query=False, repo=repo)
         ]
         if above:
             return min(above, key=lambda c: parse_semver_key(c) or ((-1,), 0, ()))
@@ -1083,7 +1022,9 @@ def evaluate_register(
                     osv_pair = osv_vuln_by_port_id.get((port, a["id"]))
                     if osv_pair is not None:
                         v_doc, v_repo = osv_pair
-                        if _candidate_version_reintroduced(v_doc, head_ver, repo=v_repo):
+                        if advisory_affects_git(
+                            v_doc, head_ver, tag=f"v{head_clean}", commit="", from_commit_query=False, repo=v_repo
+                        ):
                             continue
                     feed_pair = feed_entries_by_port_id.get((port, a["id"]))
                     if feed_pair is not None:
@@ -1407,9 +1348,9 @@ def self_test() -> int:
         [("libwebp", "1.3.1", "CVE-2023-4863")],
     )
     check(
-        "current baseline fix 1.3.2 is reported without baseline-mismatch",
+        "libwebp 1.3.1 fixture with versions=['1.3.2'] does not claim 1.3.2 is unaffected",
         (res_webp["baseline_mismatch"], res_webp["baseline_updates"]),
-        ([], ["baseline-update: libwebp 1.3.1 -> 1.3.2 in current vcpkg baseline fixes CVE-2023-4863"]),
+        ([], []),
     )
 
     # 3. Unmapped row & non-helper carrying none: identity
@@ -1422,6 +1363,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=lambda payload: clean_osv,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest", "libwebp"},
     )
     check("unmapped row and non-helper with none: identity fail", res_unmapped["ok"], False)
@@ -1444,6 +1386,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=osv_fail,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check("a failing OSV query fails as unchecked", (res_fail_query["ok"], len(res_fail_query["unchecked"])), (False, 1))
@@ -1457,6 +1400,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=lambda payload: clean_osv,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
@@ -1465,7 +1409,7 @@ def self_test() -> int:
         (False, True),
     )
 
-    # 6. Two-page OSV response with advisory on page 2, and failing second page
+    # 6. Two-page OSV response with advisory on page 2, baseline-update fix 1.3.2, and failing second page
     def osv_two_page(payload: dict) -> dict:
         if payload.get("commit") == "fd7bb21c0cb56e8a82e9bfa376164b842f433f3b":
             return two_page_2 if payload.get("page_token") == "page-2-token" else two_page_1
@@ -1478,12 +1422,13 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=osv_two_page,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=bumped_baseline,
         target_installed_ports={"libwebp"},
     )
     check(
-        "two-page OSV response finds advisory on page 2",
-        [(a["port"], a["id"]) for a in res_two_page["advisories"]],
-        [("libwebp", "CVE-2023-4863")],
+        "two-page OSV response finds advisory on page 2 and reports 1.3.2 baseline-update fix",
+        ([(a["port"], a["id"]) for a in res_two_page["advisories"]], res_two_page["baseline_updates"]),
+        ([("libwebp", "CVE-2023-4863")], ["baseline-update: libwebp 1.3.1 -> 1.3.2 in current vcpkg baseline fixes CVE-2023-4863"]),
     )
 
     def osv_fail_second_page(payload: dict) -> dict:
@@ -1498,6 +1443,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=osv_fail_second_page,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"libwebp"},
     )
     check("a failing second OSV page fails as unchecked", (res_fail_page2["ok"], len(res_fail_page2["unchecked"])), (False, 1))
@@ -1510,6 +1456,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=lambda payload: clean_osv,
         committed_baseline_doc=bumped_baseline,
+        current_baseline_doc=bumped_baseline,
         target_installed_ports={"gtest", "libwebp"},
     )
     check("bumped libwebp in baseline beside 1.3.1 row fails baseline-mismatch", res_base_mismatch["ok"], False)
@@ -1531,6 +1478,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=lambda payload: clean_osv,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
@@ -1548,6 +1496,7 @@ def self_test() -> int:
         osv_post=lambda payload: clean_osv,
         http_get=lambda url: sqlite_clean_html,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"sqlite3"},
     )
     check("SQLite 3.53.4#2 against clean feed fixture passes", (res_feed_clean["ok"], res_feed_clean["advisories"]), (True, []))
@@ -1564,6 +1513,7 @@ def self_test() -> int:
         osv_post=lambda payload: clean_osv,
         http_get=lambda url: sqlite_page2_html if url.endswith("cves-page2.html") else sqlite_page1_html,
         committed_baseline_doc=old_sqlite_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"sqlite3"},
     )
     check(
@@ -1811,6 +1761,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=lambda _payload: open_cpe_osv,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
@@ -1910,6 +1861,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=lambda payload: union_osv if "commit" in payload else {"vulns": []},
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
@@ -2000,6 +1952,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=lambda _payload: multi_limit_osv,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
@@ -2070,6 +2023,7 @@ def self_test() -> int:
         resolve_tag=fake_resolve,
         osv_post=lambda payload: {"vulns": []} if "commit" in payload else open_git_cpe_osv,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
@@ -2154,6 +2108,7 @@ def self_test() -> int:
         resolve_tag=lambda _repo, _tag: "a" * 40,
         osv_post=lambda payload: {"vulns": []} if "commit" in payload else git_inclusive_boundaries_osv,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
@@ -2191,6 +2146,7 @@ def self_test() -> int:
         resolve_tag=lambda _repo, _tag: "a" * 40,
         osv_post=lambda payload: {"vulns": []} if "commit" in payload else standalone_meta_osv,
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
@@ -2220,6 +2176,7 @@ def self_test() -> int:
         resolve_tag=lambda _repo, _tag: "a" * 40,
         osv_post=lambda payload: multi_git_limit_osv if "commit" in payload else {"vulns": []},
         committed_baseline_doc=committed_baseline,
+        current_baseline_doc=committed_baseline,
         target_installed_ports={"gtest"},
     )
     check(
