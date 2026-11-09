@@ -87,23 +87,23 @@ NAMED_COLOR_RE = re.compile(r"\b(?:D2D1::)?ColorF::(?:Enum::)?(?!ColorF\b|Enum\b
 RGB_MACRO_RE = re.compile(r"\b(?:PALETTE)?RGB(?:A)?\s*\(")
 COLORF_HEAD_RE = re.compile(
     r"\b(?:(?:D2D1::)?ColorF|D2D1_COLOR_F)"
-    r"(?:\s*\)?(?=\s*\{)|(?:\s*[&*]+)?\s+[A-Za-z_]\w*(?:\s*=\s*(?=\{))?)?\s*([({])"
+    r"(?:\s*\)?(?=\s*\{)|(?:\s*,\s*[^>;{()]*)?>?(?:\s*[&*]+)?\s+[A-Za-z_]\w*(?:\s*\[[^\]]*\])*(?:\s*=\s*(?=\{))?)?\s*([({])"
 )
 CREATE_BRUSH_RE = re.compile(r"\bCreateSolidColorBrush\s*\(")
 GEOM_TYPE_HEAD_RE = re.compile(
     r"\b(?:(?:D2D1::)?(?:RectF|RectU|RectL|SizeF|SizeU|Point2F|Point2U|Point2L|RoundedRect|Ellipse)"
     r"|D2D1_(?:RECT_F|RECT_U|RECT_L|SIZE_F|SIZE_U|POINT_2F|POINT_2U|POINT_2L|ROUNDED_RECT|ELLIPSE))"
-    r"(?:\s*\)?(?=\s*\{)|(?:\s*[&*]+)?\s+[A-Za-z_]\w*(?:\s*=\s*(?=\{))?)?\s*([({])"
+    r"(?:\s*\)?(?=\s*\{)|(?:\s*,\s*[^>;{()]*)?>?(?:\s*[&*]+)?\s+[A-Za-z_]\w*(?:\s*\[[^\]]*\])*(?:\s*=\s*(?=\{))?)?\s*([({])"
 )
 D2D_DRAW_STROKE_RE = re.compile(
     r"\b(?P<fn>DrawLine|DrawRectangle|DrawRoundedRectangle|DrawEllipse|DrawGeometry)\s*\("
 )
 GEOM_PROP_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:corner_?radius|radius(?:_[xy]|[XY])?|stroke_?width|border_?width"
-    r"|padding(?:_(?:left|right|top|bottom|h|v|x|y))?"
-    r"|margin(?:_(?:left|right|top|bottom|h|v|x|y))?"
-    r"|spacing|item_?spacing|(?:row|col|column)_?gap|gap))"
-    r"\s*(?:=\s*\{\s*(?P<eq_brace>[^;}\n]+)\}|=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})",
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:corner_?radi(?:us|i)|radi(?:us|i)(?:_[xy]|[XY])?|stroke_?widths?|border_?widths?"
+    r"|paddings?(?:_(?:left|right|top|bottom|h|v|x|y))?"
+    r"|margins?(?:_(?:left|right|top|bottom|h|v|x|y))?"
+    r"|spacings?|item_?spacings?|(?:row|col|column)_?gaps?|gaps?))"
+    r"(?:\s*\[[^\]]*\])*\s*(?:(?P<brace>\{)|=\s*(?:(?P<eq_brace>\{)|(?P<rhs>[^;,\n}]+)))",
     re.IGNORECASE,
 )
 GEOM_PROP_CALL_RE = re.compile(
@@ -112,8 +112,8 @@ GEOM_PROP_CALL_RE = re.compile(
     re.IGNORECASE,
 )
 FONT_SIZE_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?size|text_?size|lfHeight))"
-    r"\s*(?:=\s*\{\s*(?P<eq_brace>[^;}\n]+)\}|=\s*(?P<rhs>[^;,\n}]+)|\{\s*(?P<brace>[^;}\n]+)\})",
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?sizes?|text_?sizes?|lfHeight))"
+    r"(?:\s*\[[^\]]*\])*\s*(?:(?P<brace>\{)|=\s*(?:(?P<eq_brace>\{)|(?P<rhs>[^;,\n}]+)))",
     re.IGNORECASE,
 )
 FONT_SIZE_CALL_RE = re.compile(
@@ -121,8 +121,8 @@ FONT_SIZE_CALL_RE = re.compile(
     re.IGNORECASE,
 )
 FONT_FAMILY_ASSIGN_RE = re.compile(
-    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?family(?:_?name)?|family_?name|lfFaceName))"
-    r"\s*(?:=|\{)\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\"",
+    r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?famil(?:y|ies)(?:_?name)?|famil(?:y|ies)_?name|lfFaceName))"
+    r"(?:\s*\[[^\]]*\])*\s*(?:=\s*\{?|\{)\s*(?:L|u8|u|U)?\"(?P<val>[^\"]+)\"",
     re.IGNORECASE,
 )
 FONT_FAMILY_CALL_RE = re.compile(
@@ -303,8 +303,26 @@ def _split_top_level_args(arg_text: str) -> list[str]:
     return parts
 
 
+def _strip_subscripts(expr: str) -> str:
+    """Blank [...] subscript index expressions so table lookups like theme.font_sizes[1] are not treated as literal values."""
+    out: list[str] = []
+    depth = 0
+    for ch in expr:
+        if ch == "[":
+            depth += 1
+            out.append(" ")
+        elif ch == "]" and depth > 0:
+            depth -= 1
+            out.append(" ")
+        elif depth == 0:
+            out.append(ch)
+        else:
+            out.append(" ")
+    return "".join(out)
+
+
 def _numeric_literals(expr: str) -> list[str]:
-    return [m.group(0) for m in NUM_LITERAL_RE.finditer(expr)]
+    return [m.group(0) for m in NUM_LITERAL_RE.finditer(_strip_subscripts(expr))]
 
 
 def _is_zero_literal(tok: str) -> bool:
@@ -438,7 +456,11 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
 
     # Corner radius, stroke width, padding, margin, or spacing built from numeric literals other than 0
     for m in GEOM_PROP_ASSIGN_RE.finditer(code_only_s):
-        rhs = m.group("eq_brace") or m.group("rhs") or m.group("brace") or ""
+        if m.group("brace") or m.group("eq_brace"):
+            open_pos = m.start("brace") if m.group("brace") else m.start("eq_brace")
+            rhs, _ = _balanced_body(code_only_s, open_pos)
+        else:
+            rhs = m.group("rhs") or ""
         if _has_nonzero_literal(rhs):
             add(m.start(), "literal-geometry",
                 f"`{m.group('name')}` is set from a non-zero numeric literal; use a size, spacing, or radius token")
@@ -470,7 +492,11 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
             f"`{m.group('name')}` is called with literal family `\"{m.group('val')}\"`; use a font token")
 
     for m in FONT_SIZE_ASSIGN_RE.finditer(code_only_s):
-        rhs = m.group("eq_brace") or m.group("rhs") or m.group("brace") or ""
+        if m.group("brace") or m.group("eq_brace"):
+            open_pos = m.start("brace") if m.group("brace") else m.start("eq_brace")
+            rhs, _ = _balanced_body(code_only_s, open_pos)
+        else:
+            rhs = m.group("rhs") or ""
         if _has_nonzero_literal(rhs):
             add(m.start(), "literal-size",
                 f"`{m.group('name')}` is set from a non-zero numeric literal; use a type size token")
@@ -767,6 +793,9 @@ def self_test() -> int:
             "  D2D1_COLOR_F comp_c = (D2D1_COLOR_F){0.2f, 0.4f, 0.8f, 1.0f};\n"               # 29 color-api
             "  D2D1_RECT_F comp_r = (D2D1_RECT_F){0, 0, 24, 24};\n"                           # 30 literal-geometry
             "  Thickness padding = {0.0f, 8.0f, 0.0f, 8.0f};\n"                               # 31 literal-geometry
+            "  const D2D1_COLOR_F palette[] = {{0.2f, 0.4f, 0.8f, 1.0f}};\n"                  # 32 color-api
+            "  const D2D1_RECT_F rects[] = {{0, 0, 24, 24}};\n"                               # 33 literal-geometry
+            "  const auto ok_fontSize = theme.font_sizes[1];\n"                               # 34 table lookup: clean
             "}\n"
         )
         (ui_dir / "panel.cpp").write_text(panel_cpp, encoding="utf-8")
@@ -798,6 +827,8 @@ def self_test() -> int:
             (29, "color-api"),
             (30, "literal-geometry"),
             (31, "literal-geometry"),
+            (32, "color-api"),
+            (33, "literal-geometry"),
         ])
         check("panel.cpp flags every literal kind and passes every token form", panel_got, panel_want)
         check("non-UI core, tests, and generated token files produce no findings",
