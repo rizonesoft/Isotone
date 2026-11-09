@@ -103,7 +103,7 @@ GEOM_PROP_ASSIGN_RE = re.compile(
     r"|paddings?(?:_(?:left|right|top|bottom|h|v|x|y))?"
     r"|margins?(?:_(?:left|right|top|bottom|h|v|x|y))?"
     r"|spacings?|item_?spacings?|(?:row|col|column)_?gaps?|gaps?))"
-    r"(?:\s*\[[^\]]*\])*\s*(?:(?P<brace>\{)|=\s*(?:(?P<eq_brace>\{)|(?P<rhs>[^;,\n}]+)))",
+    r"(?:\s*\[[^\]]*\])*\s*(?:(?P<brace>\{)|(?<![=!<>])=(?!=))",
     re.IGNORECASE,
 )
 GEOM_PROP_CALL_RE = re.compile(
@@ -113,7 +113,7 @@ GEOM_PROP_CALL_RE = re.compile(
 )
 FONT_SIZE_ASSIGN_RE = re.compile(
     r"\b(?P<name>(?:[A-Za-z_]\w*_?)?(?:font_?sizes?|text_?sizes?|lfHeight))"
-    r"(?:\s*\[[^\]]*\])*\s*(?:(?P<brace>\{)|=\s*(?:(?P<eq_brace>\{)|(?P<rhs>[^;,\n}]+)))",
+    r"(?:\s*\[[^\]]*\])*\s*(?:(?P<brace>\{)|(?<![=!<>])=(?!=))",
     re.IGNORECASE,
 )
 FONT_SIZE_CALL_RE = re.compile(
@@ -303,6 +303,24 @@ def _split_top_level_args(arg_text: str) -> list[str]:
     return parts
 
 
+def _rhs_expr(text: str, start: int) -> str:
+    """Return the RHS expression starting at `start` up to a top-level ';', ',', or '}'."""
+    depth = 0
+    i, n = start, len(text)
+    while i < n:
+        ch = text[i]
+        if ch in "({[":
+            depth += 1
+        elif ch in ")}]":
+            if depth == 0:
+                break
+            depth -= 1
+        elif depth == 0 and ch in ";,":
+            break
+        i += 1
+    return text[start:i]
+
+
 def _strip_subscripts(expr: str) -> str:
     """Blank [...] subscript index expressions so table lookups like theme.font_sizes[1] are not treated as literal values."""
     out: list[str] = []
@@ -428,8 +446,12 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
             add(m.start(), "color-api",
                 "`CreateSolidColorBrush` builds a literal color from numbers; resolve a color token from the generated token tables")
     for m in RGB_MACRO_RE.finditer(code_only_s):
-        add(m.start(), "color-api",
-            f"`{m.group(0).strip()}` builds a literal color; resolve a color token from the generated token tables")
+        open_paren = m.end() - 1
+        body_clean, end_pos = _balanced_body(code_only_s, open_paren)
+        if _numeric_literals(body_clean):
+            colorf_spans.append((m.start(), end_pos))
+            add(m.start(), "color-api",
+                f"`{m.group(0).strip()}` builds a literal color; resolve a color token from the generated token tables")
 
     # 3. 6- or 8-digit hex color literals in code (outside ColorF calls already reported above)
     for m in HEX_LITERAL_RE.finditer(code_only_s):
@@ -456,11 +478,10 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
 
     # Corner radius, stroke width, padding, margin, or spacing built from numeric literals other than 0
     for m in GEOM_PROP_ASSIGN_RE.finditer(code_only_s):
-        if m.group("brace") or m.group("eq_brace"):
-            open_pos = m.start("brace") if m.group("brace") else m.start("eq_brace")
-            rhs, _ = _balanced_body(code_only_s, open_pos)
+        if m.group("brace"):
+            rhs, _ = _balanced_body(code_only_s, m.start("brace"))
         else:
-            rhs = m.group("rhs") or ""
+            rhs = _rhs_expr(code_only_s, m.end())
         if _has_nonzero_literal(rhs):
             add(m.start(), "literal-geometry",
                 f"`{m.group('name')}` is set from a non-zero numeric literal; use a size, spacing, or radius token")
@@ -492,11 +513,10 @@ def scan_cpp(ctx: Context, path: Path, rel: str, raw: str) -> list[Finding]:
             f"`{m.group('name')}` is called with literal family `\"{m.group('val')}\"`; use a font token")
 
     for m in FONT_SIZE_ASSIGN_RE.finditer(code_only_s):
-        if m.group("brace") or m.group("eq_brace"):
-            open_pos = m.start("brace") if m.group("brace") else m.start("eq_brace")
-            rhs, _ = _balanced_body(code_only_s, open_pos)
+        if m.group("brace"):
+            rhs, _ = _balanced_body(code_only_s, m.start("brace"))
         else:
-            rhs = m.group("rhs") or ""
+            rhs = _rhs_expr(code_only_s, m.end())
         if _has_nonzero_literal(rhs):
             add(m.start(), "literal-size",
                 f"`{m.group('name')}` is set from a non-zero numeric literal; use a type size token")
@@ -796,6 +816,9 @@ def self_test() -> int:
             "  const D2D1_COLOR_F palette[] = {{0.2f, 0.4f, 0.8f, 1.0f}};\n"                  # 32 color-api
             "  const D2D1_RECT_F rects[] = {{0, 0, 24, 24}};\n"                               # 33 literal-geometry
             "  const auto ok_fontSize = theme.font_sizes[1];\n"                               # 34 table lookup: clean
+            "  const auto ok_rgb = RGB(theme.red, theme.green, theme.blue);\n"                # 35 token RGB: clean
+            "  float max_padding = std::max(theme.padding, 8.0f);\n"                          # 36 literal-geometry
+            "  float max_font_size = std::max(theme.font_size, 12.0f);\n"                     # 37 literal-size
             "}\n"
         )
         (ui_dir / "panel.cpp").write_text(panel_cpp, encoding="utf-8")
@@ -829,6 +852,8 @@ def self_test() -> int:
             (31, "literal-geometry"),
             (32, "color-api"),
             (33, "literal-geometry"),
+            (36, "literal-geometry"),
+            (37, "literal-size"),
         ])
         check("panel.cpp flags every literal kind and passes every token form", panel_got, panel_want)
         check("non-UI core, tests, and generated token files produce no findings",
