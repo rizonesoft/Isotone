@@ -13,6 +13,9 @@
   - The slot is held (a campaign session is starting or running, here or under the watchdog), or any other Claude
     Code session is open in this folder or under it: nothing starts, because one session writes.
 
+  Each session, started here or resumed by the watchdog, signs in with the one-year token `start` reads from the
+  Conclave vault ("Claude Code OAuth token (1 year, setup-token)"); a vault that cannot be read never stops a start.
+
   `start` records the session id and flags, which is what lets the watchdog (scripts/run-guard.py watch, ticked every
   10 minutes by this repository's scheduled task) resume the run headless if this window is ever lost.
 
@@ -36,12 +39,32 @@ $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
 if ($InstallShortcut) {
+  # The shortcut carries the suite icon (Three Lights, docs/design/app-icons.md), never an app's. Its committed
+  # raster is D00 T03 §3's to export, so until then the icon is rendered here, per machine like the shortcut itself,
+  # from the committed SVGs by that section's ladder and renderer (scripts/requirements-icons.txt): every size from
+  # the file the ladder names, at its own pixel size.
+  $icon = Join-Path $env:LOCALAPPDATA 'Isotone\isotone-campaign.ico'
+  New-Item -ItemType Directory -Force (Split-Path -Parent $icon) | Out-Null
+  @'
+import io, os, sys
+import resvg_py
+from PIL import Image
+folder, target = sys.argv[1], sys.argv[2]
+ladder = {16: "-16", 20: "-16", 24: "-24", 30: "-24", 32: "-32", 40: "", 48: "", 64: "", 128: "", 256: ""}
+frames = [Image.open(io.BytesIO(bytes(resvg_py.svg_to_bytes(
+    svg_path=os.path.join(folder, f"isotone{name}.svg"), width=size, height=size)))).convert("RGBA")
+    for size, name in ladder.items()]
+frames[-1].save(target + ".tmp", format="ICO", sizes=[(n, n) for n in ladder], append_images=frames[:-1])
+os.replace(target + ".tmp", target)
+'@ | python - (Join-Path $repo 'resources\icons\isotone') $icon
+  if ($LASTEXITCODE -ne 0) { throw 'The suite icon could not be rendered: run tools/provision.ps1 (its pydeps leg installs scripts/requirements-icons.txt), then this again.' }
+
   $link = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Isotone campaign.lnk'
   $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
   $shortcut.TargetPath = (Get-Process -Id $PID).Path
   $shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
   $shortcut.WorkingDirectory = $repo
-  $shortcut.IconLocation = "$(Join-Path $repo 'resources\icons\stilus\stilus.ico'),0"
+  $shortcut.IconLocation = "$icon,0"
   $shortcut.Description = 'Start or resume the unattended Isotone campaign'
   $shortcut.Save()
   Write-Host "Shortcut written: $link -> $PSCommandPath"

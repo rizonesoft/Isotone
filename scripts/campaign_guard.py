@@ -1309,6 +1309,43 @@ def _watch_path(root: str) -> str:
     return os.path.join(root, "build", "claude-campaign-watch.json")
 
 
+# The campaign signs in with the one-year token `claude setup-token` issued, kept in the Conclave vault as "Claude
+# Code OAuth token (1 year, setup-token)", so a run does not end when the interactive sign-in expires. It is read at
+# each launch and each watchdog resume into the session's environment only: never printed, logged or written to disk.
+SIGNIN_ITEM = "op://Conclave/pm5vqgypmvjok23xwlaacbwlji/credential"
+SIGNIN_VARIABLE = "CLAUDE_CODE_OAUTH_TOKEN"
+_SIGNIN_SHAPE = re.compile(r"sk-ant-oat[0-9]{2}-[A-Za-z0-9_-]{40,}")
+
+
+def signin_token(run=subprocess.run, windows: bool = os.name == "nt") -> str | None:
+    """The vault's sign-in token, or None when the vault cannot be read or the field does not have the token's shape
+    (a vault that cannot be read never stops a start: the session then signs in as this machine already does). Read
+    through `conclave-op` as .conclave/automations/alert.py reads its key, with the Linux side bounded by systemd so
+    nothing outlives a read that hangs."""
+    read = ["systemd-run", "--user", "--pipe", "--wait", "--quiet", "--collect", "-p", "RuntimeMaxSec=60",
+            "-p", "TimeoutStopSec=5", "--", "bash", "-lc", f"conclave-op read '{SIGNIN_ITEM}'"]
+    try:
+        result = run([*(["wsl.exe", "-e"] if windows else []), *read], capture_output=True, text=True, timeout=90,
+                     stdin=subprocess.DEVNULL, creationflags=0x08000000 if windows else 0)  # CREATE_NO_WINDOW
+    except (OSError, subprocess.SubprocessError):
+        return None
+    value = (result.stdout or "").strip()
+    if result.returncode != 0 or not _SIGNIN_SHAPE.fullmatch(value):
+        return None
+    return value
+
+
+def session_env(environ, token: str | None) -> tuple[dict, str]:
+    """The environment a campaign session runs in, and the one line that says how it signs in (never the token)."""
+    env = dict(environ)
+    if token:
+        env[SIGNIN_VARIABLE] = token
+        return env, "Sign-in: the one-year token from the Conclave vault."
+    if env.get(SIGNIN_VARIABLE):
+        return env, "Sign-in: the token already in this environment (the vault token could not be read)."
+    return env, "Sign-in: this machine's interactive one (the vault token could not be read)."
+
+
 def _read_json(path: str) -> dict:
     try:
         with open(path, encoding="utf-8-sig") as fh:
@@ -1504,14 +1541,19 @@ class _World:
             sys.path.insert(0, os.path.join(HERE, "lib"))
             import win_job
             win_job.end_children_with_this_process()
+        env, signin = session_env(os.environ, signin_token())
         if not headless:
             import signal
+            print(signin, flush=True)
             # Ctrl+C belongs to the session in this console (it interrupts a turn there); this parent only waits.
             signal.signal(signal.SIGINT, signal.SIG_IGN)
-            return subprocess.call([claude, *argv], cwd=self.root)
+            return subprocess.call([claude, *argv], cwd=self.root, env=env)
         # Headless text output is the final reply only, so the log stays small.
         with open(os.path.join(self.root, "build", "claude-campaign-resumed.log"), "ab") as out:
-            return subprocess.call([claude, *argv], cwd=self.root, stdin=subprocess.DEVNULL, stdout=out, stderr=out)
+            out.write(f"{_utc_now()} {signin}\n".encode("utf-8"))
+            out.flush()
+            return subprocess.call([claude, *argv], cwd=self.root, stdin=subprocess.DEVNULL, stdout=out, stderr=out,
+                                   env=env)
 
     def spawn_supervisor(self) -> None:
         """Start `resume-headless` detached: the process that takes the slot, runs the resumed session, and holds
@@ -3089,6 +3131,39 @@ def _self_test() -> int:
         world = FakeWorld(root)
         flags = ["--dangerously-skip-permissions", "--model", "claude-test-1"]
         check("goal-fits-the-limit", len(GOAL) <= 4000, str(len(GOAL)))
+
+        # The sign-in token: read from the vault, refused unless it has the token's shape, and never a reason to stop.
+        good = "sk-ant-oat01-" + "Ab0_-" * 12
+        asked = []
+
+        def vault(stdout="", returncode=0, raises=None):
+            def run(command, **kwargs):
+                asked.append((command, kwargs))
+                if raises:
+                    raise raises
+                return subprocess.CompletedProcess(command, returncode, stdout, "")
+            return run
+
+        check("signin-reads-the-vault-token", signin_token(vault(good + "\n"), windows=True) == good)
+        command, kwargs = asked[-1]
+        check("signin-read-is-bounded-on-both-sides", command[:3] == ["wsl.exe", "-e", "systemd-run"]
+              and "RuntimeMaxSec=60" in command and SIGNIN_ITEM in command[-1] and kwargs.get("timeout") == 90,
+              str(command[:3]))
+        check("signin-refuses-a-wrong-shape", signin_token(vault("not-a-token\n")) is None
+              and signin_token(vault(good + " extra")) is None and signin_token(vault("")) is None)
+        check("signin-refuses-a-failed-read", signin_token(vault(good, returncode=1)) is None)
+        check("signin-survives-a-hung-or-missing-reader",
+              signin_token(vault(raises=subprocess.TimeoutExpired("wsl.exe", 90))) is None
+              and signin_token(vault(raises=FileNotFoundError("wsl.exe"))) is None)
+        env, said = session_env({"PATH": "p", SIGNIN_VARIABLE: "old"}, good)
+        check("session-env-carries-the-vault-token", env == {"PATH": "p", SIGNIN_VARIABLE: good}
+              and "vault" in said and good not in said, said)
+        env, said = session_env({"PATH": "p", SIGNIN_VARIABLE: "old"}, None)
+        check("session-env-keeps-an-inherited-token-without-the-vault", env[SIGNIN_VARIABLE] == "old"
+              and "already in this environment" in said and "old" not in said.split(), said)
+        env, said = session_env({"PATH": "p"}, None)
+        check("session-env-falls-back-to-the-interactive-sign-in", SIGNIN_VARIABLE not in env
+              and "interactive" in said, said)
         check("watch-inactive-without-a-guard", watch(root, world) == "inactive")
 
         world.live = [{"sessionId": "attended", "cwd": os.path.join(root, "docs", "phase-runs")}]
