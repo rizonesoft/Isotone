@@ -18,6 +18,7 @@ self-test (D00 T04 §32, §34 to §37).
     python scripts/campaign_guard.py watch                          (one watchdog tick; scripts/run-guard.py schedules it)
     python scripts/campaign_guard.py start                          (the launcher: start or resume the run in this console)
     python scripts/campaign_guard.py resume-headless                (the watchdog's supervisor: resume the dead session)
+    python scripts/campaign_guard.py session-note                   (the SessionStart hook: tell another session a campaign runs)
     python scripts/campaign_guard.py --self-test
 
 A campaign run has four parts. The guard file (`build/claude-campaign-guard.json`) names the session that owns the
@@ -1601,9 +1602,6 @@ def resume_headless(root: str, world=None) -> tuple[int, str]:
             guard = read_guard(root)
             if guard is None:
                 return 3, "resume-headless: inactive"
-            live = _live_in_tree(root, world)
-            if live:
-                return 3, f"resume-headless: session live here: {live[0]}"
             args = _resumable(root, guard)
             if args is None:
                 return 3, "resume-headless: the run was not started through scripts/start-campaign.ps1"
@@ -1613,6 +1611,12 @@ def resume_headless(root: str, world=None) -> tuple[int, str]:
             if spent:
                 _write_json(_watch_path(root), state)
                 return 3, f"resume-headless: stalled, {WATCH_MAX_RESTARTS} resumes changed nothing"
+            # Read last, after every slow step above, so the window in which a session nobody here started (an
+            # attended one, which takes no slot) could open unseen is as short as this module can make it; the
+            # SessionStart note (`session-note`) covers a session that opens after it.
+            live = _live_in_tree(root, world)
+            if live:
+                return 3, f"resume-headless: session live here: {live[0]}"
             # The attempt is on disk before anything runs, so a resume that cannot be recorded never starts.
             state.update(restarts=state.get("restarts", 0) + 1, launched_at=_utc_now())
             _write_json(_watch_path(root), state)
@@ -1621,6 +1625,24 @@ def resume_headless(root: str, world=None) -> tuple[int, str]:
         return code, f"resume-headless: session {session} ended (exit {code})"
     finally:
         slot.release()
+
+
+def session_note(root: str, stdin: str, world=None) -> str:
+    """The SessionStart hook: what a session opening in this tree is told when a campaign session holds the slot and
+    this is not that session. The slot keeps campaign sessions apart from each other; a session the operator opens
+    takes no slot, so it is told instead. Says nothing on any doubt or error: a note must never wedge a session."""
+    try:
+        opened = str(json.loads(stdin or "{}").get("session_id", ""))
+        guard = read_guard(root)
+        held = (world or _World(root)).slot_held()
+    except Exception:
+        return ""
+    if guard is None or not held or opened == str(guard.get("session_id", "")):
+        return ""
+    return ("An unattended campaign session is running in this repository right now (session "
+            f"{guard.get('session_id')}, run file {guard.get('run_file')}). It is the only writer: in this session, "
+            "read and run, and change no tracked file, commit nothing, and push nothing unless the operator first "
+            "stops the campaign (tell that session to stop, which runs `python scripts/campaign_guard.py end`).")
 
 
 def start(root: str, world=None) -> tuple[int, str]:
@@ -3119,6 +3141,12 @@ def _self_test() -> int:
               said)
         world.sig = "s2"
         check("watch-progress-resets-the-count", watch(root, world) == "resumed, attempt 1")
+        runs = len(world.runs)
+        world.live = [{"sessionId": "opened-late", "cwd": root}]
+        code, said = resume_headless(root, world)
+        check("the-supervisor-reads-liveness-itself", code == 3 and "opened-late" in said
+              and len(world.runs) == runs, said)
+        world.live = [{"sessionId": "elsewhere", "cwd": tmpd}]
 
         def failing_run(argv, headless):
             raise GuardError("claude is not on PATH")
@@ -3144,6 +3172,16 @@ def _self_test() -> int:
               and code == 3 and len(world.runs) == runs, said)
         os.unlink(os.path.join(root, "build", "claude-campaign-state.json"))
 
+        payload = json.dumps({"session_id": "an-attended-session"})
+        check("no-note-while-no-campaign-session-runs", session_note(root, payload, world) == "")
+        held = _SessionSlot(root)
+        held.take()
+        check("another-session-is-told-a-campaign-runs", sid in session_note(root, payload, world)
+              and "only writer" in session_note(root, payload, world))
+        check("the-campaign-session-itself-gets-no-note",
+              session_note(root, json.dumps({"session_id": sid}), world) == "")
+        check("a-bad-payload-gets-no-note", session_note(root, "not json", world) == "")
+        held.release()
         held = _SessionSlot(root)
         check("the-slot-is-one-os-lock", held.take() and not _SessionSlot(root).take() and slot_held(root))
         check("watch-defers-to-a-held-slot", watch(root, world) == "campaign session running"
@@ -3275,6 +3313,11 @@ def main(argv: list[str]) -> int:
             return code
         if argv[0] == "watch" and not opts:
             print(watch(root))
+            return 0
+        if argv[0] == "session-note" and not opts:
+            line = session_note(root, sys.stdin.read())
+            if line:
+                print(line)
             return 0
         if argv[0] in ("start", "resume-headless") and not opts:
             code, line = (start if argv[0] == "start" else resume_headless)(root)

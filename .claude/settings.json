@@ -27,6 +27,17 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import os, runpy, sys; sys.argv = ['campaign_guard.py', 'session-note']; runpy.run_path(os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(), 'scripts', 'campaign_guard.py'), run_name='__main__')\"",
+            "timeout": 20
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {

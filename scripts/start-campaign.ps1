@@ -64,8 +64,14 @@ $listed = claude plugin marketplace list 2>&1 | Out-String
 if (-not $listed.Contains($marketplace)) {
   if ($listed -match 'isotone-tools') { claude plugin marketplace remove isotone-tools | Out-Null }
   claude plugin marketplace add $marketplace | Out-Null
+  if ($LASTEXITCODE -ne 0) { Write-Warning "The plugin folder $marketplace could not be registered, so this session has no language servers." }
+  else { Write-Host "Registered the isotone-tools plugin folder at $marketplace." }
+}
+# Enabled in the project settings is not installed on this machine: the plugin's own state is checked on its own.
+$plugin = claude plugin list --json | Out-String | ConvertFrom-Json | Where-Object { $_.id -eq 'isotone-lsp@isotone-tools' -and $_.enabled } | Select-Object -First 1
+if (-not $plugin) {
   claude plugin install isotone-lsp@isotone-tools --scope project | Out-Null
-  Write-Host "Registered the isotone-tools plugin folder at $marketplace."
+  if ($LASTEXITCODE -ne 0) { Write-Warning 'The isotone-lsp plugin could not be installed, so this session has no language servers.' }
 }
 
 python scripts/campaign_guard.py start

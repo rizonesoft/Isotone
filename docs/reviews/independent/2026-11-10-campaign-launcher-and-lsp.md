@@ -230,3 +230,36 @@ OVERALL: needs-attention
 ## Response to round 7
 
 Both P1 findings are real, and they are the third and fourth window found in a reservation built on timestamps and recorded process ids, so the unit was re-thought instead of patched again (the skill's rule for a unit patched three rounds running). The commit that carries this response replaces `launch`, `launch-done`, the launch grace window, and the `spawning_at` mark with one session slot: an operating-system lock (`build/claude-campaign-session.lock`) that `start` (the launcher) and `resume-headless` (the watchdog's supervisor) each take in the process that then runs Claude Code and stays alive until it ends, with Claude Code inside a kill-on-close job object (`scripts/lib/win_job.py`). The lock is held by a live process or free, so no elapsed time releases it (F2) and no failure after the spawn can drop it while the session lives (F1). `watch` only asks for a resume; the supervisor decides again under the slot and writes the attempt before it runs anything. Proved with real processes in a throwaway workspace: while a supervisor's session ran, the slot read held from another process, a second supervisor and `start` each exited 3, and killing the supervisor ended its session processes and freed the slot. Self-test: 231 cases, 0 failed.
+
+## Round 8: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T01:53:02Z
+- Effort: medium
+- Lines: 20
+- Digest: d9f5a2b72215ed05
+
+## adversarial: needs-attention
+
+1. P1 `scripts/campaign_guard.py:1604`: Writer exclusion still uses a liveness snapshot that can become stale before Claude starts at line 1620. Ordinary Claude sessions do not acquire `_SessionSlot`. **Reproduce:** pause the supervisor after `_live_in_tree()` returns empty, start an ordinary Claude session in this repository, then release the supervisor. It starts the campaign beside that live session. An in-memory probe reproduced this by introducing the attended session during `world.signature()`: `resume_headless()` still invoked `world.run()`. The slot must coordinate ordinary sessions too for the claimed exclusion guarantee to hold.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P2 `scripts/start-campaign.ps1:64`: Plugin installation is conditional on the marketplace being absent, rather than the plugin being absent. **Reproduce:** register this checkout’s marketplace without installing `isotone-lsp`, then invoke the launcher. The registration check succeeds, line 67 is skipped, and the campaign starts without the language servers. A mocked execution confirmed that only `plugin marketplace list` runs. Installation failure after successful marketplace registration leaves the same persistent failure on subsequent launches. Check plugin installation independently and handle its exit status.
+
+## source-defect: needs-attention
+
+Finding 2 relies on an invalid equivalence between marketplace registration, project enablement, and installation. Claude Code explicitly documents that project settings enable plugins but do not install them. See [the documented missing-install condition](https://code.claude.com/docs/en/plugins/troubleshooting#plugin-name-is-enabled-in-project-settings-but-isnt-installed-here).
+
+## record: needs-attention
+
+3. P2 `docs/dev/decisions.md:169`, `.claude/skills/process-plan/SKILL.md:64`: The unconditional claim that recovery never starts beside a live session exceeds the implementation. Finding 1 reproduces a competing start despite the new session slot. The documentation must distinguish exclusion between cooperating campaign launchers from exclusion against ordinary Claude sessions until both are enforced.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 8
+
+Round 8 accepted the session slot between campaign sessions. Its three findings are fixed in the commit that carries this response. F1: a session the operator opens takes no lock, so certainty there is not available to this module; the starters now read the session records as their last step before running anything (self-test `the-supervisor-reads-liveness-itself`), a `SessionStart` hook (`campaign_guard.py session-note`) tells a session that opens while the slot is held that the campaign is the only writer (self-tests `another-session-is-told-a-campaign-runs`, `the-campaign-session-itself-gets-no-note`), and F3: the skill and the decision record now say exactly that, an instruction and not a lock. F2: the launcher checks the plugin's own installed-and-enabled state from `claude plugin list --json`, installs it when missing, and warns on a failed exit code.
