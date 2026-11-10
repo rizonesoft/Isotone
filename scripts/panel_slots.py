@@ -50,6 +50,7 @@ import subprocess
 import sys
 import time
 import tempfile
+from typing import NamedTuple
 
 # The delegate pin is closed. A new alias or effort is an operator decision
 # plus a `delegate-probe` run (and `standards/delegation.md` re-verified).
@@ -675,8 +676,12 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": '$review = "$(codex exec review)"'}}),
             ("a PowerShell `& (Get-Command ...)` CLI resolution bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "& (Get-Command codex).Source exec review"}}),
+            ("a `git push -u --no-verify` hook bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": "git push -u --no-verify origin main"}}),
             ("a read-only `rg` search mentioning `ProcessStartInfo|codex`", "allow",
              {"name": "run_command", "args": {"CommandLine": "rg -n 'ProcessStartInfo|codex' scripts"}}),
+            ("a `cmd /c rg` search mentioning `codex`", "allow",
+             {"name": "run_command", "args": {"CommandLine": 'cmd /c rg -n "codex" scripts'}}),
             ("a read-only `rg` search for `--no-verify`", "allow",
              {"name": "run_command", "args": {"CommandLine": "rg -n -- '--no-verify' scripts"}}),
             ("a read-only `research` subagent on `inherit`", "allow",
@@ -1548,7 +1553,7 @@ _AGY_PS_VAR_CLI = re.compile(
     re.IGNORECASE)
 _AGY_PS_RESOLVER_RHS = re.compile(
     r"(?:^\s*['\"]?(?:[^'\";\s]*[/\\])?(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?['\"]?\s*$"
-    r"|\b(?:Get-Command|gcm|where(?:\.exe)?|which|Resolve-Path|Join-Path|Get-Item|gi)\b.*"
+    r"|\b(?:Get-Command|gcm|where(?:\.exe)?|which|command\s+-v|Resolve-Path|Join-Path|Get-Item|gi)\b.*"
     r"\b(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?\b)",
     re.IGNORECASE)
 _AGY_CLI_WORD = re.compile(r"\b(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?\b", re.IGNORECASE)
@@ -1560,9 +1565,44 @@ _AGY_SEARCH_CMDS = frozenset((
     "rg", "rg.exe", "grep", "grep.exe", "egrep", "fgrep",
     "select-string", "sls", "findstr", "findstr.exe",
     "echo", "write-output", "write-host", "printf"))
-_AGY_GIT_VALUE_FLAGS = frozenset((
-    "-m", "--message", "-F", "--file", "-C", "--reuse-message", "-c", "--reedit-message",
-    "--author", "--date", "--cleanup", "--trailer", "-u", "--local-user", "--pathspec-from-file"))
+_AGY_MAX_WRAPPER_DEPTH = 8
+_GIT_SUBCMD_VALUE_FLAGS: dict[str, frozenset[str]] = {
+    "commit": frozenset((
+        "-m", "--message", "-F", "--file", "-C", "--reuse-message", "-c", "--reedit-message",
+        "--fixup", "--squash", "--author", "--date", "--cleanup", "--trailer",
+        "-t", "--template", "-U", "--unified", "--inter-hunk-context", "--pathspec-from-file")),
+    "push": frozenset((
+        "--repo", "--recurse-submodules", "--receive-pack", "--exec", "-o", "--push-option")),
+    "merge": frozenset((
+        "-m", "--message", "-F", "--file", "--cleanup", "-s", "--strategy", "-X", "--strategy-option")),
+    "tag": frozenset((
+        "-m", "--message", "-F", "--file", "--cleanup", "-u", "--local-user")),
+    "rebase": frozenset((
+        "--onto", "--exec", "-x", "-s", "--strategy", "-X", "--strategy-option", "-C", "--empty")),
+    "cherry-pick": frozenset((
+        "--cleanup", "-m", "--mainline", "-s", "--strategy", "-X", "--strategy-option")),
+    "revert": frozenset((
+        "--cleanup", "-m", "--mainline", "-s", "--strategy", "-X", "--strategy-option")),
+    "am": frozenset((
+        "--resolvemsg", "-C", "-p", "--whitespace", "--directory", "--exclude", "--include", "--patch-format")),
+    "notes": frozenset((
+        "--ref", "-m", "--message", "-F", "--file", "-c", "--reedit-message", "-C", "--reuse-message")),
+    "stash": frozenset(("-m", "--message", "--pathspec-from-file")),
+}
+
+
+class _CmdTok(NamedTuple):
+    val: str
+    raw: str
+    quote: str
+    rel_start: int
+    rel_end: int
+
+
+class _CmdSeg(NamedTuple):
+    tokens: list[_CmdTok]
+    raw: str
+    sep_before: str
 
 
 def _split_ps_flag(token: str) -> tuple[str, str | None]:
@@ -1580,76 +1620,6 @@ def _is_sp_filepath_flag(flag: str) -> bool:
 
 def _is_sp_arglist_flag(flag: str) -> bool:
     return flag in ("-a", "-ar", "-arg", "-args") or flag.startswith("-argum")
-
-
-def _unwrap_start_process(tokens: list[str], from_cmd: bool = False) -> list[str]:
-    """Extract `[executable, *args]` from a `Start-Process` / `start` / `saps` segment regardless of flag order."""
-    exe: str | None = None
-    sp_args: list[str] = []
-    positionals: list[str] = []
-    i = 1
-    n = len(tokens)
-    while i < n:
-        tok = tokens[i]
-        if tok.startswith(_DQ_MARK):
-            positionals.append(tok)
-            i += 1
-            continue
-        flag, inline_val = _split_ps_flag(tok)
-        if _is_sp_filepath_flag(flag):
-            if inline_val is not None:
-                exe = inline_val.lstrip(_DQ_MARK)
-                i += 1
-            elif i + 1 < n:
-                exe = tokens[i + 1].lstrip(_DQ_MARK)
-                i += 2
-            else:
-                i += 1
-            continue
-        if _is_sp_arglist_flag(flag):
-            raw_vals: list[str] = []
-            if inline_val is not None:
-                raw_vals.append(inline_val)
-                i += 1
-            elif i + 1 < n:
-                raw_vals.append(tokens[i + 1])
-                i += 2
-                while i < n and not tokens[i].lstrip(_DQ_MARK).startswith("-") \
-                        and (tokens[i - 1].endswith(",") or tokens[i].lstrip(_DQ_MARK).startswith(",")):
-                    raw_vals.append(tokens[i])
-                    i += 1
-            else:
-                i += 1
-            for rv in raw_vals:
-                for piece in re.split(r"[,_]+", rv.lstrip(_DQ_MARK)):
-                    cleaned_piece = piece.lstrip(_DQ_MARK).strip("'\"")
-                    if cleaned_piece:
-                        sp_args.append(cleaned_piece)
-            continue
-        if flag in _AGY_SP_SWITCHES:
-            i += 1
-            continue
-        if flag in _AGY_SP_VALUE_FLAGS or any(flag.startswith(p) for p in ("-work", "-wind", "-redir", "-cred", "-env")):
-            i += 1 if inline_val is not None else 2
-            continue
-        if flag.startswith("-"):
-            i += 1
-            continue
-        positionals.append(tok)
-        i += 1
-    if exe is None and positionals:
-        if from_cmd and positionals[0].startswith(_DQ_MARK):
-            if len(positionals) >= 2:
-                exe = positionals[1].lstrip(_DQ_MARK)
-                positionals = positionals[2:]
-            else:
-                positionals = []
-        else:
-            exe = positionals[0].lstrip(_DQ_MARK)
-            positionals = positionals[1:]
-    if exe is None:
-        return []
-    return [exe, *sp_args, *positionals]
 
 
 def _extract_subexpressions(command: str, in_posix: bool = False) -> list[str]:
@@ -1770,131 +1740,8 @@ def _extract_subexpressions(command: str, in_posix: bool = False) -> list[str]:
     return found
 
 
-def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False,
-                          in_posix: bool = False) -> tuple[list[str], bool, bool, bool]:
-    """Advance past leading assignments, call operators, and shell/process wrappers in one command segment.
-    Returns `(remaining_tokens, used_shell_wrapper, entered_cmd_shell, entered_posix_shell)`."""
-    cur = list(tokens)
-    used_wrapper = False
-    from_cmd = in_cmd
-    saw_cmd = in_cmd
-    saw_posix = in_posix
-    while cur:
-        raw_tok = cur[0]
-        is_dq = raw_tok.startswith(_DQ_MARK)
-        tok = raw_tok.lstrip(_DQ_MARK)
-        low = _bare(tok).strip("'\"")
-        if not is_dq and (tok in ("$", ".", "&") or (tok.startswith("$") and len(cur) > 1 and cur[1] == "=")):
-            cur = cur[2:] if (tok.startswith("$") and len(cur) > 1 and cur[1] == "=") else cur[1:]
-            continue
-        if not is_dq and ((tok.startswith("$") and "=" in tok) or ("=" in tok and not tok.startswith("-"))):
-            cur = cur[1:]
-            continue
-        if low == "command":
-            if len(cur) > 1 and cur[1].lstrip(_DQ_MARK) in ("-v", "-V"):
-                break
-            used_wrapper = True
-            cur = cur[2:] if len(cur) > 1 and cur[1].lstrip(_DQ_MARK) == "-p" else cur[1:]
-            continue
-        if low in ("nohup", "invoke-expression", "iex"):
-            used_wrapper = True
-            cur = cur[1:]
-            continue
-        if low == "env":
-            used_wrapper = True
-            idx = 1
-            while idx < len(cur):
-                etok = cur[idx].lstrip(_DQ_MARK)
-                if "=" in etok and not etok.startswith("-"):
-                    idx += 1
-                elif etok in ("-i", "--ignore-environment", "-0", "--null"):
-                    idx += 1
-                elif etok in ("-u", "--unset", "-C", "--chdir", "-S", "--split-string"):
-                    idx += 2
-                else:
-                    break
-            cur = cur[idx:]
-            continue
-        if low in ("cmd", "cmd.exe"):
-            used_wrapper = True
-            from_cmd = True
-            saw_cmd = True
-            saw_posix = False
-            idx = 1
-            while idx < len(cur) and _AGY_CMD_SWITCH.match(cur[idx].lstrip(_DQ_MARK)):
-                idx += 1
-            cur = cur[idx:]
-            continue
-        if low in ("bash", "bash.exe", "sh", "sh.exe"):
-            used_wrapper = True
-            from_cmd = False
-            saw_cmd = False
-            saw_posix = True
-            idx = 1
-            while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).lower() in (
-                    "-c", "-lc", "-l", "-i", "--login", "--norc", "--noprofile", "--"):
-                idx += 1
-            cur = cur[idx:]
-            continue
-        if low in ("wsl", "wsl.exe"):
-            used_wrapper = True
-            from_cmd = False
-            saw_cmd = False
-            saw_posix = True
-            idx = 1
-            while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).startswith("-"):
-                wflag = cur[idx].lstrip(_DQ_MARK).lower()
-                if wflag in ("-e", "--exec", "--"):
-                    idx += 1
-                    break
-                if wflag in _AGY_WSL_FLAGS_WITH_ARG:
-                    idx += 2
-                    continue
-                idx += 1
-            cur = cur[idx:]
-            continue
-        if low in ("pwsh", "pwsh.exe", "powershell", "powershell.exe"):
-            used_wrapper = True
-            from_cmd = False
-            saw_cmd = False
-            saw_posix = False
-            idx = 1
-            while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).startswith("-"):
-                pflag, pinline = _split_ps_flag(cur[idx])
-                if pflag in ("-file", "-f"):
-                    if pinline is not None:
-                        cur = [pinline, *cur[idx + 1:]]
-                        idx = 0
-                    else:
-                        idx += 1
-                    break
-                if pflag in ("-command", "-c"):
-                    if pinline is not None:
-                        cur = [pinline, *cur[idx + 1:]]
-                        idx = 0
-                    else:
-                        idx += 1
-                    break
-                if pflag in _AGY_PWSH_FLAGS_WITH_ARG:
-                    idx += 1 if pinline is not None else 2
-                    continue
-                if pflag in _AGY_PWSH_FLAGS:
-                    idx += 1
-                    continue
-                break
-            cur = cur[idx:]
-            continue
-        if low in ("start-process", "start", "saps", "invoke-item", "ii"):
-            used_wrapper = True
-            cur = _unwrap_start_process(cur, from_cmd=from_cmd)
-            from_cmd = False
-            continue
-        break
-    return [t.lstrip(_DQ_MARK) for t in cur], used_wrapper, saw_cmd, saw_posix
-
-
 def _resolved_target_in(expr: str) -> str | None:
-    for piece in re.split(r"[\s()_\"']+", expr.lstrip(_DQ_MARK)):
+    for piece in re.split(r"[\s()_\"'$`]+", expr.lstrip(_DQ_MARK)):
         if not piece:
             continue
         cand = _bare(piece).strip("'\"")
@@ -1903,111 +1750,526 @@ def _resolved_target_in(expr: str) -> str | None:
     return None
 
 
-def _is_exec_resolution_prefix(stmt_prefix: str, has_dollar: bool) -> bool:
-    p = re.sub(r"^\s*\$\w+\s*=\s*", "", stmt_prefix).strip()
-    if not p:
+def _toks_in_exec_slot(cur_tokens: list[_CmdTok], has_dollar: bool) -> bool:
+    eff = list(cur_tokens)
+    while eff and not eff[0].quote:
+        v0 = eff[0].val
+        if v0 == "$":
+            eff = eff[1:]
+            continue
+        if v0.startswith("$") and len(eff) > 1 and eff[1].val == "=":
+            eff = eff[2:]
+            continue
+        if v0.startswith("$") and "=" in v0:
+            eff = eff[1:]
+            continue
+        break
+    if not eff:
         return has_dollar
-    if p in ("&", "."):
+    if len(eff) == 1 and not eff[0].quote and eff[0].val in ("&", "."):
         return True
-    toks = p.split()
-    head = _bare(toks[0]).strip("'\"")
+    head = _bare(eff[0].val).strip("'\"")
     if head in ("start-process", "start", "saps", "invoke-item", "ii"):
-        last_flag = _split_ps_flag(toks[-1])[0] if len(toks) > 1 else ""
+        last_flag = _split_ps_flag(eff[-1].val)[0] if len(eff) > 1 and not eff[-1].quote else ""
         if _is_sp_arglist_flag(last_flag) or last_flag in ("-workingdirectory", "-wd"):
             return False
         return True
     return False
 
 
-def _collapse_resolved_exprs(joined: str) -> str:
-    """Replace parenthesized or quoted `$()` executable-resolution expressions in invocation slots (such as
-    `& (Get-Command codex).Source`, `Start-Process -FilePath (Get-Command claude).Path`, or `"$(command -v codex)"`)
-    with the resolved target token before `_segments` splits on parentheses."""
-    out: list[str] = []
-    stmt_start = 0
-    i = 0
-    n = len(joined)
-    while i < n:
-        if joined[i:i + 2] in ("&&", "||"):
-            out.append(joined[i:i + 2])
-            i += 2
-            stmt_start = i
+def _scan_matching_paren(command: str, open_idx: int, in_posix: bool = False) -> int:
+    n = len(command)
+    j = open_idx + 1
+    pdepth = 1
+    while j < n and pdepth > 0:
+        sc = command[j]
+        if not in_posix and sc == "`":
+            j += 2
             continue
-        ch = joined[i]
-        is_call_amp = (
-            ch == "&"
-            and (joined[stmt_start:i].strip() in ("", "$")
-                 or bool(re.fullmatch(r"\s*\$\w+\s*=\s*", joined[stmt_start:i]))))
-        if ch in ";|&\n{}" and not is_call_amp:
-            out.append(ch)
-            i += 1
-            stmt_start = i
+        if in_posix and sc == "\\":
+            j += 2
             continue
-        if ch == _DQ_MARK and joined[i + 1:i + 3] == "$_":
-            end_tok = i + 1
-            while end_tok < n and not joined[end_tok].isspace() and joined[end_tok] not in ";|(){}\n":
-                end_tok += 1
-            if _is_exec_resolution_prefix(joined[stmt_start:i], has_dollar=True):
-                target = _resolved_target_in(joined[i:end_tok])
-                if target:
-                    out.append(target)
-                    i = end_tok
+        if sc == "'":
+            j += 1
+            while j < n:
+                if not in_posix and command[j:j + 2] == "''":
+                    j += 2
                     continue
-        if ch == "(" or (ch == "$" and i + 1 < n and joined[i + 1] == "("):
+                if command[j] == "'":
+                    j += 1
+                    break
+                j += 1
+            continue
+        if sc == '"':
+            j += 1
+            while j < n:
+                if not in_posix and command[j] == "`":
+                    j += 2
+                    continue
+                if in_posix and command[j] == "\\":
+                    j += 2
+                    continue
+                if command[j] == '"':
+                    j += 1
+                    break
+                j += 1
+            continue
+        if sc == "(":
+            pdepth += 1
+        elif sc == ")":
+            pdepth -= 1
+            if pdepth == 0:
+                break
+        j += 1
+    return j
+
+
+def _tokenize_command(command: str, in_cmd: bool = False,
+                      in_posix: bool = False) -> tuple[list[_CmdSeg], list[str]]:
+    """Scan `command` into top-level pipeline/statement segments while preserving each token's unquoted value,
+    quote delimiter, and source slice so wrapper payloads and literal arguments never blur together."""
+    segments: list[_CmdSeg] = []
+    paren_subs: list[str] = []
+    cur_tokens: list[_CmdTok] = []
+    seg_start = 0
+    sep_before = ""
+    n = len(command)
+    i = 0
+
+    def flush(end_pos: int, next_sep: str) -> None:
+        nonlocal cur_tokens, sep_before
+        if cur_tokens:
+            segments.append(_CmdSeg(cur_tokens, command[seg_start:end_pos], sep_before))
+        cur_tokens = []
+        sep_before = next_sep
+
+    while i < n:
+        ch = command[i]
+        if ch in " \t\r":
+            i += 1
+            continue
+        if ch in ";\n{}":
+            flush(i, ch)
+            i += 1
+            seg_start = i
+            continue
+        if command[i:i + 2] in ("&&", "||"):
+            op = command[i:i + 2]
+            flush(i, op)
+            i += 2
+            seg_start = i
+            continue
+        if ch == "|":
+            step = 2 if command[i:i + 2] == "|&" else 1
+            flush(i, "|")
+            i += step
+            seg_start = i
+            continue
+        if ch == "&":
+            is_ps_call = (
+                not in_cmd and not in_posix and command[i:i + 2] != "&>"
+                and (not cur_tokens
+                     or [t.val for t in cur_tokens] == ["$"]
+                     or (len(cur_tokens) == 1 and cur_tokens[0].val.startswith("$") and cur_tokens[0].val.endswith("="))
+                     or (len(cur_tokens) == 2 and cur_tokens[0].val.startswith("$") and cur_tokens[1].val == "=")))
+            if is_ps_call:
+                cur_tokens.append(_CmdTok("&", "&", "", i - seg_start, i + 1 - seg_start))
+                i += 1
+                continue
+            if command[i:i + 2] != "&>":
+                flush(i, "&")
+                i += 1
+                seg_start = i
+                continue
+        if ch == "(" or (ch == "$" and i + 1 < n and command[i + 1] == "("):
             has_dollar = ch == "$"
             open_idx = i + 1 if has_dollar else i
-            if _is_exec_resolution_prefix(joined[stmt_start:i], has_dollar=has_dollar):
-                pdepth = 1
-                j = open_idx + 1
-                while j < n and pdepth > 0:
-                    if joined[j] == "(":
-                        pdepth += 1
-                    elif joined[j] == ")":
-                        pdepth -= 1
-                        if pdepth == 0:
-                            break
-                    j += 1
-                end_idx = j + 1 if j < n else n
-                m_prop = re.match(r"(?:\.[A-Za-z_]\w*)+", joined[end_idx:])
-                if m_prop:
-                    end_idx += m_prop.end()
-                target = _resolved_target_in(joined[open_idx + 1:j])
+            j = _scan_matching_paren(command, open_idx, in_posix=in_posix)
+            end_idx = j + 1 if j < n else n
+            m_prop = re.match(r"(?:\.[A-Za-z_]\w*)+", command[end_idx:])
+            if m_prop:
+                end_idx += m_prop.end()
+            inner = command[open_idx + 1:j]
+            if inner.strip():
+                paren_subs.append(inner)
+            raw_tok = command[i:end_idx]
+            tok_val = raw_tok
+            if _toks_in_exec_slot(cur_tokens, has_dollar=has_dollar):
+                target = _resolved_target_in(inner)
                 if target:
-                    out.append(target)
-                    i = end_idx
+                    tok_val = target
+            cur_tokens.append(_CmdTok(tok_val, raw_tok, "", i - seg_start, end_idx - seg_start))
+            i = end_idx
+            continue
+        tok_start = i
+        val_parts: list[str] = []
+        single_span_quote = ""
+        spans = 0
+        unquoted_chars = False
+        while i < n:
+            c = command[i]
+            if c in " \t\r\n;{}" or command[i:i + 2] in ("&&", "||", "|&") or c in "|(":
+                break
+            if c == "&":
+                if i > tok_start and command[i - 1] in "><":
+                    val_parts.append("&")
+                    unquoted_chars = True
+                    i += 1
                     continue
-        out.append(ch)
+                if i == tok_start and command[i:i + 2] == "&>":
+                    val_parts.append("&>")
+                    unquoted_chars = True
+                    i += 2
+                    continue
+                break
+            if c == "'":
+                spans += 1
+                single_span_quote = "'"
+                i += 1
+                while i < n:
+                    if not in_posix and command[i:i + 2] == "''":
+                        val_parts.append("'")
+                        i += 2
+                        continue
+                    if command[i] == "'":
+                        i += 1
+                        break
+                    val_parts.append(command[i])
+                    i += 1
+                continue
+            if c == '"':
+                spans += 1
+                single_span_quote = '"'
+                i += 1
+                while i < n:
+                    dc = command[i]
+                    if not in_posix and not in_cmd and dc == "`":
+                        if i + 1 < n:
+                            val_parts.append(command[i + 1])
+                            i += 2
+                            continue
+                        i += 1
+                        continue
+                    if in_posix and dc == "\\":
+                        if i + 1 < n:
+                            nc = command[i + 1]
+                            val_parts.append(nc if nc in ('"', "\\", "$", "`") else "\\" + nc)
+                            i += 2
+                            continue
+                        i += 1
+                        continue
+                    if not in_posix and command[i:i + 2] == '""' and i > tok_start + 1:
+                        val_parts.append('"')
+                        i += 2
+                        continue
+                    if dc == '"':
+                        i += 1
+                        break
+                    val_parts.append(dc)
+                    i += 1
+                continue
+            if not in_posix and not in_cmd and c == "`":
+                if i + 1 < n:
+                    if command[i + 1] == "\n":
+                        i += 2
+                        break
+                    if command[i + 1:i + 3] == "\r\n":
+                        i += 3
+                        break
+                    val_parts.append(command[i + 1])
+                    unquoted_chars = True
+                    i += 2
+                    continue
+                i += 1
+                continue
+            if in_posix and c == "\\":
+                if i + 1 < n:
+                    if command[i + 1] == "\n":
+                        i += 2
+                        continue
+                    val_parts.append(command[i + 1])
+                    unquoted_chars = True
+                    i += 2
+                    continue
+                i += 1
+                continue
+            if in_cmd and c == "^":
+                if i + 1 < n:
+                    if command[i + 1] == "\n":
+                        i += 2
+                        continue
+                    if command[i + 1:i + 3] == "\r\n":
+                        i += 3
+                        continue
+                    val_parts.append(command[i + 1])
+                    unquoted_chars = True
+                    i += 2
+                    continue
+                val_parts.append("^")
+                unquoted_chars = True
+                i += 1
+                continue
+            val_parts.append(c)
+            unquoted_chars = True
+            i += 1
+        tok_quote = single_span_quote if (spans == 1 and not unquoted_chars) else ""
+        tok_val = "".join(val_parts)
+        raw_tok = command[tok_start:i]
+        if tok_quote == '"' and _toks_in_exec_slot(cur_tokens, has_dollar=True) \
+                and (tok_val.startswith("$(") or (in_posix and tok_val.startswith("`"))):
+            target = _resolved_target_in(tok_val)
+            if target:
+                tok_val = target
+        cur_tokens.append(_CmdTok(tok_val, raw_tok, tok_quote, tok_start - seg_start, i - seg_start))
+    flush(n, "")
+    return segments, paren_subs
+
+
+def _split_ps_comma_elements(raw_text: str) -> list[str]:
+    """Split a PowerShell `-ArgumentList` expression on unquoted commas and unquote each element."""
+    parts: list[str] = []
+    cur_start = 0
+    n = len(raw_text)
+    i = 0
+    while i < n:
+        ch = raw_text[i]
+        if ch == "`":
+            i += 2
+            continue
+        if ch == "'":
+            i += 1
+            while i < n:
+                if raw_text[i:i + 2] == "''":
+                    i += 2
+                    continue
+                if raw_text[i] == "'":
+                    i += 1
+                    break
+                i += 1
+            continue
+        if ch == '"':
+            i += 1
+            while i < n:
+                if raw_text[i] == "`":
+                    i += 2
+                    continue
+                if raw_text[i:i + 2] == '""':
+                    i += 2
+                    continue
+                if raw_text[i] == '"':
+                    i += 1
+                    break
+                i += 1
+            continue
+        if ch == ",":
+            piece = raw_text[cur_start:i].strip()
+            if piece:
+                segs, _ = _tokenize_command(piece)
+                parts.extend(t.val for s in segs for t in s.tokens)
+            cur_start = i + 1
         i += 1
-    return "".join(out)
+    tail = raw_text[cur_start:].strip()
+    if tail:
+        segs, _ = _tokenize_command(tail)
+        parts.extend(t.val for s in segs for t in s.tokens)
+    return parts
+
+
+def _requote_tok(tok: _CmdTok) -> str:
+    if tok.quote == '"':
+        escaped = tok.val.replace('"', '""')
+        return f'"{escaped}"'
+    if tok.quote == "'":
+        escaped = tok.val.replace("'", "''")
+        return f"'{escaped}'"
+    return tok.val
+
+
+def _unwrap_start_process_toks(tokens: list[_CmdTok], from_cmd: bool = False) -> list[_CmdTok]:
+    """Extract `[executable, *args]` tokens from a `Start-Process` / `start` / `saps` segment."""
+    exe: _CmdTok | None = None
+    sp_args: list[_CmdTok] = []
+    positionals: list[_CmdTok] = []
+    i = 1
+    n = len(tokens)
+    while i < n:
+        tok = tokens[i]
+        if tok.quote:
+            positionals.append(tok)
+            i += 1
+            continue
+        flag, inline_val = _split_ps_flag(tok.val)
+        if _is_sp_filepath_flag(flag):
+            if inline_val is not None:
+                exe = _CmdTok(inline_val, inline_val, "", -1, -1)
+                i += 1
+            elif i + 1 < n:
+                exe = _CmdTok(tokens[i + 1].val, tokens[i + 1].raw, tokens[i + 1].quote, -1, -1)
+                i += 2
+            else:
+                i += 1
+            continue
+        if _is_sp_arglist_flag(flag):
+            raw_chunks: list[str] = []
+            if inline_val is not None:
+                raw_chunks.append(tok.raw.split(":", 1)[1] if ":" in tok.raw else inline_val)
+                i += 1
+            elif i + 1 < n:
+                raw_chunks.append(tokens[i + 1].raw)
+                i += 2
+                while i < n and (tokens[i - 1].raw.endswith(",") or tokens[i].raw.startswith(",")):
+                    if tokens[i].raw == "," and i + 1 < n:
+                        raw_chunks.append(tokens[i + 1].raw)
+                        i += 2
+                    else:
+                        raw_chunks.append(tokens[i].raw)
+                        i += 1
+            else:
+                i += 1
+            elems: list[str] = []
+            for rc in raw_chunks:
+                elems.extend(_split_ps_comma_elements(rc))
+            arg_line = " ".join(elems)
+            if arg_line:
+                arg_segs, _ = _tokenize_command(arg_line)
+                for aseg in arg_segs:
+                    for atok in aseg.tokens:
+                        sp_args.append(_CmdTok(atok.val, atok.raw, atok.quote, -1, -1))
+            continue
+        if flag in _AGY_SP_SWITCHES:
+            i += 1
+            continue
+        if flag in _AGY_SP_VALUE_FLAGS or any(flag.startswith(p) for p in ("-work", "-wind", "-redir", "-cred", "-env")):
+            i += 1 if inline_val is not None else 2
+            continue
+        if flag.startswith("-"):
+            i += 1
+            continue
+        positionals.append(tok)
+        i += 1
+    if exe is None and positionals:
+        if from_cmd and positionals[0].quote == '"':
+            if len(positionals) >= 2:
+                exe = positionals[1]
+                positionals = positionals[2:]
+            else:
+                positionals = []
+        else:
+            exe = positionals[0]
+            positionals = positionals[1:]
+    if exe is None:
+        return []
+    syn_exe = _CmdTok(exe.val, exe.raw, exe.quote, -1, -1)
+    syn_pos = [_CmdTok(p.val, p.raw, p.quote, -1, -1) for p in positionals]
+    return [syn_exe, *sp_args, *syn_pos]
 
 
 def _segment_passes_no_verify(head: str, args: list[str]) -> bool:
     if head in _AGY_SEARCH_CMDS:
         return False
-    if head in ("git", "git.exe") and git_write(args) is None:
+    if head in ("git", "git.exe"):
+        if git_write(args) is None:
+            return False
+        idx = 0
+        while idx < len(args) and args[idx].startswith("-"):
+            gtok = args[idx]
+            if gtok == "--":
+                idx += 1
+                break
+            if gtok == "--no-verify" or gtok.startswith("--no-verify="):
+                return True
+            if gtok in GIT_GLOBAL_WITH_ARG:
+                idx += 2
+                continue
+            idx += 1
+        if idx >= len(args):
+            return False
+        sub = args[idx].lower()
+        rest = args[idx + 1:]
+        val_flags = _GIT_SUBCMD_VALUE_FLAGS.get(sub, frozenset())
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
+            if tok == "--":
+                break
+            if tok == "--no-verify" or tok.startswith("--no-verify="):
+                return True
+            if sub == "am" and tok == "-n":
+                return True
+            if sub == "commit" and tok.startswith("-") and not tok.startswith("--") and len(tok) >= 2:
+                skip_next = False
+                for k in range(1, len(tok)):
+                    ch = tok[k]
+                    if ch == "n":
+                        return True
+                    if ch in "FmcCtU":
+                        skip_next = (k + 1 == len(tok))
+                        break
+                    if ch in "uSB":
+                        break
+                if skip_next:
+                    i += 2
+                    continue
+            if tok in val_flags:
+                i += 2
+                continue
+            i += 1
         return False
-    i = 0
-    while i < len(args):
-        tok = args[i]
+    for tok in args:
         if tok == "--":
             break
-        if tok in _AGY_GIT_VALUE_FLAGS:
-            i += 2
-            continue
         if tok == "--no-verify" or tok.startswith("--no-verify="):
             return True
-        i += 1
     return False
+
+
+_POSIX_POS_PARAM = re.compile(r"^\$(?:[0-9@*]|\{[0-9@*][^}]*\})$")
+
+
+def _posix_invokes_positional(script_str: str) -> bool:
+    segs, subs = _tokenize_command(script_str, in_posix=True)
+    for s in segs:
+        if s.tokens and _POSIX_POS_PARAM.match(s.tokens[0].val):
+            return True
+    return any(_posix_invokes_positional(sub) for sub in subs)
+
+
+def _piped_payload_of(prev_seg: _CmdSeg) -> str | None:
+    if not prev_seg.tokens:
+        return None
+    if len(prev_seg.tokens) == 1 and prev_seg.tokens[0].quote:
+        return prev_seg.tokens[0].val
+    head = _bare(prev_seg.tokens[0].val).strip("'\"")
+    if head in ("echo", "write-output", "printf") and len(prev_seg.tokens) >= 2:
+        return " ".join(t.val for t in prev_seg.tokens[1:])
+    return None
+
+
+def _blocked_cli_reason(head: str) -> str:
+    if head.startswith("codex"):
+        return ("Direct `codex` invocations bypass `scripts/review-dispatch.py`; run every review through the "
+                "dispatcher (AGENTS.md).")
+    return (f"Headless or nested `{head}` CLI sessions bypass delegation tracking and effort pins; "
+            f"delegate read-only work through `invoke_subagent` with `TypeName: \"research\"` "
+            f"(standards/delegation.md).")
+
+
+def _agy_recurse(payload: str, depth: int, in_cmd: bool = False, in_posix: bool = False) -> str | None:
+    if not payload or not payload.strip():
+        return None
+    if depth > _AGY_MAX_WRAPPER_DEPTH:
+        return ("Deeply nested shell wrappers hide commands from the command gate; pass plain commands "
+                "(standards/delegation.md).")
+    return _agy_command_decision(payload, depth, in_cmd=in_cmd, in_posix=in_posix)
 
 
 def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False) -> str | None:
     """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
-    if depth < 4:
+    if not in_cmd:
         for sub in _extract_subexpressions(command, in_posix=in_posix):
-            if sub and sub.strip():
-                why = _agy_command_decision(sub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
-                if why:
-                    return why
+            why = _agy_recurse(sub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
+            if why:
+                return why
     cleaned = command if in_posix else command.replace("`", " ")
     unquoted = _QUOTED.sub(" '' ", cleaned)
     if _AGY_PS_SPAWN.search(unquoted) and _AGY_CLI_WORD.search(cleaned):
@@ -2021,32 +2283,288 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                               cleaned, re.IGNORECASE):
             return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass delegation and "
                     "dispatcher gates (standards/delegation.md).")
-    joined = _QUOTED.sub(
-        lambda m: (_DQ_MARK + (re.sub(r"[\s;&|{}()]+", "_", m.group(1)).strip("_") or "_"))
-        if m.group(1) is not None
-        else (re.sub(r"[\s;&|{}()]+", "_", m.group(2)).strip("_") or "_"),
-        cleaned)
-    joined = _collapse_resolved_exprs(joined)
-    unpack_quotes = False
-    unpack_in_cmd = False
-    unpack_in_posix = False
-    for tokens in _segments(joined):
-        for tidx, tok in enumerate(tokens):
-            if _bare(tok).strip("'\"") in ("pwsh", "pwsh.exe", "powershell", "powershell.exe") \
-                    and any(_AGY_ENCODED_FLAG.match(_split_ps_flag(t)[0]) for t in tokens[tidx + 1:]):
-                return ("Encoded PowerShell commands hide their arguments from the command gate; pass plain commands "
-                        "(standards/delegation.md).")
-        rest_tokens, wrapped, seg_cmd, seg_posix = _strip_segment_prefix(tokens, in_cmd=in_cmd, in_posix=in_posix)
-        if wrapped:
-            unpack_quotes = True
-            if seg_cmd:
-                unpack_in_cmd = True
-            if seg_posix:
-                unpack_in_posix = True
-        if not rest_tokens:
+    if in_posix:
+        for am in re.finditer(r"(?:^|[;&|{(\n]\s*)([A-Za-z_]\w*)=", unquoted):
+            vname = re.escape(am.group(1))
+            cm = re.search(rf"(?:^|[;&|{{(\n]\s*){vname}=\s*([^;\n|]+)", command)
+            if cm and _AGY_PS_RESOLVER_RHS.search(cm.group(1)) \
+                    and re.search(rf"(?:^|[;&|{{(\n]\s*)(?:command\s+|nohup\s+|env\s+)*['\"]?\$\{{?{vname}\}}?\b",
+                                  command):
+                return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
+                        "dispatcher gates (standards/delegation.md).")
+    segments, paren_subs = _tokenize_command(command, in_cmd=in_cmd, in_posix=in_posix)
+    for psub in paren_subs:
+        why = _agy_recurse(psub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
+        if why:
+            return why
+    for seg_idx, seg in enumerate(segments):
+        cur = list(seg.tokens)
+        from_cmd = in_cmd
+        while cur:
+            tok0 = cur[0]
+            low = _bare(tok0.val).strip("'\"")
+            if not tok0.quote and (tok0.val in ("$", ".", "&")
+                                   or (tok0.val.startswith("$") and len(cur) > 1 and cur[1].val == "=")):
+                cur = cur[2:] if (tok0.val.startswith("$") and len(cur) > 1 and cur[1].val == "=") else cur[1:]
+                continue
+            if not tok0.quote and ((tok0.val.startswith("$") and "=" in tok0.val)
+                                   or ("=" in tok0.val and not tok0.val.startswith("-"))):
+                cur = cur[1:]
+                continue
+            if low == "command":
+                if len(cur) > 1 and cur[1].val in ("-v", "-V"):
+                    break
+                cur = cur[2:] if len(cur) > 1 and cur[1].val == "-p" else cur[1:]
+                continue
+            if low == "nohup":
+                cur = cur[1:]
+                continue
+            if low in ("invoke-expression", "iex"):
+                idx = 1
+                inline_iex: str | None = None
+                while idx < len(cur) and not cur[idx].quote and cur[idx].val.startswith("-"):
+                    iflag, iinline = _split_ps_flag(cur[idx].val)
+                    if iflag in ("-command", "-c"):
+                        inline_iex = iinline
+                        idx += 1
+                        break
+                    if iflag in ("-erroraction", "-ea", "-warningaction", "-wa", "-outvariable", "-ov"):
+                        idx += 1 if iinline is not None else 2
+                        continue
+                    idx += 1
+                iex_vals = ([inline_iex] if inline_iex is not None else []) + [t.val for t in cur[idx:]]
+                if iex_vals:
+                    why = _agy_recurse(" ".join(iex_vals), depth + 1, in_cmd=False, in_posix=False)
+                    if why:
+                        return why
+                elif seg.sep_before == "|" and seg_idx > 0:
+                    piped = _piped_payload_of(segments[seg_idx - 1])
+                    if piped:
+                        why = _agy_recurse(piped, depth + 1, in_cmd=False, in_posix=False)
+                        if why:
+                            return why
+                cur = []
+                break
+            if low == "env":
+                idx = 1
+                handled_split = False
+                while idx < len(cur):
+                    etok = cur[idx].val
+                    if not cur[idx].quote and "=" in etok and not etok.startswith("-"):
+                        idx += 1
+                    elif etok in ("-i", "--ignore-environment", "-0", "--null"):
+                        idx += 1
+                    elif etok in ("-u", "--unset", "-C", "--chdir"):
+                        idx += 2
+                    elif etok.startswith(("--unset=", "--chdir=")) or (etok.startswith(("-u", "-C")) and len(etok) > 2):
+                        idx += 1
+                    elif etok in ("-S", "--split-string") or etok.startswith("--split-string=") \
+                            or (etok.startswith("-S") and len(etok) > 2):
+                        if etok in ("-S", "--split-string"):
+                            split_str = cur[idx + 1].val if idx + 1 < len(cur) else ""
+                            after = cur[idx + 2:]
+                        elif etok.startswith("--split-string="):
+                            split_str = etok.split("=", 1)[1]
+                            after = cur[idx + 1:]
+                        else:
+                            split_str = etok[2:]
+                            after = cur[idx + 1:]
+                        tail_part = ""
+                        if after:
+                            tail_part = (" " + seg.raw[after[0].rel_start:].strip()
+                                         if after[0].rel_start >= 0
+                                         else " " + " ".join(_requote_tok(t) for t in after))
+                        why = _agy_recurse(split_str + tail_part, depth + 1, in_cmd=False, in_posix=True)
+                        if why:
+                            return why
+                        handled_split = True
+                        break
+                    else:
+                        break
+                if handled_split:
+                    cur = []
+                    break
+                cur = cur[idx:]
+                continue
+            if low in ("cmd", "cmd.exe"):
+                idx = 1
+                while idx < len(cur) and _AGY_CMD_SWITCH.match(cur[idx].val):
+                    idx += 1
+                tail = cur[idx:]
+                if not tail:
+                    if seg.sep_before == "|" and seg_idx > 0:
+                        piped = _piped_payload_of(segments[seg_idx - 1])
+                        if piped:
+                            why = _agy_recurse(piped, depth + 1, in_cmd=True, in_posix=False)
+                            if why:
+                                return why
+                else:
+                    if len(tail) == 1 and tail[0].quote:
+                        payload = tail[0].val
+                    elif tail[0].rel_start >= 0:
+                        payload = seg.raw[tail[0].rel_start:].strip()
+                        if payload.startswith('"') and payload.endswith('"') and len(payload) >= 2 \
+                                and payload.count('"') > 2:
+                            payload = payload[1:-1]
+                    else:
+                        payload = " ".join(_requote_tok(t) for t in tail)
+                    why = _agy_recurse(payload, depth + 1, in_cmd=True, in_posix=False)
+                    if why:
+                        return why
+                cur = []
+                break
+            if low in ("bash", "bash.exe", "sh", "sh.exe"):
+                idx = 1
+                saw_c = False
+                while idx < len(cur):
+                    btok = cur[idx].val
+                    if btok == "--":
+                        idx += 1
+                        break
+                    if btok in ("-o", "+o", "-O", "+O", "--rcfile", "--init-file"):
+                        idx += 2
+                        continue
+                    if btok.startswith("--"):
+                        idx += 1
+                        continue
+                    if (btok.startswith("-") or btok.startswith("+")) and len(btok) > 1 and btok[1:].isalpha():
+                        if btok.startswith("-") and "c" in btok[1:]:
+                            saw_c = True
+                            idx += 1
+                            break
+                        idx += 1
+                        continue
+                    break
+                if saw_c:
+                    if idx < len(cur):
+                        script_str = cur[idx].val
+                        pos_args = [t.val for t in cur[idx + 1:]]
+                        why = _agy_recurse(script_str, depth + 1, in_cmd=False, in_posix=True)
+                        if why:
+                            return why
+                        if pos_args and _posix_invokes_positional(script_str):
+                            for pa in pos_args:
+                                pa_bare = _bare(pa).strip("'\"")
+                                if pa_bare in _AGY_BLOCKED_CLIS:
+                                    return _blocked_cli_reason(pa_bare)
+                                if pa == "--no-verify" or pa.startswith("--no-verify="):
+                                    return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
+                    cur = []
+                    break
+                tail = cur[idx:]
+                if not tail:
+                    if seg.sep_before == "|" and seg_idx > 0:
+                        piped = _piped_payload_of(segments[seg_idx - 1])
+                        if piped:
+                            why = _agy_recurse(piped, depth + 1, in_cmd=False, in_posix=True)
+                            if why:
+                                return why
+                    cur = []
+                    break
+                cur = tail
+                from_cmd = False
+                break
+            if low in ("wsl", "wsl.exe"):
+                idx = 1
+                exec_direct = False
+                while idx < len(cur) and cur[idx].val.startswith("-"):
+                    wflag = cur[idx].val.lower()
+                    if wflag in ("-e", "--exec"):
+                        exec_direct = True
+                        idx += 1
+                        break
+                    if wflag == "--":
+                        idx += 1
+                        break
+                    if wflag in _AGY_WSL_FLAGS_WITH_ARG:
+                        idx += 2
+                        continue
+                    idx += 1
+                tail = cur[idx:]
+                if not tail:
+                    if seg.sep_before == "|" and seg_idx > 0:
+                        piped = _piped_payload_of(segments[seg_idx - 1])
+                        if piped:
+                            why = _agy_recurse(piped, depth + 1, in_cmd=False, in_posix=True)
+                            if why:
+                                return why
+                    cur = []
+                    break
+                if exec_direct:
+                    cur = tail
+                    from_cmd = False
+                    continue
+                if len(tail) == 1 and tail[0].quote:
+                    payload = tail[0].val
+                elif tail[0].rel_start >= 0:
+                    payload = seg.raw[tail[0].rel_start:].strip()
+                else:
+                    payload = " ".join(_requote_tok(t) for t in tail)
+                why = _agy_recurse(payload, depth + 1, in_cmd=False, in_posix=True)
+                if why:
+                    return why
+                cur = []
+                break
+            if low in ("pwsh", "pwsh.exe", "powershell", "powershell.exe"):
+                idx = 1
+                mode = "default"
+                inline_pwsh: str | None = None
+                while idx < len(cur) and cur[idx].val.startswith("-"):
+                    pflag, pinline = _split_ps_flag(cur[idx].val)
+                    if _AGY_ENCODED_FLAG.match(pflag):
+                        return ("Encoded PowerShell commands hide their arguments from the command gate; pass plain "
+                                "commands (standards/delegation.md).")
+                    if pflag in ("-file", "-f"):
+                        mode = "file"
+                        if pinline is not None:
+                            cur = [_CmdTok(pinline, pinline, "", -1, -1), *cur[idx + 1:]]
+                        else:
+                            cur = cur[idx + 1:]
+                        break
+                    if pflag in ("-command", "-c"):
+                        mode = "command"
+                        inline_pwsh = pinline
+                        idx += 1
+                        break
+                    if pflag in _AGY_PWSH_FLAGS_WITH_ARG:
+                        idx += 1 if pinline is not None else 2
+                        continue
+                    if pflag in _AGY_PWSH_FLAGS:
+                        idx += 1
+                        continue
+                    break
+                if mode == "file":
+                    from_cmd = False
+                    break
+                tail_vals = ([inline_pwsh] if inline_pwsh is not None else []) + [t.val for t in cur[idx:]]
+                if not tail_vals or tail_vals == ["-"]:
+                    if seg.sep_before == "|" and seg_idx > 0:
+                        piped = _piped_payload_of(segments[seg_idx - 1])
+                        if piped:
+                            why = _agy_recurse(piped, depth + 1, in_cmd=False, in_posix=False)
+                            if why:
+                                return why
+                    cur = []
+                    break
+                if mode == "default" and tail_vals[0].lower().endswith(".ps1") \
+                        and _bare(tail_vals[0]).strip("'\"") not in _AGY_BLOCKED_CLIS:
+                    cur = cur[idx:]
+                    from_cmd = False
+                    break
+                why = _agy_recurse(" ".join(tail_vals), depth + 1, in_cmd=False, in_posix=False)
+                if why:
+                    return why
+                cur = []
+                break
+            if low in ("start-process", "start", "saps", "invoke-item", "ii"):
+                cur = _unwrap_start_process_toks(cur, from_cmd=from_cmd)
+                from_cmd = False
+                continue
+            break
+        if not cur:
             continue
-        head = _bare(rest_tokens[0]).strip("'\"")
-        args = rest_tokens[1:]
+        head = _bare(cur[0].val).strip("'\"")
+        args = [t.val for t in cur[1:]]
         if _segment_passes_no_verify(head, args):
             return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
         if head in ("npx", "npx.cmd", "pnpx", "pnpx.cmd", "bunx", "bunx.exe") \
@@ -2055,26 +2573,13 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     "(standards/delegation.md).")
         if head in ("python", "python.exe", "python3", "python3.exe", "py", "py.exe", "node", "node.exe") \
                 and any(a in ("-c", "-e", "--eval") for a in args) \
-                and _AGY_INLINE_SPAWN.search(command) and _AGY_CLI_WORD.search(command):
+                and _AGY_INLINE_SPAWN.search(seg.raw) and _AGY_CLI_WORD.search(seg.raw):
             return ("Inline script subprocesses spawning `claude`, `agy`, or `codex` bypass delegation and dispatcher "
                     "gates (standards/delegation.md).")
         if head in _AGY_BLOCKED_CLIS:
             if args and all(a.lower() in _AGY_CLI_META_ARGS for a in args):
                 continue
-            if head.startswith("codex"):
-                return ("Direct `codex` invocations bypass `scripts/review-dispatch.py`; run every review through the "
-                        "dispatcher (AGENTS.md).")
-            return (f"Headless or nested `{head}` CLI sessions bypass delegation tracking and effort pins; "
-                    f"delegate read-only work through `invoke_subagent` with `TypeName: \"research\"` "
-                    f"(standards/delegation.md).")
-    if unpack_quotes and depth < 4:
-        source_for_quotes = command if unpack_in_posix else cleaned
-        for m in _QUOTED.finditer(source_for_quotes):
-            inner = m.group(1) if m.group(1) is not None else m.group(2)
-            if inner and inner.strip():
-                why = _agy_command_decision(inner, depth + 1, in_cmd=unpack_in_cmd, in_posix=unpack_in_posix)
-                if why:
-                    return why
+            return _blocked_cli_reason(head)
     return None
 
 
@@ -2878,11 +3383,30 @@ def _self_test() -> int:
         "git log -S --no-verify",
         'git commit -m "enforce --no-verify ban"',
         'git commit -m "--no-verify"',
+        "git commit -uno -m 'ship'",
+        "git push -u origin main",
+        "git push -n origin main",
         "Get-Command codex",
         "(Get-Command codex).Source",
         "$info = Get-Command codex; Write-Output $info.Source",
         "bash -c 'command -v codex'",
         'cmd /c start "Just A Window Title"',
+        'cmd /c rg -n "codex" scripts',
+        'cmd /c "rg -n ""codex"" scripts"',
+        'cmd /c start "codex" rg -n foo scripts',
+        'pwsh -Command rg -n "codex" scripts',
+        "pwsh -Command \"rg -n 'codex' scripts\"",
+        'pwsh -Command rg -e "codex" scripts',
+        'pwsh -WorkingDirectory "D:\\codex" -Command "Get-ChildItem"',
+        'bash -c \'rg -n "codex" scripts\'',
+        'bash -c \'rg -n "$1" scripts\' _ "codex"',
+        'wsl -e rg -n "codex" scripts',
+        'wsl rg -n "codex" scripts',
+        'env FOO="codex" rg -n "codex" scripts',
+        "env -S 'rg -n \"codex\" scripts'",
+        "Start-Process -FilePath rg -ArgumentList '-n', '\"codex\"', 'scripts'",
+        "Start-Process -FilePath pwsh -ArgumentList '-Command \"rg -n ''codex'' scripts\"'",
+        "'rg -n \"codex\" scripts' | iex",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -2900,10 +3424,16 @@ def _self_test() -> int:
             ("swarm add", "swarm", {"action": "add", "name": "w", "brief": "b"}, "never write"),
             ("swarm model", "swarm", {"action": "model", "name": "w", "model": "m"}, "never write"),
             ("run_command with --no-verify", "run_command", {"CommandLine": "git commit --no-verify -m x"}, "--no-verify"),
+            ("git push -u --no-verify", "run_command", {"CommandLine": "git push -u --no-verify origin main"}, "--no-verify"),
+            ("git commit -u --no-verify", "run_command", {"CommandLine": "git commit -u --no-verify -m x"}, "--no-verify"),
+            ("git commit -n short no-verify", "run_command", {"CommandLine": "git commit -n -m x"}, "--no-verify"),
+            ("git commit -an clustered no-verify", "run_command", {"CommandLine": "git commit -an -m x"}, "--no-verify"),
+            ("git am -n short no-verify", "run_command", {"CommandLine": "git am -n patch.mbox"}, "--no-verify"),
             ("quoted --no-verify on git commit", "run_command", {"CommandLine": 'git commit "--no-verify" -m x'}, "--no-verify"),
             ("pwsh wrapped git commit --no-verify", "run_command", {"CommandLine": 'pwsh -Command "git commit --no-verify -m x"'}, "--no-verify"),
             ("subexpression git commit --no-verify", "run_command", {"CommandLine": 'Write-Output "$(git commit --no-verify -m x)"'}, "--no-verify"),
             ("Get-Command git commit --no-verify", "run_command", {"CommandLine": "& (Get-Command git).Source commit --no-verify -m x"}, "--no-verify"),
+            ("Start-Process git push -u --no-verify", "run_command", {"CommandLine": "Start-Process -FilePath git -ArgumentList 'push -u --no-verify origin main'"}, "--no-verify"),
             ("headless claude -p delegation", "run_command", {"CommandLine": "claude -p --agent isotone-researcher inspect callers"}, "bypass delegation"),
             ("bare claude CLI session", "run_command", {"CommandLine": "claude"}, "bypass delegation"),
             ("headless agy -p delegation", "run_command", {"CommandLine": "agy -p 'inspect callers'"}, "bypass delegation"),
@@ -2913,6 +3443,13 @@ def _self_test() -> int:
             ("Start-Process Get-Command codex", "run_command", {"CommandLine": "Start-Process -FilePath (Get-Command codex).Source -ArgumentList 'exec review'"}, "review-dispatch.py"),
             ("var Get-Command codex then call", "run_command", {"CommandLine": "$cmd = Get-Command codex; & $cmd exec review"}, "Variable-indirect"),
             ("bash command -v codex substitution", "run_command", {"CommandLine": 'bash -c \'"$(command -v codex)" exec review\''}, "review-dispatch.py"),
+            ("bash positional $1 codex invocation", "run_command", {"CommandLine": 'bash -c \'"$1" exec review\' _ codex'}, "review-dispatch.py"),
+            ("posix var assignment codex invocation", "run_command", {"CommandLine": "bash -c 'c=codex; $c exec review'"}, "Variable-indirect"),
+            ("env -S codex invocation", "run_command", {"CommandLine": 'env -S "codex exec review"'}, "review-dispatch.py"),
+            ("piped string to iex codex", "run_command", {"CommandLine": "'codex exec review' | iex"}, "review-dispatch.py"),
+            ("piped echo to bash codex", "run_command", {"CommandLine": 'echo "codex exec review" | bash'}, "review-dispatch.py"),
+            ("cmd double-quoted outer path codex", "run_command", {"CommandLine": 'cmd /c ""C:\\Program Files (x86)\\codex.cmd" exec review"'}, "review-dispatch.py"),
+            ("deeply nested wrappers fail closed", "run_command", {"CommandLine": "cmd /c " * 10 + "echo ok"}, "Deeply nested"),
             ("double-quoted $() codex capture", "run_command", {"CommandLine": '$review = "$(codex exec review)"'}, "review-dispatch.py"),
             ("Write-Output double-quoted $() claude", "run_command", {"CommandLine": 'Write-Output "$(claude -p inspect-callers)"'}, "bypass delegation"),
             ("nested quotes inside double-quoted $() codex", "run_command", {"CommandLine": 'Write-Output "$(cmd /c start "Isotone reviewer" codex exec review)"'}, "review-dispatch.py"),
