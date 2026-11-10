@@ -1,27 +1,56 @@
-# The writer and the independent reviewer for this repository, read by scripts/review-dispatch.py.
+# Independent reviewers for this repository, read by scripts/review-dispatch.py.
 #
-# One writer, one reviewer, no fallback. Claude Code on Claude Opus 5.5 is always the solo writer (operator decision
-# 2026-10-23, which retired the routes other writers once had). The reviewer is of a different model family (the CLI
-# names it: codex is OpenAI, agy is Google), and there is no fallback (operator decision 2026-09-25, kept 2026-10-21
-# and 2026-10-22): a round the reviewer cannot return is retried by the campaign and then parks that section
-# (2026-10-23), and the writer's family never reviews. Every review round runs through this pin: the panel rounds, the
-# completion review, the architecture gate, the plan review, the stamp review, and the independent pass.
+# Operator decision 2026-11-10: Antigravity (`agy`) on Gemini 4 Carbon (Medium) (`gemini-4-carbon-medium`, pinned in
+# `scripts/panel_slots.py`) takes over from Claude Code as the writer in this repository. Operator decision 2026-11-10:
+# the reviewer is GPT-6 Astra always, whichever of Antigravity (`agy`), Claude Code (`claude`), or Muse Code (`muse`)
+# wrote the work, so each of the three routes names `astra` alone (`D:\Recto\.conclave\reviewers.toml` shape).
+# There is no fallback (operator decisions 2026-09-25, 2026-10-21, and 2026-10-23): a reviewer that is not installed,
+# exits non-zero, times out, returns nothing, or replies OVERALL: blocked is recorded with its reason, is retried by
+# the campaign with backoff before parking only its section, and is never an approval. Every review round runs through
+# this pin: the panel rounds, the completion review, the architecture gate, the plan review, the stamp review, and the
+# independent pass.
 #
-# Loaded strictly: an unknown key, an unknown CLI, a malformed model, a second writer, or a reviewer of the writer's
-# family refuses every dispatch. Re-pinning the reviewer is one edit here; nothing else in the tree names a model.
+# Loaded strictly: an unknown key, an unknown CLI, a malformed model, a route naming an undefined reviewer or more than
+# 1 reviewer, or a reviewer of the writer's own model family refuses every dispatch. The schedule is loaded as strictly:
+# an unknown lens, or an effort a routed reviewer's CLI does not take, refuses too.
 
-schema_version = 2
+schema_version = 1
 
-[writer]
-agent = "claude"
-model = "claude-opus-5-5"
-
-# GPT-6 Astra through the Codex CLI at medium effort, read-only sandbox (operator decision 2026-11-10: "The reviewer
-# should be GPT6 Astra."; the effort stays where the operator set it on 2026-10-23: "set the reviewer effort level to
-# medium"). Astra at medium was the 2026-10-21 pin; GPT-6.1 Sol replaced it on 2026-10-22 (at xhigh, then at medium
-# from 2026-10-23) and reviewed until this re-pin.
-[reviewer]
-name = "astra"
+# GPT-6 Astra through the Codex CLI, read-only sandbox (operator decision 2026-11-10: "The reviewer should be GPT6
+# Astra."). The effort here is medium (operator decision 2026-10-23: "set the reviewer effort level to medium"), used
+# by passes that do not name a scheduled `--kind`; `[schedule]` sets each scheduled pass's own effort.
+[reviewers.astra]
 cli = "codex"
 model = "gpt-6-astra"
 effort = "medium"
+
+[routes]
+agy = ["astra"]
+claude = ["astra"]
+muse = ["astra"]
+
+# The review schedule, matching `D:\Recto\.conclave\reviewers.toml`: a medium plan pass, a low completion pass, a
+# medium round 1 across the review lenses (`design` on surface sections), low adversarial rotation rounds, and a medium
+# escalation round after a low round finds a P1 (`severity_stop_after = 0`). Prompts sealed by `scripts/review_prompt.py`
+# keep their exact fenced bytes; `--kind` selects the scheduled effort without mutating the prompt.
+[schedule]
+severity_stop_after = 0
+
+[schedule.plan]
+effort = "medium"
+lenses = ["plan"]
+
+[schedule.completion]
+effort = "low"
+
+[[schedule.rounds]]
+effort = "medium"
+lenses = ["adversarial", "consistency", "integration", "record", "design"]
+
+[schedule.rotation]
+effort = "low"
+lenses = ["adversarial"]
+
+[schedule.escalation]
+effort = "medium"
+lenses = ["adversarial"]

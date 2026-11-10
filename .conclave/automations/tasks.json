@@ -11,7 +11,7 @@
     },
     {
       "name": "isotone-local-tools",
-      "description": "Email once when this PC's codex or claude CLI or Python is behind",
+      "description": "Email once when this PC's agy, codex, or claude CLI or Python is missing or behind",
       "command": ["python", "scripts/check-local-tools.py", "notify"],
       "trigger": {"weekly": "Monday", "at": "07:05"},
       "timeout_minutes": 5

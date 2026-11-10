@@ -113,7 +113,7 @@ RUNNERS = ("codex", "panel")
 # xhigh on 2026-10-22, so its rounds are recorded with it.
 EFFORTS = ("xhigh", "high", "medium", "low")
 OUTCOMES = ("findings", "empty", "error", "stamp", "independent")
-PROVIDERS = ("openai", "anthropic")
+PROVIDERS = ("openai", "anthropic", "google")
 # Outcomes the panel mapping skips: error voids the attempt's verdicts,
 # while stamp (a stamp-review pass) and independent (a non-panel
 # independent pass) never had panel verdicts. Skipped rounds keep their
@@ -130,7 +130,7 @@ PROVENANCES = ("recorded", "reconstructed")
 # Panel heading word -> the registry family it records (D00 T04 §27:
 # `Claude panel` is the family word, legacy records say `Opus panel`;
 # D00 T04 §29 adds `Grok panel` for the Grok fallbacks).
-HEADING_FAMILY = {"GPT": "codex", "Opus": "claude", "Claude": "claude", "Grok": "grok"}
+HEADING_FAMILY = {"GPT": "codex", "Opus": "claude", "Claude": "claude", "Grok": "grok", "Gemini": "agy"}
 # The models review records may name, by the family their heading records
 # (D00 T04 §27, §29). The registry lived in `.conclave/reviewers.toml` until
 # the pin took its current schema (2026-10-21), which names
@@ -147,10 +147,11 @@ RECORD_MODELS = {
     "claude-opus-5-5": {"family": "claude"},
     "claude-sonnet-5-5": {"family": "claude"},
     "opus": {"family": "claude"},
+    "gemini-4-carbon-medium": {"family": "agy"},
     "grok-newest": {"family": "grok", "newest": r"grok-(\d+)\.(\d+)", "served": r"grok-(\d+)\.(\d+)-build"},
 }
 # The heading family a live reviewer's CLI records under.
-CLI_FAMILY = {"codex": "codex", "claude": "claude"}
+CLI_FAMILY = {"codex": "codex", "claude": "claude", "agy": "agy"}
 
 
 def record_registry() -> dict[str, dict]:

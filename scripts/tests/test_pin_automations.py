@@ -141,7 +141,7 @@ class LocalToolsTests(GitRepo):
         self.mod = load("check-local-tools")
         self.write("README.md", "fixture\n")
         self.commit()
-        self.versions = {"codex": "codex-cli 0.162.1", "claude": "2.1.305 (Claude Code)"}
+        self.versions = {"agy": "1.5.5", "codex": "codex-cli 0.162.1", "claude": "2.1.305 (Claude Code)"}
 
     def fetch(self, url):
         if "python.org" in url:
@@ -178,6 +178,7 @@ class LocalToolsTests(GitRepo):
     def test_a_missing_cli_is_a_finding_never_a_pass(self):
         self.versions["codex"] = "codex-cli 0.163.0"
         self.assertEqual(self.call("check", which=lambda n: None if n == "claude" else self.which(n)), 1)
+        self.assertEqual(self.call("check", which=lambda n: None if n == "agy" else self.which(n)), 1)
 
     def test_python_behind_its_minor_or_patch_is_reported(self):
         releases = [{"name": "Python 3.15.0"}, {"name": "Python 3.14.8"}]
@@ -378,6 +379,19 @@ class WorkspaceHooks(unittest.TestCase):
         for folder, name in scripts:
             path = REPO / "scripts" / name if folder == "scripts" else REPO / ".claude" / "hooks" / name
             with self.subTest(script=name):
+                self.assertTrue(path.is_file(), path)
+        agy_hooks = json.loads((REPO / ".agents" / "hooks.json").read_text(encoding="utf-8"))
+        agy_commands = []
+        for group in agy_hooks.values():
+            for entries in group.values():
+                for entry in entries:
+                    for h in entry.get("hooks", [entry]):
+                        agy_commands.append(h["command"])
+        agy_scripts = [m for c in agy_commands for m in re.findall(r"(\.\./scripts/[\w.-]+\.py)", c)]
+        self.assertTrue(agy_scripts, agy_commands)
+        for rel in agy_scripts:
+            path = (REPO / ".agents" / rel).resolve()
+            with self.subTest(agy_script=rel):
                 self.assertTrue(path.is_file(), path)
 
     def test_the_pins_workflow_runs_only_scripts_that_exist(self):

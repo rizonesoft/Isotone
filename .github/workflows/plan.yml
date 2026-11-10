@@ -16,6 +16,7 @@ on:
       - 'docs/reviews/**'
       - 'docs/dev/decisions.md'
       - 'docs/dev/native-libraries.md'
+      - '.agents/**'
       - '.claude/**'
       - '.conclave/**'
       - 'tools/githooks/**'
@@ -23,6 +24,7 @@ on:
       - 'resources/icons/**'
       - '.gitattributes'
       - 'AGENTS.md'
+      - 'GEMINI.md'
       - '.github/workflows/plan.yml'
   pull_request:
     branches: [main]
@@ -33,6 +35,7 @@ on:
       - 'docs/reviews/**'
       - 'docs/dev/decisions.md'
       - 'docs/dev/native-libraries.md'
+      - '.agents/**'
       - '.claude/**'
       - '.conclave/**'
       - 'tools/githooks/**'
@@ -40,6 +43,7 @@ on:
       - 'resources/icons/**'
       - '.gitattributes'
       - 'AGENTS.md'
+      - 'GEMINI.md'
       - '.github/workflows/plan.yml'
   workflow_dispatch:
 

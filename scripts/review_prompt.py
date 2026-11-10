@@ -6759,7 +6759,7 @@ def _self_test() -> int:
             ("skill-stamp-no-fallback",
              "A failed attempt (dispatcher exit 1) has no fallback"),
             ("skill-panel-round",
-             "python scripts/review-dispatch.py --writer claude --prompt $RUNDIR/review-prompt.md --keep $ROUND"),
+             "python scripts/review-dispatch.py --writer agy --prompt $RUNDIR/review-prompt.md --keep $ROUND"),
             ("skill-panel-output", "check-panel --manifest $RUNDIR/manifest.md < $ROUND/review.md"),
             ("skill-plan-round", "--prompt $RUNDIR/plan-review-prompt.md --keep $RUNDIR/plan-<N>"),
             ("skill-stamp-round", "--prompt $RUNDIR/stamp-prompt.md --keep $RUNDIR/stamp-1"),
@@ -6803,7 +6803,7 @@ def _self_test() -> int:
     # D00 T04 §27: every review pin lives in .conclave/reviewers.toml, so the
     # skill names slots and never a model or a model alias.
     check("skill-no-model-literal",
-          re.search(r"gpt-\d|grok-\d|claude-opus|--model opus", skill_text) is None,
+          re.search(r"gpt-\d|grok-\d|claude-opus|--model opus|gemini-\d", skill_text) is None,
           skill_path)
     try:
         attest_ordered = (skill_text.index("### 9. Write the stamp and flip the row")

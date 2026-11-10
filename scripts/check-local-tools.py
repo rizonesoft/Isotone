@@ -4,9 +4,10 @@
     python scripts/check-local-tools.py check     # exit 0 current, 1 behind, 2 cannot check
     python scripts/check-local-tools.py notify    # as check, but being behind is emailed once per finding, exit 0
 
-Three tools, each compared with its newest stable release:
+Four tools on this PC:
+- the `agy` CLI (the Antigravity writer), verified installed on PATH with a valid semver output (`agy update`);
 - the `codex` CLI, which runs every review round (`scripts/review-dispatch.py`), against npm's `@openai/codex` latest;
-- the `claude` CLI (the writer, and the delegate probe), against npm's `@anthropic-ai/claude-code` latest;
+- the `claude` CLI (retained for the delegate probe), against npm's `@anthropic-ai/claude-code` latest;
 - the Python running this script (the automations and `scripts/`), against the newest stable CPython on python.org, at
   its newest patch.
 A tool that is not installed is a finding, never a pass. A source that cannot be read exits 2 (the failure email).
@@ -29,6 +30,7 @@ from pin_sources import Unreadable, fetch_json, version_key
 NPM = "https://registry.npmjs.org/{package}/latest"
 PYTHON_RELEASES = "https://www.python.org/api/v2/downloads/release/?is_published=true&pre_release=false"
 PYTHON_NAME = re.compile(r"^Python (\d+\.\d+\.\d+)$")
+AGY_VERSION = re.compile(r"(\d+\.\d+\.\d+)")
 CLIS = (("codex", "@openai/codex", re.compile(r"codex-cli (\d+\.\d+\.\d+)")),
         ("claude", "@anthropic-ai/claude-code", re.compile(r"^(\d+\.\d+\.\d+)")))
 
@@ -50,6 +52,8 @@ def installed_version(name, pattern, run=subprocess.run, which=shutil.which):
 
 def cli_findings(fetch=fetch_json, run=subprocess.run, which=shutil.which):
     out = []
+    if installed_version("agy", AGY_VERSION, run, which) is None:
+        out.append("the agy CLI is not installed or prints no version")
     for name, package, pattern in CLIS:
         latest = (fetch(NPM.format(package=package)) or {}).get("version")
         newest = version_key(latest) if isinstance(latest, str) else None
@@ -90,7 +94,7 @@ def main(argv=None, fetch=fetch_json, root=ROOT, run=subprocess.run, which=shuti
         print(f"check-local-tools: could not check: {exc}", file=sys.stderr)
         return 2
     if not found:
-        print("codex, claude and Python on this PC are current")
+        print("agy, codex, claude and Python on this PC are current")
         return 0
     print("\n".join(found))
     if args.mode == "check":
@@ -98,6 +102,7 @@ def main(argv=None, fetch=fetch_json, root=ROOT, run=subprocess.run, which=shuti
     key = "tools-" + hashlib.sha256("\n".join(found).encode()).hexdigest()[:12]
     return pin_proposal.notice(root=root, key=key, subject="Isotone: a newer tool is available on this PC",
                                body="\n".join(found + ["", "Update each the way it was installed: "
+                                                       "agy update for Antigravity, "
                                                        "npm install -g @openai/codex@latest for codex, claude update "
                                                        "for Claude Code, and the python.org installer for Python. "
                                                        "Then run python scripts/check-local-tools.py check."]),

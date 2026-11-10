@@ -6,17 +6,17 @@ Delegation changes who reads and runs, never who writes or what ships. Every gat
 
 ## Subagents never write
 
-Subagents read and run; they never write. Every Claude subagent declares an explicit `tools:` list without Edit, Write, MultiEdit, NotebookEdit or `*`. The main loop makes every change and verifies what subagents return.
+Subagents read and run; they never write. In Google Antigravity (`agy`), `.agents/hooks.json` wires `python ../scripts/panel_slots.py agent-gate` on `PreToolUse` (`invoke_subagent|define_subagent|swarm|run_command`): only the read-only `research` subagent on `inherit` or `pro` is allowed (`self`, `define_subagent` with `EnableWriteTools`, `swarm` workers, and `flash` or `flash_lite` models are denied), and shell invocations of `agy` / `claude` subagents or `--no-verify` are blocked. Every retained `.claude/agents/*.md` definition also declares an explicit `tools:` list without Edit, Write, MultiEdit, NotebookEdit or `*`. The main loop makes every change and verifies what subagents return.
 
-`python scripts/panel_slots.py validate` refuses any `.claude/agents/*.md` definition that grants one of those tools or does not deny `Edit, Write, NotebookEdit, Agent`, and the `agent-gate` hook refuses every Agent call that would start a subagent able to write: a fork and every built-in agent, whatever model it names (Model and effort are pinned, and checked).
+`python scripts/panel_slots.py validate` verifies `.agents/hooks.json` alongside `.claude/settings.json`, refuses any `.claude/agents/*.md` definition that grants write tools or does not deny `Edit, Write, NotebookEdit, Agent`, and exercises `agent-gate` across both Antigravity and Claude Code hook payloads so no subagent able to write or run below the quality bar can start.
 
 ## Who is who
 
 | Role | Runs | Owns |
 | ---- | ---- | ---- |
-| **Lead** | The writer session, `WRITER` in `scripts/panel_slots.py` (the `claude` route in `.conclave/reviewers.toml`) | Architecture, plan corrections, consequential code, integration, every commit and push, every record (`Started:`, findings, stamps, run files), final acceptance |
-| **Delegates** | The `.claude/agents/*.md` definitions, each naming the delegate alias and effort itself (today `sonnet` at effort `high`, served as `claude-sonnet-5-5`, the `DELEGATE` pin in `scripts/panel_slots.py` that `delegate-probe` re-measures) | One bounded brief each; never a tracked change, a commit, a record, or a verdict |
-| **Panel** | The reviewer `.conclave/reviewers.toml` routes for the `claude` writer, run by `scripts/review-dispatch.py` | Every recorded review verdict, unchanged; delegates share the writer's family, and the dispatcher refuses a reviewer of that family |
+| **Lead** | The writer session, `WRITER` in `scripts/panel_slots.py` (`agy` on `gemini-4-carbon-medium`, the `agy` route in `.conclave/reviewers.toml`) | Architecture, plan corrections, consequential code, integration, every commit and push, every record (`Started:`, findings, stamps, run files), final acceptance |
+| **Delegates** | In Antigravity, the read-only `research` subagent (`invoke_subagent` on `inherit` or `pro`, gated by `.agents/hooks.json`) and bounded `run_command` verification tasks writing logs under `build/`; the retained `.claude/agents/*.md` definitions remain pinned to `DELEGATE` in `scripts/panel_slots.py` | One bounded brief each; never a tracked change, a commit, a record, or a verdict |
+| **Panel** | The reviewer `.conclave/reviewers.toml` routes for the `agy` writer (`astra`: GPT-6 Astra via `codex`), run by `scripts/review-dispatch.py --writer agy` | Every recorded review verdict, unchanged; the dispatcher enforces cross-family independence between the Google writer and the OpenAI reviewer |
 
 The delegates:
 

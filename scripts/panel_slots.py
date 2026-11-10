@@ -1,48 +1,33 @@
 """The writer's delegation guard and the reviewer pin's Isotone rules (D00 T04 §27, §29).
 
-`.conclave/reviewers.toml` is the reviewer pin (`schema_version = 2`, `[writer]`, `[reviewer]`),
+`.conclave/reviewers.toml` is the reviewer pin (`schema_version = 1`, `[reviewers.*]`, `[routes]`, optional `[schedule]`),
 loaded only through `scripts/review-dispatch.py`'s `load_pin`, where its rules live; every review round runs through
 that dispatcher (operator decision 2026-10-21, "Full adoption", which retired the panel slots this module used to
-resolve). This module adds Isotone's own rules on top and guards the writer's subagents:
+resolve; updated 2026-11-10 to the `D:\\Recto\\.conclave\\reviewers.toml` shape). This module adds Isotone's own rules
+on top and guards the writer's subagents across both Antigravity (`.agents/hooks.json`) and Claude Code
+(`.claude/settings.json` and `.claude/agents/*.md`):
 
-- Claude Code on Opus 5.5 is always the solo writer (operator decision 2026-10-23), so the pin (schema 2) holds one
-  `[writer]`, and this module refuses a pin whose writer model is not WRITER.
-- The pin holds one `[reviewer]` and no fallback (operator decisions 2026-09-25 and 2026-10-21): a round that reviewer
-  cannot return is retried with backoff and then parks only its section (operator decision 2026-10-23), and the
-  writer's family never reviews (the dispatcher refuses a same-family reviewer on its own).
-- The delegate pin (operator decision 2026-10-01): every `.claude/agents/*.md` definition names the `sonnet` alias
-  and `high` effort explicitly (a bare `model: sonnet` override ran at medium, measured 2026-10-01). DELEGATE_ALIASES
-  and DELEGATE_EFFORTS are closed. DELEGATE holds what the alias served at the last `delegate-probe`, and WRITER the
-  writer's model, which an `opus` escalation of a pinned definition serves; a re-pin edits them here after a probe.
+- Antigravity (`agy`) on Gemini 4 Carbon (Medium) (`gemini-4-carbon-medium`) is the repository's writer (operator
+  decision 2026-11-10, taking over from Claude Code on Opus 5.5).
+- Every route in `[routes]` names a single cross-family reviewer with no fallback (operator decisions 2026-09-25,
+  2026-10-21, and 2026-11-10): GPT-6 Astra (`astra`) reviews whichever of `agy`, `claude`, or `muse` wrote the work; a
+  round Astra cannot return is retried with backoff and then parks only its section (operator decision 2026-10-23), and
+  the writer's family never reviews.
+- Subagents read and run; they never write (operator decision 2026-10-02). In Antigravity, `.agents/hooks.json` wires
+  `agent-gate` on `invoke_subagent|define_subagent|swarm|run_command`, allowing read-only subagents (`research` or
+  custom definitions with `EnableWriteTools: false` and `EnableSubagentTools: false` on `inherit`, `pro`, or `flash`),
+  denying writable subagents (`self`, `image-generator`, `branch`/`share` workspaces, `swarm` workers) and `--no-verify`
+  hook bypasses. In Claude Code, `.claude/agents/*.md` and `.claude/settings.json` stay validated to `DELEGATE`.
 
     python scripts/panel_slots.py validate
     python scripts/panel_slots.py show
-    python scripts/panel_slots.py writer [model|family]
+    python scripts/panel_slots.py writer [agent|model|family]
     python scripts/panel_slots.py delegate [alias|model|effort|family]
     python scripts/panel_slots.py delegate-probe [--timeout N]
     python scripts/panel_slots.py delegate-audit [--session <id>] [--dir <subagents dir>]
     python scripts/panel_slots.py agent-gate < pretooluse-hook.json
     python scripts/panel_slots.py delegate-shell-gate < pretooluse-hook.json
     python scripts/panel_slots.py --self-test
-
-`delegate-probe` runs one live `claude -p` echo at the pinned alias and
-effort and compares the served model (the result's `modelUsage`) and the
-effort recorded in the session transcript with the pin: exit 0 pinned, 1
-drift, 2 unmeasured (including an environment or settings override that
-pins the alias), 124 timeout. `delegate-audit` classifies every subagent
-transcript of a session and fails closed: unreadable or missing evidence,
-Haiku, a turn below the pin effort, or a model outside the delegate pin
-and the writer (exit 1; exit 2 when there is nothing to
-audit). `validate` loads the reviewer pin under the dispatcher's rules and
-Isotone's, holds every `.claude/agents` definition to the pin
-and its tool rules, and checks that `.claude/settings.json` wires
-`agent-gate`, the PreToolUse hook for the Agent tool: an allow-list (a
-pinned read-only definition, optionally escalated to `opus`) that denies
-forks and built-in agents, because subagents never write, and fails
-closed on an Agent call it cannot judge. `delegate-shell-gate` is the
-PreToolUse hook each delegate definition carries on its shell tools: it
-allows git only as read-only subcommands and denies GitHub calls, review
-rounds, and hook bypasses.
 """
 
 from __future__ import annotations
@@ -65,12 +50,12 @@ import tempfile
 # plus a `delegate-probe` run (and `standards/delegation.md` re-verified).
 DELEGATE_ALIASES = ("sonnet",)
 DELEGATE_EFFORTS = ("high",)
-# The writer (operator decision: Claude Code on Opus 5.5 is the only writer) and the model the delegate alias served
-# with its transcript recording effort high at the last `delegate-probe` (2026-10-01). Both are the claude family;
-# `routes` key `claude` in the reviewer pin is this writer. A probe that reports drift re-pins DELEGATE here.
-WRITER = {"model": "claude-opus-5-5", "family": "claude"}
+# The writer (operator decision 2026-11-10: Antigravity on Gemini 4 Carbon Medium takes over from Claude Code as writer)
+# and the Claude Code delegate pin served at the last `delegate-probe` (2026-10-01). `routes` key `agy` in the reviewer
+# pin is this writer.
+WRITER = {"agent": "agy", "model": "gemini-4-carbon-medium", "family": "google"}
 DELEGATE = {"alias": "sonnet", "model": "claude-sonnet-5-5", "effort": "high", "family": "claude"}
-WRITER_ROUTE = "claude"
+WRITER_ROUTE = "agy"
 TIMEOUT_EXIT = 124
 
 
@@ -102,32 +87,30 @@ def load(path: str | None = None) -> dict:
     """Load the reviewer pin under the dispatcher's rules plus Isotone's, with the writer and the delegate pin.
     Raises PanelSlotsError naming why not.
 
-    Returns {"writer": {model, family}, "delegate": {alias, model, effort, family}, "reviewers": {name: entry},
-    "route": [reviewer name]}."""
+    Returns {"writer": {agent, model, family}, "delegate": {alias, model, effort, family}, "reviewers": {name: entry},
+    "route": [reviewer name], "routes": {writer: [reviewer name]}}."""
     dispatch = dispatch_module()
     try:
         pin = dispatch.load_pin(path or toml_path())
     except dispatch.Refused as exc:
         raise PanelSlotsError(f"reviewer pin refused: {exc}")
-    if pin["writer"]["model"] != WRITER["model"]:
-        raise PanelSlotsError(
-            f"reviewer pin names the writer model {pin['writer']['model']!r}, but the writer is {WRITER['model']!r} "
-            f"(operator decision 2026-10-23: Opus 5.5 is always the solo writer); re-pin both together")
     routes = pin["routes"]
-    if set(routes) != {WRITER_ROUTE}:
+    if WRITER_ROUTE not in routes:
         raise PanelSlotsError(
-            f"reviewer pin routes {', '.join(sorted(routes)) or 'no writer'}: Claude Code is the only writer, so "
-            f"the pin routes {WRITER_ROUTE!r} alone")
+            f"reviewer pin routes {', '.join(sorted(routes)) or 'no writer'}, missing the writer route "
+            f"{WRITER_ROUTE!r} (Antigravity is the repository's writer)")
+    for rwriter, rchain in routes.items():
+        if len(rchain) != 1:
+            raise PanelSlotsError(
+                f"reviewer pin route {rwriter!r} names a fallback ({', '.join(rchain[1:])}): there is no fallback "
+                f"(operator decisions 2026-09-25, 2026-10-21, and 2026-11-10)")
     route = routes[WRITER_ROUTE]
-    if len(route) != 1:
-        raise PanelSlotsError(
-            f"reviewer pin route {WRITER_ROUTE!r} names a fallback ({', '.join(route[1:])}): there is no fallback "
-            f"(operator decisions 2026-09-25 and 2026-10-21), so a round its reviewer cannot return waits for the "
-            f"operator")
-    unrouted = sorted(set(pin["reviewers"]) - set(route))
+    routed_names = {name for rchain in routes.values() for name in rchain}
+    unrouted = sorted(set(pin["reviewers"]) - routed_names)
     if unrouted:
         raise PanelSlotsError(f"reviewer pin defines {', '.join(unrouted)}, which no route names: remove it")
-    return {"writer": dict(WRITER), "delegate": dict(DELEGATE), "reviewers": pin["reviewers"], "route": list(route)}
+    return {"writer": dict(WRITER), "delegate": dict(DELEGATE), "reviewers": pin["reviewers"],
+            "route": list(route), "routes": {k: list(v) for k, v in routes.items()}}
 
 
 def _exe(name: str) -> str:
@@ -566,6 +549,47 @@ def settings_path() -> str:
     return os.path.join(_repo_root(), ".claude", "settings.json")
 
 
+AGY_AGENT_GATE_COMMAND = "python ../scripts/panel_slots.py agent-gate"
+AGY_GATE_TOOLS = ("invoke_subagent", "define_subagent", "swarm", "run_command")
+
+
+def agy_hooks_path() -> str:
+    return os.path.join(_repo_root(), ".agents", "hooks.json")
+
+
+def check_agy_hooks(path: str | None = None) -> str:
+    """The Antigravity `.agents/hooks.json` runs the agent-gate hook verbatim on
+    subagent, swarm, and command tools, and is not disabled."""
+    src = path or agy_hooks_path()
+    try:
+        with open(src, "r", encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError) as exc:
+        raise PanelSlotsError(f"Antigravity hooks {src} does not load: {exc}")
+    if not isinstance(doc, dict):
+        raise PanelSlotsError(f"Antigravity hooks {src} is not a JSON object")
+    for name, block in doc.items():
+        if not isinstance(block, dict):
+            continue
+        if block.get("enabled") is False:
+            raise PanelSlotsError(f"Antigravity hooks {src} disables {name!r} (`enabled: false`), which turns a guard off")
+        entries = block.get("PreToolUse")
+        for entry in entries if isinstance(entries, list) else []:
+            matcher = entry.get("matcher", "") if isinstance(entry, dict) else ""
+            try:
+                matches = all(re.fullmatch(matcher, tool) for tool in AGY_GATE_TOOLS)
+            except re.error:
+                matches = False
+            if not matches:
+                continue
+            for hook in entry.get("hooks") or []:
+                if isinstance(hook, dict) and hook.get("type", "command") == "command" \
+                        and hook.get("command") == AGY_AGENT_GATE_COMMAND:
+                    return AGY_AGENT_GATE_COMMAND
+    raise PanelSlotsError(f"Antigravity hooks {src} carries no PreToolUse hook on {', '.join(AGY_GATE_TOOLS)} "
+                          f"running {AGY_AGENT_GATE_COMMAND!r} verbatim")
+
+
 def check_settings(path: str | None = None, others: list[str] | None = None) -> str:
     """The project settings run the agent-gate hook, verbatim, on the Agent
     tool, and no settings file Claude Code reads disables hooks. Returns the
@@ -606,10 +630,9 @@ def check_settings(path: str | None = None, others: list[str] | None = None) -> 
 
 
 def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
-    """Run the configured hook command the way Claude Code does (a shell, the
-    project dir in the environment, the call on stdin) with a Haiku call, and
-    require a deny. Returns a status line; raises PanelSlotsError when the
-    command runs and does not deny."""
+    """Run both configured hook commands (Antigravity's `.agents/hooks.json`
+    command and Claude Code's `.claude/settings.json` command) and verify that
+    disallowed subagent calls are denied while read-only `research` is allowed."""
     if not shutil.which("python"):
         return "agent-gate command not exercised: no `python` on PATH here"
     env = dict(os.environ, CLAUDE_PROJECT_DIR=_repo_root())
@@ -624,7 +647,21 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
     if proc.returncode != 0 or decision != "deny":
         raise PanelSlotsError(f"the configured agent-gate command did not deny a Haiku call "
                               f"(exit {proc.returncode}, stdout {proc.stdout[:120]!r}, stderr {proc.stderr[:120]!r})")
-    return "agent-gate command exercised: a Haiku call is denied"
+    agents_dir = os.path.join(_repo_root(), ".agents")
+    if os.path.isdir(agents_dir):
+        agy_deny = json.dumps({"conversationId": "probe", "hookEventName": "PreToolUse",
+                               "toolCall": {"name": "invoke_subagent",
+                                            "args": {"TypeName": "self", "Role": "r", "Prompt": "x"}}})
+        proc_agy = subprocess.run(AGY_AGENT_GATE_COMMAND, shell=True, input=agy_deny, capture_output=True,
+                                  text=True, env=env, cwd=agents_dir, timeout=60)
+        try:
+            agy_dec = json.loads(proc_agy.stdout)["decision"]
+        except (ValueError, KeyError, TypeError):
+            agy_dec = None
+        if proc_agy.returncode != 0 or agy_dec != "deny":
+            raise PanelSlotsError(f"the Antigravity agent-gate command did not deny a writable `self` subagent "
+                                  f"(exit {proc_agy.returncode}, stdout {proc_agy.stdout[:120]!r})")
+    return "agent-gate command exercised: writable subagent and Haiku calls are denied"
 
 
 def _norm_model(model: str) -> str:
@@ -1041,17 +1078,79 @@ def _default_loader() -> tuple[dict, dict[str, dict]]:
     return table, load_agents(table=table)
 
 
+def _agy_deny(reason: str) -> str:
+    return json.dumps({"decision": "deny", "reason": reason})
+
+
+def _agy_allow() -> str:
+    return json.dumps({"decision": "allow"})
+
+
+def agy_gate_decision(tool_call: dict) -> str | None:
+    """The deny reason for one Antigravity `PreToolUse` `toolCall`, or None to allow it."""
+    name = tool_call.get("name")
+    if name not in AGY_GATE_TOOLS:
+        return None
+    args = tool_call.get("args")
+    if not isinstance(args, dict):
+        raise PanelSlotsError(f"the {name} call carries no args object")
+    if name == "define_subagent":
+        if args.get("EnableWriteTools") is True:
+            return "Subagents read and run; they never write (standards/delegation.md). Set EnableWriteTools: false."
+        if args.get("EnableSubagentTools") is True:
+            return "Subagents do not spawn subagents (standards/delegation.md). Set EnableSubagentTools: false."
+        return None
+    if name == "invoke_subagent":
+        tname = args.get("TypeName")
+        workspace = args.get("Workspace") or "inherit"
+        model = str(args.get("Model") or "inherit").lower()
+        if workspace != "inherit":
+            return ("Subagents run read-only in the workspace; branch and share workspaces are for writing "
+                    "subagents, and subagents never write (standards/delegation.md).")
+        if model == "flash_lite":
+            return ("Model `flash_lite` is below the delegation bar; use `inherit`, `pro`, or `flash` on a "
+                    "read-only subagent (standards/delegation.md).")
+        if not isinstance(tname, str) or not tname.strip() or tname in ("self", "image-generator"):
+            return (f"Subagent type {tname!r} carries write tools. Subagents read and run; they never write; "
+                    f"use `research` or a read-only custom subagent (standards/delegation.md).")
+        return None
+    if name == "swarm":
+        if args.get("action") == "add":
+            return ("Swarm workers carry write tools, and subagents never write; the main writer session makes "
+                    "every change (standards/delegation.md).")
+        return None
+    if name == "run_command":
+        command = args.get("CommandLine")
+        if not isinstance(command, str):
+            return "The command gate could not read CommandLine."
+        forms = _shell_forms(command)
+        if any(re.search(r"(^|\s)--no-verify(\s|$)", form) for form in forms):
+            return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
+        return None
+    return None
+
+
 def agent_gate(raw: str, out, err, loader=None) -> int:
-    """PreToolUse hook handler for the Agent tool. Always exits 0 and denies
-    through the hook's JSON on `out`. Input that is not an Agent call passes
-    untouched; an Agent call fails closed when the wiring does not load or the
-    decision cannot be made, because a later gate cannot undo a delegated run."""
+    """PreToolUse hook handler for both Antigravity (`toolCall`) and Claude Code
+    (`tool_name: Agent|Task`). Always exits 0 and emits the caller's PreToolUse
+    JSON on `out`, failing closed when the wiring does not load."""
     try:
         payload = json.loads(raw)
     except ValueError:
         print("panel_slots agent-gate: hook input is not JSON; not an Agent call", file=err)
         return 0
-    if not isinstance(payload, dict) or payload.get("tool_name") not in ("Agent", "Task"):
+    if not isinstance(payload, dict):
+        return 0
+    if isinstance(payload.get("toolCall"), dict):
+        try:
+            (loader or _default_loader)()
+            reason = agy_gate_decision(payload["toolCall"])
+        except Exception as exc:
+            reason = (f"The delegation wiring could not judge this call ({exc}). Fix it with "
+                      f"`python scripts/panel_slots.py validate`; until then the lead does the work itself.")
+        print(_agy_deny(reason) if reason else _agy_allow(), file=out)
+        return 0
+    if payload.get("tool_name") not in ("Agent", "Task"):
         return 0
     tool_input = payload.get("tool_input")
     try:
@@ -1131,17 +1230,17 @@ def shell_gate(raw: str, out, err) -> int:
 
 # --- self-test ---------------------------------------------------------------
 
-GOOD_PIN = f"""schema_version = 2
+GOOD_PIN = """schema_version = 1
 
-[writer]
-agent = "claude"
-model = "{WRITER['model']}"
-
-[reviewer]
-name = "astra"
+[reviewers.astra]
 cli = "codex"
 model = "g-one"
 effort = "high"
+
+[routes]
+agy = ["astra"]
+claude = ["astra"]
+muse = ["astra"]
 """
 
 
@@ -1173,7 +1272,7 @@ def _self_test() -> int:
         check(name, False, "loaded without refusal")
 
     # The fixture wiring the delegation cases judge against: fixture models stand in for the live pins.
-    good = {"writer": {"model": "w-claude", "family": "claude"},
+    good = {"writer": {"agent": "agy", "model": "w-claude", "family": "google"},
             "delegate": {"alias": "sonnet", "model": "d-claude", "effort": "high", "family": "claude"}}
 
     # The reviewer pin: the dispatcher's rules, then Isotone's.
@@ -1183,18 +1282,23 @@ def _self_test() -> int:
     refuses("the dispatcher's rules refuse first", GOOD_PIN.replace('effort = "high"', 'effort = "extreme"'),
             "reviewer pin refused: reviewer 'astra' needs effort")
     refuses("the old slot table is refused", '[writer]\nmodel = "w"\n', "reviewer pin refused: the reviewer pin needs")
-    refuses("the old route shape is refused",
-            'schema_version = 1\n\n[reviewers.astra]\ncli = "codex"\nmodel = "g-one"\neffort = "high"\n\n'
-            '[routes]\nclaude = ["astra"]\n', "reviewer pin refused: the reviewer pin needs exactly schema_version = 2")
-    refuses("a reviewer CLI of the writer's family does not exist",
-            GOOD_PIN.replace('cli = "codex"', 'cli = "claude"'), "needs cli = one of codex, agy")
-    refuses("a second writer is refused", GOOD_PIN.replace('agent = "claude"', 'agent = "codex"'), "only writer")
-    refuses("a second reviewer is refused", GOOD_PIN + '\n[fallback]\nname = "gemini"\ncli = "agy"\nmodel = "gm"\n',
-            "the reviewer pin needs exactly")
-    refuses("the writer model must be the recorded writer",
-            GOOD_PIN.replace(f'model = "{WRITER["model"]}"', 'model = "claude-sonnet-5-5"'), "solo writer")
+    refuses("the retired schema 2 shape is refused",
+            'schema_version = 2\n\n[writer]\nagent = "claude"\nmodel = "claude-opus-5-5"\n\n'
+            '[reviewer]\nname = "astra"\ncli = "codex"\nmodel = "g-one"\neffort = "high"\n',
+            "reviewer pin refused: the reviewer pin needs exactly schema_version = 1")
+    refuses("a reviewer CLI of the writer's family is refused on agy route",
+            'schema_version = 1\n\n[reviewers.gemini]\ncli = "agy"\nmodel = "gemini-4-argon-high"\n\n'
+            '[routes]\nagy = ["gemini"]\n', "own family")
+    refuses("a missing writer route is refused",
+            GOOD_PIN.replace('agy = ["astra"]\n', ''), "missing the writer route 'agy'")
+    refuses("an unrouted reviewer is refused",
+            GOOD_PIN.replace('[routes]', '[reviewers.extra]\ncli = "codex"\nmodel = "g-two"\neffort = "low"\n\n[routes]'),
+            "which no route names")
+    refuses("a fallback reviewer on a route is refused",
+            GOOD_PIN.replace('agy = ["astra"]', 'agy = ["astra", "astra"]'), "there is no fallback")
     refuses("a missing pin is refused", "", "reviewer pin refused")
-    check("the writer and the delegate are one family", WRITER["family"] == DELEGATE["family"] == "claude"
+    check("the writer and delegate pins are valid", WRITER["agent"] == "agy" and WRITER["family"] == "google"
+          and DELEGATE["family"] == "claude"
           and DELEGATE["alias"] in DELEGATE_ALIASES and DELEGATE["effort"] in DELEGATE_EFFORTS)
 
     # Freshness.
@@ -1743,17 +1847,69 @@ def _self_test() -> int:
           denial((lambda o: (shell_gate(json.dumps({"tool_name": "Bash", "tool_input": {}}), o, io.StringIO()),
                              o.getvalue())[1])(io.StringIO())) is not None)
 
+    # Antigravity PreToolUse hooks and `.agents/hooks.json`.
+    def agy_gate(name: str, args) -> dict:
+        out, err = io.StringIO(), io.StringIO()
+        payload = {"conversationId": "c1", "hookEventName": "PreToolUse", "toolCall": {"name": name, "args": args}}
+        rc = agent_gate(json.dumps(payload), out, err, lambda: (good, audit_agents))
+        check(f"agy gate rc=0 ({name})", rc == 0)
+        return json.loads(out.getvalue())
+
+    check("agy gate allows research subagent",
+          agy_gate("invoke_subagent", {"TypeName": "research", "Role": "r", "Prompt": "x"}) == {"decision": "allow"})
+    check("agy gate allows read-only custom subagent definition",
+          agy_gate("define_subagent", {"Name": "ro", "Description": "d", "SystemPrompt": "s",
+                                       "EnableWriteTools": False}) == {"decision": "allow"})
+    check("agy gate allows swarm status",
+          agy_gate("swarm", {"action": "status"}) == {"decision": "allow"})
+    check("agy gate allows normal run_command",
+          agy_gate("run_command", {"CommandLine": "git commit -m 'ship'"}) == {"decision": "allow"})
+    for label, tname, targs, needle in (
+            ("writable self subagent", "invoke_subagent", {"TypeName": "self", "Role": "r", "Prompt": "x"}, "never write"),
+            ("image-generator subagent", "invoke_subagent", {"TypeName": "image-generator", "Role": "r", "Prompt": "x"}, "never write"),
+            ("branch workspace subagent", "invoke_subagent", {"TypeName": "research", "Workspace": "branch", "Role": "r", "Prompt": "x"}, "never write"),
+            ("flash_lite subagent", "invoke_subagent", {"TypeName": "research", "Model": "flash_lite", "Role": "r", "Prompt": "x"}, "below the delegation bar"),
+            ("define_subagent with EnableWriteTools", "define_subagent", {"Name": "w", "Description": "d", "SystemPrompt": "s", "EnableWriteTools": True}, "never write"),
+            ("define_subagent with EnableSubagentTools", "define_subagent", {"Name": "w", "Description": "d", "SystemPrompt": "s", "EnableSubagentTools": True}, "do not spawn"),
+            ("swarm add", "swarm", {"action": "add", "name": "w", "brief": "b"}, "never write"),
+            ("run_command with --no-verify", "run_command", {"CommandLine": "git commit --no-verify -m x"}, "--no-verify"),
+            ("malformed args", "invoke_subagent", "bad", "could not judge")):
+        dec = agy_gate(tname, targs)
+        check(f"agy gate denies {label}", dec.get("decision") == "deny" and needle in dec.get("reason", ""), repr(dec))
+
+    def agy_hooks_file(doc) -> str:
+        path = os.path.join(tempfile.mkdtemp(prefix="agy-hooks-", dir=tmpd), "hooks.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(doc if isinstance(doc, str) else json.dumps(doc))
+        return path
+
+    good_agy_hooks = {"delegation-guard": {"PreToolUse": [{"matcher": "|".join(AGY_GATE_TOOLS),
+                                                           "hooks": [{"type": "command", "command": AGY_AGENT_GATE_COMMAND}]}]}}
+    check("agy hooks found", check_agy_hooks(agy_hooks_file(good_agy_hooks)) == AGY_AGENT_GATE_COMMAND)
+    for label, doc, needle in (
+            ("agy hooks disabled", {"delegation-guard": {"enabled": False, **good_agy_hooks["delegation-guard"]}}, "disables"),
+            ("agy hooks missing matcher tool", {"delegation-guard": {"PreToolUse": [{"matcher": "invoke_subagent", "hooks": [{"type": "command", "command": AGY_AGENT_GATE_COMMAND}]}]}}, "carries no PreToolUse"),
+            ("agy hooks wrong command", {"delegation-guard": {"PreToolUse": [{"matcher": "|".join(AGY_GATE_TOOLS), "hooks": [{"type": "command", "command": "echo x"}]}]}}, "carries no PreToolUse")):
+        try:
+            check_agy_hooks(agy_hooks_file(doc))
+            check(label, False, "accepted")
+        except PanelSlotsError as exc:
+            check(label, needle in str(exc), str(exc))
+    check("live agy hooks carry the verbatim gate", check_agy_hooks() == AGY_AGENT_GATE_COMMAND)
+
     # The checked-in table validates.
     try:
         live = load()
-        check("checked-in pin validates", live["writer"]["family"] == "claude" and len(live["route"]) == 1)
-        check("checked-in delegate is the writer's family", live["delegate"]["family"] == "claude")
+        check("checked-in pin validates", live["writer"]["agent"] == "agy" and live["writer"]["family"] == "google"
+              and len(live["route"]) == 1)
+        check("checked-in delegate is pinned", live["delegate"]["family"] == "claude")
     except PanelSlotsError as exc:
         live = None
         check("checked-in pin validates", False, str(exc))
     for argv_case, expected in ((["validate"], "delegate sonnet -> "), (["delegate"], "sonnet "),
                                 (["delegate", "effort"], "high"), (["show"], "agent isotone-"),
-                                (["writer"], "claude-opus-5-5 claude")):
+                                (["writer"], "gemini-4-carbon-medium google"),
+                                (["writer", "agent"], "agy")):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             rc = main(argv_case)
@@ -1798,30 +1954,34 @@ def main(argv: list[str]) -> int:
             return 0
     if cmd == "agent-gate" and not rest:
         # A hook handler: exits 0 on every path, denying only through its JSON.
+        raw = ""
         try:
             raw = sys.stdin.buffer.read().decode("utf-8-sig", errors="replace")
             return agent_gate(raw, sys.stdout, sys.stderr)
         except Exception as exc:
-            print(_deny(f"The agent gate failed ({exc}); fix it with `python scripts/panel_slots.py validate`."))
+            msg = f"The agent gate failed ({exc}); fix it with `python scripts/panel_slots.py validate`."
+            print(_agy_deny(msg) if '"toolCall"' in raw else _deny(msg))
             return 0
     try:
         if cmd == "validate" and not rest:
             table = load()
             agents = load_agents(table=table)
             check_settings()
+            check_agy_hooks()
             exercised = exercise_agent_gate()
             delegate, reviewer = table["delegate"], table["reviewers"][table["route"][0]]
-            print(f"delegation ok: writer {table['writer']['model']} ({table['writer']['family']}), reviewer "
+            print(f"delegation ok: writer {table['writer']['agent']} {table['writer']['model']} "
+                  f"({table['writer']['family']}), reviewer "
                   f"{table['route'][0]} ({reviewer['model']} via {reviewer['cli']}, effort "
                   f"{reviewer.get('effort') or 'in the model name'}, no fallback), "
                   f"delegate {delegate['alias']} -> {delegate['model']} effort {delegate['effort']}, "
-                  f"{len(agents)} agent definitions, agent-gate hook wired; {exercised}")
+                  f"{len(agents)} agent definitions, .agents/hooks.json and .claude/settings.json wired; {exercised}")
             return 0
         if cmd == "show" and not rest:
             table = load()
             agents = load_agents(table=table)
             delegate = table["delegate"]
-            print(f"writer  {table['writer']['model']} ({table['writer']['family']})")
+            print(f"writer  {table['writer']['agent']} -> {table['writer']['model']} ({table['writer']['family']})")
             for name in table["route"]:
                 entry = table["reviewers"][name]
                 print(f"reviewer  {name} -> {entry['model']} via {entry['cli']} effort "
@@ -1835,7 +1995,7 @@ def main(argv: list[str]) -> int:
         if cmd == "writer" and len(rest) <= 1:
             writer = load()["writer"]
             if rest and rest[0] not in writer:
-                raise PanelSlotsError(f"field {rest[0]!r} is not model or family")
+                raise PanelSlotsError(f"field {rest[0]!r} is not agent, model, or family")
             print(writer[rest[0]] if rest else f"{writer['model']} {writer['family']}")
             return 0
         if cmd == "delegate" and len(rest) <= 1:

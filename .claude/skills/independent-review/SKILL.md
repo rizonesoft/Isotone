@@ -5,13 +5,13 @@ description: Get an independent review of your own work outside a TODO section f
 
 # Independent review
 
-Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` names who reviews Claude's work, and `scripts/review-dispatch.py` runs the round.
+Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` names who reviews the writer's work, and `scripts/review-dispatch.py` runs the round.
 
 | Work written by | Reviewer | Fallback |
 | --- | --- | --- |
-| Claude Code on Opus 5.5 (the solo writer) | GPT-6 Astra, medium effort | none: a round Astra cannot return is retried with backoff and then parked |
+| Antigravity (`agy`) on Gemini 4 Carbon (Medium) (the writer; `claude` and `muse` routes also map to Astra) | GPT-6 Astra (`astra`), medium effort (or scheduled effort when `--kind` is passed) | none: a round Astra cannot return is retried with backoff and then parked |
 
-The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` refuses a fallback or a second writer route (operator decisions 2026-09-25 and 2026-10-21). A TODO section never uses this skill: its panel, architecture, plan, stamp, and independent rounds run through the same dispatcher inside `review-todo-section` and `process-todo-section`.
+The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` refuses a fallback or an unrouted reviewer (operator decisions 2026-09-25, 2026-10-21, and 2026-11-10). A TODO section never uses this skill: its panel, architecture, plan, stamp, and independent rounds run through the same dispatcher inside `review-todo-section` and `process-todo-section`.
 
 ## Steps
 
@@ -21,7 +21,7 @@ The dispatcher refuses a reviewer of the writer's own family, and `python script
 
    ```bash
    KEEP=$(mktemp -d /tmp/review-XXXXXXXX)
-   python scripts/review-dispatch.py --writer claude --prompt <scratch>/review-prompt.md --keep $KEEP --record docs/reviews/independent/<YYYY-MM-DD>-<topic>.md
+   python scripts/review-dispatch.py --writer agy --prompt <scratch>/review-prompt.md --keep $KEEP --record docs/reviews/independent/<YYYY-MM-DD>-<topic>.md
    ```
 
 4. Read the review. Verify every finding against the code before acting: fix what is real, and record why anything else is not, as text after the round (a `## Response to round N` heading), never inside it.
