@@ -25,3 +25,24 @@ OVERALL: needs-attention
 
 1. Real, reproduced: `python scripts/todo-runs.py --check` exited 1 with `RUN-005` on every Sol round. Fixed at the registry that owns it: `gpt-6.1-sol` is now in `RECORD_MODELS` in `scripts/todo-runs.py`, and the self-test case `recorded-gpt-models-outlive-the-pin` fails when a GPT model the committed run records name is missing from that table (proved by removing the entry in a scratch copy: the case failed naming `gpt-6.1-sol`). `--check` now reports 29 runs, 202 rounds, all resolved.
 
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T14:19:03Z
+- Effort: medium
+- Lines: 12
+- Digest: 4a7ba808062afb7f
+
+### adversarial: approve
+
+### consistency: approve
+
+### integration: approve
+
+### source-defect: approve
+
+### record: approve
+
+HIGHEST: none
+OVERALL: approve
