@@ -671,6 +671,8 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
                  "CommandLine": "Start-Process -FilePath claude -ArgumentList '-p --agent isotone-researcher inspect-callers' -Wait -NoNewWindow"}}),
             ("a nonempty `cmd /c start \"title\"` CLI bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": 'cmd /c start "Isotone reviewer" codex exec review'}}),
+            ("a double-quoted PowerShell `$()` subexpression CLI bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": '$review = "$(codex exec review)"'}}),
             ("a read-only `rg` search mentioning `ProcessStartInfo|codex`", "allow",
              {"name": "run_command", "args": {"CommandLine": "rg -n 'ProcessStartInfo|codex' scripts"}}),
             ("a read-only `research` subagent on `inherit`", "allow",
@@ -1630,13 +1632,133 @@ def _unwrap_start_process(tokens: list[str], from_cmd: bool = False) -> list[str
     return [exe, *sp_args, *positionals]
 
 
-def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False) -> tuple[list[str], bool, bool]:
+def _extract_subexpressions(command: str, in_posix: bool = False) -> list[str]:
+    """Return executable subexpressions embedded inside double-quoted strings (`"$(...)"` in PowerShell or POSIX
+    shells, plus backtick `` `...` `` command substitutions in POSIX shells). Single-quoted strings and escaped `$`
+    (`` `$ `` in PowerShell, `\\$` in POSIX) stay literal."""
+    found: list[str] = []
+    n = len(command)
+    i = 0
+    while i < n:
+        ch = command[i]
+        if not in_posix and ch == "`":
+            i += 2
+            continue
+        if in_posix and ch == "\\":
+            i += 2
+            continue
+        if ch == "'":
+            i += 1
+            while i < n:
+                if not in_posix and command[i:i + 2] == "''":
+                    i += 2
+                    continue
+                if command[i] == "'":
+                    i += 1
+                    break
+                i += 1
+            continue
+        if in_posix and ch == "`":
+            start = i + 1
+            j = start
+            while j < n:
+                if command[j] == "\\":
+                    j += 2
+                    continue
+                if command[j] == "`":
+                    break
+                j += 1
+            found.append(command[start:j])
+            i = j + 1 if j < n else n
+            continue
+        if ch == '"':
+            i += 1
+            while i < n:
+                c = command[i]
+                if not in_posix and c == "`":
+                    i += 2
+                    continue
+                if in_posix and c == "\\":
+                    i += 2
+                    continue
+                if c == '"':
+                    i += 1
+                    break
+                if c == "$" and i + 1 < n and command[i + 1] == "(":
+                    start = i + 2
+                    j = start
+                    pdepth = 1
+                    while j < n and pdepth > 0:
+                        sc = command[j]
+                        if not in_posix and sc == "`":
+                            j += 2
+                            continue
+                        if in_posix and sc == "\\":
+                            j += 2
+                            continue
+                        if sc == "'":
+                            j += 1
+                            while j < n:
+                                if not in_posix and command[j:j + 2] == "''":
+                                    j += 2
+                                    continue
+                                if command[j] == "'":
+                                    j += 1
+                                    break
+                                j += 1
+                            continue
+                        if sc == '"':
+                            j += 1
+                            while j < n:
+                                if not in_posix and command[j] == "`":
+                                    j += 2
+                                    continue
+                                if in_posix and command[j] == "\\":
+                                    j += 2
+                                    continue
+                                if command[j] == '"':
+                                    j += 1
+                                    break
+                                j += 1
+                            continue
+                        if sc == "(":
+                            pdepth += 1
+                        elif sc == ")":
+                            pdepth -= 1
+                            if pdepth == 0:
+                                break
+                        j += 1
+                    found.append(command[start:j])
+                    i = j + 1 if j < n else n
+                    continue
+                if in_posix and c == "`":
+                    start = i + 1
+                    j = start
+                    while j < n:
+                        if command[j] == "\\":
+                            j += 2
+                            continue
+                        if command[j] == "`":
+                            break
+                        j += 1
+                    found.append(command[start:j])
+                    i = j + 1 if j < n else n
+                    continue
+                i += 1
+            continue
+        i += 1
+    return found
+
+
+def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False,
+                          in_posix: bool = False) -> tuple[list[str], bool, bool, bool]:
     """Advance past leading assignments, call operators, and shell/process wrappers in one command segment.
-    Returns `(remaining_tokens, used_shell_wrapper, entered_cmd_shell)`."""
+    Returns `(remaining_tokens, used_shell_wrapper, entered_cmd_shell, entered_posix_shell)`."""
     cur = list(tokens)
     used_wrapper = False
     from_cmd = in_cmd
     saw_cmd = in_cmd
+    saw_posix = in_posix
     while cur:
         raw_tok = cur[0]
         is_dq = raw_tok.startswith(_DQ_MARK)
@@ -1671,6 +1793,7 @@ def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False) -> tuple[list
             used_wrapper = True
             from_cmd = True
             saw_cmd = True
+            saw_posix = False
             idx = 1
             while idx < len(cur) and _AGY_CMD_SWITCH.match(cur[idx].lstrip(_DQ_MARK)):
                 idx += 1
@@ -1680,6 +1803,7 @@ def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False) -> tuple[list
             used_wrapper = True
             from_cmd = False
             saw_cmd = False
+            saw_posix = True
             idx = 1
             while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).lower() in (
                     "-c", "-lc", "-l", "-i", "--login", "--norc", "--noprofile", "--"):
@@ -1690,6 +1814,7 @@ def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False) -> tuple[list
             used_wrapper = True
             from_cmd = False
             saw_cmd = False
+            saw_posix = True
             idx = 1
             while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).startswith("-"):
                 wflag = cur[idx].lstrip(_DQ_MARK).lower()
@@ -1706,6 +1831,7 @@ def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False) -> tuple[list
             used_wrapper = True
             from_cmd = False
             saw_cmd = False
+            saw_posix = False
             idx = 1
             while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).startswith("-"):
                 pflag, pinline = _split_ps_flag(cur[idx])
@@ -1738,15 +1864,21 @@ def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False) -> tuple[list
             from_cmd = False
             continue
         break
-    return [t.lstrip(_DQ_MARK) for t in cur], used_wrapper, saw_cmd
+    return [t.lstrip(_DQ_MARK) for t in cur], used_wrapper, saw_cmd, saw_posix
 
 
-def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False) -> str | None:
+def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False) -> str | None:
     """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
     forms = _shell_forms(command)
     if any(re.search(r"(^|\s)--no-verify(\s|$)", form) for form in forms):
         return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
-    cleaned = command.replace("`", " ")
+    if depth < 4:
+        for sub in _extract_subexpressions(command, in_posix=in_posix):
+            if sub and sub.strip():
+                why = _agy_command_decision(sub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
+                if why:
+                    return why
+    cleaned = command if in_posix else command.replace("`", " ")
     unquoted = _QUOTED.sub(" '' ", cleaned)
     if _AGY_PS_SPAWN.search(unquoted) and _AGY_CLI_WORD.search(cleaned):
         return ("Direct .NET/COM/CIM process launches of `claude`, `agy`, or `codex` bypass delegation and dispatcher "
@@ -1764,17 +1896,20 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False) ->
         cleaned)
     unpack_quotes = False
     unpack_in_cmd = False
+    unpack_in_posix = False
     for tokens in _segments(joined):
         for tidx, tok in enumerate(tokens):
             if _bare(tok).strip("'\"") in ("pwsh", "pwsh.exe", "powershell", "powershell.exe") \
                     and any(_AGY_ENCODED_FLAG.match(_split_ps_flag(t)[0]) for t in tokens[tidx + 1:]):
                 return ("Encoded PowerShell commands hide their arguments from the command gate; pass plain commands "
                         "(standards/delegation.md).")
-        rest_tokens, wrapped, seg_cmd = _strip_segment_prefix(tokens, in_cmd=in_cmd)
+        rest_tokens, wrapped, seg_cmd, seg_posix = _strip_segment_prefix(tokens, in_cmd=in_cmd, in_posix=in_posix)
         if wrapped:
             unpack_quotes = True
             if seg_cmd:
                 unpack_in_cmd = True
+            if seg_posix:
+                unpack_in_posix = True
         if not rest_tokens:
             continue
         head = _bare(rest_tokens[0]).strip("'\"")
@@ -1797,11 +1932,12 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False) ->
             return (f"Headless or nested `{head}` CLI sessions bypass delegation tracking and effort pins; "
                     f"delegate read-only work through `invoke_subagent` with `TypeName: \"research\"` "
                     f"(standards/delegation.md).")
-    if unpack_quotes and depth < 3:
-        for m in _QUOTED.finditer(cleaned):
+    if unpack_quotes and depth < 4:
+        source_for_quotes = command if unpack_in_posix else cleaned
+        for m in _QUOTED.finditer(source_for_quotes):
             inner = m.group(1) if m.group(1) is not None else m.group(2)
             if inner and inner.strip():
-                why = _agy_command_decision(inner, depth + 1, in_cmd=unpack_in_cmd)
+                why = _agy_command_decision(inner, depth + 1, in_cmd=unpack_in_cmd, in_posix=unpack_in_posix)
                 if why:
                     return why
     return None
@@ -2599,6 +2735,8 @@ def _self_test() -> int:
         "git log -S ProcessStartInfo --grep codex",
         "git log -S Invoke-CimMethod --grep codex",
         'git commit -m "block [Diagnostics.Process]::Start(\'codex\') and $bin = \'claude\'; & $bin"',
+        "rg -n '$(codex exec review)' scripts",
+        'git commit -m "document `$(codex exec review) subexpression gate"',
         'cmd /c start "Just A Window Title"',
     ):
         check(f"agy gate allows command {ok_cmd!r}",
@@ -2621,6 +2759,11 @@ def _self_test() -> int:
             ("bare claude CLI session", "run_command", {"CommandLine": "claude"}, "bypass delegation"),
             ("headless agy -p delegation", "run_command", {"CommandLine": "agy -p 'inspect callers'"}, "bypass delegation"),
             ("powershell variable headless claude", "run_command", {"CommandLine": "$out = claude -p inspect"}, "bypass delegation"),
+            ("double-quoted $() codex capture", "run_command", {"CommandLine": '$review = "$(codex exec review)"'}, "review-dispatch.py"),
+            ("Write-Output double-quoted $() claude", "run_command", {"CommandLine": 'Write-Output "$(claude -p inspect-callers)"'}, "bypass delegation"),
+            ("nested quotes inside double-quoted $() codex", "run_command", {"CommandLine": 'Write-Output "$(cmd /c start "Isotone reviewer" codex exec review)"'}, "review-dispatch.py"),
+            ("double-backtick unescaped $() codex", "run_command", {"CommandLine": 'Write-Output "lit``$(codex exec review)"'}, "review-dispatch.py"),
+            ("bash backtick command substitution codex", "run_command", {"CommandLine": "bash -c 'echo `codex exec review`'"}, "review-dispatch.py"),
             ("pwsh wrapped headless claude", "run_command", {"CommandLine": 'pwsh -NoProfile -Command "claude -p inspect"'}, "bypass delegation"),
             ("cmd unquoted headless claude", "run_command", {"CommandLine": "cmd /c claude -p inspect"}, "bypass delegation"),
             ("Start-Process headless claude", "run_command", {"CommandLine": "Start-Process claude -ArgumentList '-p','inspect'"}, "bypass delegation"),
