@@ -3,17 +3,21 @@
 .SYNOPSIS
   Starts the unattended campaign, or picks a dead one up, in this window.
 .DESCRIPTION
-  Asks scripts/campaign_guard.py what to do (`launch`) and does it:
+  Runs `python scripts/campaign_guard.py start`, which takes the session slot (one operating-system lock that every
+  campaign session must hold), decides under it, and runs the session in this window until it ends:
 
   - No run is open: a new Claude Code session starts under `/goal`, with the goal text campaign_guard.py holds
     (finish the plan through process-plan, every section stamped, aiming for the best app in its class), on the
     writer model .conclave/reviewers.toml pins, with --dangerously-skip-permissions.
   - A run is open and its session died: that same session is resumed, so it still owns the run guard.
-  - A run is open and its session is alive, any other Claude Code session is open in this folder, or another
-    launcher window is still open: nothing starts, because two writers on one tree is the worse failure.
+  - The slot is held (a campaign session is starting or running, here or under the watchdog), or any other Claude
+    Code session is open in this folder or under it: nothing starts, because one session writes.
 
-  `launch` records the session id and flags, which is what lets the watchdog (scripts/run-guard.py watch, ticked every
+  `start` records the session id and flags, which is what lets the watchdog (scripts/run-guard.py watch, ticked every
   10 minutes by this repository's scheduled task) resume the run headless if this window is ever lost.
+
+  Before that, this script puts the two per-machine things in place, each derived from where this file is: the
+  watchdog's scheduled task, and Claude Code's registration of the plugin folder.
 
   The desktop shortcut "Isotone campaign" runs this file. Stop the run by telling the session to stop: it ends the
   run through `campaign_guard.py end`, after which neither the watchdog nor this script resumes it.
@@ -35,8 +39,6 @@ if ($InstallShortcut) {
   $link = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Isotone campaign.lnk'
   $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
   $shortcut.TargetPath = (Get-Process -Id $PID).Path
-  # No -NoExit: the window must close when the session ends, because the launch record holds its place for as
-  # long as this process lives, and a window left open would keep the watchdog from resuming a dead session.
   $shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
   $shortcut.WorkingDirectory = $repo
   $shortcut.IconLocation = "$(Join-Path $repo 'resources\icons\stilus\stilus.ico'),0"
@@ -46,35 +48,10 @@ if ($InstallShortcut) {
   return
 }
 
-# The launch record names this process, so the place it reserves holds for exactly as long as this window lives:
-# no second launcher and no watchdog tick starts a session while this one is starting or running its own.
-$raw = python scripts/campaign_guard.py launch --launcher-pid $PID
-if ($LASTEXITCODE -ne 0) { throw "campaign_guard.py launch failed (exit $LASTEXITCODE)" }
-$plan = $raw | ConvertFrom-Json
-
-if ($plan.action -eq 'live') {
-  Write-Host "The campaign is already running in session $($plan.session). Nothing was started."
-  Start-Sleep -Seconds 12
-  return
-}
-if ($plan.action -eq 'busy') {
-  Write-Host "Another Claude Code session is open in this folder ($($plan.sessions -join ', ')). One session writes, so nothing was started: close it, then run this again."
-  Start-Sleep -Seconds 12
-  return
-}
-if ($plan.action -eq 'starting') {
-  Write-Host "Session $($plan.session) is being started by another launcher window. Nothing was started."
-  Start-Sleep -Seconds 12
-  return
-}
-
-# Everything from here runs with the launch held, so it all sits inside one cleanup: whatever fails or ends, the
-# place this launcher holds is freed, and a shell left open never keeps the watchdog from resuming an open run.
-try {
+# Without the scheduled tick nothing resumes a session that dies, so the launcher puts it in place. A task left
+# pointing at a folder this clone moved away from (STALE) is replaced the same way.
 $scheduled = (python scripts/run-guard.py status | Select-Object -Skip 1 | Out-String | ConvertFrom-Json).watchdog
 if ($scheduled -ne 'own task') {
-  # Without the scheduled tick nothing resumes a session that dies, so the launcher puts it in place. A task left
-  # pointing at a folder this clone moved away from (STALE) is replaced the same way.
   python scripts/run-guard.py install
   if ($LASTEXITCODE -ne 0) { Write-Warning 'The watchdog task could not be created, so a session that dies will not be resumed.' }
 }
@@ -91,14 +68,7 @@ if (-not $listed.Contains($marketplace)) {
   Write-Host "Registered the isotone-tools plugin folder at $marketplace."
 }
 
-$flags = @($plan.args)
-  if ($plan.action -eq 'start') {
-    Write-Host "Starting the Isotone campaign (session $($plan.session))."
-    & claude --session-id $plan.session @flags --name 'Isotone campaign' $plan.prompt
-  } else {
-    Write-Host "Resuming the Isotone campaign (session $($plan.session))."
-    & claude --resume $plan.session @flags $plan.prompt
-  }
-} finally {
-  python scripts/campaign_guard.py launch-done --launcher-pid $PID | Out-Null
-}
+python scripts/campaign_guard.py start
+$code = $LASTEXITCODE
+if ($code -eq 3) { Start-Sleep -Seconds 12 }  # nothing was started: leave the reason on screen before the window closes
+exit $code

@@ -199,3 +199,34 @@ OVERALL: needs-attention
 ## Response to round 6
 
 Four findings, all verified and fixed in the commit that carries this response. The exclusion rule was re-thought as fail-closed, not patched case by case: F2 (a process query that fails raises; only a missing or exited process reads as gone), F3 (a running session whose record lacks `sessionId` or `cwd` raises; self-tests `a-live-record-without-sessionId-starts-nothing`, `a-live-record-without-cwd-starts-nothing`), F1 (the watchdog writes a `spawning_at` mark with the attempt before it spawns; the mark holds the place for five minutes when no child was recorded, in `watch` and in `launch`; self-test `an-unrecorded-resume-holds-its-place`; a start that fails cleanly clears it), F4 (the skill states those three conditions).
+
+## Round 7: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T01:40:09Z
+- Effort: medium
+- Lines: 18
+- Digest: e8ee61ccd24d8cd7
+
+## adversarial: needs-attention
+
+1. P1 `scripts/campaign_guard.py:1563`: The exception handler clears the startup reservation even when Claude has already spawned. `_World.spawn()` calls `Popen` before `_process_started(child.pid)`, which can now raise on a failed process query. **Reproduce:** suspend the child before its session record appears and inject a `GetProcessTimes` failure after `Popen`. The handler removes `spawning_at` without recording or terminating the child. An immediate launcher invocation authorizes another resume. The in-memory probe confirmed `child_exists=True` and `next_launch='resume'`. Distinguish failure to create a process from failure to identify an existing child.
+
+2. P1 `scripts/campaign_guard.py:1477`: The five-minute reservation expires without establishing that an unrecorded child died. **Reproduce:** suspend a spawned child before it registers its session, terminate the watchdog before it persists the child identity, wait 301 seconds, then invoke the launcher or another tick. Both ignore the expired marker and can start another writer while the first child remains alive. The in-memory probe returned `starting` before expiry and `resume` afterward with the child still present. Elapsed time alone cannot safely release uncertain process ownership.
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: approve
+
+## record: needs-attention
+
+3. P2 `.claude/skills/process-plan/SKILL.md:64`, `docs/dev/decisions.md:170`: The unconditional claim that recovery never starts beside a live session remains unsupported. Findings 1 and 2 reproduce competing-start authorization at the specified tip. The round 6 response also describes process-query failures as fail-closed, but the post-spawn exception path clears the very reservation needed to preserve exclusion.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 7
+
+Both P1 findings are real, and they are the third and fourth window found in a reservation built on timestamps and recorded process ids, so the unit was re-thought instead of patched again (the skill's rule for a unit patched three rounds running). The commit that carries this response replaces `launch`, `launch-done`, the launch grace window, and the `spawning_at` mark with one session slot: an operating-system lock (`build/claude-campaign-session.lock`) that `start` (the launcher) and `resume-headless` (the watchdog's supervisor) each take in the process that then runs Claude Code and stays alive until it ends, with Claude Code inside a kill-on-close job object (`scripts/lib/win_job.py`). The lock is held by a live process or free, so no elapsed time releases it (F2) and no failure after the spawn can drop it while the session lives (F1). `watch` only asks for a resume; the supervisor decides again under the slot and writes the attempt before it runs anything. Proved with real processes in a throwaway workspace: while a supervisor's session ran, the slot read held from another process, a second supervisor and `start` each exited 3, and killing the supervisor ended its session processes and freed the slot. Self-test: 231 cases, 0 failed.
