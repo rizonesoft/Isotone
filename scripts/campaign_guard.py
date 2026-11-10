@@ -16,7 +16,7 @@ self-test (D00 T04 §32, §34 to §37).
     python scripts/campaign_guard.py repair close --green SHA --workflow W --run-file F --evidence LINE
     python scripts/campaign_guard.py repair status|restore --run-file F [--workflow W] | ceiling --run-id ID
     python scripts/campaign_guard.py watch                          (one watchdog tick; scripts/run-guard.py schedules it)
-    python scripts/campaign_guard.py launch                         (what scripts/start-campaign.ps1 should start, as JSON)
+    python scripts/campaign_guard.py launch [--launcher-pid P]      (what scripts/start-campaign.ps1 should start, as JSON)
     python scripts/campaign_guard.py --self-test
 
 A campaign run has four parts. The guard file (`build/claude-campaign-guard.json`) names the session that owns the
@@ -1289,10 +1289,12 @@ RESUME_PROMPT = (
     "restore it, and it can also be missing or expired. Only when it is missing, replace it as steps 2 and 3 say (a "
     "fresh generation, then `acquire` with the new job id). Append `- bookkeeping: watchdog resume <UTC>` to the run "
     "file's Critical events once step 3 below allows a write.\n"
-    "3. Resume exactly as step 7 of process-plan's canonical heartbeat prompt says: `merge_prs.py recover` and the "
-    "CI read-back first, then the open section in the run file from where it stopped, then the next ready row, "
-    "under process-plan for a plan-scoped run or process-phase for a phase-scoped one. Stop only at closeout, park, "
-    "or an operator stop."
+    "3. Then follow process-plan's canonical heartbeat prompt from its step 2 to its step 7, in order and without "
+    "skipping one: the hook-error and pending-cancel checks, the closeout and drained checks, the stall check of "
+    "step 6 (which ends the run instead of resuming it), and only then step 7: `merge_prs.py recover` and the CI "
+    "read-back first, then the open section in the run file from where it stopped, then the next ready row, under "
+    "process-plan for a plan-scoped run or process-phase for a phase-scoped one. Stop only at closeout, park, or an "
+    "operator stop."
 )
 
 
@@ -1392,6 +1394,9 @@ class _World:
     def now(self) -> datetime.datetime:
         return datetime.datetime.now(datetime.timezone.utc)
 
+    def process(self, pid: int) -> dict:
+        return {"pid": pid, "started": _process_started(pid)}
+
     def child_alive(self, child: dict) -> bool:
         started = _process_started(int(child.get("pid", 0) or 0)) if child.get("pid") else None
         return started is not None and started == child.get("started")
@@ -1420,8 +1425,12 @@ class _World:
 
 
 def _launch_fresh(record: dict, world) -> bool:
-    """Whether the launcher handed this record out within LAUNCH_GRACE_SECONDS: the session it names is still coming
-    up (Claude Code has not written its session record yet), so nothing else may start in its place."""
+    """Whether the launch this record names still holds its place: the launcher process that asked for it is alive
+    (the session runs inside it, so that covers the whole session), or, for a record with no launcher, it was handed
+    out within LAUNCH_GRACE_SECONDS and Claude Code may not have written its session record yet."""
+    launcher = record.get("launcher")
+    if isinstance(launcher, dict) and launcher.get("pid"):
+        return world.child_alive(launcher)
     try:
         at = datetime.datetime.strptime(str(record.get("at")), UTC_FORMAT).replace(tzinfo=datetime.timezone.utc)
     except ValueError:
@@ -1466,19 +1475,25 @@ def watch(root: str, world=None) -> str:
             return "the launcher is starting this session"
         if ready == 0 and pending == 0:
             return "drained"
+        if int(_read_state(root).get("trips", 0) or 0) >= 2:
+            # The heartbeat prompt's step 6: a run whose Stop-hook breaker tripped twice is stalled and is not resumed.
+            return "stalled: the Stop hook's breaker tripped twice"
         if signature != state.get("signature"):
             state.update(signature=signature, restarts=0)
         if state.get("restarts", 0) >= WATCH_MAX_RESTARTS:
             _write_json(_watch_path(root), state)
             return f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"
-        # A launch that fails raises and uses no attempt: nothing ran, so nothing was tried.
-        child = world.spawn(["-p", RESUME_PROMPT, "--resume", session, *[str(a) for a in args]])
-        state.update(child=child, restarts=state.get("restarts", 0) + 1, launched_at=_utc_now())
+        # The attempt is on disk before anything starts, so a resume that cannot be recorded never runs and the
+        # bound holds whatever fails afterwards. A spawn that fails has still used its attempt.
+        state.update(restarts=state.get("restarts", 0) + 1, launched_at=_utc_now())
+        state.pop("child", None)
+        _write_json(_watch_path(root), state)
+        state["child"] = world.spawn(["-p", RESUME_PROMPT, "--resume", session, *[str(a) for a in args]])
         _write_json(_watch_path(root), state)
         return f"resumed, attempt {state['restarts']}"
 
 
-def launch(root: str, world=None) -> dict:
+def launch(root: str, world=None, launcher_pid: int | None = None) -> dict:
     """What the operator's shortcut should start: a new run under the goal, the dead run's session again, or nothing
     because the run's session is alive. A new run's session id and flags are recorded so `watch` can resume it."""
     world = world or _World(root)
@@ -1502,8 +1517,10 @@ def launch(root: str, world=None) -> dict:
             session, action, prompt = str(uuid.uuid4()), "start", "/goal " + GOAL
         args = [*LAUNCH_ARGS, "--model", writer_model(root)]
         os.makedirs(os.path.join(root, "build"), exist_ok=True)
-        _write_json(_launch_path(root), {"session_id": session, "args": args,
-                                         "at": world.now().strftime(UTC_FORMAT)})
+        record = {"session_id": session, "args": args, "at": world.now().strftime(UTC_FORMAT)}
+        if launcher_pid:
+            record["launcher"] = world.process(launcher_pid)
+        _write_json(_launch_path(root), record)
         return {"action": action, "session": session, "args": args, "prompt": prompt}
 
 
@@ -2881,6 +2898,7 @@ def _self_test() -> int:
         def __init__(self):
             self.live, self.alive, self.sig, self.spawned = [], False, "s1", []
             self.clock = datetime.datetime(2099, 1, 1, tzinfo=datetime.timezone.utc)
+            self.launchers = set()
 
         def now(self):
             return self.clock
@@ -2889,7 +2907,10 @@ def _self_test() -> int:
             return self.live
 
         def child_alive(self, child):
-            return self.alive
+            return self.alive if child.get("pid") == 4242 else child.get("pid") in self.launchers
+
+        def process(self, pid):
+            return {"pid": pid, "started": 1}
 
         def signature(self, guard):
             return self.sig
@@ -2955,6 +2976,26 @@ def _self_test() -> int:
             fh.write("two")
         check("an-untracked-edit-is-watchdog-progress", first != second and second != real.signature(held))
         os.unlink(os.path.join(root, "new-source.txt"))
+        with open(os.path.join(root, "build", "claude-campaign-state.json"), "w", encoding="utf-8") as fh:
+            json.dump({"trips": 2}, fh)
+        spawned = len(world.spawned)
+        check("watch-honours-the-stop-hook-breaker", watch(root, world).startswith("stalled: the Stop hook")
+              and len(world.spawned) == spawned)
+        os.unlink(os.path.join(root, "build", "claude-campaign-state.json"))
+
+        def failing_spawn(argv):
+            raise GuardError("claude is not on PATH")
+
+        world.sig, good_spawn, world.spawn = "s3", world.spawn, failing_spawn
+        outcomes = []
+        for _ in range(4):
+            try:
+                outcomes.append(watch(root, world))
+            except GuardError:
+                outcomes.append("raised")
+        world.spawn = good_spawn
+        check("a-failed-start-still-uses-its-attempt",
+              outcomes == ["raised"] * 3 + [f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"], str(outcomes))
         _set_ready(root, 0)
         check("watch-drained-starts-nothing", watch(root, world) == "drained" and len(world.spawned) == 4)
         _set_ready(root, 3)
@@ -3050,8 +3091,11 @@ def main(argv: list[str]) -> int:
         if argv[0] == "watch" and not opts:
             print(watch(root))
             return 0
-        if argv[0] == "launch" and not opts:
-            print(json.dumps(launch(root)))
+        if argv[0] == "launch" and set(opts) <= {"launcher_pid"}:
+            pid = opts.get("launcher_pid")
+            if pid is not None and not pid.isdigit():
+                raise GuardError(f"--launcher-pid {pid!r} is not a process id")
+            print(json.dumps(launch(root, launcher_pid=int(pid) if pid else None)))
             return 0
     except (GuardError, ValueError) as exc:
         print(f"campaign_guard: {exc}", file=sys.stderr)

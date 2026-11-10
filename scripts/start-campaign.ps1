@@ -9,8 +9,8 @@
     (finish the plan through process-plan, every section stamped, aiming for the best app in its class), on the
     writer model .conclave/reviewers.toml pins, with --dangerously-skip-permissions.
   - A run is open and its session died: that same session is resumed, so it still owns the run guard.
-  - A run is open and its session is alive, any other Claude Code session is open in this folder, or a launch from
-    the last five minutes is still coming up: nothing starts, because two writers on one tree is the worse failure.
+  - A run is open and its session is alive, any other Claude Code session is open in this folder, or another
+    launcher window is still open: nothing starts, because two writers on one tree is the worse failure.
 
   `launch` records the session id and flags, which is what lets the watchdog (scripts/run-guard.py watch, ticked every
   10 minutes by this repository's scheduled task) resume the run headless if this window is ever lost.
@@ -18,7 +18,7 @@
   The desktop shortcut "Isotone campaign" runs this file. Stop the run by telling the session to stop: it ends the
   run through `campaign_guard.py end`, after which neither the watchdog nor this script resumes it.
 .EXAMPLE
-  pwsh -NoExit -File scripts/start-campaign.ps1
+  pwsh -File scripts/start-campaign.ps1
 #>
 [CmdletBinding()]
 param(
@@ -35,7 +35,9 @@ if ($InstallShortcut) {
   $link = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Isotone campaign.lnk'
   $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
   $shortcut.TargetPath = (Get-Process -Id $PID).Path
-  $shortcut.Arguments = "-NoExit -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+  # No -NoExit: the window must close when the session ends, because the launch record holds its place for as
+  # long as this process lives, and a window left open would keep the watchdog from resuming a dead session.
+  $shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
   $shortcut.WorkingDirectory = $repo
   $shortcut.IconLocation = "$(Join-Path $repo 'resources\icons\stilus\stilus.ico'),0"
   $shortcut.Description = 'Start or resume the unattended Isotone campaign'
@@ -44,20 +46,25 @@ if ($InstallShortcut) {
   return
 }
 
-$raw = python scripts/campaign_guard.py launch
+# The launch record names this process, so the place it reserves holds for exactly as long as this window lives:
+# no second launcher and no watchdog tick starts a session while this one is starting or running its own.
+$raw = python scripts/campaign_guard.py launch --launcher-pid $PID
 if ($LASTEXITCODE -ne 0) { throw "campaign_guard.py launch failed (exit $LASTEXITCODE)" }
 $plan = $raw | ConvertFrom-Json
 
 if ($plan.action -eq 'live') {
   Write-Host "The campaign is already running in session $($plan.session). Nothing was started."
+  Start-Sleep -Seconds 12
   return
 }
 if ($plan.action -eq 'busy') {
   Write-Host "Another Claude Code session is open in this folder ($($plan.sessions -join ', ')). One session writes, so nothing was started: close it, then run this again."
+  Start-Sleep -Seconds 12
   return
 }
 if ($plan.action -eq 'starting') {
-  Write-Host "Session $($plan.session) was launched moments ago and is still coming up. Nothing was started."
+  Write-Host "Session $($plan.session) is being started by another launcher window. Nothing was started."
+  Start-Sleep -Seconds 12
   return
 }
 

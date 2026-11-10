@@ -11,7 +11,7 @@ Language servers, so a session sees compiler and type errors right after an edit
 | clangd | `.c`, `.h`, `.hpp`, `.cpp`, `.cc`, `.cxx`, `.inl`, `.ixx` | The clangd beside the pinned clang-tidy (Visual Studio's Clang component, `native/toolchain.json`), inside the pinned MSVC environment, reading `artifacts/native/x64-debug/compile_commands.json`, with clang-tidy on |
 | pyright | `.py` | `pyright-langserver` from `PATH`, limited by `pyrightconfig.json` to the tracked script folders |
 
-Both start through `python scripts/lsp-launch.py <server>`, which finds the binary, sets its environment, and holds it in a job object so it ends with the session.
+Both start through `python scripts/lsp-launch.py <server>`, which finds the binary, sets its environment, holds it in a job object, and exits when the process that started it exits, so the server ends with the launcher and the launcher ends with the session.
 
 ## Setting up a clone
 

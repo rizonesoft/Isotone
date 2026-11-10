@@ -12,8 +12,10 @@ gate. Both servers are bounded for a machine that runs several sessions: clangd 
 preambles on disk, and pyrightconfig.json limits pyright to the tracked script folders.
 
 On Windows this process puts itself in a job object before it starts the server, so the server and anything it
-starts are born inside the job, and Windows ends them all when this process ends, however that happens: a killed
-session never leaves a language server behind. Stdlib only.
+starts are born inside the job, and Windows ends them all when this process ends, however that happens. It also
+watches the process that started it (Claude Code) and ends itself when that one goes, because Windows does not end
+a child with its parent. So neither a killed launcher nor a killed session leaves a language server behind.
+Stdlib only.
 """
 
 from __future__ import annotations
@@ -121,6 +123,28 @@ def end_children_with_this_process() -> None:
     _JOB = job
 
 
+def end_with_parent() -> None:
+    """Exit when the process that started this one ends: a thread waits on the parent's handle. Exiting closes the
+    job object, which ends the server."""
+    import ctypes
+    import threading
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel.WaitForSingleObject.argtypes = (wintypes.HANDLE, wintypes.DWORD)
+    parent = kernel.OpenProcess(0x00100000, False, os.getppid())  # SYNCHRONIZE
+    if not parent:
+        raise LaunchError(f"could not watch the parent process (error {ctypes.get_last_error()})")
+
+    def wait() -> None:
+        kernel.WaitForSingleObject(parent, 0xFFFFFFFF)
+        os._exit(1)
+
+    threading.Thread(target=wait, daemon=True).start()
+
+
 def main(argv: list[str]) -> int:
     servers = {"clangd": clangd, "pyright": pyright}
     if len(argv) != 1 or argv[0] not in servers:
@@ -130,6 +154,7 @@ def main(argv: list[str]) -> int:
         command, env = servers[argv[0]]()
         if os.name == "nt":
             end_children_with_this_process()
+            end_with_parent()
         child = subprocess.Popen(command, env=env, cwd=REPO)
     except (LaunchError, OSError, KeyError, ValueError) as error:
         print(f"lsp-launch: {error}", file=sys.stderr)
