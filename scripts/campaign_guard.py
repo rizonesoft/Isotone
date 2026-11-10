@@ -17,6 +17,7 @@ self-test (D00 T04 §32, §34 to §37).
     python scripts/campaign_guard.py repair status|restore --run-file F [--workflow W] | ceiling --run-id ID
     python scripts/campaign_guard.py watch                          (one watchdog tick; scripts/run-guard.py schedules it)
     python scripts/campaign_guard.py launch [--launcher-pid P]      (what scripts/start-campaign.ps1 should start, as JSON)
+    python scripts/campaign_guard.py launch-done --launcher-pid P   (that launcher's session ended; its place is free)
     python scripts/campaign_guard.py --self-test
 
 A campaign run has four parts. The guard file (`build/claude-campaign-guard.json`) names the session that owns the
@@ -1366,6 +1367,19 @@ def _same_folder(a, b: str) -> bool:
     return bool(a) and os.path.normcase(os.path.realpath(str(a))) == os.path.normcase(os.path.realpath(b))
 
 
+def _in_tree(folder, root: str) -> bool:
+    """Whether `folder` is the working tree or anywhere inside it: a session started in a subfolder writes to the
+    same tree, so it counts as live here."""
+    if not folder:
+        return False
+    try:
+        inside = os.path.commonpath([os.path.normcase(os.path.realpath(str(folder))),
+                                     os.path.normcase(os.path.realpath(root))])
+    except ValueError:  # different drives
+        return False
+    return inside == os.path.normcase(os.path.realpath(root))
+
+
 class _World:
     """What the watchdog reads from the machine, so the self-test can stand in for it."""
 
@@ -1424,6 +1438,20 @@ class _World:
         return {"pid": child.pid, "started": _process_started(child.pid)}
 
 
+def launch_done(root: str, launcher_pid: int) -> str:
+    """The launcher's session has ended: give up the place its launch record held, so a launcher left open (a script
+    run from an existing shell) never keeps the watchdog from resuming the run. The session id and flags stay."""
+    with _Lock(root):
+        record = _read_json(_launch_path(root))
+        launcher = record.get("launcher")
+        if not isinstance(launcher, dict) or launcher.get("pid") != launcher_pid:
+            return "launch-done: this launcher holds no launch"
+        record.pop("launcher")
+        record["at"] = "released"  # no grace window either: the session it named has already run
+        _write_json(_launch_path(root), record)
+        return "launch-done: released"
+
+
 def _launch_fresh(record: dict, world) -> bool:
     """Whether the launch this record names still holds its place: the launcher process that asked for it is alive
     (the session runs inside it, so that covers the whole session), or, for a record with no launcher, it was handed
@@ -1464,7 +1492,7 @@ def watch(root: str, world=None) -> str:
         if state.get("child") and world.child_alive(state["child"]):
             return "resumed session still running"
         # Liveness is read here, under the lock `launch` also holds, so neither can start beside the other's session.
-        live = [str(r.get("sessionId")) for r in world.live_sessions() if _same_folder(r.get("cwd"), root)]
+        live = [str(r.get("sessionId")) for r in world.live_sessions() if _in_tree(r.get("cwd"), root)]
         if live:
             return f"session live here: {live[0]}"
         launch = _read_json(_launch_path(root))
@@ -1502,7 +1530,7 @@ def launch(root: str, world=None, launcher_pid: int | None = None) -> dict:
         session = str(guard.get("session_id", "")) if guard is not None else ""
         state = _read_json(_watch_path(root))
         # Read under the lock `watch` also holds, so two launches, or a launch and a tick, never both start.
-        live = [str(r.get("sessionId")) for r in world.live_sessions() if _same_folder(r.get("cwd"), root)]
+        live = [str(r.get("sessionId")) for r in world.live_sessions() if _in_tree(r.get("cwd"), root)]
         if guard is not None and (session in live or (state.get("session_id") == session and state.get("child")
                                                       and world.child_alive(state["child"]))):
             return {"action": "live", "session": session}
@@ -2996,6 +3024,25 @@ def _self_test() -> int:
         world.spawn = good_spawn
         check("a-failed-start-still-uses-its-attempt",
               outcomes == ["raised"] * 3 + [f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"], str(outcomes))
+        world.live = [{"sessionId": "in-a-subfolder", "cwd": os.path.join(root, "docs", "phase-runs")}]
+        spawned = len(world.spawned)
+        check("a-session-in-a-subfolder-is-live-here", watch(root, world) == "session live here: in-a-subfolder"
+              and launch(root, world) == {"action": "busy", "sessions": ["in-a-subfolder"]}
+              and len(world.spawned) == spawned)
+        world.live = []
+        world.launchers = {777}
+        held = launch(root, world, launcher_pid=777)
+        check("an-open-launcher-holds-its-place", held["action"] == "resume"
+              and launch(root, world)["action"] == "starting"
+              and watch(root, world) == "the launcher is starting this session")
+        check("another-launcher-cannot-release-it", launch_done(root, 778).endswith("holds no launch")
+              and launch(root, world)["action"] == "starting")
+        world.sig = "s4"  # progress since the exhausted attempts above, so the next tick may resume
+        freed = launch_done(root, 777)
+        after = watch(root, world)
+        check("a-finished-launcher-frees-its-place", freed == "launch-done: released"
+              and after == "resumed, attempt 1", f"{freed} / {after}")
+        world.launchers = set()
         _set_ready(root, 0)
         check("watch-drained-starts-nothing", watch(root, world) == "drained" and len(world.spawned) == 4)
         _set_ready(root, 3)
@@ -3090,6 +3137,9 @@ def main(argv: list[str]) -> int:
             return code
         if argv[0] == "watch" and not opts:
             print(watch(root))
+            return 0
+        if argv[0] == "launch-done" and set(opts) == {"launcher_pid"} and opts["launcher_pid"].isdigit():
+            print(launch_done(root, int(opts["launcher_pid"])))
             return 0
         if argv[0] == "launch" and set(opts) <= {"launcher_pid"}:
             pid = opts.get("launcher_pid")

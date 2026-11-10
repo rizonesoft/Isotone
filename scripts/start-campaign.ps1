@@ -76,11 +76,29 @@ if ($scheduled -ne 'own task') {
   if ($LASTEXITCODE -ne 0) { Write-Warning 'The watchdog task could not be created, so a session that dies will not be resumed.' }
 }
 
+# The language-server plugin is found through a per-machine registration that holds this folder's absolute path
+# (Claude Code documents no relative form), so a clone that is new or has moved is registered here, from where this
+# file actually is.
+$marketplace = Join-Path $repo 'tools\claude-plugins'
+$listed = claude plugin marketplace list 2>&1 | Out-String
+if (-not $listed.Contains($marketplace)) {
+  if ($listed -match 'isotone-tools') { claude plugin marketplace remove isotone-tools | Out-Null }
+  claude plugin marketplace add $marketplace | Out-Null
+  claude plugin install isotone-lsp@isotone-tools --scope project | Out-Null
+  Write-Host "Registered the isotone-tools plugin folder at $marketplace."
+}
+
 $flags = @($plan.args)
-if ($plan.action -eq 'start') {
-  Write-Host "Starting the Isotone campaign (session $($plan.session))."
-  & claude --session-id $plan.session @flags --name 'Isotone campaign' $plan.prompt
-} else {
-  Write-Host "Resuming the Isotone campaign (session $($plan.session))."
-  & claude --resume $plan.session @flags $plan.prompt
+try {
+  if ($plan.action -eq 'start') {
+    Write-Host "Starting the Isotone campaign (session $($plan.session))."
+    & claude --session-id $plan.session @flags --name 'Isotone campaign' $plan.prompt
+  } else {
+    Write-Host "Resuming the Isotone campaign (session $($plan.session))."
+    & claude --resume $plan.session @flags $plan.prompt
+  }
+} finally {
+  # The session is over, however it ended: free the place this launcher held, so a window left open never keeps the
+  # watchdog from resuming a run that is still open.
+  python scripts/campaign_guard.py launch-done --launcher-pid $PID | Out-Null
 }

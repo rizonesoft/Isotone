@@ -102,3 +102,36 @@ OVERALL: needs-attention
 ## Response to round 3
 
 Round 3 was dispatched with a prompt that still named the round 2 range (the writer's error updating the scratch prompt), so it re-read the code as it was before the round 2 fixes and repeated round 2's four findings. Nothing new was raised; the fixes are the ones the round 2 response lists. Round 4 names the tip.
+
+## Round 4: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T01:18:26Z
+- Effort: medium
+- Lines: 20
+- Digest: 02984c8df9f70700
+
+## adversarial: needs-attention
+
+1. P1 `scripts/campaign_guard.py:1365`: Liveness checks require an exact working-directory match. A live Claude session started in `R:\GitHub\Isotone\native` is ignored, although it can edit the same repository. Both `watch()` and `launch()` can consequently start a competing writer. **Reproduce:** open Claude from `native/`, leave a dead campaign guard, then invoke the launcher or watchdog. An in-memory probe at the tip returned `resume` and `resumed, attempt 1` with that live session present. Detect ownership of the working tree, including sessions started in its subdirectories.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P2 `scripts/campaign_guard.py:1432`: A surviving launcher shell permanently suppresses recovery after Claude exits. `start-campaign.ps1:51` records `$PID`, but running `& ./scripts/start-campaign.ps1` from an existing PowerShell session leaves that process alive after the script returns. **Reproduce:** invoke it this way, terminate Claude without ending its guard, and leave PowerShell open. Every watchdog tick reports `the launcher is starting this session`; another launcher returns `starting`. The tip’s in-memory probe confirmed both decisions. Release the reservation when the launched command finishes while preserving protection during startup.
+
+## source-defect: needs-attention
+
+3. P2 `.claude/settings.json:39`: The directory marketplace uses a relative path where Claude Code documents an absolute path. Existing manual marketplace registration can conceal the fresh-clone failure. **Reproduce:** use a fresh Claude configuration, trust this checkout, and inspect plugin loading without first running `plugin marketplace add`. The relative directory registration can leave `isotone-lsp` unavailable. Provision an absolute registration derived from the checkout. See the [directory-source contract](https://code.claude.com/docs/en/settings-reference#marketplace-source-types) and [upstream reproduction](https://github.com/anthropics/claude-code/issues/23978).
+
+## record: needs-attention
+
+Findings 1 and 2 contradict the unconditional writer-exclusion and dead-session recovery claims at `docs/dev/decisions.md:169`, `docs/dev/decisions.md:170`, and `.claude/skills/process-plan/SKILL.md:64`. Their reproduction steps apply to these claims.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 4
+
+Round 4 read the tip and raised three new findings, all verified and fixed in the commit that carries this response: F1 (a session started in any folder under the working tree counts as live here; self-test `a-session-in-a-subfolder-is-live-here`), F2 (the launcher runs `launch-done` when its session ends, so a shell left open frees its place; self-tests `an-open-launcher-holds-its-place`, `another-launcher-cannot-release-it`, `a-finished-launcher-frees-its-place`), F3 (the relative `extraKnownMarketplaces` entry is removed; the launcher registers the plugin folder per machine from where the clone is, and the README gives the same commands).

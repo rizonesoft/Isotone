@@ -1,6 +1,6 @@
 # Claude Code plugins
 
-The plugins this repository ships for its own Claude Code sessions. `.claude/settings.json` declares this folder as the `isotone-tools` marketplace and enables what is listed here.
+The plugins this repository ships for its own Claude Code sessions. `.claude/settings.json` enables what is listed here from the `isotone-tools` marketplace, which is this folder. Claude Code finds a folder marketplace through a per-machine registration that holds its absolute path, so nothing tracked names it: `scripts/start-campaign.ps1` registers this folder from where the clone actually is, and the commands below do the same by hand.
 
 ## isotone-lsp
 
@@ -18,6 +18,7 @@ Both start through `python scripts/lsp-launch.py <server>`, which finds the bina
 ```powershell
 npm install -g pyright                                   # the Python server; clangd comes with the pinned Visual Studio
 claude plugin marketplace add ./tools/claude-plugins     # registers this folder on the machine
+claude plugin install isotone-lsp@isotone-tools --scope project
 claude plugin list                                       # isotone-lsp@isotone-tools reads "enabled"
 ```
 

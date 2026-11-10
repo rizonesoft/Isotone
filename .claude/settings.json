@@ -31,13 +31,5 @@
   },
   "enabledPlugins": {
     "isotone-lsp@isotone-tools": true
-  },
-  "extraKnownMarketplaces": {
-    "isotone-tools": {
-      "source": {
-        "source": "directory",
-        "path": "./tools/claude-plugins"
-      }
-    }
   }
 }
