@@ -140,6 +140,7 @@ HEADING_FAMILY = {"GPT": "codex", "Opus": "claude", "Claude": "claude", "Grok": 
 # `grok-4.7-build-fast`), and `served` what the provider reported running.
 RECORD_MODELS = {
     "gpt-6-astra": {"family": "codex"},
+    "gpt-6.1-sol": {"family": "codex"},
     "gpt-6-sol": {"family": "codex"},
     "gpt-5.6-terra": {"family": "codex"},
     "gpt-5.6-sol": {"family": "codex"},
@@ -1178,6 +1179,17 @@ refuted: 0
 """
     runs, errors = parse_runs(good)
     check("parse-clean", not errors and len(runs) == 1, f"{errors}")
+    # Records are history: every GPT model the committed records name is in RECORD_MODELS itself, never only in the
+    # live pin, so re-pinning the reviewer cannot make its earlier rounds fail (2026-11-10: the re-pin from GPT-6.1
+    # Sol to GPT-6 Astra did exactly that).
+    try:
+        with open(Path(__file__).resolve().parent.parent / "docs" / "reviews" / "run-records.md",
+                  encoding="utf-8") as fh:
+            named = set(re.findall(r"\bgpt-\d[\w.-]*\w", fh.read()))
+    except OSError:
+        named = set()
+    check("recorded-gpt-models-outlive-the-pin", named and named <= set(RECORD_MODELS),
+          str(sorted(named - set(RECORD_MODELS))))
     check_runs(runs, errors)
     check("check-clean", not errors, f"{errors}")
     check("round-count", runs[0].round_lines[1][1] == 2)

@@ -180,8 +180,10 @@ Each entry holds:
 
 ## 2026-11-10: The reviewer is GPT-6 Astra again
 
-- **Date:** 2026-11-10, the operator: "The reviewer should be GPT6 Astra."
+- **Date:** 2026-11-10, the operator: "The reviewer should be GPT6 Astra." Clarified minutes later: "I mean The reviewer should be GPT6 Astra, always if Claude, agy, or Muse is writer."
 - **Decision:** `.conclave/reviewers.toml` pins `gpt-6-astra` through the `codex` CLI as the one reviewer, in place of GPT-6.1 Sol (the pin from 2026-10-22). The effort stays medium, the operator's 2026-10-23 setting, which the instruction did not change. No fallback, as before.
 - **Scope:** every round from this commit on. Rounds Sol already returned stand as recorded, including the same day's campaign launcher and sign-in reviews.
+- **Reading of the clarification (the writer's, a default):** Astra reviews whoever writes. In this repository the only writer is Claude Code (operator decision 2026-10-23, which the dispatcher and `panel_slots.py validate` enforce), so the one pin already covers it; the clarification is not read as admitting agy or Muse as writers here, which would reverse that decision and needs the operator to say so. Cost of changing: a writer route per harness in the pin's schema and the dispatcher, with Astra as each one's reviewer.
+- **Records are history:** `scripts/todo-runs.py` keeps `gpt-6.1-sol` in `RECORD_MODELS`, so the rounds Sol returned keep validating after the re-pin (the first Astra round found they did not), and its self-test now fails when a model the committed records name is known only through the live pin.
 - **Cost of change:** one edit to the pin, plus the sentences in `AGENTS.md` and the `independent-review` skill that name the reviewer.
-- **Owner:** `.conclave/reviewers.toml`.
+- **Owner:** `.conclave/reviewers.toml`, `scripts/todo-runs.py`.
