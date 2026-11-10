@@ -42,7 +42,7 @@ When the section dispatched any delegate (`standards/delegation.md`):
 
 ```powershell
 python scripts/weakening-scan.py --scope build/delegation/<task>/before.json --   # per delegate: no owned paths, it wrote nothing
-python scripts/panel_slots.py delegate-audit
+python scripts/panel_slots.py delegate-audit --session <conversation-or-session-id>   # omits --session when ANTIGRAVITY_CONVERSATION_ID or CLAUDE_CODE_SESSION_ID is set
 ```
 
 Every scope check prints `0 problem(s)`, and the audit is green (exit 0, `0 failing`); both summary lines are quoted.

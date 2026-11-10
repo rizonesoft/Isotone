@@ -428,13 +428,15 @@ def run(argv, stdin_text, timeout, watched, stderr_path=None):
     return process.returncode, None
 
 
+KEPT_NAMES = ("review.md", "round.json")
 KEPT_SUFFIXES = (".stdout.txt", ".stderr.txt")
+KEEP_ROUND_DIR = re.compile(r"^round-([0-9]{1,6})(?:-retry-([0-9]{1,6}))?$")
 
 
 def kept_artifacts(keep):
     """The evidence an earlier attempt left in a --keep folder; a folder holding any is refused, so a failed attempt
     can never sit beside an earlier attempt's review."""
-    return sorted(p.name for p in Path(keep).iterdir() if p.name == "review.md" or p.name.endswith(KEPT_SUFFIXES))
+    return sorted(p.name for p in Path(keep).iterdir() if p.name in KEPT_NAMES or p.name.endswith(KEPT_SUFFIXES))
 
 
 def keep_file(source, keep, name):
@@ -470,6 +472,58 @@ def prior_recorded_rounds(record_path):
     return rounds
 
 
+def prior_keep_rounds(keep):
+    """Read completed sibling `round-<N>` (and `round-<N>-retry-<K>`) folders beside `keep` for `--kind round`
+    scheduling when `--record` is not given (`review-todo-section`'s `$RUNDIR/round-<N>` loop)."""
+    current = Path(keep)
+    if not KEEP_ROUND_DIR.match(current.name):
+        raise Refused(f"--kind round without --record needs --keep named round-<N> (or round-<N>-retry-<K>), got "
+                      f"{current.name!r}")
+    parent = current.parent
+    if not parent.is_dir():
+        return []
+    found = []
+    for child in parent.iterdir():
+        if child == current or not child.is_dir():
+            continue
+        match = KEEP_ROUND_DIR.match(child.name)
+        if not match:
+            continue
+        review_file = child / "review.md"
+        if not review_file.is_file():
+            continue
+        try:
+            review_text = review_file.read_bytes().decode("utf-8")
+        except (OSError, UnicodeDecodeError):
+            raise Refused(f"{review_file} cannot be read back for scheduled round selection") from None
+        meta_file = child / "round.json"
+        sibling_json = parent / f"{child.name}.json"
+        meta = None
+        for candidate in (meta_file, sibling_json):
+            if candidate.is_file():
+                try:
+                    loaded = json.loads(candidate.read_bytes().decode("utf-8"))
+                except (OSError, UnicodeDecodeError, ValueError):
+                    raise Refused(f"{candidate} cannot be read back for scheduled round selection") from None
+                if not isinstance(loaded, dict):
+                    raise Refused(f"{candidate} is not a JSON object for scheduled round selection")
+                meta = loaded
+                break
+        if meta is None:
+            raise Refused(f"{child} holds review.md without round.json or {sibling_json.name} metadata")
+        found.append(((int(match.group(1)), int(match.group(2) or 0)), {
+            "number": int(match.group(1)),
+            "writer": meta.get("writer"),
+            "reviewer": meta.get("reviewer"),
+            "cli": meta.get("cli"),
+            "model": meta.get("model"),
+            "effort": meta.get("effort"),
+            "review": review_text.strip(),
+        }))
+    found.sort(key=lambda item: item[0])
+    return [entry for _, entry in found]
+
+
 def review(pin, writer, prompt_path, timeout, keep=None, kind=None, record_path=None, surface=False):
     """Walk the writer's route until one reviewer returns a review. Returns the summary dict. With `keep`, each
     reviewer's raw stdout and stderr and the returned review are kept in that folder."""
@@ -482,7 +536,15 @@ def review(pin, writer, prompt_path, timeout, keep=None, kind=None, record_path=
         raise Refused("the review prompt is empty")
     if "\0" in prompt:
         raise Refused("the review prompt contains a NUL byte; no command line can carry it")
-    prior = prior_recorded_rounds(record_path) if kind == "round" else []
+    if kind == "round":
+        if record_path:
+            prior = prior_recorded_rounds(record_path)
+        elif keep is not None:
+            prior = prior_keep_rounds(keep)
+        else:
+            raise Refused("--kind round requires --record or --keep round-<N> so prior round history is preserved")
+    else:
+        prior = []
     failover = []
     for name in pin["routes"][writer]:
         reviewer = pin["reviewers"][name]
@@ -522,6 +584,9 @@ def review(pin, writer, prompt_path, timeout, keep=None, kind=None, record_path=
         text = stdout.strip()
         if keep is not None:
             atomic_write(Path(keep) / "review.md", text + "\n")
+            atomic_write(Path(keep) / "round.json",
+                         json.dumps({"writer": writer, "reviewer": name, "cli": reviewer["cli"],
+                                     "model": reviewer["model"], "effort": effort}) + "\n")
         extra = {}
         if plan is not None:
             stop_after = pin["schedule"]["severity_stop_after"]

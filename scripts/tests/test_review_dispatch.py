@@ -221,6 +221,34 @@ class Dispatch(unittest.TestCase):
                          (3, "medium", True, True))
         self.assertEqual(self.calls()[-1]["stdin"], fenced)
 
+    def test_schedule_reads_sibling_keep_rounds_when_record_is_omitted(self):
+        rundir = Path(self._tmp.name) / "panel-rundir"
+        for sub in ("round-1", "round-2", "round-2-retry-1", "round-3", "arch-1", "bad-keep"):
+            (rundir / sub).mkdir(parents=True)
+        # Round 1 runs at medium and persists round.json + review.md inside round-1.
+        _, r1 = self.dispatch("--kind", "round", "--writer", "agy", "--prompt", str(self.prompt),
+                              "--keep", str(rundir / "round-1"))
+        self.assertEqual((r1["position"], r1["effort"], r1["escalated"]), (1, "medium", False))
+        # An outage on round-2 writes no review.md, so round-2-retry-1 stays at position 2 (low rotation).
+        failed, _ = self.dispatch("--kind", "round", "--writer", "agy", "--prompt", str(self.prompt),
+                                  "--keep", str(rundir / "round-2"), codex="fail")
+        self.assertEqual(failed.returncode, 1)
+        _, r2 = self.dispatch("--kind", "round", "--writer", "agy", "--prompt", str(self.prompt),
+                              "--keep", str(rundir / "round-2-retry-1"), codex="p1")
+        self.assertEqual((r2["position"], r2["effort"], r2["escalated"]), (2, "low", False))
+        # Non-round sibling folders (arch-1) are ignored; round-3 sees round-2-retry-1's P1 at low and escalates.
+        (rundir / "arch-1" / "review.md").write_text("**architecture: approve**\n", encoding="utf-8")
+        _, r3 = self.dispatch("--kind", "round", "--writer", "agy", "--prompt", str(self.prompt),
+                              "--keep", str(rundir / "round-3"), codex="p3")
+        self.assertEqual((r3["position"], r3["effort"], r3["escalated"], r3["severity_stop"]),
+                         (3, "medium", True, True))
+        # --kind round without persistent history (--record or round-<N> --keep) is refused.
+        refused_bare, _ = self.dispatch("--kind", "round", "--writer", "agy", "--prompt", str(self.prompt))
+        self.assertEqual(refused_bare.returncode, 2)
+        refused_name, _ = self.dispatch("--kind", "round", "--writer", "agy", "--prompt", str(self.prompt),
+                                        "--keep", str(rundir / "bad-keep"))
+        self.assertEqual(refused_name.returncode, 2)
+
     def test_unsupported_writers_and_unrouted_writers_are_refused(self):
         for writer in ("codex", "gemini"):
             with self.subTest(writer=writer):

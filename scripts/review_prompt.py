@@ -6759,7 +6759,7 @@ def _self_test() -> int:
             ("skill-stamp-no-fallback",
              "A failed attempt (dispatcher exit 1) has no fallback"),
             ("skill-panel-round",
-             "python scripts/review-dispatch.py --writer agy --prompt $RUNDIR/review-prompt.md --keep $ROUND"),
+             "python scripts/review-dispatch.py --writer agy --kind round --prompt $RUNDIR/review-prompt.md --keep $ROUND"),
             ("skill-panel-output", "check-panel --manifest $RUNDIR/manifest.md < $ROUND/review.md"),
             ("skill-plan-round", "--prompt $RUNDIR/plan-review-prompt.md --keep $RUNDIR/plan-<N>"),
             ("skill-stamp-round", "--prompt $RUNDIR/stamp-prompt.md --keep $RUNDIR/stamp-1"),

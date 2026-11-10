@@ -21,7 +21,7 @@ The dispatcher refuses a reviewer of the writer's own family, and `python script
 
    ```bash
    KEEP=$(mktemp -d /tmp/review-XXXXXXXX)
-   python scripts/review-dispatch.py --writer agy --prompt <scratch>/review-prompt.md --keep $KEEP --record docs/reviews/independent/<YYYY-MM-DD>-<topic>.md
+   python scripts/review-dispatch.py --writer agy --kind round --prompt <scratch>/review-prompt.md --keep $KEEP --record docs/reviews/independent/<YYYY-MM-DD>-<topic>.md
    ```
 
 4. Read the review. Verify every finding against the code before acting: fix what is real, and record why anything else is not, as text after the round (a `## Response to round N` heading), never inside it.

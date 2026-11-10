@@ -14,10 +14,11 @@ on top and guards the writer's subagents across both Antigravity (`.agents/hooks
   round Astra cannot return is retried with backoff and then parks only its section (operator decision 2026-10-23), and
   the writer's family never reviews.
 - Subagents read and run; they never write (operator decision 2026-10-02). In Antigravity, `.agents/hooks.json` wires
-  `agent-gate` on `invoke_subagent|define_subagent|swarm|run_command`, allowing read-only subagents (`research` or
-  custom definitions with `EnableWriteTools: false` and `EnableSubagentTools: false` on `inherit`, `pro`, or `flash`),
-  denying writable subagents (`self`, `image-generator`, `branch`/`share` workspaces, `swarm` workers) and `--no-verify`
-  hook bypasses. In Claude Code, `.claude/agents/*.md` and `.claude/settings.json` stay validated to `DELEGATE`.
+  `agent-gate` on `invoke_subagent|define_subagent|swarm|run_command`, allowing only the read-only `research` subagent
+  on `inherit` or `pro`, denying writable or custom subagents (`self`, `image-generator`, `define_subagent`,
+  `branch`/`share` workspaces, `swarm` workers), `flash` or `flash_lite` downgrades, direct CLI agent or reviewer runs
+  (`claude`, `agy`, `codex`), and `--no-verify` hook bypasses. In Claude Code, `.claude/agents/*.md` and
+  `.claude/settings.json` stay validated to `DELEGATE`.
 
     python scripts/panel_slots.py validate
     python scripts/panel_slots.py show
@@ -649,19 +650,27 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
                               f"(exit {proc.returncode}, stdout {proc.stdout[:120]!r}, stderr {proc.stderr[:120]!r})")
     agents_dir = os.path.join(_repo_root(), ".agents")
     if os.path.isdir(agents_dir):
-        agy_deny = json.dumps({"conversationId": "probe", "hookEventName": "PreToolUse",
-                               "toolCall": {"name": "invoke_subagent",
-                                            "args": {"TypeName": "self", "Role": "r", "Prompt": "x"}}})
-        proc_agy = subprocess.run(AGY_AGENT_GATE_COMMAND, shell=True, input=agy_deny, capture_output=True,
-                                  text=True, env=env, cwd=agents_dir, timeout=60)
-        try:
-            agy_dec = json.loads(proc_agy.stdout)["decision"]
-        except (ValueError, KeyError, TypeError):
-            agy_dec = None
-        if proc_agy.returncode != 0 or agy_dec != "deny":
-            raise PanelSlotsError(f"the Antigravity agent-gate command did not deny a writable `self` subagent "
-                                  f"(exit {proc_agy.returncode}, stdout {proc_agy.stdout[:120]!r})")
-    return "agent-gate command exercised: writable subagent and Haiku calls are denied"
+        for label, expected, tool_call in (
+            ("a writable `self` subagent", "deny",
+             {"name": "invoke_subagent", "args": {"TypeName": "self", "Role": "r", "Prompt": "x"}}),
+            ("a `flash` model downgrade", "deny",
+             {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "flash", "Role": "r", "Prompt": "x"}}),
+            ("a headless `claude -p` delegation", "deny",
+             {"name": "run_command", "args": {"CommandLine": "claude -p --agent isotone-researcher inspect callers"}}),
+            ("a read-only `research` subagent on `inherit`", "allow",
+             {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}}),
+        ):
+            agy_in = json.dumps({"conversationId": "probe", "hookEventName": "PreToolUse", "toolCall": tool_call})
+            proc_agy = subprocess.run(AGY_AGENT_GATE_COMMAND, shell=True, input=agy_in, capture_output=True,
+                                      text=True, env=env, cwd=agents_dir, timeout=60)
+            try:
+                agy_dec = json.loads(proc_agy.stdout)["decision"]
+            except (ValueError, KeyError, TypeError):
+                agy_dec = None
+            if proc_agy.returncode != 0 or agy_dec != expected:
+                raise PanelSlotsError(f"the Antigravity agent-gate command did not {expected} {label} "
+                                      f"(exit {proc_agy.returncode}, stdout {proc_agy.stdout[:120]!r})")
+    return "agent-gate command exercised: writable subagent, flash, headless CLI, and Haiku calls are denied"
 
 
 def _norm_model(model: str) -> str:
@@ -956,12 +965,229 @@ def dispatched_agents(main_transcript: str) -> tuple[set[str], int]:
     return calls - refused, unreadable
 
 
+_AGY_REFUSALS = re.compile(
+    r"tool call denied by pre-tool hook|subagent type .* not found|unknown subagent|"
+    r"permission denied|user denied|cancelled by user", re.IGNORECASE)
+_AGY_CONV_ID = re.compile(r'"conversationId"\s*:\s*"([^"]+)"')
+AGY_SUBAGENT_FORBIDDEN_TOOLS = frozenset((
+    "write_file", "write_to_file", "edit_file", "replace_file_content",
+    "multi_replace_file_content", "delete_file", "run_command",
+    "invoke_subagent", "define_subagent", "swarm"))
+
+
+def _agy_config_dir(env: dict | None = None) -> str:
+    env_map = os.environ if env is None else env
+    return (env_map.get("ANTIGRAVITY_APP_DATA_DIR")
+            or env_map.get("AGY_CONFIG_DIR")
+            or os.path.join(os.path.expanduser("~"), ".gemini", "antigravity-cli"))
+
+
+def find_agy_transcript(conversation_id: str | None, agy_root: str | None = None,
+                        env: dict | None = None) -> str | None:
+    if not conversation_id or any(sep in conversation_id for sep in ("/", "\\", "..")):
+        return None
+    logs = os.path.join(agy_root or _agy_config_dir(env), "brain", conversation_id, ".system_generated", "logs")
+    for name in ("transcript_full.jsonl", "transcript.jsonl"):
+        candidate = os.path.join(logs, name)
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def _agy_arg(value) -> str:
+    if isinstance(value, str) and len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+        try:
+            decoded = json.loads(value)
+            if isinstance(decoded, str):
+                return decoded
+        except ValueError:
+            pass
+    return str(value) if value is not None else ""
+
+
+def _agy_refusal(rec: dict | None) -> bool:
+    if not isinstance(rec, dict) or rec.get("status") != "ERROR":
+        return False
+    content = str(rec.get("content") or "")
+    if _AGY_CONV_ID.search(content):
+        return False
+    text = f"{rec.get('error') or ''}\n{content}"
+    return bool(_AGY_REFUSALS.search(text))
+
+
+def _agy_load_records(path: str) -> tuple[list[dict], int]:
+    records: list[dict] = []
+    unreadable = 0
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            try:
+                rec = json.loads(line)
+            except ValueError:
+                unreadable += 1
+                continue
+            if not isinstance(rec, dict):
+                unreadable += 1
+                continue
+            truncated = rec.get("truncated_fields")
+            if isinstance(truncated, list) and any(f in truncated for f in ("tool_calls", "content")):
+                unreadable += 1
+            records.append(rec)
+    return records, unreadable
+
+
+def _agy_dispatched_subagents(main_transcript: str) -> tuple[list[dict], int]:
+    """(started subagent records in an Antigravity parent transcript, unreadable count)."""
+    records, unreadable = _agy_load_records(main_transcript)
+    dispatched: list[dict] = []
+    i = 0
+    while i < len(records):
+        rec = records[i]
+        tcs = rec.get("tool_calls") if rec.get("type") == "PLANNER_RESPONSE" else None
+        if not isinstance(tcs, list) or not tcs:
+            i += 1
+            continue
+        generics: list[dict] = []
+        j = i + 1
+        while j < len(records) and records[j].get("type") != "PLANNER_RESPONSE":
+            if records[j].get("type") == "GENERIC":
+                generics.append(records[j])
+            j += 1
+        step_no = rec.get("step_index", i)
+        for idx, tc in enumerate(tcs):
+            if not isinstance(tc, dict):
+                continue
+            name = tc.get("name")
+            args = tc.get("args") if isinstance(tc.get("args"), dict) else {}
+            gres = generics[idx] if idx < len(generics) else None
+            if _agy_refusal(gres):
+                continue
+            label = f"step-{step_no}-{idx}"
+            if name == "invoke_subagent":
+                entries = args.get("Subagents") if isinstance(args.get("Subagents"), list) else [args]
+                content = str(gres.get("content") or "") if isinstance(gres, dict) else ""
+                ids = _AGY_CONV_ID.findall(content)
+                for sub_idx, item in enumerate(entries if entries else [args]):
+                    item_dict = item if isinstance(item, dict) else {}
+                    dispatched.append({
+                        "call": label if len(entries) <= 1 else f"{label}-{sub_idx}",
+                        "sub_id": ids[sub_idx] if sub_idx < len(ids) else None,
+                        "type": _agy_arg(item_dict.get("TypeName")) or "?",
+                        "model": _agy_arg(item_dict.get("Model")),
+                        "workspace": _agy_arg(item_dict.get("Workspace")),
+                    })
+            elif name == "define_subagent":
+                dispatched.append({
+                    "call": label, "sub_id": "", "type": f"define_subagent:{_agy_arg(args.get('Name')) or '?'}",
+                    "model": "", "workspace": "", "forced_class": "writable",
+                })
+            elif name == "swarm" and _agy_arg(args.get("action")) not in ("status", "models"):
+                dispatched.append({
+                    "call": label, "sub_id": "", "type": f"swarm:{_agy_arg(args.get('action')) or '?'}",
+                    "model": "", "workspace": "", "forced_class": "writable",
+                })
+        i = j
+    return dispatched, unreadable
+
+
+def _agy_child_summary(path: str) -> tuple[int, int, list[str]]:
+    """(planner turn count, unreadable record count, non-refused forbidden tool names) for a child transcript."""
+    records, unreadable = _agy_load_records(path)
+    turns = 0
+    forbidden: list[str] = []
+    i = 0
+    while i < len(records):
+        rec = records[i]
+        if rec.get("type") == "PLANNER_RESPONSE":
+            turns += 1
+            tcs = rec.get("tool_calls")
+            if isinstance(tcs, list) and tcs:
+                generics: list[dict] = []
+                j = i + 1
+                while j < len(records) and records[j].get("type") != "PLANNER_RESPONSE":
+                    if records[j].get("type") == "GENERIC":
+                        generics.append(records[j])
+                    j += 1
+                for idx, tc in enumerate(tcs):
+                    if not isinstance(tc, dict):
+                        continue
+                    tname = str(tc.get("name") or "")
+                    gres = generics[idx] if idx < len(generics) else None
+                    if tname in AGY_SUBAGENT_FORBIDDEN_TOOLS and not _agy_refusal(gres):
+                        forbidden.append(tname)
+                i = j
+                continue
+        i += 1
+    return turns, unreadable, sorted(set(forbidden))
+
+
+def agy_delegate_audit(main_transcript: str, out, agy_root: str | None = None,
+                       env: dict | None = None) -> int:
+    """Audit every Antigravity subagent started in `main_transcript` against its child brain transcript."""
+    dispatched, parent_unreadable = _agy_dispatched_subagents(main_transcript)
+    if not dispatched and not parent_unreadable:
+        print("delegate audit: no subagents found (nothing was delegated, or the directory is "
+              "wrong): nothing is proven", file=sys.stderr)
+        return 2
+    total = pinned = failing = 0
+    for item in dispatched:
+        total += 1
+        sub_id = item.get("sub_id")
+        agent_type = item["type"]
+        req_raw = item["model"].strip()
+        req_norm = req_raw.lower()
+        req_display = req_raw or "inherit"
+        ws = item["workspace"].strip().lower()
+        if item.get("forced_class"):
+            failing += 1
+            print(f"agent ? call {item['call']} type {agent_type}: {item['forced_class']}", file=out)
+            continue
+        if not sub_id:
+            failing += 1
+            print(f"agent ? call {item['call']}: missing (the session started it; no subagent record)", file=out)
+            continue
+        child_path = find_agy_transcript(sub_id, agy_root=agy_root, env=env)
+        if child_path is None:
+            failing += 1
+            print(f"agent {sub_id} type {agent_type} requested {req_display}: missing (no transcript)", file=out)
+            continue
+        turns, child_unreadable, forbidden = _agy_child_summary(child_path)
+        if child_unreadable or turns == 0:
+            klass, fails = "unmeasured", True
+        elif forbidden or ws not in ("", "inherit") or agent_type != "research":
+            klass, fails = "writable", True
+        elif req_norm in ("flash", "flash_lite"):
+            klass, fails = "below-bar", True
+        elif req_norm not in ("", "inherit", "pro"):
+            klass, fails = "off-pin", True
+        elif req_norm == "pro":
+            klass, fails = "escalated", False
+        else:
+            klass, fails = "pinned", False
+        pinned += klass == "pinned"
+        failing += fails
+        extra = f" unreadable {child_unreadable}" if child_unreadable else ""
+        if forbidden:
+            extra += f" forbidden {','.join(forbidden)}"
+        print(f"agent {sub_id} type {agent_type} requested {req_display} turns {turns}{extra}: {klass}", file=out)
+    if parent_unreadable:
+        failing += 1
+        print(f"session transcript: {parent_unreadable} unreadable record(s): unmeasured "
+              f"(a started agent could be hidden)", file=out)
+    print(f"delegate audit: {total} agents, {pinned} pinned, {failing} failing", file=out)
+    return 1 if failing else 0
+
+
 def delegate_audit(session: str | None, subagent_dir: str | None, out,
                    table: dict | None = None, agents: dict[str, dict] | None = None,
-                   main_transcript: str | None = None) -> int:
-    """Classify every subagent of a session. With `--session`, reconcile them
-    against the Agent calls in the session's own transcript: a started agent
-    with no transcript fails as `missing`. `--dir` audits a directory as is."""
+                   main_transcript: str | None = None, agy_root: str | None = None,
+                   env: dict | None = None) -> int:
+    """Classify every subagent of a session (Antigravity brain transcripts or
+    Claude Code project transcripts). With `--session` (or
+    `ANTIGRAVITY_CONVERSATION_ID` / `CLAUDE_CODE_SESSION_ID`), reconcile them
+    against the session's own transcript: a started agent with no transcript
+    fails as `missing`. `--dir` audits a Claude subagents directory as is."""
     if session and subagent_dir:
         raise PanelSlotsError("delegate-audit takes --session or --dir, not both")
     table = table or load()
@@ -969,9 +1195,15 @@ def delegate_audit(session: str | None, subagent_dir: str | None, out,
     if subagent_dir:
         dirs = [subagent_dir] if os.path.isdir(subagent_dir) else []
     else:
-        session = session or os.environ.get("CLAUDE_CODE_SESSION_ID")
+        env_map = os.environ if env is None else env
+        session = session or env_map.get("ANTIGRAVITY_CONVERSATION_ID") or env_map.get("CLAUDE_CODE_SESSION_ID")
         if not session:
-            raise PanelSlotsError("delegate-audit needs --session, --dir, or CLAUDE_CODE_SESSION_ID")
+            raise PanelSlotsError(
+                "delegate-audit needs --session, --dir, ANTIGRAVITY_CONVERSATION_ID, or CLAUDE_CODE_SESSION_ID")
+        if main_transcript is None:
+            agy_transcript = find_agy_transcript(session, agy_root=agy_root, env=env_map)
+            if agy_transcript is not None:
+                return agy_delegate_audit(agy_transcript, out, agy_root=agy_root, env=env_map)
         dirs = sorted(glob.glob(os.path.join(_config_dir(), "projects", "*", session, "subagents")))
         main_transcript = main_transcript or find_transcript(session)
         if main_transcript is None:
@@ -1086,6 +1318,132 @@ def _agy_allow() -> str:
     return json.dumps({"decision": "allow"})
 
 
+_AGY_BLOCKED_CLIS = frozenset((
+    "claude", "claude.exe", "claude.cmd", "claude.ps1",
+    "agy", "agy.exe", "agy.cmd", "agy.ps1",
+    "codex", "codex.exe", "codex.cmd", "codex.ps1"))
+_AGY_CLI_META_ARGS = frozenset((
+    "--version", "-v", "--help", "-h", "help", "version", "update", "upgrade", "models", "changelog"))
+_AGY_SHELL_WRAPPERS = frozenset((
+    "pwsh", "pwsh.exe", "powershell", "powershell.exe", "cmd", "cmd.exe",
+    "bash", "bash.exe", "sh", "sh.exe", "wsl", "wsl.exe",
+    "env", "nohup", "invoke-expression", "iex", "start-process", "start", "saps"))
+_AGY_PWSH_FLAGS_WITH_ARG = frozenset(("-executionpolicy", "-ep", "-windowstyle", "-w", "-configurationname"))
+_AGY_PWSH_FLAGS = frozenset(("-noprofile", "-nop", "-noninteractive", "-noni", "-nologo", "-nol", "-sta", "-mta",
+                             "-command", "-c"))
+_AGY_ENCODED_FLAG = re.compile(r"-(?:e|ec|enc|encodedcommand)$", re.IGNORECASE)
+_AGY_INLINE_SPAWN = re.compile(
+    r"\b(?:subprocess|os\.system|os\.popen|os\.spawn\w*|os\.exec\w*|Popen|child_process)\b", re.IGNORECASE)
+_AGY_CLI_WORD = re.compile(r"\b(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?\b", re.IGNORECASE)
+
+
+def _strip_segment_prefix(tokens: list[str]) -> tuple[list[str], bool]:
+    """Advance past leading assignments, call operators, and shell/process wrappers in one command segment.
+    Returns `(remaining_tokens, used_shell_wrapper)`."""
+    idx = 0
+    used_wrapper = False
+    while idx < len(tokens):
+        tok = tokens[idx]
+        low = _bare(tok).strip("'\"")
+        if tok in ("$", ".", "&") or (tok.startswith("$") and idx + 1 < len(tokens) and tokens[idx + 1] == "="):
+            idx += 2 if (idx + 1 < len(tokens) and tokens[idx + 1] == "=" and tok.startswith("$")) else 1
+            continue
+        if (tok.startswith("$") and "=" in tok) or ("=" in tok and not tok.startswith("-")):
+            idx += 1
+            continue
+        if low in ("env", "nohup", "command", "invoke-expression", "iex"):
+            used_wrapper = True
+            idx += 1
+            continue
+        if low in ("cmd", "cmd.exe"):
+            used_wrapper = True
+            idx += 1
+            while idx < len(tokens) and tokens[idx].lower() in ("/c", "/k", "/s", "/d", "/q"):
+                idx += 1
+            continue
+        if low in ("bash", "bash.exe", "sh", "sh.exe", "wsl", "wsl.exe"):
+            used_wrapper = True
+            idx += 1
+            while idx < len(tokens) and tokens[idx].lower() in ("-c", "-lc", "-e", "--"):
+                idx += 1
+            continue
+        if low in ("pwsh", "pwsh.exe", "powershell", "powershell.exe"):
+            used_wrapper = True
+            idx += 1
+            while idx < len(tokens) and tokens[idx].startswith("-"):
+                flag = tokens[idx].lower()
+                if flag in ("-file", "-f"):
+                    idx += 1
+                    break
+                if flag in _AGY_PWSH_FLAGS_WITH_ARG:
+                    idx += 2
+                    continue
+                if flag in _AGY_PWSH_FLAGS:
+                    idx += 1
+                    continue
+                break
+            continue
+        if low in ("start-process", "start", "saps"):
+            used_wrapper = True
+            idx += 1
+            while idx < len(tokens) and tokens[idx].startswith("-"):
+                flag = tokens[idx].lower()
+                idx += 2 if flag in ("-filepath", "-windowstyle") else 1
+            continue
+        break
+    return tokens[idx:], used_wrapper
+
+
+def _agy_command_decision(command: str, depth: int = 0) -> str | None:
+    """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
+    forms = _shell_forms(command)
+    if any(re.search(r"(^|\s)--no-verify(\s|$)", form) for form in forms):
+        return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
+    cleaned = command.replace("`", " ")
+    joined = _QUOTED.sub(lambda m: (m.group(1) if m.group(1) is not None else m.group(2))
+                         .replace(" ", "_") or "_", cleaned)
+    unpack_quotes = False
+    for tokens in _segments(joined):
+        raw_head = _bare(tokens[0]).strip("'\"") if tokens else ""
+        if raw_head in ("pwsh", "pwsh.exe", "powershell", "powershell.exe") \
+                and any(_AGY_ENCODED_FLAG.match(t) for t in tokens[1:]):
+            return ("Encoded PowerShell commands hide their arguments from the command gate; pass plain commands "
+                    "(standards/delegation.md).")
+        rest_tokens, wrapped = _strip_segment_prefix(tokens)
+        if wrapped:
+            unpack_quotes = True
+        if not rest_tokens:
+            continue
+        head = _bare(rest_tokens[0]).strip("'\"")
+        args = rest_tokens[1:]
+        if head in ("npx", "npx.cmd", "pnpx", "pnpx.cmd", "bunx", "bunx.exe") \
+                and any(any(pkg in a.lower() for pkg in ("claude-code", "antigravity", "@openai/codex")) for a in args):
+            return ("Headless CLI agent or reviewer runs via package runners bypass delegation and dispatcher gates "
+                    "(standards/delegation.md).")
+        if head in ("python", "python.exe", "python3", "python3.exe", "py", "py.exe", "node", "node.exe") \
+                and any(a in ("-c", "-e", "--eval") for a in args) \
+                and _AGY_INLINE_SPAWN.search(command) and _AGY_CLI_WORD.search(command):
+            return ("Inline script subprocesses spawning `claude`, `agy`, or `codex` bypass delegation and dispatcher "
+                    "gates (standards/delegation.md).")
+        if head in _AGY_BLOCKED_CLIS:
+            if args and all(a.lower() in _AGY_CLI_META_ARGS for a in args):
+                continue
+            if head.startswith("codex"):
+                return ("Direct `codex` invocations bypass `scripts/review-dispatch.py`; run every review through the "
+                        "dispatcher (AGENTS.md).")
+            return (f"Headless or nested `{head}` CLI sessions bypass delegation tracking and effort pins; "
+                    f"delegate read-only work through `invoke_subagent` with `TypeName: \"research\"` "
+                    f"(standards/delegation.md).")
+    if unpack_quotes and depth < 3:
+        for m in _QUOTED.finditer(cleaned):
+            inner = m.group(1) if m.group(1) is not None else m.group(2)
+            if inner and inner.strip():
+                why = _agy_command_decision(inner, depth + 1)
+                if why:
+                    return why
+    return None
+
+
 def agy_gate_decision(tool_call: dict) -> str | None:
     """The deny reason for one Antigravity `PreToolUse` `toolCall`, or None to allow it."""
     name = tool_call.get("name")
@@ -1095,27 +1453,28 @@ def agy_gate_decision(tool_call: dict) -> str | None:
     if not isinstance(args, dict):
         raise PanelSlotsError(f"the {name} call carries no args object")
     if name == "define_subagent":
-        if args.get("EnableWriteTools") is True:
-            return "Subagents read and run; they never write (standards/delegation.md). Set EnableWriteTools: false."
-        if args.get("EnableSubagentTools") is True:
-            return "Subagents do not spawn subagents (standards/delegation.md). Set EnableSubagentTools: false."
-        return None
+        return ("Custom subagent definitions are not used; Subagents read and run, they never write; delegate "
+                "read-only work through `invoke_subagent` with `TypeName: \"research\"` on `inherit` or `pro` "
+                "(standards/delegation.md).")
     if name == "invoke_subagent":
         tname = args.get("TypeName")
-        workspace = args.get("Workspace") or "inherit"
-        model = str(args.get("Model") or "inherit").lower()
+        raw_ws = args.get("Workspace")
+        workspace = "inherit" if raw_ws in (None, "") else raw_ws
+        raw_model = args.get("Model")
+        model = ("inherit" if raw_model in (None, "")
+                 else (raw_model.strip().lower() if isinstance(raw_model, str) else None))
         if workspace != "inherit":
             return ("Subagents run read-only in the workspace; branch and share workspaces are for writing "
                     "subagents, and subagents never write (standards/delegation.md).")
-        if model == "flash_lite":
-            return ("Model `flash_lite` is below the delegation bar; use `inherit`, `pro`, or `flash` on a "
-                    "read-only subagent (standards/delegation.md).")
-        if not isinstance(tname, str) or not tname.strip() or tname in ("self", "image-generator"):
-            return (f"Subagent type {tname!r} carries write tools. Subagents read and run; they never write; "
-                    f"use `research` or a read-only custom subagent (standards/delegation.md).")
+        if model not in ("inherit", "pro"):
+            return (f"Model {raw_model!r} is below or outside the delegation bar; omit Model or pass `inherit` or "
+                    f"`pro` on the read-only `research` subagent (standards/delegation.md).")
+        if tname != "research":
+            return (f"Subagent type {tname!r} carries write tools or is not pinned. Subagents read and run; they "
+                    f"never write; use `TypeName: \"research\"` (standards/delegation.md).")
         return None
     if name == "swarm":
-        if args.get("action") == "add":
+        if args.get("action") not in ("status", "models"):
             return ("Swarm workers carry write tools, and subagents never write; the main writer session makes "
                     "every change (standards/delegation.md).")
         return None
@@ -1123,10 +1482,7 @@ def agy_gate_decision(tool_call: dict) -> str | None:
         command = args.get("CommandLine")
         if not isinstance(command, str):
             return "The command gate could not read CommandLine."
-        forms = _shell_forms(command)
-        if any(re.search(r"(^|\s)--no-verify(\s|$)", form) for form in forms):
-            return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
-        return None
+        return _agy_command_decision(command)
     return None
 
 
@@ -1857,25 +2213,144 @@ def _self_test() -> int:
 
     check("agy gate allows research subagent",
           agy_gate("invoke_subagent", {"TypeName": "research", "Role": "r", "Prompt": "x"}) == {"decision": "allow"})
-    check("agy gate allows read-only custom subagent definition",
-          agy_gate("define_subagent", {"Name": "ro", "Description": "d", "SystemPrompt": "s",
-                                       "EnableWriteTools": False}) == {"decision": "allow"})
+    check("agy gate allows research subagent on pro",
+          agy_gate("invoke_subagent", {"TypeName": "research", "Model": "pro", "Role": "r", "Prompt": "x"}) == {"decision": "allow"})
     check("agy gate allows swarm status",
           agy_gate("swarm", {"action": "status"}) == {"decision": "allow"})
-    check("agy gate allows normal run_command",
-          agy_gate("run_command", {"CommandLine": "git commit -m 'ship'"}) == {"decision": "allow"})
+    check("agy gate allows swarm models",
+          agy_gate("swarm", {"action": "models"}) == {"decision": "allow"})
+    for ok_cmd in (
+        "git commit -m 'ship'",
+        'git commit -m "claude -p --agent isotone-researcher fixed"',
+        "agy --version",
+        "agy update --help",
+        "claude --version",
+        "codex --version",
+        "python scripts/review-dispatch.py --writer agy --kind round --prompt build/p.md --keep build/round-1",
+        "python scripts/panel_slots.py delegate-probe",
+        "pwsh -NoProfile -File scripts/start-campaign.ps1 -InstallShortcut",
+        "python -c \"import re; print(re.search('claude', 'claude -p'))\"",
+    ):
+        check(f"agy gate allows command {ok_cmd!r}",
+              agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
     for label, tname, targs, needle in (
             ("writable self subagent", "invoke_subagent", {"TypeName": "self", "Role": "r", "Prompt": "x"}, "never write"),
             ("image-generator subagent", "invoke_subagent", {"TypeName": "image-generator", "Role": "r", "Prompt": "x"}, "never write"),
+            ("unpinned custom subagent", "invoke_subagent", {"TypeName": "custom", "Role": "r", "Prompt": "x"}, "never write"),
             ("branch workspace subagent", "invoke_subagent", {"TypeName": "research", "Workspace": "branch", "Role": "r", "Prompt": "x"}, "never write"),
-            ("flash_lite subagent", "invoke_subagent", {"TypeName": "research", "Model": "flash_lite", "Role": "r", "Prompt": "x"}, "below the delegation bar"),
+            ("flash subagent", "invoke_subagent", {"TypeName": "research", "Model": "flash", "Role": "r", "Prompt": "x"}, "below or outside the delegation bar"),
+            ("flash_lite subagent", "invoke_subagent", {"TypeName": "research", "Model": "flash_lite", "Role": "r", "Prompt": "x"}, "below or outside the delegation bar"),
+            ("off-pin model subagent", "invoke_subagent", {"TypeName": "research", "Model": "sonnet", "Role": "r", "Prompt": "x"}, "below or outside the delegation bar"),
+            ("define_subagent even read-only", "define_subagent", {"Name": "ro", "Description": "d", "SystemPrompt": "s", "EnableWriteTools": False}, "never write"),
             ("define_subagent with EnableWriteTools", "define_subagent", {"Name": "w", "Description": "d", "SystemPrompt": "s", "EnableWriteTools": True}, "never write"),
-            ("define_subagent with EnableSubagentTools", "define_subagent", {"Name": "w", "Description": "d", "SystemPrompt": "s", "EnableSubagentTools": True}, "do not spawn"),
             ("swarm add", "swarm", {"action": "add", "name": "w", "brief": "b"}, "never write"),
+            ("swarm model", "swarm", {"action": "model", "name": "w", "model": "m"}, "never write"),
             ("run_command with --no-verify", "run_command", {"CommandLine": "git commit --no-verify -m x"}, "--no-verify"),
+            ("headless claude -p delegation", "run_command", {"CommandLine": "claude -p --agent isotone-researcher inspect callers"}, "bypass delegation"),
+            ("bare claude CLI session", "run_command", {"CommandLine": "claude"}, "bypass delegation"),
+            ("headless agy -p delegation", "run_command", {"CommandLine": "agy -p 'inspect callers'"}, "bypass delegation"),
+            ("powershell variable headless claude", "run_command", {"CommandLine": "$out = claude -p inspect"}, "bypass delegation"),
+            ("pwsh wrapped headless claude", "run_command", {"CommandLine": 'pwsh -NoProfile -Command "claude -p inspect"'}, "bypass delegation"),
+            ("cmd unquoted headless claude", "run_command", {"CommandLine": "cmd /c claude -p inspect"}, "bypass delegation"),
+            ("Start-Process headless claude", "run_command", {"CommandLine": "Start-Process claude -ArgumentList '-p','inspect'"}, "bypass delegation"),
+            ("python inline subprocess claude", "run_command", {"CommandLine": "python -c \"import subprocess; subprocess.run(['claude', '-p', 'x'])\""}, "Inline script subprocesses"),
+            ("encoded powershell command", "run_command", {"CommandLine": "pwsh -EncodedCommand ZWNobyBoZWxsbw=="}, "Encoded PowerShell"),
+            ("direct codex bypassing dispatcher", "run_command", {"CommandLine": "codex exec -m gpt-6-astra 'review'"}, "review-dispatch.py"),
             ("malformed args", "invoke_subagent", "bad", "could not judge")):
         dec = agy_gate(tname, targs)
         check(f"agy gate denies {label}", dec.get("decision") == "deny" and needle in dec.get("reason", ""), repr(dec))
+
+    # Antigravity brain transcript delegate-audit.
+    agy_home = tempfile.mkdtemp(prefix="agy-brain-", dir=tmpd)
+
+    def write_agy_log(cid: str, steps: list[dict | str], full: bool = True) -> str:
+        log_dir = os.path.join(agy_home, "brain", cid, ".system_generated", "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        path = os.path.join(log_dir, "transcript_full.jsonl" if full else "transcript.jsonl")
+        with open(path, "w", encoding="utf-8") as fh:
+            for item in steps:
+                fh.write(item if isinstance(item, str) else json.dumps(item) + "\n")
+        return path
+
+    def agy_sub_created(cid: str) -> dict:
+        return {"type": "GENERIC", "status": "DONE",
+                "content": f'Created the following subagent:\n{{\n  "conversationId": "{cid}"\n}}'}
+
+    def agy_sub_denied(msg: str = "tool call denied by pre-tool hook: denied") -> dict:
+        return {"type": "GENERIC", "status": "ERROR", "error": msg,
+                "content": f"Encountered error in step execution: {msg}"}
+
+    write_agy_log("sub-pinned", [
+        {"type": "PLANNER_RESPONSE", "status": "DONE",
+         "tool_calls": [{"name": "read_file", "args": {"Path": "D:/Isotone/AGENTS.md"}}]},
+        {"type": "GENERIC", "status": "DONE", "content": "ok"},
+        {"type": "PLANNER_RESPONSE", "status": "DONE", "content": "Done."},
+    ])
+    write_agy_log("sub-pro", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "Done."}])
+    write_agy_log("parent-clean", [
+        {"step_index": 1, "type": "PLANNER_RESPONSE", "status": "DONE", "tool_calls": [
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "pro", "Role": "r2", "Prompt": "y"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "self", "Model": "inherit", "Role": "r3", "Prompt": "z"}},
+        ]},
+        agy_sub_created("sub-pinned"),
+        agy_sub_created("sub-pro"),
+        agy_sub_denied(),
+    ])
+    buf = io.StringIO()
+    rc = delegate_audit("parent-clean", None, buf, good, audit_agents, agy_root=agy_home, env={})
+    text = buf.getvalue()
+    check("agy audit clean mix exits 0",
+          rc == 0 and "agent sub-pinned type research requested inherit turns 2: pinned" in text
+          and "agent sub-pro type research requested pro turns 1: escalated" in text
+          and "delegate audit: 2 agents, 1 pinned, 0 failing" in text, text)
+    buf = io.StringIO()
+    rc = delegate_audit(None, None, buf, good, audit_agents,
+                        env={"ANTIGRAVITY_CONVERSATION_ID": "parent-clean", "ANTIGRAVITY_APP_DATA_DIR": agy_home})
+    check("agy audit picks up ANTIGRAVITY_CONVERSATION_ID and ANTIGRAVITY_APP_DATA_DIR",
+          rc == 0 and "2 agents, 1 pinned, 0 failing" in buf.getvalue(), buf.getvalue())
+
+    write_agy_log("sub-flash", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_log("sub-wrote", [
+        {"type": "PLANNER_RESPONSE", "status": "DONE",
+         "tool_calls": [{"name": "write_file", "args": {"Path": "D:/Isotone/x", "Content": "y"}}]},
+        {"type": "GENERIC", "status": "DONE", "content": "wrote"},
+    ])
+    write_agy_log("sub-trunc", [
+        {"type": "PLANNER_RESPONSE", "status": "DONE", "truncated_fields": ["tool_calls"], "content": "ok"},
+    ], full=False)
+    write_agy_log("parent-bad", [
+        {"step_index": 1, "type": "PLANNER_RESPONSE", "status": "DONE", "tool_calls": [
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "flash", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+        ]},
+        agy_sub_created("sub-flash"),
+        agy_sub_created("sub-wrote"),
+        agy_sub_created("sub-trunc"),
+        agy_sub_created("sub-missing"),
+        {"type": "GENERIC", "status": "ERROR", "content": "unexpected crash without conversationId"},
+        "not json\n",
+    ])
+    buf = io.StringIO()
+    rc = delegate_audit("parent-bad", None, buf, good, audit_agents, agy_root=agy_home, env={})
+    text = buf.getvalue()
+    check("agy audit catches flash, child write, truncation, missing child, crashed start, and bad parent JSON",
+          rc == 1
+          and "agent sub-flash type research requested flash turns 1: below-bar" in text
+          and "agent sub-wrote type research requested inherit turns 1 forbidden write_file: writable" in text
+          and "agent sub-trunc type research requested inherit turns 1 unreadable 1: unmeasured" in text
+          and "agent sub-missing type research requested inherit: missing (no transcript)" in text
+          and "agent ? call step-1-4: missing (the session started it; no subagent record)" in text
+          and "session transcript: 1 unreadable record(s)" in text
+          and "delegate audit: 5 agents, 0 pinned, 6 failing" in text, text)
+
+    write_agy_log("parent-empty", [{"step_index": 0, "type": "USER_INPUT", "status": "DONE", "content": "hi"}])
+    with contextlib.redirect_stderr(io.StringIO()):
+        check("agy audit with no delegated subagents exits 2",
+              delegate_audit("parent-empty", None, io.StringIO(), good, audit_agents, agy_root=agy_home, env={}) == 2)
 
     def agy_hooks_file(doc) -> str:
         path = os.path.join(tempfile.mkdtemp(prefix="agy-hooks-", dir=tmpd), "hooks.json")
