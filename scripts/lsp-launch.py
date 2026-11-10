@@ -88,7 +88,11 @@ def pyright() -> tuple[list[str], dict]:
 
 def end_with_parent() -> None:
     """Exit when the process that started this one ends: a thread waits on the parent's handle. Exiting closes the
-    job object, which ends the server."""
+    job object, which ends the server.
+
+    Called first, before anything slow, and the handle is checked to be the real parent: a parent starts before its
+    child, so a process under the parent's id that started after this one is a stranger that took the id of a parent
+    already gone, and nothing is started for it."""
     import ctypes
     import threading
     from ctypes import wintypes
@@ -96,10 +100,22 @@ def end_with_parent() -> None:
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.OpenProcess.restype = wintypes.HANDLE
     kernel.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel.GetCurrentProcess.restype = wintypes.HANDLE
+    kernel.GetProcessTimes.argtypes = (wintypes.HANDLE, *[ctypes.POINTER(wintypes.FILETIME)] * 4)
     kernel.WaitForSingleObject.argtypes = (wintypes.HANDLE, wintypes.DWORD)
-    parent = kernel.OpenProcess(0x00100000, False, os.getppid())  # SYNCHRONIZE
+
+    def started(handle) -> int:
+        times = [wintypes.FILETIME() for _ in range(4)]
+        if not kernel.GetProcessTimes(handle, *[ctypes.byref(t) for t in times]):
+            raise LaunchError(f"could not read a process start time (error {ctypes.get_last_error()})")
+        return (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
+
+    # SYNCHRONIZE to wait on it, PROCESS_QUERY_LIMITED_INFORMATION to read when it started
+    parent = kernel.OpenProcess(0x00100000 | 0x1000, False, os.getppid())
     if not parent:
-        raise LaunchError(f"could not watch the parent process (error {ctypes.get_last_error()})")
+        raise LaunchError(f"the process that started this launcher is gone (error {ctypes.get_last_error()})")
+    if started(parent) > started(kernel.GetCurrentProcess()):
+        raise LaunchError("the process that started this launcher is gone (its id belongs to a newer process)")
 
     def wait() -> None:
         kernel.WaitForSingleObject(parent, 0xFFFFFFFF)
@@ -114,12 +130,12 @@ def main(argv: list[str]) -> int:
         print(__doc__.split("\n\n")[1], file=sys.stderr)
         return 2
     try:
-        command, env = servers[argv[0]]()
         if os.name == "nt":
+            end_with_parent()
             sys.path.insert(0, os.path.join(REPO, "scripts", "lib"))
             import win_job
             win_job.end_children_with_this_process()
-            end_with_parent()
+        command, env = servers[argv[0]]()
         child = subprocess.Popen(command, env=env, cwd=REPO)
     except (LaunchError, OSError, KeyError, ValueError) as error:
         print(f"lsp-launch: {error}", file=sys.stderr)

@@ -294,3 +294,32 @@ OVERALL: needs-attention
 ## Response to round 9
 
 Two findings, both fixed in the commit that carries this response: F1 (the session note names the campaign session from the launch record before the run's first `acquire`, so a session opened during startup is told; self-test `a-session-opened-during-startup-is-told`), F2 (the supervisor rechecks the drained plan under the slot; self-test `the-supervisor-rechecks-the-drained-plan`). The skill text matches both.
+
+## Round 10: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T02:06:28Z
+- Effort: medium
+- Lines: 16
+- Digest: 35ecf930337fb4c1
+
+## adversarial: needs-attention
+
+1. P2 `scripts/lsp-launch.py:100`: The parent watcher can attach to a reused PID and leave the language server running after Claude dies. `main()` performs toolchain discovery before opening the parent handle, and `end_with_parent()` never validates the process’s creation time. **Reproduce:** pause before `end_with_parent()`, terminate the original parent, let its PID be reused by a long-lived process, then continue. The launcher watches that unrelated process and starts its server despite Claude already being dead. Python explicitly documents this Windows [`os.getppid()` reuse behavior](https://docs.python.org/3/library/os.html#os.getppid). Capture the parent handle before discovery and validate its creation time against the launcher’s creation time before starting a server.
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: approve
+
+## record: needs-attention
+
+The unconditional session-lifetime claim at `tools/claude-plugins/README.md:14` and `scripts/lsp-launch.py:17` fails under finding 1. Its reproduction leaves the launcher and server alive after their original parent exits.
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 10
+
+Round 10 approved the campaign guard on every lens. Its one finding (P2, the language-server launcher watching a reused parent process id) is fixed in the commit that carries this response: the launcher opens its parent as its first act, before toolchain discovery, and starts nothing when the process under that id started after the launcher itself. Both servers were driven over LSP again afterwards, including the killed-launcher case.
