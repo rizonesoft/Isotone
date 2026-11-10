@@ -673,8 +673,12 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": 'cmd /c start "Isotone reviewer" codex exec review'}}),
             ("a double-quoted PowerShell `$()` subexpression CLI bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": '$review = "$(codex exec review)"'}}),
+            ("a PowerShell `& (Get-Command ...)` CLI resolution bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": "& (Get-Command codex).Source exec review"}}),
             ("a read-only `rg` search mentioning `ProcessStartInfo|codex`", "allow",
              {"name": "run_command", "args": {"CommandLine": "rg -n 'ProcessStartInfo|codex' scripts"}}),
+            ("a read-only `rg` search for `--no-verify`", "allow",
+             {"name": "run_command", "args": {"CommandLine": "rg -n -- '--no-verify' scripts"}}),
             ("a read-only `research` subagent on `inherit`", "allow",
              {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}}),
         ):
@@ -1542,7 +1546,23 @@ _AGY_PS_SPAWN = re.compile(
 _AGY_PS_VAR_CLI = re.compile(
     r"\$(\w+)\s*=\s*['\"]?(?:[^'\";\s]*[/\\])?(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?['\"]?(?=\s|;|$)",
     re.IGNORECASE)
+_AGY_PS_RESOLVER_RHS = re.compile(
+    r"(?:^\s*['\"]?(?:[^'\";\s]*[/\\])?(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?['\"]?\s*$"
+    r"|\b(?:Get-Command|gcm|where(?:\.exe)?|which|Resolve-Path|Join-Path|Get-Item|gi)\b.*"
+    r"\b(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?\b)",
+    re.IGNORECASE)
 _AGY_CLI_WORD = re.compile(r"\b(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?\b", re.IGNORECASE)
+_AGY_RESOLVED_TARGETS = (
+    _AGY_BLOCKED_CLIS
+    | frozenset(("git", "git.exe", "pwsh", "pwsh.exe", "powershell", "powershell.exe",
+                 "cmd", "cmd.exe", "bash", "bash.exe", "sh", "sh.exe", "wsl", "wsl.exe")))
+_AGY_SEARCH_CMDS = frozenset((
+    "rg", "rg.exe", "grep", "grep.exe", "egrep", "fgrep",
+    "select-string", "sls", "findstr", "findstr.exe",
+    "echo", "write-output", "write-host", "printf"))
+_AGY_GIT_VALUE_FLAGS = frozenset((
+    "-m", "--message", "-F", "--file", "-C", "--reuse-message", "-c", "--reedit-message",
+    "--author", "--date", "--cleanup", "--trailer", "-u", "--local-user", "--pathspec-from-file"))
 
 
 def _split_ps_flag(token: str) -> tuple[str, str | None]:
@@ -1770,7 +1790,13 @@ def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False,
         if not is_dq and ((tok.startswith("$") and "=" in tok) or ("=" in tok and not tok.startswith("-"))):
             cur = cur[1:]
             continue
-        if low in ("nohup", "command", "invoke-expression", "iex"):
+        if low == "command":
+            if len(cur) > 1 and cur[1].lstrip(_DQ_MARK) in ("-v", "-V"):
+                break
+            used_wrapper = True
+            cur = cur[2:] if len(cur) > 1 and cur[1].lstrip(_DQ_MARK) == "-p" else cur[1:]
+            continue
+        if low in ("nohup", "invoke-expression", "iex"):
             used_wrapper = True
             cur = cur[1:]
             continue
@@ -1858,7 +1884,7 @@ def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False,
                 break
             cur = cur[idx:]
             continue
-        if low in ("start-process", "start", "saps"):
+        if low in ("start-process", "start", "saps", "invoke-item", "ii"):
             used_wrapper = True
             cur = _unwrap_start_process(cur, from_cmd=from_cmd)
             from_cmd = False
@@ -1867,11 +1893,115 @@ def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False,
     return [t.lstrip(_DQ_MARK) for t in cur], used_wrapper, saw_cmd, saw_posix
 
 
+def _resolved_target_in(expr: str) -> str | None:
+    for piece in re.split(r"[\s()_\"']+", expr.lstrip(_DQ_MARK)):
+        if not piece:
+            continue
+        cand = _bare(piece).strip("'\"")
+        if cand in _AGY_RESOLVED_TARGETS:
+            return cand
+    return None
+
+
+def _is_exec_resolution_prefix(stmt_prefix: str, has_dollar: bool) -> bool:
+    p = re.sub(r"^\s*\$\w+\s*=\s*", "", stmt_prefix).strip()
+    if not p:
+        return has_dollar
+    if p in ("&", "."):
+        return True
+    toks = p.split()
+    head = _bare(toks[0]).strip("'\"")
+    if head in ("start-process", "start", "saps", "invoke-item", "ii"):
+        last_flag = _split_ps_flag(toks[-1])[0] if len(toks) > 1 else ""
+        if _is_sp_arglist_flag(last_flag) or last_flag in ("-workingdirectory", "-wd"):
+            return False
+        return True
+    return False
+
+
+def _collapse_resolved_exprs(joined: str) -> str:
+    """Replace parenthesized or quoted `$()` executable-resolution expressions in invocation slots (such as
+    `& (Get-Command codex).Source`, `Start-Process -FilePath (Get-Command claude).Path`, or `"$(command -v codex)"`)
+    with the resolved target token before `_segments` splits on parentheses."""
+    out: list[str] = []
+    stmt_start = 0
+    i = 0
+    n = len(joined)
+    while i < n:
+        if joined[i:i + 2] in ("&&", "||"):
+            out.append(joined[i:i + 2])
+            i += 2
+            stmt_start = i
+            continue
+        ch = joined[i]
+        is_call_amp = (
+            ch == "&"
+            and (joined[stmt_start:i].strip() in ("", "$")
+                 or bool(re.fullmatch(r"\s*\$\w+\s*=\s*", joined[stmt_start:i]))))
+        if ch in ";|&\n{}" and not is_call_amp:
+            out.append(ch)
+            i += 1
+            stmt_start = i
+            continue
+        if ch == _DQ_MARK and joined[i + 1:i + 3] == "$_":
+            end_tok = i + 1
+            while end_tok < n and not joined[end_tok].isspace() and joined[end_tok] not in ";|(){}\n":
+                end_tok += 1
+            if _is_exec_resolution_prefix(joined[stmt_start:i], has_dollar=True):
+                target = _resolved_target_in(joined[i:end_tok])
+                if target:
+                    out.append(target)
+                    i = end_tok
+                    continue
+        if ch == "(" or (ch == "$" and i + 1 < n and joined[i + 1] == "("):
+            has_dollar = ch == "$"
+            open_idx = i + 1 if has_dollar else i
+            if _is_exec_resolution_prefix(joined[stmt_start:i], has_dollar=has_dollar):
+                pdepth = 1
+                j = open_idx + 1
+                while j < n and pdepth > 0:
+                    if joined[j] == "(":
+                        pdepth += 1
+                    elif joined[j] == ")":
+                        pdepth -= 1
+                        if pdepth == 0:
+                            break
+                    j += 1
+                end_idx = j + 1 if j < n else n
+                m_prop = re.match(r"(?:\.[A-Za-z_]\w*)+", joined[end_idx:])
+                if m_prop:
+                    end_idx += m_prop.end()
+                target = _resolved_target_in(joined[open_idx + 1:j])
+                if target:
+                    out.append(target)
+                    i = end_idx
+                    continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _segment_passes_no_verify(head: str, args: list[str]) -> bool:
+    if head in _AGY_SEARCH_CMDS:
+        return False
+    if head in ("git", "git.exe") and git_write(args) is None:
+        return False
+    i = 0
+    while i < len(args):
+        tok = args[i]
+        if tok == "--":
+            break
+        if tok in _AGY_GIT_VALUE_FLAGS:
+            i += 2
+            continue
+        if tok == "--no-verify" or tok.startswith("--no-verify="):
+            return True
+        i += 1
+    return False
+
+
 def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False) -> str | None:
     """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
-    forms = _shell_forms(command)
-    if any(re.search(r"(^|\s)--no-verify(\s|$)", form) for form in forms):
-        return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
     if depth < 4:
         for sub in _extract_subexpressions(command, in_posix=in_posix):
             if sub and sub.strip():
@@ -1883,10 +2013,12 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
     if _AGY_PS_SPAWN.search(unquoted) and _AGY_CLI_WORD.search(cleaned):
         return ("Direct .NET/COM/CIM process launches of `claude`, `agy`, or `codex` bypass delegation and dispatcher "
                 "gates (standards/delegation.md).")
-    for vm in _AGY_PS_VAR_CLI.finditer(cleaned):
-        vname = re.escape(vm.group(1))
-        if re.search(rf"(?:^|[;&|{{(\n]\s*)\${vname}\s*=", unquoted) \
-                and re.search(rf"(?:[&.]|start(?:-process)?|saps)\s+['\"]?\${vname}\b", cleaned, re.IGNORECASE):
+    for am in re.finditer(r"(?:^|[;&|{(\n]\s*)\$(\w+)\s*=", unquoted):
+        vname = re.escape(am.group(1))
+        cm = re.search(rf"(?:^|[;&|{{(\n]\s*)\${vname}\s*=\s*([^;\n|]+)", cleaned)
+        if cm and _AGY_PS_RESOLVER_RHS.search(cm.group(1)) \
+                and re.search(rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii)\b)\s+[^;\n|]*\${vname}\b",
+                              cleaned, re.IGNORECASE):
             return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass delegation and "
                     "dispatcher gates (standards/delegation.md).")
     joined = _QUOTED.sub(
@@ -1894,6 +2026,7 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
         if m.group(1) is not None
         else (re.sub(r"[\s;&|{}()]+", "_", m.group(2)).strip("_") or "_"),
         cleaned)
+    joined = _collapse_resolved_exprs(joined)
     unpack_quotes = False
     unpack_in_cmd = False
     unpack_in_posix = False
@@ -1914,6 +2047,8 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
             continue
         head = _bare(rest_tokens[0]).strip("'\"")
         args = rest_tokens[1:]
+        if _segment_passes_no_verify(head, args):
+            return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
         if head in ("npx", "npx.cmd", "pnpx", "pnpx.cmd", "bunx", "bunx.exe") \
                 and any(any(pkg in a.lower() for pkg in ("claude-code", "antigravity", "@openai/codex")) for a in args):
             return ("Headless CLI agent or reviewer runs via package runners bypass delegation and dispatcher gates "
@@ -2737,6 +2872,16 @@ def _self_test() -> int:
         'git commit -m "block [Diagnostics.Process]::Start(\'codex\') and $bin = \'claude\'; & $bin"',
         "rg -n '$(codex exec review)' scripts",
         'git commit -m "document `$(codex exec review) subexpression gate"',
+        "rg -n -- '--no-verify' scripts",
+        "rg -n '--no-verify' scripts",
+        "git grep -n -- '--no-verify'",
+        "git log -S --no-verify",
+        'git commit -m "enforce --no-verify ban"',
+        'git commit -m "--no-verify"',
+        "Get-Command codex",
+        "(Get-Command codex).Source",
+        "$info = Get-Command codex; Write-Output $info.Source",
+        "bash -c 'command -v codex'",
         'cmd /c start "Just A Window Title"',
     ):
         check(f"agy gate allows command {ok_cmd!r}",
@@ -2755,10 +2900,19 @@ def _self_test() -> int:
             ("swarm add", "swarm", {"action": "add", "name": "w", "brief": "b"}, "never write"),
             ("swarm model", "swarm", {"action": "model", "name": "w", "model": "m"}, "never write"),
             ("run_command with --no-verify", "run_command", {"CommandLine": "git commit --no-verify -m x"}, "--no-verify"),
+            ("quoted --no-verify on git commit", "run_command", {"CommandLine": 'git commit "--no-verify" -m x'}, "--no-verify"),
+            ("pwsh wrapped git commit --no-verify", "run_command", {"CommandLine": 'pwsh -Command "git commit --no-verify -m x"'}, "--no-verify"),
+            ("subexpression git commit --no-verify", "run_command", {"CommandLine": 'Write-Output "$(git commit --no-verify -m x)"'}, "--no-verify"),
+            ("Get-Command git commit --no-verify", "run_command", {"CommandLine": "& (Get-Command git).Source commit --no-verify -m x"}, "--no-verify"),
             ("headless claude -p delegation", "run_command", {"CommandLine": "claude -p --agent isotone-researcher inspect callers"}, "bypass delegation"),
             ("bare claude CLI session", "run_command", {"CommandLine": "claude"}, "bypass delegation"),
             ("headless agy -p delegation", "run_command", {"CommandLine": "agy -p 'inspect callers'"}, "bypass delegation"),
             ("powershell variable headless claude", "run_command", {"CommandLine": "$out = claude -p inspect"}, "bypass delegation"),
+            ("call Get-Command codex.Source", "run_command", {"CommandLine": "& (Get-Command codex).Source exec review"}, "review-dispatch.py"),
+            ("call Get-Command claude object", "run_command", {"CommandLine": "& (Get-Command claude -ErrorAction Stop) -p inspect-callers"}, "bypass delegation"),
+            ("Start-Process Get-Command codex", "run_command", {"CommandLine": "Start-Process -FilePath (Get-Command codex).Source -ArgumentList 'exec review'"}, "review-dispatch.py"),
+            ("var Get-Command codex then call", "run_command", {"CommandLine": "$cmd = Get-Command codex; & $cmd exec review"}, "Variable-indirect"),
+            ("bash command -v codex substitution", "run_command", {"CommandLine": 'bash -c \'"$(command -v codex)" exec review\''}, "review-dispatch.py"),
             ("double-quoted $() codex capture", "run_command", {"CommandLine": '$review = "$(codex exec review)"'}, "review-dispatch.py"),
             ("Write-Output double-quoted $() claude", "run_command", {"CommandLine": 'Write-Output "$(claude -p inspect-callers)"'}, "bypass delegation"),
             ("nested quotes inside double-quoted $() codex", "run_command", {"CommandLine": 'Write-Output "$(cmd /c start "Isotone reviewer" codex exec review)"'}, "review-dispatch.py"),
