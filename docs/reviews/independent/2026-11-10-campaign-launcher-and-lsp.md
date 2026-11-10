@@ -69,3 +69,36 @@ OVERALL: needs-attention
 ## Response to round 2
 
 All four findings verified and fixed in the commit that carries this response: F1 (the launch record names the launcher process, and holds its place for as long as that process lives; the shortcut no longer passes `-NoExit`), F2 (the attempt is written before anything is started; self-test `a-failed-start-still-uses-its-attempt`), F3 (`watch` starts nothing once the Stop hook breaker has tripped twice, self-test `watch-honours-the-stop-hook-breaker`, and the resume prompt runs the heartbeat steps 2 to 7 in order), F4 (the launcher also exits when the process that started it exits, and the documents say exactly that).
+
+## Round 3: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T01:13:18Z
+- Effort: medium
+- Lines: 20
+- Digest: 55f4e16a503daf75
+
+## adversarial: needs-attention
+
+1. P1 `scripts/campaign_guard.py:1497`: The launch reservation expires while its launcher can still be alive. Pause the first shortcut after `launch` returns, wait over 300 seconds, then invoke another shortcut before either starts Claude. Both receive `start` with different session IDs, and the second overwrites the launch record. Releasing both permits competing writers and can disable recovery for whichever acquires the guard first. An in-memory probe confirmed two distinct starts. Round 1’s launch-race fix remains incomplete.
+
+2. P1 `scripts/campaign_guard.py:1475`: Restart accounting is persisted **after** spawning Claude. Terminating the watchdog between `Popen` and `_write_json`, or failing `_process_started` after `Popen`, leaves an actual resume uncounted. Let that child exit without changing the tree and repeat: the three-resume ceiling can be bypassed indefinitely. Five injected post-spawn failures produced five starts with no persisted watchdog state. Reserve the attempt durably before spawning.
+
+## consistency: approve
+
+## integration: needs-attention
+
+3. P2 `scripts/campaign_guard.py:1292`: The resume prompt jumps directly to canonical heartbeat step 7, bypassing step 6’s mandatory stop after two stall-breaker trips. `watch()` also never checks that breaker state. Reproduce with a dead owner, runnable work, an expired launch reservation, and `claude-campaign-state.json` containing `{"trips":2,"stalled":true}`. The watchdog starts another session and instructs it to continue. The in-memory probe returned `resumed, attempt 1` despite the existing stop condition.
+
+## source-defect: approve
+
+## record: needs-attention
+
+4. P2 `scripts/lsp-launch.py:17`: The claim that a killed session never leaves a language server behind exceeds the implementation. The Python launcher owns the job handle and waits indefinitely at line 137; nothing monitors the Claude process that started it. Killing Claude alone does not close the launcher’s handle. Reproduce with a server shim that remains running after stdin closes, terminate only Claude, and observe the launcher and server survive. Windows terminates the job when its last handle closes, not when an unrelated ancestor exits. [Microsoft job-object documentation](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects). The session-lifetime claim also appears in `tools/claude-plugins/README.md:14`.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 3
+
+Round 3 was dispatched with a prompt that still named the round 2 range (the writer's error updating the scratch prompt), so it re-read the code as it was before the round 2 fixes and repeated round 2's four findings. Nothing new was raised; the fixes are the ones the round 2 response lists. Round 4 names the tip.
