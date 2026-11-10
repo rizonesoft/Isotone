@@ -177,3 +177,11 @@ Each entry holds:
 - **The shortcut's icon** (the operator, the same day: "the current shortcut is incorrect and is using the wrong icon"): the shortcut pointed at the earlier `R:\GitHub\Isotone` folder and at `resources/icons/stilus/stilus.ico`, which is the old Stilus design and an app's icon. `start-campaign.ps1 -InstallShortcut` now renders the suite icon (Three Lights) from the committed SVGs by `D00 T03 §3`'s ladder and renderer into `%LOCALAPPDATA%\Isotone\isotone-campaign.ico` and points the shortcut there; the committed `isotone.ico` stays that section's to export.
 - **Cost of change:** removing the watchdog is `python scripts/run-guard.py uninstall` and two scripts; the sign-in is two functions and one line in `_World.run`; the plugin is one `enabledPlugins` line; the queue is one block at the top of `check-all.ps1`.
 - **Owner:** `scripts/campaign_guard.py`, `scripts/run-guard.py`, `scripts/start-campaign.ps1`, `scripts/lsp-launch.py`, `tools/claude-plugins/`, `.claude/skills/process-plan`.
+
+## 2026-11-10: The reviewer is GPT-6 Astra again
+
+- **Date:** 2026-11-10, the operator: "The reviewer should be GPT6 Astra."
+- **Decision:** `.conclave/reviewers.toml` pins `gpt-6-astra` through the `codex` CLI as the one reviewer, in place of GPT-6.1 Sol (the pin from 2026-10-22). The effort stays medium, the operator's 2026-10-23 setting, which the instruction did not change. No fallback, as before.
+- **Scope:** every round from this commit on. Rounds Sol already returned stand as recorded, including the same day's campaign launcher and sign-in reviews.
+- **Cost of change:** one edit to the pin, plus the sentences in `AGENTS.md` and the `independent-review` skill that name the reviewer.
+- **Owner:** `.conclave/reviewers.toml`.

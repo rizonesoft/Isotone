@@ -16,13 +16,12 @@ schema_version = 2
 agent = "claude"
 model = "claude-opus-5-5"
 
-# GPT-6.1 Sol through the Codex CLI at medium effort, read-only sandbox (operator decision 2026-10-23: "set the
-# reviewer effort level to medium", after two capacity outages at xhigh that day). Sol was pinned at xhigh, the highest
-# effort Codex accepts, on 2026-10-22, replacing GPT-6 Astra at medium (the 2026-10-21 pin): in Recto's three-way
-# trial (.conclave/reviewer-trial-2026-10-22.md there), Sol at xhigh found all three verified defects and the other
-# two pins two each, at about 2.3x Astra's wall time.
+# GPT-6 Astra through the Codex CLI at medium effort, read-only sandbox (operator decision 2026-11-10: "The reviewer
+# should be GPT6 Astra."; the effort stays where the operator set it on 2026-10-23: "set the reviewer effort level to
+# medium"). Astra at medium was the 2026-10-21 pin; GPT-6.1 Sol replaced it on 2026-10-22 (at xhigh, then at medium
+# from 2026-10-23) and reviewed until this re-pin.
 [reviewer]
-name = "sol"
+name = "astra"
 cli = "codex"
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 effort = "medium"
