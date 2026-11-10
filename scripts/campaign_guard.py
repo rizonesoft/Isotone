@@ -1370,19 +1370,16 @@ def _watch_path(root: str) -> str:
     return os.path.join(root, "build", "claude-campaign-watch.json")
 
 
-# The campaign signs in with the one-year token `claude setup-token` issued, kept in the Conclave vault as "Claude
-# Code OAuth token (1 year, setup-token)", so a run does not end when the interactive sign-in expires. It is read at
-# each launch and each watchdog resume into the session's environment only: never printed, logged or written to disk.
+# Legacy Claude Code setup-token helpers (retained for self-test coverage; Antigravity uses its own local Google
+# account via `agy_session_env`, never reads the vault, and strips any inherited `CLAUDE_CODE_OAUTH_TOKEN`).
 SIGNIN_ITEM = "op://Conclave/pm5vqgypmvjok23xwlaacbwlji/credential"
 SIGNIN_VARIABLE = "CLAUDE_CODE_OAUTH_TOKEN"
 _SIGNIN_SHAPE = re.compile(r"sk-ant-oat[0-9]{2}-[A-Za-z0-9_-]{40,}")
 
 
 def signin_token(run=subprocess.run, windows: bool = os.name == "nt") -> str | None:
-    """The vault's sign-in token, or None when the vault cannot be read or the field does not have the token's shape
-    (a vault that cannot be read never stops a start: the session then signs in as this machine already does). Read
-    through `conclave-op` as .conclave/automations/alert.py reads its key, with the Linux side bounded by systemd so
-    nothing outlives a read that hangs."""
+    """The vault's legacy Claude Code sign-in token, or None when the vault cannot be read or the field does not have
+    the token's shape."""
     read = ["systemd-run", "--user", "--pipe", "--wait", "--quiet", "--collect", "-p", "RuntimeMaxSec=60",
             "-p", "TimeoutStopSec=5", "--", "bash", "-lc", f"conclave-op read '{SIGNIN_ITEM}'"]
     try:
@@ -1397,7 +1394,7 @@ def signin_token(run=subprocess.run, windows: bool = os.name == "nt") -> str | N
 
 
 def session_env(environ, token: str | None) -> tuple[dict, str]:
-    """The environment a campaign session runs in, and the one line that says how it signs in (never the token)."""
+    """Legacy Claude Code session environment helper (never used by the Antigravity launch path)."""
     env = dict(environ)
     if token:
         env[SIGNIN_VARIABLE] = token
@@ -1405,6 +1402,15 @@ def session_env(environ, token: str | None) -> tuple[dict, str]:
     if env.get(SIGNIN_VARIABLE):
         return env, "Sign-in: the token already in this environment (the vault token could not be read)."
     return env, "Sign-in: this machine's interactive one (the vault token could not be read)."
+
+
+def agy_session_env(environ, extra_env: dict | None = None) -> tuple[dict, str]:
+    """The environment an Antigravity (`agy`) campaign session runs in, stripping any unrelated Claude OAuth token."""
+    env = dict(environ)
+    env.pop(SIGNIN_VARIABLE, None)
+    if extra_env:
+        env.update(extra_env)
+    return env, "Sign-in: Antigravity local account."
 
 
 def _read_json(path: str) -> dict:
@@ -1698,10 +1704,7 @@ class _World:
             sys.path.insert(0, os.path.join(HERE, "lib"))
             import win_job
             win_job.end_children_with_this_process()
-        env, _ = session_env(os.environ, signin_token())
-        if extra_env:
-            env.update(extra_env)
-        signin = "Sign-in: Antigravity local account."
+        env, signin = agy_session_env(os.environ, extra_env)
         if not headless:
             import signal
             print(signin, flush=True)
@@ -3403,6 +3406,33 @@ def _self_test() -> int:
         env, said = session_env({"PATH": "p"}, None)
         check("session-env-falls-back-to-the-interactive-sign-in", SIGNIN_VARIABLE not in env
               and "interactive" in said, said)
+        agy_env, agy_said = agy_session_env({"PATH": "p", SIGNIN_VARIABLE: good}, {"ISOTONE_CAMPAIGN_LAUNCH": "x"})
+        check("agy-session-env-strips-claude-token-and-merges-extra",
+              SIGNIN_VARIABLE not in agy_env and agy_env.get("ISOTONE_CAMPAIGN_LAUNCH") == "x"
+              and agy_said == "Sign-in: Antigravity local account.", repr(agy_env))
+        real_which, real_call, real_signin = shutil.which, subprocess.call, globals()["signin_token"]
+        captured_calls = []
+        os.environ[SIGNIN_VARIABLE] = good
+        sys.path.insert(0, os.path.join(HERE, "lib"))
+        import win_job as _wj
+        real_end_children = _wj.end_children_with_this_process
+        try:
+            shutil.which = lambda name: "C:/fake/agy.cmd" if name == "agy" else real_which(name)
+            globals()["signin_token"] = lambda *a, **kw: (_ for _ in ()).throw(AssertionError("signin_token called"))
+            _wj.end_children_with_this_process = lambda: None
+            subprocess.call = lambda cmd, **kw: (captured_calls.append((cmd, kw.get("env") or {})), 0)[1]
+            rc_w = _World(root).run(["--conversation", "cid-1", "-p", "go"], headless=True,
+                                    extra_env={"ISOTONE_CAMPAIGN_LAUNCH": "L1"})
+        finally:
+            shutil.which = real_which
+            subprocess.call = real_call
+            globals()["signin_token"] = real_signin
+            _wj.end_children_with_this_process = real_end_children
+            os.environ.pop(SIGNIN_VARIABLE, None)
+        check("world-run-never-reads-claude-vault-or-exposes-claude-token",
+              rc_w == 0 and len(captured_calls) == 1
+              and SIGNIN_VARIABLE not in captured_calls[0][1]
+              and captured_calls[0][1].get("ISOTONE_CAMPAIGN_LAUNCH") == "L1", repr(captured_calls))
         check("watch-inactive-without-a-guard", watch(root, world) == "inactive")
 
         world.live = [{"sessionId": "attended", "cwd": os.path.join(root, "docs", "phase-runs")}]

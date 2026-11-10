@@ -15,10 +15,12 @@ on top and guards the writer's subagents across both Antigravity (`.agents/hooks
   the writer's family never reviews.
 - Subagents read and run; they never write (operator decision 2026-10-02). In Antigravity, `.agents/hooks.json` wires
   `agent-gate` on `invoke_subagent|define_subagent|swarm|run_command`, allowing only the read-only `research` subagent
-  on `inherit` or `pro`, denying writable or custom subagents (`self`, `image-generator`, `define_subagent`,
-  `branch`/`share` workspaces, `swarm` workers), `flash` or `flash_lite` downgrades, direct CLI agent or reviewer runs
-  (`claude`, `agy`, `codex`), and `--no-verify` hook bypasses. In Claude Code, `.claude/agents/*.md` and
-  `.claude/settings.json` stay validated to `DELEGATE`.
+  on `inherit` (inheriting the writer's `gemini-4-carbon-medium`), denying writable or custom subagents (`self`,
+  `image-generator`, `define_subagent`, `branch`/`share` workspaces, `swarm` workers), `pro`/`flash`/`flash_lite`
+  model overrides (`pro` resolves to `gemini-3.8-flash-tiered` in Antigravity), direct CLI agent or reviewer runs
+  (`claude`, `agy`, `codex`), and `--no-verify` hook bypasses, while `delegate-audit` verifies the actual served model
+  and effort of every subagent turn from `<appDataDir>/conversations/<conversationId>.db` (`gen_metadata`). In Claude
+  Code, `.claude/agents/*.md` and `.claude/settings.json` stay validated to `DELEGATE`.
 
     python scripts/panel_slots.py validate
     python scripts/panel_slots.py show
@@ -34,7 +36,9 @@ on top and guards the writer's subagents across both Antigravity (`.agents/hooks
 from __future__ import annotations
 
 import os
+import pathlib
 import re
+import sqlite3
 import unicodedata
 import contextlib
 import glob
@@ -655,6 +659,8 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "invoke_subagent", "args": {"TypeName": "self", "Role": "r", "Prompt": "x"}}),
             ("a `flash` model downgrade", "deny",
              {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "flash", "Role": "r", "Prompt": "x"}}),
+            ("a `pro` tier override", "deny",
+             {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "pro", "Role": "r", "Prompt": "x"}}),
             ("a headless `claude -p` delegation", "deny",
              {"name": "run_command", "args": {"CommandLine": "claude -p --agent isotone-researcher inspect callers"}}),
             ("a read-only `research` subagent on `inherit`", "allow",
@@ -1122,9 +1128,164 @@ def _agy_child_summary(path: str) -> tuple[int, int, list[str]]:
     return turns, unreadable, sorted(set(forbidden))
 
 
-def agy_delegate_audit(main_transcript: str, out, agy_root: str | None = None,
-                       env: dict | None = None) -> int:
-    """Audit every Antigravity subagent started in `main_transcript` against its child brain transcript."""
+_AGY_DISP_EFFORT = re.compile(r"\(([A-Za-z]+)\)\s*$")
+
+
+def _split_model_effort(model: str) -> tuple[str, str]:
+    norm = _norm_model(model or "").strip().lower()
+    if "-" in norm:
+        base, tail = norm.rsplit("-", 1)
+        if tail in EFFORT_RANK and base:
+            return base, tail
+    return norm, ""
+
+
+def _proto_varint(buf: bytes, pos: int) -> tuple[int, int]:
+    val = shift = 0
+    n = len(buf)
+    while pos < n and shift < 70:
+        b = buf[pos]
+        pos += 1
+        val |= (b & 0x7F) << shift
+        if not (b & 0x80):
+            return val, pos
+        shift += 7
+    raise ValueError("truncated or oversized varint")
+
+
+def _proto_fields(buf: bytes) -> list[tuple[int, int, int | bytes]]:
+    pos = 0
+    out: list[tuple[int, int, int | bytes]] = []
+    n = len(buf)
+    while pos < n:
+        tag, pos = _proto_varint(buf, pos)
+        fnum, wt = tag >> 3, tag & 7
+        if fnum <= 0:
+            raise ValueError("invalid field number")
+        if wt == 0:
+            v, pos = _proto_varint(buf, pos)
+            out.append((fnum, wt, v))
+        elif wt == 1:
+            if pos + 8 > n:
+                raise ValueError("truncated 64-bit field")
+            out.append((fnum, wt, buf[pos:pos + 8]))
+            pos += 8
+        elif wt == 2:
+            ln, pos = _proto_varint(buf, pos)
+            if pos + ln > n:
+                raise ValueError("truncated length-delimited field")
+            out.append((fnum, wt, buf[pos:pos + ln]))
+            pos += ln
+        elif wt == 5:
+            if pos + 4 > n:
+                raise ValueError("truncated 32-bit field")
+            out.append((fnum, wt, buf[pos:pos + 4]))
+            pos += 4
+        else:
+            raise ValueError(f"unsupported protobuf wire type {wt}")
+    return out
+
+
+def _parse_agy_gen_row(data: bytes, expected_cid: str, expected_parent: str = "") -> tuple[str, str] | None:
+    """Decode `(served_model_slug, effort)` from one `gen_metadata.data` protobuf blob in
+    `<appDataDir>/conversations/<conversationId>.db`. Returns `None` only for an aborted HTTP request row (top-level
+    field 5 error text with neither response metadata field 1 nor step indices field 2); raises `ValueError` on any
+    missing, mismatched, or malformed model/effort evidence."""
+    has_f1 = has_f2 = has_f5 = False
+    base_slug = display_name = explicit_slug = ""
+    meta_map: dict[str, str] = {}
+    for fn, wt, val in _proto_fields(data):
+        if fn == 2:
+            has_f2 = True
+        elif fn == 5 and wt == 2:
+            has_f5 = True
+        elif fn == 1 and wt == 2 and isinstance(val, bytes):
+            has_f1 = True
+            for sfn, swt, sval in _proto_fields(val):
+                if swt != 2 or not isinstance(sval, bytes):
+                    continue
+                if sfn == 19:
+                    base_slug = sval.decode("utf-8")
+                elif sfn == 21:
+                    display_name = sval.decode("utf-8")
+                elif sfn == 20:
+                    mk = mv = ""
+                    for mfn, mwt, mval in _proto_fields(sval):
+                        if mwt == 2 and isinstance(mval, bytes):
+                            if mfn == 1:
+                                mk = mval.decode("utf-8")
+                            elif mfn == 2:
+                                mv = mval.decode("utf-8")
+                    if mk:
+                        meta_map[mk] = mv
+        elif fn == 3 and wt == 2 and isinstance(val, bytes):
+            for sfn, swt, sval in _proto_fields(val):
+                if sfn == 28 and swt == 2 and isinstance(sval, bytes):
+                    explicit_slug = sval.decode("utf-8")
+    if not has_f1 and not has_f2 and has_f5:
+        return None
+    if meta_map.get("cascade_id") and meta_map["cascade_id"] != expected_cid:
+        raise ValueError("cascade_id mismatch")
+    if expected_parent and meta_map.get("parent_cascade_id") and meta_map["parent_cascade_id"] != expected_parent:
+        raise ValueError("parent_cascade_id mismatch")
+    m = _AGY_DISP_EFFORT.search(display_name)
+    disp_effort = m.group(1).lower() if m else ""
+    exp = _norm_model(explicit_slug).strip().lower()
+    base = _norm_model(base_slug).strip().lower()
+    effort = disp_effort or _split_model_effort(exp)[1]
+    if exp:
+        slug = exp
+        if base and disp_effort and slug != f"{base}-{disp_effort}":
+            raise ValueError("served slug disagrees with base/display model")
+    elif base and effort:
+        slug = f"{base}-{effort}"
+    else:
+        raise ValueError("missing served model or effort")
+    if not slug or effort not in EFFORT_RANK:
+        raise ValueError("invalid served model or effort")
+    return slug, effort
+
+
+def _agy_conversation_turns(conversation_id: str, parent_id: str = "", agy_root: str | None = None,
+                            env: dict | None = None) -> tuple[list[tuple[str, str]], int]:
+    """`((served_model, effort) per generation turn, unreadable count)` from
+    `<appDataDir>/conversations/<conversationId>.db` (`gen_metadata`). Fails closed (`unreadable >= 1`) when the
+    SQLite database is missing, cannot be queried, or carries malformed or mismatched generation metadata."""
+    if not conversation_id or any(sep in conversation_id for sep in ("/", "\\", "..")):
+        return [], 1
+    db_path = os.path.join(agy_root or _agy_config_dir(env), "conversations", f"{conversation_id}.db")
+    if not os.path.isfile(db_path):
+        return [], 1
+    uri = pathlib.Path(db_path).resolve().as_uri() + "?mode=ro"
+    try:
+        with sqlite3.connect(uri, uri=True, timeout=5.0) as con:
+            rows = con.execute("SELECT idx, data FROM gen_metadata ORDER BY idx").fetchall()
+    except sqlite3.Error:
+        return [], 1
+    turns: list[tuple[str, str]] = []
+    unreadable = 0
+    for _idx, data in rows:
+        if not isinstance(data, (bytes, bytearray, memoryview)):
+            unreadable += 1
+            continue
+        try:
+            parsed = _parse_agy_gen_row(bytes(data), conversation_id, parent_id)
+        except (ValueError, UnicodeDecodeError):
+            unreadable += 1
+            continue
+        if parsed is not None:
+            turns.append(parsed)
+    return turns, unreadable
+
+
+def agy_delegate_audit(main_transcript: str, out, table: dict | None = None, parent_id: str = "",
+                       agy_root: str | None = None, env: dict | None = None) -> int:
+    """Audit every Antigravity subagent started in `main_transcript` against its child brain transcript and its
+    runtime generation metadata in `<appDataDir>/conversations/<conversationId>.db`."""
+    table = table or load()
+    writer_model = _norm_model(str(table["writer"]["model"])).strip().lower()
+    writer_base, writer_eff_name = _split_model_effort(writer_model)
+    writer_floor = EFFORT_RANK.get(writer_eff_name, 0)
     dispatched, parent_unreadable = _agy_dispatched_subagents(main_transcript)
     if not dispatched and not parent_unreadable:
         print("delegate audit: no subagents found (nothing was delegated, or the directory is "
@@ -1153,24 +1314,33 @@ def agy_delegate_audit(main_transcript: str, out, agy_root: str | None = None,
             print(f"agent {sub_id} type {agent_type} requested {req_display}: missing (no transcript)", file=out)
             continue
         turns, child_unreadable, forbidden = _agy_child_summary(child_path)
-        if child_unreadable or turns == 0:
-            klass, fails = "unmeasured", True
-        elif forbidden or ws not in ("", "inherit") or agent_type != "research":
+        gen_turns, gen_unreadable = _agy_conversation_turns(sub_id, parent_id=parent_id, agy_root=agy_root, env=env)
+        unreadable = child_unreadable + gen_unreadable
+        models = {m for m, _e in gen_turns}
+        if forbidden or ws not in ("", "inherit") or agent_type != "research":
             klass, fails = "writable", True
-        elif req_norm in ("flash", "flash_lite"):
+        elif unreadable or turns == 0 or len(gen_turns) < turns:
+            klass, fails = "unmeasured", True
+        elif req_norm in ("flash", "flash_lite") or any("flash" in m or "haiku" in m for m in models):
             klass, fails = "below-bar", True
-        elif req_norm not in ("", "inherit", "pro"):
+        elif any(_split_model_effort(m)[0] != writer_base for m in models):
             klass, fails = "off-pin", True
-        elif req_norm == "pro":
-            klass, fails = "escalated", False
-        else:
+        elif any(EFFORT_RANK[e] < writer_floor for _m, e in gen_turns):
+            klass, fails = "below-pin", True
+        elif req_norm not in ("", "inherit"):
+            klass, fails = "off-pin", True
+        elif models == {writer_model}:
             klass, fails = "pinned", False
+        else:
+            klass, fails = "escalated", False
         pinned += klass == "pinned"
         failing += fails
-        extra = f" unreadable {child_unreadable}" if child_unreadable else ""
+        extra = f" unreadable {unreadable}" if unreadable else ""
         if forbidden:
             extra += f" forbidden {','.join(forbidden)}"
-        print(f"agent {sub_id} type {agent_type} requested {req_display} turns {turns}{extra}: {klass}", file=out)
+        print(f"agent {sub_id} type {agent_type} requested {req_display} turns {turns} "
+              f"served {_counts([m for m, _e in gen_turns])} effort {_counts([e for _m, e in gen_turns])}"
+              f"{extra}: {klass}", file=out)
     if parent_unreadable:
         failing += 1
         print(f"session transcript: {parent_unreadable} unreadable record(s): unmeasured "
@@ -1203,7 +1373,8 @@ def delegate_audit(session: str | None, subagent_dir: str | None, out,
         if main_transcript is None:
             agy_transcript = find_agy_transcript(session, agy_root=agy_root, env=env_map)
             if agy_transcript is not None:
-                return agy_delegate_audit(agy_transcript, out, agy_root=agy_root, env=env_map)
+                return agy_delegate_audit(agy_transcript, out, table=table, parent_id=session,
+                                          agy_root=agy_root, env=env_map)
         dirs = sorted(glob.glob(os.path.join(_config_dir(), "projects", "*", session, "subagents")))
         main_transcript = main_transcript or find_transcript(session)
         if main_transcript is None:
@@ -1454,7 +1625,7 @@ def agy_gate_decision(tool_call: dict) -> str | None:
         raise PanelSlotsError(f"the {name} call carries no args object")
     if name == "define_subagent":
         return ("Custom subagent definitions are not used; Subagents read and run, they never write; delegate "
-                "read-only work through `invoke_subagent` with `TypeName: \"research\"` on `inherit` or `pro` "
+                "read-only work through `invoke_subagent` with `TypeName: \"research\"` on `inherit` "
                 "(standards/delegation.md).")
     if name == "invoke_subagent":
         tname = args.get("TypeName")
@@ -1466,9 +1637,10 @@ def agy_gate_decision(tool_call: dict) -> str | None:
         if workspace != "inherit":
             return ("Subagents run read-only in the workspace; branch and share workspaces are for writing "
                     "subagents, and subagents never write (standards/delegation.md).")
-        if model not in ("inherit", "pro"):
-            return (f"Model {raw_model!r} is below or outside the delegation bar; omit Model or pass `inherit` or "
-                    f"`pro` on the read-only `research` subagent (standards/delegation.md).")
+        if model != "inherit":
+            return (f"Model {raw_model!r} is below or outside the delegation bar (`pro` resolves to "
+                    f"`gemini-3.8-flash-tiered` in Antigravity); omit Model or pass `inherit` on the read-only "
+                    f"`research` subagent (standards/delegation.md).")
         if tname != "research":
             return (f"Subagent type {tname!r} carries write tools or is not pinned. Subagents read and run; they "
                     f"never write; use `TypeName: \"research\"` (standards/delegation.md).")
@@ -2213,8 +2385,8 @@ def _self_test() -> int:
 
     check("agy gate allows research subagent",
           agy_gate("invoke_subagent", {"TypeName": "research", "Role": "r", "Prompt": "x"}) == {"decision": "allow"})
-    check("agy gate allows research subagent on pro",
-          agy_gate("invoke_subagent", {"TypeName": "research", "Model": "pro", "Role": "r", "Prompt": "x"}) == {"decision": "allow"})
+    check("agy gate allows research subagent on explicit inherit",
+          agy_gate("invoke_subagent", {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}) == {"decision": "allow"})
     check("agy gate allows swarm status",
           agy_gate("swarm", {"action": "status"}) == {"decision": "allow"})
     check("agy gate allows swarm models",
@@ -2238,6 +2410,7 @@ def _self_test() -> int:
             ("image-generator subagent", "invoke_subagent", {"TypeName": "image-generator", "Role": "r", "Prompt": "x"}, "never write"),
             ("unpinned custom subagent", "invoke_subagent", {"TypeName": "custom", "Role": "r", "Prompt": "x"}, "never write"),
             ("branch workspace subagent", "invoke_subagent", {"TypeName": "research", "Workspace": "branch", "Role": "r", "Prompt": "x"}, "never write"),
+            ("pro tier override subagent", "invoke_subagent", {"TypeName": "research", "Model": "pro", "Role": "r", "Prompt": "x"}, "below or outside the delegation bar"),
             ("flash subagent", "invoke_subagent", {"TypeName": "research", "Model": "flash", "Role": "r", "Prompt": "x"}, "below or outside the delegation bar"),
             ("flash_lite subagent", "invoke_subagent", {"TypeName": "research", "Model": "flash_lite", "Role": "r", "Prompt": "x"}, "below or outside the delegation bar"),
             ("off-pin model subagent", "invoke_subagent", {"TypeName": "research", "Model": "sonnet", "Role": "r", "Prompt": "x"}, "below or outside the delegation bar"),
@@ -2260,8 +2433,46 @@ def _self_test() -> int:
         dec = agy_gate(tname, targs)
         check(f"agy gate denies {label}", dec.get("decision") == "deny" and needle in dec.get("reason", ""), repr(dec))
 
-    # Antigravity brain transcript delegate-audit.
+    # Antigravity brain transcript + conversations/<id>.db delegate-audit.
     agy_home = tempfile.mkdtemp(prefix="agy-brain-", dir=tmpd)
+    agy_table = {**good, "writer": dict(WRITER)}
+
+    def _pvarint(val: int) -> bytes:
+        out_b = bytearray()
+        while True:
+            b = val & 0x7F
+            val >>= 7
+            if val:
+                out_b.append(b | 0x80)
+            else:
+                out_b.append(b)
+                return bytes(out_b)
+
+    def _plen(fnum: int, payload: bytes) -> bytes:
+        return _pvarint((fnum << 3) | 2) + _pvarint(len(payload)) + payload
+
+    def agy_gen_blob(base_slug: str, display: str, cid: str, parent_cid: str = "", explicit_slug: str = "") -> bytes:
+        entries = [_plen(1, b"cascade_id") + _plen(2, cid.encode("utf-8"))]
+        if parent_cid:
+            entries.append(_plen(1, b"parent_cascade_id") + _plen(2, parent_cid.encode("utf-8")))
+        f1 = (_plen(19, base_slug.encode("utf-8"))
+              + b"".join(_plen(20, e) for e in entries)
+              + _plen(21, display.encode("utf-8")))
+        blob = _plen(2, b"\x01") + _plen(1, f1)
+        if explicit_slug:
+            blob += _plen(3, _plen(28, explicit_slug.encode("utf-8")))
+        return blob
+
+    def write_agy_db(cid: str, blobs: list[bytes]) -> str:
+        conv_dir = os.path.join(agy_home, "conversations")
+        os.makedirs(conv_dir, exist_ok=True)
+        db_p = os.path.join(conv_dir, f"{cid}.db")
+        with sqlite3.connect(db_p) as con:
+            con.execute("CREATE TABLE IF NOT EXISTS gen_metadata (idx INTEGER PRIMARY KEY, data BLOB, size INTEGER)")
+            con.execute("DELETE FROM gen_metadata")
+            for idx, b in enumerate(blobs):
+                con.execute("INSERT INTO gen_metadata (idx, data, size) VALUES (?, ?, ?)", (idx, b, len(b)))
+        return db_p
 
     def write_agy_log(cid: str, steps: list[dict | str], full: bool = True) -> str:
         log_dir = os.path.join(agy_home, "brain", cid, ".system_generated", "logs")
@@ -2286,48 +2497,90 @@ def _self_test() -> int:
         {"type": "GENERIC", "status": "DONE", "content": "ok"},
         {"type": "PLANNER_RESPONSE", "status": "DONE", "content": "Done."},
     ])
-    write_agy_log("sub-pro", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "Done."}])
+    write_agy_db("sub-pinned", [
+        agy_gen_blob("gemini-4-carbon", "Gemini 4 Carbon (Medium)", "sub-pinned", "parent-clean"),
+        _plen(5, b"request failed: context canceled"),
+        agy_gen_blob("gemini-4-carbon", "Gemini 4 Carbon (Medium)", "sub-pinned", "parent-clean",
+                     explicit_slug="gemini-4-carbon-medium"),
+    ])
+    write_agy_log("sub-escalated", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "Done."}])
+    write_agy_db("sub-escalated", [
+        agy_gen_blob("gemini-4-carbon", "Gemini 4 Carbon (High)", "sub-escalated", "parent-clean",
+                     explicit_slug="gemini-4-carbon-high"),
+    ])
     write_agy_log("parent-clean", [
         {"step_index": 1, "type": "PLANNER_RESPONSE", "status": "DONE", "tool_calls": [
             {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
-            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "pro", "Role": "r2", "Prompt": "y"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Role": "r2", "Prompt": "y"}},
             {"name": "invoke_subagent", "args": {"TypeName": "self", "Model": "inherit", "Role": "r3", "Prompt": "z"}},
         ]},
         agy_sub_created("sub-pinned"),
-        agy_sub_created("sub-pro"),
+        agy_sub_created("sub-escalated"),
         agy_sub_denied(),
     ])
     buf = io.StringIO()
-    rc = delegate_audit("parent-clean", None, buf, good, audit_agents, agy_root=agy_home, env={})
+    rc = delegate_audit("parent-clean", None, buf, agy_table, audit_agents, agy_root=agy_home, env={})
     text = buf.getvalue()
-    check("agy audit clean mix exits 0",
-          rc == 0 and "agent sub-pinned type research requested inherit turns 2: pinned" in text
-          and "agent sub-pro type research requested pro turns 1: escalated" in text
+    check("agy audit clean mix verifies served models and exits 0",
+          rc == 0
+          and "agent sub-pinned type research requested inherit turns 2 served gemini-4-carbon-medium x2 effort medium x2: pinned" in text
+          and "agent sub-escalated type research requested inherit turns 1 served gemini-4-carbon-high x1 effort high x1: escalated" in text
           and "delegate audit: 2 agents, 1 pinned, 0 failing" in text, text)
     buf = io.StringIO()
-    rc = delegate_audit(None, None, buf, good, audit_agents,
+    rc = delegate_audit(None, None, buf, agy_table, audit_agents,
                         env={"ANTIGRAVITY_CONVERSATION_ID": "parent-clean", "ANTIGRAVITY_APP_DATA_DIR": agy_home})
     check("agy audit picks up ANTIGRAVITY_CONVERSATION_ID and ANTIGRAVITY_APP_DATA_DIR",
           rc == 0 and "2 agents, 1 pinned, 0 failing" in buf.getvalue(), buf.getvalue())
 
-    write_agy_log("sub-flash", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_log("sub-flash-inherit", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-flash-inherit", [
+        agy_gen_blob("gemini-3.8-flash", "Gemini 3.8 Flash (Low)", "sub-flash-inherit", "parent-bad",
+                     explicit_slug="gemini-3.8-flash-low"),
+    ])
+    write_agy_log("sub-argon-inherit", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-argon-inherit", [
+        agy_gen_blob("gemini-4-argon", "Gemini 4 Argon (Medium)", "sub-argon-inherit", "parent-bad"),
+    ])
+    write_agy_log("sub-low-inherit", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-low-inherit", [
+        agy_gen_blob("gemini-4-carbon", "Gemini 4 Carbon (Low)", "sub-low-inherit", "parent-bad"),
+    ])
+    write_agy_log("sub-nodb", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_log("sub-spoofed", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-spoofed", [
+        agy_gen_blob("gemini-4-carbon", "Gemini 4 Carbon (Medium)", "other-cid", "parent-bad"),
+    ])
     write_agy_log("sub-wrote", [
         {"type": "PLANNER_RESPONSE", "status": "DONE",
          "tool_calls": [{"name": "write_file", "args": {"Path": "D:/Isotone/x", "Content": "y"}}]},
         {"type": "GENERIC", "status": "DONE", "content": "wrote"},
     ])
+    write_agy_db("sub-wrote", [
+        agy_gen_blob("gemini-4-carbon", "Gemini 4 Carbon (Medium)", "sub-wrote", "parent-bad"),
+    ])
     write_agy_log("sub-trunc", [
         {"type": "PLANNER_RESPONSE", "status": "DONE", "truncated_fields": ["tool_calls"], "content": "ok"},
     ], full=False)
+    write_agy_db("sub-trunc", [
+        agy_gen_blob("gemini-4-carbon", "Gemini 4 Carbon (Medium)", "sub-trunc", "parent-bad"),
+    ])
     write_agy_log("parent-bad", [
         {"step_index": 1, "type": "PLANNER_RESPONSE", "status": "DONE", "tool_calls": [
-            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "flash", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
             {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
             {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
             {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
             {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}},
         ]},
-        agy_sub_created("sub-flash"),
+        agy_sub_created("sub-flash-inherit"),
+        agy_sub_created("sub-argon-inherit"),
+        agy_sub_created("sub-low-inherit"),
+        agy_sub_created("sub-nodb"),
+        agy_sub_created("sub-spoofed"),
         agy_sub_created("sub-wrote"),
         agy_sub_created("sub-trunc"),
         agy_sub_created("sub-missing"),
@@ -2335,17 +2588,21 @@ def _self_test() -> int:
         "not json\n",
     ])
     buf = io.StringIO()
-    rc = delegate_audit("parent-bad", None, buf, good, audit_agents, agy_root=agy_home, env={})
+    rc = delegate_audit("parent-bad", None, buf, agy_table, audit_agents, agy_root=agy_home, env={})
     text = buf.getvalue()
-    check("agy audit catches flash, child write, truncation, missing child, crashed start, and bad parent JSON",
+    check("agy audit catches served model drift on inherit, missing/spoofed DB, child write, truncation, and missing child",
           rc == 1
-          and "agent sub-flash type research requested flash turns 1: below-bar" in text
-          and "agent sub-wrote type research requested inherit turns 1 forbidden write_file: writable" in text
-          and "agent sub-trunc type research requested inherit turns 1 unreadable 1: unmeasured" in text
+          and "agent sub-flash-inherit type research requested inherit turns 1 served gemini-3.8-flash-low x1 effort low x1: below-bar" in text
+          and "agent sub-argon-inherit type research requested inherit turns 1 served gemini-4-argon-medium x1 effort medium x1: off-pin" in text
+          and "agent sub-low-inherit type research requested inherit turns 1 served gemini-4-carbon-low x1 effort low x1: below-pin" in text
+          and "agent sub-nodb type research requested inherit turns 1 served - effort - unreadable 1: unmeasured" in text
+          and "agent sub-spoofed type research requested inherit turns 1 served - effort - unreadable 1: unmeasured" in text
+          and "agent sub-wrote type research requested inherit turns 1 served gemini-4-carbon-medium x1 effort medium x1 forbidden write_file: writable" in text
+          and "agent sub-trunc type research requested inherit turns 1 served gemini-4-carbon-medium x1 effort medium x1 unreadable 1: unmeasured" in text
           and "agent sub-missing type research requested inherit: missing (no transcript)" in text
-          and "agent ? call step-1-4: missing (the session started it; no subagent record)" in text
+          and "agent ? call step-1-8: missing (the session started it; no subagent record)" in text
           and "session transcript: 1 unreadable record(s)" in text
-          and "delegate audit: 5 agents, 0 pinned, 6 failing" in text, text)
+          and "delegate audit: 9 agents, 0 pinned, 10 failing" in text, text)
 
     write_agy_log("parent-empty", [{"step_index": 0, "type": "USER_INPUT", "status": "DONE", "content": "hi"}])
     with contextlib.redirect_stderr(io.StringIO()):
