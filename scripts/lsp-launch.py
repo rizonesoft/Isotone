@@ -11,7 +11,8 @@ preset compiles, and runs clang-tidy with native/.clang-tidy, so a tidy finding 
 gate. Both servers are bounded for a machine that runs several sessions: clangd indexes on 4 threads and keeps
 preambles on disk, and pyrightconfig.json limits pyright to the tracked script folders.
 
-On Windows the server is held in a job object that ends it when this process ends, however that happens, so a killed
+On Windows this process puts itself in a job object before it starts the server, so the server and anything it
+starts are born inside the job, and Windows ends them all when this process ends, however that happens: a killed
 session never leaves a language server behind. Stdlib only.
 """
 
@@ -86,8 +87,9 @@ def pyright() -> tuple[list[str], dict]:
 _JOB = None  # kept for the life of this process: closing the handle is what ends the server
 
 
-def end_with_this_process(child: subprocess.Popen) -> None:
-    """Put the server in a job object that Windows closes with this process, taking the server and its children."""
+def end_children_with_this_process() -> None:
+    """Put this process in a job object that Windows closes when it ends. Called before the server starts, so the
+    server and every process it starts join the job at birth and none can slip out between start and assignment."""
     global _JOB
     import ctypes
     from ctypes import wintypes
@@ -109,13 +111,13 @@ def end_with_this_process(child: subprocess.Popen) -> None:
     kernel.CreateJobObjectW.argtypes = (ctypes.c_void_p, wintypes.LPCWSTR)
     kernel.SetInformationJobObject.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
     kernel.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+    kernel.GetCurrentProcess.restype = wintypes.HANDLE
     info = Extended()
     info.Basic.LimitFlags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
     job = kernel.CreateJobObjectW(None, None)
     if (not job or not kernel.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info))
-            or not kernel.AssignProcessToJobObject(job, wintypes.HANDLE(int(child._handle)))):
-        child.kill()
-        raise LaunchError(f"could not bind the server to this process (error {ctypes.get_last_error()})")
+            or not kernel.AssignProcessToJobObject(job, kernel.GetCurrentProcess())):
+        raise LaunchError(f"could not hold the server in a job object (error {ctypes.get_last_error()})")
     _JOB = job
 
 
@@ -126,9 +128,9 @@ def main(argv: list[str]) -> int:
         return 2
     try:
         command, env = servers[argv[0]]()
-        child = subprocess.Popen(command, env=env, cwd=REPO)
         if os.name == "nt":
-            end_with_this_process(child)
+            end_children_with_this_process()
+        child = subprocess.Popen(command, env=env, cwd=REPO)
     except (LaunchError, OSError, KeyError, ValueError) as error:
         print(f"lsp-launch: {error}", file=sys.stderr)
         return 1

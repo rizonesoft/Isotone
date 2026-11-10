@@ -9,7 +9,8 @@
     (finish the plan through process-plan, every section stamped, aiming for the best app in its class), on the
     writer model .conclave/reviewers.toml pins, with --dangerously-skip-permissions.
   - A run is open and its session died: that same session is resumed, so it still owns the run guard.
-  - A run is open and its session is alive: nothing starts, because two writers on one tree is the worse failure.
+  - A run is open and its session is alive, any other Claude Code session is open in this folder, or a launch from
+    the last five minutes is still coming up: nothing starts, because two writers on one tree is the worse failure.
 
   `launch` records the session id and flags, which is what lets the watchdog (scripts/run-guard.py watch, ticked every
   10 minutes by this repository's scheduled task) resume the run headless if this window is ever lost.
@@ -51,6 +52,14 @@ if ($plan.action -eq 'live') {
   Write-Host "The campaign is already running in session $($plan.session). Nothing was started."
   return
 }
+if ($plan.action -eq 'busy') {
+  Write-Host "Another Claude Code session is open in this folder ($($plan.sessions -join ', ')). One session writes, so nothing was started: close it, then run this again."
+  return
+}
+if ($plan.action -eq 'starting') {
+  Write-Host "Session $($plan.session) was launched moments ago and is still coming up. Nothing was started."
+  return
+}
 
 $scheduled = (python scripts/run-guard.py status | Select-Object -Skip 1 | Out-String | ConvertFrom-Json).watchdog
 if ($scheduled -ne 'own task') {
@@ -58,9 +67,6 @@ if ($scheduled -ne 'own task') {
   # pointing at a folder this clone moved away from (STALE) is replaced the same way.
   python scripts/run-guard.py install
   if ($LASTEXITCODE -ne 0) { Write-Warning 'The watchdog task could not be created, so a session that dies will not be resumed.' }
-}
-if ($plan.live_here) {
-  Write-Warning "Another Claude Code session is open in this folder ($($plan.live_here -join ', ')). Close it or leave it idle: one session writes."
 }
 
 $flags = @($plan.args)
