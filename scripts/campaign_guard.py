@@ -1380,6 +1380,20 @@ def _in_tree(folder, root: str) -> bool:
     return inside == os.path.normcase(os.path.realpath(root))
 
 
+def _session_live(record: dict, started: int | None, windows: bool = os.name == "nt") -> bool:
+    """Whether a session record names a running session. `started` is when the record's process started, None when
+    it is gone. On Windows the record's `procStart` must match, so a reused process id is not taken for the session;
+    a record whose process runs but which carries no `procStart` cannot be judged and raises, so nothing starts."""
+    if started is None:
+        return False
+    if not windows:
+        return True
+    if record.get("procStart") in (None, ""):
+        raise GuardError(f"session record for process {record.get('pid')} has no procStart: cannot tell whether "
+                         "that session is live")
+    return str(started) == str(record["procStart"])
+
+
 class _World:
     """What the watchdog reads from the machine, so the self-test can stand in for it."""
 
@@ -1400,8 +1414,7 @@ class _World:
                     record = json.load(fh)
             except FileNotFoundError:
                 continue  # the session exited while this looked
-            started = _process_started(int(record["pid"]))
-            if started is not None and (os.name != "nt" or str(started) == str(record.get("procStart"))):
+            if _session_live(record, _process_started(int(record["pid"]))):
                 records.append(record)
         return records
 
@@ -3044,13 +3057,23 @@ def _self_test() -> int:
               and after == "resumed, attempt 1", f"{freed} / {after}")
         world.launchers = set()
         _set_ready(root, 0)
-        check("watch-drained-starts-nothing", watch(root, world) == "drained" and len(world.spawned) == 4)
+        spawned = len(world.spawned)
+        check("watch-drained-starts-nothing", watch(root, world) == "drained" and len(world.spawned) == spawned)
         _set_ready(root, 3)
         os.unlink(_launch_path(root))
         check("watch-needs-the-launch-record", watch(root, world).startswith("session dead and not resumable"))
         _guard(root, "another-session")
         check("watch-ignores-another-runs-record", watch(root, world).startswith("session dead and not resumable")
-              and len(world.spawned) == 4)
+              and len(world.spawned) == spawned)
+        check("a-gone-process-is-not-a-live-session", not _session_live({"pid": 1, "procStart": "5"}, None, True))
+        check("a-reused-process-id-is-not-the-session", not _session_live({"pid": 1, "procStart": "5"}, 6, True)
+              and _session_live({"pid": 1, "procStart": "5"}, 5, True))
+        try:
+            _session_live({"pid": 1}, 5, True)
+            unjudged = False
+        except GuardError:
+            unjudged = True
+        check("a-record-that-cannot-be-judged-starts-nothing", unjudged)
 
     print(f"campaign_guard self-test: {passed + failed} cases, {failed} failed")
     return 1 if failed else 0

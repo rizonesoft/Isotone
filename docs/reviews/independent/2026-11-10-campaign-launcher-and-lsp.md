@@ -135,3 +135,34 @@ OVERALL: needs-attention
 ## Response to round 4
 
 Round 4 read the tip and raised three new findings, all verified and fixed in the commit that carries this response: F1 (a session started in any folder under the working tree counts as live here; self-test `a-session-in-a-subfolder-is-live-here`), F2 (the launcher runs `launch-done` when its session ends, so a shell left open frees its place; self-tests `an-open-launcher-holds-its-place`, `another-launcher-cannot-release-it`, `a-finished-launcher-frees-its-place`), F3 (the relative `extraKnownMarketplaces` entry is removed; the launcher registers the plugin folder per machine from where the clone is, and the README gives the same commands).
+
+## Round 5: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T01:26:45Z
+- Effort: medium
+- Lines: 18
+- Digest: b745eab0285930b5
+
+## adversarial: needs-attention
+
+1. P1 `scripts/campaign_guard.py:1404`: An incomplete session record bypasses writer exclusion. If a record names a running PID and this repository but omits `procStart`, the comparison silently drops it. Both `launch()` and `watch()` can then start beside that live session. This contradicts the stated rule that an unjudgeable record raises. **Reproduce:** supply a session record with valid `pid`, `sessionId`, and `cwd`, but no `procStart`, while `_process_started()` returns that process’s creation time. The tip’s in-memory probe returned `[]`. Validate required identity fields and refuse startup when identity cannot be established.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P2 `scripts/start-campaign.ps1:71`: Startup preparation occurs outside the `try/finally` that releases the launch reservation. A terminating error in scheduler-status parsing or marketplace setup leaves the reservation attached to the surviving PowerShell process indefinitely. The round 4 cleanup fix therefore covers Claude execution, but not the preceding startup failures. **Reproduce:** invoke the script from an existing PowerShell shell with Python available but `claude` unavailable. `launch` reserves the shell’s PID, line 83 throws, and `launch-done` never executes. After making Claude available, subsequent launches report `starting` while that shell remains open. Put all work following reservation acquisition inside the cleanup scope.
+
+## source-defect: approve
+
+## record: needs-attention
+
+3. P2 `docs/dev/decisions.md:169`: The recorded reservation lifetime ends “when its session ends and it runs `launch-done`,” but finding 2 leaves a reservation indefinitely even though no session started. **Reproduce:** use finding 2’s startup-failure sequence. The implementation must release failed startup reservations before this lifecycle claim holds.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 5
+
+Three findings, all verified and fixed in the commit that carries this response: F1 (a session record whose process runs but which has no `procStart` raises, so nothing starts; self-tests `a-record-that-cannot-be-judged-starts-nothing`, `a-reused-process-id-is-not-the-session`), F2 and F3 (everything the launcher does after `launch` sits inside the one `try`/`finally` that runs `launch-done`, and the decision record says so). The commit before this one (`fix(workspace): count sessions in subfolders as live ...`) went in with two self-test cases failing, `watch-drained-starts-nothing` and `watch-ignores-another-runs-record`: they asserted a fixed spawn count that the new cases had shifted, and the writer's command chain did not stop on the failure. Both assert a relative count now, and the self-test exits 0 with 225 cases.

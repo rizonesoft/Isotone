@@ -68,6 +68,9 @@ if ($plan.action -eq 'starting') {
   return
 }
 
+# Everything from here runs with the launch held, so it all sits inside one cleanup: whatever fails or ends, the
+# place this launcher holds is freed, and a shell left open never keeps the watchdog from resuming an open run.
+try {
 $scheduled = (python scripts/run-guard.py status | Select-Object -Skip 1 | Out-String | ConvertFrom-Json).watchdog
 if ($scheduled -ne 'own task') {
   # Without the scheduled tick nothing resumes a session that dies, so the launcher puts it in place. A task left
@@ -89,7 +92,6 @@ if (-not $listed.Contains($marketplace)) {
 }
 
 $flags = @($plan.args)
-try {
   if ($plan.action -eq 'start') {
     Write-Host "Starting the Isotone campaign (session $($plan.session))."
     & claude --session-id $plan.session @flags --name 'Isotone campaign' $plan.prompt
@@ -98,7 +100,5 @@ try {
     & claude --resume $plan.session @flags $plan.prompt
   }
 } finally {
-  # The session is over, however it ended: free the place this launcher held, so a window left open never keeps the
-  # watchdog from resuming a run that is still open.
   python scripts/campaign_guard.py launch-done --launcher-pid $PID | Out-Null
 }
