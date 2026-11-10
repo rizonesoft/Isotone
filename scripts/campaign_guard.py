@@ -1353,11 +1353,13 @@ def _process_started(pid: int) -> int | None:
         raise OSError(f"cannot tell whether process {pid} is running")
     try:
         code = wintypes.DWORD()
-        if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)) or code.value != 259:  # STILL_ACTIVE
+        if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)):
+            raise OSError(f"cannot tell whether process {pid} is running (GetExitCodeProcess failed)")
+        if code.value != 259:  # STILL_ACTIVE
             return None
         times = [wintypes.FILETIME() for _ in range(4)]
         if not kernel.GetProcessTimes(handle, *[ctypes.byref(t) for t in times]):
-            return None
+            raise OSError(f"cannot tell when process {pid} started (GetProcessTimes failed)")
         return (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
     finally:
         kernel.CloseHandle(handle)
@@ -1380,6 +1382,16 @@ def _in_tree(folder, root: str) -> bool:
     return inside == os.path.normcase(os.path.realpath(root))
 
 
+def _placed(record: dict) -> bool:
+    """A live session's record must say which session it is and where it runs; one that does not cannot be placed
+    inside or outside this tree, so it raises and nothing starts."""
+    for field in ("sessionId", "cwd"):
+        if not isinstance(record.get(field), str) or not record[field]:
+            raise GuardError(f"session record for running process {record.get('pid')} has no {field}: cannot tell "
+                             "whether that session is in this tree")
+    return True
+
+
 def _session_live(record: dict, started: int | None, windows: bool = os.name == "nt") -> bool:
     """Whether a session record names a running session. `started` is when the record's process started, None when
     it is gone. On Windows the record's `procStart` must match, so a reused process id is not taken for the session;
@@ -1387,11 +1399,13 @@ def _session_live(record: dict, started: int | None, windows: bool = os.name == 
     if started is None:
         return False
     if not windows:
-        return True
+        return _placed(record)
     if record.get("procStart") in (None, ""):
         raise GuardError(f"session record for process {record.get('pid')} has no procStart: cannot tell whether "
                          "that session is live")
-    return str(started) == str(record["procStart"])
+    if str(started) != str(record["procStart"]):
+        return False
+    return _placed(record)
 
 
 class _World:
@@ -1451,6 +1465,18 @@ class _World:
         return {"pid": child.pid, "started": _process_started(child.pid)}
 
 
+def _resume_starting(state: dict, world) -> bool:
+    """Whether the watchdog marked a resume as starting within LAUNCH_GRACE_SECONDS and never recorded its child: the
+    tick died between starting the session and writing it down, so the session may be coming up unrecorded. The mark
+    holds its place until the session has had time to write its own record."""
+    try:
+        at = datetime.datetime.strptime(str(state.get("spawning_at")), UTC_FORMAT).replace(
+            tzinfo=datetime.timezone.utc)
+    except ValueError:
+        return False
+    return 0 <= (world.now() - at).total_seconds() < LAUNCH_GRACE_SECONDS
+
+
 def launch_done(root: str, launcher_pid: int) -> str:
     """The launcher's session has ended: give up the place its launch record held, so a launcher left open (a script
     run from an existing shell) never keeps the watchdog from resuming the run. The session id and flags stay."""
@@ -1504,6 +1530,8 @@ def watch(root: str, world=None) -> str:
             state = {"session_id": session}
         if state.get("child") and world.child_alive(state["child"]):
             return "resumed session still running"
+        if _resume_starting(state, world):
+            return "a resume is starting"
         # Liveness is read here, under the lock `launch` also holds, so neither can start beside the other's session.
         live = [str(r.get("sessionId")) for r in world.live_sessions() if _in_tree(r.get("cwd"), root)]
         if live:
@@ -1526,10 +1554,18 @@ def watch(root: str, world=None) -> str:
             return f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"
         # The attempt is on disk before anything starts, so a resume that cannot be recorded never runs and the
         # bound holds whatever fails afterwards. A spawn that fails has still used its attempt.
-        state.update(restarts=state.get("restarts", 0) + 1, launched_at=_utc_now())
+        state.update(restarts=state.get("restarts", 0) + 1, launched_at=_utc_now(),
+                     spawning_at=world.now().strftime(UTC_FORMAT))
         state.pop("child", None)
         _write_json(_watch_path(root), state)
-        state["child"] = world.spawn(["-p", RESUME_PROMPT, "--resume", session, *[str(a) for a in args]])
+        try:
+            state["child"] = world.spawn(["-p", RESUME_PROMPT, "--resume", session, *[str(a) for a in args]])
+        except Exception:
+            # The start itself failed, so no session is coming up: the mark goes, the used attempt stays.
+            state.pop("spawning_at")
+            _write_json(_watch_path(root), state)
+            raise
+        state.pop("spawning_at")
         _write_json(_watch_path(root), state)
         return f"resumed, attempt {state['restarts']}"
 
@@ -1549,6 +1585,8 @@ def launch(root: str, world=None, launcher_pid: int | None = None) -> dict:
             return {"action": "live", "session": session}
         if live:  # any other session open in this folder: one session writes, so nothing starts beside it
             return {"action": "busy", "sessions": live}
+        if guard is not None and state.get("session_id") == session and _resume_starting(state, world):
+            return {"action": "starting", "session": session}
         recorded = _read_json(_launch_path(root))
         if _launch_fresh(recorded, world) and (guard is None or recorded.get("session_id") == session):
             return {"action": "starting", "session": str(recorded.get("session_id", ""))}
@@ -3067,13 +3105,27 @@ def _self_test() -> int:
               and len(world.spawned) == spawned)
         check("a-gone-process-is-not-a-live-session", not _session_live({"pid": 1, "procStart": "5"}, None, True))
         check("a-reused-process-id-is-not-the-session", not _session_live({"pid": 1, "procStart": "5"}, 6, True)
-              and _session_live({"pid": 1, "procStart": "5"}, 5, True))
+              and _session_live({"pid": 1, "procStart": "5", "sessionId": "s", "cwd": root}, 5, True))
         try:
             _session_live({"pid": 1}, 5, True)
             unjudged = False
         except GuardError:
             unjudged = True
         check("a-record-that-cannot-be-judged-starts-nothing", unjudged)
+        whole = {"pid": 1, "procStart": "5", "sessionId": "s", "cwd": root}
+        for field in ("sessionId", "cwd"):
+            try:
+                _session_live({k: v for k, v in whole.items() if k != field}, 5, True)
+                refused = False
+            except GuardError:
+                refused = True
+            check(f"a-live-record-without-{field}-starts-nothing", refused)
+        _guard(root, sid)
+        with open(_watch_path(root), "w", encoding="utf-8") as fh:
+            json.dump({"session_id": sid, "restarts": 1, "spawning_at": world.now().strftime(UTC_FORMAT)}, fh)
+        spawned = len(world.spawned)
+        check("an-unrecorded-resume-holds-its-place", watch(root, world) == "a resume is starting"
+              and launch(root, world) == {"action": "starting", "session": sid} and len(world.spawned) == spawned)
 
     print(f"campaign_guard self-test: {passed + failed} cases, {failed} failed")
     return 1 if failed else 0

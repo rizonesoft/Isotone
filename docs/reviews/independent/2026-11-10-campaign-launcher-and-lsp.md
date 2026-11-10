@@ -166,3 +166,36 @@ OVERALL: needs-attention
 ## Response to round 5
 
 Three findings, all verified and fixed in the commit that carries this response: F1 (a session record whose process runs but which has no `procStart` raises, so nothing starts; self-tests `a-record-that-cannot-be-judged-starts-nothing`, `a-reused-process-id-is-not-the-session`), F2 and F3 (everything the launcher does after `launch` sits inside the one `try`/`finally` that runs `launch-done`, and the decision record says so). The commit before this one (`fix(workspace): count sessions in subfolders as live ...`) went in with two self-test cases failing, `watch-drained-starts-nothing` and `watch-ignores-another-runs-record`: they asserted a fixed spawn count that the new cases had shifted, and the writer's command chain did not stop on the failure. Both assert a relative count now, and the self-test exits 0 with 225 cases.
+
+## Round 6: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T01:33:10Z
+- Effort: medium
+- Lines: 20
+- Digest: 2ff603c1a0cc0e1c
+
+## adversarial: needs-attention
+
+1. P1 `scripts/campaign_guard.py:1532`: A spawned resume can remain unrecorded, allowing a competing writer. Restart accounting is persisted before spawn, but child identity is persisted afterward. **Reproduce:** suspend the child before Claude writes its session record, then terminate the watchdog between `Popen` and the final state write. Invoke the launcher: it sees neither a recorded child nor a live session and authorizes another resume. An in-memory probe confirmed `child_exists=True`, no persisted child, and `next_launcher_action='resume'`.
+
+2. P1 `scripts/campaign_guard.py:1356`: Failed Windows liveness queries are treated as proof of death. Both a failed `GetExitCodeProcess` and a failed `GetProcessTimes` return `None`, which `_session_live()` interprets as dead. This bypasses the latest fix’s refusal of unjudgeable sessions. **Reproduce:** keep a valid session record and inject a false return from `GetProcessTimes` for its running process. The probe returned `started_result=None` and `treated_as_live=False`; startup can proceed beside that session. Query failures must remain errors.
+
+3. P1 `scripts/campaign_guard.py:1508`: A live session record with missing or empty `cwd` silently bypasses writer exclusion. `_session_live()` accepts its matching PID and `procStart`, but `_in_tree(None, root)` returns false; `launch()` repeats the same filtering. **Reproduce:** supply a record with a running PID, matching creation time and session ID, but omit `cwd`. Both decisions ignore the session instead of refusing an unjudgeable record. The in-memory probe confirmed that its identity passes while its folder filter excludes it.
+
+## consistency: approve
+
+## integration: approve
+
+## source-defect: approve
+
+## record: needs-attention
+
+4. P2 `.claude/skills/process-plan/SKILL.md:64`: The unconditional claim that the watchdog “never starts beside a live session” remains unsupported. The lock does not cover an unrecorded surviving child, and unknown liveness can still become absence. **Reproduce:** use findings 1 through 3. The documented guarantee must be backed by those failure paths before it can be recorded as delivered.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 6
+
+Four findings, all verified and fixed in the commit that carries this response. The exclusion rule was re-thought as fail-closed, not patched case by case: F2 (a process query that fails raises; only a missing or exited process reads as gone), F3 (a running session whose record lacks `sessionId` or `cwd` raises; self-tests `a-live-record-without-sessionId-starts-nothing`, `a-live-record-without-cwd-starts-nothing`), F1 (the watchdog writes a `spawning_at` mark with the attempt before it spawns; the mark holds the place for five minutes when no child was recorded, in `watch` and in `launch`; self-test `an-unrecorded-resume-holds-its-place`; a start that fails cleanly clears it), F4 (the skill states those three conditions).
