@@ -1605,6 +1605,9 @@ def resume_headless(root: str, world=None) -> tuple[int, str]:
             args = _resumable(root, guard)
             if args is None:
                 return 3, "resume-headless: the run was not started through scripts/start-campaign.ps1"
+            ready, _ = ready_rows(root)
+            if ready == 0 and review_pending(root) == 0:
+                return 3, "resume-headless: drained"
             if int(_read_state(root).get("trips", 0) or 0) >= 2:
                 return 3, "resume-headless: stalled, the Stop hook's breaker tripped twice"
             state, spent = _attempts_spent(root, guard, world)
@@ -1633,14 +1636,16 @@ def session_note(root: str, stdin: str, world=None) -> str:
     takes no slot, so it is told instead. Says nothing on any doubt or error: a note must never wedge a session."""
     try:
         opened = str(json.loads(stdin or "{}").get("session_id", ""))
-        guard = read_guard(root)
+        guard = read_guard(root) or {}
         held = (world or _World(root)).slot_held()
+        # Before the run's first `acquire` there is no guard yet: the launch record names the session being started.
+        campaign = str(guard.get("session_id") or _read_json(_launch_path(root)).get("session_id") or "")
     except Exception:
         return ""
-    if guard is None or not held or opened == str(guard.get("session_id", "")):
+    if not held or (campaign and opened == campaign):
         return ""
-    return ("An unattended campaign session is running in this repository right now (session "
-            f"{guard.get('session_id')}, run file {guard.get('run_file')}). It is the only writer: in this session, "
+    return ("An unattended campaign session is starting or running in this repository right now (session "
+            f"{campaign or 'not yet recorded'}). It is the only writer: in this session, "
             "read and run, and change no tracked file, commit nothing, and push nothing unless the operator first "
             "stops the campaign (tell that session to stop, which runs `python scripts/campaign_guard.py end`).")
 
@@ -3174,6 +3179,14 @@ def _self_test() -> int:
 
         payload = json.dumps({"session_id": "an-attended-session"})
         check("no-note-while-no-campaign-session-runs", session_note(root, payload, world) == "")
+        kept = read_guard(root)
+        os.unlink(os.path.join(root, "build", "claude-campaign-guard.json"))
+        starting = _SessionSlot(root)
+        starting.take()
+        check("a-session-opened-during-startup-is-told", "only writer" in session_note(root, payload, world)
+              and session_note(root, json.dumps({"session_id": sid}), world) == "")
+        starting.release()
+        _write_json(os.path.join(root, "build", "claude-campaign-guard.json"), kept)
         held = _SessionSlot(root)
         held.take()
         check("another-session-is-told-a-campaign-runs", sid in session_note(root, payload, world)
@@ -3204,6 +3217,9 @@ def _self_test() -> int:
 
         _set_ready(root, 0)
         check("watch-drained-starts-nothing", watch(root, world) == "drained" and len(world.runs) == runs)
+        code, said = resume_headless(root, world)
+        check("the-supervisor-rechecks-the-drained-plan", code == 3 and said.endswith("drained")
+              and len(world.runs) == runs, said)
         _set_ready(root, 3)
         os.unlink(_launch_path(root))
         code, said = resume_headless(root, world)

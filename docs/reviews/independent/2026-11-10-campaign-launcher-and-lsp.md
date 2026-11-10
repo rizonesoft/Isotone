@@ -263,3 +263,34 @@ OVERALL: needs-attention
 ## Response to round 8
 
 Round 8 accepted the session slot between campaign sessions. Its three findings are fixed in the commit that carries this response. F1: a session the operator opens takes no lock, so certainty there is not available to this module; the starters now read the session records as their last step before running anything (self-test `the-supervisor-reads-liveness-itself`), a `SessionStart` hook (`campaign_guard.py session-note`) tells a session that opens while the slot is held that the campaign is the only writer (self-tests `another-session-is-told-a-campaign-runs`, `the-campaign-session-itself-gets-no-note`), and F3: the skill and the decision record now say exactly that, an instruction and not a lock. F2: the launcher checks the plugin's own installed-and-enabled state from `claude plugin list --json`, installs it when missing, and warns on a failed exit code.
+
+## Round 9: sol (`gpt-6.1-sol` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-10T02:00:26Z
+- Effort: medium
+- Lines: 18
+- Digest: 93202929e6b969af
+
+## adversarial: needs-attention
+
+1. P1 `scripts/campaign_guard.py:1640`: The new SessionStart warning misses campaign startup before guard acquisition. **Reproduce:** pause `start()` after its liveness check, before Claude starts; open an ordinary session while no guard exists; then release the launcher. `session_note()` returns empty because `guard is None`, and the launcher starts beside the ordinary session. An in-memory probe confirmed `session_start_note=''` and `campaign_spawned=True` with the ordinary session live. The slot and launch record must protect this interval too.
+
+## consistency: approve
+
+## integration: needs-attention
+
+2. P2 `scripts/campaign_guard.py:1601`: The supervisor does not repeat the drained-plan check before resuming. **Reproduce:** let `watch()` observe runnable work, delay the detached supervisor, and make the plan reach zero runnable rows and zero pending reviews before releasing it. `resume_headless()` still spends an attempt and invokes Claude. An in-memory probe confirmed this with both counts zero. Recheck the drain condition in the supervisor, which is supposed to make the final startup decision.
+
+## source-defect: approve
+
+## record: needs-attention
+
+The SessionStart coverage described at `.claude/skills/process-plan/SKILL.md:64` is incomplete under finding 1: a session opening while the slot is held can receive no warning. The same paragraph’s statement that the watchdog starts nothing when the plan is drained fails under finding 2.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+## Response to round 9
+
+Two findings, both fixed in the commit that carries this response: F1 (the session note names the campaign session from the launch record before the run's first `acquire`, so a session opened during startup is told; self-test `a-session-opened-during-startup-is-told`), F2 (the supervisor rechecks the drained plan under the slot; self-test `the-supervisor-rechecks-the-drained-plan`). The skill text matches both.
