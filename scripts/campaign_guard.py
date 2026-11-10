@@ -289,9 +289,12 @@ def _acquire_locked(root: str, session: str, phase: int | None, run_file: str, c
     # reader nor a crash ever sees a torn guard and no other change lands in between.
     _write_json(guard, doc)
     launch = _read_json(_launch_path(root))
-    if slot_held(root) and launch.get("session_id") in (None, "") and isinstance(launch.get("args"), list):
+    if slot_held(root) and launch.get("runner") == "agy" and launch.get("session_id") in (None, "") \
+            and isinstance(launch.get("args"), list):
         launch["session_id"] = session
         launch.pop("launch_token", None)
+        launch.pop("handover_from", None)
+        launch.pop("handover_runner", None)
         _write_json(_launch_path(root), launch)
     if what != "re-pointed" or not same_run:
         try:
@@ -1362,6 +1365,41 @@ RESUME_PROMPT = (
 )
 
 
+def handover_prompt(guard: dict) -> str:
+    """Prompt for a fresh Antigravity campaign session taking over an unfinished non-Antigravity guard."""
+    old_runner = str(guard.get("runner") or "legacy")
+    old_session = str(guard.get("session_id") or "<unknown>")
+    phase = guard.get("phase")
+    scope = str(guard.get("scope") or "plan")
+    run_file = str(guard.get("run_file") or "")
+    run_id = str(guard.get("run_id") or "")
+    reason = f"runner migration from {old_runner} session {old_session} to agy"
+    return (
+        f"Isotone runner handover: an unfinished `{old_runner}` campaign run (session {old_session}, "
+        f"phase {phase}, scope {scope}, run file {run_file}"
+        + (f", run={run_id}" if run_id else "")
+        + ") could not be resumed in its original conversation and is being handed over to this Antigravity (`agy`) "
+        "conversation (pass this conversation's Conversation ID wherever `$CLAUDE_CODE_SESSION_ID` appears, and use "
+        "`schedule` / `manage_task` for `CronCreate` / `CronList` / `CronDelete`). Act autonomously, self-heal, and "
+        "preserve the unfinished run without starting a new run file.\n\n"
+        f"1. Run `python scripts/campaign_guard.py whoami --session <Conversation ID>`. If SessionStart has not "
+        f"already migrated the guard to this conversation, mint a generation, create the heartbeat job with "
+        f"`schedule`, and run `python scripts/campaign_guard.py acquire --session <Conversation ID> --phase {phase} "
+        f"--run-file {run_file} --cron-id <task id> --generation <generation> --scope {scope} "
+        f"--handover \"{reason}\"`, then re-run `whoami` and confirm it prints OWNER.\n"
+        "2. Check the heartbeat job with `manage_task` (`list`) and process-plan's Run guard step 1 (`reconcile`): "
+        "when the guard's job (`handover-pending` or a missing task) is not live, replace it as steps 2 and 3 say "
+        "(a fresh generation, then `acquire` with the new task id). Append `- bookkeeping: runner handover to agy "
+        "<UTC>` to the run file's Critical events once step 3 below allows a write.\n"
+        "3. Then follow process-plan's canonical heartbeat prompt from its step 2 to its step 7, in order and without "
+        "skipping one: the hook-error and pending-cancel checks, the closeout and drained checks, the stall check of "
+        "step 6 (which ends the run instead of resuming it), and only then step 7: `merge_prs.py recover` and the CI "
+        "read-back first, then the open section in the run file from where it stopped, then the next ready row, under "
+        "process-plan for a plan-scoped run or process-phase for a phase-scoped one. Stop only at closeout, park, or "
+        "an operator stop."
+    )
+
+
 def _launch_path(root: str) -> str:
     return os.path.join(root, "build", "claude-campaign-launch.json")
 
@@ -1655,10 +1693,10 @@ class _World:
                 guard = read_guard(self.root)
             except GuardError:
                 guard = None
-            if guard and str(guard.get("session_id", "")) in held_cids:
+            if guard and guard.get("runner") == "agy" and str(guard.get("session_id", "")) in held_cids:
                 placed.setdefault(str(guard["session_id"]), str(guard.get("workspace") or self.root))
             launch = _read_json(_launch_path(self.root))
-            if str(launch.get("session_id", "")) in held_cids:
+            if launch.get("runner") == "agy" and str(launch.get("session_id", "")) in held_cids:
                 placed.setdefault(str(launch["session_id"]), self.root)
             for cid, cwd in placed.items():
                 records.append({"sessionId": cid, "cwd": cwd})
@@ -1735,13 +1773,19 @@ def _live_in_tree(root: str, world) -> list[str]:
 
 
 def _resumable(root: str, guard: dict) -> list[str] | None:
-    """The flags to resume the guard's session with, from the record `start` wrote for it; None when the run was not
-    started through `start`, so the flags it ran with are unknown."""
+    """The flags to resume the guard's Antigravity session with, from the record `start` wrote for it; None when the
+    guard belongs to another runner or was not started through `start`, so the flags it ran with are unknown."""
+    if guard.get("runner") != "agy":
+        return None
     record = _read_json(_launch_path(root))
     args = record.get("args")
-    if record.get("session_id") != str(guard.get("session_id", "")) or not isinstance(args, list):
+    if record.get("runner") != "agy" or record.get("session_id") != str(guard.get("session_id", "")) \
+            or not isinstance(args, list):
         return None
-    return [str(a) for a in args]
+    str_args = [str(a) for a in args]
+    if any(a.startswith("claude-") or a in ("--session-id", "--resume", "--effort") for a in str_args):
+        return None
+    return str_args
 
 
 def _attempts_spent(root: str, guard: dict, world) -> tuple[dict, bool]:
@@ -1773,6 +1817,9 @@ def watch(root: str, world=None) -> str:
     if live:
         return f"session live here: {live[0]}"
     if _resumable(root, guard) is None:
+        if guard.get("runner") != "agy":
+            return (f"session dead and not resumable (guard runner is {guard.get('runner') or 'legacy'!r}, not 'agy'): "
+                    "start it again with scripts/start-campaign.ps1 to hand over the run")
         return "session dead and not resumable: start it again with scripts/start-campaign.ps1"
     ready, _ = ready_rows(root)
     if ready == 0 and review_pending(root) == 0:
@@ -1809,6 +1856,9 @@ def resume_headless(root: str, world=None) -> tuple[int, str]:
                 return 3, "resume-headless: inactive"
             args = _resumable(root, guard)
             if args is None:
+                if guard.get("runner") != "agy":
+                    return 3, (f"resume-headless: guard belongs to runner {guard.get('runner') or 'legacy'!r}, not "
+                               "'agy'; run scripts/start-campaign.ps1 to hand over the run")
                 return 3, "resume-headless: the run was not started through scripts/start-campaign.ps1"
             ready, _ = ready_rows(root)
             if ready == 0 and review_pending(root) == 0:
@@ -1859,16 +1909,40 @@ def session_note(root: str, stdin: str, world=None, env: dict | None = None) -> 
                 with _Lock(root, wait=2.0):
                     launch = _read_json(_launch_path(root))
                     if launch.get("launch_token") == launch_tok and not launch.get("session_id"):
+                        if "handover_from" in launch:
+                            cur_guard = read_guard(root)
+                            if cur_guard is not None and cur_guard.get("runner") != "agy" \
+                                    and str(cur_guard.get("session_id", "")) == str(launch.get("handover_from", "")):
+                                old_runner = str(launch.get("handover_runner") or cur_guard.get("runner") or "legacy")
+                                old_owner = str(cur_guard.get("session_id") or "<unknown>")
+                                _acquire_locked(
+                                    root,
+                                    session=opened,
+                                    phase=cur_guard.get("phase"),
+                                    run_file=str(cur_guard.get("run_file") or ""),
+                                    cron_id="handover-pending",
+                                    handover=f"runner migration from {old_runner} session {old_owner} to agy",
+                                    generation=None,
+                                    scope=str(cur_guard.get("scope") or "plan"),
+                                )
                         launch["session_id"] = opened
                         launch.pop("launch_token", None)
+                        launch.pop("handover_from", None)
+                        launch.pop("handover_runner", None)
                         _write_json(_launch_path(root), launch)
                         return ""
             except (GuardError, OSError):
                 pass
         guard = read_guard(root) or {}
         held = (world or _World(root)).slot_held()
-        # Before the run's first `acquire` there is no guard yet: the launch record names the session being started.
-        campaign = str(guard.get("session_id") or _read_json(_launch_path(root)).get("session_id") or "")
+        # Before the run's first `acquire` (or before a runner-handover launch binds its new conversationId), use the
+        # launch record so another session opening meanwhile is not pointed at a dead pre-upgrade session id.
+        launch_rec = _read_json(_launch_path(root))
+        if launch_rec.get("launch_token") and "handover_from" in launch_rec:
+            campaign = str(launch_rec.get("session_id") or "")
+        else:
+            campaign = str((guard.get("session_id") if guard.get("runner") == "agy" else "")
+                           or launch_rec.get("session_id") or guard.get("session_id") or "")
     except Exception:
         return ""
     if not held or (campaign and opened == campaign):
@@ -1921,16 +1995,39 @@ def start(root: str, world=None) -> tuple[int, str]:
                 return 3, (f"Another Antigravity or Claude session is open in this folder ({', '.join(live)}). One "
                            "session writes, so nothing was started: close it, then run this again.")
             args = [*LAUNCH_ARGS, "--model", writer_model(root)]
-            if guard is not None:
+            if guard is not None and guard.get("runner") == "agy":
                 session = str(guard.get("session_id", ""))
                 argv = [*args, "--conversation", session, "-i", RESUME_PROMPT]
-                _write_json(_launch_path(root), {"session_id": session, "args": args, "at": _utc_now()})
+                _write_json(_launch_path(root), {"runner": "agy", "session_id": session, "args": args,
+                                                 "at": _utc_now()})
                 label = f"Resuming the Isotone campaign (conversation {session})."
+            elif guard is not None:
+                phase = guard.get("phase")
+                run_file = str(guard.get("run_file") or "")
+                if not isinstance(phase, int) or isinstance(phase, bool) or not run_file \
+                        or os.path.isabs(run_file) or ".." in run_file.replace("\\", "/").split("/"):
+                    raise GuardError("cannot hand over the non-Antigravity guard: its phase or run_file is invalid")
+                old_runner = str(guard.get("runner") or "legacy")
+                old_session = str(guard.get("session_id") or "")
+                token = mint_generation()
+                extra_env = {"ISOTONE_CAMPAIGN_LAUNCH": token}
+                argv = [*args, "-i", handover_prompt(guard)]
+                _write_json(_launch_path(root), {
+                    "runner": "agy",
+                    "session_id": "",
+                    "launch_token": token,
+                    "handover_from": old_session,
+                    "handover_runner": old_runner,
+                    "args": args,
+                    "at": _utc_now(),
+                })
+                label = (f"Handing over the Isotone campaign from {old_runner} session "
+                         f"{old_session or '<unknown>'} to Antigravity.")
             else:
                 token = mint_generation()
                 extra_env = {"ISOTONE_CAMPAIGN_LAUNCH": token}
                 argv = [*args, "-i", "/goal " + GOAL]
-                _write_json(_launch_path(root), {"session_id": "", "launch_token": token, "args": args,
+                _write_json(_launch_path(root), {"runner": "agy", "session_id": "", "launch_token": token, "args": args,
                                                  "at": _utc_now()})
                 label = "Starting the Isotone campaign in Antigravity."
         print(label, flush=True)
@@ -3579,9 +3676,85 @@ def _self_test() -> int:
         check("watch-needs-the-launch-record", watch(root, world).startswith("session dead and not resumable")
               and code == 3 and len(world.runs) == runs, said)
         _guard(root, "another-session")
-        _write_json(_launch_path(root), {"session_id": sid, "args": flags})
+        _write_json(_launch_path(root), {"runner": "agy", "session_id": sid, "args": flags})
         check("watch-ignores-another-runs-record", watch(root, world).startswith("session dead and not resumable")
               and resume_headless(root, world)[0] == 3 and len(world.runs) == runs)
+
+        # Pre-upgrade or interrupted Claude campaign guard (`runner: "claude"`): never resumed as an Antigravity
+        # conversation id or with old `claude-*` model flags; `start` hands the unfinished run over to a fresh
+        # Antigravity conversation, preserving phase, scope, run_file, and run_id.
+        _write_json(os.path.join(root, "build", "claude-campaign-guard.json"), {
+            "runner": "claude",
+            "workspace": root,
+            "phase": 4,
+            "scope": "phase",
+            "run_file": RUN_FILE,
+            "session_id": "claude-old-session",
+            "cron_id": "claude-job-9",
+            "generation": "001122334455",
+            "job_created_at": "2026-11-09T10:00:00Z",
+            "run_id": "deadbeefcafe",
+        })
+        _write_json(_launch_path(root), {
+            "session_id": "claude-old-session",
+            "args": ["--dangerously-skip-permissions", "--model", "claude-opus-5-5"],
+        })
+        w_claude = watch(root, world)
+        rh_code, rh_said = resume_headless(root, world)
+        check("watch-refuses-pre-upgrade-claude-guard-and-flags",
+              w_claude.startswith("session dead and not resumable") and "guard runner is 'claude'" in w_claude
+              and rh_code == 3 and "runner 'claude'" in rh_said and len(world.runs) == runs,
+              f"{w_claude!r} / {rh_said!r}")
+        world.run = failing_run
+        try:
+            start(root, world)
+            failed_launch = False
+        except GuardError:
+            failed_launch = True
+        world.run = good_run
+        still_claude = read_guard(root) or {}
+        check("failed-handover-launch-preserves-original-claude-guard",
+              failed_launch and still_claude.get("runner") == "claude"
+              and still_claude.get("session_id") == "claude-old-session"
+              and still_claude.get("run_id") == "deadbeefcafe", repr(still_claude))
+        world.runs.clear()
+        world.minted.clear()
+        world.sig = "s5"
+        code, _ = start(root, world)
+        migrated_cid = world.minted[0] if world.minted else ""
+        migrated_guard = read_guard(root) or {}
+        migrated_launch = _read_json(_launch_path(root))
+        check("start-hands-over-claude-guard-to-fresh-agy-conversation",
+              code == 0 and len(world.runs) == 1
+              and "--conversation" not in world.runs[0][0]
+              and "claude-old-session" not in world.runs[0][0][:4]
+              and world.runs[0][0][:4] == [*flags, "-i"]
+              and "Isotone runner handover:" in world.runs[0][0][4]
+              and migrated_cid and migrated_cid != "claude-old-session"
+              and migrated_guard.get("runner") == "agy"
+              and migrated_guard.get("session_id") == migrated_cid
+              and migrated_guard.get("handover_from") == "claude-old-session"
+              and "runner migration from claude session claude-old-session to agy" in str(migrated_guard.get("handover_reason"))
+              and migrated_guard.get("phase") == 4
+              and migrated_guard.get("scope") == "phase"
+              and migrated_guard.get("run_file") == RUN_FILE
+              and migrated_guard.get("run_id") == "deadbeefcafe"
+              and whoami(root, migrated_cid) == "OWNER run=deadbeefcafe scope=phase"
+              and migrated_launch.get("runner") == "agy"
+              and migrated_launch.get("session_id") == migrated_cid
+              and migrated_launch.get("args") == flags,
+              repr((migrated_guard, migrated_launch)))
+        world.runs.clear()
+        check("watch-resumes-migrated-agy-conversation-after-handover",
+              watch(root, world) == "resumed, attempt 1"
+              and world.runs == [([*flags, "--conversation", migrated_cid, "-p", RESUME_PROMPT], True)],
+              repr(world.runs))
+        _write_json(_launch_path(root), {
+            "runner": "agy",
+            "session_id": migrated_cid,
+            "args": ["--dangerously-skip-permissions", "--model", "claude-opus-5-5"],
+        })
+        check("resumable-rejects-stale-claude-model-flag", _resumable(root, migrated_guard) is None)
 
         whole = {"pid": 1, "procStart": "5", "sessionId": "s", "cwd": root}
         check("a-gone-process-is-not-a-live-session", not _session_live(whole, None, True))

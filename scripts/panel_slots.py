@@ -214,8 +214,11 @@ SHELL_DENY = (
 )
 
 
+_DQ_MARK = "\x00"
+
+
 def _bare(token: str) -> str:
-    return token.replace("\\", "/").rsplit("/", 1)[-1].lower()
+    return token.lstrip(_DQ_MARK).replace("\\", "/").rsplit("/", 1)[-1].lower()
 
 
 def _flag(token: str) -> str:
@@ -666,6 +669,10 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
             ("a `Start-Process -FilePath` CLI bypass", "deny",
              {"name": "run_command", "args": {
                  "CommandLine": "Start-Process -FilePath claude -ArgumentList '-p --agent isotone-researcher inspect-callers' -Wait -NoNewWindow"}}),
+            ("a nonempty `cmd /c start \"title\"` CLI bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": 'cmd /c start "Isotone reviewer" codex exec review'}}),
+            ("a read-only `rg` search mentioning `ProcessStartInfo|codex`", "allow",
+             {"name": "run_command", "args": {"CommandLine": "rg -n 'ProcessStartInfo|codex' scripts"}}),
             ("a read-only `research` subagent on `inherit`", "allow",
              {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}}),
         ):
@@ -1524,7 +1531,11 @@ _AGY_SP_VALUE_FLAGS = frozenset((
 _AGY_INLINE_SPAWN = re.compile(
     r"\b(?:subprocess|os\.system|os\.popen|os\.spawn\w*|os\.exec\w*|Popen|child_process)\b", re.IGNORECASE)
 _AGY_PS_SPAWN = re.compile(
-    r"(?:\bProcess\s*\]::\s*Start\b|\bProcessStartInfo\b|\bWScript\.Shell\b|\bInvoke-(?:Wmi|Cim)Method\b)",
+    r"(?:\[[^\]]*\bProcess\]\s*::\s*Start\b"
+    r"|::\s*Start\s*\("
+    r"|\[(?:System\.)?(?:Diagnostics\.)?ProcessStartInfo\]"
+    r"|\bNew-Object\b[^;\n|]*\b(?:(?:System\.)?(?:Diagnostics\.)?ProcessStartInfo|WScript\.Shell|Shell\.Application)\b"
+    r"|(?:^|[;&|{(\n]\s*)Invoke-(?:Wmi|Cim)Method\b)",
     re.IGNORECASE)
 _AGY_PS_VAR_CLI = re.compile(
     r"\$(\w+)\s*=\s*['\"]?(?:[^'\";\s]*[/\\])?(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?['\"]?(?=\s|;|$)",
@@ -1533,10 +1544,11 @@ _AGY_CLI_WORD = re.compile(r"\b(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?\b", re
 
 
 def _split_ps_flag(token: str) -> tuple[str, str | None]:
-    if token.startswith("-") and ":" in token:
-        flag, val = token.split(":", 1)
+    clean = token.lstrip(_DQ_MARK)
+    if clean.startswith("-") and ":" in clean:
+        flag, val = clean.split(":", 1)
         return flag.lower(), val
-    return token.lower(), None
+    return clean.lower(), None
 
 
 def _is_sp_filepath_flag(flag: str) -> bool:
@@ -1557,13 +1569,17 @@ def _unwrap_start_process(tokens: list[str], from_cmd: bool = False) -> list[str
     n = len(tokens)
     while i < n:
         tok = tokens[i]
+        if tok.startswith(_DQ_MARK):
+            positionals.append(tok)
+            i += 1
+            continue
         flag, inline_val = _split_ps_flag(tok)
         if _is_sp_filepath_flag(flag):
             if inline_val is not None:
-                exe = inline_val
+                exe = inline_val.lstrip(_DQ_MARK)
                 i += 1
             elif i + 1 < n:
-                exe = tokens[i + 1]
+                exe = tokens[i + 1].lstrip(_DQ_MARK)
                 i += 2
             else:
                 i += 1
@@ -1576,14 +1592,15 @@ def _unwrap_start_process(tokens: list[str], from_cmd: bool = False) -> list[str
             elif i + 1 < n:
                 raw_vals.append(tokens[i + 1])
                 i += 2
-                while i < n and not tokens[i].startswith("-") and (tokens[i - 1].endswith(",") or tokens[i].startswith(",")):
+                while i < n and not tokens[i].lstrip(_DQ_MARK).startswith("-") \
+                        and (tokens[i - 1].endswith(",") or tokens[i].lstrip(_DQ_MARK).startswith(",")):
                     raw_vals.append(tokens[i])
                     i += 1
             else:
                 i += 1
             for rv in raw_vals:
-                for piece in re.split(r"[,_]+", rv):
-                    cleaned_piece = piece.strip("'\"")
+                for piece in re.split(r"[,_]+", rv.lstrip(_DQ_MARK)):
+                    cleaned_piece = piece.lstrip(_DQ_MARK).strip("'\"")
                     if cleaned_piece:
                         sp_args.append(cleaned_piece)
             continue
@@ -1599,30 +1616,36 @@ def _unwrap_start_process(tokens: list[str], from_cmd: bool = False) -> list[str
         positionals.append(tok)
         i += 1
     if exe is None and positionals:
-        if from_cmd and len(positionals) >= 2 and positionals[0] == "_":
-            exe = positionals[1]
-            positionals = positionals[2:]
+        if from_cmd and positionals[0].startswith(_DQ_MARK):
+            if len(positionals) >= 2:
+                exe = positionals[1].lstrip(_DQ_MARK)
+                positionals = positionals[2:]
+            else:
+                positionals = []
         else:
-            exe = positionals[0]
+            exe = positionals[0].lstrip(_DQ_MARK)
             positionals = positionals[1:]
     if exe is None:
         return []
     return [exe, *sp_args, *positionals]
 
 
-def _strip_segment_prefix(tokens: list[str]) -> tuple[list[str], bool]:
+def _strip_segment_prefix(tokens: list[str], in_cmd: bool = False) -> tuple[list[str], bool, bool]:
     """Advance past leading assignments, call operators, and shell/process wrappers in one command segment.
-    Returns `(remaining_tokens, used_shell_wrapper)`."""
+    Returns `(remaining_tokens, used_shell_wrapper, entered_cmd_shell)`."""
     cur = list(tokens)
     used_wrapper = False
-    from_cmd = False
+    from_cmd = in_cmd
+    saw_cmd = in_cmd
     while cur:
-        tok = cur[0]
+        raw_tok = cur[0]
+        is_dq = raw_tok.startswith(_DQ_MARK)
+        tok = raw_tok.lstrip(_DQ_MARK)
         low = _bare(tok).strip("'\"")
-        if tok in ("$", ".", "&") or (tok.startswith("$") and len(cur) > 1 and cur[1] == "="):
+        if not is_dq and (tok in ("$", ".", "&") or (tok.startswith("$") and len(cur) > 1 and cur[1] == "=")):
             cur = cur[2:] if (tok.startswith("$") and len(cur) > 1 and cur[1] == "=") else cur[1:]
             continue
-        if (tok.startswith("$") and "=" in tok) or ("=" in tok and not tok.startswith("-")):
+        if not is_dq and ((tok.startswith("$") and "=" in tok) or ("=" in tok and not tok.startswith("-"))):
             cur = cur[1:]
             continue
         if low in ("nohup", "command", "invoke-expression", "iex"):
@@ -1633,7 +1656,7 @@ def _strip_segment_prefix(tokens: list[str]) -> tuple[list[str], bool]:
             used_wrapper = True
             idx = 1
             while idx < len(cur):
-                etok = cur[idx]
+                etok = cur[idx].lstrip(_DQ_MARK)
                 if "=" in etok and not etok.startswith("-"):
                     idx += 1
                 elif etok in ("-i", "--ignore-environment", "-0", "--null"):
@@ -1647,23 +1670,29 @@ def _strip_segment_prefix(tokens: list[str]) -> tuple[list[str], bool]:
         if low in ("cmd", "cmd.exe"):
             used_wrapper = True
             from_cmd = True
+            saw_cmd = True
             idx = 1
-            while idx < len(cur) and _AGY_CMD_SWITCH.match(cur[idx]):
+            while idx < len(cur) and _AGY_CMD_SWITCH.match(cur[idx].lstrip(_DQ_MARK)):
                 idx += 1
             cur = cur[idx:]
             continue
         if low in ("bash", "bash.exe", "sh", "sh.exe"):
             used_wrapper = True
+            from_cmd = False
+            saw_cmd = False
             idx = 1
-            while idx < len(cur) and cur[idx].lower() in ("-c", "-lc", "-l", "-i", "--login", "--norc", "--noprofile", "--"):
+            while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).lower() in (
+                    "-c", "-lc", "-l", "-i", "--login", "--norc", "--noprofile", "--"):
                 idx += 1
             cur = cur[idx:]
             continue
         if low in ("wsl", "wsl.exe"):
             used_wrapper = True
+            from_cmd = False
+            saw_cmd = False
             idx = 1
-            while idx < len(cur) and cur[idx].startswith("-"):
-                wflag = cur[idx].lower()
+            while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).startswith("-"):
+                wflag = cur[idx].lstrip(_DQ_MARK).lower()
                 if wflag in ("-e", "--exec", "--"):
                     idx += 1
                     break
@@ -1675,8 +1704,10 @@ def _strip_segment_prefix(tokens: list[str]) -> tuple[list[str], bool]:
             continue
         if low in ("pwsh", "pwsh.exe", "powershell", "powershell.exe"):
             used_wrapper = True
+            from_cmd = False
+            saw_cmd = False
             idx = 1
-            while idx < len(cur) and cur[idx].startswith("-"):
+            while idx < len(cur) and cur[idx].lstrip(_DQ_MARK).startswith("-"):
                 pflag, pinline = _split_ps_flag(cur[idx])
                 if pflag in ("-file", "-f"):
                     if pinline is not None:
@@ -1707,35 +1738,43 @@ def _strip_segment_prefix(tokens: list[str]) -> tuple[list[str], bool]:
             from_cmd = False
             continue
         break
-    return cur, used_wrapper
+    return [t.lstrip(_DQ_MARK) for t in cur], used_wrapper, saw_cmd
 
 
-def _agy_command_decision(command: str, depth: int = 0) -> str | None:
+def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False) -> str | None:
     """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
     forms = _shell_forms(command)
     if any(re.search(r"(^|\s)--no-verify(\s|$)", form) for form in forms):
         return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
-    if _AGY_PS_SPAWN.search(command) and _AGY_CLI_WORD.search(command):
+    cleaned = command.replace("`", " ")
+    unquoted = _QUOTED.sub(" '' ", cleaned)
+    if _AGY_PS_SPAWN.search(unquoted) and _AGY_CLI_WORD.search(cleaned):
         return ("Direct .NET/COM/CIM process launches of `claude`, `agy`, or `codex` bypass delegation and dispatcher "
                 "gates (standards/delegation.md).")
-    for vm in _AGY_PS_VAR_CLI.finditer(command):
+    for vm in _AGY_PS_VAR_CLI.finditer(cleaned):
         vname = re.escape(vm.group(1))
-        if re.search(rf"(?:[&.]|start(?:-process)?|saps)\s+['\"]?\${vname}\b", command, re.IGNORECASE):
+        if re.search(rf"(?:^|[;&|{{(\n]\s*)\${vname}\s*=", unquoted) \
+                and re.search(rf"(?:[&.]|start(?:-process)?|saps)\s+['\"]?\${vname}\b", cleaned, re.IGNORECASE):
             return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass delegation and "
                     "dispatcher gates (standards/delegation.md).")
-    cleaned = command.replace("`", " ")
-    joined = _QUOTED.sub(lambda m: (m.group(1) if m.group(1) is not None else m.group(2))
-                         .replace(" ", "_") or "_", cleaned)
+    joined = _QUOTED.sub(
+        lambda m: (_DQ_MARK + (re.sub(r"[\s;&|{}()]+", "_", m.group(1)).strip("_") or "_"))
+        if m.group(1) is not None
+        else (re.sub(r"[\s;&|{}()]+", "_", m.group(2)).strip("_") or "_"),
+        cleaned)
     unpack_quotes = False
+    unpack_in_cmd = False
     for tokens in _segments(joined):
         for tidx, tok in enumerate(tokens):
             if _bare(tok).strip("'\"") in ("pwsh", "pwsh.exe", "powershell", "powershell.exe") \
                     and any(_AGY_ENCODED_FLAG.match(_split_ps_flag(t)[0]) for t in tokens[tidx + 1:]):
                 return ("Encoded PowerShell commands hide their arguments from the command gate; pass plain commands "
                         "(standards/delegation.md).")
-        rest_tokens, wrapped = _strip_segment_prefix(tokens)
+        rest_tokens, wrapped, seg_cmd = _strip_segment_prefix(tokens, in_cmd=in_cmd)
         if wrapped:
             unpack_quotes = True
+            if seg_cmd:
+                unpack_in_cmd = True
         if not rest_tokens:
             continue
         head = _bare(rest_tokens[0]).strip("'\"")
@@ -1762,7 +1801,7 @@ def _agy_command_decision(command: str, depth: int = 0) -> str | None:
         for m in _QUOTED.finditer(cleaned):
             inner = m.group(1) if m.group(1) is not None else m.group(2)
             if inner and inner.strip():
-                why = _agy_command_decision(inner, depth + 1)
+                why = _agy_command_decision(inner, depth + 1, in_cmd=unpack_in_cmd)
                 if why:
                     return why
     return None
@@ -2555,6 +2594,12 @@ def _self_test() -> int:
         "python scripts/panel_slots.py delegate-probe",
         "pwsh -NoProfile -File scripts/start-campaign.ps1 -InstallShortcut",
         "python -c \"import re; print(re.search('claude', 'claude -p'))\"",
+        "rg -n 'ProcessStartInfo|codex' scripts",
+        'rg -n "[System.Diagnostics.Process]::Start|codex" scripts',
+        "git log -S ProcessStartInfo --grep codex",
+        "git log -S Invoke-CimMethod --grep codex",
+        'git commit -m "block [Diagnostics.Process]::Start(\'codex\') and $bin = \'claude\'; & $bin"',
+        'cmd /c start "Just A Window Title"',
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -2582,12 +2627,21 @@ def _self_test() -> int:
             ("Start-Process -FilePath claude", "run_command", {"CommandLine": "Start-Process -FilePath claude -ArgumentList '-p --agent isotone-researcher inspect-callers' -Wait -NoNewWindow"}, "bypass delegation"),
             ("Start-Process trailing -FilePath codex", "run_command", {"CommandLine": "Start-Process -WorkingDirectory . -Wait -ArgumentList 'exec review' -FilePath codex"}, "review-dispatch.py"),
             ("Start-Process colon -FilePath:agy", "run_command", {"CommandLine": "saps -FilePath:agy -Args '-p inspect'"}, "bypass delegation"),
-            ("cmd start title claude", "run_command", {"CommandLine": 'cmd /c start "" claude -p inspect'}, "bypass delegation"),
+            ("cmd start empty title claude", "run_command", {"CommandLine": 'cmd /c start "" claude -p inspect'}, "bypass delegation"),
+            ("cmd start nonempty title codex", "run_command", {"CommandLine": 'cmd /c start "Isotone reviewer" codex exec review'}, "review-dispatch.py"),
+            ("quoted Program Files (x86) codex path", "run_command", {"CommandLine": '"C:\\Program Files (x86)\\codex.cmd" exec review'}, "review-dispatch.py"),
+            ("cmd single-quoted start nonempty title codex", "run_command", {"CommandLine": "cmd /c 'start \"Isotone reviewer\" codex exec review'"}, "review-dispatch.py"),
+            ("cmd start /b nonempty title claude", "run_command", {"CommandLine": 'cmd /c start /b "Isotone reviewer" claude -p inspect'}, "bypass delegation"),
             ("pwsh -WorkingDirectory unquoted claude", "run_command", {"CommandLine": "pwsh -WorkingDirectory . -Command claude -p inspect"}, "bypass delegation"),
             ("cmd wrapped encoded powershell", "run_command", {"CommandLine": "cmd /c pwsh -Enc ZWNobyBoZWxsbw=="}, "Encoded PowerShell"),
             ("wsl -d distro claude", "run_command", {"CommandLine": "wsl -d Ubuntu -u root -- claude -p inspect"}, "bypass delegation"),
             ("scriptblock Invoke-Command codex", "run_command", {"CommandLine": "Invoke-Command -ScriptBlock { codex exec 'review' }"}, "review-dispatch.py"),
             ("dotnet Process::Start claude", "run_command", {"CommandLine": "[System.Diagnostics.Process]::Start('claude', '-p inspect')"}, "Direct .NET/COM/CIM"),
+            ("New-Object ProcessStartInfo codex", "run_command", {"CommandLine": "$psi = New-Object System.Diagnostics.ProcessStartInfo 'codex', 'exec'; [System.Diagnostics.Process]::Start($psi)"}, "Direct .NET/COM/CIM"),
+            ("ProcessStartInfo::new claude", "run_command", {"CommandLine": "$psi = [Diagnostics.ProcessStartInfo]::new('claude', '-p'); [Diagnostics.Process]::Start($psi)"}, "Direct .NET/COM/CIM"),
+            ("WScript.Shell Run codex", "run_command", {"CommandLine": "(New-Object -ComObject WScript.Shell).Run('codex exec review')"}, "Direct .NET/COM/CIM"),
+            ("Invoke-CimMethod Win32_Process codex", "run_command", {"CommandLine": "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='codex exec'}"}, "Direct .NET/COM/CIM"),
+            ("pwsh wrapped Process::Start claude", "run_command", {"CommandLine": "pwsh -NoProfile -Command \"[System.Diagnostics.Process]::Start('claude', '-p inspect')\""}, "Direct .NET/COM/CIM"),
             ("powershell variable indirect claude", "run_command", {"CommandLine": "$bin = 'claude'; & $bin -p inspect"}, "Variable-indirect"),
             ("python inline subprocess claude", "run_command", {"CommandLine": "python -c \"import subprocess; subprocess.run(['claude', '-p', 'x'])\""}, "Inline script subprocesses"),
             ("encoded powershell command", "run_command", {"CommandLine": "pwsh -EncodedCommand ZWNobyBoZWxsbw=="}, "Encoded PowerShell"),
