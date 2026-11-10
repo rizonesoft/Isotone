@@ -3,7 +3,7 @@ name: debug-evidence
 description: Gather the evidence for a bug before anyone forms a theory -- logs and journals around the failure time, reproduction attempts, the same request made along each path the failing client could have taken, timings, and what changed recently. Reports observations separated from interpretation; the root cause and the fix stay with the main loop. Use for Phase 1 of systematic debugging whenever the evidence needs more than two or three commands.
 model: sonnet
 effort: high
-tools: Bash, Read, Glob, Grep
+tools: Bash, Read, Glob, Grep, LSP
 disallowedTools: Edit, Write, NotebookEdit, Agent
 hooks:
   PreToolUse:

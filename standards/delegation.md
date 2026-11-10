@@ -31,6 +31,8 @@ The delegates:
 | `test-runner` | `build/` only | Running a named test or check command outside a section's gate run and reporting the counts and the exact failures |
 | `mutation-tester` | a scratch folder outside the repository only | Proving a test can fail: each mutation the lead specifies, applied in a scratch copy of the candidate, the named command run, the file restored, and killed or survived reported per mutation |
 
+The four that answer questions about code (`isotone-researcher`, `isotone-reviewer`, `code-explorer`, `debug-evidence`) also carry the read-only `LSP` tool, so a caller, a definition, or an implementation is resolved by the language server (clangd on the pinned toolchain, pyright for the Python tooling; `tools/claude-plugins/isotone-lsp`) instead of guessed from a text match. The four that only run commands do not need it.
+
 The last five are pinned like the `isotone-*` definitions: the delegate effort, the denied edit tools, and the `delegate-shell-gate` hook. The shell gate denies `git worktree add` and `git apply` to every delegate, so `mutation-tester` (operator decision 2026-10-21) builds its copy from `git ls-files` with a plain file copy into a scratch folder outside the repository and runs no git write. After any change to a definition, `python scripts/panel_slots.py validate` must pass before the session uses it.
 
 ## What the lead keeps

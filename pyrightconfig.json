@@ -1,0 +1,7 @@
+{
+  "include": ["scripts", ".conclave/automations", "tools"],
+  "exclude": ["**/__pycache__", "build", "artifacts"],
+  "extraPaths": ["scripts", "scripts/lib"],
+  "pythonPlatform": "Windows",
+  "typeCheckingMode": "standard"
+}

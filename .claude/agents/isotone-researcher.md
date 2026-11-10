@@ -3,7 +3,7 @@ name: isotone-researcher
 description: Read-only research delegate on Sonnet at high effort. Use for bounded fact-finding the lead will act on -- fact-checking a TODO section's claims against the repository (currency, accuracy, deferrals), locating callers and consumers, reading a file-format specification or Microsoft Learn page, and competitor research with versions and sources. Returns cited findings; writes nothing.
 model: sonnet
 effort: high
-tools: Read, Grep, Glob, Bash, PowerShell, WebFetch, WebSearch
+tools: Read, Grep, Glob, LSP, Bash, PowerShell, WebFetch, WebSearch
 disallowedTools: Edit, Write, NotebookEdit, Agent
 color: cyan
 hooks:

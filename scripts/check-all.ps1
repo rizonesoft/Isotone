@@ -59,6 +59,12 @@
       test_run_arm64_tests.py.
   A python gate whose script is absent is skipped with a warning. Every gate
   runs even after an earlier failure; the exit code is 1 when any gate failed.
+
+  Where Bosun is installed (the development machine; CI has none), the whole run
+  takes one of its build slots, so heavy jobs from every repository and session
+  on the machine take turns for memory, and the run and everything it starts
+  end together inside Bosun's write budget. A run already inside a slot
+  (BOSUN_SLOT) passes straight through.
 .EXAMPLE
   pwsh scripts/check-all.ps1
   pwsh scripts/check-all.ps1 -SkipBuild
@@ -72,9 +78,18 @@ param(
   [string]$Config = 'Release'
 )
 $ErrorActionPreference = 'Stop'
+
+if (-not $env:BOSUN_SLOT -and (Get-Command -Name bosun -CommandType Application -ErrorAction Ignore)) {
+  $forward = @('-Config', $Config)
+  if ($SkipBuild) { $forward += '-SkipBuild' }
+  if ($SkipNative) { $forward += '-SkipNative' }
+  & bosun run -- pwsh -NoProfile -File $PSCommandPath @forward
+  exit $LASTEXITCODE
+}
+
 . "$PSScriptRoot/_common.ps1"
 
-$results = [System.Collections.Generic.List[object]]::new()
+$results =[System.Collections.Generic.List[object]]::new()
 
 function Invoke-Gate([string]$Name, [scriptblock]$Body) {
   Write-Step $Name

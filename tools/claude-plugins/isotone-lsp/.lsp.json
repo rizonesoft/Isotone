@@ -1,0 +1,25 @@
+{
+  "clangd": {
+    "command": "python",
+    "args": ["${CLAUDE_PROJECT_DIR}/scripts/lsp-launch.py", "clangd"],
+    "extensionToLanguage": {
+      ".c": "c",
+      ".h": "cpp",
+      ".hpp": "cpp",
+      ".cpp": "cpp",
+      ".cc": "cpp",
+      ".cxx": "cpp",
+      ".inl": "cpp",
+      ".ixx": "cpp"
+    },
+    "startupTimeout": 60000
+  },
+  "pyright": {
+    "command": "python",
+    "args": ["${CLAUDE_PROJECT_DIR}/scripts/lsp-launch.py", "pyright"],
+    "extensionToLanguage": {
+      ".py": "python"
+    },
+    "startupTimeout": 60000
+  }
+}

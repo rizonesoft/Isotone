@@ -1,0 +1,12 @@
+{
+  "name": "isotone-tools",
+  "owner": { "name": "Rizonesoft" },
+  "description": "Claude Code plugins this repository ships for its own sessions.",
+  "plugins": [
+    {
+      "name": "isotone-lsp",
+      "source": "./isotone-lsp",
+      "description": "Language servers for the Isotone tree: clangd on the pinned toolchain for C and C++, pyright for the Python tooling."
+    }
+  ]
+}

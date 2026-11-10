@@ -1,4 +1,9 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "includeCoAuthoredBy": false,
   "hooks": {
     "PreToolUse": [
       {
@@ -24,9 +29,15 @@
       }
     ]
   },
-  "includeCoAuthoredBy": false,
-  "attribution": {
-    "commit": "",
-    "pr": ""
+  "enabledPlugins": {
+    "isotone-lsp@isotone-tools": true
+  },
+  "extraKnownMarketplaces": {
+    "isotone-tools": {
+      "source": {
+        "source": "directory",
+        "path": "./tools/claude-plugins"
+      }
+    }
   }
 }

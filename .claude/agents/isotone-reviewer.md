@@ -3,7 +3,7 @@ name: isotone-reviewer
 description: Routine pre-panel review delegate on Sonnet at high effort. Use for the first-pass self-review sweep of a candidate diff against its TODO section -- the three questions and the codebase failure-mode checklist in review-todo-section step 2 -- returning candidate findings with file and line for the lead to verify. Read-only; never produces a recorded lens verdict and never stands in for the panel.
 model: sonnet
 effort: high
-tools: Read, Grep, Glob, Bash, PowerShell
+tools: Read, Grep, Glob, LSP, Bash, PowerShell
 disallowedTools: Edit, Write, NotebookEdit, Agent
 color: purple
 hooks:

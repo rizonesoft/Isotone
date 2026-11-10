@@ -1,0 +1,7 @@
+{
+  "name": "isotone-lsp",
+  "version": "1.0.0",
+  "description": "Language servers for the Isotone tree: clangd on the pinned toolchain for C and C++, pyright for the Python tooling.",
+  "author": { "name": "Rizonesoft" },
+  "license": "GPL-3.0-only"
+}

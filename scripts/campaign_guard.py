@@ -15,17 +15,21 @@ self-test (D00 T04 §32, §34 to §37).
     python scripts/campaign_guard.py repair attempt --red SHA --commit SHA --workflow W --run-file F
     python scripts/campaign_guard.py repair close --green SHA --workflow W --run-file F --evidence LINE
     python scripts/campaign_guard.py repair status|restore --run-file F [--workflow W] | ceiling --run-id ID
+    python scripts/campaign_guard.py watch                          (one watchdog tick; scripts/run-guard.py schedules it)
+    python scripts/campaign_guard.py launch                         (what scripts/start-campaign.ps1 should start, as JSON)
     python scripts/campaign_guard.py --self-test
 
-A campaign run has three parts. The guard file (`build/claude-campaign-guard.json`) names the session that owns the
+A campaign run has four parts. The guard file (`build/claude-campaign-guard.json`) names the session that owns the
 run, its phase, scope, run file, heartbeat job and run id; it is written and deleted only through this module, under
 an interprocess lock. The Stop hook (`stop-hook`, wired in `.claude/settings.json`) blocks that session's end of turn
 while the run is open and lets go when the run file carries this run's `## Closeout run=<id>` heading or column-0
 `PARKED <UTC> run=<id>` line, when `query ready` reads `0 runnable now` (a plan-scoped run only), or when the stall
 breaker trips after 3 blocks with no change to the tree. The heartbeat is a `CronCreate` job inside the session
-(process-plan holds its prompt) that resumes an idle run, the plan or only its phase as the guard's scope says. There
-is no keep-alive outside the session: a session that died is resumed by the operator, and the new session takes the
-guard with `acquire --handover`.
+(process-plan holds its prompt) that resumes an idle run, the plan or only its phase as the guard's scope says. The
+watchdog (`watch`) is the one part outside the session: a scheduled tick that resumes a session that died, under its
+own session id so the guard keeps its owner, when the run was started through `launch` (which records the flags to
+resume with). A run started any other way is resumed by the operator, and a new session takes the guard with
+`acquire --handover`.
 
 The hook fails open on a bad payload, a missing guard or any error, and records the error for the heartbeat to report
 (`hook-error`). `repair` persists the CI repair episode the review skill's push block bounds at 3 attempts. Every
@@ -1243,6 +1247,226 @@ def run_configured(root: str, session: str, shell: list[str]) -> tuple[int, dict
     except ValueError:
         parsed = {"unparsed": out}
     return proc.returncode, parsed, proc.stderr
+
+
+# The watchdog: the catch for a session that died (a crash, a reboot, a closed terminal). The Stop hook and the
+# heartbeat both live inside the session, so neither can bring a dead one back. `watch` is one scheduled tick from
+# outside it (this repository's scheduled task, installed by scripts/run-guard.py): it resumes the guard's
+# session headless, never beside a live session in this folder, and gives up after WATCH_MAX_RESTARTS resumes that
+# changed nothing. `launch` is the same decision for the operator's shortcut (scripts/start-campaign.ps1).
+
+WATCH_MAX_RESTARTS = 3
+WATCH_MINUTES = 10
+WATCH_TASK = f"{os.path.basename(REPO)} run watchdog"  # "<folder> run watchdog", as the machine's other repositories name theirs
+LAUNCH_ARGS = ("--dangerously-skip-permissions",)
+
+GOAL = (
+    "The Isotone plan is finished: every section under todo/ is built, reviewed and stamped, so "
+    "`python scripts/todo-graph.py query ready` prints `0 runnable now` with `0 review pending`, and the only open "
+    "rows left are ones the operator alone can do (todo/99-manual, a signing certificate, a clean machine). Get "
+    "there only through the process-plan skill: run /process-plan now, and again after any interruption, one "
+    "section at a time through process-todo-section and review-todo-section, every gate green, every review round "
+    "through scripts/review-dispatch.py, nothing skipped, weakened, stubbed or scoped down. Aim for excellence in "
+    "every section: each feature first matches its competitor where users expect it and then beats it measurably "
+    "(its Exceed paragraph), so every app is the best in its class. The goal also counts as met when the run ended "
+    "the way process-plan allows and the transcript shows it: an operator stop, or a `PARKED ... escalation:` line "
+    "reported to the operator, each followed by `python scripts/campaign_guard.py end`. A parked section, a red CI "
+    "run, a failed review round and a usage limit are not ends: repair it, wait it out, or take the next ready row."
+)
+
+RESUME_PROMPT = (
+    "Isotone run watchdog: the campaign session ended without closing its run (a crash, a reboot or a closed "
+    "terminal) and was restarted. This session still owns the run guard. Check, then act, in this turn.\n\n"
+    "1. Run `python scripts/campaign_guard.py whoami --session $CLAUDE_CODE_SESSION_ID`. If it does not print "
+    "OWNER, change nothing and reply with the line it printed.\n"
+    "2. The heartbeat job died with the old process: reconcile and replace it as process-plan's Run guard steps 1 "
+    "to 3 say (a fresh generation, then `acquire` with the new job id), and append "
+    "`- bookkeeping: watchdog resume <UTC>` to the run file's Critical events once step 3 below allows a write.\n"
+    "3. Resume exactly as step 7 of process-plan's canonical heartbeat prompt says: `merge_prs.py recover` and the "
+    "CI read-back first, then the open section in the run file from where it stopped, then the next ready row, "
+    "under process-plan for a plan-scoped run or process-phase for a phase-scoped one. Stop only at closeout, park, "
+    "or an operator stop."
+)
+
+
+def _launch_path(root: str) -> str:
+    return os.path.join(root, "build", "claude-campaign-launch.json")
+
+
+def _watch_path(root: str) -> str:
+    return os.path.join(root, "build", "claude-campaign-watch.json")
+
+
+def _read_json(path: str) -> dict:
+    try:
+        with open(path, encoding="utf-8-sig") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    return doc if isinstance(doc, dict) else {}
+
+
+def writer_model(root: str) -> str:
+    """The writer's model from the reviewer pin, the one place a model is named."""
+    import tomllib
+    try:
+        with open(os.path.join(root, ".conclave", "reviewers.toml"), "rb") as fh:
+            model = tomllib.load(fh).get("writer", {}).get("model")
+    except (OSError, ValueError) as exc:
+        raise GuardError(f"the reviewer pin does not load: {exc}") from None
+    if not isinstance(model, str) or not model:
+        raise GuardError("the reviewer pin names no writer model")
+    return model
+
+
+def _process_started(pid: int) -> int | None:
+    """When a process started, as a FILETIME, so a reused process id is never taken for the session. None when the
+    process is gone; an error when that cannot be told, because not knowing is not the same as dead."""
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+            return 0
+        except ProcessLookupError:
+            return None
+    import ctypes
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel.GetProcessTimes.argtypes = (wintypes.HANDLE, *[ctypes.POINTER(wintypes.FILETIME)] * 4)
+    kernel.GetExitCodeProcess.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+    kernel.CloseHandle.argtypes = (wintypes.HANDLE,)
+    handle = kernel.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+    if not handle:
+        if ctypes.get_last_error() == 87:  # ERROR_INVALID_PARAMETER: no such process
+            return None
+        raise OSError(f"cannot tell whether process {pid} is running")
+    try:
+        code = wintypes.DWORD()
+        if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)) or code.value != 259:  # STILL_ACTIVE
+            return None
+        times = [wintypes.FILETIME() for _ in range(4)]
+        if not kernel.GetProcessTimes(handle, *[ctypes.byref(t) for t in times]):
+            return None
+        return (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
+    finally:
+        kernel.CloseHandle(handle)
+
+
+def _same_folder(a, b: str) -> bool:
+    return bool(a) and os.path.normcase(os.path.realpath(str(a))) == os.path.normcase(os.path.realpath(b))
+
+
+class _World:
+    """What the watchdog reads from the machine, so the self-test can stand in for it."""
+
+    def __init__(self, root: str):
+        self.root = root
+
+    def live_sessions(self) -> list[dict]:
+        """Claude Code's own record of each running session (`~/.claude/sessions/*.json`); one a crash left behind
+        names a process that has gone and is dropped. A record that cannot be judged raises, so nothing starts."""
+        folder = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"),
+                              "sessions")
+        records = []
+        for name in (os.listdir(folder) if os.path.isdir(folder) else []):
+            if not name.endswith(".json"):
+                continue
+            try:
+                with open(os.path.join(folder, name), encoding="utf-8") as fh:
+                    record = json.load(fh)
+            except FileNotFoundError:
+                continue  # the session exited while this looked
+            started = _process_started(int(record["pid"]))
+            if started is not None and (os.name != "nt" or str(started) == str(record.get("procStart"))):
+                records.append(record)
+        return records
+
+    def child_alive(self, child: dict) -> bool:
+        started = _process_started(int(child.get("pid", 0) or 0)) if child.get("pid") else None
+        return started is not None and started == child.get("started")
+
+    def signature(self) -> str:
+        """HEAD and the working tree, hashed: a resume that moved neither made no progress."""
+        parts = [_git_text(self.root, *args)[1] for args in (("rev-parse", "HEAD"), ("status", "--porcelain"),
+                                                              ("diff", "HEAD"))]
+        return hashlib.sha256("\0".join(parts).encode("utf-8", "replace")).hexdigest()
+
+    def spawn(self, argv: list[str]) -> dict:
+        claude = shutil.which("claude")
+        if not claude:
+            raise GuardError("claude is not on PATH")
+        flags = (subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
+        # Headless text output is the final reply only, so the log stays small; it is the resumed session's own.
+        with open(os.path.join(self.root, "build", "claude-campaign-resumed.log"), "ab") as out:
+            child = subprocess.Popen([claude, *argv], cwd=self.root, stdin=subprocess.DEVNULL, stdout=out,
+                                     stderr=out, creationflags=flags)
+        return {"pid": child.pid, "started": _process_started(child.pid)}
+
+
+def watch(root: str, world=None) -> str:
+    """One scheduled tick. A live session in this folder always wins: two writers on one tree is the worse failure."""
+    world = world or _World(root)
+    try:
+        if read_guard(root) is None:
+            return "inactive"
+    except GuardError as exc:
+        return f"malformed guard: {exc}"
+    # Slow reads first, outside the lock the Stop hook also takes.
+    live = [str(r.get("sessionId")) for r in world.live_sessions() if _same_folder(r.get("cwd"), root)]
+    ready, _ = ready_rows(root)
+    pending = review_pending(root)
+    signature = world.signature()
+    with _Lock(root):
+        guard = read_guard(root)
+        if guard is None:
+            return "inactive"
+        session = str(guard.get("session_id", ""))
+        state = _read_json(_watch_path(root))
+        if state.get("session_id") != session:
+            state = {"session_id": session}
+        if state.get("child") and world.child_alive(state["child"]):
+            return "resumed session still running"
+        if live:
+            return f"session live here: {live[0]}"
+        launch = _read_json(_launch_path(root))
+        args = launch.get("args")
+        if launch.get("session_id") != session or not isinstance(args, list):
+            return "session dead and not resumable: start it again with scripts/start-campaign.ps1"
+        if ready == 0 and pending == 0:
+            return "drained"
+        if signature != state.get("signature"):
+            state.update(signature=signature, restarts=0)
+        if state.get("restarts", 0) >= WATCH_MAX_RESTARTS:
+            _write_json(_watch_path(root), state)
+            return f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"
+        # A launch that fails raises and uses no attempt: nothing ran, so nothing was tried.
+        child = world.spawn(["-p", RESUME_PROMPT, "--resume", session, *[str(a) for a in args]])
+        state.update(child=child, restarts=state.get("restarts", 0) + 1, launched_at=_utc_now())
+        _write_json(_watch_path(root), state)
+        return f"resumed, attempt {state['restarts']}"
+
+
+def launch(root: str, world=None) -> dict:
+    """What the operator's shortcut should start: a new run under the goal, the dead run's session again, or nothing
+    because the run's session is alive. A new run's session id and flags are recorded so `watch` can resume it."""
+    world = world or _World(root)
+    live = [str(r.get("sessionId")) for r in world.live_sessions() if _same_folder(r.get("cwd"), root)]
+    with _Lock(root):
+        guard = read_guard(root)
+        if guard is not None:
+            session = str(guard.get("session_id", ""))
+            state = _read_json(_watch_path(root))
+            if session in live or (state.get("session_id") == session and state.get("child")
+                                   and world.child_alive(state["child"])):
+                return {"action": "live", "session": session}
+            action, prompt = "resume", RESUME_PROMPT
+        else:
+            session, action, prompt = str(uuid.uuid4()), "start", "/goal " + GOAL
+        args = [*LAUNCH_ARGS, "--model", writer_model(root)]
+        os.makedirs(os.path.join(root, "build"), exist_ok=True)
+        _write_json(_launch_path(root), {"session_id": session, "args": args, "at": _utc_now()})
+        return {"action": action, "session": session, "args": args, "prompt": prompt, "live_here": live}
 
 
 def _workspace(tmpd: str) -> str:
@@ -2612,6 +2836,68 @@ def _self_test() -> int:
     except OSError:
         phase_text = ""
     check("skill-a-standalone-phase-is-phase-scoped", "--scope phase" in phase_text, phase_skill)
+    check("skill-names-the-watchdog", "python scripts/run-guard.py watch" in skill, plan_skill)
+
+    # The watchdog and the launcher, against a stand-in for the machine.
+    class FakeWorld:
+        def __init__(self):
+            self.live, self.alive, self.sig, self.spawned = [], False, "s1", []
+
+        def live_sessions(self):
+            return self.live
+
+        def child_alive(self, child):
+            return self.alive
+
+        def signature(self):
+            return self.sig
+
+        def spawn(self, argv):
+            self.spawned.append(argv)
+            return {"pid": 4242, "started": 1}
+
+    with tempfile.TemporaryDirectory(prefix="campaign-watch-") as tmpd:
+        root = _workspace(tmpd)
+        os.makedirs(os.path.join(root, ".conclave"))
+        with open(os.path.join(root, ".conclave", "reviewers.toml"), "w", encoding="utf-8") as fh:
+            fh.write('[writer]\nagent = "claude"\nmodel = "claude-test-1"\n')
+        world = FakeWorld()
+        check("watch-inactive-without-a-guard", watch(root, world) == "inactive")
+        plan = launch(root, world)
+        check("launch-starts-under-the-goal", plan["action"] == "start" and plan["prompt"].startswith("/goal ")
+              and plan["args"] == ["--dangerously-skip-permissions", "--model", "claude-test-1"], str(plan))
+        check("goal-fits-the-limit", len(GOAL) <= 4000, str(len(GOAL)))
+        sid = plan["session"]
+        _guard(root, sid)
+        world.live = [{"sessionId": sid, "cwd": root}]
+        check("watch-never-beside-a-live-session", watch(root, world) == f"session live here: {sid}"
+              and not world.spawned)
+        check("launch-refuses-a-live-run", launch(root, world) == {"action": "live", "session": sid})
+        world.live = [{"sessionId": "elsewhere", "cwd": tmpd}]
+        check("watch-resumes-a-dead-session", watch(root, world) == "resumed, attempt 1" and len(world.spawned) == 1
+              and world.spawned[0][:2] == ["-p", RESUME_PROMPT] and world.spawned[0][2:4] == ["--resume", sid]
+              and world.spawned[0][4:] == plan["args"], str(world.spawned))
+        world.alive = True
+        check("watch-leaves-a-running-resume", watch(root, world) == "resumed session still running"
+              and len(world.spawned) == 1)
+        check("launch-refuses-a-running-resume", launch(root, world)["action"] == "live")
+        world.alive = False
+        results = [watch(root, world) for _ in range(3)]
+        check("watch-stalls-after-unchanged-resumes", results == ["resumed, attempt 2", "resumed, attempt 3",
+              f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"] and len(world.spawned) == 3, str(results))
+        world.sig = "s2"
+        check("watch-progress-resets-the-count", watch(root, world) == "resumed, attempt 1")
+        again = launch(root, world)
+        check("launch-resumes-a-dead-run", again["action"] == "resume" and again["session"] == sid
+              and again["prompt"] == RESUME_PROMPT, str(again))
+        _set_ready(root, 0)
+        check("watch-drained-starts-nothing", watch(root, world) == "drained" and len(world.spawned) == 4)
+        _set_ready(root, 3)
+        os.unlink(_launch_path(root))
+        check("watch-needs-the-launch-record", watch(root, world).startswith("session dead and not resumable"))
+        _guard(root, "another-session")
+        check("watch-ignores-another-runs-record", watch(root, world).startswith("session dead and not resumable")
+              and len(world.spawned) == 4)
 
     print(f"campaign_guard self-test: {passed + failed} cases, {failed} failed")
     return 1 if failed else 0
@@ -2696,6 +2982,12 @@ def main(argv: list[str]) -> int:
             code, line = expiry(root, opts.get("session", ""), opts.get("now"))
             print(line, file=sys.stdout if code == 0 else sys.stderr)
             return code
+        if argv[0] == "watch" and not opts:
+            print(watch(root))
+            return 0
+        if argv[0] == "launch" and not opts:
+            print(json.dumps(launch(root)))
+            return 0
     except (GuardError, ValueError) as exc:
         print(f"campaign_guard: {exc}", file=sys.stderr)
         return 1
