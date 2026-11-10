@@ -32,3 +32,7 @@ The guarantees recorded at `docs/dev/decisions.md:169` and `docs/dev/decisions.m
 
 HIGHEST: P1
 OVERALL: needs-attention
+
+## Response to round 1
+
+All six findings verified against the code and fixed in `dbbcd6f`: F1 and F2 (`launch` and `watch` read liveness under the guard lock, `launch` returns `busy` beside any live session and `starting` within five minutes of an earlier launch), F3 (the launcher joins its job object before starting the server), F4 and F5 (the watchdog signature is the Stop hook fingerprint, self-test cases `a-bookkeeping-note-is-not-watchdog-progress` and `an-untracked-edit-is-watchdog-progress`), F6 (the resume prompt reconciles the heartbeat job and replaces it only when missing). The record lens statements were corrected with them.
