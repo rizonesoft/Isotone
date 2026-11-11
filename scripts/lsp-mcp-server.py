@@ -41,6 +41,14 @@ MAX_FRAME_BYTES = 64 * 1024 * 1024
 
 CPP_EXTENSIONS = {".c", ".h", ".hpp", ".cpp", ".cc", ".cxx", ".inl", ".ixx"}
 PY_EXTENSIONS = {".py", ".pyi"}
+_WORKSPACE_SKIP_DIRS = frozenset((
+    ".git", ".hg", ".svn", "build", "artifacts", "node_modules", "__pycache__",
+    ".venv", "venv", ".tox", ".mypy_cache", ".pytest_cache", ".vs", "bin", "obj",
+))
+_WORKSPACE_WATCH_EXTS = frozenset(CPP_EXTENSIONS | PY_EXTENSIONS | {".json", ".toml", ".cfg", ".ini", ".txt"})
+_WORKSPACE_WATCH_NAMES = frozenset((".clangd", "compile_commands.json", "compile_flags.txt", "pyrightconfig.json"))
+MAX_CLOSED_DOCS = 4096
+MAX_WORKSPACE_SCAN_FILES = 20000
 
 SYMBOL_KINDS = {
     1: "File", 2: "Module", 3: "Namespace", 4: "Package", 5: "Class", 6: "Method",
@@ -182,6 +190,7 @@ class LspBackend:
         self._diag_seq = 0
         self._open_docs: collections.OrderedDict[str, dict] = collections.OrderedDict()
         self._closed_docs: collections.OrderedDict[str, dict] = collections.OrderedDict()
+        self._workspace_snapshot: dict[str, tuple[int, int, str]] = {}
         self._capabilities: dict = {}
         self._last_used = 0.0
         self._command: list[str] = []
@@ -232,6 +241,7 @@ class LspBackend:
             self._diagnostics.clear()
             self._open_docs.clear()
             self._closed_docs.clear()
+            self._workspace_snapshot.clear()
             self._capabilities = {}
             self._cond.notify_all()
 
@@ -387,6 +397,8 @@ class LspBackend:
             init_res = self._request_locked("initialize", init_params, timeout=60.0)
             self._capabilities = (init_res or {}).get("capabilities") or {} if isinstance(init_res, dict) else {}
             self._send_notification_locked("initialized", {})
+            with self._cond:
+                self._workspace_snapshot = self._take_workspace_snapshot()
             self._last_used = time.monotonic()
         except Exception:
             self._kill_proc(proc)
@@ -427,8 +439,37 @@ class LspBackend:
     def _decode_source_bytes(raw_bytes: bytes) -> str:
         return raw_bytes.decode("utf-8-sig" if raw_bytes.startswith(b"\xef\xbb\xbf") else "utf-8", errors="replace")
 
+    def _take_workspace_snapshot(self) -> dict[str, tuple[int, int, str]]:
+        """Scan relevant workspace source and config files for (mtime_ns, size, uri) to detect unopened file edits."""
+        snap: dict[str, tuple[int, int, str]] = {}
+        stack = [self.root]
+        while stack and len(snap) < MAX_WORKSPACE_SCAN_FILES:
+            cur = stack.pop()
+            try:
+                with os.scandir(cur) as it:
+                    for entry in it:
+                        try:
+                            if entry.is_symlink():
+                                continue
+                            if entry.is_dir(follow_symlinks=False):
+                                if entry.name not in _WORKSPACE_SKIP_DIRS:
+                                    stack.append(entry.path)
+                            elif entry.is_file(follow_symlinks=False):
+                                ext = os.path.splitext(entry.name)[1].lower()
+                                if ext in _WORKSPACE_WATCH_EXTS or entry.name in _WORKSPACE_WATCH_NAMES:
+                                    st = entry.stat(follow_symlinks=False)
+                                    k = os.path.normcase(entry.path)
+                                    snap[k] = (st.st_mtime_ns, st.st_size, _path_to_uri(entry.path))
+                                    if len(snap) >= MAX_WORKSPACE_SCAN_FILES:
+                                        break
+                        except OSError:
+                            continue
+            except OSError:
+                continue
+        return snap
+
     def _refresh_tracked_documents_locked(self, exclude_key: str | None = None) -> bool:
-        """Refresh open and evicted documents whose disk contents changed or disappeared; return True if any changed."""
+        """Refresh open, evicted, and unopened workspace files whose disk state changed; return True if any changed."""
         with self._cond:
             open_snapshot = [
                 (k, meta["abs_path"], meta["uri"], meta["sha256"])
@@ -440,6 +481,10 @@ class LspBackend:
                 for k, meta in self._closed_docs.items()
                 if k != exclude_key
             ]
+            prev_ws = dict(self._workspace_snapshot)
+            tracked_keys = set(self._open_docs) | set(self._closed_docs)
+            if exclude_key is not None:
+                tracked_keys.add(exclude_key)
         open_updates: list[tuple[str, bytes | None, str | None]] = []
         for dep_key, dep_path, _, prev_sha in open_snapshot:
             try:
@@ -462,13 +507,31 @@ class LspBackend:
             c_sha = hashlib.sha256(c_bytes).hexdigest()
             if c_sha != prev_sha:
                 closed_updates.append((c_key, c_uri, c_sha))
-        if not open_updates and not closed_updates:
+        cur_ws = self._take_workspace_snapshot()
+        ws_events: list[dict] = []
+        for w_key, (m_ns, sz, w_uri) in cur_ws.items():
+            if w_key in tracked_keys:
+                continue
+            prev_entry = prev_ws.get(w_key)
+            if prev_entry is None:
+                ws_events.append({"uri": w_uri, "type": 1})
+            elif (m_ns, sz) != (prev_entry[0], prev_entry[1]):
+                ws_events.append({"uri": w_uri, "type": 2})
+        for w_key, (_, _, w_uri) in prev_ws.items():
+            if w_key in tracked_keys:
+                continue
+            if w_key not in cur_ws:
+                ws_events.append({"uri": w_uri, "type": 3})
+        if not open_updates and not closed_updates and not ws_events:
+            with self._cond:
+                self._workspace_snapshot = cur_ws
             return False
 
         to_close: list[str] = []
         to_change: list[tuple[str, int, str]] = []
-        watched_events: list[dict] = []
+        watched_events: list[dict] = list(ws_events)
         with self._cond:
+            self._workspace_snapshot = cur_ws
             for dep_key, dep_bytes, dep_sha in open_updates:
                 meta = self._open_docs.get(dep_key)
                 if meta is None:
@@ -523,7 +586,13 @@ class LspBackend:
         try:
             with open(abs_path, "rb") as fh:
                 raw_bytes = fh.read()
+                try:
+                    st = os.fstat(fh.fileno())
+                    stat_pair: tuple[int, int] | None = (st.st_mtime_ns, st.st_size)
+                except OSError:
+                    stat_pair = None
         except OSError as exc:
+            self._refresh_tracked_documents_locked()
             raise LspToolError(f"cannot read {abs_path}: {exc}") from exc
         text = self._decode_source_bytes(raw_bytes)
         digest = hashlib.sha256(raw_bytes).hexdigest()
@@ -531,11 +600,25 @@ class LspBackend:
         uri = _path_to_uri(abs_path)
         dep_changed = self._refresh_tracked_documents_locked(exclude_key=key)
         evicted_uris: list[str] = []
+        watched_self: dict | None = None
         action: str | None = None
         with self._cond:
+            ws_prev = self._workspace_snapshot.get(key)
+            if stat_pair is not None:
+                self._workspace_snapshot[key] = (stat_pair[0], stat_pair[1], uri)
             existing = self._open_docs.get(key)
             if existing is None:
-                self._closed_docs.pop(key, None)
+                closed_prev = self._closed_docs.pop(key, None)
+                if closed_prev is not None:
+                    reopened_changed = closed_prev.get("sha256") != digest
+                    if reopened_changed:
+                        watched_self = {"uri": uri, "type": 2}
+                else:
+                    reopened_changed = True
+                    if ws_prev is None:
+                        watched_self = {"uri": uri, "type": 1}
+                    elif stat_pair is not None and stat_pair != (ws_prev[0], ws_prev[1]):
+                        watched_self = {"uri": uri, "type": 2}
                 while len(self._open_docs) >= self._max_open_docs:
                     evict_key, evict_meta = self._open_docs.popitem(last=False)
                     evicted_uris.append(evict_meta["uri"])
@@ -547,8 +630,12 @@ class LspBackend:
                             "sha256": evict_meta["sha256"],
                         }
                         self._closed_docs.move_to_end(evict_key)
-                        while len(self._closed_docs) > 256:
+                        while len(self._closed_docs) > MAX_CLOSED_DOCS:
                             self._closed_docs.popitem(last=False)
+                if reopened_changed:
+                    for other_key, other_meta in self._open_docs.items():
+                        other_meta["deps_dirty"] = True
+                        self._diagnostics.pop(other_key, None)
                 self._next_doc_version += 1
                 version = self._next_doc_version
                 expected_seq = self._diag_seq + 1
@@ -579,6 +666,7 @@ class LspBackend:
                     existing["deps_dirty"] = False
                     self._diagnostics.pop(key, None)
                     if disk_changed:
+                        watched_self = {"uri": uri, "type": 2}
                         for other_key, other_meta in self._open_docs.items():
                             if other_key != key:
                                 other_meta["deps_dirty"] = True
@@ -590,6 +678,11 @@ class LspBackend:
         for evict_uri in evicted_uris:
             try:
                 self._send_notification_locked("textDocument/didClose", {"textDocument": {"uri": evict_uri}})
+            except Exception:
+                pass
+        if watched_self is not None:
+            try:
+                self._send_notification_locked("workspace/didChangeWatchedFiles", {"changes": [watched_self]})
             except Exception:
                 pass
         if action == "open":
@@ -1404,6 +1497,29 @@ def _self_test() -> int:
                   not d_cons_err["result"]["isError"]
                   and "Type mismatch from open dep.py" in d_cons_err["result"]["content"][0]["text"],
                   repr(d_cons_err))
+
+            # Evicted dependency modified on disk, then reopened before querying open consumer (LRU cap=2: B, C, then A).
+            with open(py_dep, "w", encoding="utf-8") as fh:
+                fh.write("answer: int = 1\n")
+            _ = rpc({"jsonrpc": "2.0", "id": 71, "method": "tools/call",
+                     "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "dep.py"}}})
+            _ = rpc({"jsonrpc": "2.0", "id": 72, "method": "tools/call",
+                     "params": {"name": "lsp_hover", "arguments": {"file_path": "c.py", "line": 1, "character": 1}}})
+            d_cons_evict_ok = rpc({"jsonrpc": "2.0", "id": 73, "method": "tools/call",
+                                   "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "consumer.py"}}})
+            check("consumer clean after dep.py is evicted by LRU cap",
+                  "consumer.py: 0 diagnostics" in d_cons_evict_ok["result"]["content"][0]["text"],
+                  repr(d_cons_evict_ok))
+            with open(py_dep, "w", encoding="utf-8") as fh:
+                fh.write("# ANSWER_IS_STR\nanswer: str = 'changed'\n")
+            _ = rpc({"jsonrpc": "2.0", "id": 74, "method": "tools/call",
+                     "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "dep.py"}}})
+            d_cons_reopen_err = rpc({"jsonrpc": "2.0", "id": 75, "method": "tools/call",
+                                     "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "consumer.py"}}})
+            check("reopening changed evicted dependency invalidates open consumer diagnostics",
+                  not d_cons_reopen_err["result"]["isError"]
+                  and "Type mismatch from open dep.py" in d_cons_reopen_err["result"]["content"][0]["text"],
+                  repr(d_cons_reopen_err))
 
             bad_arg = rpc({"jsonrpc": "2.0", "id": 61, "method": "tools/call",
                            "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "a.py", "severity_max": 99}}})

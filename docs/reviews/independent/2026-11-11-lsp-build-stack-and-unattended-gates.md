@@ -100,3 +100,38 @@ OVERALL: needs-attention
 1. **P1 `scripts/panel_slots.py:4965` (`adversarial`):** Real and reproduced. Hardened `_segment_creates_branch_or_worktree` and `_AGY_RESOLVED_TARGETS` in `scripts/panel_slots.py` to enforce strict canonical option allow-lists for global Git flags and for `worktree`, `checkout`, `switch`, `symbolic-ref`, `update-ref`, `branch`, `stash`, `bisect`, `fetch`, `pull`, and `push` (including `git-<subcmd>` executables and `alias.*` overrides via `-c` / `--config-env`), rejecting unrecognized or abbreviated long options such as `git checkout --det main` and `git switch --det main`. Covered in `_self_test` (1,009 cases passing).
 2. **P1 `scripts/lsp-mcp-server.py:426` (`integration`):** Real and reproduced. Added `_refresh_tracked_documents_locked` and per-document `deps_dirty` tracking in `LspBackend` (`scripts/lsp-mcp-server.py`) so every `_sync_document_locked` and `workspace_symbols` call first checks all open and previously evicted documents against disk, emits `textDocument/didChange`, `textDocument/didClose`, and `workspace/didChangeWatchedFiles` for modified or removed dependencies, invalidates stale cached diagnostics across open consumers, and bumps the consumer's version via `textDocument/didChange` so Pyright and clangd re-analyze against fresh dependency buffers. Covered in `_self_test` and in `test_live_pyright_refreshes_changed_open_dependency` (`scripts/tests/test_lsp_mcp_server.py`).
 
+
+## Round 4: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-11T22:11:35Z
+- Effort: low
+- Lines: 18
+- Digest: 95a6e260e9b6371f
+
+### adversarial: approve
+
+### consistency: needs-attention
+
+1. P2 `scripts/panel_slots.py:5250`: The forbidden-short-option scan interprets characters inside an attached upstream argument as flags. Reproduced read-only: `_agy_command_decision('git branch -uorigin/main')` denies branch creation because `origin/main` contains `m`, while `git branch -u origin/main` is allowed. This blocks ordinary upstream repair on `main`. Parse `-u` and its argument before scanning flag clusters; attached arguments are supported [Git syntax](https://git-scm.com/docs/gitcli#_separating_argument_from_the_option).
+
+### integration: needs-attention
+
+2. P1 `scripts/lsp-mcp-server.py:538`: Reopening a changed, evicted dependency discards its previous hash without invalidating open consumers. The dependency is excluded from refresh at line 532, and the new-open path never marks consumers dirty. Reproduce with an LRU cap of two: open B, C, then A importing B; change B’s exported type, reopen B, then request A’s diagnostics before asynchronous reanalysis finishes. An in-memory reproduction returned cached `[]`, kept A’s version unchanged, and sent no consumer-refresh notification. The default 16-document cap reaches the same failure during normal campaign browsing.
+
+### source-defect: approve
+
+### record: needs-attention
+
+3. P3 `docs/reviews/independent/2026-11-11-lsp-build-stack-and-unattended-gates.md:100`: The round-3 response claims its Git parser hardening is covered by `_self_test`, but that commit adds no corresponding parser regression cases. Inspect `git show 7840339 -- scripts/panel_slots.py`: neither `checkout --det main` nor `switch --det main` is tested. The reported aggregate case count does not establish coverage of the repaired bypass.
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+
+## Response to round 4
+
+1. **P2 `scripts/panel_slots.py:5250` (`consistency`):** Real and reproduced. Replaced character-set pre-scans with left-to-right Git `parse_options` short-cluster scanning across `branch`, `checkout`, `fetch`, `pull`, and `push` in `_segment_creates_branch_or_worktree` (`scripts/panel_slots.py`), so value-taking short options (`-u`, `-U`, `-o`, `-j`, `-e`) consume their attached or separate argument instead of scanning characters inside the value as flags (allowing `git branch -uorigin/main` and `git branch -vuorigin/main`, while denying `git branch -muorigin/main` and `git push -odelete=1 . HEAD:feat`).
+2. **P1 `scripts/lsp-mcp-server.py:538` (`integration`):** Real and reproduced. Updated `LspBackend._sync_document_locked` and `_refresh_tracked_documents_locked` in `scripts/lsp-mcp-server.py` so reopening a previously evicted document whose `sha256` changed while closed (or opening a newly created/untracked file, or modifying an unopened workspace file detected via `_take_workspace_snapshot`, or deleting a tracked file on disk) invalidates cached diagnostics and sets `deps_dirty = True` across open consumers, emits `workspace/didChangeWatchedFiles`, and forces a consumer version bump on subsequent queries. Added deterministic LRU-eviction reopen coverage in `_self_test` (`25 cases, 0 failed`) and live Pyright integration coverage (`test_live_pyright_refreshes_reopened_evicted_and_unopened_dependencies`) in `scripts/tests/test_lsp_mcp_server.py`.
+3. **P3 `docs/reviews/independent/2026-11-11-lsp-build-stack-and-unattended-gates.md:100` (`record`):** Real. Added explicit parser regression cases to `_self_test` in `scripts/panel_slots.py` (`1039 cases, 0 failed`) covering `git checkout --det main`, `git switch --det main`, `git switch --cr feat/foo`, `git branch --co main feat/foo`, `git worktree --porc list`, `git -c alias.co=checkout co -b feat/foo`, `git-checkout -b feat/foo`, `git branch -uorigin/main`, `git branch -vuorigin/main`, `git branch -muorigin/main`, and `git push -odelete=1 . HEAD:feat`.
+

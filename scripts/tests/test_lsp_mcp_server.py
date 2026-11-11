@@ -123,6 +123,78 @@ class LspMcpServerTest(unittest.TestCase):
             finally:
                 srv.close()
 
+    @unittest.skipUnless(shutil.which("pyright-langserver"), "pyright-langserver not installed")
+    def test_live_pyright_refreshes_reopened_evicted_and_unopened_dependencies(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory(prefix="isotone-pyright-evict-") as tmp_ws:
+            ws = Path(tmp_ws)
+            dep_b = ws / "mod_b.py"
+            mid_c = ws / "mod_c.py"
+            unopened_d = ws / "mod_d.py"
+            cons_a = ws / "mod_a.py"
+            dep_b.write_text("val_b: int = 1\n", encoding="utf-8")
+            mid_c.write_text("val_c: int = 2\n", encoding="utf-8")
+            unopened_d.write_text("val_d: int = 3\n", encoding="utf-8")
+            cons_a.write_text(
+                "from mod_b import val_b\nfrom mod_d import val_d\nx: int = val_b\ny: int = val_d\n",
+                encoding="utf-8",
+            )
+            mod = _load_server_module()
+            srv = mod.IsotoneLspMcpServer(root=str(ws), idle_seconds=30.0, max_open_docs=2)
+            try:
+                # Open B, C, then A (evicting B under max_open_docs=2).
+                for req_id, fname in ((1, "mod_b.py"), (2, "mod_c.py"), (3, "mod_a.py")):
+                    res = srv.handle_message({
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "method": "tools/call",
+                        "params": {"name": "lsp_diagnostics", "arguments": {"file_path": fname}},
+                    })
+                    assert res is not None and not res["result"]["isError"]
+                    if fname == "mod_a.py":
+                        self.assertIn("mod_a.py: 0 diagnostics (pyright)", res["result"]["content"][0]["text"])
+
+                # Change evicted B, reopen B first, then immediately query open consumer A.
+                dep_b.write_text('val_b: str = "changed"\n', encoding="utf-8")
+                reopen_b = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 4,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "mod_b.py"}},
+                })
+                assert reopen_b is not None and not reopen_b["result"]["isError"]
+                d_a_reopen = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 5,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "mod_a.py"}},
+                })
+                assert d_a_reopen is not None and not d_a_reopen["result"]["isError"]
+                self.assertIn("reportAssignmentType", d_a_reopen["result"]["content"][0]["text"])
+
+                # Restore B to int, verify A returns to 0 diagnostics, then break never-opened D on disk!
+                dep_b.write_text("val_b: int = 1\n", encoding="utf-8")
+                d_a_restored = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 6,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "mod_a.py"}},
+                })
+                assert d_a_restored is not None and not d_a_restored["result"]["isError"]
+                self.assertIn("mod_a.py: 0 diagnostics (pyright)", d_a_restored["result"]["content"][0]["text"])
+
+                unopened_d.write_text('val_d: str = "unopened_changed"\n', encoding="utf-8")
+                d_a_unopened = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 7,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "mod_a.py"}},
+                })
+                assert d_a_unopened is not None and not d_a_unopened["result"]["isError"]
+                self.assertIn("reportAssignmentType", d_a_unopened["result"]["content"][0]["text"])
+            finally:
+                srv.close()
+
     @unittest.skipUnless(os.name == "nt" and VSWHERE.is_file(), "pinned Visual Studio clangd not installed")
     def test_live_clangd_symbols_and_diagnostics(self) -> None:
         cpp_files = sorted((ROOT / "native").rglob("*.cpp"))

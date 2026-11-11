@@ -5099,24 +5099,31 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                     return ("Isotone develops straight on `main`; unrecognized, abbreviated, or branching/detaching "
                             f"`git checkout` option {tok!r} is forbidden (pass canonical options or `git checkout main`; "
                             "AGENTS.md).")
-                if any(c in tok[1:] for c in ("b", "B", "t", "d", "l")):
-                    return ("Isotone develops straight on `main`; creating branches or detaching `HEAD` "
-                            "(`git checkout -b/-B/-t/-d`) is forbidden (AGENTS.md).")
-                if tok == "-U" or (tok.startswith("-U") and tok[2:].isdigit()):
-                    if tok == "-U":
+                j = 1
+                while j < len(tok):
+                    ch = tok[j]
+                    if ch == "h":
+                        return None
+                    if ch in ("b", "B", "t", "d", "l"):
+                        return ("Isotone develops straight on `main`; creating branches or detaching `HEAD` "
+                                "(`git checkout -b/-B/-t/-d`) is forbidden (AGENTS.md).")
+                    if ch == "U":
+                        if j + 1 < len(tok):
+                            if not tok[j + 1:].isdigit():
+                                return ("Isotone develops straight on `main`; unrecognized `git checkout` short option "
+                                        f"{tok!r} is forbidden (AGENTS.md).")
+                            break
                         if i + 1 >= len(before_dash):
                             return "Incomplete `git checkout -U` option (AGENTS.md)."
-                        i += 2
+                        i += 1
+                        break
+                    if ch in ("f", "m", "q", "p", "2", "3"):
+                        j += 1
                         continue
-                    i += 1
-                    continue
-                if set(tok[1:]) <= {"f", "m", "q", "p", "2", "3", "h"}:
-                    if "h" in tok[1:]:
-                        return None
-                    i += 1
-                    continue
-                return ("Isotone develops straight on `main`; unrecognized `git checkout` short option "
-                        f"{tok!r} is forbidden (AGENTS.md).")
+                    return ("Isotone develops straight on `main`; unrecognized `git checkout` short option "
+                            f"{tok!r} is forbidden (AGENTS.md).")
+                i += 1
+                continue
             else:
                 pre_pos.append(tok)
             i += 1
@@ -5246,25 +5253,35 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
             if not after_sep and tok != "-" and tok.startswith("-"):
                 if tok in ("-h", "--help"):
                     return None
+                if not tok.startswith("--"):
+                    j = 1
+                    while j < len(tok):
+                        ch = tok[j]
+                        if ch == "h":
+                            return None
+                        if ch in ("c", "C", "m", "M", "f", "t"):
+                            return ("Isotone develops straight on `main`; creating, forcing, copying, or renaming "
+                                    "branches (`git branch -c/-C/-m/-M/-f/-t/--create-reflog`) is forbidden "
+                                    "(AGENTS.md).")
+                        if ch == "u":
+                            flags.add("-u")
+                            if j + 1 >= len(tok):
+                                if i + 1 >= len(rest):
+                                    return f"Incomplete `git branch {tok}` option (AGENTS.md)."
+                                i += 1
+                            break
+                        if ch in ("l", "a", "r", "d", "D", "v", "q", "i"):
+                            flags.add(f"-{ch}")
+                            j += 1
+                            continue
+                        return ("Isotone develops straight on `main`; unrecognized `git branch` short option "
+                                f"{tok!r} is forbidden (AGENTS.md).")
+                    i += 1
+                    continue
                 fl = _flag(tok)
-                if fl in _GIT_BRANCH_FORBIDDEN_OPS or (
-                        not tok.startswith("--") and any(c in tok[1:] for c in ("c", "C", "m", "M", "f", "t"))):
+                if fl in _GIT_BRANCH_FORBIDDEN_OPS:
                     return ("Isotone develops straight on `main`; creating, forcing, copying, or renaming branches "
                             "(`git branch -c/-C/-m/-M/-f/-t/--create-reflog`) is forbidden (AGENTS.md).")
-                if not tok.startswith("--") and len(tok) > 2 and tok != "-vv":
-                    if tok.startswith("-u"):
-                        flags.add("-u")
-                        i += 1
-                        continue
-                    if set(tok[1:]) <= {"l", "a", "r", "d", "D", "v", "q", "i", "h"}:
-                        if "h" in tok[1:]:
-                            return None
-                        for ch in tok[1:]:
-                            flags.add(f"-{ch}")
-                        i += 1
-                        continue
-                    return ("Isotone develops straight on `main`; unrecognized `git branch` short option "
-                            f"{tok!r} is forbidden (AGENTS.md).")
                 if fl not in all_canonical:
                     return ("Isotone develops straight on `main`; unrecognized, abbreviated, or branching `git branch` "
                             f"option {tok!r} is forbidden (AGENTS.md).")
@@ -5327,12 +5344,25 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                 i += 1
                 continue
             if not after_sep and tok != "-" and tok.startswith("-"):
+                if not tok.startswith("--"):
+                    j = 1
+                    while j < len(tok):
+                        ch = tok[j]
+                        if ch == "h":
+                            return None
+                        if ch in ("o", "j"):
+                            if j + 1 >= len(tok):
+                                i += 1
+                            break
+                        j += 1
+                    i += 1
+                    continue
                 fl = _flag(tok).lower()
                 if fl.startswith("--refm"):
                     return ("Isotone develops straight on `main`; custom `git fetch` `--refmap` overrides "
                             "are forbidden (AGENTS.md).")
                 if fl in ("--depth", "--deepen", "--shallow-since", "--shallow-exclude", "--negotiation-tip",
-                          "--upload-pack", "-o", "--server-option", "-j", "--jobs",
+                          "--upload-pack", "--server-option", "--jobs",
                           "--recurse-submodules-default", "--submodule-prefix") and "=" not in tok:
                     i += 2
                     continue
@@ -5362,10 +5392,27 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
             if not after_sep and tok != "-" and tok.startswith("-"):
                 if tok in ("-h", "--help"):
                     return None
+                if not tok.startswith("--"):
+                    j = 1
+                    while j < len(tok):
+                        ch = tok[j]
+                        if ch == "h":
+                            return None
+                        if ch == "d":
+                            delete_mode = True
+                            j += 1
+                            continue
+                        if ch in ("o", "e"):
+                            if j + 1 >= len(tok):
+                                i += 1
+                            break
+                        j += 1
+                    i += 1
+                    continue
                 fl = _flag(tok)
-                if fl in ("-d", "--delete") or (not tok.startswith("--") and "d" in tok[1:]):
+                if fl == "--delete":
                     delete_mode = True
-                if fl in ("--repo", "--receive-pack", "--exec", "-o", "--push-option") and "=" not in tok:
+                if fl in ("--repo", "--receive-pack", "--exec", "--push-option") and "=" not in tok:
                     i += 2
                     continue
             else:
@@ -6272,6 +6319,12 @@ def _self_test() -> int:
         "git branch -vv",
         "git branch -a",
         "git branch -D stale-branch",
+        "git branch -u origin/main",
+        "git branch -uorigin/main",
+        "git branch -vuorigin/main",
+        "git branch --set-upstream-to=origin/main",
+        "git branch --set-upstream-to origin/main main",
+        "git checkout -pU3 -- README.md",
         "claude --version",
         "codex --version",
         "python scripts/review-dispatch.py --writer agy --kind round --prompt build/p.md --keep build/round-1",
@@ -6559,6 +6612,7 @@ def _self_test() -> int:
             ("git checkout previous branch dash", "run_command", {"CommandLine": "git checkout -"}, "switching away from `main`"),
             ("git checkout detached commit", "run_command", {"CommandLine": "git checkout HEAD~1"}, "switching away from `main`"),
             ("git checkout qualified refs/heads/main detaches HEAD", "run_command", {"CommandLine": "git checkout refs/heads/main"}, "detaching `HEAD`"),
+            ("git checkout abbreviated --det main", "run_command", {"CommandLine": "git checkout --det main"}, "abbreviated"),
             ("git switch -c feature branch", "run_command", {"CommandLine": "git switch -c feat/foo"}, "git switch -c"),
             ("git switch --track branch", "run_command", {"CommandLine": "git switch --track origin/foo"}, "git switch -c/-C/--create/-t/--track"),
             ("git switch --create feature branch", "run_command", {"CommandLine": "git switch --create feat/foo"}, "git switch -c/-C/--create"),
@@ -6566,10 +6620,18 @@ def _self_test() -> int:
             ("git switch qualified refs/heads/main", "run_command", {"CommandLine": "git switch refs/heads/main"}, "switching away from `main`"),
             ("git switch previous branch dash", "run_command", {"CommandLine": "git switch -"}, "switching away from `main`"),
             ("git switch --detach commit", "run_command", {"CommandLine": "git switch --detach HEAD"}, "git switch -c/-C"),
+            ("git switch abbreviated --det main", "run_command", {"CommandLine": "git switch --det main"}, "abbreviated"),
+            ("git switch abbreviated --cr feat", "run_command", {"CommandLine": "git switch --cr feat/foo"}, "abbreviated"),
             ("git branch new-branch creation", "run_command", {"CommandLine": "git branch feat/foo"}, "git branch <name>"),
             ("git branch double-dash new-branch creation", "run_command", {"CommandLine": "git branch -- review-probe"}, "git branch <name>"),
             ("git branch -c copy branch", "run_command", {"CommandLine": "git branch -c main feat/foo"}, "git branch -c"),
             ("git branch -f force branch", "run_command", {"CommandLine": "git branch -f feat/foo HEAD"}, "git branch -c"),
+            ("git branch -muorigin/main forbidden -m before -u", "run_command", {"CommandLine": "git branch -muorigin/main"}, "git branch -c/-C/-m"),
+            ("git branch abbreviated --co copy", "run_command", {"CommandLine": "git branch --co main feat/foo"}, "abbreviated"),
+            ("git worktree abbreviated --porc list", "run_command", {"CommandLine": "git worktree --porc list"}, "git worktree add"),
+            ("git -c alias.co=checkout override", "run_command", {"CommandLine": "git -c alias.co=checkout co -b feat/foo"}, "alias.*"),
+            ("git-checkout direct binary branch", "run_command", {"CommandLine": "git-checkout -b feat/foo"}, "git checkout -b"),
+            ("git push -odelete=1 attached value does not set delete_mode", "run_command", {"CommandLine": "git push -odelete=1 . HEAD:feat"}, "non-`main`"),
             ("git symbolic-ref HEAD off main", "run_command", {"CommandLine": "git symbolic-ref HEAD refs/heads/feat"}, "repointing `HEAD`"),
             ("git symbolic-ref -m reason HEAD off main", "run_command", {"CommandLine": "git symbolic-ref -m reason HEAD refs/heads/feat"}, "repointing `HEAD`"),
             ("git update-ref non-main local branch", "run_command", {"CommandLine": "git update-ref refs/heads/feat HEAD"}, "git update-ref"),
