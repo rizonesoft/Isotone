@@ -1655,7 +1655,9 @@ _AGY_PS_RESOLVER_RHS = re.compile(
 _AGY_CLI_WORD = re.compile(r"\b(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?\b", re.IGNORECASE)
 _AGY_RESOLVED_TARGETS = (
     _AGY_BLOCKED_CLIS
-    | frozenset(("git", "git.exe", "pwsh", "pwsh.exe", "powershell", "powershell.exe",
+    | frozenset(("git", "git.exe", "git-worktree", "git-checkout", "git-switch", "git-branch",
+                 "git-symbolic-ref", "git-update-ref", "git-stash", "git-fetch", "git-pull",
+                 "git-push", "git-bisect", "pwsh", "pwsh.exe", "powershell", "powershell.exe",
                  "cmd", "cmd.exe", "bash", "bash.exe", "sh", "sh.exe", "wsl", "wsl.exe",
                  "iex", "invoke-expression", "start-process", "saps")))
 _AGY_SEARCH_CMDS = frozenset((
@@ -4913,41 +4915,156 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
     return None
 
 
+_GIT_TRUNK_DIRECT_SUBCMDS = frozenset((
+    "worktree", "checkout", "switch", "branch", "symbolic-ref", "update-ref",
+    "stash", "fetch", "pull", "push", "bisect",
+))
+_GIT_GLOBAL_EXIT_FLAGS = frozenset(("-v", "--version", "-h", "--help", "--html-path", "--man-path", "--info-path"))
+_GIT_GLOBAL_BOOL_FLAGS = frozenset((
+    "-p", "--paginate", "-P", "--no-pager", "--no-replace-objects", "--no-lazy-fetch",
+    "--no-optional-locks", "--no-advice", "--bare", "--literal-pathspecs", "--glob-pathspecs",
+    "--noglob-pathspecs", "--icase-pathspecs", "--exec-path",
+))
+_GIT_GLOBAL_VALUE_FLAGS = frozenset((
+    "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env", "--attr-source",
+))
+_GIT_WORKTREE_BOOL_FLAGS = frozenset((
+    "-h", "--help", "-v", "--verbose", "-q", "--quiet", "-f", "--force", "--porcelain", "-z", "-n", "--dry-run",
+))
+_GIT_CHECKOUT_BOOL_LONGS = frozenset((
+    "--force", "--merge", "--quiet", "--progress", "--no-progress", "--ours", "--theirs",
+    "--patch", "--no-patch", "--overwrite-ignore", "--no-overwrite-ignore", "--no-recurse-submodules",
+    "--ignore-skip-worktree-bits", "--no-ignore-skip-worktree-bits", "--ignore-other-worktrees",
+    "--no-ignore-other-worktrees", "--pathspec-file-nul", "--no-pathspec-file-nul", "--no-guess",
+    "--overlay", "--no-overlay", "--auto-advance", "--no-auto-advance",
+))
+_GIT_CHECKOUT_VALUE_LONGS = frozenset(("--conflict", "--pathspec-from-file", "--unified", "--inter-hunk-context"))
+_GIT_CHECKOUT_FORBIDDEN_LONGS = frozenset((
+    "--orphan", "--no-orphan", "--track", "--no-track", "--detach", "--no-detach", "--guess",
+))
+_GIT_SWITCH_BOOL_LONGS = frozenset((
+    "--force", "--discard-changes", "--no-discard-changes", "--merge", "--quiet", "--no-quiet",
+    "--progress", "--no-progress", "--no-guess", "--no-recurse-submodules", "--overwrite-ignore",
+    "--no-overwrite-ignore", "--ignore-other-worktrees", "--no-ignore-other-worktrees",
+))
+_GIT_SWITCH_FORBIDDEN_LONGS = frozenset((
+    "--create", "--no-create", "--force-create", "--no-force-create", "--orphan", "--no-orphan",
+    "--track", "--no-track", "--detach", "--no-detach", "--guess",
+))
+_GIT_BRANCH_SAFE_MUTS = frozenset((
+    "-d", "-D", "--delete", "-u", "--set-upstream-to", "--unset-upstream", "--edit-description",
+))
+_GIT_BRANCH_DISPLAY_FLAGS = frozenset((
+    "-v", "-vv", "--verbose", "--no-verbose", "-q", "--quiet", "--no-quiet", "--abbrev", "--no-abbrev",
+    "--color", "--no-color", "--column", "--no-column", "-i", "--ignore-case", "--no-ignore-case",
+    "--omit-empty", "--no-omit-empty", "--format", "--sort",
+))
+_GIT_BRANCH_FORBIDDEN_OPS = frozenset((
+    "-c", "-C", "--copy", "--no-copy", "-m", "-M", "--move", "--no-move",
+    "-f", "--force", "--no-force", "-t", "--track", "--no-track", "--create-reflog", "--no-create-reflog",
+))
+_GIT_BRANCH_REQ_VALUE = frozenset(("--points-at", "-u", "--set-upstream-to", "--format", "--sort"))
+_GIT_BRANCH_OPT_EQ = frozenset(("--abbrev", "--color", "--column", "--contains", "--no-contains", "--merged", "--no-merged"))
+
+
 def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | None:
-    """Enforce trunk-only development on `main`: deny `git worktree add` and branch creation commands while allowing
-    status/list/prune/remove and branch deletion (`-d`/`-D`)."""
-    if head not in ("git", "git.exe"):
+    """Enforce trunk-only development on `main` using closed canonical Git option allow-lists so abbreviated,
+    negated, or unknown flags fail closed rather than falling through."""
+    sub: str | None = None
+    rest: list[str] = []
+    if head in ("git", "git.exe"):
+        idx = 0
+        while idx < len(args) and args[idx] != "-" and args[idx].startswith("-"):
+            gtok = args[idx]
+            if gtok == "--":
+                idx += 1
+                break
+            if gtok in _GIT_GLOBAL_EXIT_FLAGS:
+                return None
+            if gtok in _GIT_GLOBAL_BOOL_FLAGS or gtok.startswith(("--exec-path=", "--list-cmds=")):
+                idx += 1
+                continue
+            if gtok == "-C" or (gtok.startswith("-C") and len(gtok) > 2):
+                if gtok == "-C" and idx + 1 >= len(args):
+                    return "Incomplete `git -C` option; pass a directory argument (AGENTS.md)."
+                idx += 2 if gtok == "-C" else 1
+                continue
+            if gtok == "-c" or (gtok.startswith("-c") and len(gtok) > 2):
+                if gtok == "-c" and idx + 1 >= len(args):
+                    return "Incomplete `git -c` option; pass a `key=value` argument (AGENTS.md)."
+                cfg = args[idx + 1] if gtok == "-c" else gtok[2:]
+                cfg_key = cfg.split("=", 1)[0].strip().lower()
+                if cfg_key.startswith("alias.") or cfg_key in ("checkout.defaultremote", "checkout.guess"):
+                    return ("Isotone develops straight on `main`; overriding `git -c alias.*` or `checkout.*` "
+                            "is forbidden (AGENTS.md).")
+                idx += 2 if gtok == "-c" else 1
+                continue
+            gfl = _flag(gtok)
+            if gfl in _GIT_GLOBAL_VALUE_FLAGS:
+                if "=" in gtok:
+                    gval = gtok.split("=", 1)[1]
+                    idx += 1
+                else:
+                    if idx + 1 >= len(args):
+                        return f"Incomplete `git {gtok}` option; pass its value argument (AGENTS.md)."
+                    gval = args[idx + 1]
+                    idx += 2
+                if gfl == "--config-env" and gval.split("=", 1)[0].strip().lower().startswith("alias."):
+                    return "Isotone develops straight on `main`; overriding `alias.*` via `--config-env` is forbidden (AGENTS.md)."
+                continue
+            return (f"Unrecognized or abbreviated global Git option {gtok!r}; pass canonical Git options "
+                    f"(AGENTS.md).")
+        if idx >= len(args):
+            return None
+        sub = args[idx].lower()
+        rest = args[idx + 1:]
+    elif head.startswith("git-"):
+        cand = head[4:].removesuffix(".exe")
+        if cand not in _GIT_TRUNK_DIRECT_SUBCMDS:
+            return None
+        sub = cand
+        rest = list(args)
+    else:
         return None
-    idx = 0
-    while idx < len(args) and args[idx].startswith("-"):
-        gtok = args[idx]
-        if gtok == "--":
-            idx += 1
-            break
-        if gtok in GIT_GLOBAL_WITH_ARG:
-            idx += 2
-            continue
-        idx += 1
-    if idx >= len(args):
-        return None
-    sub = args[idx].lower()
-    rest = args[idx + 1:]
+
     if sub == "worktree":
         after_sep = False
         subcmd: str | None = None
-        for tok in rest:
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
             if not after_sep and tok == "--":
                 after_sep = True
+                i += 1
                 continue
-            if not after_sep and tok in ("-h", "--help"):
-                return None
-            if after_sep or not tok.startswith("-"):
+            if not after_sep and tok != "-" and tok.startswith("-"):
+                if tok in ("-h", "--help"):
+                    return None
+                fl = _flag(tok)
+                if fl == "--expire":
+                    if "=" not in tok:
+                        if i + 1 >= len(rest):
+                            return "Incomplete `git worktree --expire` option (AGENTS.md)."
+                        i += 2
+                        continue
+                    i += 1
+                    continue
+                if tok in _GIT_WORKTREE_BOOL_FLAGS or (
+                        not tok.startswith("--") and len(tok) > 2 and set(tok[1:]) <= {"h", "v", "q", "f", "z", "n"}):
+                    if not tok.startswith("--") and "h" in tok[1:]:
+                        return None
+                    i += 1
+                    continue
+                return ("Isotone develops straight on `main` without secondary git worktrees "
+                        f"(`git worktree add` and option {tok!r} are forbidden; AGENTS.md).")
+            if subcmd is None:
                 subcmd = tok.lower()
-                break
+            i += 1
         if subcmd in ("list", "prune", "remove", "unlock", "repair"):
             return None
         return ("Isotone develops straight on `main` without secondary git worktrees "
                 "(`git worktree add` and secondary worktree operations are forbidden; AGENTS.md).")
+
     if sub == "checkout":
         has_dash = "--" in rest
         dash_at = rest.index("--") if has_dash else len(rest)
@@ -4959,20 +5076,47 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
         while i < len(before_dash):
             tok = before_dash[i]
             if tok != "-" and tok.startswith("-"):
-                low = _flag(tok)
-                if low in ("-h", "--help"):
+                if tok in ("-h", "--help"):
                     return None
-                if low in ("-b", "-B", "--orphan", "-t", "--track", "-d", "--detach", "--guess"):
-                    return ("Isotone develops straight on `main`; creating branches or detaching `HEAD` "
-                            "(`git checkout -b/-B/-t/--track/--orphan/-d/--detach`) is forbidden (AGENTS.md).")
-                if not tok.startswith("--") and any(c in tok[1:] for c in ("b", "B", "t", "d")):
+                if tok.startswith("--"):
+                    fl = _flag(tok)
+                    if fl in _GIT_CHECKOUT_FORBIDDEN_LONGS:
+                        return ("Isotone develops straight on `main`; creating branches or detaching `HEAD` "
+                                "(`git checkout -b/-B/-t/--track/--orphan/-d/--detach`) is forbidden (AGENTS.md).")
+                    if fl in _GIT_CHECKOUT_VALUE_LONGS:
+                        if fl == "--pathspec-from-file":
+                            has_pathspec_file = True
+                        if "=" not in tok:
+                            if i + 1 >= len(before_dash):
+                                return f"Incomplete `git checkout {tok}` option (AGENTS.md)."
+                            i += 2
+                            continue
+                        i += 1
+                        continue
+                    if tok in _GIT_CHECKOUT_BOOL_LONGS or fl == "--recurse-submodules":
+                        i += 1
+                        continue
+                    return ("Isotone develops straight on `main`; unrecognized, abbreviated, or branching/detaching "
+                            f"`git checkout` option {tok!r} is forbidden (pass canonical options or `git checkout main`; "
+                            "AGENTS.md).")
+                if any(c in tok[1:] for c in ("b", "B", "t", "d", "l")):
                     return ("Isotone develops straight on `main`; creating branches or detaching `HEAD` "
                             "(`git checkout -b/-B/-t/-d`) is forbidden (AGENTS.md).")
-                if low == "--pathspec-from-file":
-                    has_pathspec_file = True
-                if low in ("--conflict", "--pathspec-from-file") and "=" not in tok:
-                    i += 2
+                if tok == "-U" or (tok.startswith("-U") and tok[2:].isdigit()):
+                    if tok == "-U":
+                        if i + 1 >= len(before_dash):
+                            return "Incomplete `git checkout -U` option (AGENTS.md)."
+                        i += 2
+                        continue
+                    i += 1
                     continue
+                if set(tok[1:]) <= {"f", "m", "q", "p", "2", "3", "h"}:
+                    if "h" in tok[1:]:
+                        return None
+                    i += 1
+                    continue
+                return ("Isotone develops straight on `main`; unrecognized `git checkout` short option "
+                        f"{tok!r} is forbidden (AGENTS.md).")
             else:
                 pre_pos.append(tok)
             i += 1
@@ -4985,6 +5129,7 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
         return ("Isotone develops straight on `main`; switching away from `main`, detaching `HEAD`, or creating/"
                 "tracking branches via `git checkout` is forbidden (use `git checkout -- <path>` or `git restore "
                 "<path>` to restore files, or `git show`/`git diff` to inspect refs; AGENTS.md).")
+
     if sub == "switch":
         pos: list[str] = []
         after_sep = False
@@ -4996,18 +5141,36 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                 i += 1
                 continue
             if not after_sep and tok != "-" and tok.startswith("-"):
-                low = _flag(tok)
-                if low in ("-h", "--help"):
+                if tok in ("-h", "--help"):
                     return None
-                if low in ("-c", "-C", "--create", "--force-create", "--orphan", "-t", "--track", "-d", "--detach"):
-                    return ("Isotone develops straight on `main`; creating branches or detaching `HEAD` "
-                            "(`git switch -c/-C/--create/-t/--track/--orphan/-d/--detach`) is forbidden (AGENTS.md).")
-                if not tok.startswith("--") and any(c in tok[1:] for c in ("c", "C", "t", "d")):
+                if tok.startswith("--"):
+                    fl = _flag(tok)
+                    if fl in _GIT_SWITCH_FORBIDDEN_LONGS:
+                        return ("Isotone develops straight on `main`; creating branches or detaching `HEAD` "
+                                "(`git switch -c/-C/--create/-t/--track/--orphan/-d/--detach`) is forbidden (AGENTS.md).")
+                    if fl == "--conflict":
+                        if "=" not in tok:
+                            if i + 1 >= len(rest):
+                                return "Incomplete `git switch --conflict` option (AGENTS.md)."
+                            i += 2
+                            continue
+                        i += 1
+                        continue
+                    if tok in _GIT_SWITCH_BOOL_LONGS or fl == "--recurse-submodules":
+                        i += 1
+                        continue
+                    return ("Isotone develops straight on `main`; unrecognized, abbreviated, or branching/detaching "
+                            f"`git switch` option {tok!r} is forbidden (use `git switch main`; AGENTS.md).")
+                if any(c in tok[1:] for c in ("c", "C", "t", "d")):
                     return ("Isotone develops straight on `main`; creating branches or detaching `HEAD` "
                             "(`git switch -c/-C/-t/-d`) is forbidden (AGENTS.md).")
-                if low == "--conflict" and "=" not in tok:
-                    i += 2
+                if set(tok[1:]) <= {"f", "m", "q", "h"}:
+                    if "h" in tok[1:]:
+                        return None
+                    i += 1
                     continue
+                return ("Isotone develops straight on `main`; unrecognized `git switch` short option "
+                        f"{tok!r} is forbidden (AGENTS.md).")
             else:
                 pos.append(tok)
             i += 1
@@ -5015,8 +5178,9 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
             return None
         return ("Isotone develops straight on `main`; switching away from `main` or creating/tracking branches via "
                 "`git switch` is forbidden (AGENTS.md).")
+
     if sub == "symbolic-ref":
-        flags: set[str] = set()
+        flags_sr: set[str] = set()
         pos_sr: list[str] = []
         after_sep = False
         for tok in rest:
@@ -5024,53 +5188,52 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                 after_sep = True
                 continue
             if not after_sep and tok != "-" and tok.startswith("-"):
-                fl = _flag(tok)
-                if fl in ("-h", "--help"):
+                if tok in ("-h", "--help"):
                     return None
-                flags.add(fl)
+                if not tok.startswith("--") and len(tok) > 2 and set(tok[1:]) <= {"q", "h"}:
+                    if "h" in tok[1:]:
+                        return None
+                    flags_sr.add("-q")
+                    continue
+                if tok in ("-q", "--quiet", "--short", "--recurse", "--no-recurse"):
+                    flags_sr.add(tok)
+                    continue
+                return ("Isotone develops straight on `main`; modifying symbolic refs or repointing `HEAD` "
+                        "(`git symbolic-ref`) is forbidden (AGENTS.md).")
             else:
                 pos_sr.append(tok)
-        if flags <= {"-q", "--quiet", "--short"} and pos_sr == ["HEAD"]:
+        if pos_sr == ["HEAD"]:
             return None
         return ("Isotone develops straight on `main`; modifying symbolic refs or repointing `HEAD` "
                 "(`git symbolic-ref`) is forbidden (AGENTS.md).")
+
     if sub == "update-ref":
         flags_ur: set[str] = set()
         pos_ur: list[str] = []
         after_sep = False
-        i = 0
-        while i < len(rest):
-            tok = rest[i]
+        for tok in rest:
             if not after_sep and tok == "--":
                 after_sep = True
-                i += 1
                 continue
             if not after_sep and tok != "-" and tok.startswith("-"):
-                fl = _flag(tok)
-                if fl in ("-h", "--help"):
+                if tok in ("-h", "--help"):
                     return None
-                flags_ur.add(fl)
-                if fl == "-m" and "=" not in tok:
-                    i += 2
+                if tok in ("-d", "--no-deref"):
+                    flags_ur.add(tok)
                     continue
+                return ("Isotone develops straight on `main`; creating or updating refs via `git update-ref` "
+                        "is forbidden (AGENTS.md).")
             else:
                 pos_ur.append(tok)
-            i += 1
-        if flags_ur <= {"-d", "--no-deref"} and "-d" in flags_ur and 1 <= len(pos_ur) <= 2 \
-                and pos_ur[0] not in ("HEAD", "refs/heads/main"):
+        if "-d" in flags_ur and 1 <= len(pos_ur) <= 2 and pos_ur[0] not in ("HEAD", "refs/heads/main"):
             return None
         return ("Isotone develops straight on `main`; creating or updating refs via `git update-ref` "
                 "is forbidden (AGENTS.md).")
+
     if sub == "branch":
-        allowed_branch_ops = (
-            _BRANCH_LISTS
-            | frozenset(("-d", "-D", "--delete", "-u", "--set-upstream-to", "--unset-upstream",
-                         "--edit-description", "-h", "--help"))
-        )
-        forbidden_branch_ops = frozenset((
-            "-c", "-C", "--copy", "-m", "-M", "--move", "-f", "--force", "-t", "--track", "--create-reflog",
-        ))
-        flags = set()
+        allowed_branch_modes = _BRANCH_LISTS | _GIT_BRANCH_SAFE_MUTS
+        all_canonical = allowed_branch_modes | _GIT_BRANCH_DISPLAY_FLAGS
+        flags: set[str] = set()
         positionals: list[str] = []
         after_sep = False
         i = 0
@@ -5081,24 +5244,78 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                 i += 1
                 continue
             if not after_sep and tok != "-" and tok.startswith("-"):
+                if tok in ("-h", "--help"):
+                    return None
                 fl = _flag(tok)
+                if fl in _GIT_BRANCH_FORBIDDEN_OPS or (
+                        not tok.startswith("--") and any(c in tok[1:] for c in ("c", "C", "m", "M", "f", "t"))):
+                    return ("Isotone develops straight on `main`; creating, forcing, copying, or renaming branches "
+                            "(`git branch -c/-C/-m/-M/-f/-t/--create-reflog`) is forbidden (AGENTS.md).")
+                if not tok.startswith("--") and len(tok) > 2 and tok != "-vv":
+                    if tok.startswith("-u"):
+                        flags.add("-u")
+                        i += 1
+                        continue
+                    if set(tok[1:]) <= {"l", "a", "r", "d", "D", "v", "q", "i", "h"}:
+                        if "h" in tok[1:]:
+                            return None
+                        for ch in tok[1:]:
+                            flags.add(f"-{ch}")
+                        i += 1
+                        continue
+                    return ("Isotone develops straight on `main`; unrecognized `git branch` short option "
+                            f"{tok!r} is forbidden (AGENTS.md).")
+                if fl not in all_canonical:
+                    return ("Isotone develops straight on `main`; unrecognized, abbreviated, or branching `git branch` "
+                            f"option {tok!r} is forbidden (AGENTS.md).")
+                if "=" in tok and fl not in (_GIT_BRANCH_REQ_VALUE | _GIT_BRANCH_OPT_EQ):
+                    return ("Isotone develops straight on `main`; unexpected inline value on `git branch` option "
+                            f"{tok!r} (AGENTS.md).")
                 flags.add(fl)
-                if not tok.startswith("--") and len(tok) > 2:
-                    for ch in tok[1:]:
-                        flags.add(f"-{ch}")
-                if fl in ("--contains", "--no-contains", "--merged", "--no-merged", "--points-at",
-                          "-u", "--set-upstream-to", "--format", "--sort") and "=" not in tok:
+                if fl in _GIT_BRANCH_REQ_VALUE and "=" not in tok:
+                    if i + 1 >= len(rest):
+                        return f"Incomplete `git branch {tok}` option (AGENTS.md)."
                     i += 2
                     continue
+                if fl in ("--contains", "--no-contains", "--merged", "--no-merged") and "=" not in tok:
+                    if i + 1 < len(rest) and rest[i + 1] != "--" and not rest[i + 1].startswith("-"):
+                        i += 2
+                        continue
             else:
                 positionals.append(tok)
             i += 1
-        if flags & forbidden_branch_ops:
-            return ("Isotone develops straight on `main`; creating, forcing, copying, or renaming branches "
-                    "(`git branch -c/-C/-m/-M/-f/-t/--create-reflog`) is forbidden (AGENTS.md).")
-        if positionals and not (flags & allowed_branch_ops):
+        if (flags & {"-d", "-D", "--delete"}) and not (flags & {"-r", "--remotes"}) \
+                and any(p in ("main", "refs/heads/main") for p in positionals):
+            return "Isotone develops straight on `main`; deleting `main` is forbidden (AGENTS.md)."
+        if positionals and not (flags & allowed_branch_modes):
             return ("Isotone develops straight on `main`; creating branches (`git branch <name>`) "
                     "is forbidden (AGENTS.md).")
+        return None
+
+    if sub == "stash":
+        for tok in rest:
+            if tok == "--":
+                break
+            if tok in ("-h", "--help"):
+                return None
+            if not tok.startswith("-"):
+                if tok.lower() == "branch":
+                    return ("Isotone develops straight on `main`; `git stash branch` creates a branch off `main` "
+                            "and is forbidden (AGENTS.md).")
+                break
+        return None
+
+    if sub == "bisect":
+        for tok in rest:
+            if tok in ("-h", "--help"):
+                return None
+            if not tok.startswith("-"):
+                if tok.lower() not in ("reset", "log", "terms", "help"):
+                    return ("Isotone develops straight on `main`; `git bisect` detaches `HEAD` off `main` "
+                            "and is forbidden (AGENTS.md).")
+                break
+        return None
+
     if sub in ("fetch", "pull"):
         after_sep = False
         pos_fp: list[str] = []
@@ -5110,10 +5327,13 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                 i += 1
                 continue
             if not after_sep and tok != "-" and tok.startswith("-"):
-                fl = _flag(tok)
+                fl = _flag(tok).lower()
+                if fl.startswith("--refm"):
+                    return ("Isotone develops straight on `main`; custom `git fetch` `--refmap` overrides "
+                            "are forbidden (AGENTS.md).")
                 if fl in ("--depth", "--deepen", "--shallow-since", "--shallow-exclude", "--negotiation-tip",
-                          "--Upload-pack", "--upload-pack", "-o", "--server-option", "-j", "--jobs",
-                          "--refmap") and "=" not in tok:
+                          "--upload-pack", "-o", "--server-option", "-j", "--jobs",
+                          "--recurse-submodules-default", "--submodule-prefix") and "=" not in tok:
                     i += 2
                     continue
             else:
@@ -5126,6 +5346,56 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                         and not dst.startswith(("refs/remotes/", "refs/tags/")):
                     return ("Isotone develops straight on `main`; fetching into a non-`main` local branch refspec "
                             f"({refspec!r}) is forbidden (AGENTS.md).")
+        return None
+
+    if sub == "push":
+        after_sep = False
+        delete_mode = False
+        pos_push: list[str] = []
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
+            if not after_sep and tok == "--":
+                after_sep = True
+                i += 1
+                continue
+            if not after_sep and tok != "-" and tok.startswith("-"):
+                if tok in ("-h", "--help"):
+                    return None
+                fl = _flag(tok)
+                if fl in ("-d", "--delete") or (not tok.startswith("--") and "d" in tok[1:]):
+                    delete_mode = True
+                if fl in ("--repo", "--receive-pack", "--exec", "-o", "--push-option") and "=" not in tok:
+                    i += 2
+                    continue
+            else:
+                pos_push.append(tok)
+            i += 1
+        if pos_push:
+            remote = pos_push[0]
+            is_local = (remote in (".", "./", ".\\", ".git")
+                        or os.path.isabs(remote)
+                        or remote.lower().startswith("file:"))
+            for refspec in pos_push[1:]:
+                if delete_mode:
+                    if refspec.lstrip("+") in ("main", "refs/heads/main"):
+                        return "Isotone develops straight on `main`; deleting `main` via `git push --delete` is forbidden (AGENTS.md)."
+                    continue
+                if ":" in refspec:
+                    src, dst = refspec.split(":", 1)
+                    dst_clean = dst.lstrip("+")
+                    if not src:
+                        if dst_clean in ("main", "refs/heads/main"):
+                            return "Isotone develops straight on `main`; deleting `main` via push refspec is forbidden (AGENTS.md)."
+                    elif dst_clean and dst_clean not in ("main", "refs/heads/main") \
+                            and not dst_clean.startswith("refs/tags/"):
+                        return ("Isotone develops straight on `main`; pushing to a non-`main` branch refspec "
+                                f"({refspec!r}) is forbidden (AGENTS.md).")
+                elif is_local:
+                    clean_ref = refspec.lstrip("+")
+                    if clean_ref not in ("main", "refs/heads/main") and not clean_ref.startswith("refs/tags/"):
+                        return ("Isotone develops straight on `main`; pushing a non-`main` ref into a local repository "
+                                f"({refspec!r}) is forbidden (AGENTS.md).")
     return None
 
 

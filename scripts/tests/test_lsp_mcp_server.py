@@ -82,6 +82,47 @@ class LspMcpServerTest(unittest.TestCase):
         finally:
             srv.close()
 
+    @unittest.skipUnless(shutil.which("pyright-langserver"), "pyright-langserver not installed")
+    def test_live_pyright_refreshes_changed_open_dependency(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory(prefix="isotone-pyright-dep-") as tmp_ws:
+            ws = Path(tmp_ws)
+            dep_py = ws / "mod_b.py"
+            cons_py = ws / "mod_a.py"
+            dep_py.write_text("answer: int = 1\n", encoding="utf-8")
+            cons_py.write_text("from mod_b import answer\nx: int = answer\n", encoding="utf-8")
+            mod = _load_server_module()
+            srv = mod.IsotoneLspMcpServer(root=str(ws), idle_seconds=30.0)
+            try:
+                d_b = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "mod_b.py"}},
+                })
+                assert d_b is not None and not d_b["result"]["isError"]
+                d_a_ok = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "mod_a.py"}},
+                })
+                assert d_a_ok is not None and not d_a_ok["result"]["isError"]
+                self.assertIn("mod_a.py: 0 diagnostics (pyright)", d_a_ok["result"]["content"][0]["text"])
+
+                dep_py.write_text('answer: str = "changed"\n', encoding="utf-8")
+                d_a_err = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 3,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "mod_a.py"}},
+                })
+                assert d_a_err is not None and not d_a_err["result"]["isError"]
+                self.assertIn("Error (Pyright", d_a_err["result"]["content"][0]["text"])
+                self.assertIn("reportAssignmentType", d_a_err["result"]["content"][0]["text"])
+            finally:
+                srv.close()
+
     @unittest.skipUnless(os.name == "nt" and VSWHERE.is_file(), "pinned Visual Studio clangd not installed")
     def test_live_clangd_symbols_and_diagnostics(self) -> None:
         cpp_files = sorted((ROOT / "native").rglob("*.cpp"))

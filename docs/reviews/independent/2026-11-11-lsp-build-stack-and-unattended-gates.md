@@ -68,3 +68,35 @@ OVERALL: needs-attention
 1. **P1 `scripts/panel_slots.py:5040` (`adversarial`):** Real and reproduced. Updated `git branch` parsing in `_segment_creates_branch_or_worktree` (`scripts/panel_slots.py`) to switch to positional collection after `--` instead of breaking early, added `-f`/`--force`/`-t`/`--track`/`--create-reflog` to `forbidden_branch_ops` and `--sort` to option-value skipping, and hardened `worktree`, `symbolic-ref`, `update-ref`, and `fetch`/`pull` refspec parsing across `--` and `-m` option values. Covered in `_self_test` (`git branch -- review-probe`, `git branch -f`, `git symbolic-ref -m`, `git update-ref -m`, and `git fetch origin main:feat`).
 2. **P1 `scripts/panel_slots.py:4979` (`consistency`):** Real and reproduced. Removed `refs/heads/main` from both the `git checkout` and `git switch` allow-lists in `_segment_creates_branch_or_worktree` (`scripts/panel_slots.py`) so only the branch name `main` (and `.` / explicit pathspecs on `git checkout`) is allowed, preventing detached-HEAD checkout via `git checkout refs/heads/main`. Covered in `_self_test`.
 3. **P2 `scripts/lsp-mcp-server.py:518` (`integration`):** Real and reproduced. Assigned monotonically increasing backend-wide document versions (`self._next_doc_version`) across `didOpen` and `didChange` in `LspBackend` (`scripts/lsp-mcp-server.py`) and required an exact integer version match (`pub_ver == int(open_meta["version"])` and `pub_ver == expected_version`) in `_handle_incoming` and `diagnostics()`, rejecting unversioned `didClose` clear notifications (`pub_ver is None`) and any prior-open version notifications across LRU eviction and reopen cycles. Verified against both live `clangd` and live `pyright` (`test_lsp_mcp_server.py`) and in `_self_test` (`DELAYED_UNVERSIONED_CLOSE`).
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-11T07:38:47Z
+- Effort: medium
+- Lines: 16
+- Digest: f135b52c67010264
+
+### adversarial: needs-attention
+
+1. P1 `scripts/panel_slots.py:4965`: Abbreviated long options bypass detached-HEAD enforcement. Read-only reproduction: `_agy_command_decision('git checkout --det main')` and the equivalent `git switch --det main` both return `None`. Git accepts `--det` as `--detach`, so a writer using this valid command leaves `main` and can commit detached. Unknown long options fall through to the permitted `main` positional. Normalize supported abbreviations or reject unrecognized options. [Git CLI documentation](https://git-scm.com/docs/gitcli#_abbreviating_long_options).
+
+### consistency: approve
+
+### integration: needs-attention
+
+2. P1 `scripts/lsp-mcp-server.py:426`: Synchronization refreshes only the requested file, leaving previously opened dependencies stale indefinitely during continued use. Reproduce by querying module B containing `answer: int = 1`, then consumer A containing `from B import answer; x: int = answer`; change B to `answer: str = "changed"` and request A’s diagnostics again. A still reports zero diagnostics because B’s open buffer retains its previous contents, and A’s cached result remains eligible. Reproduced with live Pyright and in-memory disk-content overlays without modifying files: A returned `[]` after B changed, then reported `reportAssignmentType` only after explicitly synchronizing B. Refresh changed open dependencies and invalidate affected diagnostics before returning results.
+
+### source-defect: approve
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+
+## Response to round 3
+
+1. **P1 `scripts/panel_slots.py:4965` (`adversarial`):** Real and reproduced. Hardened `_segment_creates_branch_or_worktree` and `_AGY_RESOLVED_TARGETS` in `scripts/panel_slots.py` to enforce strict canonical option allow-lists for global Git flags and for `worktree`, `checkout`, `switch`, `symbolic-ref`, `update-ref`, `branch`, `stash`, `bisect`, `fetch`, `pull`, and `push` (including `git-<subcmd>` executables and `alias.*` overrides via `-c` / `--config-env`), rejecting unrecognized or abbreviated long options such as `git checkout --det main` and `git switch --det main`. Covered in `_self_test` (1,009 cases passing).
+2. **P1 `scripts/lsp-mcp-server.py:426` (`integration`):** Real and reproduced. Added `_refresh_tracked_documents_locked` and per-document `deps_dirty` tracking in `LspBackend` (`scripts/lsp-mcp-server.py`) so every `_sync_document_locked` and `workspace_symbols` call first checks all open and previously evicted documents against disk, emits `textDocument/didChange`, `textDocument/didClose`, and `workspace/didChangeWatchedFiles` for modified or removed dependencies, invalidates stale cached diagnostics across open consumers, and bumps the consumer's version via `textDocument/didChange` so Pyright and clangd re-analyze against fresh dependency buffers. Covered in `_self_test` and in `test_live_pyright_refreshes_changed_open_dependency` (`scripts/tests/test_lsp_mcp_server.py`).
+

@@ -181,6 +181,7 @@ class LspBackend:
         self._diagnostics: dict[str, tuple[int, int, list[dict]]] = {}
         self._diag_seq = 0
         self._open_docs: collections.OrderedDict[str, dict] = collections.OrderedDict()
+        self._closed_docs: collections.OrderedDict[str, dict] = collections.OrderedDict()
         self._capabilities: dict = {}
         self._last_used = 0.0
         self._command: list[str] = []
@@ -230,6 +231,7 @@ class LspBackend:
             self._responses.clear()
             self._diagnostics.clear()
             self._open_docs.clear()
+            self._closed_docs.clear()
             self._capabilities = {}
             self._cond.notify_all()
 
@@ -421,47 +423,166 @@ class LspBackend:
         self._kill_proc(proc)
         self._reset_state()
 
+    @staticmethod
+    def _decode_source_bytes(raw_bytes: bytes) -> str:
+        return raw_bytes.decode("utf-8-sig" if raw_bytes.startswith(b"\xef\xbb\xbf") else "utf-8", errors="replace")
+
+    def _refresh_tracked_documents_locked(self, exclude_key: str | None = None) -> bool:
+        """Refresh open and evicted documents whose disk contents changed or disappeared; return True if any changed."""
+        with self._cond:
+            open_snapshot = [
+                (k, meta["abs_path"], meta["uri"], meta["sha256"])
+                for k, meta in self._open_docs.items()
+                if k != exclude_key and "abs_path" in meta
+            ]
+            closed_snapshot = [
+                (k, meta["abs_path"], meta["uri"], meta["sha256"])
+                for k, meta in self._closed_docs.items()
+                if k != exclude_key
+            ]
+        open_updates: list[tuple[str, bytes | None, str | None]] = []
+        for dep_key, dep_path, _, prev_sha in open_snapshot:
+            try:
+                with open(dep_path, "rb") as fh:
+                    dep_bytes = fh.read()
+            except OSError:
+                open_updates.append((dep_key, None, None))
+                continue
+            dep_sha = hashlib.sha256(dep_bytes).hexdigest()
+            if dep_sha != prev_sha:
+                open_updates.append((dep_key, dep_bytes, dep_sha))
+        closed_updates: list[tuple[str, str, str | None]] = []
+        for c_key, c_path, c_uri, prev_sha in closed_snapshot:
+            try:
+                with open(c_path, "rb") as fh:
+                    c_bytes = fh.read()
+            except OSError:
+                closed_updates.append((c_key, c_uri, None))
+                continue
+            c_sha = hashlib.sha256(c_bytes).hexdigest()
+            if c_sha != prev_sha:
+                closed_updates.append((c_key, c_uri, c_sha))
+        if not open_updates and not closed_updates:
+            return False
+
+        to_close: list[str] = []
+        to_change: list[tuple[str, int, str]] = []
+        watched_events: list[dict] = []
+        with self._cond:
+            for dep_key, dep_bytes, dep_sha in open_updates:
+                meta = self._open_docs.get(dep_key)
+                if meta is None:
+                    continue
+                dep_uri = meta["uri"]
+                self._diagnostics.pop(dep_key, None)
+                if dep_bytes is None or dep_sha is None:
+                    self._open_docs.pop(dep_key, None)
+                    to_close.append(dep_uri)
+                    watched_events.append({"uri": dep_uri, "type": 3})
+                else:
+                    self._next_doc_version += 1
+                    dep_ver = self._next_doc_version
+                    meta["version"] = dep_ver
+                    meta["sha256"] = dep_sha
+                    meta["expected_diag_seq"] = self._diag_seq + 1
+                    to_change.append((dep_uri, dep_ver, self._decode_source_bytes(dep_bytes)))
+                    watched_events.append({"uri": dep_uri, "type": 2})
+            for c_key, c_uri, c_sha in closed_updates:
+                c_meta = self._closed_docs.get(c_key)
+                if c_meta is None:
+                    continue
+                if c_sha is None:
+                    self._closed_docs.pop(c_key, None)
+                    watched_events.append({"uri": c_uri, "type": 3})
+                else:
+                    c_meta["sha256"] = c_sha
+                    watched_events.append({"uri": c_uri, "type": 2})
+            for other_key, other_meta in self._open_docs.items():
+                other_meta["deps_dirty"] = True
+                self._diagnostics.pop(other_key, None)
+
+        for close_uri in to_close:
+            try:
+                self._send_notification_locked("textDocument/didClose", {"textDocument": {"uri": close_uri}})
+            except Exception:
+                pass
+        for change_uri, change_ver, change_text in to_change:
+            self._send_notification_locked("textDocument/didChange", {
+                "textDocument": {"uri": change_uri, "version": change_ver},
+                "contentChanges": [{"text": change_text}],
+            })
+        if watched_events:
+            try:
+                self._send_notification_locked("workspace/didChangeWatchedFiles", {"changes": watched_events})
+            except Exception:
+                pass
+        return True
+
     def _sync_document_locked(self, abs_path: str, language_id: str) -> tuple[str, str, int, int]:
-        """Ensure abs_path is open and synced with disk; return (uri, key, expected_diag_seq, expected_version)."""
+        """Ensure abs_path and open dependencies are synced with disk; return (uri, key, expected_diag_seq, expected_version)."""
         try:
             with open(abs_path, "rb") as fh:
                 raw_bytes = fh.read()
         except OSError as exc:
             raise LspToolError(f"cannot read {abs_path}: {exc}") from exc
-        text = raw_bytes.decode("utf-8-sig" if raw_bytes.startswith(b"\xef\xbb\xbf") else "utf-8", errors="replace")
+        text = self._decode_source_bytes(raw_bytes)
         digest = hashlib.sha256(raw_bytes).hexdigest()
         key = _norm_key(abs_path)
         uri = _path_to_uri(abs_path)
+        dep_changed = self._refresh_tracked_documents_locked(exclude_key=key)
         evicted_uris: list[str] = []
         action: str | None = None
         with self._cond:
             existing = self._open_docs.get(key)
             if existing is None:
+                self._closed_docs.pop(key, None)
                 while len(self._open_docs) >= self._max_open_docs:
                     evict_key, evict_meta = self._open_docs.popitem(last=False)
                     evicted_uris.append(evict_meta["uri"])
                     self._diagnostics.pop(evict_key, None)
+                    if "abs_path" in evict_meta:
+                        self._closed_docs[evict_key] = {
+                            "abs_path": evict_meta["abs_path"],
+                            "uri": evict_meta["uri"],
+                            "sha256": evict_meta["sha256"],
+                        }
+                        self._closed_docs.move_to_end(evict_key)
+                        while len(self._closed_docs) > 256:
+                            self._closed_docs.popitem(last=False)
                 self._next_doc_version += 1
                 version = self._next_doc_version
                 expected_seq = self._diag_seq + 1
+                self._diagnostics.pop(key, None)
                 self._open_docs[key] = {
+                    "abs_path": abs_path,
                     "uri": uri,
                     "version": version,
                     "sha256": digest,
                     "language_id": language_id,
                     "expected_diag_seq": expected_seq,
+                    "deps_dirty": False,
                 }
                 action = "open"
             else:
                 self._open_docs.move_to_end(key)
+                existing["abs_path"] = abs_path
                 uri = existing["uri"]
-                if existing["sha256"] != digest:
+                disk_changed = existing["sha256"] != digest
+                dirty = bool(existing.get("deps_dirty")) or dep_changed
+                if disk_changed or dirty:
                     self._next_doc_version += 1
                     version = self._next_doc_version
                     expected_seq = self._diag_seq + 1
                     existing["version"] = version
                     existing["sha256"] = digest
                     existing["expected_diag_seq"] = expected_seq
+                    existing["deps_dirty"] = False
+                    self._diagnostics.pop(key, None)
+                    if disk_changed:
+                        for other_key, other_meta in self._open_docs.items():
+                            if other_key != key:
+                                other_meta["deps_dirty"] = True
+                                self._diagnostics.pop(other_key, None)
                     action = "change"
                 else:
                     version = int(existing["version"])
@@ -540,6 +661,7 @@ class LspBackend:
     def workspace_symbols(self, query: str, timeout: float = 30.0) -> object:
         with self._op_lock:
             self._ensure_started_locked()
+            self._refresh_tracked_documents_locked()
             self._last_used = time.monotonic()
             return self._request_locked("workspace/symbol", {"query": query}, timeout=timeout)
 
@@ -1051,6 +1173,14 @@ def publish(uri, text, version):
                 "code": "E001",
                 "message": "Found BAD_TOKEN",
             })
+        if "IMPORT_DEP_ANSWER" in line and any("ANSWER_IS_STR" in dtext for duri, dtext in docs.items() if duri.endswith("/dep.py")):
+            diags.append({
+                "range": {"start": {"line": idx, "character": 0}, "end": {"line": idx, "character": len(line)}},
+                "severity": 1,
+                "source": "fake-lsp",
+                "code": "E002",
+                "message": "Type mismatch from open dep.py",
+            })
     send_msg({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
               "params": {"uri": enc_uri, "version": version, "diagnostics": diags}})
 
@@ -1252,6 +1382,28 @@ def _self_test() -> int:
             check("delayed unversioned didClose notification does not mask reopened file diagnostics",
                   not d_reopen["result"]["isError"] and "Found BAD_TOKEN" in d_reopen["result"]["content"][0]["text"],
                   repr(d_reopen))
+
+            # Open dependency modified on disk without direct query refreshes open buffer and invalidates consumer cache.
+            py_dep = os.path.join(ws, "dep.py")
+            py_cons = os.path.join(ws, "consumer.py")
+            with open(py_dep, "w", encoding="utf-8") as fh:
+                fh.write("answer: int = 1\n")
+            with open(py_cons, "w", encoding="utf-8") as fh:
+                fh.write("# IMPORT_DEP_ANSWER\n")
+            _ = rpc({"jsonrpc": "2.0", "id": 68, "method": "tools/call",
+                     "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "dep.py"}}})
+            d_cons_clean = rpc({"jsonrpc": "2.0", "id": 69, "method": "tools/call",
+                                "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "consumer.py"}}})
+            check("consumer cleanly analyzed against initial open dependency",
+                  "consumer.py: 0 diagnostics" in d_cons_clean["result"]["content"][0]["text"], repr(d_cons_clean))
+            with open(py_dep, "w", encoding="utf-8") as fh:
+                fh.write("# ANSWER_IS_STR\nanswer: str = 'changed'\n")
+            d_cons_err = rpc({"jsonrpc": "2.0", "id": 70, "method": "tools/call",
+                              "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "consumer.py"}}})
+            check("modifying open dependency on disk refreshes buffer and invalidates consumer diagnostics",
+                  not d_cons_err["result"]["isError"]
+                  and "Type mismatch from open dep.py" in d_cons_err["result"]["content"][0]["text"],
+                  repr(d_cons_err))
 
             bad_arg = rpc({"jsonrpc": "2.0", "id": 61, "method": "tools/call",
                            "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "a.py", "severity_max": 99}}})
