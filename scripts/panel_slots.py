@@ -684,6 +684,10 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": "pwsh -NoProfile -CommandWithArgs '& git @args' commit -n -m test"}}),
             ("an indented PowerShell `@a` splat hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "  $a = @('commit', '-n', '-m', 'test'); git @a"}}),
+            ("a typed PowerShell `[string]$out` CLI bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": "[string]$out = codex exec review"}}),
+            ("a typed PowerShell `[string[]]$a` splat hook bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": "[string[]]$a = @('commit', '-n', '-m', 'test'); git @a"}}),
             ("a clustered `git am -qn` hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "git am -qn patch.mbox"}}),
             ("a PowerShell command with an inline `# ...; codex` comment", "allow",
@@ -1993,6 +1997,32 @@ def _strip_shell_comments(command: str, in_cmd: bool = False, in_posix: bool = F
     return "".join(out)
 
 
+def _strip_ps_type_prefix(text: str) -> str:
+    """Strip one or more leading PowerShell `[TypeName]` / `[Attr(...)]` prefixes (including nested `[List[string]]`)."""
+    i = 0
+    n = len(text)
+    while i < n:
+        while i < n and text[i] in " \t":
+            i += 1
+        if i >= n or text[i] != "[":
+            break
+        depth = 0
+        j = i
+        while j < n:
+            if text[j] == "[":
+                depth += 1
+            elif text[j] == "]":
+                depth -= 1
+                if depth == 0:
+                    j += 1
+                    break
+            j += 1
+        if depth != 0:
+            break
+        i = j
+    return text[i:]
+
+
 def _ht_values_as_ps_assigns(inner_ht: str) -> str:
     """Rewrite top-level `key = value` entries inside a PowerShell `@{ ... }` hashtable into `$__ht_ = value` so key
     names are never misread as command heads while executable value expressions still go through command validation."""
@@ -2082,12 +2112,14 @@ def _tokenize_command(command: str, in_cmd: bool = False,
             seg_start = i
             continue
         if ch == "&":
+            eff_ct = [t for t in cur_tokens if not (not t.quote and _strip_ps_type_prefix(t.raw) == "")]
+            ct0_val = _strip_ps_type_prefix(eff_ct[0].val) if eff_ct and not eff_ct[0].quote else (eff_ct[0].val if eff_ct else "")
             is_ps_call = (
                 not in_cmd and not in_posix and command[i:i + 2] != "&>"
-                and (not cur_tokens
-                     or [t.val for t in cur_tokens] == ["$"]
-                     or (len(cur_tokens) == 1 and cur_tokens[0].val.startswith("$") and cur_tokens[0].val.endswith("="))
-                     or (len(cur_tokens) == 2 and cur_tokens[0].val.startswith("$") and cur_tokens[1].val == "=")))
+                and (not eff_ct
+                     or [t.val for t in eff_ct] == ["$"]
+                     or (len(eff_ct) == 1 and ct0_val.startswith("$") and ct0_val.endswith("="))
+                     or (len(eff_ct) == 2 and ct0_val.startswith("$") and eff_ct[1].val in _PS_ASSIGN_OPS)))
             if is_ps_call:
                 cur_tokens.append(_CmdTok("&", "&", "", i - seg_start, i + 1 - seg_start))
                 i += 1
@@ -2804,7 +2836,16 @@ _PS_ASSIGN_OPS = frozenset(("=", "+=", "-=", "*=", "/=", "%=", "??="))
 
 
 def _split_ps_var_assignment(cur: list[_CmdTok], seg_raw: str) -> list[_CmdTok] | None:
-    """If `cur` starts with a PowerShell `$var = <rhs>` assignment, return `<rhs>` tokens; otherwise return `None`."""
+    """If `cur` starts with a PowerShell `([Type])* $var = <rhs>` assignment, return `<rhs>` tokens; else `None`."""
+    cur = list(cur)
+    while cur and not cur[0].quote and cur[0].raw.startswith("[") and _strip_ps_type_prefix(cur[0].raw) == "":
+        cur = cur[1:]
+    if cur and not cur[0].quote and cur[0].raw.startswith("["):
+        stripped_raw = _strip_ps_type_prefix(cur[0].raw)
+        if stripped_raw.startswith("$"):
+            plen = len(cur[0].raw) - len(stripped_raw)
+            nstart = cur[0].rel_start + plen if cur[0].rel_start >= 0 else -1
+            cur[0] = _CmdTok(_strip_ps_type_prefix(cur[0].val), stripped_raw, "", nstart, cur[0].rel_end)
     if not cur or cur[0].quote or not cur[0].val.startswith("$") or cur[0].val.startswith("$("):
         return None
     t0 = cur[0]
@@ -2848,11 +2889,12 @@ def _ps_rhs_is_value_expr(rhs: list[_CmdTok]) -> bool:
     r0 = rhs[0]
     if r0.quote in ("'", '"', "@(", "@{"):
         return True
-    if r0.raw[:1] in ("'", '"', "(", "@"):
+    r0_tail = _strip_ps_type_prefix(r0.raw) if r0.raw.startswith("[") else r0.raw
+    if r0_tail[:1] in ("'", '"', "(", "@"):
         return True
     if not r0.quote and (
-            (r0.val.startswith("$") and not r0.val.startswith("$("))
-            or re.fullmatch(r"-?\d+(?:\.\d+)?", r0.val) is not None):
+            (r0_tail.startswith("$") and not r0_tail.startswith("$("))
+            or re.fullmatch(r"-?\d+(?:\.\d+)?", r0_tail) is not None):
         return True
     return False
 
@@ -2868,15 +2910,20 @@ def _agy_recurse(payload: str, depth: int, in_cmd: bool = False, in_posix: bool 
 
 
 def _extract_ps_assignments(cleaned: str, unquoted: str) -> list[tuple[str, str]]:
-    """Return `(var_name, rhs_text)` for top-level PowerShell `$var = ...` and `Set-Variable`/`New-Variable` forms."""
+    """Return `(var_name, rhs_text)` for top-level PowerShell `([Type])* $var = ...` and `Set-Variable`/`New-Variable`."""
     found: list[tuple[str, str]] = []
-    for am in re.finditer(r"(?:^|[;&|{(\n])\s*\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*=", unquoted):
-        raw_name = am.group(1) or am.group(2) or ""
-        vname = re.escape(raw_name)
-        cm = re.search(rf"(?:^|[;&|{{(\n])\s*\$(?:\{{{vname}\}}|{vname})\s*=", cleaned)
-        if not cm:
+    ps_var_re = re.compile(r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*=(?!=)")
+    for bm in re.finditer(r"(?:^|[;&|{(\n])\s*", unquoted):
+        after_u = _strip_ps_type_prefix(unquoted[bm.end():])
+        vm_u = ps_var_re.match(after_u)
+        if not vm_u:
             continue
-        pos = cm.end()
+        raw_name = vm_u.group(1) or vm_u.group(2) or ""
+        after_c = _strip_ps_type_prefix(cleaned[bm.end():])
+        vm_c = ps_var_re.match(after_c)
+        if not vm_c:
+            continue
+        pos = (len(cleaned) - len(after_c)) + vm_c.end()
         while pos < len(cleaned) and cleaned[pos] in " \t":
             pos += 1
         if pos >= len(cleaned):
@@ -2891,6 +2938,12 @@ def _extract_ps_assignments(cleaned: str, unquoted: str) -> list[tuple[str, str]
         else:
             m_line = re.match(r"[^;\r\n|]+", cleaned[pos:])
             rhs_val = m_line.group(0).strip() if m_line else ""
+        while rhs_val:
+            rhs_nt = _strip_ps_type_prefix(rhs_val)
+            m_chain = ps_var_re.match(rhs_nt)
+            if not m_chain:
+                break
+            rhs_val = rhs_nt[m_chain.end():].strip()
         if rhs_val:
             found.append((raw_name, rhs_val))
     for sm in re.finditer(
@@ -4300,6 +4353,8 @@ def _self_test() -> int:
         "  $m = 'ship'; git commit -m $m",
         "bash -c '  m=ship; git commit -m \"$m\"'",
         "$pattern = 'codex'; Get-Content scripts/panel_slots.py | Select-String $pattern",
+        "[string]$pattern = 'codex'; Get-Content scripts/panel_slots.py | Select-String $pattern",
+        "$pattern = [string]'codex'; Select-String $pattern scripts/panel_slots.py",
         "$pattern='codex'; Select-String $pattern scripts/panel_slots.py",
         "$tools = @('codex', 'claude'); Select-String -Pattern $tools scripts/panel_slots.py",
         "$map = @{ codex = 'astra'; claude = 'sonnet' }; Write-Output $map.codex",
@@ -4360,6 +4415,12 @@ def _self_test() -> int:
             ("bare claude CLI session", "run_command", {"CommandLine": "claude"}, "bypass delegation"),
             ("headless agy -p delegation", "run_command", {"CommandLine": "agy -p 'inspect callers'"}, "bypass delegation"),
             ("powershell variable headless claude", "run_command", {"CommandLine": "$out = claude -p inspect"}, "bypass delegation"),
+            ("typed powershell [string]$out codex", "run_command", {"CommandLine": "[string]$out = codex exec review"}, "review-dispatch.py"),
+            ("spaced typed powershell [string] $out codex", "run_command", {"CommandLine": "[string] $out = codex exec review"}, "review-dispatch.py"),
+            ("typed powershell [string]$out & quoted codex", "run_command", {"CommandLine": "[string]$out = & 'codex' exec review"}, "review-dispatch.py"),
+            ("typed powershell [string[]]$a splat git -n", "run_command", {"CommandLine": "[string[]]$a = @('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
+            ("nested generic [List[string]]$a splat git -n", "run_command", {"CommandLine": "[System.Collections.Generic.List[string]]$a = @('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
+            ("chained assignment $a = $b = claude", "run_command", {"CommandLine": "$a = $b = 'claude'; & $a -p inspect"}, "Variable-indirect"),
             ("powershell no-space variable headless claude", "run_command", {"CommandLine": "$out=claude -p inspect"}, "bypass delegation"),
             ("powershell variable & quoted codex", "run_command", {"CommandLine": "$out = & 'codex' exec review"}, "review-dispatch.py"),
             ("powershell array subexpression codex", "run_command", {"CommandLine": "$out = @(codex exec review)"}, "review-dispatch.py"),
