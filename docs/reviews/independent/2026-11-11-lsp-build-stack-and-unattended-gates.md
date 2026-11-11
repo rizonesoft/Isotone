@@ -166,3 +166,34 @@ OVERALL: needs-attention
 1. **P1 `scripts/panel_slots.py:5415` (`adversarial`):** Real and reproduced. Upgraded `git push`, `git fetch`, and `git pull` in `_segment_creates_branch_or_worktree` (`scripts/panel_slots.py`) to closed canonical Git option allow-lists matching `checkout`, `switch`, `branch`, and `worktree`, explicitly forbidding `git push --repo`/`--no-repo`/`--all`/`--branches`/`--mirror`, `git fetch --stdin`/`--refmap`, and abbreviated or unrecognized options, resetting `delete_mode` on `--no-delete`, and stripping leading `+` before checking empty-source deletion refspecs (`+:main`, `:heads/main`, `:refs/heads/main`). Added explicit `_self_test` coverage (`1061 cases, 0 failed`).
 2. **P2 `scripts/lsp-mcp-server.py:412` (`integration`):** Real and reproduced. Assigned each spawned LSP backend process (`CREATE_SUSPENDED` on Windows, `start_new_session=True` on POSIX) to its own per-backend Win32 kill-on-close Job Object (`_create_backend_job` / `_assign_and_resume_backend_job`) and terminated the entire job tree (`TerminateJobObject` + `CloseHandle` in `_close_backend_job`, or `os.killpg` on POSIX) inside `LspBackend._kill_proc` before closing stdio pipes. Added a regression test in `lsp-mcp-server.py --self-test` (`27 cases, 0 failed`) that spawns a descendant sleeper holding inherited pipes while `shutdown` hangs, verifying `lsp_status(action="stop")` returns promptly and kills the descendant process.
 
+
+## Round 6: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-11T22:49:54Z
+- Effort: low
+- Lines: 16
+- Digest: bd07c70d8aaada31
+
+### adversarial: needs-attention
+
+1. P1 `scripts/panel_slots.py:5032`: Command-line remote configuration bypasses refspec enforcement. Read-only reproduction: `_agy_command_decision('git -c remote.origin.fetch=+refs/heads/main:refs/heads/feature fetch origin')` returns `None`, permitting Git to create a non-main local branch. Likewise, `git -c remote.origin.push=HEAD:refs/heads/feature push origin` passes. A writer using temporary remote mappings can therefore perform operations forbidden by the equivalent positional refspec checks. Validate these configuration overrides alongside positional refspecs.
+
+### consistency: approve
+
+### integration: needs-attention
+
+2. P2 `scripts/lsp-mcp-server.py:418`: Blocking stdin writes occur before the request timeout starts; notification writes are also unbounded. If clangd or Pyright stops consuming stdin, synchronizing a document larger than the pipe buffer hangs while holding `_op_lock`, preventing idle termination and subsequent MCP calls. Reproduced without file changes using a sleeping subprocess with piped stdin: a 1 MiB request with `timeout=0.1` remained blocked after one second and released only when the child was killed. Bound transport writes and terminate the backend tree when that deadline expires.
+
+### source-defect: approve
+
+### record: approve
+
+HIGHEST: P1
+OVERALL: needs-attention
+
+
+## Response to round 6
+
+1. **P1 `scripts/panel_slots.py:5032` (`adversarial`):** Real and reproduced. Added `_check_fetch_refspec`, `_check_push_refspec`, and `_check_git_trunk_config_override` in `scripts/panel_slots.py` and wired them across `git -c`, `git --config-env`, `git config`, and `git remote`, validating `remote.*.fetch` and `remote.*.push` refspecs with the exact same rules as positional `fetch`/`pull`/`push` refspecs and forbidding overrides of `remote.*` non-refspec keys (`url`, `pushurl`, `mirror`), `alias.*`, `include.*`/`includeIf.*`, `checkout.*`, `worktree.*`, `branch.*`, `push.*`, `url.*`, and `core.worktree`/`core.bare`/`core.hooksPath`, as well as remote-mutating `git remote` subcommands. Added explicit `_self_test` coverage (`1091 cases, 0 failed`).
+2. **P2 `scripts/lsp-mcp-server.py:418` (`integration`):** Real and reproduced. Added a dedicated per-backend `_BackendWriter` thread in `scripts/lsp-mcp-server.py` so every transport write (`_send_notification_locked` and `_request_locked`, with `deadline` started before writing stdin) runs under a bounded deadline, and when any write or request deadline expires `LspBackend` immediately terminates the backend process tree (`_terminate_backend_instance` / `_kill_proc`), joins the writer thread, resets backend state, and releases `_op_lock`. Added deterministic 1 MiB stalled-stdin notification and request timeout regression tests in `lsp-mcp-server.py --self-test` (`29 cases, 0 failed`).

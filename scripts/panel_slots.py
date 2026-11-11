@@ -2542,7 +2542,9 @@ def _segment_passes_no_verify(head: str, args: list[str]) -> bool:
             if _is_git_no_verify_long(gtok):
                 return True
             if gtok.lower().startswith("-ccore.hookspath") \
-                    or (gtok == "-c" and idx + 1 < len(args) and args[idx + 1].lower().startswith("core.hookspath")):
+                    or (gtok == "-c" and idx + 1 < len(args) and args[idx + 1].lower().startswith("core.hookspath")) \
+                    or (gtok.lower().startswith("--config-env=") and gtok.split("=", 1)[1].lower().startswith("core.hookspath")) \
+                    or (gtok == "--config-env" and idx + 1 < len(args) and args[idx + 1].lower().startswith("core.hookspath")):
                 return True
             if gtok in GIT_GLOBAL_WITH_ARG:
                 idx += 2
@@ -4917,7 +4919,7 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
 
 _GIT_TRUNK_DIRECT_SUBCMDS = frozenset((
     "worktree", "checkout", "switch", "branch", "symbolic-ref", "update-ref",
-    "stash", "fetch", "pull", "push", "bisect",
+    "stash", "fetch", "pull", "push", "bisect", "config", "remote",
 ))
 _GIT_GLOBAL_EXIT_FLAGS = frozenset(("-v", "--version", "-h", "--help", "--html-path", "--man-path", "--info-path"))
 _GIT_GLOBAL_BOOL_FLAGS = frozenset((
@@ -5002,6 +5004,78 @@ _GIT_PUSH_BOOL_LONGS = frozenset((
 ))
 
 
+def _check_fetch_refspec(refspec: str) -> str | None:
+    if ":" in refspec:
+        dst = refspec.split(":", 1)[1].lstrip("+")
+        if dst and (".." in dst or "//" in dst
+                    or (dst not in ("main", "refs/heads/main")
+                        and not dst.startswith(("refs/remotes/", "refs/tags/")))):
+            return ("Isotone develops straight on `main`; fetching into a non-`main` local branch refspec "
+                    f"({refspec!r}) is forbidden (AGENTS.md).")
+    return None
+
+
+def _check_push_refspec(refspec: str, *, delete_mode: bool = False, is_local: bool = False) -> str | None:
+    if delete_mode:
+        if refspec.lstrip("+") in ("main", "heads/main", "refs/heads/main", "HEAD", "@"):
+            return "Isotone develops straight on `main`; deleting `main` via `git push --delete` is forbidden (AGENTS.md)."
+        return None
+    if ":" in refspec:
+        src, dst = refspec.split(":", 1)
+        src_clean = src.lstrip("+")
+        dst_clean = dst.lstrip("+")
+        if not src_clean:
+            if dst_clean in ("main", "heads/main", "refs/heads/main", "HEAD", "@"):
+                return "Isotone develops straight on `main`; deleting `main` via push refspec is forbidden (AGENTS.md)."
+        elif dst_clean and (".." in dst_clean or "//" in dst_clean
+                            or (dst_clean not in ("main", "refs/heads/main")
+                                and not dst_clean.startswith("refs/tags/"))):
+            return ("Isotone develops straight on `main`; pushing to a non-`main` branch refspec "
+                    f"({refspec!r}) is forbidden (AGENTS.md).")
+        return None
+    clean_ref = refspec.lstrip("+")
+    allowed_bare = ("main", "refs/heads/main") if is_local else ("main", "refs/heads/main", "HEAD")
+    if (".." in clean_ref or "//" in clean_ref
+            or (clean_ref not in allowed_bare and not clean_ref.startswith("refs/tags/"))):
+        return ("Isotone develops straight on `main`; pushing a non-`main` refspec "
+                f"({refspec!r}) is forbidden (AGENTS.md).")
+    return None
+
+
+def _check_git_trunk_config_override(cfg_key: str, cfg_val: str, has_val: bool, *, via_env: bool = False) -> str | None:
+    key = cfg_key.strip()
+    if "." not in key:
+        return f"Isotone develops straight on `main`; malformed Git configuration key {cfg_key!r} is forbidden (AGENTS.md)."
+    section = key.split(".", 1)[0].lower()
+    var = key.rsplit(".", 1)[1].lower()
+    if section == "alias":
+        return "Isotone develops straight on `main`; overriding `alias.*` in Git configuration is forbidden (AGENTS.md)."
+    if section in ("include", "includeif"):
+        return ("Isotone develops straight on `main`; loading external Git configuration includes "
+                "(`include.*` / `includeIf.*`) is forbidden (AGENTS.md).")
+    if section in ("checkout", "worktree", "branch", "push", "url"):
+        return (f"Isotone develops straight on `main`; overriding `{section}.*` in Git configuration "
+                f"is forbidden (AGENTS.md).")
+    if section == "core" and var in ("worktree", "bare"):
+        return (f"Isotone develops straight on `main`; overriding `core.{var}` in Git configuration "
+                f"is forbidden (AGENTS.md).")
+    if section == "core" and var == "hookspath":
+        norm_hooks = cfg_val.strip().replace("\\", "/").rstrip("/")
+        if via_env or not has_val or norm_hooks != "tools/githooks":
+            return "Commands never pass --no-verify or redirect `core.hooksPath` away from `tools/githooks`; hooks are mandatory (AGENTS.md)."
+    if section == "remote":
+        if via_env or not has_val or not cfg_val.strip():
+            return ("Isotone develops straight on `main`; unvalidated `remote.*` configuration overrides "
+                    "are forbidden (AGENTS.md).")
+        if var == "fetch":
+            return _check_fetch_refspec(cfg_val.strip())
+        if var == "push":
+            return _check_push_refspec(cfg_val.strip(), delete_mode=False, is_local=False)
+        return (f"Isotone develops straight on `main`; overriding `remote.*.{var}` in Git configuration "
+                f"is forbidden (AGENTS.md).")
+    return None
+
+
 def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | None:
     """Enforce trunk-only development on `main` using closed canonical Git option allow-lists so abbreviated,
     negated, or unknown flags fail closed rather than falling through."""
@@ -5028,10 +5102,11 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                 if gtok == "-c" and idx + 1 >= len(args):
                     return "Incomplete `git -c` option; pass a `key=value` argument (AGENTS.md)."
                 cfg = args[idx + 1] if gtok == "-c" else gtok[2:]
-                cfg_key = cfg.split("=", 1)[0].strip().lower()
-                if cfg_key.startswith("alias.") or cfg_key in ("checkout.defaultremote", "checkout.guess"):
-                    return ("Isotone develops straight on `main`; overriding `git -c alias.*` or `checkout.*` "
-                            "is forbidden (AGENTS.md).")
+                has_eq = "=" in cfg
+                cfg_key, cfg_val = cfg.split("=", 1) if has_eq else (cfg, "")
+                cfg_err = _check_git_trunk_config_override(cfg_key, cfg_val, has_eq, via_env=False)
+                if cfg_err:
+                    return cfg_err
                 idx += 2 if gtok == "-c" else 1
                 continue
             gfl = _flag(gtok)
@@ -5044,8 +5119,14 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                         return f"Incomplete `git {gtok}` option; pass its value argument (AGENTS.md)."
                     gval = args[idx + 1]
                     idx += 2
-                if gfl == "--config-env" and gval.split("=", 1)[0].strip().lower().startswith("alias."):
-                    return "Isotone develops straight on `main`; overriding `alias.*` via `--config-env` is forbidden (AGENTS.md)."
+                if gfl == "--config-env":
+                    has_eq = "=" in gval
+                    env_key, env_var = gval.split("=", 1) if has_eq else (gval, "")
+                    if not has_eq or not env_var.strip():
+                        return "Incomplete `git --config-env` option; pass `key=envvar` (AGENTS.md)."
+                    cfg_err = _check_git_trunk_config_override(env_key, "", False, via_env=True)
+                    if cfg_err:
+                        return cfg_err
                 continue
             return (f"Unrecognized or abbreviated global Git option {gtok!r}; pass canonical Git options "
                     f"(AGENTS.md).")
@@ -5425,12 +5506,9 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                 pos_fp.append(tok)
             i += 1
         for refspec in pos_fp[1:]:
-            if ":" in refspec:
-                dst = refspec.split(":", 1)[1].lstrip("+")
-                if dst and dst not in ("main", "refs/heads/main") \
-                        and not dst.startswith(("refs/remotes/", "refs/tags/")):
-                    return ("Isotone develops straight on `main`; fetching into a non-`main` local branch refspec "
-                            f"({refspec!r}) is forbidden (AGENTS.md).")
+            fetch_err = _check_fetch_refspec(refspec)
+            if fetch_err:
+                return fetch_err
         return None
 
     if sub == "push":
@@ -5502,26 +5580,83 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                         or os.path.isabs(remote)
                         or remote.lower().startswith("file:"))
             for refspec in pos_push[1:]:
-                if delete_mode:
-                    if refspec.lstrip("+") in ("main", "heads/main", "refs/heads/main", "HEAD", "@"):
-                        return "Isotone develops straight on `main`; deleting `main` via `git push --delete` is forbidden (AGENTS.md)."
+                push_err = _check_push_refspec(refspec, delete_mode=delete_mode, is_local=is_local)
+                if push_err:
+                    return push_err
+        return None
+
+    if sub == "remote":
+        if not rest or rest in (["-v"], ["--verbose"]):
+            return None
+        if any(t in ("-h", "--help") for t in rest if t != "--"):
+            return None
+        pos_rem = [t for t in rest if t != "--" and not t.startswith("-")]
+        if pos_rem and pos_rem[0].lower() in ("show", "get-url", "prune"):
+            return None
+        return ("Isotone develops straight on `main`; mutating or fetching remotes via `git remote` "
+                "is forbidden (AGENTS.md).")
+
+    if sub == "config":
+        if any(t in ("-h", "--help") for t in rest if t != "--"):
+            return None
+        if git_write(["config", *rest]) is None:
+            return None
+        pos_cfg: list[str] = []
+        after_sep = False
+        unset_mode = False
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
+            if not after_sep and tok == "--":
+                after_sep = True
+                i += 1
+                continue
+            if not after_sep and tok != "-" and tok.startswith("-"):
+                fl = _flag(tok)
+                if fl in ("-e", "--edit", "--rename-section", "--remove-section"):
+                    return ("Isotone develops straight on `main`; interactive or section-wide `git config` "
+                            f"mutation ({fl}) is forbidden (AGENTS.md).")
+                if fl in ("--unset", "--unset-all"):
+                    unset_mode = True
+                    i += 1
                     continue
-                if ":" in refspec:
-                    src, dst = refspec.split(":", 1)
-                    src_clean = src.lstrip("+")
-                    dst_clean = dst.lstrip("+")
-                    if not src_clean:
-                        if dst_clean in ("main", "heads/main", "refs/heads/main", "HEAD", "@"):
-                            return "Isotone develops straight on `main`; deleting `main` via push refspec is forbidden (AGENTS.md)."
-                    elif dst_clean and dst_clean not in ("main", "refs/heads/main") \
-                            and not dst_clean.startswith("refs/tags/"):
-                        return ("Isotone develops straight on `main`; pushing to a non-`main` branch refspec "
-                                f"({refspec!r}) is forbidden (AGENTS.md).")
-                elif is_local:
-                    clean_ref = refspec.lstrip("+")
-                    if clean_ref not in ("main", "refs/heads/main") and not clean_ref.startswith("refs/tags/"):
-                        return ("Isotone develops straight on `main`; pushing a non-`main` ref into a local repository "
-                                f"({refspec!r}) is forbidden (AGENTS.md).")
+                if fl in ("-f", "--file", "--blob", "--type", "-t", "--default", "--comment", "--expiry-date"):
+                    if "=" not in tok:
+                        if i + 1 >= len(rest):
+                            return f"Incomplete `git config {tok}` option (AGENTS.md)."
+                        i += 2
+                        continue
+                    i += 1
+                    continue
+                if tok in (
+                    "--global", "--system", "--local", "--worktree", "--replace-all", "--add",
+                    "--fixed-value", "--no-type", "--null", "-z", "--name-only", "--show-origin",
+                    "--show-scope", "--show-names", "--includes", "--no-includes", "--all",
+                ):
+                    i += 1
+                    continue
+                return ("Isotone develops straight on `main`; unrecognized or forbidden `git config` option "
+                        f"{tok!r} is forbidden (AGENTS.md).")
+            else:
+                pos_cfg.append(tok)
+            i += 1
+        if pos_cfg and pos_cfg[0].lower() in ("rename-section", "remove-section", "edit"):
+            return ("Isotone develops straight on `main`; `git config` subcommand "
+                    f"{pos_cfg[0]!r} is forbidden (AGENTS.md).")
+        if pos_cfg and pos_cfg[0].lower() in ("set", "unset"):
+            if pos_cfg[0].lower() == "unset":
+                unset_mode = True
+            pos_cfg = pos_cfg[1:]
+        if not pos_cfg:
+            return "Incomplete `git config` write; pass a configuration key (AGENTS.md)."
+        cfg_key = pos_cfg[0]
+        has_val = (not unset_mode) and len(pos_cfg) >= 2
+        cfg_val = pos_cfg[1] if has_val else ""
+        if unset_mode and cfg_key.strip().lower() == "core.hookspath":
+            return "Commands never pass --no-verify or unset `core.hooksPath`; hooks are mandatory (AGENTS.md)."
+        if unset_mode and cfg_key.strip().split(".", 1)[0].lower() == "remote":
+            return None
+        return _check_git_trunk_config_override(cfg_key, cfg_val, has_val, via_env=False)
     return None
 
 
@@ -6502,6 +6637,11 @@ def _self_test() -> int:
         "git push -u origin main",
         "git push origin --delete feat/stale",
         "git fetch --quiet origin +refs/heads/main:refs/remotes/origin/main",
+        "git -c remote.origin.fetch=+refs/heads/main:refs/remotes/origin/main fetch origin",
+        "git -c remote.origin.push=HEAD:refs/heads/main push origin",
+        "git -c color.ui=false log -1",
+        "git config core.hooksPath tools/githooks",
+        "git remote get-url --push --all origin",
         "git pull --ff-only origin main",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
@@ -6727,6 +6867,16 @@ def _self_test() -> int:
             ("git update-ref non-main local branch", "run_command", {"CommandLine": "git update-ref refs/heads/feat HEAD"}, "git update-ref"),
             ("git update-ref -m reason non-main local branch", "run_command", {"CommandLine": "git update-ref -m msg refs/heads/feat HEAD"}, "git update-ref"),
             ("git fetch local branch refspec", "run_command", {"CommandLine": "git fetch origin main:feat"}, "refspec"),
+            ("git -c remote.origin.fetch non-main refspec", "run_command", {"CommandLine": "git -c remote.origin.fetch=+refs/heads/main:refs/heads/feature fetch origin"}, "refspec"),
+            ("git -cremote.origin.fetch attached non-main refspec", "run_command", {"CommandLine": "git -cremote.origin.fetch=+refs/heads/main:refs/heads/feature fetch origin"}, "refspec"),
+            ("git -c remote.origin.push non-main refspec", "run_command", {"CommandLine": "git -c remote.origin.push=HEAD:refs/heads/feature push origin"}, "refspec"),
+            ("git -c remote.origin.push delete main refspec", "run_command", {"CommandLine": "git -c remote.origin.push=:main push origin"}, "deleting `main`"),
+            ("git -c remote.origin.mirror override", "run_command", {"CommandLine": "git -c remote.origin.mirror=true push origin"}, "remote.*.mirror"),
+            ("git --config-env remote.origin.fetch override", "run_command", {"CommandLine": "git --config-env=remote.origin.fetch=EVIL fetch origin"}, "remote.*"),
+            ("git -c include.path external config override", "run_command", {"CommandLine": "git -c include.path=/tmp/evil fetch origin"}, "include.*"),
+            ("git -c push.default override", "run_command", {"CommandLine": "git -c push.default=matching push origin"}, "push.*"),
+            ("git config persistent remote.origin.fetch override", "run_command", {"CommandLine": "git config remote.origin.fetch +refs/heads/main:refs/heads/feature"}, "refspec"),
+            ("git remote add bypass", "run_command", {"CommandLine": "git remote add local ."}, "git remote"),
             ("pwsh wrapped git worktree add", "run_command", {"CommandLine": "pwsh -Command 'git worktree add ../wt'"}, "git worktree add"),
             ("malformed args", "invoke_subagent", "bad", "could not judge")):
         dec = agy_gate(tname, targs)

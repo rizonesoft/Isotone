@@ -25,12 +25,14 @@ import io
 import json
 import os
 from pathlib import Path
+import queue
 import signal
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+from typing import Any
 import urllib.parse
 import urllib.request
 
@@ -38,6 +40,7 @@ REPO = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_INFO = {"name": "isotone-lsp", "version": "1.0.0"}
 DEFAULT_IDLE_SECONDS = 300.0
+DEFAULT_WRITE_TIMEOUT = 15.0
 MAX_OPEN_DOCS = 16
 MAX_FRAME_BYTES = 64 * 1024 * 1024
 
@@ -245,26 +248,117 @@ def _read_lsp_frame(stream) -> dict | None:
     return json.loads(body.decode("utf-8", errors="replace"))
 
 
-def _write_lsp_frame(stream, payload: dict) -> None:
+def _encode_lsp_frame(payload: dict) -> bytes:
     raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     header = f"Content-Length: {len(raw)}\r\n\r\n".encode("ascii")
-    stream.write(header + raw)
+    return header + raw
+
+
+def _write_lsp_frame(stream, payload: dict) -> None:
+    stream.write(_encode_lsp_frame(payload))
     stream.flush()
+
+
+class _BackendWriter:
+    """Dedicated per-backend stdin writer thread so pipe backpressure obeys caller deadlines."""
+
+    def __init__(self, stream: Any) -> None:
+        raw_stream = getattr(stream, "raw", None)
+        self._raw: Any = raw_stream if raw_stream is not None else stream
+        self._queue: queue.Queue[tuple[bytes, threading.Event | None, list[BaseException]] | None] = queue.Queue(maxsize=256)
+        self._closed = False
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def _run(self) -> None:
+        while True:
+            item = self._queue.get()
+            if item is None:
+                break
+            data, done, err = item
+            try:
+                mv = memoryview(data)
+                offset = 0
+                while offset < len(mv):
+                    written = self._raw.write(mv[offset:])
+                    if written is None or written <= 0:
+                        raise BrokenPipeError("language server stdin closed during write")
+                    offset += written
+                if hasattr(self._raw, "flush"):
+                    self._raw.flush()
+            except BaseException as exc:
+                err.append(exc)
+                self._closed = True
+                if done is not None:
+                    done.set()
+                while True:
+                    try:
+                        rem = self._queue.get_nowait()
+                    except queue.Empty:
+                        break
+                    if rem is not None:
+                        _, r_done, r_err = rem
+                        r_err.append(exc)
+                        if r_done is not None:
+                            r_done.set()
+                break
+            else:
+                if done is not None:
+                    done.set()
+
+    def write_bounded(self, payload: dict, deadline: float) -> tuple[bool, BaseException | None]:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False, None
+        if self._closed:
+            return True, BrokenPipeError("language server stdin writer is closed")
+        frame = _encode_lsp_frame(payload)
+        done = threading.Event()
+        err: list[BaseException] = []
+        try:
+            self._queue.put((frame, done, err), timeout=remaining)
+        except queue.Full:
+            return False, None
+        remaining = deadline - time.monotonic()
+        if not done.is_set() and (remaining <= 0 or not done.wait(timeout=remaining)):
+            return False, None
+        return True, (err[0] if err else None)
+
+    def write_async(self, payload: dict) -> None:
+        if self._closed:
+            return
+        try:
+            self._queue.put_nowait((_encode_lsp_frame(payload), None, []))
+        except queue.Full:
+            pass
+
+    def close(self) -> None:
+        self._closed = True
+        try:
+            self._queue.put_nowait(None)
+        except queue.Full:
+            pass
+
+    def join(self, timeout: float = 1.0) -> None:
+        if self._thread.is_alive() and threading.current_thread() is not self._thread:
+            self._thread.join(timeout=timeout)
 
 
 class LspBackend:
     """Manages one child language server process over Content-Length JSON-RPC stdio."""
 
-    def __init__(self, name: str, root: str, resolver, max_open_docs: int = MAX_OPEN_DOCS) -> None:
+    def __init__(self, name: str, root: str, resolver, max_open_docs: int = MAX_OPEN_DOCS,
+                 write_timeout: float = DEFAULT_WRITE_TIMEOUT) -> None:
         self.name = name
         self.root = root
         self._resolver = resolver
         self._max_open_docs = max(1, max_open_docs)
+        self._write_timeout = max(0.05, float(write_timeout))
         self._op_lock = threading.Lock()
-        self._io_lock = threading.Lock()
         self._cond = threading.Condition()
         self._proc: subprocess.Popen | None = None
         self._job: int | None = None
+        self._writer: _BackendWriter | None = None
         self._next_id = 0
         self._next_doc_version = 0
         self._responses: dict[int, dict] = {}
@@ -308,11 +402,11 @@ class LspBackend:
     def stop(self) -> bool:
         with self._op_lock:
             with self._cond:
-                proc, job = self._proc, self._job
+                proc, job, writer = self._proc, self._job, self._writer
                 alive = proc is not None and proc.poll() is None
             if not alive:
-                if proc is not None or job is not None:
-                    self._kill_proc(proc, job)
+                if proc is not None or job is not None or writer is not None:
+                    self._kill_proc(proc, job, writer)
                 self._reset_state()
                 return False
             self._shutdown_locked()
@@ -322,6 +416,7 @@ class LspBackend:
         with self._cond:
             self._proc = None
             self._job = None
+            self._writer = None
             self._next_doc_version = 0
             self._responses.clear()
             self._diagnostics.clear()
@@ -365,12 +460,10 @@ class LspBackend:
                 result = [{} for _ in items]
             elif method == "workspace/workspaceFolders":
                 result = [{"uri": _path_to_uri(self.root), "name": os.path.basename(self.root)}]
-            try:
-                if proc.poll() is None and proc.stdin is not None:
-                    with self._io_lock:
-                        _write_lsp_frame(proc.stdin, {"jsonrpc": "2.0", "id": req_id, "result": result})
-            except OSError:
-                pass
+            with self._cond:
+                writer = self._writer if self._proc is proc else None
+            if proc.poll() is None and writer is not None:
+                writer.write_async({"jsonrpc": "2.0", "id": req_id, "result": result})
             return
         if "id" in msg:
             with self._cond:
@@ -398,35 +491,71 @@ class LspBackend:
                     self._diagnostics[key] = (self._diag_seq, pub_ver, diags)
                     self._cond.notify_all()
 
-    def _send_notification_locked(self, method: str, params: dict) -> None:
-        proc = self._proc
-        if proc is None or proc.poll() is not None or proc.stdin is None:
+    def _terminate_backend_instance(self, proc: subprocess.Popen | None, job: int | None,
+                                    writer: _BackendWriter | None) -> None:
+        self._kill_proc(proc, job, writer)
+        with self._cond:
+            same = self._proc is proc
+        if same:
+            self._reset_state()
+
+    def _send_notification_locked(self, method: str, params: dict,
+                                  timeout: float | None = None, deadline: float | None = None) -> None:
+        eff_timeout = self._write_timeout if timeout is None else timeout
+        now = time.monotonic()
+        eff_deadline = (now + eff_timeout) if deadline is None else min(deadline, now + eff_timeout)
+        with self._cond:
+            proc, job, writer = self._proc, self._job, self._writer
+        if proc is None or proc.poll() is not None or writer is None:
             raise LspToolError(f"{self.name} language server is not running")
-        with self._io_lock:
-            _write_lsp_frame(proc.stdin, {"jsonrpc": "2.0", "method": method, "params": params})
+        completed, write_err = writer.write_bounded({"jsonrpc": "2.0", "method": method, "params": params}, eff_deadline)
+        if not completed:
+            self._terminate_backend_instance(proc, job, writer)
+            raise LspToolError(
+                f"{self.name} timed out writing {method} to stdin; language server terminated"
+            )
+        if write_err is not None:
+            self._terminate_backend_instance(proc, job, writer)
+            raise LspToolError(f"{self.name} stdin write failed during {method}: {write_err}")
 
     def _request_locked(self, method: str, params: dict | None, timeout: float = 45.0) -> object:
+        deadline = time.monotonic() + timeout
         with self._cond:
-            proc = self._proc
-            if proc is None or proc.poll() is not None or proc.stdin is None:
+            proc, job, writer = self._proc, self._job, self._writer
+            if proc is None or proc.poll() is not None or writer is None:
                 raise LspToolError(f"{self.name} language server is not running")
             self._next_id += 1
             req_id = self._next_id
         payload: dict = {"jsonrpc": "2.0", "id": req_id, "method": method}
         if params is not None:
             payload["params"] = params
-        with self._io_lock:
-            _write_lsp_frame(proc.stdin, payload)
-        deadline = time.monotonic() + timeout
+        completed, write_err = writer.write_bounded(payload, deadline)
+        if not completed:
+            self._terminate_backend_instance(proc, job, writer)
+            raise LspToolError(
+                f"{self.name} timed out after {timeout:g}s writing {method} to stdin; language server terminated"
+            )
+        if write_err is not None:
+            self._terminate_backend_instance(proc, job, writer)
+            raise LspToolError(f"{self.name} stdin write failed during {method}: {write_err}")
+        resp: dict = {}
+        resp_timeout = False
         with self._cond:
             while req_id not in self._responses:
-                if self._proc is None or self._proc.poll() is not None:
+                if self._proc is not proc or proc.poll() is not None:
                     raise LspToolError(f"{self.name} language server exited while handling {method}")
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
-                    raise LspToolError(f"{self.name} timed out after {timeout:.0f}s waiting for {method}")
+                    resp_timeout = True
+                    break
                 self._cond.wait(timeout=min(remaining, 0.25))
-            resp = self._responses.pop(req_id)
+            else:
+                resp = self._responses.pop(req_id)
+        if resp_timeout:
+            self._terminate_backend_instance(proc, job, writer)
+            raise LspToolError(
+                f"{self.name} timed out after {timeout:g}s waiting for {method}; language server terminated"
+            )
         if "error" in resp and resp["error"] is not None:
             err = resp["error"]
             msg = err.get("message") if isinstance(err, dict) else str(err)
@@ -437,8 +566,8 @@ class LspBackend:
         if self._proc is not None and self._proc.poll() is None:
             self._last_used = time.monotonic()
             return
-        if self._proc is not None or self._job is not None:
-            self._kill_proc(self._proc, self._job)
+        if self._proc is not None or self._job is not None or self._writer is not None:
+            self._kill_proc(self._proc, self._job, self._writer)
         self._reset_state()
         try:
             command, env = self._resolver()
@@ -469,11 +598,14 @@ class LspBackend:
             if os.name == "nt" and job is not None:
                 _assign_and_resume_backend_job(job, proc)
         except OSError as exc:
-            self._kill_proc(proc, job)
+            self._kill_proc(proc, job, None)
             raise LspToolError(f"failed to spawn {self.name} ({command[0]}): {exc}") from exc
+        assert proc.stdin is not None
+        writer = _BackendWriter(proc.stdin)
         with self._cond:
             self._proc = proc
             self._job = job
+            self._writer = writer
         threading.Thread(target=self._reader_loop, args=(proc,), daemon=True).start()
         if proc.stderr is not None:
             threading.Thread(target=self._stderr_drain, args=(proc.stderr,), daemon=True).start()
@@ -503,11 +635,14 @@ class LspBackend:
                 self._workspace_snapshot = self._take_workspace_snapshot()
             self._last_used = time.monotonic()
         except Exception:
-            self._kill_proc(proc, job)
+            self._kill_proc(proc, job, writer)
             self._reset_state()
             raise
 
-    def _kill_proc(self, proc: subprocess.Popen | None, job: int | None = None) -> None:
+    def _kill_proc(self, proc: subprocess.Popen | None, job: int | None = None,
+                   writer: _BackendWriter | None = None) -> None:
+        if writer is not None:
+            writer.close()
         if os.name == "nt":
             if job is not None:
                 try:
@@ -534,6 +669,8 @@ class LspBackend:
                 proc.wait(timeout=2.0)
             except (OSError, subprocess.TimeoutExpired):
                 pass
+        if writer is not None:
+            writer.join(timeout=1.0)
         if proc is not None:
             for pipe in (proc.stdin, proc.stdout, proc.stderr):
                 if pipe is not None:
@@ -543,15 +680,16 @@ class LspBackend:
                         pass
 
     def _shutdown_locked(self) -> None:
-        proc, job = self._proc, self._job
+        with self._cond:
+            proc, job, writer = self._proc, self._job, self._writer
         if proc is not None and proc.poll() is None:
             try:
                 self._request_locked("shutdown", None, timeout=3.0)
-                self._send_notification_locked("exit", {})
+                self._send_notification_locked("exit", {}, timeout=1.0)
                 proc.wait(timeout=1.0)
             except Exception:
                 pass
-        self._kill_proc(proc, job)
+        self._kill_proc(proc, job, writer)
         self._reset_state()
 
     @staticmethod
@@ -587,7 +725,8 @@ class LspBackend:
                 continue
         return snap
 
-    def _refresh_tracked_documents_locked(self, exclude_key: str | None = None) -> bool:
+    def _refresh_tracked_documents_locked(self, exclude_key: str | None = None,
+                                          deadline: float | None = None) -> bool:
         """Refresh open, evicted, and unopened workspace files whose disk state changed; return True if any changed."""
         with self._cond:
             open_snapshot = [
@@ -684,23 +823,22 @@ class LspBackend:
                 self._diagnostics.pop(other_key, None)
 
         for close_uri in to_close:
-            try:
-                self._send_notification_locked("textDocument/didClose", {"textDocument": {"uri": close_uri}})
-            except Exception:
-                pass
+            self._send_notification_locked(
+                "textDocument/didClose", {"textDocument": {"uri": close_uri}}, deadline=deadline
+            )
         for change_uri, change_ver, change_text in to_change:
             self._send_notification_locked("textDocument/didChange", {
                 "textDocument": {"uri": change_uri, "version": change_ver},
                 "contentChanges": [{"text": change_text}],
-            })
+            }, deadline=deadline)
         if watched_events:
-            try:
-                self._send_notification_locked("workspace/didChangeWatchedFiles", {"changes": watched_events})
-            except Exception:
-                pass
+            self._send_notification_locked(
+                "workspace/didChangeWatchedFiles", {"changes": watched_events}, deadline=deadline
+            )
         return True
 
-    def _sync_document_locked(self, abs_path: str, language_id: str) -> tuple[str, str, int, int]:
+    def _sync_document_locked(self, abs_path: str, language_id: str,
+                              deadline: float | None = None) -> tuple[str, str, int, int]:
         """Ensure abs_path and open dependencies are synced with disk; return (uri, key, expected_diag_seq, expected_version)."""
         try:
             with open(abs_path, "rb") as fh:
@@ -711,13 +849,13 @@ class LspBackend:
                 except OSError:
                     stat_pair = None
         except OSError as exc:
-            self._refresh_tracked_documents_locked()
+            self._refresh_tracked_documents_locked(deadline=deadline)
             raise LspToolError(f"cannot read {abs_path}: {exc}") from exc
         text = self._decode_source_bytes(raw_bytes)
         digest = hashlib.sha256(raw_bytes).hexdigest()
         key = _norm_key(abs_path)
         uri = _path_to_uri(abs_path)
-        dep_changed = self._refresh_tracked_documents_locked(exclude_key=key)
+        dep_changed = self._refresh_tracked_documents_locked(exclude_key=key, deadline=deadline)
         evicted_uris: list[str] = []
         watched_self: dict | None = None
         action: str | None = None
@@ -795,31 +933,31 @@ class LspBackend:
                     version = int(existing["version"])
                     expected_seq = int(existing.get("expected_diag_seq", 1))
         for evict_uri in evicted_uris:
-            try:
-                self._send_notification_locked("textDocument/didClose", {"textDocument": {"uri": evict_uri}})
-            except Exception:
-                pass
+            self._send_notification_locked(
+                "textDocument/didClose", {"textDocument": {"uri": evict_uri}}, deadline=deadline
+            )
         if watched_self is not None:
-            try:
-                self._send_notification_locked("workspace/didChangeWatchedFiles", {"changes": [watched_self]})
-            except Exception:
-                pass
+            self._send_notification_locked(
+                "workspace/didChangeWatchedFiles", {"changes": [watched_self]}, deadline=deadline
+            )
         if action == "open":
             self._send_notification_locked("textDocument/didOpen", {
                 "textDocument": {"uri": uri, "languageId": language_id, "version": version, "text": text},
-            })
+            }, deadline=deadline)
         elif action == "change":
             self._send_notification_locked("textDocument/didChange", {
                 "textDocument": {"uri": uri, "version": version},
                 "contentChanges": [{"text": text}],
-            })
+            }, deadline=deadline)
         return uri, key, expected_seq, version
 
     def diagnostics(self, abs_path: str, language_id: str, timeout: float = 30.0) -> list[dict]:
         with self._op_lock:
-            deadline = time.monotonic() + timeout
             self._ensure_started_locked()
-            uri, key, expected_seq, expected_version = self._sync_document_locked(abs_path, language_id)
+            deadline = time.monotonic() + timeout
+            uri, key, expected_seq, expected_version = self._sync_document_locked(
+                abs_path, language_id, deadline=deadline
+            )
             self._last_used = time.monotonic()
             if self._capabilities.get("diagnosticProvider"):
                 rem = deadline - time.monotonic()
@@ -845,7 +983,8 @@ class LspBackend:
                                     return list(cached[2])
                 except LspToolError as exc:
                     msg_low = str(exc).lower()
-                    if "timed out" in msg_low or "exited" in msg_low or "not running" in msg_low:
+                    if ("timed out" in msg_low or "exited" in msg_low
+                            or "not running" in msg_low or "stdin write failed" in msg_low):
                         raise
             with self._cond:
                 while True:
@@ -865,17 +1004,21 @@ class LspBackend:
                         timeout: float = 30.0) -> object:
         with self._op_lock:
             self._ensure_started_locked()
-            uri, _, _, _ = self._sync_document_locked(abs_path, language_id)
+            deadline = time.monotonic() + timeout
+            uri, _, _, _ = self._sync_document_locked(abs_path, language_id, deadline=deadline)
             self._last_used = time.monotonic()
+            rem = max(0.01, deadline - time.monotonic())
             params = {"textDocument": {"uri": uri}, **extra_params}
-            return self._request_locked(method, params, timeout=timeout)
+            return self._request_locked(method, params, timeout=rem)
 
     def workspace_symbols(self, query: str, timeout: float = 30.0) -> object:
         with self._op_lock:
             self._ensure_started_locked()
-            self._refresh_tracked_documents_locked()
+            deadline = time.monotonic() + timeout
+            self._refresh_tracked_documents_locked(deadline=deadline)
             self._last_used = time.monotonic()
-            return self._request_locked("workspace/symbol", {"query": query}, timeout=timeout)
+            rem = max(0.01, deadline - time.monotonic())
+            return self._request_locked("workspace/symbol", {"query": query}, timeout=rem)
 
 
 def _int_arg(args: dict, key: str, default: int, minimum: int = 1, maximum: int = 10000) -> int:
@@ -1097,7 +1240,8 @@ class IsotoneLspMcpServer:
     """MCP JSON-RPC 2.0 server multiplexing clangd and pyright with idle memory reclamation."""
 
     def __init__(self, root: str = REPO, resolvers: dict | None = None,
-                 idle_seconds: float | None = None, max_open_docs: int = MAX_OPEN_DOCS) -> None:
+                 idle_seconds: float | None = None, max_open_docs: int = MAX_OPEN_DOCS,
+                 write_timeout: float = DEFAULT_WRITE_TIMEOUT) -> None:
         self.root = str(Path(root).resolve())
         if idle_seconds is None:
             raw_idle = os.environ.get("ISOTONE_LSP_IDLE_SECONDS", "").strip()
@@ -1107,7 +1251,7 @@ class IsotoneLspMcpServer:
             launch = _load_lsp_launch()
             resolvers = {"clangd": launch.clangd, "pyright": launch.pyright}
         self.backends = {
-            name: LspBackend(name, self.root, fn, max_open_docs=max_open_docs)
+            name: LspBackend(name, self.root, fn, max_open_docs=max_open_docs, write_timeout=write_timeout)
             for name, fn in resolvers.items()
         }
         self._closed = threading.Event()
@@ -1402,7 +1546,7 @@ while True:
         break
     method = m.get("method")
     if method == "initialize":
-        hang_pid_file = os.environ.get("FAKE_LSP_HANG_SHUTDOWN_PID_FILE")
+        hang_pid_file = os.environ.get("FAKE_LSP_HANG_SHUTDOWN_PID_FILE") or os.environ.get("FAKE_LSP_STALL_STDIN_PID_FILE")
         if hang_pid_file:
             import subprocess as _sp
             _child = _sp.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
@@ -1412,6 +1556,9 @@ while True:
             "hoverProvider": True, "definitionProvider": True, "referencesProvider": True,
             "documentSymbolProvider": True, "workspaceSymbolProvider": True,
         }}})
+    elif method == "initialized":
+        if os.environ.get("FAKE_LSP_STALL_STDIN_PID_FILE"):
+            time.sleep(60)
     elif method == "shutdown":
         if os.environ.get("FAKE_LSP_HANG_SHUTDOWN_PID_FILE"):
             time.sleep(60)
@@ -1764,6 +1911,88 @@ def _self_test() -> int:
                         os.kill(descendant_pid, signal.SIGKILL)
                     except OSError:
                         pass
+
+        # Verify bounded stdin writes: when a backend stops consuming stdin, a 1 MiB didOpen notification and a 1 MiB
+        # request both time out promptly instead of hanging on pipe backpressure, kill the backend process tree, and
+        # release _op_lock so subsequent MCP calls succeed.
+        big_py = os.path.join(ws, "big_stall.py")
+        with open(big_py, "w", encoding="utf-8") as bfh:
+            bfh.write("# " + ("x" * (1024 * 1024)) + "\nx = 1\n")
+        stall_pid_file = os.path.join(tmp, "stall_descendant.pid")
+        stall_env = {**os.environ, "FAKE_LSP_STALL_STDIN_PID_FILE": stall_pid_file}
+        stall_srv = IsotoneLspMcpServer(
+            root=ws,
+            resolvers={
+                "clangd": lambda: ([sys.executable, "-u", fake_script], dict(stall_env)),
+                "pyright": lambda: ([sys.executable, "-u", fake_script], dict(stall_env)),
+            },
+            idle_seconds=60.0,
+            write_timeout=0.25,
+        )
+        stall_desc_pid: int | None = None
+        stall_desc_pid2: int | None = None
+        try:
+            t0 = time.monotonic()
+            stall_diag = stall_srv.handle_message({
+                "jsonrpc": "2.0", "id": 32, "method": "tools/call",
+                "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "big_stall.py", "timeout_seconds": 0.3}},
+            })
+            stall_elapsed = time.monotonic() - t0
+            if os.path.isfile(stall_pid_file):
+                with open(stall_pid_file, encoding="utf-8") as pfh:
+                    stall_desc_pid = int(pfh.read().strip())
+            for _ in range(20):
+                if stall_desc_pid is None or not _pid_alive(stall_desc_pid):
+                    break
+                time.sleep(0.05)
+            check("1 MiB notification write to stalled stdin times out promptly and kills backend tree",
+                  stall_diag is not None and stall_diag["result"]["isError"]
+                  and "timed out" in stall_diag["result"]["content"][0]["text"]
+                  and stall_elapsed < 4.0
+                  and (stall_desc_pid is not None and not _pid_alive(stall_desc_pid)),
+                  f"elapsed={stall_elapsed:.2f}s desc_pid={stall_desc_pid} resp={stall_diag!r}")
+
+            # Also verify a 1 MiB request write times out under _request_locked(timeout=0.2) and releases _op_lock.
+            if os.path.isfile(stall_pid_file):
+                os.remove(stall_pid_file)
+            py_backend = stall_srv.backends["pyright"]
+            t1 = time.monotonic()
+            req_err = ""
+            try:
+                py_backend.workspace_symbols("y" * (1024 * 1024), timeout=0.2)
+            except LspToolError as exc:
+                req_err = str(exc)
+            req_elapsed = time.monotonic() - t1
+            stall_desc_pid2 = None
+            if os.path.isfile(stall_pid_file):
+                with open(stall_pid_file, encoding="utf-8") as pfh:
+                    stall_desc_pid2 = int(pfh.read().strip())
+            for _ in range(20):
+                if stall_desc_pid2 is None or not _pid_alive(stall_desc_pid2):
+                    break
+                time.sleep(0.05)
+            st_after_msg = stall_srv.handle_message({
+                "jsonrpc": "2.0", "id": 33, "method": "tools/call",
+                "params": {"name": "lsp_status", "arguments": {}},
+            })
+            assert st_after_msg is not None
+            st_after = json.loads(st_after_msg["result"]["content"][0]["text"])
+            check("1 MiB request write to stalled stdin times out promptly, kills backend tree, and releases _op_lock",
+                  "timed out" in req_err and req_elapsed < 4.0
+                  and not st_after["backends"]["pyright"]["running"]
+                  and (stall_desc_pid2 is not None and not _pid_alive(stall_desc_pid2)),
+                  f"elapsed={req_elapsed:.2f}s err={req_err!r} status={st_after!r}")
+        finally:
+            stall_srv.close()
+            for pid_cand in (stall_desc_pid, stall_desc_pid2):
+                if pid_cand and _pid_alive(pid_cand):
+                    if os.name == "nt":
+                        subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid_cand)], capture_output=True)
+                    else:
+                        try:
+                            os.kill(pid_cand, signal.SIGKILL)
+                        except OSError:
+                            pass
 
     # Verify checked-in Antigravity workspace plugin manifests resolve cleanly.
     plugin_json = os.path.join(REPO, ".agents", "plugins", "isotone-lsp", "plugin.json")
