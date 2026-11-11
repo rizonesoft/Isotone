@@ -11,6 +11,9 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl",
         "CMAKE_CXX_COMPILER": "cl",
+        "CMAKE_JOB_POOLS": "compile=12;link=4",
+        "CMAKE_JOB_POOL_COMPILE": "compile",
+        "CMAKE_JOB_POOL_LINK": "link",
         "VCPKG_INSTALLED_DIR": "${sourceDir}/../artifacts/vcpkg_installed/${presetName}",
         "VCPKG_MANIFEST_FEATURES": "test"
       }
@@ -113,7 +116,7 @@
       "name": "base",
       "hidden": true,
       "output": { "outputOnFailure": true, "outputJUnitFile": "junit-${presetName}.xml" },
-      "execution": { "noTestsAction": "error", "timeout": 300 }
+      "execution": { "noTestsAction": "error", "timeout": 300, "jobs": 8 }
     },
     { "name": "x64-debug", "inherits": "base", "configurePreset": "x64-debug" },
     { "name": "x64-release", "inherits": "base", "configurePreset": "x64-release" },

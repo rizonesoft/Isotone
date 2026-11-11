@@ -16,7 +16,8 @@
 param(
   [string]$Preset = 'x64-debug',
   [string]$Root = (Split-Path -Parent $PSScriptRoot),
-  [switch]$SkipBuild
+  [switch]$SkipBuild,
+  [int]$MaxJobs = 0
 )
 $ErrorActionPreference = 'Stop'
 # GetFullPath expands an 8.3 short name (C:\Users\DERICK~1) to the long one, as it does for every compile database
@@ -83,7 +84,14 @@ if (-not $units) { "native-tidy: no translation unit under native/ in $database"
 # for cl; left in, it reports them unused, and the database's /WX makes that an error before any check runs. Removing
 # exactly these two keeps the unused-argument error live for any other switch clang-cl does not know.
 $removed = @('--removed-arg=/Zc:preprocessor', '--removed-arg=/external:anglebrackets')
-$results = $units | ForEach-Object -ThrottleLimit ([Environment]::ProcessorCount) -Parallel {
+$throttle = if ($MaxJobs -gt 0) {
+  $MaxJobs
+} elseif ($env:ISOTONE_TIDY_JOBS -match '^\d+$' -and [int]$env:ISOTONE_TIDY_JOBS -gt 0) {
+  [int]$env:ISOTONE_TIDY_JOBS
+} else {
+  [Math]::Clamp([Environment]::ProcessorCount - 2, 1, 8)
+}
+$results = $units | ForEach-Object -ThrottleLimit $throttle -Parallel {
   $unitBuildDir = ($using:unitMap)[$_]
   $out = clang-tidy -p $unitBuildDir --quiet @using:removed $_ 2>&1 | ForEach-Object { "$_" }
   # A diagnostic is `file:line:col: error: ...` or, for a command-line problem, `error: ...` at the start of the line.

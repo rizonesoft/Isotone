@@ -559,7 +559,10 @@ def settings_path() -> str:
 
 
 AGY_AGENT_GATE_COMMAND = "python ../scripts/panel_slots.py agent-gate"
-AGY_GATE_TOOLS = ("invoke_subagent", "define_subagent", "swarm", "run_command")
+AGY_GATE_TOOLS = (
+    "invoke_subagent", "define_subagent", "swarm", "run_command",
+    "ask_question", "write_file", "edit_file",
+)
 
 
 def agy_hooks_path() -> str:
@@ -719,10 +722,43 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": "rg -n -- '--no-verify' scripts"}}),
             ("a read-only `research` subagent on `inherit`", "allow",
              {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r", "Prompt": "x"}}),
+            ("a read-only `agy plugin list` inspection", "allow",
+             {"name": "run_command", "args": {"CommandLine": "agy plugin list"}}),
+            ("a read-only `agy mcp list` inspection", "allow",
+             {"name": "run_command", "args": {"CommandLine": "agy mcp list"}}),
+            ("a `git worktree add` secondary worktree bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": "git worktree add ../wt main"}}),
+            ("a `git checkout -b` feature branch creation", "deny",
+             {"name": "run_command", "args": {"CommandLine": "git checkout -b feature/test"}}),
+            ("a `git switch -c` feature branch creation", "deny",
+             {"name": "run_command", "args": {"CommandLine": "git switch -c feature/test"}}),
         ):
-            agy_in = json.dumps({"conversationId": "probe", "hookEventName": "PreToolUse", "toolCall": tool_call})
+            agy_env = {k: v for k, v in env.items() if k != "ISOTONE_CAMPAIGN_UNATTENDED"}
+            agy_in = json.dumps({"conversationId": "probe-attended", "hookEventName": "PreToolUse", "toolCall": tool_call})
             proc_agy = subprocess.run(AGY_AGENT_GATE_COMMAND, shell=True, input=agy_in, capture_output=True,
-                                      text=True, env=env, cwd=agents_dir, timeout=60)
+                                      text=True, env=agy_env, cwd=agents_dir, timeout=60)
+            try:
+                agy_dec = json.loads(proc_agy.stdout)["decision"]
+            except (ValueError, KeyError, TypeError):
+                agy_dec = None
+            if proc_agy.returncode != 0 or agy_dec != expected:
+                raise PanelSlotsError(
+                    f"the configured Antigravity agent-gate command returned {agy_dec!r} (want {expected!r}) on "
+                    f"{label} (exit {proc_agy.returncode}, stdout {proc_agy.stdout[:120]!r}, "
+                    f"stderr {proc_agy.stderr[:120]!r})")
+        unattended_env = dict(env, ISOTONE_CAMPAIGN_UNATTENDED="1")
+        for label, expected, tool_call in (
+            ("an unattended `ask_question` stall", "deny",
+             {"name": "ask_question", "args": {"questions": [{"question": "q?", "options": ["a", "b"]}]}}),
+            ("an unattended `write_file` with `RequestFeedback=true`", "deny",
+             {"name": "write_file", "args": {"Path": "D:/Isotone/plan.md", "Content": "x",
+                                             "ArtifactMetadata": {"Summary": "s", "UserFacing": True, "RequestFeedback": True}}}),
+            ("an unattended `write_file` without `RequestFeedback`", "allow",
+             {"name": "write_file", "args": {"Path": "D:/Isotone/out.txt", "Content": "x"}}),
+        ):
+            agy_in = json.dumps({"conversationId": "probe-unattended", "hookEventName": "PreToolUse", "toolCall": tool_call})
+            proc_agy = subprocess.run(AGY_AGENT_GATE_COMMAND, shell=True, input=agy_in, capture_output=True,
+                                      text=True, env=unattended_env, cwd=agents_dir, timeout=60)
             try:
                 agy_dec = json.loads(proc_agy.stdout)["decision"]
             except (ValueError, KeyError, TypeError):
@@ -1549,6 +1585,27 @@ _AGY_BLOCKED_CLIS = frozenset((
     "codex", "codex.exe", "codex.cmd", "codex.ps1"))
 _AGY_CLI_META_ARGS = frozenset((
     "--version", "-v", "--help", "-h", "help", "version", "update", "upgrade", "models", "changelog"))
+_AGY_READONLY_SUBGROUPS = frozenset(("plugin", "plugins", "mcp", "agent", "agents"))
+_AGY_READONLY_SUBACTIONS = frozenset(("list", "ls", "help", "--help", "-h"))
+_AGY_READONLY_SUBFLAGS = frozenset(("--json", "--help", "-h", "-v", "--verbose"))
+
+
+def _is_safe_cli_meta_call(head: str, args: list[str]) -> bool:
+    """True when `head` + `args` is a non-agentic CLI inspection, validation, or version/help call."""
+    if not args:
+        return False
+    if all(a.lower() in _AGY_CLI_META_ARGS for a in args):
+        return True
+    if head in ("agy", "agy.exe", "agy.cmd", "agy.ps1"):
+        first = args[0].lower()
+        if first == "help":
+            return all(not a.startswith("-") or a.lower() in _AGY_READONLY_SUBFLAGS for a in args[1:])
+        if first in _AGY_READONLY_SUBGROUPS and len(args) >= 2 and args[1].lower() in _AGY_READONLY_SUBACTIONS:
+            return all(a.lower() in _AGY_READONLY_SUBFLAGS for a in args[2:])
+        if first in ("plugin", "plugins") and len(args) >= 2 and args[1].lower() == "validate":
+            return all(not a.startswith("-") or a.lower() in ("--strict", "--json", "--help", "-h")
+                       for a in args[2:])
+    return False
 _AGY_SHELL_WRAPPERS = frozenset((
     "pwsh", "pwsh.exe", "powershell", "powershell.exe", "cmd", "cmd.exe",
     "bash", "bash.exe", "sh", "sh.exe", "wsl", "wsl.exe",
@@ -4837,6 +4894,9 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
         args = [t.val for t in cur[1:]]
         if _segment_passes_no_verify(head, args):
             return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
+        trunk_err = _segment_creates_branch_or_worktree(head, args)
+        if trunk_err:
+            return trunk_err
         if head in ("npx", "npx.cmd", "pnpx", "pnpx.cmd", "bunx", "bunx.exe") \
                 and any(any(pkg in a.lower() for pkg in ("claude-code", "antigravity", "@openai/codex")) for a in args):
             return ("Headless CLI agent or reviewer runs via package runners bypass delegation and dispatcher gates "
@@ -4847,13 +4907,123 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
             return ("Inline script subprocesses spawning `claude`, `agy`, or `codex` bypass delegation and dispatcher "
                     "gates (standards/delegation.md).")
         if head in _AGY_BLOCKED_CLIS:
-            if args and all(a.lower() in _AGY_CLI_META_ARGS for a in args):
+            if _is_safe_cli_meta_call(head, args):
                 continue
             return _blocked_cli_reason(head)
     return None
 
 
-def agy_gate_decision(tool_call: dict) -> str | None:
+def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | None:
+    """Enforce trunk-only development on `main`: deny `git worktree add` and branch creation commands while allowing
+    status/list/prune/remove and branch deletion (`-d`/`-D`)."""
+    if head not in ("git", "git.exe"):
+        return None
+    idx = 0
+    while idx < len(args) and args[idx].startswith("-"):
+        gtok = args[idx]
+        if gtok == "--":
+            idx += 1
+            break
+        if gtok in GIT_GLOBAL_WITH_ARG:
+            idx += 2
+            continue
+        idx += 1
+    if idx >= len(args):
+        return None
+    sub = args[idx].lower()
+    rest = args[idx + 1:]
+    if sub == "worktree":
+        for tok in rest:
+            if tok == "--":
+                break
+            if not tok.startswith("-"):
+                if tok.lower() == "add":
+                    return ("Isotone develops straight on `main` without secondary git worktrees "
+                            "(`git worktree add` is forbidden; AGENTS.md).")
+                return None
+        return None
+    if sub == "checkout":
+        for tok in rest:
+            if tok == "--":
+                break
+            low = tok.split("=", 1)[0]
+            if low in ("-b", "-B", "--orphan", "-t", "--track"):
+                return ("Isotone develops straight on `main`; creating feature branches "
+                        "(`git checkout -b/-B/-t/--track/--orphan`) is forbidden (AGENTS.md).")
+            if tok.startswith("-") and not tok.startswith("--") and any(c in tok[1:] for c in ("b", "B", "t")):
+                return ("Isotone develops straight on `main`; creating feature branches "
+                        "(`git checkout -b/-B/-t`) is forbidden (AGENTS.md).")
+        return None
+    if sub == "switch":
+        for tok in rest:
+            if tok == "--":
+                break
+            low = tok.split("=", 1)[0]
+            if low in ("-c", "-C", "--create", "--force-create", "--orphan", "-t", "--track"):
+                return ("Isotone develops straight on `main`; creating feature branches "
+                        "(`git switch -c/-C/--create/-t/--track/--orphan`) is forbidden (AGENTS.md).")
+            if tok.startswith("-") and not tok.startswith("--") and any(c in tok[1:] for c in ("c", "C", "t")):
+                return ("Isotone develops straight on `main`; creating feature branches "
+                        "(`git switch -c/-C/-t`) is forbidden (AGENTS.md).")
+        return None
+    if sub == "branch":
+        allowed_branch_ops = (
+            _BRANCH_LISTS
+            | frozenset(("-d", "-D", "--delete", "-u", "--set-upstream-to", "--unset-upstream",
+                         "--edit-description", "-h", "--help"))
+        )
+        copy_move_ops = frozenset(("-c", "-C", "--copy", "-m", "-M", "--move"))
+        flags: set[str] = set()
+        positionals: list[str] = []
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
+            if tok == "--":
+                break
+            if tok.startswith("-"):
+                fl = _flag(tok)
+                flags.add(fl)
+                if not tok.startswith("--") and len(tok) > 2:
+                    for ch in tok[1:]:
+                        flags.add(f"-{ch}")
+                if fl in ("--contains", "--no-contains", "--merged", "--no-merged", "--points-at",
+                          "-u", "--set-upstream-to", "--format") and "=" not in tok:
+                    i += 2
+                    continue
+            else:
+                positionals.append(tok)
+            i += 1
+        if flags & copy_move_ops:
+            return ("Isotone develops straight on `main`; copying or renaming branches "
+                    "(`git branch -c/-C/-m/-M`) is forbidden (AGENTS.md).")
+        if positionals and not (flags & allowed_branch_ops):
+            return ("Isotone develops straight on `main`; creating branches (`git branch <name>`) "
+                    "is forbidden (AGENTS.md).")
+    return None
+
+
+def _is_unattended_campaign(env: dict | None = None, conversation_id: str | None = None,
+                            root: str | None = None) -> bool:
+    """True when running inside an unattended campaign (via ISOTONE_CAMPAIGN_UNATTENDED=1 or an active
+    build/claude-campaign-guard.json matching conversation_id)."""
+    env_map = os.environ if env is None else env
+    if str(env_map.get("ISOTONE_CAMPAIGN_UNATTENDED", "")).strip() == "1":
+        return True
+    if not conversation_id:
+        return False
+    guard_file = os.path.join(root or _repo_root(), "build", "claude-campaign-guard.json")
+    try:
+        with open(guard_file, encoding="utf-8-sig") as fh:
+            state = json.load(fh)
+    except (OSError, ValueError):
+        return False
+    if not isinstance(state, dict) or "ended" in state:
+        return False
+    return state.get("session_id") == conversation_id
+
+
+def agy_gate_decision(tool_call: dict, env: dict | None = None,
+                      conversation_id: str | None = None, root: str | None = None) -> str | None:
     """The deny reason for one Antigravity `PreToolUse` `toolCall`, or None to allow it."""
     name = tool_call.get("name")
     if name not in AGY_GATE_TOOLS:
@@ -4861,6 +5031,21 @@ def agy_gate_decision(tool_call: dict) -> str | None:
     args = tool_call.get("args")
     if not isinstance(args, dict):
         raise PanelSlotsError(f"the {name} call carries no args object")
+    if name == "ask_question":
+        if _is_unattended_campaign(env=env, conversation_id=conversation_id, root=root):
+            return ("Unattended campaign runs never block on interactive `ask_question` prompts. Decide "
+                    "autonomously from repository sources, specifications, and measurements; if an item truly "
+                    "requires an operator-only credential, legal, naming, or external action, record it and park "
+                    "the row cleanly (AGENTS.md).")
+        return None
+    if name in ("write_file", "edit_file"):
+        meta = args.get("ArtifactMetadata")
+        if isinstance(meta, dict) and meta.get("RequestFeedback") is True:
+            if _is_unattended_campaign(env=env, conversation_id=conversation_id, root=root):
+                return ("Unattended campaign runs never set `ArtifactMetadata.RequestFeedback=true`, which pauses "
+                        "waiting for human UI approval. Write artifacts with `RequestFeedback=false` and proceed "
+                        "autonomously (AGENTS.md).")
+        return None
     if name == "define_subagent":
         return ("Custom subagent definitions are not used; Subagents read and run, they never write; delegate "
                 "read-only work through `invoke_subagent` with `TypeName: \"research\"` on `inherit` "
@@ -4896,7 +5081,7 @@ def agy_gate_decision(tool_call: dict) -> str | None:
     return None
 
 
-def agent_gate(raw: str, out, err, loader=None) -> int:
+def agent_gate(raw: str, out, err, loader=None, env: dict | None = None, root: str | None = None) -> int:
     """PreToolUse hook handler for both Antigravity (`toolCall`) and Claude Code
     (`tool_name: Agent|Task`). Always exits 0 and emits the caller's PreToolUse
     JSON on `out`, failing closed when the wiring does not load."""
@@ -4910,7 +5095,8 @@ def agent_gate(raw: str, out, err, loader=None) -> int:
     if isinstance(payload.get("toolCall"), dict):
         try:
             (loader or _default_loader)()
-            reason = agy_gate_decision(payload["toolCall"])
+            cid = payload.get("conversationId") if isinstance(payload.get("conversationId"), str) else None
+            reason = agy_gate_decision(payload["toolCall"], env=env, conversation_id=cid, root=root)
         except Exception as exc:
             reason = (f"The delegation wiring could not judge this call ({exc}). Fix it with "
                       f"`python scripts/panel_slots.py validate`; until then the lead does the work itself.")
@@ -5614,10 +5800,13 @@ def _self_test() -> int:
                              o.getvalue())[1])(io.StringIO())) is not None)
 
     # Antigravity PreToolUse hooks and `.agents/hooks.json`.
-    def agy_gate(name: str, args) -> dict:
+    def agy_gate(name: str, args, env_override: dict | None = None,
+                 cid: str = "c1", root_override: str | None = None) -> dict:
         out, err = io.StringIO(), io.StringIO()
-        payload = {"conversationId": "c1", "hookEventName": "PreToolUse", "toolCall": {"name": name, "args": args}}
-        rc = agent_gate(json.dumps(payload), out, err, lambda: (good, audit_agents))
+        payload = {"conversationId": cid, "hookEventName": "PreToolUse", "toolCall": {"name": name, "args": args}}
+        rc = agent_gate(json.dumps(payload), out, err, lambda: (good, audit_agents),
+                        env={} if env_override is None else env_override,
+                        root=tmpd if root_override is None else root_override)
         check(f"agy gate rc=0 ({name})", rc == 0)
         return json.loads(out.getvalue())
 
@@ -5629,11 +5818,62 @@ def _self_test() -> int:
           agy_gate("swarm", {"action": "status"}) == {"decision": "allow"})
     check("agy gate allows swarm models",
           agy_gate("swarm", {"action": "models"}) == {"decision": "allow"})
+    check("agy gate allows attended ask_question",
+          agy_gate("ask_question", {"questions": [{"question": "q?", "options": ["a", "b"]}]}) == {"decision": "allow"})
+    check("agy gate denies unattended ask_question via env",
+          agy_gate("ask_question", {"questions": [{"question": "q?", "options": ["a", "b"]}]},
+                   env_override={"ISOTONE_CAMPAIGN_UNATTENDED": "1"}).get("decision") == "deny")
+    guard_root = tempfile.mkdtemp(prefix="guard-root-", dir=tmpd)
+    os.makedirs(os.path.join(guard_root, "build"), exist_ok=True)
+    with open(os.path.join(guard_root, "build", "claude-campaign-guard.json"), "w", encoding="utf-8") as fh:
+        json.dump({"runner": "agy", "phase": 0, "session_id": "camp-cid", "run_file": "docs/phase-runs/x.md"}, fh)
+    check("agy gate denies ask_question when campaign guard holds matching conversationId",
+          agy_gate("ask_question", {"questions": [{"question": "q?", "options": ["a", "b"]}]},
+                   cid="camp-cid", root_override=guard_root).get("decision") == "deny")
+    check("agy gate allows ask_question when campaign guard belongs to another session",
+          agy_gate("ask_question", {"questions": [{"question": "q?", "options": ["a", "b"]}]},
+                   cid="other-cid", root_override=guard_root) == {"decision": "allow"})
+    ended_guard_root = tempfile.mkdtemp(prefix="ended-guard-root-", dir=tmpd)
+    os.makedirs(os.path.join(ended_guard_root, "build"), exist_ok=True)
+    with open(os.path.join(ended_guard_root, "build", "claude-campaign-guard.json"), "w", encoding="utf-8") as fh:
+        json.dump({"runner": "agy", "phase": 0, "session_id": "camp-cid",
+                   "ended": {"reason": "closeout", "at": "2026-11-11T00:00:00Z"}}, fh)
+    check("agy gate allows ask_question when campaign guard is marked ended",
+          agy_gate("ask_question", {"questions": [{"question": "q?", "options": ["a", "b"]}]},
+                   cid="camp-cid", root_override=ended_guard_root) == {"decision": "allow"})
+    check("agy gate denies unattended write_file with RequestFeedback=true",
+          agy_gate("write_file",
+                   {"Path": "D:/Isotone/p.md", "Content": "x",
+                    "ArtifactMetadata": {"Summary": "s", "UserFacing": True, "RequestFeedback": True}},
+                   env_override={"ISOTONE_CAMPAIGN_UNATTENDED": "1"}).get("decision") == "deny")
+    check("agy gate denies unattended edit_file with RequestFeedback=true",
+          agy_gate("edit_file",
+                   {"Path": "D:/Isotone/p.md", "Target": "a", "Replacement": "b",
+                    "ArtifactMetadata": {"Summary": "s", "UserFacing": True, "RequestFeedback": True}},
+                   env_override={"ISOTONE_CAMPAIGN_UNATTENDED": "1"}).get("decision") == "deny")
+    check("agy gate allows unattended write_file with RequestFeedback=false",
+          agy_gate("write_file",
+                   {"Path": "D:/Isotone/p.md", "Content": "x",
+                    "ArtifactMetadata": {"Summary": "s", "UserFacing": True, "RequestFeedback": False}},
+                   env_override={"ISOTONE_CAMPAIGN_UNATTENDED": "1"}) == {"decision": "allow"})
     for ok_cmd in (
         "git commit -m 'ship'",
         'git commit -m "claude -p --agent isotone-researcher fixed"',
         "agy --version",
         "agy update --help",
+        "agy plugin list",
+        "agy plugin list --json",
+        "agy plugin validate .agents/plugins/isotone-lsp --strict",
+        "agy mcp list",
+        "agy help plugin",
+        "git worktree list",
+        "git worktree prune",
+        "git checkout main",
+        "git checkout -- README.md",
+        "git switch main",
+        "git branch -vv",
+        "git branch -a",
+        "git branch -D stale-branch",
         "claude --version",
         "codex --version",
         "python scripts/review-dispatch.py --writer agy --kind round --prompt build/p.md --keep build/round-1",
@@ -5910,6 +6150,18 @@ def _self_test() -> int:
             ("python inline subprocess claude", "run_command", {"CommandLine": "python -c \"import subprocess; subprocess.run(['claude', '-p', 'x'])\""}, "Inline script subprocesses"),
             ("encoded powershell command", "run_command", {"CommandLine": "pwsh -EncodedCommand ZWNobyBoZWxsbw=="}, "Encoded PowerShell"),
             ("direct codex bypassing dispatcher", "run_command", {"CommandLine": "codex exec -m gpt-6-astra 'review'"}, "review-dispatch.py"),
+            ("agy plugin install mutation", "run_command", {"CommandLine": "agy plugin install foo"}, "bypass delegation"),
+            ("git worktree add secondary worktree", "run_command", {"CommandLine": "git worktree add ../wt main"}, "git worktree add"),
+            ("git checkout -b feature branch", "run_command", {"CommandLine": "git checkout -b feat/foo"}, "git checkout -b"),
+            ("git checkout -B feature branch", "run_command", {"CommandLine": "git checkout -B feat/foo"}, "git checkout -b/-B"),
+            ("git checkout -tb clustered feature branch", "run_command", {"CommandLine": "git checkout -tb feat/foo origin/main"}, "git checkout -b/-B"),
+            ("git checkout -t tracking branch", "run_command", {"CommandLine": "git checkout -t origin/foo"}, "git checkout -b/-B/-t"),
+            ("git switch -c feature branch", "run_command", {"CommandLine": "git switch -c feat/foo"}, "git switch -c"),
+            ("git switch --track branch", "run_command", {"CommandLine": "git switch --track origin/foo"}, "git switch -c/-C/--create/-t/--track"),
+            ("git switch --create feature branch", "run_command", {"CommandLine": "git switch --create feat/foo"}, "git switch -c/-C/--create"),
+            ("git branch new-branch creation", "run_command", {"CommandLine": "git branch feat/foo"}, "git branch <name>"),
+            ("git branch -c copy branch", "run_command", {"CommandLine": "git branch -c main feat/foo"}, "git branch -c"),
+            ("pwsh wrapped git worktree add", "run_command", {"CommandLine": "pwsh -Command 'git worktree add ../wt'"}, "git worktree add"),
             ("malformed args", "invoke_subagent", "bad", "could not judge")):
         dec = agy_gate(tname, targs)
         check(f"agy gate denies {label}", dec.get("decision") == "deny" and needle in dec.get("reason", ""), repr(dec))

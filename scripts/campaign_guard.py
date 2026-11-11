@@ -1322,34 +1322,40 @@ WATCH_TASK = f"{os.path.basename(REPO)} run watchdog"  # "<folder> run watchdog"
 LAUNCH_ARGS = ("--dangerously-skip-permissions",)
 
 GOAL = (
-    "The Isotone plan is finished: every section under todo/ is built, reviewed and stamped, so "
-    "`python scripts/todo-graph.py query ready` prints `0 runnable now` with `0 review pending`, and the only open "
-    "rows left are ones the operator alone can do (todo/99-manual, a signing certificate, a clean machine). Get "
-    "there only through the process-plan skill: run /process-plan now (using this conversation's Conversation ID "
-    "for `--session`, `schedule` and `manage_task` for the heartbeat cron, and `--writer agy` on "
+    "Finish 100% of the Isotone project to best-in-class excellence: every section under todo/ is built, reviewed "
+    "and stamped, so `python scripts/todo-graph.py query ready` prints `0 runnable now` with `0 review pending`, "
+    "and the only open rows left are ones the operator alone can do (todo/99-manual, a signing certificate, a clean "
+    "machine). Get there only through the process-plan skill: run /process-plan now (using this conversation's "
+    "Conversation ID for `--session`, `schedule` and `manage_task` for the heartbeat cron, and `--writer agy` on "
     "`scripts/review-dispatch.py`), and again after any interruption, one section at a time through "
     "process-todo-section and review-todo-section, every gate green, every review round through "
-    "scripts/review-dispatch.py, nothing skipped, weakened, stubbed or scoped down. Aim for excellence in every "
-    "section: each feature first matches its competitor where users expect it and then beats it measurably (its "
-    "Exceed paragraph), so every app blows the competition away. We are not scared of Adobe, Microsoft, Apple or "
-    "Google: we can and will build a better product. Act autonomously, self-improve and self-heal: make decisions "
-    "to shape the best repository, runners, toolset, dev methods and product possible whenever source, a spec, a "
-    "measurement or a driven run settles the answer, and record the decision; diagnose and repair any broken gate, "
-    "hook, runner or tool at its owning layer when you meet one; file measured improvements to the repository's own "
-    "tooling through add-todo and build them. Nothing is impossible and nothing stops us from accomplishing the "
-    "impossible: split any seemingly impossible problem into concrete rows and ship them. Ask the operator only for "
-    "credentials, money, a legal decision, or an act that destroys or exposes something outside this repository. "
-    "The goal also counts as met when the run ended the way process-plan allows and the transcript shows it: an "
-    "operator stop, or a `PARKED ... escalation:` line reported to the operator, each followed by "
-    "`python scripts/campaign_guard.py end`. A parked section, a red CI run, a failed review round and a usage "
-    "limit are not ends: repair it, wait it out, or take the next ready row."
+    "scripts/review-dispatch.py, nothing skipped, weakened, stubbed or scoped down. Always develop straight on "
+    "`main`: never create feature branches or secondary git worktrees. Use the `isotone-lsp` language-server tools "
+    "(`clangd` and `pyright`) alongside the build and static-analysis gates to catch type and symbol defects early. "
+    "Aim for excellence in every section: each feature first matches its competitor where users expect it and then "
+    "beats it measurably (its Exceed paragraph), so every app blows the competition away and is the best product in "
+    "its class. We are not scared of Adobe, Microsoft, Apple or Google: we can and will build a better product. Act "
+    "autonomously, self-improve and self-heal: never call `ask_question`, never set `RequestFeedback=true`, and "
+    "never block the unattended run waiting for answers that source, a spec, a measurement or a driven run settles; "
+    "make and record those decisions yourself, diagnose and repair any broken gate, hook, runner or tool at its "
+    "owning layer when you meet one, and file measured improvements to the repository's own tooling through "
+    "add-todo and build them. Nothing is impossible and nothing stops us from accomplishing the impossible: split "
+    "any seemingly impossible problem into concrete rows and ship them. Only if an item genuinely requires a "
+    "credential, money, a legal decision, or an act that destroys or exposes something outside this repository, "
+    "record the blocker and park that row cleanly without stalling the rest of the plan. The goal also counts as "
+    "met when the run ended the way process-plan allows and the transcript shows it: an operator stop, or a "
+    "`PARKED ... escalation:` line reported to the operator, each followed by `python scripts/campaign_guard.py end`. "
+    "A parked section, a red CI run, a failed review round and a usage limit are not ends: repair it, wait it out, "
+    "or take the next ready row."
 )
 
 RESUME_PROMPT = (
     "Isotone run watchdog: the campaign session ended without closing its run (a crash, a reboot or a closed "
     "terminal) and was restarted in Antigravity (`agy`). This conversation still owns the run guard (pass this "
     "conversation's Conversation ID wherever `$CLAUDE_CODE_SESSION_ID` appears, and use `schedule` / `manage_task` "
-    "for `CronCreate` / `CronList` / `CronDelete`). Act autonomously, self-heal, and check, then act, in this turn.\n\n"
+    "for `CronCreate` / `CronList` / `CronDelete`). Develop straight on `main` (never create branches or worktrees), "
+    "never block on `ask_question` or `RequestFeedback=true`, act autonomously, self-heal, and check, then act, in "
+    "this turn.\n\n"
     "1. Run `python scripts/campaign_guard.py whoami --session <Conversation ID>`. If it does not print "
     "OWNER, change nothing and reply with the line it printed.\n"
     "2. Check the heartbeat job with `manage_task` (`list`) and process-plan's Run guard step 1 (`reconcile`): a "
@@ -1443,9 +1449,11 @@ def session_env(environ, token: str | None) -> tuple[dict, str]:
 
 
 def agy_session_env(environ, extra_env: dict | None = None) -> tuple[dict, str]:
-    """The environment an Antigravity (`agy`) campaign session runs in, stripping any unrelated Claude OAuth token."""
+    """The environment an Antigravity (`agy`) campaign session runs in: strips any unrelated Claude OAuth token and
+    marks the session unattended (`ISOTONE_CAMPAIGN_UNATTENDED=1`) so interactive tools cannot stall it."""
     env = dict(environ)
     env.pop(SIGNIN_VARIABLE, None)
+    env["ISOTONE_CAMPAIGN_UNATTENDED"] = "1"
     if extra_env:
         env.update(extra_env)
     return env, "Sign-in: Antigravity local account."
@@ -3506,7 +3514,10 @@ def _self_test() -> int:
         agy_env, agy_said = agy_session_env({"PATH": "p", SIGNIN_VARIABLE: good}, {"ISOTONE_CAMPAIGN_LAUNCH": "x"})
         check("agy-session-env-strips-claude-token-and-merges-extra",
               SIGNIN_VARIABLE not in agy_env and agy_env.get("ISOTONE_CAMPAIGN_LAUNCH") == "x"
+              and agy_env.get("ISOTONE_CAMPAIGN_UNATTENDED") == "1"
               and agy_said == "Sign-in: Antigravity local account.", repr(agy_env))
+        check("goal-enforces-trunk-main-nonblocking-and-100-percent-excellence",
+              "straight on `main`" in GOAL and "ask_question" in GOAL and "isotone-lsp" in GOAL, GOAL)
         real_which, real_call, real_signin = shutil.which, subprocess.call, globals()["signin_token"]
         captured_calls = []
         os.environ[SIGNIN_VARIABLE] = good

@@ -18,7 +18,7 @@
   "delegation-guard": {
     "PreToolUse": [
       {
-        "matcher": "invoke_subagent|define_subagent|swarm|run_command",
+        "matcher": "invoke_subagent|define_subagent|swarm|run_command|ask_question|write_file|edit_file",
         "hooks": [
           {
             "type": "command",

@@ -33,11 +33,14 @@
       merger, D00 T01 §12)
   21. python scripts/ci_watch.py --self-test (the section-boundary watch over
       every workflow's latest run on main, scheduled ones included)
-  22. python scripts/tests/test_build_props.py (a WPF temporary project shares
+  22. python scripts/lsp-mcp-server.py --self-test and
+      python scripts/tests/test_lsp_mcp_server.py (the Antigravity LSP MCP
+      multiplexer and workspace plugin manifest)
+  23. python scripts/tests/test_build_props.py (a WPF temporary project shares
       its parent's artifacts folders, D00 T02 §3; asks the pinned SDK), then
       python scripts/native-deps-lint.py --self-test (D00 T04 §1) and
       python scripts/check-native-advisories.py --self-test (D00 T04 §3)
-  23. The native stages (skipped with -SkipNative), each inside scripts/dev-env.ps1
+  24. The native stages (skipped with -SkipNative), each inside scripts/dev-env.ps1
       where it builds or inspects, its full output in build/check-all/<stage>.log:
       native presets (every non-hidden configure preset in native/CMakePresets.json
       is owned by a build stage, D00-T05-S7-PR7); native toolchain (dev-env.ps1
@@ -135,13 +138,15 @@ $script:Python = if (Get-Command python -ErrorAction SilentlyContinue) { 'python
 
 Push-Location $RepoRoot
 try {
+  # Shut down MSBuild and Roslyn compiler nodes when each dotnet command finishes so background daemons do not hold memory.
+  $env:MSBUILDDISABLENODEREUSE = '1'
   if (-not $SkipBuild) {
-    Invoke-Gate 'build Debug' { dotnet build $Solution -c Debug -nologo }
-    Invoke-Gate 'build Release' { dotnet build $Solution -c Release -nologo }
+    Invoke-Gate 'build Debug' { dotnet build $Solution -c Debug -nologo -p:UseSharedCompilation=false }
+    Invoke-Gate 'build Release' { dotnet build $Solution -c Release -nologo -p:UseSharedCompilation=false }
   }
   $noBuild = @()
   if (-not $SkipBuild) { $noBuild = @('--no-build') }
-  Invoke-Gate "test $Config" { dotnet test $Solution -c $Config -nologo @noBuild }
+  Invoke-Gate "test $Config" { dotnet test $Solution -c $Config -nologo -p:UseSharedCompilation=false @noBuild }
 
   if ($script:Python) {
     Invoke-PythonGate 'todo-graph self-test' 'todo-graph.py' @('self-test')
@@ -165,6 +170,8 @@ try {
     Invoke-PythonGate 'merge prs tests' 'tests/test_merge_prs.py' @()
     Invoke-PythonGate 'ci_watch self-test' 'ci_watch.py' @('--self-test')
     Invoke-PythonGate 'completion_check self-test' 'completion_check.py' @('--self-test')
+    Invoke-PythonGate 'lsp-mcp-server self-test' 'lsp-mcp-server.py' @('--self-test')
+    Invoke-PythonGate 'lsp-mcp-server tests' 'tests/test_lsp_mcp_server.py' @()
     Invoke-PythonGate 'build props tests' 'tests/test_build_props.py' @()
     Invoke-PythonGate 'native-deps-lint self-test' 'native-deps-lint.py' @('--self-test')
     Invoke-PythonGate 'check-native-advisories self-test' 'check-native-advisories.py' @('--self-test')

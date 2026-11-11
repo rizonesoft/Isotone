@@ -145,6 +145,10 @@ if ($vs) {
       if ($i -gt 0) { Set-Item -Path "env:$($line.Substring(0, $i))" -Value $line.Substring($i + 1) }
     }
     $env:VCPKG_ROOT = Join-Path $vs 'VC\vcpkg'
+    $repoRoot = Split-Path -Parent $PSScriptRoot
+    if (-not $env:SCCACHE_DIR) { $env:SCCACHE_DIR = Join-Path $repoRoot 'build\sccache' }
+    if (-not $env:SCCACHE_CACHE_SIZE) { $env:SCCACHE_CACHE_SIZE = '5G' }
+    if (-not $env:SCCACHE_IDLE_TIMEOUT) { $env:SCCACHE_IDLE_TIMEOUT = '600' }
     # The selected installation's bundled tools come first: vcvarsall appends their folders, so a standalone copy
     # earlier on PATH would otherwise run instead.
     $llvmHost = if ((Get-HostArch) -eq 'arm64') { 'ARM64' } else { 'x64' }

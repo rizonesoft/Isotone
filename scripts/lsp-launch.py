@@ -127,7 +127,9 @@ def end_with_parent() -> None:
 def main(argv: list[str]) -> int:
     servers = {"clangd": clangd, "pyright": pyright}
     if len(argv) != 1 or argv[0] not in servers:
-        print(__doc__.split("\n\n")[1], file=sys.stderr)
+        doc = __doc__ or ""
+        parts = doc.split("\n\n")
+        print(parts[1] if len(parts) > 1 else doc, file=sys.stderr)
         return 2
     try:
         if os.name == "nt":

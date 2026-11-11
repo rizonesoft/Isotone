@@ -20,7 +20,6 @@ set(CMAKE_CXX23_EXTENSION_COMPILE_OPTION "${ISOTONE_CXX_STD_SWITCH}")
 # The static runtime, so no app installs a Visual C++ redistributable, and full program databases in every
 # configuration, so a Release crash dump resolves to source.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "ProgramDatabase")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(ISOTONE_VERSION "0.0.0" CACHE STRING "The version the build reports until versioning computes it from the tag")
@@ -28,6 +27,22 @@ set(ISOTONE_SANITIZE "" CACHE STRING "A sanitizer every target builds with: empt
 option(ISOTONE_ANALYZE "Run MSVC code analysis (/analyze) on every target, its warnings errors under /WX" OFF)
 option(ISOTONE_FUZZ "Build libFuzzer executables and fuzz-instrumented first-party library closures" OFF)
 option(ISOTONE_FUZZ_QUALIFY "Compile the planted out-of-bounds read in the fuzzing qualification parser" OFF)
+
+# When sccache is installed locally and neither /analyze, AddressSanitizer, nor libFuzzer is active, route C and C++
+# compiles through sccache with embedded CodeView debug info (/Z7) so parallel compiles avoid mspdbsrv.exe lock
+# contention and hit the object cache, while link.exe (/DEBUG and Release /DEBUG:FULL) still emits full .pdb files.
+# Set ISOTONE_NO_SCCACHE=1 to disable launcher caching and fall back to ProgramDatabase (/Zi).
+set(ISOTONE_DEBUG_INFO_FORMAT "ProgramDatabase")
+if(NOT ISOTONE_ANALYZE AND ISOTONE_SANITIZE STREQUAL "" AND NOT ISOTONE_FUZZ
+   AND NOT "$ENV{ISOTONE_NO_SCCACHE}" STREQUAL "1")
+  find_program(ISOTONE_SCCACHE_PROGRAM NAMES sccache HINTS "$ENV{LOCALAPPDATA}/Microsoft/WinGet/Links")
+  if(ISOTONE_SCCACHE_PROGRAM)
+    set(CMAKE_C_COMPILER_LAUNCHER "${ISOTONE_SCCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${ISOTONE_SCCACHE_PROGRAM}")
+    set(ISOTONE_DEBUG_INFO_FORMAT "Embedded")
+  endif()
+endif()
+set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "${ISOTONE_DEBUG_INFO_FORMAT}")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CheckCompilerEnvironment)

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "isotone-lsp": {
+      "command": "python",
+      "args": [
+        "-u",
+        "-c",
+        "import os,runpy,sys\ncands=[os.path.abspath('.')]\nfor k in ('ISOTONE_REPO_ROOT','CLAUDE_PROJECT_DIR','PWD'):\n v=os.environ.get(k,'').strip()\n if v: cands.append(os.path.abspath(v))\ntarget=''\nfor p in cands:\n while p!=os.path.dirname(p) and not os.path.isfile(os.path.join(p,'scripts','lsp-mcp-server.py')): p=os.path.dirname(p)\n t=os.path.join(p,'scripts','lsp-mcp-server.py')\n if os.path.isfile(t): target=t; break\nif not target: print('isotone-lsp: could not locate scripts/lsp-mcp-server.py from '+os.getcwd(), file=sys.stderr); sys.exit(1)\nsys.argv=[target]; runpy.run_path(target, run_name='__main__')"
+      ],
+      "env": {
+        "ISOTONE_LSP_IDLE_SECONDS": "300"
+      }
+    }
+  }
+}
