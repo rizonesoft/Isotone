@@ -88,6 +88,11 @@ class LspMcpServerTest(unittest.TestCase):
         if not cpp_files:
             self.skipTest("no C++ translation units under native/")
         rel_cpp = cpp_files[0].relative_to(ROOT).as_posix()
+        probe_dir = ROOT / "build" / "lsp-clangd-probe"
+        probe_dir.mkdir(parents=True, exist_ok=True)
+        broken_cpp = probe_dir / "broken_probe.cpp"
+        broken_cpp.write_text('int broken_probe() {\n    int value = "not_an_int";\n    return value;\n}\n', encoding="utf-8")
+        rel_broken = broken_cpp.relative_to(ROOT).as_posix()
         mod = _load_server_module()
         srv = mod.IsotoneLspMcpServer(root=str(ROOT), idle_seconds=30.0)
         try:
@@ -101,9 +106,21 @@ class LspMcpServerTest(unittest.TestCase):
             self.assertFalse(syms["result"]["isError"], syms)
             self.assertIn(rel_cpp, syms["result"]["content"][0]["text"])
 
-            status_raw = srv.handle_message({
+            err_diags = srv.handle_message({
                 "jsonrpc": "2.0",
                 "id": 2,
+                "method": "tools/call",
+                "params": {"name": "lsp_diagnostics", "arguments": {"file_path": rel_broken}},
+            })
+            assert err_diags is not None
+            self.assertFalse(err_diags["result"]["isError"], err_diags)
+            err_text = err_diags["result"]["content"][0]["text"]
+            self.assertIn(f"{rel_broken}:", err_text)
+            self.assertIn("Error", err_text)
+
+            status_raw = srv.handle_message({
+                "jsonrpc": "2.0",
+                "id": 3,
                 "method": "tools/call",
                 "params": {"name": "lsp_status", "arguments": {"action": "stop"}},
             })
@@ -113,6 +130,7 @@ class LspMcpServerTest(unittest.TestCase):
             self.assertFalse(status_obj["backends"]["clangd"]["running"])
         finally:
             srv.close()
+            shutil.rmtree(probe_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

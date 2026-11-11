@@ -177,7 +177,7 @@ class LspBackend:
         self._proc: subprocess.Popen | None = None
         self._next_id = 0
         self._responses: dict[int, dict] = {}
-        self._diagnostics: dict[str, tuple[int, list[dict]]] = {}
+        self._diagnostics: dict[str, tuple[int, int | None, list[dict]]] = {}
         self._diag_seq = 0
         self._open_docs: collections.OrderedDict[str, dict] = collections.OrderedDict()
         self._capabilities: dict = {}
@@ -286,11 +286,16 @@ class LspBackend:
             params = msg.get("params") or {}
             uri = params.get("uri")
             diags = params.get("diagnostics")
+            raw_ver = params.get("version")
+            pub_ver = raw_ver if isinstance(raw_ver, int) and not isinstance(raw_ver, bool) else None
             if isinstance(uri, str) and isinstance(diags, list):
                 key = _uri_key(uri)
                 with self._cond:
+                    open_meta = self._open_docs.get(key)
+                    if open_meta is not None and pub_ver is not None and pub_ver < int(open_meta["version"]):
+                        return
                     self._diag_seq += 1
-                    self._diagnostics[key] = (self._diag_seq, diags)
+                    self._diagnostics[key] = (self._diag_seq, pub_ver, diags)
                     self._cond.notify_all()
 
     def _send_notification_locked(self, method: str, params: dict) -> None:
@@ -414,8 +419,8 @@ class LspBackend:
         self._kill_proc(proc)
         self._reset_state()
 
-    def _sync_document_locked(self, abs_path: str, language_id: str) -> tuple[str, str, int]:
-        """Ensure abs_path is open and synced with disk; return (uri, key, expected_diag_seq)."""
+    def _sync_document_locked(self, abs_path: str, language_id: str) -> tuple[str, str, int, int]:
+        """Ensure abs_path is open and synced with disk; return (uri, key, expected_diag_seq, expected_version)."""
         try:
             with open(abs_path, "rb") as fh:
                 raw_bytes = fh.read()
@@ -425,85 +430,107 @@ class LspBackend:
         digest = hashlib.sha256(raw_bytes).hexdigest()
         key = _norm_key(abs_path)
         uri = _path_to_uri(abs_path)
-        existing = self._open_docs.get(key)
-        if existing is None:
-            while len(self._open_docs) >= self._max_open_docs:
-                evict_key, evict_meta = self._open_docs.popitem(last=False)
-                try:
-                    self._send_notification_locked("textDocument/didClose", {"textDocument": {"uri": evict_meta["uri"]}})
-                except Exception:
-                    pass
-                with self._cond:
+        evicted_uris: list[str] = []
+        action: str | None = None
+        with self._cond:
+            existing = self._open_docs.get(key)
+            if existing is None:
+                while len(self._open_docs) >= self._max_open_docs:
+                    evict_key, evict_meta = self._open_docs.popitem(last=False)
+                    evicted_uris.append(evict_meta["uri"])
                     self._diagnostics.pop(evict_key, None)
-            with self._cond:
                 expected_seq = self._diag_seq + 1
-            self._open_docs[key] = {
-                "uri": uri,
-                "version": 1,
-                "sha256": digest,
-                "language_id": language_id,
-                "expected_diag_seq": expected_seq,
-            }
+                version = 1
+                self._open_docs[key] = {
+                    "uri": uri,
+                    "version": version,
+                    "sha256": digest,
+                    "language_id": language_id,
+                    "expected_diag_seq": expected_seq,
+                }
+                action = "open"
+            else:
+                self._open_docs.move_to_end(key)
+                uri = existing["uri"]
+                if existing["sha256"] != digest:
+                    version = int(existing["version"]) + 1
+                    expected_seq = self._diag_seq + 1
+                    existing["version"] = version
+                    existing["sha256"] = digest
+                    existing["expected_diag_seq"] = expected_seq
+                    action = "change"
+                else:
+                    version = int(existing["version"])
+                    expected_seq = int(existing.get("expected_diag_seq", 1))
+        for evict_uri in evicted_uris:
+            try:
+                self._send_notification_locked("textDocument/didClose", {"textDocument": {"uri": evict_uri}})
+            except Exception:
+                pass
+        if action == "open":
             self._send_notification_locked("textDocument/didOpen", {
-                "textDocument": {"uri": uri, "languageId": language_id, "version": 1, "text": text},
+                "textDocument": {"uri": uri, "languageId": language_id, "version": version, "text": text},
             })
-            return uri, key, expected_seq
-        self._open_docs.move_to_end(key)
-        if existing["sha256"] != digest:
-            version = existing["version"] + 1
-            with self._cond:
-                expected_seq = self._diag_seq + 1
-            existing["version"] = version
-            existing["sha256"] = digest
-            existing["expected_diag_seq"] = expected_seq
-            uri = existing["uri"]
+        elif action == "change":
             self._send_notification_locked("textDocument/didChange", {
                 "textDocument": {"uri": uri, "version": version},
                 "contentChanges": [{"text": text}],
             })
-            return uri, key, expected_seq
-        return existing["uri"], key, int(existing.get("expected_diag_seq", 1))
+        return uri, key, expected_seq, version
 
     def diagnostics(self, abs_path: str, language_id: str, timeout: float = 30.0) -> list[dict]:
         with self._op_lock:
+            deadline = time.monotonic() + timeout
             self._ensure_started_locked()
-            uri, key, expected_seq = self._sync_document_locked(abs_path, language_id)
+            uri, key, expected_seq, expected_version = self._sync_document_locked(abs_path, language_id)
             self._last_used = time.monotonic()
             if self._capabilities.get("diagnosticProvider"):
+                rem = deadline - time.monotonic()
+                if rem <= 0:
+                    raise LspToolError(
+                        f"{self.name} timed out after {timeout:g}s waiting for diagnostics on {_rel_display(abs_path, self.root)}"
+                    )
                 try:
-                    res = self._request_locked("textDocument/diagnostic", {"textDocument": {"uri": uri}}, timeout=timeout)
+                    res = self._request_locked("textDocument/diagnostic", {"textDocument": {"uri": uri}}, timeout=rem)
                     if isinstance(res, dict):
                         if isinstance(res.get("items"), list):
                             items_list = list(res["items"])
                             with self._cond:
                                 self._diag_seq += 1
-                                self._diagnostics[key] = (self._diag_seq, items_list)
+                                self._diagnostics[key] = (self._diag_seq, expected_version, items_list)
                                 if key in self._open_docs:
                                     self._open_docs[key]["expected_diag_seq"] = self._diag_seq
                             return items_list
                         if res.get("kind") == "unchanged":
                             with self._cond:
-                                return list(self._diagnostics.get(key, (0, []))[1])
-                except LspToolError:
-                    pass
-            deadline = time.monotonic() + timeout
+                                cached = self._diagnostics.get(key)
+                                if cached is not None and cached[0] >= expected_seq and (
+                                    cached[1] is None or cached[1] >= expected_version
+                                ):
+                                    return list(cached[2])
+                except LspToolError as exc:
+                    msg_low = str(exc).lower()
+                    if "timed out" in msg_low or "exited" in msg_low or "not running" in msg_low:
+                        raise
             with self._cond:
                 while True:
-                    seq, items = self._diagnostics.get(key, (0, []))
-                    if seq >= expected_seq:
+                    seq, pub_ver, items = self._diagnostics.get(key, (0, None, []))
+                    if seq >= expected_seq and (pub_ver is None or pub_ver >= expected_version):
                         return list(items)
                     if self._proc is None or self._proc.poll() is not None:
                         raise LspToolError(f"{self.name} exited while computing diagnostics")
                     remaining = deadline - time.monotonic()
                     if remaining <= 0:
-                        return list(items)
+                        raise LspToolError(
+                            f"{self.name} timed out after {timeout:g}s waiting for diagnostics on {_rel_display(abs_path, self.root)}"
+                        )
                     self._cond.wait(timeout=min(remaining, 0.2))
 
     def request_on_file(self, abs_path: str, language_id: str, method: str, extra_params: dict,
                         timeout: float = 30.0) -> object:
         with self._op_lock:
             self._ensure_started_locked()
-            uri, _, _ = self._sync_document_locked(abs_path, language_id)
+            uri, _, _, _ = self._sync_document_locked(abs_path, language_id)
             self._last_used = time.monotonic()
             params = {"textDocument": {"uri": uri}, **extra_params}
             return self._request_locked(method, params, timeout=timeout)
@@ -977,7 +1004,7 @@ def serve_stdio(server: IsotoneLspMcpServer, binary_in=None, binary_out=None) ->
 
 
 FAKE_LSP_CODE = r"""
-import json, sys, urllib.parse
+import json, sys, time, urllib.parse
 
 docs = {}
 
@@ -1002,9 +1029,15 @@ def send_msg(obj):
     sys.stdout.buffer.write(f"Content-Length: {len(raw)}\r\n\r\n".encode("ascii") + raw)
     sys.stdout.buffer.flush()
 
-def publish(uri, text):
+def publish(uri, text, version):
+    if "SILENT_NO_PUBLISH" in text:
+        return
     # Deliberately percent-encode drive colon on Windows to exercise URI normalization.
     enc_uri = uri.replace("file:///D:", "file:///d%3A").replace("file:///C:", "file:///c%3A")
+    if "STALE_PREV_VERSION" in text and version > 1:
+        send_msg({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
+                  "params": {"uri": enc_uri, "version": version - 1, "diagnostics": []}})
+        time.sleep(0.05)
     diags = []
     for idx, line in enumerate(text.splitlines()):
         if "BAD_TOKEN" in line:
@@ -1016,7 +1049,8 @@ def publish(uri, text):
                 "code": "E001",
                 "message": "Found BAD_TOKEN",
             })
-    send_msg({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics", "params": {"uri": enc_uri, "diagnostics": diags}})
+    send_msg({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
+              "params": {"uri": enc_uri, "version": version, "diagnostics": diags}})
 
 while True:
     m = read_msg()
@@ -1035,12 +1069,12 @@ while True:
     elif method == "textDocument/didOpen":
         td = m["params"]["textDocument"]
         docs[td["uri"]] = td["text"]
-        publish(td["uri"], td["text"])
+        publish(td["uri"], td["text"], td.get("version", 1))
     elif method == "textDocument/didChange":
         td = m["params"]["textDocument"]
         text = m["params"]["contentChanges"][0]["text"]
         docs[td["uri"]] = text
-        publish(td["uri"], text)
+        publish(td["uri"], text, td.get("version", 1))
     elif method == "textDocument/didClose":
         docs.pop(m["params"]["textDocument"]["uri"], None)
     elif method == "textDocument/hover":
@@ -1165,6 +1199,26 @@ def _self_test() -> int:
                            "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "b.py"}}})
             check("disk edit synced via hover still refreshes diagnostics cleanly",
                   "b.py: 0 diagnostics" in d_fixed["result"]["content"][0]["text"], repr(d_fixed))
+
+            # Out-of-order stale version diagnostics (version N-1 arriving clean after version N edit) must not hide vN errors.
+            with open(py_b, "w", encoding="utf-8") as fh:
+                fh.write("# STALE_PREV_VERSION\nx = BAD_TOKEN\n")
+            d_stale = rpc({"jsonrpc": "2.0", "id": 62, "method": "tools/call",
+                           "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "b.py"}}})
+            check("stale prior-version publishDiagnostics is ignored until current version arrives",
+                  not d_stale["result"]["isError"] and "Found BAD_TOKEN" in d_stale["result"]["content"][0]["text"],
+                  repr(d_stale))
+
+            # Silent backend exceeding timeout_seconds must return an explicit timeout error, never '0 diagnostics'.
+            py_silent = os.path.join(ws, "silent.py")
+            with open(py_silent, "w", encoding="utf-8") as fh:
+                fh.write("# SILENT_NO_PUBLISH\n")
+            d_timeout = rpc({"jsonrpc": "2.0", "id": 63, "method": "tools/call",
+                             "params": {"name": "lsp_diagnostics",
+                                        "arguments": {"file_path": "silent.py", "timeout_seconds": 0.1}}})
+            check("diagnostics timeout returns explicit error instead of 0 diagnostics",
+                  d_timeout["result"]["isError"] and "timed out" in d_timeout["result"]["content"][0]["text"],
+                  repr(d_timeout))
 
             bad_arg = rpc({"jsonrpc": "2.0", "id": 61, "method": "tools/call",
                            "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "a.py", "severity_max": 99}}})
