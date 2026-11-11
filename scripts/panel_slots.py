@@ -688,6 +688,8 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": "git am -qn patch.mbox"}}),
             ("a PowerShell command with an inline `# ...; codex` comment", "allow",
              {"name": "run_command", "args": {"CommandLine": "Write-Output 'ok' # note; codex is reviewed via dispatcher"}}),
+            ("a PowerShell string variable assignment `$pattern = 'codex'` piped to `Select-String`", "allow",
+             {"name": "run_command", "args": {"CommandLine": "$pattern = 'codex'; Get-Content scripts/panel_slots.py | Select-String $pattern"}}),
             ("a read-only `rg` search mentioning `ProcessStartInfo|codex`", "allow",
              {"name": "run_command", "args": {"CommandLine": "rg -n 'ProcessStartInfo|codex' scripts"}}),
             ("a `cmd /c rg` search mentioning `codex`", "allow",
@@ -1991,12 +1993,25 @@ def _strip_shell_comments(command: str, in_cmd: bool = False, in_posix: bool = F
     return "".join(out)
 
 
+def _ht_values_as_ps_assigns(inner_ht: str) -> str:
+    """Rewrite top-level `key = value` entries inside a PowerShell `@{ ... }` hashtable into `$__ht_ = value` so key
+    names are never misread as command heads while executable value expressions still go through command validation."""
+    rewritten: list[str] = []
+    for entry in re.split(r"[;\r\n]+", inner_ht):
+        m = re.match(r"^\s*(?:'(?:''|[^'])*'|\"(?:\"\"|`[\s\S]|[^\"])*\"|[A-Za-z_][\w.-]*)\s*=(?!=)\s*(.*)$", entry)
+        if m:
+            rewritten.append(f"$__ht_ = {m.group(1)}")
+        elif entry.strip():
+            rewritten.append(entry)
+    return "; ".join(rewritten)
+
+
 def _tokenize_command(command: str, in_cmd: bool = False,
-                      in_posix: bool = False) -> tuple[list[_CmdSeg], list[str]]:
+                      in_posix: bool = False) -> tuple[list[_CmdSeg], list[tuple[str, bool]]]:
     """Scan `command` into top-level pipeline/statement segments while preserving each token's unquoted value,
     quote delimiter, and source slice so wrapper payloads and literal arguments never blur together."""
     segments: list[_CmdSeg] = []
-    paren_subs: list[str] = []
+    paren_subs: list[tuple[str, bool]] = []
     cur_tokens: list[_CmdTok] = []
     seg_start = 0
     sep_before = ""
@@ -2015,12 +2030,32 @@ def _tokenize_command(command: str, in_cmd: bool = False,
         if ch in " \t\r":
             i += 1
             continue
+        if not in_cmd and not in_posix and command[i:i + 2] == "@{":
+            j = _scan_matching_brace(command, i + 1)
+            end_idx = j + 1 if j < n else n
+            inner_ht = command[i + 2:j]
+            if inner_ht.strip():
+                paren_subs.append((_ht_values_as_ps_assigns(inner_ht), True))
+            raw_ht = command[i:end_idx]
+            cur_tokens.append(_CmdTok(raw_ht, raw_ht, "@{", i - seg_start, end_idx - seg_start))
+            i = end_idx
+            continue
+        if not in_cmd and not in_posix and command[i:i + 2] == "@(":
+            j = _scan_matching_paren(command, i + 1, in_posix=False)
+            end_idx = j + 1 if j < n else n
+            inner_arr = command[i + 2:j]
+            if inner_arr.strip():
+                paren_subs.append((inner_arr, True))
+            raw_arr = command[i:end_idx]
+            cur_tokens.append(_CmdTok(raw_arr, raw_arr, "@(", i - seg_start, end_idx - seg_start))
+            i = end_idx
+            continue
         if not in_cmd and not in_posix and ch == "{":
             j = _scan_matching_brace(command, i)
             end_idx = j + 1 if j < n else n
             inner_b = command[i + 1:j]
             if inner_b.strip():
-                paren_subs.append(inner_b)
+                paren_subs.append((inner_b, False))
             cur_tokens.append(_CmdTok(inner_b, command[i:end_idx], "{", i - seg_start, end_idx - seg_start))
             i = end_idx
             continue
@@ -2071,8 +2106,17 @@ def _tokenize_command(command: str, in_cmd: bool = False,
             if m_prop:
                 end_idx += m_prop.end()
             inner = command[open_idx + 1:j]
+            if (in_posix and not has_dollar and cur_tokens and not cur_tokens[-1].quote
+                    and re.fullmatch(r"[A-Za-z_]\w*\+?=", cur_tokens[-1].val)
+                    and cur_tokens[-1].rel_end == i - seg_start):
+                prev_t = cur_tokens[-1]
+                merged_raw = prev_t.raw + command[i:end_idx]
+                cur_tokens[-1] = _CmdTok(prev_t.val + command[i:end_idx], merged_raw, "", prev_t.rel_start,
+                                         end_idx - seg_start)
+                i = end_idx
+                continue
             if inner.strip():
-                paren_subs.append(inner)
+                paren_subs.append((inner, not in_cmd and not in_posix and not has_dollar))
             raw_tok = command[i:end_idx]
             tok_val = raw_tok
             if _toks_in_exec_slot(cur_tokens, has_dollar=has_dollar):
@@ -2755,13 +2799,72 @@ def _blocked_cli_reason(head: str) -> str:
             f"(standards/delegation.md).")
 
 
-def _agy_recurse(payload: str, depth: int, in_cmd: bool = False, in_posix: bool = False) -> str | None:
+_PS_ASSIGN_LHS = re.compile(r"^\$(?:\{[A-Za-z_][\w:]*\}|[A-Za-z_][\w:]*)$")
+_PS_ASSIGN_OPS = frozenset(("=", "+=", "-=", "*=", "/=", "%=", "??="))
+
+
+def _split_ps_var_assignment(cur: list[_CmdTok], seg_raw: str) -> list[_CmdTok] | None:
+    """If `cur` starts with a PowerShell `$var = <rhs>` assignment, return `<rhs>` tokens; otherwise return `None`."""
+    if not cur or cur[0].quote or not cur[0].val.startswith("$") or cur[0].val.startswith("$("):
+        return None
+    t0 = cur[0]
+    if _PS_ASSIGN_LHS.match(t0.val):
+        if len(cur) >= 2 and not cur[1].quote and cur[1].val in _PS_ASSIGN_OPS:
+            return cur[2:]
+        if len(cur) >= 2 and not cur[1].quote:
+            for op in ("??=", "+=", "-=", "*=", "/=", "%=", "="):
+                if cur[1].raw.startswith(op) and not cur[1].raw.startswith("=="):
+                    if cur[1].rel_start >= 0:
+                        rhs_text = seg_raw[cur[1].rel_start + len(op):].strip()
+                    else:
+                        rhs_text = (cur[1].raw[len(op):]
+                                    + (" " + " ".join(_requote_tok(t) for t in cur[2:]) if len(cur) > 2 else "")).strip()
+                    segs_r, _ = _tokenize_command(rhs_text)
+                    return segs_r[0].tokens if segs_r else []
+        return None
+    for op in ("??=", "+=", "-=", "*=", "/=", "%=", "="):
+        if op in t0.raw:
+            lhs_part, _ = t0.raw.split(op, 1)
+            if _PS_ASSIGN_LHS.match(lhs_part):
+                if t0.val.endswith(op) and len(t0.raw) == len(lhs_part) + len(op):
+                    return cur[1:]
+                if t0.rel_start >= 0:
+                    rhs_text = seg_raw[t0.rel_start + len(lhs_part) + len(op):].strip()
+                else:
+                    rhs_text = (t0.raw[len(lhs_part) + len(op):]
+                                + (" " + " ".join(_requote_tok(t) for t in cur[1:]) if len(cur) > 1 else "")).strip()
+                segs_r, _ = _tokenize_command(rhs_text)
+                return segs_r[0].tokens if segs_r else []
+            break
+    return None
+
+
+def _ps_rhs_is_value_expr(rhs: list[_CmdTok]) -> bool:
+    """True when a PowerShell assignment RHS (`$var = <rhs>`) is a value/literal expression rather than a command run
+    (any embedded `$(...)`, `(...)`, `@(...)`, or `@{...}` subexpression is already evaluated through `paren_subs` and
+    `_extract_subexpressions`, and variable-indirect execution is checked separately)."""
+    if not rhs:
+        return True
+    r0 = rhs[0]
+    if r0.quote in ("'", '"', "@(", "@{"):
+        return True
+    if r0.raw[:1] in ("'", '"', "(", "@"):
+        return True
+    if not r0.quote and (
+            (r0.val.startswith("$") and not r0.val.startswith("$("))
+            or re.fullmatch(r"-?\d+(?:\.\d+)?", r0.val) is not None):
+        return True
+    return False
+
+
+def _agy_recurse(payload: str, depth: int, in_cmd: bool = False, in_posix: bool = False,
+                 in_ps_expr: bool = False) -> str | None:
     if not payload or not payload.strip():
         return None
     if depth > _AGY_MAX_WRAPPER_DEPTH:
         return ("Deeply nested shell wrappers hide commands from the command gate; pass plain commands "
                 "(standards/delegation.md).")
-    return _agy_command_decision(payload, depth, in_cmd=in_cmd, in_posix=in_posix)
+    return _agy_command_decision(payload, depth, in_cmd=in_cmd, in_posix=in_posix, in_ps_expr=in_ps_expr)
 
 
 def _extract_ps_assignments(cleaned: str, unquoted: str) -> list[tuple[str, str]]:
@@ -2798,7 +2901,8 @@ def _extract_ps_assignments(cleaned: str, unquoted: str) -> list[tuple[str, str]
     return found
 
 
-def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False) -> str | None:
+def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False,
+                          in_ps_expr: bool = False) -> str | None:
     """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
     command = _strip_shell_comments(command, in_cmd=in_cmd, in_posix=in_posix)
     if in_cmd:
@@ -2875,22 +2979,35 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     if why:
                         return why
     segments, paren_subs = _tokenize_command(command, in_cmd=in_cmd, in_posix=in_posix)
-    for psub in paren_subs:
-        why = _agy_recurse(psub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
+    for psub, sub_is_expr in paren_subs:
+        why = _agy_recurse(psub, depth + 1, in_cmd=in_cmd, in_posix=in_posix, in_ps_expr=sub_is_expr)
         if why:
             return why
     for seg_idx, seg in enumerate(segments):
         cur = list(seg.tokens)
         from_cmd = in_cmd
+        saw_call = False
         while cur:
             tok0 = cur[0]
             low = _bare(tok0.val).strip("'\"")
-            if not tok0.quote and (tok0.val in ("$", ".", "&")
-                                   or (tok0.val.startswith("$") and len(cur) > 1 and cur[1].val == "=")):
-                cur = cur[2:] if (tok0.val.startswith("$") and len(cur) > 1 and cur[1].val == "=") else cur[1:]
+            if not tok0.quote and tok0.val in ("$", ".", "&"):
+                if tok0.val in (".", "&"):
+                    saw_call = True
+                cur = cur[1:]
                 continue
-            if not tok0.quote and ((tok0.val.startswith("$") and "=" in tok0.val)
-                                   or ("=" in tok0.val and not tok0.val.startswith("-"))):
+            if not from_cmd and not in_posix:
+                ps_rhs = _split_ps_var_assignment(cur, seg.raw)
+                if ps_rhs is not None:
+                    if _ps_rhs_is_value_expr(ps_rhs):
+                        cur = []
+                        break
+                    cur = ps_rhs
+                    continue
+                if in_ps_expr and not saw_call and (
+                        tok0.quote in ("'", '"', "@(", "@{") or tok0.raw[:1] in ("'", '"', "@", "(")):
+                    cur = []
+                    break
+            if not tok0.quote and ("=" in tok0.val and not tok0.val.startswith("-")):
                 cur = cur[1:]
                 continue
             if tok0.quote == "{":
@@ -4182,6 +4299,12 @@ def _self_test() -> int:
         "$m = 'ship'; git commit -m $m",
         "  $m = 'ship'; git commit -m $m",
         "bash -c '  m=ship; git commit -m \"$m\"'",
+        "$pattern = 'codex'; Get-Content scripts/panel_slots.py | Select-String $pattern",
+        "$pattern='codex'; Select-String $pattern scripts/panel_slots.py",
+        "$tools = @('codex', 'claude'); Select-String -Pattern $tools scripts/panel_slots.py",
+        "$map = @{ codex = 'astra'; claude = 'sonnet' }; Write-Output $map.codex",
+        "bash -c \"pattern='codex'; grep -n \\\"\\$pattern\\\" scripts/panel_slots.py\"",
+        "bash -c \"arr=('codex' 'claude'); echo \\\"\\\\${arr[0]}\\\"\"",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -4237,6 +4360,10 @@ def _self_test() -> int:
             ("bare claude CLI session", "run_command", {"CommandLine": "claude"}, "bypass delegation"),
             ("headless agy -p delegation", "run_command", {"CommandLine": "agy -p 'inspect callers'"}, "bypass delegation"),
             ("powershell variable headless claude", "run_command", {"CommandLine": "$out = claude -p inspect"}, "bypass delegation"),
+            ("powershell no-space variable headless claude", "run_command", {"CommandLine": "$out=claude -p inspect"}, "bypass delegation"),
+            ("powershell variable & quoted codex", "run_command", {"CommandLine": "$out = & 'codex' exec review"}, "review-dispatch.py"),
+            ("powershell array subexpression codex", "run_command", {"CommandLine": "$out = @(codex exec review)"}, "review-dispatch.py"),
+            ("powershell hashtable value codex", "run_command", {"CommandLine": "$map = @{ out = codex exec review }"}, "review-dispatch.py"),
             ("call Get-Command codex.Source", "run_command", {"CommandLine": "& (Get-Command codex).Source exec review"}, "review-dispatch.py"),
             ("call Get-Command claude object", "run_command", {"CommandLine": "& (Get-Command claude -ErrorAction Stop) -p inspect-callers"}, "bypass delegation"),
             ("Start-Process Get-Command codex", "run_command", {"CommandLine": "Start-Process -FilePath (Get-Command codex).Source -ArgumentList 'exec review'"}, "review-dispatch.py"),
