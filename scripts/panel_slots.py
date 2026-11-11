@@ -700,6 +700,8 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": "Write-Output 'ok' # note; codex is reviewed via dispatcher"}}),
             ("a PowerShell string variable assignment `$pattern = 'codex'` piped to `Select-String`", "allow",
              {"name": "run_command", "args": {"CommandLine": "$pattern = 'codex'; Get-Content scripts/panel_slots.py | Select-String $pattern"}}),
+            ("a PowerShell `& rg -n $pattern` search where `$pattern = 'codex'` is an argument", "allow",
+             {"name": "run_command", "args": {"CommandLine": "$pattern = 'codex'; & rg -n $pattern scripts/panel_slots.py"}}),
             ("a read-only `rg` search mentioning `ProcessStartInfo|codex`", "allow",
              {"name": "run_command", "args": {"CommandLine": "rg -n 'ProcessStartInfo|codex' scripts"}}),
             ("a `cmd /c rg` search mentioning `codex`", "allow",
@@ -3041,6 +3043,7 @@ class _PsAssignSpan(NamedTuple):
     eq_end: int
     rhs_end: int
     destruct: bool
+    is_foreach: bool = False
 
 
 def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]:
@@ -3167,7 +3170,7 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
         loop_v = fm.group(1) or fm.group(2) or ""
         coll_text = command[fm.start(3):fm.end(3)].strip()
         if loop_v and coll_text:
-            found.append(_PsAssignSpan([loop_v], coll_text, fm.start(), fm.start(3), fm.end(), False))
+            found.append(_PsAssignSpan([loop_v], coll_text, fm.start(), fm.start(3), fm.end(), False, True))
     found.sort(key=lambda item: (item.lhs_start, item.eq_end))
     deduped: list[_PsAssignSpan] = []
     last_eq = -1
@@ -3532,6 +3535,121 @@ def _expand_sh_vars_chunk(chunk: str, sh_env: dict[str, dict]) -> str:
     return "".join(out)
 
 
+def _ps_next_top_rebind(unquoted: str, ps_spans: list[_PsAssignSpan], cur_idx: int, vname_raw: str) -> int:
+    target = vname_raw.lower()
+    for next_sp in ps_spans[cur_idx + 1:]:
+        if target not in (n.lower() for n in next_sp.names):
+            continue
+        op_seg = unquoted[next_sp.lhs_start:next_sp.eq_end].rstrip()
+        if any(op_seg.endswith(op) for op in ("??=", "+=", "-=", "*=", "/=", "%=")):
+            continue
+        prefix_u = unquoted[:next_sp.lhs_start]
+        if prefix_u.count("(") == prefix_u.count(")") and prefix_u.count("{") == prefix_u.count("}"):
+            return next_sp.lhs_start
+    return len(unquoted)
+
+
+def _ps_var_in_exec_pos(command: str, start_pos: int, end_pos: int, vname_raw: str,
+                        binding: dict | None, has_cli_fallback: bool, is_foreach: bool) -> bool:
+    """True when PowerShell variable `vname_raw` (holding or resolving a blocked CLI) is referenced in an executable
+    position within `command[start_pos:end_pos]`, rather than as an ordinary command argument."""
+    tail = command[start_pos:end_pos]
+    if not tail or ("$" not in tail and "@" not in tail):
+        return False
+    vesc = re.escape(vname_raw)
+    base_var = rf"(?:\{{{vesc}\}}|{vesc}(?![\w:]))"
+    exec_refs: list[str] = []
+    is_ht_cli = False
+    is_arr_head_cli = False
+    if binding is not None:
+        elems = binding["elems"]
+        props = binding["props"]
+        any_elem_cli = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS for x in elems)
+        if (len(elems) == 1 and _bare(elems[0]).strip("'\"") in _AGY_BLOCKED_CLIS) or (is_foreach and binding["has_cli"]):
+            exec_refs.append(rf"\${base_var}(?:\.(?:Source|Path|Definition)\b)?")
+            is_arr_head_cli = True
+        elif any_elem_cli:
+            for idx_e, el in enumerate(elems):
+                if _bare(el).strip("'\"") in _AGY_BLOCKED_CLIS:
+                    neg_e = idx_e - len(elems)
+                    exec_refs.append(rf"\${base_var}\[\s*(?:{idx_e}|{neg_e})\s*\]")
+                    if idx_e == 0:
+                        is_arr_head_cli = True
+            exec_refs.append(rf"\${base_var}\[\s*[$@][^\]]+\]")
+        for pk, pv in props.items():
+            if _bare(pv).strip("'\"") in _AGY_BLOCKED_CLIS:
+                exec_refs.append(rf"\${base_var}(?:\.{re.escape(pk)}\b|\[\s*['\"]?{re.escape(pk)}['\"]?\s*\])")
+                if pk in ("filepath", "pspath", "path"):
+                    is_ht_cli = True
+        if any(_bare(pv).strip("'\"") in _AGY_BLOCKED_CLIS for pv in props.values()):
+            exec_refs.append(rf"\${base_var}(?:\.\$[A-Za-z_]\w*|\[\s*[$@][^\]]+\])")
+    elif has_cli_fallback:
+        exec_refs.append(rf"\${base_var}(?:\.(?:Source|Path|Definition)\b)?")
+        is_arr_head_cli = True
+        is_ht_cli = True
+    if not exec_refs and not is_ht_cli and not is_arr_head_cli:
+        return False
+    ref_pat = "(?:" + "|".join(exec_refs) + ")" if exec_refs else None
+    if ref_pat and re.search(
+            rf"(?:(?:^|[;&|{{(\n]|(?<!=)=(?!=))\s*(?:&|\.(?![.\w/\\]))\s*['\"(]*{ref_pat}"
+            rf"|\b(?:invoke-expression|iex)\s+(?:-[A-Za-z]+(?::\S+)?\s+)*['\"]?\s*(?:[&.]\s*)?['\"(]*{ref_pat})",
+            tail, re.IGNORECASE):
+        return True
+    ref_tok_re = re.compile(rf"^['\"(]*{ref_pat}['\")]*$", re.IGNORECASE) if ref_pat else None
+    splat_tok_re = re.compile(rf"^@{base_var}$", re.IGNORECASE)
+    queue = [tail]
+    seen_q = 0
+    while seen_q < len(queue) and seen_q < 24:
+        chunk_q = queue[seen_q]
+        seen_q += 1
+        for dsub in _extract_subexpressions(chunk_q, in_posix=False):
+            if "$" in dsub or "@" in dsub:
+                queue.append(dsub)
+        segs_q, subs_q = _tokenize_command(chunk_q)
+        for sub_s, _ in subs_q:
+            if "$" in sub_s or "@" in sub_s:
+                queue.append(sub_s)
+        for seg_q in segs_q:
+            cur_q = list(seg_q.tokens)
+            while cur_q and not cur_q[0].quote and cur_q[0].val in ("$", ".", "&"):
+                cur_q = cur_q[1:]
+            ps_rhs_q = _split_ps_var_assignment(cur_q, seg_q.raw) if cur_q else None
+            if ps_rhs_q is not None:
+                cur_q = ps_rhs_q
+                while cur_q and not cur_q[0].quote and cur_q[0].val in ("$", ".", "&"):
+                    cur_q = cur_q[1:]
+            if not cur_q:
+                continue
+            head_q = _bare(cur_q[0].val).strip("'\"")
+            if head_q in ("start-process", "start", "saps"):
+                if (is_ht_cli or is_arr_head_cli) and any(splat_tok_re.match(t.raw) for t in cur_q[1:]):
+                    sp_u, _ = _unwrap_start_process_toks(cur_q)
+                    if is_ht_cli or not sp_u or splat_tok_re.match(sp_u[0].raw):
+                        return True
+                if ref_tok_re is not None:
+                    sp_u, _ = _unwrap_start_process_toks(cur_q)
+                    if sp_u and ref_tok_re.match(sp_u[0].raw):
+                        return True
+            elif head_q in ("invoke-item", "ii") and ref_tok_re is not None:
+                for idx_ii, itok in enumerate(cur_q[1:], start=1):
+                    if not itok.quote and itok.val.startswith("-"):
+                        iflag, iinline = _split_ps_flag(itok.val)
+                        ibody = iflag[1:]
+                        if any(p.startswith(ibody) for p in ("path", "literalpath")) or ibody == "lp":
+                            cand_ii = (itok.raw.split(":", 1)[1] if iinline is not None and ":" in itok.raw
+                                       else (cur_q[idx_ii + 1].raw if idx_ii + 1 < len(cur_q) else ""))
+                            if ref_tok_re.match(cand_ii):
+                                return True
+                        continue
+                    prev_f = _split_ps_flag(cur_q[idx_ii - 1].val)[0] if idx_ii > 1 and not cur_q[idx_ii - 1].quote else ""
+                    if prev_f and prev_f.startswith("-") and ":" not in cur_q[idx_ii - 1].val:
+                        continue
+                    if ref_tok_re.match(itok.raw):
+                        return True
+                    break
+    return False
+
+
 def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False,
                           in_ps_expr: bool = False) -> str | None:
     """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
@@ -3560,11 +3678,16 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
         if ps_spans:
             rewritten_ps: list[str] = []
             cursor_ps = 0
-            for span in ps_spans:
+            for idx_sp, span in enumerate(ps_spans):
                 rewritten_ps.append(_expand_ps_vars_chunk(command[cursor_ps:span.lhs_start], ps_env))
                 rewritten_ps.append(command[span.lhs_start:span.eq_end])
                 cursor_ps = span.eq_end
                 exp_rhs = _expand_ps_vars_chunk(span.rhs_val, ps_env)
+                if (len(span.names) == 1
+                        and unquoted[span.lhs_start:span.eq_end].rstrip().endswith("+=")
+                        and span.names[0].lower() in ps_env
+                        and len(ps_env[span.names[0].lower()]["elems"]) == 1):
+                    exp_rhs = _ps_sq(ps_env[span.names[0].lower()]["elems"][0]) + " + " + exp_rhs
                 if span.destruct:
                     raw_parts = _split_ps_comma_elements(exp_rhs)
                     for idx_n, dname in enumerate(span.names):
@@ -3576,30 +3699,24 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                             b_item = (_eval_ps_rhs_binding(_ps_sq(rem_vals[0])) if len(rem_vals) == 1
                                       else _eval_ps_rhs_binding("@(" + ", ".join(_ps_sq(x) for x in rem_vals) + ")"))
                         if b_item is not None:
-                            if b_item["has_cli"]:
-                                vesc = re.escape(dname)
-                                vref = rf"[$@](?:\{{{vesc}\}}|{vesc}(?![\w:]))"
-                                if re.compile(
-                                        rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii|invoke-expression|iex)\b)"
-                                        rf"\s+[^;\n|]*{vref}", re.IGNORECASE).search(command, span.rhs_end):
-                                    return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` "
-                                            "bypass delegation and dispatcher gates (standards/delegation.md).")
+                            end_d = _ps_next_top_rebind(unquoted, ps_spans, idx_sp, dname)
+                            if b_item["has_cli"] and _ps_var_in_exec_pos(
+                                    command, span.rhs_end, end_d, dname, b_item, False, False):
+                                return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` "
+                                        "bypass delegation and dispatcher gates (standards/delegation.md).")
                             _bind_ps_var(ps_env, dname, b_item)
                 else:
                     binding = _eval_ps_rhs_binding(exp_rhs)
-                    has_cli_rhs = (
-                        (binding is not None and binding["has_cli"])
-                        or bool(_AGY_PS_RESOLVER_RHS.search(exp_rhs))
+                    has_cli_fb = (
+                        bool(_AGY_PS_RESOLVER_RHS.search(exp_rhs))
                         or (exp_rhs.startswith(("@", "(")) and bool(_AGY_CLI_WORD.search(exp_rhs))))
+                    has_cli_rhs = (binding is not None and binding["has_cli"]) or has_cli_fb
                     for vname_raw in span.names:
-                        if has_cli_rhs:
-                            vesc = re.escape(vname_raw)
-                            vref = rf"[$@](?:\{{{vesc}\}}|{vesc}(?![\w:]))"
-                            if re.compile(
-                                    rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii|invoke-expression|iex)\b)"
-                                    rf"\s+[^;\n|]*{vref}", re.IGNORECASE).search(command, span.rhs_end):
-                                return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass "
-                                        "delegation and dispatcher gates (standards/delegation.md).")
+                        end_v = _ps_next_top_rebind(unquoted, ps_spans, idx_sp, vname_raw)
+                        if has_cli_rhs and _ps_var_in_exec_pos(
+                                command, span.rhs_end, end_v, vname_raw, binding, has_cli_fb, span.is_foreach):
+                            return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass "
+                                    "delegation and dispatcher gates (standards/delegation.md).")
                         if binding is not None:
                             _bind_ps_var(ps_env, vname_raw, binding)
             rewritten_ps.append(_expand_ps_vars_chunk(command[cursor_ps:], ps_env))
@@ -3637,14 +3754,20 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                 exp_rhs_sh = _expand_sh_vars_chunk(rhs_sh_raw, sh_env)
                 raw_sv = am.group(2)
                 vesc_sh = re.escape(raw_sv)
-                vref_sh = rf"\$(?:\{{{vesc_sh}(?:\[[^\]]*\])?\}}|{vesc_sh}\b)"
+                sh_exec_refs: list[str] = []
                 sh_segs, _ = _tokenize_command(exp_rhs_sh, in_posix=True)
                 sh_elems = [t.val for s in sh_segs for t in s.tokens]
                 if is_arr:
                     splat_sh = " ".join(_sh_splat_elem(x) for x in sh_elems) if sh_elems else ""
                     dq_sh = _sh_dq_esc(" ".join(sh_elems))[:2048]
-                    has_cli_sh = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x))
-                                     for x in sh_elems)
+                    has_cli_sh = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS for x in sh_elems)
+                    if sh_elems and _bare(sh_elems[0]).strip("'\"") in _AGY_BLOCKED_CLIS:
+                        sh_exec_refs.append(rf"\$(?:\{{{vesc_sh}(?:\[\s*(?:0|@|[*])\s*\])?\}}|{vesc_sh}\b)")
+                    for idx_s, se in enumerate(sh_elems):
+                        if idx_s > 0 and _bare(se).strip("'\"") in _AGY_BLOCKED_CLIS:
+                            sh_exec_refs.append(rf"\$\{{{vesc_sh}\[\s*{idx_s}\s*\]\}}")
+                    if has_cli_sh:
+                        sh_exec_refs.append(rf"\$\{{{vesc_sh}\[\s*\$[^\]]+\]\}}")
                 else:
                     sval = sh_elems[0] if len(sh_elems) == 1 else exp_rhs_sh.strip()
                     if ("$(" in rhs_sh_raw or "`" in rhs_sh_raw) and _resolved_target_in(rhs_sh_raw):
@@ -3653,13 +3776,18 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     splat_sh = " ".join(_sh_splat_elem(w) for w in words_sh) if words_sh else "''"
                     dq_sh = _sh_dq_esc(sval)[:2048]
                     sh_elems = [sval]
-                    has_cli_sh = (_bare(sval).strip("'\"") in _AGY_BLOCKED_CLIS
+                    head_sh = words_sh[0] if words_sh else sval
+                    has_cli_sh = (_bare(head_sh).strip("'\"") in _AGY_BLOCKED_CLIS
                                   or bool(_AGY_PS_RESOLVER_RHS.search(exp_rhs_sh)))
-                if has_cli_sh and re.compile(
-                        rf"(?:^|[;&|{{(\n])\s*(?:command\s+|nohup\s+|env\s+|exec\s+|eval\s+)*['\"]?{vref_sh}").search(
-                            command, rhs_end_sh):
-                    return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
-                            "dispatcher gates (standards/delegation.md).")
+                    if has_cli_sh:
+                        sh_exec_refs.append(rf"\$(?:\{{{vesc_sh}(?:\[[^\]]*\])?\}}|{vesc_sh}\b)")
+                if sh_exec_refs:
+                    sh_ref_pat = "(?:" + "|".join(sh_exec_refs) + ")"
+                    if re.compile(
+                            rf"(?:(?:^|[;&|{{(\n])\s*(?:command\s+(?!-[vV]\b)(?:-p\s+)?|nohup\s+|exec\s+(?:-[a-zA-Z]+\s+\S+\s+)?)*['\"]?{sh_ref_pat}"
+                            rf"|\beval\s+['\"]?\s*{sh_ref_pat})").search(command, rhs_end_sh):
+                        return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
+                                "dispatcher gates (standards/delegation.md).")
                 sh_env[raw_sv] = {"splat": splat_sh, "dq": dq_sh, "elems": sh_elems, "has_cli": has_cli_sh}
             rewritten_sh.append(_expand_sh_vars_chunk(command[cursor_sh:], sh_env))
             expanded_sh_cmd = "".join(rewritten_sh)
@@ -5001,10 +5129,21 @@ def _self_test() -> int:
         "$msg = '-n'; git commit -m $msg",
         "$msg = 'codex'; $msg | Select-String 'codex'",
         "$bin = 'echo'; & $bin claude; $bin = 'claude'",
+        "$bin = 'claude'; $bin = 'echo'; & $bin hi",
+        "$pattern = 'codex'; & rg -n $pattern scripts/panel_slots.py",
+        "$pattern = 'codex'; . ./scripts/helper.ps1 $pattern",
+        "$pattern = 'codex'; Start-Process rg -ArgumentList '-n', $pattern, 'scripts'",
+        "$pattern = 'codex'; iex \"rg -n $pattern scripts\"",
+        "$args_rg = @('-n', 'codex', 'scripts/panel_slots.py'); & rg @args_rg",
+        "$p = @{ FilePath = 'rg'; ArgumentList = '-n', 'codex', 'scripts' }; Start-Process @p",
+        "$arr = @('rg', 'codex'); & $arr[0] -n $arr[1] scripts/panel_slots.py",
         "$git = Get-Command git; & $git.Source status",
         "bash -c \"pattern='codex'; grep -n \\\"\\$pattern\\\" scripts/panel_slots.py\"",
         "bash -c 'pat=\"codex\"; msg=\"bin=safe\"; grep -n \"$pat\" scripts/panel_slots.py'",
         "bash -c \"arr=('codex' 'claude'); echo \\\"\\\\${arr[0]}\\\"\"",
+        "bash -c 'cmd=(rg -n codex scripts/panel_slots.py); \"${cmd[@]}\"'",
+        "bash -c 'pattern=codex; command -v \"$pattern\"'",
+        "bash -c 'pattern=codex; eval \"rg -n $pattern scripts\"'",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -5080,6 +5219,13 @@ def _self_test() -> int:
             ("hashtable dot property & $m.bin", "run_command", {"CommandLine": "$m = @{ bin = 'claude' }; & $m.bin -p inspect"}, "Variable-indirect"),
             ("hashtable bracket property & $m['bin']", "run_command", {"CommandLine": "$m = @{ bin = 'codex' }; & $m['bin'] exec review"}, "Variable-indirect"),
             ("Set-Variable -Name bin -Value claude & $bin", "run_command", {"CommandLine": "Set-Variable -Name bin -Value 'claude'; & $bin -p inspect"}, "Variable-indirect"),
+            ("captured output $out = & $bin claude", "run_command", {"CommandLine": "$bin = 'claude'; $out = & $bin -p inspect"}, "Variable-indirect"),
+            ("no-space call &$bin claude", "run_command", {"CommandLine": "$bin = 'claude'; &$bin -p inspect"}, "Variable-indirect"),
+            ("Start-Process -NoNewWindow -FilePath $bin claude", "run_command", {"CommandLine": "$bin = 'claude'; Start-Process -NoNewWindow -FilePath $bin -Args '-p inspect'"}, "Variable-indirect"),
+            ("Start-Process -Wait positional $bin codex", "run_command", {"CommandLine": "$bin = 'codex'; Start-Process -Wait $bin -Args 'exec review'"}, "Variable-indirect"),
+            ("array second element & $arr[1] codex", "run_command", {"CommandLine": "$arr = @('rg', 'codex'); & $arr[1] exec review"}, "Variable-indirect"),
+            ("plus-equals $bin += 'aude' & $bin", "run_command", {"CommandLine": "$bin = 'cl'; $bin += 'aude'; & $bin -p inspect"}, "Variable-indirect"),
+            ("posix array second element ${cmd[1]} codex", "run_command", {"CommandLine": "bash -c 'cmd=(rg codex); \"${cmd[1]}\" exec review'"}, "Variable-indirect"),
             ("foreach loop over @('codex', 'claude') & $t", "run_command", {"CommandLine": "foreach ($t in @('codex', 'claude')) { & $t exec review }"}, "Variable-indirect"),
             ("variable command passed to iex $cmd", "run_command", {"CommandLine": "$cmd = 'codex exec review'; iex $cmd"}, "review-dispatch.py"),
             ("variable in single-quoted iex '$c exec review'", "run_command", {"CommandLine": "$c = 'codex'; iex '$c exec review'"}, "Variable-indirect"),
