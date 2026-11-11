@@ -4965,6 +4965,41 @@ _GIT_BRANCH_FORBIDDEN_OPS = frozenset((
 ))
 _GIT_BRANCH_REQ_VALUE = frozenset(("--points-at", "-u", "--set-upstream-to", "--format", "--sort"))
 _GIT_BRANCH_OPT_EQ = frozenset(("--abbrev", "--color", "--column", "--contains", "--no-contains", "--merged", "--no-merged"))
+_GIT_FETCH_PULL_FORBIDDEN_LONGS = frozenset(("--refmap", "--no-refmap", "--stdin", "--no-stdin"))
+_GIT_FETCH_PULL_REQ_VALUE_LONGS = frozenset((
+    "--depth", "--deepen", "--shallow-since", "--shallow-exclude", "--negotiation-tip", "--negotiation-restrict",
+    "--negotiation-include", "--upload-pack", "--server-option", "--filter", "--submodule-prefix", "--cleanup",
+    "--strategy", "--strategy-option", "--recurse-submodules-default",
+))
+_GIT_FETCH_PULL_OPT_EQ_LONGS = frozenset((
+    "--recurse-submodules", "--rebase", "--log", "--signoff", "--gpg-sign", "--jobs",
+))
+_GIT_FETCH_PULL_BOOL_LONGS = frozenset((
+    "--all", "--no-all", "--set-upstream", "--no-set-upstream", "--append", "--no-append", "--atomic", "--no-atomic",
+    "--force", "--no-force", "--multiple", "--no-multiple", "--tags", "--no-tags", "--prefetch", "--no-prefetch",
+    "--prune", "--no-prune", "--prune-tags", "--no-prune-tags", "--no-recurse-submodules", "--dry-run", "--no-dry-run",
+    "--porcelain", "--no-porcelain", "--write-fetch-head", "--no-write-fetch-head", "--keep", "--no-keep",
+    "--update-head-ok", "--no-update-head-ok", "--progress", "--no-progress", "--unshallow", "--refetch",
+    "--update-shallow", "--no-update-shallow", "--ipv4", "--no-ipv4", "--ipv6", "--no-ipv6", "--negotiate-only",
+    "--no-negotiate-only", "--auto-maintenance", "--no-auto-maintenance", "--auto-gc", "--no-auto-gc",
+    "--show-forced-updates", "--no-show-forced-updates", "--write-commit-graph", "--no-write-commit-graph",
+    "--no-rebase", "--stat", "--no-stat", "--compact-summary", "--no-compact-summary", "--no-log", "--no-signoff",
+    "--squash", "--no-squash", "--commit", "--no-commit", "--edit", "--no-edit", "--ff", "--no-ff", "--ff-only",
+    "--no-ff-only", "--verify", "--verify-signatures", "--no-verify-signatures", "--autostash", "--no-autostash",
+    "--no-gpg-sign", "--allow-unrelated-histories", "--no-allow-unrelated-histories", "--verbose", "--no-verbose",
+    "--quiet", "--no-quiet", "--no-jobs",
+))
+_GIT_PUSH_FORBIDDEN_LONGS = frozenset(("--repo", "--no-repo", "--all", "--branches", "--mirror"))
+_GIT_PUSH_REQ_VALUE_LONGS = frozenset(("--recurse-submodules", "--receive-pack", "--exec", "--push-option"))
+_GIT_PUSH_OPT_EQ_LONGS = frozenset(("--force-with-lease", "--signed"))
+_GIT_PUSH_BOOL_LONGS = frozenset((
+    "--verbose", "--no-verbose", "--quiet", "--no-quiet", "--no-all", "--no-branches", "--no-mirror",
+    "--delete", "--no-delete", "--tags", "--no-tags", "--dry-run", "--no-dry-run", "--porcelain", "--no-porcelain",
+    "--force", "--no-force", "--force-if-includes", "--no-force-if-includes", "--thin", "--no-thin",
+    "--set-upstream", "--no-set-upstream", "--progress", "--no-progress", "--prune", "--no-prune", "--verify",
+    "--follow-tags", "--no-follow-tags", "--atomic", "--no-atomic", "--ipv4", "--no-ipv4", "--ipv6", "--no-ipv6",
+    "--no-recurse-submodules", "--no-force-with-lease", "--no-signed", "--no-push-option",
+))
 
 
 def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | None:
@@ -5344,28 +5379,48 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                 i += 1
                 continue
             if not after_sep and tok != "-" and tok.startswith("-"):
+                if tok in ("-h", "--help"):
+                    return None
                 if not tok.startswith("--"):
                     j = 1
                     while j < len(tok):
                         ch = tok[j]
                         if ch == "h":
                             return None
-                        if ch in ("o", "j"):
+                        if ch in ("o", "j") if sub == "fetch" else ch in ("o", "s", "X"):
                             if j + 1 >= len(tok):
+                                if i + 1 >= len(rest):
+                                    return f"Incomplete `git {sub} -{ch}` option (AGENTS.md)."
                                 i += 1
                             break
+                        if sub == "pull" and ch in ("j", "S"):
+                            break
+                        if ch not in ("v", "q", "a", "f", "m", "t", "n", "p", "P", "k", "u", "4", "6", "r"):
+                            return ("Isotone develops straight on `main`; unrecognized "
+                                    f"`git {sub}` short option {tok!r} is forbidden (AGENTS.md).")
                         j += 1
                     i += 1
                     continue
-                fl = _flag(tok).lower()
-                if fl.startswith("--refm"):
-                    return ("Isotone develops straight on `main`; custom `git fetch` `--refmap` overrides "
-                            "are forbidden (AGENTS.md).")
-                if fl in ("--depth", "--deepen", "--shallow-since", "--shallow-exclude", "--negotiation-tip",
-                          "--upload-pack", "--server-option", "--jobs",
-                          "--recurse-submodules-default", "--submodule-prefix") and "=" not in tok:
-                    i += 2
+                fl = _flag(tok)
+                if fl in _GIT_FETCH_PULL_FORBIDDEN_LONGS:
+                    return ("Isotone develops straight on `main`; custom `git fetch`/`git pull` `--refmap` or "
+                            "`--stdin` refspecs are forbidden (AGENTS.md).")
+                if fl in _GIT_FETCH_PULL_REQ_VALUE_LONGS or (sub == "fetch" and fl == "--jobs"):
+                    if "=" not in tok:
+                        if i + 1 >= len(rest):
+                            return f"Incomplete `git {sub} {fl}` option (AGENTS.md)."
+                        i += 2
+                        continue
+                    i += 1
                     continue
+                if fl in _GIT_FETCH_PULL_OPT_EQ_LONGS:
+                    i += 1
+                    continue
+                if "=" not in tok and tok in _GIT_FETCH_PULL_BOOL_LONGS:
+                    i += 1
+                    continue
+                return ("Isotone develops straight on `main`; unrecognized, abbreviated, or forbidden "
+                        f"`git {sub}` option {tok!r} is forbidden (AGENTS.md).")
             else:
                 pos_fp.append(tok)
             i += 1
@@ -5404,17 +5459,40 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                             continue
                         if ch in ("o", "e"):
                             if j + 1 >= len(tok):
+                                if i + 1 >= len(rest):
+                                    return f"Incomplete `git push -{ch}` option (AGENTS.md)."
                                 i += 1
                             break
+                        if ch not in ("v", "q", "n", "f", "u", "4", "6"):
+                            return ("Isotone develops straight on `main`; unrecognized `git push` short option "
+                                    f"{tok!r} is forbidden (AGENTS.md).")
                         j += 1
                     i += 1
                     continue
                 fl = _flag(tok)
-                if fl == "--delete":
-                    delete_mode = True
-                if fl in ("--repo", "--receive-pack", "--exec", "--push-option") and "=" not in tok:
-                    i += 2
+                if fl in _GIT_PUSH_FORBIDDEN_LONGS:
+                    return ("Isotone develops straight on `main`; `git push` option "
+                            f"{fl!r} is forbidden (pass positional `<remote> main` instead; AGENTS.md).")
+                if fl in _GIT_PUSH_REQ_VALUE_LONGS:
+                    if "=" not in tok:
+                        if i + 1 >= len(rest):
+                            return f"Incomplete `git push {fl}` option (AGENTS.md)."
+                        i += 2
+                        continue
+                    i += 1
                     continue
+                if fl in _GIT_PUSH_OPT_EQ_LONGS:
+                    i += 1
+                    continue
+                if "=" not in tok and tok in _GIT_PUSH_BOOL_LONGS:
+                    if tok == "--delete":
+                        delete_mode = True
+                    elif tok == "--no-delete":
+                        delete_mode = False
+                    i += 1
+                    continue
+                return ("Isotone develops straight on `main`; unrecognized, abbreviated, or forbidden "
+                        f"`git push` option {tok!r} is forbidden (AGENTS.md).")
             else:
                 pos_push.append(tok)
             i += 1
@@ -5425,14 +5503,15 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
                         or remote.lower().startswith("file:"))
             for refspec in pos_push[1:]:
                 if delete_mode:
-                    if refspec.lstrip("+") in ("main", "refs/heads/main"):
+                    if refspec.lstrip("+") in ("main", "heads/main", "refs/heads/main", "HEAD", "@"):
                         return "Isotone develops straight on `main`; deleting `main` via `git push --delete` is forbidden (AGENTS.md)."
                     continue
                 if ":" in refspec:
                     src, dst = refspec.split(":", 1)
+                    src_clean = src.lstrip("+")
                     dst_clean = dst.lstrip("+")
-                    if not src:
-                        if dst_clean in ("main", "refs/heads/main"):
+                    if not src_clean:
+                        if dst_clean in ("main", "heads/main", "refs/heads/main", "HEAD", "@"):
                             return "Isotone develops straight on `main`; deleting `main` via push refspec is forbidden (AGENTS.md)."
                     elif dst_clean and dst_clean not in ("main", "refs/heads/main") \
                             and not dst_clean.startswith("refs/tags/"):
@@ -6420,6 +6499,10 @@ def _self_test() -> int:
         "bash -c 'pattern=codex; command -v \"$pattern\"'",
         "bash -c 'pattern=codex; eval \"rg -n $pattern scripts\"'",
         "bash -c 'patterns=(codex claude); for p in \"${patterns[@]}\"; do rg -n \"$p\" scripts; done'",
+        "git push -u origin main",
+        "git push origin --delete feat/stale",
+        "git fetch --quiet origin +refs/heads/main:refs/remotes/origin/main",
+        "git pull --ff-only origin main",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -6632,6 +6715,13 @@ def _self_test() -> int:
             ("git -c alias.co=checkout override", "run_command", {"CommandLine": "git -c alias.co=checkout co -b feat/foo"}, "alias.*"),
             ("git-checkout direct binary branch", "run_command", {"CommandLine": "git-checkout -b feat/foo"}, "git checkout -b"),
             ("git push -odelete=1 attached value does not set delete_mode", "run_command", {"CommandLine": "git push -odelete=1 . HEAD:feat"}, "non-`main`"),
+            ("git push --repo=. non-main refspec", "run_command", {"CommandLine": "git push --repo=. HEAD:feat"}, "--repo"),
+            ("git push --repo=origin --delete main", "run_command", {"CommandLine": "git push --repo=origin --delete main"}, "--repo"),
+            ("git push abbreviated --rep=. non-main", "run_command", {"CommandLine": "git push --rep=. HEAD:feat"}, "abbreviated"),
+            ("git push +:main force-delete refspec", "run_command", {"CommandLine": "git push origin +:main"}, "deleting `main`"),
+            ("git push -d --no-delete resets delete_mode", "run_command", {"CommandLine": "git push -d --no-delete . HEAD:feat"}, "non-`main`"),
+            ("git fetch --stdin refspec bypass", "run_command", {"CommandLine": "git fetch --stdin origin"}, "--stdin"),
+            ("git fetch abbreviated --refm bypass", "run_command", {"CommandLine": "git fetch --refm=+refs/heads/*:refs/heads/* origin"}, "abbreviated"),
             ("git symbolic-ref HEAD off main", "run_command", {"CommandLine": "git symbolic-ref HEAD refs/heads/feat"}, "repointing `HEAD`"),
             ("git symbolic-ref -m reason HEAD off main", "run_command", {"CommandLine": "git symbolic-ref -m reason HEAD refs/heads/feat"}, "repointing `HEAD`"),
             ("git update-ref non-main local branch", "run_command", {"CommandLine": "git update-ref refs/heads/feat HEAD"}, "git update-ref"),

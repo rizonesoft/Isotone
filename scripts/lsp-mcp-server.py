@@ -18,12 +18,14 @@ leaves clangd or pyright-langserver running. Stdlib only.
 from __future__ import annotations
 
 import collections
+import ctypes
 import hashlib
 import importlib.util
 import io
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import sys
 import tempfile
@@ -59,6 +61,85 @@ SYMBOL_KINDS = {
 }
 
 SEVERITY_NAMES = {1: "Error", 2: "Warning", 3: "Information", 4: "Hint"}
+
+CREATE_SUSPENDED = 0x00000004
+JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS = 9
+JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
+
+
+class _WinIoCounters(ctypes.Structure):
+    _fields_ = [("ReadOperationCount", ctypes.c_uint64), ("WriteOperationCount", ctypes.c_uint64),
+                ("OtherOperationCount", ctypes.c_uint64), ("ReadTransferCount", ctypes.c_uint64),
+                ("WriteTransferCount", ctypes.c_uint64), ("OtherTransferCount", ctypes.c_uint64)]
+
+
+class _WinJobBasicLimit(ctypes.Structure):
+    _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                ("LimitFlags", ctypes.c_uint32), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", ctypes.c_uint32),
+                ("Affinity", ctypes.c_size_t), ("PriorityClass", ctypes.c_uint32),
+                ("SchedulingClass", ctypes.c_uint32)]
+
+
+class _WinJobExtendedLimit(ctypes.Structure):
+    _fields_ = [("BasicLimitInformation", _WinJobBasicLimit), ("IoInfo", _WinIoCounters),
+                ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+
+_WIN32_JOB_APIS = None
+
+
+def _win32_job_apis():
+    global _WIN32_JOB_APIS
+    if _WIN32_JOB_APIS is None:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+        kernel32.CreateJobObjectW.restype = ctypes.c_void_p
+        kernel32.SetInformationJobObject.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32]
+        kernel32.SetInformationJobObject.restype = ctypes.c_int
+        kernel32.AssignProcessToJobObject.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        kernel32.AssignProcessToJobObject.restype = ctypes.c_int
+        kernel32.TerminateJobObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        kernel32.TerminateJobObject.restype = ctypes.c_int
+        kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+        kernel32.CloseHandle.restype = ctypes.c_int
+        ntdll = ctypes.WinDLL("ntdll")
+        ntdll.NtResumeProcess.argtypes = [ctypes.c_void_p]
+        ntdll.NtResumeProcess.restype = ctypes.c_int32
+        _WIN32_JOB_APIS = kernel32, ntdll
+    return _WIN32_JOB_APIS
+
+
+def _create_backend_job() -> int:
+    kernel32, _ = _win32_job_apis()
+    job = kernel32.CreateJobObjectW(None, None)
+    if not job:
+        raise ctypes.WinError(ctypes.get_last_error())
+    info = _WinJobExtendedLimit()
+    info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+    if not kernel32.SetInformationJobObject(job, JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS, ctypes.byref(info),
+                                            ctypes.sizeof(info)):
+        err = ctypes.get_last_error()
+        kernel32.CloseHandle(job)
+        raise ctypes.WinError(err)
+    return int(job)
+
+
+def _assign_and_resume_backend_job(job: int, proc: subprocess.Popen) -> None:
+    kernel32, ntdll = _win32_job_apis()
+    handle = ctypes.c_void_p(int(proc._handle))  # type: ignore[attr-defined]
+    if not kernel32.AssignProcessToJobObject(ctypes.c_void_p(job), handle):
+        raise ctypes.WinError(ctypes.get_last_error())
+    status = ntdll.NtResumeProcess(handle)
+    if status != 0:
+        raise OSError(f"NtResumeProcess returned 0x{status & 0xFFFFFFFF:08x}")
+
+
+def _close_backend_job(job: int) -> None:
+    kernel32, _ = _win32_job_apis()
+    kernel32.TerminateJobObject(ctypes.c_void_p(job), 1)
+    kernel32.CloseHandle(ctypes.c_void_p(job))
 
 
 class LspToolError(Exception):
@@ -183,6 +264,7 @@ class LspBackend:
         self._io_lock = threading.Lock()
         self._cond = threading.Condition()
         self._proc: subprocess.Popen | None = None
+        self._job: int | None = None
         self._next_id = 0
         self._next_doc_version = 0
         self._responses: dict[int, dict] = {}
@@ -226,8 +308,11 @@ class LspBackend:
     def stop(self) -> bool:
         with self._op_lock:
             with self._cond:
-                alive = self._proc is not None and self._proc.poll() is None
+                proc, job = self._proc, self._job
+                alive = proc is not None and proc.poll() is None
             if not alive:
+                if proc is not None or job is not None:
+                    self._kill_proc(proc, job)
                 self._reset_state()
                 return False
             self._shutdown_locked()
@@ -236,6 +321,7 @@ class LspBackend:
     def _reset_state(self) -> None:
         with self._cond:
             self._proc = None
+            self._job = None
             self._next_doc_version = 0
             self._responses.clear()
             self._diagnostics.clear()
@@ -351,13 +437,25 @@ class LspBackend:
         if self._proc is not None and self._proc.poll() is None:
             self._last_used = time.monotonic()
             return
+        if self._proc is not None or self._job is not None:
+            self._kill_proc(self._proc, self._job)
         self._reset_state()
         try:
             command, env = self._resolver()
         except Exception as exc:
             raise LspToolError(f"cannot start {self.name}: {exc}") from exc
         self._command = list(command)
-        flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        job: int | None = None
+        proc: subprocess.Popen | None = None
+        if os.name == "nt":
+            try:
+                job = _create_backend_job()
+            except OSError as exc:
+                raise LspToolError(f"failed to create job object for {self.name}: {exc}") from exc
+            flags = subprocess.CREATE_NO_WINDOW | CREATE_SUSPENDED
+            popen_extra: dict = {"creationflags": flags}
+        else:
+            popen_extra = {"start_new_session": True}
         try:
             proc = subprocess.Popen(
                 command,
@@ -366,12 +464,16 @@ class LspBackend:
                 stderr=subprocess.PIPE,
                 cwd=self.root,
                 env=env,
-                creationflags=flags,
+                **popen_extra,
             )
+            if os.name == "nt" and job is not None:
+                _assign_and_resume_backend_job(job, proc)
         except OSError as exc:
+            self._kill_proc(proc, job)
             raise LspToolError(f"failed to spawn {self.name} ({command[0]}): {exc}") from exc
         with self._cond:
             self._proc = proc
+            self._job = job
         threading.Thread(target=self._reader_loop, args=(proc,), daemon=True).start()
         if proc.stderr is not None:
             threading.Thread(target=self._stderr_drain, args=(proc.stderr,), daemon=True).start()
@@ -401,38 +503,55 @@ class LspBackend:
                 self._workspace_snapshot = self._take_workspace_snapshot()
             self._last_used = time.monotonic()
         except Exception:
-            self._kill_proc(proc)
+            self._kill_proc(proc, job)
             self._reset_state()
             raise
 
-    def _kill_proc(self, proc: subprocess.Popen | None) -> None:
-        if proc is None:
-            return
-        try:
-            if proc.poll() is None:
-                proc.terminate()
+    def _kill_proc(self, proc: subprocess.Popen | None, job: int | None = None) -> None:
+        if os.name == "nt":
+            if job is not None:
                 try:
-                    proc.wait(timeout=2.0)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-        except OSError:
-            pass
-        for pipe in (proc.stdin, proc.stdout, proc.stderr):
-            if pipe is not None:
-                try:
-                    pipe.close()
+                    _close_backend_job(job)
                 except OSError:
                     pass
+            if proc is not None:
+                try:
+                    if proc.poll() is None:
+                        proc.kill()
+                    proc.wait(timeout=2.0)
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
+        elif proc is not None:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError, OSError):
+                try:
+                    if proc.poll() is None:
+                        proc.kill()
+                except OSError:
+                    pass
+            try:
+                proc.wait(timeout=2.0)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        if proc is not None:
+            for pipe in (proc.stdin, proc.stdout, proc.stderr):
+                if pipe is not None:
+                    try:
+                        pipe.close()
+                    except OSError:
+                        pass
 
     def _shutdown_locked(self) -> None:
-        proc = self._proc
+        proc, job = self._proc, self._job
         if proc is not None and proc.poll() is None:
             try:
                 self._request_locked("shutdown", None, timeout=3.0)
                 self._send_notification_locked("exit", {})
+                proc.wait(timeout=1.0)
             except Exception:
                 pass
-        self._kill_proc(proc)
+        self._kill_proc(proc, job)
         self._reset_state()
 
     @staticmethod
@@ -1221,7 +1340,7 @@ def serve_stdio(server: IsotoneLspMcpServer, binary_in=None, binary_out=None) ->
 
 
 FAKE_LSP_CODE = r"""
-import json, sys, time, urllib.parse
+import json, os, sys, time, urllib.parse
 
 docs = {}
 
@@ -1283,11 +1402,19 @@ while True:
         break
     method = m.get("method")
     if method == "initialize":
+        hang_pid_file = os.environ.get("FAKE_LSP_HANG_SHUTDOWN_PID_FILE")
+        if hang_pid_file:
+            import subprocess as _sp
+            _child = _sp.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+            with open(hang_pid_file, "w", encoding="utf-8") as _pf:
+                _pf.write(str(_child.pid))
         send_msg({"jsonrpc": "2.0", "id": m["id"], "result": {"capabilities": {
             "hoverProvider": True, "definitionProvider": True, "referencesProvider": True,
             "documentSymbolProvider": True, "workspaceSymbolProvider": True,
         }}})
     elif method == "shutdown":
+        if os.environ.get("FAKE_LSP_HANG_SHUTDOWN_PID_FILE"):
+            time.sleep(60)
         send_msg({"jsonrpc": "2.0", "id": m["id"], "result": None})
     elif method == "exit":
         break
@@ -1573,6 +1700,70 @@ def _self_test() -> int:
                   "main.cpp: 0 diagnostics (clangd)" in wire_resp["result"]["content"][0]["text"], repr(wire_resp))
         finally:
             srv.close()
+
+        # Verify backend shutdown terminates descendant processes holding inherited pipes when shutdown times out.
+        def _pid_alive(pid: int) -> bool:
+            if os.name != "nt":
+                try:
+                    os.kill(pid, 0)
+                    return True
+                except ProcessLookupError:
+                    return False
+                except PermissionError:
+                    return True
+            kernel32, _ = _win32_job_apis()
+            kernel32.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+            kernel32.OpenProcess.restype = ctypes.c_void_p
+            kernel32.GetExitCodeProcess.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32)]
+            kernel32.GetExitCodeProcess.restype = ctypes.c_int
+            h = kernel32.OpenProcess(0x1000, 0, pid)
+            if not h:
+                return ctypes.get_last_error() == 5
+            try:
+                code = ctypes.c_uint32()
+                return bool(kernel32.GetExitCodeProcess(h, ctypes.byref(code))) and code.value == 259
+            finally:
+                kernel32.CloseHandle(h)
+
+        descendant_pid_file = os.path.join(tmp, "descendant.pid")
+        hang_env = {**os.environ, "FAKE_LSP_HANG_SHUTDOWN_PID_FILE": descendant_pid_file}
+        hang_srv = IsotoneLspMcpServer(
+            root=ws,
+            resolvers={
+                "clangd": lambda: ([sys.executable, "-u", fake_script], dict(hang_env)),
+                "pyright": lambda: ([sys.executable, "-u", fake_script], dict(hang_env)),
+            },
+            idle_seconds=60.0,
+        )
+        descendant_pid: int | None = None
+        try:
+            _ = hang_srv.handle_message({"jsonrpc": "2.0", "id": 30, "method": "tools/call",
+                                         "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "a.py"}}})
+            with open(descendant_pid_file, encoding="utf-8") as pfh:
+                descendant_pid = int(pfh.read().strip())
+            check("fake LSP spawned a live descendant process", _pid_alive(descendant_pid), f"pid={descendant_pid}")
+            t0 = time.monotonic()
+            stop_resp = hang_srv.handle_message({"jsonrpc": "2.0", "id": 31, "method": "tools/call",
+                                                 "params": {"name": "lsp_status", "arguments": {"action": "stop"}}})
+            elapsed = time.monotonic() - t0
+            for _ in range(20):
+                if not _pid_alive(descendant_pid):
+                    break
+                time.sleep(0.05)
+            check("backend stop kills unresponsive process tree without blocking on descendant pipes",
+                  stop_resp is not None and not stop_resp["result"]["isError"]
+                  and elapsed < 10.0 and not _pid_alive(descendant_pid),
+                  f"elapsed={elapsed:.2f}s alive={_pid_alive(descendant_pid)} resp={stop_resp!r}")
+        finally:
+            hang_srv.close()
+            if descendant_pid and _pid_alive(descendant_pid):
+                if os.name == "nt":
+                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(descendant_pid)], capture_output=True)
+                else:
+                    try:
+                        os.kill(descendant_pid, signal.SIGKILL)
+                    except OSError:
+                        pass
 
     # Verify checked-in Antigravity workspace plugin manifests resolve cleanly.
     plugin_json = os.path.join(REPO, ".agents", "plugins", "isotone-lsp", "plugin.json")
