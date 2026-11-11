@@ -697,6 +697,9 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
             ("an incremental PowerShell `$gitArgs += @('-m', 'fix')` array splat hook bypass", "deny",
              {"name": "run_command", "args": {
                  "CommandLine": "$gitArgs = @('commit', '-n'); $gitArgs += @('-m', 'fix'); git @gitArgs"}}),
+            ("a PowerShell indexed `$gitArgs[3] = '-n'` array mutation hook bypass", "deny",
+             {"name": "run_command", "args": {
+                 "CommandLine": "$gitArgs = @('commit', '-m', 'repair', '--quiet'); $gitArgs[3] = '-n'; git @gitArgs"}}),
             ("a clustered `git am -qn` hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "git am -qn patch.mbox"}}),
             ("a PowerShell command with an inline `# ...; codex` comment", "allow",
@@ -2846,7 +2849,7 @@ def _blocked_cli_reason(head: str) -> str:
             f"(standards/delegation.md).")
 
 
-_PS_ASSIGN_LHS = re.compile(r"^\$(?:\{[A-Za-z_][\w:]*\}|[A-Za-z_][\w:]*)$")
+_PS_ASSIGN_LHS = re.compile(r"^\$(?:\{[A-Za-z_][\w:]*\}|[A-Za-z_][\w:]*)(?:\.[A-Za-z_]\w*|\[[^\]]*\])*$")
 _PS_ASSIGN_OPS = frozenset(("=", "+=", "-=", "*=", "/=", "%=", "??="))
 
 
@@ -2860,6 +2863,15 @@ def _strip_leading_ps_lhs_types(cur: list[_CmdTok]) -> list[_CmdTok]:
             plen = len(cur[0].raw) - len(stripped_raw)
             nstart = cur[0].rel_start + plen if cur[0].rel_start >= 0 else -1
             cur[0] = _CmdTok(_strip_ps_type_prefix(cur[0].val), stripped_raw, "", nstart, cur[0].rel_end)
+    if cur and not cur[0].quote and cur[0].val.startswith("$") and not cur[0].val.startswith("$("):
+        while len(cur) >= 2 and (
+                cur[0].val.count("[") > cur[0].val.count("]")
+                or (cur[0].val.count("[") == cur[0].val.count("]") and not cur[1].quote and cur[1].raw.startswith("["))):
+            merged_val = cur[0].val + cur[1].val
+            merged_raw = cur[0].raw + cur[1].raw
+            cur = [_CmdTok(merged_val, merged_raw, "", cur[0].rel_start, cur[1].rel_end), *cur[2:]]
+            if cur[0].val.count("[") == cur[0].val.count("]") and (len(cur) < 2 or not cur[1].raw.startswith("[")):
+                break
     return cur
 
 
@@ -3035,9 +3047,10 @@ def _scan_ps_rhs_end(unquoted: str, start: int) -> int:
 
 
 _PS_VAR_EQ_RE = re.compile(r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*(\?\?=|[+\-*/%]?=)(?!=)")
-_PS_PROP_EQ_RE = re.compile(
-    r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))"
-    r"(?:\.([A-Za-z_]\w*)|\[\s*(['\"]_*['\"])\s*\])\s*=(?!=)")
+_PS_DOT_PROP_EQ_RE = re.compile(
+    r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\.([A-Za-z_]\w*)\s*(\?\?=|[+\-*/%]?=)(?!=)")
+_PS_BRACKET_LHS_RE = re.compile(r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*\[")
+_PS_ASSIGN_OP_HEAD_RE = re.compile(r"^\s*(\?\?=|[+\-*/%]?=)(?!=)")
 _PS_VAR_DESTRUCT_ITEM = re.compile(r"^\s*\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*")
 _PS_REF_BRACED = re.compile(r"^[$@]\{([A-Za-z_][\w:]*)\}")
 _PS_REF_BARE = re.compile(r"^[$@]([A-Za-z_]\w*(?::[A-Za-z_]\w*)?)")
@@ -3092,16 +3105,11 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
             if rhs_val and any(names):
                 found.append(_PsAssignSpan([n for n in names if n], rhs_val, lhs_start, eq_end, rhs_end, False, False, last_op))
             continue
-        pm = _PS_PROP_EQ_RE.match(cur_u)
+        pm = _PS_DOT_PROP_EQ_RE.match(cur_u)
         if pm:
             pv_name = pm.group(1) or pm.group(2) or ""
-            if pm.group(3):
-                pkey = pm.group(3)
-            else:
-                q_s = lhs_start + type_len + pm.start(4)
-                q_e = lhs_start + type_len + pm.end(4)
-                q_toks, _ = _tokenize_command(command[q_s:q_e])
-                pkey = q_toks[0].tokens[0].val if q_toks and q_toks[0].tokens else ""
+            pkey = pm.group(3)
+            pop = "prop" + pm.group(4)
             eq_end = lhs_start + type_len + pm.end()
             pos = eq_end
             while pos < len(command) and command[pos] in " \t":
@@ -3109,8 +3117,33 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
             rhs_end = _scan_ps_rhs_end(unquoted, pos)
             rhs_val = command[pos:rhs_end].strip()
             if pv_name and pkey and rhs_val:
-                found.append(_PsAssignSpan([pv_name], rhs_val, lhs_start, eq_end, rhs_end, False, False, "prop=", pkey))
+                found.append(_PsAssignSpan([pv_name], rhs_val, lhs_start, eq_end, rhs_end, False, False, pop, pkey))
             continue
+        bm_idx = _PS_BRACKET_LHS_RE.match(cur_u)
+        if bm_idx:
+            pv_name = bm_idx.group(1) or bm_idx.group(2) or ""
+            open_br = lhs_start + type_len + bm_idx.end() - 1
+            bdepth_i = 1
+            close_br = open_br + 1
+            while close_br < len(unquoted) and bdepth_i > 0:
+                if unquoted[close_br] == "[":
+                    bdepth_i += 1
+                elif unquoted[close_br] == "]":
+                    bdepth_i -= 1
+                close_br += 1
+            om = _PS_ASSIGN_OP_HEAD_RE.match(unquoted[close_br:]) if bdepth_i == 0 else None
+            if om:
+                raw_idx_expr = command[open_br + 1:close_br - 1].strip()
+                iop = "idx" + om.group(1)
+                eq_end = close_br + om.end()
+                pos = eq_end
+                while pos < len(command) and command[pos] in " \t":
+                    pos += 1
+                rhs_end = _scan_ps_rhs_end(unquoted, pos)
+                rhs_val = command[pos:rhs_end].strip()
+                if pv_name and raw_idx_expr and rhs_val:
+                    found.append(_PsAssignSpan([pv_name], rhs_val, lhs_start, eq_end, rhs_end, False, False, iop, raw_idx_expr))
+                continue
         first_d = _PS_VAR_DESTRUCT_ITEM.match(cur_u)
         if first_d and cur_u[first_d.end():first_d.end() + 1] == ",":
             dnames = [first_d.group(1) or first_d.group(2) or ""]
@@ -3205,10 +3238,10 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
             found.append(_PsAssignSpan([loop_v], coll_text, fm.start(), fm.start(3), fm.end(), False, True))
     for mm in re.finditer(
             r"(?:^|[;&|{(\n])\s*(?:\$null\s*=\s*|\[void\]\s*)*"
-            r"(\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\.(Add|AddRange)\s*\()",
+            r"(\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\.(Add|AddRange|Insert|InsertRange|SetValue|set_Item)\s*\()",
             unquoted, re.IGNORECASE):
         mv_name = mm.group(2) or mm.group(3) or ""
-        m_kind = ".addrange" if mm.group(4).lower() == "addrange" else ".add"
+        m_kind = "." + mm.group(4).lower()
         open_p = mm.end(1) - 1
         close_p = _scan_matching_paren(command, open_p, in_posix=False)
         arg_inside = command[open_p + 1:close_p].strip()
@@ -3223,6 +3256,69 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
             deduped.append(item)
             last_eq = item.eq_end
     return deduped
+
+
+def _split_ps_call_args(raw_args: str) -> list[str]:
+    """Split a PowerShell `.Method(...)` argument list on top-level commas while preserving nested `@(...)`, `(...)`,
+    `[...]`, and `@{...}` expressions."""
+    unq = _mask_quotes_same_len(raw_args, in_posix=False)
+    args: list[str] = []
+    start = 0
+    pdepth = bdepth = kdepth = 0
+    for idx, ch in enumerate(unq):
+        if ch == "(":
+            pdepth += 1
+        elif ch == ")" and pdepth > 0:
+            pdepth -= 1
+        elif ch == "{":
+            bdepth += 1
+        elif ch == "}" and bdepth > 0:
+            bdepth -= 1
+        elif ch == "[":
+            kdepth += 1
+        elif ch == "]" and kdepth > 0:
+            kdepth -= 1
+        elif pdepth == 0 and bdepth == 0 and kdepth == 0 and ch == ",":
+            args.append(raw_args[start:idx].strip())
+            start = idx + 1
+    tail = raw_args[start:].strip()
+    if tail or args:
+        args.append(tail)
+    return args
+
+
+def _eval_ps_int_expr(expr: str) -> int | None:
+    """Evaluate a simple integer or `a +/- b` integer expression (after variable expansion), or return `None`."""
+    s = expr.strip()
+    while s.startswith("(") and s.endswith(")") and _scan_matching_paren(s, 0, in_posix=False) == len(s) - 1:
+        s = s[1:-1].strip()
+    if len(s) >= 2 and s[0] == s[-1] and s[0] in ("'", '"'):
+        s = s[1:-1].strip()
+    m = re.fullmatch(r"(-?\d+)(?:\s*([+-])\s*(-?\d+))?", s)
+    if not m:
+        return None
+    lhs = int(m.group(1))
+    if m.group(2) is None:
+        return lhs
+    rhs = int(m.group(3))
+    return lhs + rhs if m.group(2) == "+" else lhs - rhs
+
+
+def _apply_ps_array_set(elems: list[str], idx_val: int, val_str: str, op_sfx: str) -> list[str]:
+    out_e = list(elems)
+    eff = idx_val if idx_val >= 0 else len(out_e) + idx_val
+    if 0 <= eff < len(out_e):
+        if op_sfx == "+=":
+            out_e[eff] = out_e[eff] + val_str
+        elif op_sfx == "??=":
+            if not out_e[eff]:
+                out_e[eff] = val_str
+        else:
+            out_e[eff] = val_str
+    elif 0 <= idx_val < 256:
+        out_e.extend([""] * (idx_val - len(out_e)))
+        out_e.append(val_str)
+    return out_e
 
 
 def _split_ps_array_items(raw_inner: str) -> list[str]:
@@ -3316,11 +3412,20 @@ def _eval_ps_rhs_binding(exp_rhs: str, depth: int = 0) -> dict | None:
     body = _strip_ps_type_prefix(raw_trimmed).strip()
     if not body or body.lower() == "$null":
         return None
-    if (re.fullmatch(r"::new\(\s*\)", body, re.IGNORECASE)
-            or re.match(
-                r"^New-Object\s+(?:-TypeName\s+)?['\"]?(?:System\.)?Collections\.(?:Generic\.List|ArrayList)\b",
-                raw_trimmed, re.IGNORECASE)):
+    m_new_ctor = re.fullmatch(r"::new\(\s*(\d+)?\s*\)", body, re.IGNORECASE)
+    if m_new_ctor:
+        sz = min(int(m_new_ctor.group(1)), 256) if m_new_ctor.group(1) else 0
+        return _make_ps_array_binding([""] * sz)
+    if re.match(
+            r"^New-Object\s+(?:-TypeName\s+)?['\"]?(?:System\.)?Collections\.(?:Generic\.List|ArrayList)\b",
+            raw_trimmed, re.IGNORECASE):
         return _make_ps_array_binding([])
+    m_arr_obj = re.match(
+        r"^New-Object\s+(?:-TypeName\s+)?['\"]?[A-Za-z0-9_.\[\]]+\[\]['\"]?(?:\s+(?:-ArgumentList\s+)?(\d+))?\s*$",
+        raw_trimmed, re.IGNORECASE)
+    if m_arr_obj:
+        sz = min(int(m_arr_obj.group(1)), 256) if m_arr_obj.group(1) else 0
+        return _make_ps_array_binding([""] * sz)
     if body.startswith("@{") and body.endswith("}") and _scan_matching_brace(body, 1) == len(body) - 1:
         inner_ht = body[2:-1]
         unq_ht = _mask_quotes_same_len(inner_ht, in_posix=False)
@@ -3532,20 +3637,49 @@ def _expand_ps_vars_chunk(chunk: str, ps_env: dict[str, dict]) -> str:
                 if b is not None:
                     after_v = i + m_u.end()
                     if ch == "$":
-                        m_idx = re.match(r"^\[\s*(-?\d+)\s*\]", chunk[after_v:])
-                        if m_idx:
-                            idx_val = int(m_idx.group(1))
-                            elems = b["elems"]
-                            out.append(_ps_splat_elem(elems[idx_val]) if -len(elems) <= idx_val < len(elems) else "''")
-                            i = after_v + m_idx.end()
-                            continue
-                        m_key = re.match(r"^\[\s*(?:'([^']*)'|\"([^\"]*)\")\s*\]", chunk[after_v:])
-                        if m_key:
-                            pkey = (m_key.group(1) if m_key.group(1) is not None else m_key.group(2)).lower()
-                            if pkey in b["props"]:
-                                out.append(b["props"][pkey])
-                                i = after_v + m_key.end()
-                                continue
+                        if chunk[after_v:after_v + 1] == "[":
+                            unq_tail = _mask_quotes_same_len(chunk[after_v:], in_posix=False)
+                            bdepth_r = 1
+                            k_br = 1
+                            while k_br < len(unq_tail) and bdepth_r > 0:
+                                if unq_tail[k_br] == "[":
+                                    bdepth_r += 1
+                                elif unq_tail[k_br] == "]":
+                                    bdepth_r -= 1
+                                k_br += 1
+                            if bdepth_r == 0:
+                                exp_sub = _expand_ps_vars_chunk(chunk[after_v + 1:after_v + k_br - 1], ps_env).strip()
+                                if b.get("kind") == "array" or (b["elems"] and not b["props"]):
+                                    idx_val = _eval_ps_int_expr(exp_sub)
+                                    if idx_val is not None:
+                                        elems = b["elems"]
+                                        out.append(_ps_splat_elem(elems[idx_val])
+                                                   if -len(elems) <= idx_val < len(elems) else "''")
+                                        i = after_v + k_br
+                                        continue
+                                    m_rng_r = re.fullmatch(r"(-?\d+)\s*\.\.\s*(-?\d+)", exp_sub)
+                                    if m_rng_r:
+                                        elems = b["elems"]
+                                        lo_v, hi_v = int(m_rng_r.group(1)), int(m_rng_r.group(2))
+                                        lo_i = lo_v if lo_v >= 0 else max(0, len(elems) + lo_v)
+                                        hi_i = hi_v if hi_v >= 0 else max(0, len(elems) + hi_v)
+                                        step_i = 1 if lo_i <= hi_i else -1
+                                        sliced = [elems[p] for p in range(lo_i, hi_i + step_i, step_i)
+                                                  if 0 <= p < len(elems)]
+                                        out.append(("@(" + ", ".join(_ps_sq(x) for x in sliced) + ")")
+                                                   if _ps_offset_is_expr_pos(chunk, i)
+                                                   else " ".join(_ps_splat_elem(x) for x in sliced))
+                                        i = after_v + k_br
+                                        continue
+                                if b["props"]:
+                                    k_segs, _ = _tokenize_command(exp_sub)
+                                    pkey = (k_segs[0].tokens[0].val
+                                            if len(k_segs) == 1 and len(k_segs[0].tokens) == 1
+                                            else exp_sub.strip("'\"")).lower()
+                                    if pkey in b["props"]:
+                                        out.append(b["props"][pkey])
+                                        i = after_v + k_br
+                                        continue
                         m_prop = re.match(r"^\.([A-Za-z_]\w*)", chunk[after_v:])
                         if m_prop and m_prop.group(1).lower() in b["props"]:
                             out.append(b["props"][m_prop.group(1).lower()])
@@ -3561,6 +3695,26 @@ def _expand_ps_vars_chunk(chunk: str, ps_env: dict[str, dict]) -> str:
         out.append(ch)
         i += 1
     return "".join(out)
+
+
+def _lookup_sh_sub(b: dict, sub_k: str, sh_env: dict[str, dict]) -> str | None:
+    exp_sub = _expand_sh_vars_chunk(sub_k, sh_env).strip().strip("'\"")
+    if re.fullmatch(r"[A-Za-z_]\w*", exp_sub) and exp_sub in sh_env:
+        cand_s = sh_env[exp_sub].get("raw_sval", "").strip()
+        if _eval_ps_int_expr(cand_s) is not None:
+            exp_sub = cand_s
+    assoc = b.get("assoc_map")
+    if assoc and exp_sub in assoc:
+        return assoc[exp_sub]
+    idx_v = _eval_ps_int_expr(exp_sub)
+    if idx_v is not None:
+        imap = b.get("idx_map")
+        if imap is not None:
+            eff_i = (max(imap.keys()) + 1 + idx_v) if (idx_v < 0 and imap) else idx_v
+            return imap.get(eff_i, "")
+        elems = b["elems"]
+        return elems[idx_v] if -len(elems) <= idx_v < len(elems) else ""
+    return None
 
 
 def _expand_sh_vars_chunk(chunk: str, sh_env: dict[str, dict]) -> str:
@@ -3623,10 +3777,9 @@ def _expand_sh_vars_chunk(chunk: str, sh_env: dict[str, dict]) -> str:
                             out.append('" "'.join(_sh_dq_esc(x) for x in b["elems"]))
                         elif sub_k == "*":
                             out.append(_sh_dq_esc(" ".join(b["elems"])))
-                        elif sub_k is not None and re.fullmatch(r"-?\d+", sub_k.strip()):
-                            idx_v = int(sub_k.strip())
-                            elems = b["elems"]
-                            out.append(_sh_dq_esc(elems[idx_v]) if -len(elems) <= idx_v < len(elems) else "")
+                        elif sub_k is not None:
+                            looked = _lookup_sh_sub(b, sub_k, sh_env)
+                            out.append(_sh_dq_esc(looked) if looked is not None else b["dq"])
                         else:
                             out.append(b["dq"])
                         i += m_sb.end()
@@ -3651,12 +3804,9 @@ def _expand_sh_vars_chunk(chunk: str, sh_env: dict[str, dict]) -> str:
                 sub_k = m_ub.group(2)
                 if sub_k in (None, "@", "*"):
                     out.append(b["splat"])
-                elif re.fullmatch(r"-?\d+", sub_k.strip()):
-                    idx_v = int(sub_k.strip())
-                    elems = b["elems"]
-                    out.append(_sh_splat_elem(elems[idx_v]) if -len(elems) <= idx_v < len(elems) else "''")
                 else:
-                    out.append(b["splat"])
+                    looked = _lookup_sh_sub(b, sub_k, sh_env)
+                    out.append((_sh_splat_elem(looked) if looked else "''") if looked is not None else b["splat"])
                 i += m_ub.end()
                 continue
             m_up = _SH_REF_BARE.match(tail_u)
@@ -3674,21 +3824,27 @@ def _ps_next_top_rebind(unquoted: str, ps_spans: list[_PsAssignSpan], cur_idx: i
     for next_sp in ps_spans[cur_idx + 1:]:
         if target not in (n.lower() for n in next_sp.names):
             continue
-        if next_sp.op != "=":
+        if not (next_sp.op in ("=", "+=", "??=", ".add", ".addrange", ".insert", ".insertrange", ".setvalue", ".set_item")
+                or next_sp.op.startswith(("idx", "prop"))):
             continue
         prefix_u = unquoted[:next_sp.lhs_start]
         if prefix_u.count("(") == prefix_u.count(")") and prefix_u.count("{") == prefix_u.count("}"):
-            return next_sp.lhs_start
+            return next_sp.rhs_end
     return len(unquoted)
 
 
 def _ps_var_in_exec_pos(command: str, start_pos: int, end_pos: int, vname_raw: str,
-                        binding: dict | None, has_cli_fallback: bool, is_foreach: bool) -> bool:
+                        binding: dict | None, has_cli_fallback: bool, is_foreach: bool,
+                        ps_env: dict[str, dict] | None = None) -> bool:
     """True when PowerShell variable `vname_raw` (holding or resolving a blocked CLI) is referenced in an executable
     position within `command[start_pos:end_pos]`, rather than as an ordinary command argument."""
     tail = command[start_pos:end_pos]
     if not tail or ("$" not in tail and "@" not in tail):
         return False
+    if ps_env:
+        other_env = {k: v for k, v in ps_env.items() if k != vname_raw.lower()}
+        if other_env:
+            tail = _expand_ps_vars_chunk(tail, other_env)
     vesc = re.escape(vname_raw)
     base_var = rf"(?:\{{{vesc}\}}|{vesc}(?![\w:]))"
     exec_refs: list[str] = []
@@ -3705,7 +3861,7 @@ def _ps_var_in_exec_pos(command: str, start_pos: int, end_pos: int, vname_raw: s
             for idx_e, el in enumerate(elems):
                 if _bare(el).strip("'\"") in _AGY_BLOCKED_CLIS:
                     neg_e = idx_e - len(elems)
-                    exec_refs.append(rf"\${base_var}\[\s*(?:{idx_e}|{neg_e})\s*\]")
+                    exec_refs.append(rf"\${base_var}\[\s*['\"]?(?:{idx_e}|{neg_e})['\"]?\s*\]")
                     if idx_e == 0:
                         is_arr_head_cli = True
             exec_refs.append(rf"\${base_var}\[\s*[$@][^\]]+\]")
@@ -3829,7 +3985,7 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                         if b_item is not None:
                             end_d = _ps_next_top_rebind(unquoted, ps_spans, idx_sp, dname)
                             if b_item["has_cli"] and _ps_var_in_exec_pos(
-                                    command, span.rhs_end, end_d, dname, b_item, False, False):
+                                    command, span.rhs_end, end_d, dname, b_item, False, False, ps_env):
                                 return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` "
                                         "bypass delegation and dispatcher gates (standards/delegation.md).")
                             _bind_ps_var(ps_env, dname, b_item)
@@ -3855,14 +4011,65 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                             binding = prev_b
                         else:
                             binding = _eval_ps_rhs_binding(exp_rhs)
-                    elif span.op in (".add", ".addrange") and v0_key:
+                    elif span.op in (".add", ".addrange", ".insert", ".insertrange", ".setvalue", ".set_item") and v0_key:
+                        call_args = _split_ps_call_args(exp_rhs)
                         if span.op == ".add" and prev_b is not None and prev_b["kind"] == "hashtable":
-                            kv = _split_ps_comma_elements(exp_rhs)
-                            if len(kv) >= 2:
-                                vb = _eval_ps_rhs_binding(_ps_sq(kv[1]))
-                                vsplat_m = vb["splat"] if vb else _ps_sq(kv[1])
-                                binding = _make_ps_ht_binding(
-                                    prev_b["ht_items"] + [(kv[0], vsplat_m, bool(vb and vb["has_cli"]))])
+                            if len(call_args) >= 2:
+                                k_add = call_args[0].strip("'\"")
+                                vb = _eval_ps_rhs_binding(call_args[1])
+                                vsplat_m = vb["splat"] if vb else call_args[1]
+                                ehc_m = bool((vb and vb["has_cli"]) or _AGY_CLI_WORD.search(call_args[1]))
+                                binding = _make_ps_ht_binding(prev_b["ht_items"] + [(k_add, vsplat_m, ehc_m)])
+                            else:
+                                binding = prev_b
+                        elif span.op in (".insert", ".insertrange"):
+                            elems_c = list(prev_b["elems"]) if prev_b is not None else []
+                            if len(call_args) >= 2:
+                                ins_idx = _eval_ps_int_expr(call_args[0])
+                                ins_b = _eval_ps_rhs_binding(call_args[1])
+                                ins_items = (ins_b["elems"] if ins_b is not None
+                                             else _split_ps_comma_elements(call_args[1]))
+                                if span.op == ".insert" and ins_b is not None and len(ins_b["elems"]) > 1:
+                                    ins_items = [" ".join(ins_b["elems"])]
+                                eff_ins = (ins_idx if ins_idx >= 0 else max(0, len(elems_c) + ins_idx)) \
+                                    if ins_idx is not None else None
+                                if eff_ins is not None and 0 <= eff_ins <= len(elems_c):
+                                    elems_c[eff_ins:eff_ins] = ins_items
+                                else:
+                                    elems_c.extend(ins_items)
+                            binding = _make_ps_array_binding(elems_c)
+                        elif span.op == ".setvalue":
+                            elems_c = list(prev_b["elems"]) if prev_b is not None else []
+                            if len(call_args) >= 2:
+                                sv_idx = _eval_ps_int_expr(call_args[1])
+                                sv_b = _eval_ps_rhs_binding(call_args[0])
+                                sv_val = (sv_b["elems"][0] if sv_b is not None and sv_b["elems"]
+                                          else call_args[0].strip("'\""))
+                                elems_c = (_apply_ps_array_set(elems_c, sv_idx, sv_val, "=")
+                                           if sv_idx is not None else elems_c + [sv_val])
+                            binding = _make_ps_array_binding(elems_c)
+                        elif span.op == ".set_item":
+                            if len(call_args) >= 2:
+                                si_idx = _eval_ps_int_expr(call_args[0])
+                                si_b = _eval_ps_rhs_binding(call_args[1])
+                                if ((prev_b is not None and prev_b["kind"] == "array")
+                                        or (prev_b is None and si_idx is not None)):
+                                    elems_c = list(prev_b["elems"]) if prev_b is not None else []
+                                    si_val = (si_b["elems"][0] if si_b is not None and si_b["elems"]
+                                              else call_args[1].strip("'\""))
+                                    elems_c = (_apply_ps_array_set(elems_c, si_idx, si_val, "=")
+                                               if si_idx is not None else elems_c + [si_val])
+                                    binding = _make_ps_array_binding(elems_c)
+                                else:
+                                    k_si = call_args[0].strip("'\"")
+                                    vsplat_si = (
+                                        (", ".join(_ps_splat_elem(x) for x in si_b["elems"]) if si_b["elems"] else "@()")
+                                        if si_b is not None and si_b["kind"] == "array"
+                                        else (si_b["splat"] if si_b is not None else call_args[1]))
+                                    ehc_si = bool((si_b and si_b["has_cli"]) or _AGY_CLI_WORD.search(call_args[1]))
+                                    base_ht = (prev_b["ht_items"]
+                                               if prev_b is not None and prev_b["kind"] == "hashtable" else [])
+                                    binding = _make_ps_ht_binding(base_ht + [(k_si, vsplat_si, ehc_si)])
                             else:
                                 binding = prev_b
                         else:
@@ -3870,19 +4077,83 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                             base_elems = prev_b["elems"] if prev_b is not None else []
                             add_elems = arg_b["elems"] if arg_b is not None else _split_ps_comma_elements(exp_rhs)
                             binding = _make_ps_array_binding(base_elems + add_elems)
-                    elif span.op == "prop=" and v0_key:
+                    elif (span.op.startswith("idx") or span.op.startswith("prop")) and v0_key:
+                        is_idx = span.op.startswith("idx")
+                        op_sfx = span.op[3:] if is_idx else span.op[4:]
+                        exp_idx = _expand_ps_vars_chunk(span.prop_key, ps_env).strip() if is_idx else span.prop_key
                         val_b = _eval_ps_rhs_binding(exp_rhs)
-                        if val_b is not None and val_b["kind"] == "array":
-                            vsplat_p = (", ".join(_ps_splat_elem(x) for x in val_b["elems"])
-                                        if val_b["elems"] else "@()")
+                        idx_int = _eval_ps_int_expr(exp_idx) if is_idx else None
+                        m_rng = re.fullmatch(r"(-?\d+)\s*\.\.\s*(-?\d+)", exp_idx) if is_idx else None
+                        unq_idx = _mask_quotes_same_len(exp_idx, in_posix=False) if is_idx else ""
+                        idx_list = ([_eval_ps_int_expr(p) for p in _split_ps_call_args(exp_idx)]
+                                    if is_idx and "," in unq_idx else None)
+                        is_arr_target = is_idx and (
+                            (prev_b is not None and prev_b["kind"] == "array")
+                            or (prev_b is None and (
+                                idx_int is not None or m_rng is not None
+                                or bool(idx_list and all(x is not None for x in idx_list)))))
+                        if is_arr_target:
+                            elems_c = list(prev_b["elems"]) if prev_b is not None else []
+                            if val_b is not None and len(val_b["elems"]) == 1:
+                                sval_rhs = val_b["elems"][0]
+                            elif val_b is not None and val_b["elems"]:
+                                sval_rhs = " ".join(val_b["elems"])
+                            else:
+                                t_segs, _ = _tokenize_command(exp_rhs)
+                                sval_rhs = (t_segs[0].tokens[0].val
+                                            if len(t_segs) == 1 and len(t_segs[0].tokens) == 1
+                                            else exp_rhs.strip("'\""))
+                            if idx_int is not None:
+                                elems_c = _apply_ps_array_set(elems_c, idx_int, sval_rhs, op_sfx)
+                            elif m_rng is not None:
+                                lo_r, hi_r = int(m_rng.group(1)), int(m_rng.group(2))
+                                lo_e = lo_r if lo_r >= 0 else max(0, len(elems_c) + lo_r)
+                                hi_e = hi_r if hi_r >= 0 else max(0, len(elems_c) + hi_r)
+                                repl = val_b["elems"] if val_b is not None else [sval_rhs]
+                                if lo_e <= hi_e:
+                                    elems_c[lo_e:hi_e + 1] = repl
+                                else:
+                                    elems_c[hi_e:lo_e + 1] = repl
+                            elif idx_list and all(x is not None for x in idx_list):
+                                repl = val_b["elems"] if val_b is not None else [sval_rhs]
+                                for pos_k, idx_k in enumerate(idx_list):
+                                    assert idx_k is not None
+                                    v_k = repl[pos_k] if pos_k < len(repl) else (repl[-1] if repl else sval_rhs)
+                                    elems_c = _apply_ps_array_set(elems_c, idx_k, v_k, op_sfx)
+                            else:
+                                repl = val_b["elems"] if val_b is not None else ([sval_rhs] if sval_rhs else [])
+                                elems_c = elems_c + repl
+                            binding = _make_ps_array_binding(elems_c)
                         else:
-                            vsplat_p = val_b["splat"] if val_b is not None else exp_rhs
-                        ehc_p = bool((val_b and val_b["has_cli"]) or _AGY_CLI_WORD.search(exp_rhs))
-                        base_ht = (prev_b["ht_items"]
-                                   if prev_b is not None and prev_b["kind"] == "hashtable" else [])
-                        binding = _make_ps_ht_binding(base_ht + [(span.prop_key, vsplat_p, ehc_p)])
+                            if is_idx:
+                                k_segs, _ = _tokenize_command(exp_idx)
+                                kname = (k_segs[0].tokens[0].val
+                                         if len(k_segs) == 1 and len(k_segs[0].tokens) == 1
+                                         else exp_idx.strip("'\""))
+                            else:
+                                kname = span.prop_key
+                            kl_low = kname.lower()
+                            if op_sfx == "??=" and prev_b is not None and kl_low in prev_b["props"]:
+                                binding = prev_b
+                            else:
+                                if (op_sfx == "+=" and prev_b is not None and kl_low in prev_b["props"]
+                                        and val_b is not None and val_b["kind"] == "scalar"):
+                                    old_b = _eval_ps_rhs_binding(prev_b["props"][kl_low])
+                                    if old_b is not None and old_b["kind"] == "scalar":
+                                        val_b = _make_ps_scalar_binding(old_b["elems"][0] + val_b["elems"][0])
+                                if val_b is not None and val_b["kind"] == "array":
+                                    vsplat_p = (", ".join(_ps_splat_elem(x) for x in val_b["elems"])
+                                                if val_b["elems"] else "@()")
+                                else:
+                                    vsplat_p = val_b["splat"] if val_b is not None else exp_rhs
+                                ehc_p = bool((val_b and val_b["has_cli"]) or _AGY_CLI_WORD.search(exp_rhs))
+                                base_ht = (prev_b["ht_items"]
+                                           if prev_b is not None and prev_b["kind"] == "hashtable" else [])
+                                binding = _make_ps_ht_binding(base_ht + [(kname, vsplat_p, ehc_p)])
                     else:
                         binding = _eval_ps_rhs_binding(exp_rhs)
+                        if binding is None and span.op != "=" and prev_b is not None:
+                            binding = prev_b
                     has_cli_fb = (
                         bool(_AGY_PS_RESOLVER_RHS.search(exp_rhs))
                         or (exp_rhs.startswith(("@", "(")) and bool(_AGY_CLI_WORD.search(exp_rhs))))
@@ -3890,7 +4161,7 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     for vname_raw in span.names:
                         end_v = _ps_next_top_rebind(unquoted, ps_spans, idx_sp, vname_raw)
                         if has_cli_rhs and _ps_var_in_exec_pos(
-                                command, span.rhs_end, end_v, vname_raw, binding, has_cli_fb, span.is_foreach):
+                                command, span.rhs_end, end_v, vname_raw, binding, has_cli_fb, span.is_foreach, ps_env):
                             return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass "
                                     "delegation and dispatcher gates (standards/delegation.md).")
                         if binding is not None:
@@ -3917,7 +4188,8 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
                             "dispatcher gates (standards/delegation.md).")
         sh_assign_re = re.compile(
-            r"(?:^|[;&|{(\n])\s*((?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?([A-Za-z_]\w*)(\+?=))")
+            r"(?:^|[;&|{(\n])\s*((?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?"
+            r"([A-Za-z_]\w*)(?:\[([^\]]+)\])?(\+?=))")
         sh_matches = list(sh_assign_re.finditer(unquoted))
         if sh_matches:
             rewritten_sh: list[str] = []
@@ -3942,27 +4214,88 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     is_arr = False
                 exp_rhs_sh = _expand_sh_vars_chunk(rhs_sh_raw, sh_env)
                 raw_sv = am.group(2)
-                sh_op = am.group(3)
-                prev_sh = sh_env.get(raw_sv) if sh_op == "+=" else None
+                raw_sub_sh = command[am.start(3):am.end(3)] if am.group(3) is not None else None
+                sh_op = am.group(4)
+                prev_sh = sh_env.get(raw_sv) if (sh_op == "+=" or raw_sub_sh is not None) else None
                 vesc_sh = re.escape(raw_sv)
                 sh_exec_refs: list[str] = []
                 sh_segs, _ = _tokenize_command(exp_rhs_sh, in_posix=True)
-                sh_elems = [t.val for s in sh_segs for t in s.tokens]
-                if is_arr or (prev_sh is not None and prev_sh.get("is_arr")):
+                sh_toks = [t for s in sh_segs for t in s.tokens]
+                sh_elems = [t.val for t in sh_toks]
+                imap_sh: dict[int, str] | None = None
+                assoc_sh: dict[str, str] = dict(prev_sh.get("assoc_map") or {}) if prev_sh is not None else {}
+                if raw_sub_sh is not None or is_arr or (prev_sh is not None and prev_sh.get("is_arr")):
                     is_arr = True
-                    if prev_sh is not None:
-                        sh_elems = prev_sh["elems"] + sh_elems
+                    if prev_sh is not None and prev_sh.get("idx_map") is not None:
+                        imap_sh = dict(prev_sh["idx_map"])
+                    elif prev_sh is not None and prev_sh.get("elems"):
+                        imap_sh = {idx_p: el_p for idx_p, el_p in enumerate(prev_sh["elems"])}
+                    else:
+                        imap_sh = {}
+                    if raw_sub_sh is not None:
+                        exp_sub_sh = _expand_sh_vars_chunk(raw_sub_sh, sh_env).strip().strip("'\"")
+                        if re.fullmatch(r"[A-Za-z_]\w*", exp_sub_sh) and exp_sub_sh in sh_env:
+                            cand_sh = sh_env[exp_sub_sh].get("raw_sval", "").strip()
+                            if _eval_ps_int_expr(cand_sh) is not None:
+                                exp_sub_sh = cand_sh
+                        sval_el = sh_elems[0] if len(sh_elems) == 1 else exp_rhs_sh.strip()
+                        if ("$(" in rhs_sh_raw or "`" in rhs_sh_raw) and _resolved_target_in(rhs_sh_raw):
+                            sval_el = _resolved_target_in(rhs_sh_raw) or sval_el
+                        sub_idx_sh = _eval_ps_int_expr(exp_sub_sh)
+                        if sub_idx_sh is not None:
+                            eff_k = (max(0, max(imap_sh.keys()) + 1 + sub_idx_sh)
+                                     if sub_idx_sh < 0 and imap_sh else max(0, sub_idx_sh))
+                            imap_sh[eff_k] = (imap_sh[eff_k] + sval_el) if (sh_op == "+=" and eff_k in imap_sh) else sval_el
+                        else:
+                            if exp_sub_sh:
+                                assoc_sh[exp_sub_sh] = ((assoc_sh[exp_sub_sh] + sval_el)
+                                                        if (sh_op == "+=" and exp_sub_sh in assoc_sh) else sval_el)
+                            nxt_k = (max(imap_sh.keys()) + 1) if imap_sh else 0
+                            imap_sh[nxt_k] = sval_el
+                    else:
+                        nxt_k = (max(imap_sh.keys()) + 1) if imap_sh else 0
+                        for t_sh in sh_toks:
+                            m_ke = re.match(r"^\[([^\]]+)\](\+?=)([\s\S]*)$", t_sh.val) if t_sh.raw.startswith("[") else None
+                            if m_ke:
+                                k_exp = _expand_sh_vars_chunk(m_ke.group(1), sh_env).strip().strip("'\"")
+                                if re.fullmatch(r"[A-Za-z_]\w*", k_exp) and k_exp in sh_env:
+                                    cand_ke = sh_env[k_exp].get("raw_sval", "").strip()
+                                    if _eval_ps_int_expr(cand_ke) is not None:
+                                        k_exp = cand_ke
+                                ke_op, ke_val = m_ke.group(2), m_ke.group(3)
+                                k_int = _eval_ps_int_expr(k_exp)
+                                if k_int is not None:
+                                    eff_ke = (max(0, max(imap_sh.keys()) + 1 + k_int)
+                                              if k_int < 0 and imap_sh else max(0, k_int))
+                                    imap_sh[eff_ke] = ((imap_sh[eff_ke] + ke_val)
+                                                       if (ke_op == "+=" and eff_ke in imap_sh) else ke_val)
+                                    nxt_k = max(nxt_k, eff_ke + 1)
+                                else:
+                                    if k_exp:
+                                        assoc_sh[k_exp] = ((assoc_sh[k_exp] + ke_val)
+                                                           if (ke_op == "+=" and k_exp in assoc_sh) else ke_val)
+                                    imap_sh[nxt_k] = ke_val
+                                    nxt_k += 1
+                            else:
+                                imap_sh[nxt_k] = t_sh.val
+                                nxt_k += 1
+                    sh_elems = [v_sh for _, v_sh in sorted(imap_sh.items())]
                     splat_sh = " ".join(_sh_splat_elem(x) for x in sh_elems) if sh_elems else ""
                     dq_sh = _sh_dq_esc(" ".join(sh_elems))[:2048]
                     raw_sval = " ".join(sh_elems)
                     has_cli_sh = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS for x in sh_elems)
-                    if sh_elems and _bare(sh_elems[0]).strip("'\"") in _AGY_BLOCKED_CLIS:
-                        sh_exec_refs.append(rf"\$(?:\{{{vesc_sh}(?:\[\s*(?:0|@|[*])\s*\])?\}}|{vesc_sh}\b)")
-                    for idx_s, se in enumerate(sh_elems):
-                        if idx_s > 0 and _bare(se).strip("'\"") in _AGY_BLOCKED_CLIS:
-                            sh_exec_refs.append(rf"\$\{{{vesc_sh}\[\s*{idx_s}\s*\]\}}")
+                    if 0 in imap_sh and _bare(imap_sh[0]).strip("'\"") in _AGY_BLOCKED_CLIS:
+                        sh_exec_refs.append(rf"\$(?:\{{{vesc_sh}\}}|{vesc_sh}\b)")
+                    if imap_sh and _bare(imap_sh[min(imap_sh.keys())]).strip("'\"") in _AGY_BLOCKED_CLIS:
+                        sh_exec_refs.append(rf"\$\{{{vesc_sh}\[\s*[@*]\s*\]\}}")
+                    for idx_s, se in imap_sh.items():
+                        if _bare(se).strip("'\"") in _AGY_BLOCKED_CLIS:
+                            sh_exec_refs.append(rf"\$\{{{vesc_sh}\[\s*['\"]?{idx_s}['\"]?\s*\]\}}")
+                    for ak, av in assoc_sh.items():
+                        if _bare(av).strip("'\"") in _AGY_BLOCKED_CLIS:
+                            sh_exec_refs.append(rf"\$\{{{vesc_sh}\[\s*['\"]?{re.escape(ak)}['\"]?\s*\]\}}")
                     if has_cli_sh:
-                        sh_exec_refs.append(rf"\$\{{{vesc_sh}\[\s*\$[^\]]+\]\}}")
+                        sh_exec_refs.append(rf"\$\{{{vesc_sh}\[\s*(?:\$[^\]]+|[A-Za-z_]\w*)\s*\]\}}")
                 else:
                     sval = sh_elems[0] if len(sh_elems) == 1 else exp_rhs_sh.strip()
                     if ("$(" in rhs_sh_raw or "`" in rhs_sh_raw) and _resolved_target_in(rhs_sh_raw):
@@ -3981,14 +4314,34 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                         sh_exec_refs.append(rf"\$(?:\{{{vesc_sh}(?:\[[^\]]*\])?\}}|{vesc_sh}\b)")
                 if sh_exec_refs:
                     sh_ref_pat = "(?:" + "|".join(sh_exec_refs) + ")"
+                    sh_end = len(command)
+                    for next_am in sh_matches:
+                        if next_am.start(1) > rhs_end_sh and next_am.group(2) == raw_sv:
+                            pfx_sh = unquoted[:next_am.start(1)]
+                            if pfx_sh.count("(") == pfx_sh.count(")") and pfx_sh.count("{") == pfx_sh.count("}"):
+                                sh_end = next_am.end()
+                                break
+                    sh_tail = command[rhs_end_sh:sh_end]
+                    if sh_env:
+                        other_sh = {k: v for k, v in sh_env.items() if k != raw_sv}
+                        if other_sh:
+                            sh_tail = _expand_sh_vars_chunk(sh_tail, other_sh)
+                            sh_tail = re.sub(
+                                rf"(\$\{{{vesc_sh}\[\s*)([A-Za-z_]\w*)(\s*\]\}})",
+                                lambda m_id, osh=other_sh: (
+                                    f"{m_id.group(1)}{osh[m_id.group(2)]['raw_sval'].strip()}{m_id.group(3)}"
+                                    if (m_id.group(2) in osh
+                                        and _eval_ps_int_expr(osh[m_id.group(2)].get("raw_sval", "")) is not None)
+                                    else m_id.group(0)),
+                                sh_tail)
                     if re.compile(
                             rf"(?:(?:^|[;&|{{(\n])\s*(?:command\s+(?!-[vV]\b)(?:-p\s+)?|nohup\s+|exec\s+(?:-[a-zA-Z]+\s+\S+\s+)?)*['\"]?{sh_ref_pat}"
-                            rf"|\beval\s+['\"]?\s*{sh_ref_pat})").search(command, rhs_end_sh):
+                            rf"|\beval\s+['\"]?\s*{sh_ref_pat})").search(sh_tail):
                         return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
                                 "dispatcher gates (standards/delegation.md).")
                 sh_env[raw_sv] = {
                     "splat": splat_sh, "dq": dq_sh, "elems": sh_elems, "has_cli": has_cli_sh,
-                    "is_arr": is_arr, "raw_sval": raw_sval,
+                    "is_arr": is_arr, "raw_sval": raw_sval, "idx_map": imap_sh, "assoc_map": assoc_sh,
                 }
             rewritten_sh.append(_expand_sh_vars_chunk(command[cursor_sh:], sh_env))
             expanded_sh_cmd = "".join(rewritten_sh)
@@ -5362,12 +5715,17 @@ def _self_test() -> int:
         "$patterns = @('codex', 'claude'); foreach ($p in $patterns) { rg -n $p scripts }",
         "$map = @{ codex = 'astra'; claude = 'sonnet' }; $map | Format-Table",
         "$p = @{ FilePath = 'rg' }; $p['ArgumentList'] = @('-n', 'codex', 'scripts'); Start-Process @p",
+        "$rgArgs = @('-n', 'placeholder', 'scripts/panel_slots.py'); $rgArgs[1] = 'codex'; & rg @rgArgs",
+        "$i = 0; $arr = @('rg', 'codex'); & $arr[$i] -n $arr[1] scripts/panel_slots.py",
+        "$cmd = @('codex', '-n', 'scripts'); $cmd[0] = 'rg'; & $cmd[0] $cmd[1] 'pattern' $cmd[2]",
         "$f = '-n'; $f | Select-String 'n'",
         "$git = Get-Command git; & $git.Source status",
         "bash -c \"pattern='codex'; grep -n \\\"\\$pattern\\\" scripts/panel_slots.py\"",
         "bash -c 'pat=\"codex\"; msg=\"bin=safe\"; grep -n \"$pat\" scripts/panel_slots.py'",
         "bash -c \"arr=('codex' 'claude'); echo \\\"\\\\${arr[0]}\\\"\"",
         "bash -c 'cmd=(rg -n codex scripts/panel_slots.py); \"${cmd[@]}\"'",
+        "bash -c 'a=(rg -n placeholder scripts); a[2]=codex; \"${a[@]}\"'",
+        "bash -c 'i=0; arr=(rg codex); \"${arr[i]}\" -n \"${arr[1]}\" scripts/panel_slots.py'",
         "bash -c 'pattern=codex; command -v \"$pattern\"'",
         "bash -c 'pattern=codex; eval \"rg -n $pattern scripts\"'",
         "bash -c 'patterns=(codex claude); for p in \"${patterns[@]}\"; do rg -n \"$p\" scripts; done'",
@@ -5456,6 +5814,23 @@ def _self_test() -> int:
             ("pipeline ForEach-Object { & $_ } CLI launch", "run_command", {"CommandLine": "$cmds = @('codex', 'claude'); $cmds | ForEach-Object { & $_ exec review }"}, "review-dispatch.py"),
             ("pipeline ForEach-Object { git commit $_ } -n bypass", "run_command", {"CommandLine": "$flags = @('-n'); $flags | ForEach-Object { git commit $_ -m 'fix' }"}, "--no-verify"),
             ("posix array += a+=(-m fix) git", "run_command", {"CommandLine": 'bash -c \'a=(commit -n); a+=(-m fix); git "${a[@]}"\''}, "--no-verify"),
+            ("indexed array mutation $gitArgs[3] = '-n' git @gitArgs", "run_command", {"CommandLine": "$gitArgs = @('commit', '-m', 'repair', '--quiet'); $gitArgs[3] = '-n'; git @gitArgs"}, "--no-verify"),
+            ("negative indexed array mutation $gitArgs[-1] = '-n' git @gitArgs", "run_command", {"CommandLine": "$gitArgs = @('commit', '-m', 'repair', '--quiet'); $gitArgs[-1] = '-n'; git @gitArgs"}, "--no-verify"),
+            ("compound indexed array mutation $gitArgs[3] += 'n' git @gitArgs", "run_command", {"CommandLine": "$gitArgs = @('commit', '-m', 'repair', '-'); $gitArgs[3] += 'n'; git @gitArgs"}, "--no-verify"),
+            ("variable indexed array mutation $gitArgs[$i] = '-n' git @gitArgs", "run_command", {"CommandLine": "$i = 3; $gitArgs = @('commit', '-m', 'repair', '--quiet'); $gitArgs[$i] = '-n'; git @gitArgs"}, "--no-verify"),
+            ("slice indexed array mutation $gitArgs[2..3] = '-n', 'fix' git @gitArgs", "run_command", {"CommandLine": "$gitArgs = @('commit', '-m', 'old', '--quiet'); $gitArgs[2..3] = 'fix', '-n'; git @gitArgs"}, "--no-verify"),
+            ("fixed-size string[]::new(4) indexed assignments git @gitArgs", "run_command", {"CommandLine": "$gitArgs = [string[]]::new(4); $gitArgs[0] = 'commit'; $gitArgs[1] = '-m'; $gitArgs[2] = 'repair'; $gitArgs[3] = '-n'; git @gitArgs"}, "--no-verify"),
+            ("List.Insert(1, '-n') git @gitArgs", "run_command", {"CommandLine": "$gitArgs = [System.Collections.Generic.List[string]]::new(); $gitArgs.AddRange(@('commit', '-m', 'fix')); $gitArgs.Insert(1, '-n'); git @gitArgs"}, "--no-verify"),
+            ("Array.SetValue('-n', 3) git @gitArgs", "run_command", {"CommandLine": "$gitArgs = @('commit', '-m', 'repair', '--quiet'); $gitArgs.SetValue('-n', 3); git @gitArgs"}, "--no-verify"),
+            ("List.set_Item(3, '-n') git @gitArgs", "run_command", {"CommandLine": "$gitArgs = @('commit', '-m', 'repair', '--quiet'); $gitArgs.set_Item(3, '-n'); git @gitArgs"}, "--no-verify"),
+            ("indexed CLI mutation $cmd[0] = 'claude' & $cmd[0]", "run_command", {"CommandLine": "$cmd = @('rg', '-p', 'inspect'); $cmd[0] = 'claude'; & $cmd[0] $cmd[1] $cmd[2]"}, "Variable-indirect"),
+            ("variable indexed CLI read & $arr[$i] codex", "run_command", {"CommandLine": "$i = 1; $arr = @('rg', 'codex'); & $arr[$i] exec review"}, "Variable-indirect"),
+            ("command-mode RHS on indexed LHS $a[0] = codex exec review", "run_command", {"CommandLine": "$a = @('x'); $a[0] = codex exec review"}, "review-dispatch.py"),
+            ("variable key hashtable mutation $p[$k] = 'codex' Start-Process @p", "run_command", {"CommandLine": "$k = 'FilePath'; $p = @{}; $p[$k] = 'codex'; Start-Process @p"}, "Variable-indirect"),
+            ("posix indexed array mutation a[3]=-n git", "run_command", {"CommandLine": 'bash -c \'a=(commit -m repair --quiet); a[3]=-n; git "${a[@]}"\''}, "--no-verify"),
+            ("posix arithmetic indexed array mutation a[i]=-n git", "run_command", {"CommandLine": 'bash -c \'i=3; a=(commit -m repair --quiet); a[i]=-n; git "${a[@]}"\''}, "--no-verify"),
+            ("posix keyed array literal a=([0]=commit [1]=-n ...) git", "run_command", {"CommandLine": 'bash -c \'a=([0]=commit [1]=-n [2]=-m [3]=fix); git "${a[@]}"\''}, "--no-verify"),
+            ("posix sparse indexed array a[5]=codex ${a[5]}", "run_command", {"CommandLine": 'bash -c \'a=(); a[5]=codex; "${a[5]}" exec review\''}, "Variable-indirect"),
             ("posix scalar += b+=aude", "run_command", {"CommandLine": 'bash -c \'b=cl; b+=aude; "$b" -p inspect\''}, "Variable-indirect"),
             ("posix for loop do codex exec review", "run_command", {"CommandLine": "bash -c 'for c in codex claude; do \"$c\" exec review; done'"}, "Variable-indirect"),
             ("posix if true then git commit -n", "run_command", {"CommandLine": "bash -c 'if true; then git commit -n -m fix; fi'"}, "--no-verify"),
