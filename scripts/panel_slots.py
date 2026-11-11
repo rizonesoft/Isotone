@@ -4933,17 +4933,21 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
     sub = args[idx].lower()
     rest = args[idx + 1:]
     if sub == "worktree":
+        after_sep = False
+        subcmd: str | None = None
         for tok in rest:
-            if tok == "--":
-                break
-            if tok in ("-h", "--help"):
+            if not after_sep and tok == "--":
+                after_sep = True
+                continue
+            if not after_sep and tok in ("-h", "--help"):
                 return None
-            if not tok.startswith("-"):
-                if tok.lower() in ("list", "prune", "remove", "unlock", "repair"):
-                    return None
-                return ("Isotone develops straight on `main` without secondary git worktrees "
-                        "(`git worktree add` and secondary worktree operations are forbidden; AGENTS.md).")
-        return None
+            if after_sep or not tok.startswith("-"):
+                subcmd = tok.lower()
+                break
+        if subcmd in ("list", "prune", "remove", "unlock", "repair"):
+            return None
+        return ("Isotone develops straight on `main` without secondary git worktrees "
+                "(`git worktree add` and secondary worktree operations are forbidden; AGENTS.md).")
     if sub == "checkout":
         has_dash = "--" in rest
         dash_at = rest.index("--") if has_dash else len(rest)
@@ -4976,11 +4980,11 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
             return None
         if not has_dash and has_pathspec_file and len(pre_pos) <= 1:
             return None
-        if not has_dash and pre_pos in (["main"], ["refs/heads/main"], ["."]):
+        if not has_dash and pre_pos in (["main"], ["."]):
             return None
-        return ("Isotone develops straight on `main`; switching away from `main` or creating/tracking branches via "
-                "`git checkout` is forbidden (use `git checkout -- <path>` or `git restore <path>` to restore files, "
-                "or `git show`/`git diff` to inspect refs; AGENTS.md).")
+        return ("Isotone develops straight on `main`; switching away from `main`, detaching `HEAD`, or creating/"
+                "tracking branches via `git checkout` is forbidden (use `git checkout -- <path>` or `git restore "
+                "<path>` to restore files, or `git show`/`git diff` to inspect refs; AGENTS.md).")
     if sub == "switch":
         pos: list[str] = []
         after_sep = False
@@ -5007,57 +5011,121 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
             else:
                 pos.append(tok)
             i += 1
-        if pos in (["main"], ["refs/heads/main"]):
+        if pos == ["main"]:
             return None
         return ("Isotone develops straight on `main`; switching away from `main` or creating/tracking branches via "
                 "`git switch` is forbidden (AGENTS.md).")
     if sub == "symbolic-ref":
-        non_flags = [t for t in rest if not t.startswith("-")]
-        if len(non_flags) >= 2 and non_flags[0] == "HEAD" and non_flags[1] != "refs/heads/main":
-            return ("Isotone develops straight on `main`; repointing `HEAD` away from `refs/heads/main` "
-                    "is forbidden (AGENTS.md).")
-        return None
+        flags: set[str] = set()
+        pos_sr: list[str] = []
+        after_sep = False
+        for tok in rest:
+            if not after_sep and tok == "--":
+                after_sep = True
+                continue
+            if not after_sep and tok != "-" and tok.startswith("-"):
+                fl = _flag(tok)
+                if fl in ("-h", "--help"):
+                    return None
+                flags.add(fl)
+            else:
+                pos_sr.append(tok)
+        if flags <= {"-q", "--quiet", "--short"} and pos_sr == ["HEAD"]:
+            return None
+        return ("Isotone develops straight on `main`; modifying symbolic refs or repointing `HEAD` "
+                "(`git symbolic-ref`) is forbidden (AGENTS.md).")
     if sub == "update-ref":
-        flags = {_flag(t) for t in rest if t.startswith("-")}
-        non_flags = [t for t in rest if not t.startswith("-")]
-        if "-d" not in flags and non_flags and non_flags[0].startswith("refs/heads/") \
-                and non_flags[0] != "refs/heads/main":
-            return ("Isotone develops straight on `main`; creating or updating non-`main` local branch refs "
-                    "(`git update-ref`) is forbidden (AGENTS.md).")
-        return None
+        flags_ur: set[str] = set()
+        pos_ur: list[str] = []
+        after_sep = False
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
+            if not after_sep and tok == "--":
+                after_sep = True
+                i += 1
+                continue
+            if not after_sep and tok != "-" and tok.startswith("-"):
+                fl = _flag(tok)
+                if fl in ("-h", "--help"):
+                    return None
+                flags_ur.add(fl)
+                if fl == "-m" and "=" not in tok:
+                    i += 2
+                    continue
+            else:
+                pos_ur.append(tok)
+            i += 1
+        if flags_ur <= {"-d", "--no-deref"} and "-d" in flags_ur and 1 <= len(pos_ur) <= 2 \
+                and pos_ur[0] not in ("HEAD", "refs/heads/main"):
+            return None
+        return ("Isotone develops straight on `main`; creating or updating refs via `git update-ref` "
+                "is forbidden (AGENTS.md).")
     if sub == "branch":
         allowed_branch_ops = (
             _BRANCH_LISTS
             | frozenset(("-d", "-D", "--delete", "-u", "--set-upstream-to", "--unset-upstream",
                          "--edit-description", "-h", "--help"))
         )
-        copy_move_ops = frozenset(("-c", "-C", "--copy", "-m", "-M", "--move"))
-        flags: set[str] = set()
+        forbidden_branch_ops = frozenset((
+            "-c", "-C", "--copy", "-m", "-M", "--move", "-f", "--force", "-t", "--track", "--create-reflog",
+        ))
+        flags = set()
         positionals: list[str] = []
+        after_sep = False
         i = 0
         while i < len(rest):
             tok = rest[i]
-            if tok == "--":
-                break
-            if tok.startswith("-"):
+            if not after_sep and tok == "--":
+                after_sep = True
+                i += 1
+                continue
+            if not after_sep and tok != "-" and tok.startswith("-"):
                 fl = _flag(tok)
                 flags.add(fl)
                 if not tok.startswith("--") and len(tok) > 2:
                     for ch in tok[1:]:
                         flags.add(f"-{ch}")
                 if fl in ("--contains", "--no-contains", "--merged", "--no-merged", "--points-at",
-                          "-u", "--set-upstream-to", "--format") and "=" not in tok:
+                          "-u", "--set-upstream-to", "--format", "--sort") and "=" not in tok:
                     i += 2
                     continue
             else:
                 positionals.append(tok)
             i += 1
-        if flags & copy_move_ops:
-            return ("Isotone develops straight on `main`; copying or renaming branches "
-                    "(`git branch -c/-C/-m/-M`) is forbidden (AGENTS.md).")
+        if flags & forbidden_branch_ops:
+            return ("Isotone develops straight on `main`; creating, forcing, copying, or renaming branches "
+                    "(`git branch -c/-C/-m/-M/-f/-t/--create-reflog`) is forbidden (AGENTS.md).")
         if positionals and not (flags & allowed_branch_ops):
             return ("Isotone develops straight on `main`; creating branches (`git branch <name>`) "
                     "is forbidden (AGENTS.md).")
+    if sub in ("fetch", "pull"):
+        after_sep = False
+        pos_fp: list[str] = []
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
+            if not after_sep and tok == "--":
+                after_sep = True
+                i += 1
+                continue
+            if not after_sep and tok != "-" and tok.startswith("-"):
+                fl = _flag(tok)
+                if fl in ("--depth", "--deepen", "--shallow-since", "--shallow-exclude", "--negotiation-tip",
+                          "--Upload-pack", "--upload-pack", "-o", "--server-option", "-j", "--jobs",
+                          "--refmap") and "=" not in tok:
+                    i += 2
+                    continue
+            else:
+                pos_fp.append(tok)
+            i += 1
+        for refspec in pos_fp[1:]:
+            if ":" in refspec:
+                dst = refspec.split(":", 1)[1].lstrip("+")
+                if dst and dst not in ("main", "refs/heads/main") \
+                        and not dst.startswith(("refs/remotes/", "refs/tags/")):
+                    return ("Isotone develops straight on `main`; fetching into a non-`main` local branch refspec "
+                            f"({refspec!r}) is forbidden (AGENTS.md).")
     return None
 
 
@@ -6220,16 +6288,23 @@ def _self_test() -> int:
             ("git checkout implicit remote tracking branch", "run_command", {"CommandLine": "git checkout dependabot/github_actions/actions-39799580c0"}, "switching away from `main`"),
             ("git checkout previous branch dash", "run_command", {"CommandLine": "git checkout -"}, "switching away from `main`"),
             ("git checkout detached commit", "run_command", {"CommandLine": "git checkout HEAD~1"}, "switching away from `main`"),
+            ("git checkout qualified refs/heads/main detaches HEAD", "run_command", {"CommandLine": "git checkout refs/heads/main"}, "detaching `HEAD`"),
             ("git switch -c feature branch", "run_command", {"CommandLine": "git switch -c feat/foo"}, "git switch -c"),
             ("git switch --track branch", "run_command", {"CommandLine": "git switch --track origin/foo"}, "git switch -c/-C/--create/-t/--track"),
             ("git switch --create feature branch", "run_command", {"CommandLine": "git switch --create feat/foo"}, "git switch -c/-C/--create"),
             ("git switch implicit remote tracking branch", "run_command", {"CommandLine": "git switch dependabot/github_actions/actions-39799580c0"}, "switching away from `main`"),
+            ("git switch qualified refs/heads/main", "run_command", {"CommandLine": "git switch refs/heads/main"}, "switching away from `main`"),
             ("git switch previous branch dash", "run_command", {"CommandLine": "git switch -"}, "switching away from `main`"),
             ("git switch --detach commit", "run_command", {"CommandLine": "git switch --detach HEAD"}, "git switch -c/-C"),
             ("git branch new-branch creation", "run_command", {"CommandLine": "git branch feat/foo"}, "git branch <name>"),
+            ("git branch double-dash new-branch creation", "run_command", {"CommandLine": "git branch -- review-probe"}, "git branch <name>"),
             ("git branch -c copy branch", "run_command", {"CommandLine": "git branch -c main feat/foo"}, "git branch -c"),
+            ("git branch -f force branch", "run_command", {"CommandLine": "git branch -f feat/foo HEAD"}, "git branch -c"),
             ("git symbolic-ref HEAD off main", "run_command", {"CommandLine": "git symbolic-ref HEAD refs/heads/feat"}, "repointing `HEAD`"),
+            ("git symbolic-ref -m reason HEAD off main", "run_command", {"CommandLine": "git symbolic-ref -m reason HEAD refs/heads/feat"}, "repointing `HEAD`"),
             ("git update-ref non-main local branch", "run_command", {"CommandLine": "git update-ref refs/heads/feat HEAD"}, "git update-ref"),
+            ("git update-ref -m reason non-main local branch", "run_command", {"CommandLine": "git update-ref -m msg refs/heads/feat HEAD"}, "git update-ref"),
+            ("git fetch local branch refspec", "run_command", {"CommandLine": "git fetch origin main:feat"}, "refspec"),
             ("pwsh wrapped git worktree add", "run_command", {"CommandLine": "pwsh -Command 'git worktree add ../wt'"}, "git worktree add"),
             ("malformed args", "invoke_subagent", "bad", "could not judge")):
         dec = agy_gate(tname, targs)

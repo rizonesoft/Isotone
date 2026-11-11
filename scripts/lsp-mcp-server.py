@@ -176,8 +176,9 @@ class LspBackend:
         self._cond = threading.Condition()
         self._proc: subprocess.Popen | None = None
         self._next_id = 0
+        self._next_doc_version = 0
         self._responses: dict[int, dict] = {}
-        self._diagnostics: dict[str, tuple[int, int | None, list[dict]]] = {}
+        self._diagnostics: dict[str, tuple[int, int, list[dict]]] = {}
         self._diag_seq = 0
         self._open_docs: collections.OrderedDict[str, dict] = collections.OrderedDict()
         self._capabilities: dict = {}
@@ -225,6 +226,7 @@ class LspBackend:
     def _reset_state(self) -> None:
         with self._cond:
             self._proc = None
+            self._next_doc_version = 0
             self._responses.clear()
             self._diagnostics.clear()
             self._open_docs.clear()
@@ -292,7 +294,7 @@ class LspBackend:
                 key = _uri_key(uri)
                 with self._cond:
                     open_meta = self._open_docs.get(key)
-                    if open_meta is not None and pub_ver is not None and pub_ver < int(open_meta["version"]):
+                    if open_meta is None or pub_ver is None or pub_ver != int(open_meta["version"]):
                         return
                     self._diag_seq += 1
                     self._diagnostics[key] = (self._diag_seq, pub_ver, diags)
@@ -439,8 +441,9 @@ class LspBackend:
                     evict_key, evict_meta = self._open_docs.popitem(last=False)
                     evicted_uris.append(evict_meta["uri"])
                     self._diagnostics.pop(evict_key, None)
+                self._next_doc_version += 1
+                version = self._next_doc_version
                 expected_seq = self._diag_seq + 1
-                version = 1
                 self._open_docs[key] = {
                     "uri": uri,
                     "version": version,
@@ -453,7 +456,8 @@ class LspBackend:
                 self._open_docs.move_to_end(key)
                 uri = existing["uri"]
                 if existing["sha256"] != digest:
-                    version = int(existing["version"]) + 1
+                    self._next_doc_version += 1
+                    version = self._next_doc_version
                     expected_seq = self._diag_seq + 1
                     existing["version"] = version
                     existing["sha256"] = digest
@@ -504,9 +508,7 @@ class LspBackend:
                         if res.get("kind") == "unchanged":
                             with self._cond:
                                 cached = self._diagnostics.get(key)
-                                if cached is not None and cached[0] >= expected_seq and (
-                                    cached[1] is None or cached[1] >= expected_version
-                                ):
+                                if cached is not None and cached[0] >= expected_seq and cached[1] == expected_version:
                                     return list(cached[2])
                 except LspToolError as exc:
                     msg_low = str(exc).lower()
@@ -514,8 +516,8 @@ class LspBackend:
                         raise
             with self._cond:
                 while True:
-                    seq, pub_ver, items = self._diagnostics.get(key, (0, None, []))
-                    if seq >= expected_seq and (pub_ver is None or pub_ver >= expected_version):
+                    seq, pub_ver, items = self._diagnostics.get(key, (0, -1, []))
+                    if seq >= expected_seq and pub_ver == expected_version:
                         return list(items)
                     if self._proc is None or self._proc.poll() is not None:
                         raise LspToolError(f"{self.name} exited while computing diagnostics")
@@ -1076,7 +1078,19 @@ while True:
         docs[td["uri"]] = text
         publish(td["uri"], text, td.get("version", 1))
     elif method == "textDocument/didClose":
-        docs.pop(m["params"]["textDocument"]["uri"], None)
+        uri = m["params"]["textDocument"]["uri"]
+        prev_text = docs.pop(uri, "")
+        enc_uri = uri.replace("file:///D:", "file:///d%3A").replace("file:///C:", "file:///c%3A")
+        if "DELAYED_UNVERSIONED_CLOSE" in prev_text:
+            import threading
+            def _emit_late_close(u=enc_uri):
+                time.sleep(0.06)
+                send_msg({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
+                          "params": {"uri": u, "diagnostics": []}})
+            threading.Thread(target=_emit_late_close, daemon=True).start()
+        else:
+            send_msg({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
+                      "params": {"uri": enc_uri, "diagnostics": []}})
     elif method == "textDocument/hover":
         pos = m["params"]["position"]
         send_msg({"jsonrpc": "2.0", "id": m["id"], "result": {
@@ -1219,6 +1233,25 @@ def _self_test() -> int:
             check("diagnostics timeout returns explicit error instead of 0 diagnostics",
                   d_timeout["result"]["isError"] and "timed out" in d_timeout["result"]["content"][0]["text"],
                   repr(d_timeout))
+
+            # Delayed unversioned didClose clear notification (like clangd's on close) must not satisfy reopened file.
+            py_reopen = os.path.join(ws, "reopen.py")
+            with open(py_reopen, "w", encoding="utf-8") as fh:
+                fh.write("# DELAYED_UNVERSIONED_CLOSE\nx = 1\n")
+            _ = rpc({"jsonrpc": "2.0", "id": 64, "method": "tools/call",
+                     "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "reopen.py"}}})
+            # Open two other docs (max_open_docs=2) to evict reopen.py and trigger delayed unversioned didClose [].
+            _ = rpc({"jsonrpc": "2.0", "id": 65, "method": "tools/call",
+                     "params": {"name": "lsp_hover", "arguments": {"file_path": "a.py", "line": 1, "character": 1}}})
+            _ = rpc({"jsonrpc": "2.0", "id": 66, "method": "tools/call",
+                     "params": {"name": "lsp_hover", "arguments": {"file_path": "c.py", "line": 1, "character": 1}}})
+            with open(py_reopen, "w", encoding="utf-8") as fh:
+                fh.write("x = BAD_TOKEN\n")
+            d_reopen = rpc({"jsonrpc": "2.0", "id": 67, "method": "tools/call",
+                            "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "reopen.py"}}})
+            check("delayed unversioned didClose notification does not mask reopened file diagnostics",
+                  not d_reopen["result"]["isError"] and "Found BAD_TOKEN" in d_reopen["result"]["content"][0]["text"],
+                  repr(d_reopen))
 
             bad_arg = rpc({"jsonrpc": "2.0", "id": 61, "method": "tools/call",
                            "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "a.py", "severity_max": 99}}})
