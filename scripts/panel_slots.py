@@ -680,8 +680,12 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": "git push -u --no-verify origin main"}}),
             ("an abbreviated `pwsh -co` CLI bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "pwsh -NoProfile -co codex exec review"}}),
+            ("a `pwsh -CommandWithArgs` `@args` hook bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": "pwsh -NoProfile -CommandWithArgs '& git @args' commit -n -m test"}}),
             ("a clustered `git am -qn` hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "git am -qn patch.mbox"}}),
+            ("a PowerShell command with an inline `# ...; codex` comment", "allow",
+             {"name": "run_command", "args": {"CommandLine": "Write-Output 'ok' # note; codex is reviewed via dispatcher"}}),
             ("a read-only `rg` search mentioning `ProcessStartInfo|codex`", "allow",
              {"name": "run_command", "args": {"CommandLine": "rg -n 'ProcessStartInfo|codex' scripts"}}),
             ("a `cmd /c rg` search mentioning `codex`", "allow",
@@ -1861,6 +1865,133 @@ def _scan_matching_paren(command: str, open_idx: int, in_posix: bool = False) ->
     return j
 
 
+def _scan_matching_brace(command: str, open_idx: int) -> int:
+    n = len(command)
+    j = open_idx + 1
+    bdepth = 1
+    while j < n and bdepth > 0:
+        sc = command[j]
+        if sc == "`":
+            j += 2
+            continue
+        if sc == "'":
+            j += 1
+            while j < n:
+                if command[j:j + 2] == "''":
+                    j += 2
+                    continue
+                if command[j] == "'":
+                    j += 1
+                    break
+                j += 1
+            continue
+        if sc == '"':
+            j += 1
+            while j < n:
+                if command[j] == "`":
+                    j += 2
+                    continue
+                if command[j:j + 2] == '""' and j > open_idx + 2:
+                    j += 2
+                    continue
+                if command[j] == '"':
+                    j += 1
+                    break
+                j += 1
+            continue
+        if sc == "{":
+            bdepth += 1
+        elif sc == "}":
+            bdepth -= 1
+            if bdepth == 0:
+                break
+        j += 1
+    return j
+
+
+def _strip_shell_comments(command: str, in_cmd: bool = False, in_posix: bool = False) -> str:
+    """Strip unquoted shell comments (`# ...` to end-of-line in PowerShell and POSIX shells, plus `<# ... #>` block
+    comments in PowerShell) while keeping quoted strings, `$()` subexpressions, and `` `# `` / `\\#` escapes intact."""
+    if in_cmd:
+        return command
+    out: list[str] = []
+    n = len(command)
+    i = 0
+    at_boundary = True
+    while i < n:
+        ch = command[i]
+        if ch in " \t\r\n;{}|()&":
+            out.append(ch)
+            at_boundary = True
+            i += 1
+            continue
+        if not in_posix and at_boundary and command[i:i + 2] == "<#":
+            end = command.find("#>", i + 2)
+            i = end + 2 if end >= 0 else n
+            out.append(" ")
+            at_boundary = True
+            continue
+        if at_boundary and ch == "#":
+            while i < n and command[i] not in "\r\n":
+                i += 1
+            out.append(" ")
+            at_boundary = True
+            continue
+        if ch == "'":
+            start = i
+            i += 1
+            while i < n:
+                if not in_posix and command[i:i + 2] == "''":
+                    i += 2
+                    continue
+                if command[i] == "'":
+                    i += 1
+                    break
+                i += 1
+            out.append(command[start:i])
+            at_boundary = not in_posix
+            continue
+        if ch == '"':
+            start = i
+            i += 1
+            while i < n:
+                dc = command[i]
+                if not in_posix and dc == "`":
+                    i += 2
+                    continue
+                if in_posix and dc == "\\":
+                    i += 2
+                    continue
+                if not in_posix and command[i:i + 2] == '""' and i > start + 1:
+                    i += 2
+                    continue
+                if dc == "$" and i + 1 < n and command[i + 1] == "(":
+                    j = _scan_matching_paren(command, i + 1, in_posix=in_posix)
+                    i = j + 1 if j < n else n
+                    continue
+                if dc == '"':
+                    i += 1
+                    break
+                i += 1
+            out.append(command[start:i])
+            at_boundary = not in_posix
+            continue
+        if not in_posix and ch == "`":
+            out.append(command[i:i + 2])
+            at_boundary = False
+            i += 2
+            continue
+        if in_posix and ch == "\\":
+            out.append(command[i:i + 2])
+            at_boundary = False
+            i += 2
+            continue
+        out.append(ch)
+        at_boundary = False
+        i += 1
+    return "".join(out)
+
+
 def _tokenize_command(command: str, in_cmd: bool = False,
                       in_posix: bool = False) -> tuple[list[_CmdSeg], list[str]]:
     """Scan `command` into top-level pipeline/statement segments while preserving each token's unquoted value,
@@ -1885,7 +2016,21 @@ def _tokenize_command(command: str, in_cmd: bool = False,
         if ch in " \t\r":
             i += 1
             continue
-        if ch in ";\n{}":
+        if not in_cmd and not in_posix and ch == "{":
+            j = _scan_matching_brace(command, i)
+            end_idx = j + 1 if j < n else n
+            inner_b = command[i + 1:j]
+            if inner_b.strip():
+                paren_subs.append(inner_b)
+            cur_tokens.append(_CmdTok(inner_b, command[i:end_idx], "{", i - seg_start, end_idx - seg_start))
+            i = end_idx
+            continue
+        if ch in ";\n}":
+            flush(i, ch)
+            i += 1
+            seg_start = i
+            continue
+        if ch == "{":
             flush(i, ch)
             i += 1
             seg_start = i
@@ -2348,43 +2493,247 @@ def _classify_pwsh_switch(tok: _CmdTok) -> tuple[str, str | None] | None:
     return ("unknown", inline) if raw.startswith("-") else None
 
 
-_POSIX_POS_PARAM = re.compile(r"^\$(?:[0-9@*]|\{[0-9@*][^}]*\})$")
-_PS_ARGS_PARAM = re.compile(r"^\$args(?:\b|\[)", re.IGNORECASE)
+def _ps_sq(val: str) -> str:
+    return "'" + val.replace("'", "''") + "'"
 
 
-def _posix_invokes_positional(script_str: str) -> bool:
-    segs, subs = _tokenize_command(script_str, in_posix=True)
-    for s in segs:
-        if s.tokens and _POSIX_POS_PARAM.match(s.tokens[0].val):
-            return True
-    return any(_posix_invokes_positional(sub) for sub in subs)
+def _ps_splat_elem(val: str) -> str:
+    if re.fullmatch(r"-[A-Za-z?][A-Za-z0-9-]*(?::[^\s'\";|&()`$]*)?", val):
+        return val
+    return _ps_sq(val)
 
 
-def _ps_invokes_args(script_str: str) -> bool:
-    segs, subs = _tokenize_command(script_str)
-    for s in segs:
-        eff = list(s.tokens)
-        while eff and not eff[0].quote:
-            v0 = eff[0].val
-            if v0 in ("$", "&", "."):
-                eff = eff[1:]
+def _ps_dq_esc(val: str) -> str:
+    return val.replace("`", "``").replace('"', '`"').replace("$", "`$")
+
+
+_PS_DQ_SUB_ARGS_IDX = re.compile(r"^\$\(\s*(?:\$args|\$\{args\})\[\s*(-?\d+)\s*\]\s*\)", re.IGNORECASE)
+_PS_DQ_SUB_ARGS_ALL = re.compile(r"^\$\(\s*[@$]\{?args\}?\s*\)", re.IGNORECASE)
+_PS_DQ_BARE_ARGS = re.compile(r"^(?:\$\{args\}|\$args\b)", re.IGNORECASE)
+_PS_UNQ_ARGS_IDX = re.compile(r"^(?:\$args|\$\{args\})\[\s*(-?\d+)\s*\]", re.IGNORECASE)
+_PS_UNQ_ARGS_DYN = re.compile(r"^(?:\$args|\$\{args\})\[\s*([^\]]+)\s*\]", re.IGNORECASE)
+_PS_UNQ_ARGS_ALL = re.compile(r"^(?:@args\b|@\{args\}|\$args\b|\$\{args\})", re.IGNORECASE)
+
+
+def _expand_ps_args_once(script_str: str, fwd: list[str], dyn_override: str | None = None) -> tuple[str, bool]:
+    out: list[str] = []
+    saw_dyn = False
+    n = len(script_str)
+    i = 0
+    splatted_all = " ".join(_ps_splat_elem(x) for x in fwd)
+    joined_dq = _ps_dq_esc(" ".join(fwd))
+    while i < n:
+        ch = script_str[i]
+        if ch == "`":
+            out.append(script_str[i:i + 2])
+            i += 2
+            continue
+        if ch == "'":
+            start = i
+            i += 1
+            while i < n:
+                if script_str[i:i + 2] == "''":
+                    i += 2
+                    continue
+                if script_str[i] == "'":
+                    i += 1
+                    break
+                i += 1
+            out.append(script_str[start:i])
+            continue
+        if ch == '"':
+            out.append('"')
+            i += 1
+            while i < n:
+                dc = script_str[i]
+                if dc == "`":
+                    out.append(script_str[i:i + 2])
+                    i += 2
+                    continue
+                if script_str[i:i + 2] == '""':
+                    out.append('""')
+                    i += 2
+                    continue
+                if dc == '"':
+                    out.append('"')
+                    i += 1
+                    break
+                if dc == "$":
+                    tail_dq = script_str[i:]
+                    m_dqi = _PS_DQ_SUB_ARGS_IDX.match(tail_dq)
+                    if m_dqi:
+                        idx = int(m_dqi.group(1))
+                        out.append(_ps_dq_esc(fwd[idx]) if -len(fwd) <= idx < len(fwd) else "")
+                        i += m_dqi.end()
+                        continue
+                    m_dqa = _PS_DQ_SUB_ARGS_ALL.match(tail_dq)
+                    if m_dqa:
+                        out.append(joined_dq)
+                        i += m_dqa.end()
+                        continue
+                    if i + 1 < n and script_str[i + 1] == "(":
+                        j = _scan_matching_paren(script_str, i + 1, in_posix=False)
+                        inner_exp, inner_dyn = _expand_ps_args_once(script_str[i + 2:j], fwd, dyn_override)
+                        saw_dyn = saw_dyn or inner_dyn
+                        out.append("$(" + inner_exp + (")" if j < n else ""))
+                        i = j + 1 if j < n else n
+                        continue
+                    m_dqb = _PS_DQ_BARE_ARGS.match(tail_dq)
+                    if m_dqb:
+                        out.append(joined_dq)
+                        i += m_dqb.end()
+                        continue
+                out.append(dc)
+                i += 1
+            continue
+        if ch in ("$", "@"):
+            tail_u = script_str[i:]
+            m_ui = _PS_UNQ_ARGS_IDX.match(tail_u)
+            if m_ui:
+                idx = int(m_ui.group(1))
+                out.append(_ps_splat_elem(fwd[idx]) if -len(fwd) <= idx < len(fwd) else "''")
+                i += m_ui.end()
                 continue
-            if v0.startswith("$") and len(eff) > 1 and eff[1].val == "=":
-                eff = eff[2:]
+            m_ud = _PS_UNQ_ARGS_DYN.match(tail_u)
+            if m_ud:
+                saw_dyn = True
+                out.append(_ps_splat_elem(dyn_override) if dyn_override is not None else splatted_all)
+                i += m_ud.end()
                 continue
-            if v0.startswith("$") and "=" in v0:
-                eff = eff[1:]
+            m_ua = _PS_UNQ_ARGS_ALL.match(tail_u)
+            if m_ua:
+                out.append(splatted_all)
+                i += m_ua.end()
                 continue
-            break
-        if eff:
-            h0 = _bare(eff[0].val).strip("'\"")
-            if _PS_ARGS_PARAM.match(eff[0].val):
-                return True
-            if h0 in ("start-process", "start", "saps", "invoke-item", "ii", "invoke-expression", "iex") \
-                    and any(_PS_ARGS_PARAM.match(t.val) for t in eff[1:]):
-                return True
-    return (any(_ps_invokes_args(sub) for sub in subs)
-            or any(_ps_invokes_args(sub) for sub in _extract_subexpressions(script_str)))
+        out.append(ch)
+        i += 1
+    return "".join(out), saw_dyn
+
+
+def _expand_ps_args(script_str: str, fwd: list[str]) -> list[str]:
+    """Expand PowerShell `@args` / `$args` / `$args[i]` in `script_str` against forwarded `fwd` arguments."""
+    if not fwd:
+        return []
+    primary, saw_dyn = _expand_ps_args_once(script_str, fwd)
+    results = [primary]
+    if saw_dyn:
+        for elem in fwd[:16]:
+            cand, _ = _expand_ps_args_once(script_str, fwd, dyn_override=elem)
+            if cand not in results:
+                results.append(cand)
+    return results
+
+
+def _sh_sq(val: str) -> str:
+    return "'" + val.replace("'", "'\\''") + "'"
+
+
+def _sh_splat_elem(val: str) -> str:
+    if re.fullmatch(r"-[A-Za-z0-9-]+", val):
+        return val
+    return _sh_sq(val)
+
+
+def _sh_dq_esc(val: str) -> str:
+    return val.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
+
+
+_SH_BRACE_POS = re.compile(r"^\$\{(\d+)\}")
+_SH_BRACE_ALL = re.compile(r"^\$\{[@*](?::[^}]*)?\}")
+
+
+def _expand_posix_positional(script_str: str, pos_args: list[str]) -> str:
+    """Expand POSIX `$0`, `$1`..`$9`, `${N}`, `$@`, `$*`, `${@}`, and `${*}` in `script_str` against `pos_args`."""
+    if not pos_args:
+        return script_str
+    arg0 = pos_args[0]
+    rest = pos_args[1:]
+    splatted_rest = " ".join(_sh_splat_elem(x) for x in rest)
+    out: list[str] = []
+    n = len(script_str)
+    i = 0
+    while i < n:
+        ch = script_str[i]
+        if ch == "\\":
+            out.append(script_str[i:i + 2])
+            i += 2
+            continue
+        if ch == "'":
+            end = script_str.find("'", i + 1)
+            j = end + 1 if end >= 0 else n
+            out.append(script_str[i:j])
+            i = j
+            continue
+        if ch == '"':
+            out.append('"')
+            i += 1
+            while i < n:
+                dc = script_str[i]
+                if dc == "\\":
+                    out.append(script_str[i:i + 2])
+                    i += 2
+                    continue
+                if dc == '"':
+                    out.append('"')
+                    i += 1
+                    break
+                if dc == "$":
+                    tail_dq = script_str[i:]
+                    if tail_dq.startswith("$@") or _SH_BRACE_ALL.match(tail_dq) and tail_dq[2] == "@":
+                        step = 2 if tail_dq.startswith("$@") else _SH_BRACE_ALL.match(tail_dq).end()  # type: ignore[union-attr]
+                        out.append('\" \"'.join(_sh_dq_esc(x) for x in rest))
+                        i += step
+                        continue
+                    if tail_dq.startswith("$*") or _SH_BRACE_ALL.match(tail_dq):
+                        step = 2 if tail_dq.startswith("$*") else _SH_BRACE_ALL.match(tail_dq).end()  # type: ignore[union-attr]
+                        out.append(_sh_dq_esc(" ".join(rest)))
+                        i += step
+                        continue
+                    m_bp = _SH_BRACE_POS.match(tail_dq)
+                    if m_bp:
+                        idx = int(m_bp.group(1))
+                        val = arg0 if idx == 0 else (pos_args[idx] if idx < len(pos_args) else "")
+                        out.append(_sh_dq_esc(val))
+                        i += m_bp.end()
+                        continue
+                    if i + 1 < n and script_str[i + 1].isdigit():
+                        idx = int(script_str[i + 1])
+                        val = arg0 if idx == 0 else (pos_args[idx] if idx < len(pos_args) else "")
+                        out.append(_sh_dq_esc(val))
+                        i += 2
+                        continue
+                    if i + 1 < n and script_str[i + 1] == "(":
+                        j = _scan_matching_paren(script_str, i + 1, in_posix=True)
+                        out.append("$(" + _expand_posix_positional(script_str[i + 2:j], pos_args) + (")" if j < n else ""))
+                        i = j + 1 if j < n else n
+                        continue
+                out.append(dc)
+                i += 1
+            continue
+        if ch == "$":
+            tail_u = script_str[i:]
+            m_all = _SH_BRACE_ALL.match(tail_u)
+            if tail_u.startswith(("$@", "$*")) or m_all:
+                step = 2 if tail_u.startswith(("$@", "$*")) else m_all.end()  # type: ignore[union-attr]
+                out.append(splatted_rest)
+                i += step
+                continue
+            m_bp = _SH_BRACE_POS.match(tail_u)
+            if m_bp:
+                idx = int(m_bp.group(1))
+                val = arg0 if idx == 0 else (pos_args[idx] if idx < len(pos_args) else "")
+                out.append(_sh_splat_elem(val) if val else "''")
+                i += m_bp.end()
+                continue
+            if i + 1 < n and script_str[i + 1].isdigit():
+                idx = int(script_str[i + 1])
+                val = arg0 if idx == 0 else (pos_args[idx] if idx < len(pos_args) else "")
+                out.append(_sh_splat_elem(val) if val else "''")
+                i += 2
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
 
 
 def _piped_payload_of(prev_seg: _CmdSeg) -> str | None:
@@ -2418,6 +2767,7 @@ def _agy_recurse(payload: str, depth: int, in_cmd: bool = False, in_posix: bool 
 
 def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False) -> str | None:
     """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
+    command = _strip_shell_comments(command, in_cmd=in_cmd, in_posix=in_posix)
     if not in_cmd:
         for sub in _extract_subexpressions(command, in_posix=in_posix):
             why = _agy_recurse(sub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
@@ -2431,11 +2781,25 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
     for am in re.finditer(r"(?:^|[;&|{(\n]\s*)\$(\w+)\s*=", unquoted):
         vname = re.escape(am.group(1))
         cm = re.search(rf"(?:^|[;&|{{(\n]\s*)\${vname}\s*=\s*([^;\n|]+)", cleaned)
-        if cm and _AGY_PS_RESOLVER_RHS.search(cm.group(1)) \
-                and re.search(rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii)\b)\s+[^;\n|]*\${vname}\b",
-                              cleaned, re.IGNORECASE):
-            return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass delegation and "
-                    "dispatcher gates (standards/delegation.md).")
+        if cm:
+            rhs_val = cm.group(1).strip()
+            has_cli_rhs = (_AGY_PS_RESOLVER_RHS.search(rhs_val)
+                           or (rhs_val.startswith("@") and bool(_AGY_CLI_WORD.search(rhs_val))))
+            if has_cli_rhs and re.search(
+                    rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii)\b)\s+[^;\n|]*[$@]{vname}\b",
+                    cleaned, re.IGNORECASE):
+                return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass delegation and "
+                        "dispatcher gates (standards/delegation.md).")
+            if not in_cmd and not in_posix:
+                for gm in re.finditer(rf"\bgit(?:\.exe)?\b([^;\n|]*[$@]{vname}\b[^;\n|]*)", cleaned, re.IGNORECASE):
+                    rhs_inner = rhs_val[2:-1] if rhs_val.startswith("@(") and rhs_val.endswith(")") else rhs_val
+                    rhs_elems = _split_ps_comma_elements(rhs_inner)
+                    if rhs_elems:
+                        splat = " ".join(_ps_splat_elem(x) for x in rhs_elems)
+                        inlined_git = "git " + re.sub(rf"[$@]{vname}\b", lambda _m: splat, gm.group(1))
+                        why = _agy_recurse(inlined_git, depth + 1, in_cmd=False, in_posix=False)
+                        if why:
+                            return why
     if in_posix:
         for am in re.finditer(r"(?:^|[;&|{(\n]\s*)([A-Za-z_]\w*)=", unquoted):
             vname = re.escape(am.group(1))
@@ -2464,6 +2828,14 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                                    or ("=" in tok0.val and not tok0.val.startswith("-"))):
                 cur = cur[1:]
                 continue
+            if tok0.quote == "{":
+                if len(cur) > 1 and re.search(r"[@$]\{?args\b", tok0.val, re.IGNORECASE):
+                    for exp_sb in _expand_ps_args(tok0.val, [t.val for t in cur[1:]]):
+                        why = _agy_recurse(exp_sb, depth + 1, in_cmd=False, in_posix=False)
+                        if why:
+                            return why
+                cur = []
+                break
             if low == "command":
                 if len(cur) > 1 and cur[1].val in ("-v", "-V"):
                     break
@@ -2472,6 +2844,67 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
             if low == "nohup":
                 cur = cur[1:]
                 continue
+            if low == "eval":
+                if len(cur) > 1:
+                    why = _agy_recurse(" ".join(t.val for t in cur[1:]), depth + 1, in_cmd=False, in_posix=True)
+                    if why:
+                        return why
+                cur = []
+                break
+            if low == "exec":
+                idx_ex = 1
+                while idx_ex < len(cur) and cur[idx_ex].val.startswith("-") and len(cur[idx_ex].val) >= 2:
+                    ef = cur[idx_ex].val
+                    if ef == "--":
+                        idx_ex += 1
+                        break
+                    if ef == "-a" or (ef.startswith("-") and not ef.startswith("--") and ef.endswith("a")):
+                        idx_ex += 2
+                        continue
+                    idx_ex += 1
+                cur = cur[idx_ex:]
+                continue
+            if low in ("invoke-command", "icm"):
+                sb_body: str | None = None
+                icm_args: list[str] = []
+                idx_icm = 1
+                while idx_icm < len(cur):
+                    itok = cur[idx_icm]
+                    if itok.quote == "{":
+                        sb_body = itok.val
+                        idx_icm += 1
+                        continue
+                    iflag, iinline = _split_ps_flag(itok.val)
+                    ibody = iflag[1:] if iflag.startswith("-") else ""
+                    if not itok.quote and ibody and ("argumentlist".startswith(ibody) or ibody == "args"):
+                        raw_icm: list[str] = []
+                        if iinline is not None:
+                            raw_icm.append(itok.raw.split(":", 1)[1] if ":" in itok.raw else iinline)
+                            idx_icm += 1
+                        elif idx_icm + 1 < len(cur):
+                            raw_icm.append(cur[idx_icm + 1].raw)
+                            idx_icm += 2
+                            while idx_icm < len(cur) and (
+                                    cur[idx_icm - 1].raw.endswith(",") or cur[idx_icm].raw.startswith(",")):
+                                if cur[idx_icm].raw == "," and idx_icm + 1 < len(cur):
+                                    raw_icm.append(cur[idx_icm + 1].raw)
+                                    idx_icm += 2
+                                else:
+                                    raw_icm.append(cur[idx_icm].raw)
+                                    idx_icm += 1
+                        else:
+                            idx_icm += 1
+                        for rc in raw_icm:
+                            icm_args.extend(_split_ps_comma_elements(rc))
+                        continue
+                    idx_icm += 1
+                if sb_body and icm_args and re.search(r"[@$]\{?args\b", sb_body, re.IGNORECASE):
+                    for exp_icm in _expand_ps_args(sb_body, icm_args):
+                        why = _agy_recurse(exp_icm, depth + 1, in_cmd=False, in_posix=False)
+                        if why:
+                            return why
+                cur = []
+                break
             if low in ("invoke-expression", "iex"):
                 idx = 1
                 inline_iex: str | None = None
@@ -2656,13 +3089,19 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                         why = _agy_recurse(script_str, depth + 1, in_cmd=False, in_posix=True)
                         if why:
                             return why
-                        if pos_args and _posix_invokes_positional(script_str):
-                            for pa in pos_args:
-                                pa_bare = _bare(pa).strip("'\"")
-                                if pa_bare in _AGY_BLOCKED_CLIS:
-                                    return _blocked_cli_reason(pa_bare)
-                                if _is_git_no_verify_long(pa):
-                                    return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
+                        if pos_args and re.search(r"\$(?:[0-9@*]|(?:\{[0-9@*!]))", script_str):
+                            exp_sh = _expand_posix_positional(script_str, pos_args)
+                            why = _agy_recurse(exp_sh, depth + 1, in_cmd=False, in_posix=True)
+                            if why:
+                                return why
+                            if re.search(r"\$\{![^}]+\}", script_str):
+                                for pa in pos_args:
+                                    pa_bare = _bare(pa).strip("'\"")
+                                    if pa_bare in _AGY_BLOCKED_CLIS:
+                                        return _blocked_cli_reason(pa_bare)
+                                    if _is_git_no_verify_long(pa) or (
+                                            "git" in script_str.lower() and pa.startswith("-") and "n" in pa[1:]):
+                                        return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
                     cur = []
                     break
                 tail = cur[idx:]
@@ -2783,13 +3222,11 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                         why = _agy_recurse(script_str, depth + 1, in_cmd=False, in_posix=False)
                         if why:
                             return why
-                        if len(cwa_vals) > 1 and _ps_invokes_args(script_str):
-                            for ca in cwa_vals[1:]:
-                                ca_bare = _bare(ca).strip("'\"")
-                                if ca_bare in _AGY_BLOCKED_CLIS:
-                                    return _blocked_cli_reason(ca_bare)
-                                if _is_git_no_verify_long(ca):
-                                    return "Commands never pass --no-verify; hooks are mandatory (AGENTS.md)."
+                        if len(cwa_vals) > 1 and re.search(r"[@$]\{?args\b", script_str, re.IGNORECASE):
+                            for exp_ps in _expand_ps_args(script_str, cwa_vals[1:]):
+                                why = _agy_recurse(exp_ps, depth + 1, in_cmd=False, in_posix=False)
+                                if why:
+                                    return why
                     cur = []
                     break
                 tail_vals = ([inline_pwsh] if inline_pwsh is not None else []) + [t.val for t in cur[idx:]]
@@ -3672,6 +4109,12 @@ def _self_test() -> int:
         'cmd /c"rg -n ""codex"" scripts"',
         "bash -lc'rg -n \"codex\" scripts'",
         "Start-Process -wo . -Path rg -Args '-n', '\"codex\"', 'scripts'",
+        "Write-Output 'ok' # note; codex is reviewed via dispatcher",
+        "Write-Output 'ok' <# block; codex exec review #>; rg -n foo scripts",
+        "bash -c 'echo ok # note; codex exec review'",
+        "bash -c 'echo ok#codex; rg -n foo scripts'",
+        "& { rg -n $args[0] scripts } codex",
+        "$m = 'ship'; git commit -m $m",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -3698,6 +4141,18 @@ def _self_test() -> int:
             ("git am --no-v prefix no-verify", "run_command", {"CommandLine": "git am --no-v patch.mbox"}, "--no-verify"),
             ("git push --no-veri prefix no-verify", "run_command", {"CommandLine": "git push --no-veri origin main"}, "--no-verify"),
             ("git -c core.hooksPath override", "run_command", {"CommandLine": "git -c core.hooksPath=/dev/null commit -m x"}, "--no-verify"),
+            ("pwsh -CommandWithArgs git @args -n", "run_command", {"CommandLine": "pwsh -NoProfile -CommandWithArgs '& git @args' commit -n -m test"}, "--no-verify"),
+            ("pwsh -cwa git $args[0] $args[1]", "run_command", {"CommandLine": "pwsh -cwa 'git $args[0] $args[1] -m test' commit -n"}, "--no-verify"),
+            ("pwsh -cwa Start-Process @args codex", "run_command", {"CommandLine": "pwsh -cwa 'Start-Process @args' -FilePath codex -Args 'exec review'"}, "review-dispatch.py"),
+            ("scriptblock call & { git @args } commit -n", "run_command", {"CommandLine": "& { git @args } commit -n -m test"}, "--no-verify"),
+            ("Invoke-Command -ScriptBlock { git @args } -Args", "run_command", {"CommandLine": "Invoke-Command -ScriptBlock { git @args } -ArgumentList 'commit', '-n', '-m', 'test'"}, "--no-verify"),
+            ("PowerShell array splat git @a -n", "run_command", {"CommandLine": "$a = @('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
+            ("PowerShell hashtable splat Start-Process @p codex", "run_command", {"CommandLine": "$p = @{ FilePath = 'codex'; ArgumentList = 'exec review' }; Start-Process @p"}, "Variable-indirect"),
+            ("bash -c git $@ commit -n", "run_command", {"CommandLine": 'bash -c \'git "$@"\' _ commit -n -m test'}, "--no-verify"),
+            ("bash -c $0 git commit -n", "run_command", {"CommandLine": 'bash -c \'"$0" commit -n -m test\' git'}, "--no-verify"),
+            ("bash eval $@ codex", "run_command", {"CommandLine": 'bash -c \'eval "$@"\' _ codex exec review'}, "review-dispatch.py"),
+            ("bash exec -a codex", "run_command", {"CommandLine": "bash -c 'exec -a helper codex exec review'"}, "review-dispatch.py"),
+            ("backtick-escaped `# not a comment before codex", "run_command", {"CommandLine": "Write-Output `#; codex exec review"}, "review-dispatch.py"),
             ("quoted --no-verify on git commit", "run_command", {"CommandLine": 'git commit "--no-verify" -m x'}, "--no-verify"),
             ("pwsh wrapped git commit --no-verify", "run_command", {"CommandLine": 'pwsh -Command "git commit --no-verify -m x"'}, "--no-verify"),
             ("subexpression git commit --no-verify", "run_command", {"CommandLine": 'Write-Output "$(git commit --no-verify -m x)"'}, "--no-verify"),
