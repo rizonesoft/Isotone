@@ -682,6 +682,8 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": "pwsh -NoProfile -co codex exec review"}}),
             ("a `pwsh -CommandWithArgs` `@args` hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "pwsh -NoProfile -CommandWithArgs '& git @args' commit -n -m test"}}),
+            ("an indented PowerShell `@a` splat hook bypass", "deny",
+             {"name": "run_command", "args": {"CommandLine": "  $a = @('commit', '-n', '-m', 'test'); git @a"}}),
             ("a clustered `git am -qn` hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "git am -qn patch.mbox"}}),
             ("a PowerShell command with an inline `# ...; codex` comment", "allow",
@@ -1563,10 +1565,7 @@ _AGY_PS_SPAWN = re.compile(
     r"|\[(?:System\.Management\.Automation\.)?ScriptBlock\]\s*::\s*Create\b"
     r"|\$ExecutionContext\.InvokeCommand\b"
     r"|\bNew-Object\b[^;\n|]*\b(?:(?:System\.)?(?:Diagnostics\.)?ProcessStartInfo|WScript\.Shell|Shell\.Application)\b"
-    r"|(?:^|[;&|{(\n]\s*)Invoke-(?:Wmi|Cim)Method\b)",
-    re.IGNORECASE)
-_AGY_PS_VAR_CLI = re.compile(
-    r"\$(\w+)\s*=\s*['\"]?(?:[^'\";\s]*[/\\])?(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?['\"]?(?=\s|;|$)",
+    r"|(?:^|[;&|{(\n])\s*Invoke-(?:Wmi|Cim)Method\b)",
     re.IGNORECASE)
 _AGY_PS_RESOLVER_RHS = re.compile(
     r"(?:^\s*['\"]?(?:[^'\";\s]*[/\\])?(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?['\"]?\s*$"
@@ -2765,9 +2764,49 @@ def _agy_recurse(payload: str, depth: int, in_cmd: bool = False, in_posix: bool 
     return _agy_command_decision(payload, depth, in_cmd=in_cmd, in_posix=in_posix)
 
 
+def _extract_ps_assignments(cleaned: str, unquoted: str) -> list[tuple[str, str]]:
+    """Return `(var_name, rhs_text)` for top-level PowerShell `$var = ...` and `Set-Variable`/`New-Variable` forms."""
+    found: list[tuple[str, str]] = []
+    for am in re.finditer(r"(?:^|[;&|{(\n])\s*\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*=", unquoted):
+        raw_name = am.group(1) or am.group(2) or ""
+        vname = re.escape(raw_name)
+        cm = re.search(rf"(?:^|[;&|{{(\n])\s*\$(?:\{{{vname}\}}|{vname})\s*=", cleaned)
+        if not cm:
+            continue
+        pos = cm.end()
+        while pos < len(cleaned) and cleaned[pos] in " \t":
+            pos += 1
+        if pos >= len(cleaned):
+            continue
+        if cleaned[pos:].startswith("@(") or cleaned[pos] == "(":
+            open_p = pos + 1 if cleaned[pos] == "@" else pos
+            j = _scan_matching_paren(cleaned, open_p, in_posix=False)
+            rhs_val = cleaned[pos:j + 1].strip()
+        elif cleaned[pos:].startswith("@{"):
+            j = _scan_matching_brace(cleaned, pos + 1)
+            rhs_val = cleaned[pos:j + 1].strip()
+        else:
+            m_line = re.match(r"[^;\r\n|]+", cleaned[pos:])
+            rhs_val = m_line.group(0).strip() if m_line else ""
+        if rhs_val:
+            found.append((raw_name, rhs_val))
+    for sm in re.finditer(
+            r"(?:^|[;&|{(\n])\s*(?:Set-Variable|New-Variable|sv|nv)\s+"
+            r"(?:-[Nn](?:ame)?\s+)?['\"]?([A-Za-z_][\w:]*)['\"]?\s+(?:-[Vv](?:alue)?\s+)?([^;\r\n|]+)",
+            cleaned, re.IGNORECASE):
+        found.append((sm.group(1), sm.group(2).strip()))
+    return found
+
+
 def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False) -> str | None:
     """Why one Antigravity `run_command` string violates hook or delegation rules, or None to allow it."""
     command = _strip_shell_comments(command, in_cmd=in_cmd, in_posix=in_posix)
+    if in_cmd:
+        for cm_set in list(re.finditer(
+                r"(?:^|[&\n])\s*set\s+(?:/[ap]\s+)?\"?([A-Za-z_]\w*)=([^\"&\r\n]+)\"?", command, re.IGNORECASE)):
+            cv = re.escape(cm_set.group(1))
+            cval = cm_set.group(2).strip()
+            command = re.sub(rf"(?:%{cv}%|!{cv}!)", lambda _m, v=cval: v, command, flags=re.IGNORECASE)
     if not in_cmd:
         for sub in _extract_subexpressions(command, in_posix=in_posix):
             why = _agy_recurse(sub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
@@ -2778,37 +2817,63 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
     if _AGY_PS_SPAWN.search(unquoted) and _AGY_CLI_WORD.search(cleaned):
         return ("Direct .NET/COM/CIM process launches of `claude`, `agy`, or `codex` bypass delegation and dispatcher "
                 "gates (standards/delegation.md).")
-    for am in re.finditer(r"(?:^|[;&|{(\n]\s*)\$(\w+)\s*=", unquoted):
-        vname = re.escape(am.group(1))
-        cm = re.search(rf"(?:^|[;&|{{(\n]\s*)\${vname}\s*=\s*([^;\n|]+)", cleaned)
-        if cm:
-            rhs_val = cm.group(1).strip()
-            has_cli_rhs = (_AGY_PS_RESOLVER_RHS.search(rhs_val)
-                           or (rhs_val.startswith("@") and bool(_AGY_CLI_WORD.search(rhs_val))))
-            if has_cli_rhs and re.search(
-                    rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii)\b)\s+[^;\n|]*[$@]{vname}\b",
-                    cleaned, re.IGNORECASE):
-                return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass delegation and "
-                        "dispatcher gates (standards/delegation.md).")
-            if not in_cmd and not in_posix:
-                for gm in re.finditer(rf"\bgit(?:\.exe)?\b([^;\n|]*[$@]{vname}\b[^;\n|]*)", cleaned, re.IGNORECASE):
-                    rhs_inner = rhs_val[2:-1] if rhs_val.startswith("@(") and rhs_val.endswith(")") else rhs_val
-                    rhs_elems = _split_ps_comma_elements(rhs_inner)
-                    if rhs_elems:
-                        splat = " ".join(_ps_splat_elem(x) for x in rhs_elems)
-                        inlined_git = "git " + re.sub(rf"[$@]{vname}\b", lambda _m: splat, gm.group(1))
-                        why = _agy_recurse(inlined_git, depth + 1, in_cmd=False, in_posix=False)
-                        if why:
-                            return why
+    for raw_vname, rhs_val in _extract_ps_assignments(cleaned, unquoted):
+        vname = re.escape(raw_vname)
+        vref = rf"[$@](?:\{{{vname}\}}|{vname}(?![\w:]))"
+        has_cli_rhs = (_AGY_PS_RESOLVER_RHS.search(rhs_val)
+                       or (rhs_val.startswith(("@", "(")) and bool(_AGY_CLI_WORD.search(rhs_val))))
+        if has_cli_rhs and re.search(
+                rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii)\b)\s+[^;\n|]*{vref}",
+                cleaned, re.IGNORECASE):
+            return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass delegation and "
+                    "dispatcher gates (standards/delegation.md).")
+        if not in_cmd and not in_posix:
+            for gm in re.finditer(rf"\bgit(?:\.exe)?\b([^;\n|]*{vref}[^;\n|]*)", cleaned, re.IGNORECASE):
+                rhs_inner = (rhs_val[2:-1] if rhs_val.startswith("@(") and rhs_val.endswith(")")
+                             else (rhs_val[1:-1] if rhs_val.startswith("(") and rhs_val.endswith(")") else rhs_val))
+                rhs_elems = _split_ps_comma_elements(rhs_inner)
+                if rhs_elems:
+                    splat = " ".join(_ps_splat_elem(x) for x in rhs_elems)
+                    inlined_git = "git " + re.sub(vref, lambda _m, s=splat: s, gm.group(1), flags=re.IGNORECASE)
+                    why = _agy_recurse(inlined_git, depth + 1, in_cmd=False, in_posix=False)
+                    if why:
+                        return why
     if in_posix:
-        for am in re.finditer(r"(?:^|[;&|{(\n]\s*)([A-Za-z_]\w*)=", unquoted):
-            vname = re.escape(am.group(1))
-            cm = re.search(rf"(?:^|[;&|{{(\n]\s*){vname}=\s*([^;\n|]+)", command)
-            if cm and _AGY_PS_RESOLVER_RHS.search(cm.group(1)) \
-                    and re.search(rf"(?:^|[;&|{{(\n]\s*)(?:command\s+|nohup\s+|env\s+)*['\"]?\$\{{?{vname}\}}?\b",
-                                  command):
+        sh_assign_re = re.compile(
+            r"(?:^|[;&|{(\n])\s*(?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?([A-Za-z_]\w*)=")
+        for am in sh_assign_re.finditer(unquoted):
+            raw_sv = am.group(1)
+            vname = re.escape(raw_sv)
+            cm = re.search(
+                rf"(?:^|[;&|{{(\n])\s*(?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?{vname}=",
+                command)
+            if not cm:
+                continue
+            pos = cm.end()
+            if pos < len(command) and command[pos] == "(":
+                j = _scan_matching_paren(command, pos, in_posix=True)
+                rhs_sh = command[pos + 1:j]
+                is_arr = True
+            else:
+                m_sh = re.match(r"[^;\r\n|]+", command[pos:])
+                rhs_sh = m_sh.group(0).strip() if m_sh else ""
+                is_arr = False
+            vref_sh = rf"\$(?:\{{{vname}(?:\[[^\]]*\])?\}}|{vname}\b)"
+            if (_AGY_PS_RESOLVER_RHS.search(rhs_sh) or (is_arr and _AGY_CLI_WORD.search(rhs_sh))) \
+                    and re.search(
+                        rf"(?:^|[;&|{{(\n])\s*(?:command\s+|nohup\s+|env\s+|exec\s+|eval\s+)*['\"]?{vref_sh}",
+                        command):
                 return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
                         "dispatcher gates (standards/delegation.md).")
+            sh_segs, _ = _tokenize_command(rhs_sh, in_posix=True)
+            sh_elems = [t.val for s in sh_segs for t in s.tokens]
+            if sh_elems:
+                sh_splat = " ".join(_sh_splat_elem(x) for x in sh_elems)
+                for gm in re.finditer(rf"\bgit(?:\.exe)?\b([^;\n|]*{vref_sh}[^;\n|]*)", command):
+                    tail_git = re.sub(rf'"{vref_sh}"|{vref_sh}', lambda _m, s=sh_splat: s, gm.group(1))
+                    why = _agy_recurse("git " + tail_git, depth + 1, in_cmd=False, in_posix=True)
+                    if why:
+                        return why
     segments, paren_subs = _tokenize_command(command, in_cmd=in_cmd, in_posix=in_posix)
     for psub in paren_subs:
         why = _agy_recurse(psub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
@@ -4115,6 +4180,8 @@ def _self_test() -> int:
         "bash -c 'echo ok#codex; rg -n foo scripts'",
         "& { rg -n $args[0] scripts } codex",
         "$m = 'ship'; git commit -m $m",
+        "  $m = 'ship'; git commit -m $m",
+        "bash -c '  m=ship; git commit -m \"$m\"'",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -4147,6 +4214,14 @@ def _self_test() -> int:
             ("scriptblock call & { git @args } commit -n", "run_command", {"CommandLine": "& { git @args } commit -n -m test"}, "--no-verify"),
             ("Invoke-Command -ScriptBlock { git @args } -Args", "run_command", {"CommandLine": "Invoke-Command -ScriptBlock { git @args } -ArgumentList 'commit', '-n', '-m', 'test'"}, "--no-verify"),
             ("PowerShell array splat git @a -n", "run_command", {"CommandLine": "$a = @('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
+            ("indented PowerShell array splat git @a -n", "run_command", {"CommandLine": "  $a = @('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
+            ("multiline PowerShell array splat git @a -n", "run_command", {"CommandLine": "$a = @(\n  'commit',\n  '-n',\n  '-m',\n  'test'\n)\ngit @a"}, "--no-verify"),
+            ("Set-Variable PowerShell splat git @a -n", "run_command", {"CommandLine": "Set-Variable a ('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
+            ("indented PowerShell var indirect claude", "run_command", {"CommandLine": "  $bin = 'claude'; & $bin -p inspect"}, "Variable-indirect"),
+            ("indented Invoke-CimMethod codex", "run_command", {"CommandLine": "  Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='codex exec'}"}, "Direct .NET/COM/CIM"),
+            ("indented posix var assignment codex", "run_command", {"CommandLine": "bash -c '  c=codex; $c exec review'"}, "Variable-indirect"),
+            ("bash array splat git commit -n", "run_command", {"CommandLine": 'bash -c \'  a=(commit -n -m test); git "${a[@]}"\''}, "--no-verify"),
+            ("cmd set var git commit -n", "run_command", {"CommandLine": 'cmd /c "set f=-n&& git commit %f% -m test"'}, "--no-verify"),
             ("PowerShell hashtable splat Start-Process @p codex", "run_command", {"CommandLine": "$p = @{ FilePath = 'codex'; ArgumentList = 'exec review' }; Start-Process @p"}, "Variable-indirect"),
             ("bash -c git $@ commit -n", "run_command", {"CommandLine": 'bash -c \'git "$@"\' _ commit -n -m test'}, "--no-verify"),
             ("bash -c $0 git commit -n", "run_command", {"CommandLine": 'bash -c \'"$0" commit -n -m test\' git'}, "--no-verify"),
