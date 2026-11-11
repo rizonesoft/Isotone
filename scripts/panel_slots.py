@@ -694,6 +694,9 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
             ("a multi-variable PowerShell `$task` + `& $bin` CLI bypass", "deny",
              {"name": "run_command", "args": {
                  "CommandLine": "$task = 'inspect callers'; $bin = 'claude'; & $bin -p $task"}}),
+            ("an incremental PowerShell `$gitArgs += @('-m', 'fix')` array splat hook bypass", "deny",
+             {"name": "run_command", "args": {
+                 "CommandLine": "$gitArgs = @('commit', '-n'); $gitArgs += @('-m', 'fix'); git @gitArgs"}}),
             ("a clustered `git am -qn` hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "git am -qn patch.mbox"}}),
             ("a PowerShell command with an inline `# ...; codex` comment", "allow",
@@ -702,6 +705,9 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": "$pattern = 'codex'; Get-Content scripts/panel_slots.py | Select-String $pattern"}}),
             ("a PowerShell `& rg -n $pattern` search where `$pattern = 'codex'` is an argument", "allow",
              {"name": "run_command", "args": {"CommandLine": "$pattern = 'codex'; & rg -n $pattern scripts/panel_slots.py"}}),
+            ("a PowerShell `$patterns | ForEach-Object` pipeline search over CLI names", "allow",
+             {"name": "run_command", "args": {
+                 "CommandLine": "$patterns = @('codex', 'claude'); $patterns | ForEach-Object { rg -n $_ scripts }"}}),
             ("a read-only `rg` search mentioning `ProcessStartInfo|codex`", "allow",
              {"name": "run_command", "args": {"CommandLine": "rg -n 'ProcessStartInfo|codex' scripts"}}),
             ("a `cmd /c rg` search mentioning `codex`", "allow",
@@ -3028,7 +3034,10 @@ def _scan_ps_rhs_end(unquoted: str, start: int) -> int:
     return j
 
 
-_PS_VAR_EQ_RE = re.compile(r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*(?:\?\?=|[+\-*/%]?=)(?!=)")
+_PS_VAR_EQ_RE = re.compile(r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*(\?\?=|[+\-*/%]?=)(?!=)")
+_PS_PROP_EQ_RE = re.compile(
+    r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))"
+    r"(?:\.([A-Za-z_]\w*)|\[\s*(['\"]_*['\"])\s*\])\s*=(?!=)")
 _PS_VAR_DESTRUCT_ITEM = re.compile(r"^\s*\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*")
 _PS_REF_BRACED = re.compile(r"^[$@]\{([A-Za-z_][\w:]*)\}")
 _PS_REF_BARE = re.compile(r"^[$@]([A-Za-z_]\w*(?::[A-Za-z_]\w*)?)")
@@ -3044,11 +3053,13 @@ class _PsAssignSpan(NamedTuple):
     rhs_end: int
     destruct: bool
     is_foreach: bool = False
+    op: str = "="
+    prop_key: str = ""
 
 
 def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]:
-    """Return ordered `_PsAssignSpan` entries for PowerShell assignments and `Set-Variable` / `New-Variable` calls,
-    using length-preserving `unquoted` so character offsets match `command` exactly."""
+    """Return ordered `_PsAssignSpan` entries for PowerShell assignments, collection mutations, and `Set-Variable` /
+    `New-Variable` calls, using length-preserving `unquoted` so character offsets match `command` exactly."""
     found: list[_PsAssignSpan] = []
     for bm in re.finditer(r"(?:^|[;&|{(\n])\s*", unquoted):
         lhs_start = bm.end()
@@ -3059,6 +3070,7 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
         vm = _PS_VAR_EQ_RE.match(cur_u)
         if vm:
             names = [vm.group(1) or vm.group(2) or ""]
+            last_op = vm.group(3)
             eq_end = lhs_start + type_len + vm.end()
             while eq_end < len(command):
                 ws_end = eq_end
@@ -3070,6 +3082,7 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
                 if not vm_next:
                     break
                 names.append(vm_next.group(1) or vm_next.group(2) or "")
+                last_op = vm_next.group(3)
                 eq_end = ws_end + ntype_len + vm_next.end()
             pos = eq_end
             while pos < len(command) and command[pos] in " \t":
@@ -3077,7 +3090,26 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
             rhs_end = _scan_ps_rhs_end(unquoted, pos)
             rhs_val = command[pos:rhs_end].strip()
             if rhs_val and any(names):
-                found.append(_PsAssignSpan([n for n in names if n], rhs_val, lhs_start, eq_end, rhs_end, False))
+                found.append(_PsAssignSpan([n for n in names if n], rhs_val, lhs_start, eq_end, rhs_end, False, False, last_op))
+            continue
+        pm = _PS_PROP_EQ_RE.match(cur_u)
+        if pm:
+            pv_name = pm.group(1) or pm.group(2) or ""
+            if pm.group(3):
+                pkey = pm.group(3)
+            else:
+                q_s = lhs_start + type_len + pm.start(4)
+                q_e = lhs_start + type_len + pm.end(4)
+                q_toks, _ = _tokenize_command(command[q_s:q_e])
+                pkey = q_toks[0].tokens[0].val if q_toks and q_toks[0].tokens else ""
+            eq_end = lhs_start + type_len + pm.end()
+            pos = eq_end
+            while pos < len(command) and command[pos] in " \t":
+                pos += 1
+            rhs_end = _scan_ps_rhs_end(unquoted, pos)
+            rhs_val = command[pos:rhs_end].strip()
+            if pv_name and pkey and rhs_val:
+                found.append(_PsAssignSpan([pv_name], rhs_val, lhs_start, eq_end, rhs_end, False, False, "prop=", pkey))
             continue
         first_d = _PS_VAR_DESTRUCT_ITEM.match(cur_u)
         if first_d and cur_u[first_d.end():first_d.end() + 1] == ",":
@@ -3171,6 +3203,18 @@ def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]
         coll_text = command[fm.start(3):fm.end(3)].strip()
         if loop_v and coll_text:
             found.append(_PsAssignSpan([loop_v], coll_text, fm.start(), fm.start(3), fm.end(), False, True))
+    for mm in re.finditer(
+            r"(?:^|[;&|{(\n])\s*(?:\$null\s*=\s*|\[void\]\s*)*"
+            r"(\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\.(Add|AddRange)\s*\()",
+            unquoted, re.IGNORECASE):
+        mv_name = mm.group(2) or mm.group(3) or ""
+        m_kind = ".addrange" if mm.group(4).lower() == "addrange" else ".add"
+        open_p = mm.end(1) - 1
+        close_p = _scan_matching_paren(command, open_p, in_posix=False)
+        arg_inside = command[open_p + 1:close_p].strip()
+        stmt_end_m = min(close_p + 1, len(command))
+        if mv_name and arg_inside:
+            found.append(_PsAssignSpan([mv_name], arg_inside, mm.start(1), open_p + 1, stmt_end_m, False, False, m_kind))
     found.sort(key=lambda item: (item.lhs_start, item.eq_end))
     deduped: list[_PsAssignSpan] = []
     last_eq = -1
@@ -3210,15 +3254,74 @@ def _split_ps_array_items(raw_inner: str) -> list[str]:
     return items
 
 
+def _make_ps_scalar_binding(val: str, extra_props: dict[str, str] | None = None,
+                            force_cli: bool = False) -> dict:
+    val = val[:2048]
+    bare_v = _bare(val).strip("'\"")
+    has_cli = force_cli or bare_v in _AGY_BLOCKED_CLIS or bool(_AGY_PS_RESOLVER_RHS.search(_ps_sq(val)))
+    sq = _ps_sq(val)
+    return {
+        "kind": "scalar",
+        "splat": _ps_splat_elem(val),
+        "expr": sq,
+        "dq": _ps_dq_esc(val)[:2048],
+        "elems": [val],
+        "props": dict(extra_props) if extra_props else {},
+        "ht_items": [],
+        "has_cli": has_cli,
+    }
+
+
+def _make_ps_array_binding(elems: list[str]) -> dict:
+    elems = elems[:256]
+    has_cli = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x)) for x in elems)
+    return {
+        "kind": "array",
+        "splat": " ".join(_ps_splat_elem(x) for x in elems),
+        "expr": "@(" + ", ".join(_ps_sq(x) for x in elems) + ")",
+        "dq": _ps_dq_esc(" ".join(elems))[:2048],
+        "elems": list(elems),
+        "props": {},
+        "ht_items": [],
+        "has_cli": has_cli,
+    }
+
+
+def _make_ps_ht_binding(prop_order: list[tuple[str, str, bool]]) -> dict:
+    dedup: dict[str, tuple[str, str, bool]] = {}
+    for korig, vsplat, ehc in prop_order:
+        dedup[korig.lower()] = (korig, vsplat, ehc)
+    splat_parts = [f"-{korig} {vsplat}" for korig, vsplat, _ in dedup.values()]
+    expr_parts = [f"{_ps_sq(korig)} = {vsplat}" for korig, vsplat, _ in dedup.values()]
+    props = {kl: vsplat for kl, (_ko, vsplat, _ehc) in dedup.items()}
+    val_has_cli = any(ehc for _ko, _vs, ehc in dedup.values())
+    return {
+        "kind": "hashtable",
+        "splat": " ".join(splat_parts),
+        "expr": "@{ " + "; ".join(expr_parts) + " }" if expr_parts else "@{}",
+        "dq": "System.Collections.Hashtable",
+        "elems": [],
+        "props": props,
+        "ht_items": list(dedup.values()),
+        "has_cli": val_has_cli,
+    }
+
+
 def _eval_ps_rhs_binding(exp_rhs: str, depth: int = 0) -> dict | None:
-    """Evaluate a PowerShell RHS string into `{splat, dq, elems, props, has_cli}` if it is a literal/array/hashtable or
-    executable resolver; return `None` for arbitrary command invocations."""
-    if depth > 3 or not exp_rhs or len(exp_rhs) > 4096:
+    """Evaluate a PowerShell RHS string into `{kind, splat, expr, dq, elems, props, ht_items, has_cli}` if it is a
+    literal/array/hashtable or executable resolver; return `None` for `$null` or arbitrary command invocations."""
+    if depth > 4 or not exp_rhs or len(exp_rhs) > 4096:
         return None
-    body = _strip_ps_type_prefix(exp_rhs.strip()).strip()
-    if not body:
+    raw_trimmed = exp_rhs.strip()
+    body = _strip_ps_type_prefix(raw_trimmed).strip()
+    if not body or body.lower() == "$null":
         return None
-    if body.startswith("@{") and body.endswith("}"):
+    if (re.fullmatch(r"::new\(\s*\)", body, re.IGNORECASE)
+            or re.match(
+                r"^New-Object\s+(?:-TypeName\s+)?['\"]?(?:System\.)?Collections\.(?:Generic\.List|ArrayList)\b",
+                raw_trimmed, re.IGNORECASE)):
+        return _make_ps_array_binding([])
+    if body.startswith("@{") and body.endswith("}") and _scan_matching_brace(body, 1) == len(body) - 1:
         inner_ht = body[2:-1]
         unq_ht = _mask_quotes_same_len(inner_ht, in_posix=False)
         entries: list[str] = []
@@ -3239,9 +3342,7 @@ def _eval_ps_rhs_binding(exp_rhs: str, depth: int = 0) -> dict | None:
                 estart = idx + 1
         if inner_ht[estart:].strip():
             entries.append(inner_ht[estart:].strip())
-        splat_parts: list[str] = []
-        props: dict[str, str] = {}
-        val_has_cli = False
+        ht_items: list[tuple[str, str, bool]] = []
         for ent in entries:
             m_ent = re.match(
                 r"^\s*(?:'((?:''|[^'])*)'|\"((?:\"\"|`[\s\S]|[^\"])*)\"|([A-Za-z_][\w.-]*))\s*=(?!=)\s*(.*)$",
@@ -3252,27 +3353,21 @@ def _eval_ps_rhs_binding(exp_rhs: str, depth: int = 0) -> dict | None:
                      else (m_ent.group(2) if m_ent.group(2) is not None else m_ent.group(3)))
             vraw = m_ent.group(4).strip()
             sub_b = _eval_ps_rhs_binding(vraw, depth + 1)
-            vsplat = sub_b["splat"] if sub_b else vraw
-            splat_parts.append(f"-{kname} {vsplat}")
-            props[kname.lower()] = vsplat
-            if (sub_b and sub_b["has_cli"]) or _AGY_CLI_WORD.search(vraw):
-                val_has_cli = True
-        return {"splat": " ".join(splat_parts), "dq": "", "elems": [], "props": props, "has_cli": val_has_cli}
-    if body.startswith("@(") and body.endswith(")"):
-        elems = _split_ps_array_items(body[2:-1])
-        has_cli = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x)) for x in elems)
-        return {"splat": " ".join(_ps_splat_elem(x) for x in elems),
-                "dq": _ps_dq_esc(" ".join(elems))[:2048],
-                "elems": elems, "props": {}, "has_cli": has_cli}
+            if sub_b is not None and sub_b["kind"] == "array":
+                vsplat = ", ".join(_ps_splat_elem(x) for x in sub_b["elems"]) if sub_b["elems"] else "@()"
+            else:
+                vsplat = sub_b["splat"] if sub_b else vraw
+            ehc = bool((sub_b and sub_b["has_cli"]) or _AGY_CLI_WORD.search(vraw))
+            ht_items.append((kname, vsplat, ehc))
+        return _make_ps_ht_binding(ht_items)
+    if (body.startswith("@(") and body.endswith(")")
+            and _scan_matching_paren(body, 1, in_posix=False) == len(body) - 1):
+        return _make_ps_array_binding(_split_ps_array_items(body[2:-1]))
     if body.startswith("(") and body.endswith(")") and _scan_matching_paren(body, 0, in_posix=False) == len(body) - 1:
         inner_p = body[1:-1].strip()
         unq_p = _mask_quotes_same_len(inner_p, in_posix=False)
         if "," in unq_p:
-            elems = _split_ps_comma_elements(inner_p)
-            has_cli = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x)) for x in elems)
-            return {"splat": " ".join(_ps_splat_elem(x) for x in elems),
-                    "dq": _ps_dq_esc(" ".join(elems))[:2048],
-                    "elems": elems, "props": {}, "has_cli": has_cli}
+            return _make_ps_array_binding(_split_ps_comma_elements(inner_p))
         inner_b = _eval_ps_rhs_binding(inner_p, depth + 1)
         if inner_b is not None:
             return inner_b
@@ -3282,42 +3377,49 @@ def _eval_ps_rhs_binding(exp_rhs: str, depth: int = 0) -> dict | None:
         target = _resolved_target_in(body)
         if target:
             sq_t = _ps_sq(target)
-            return {"splat": sq_t, "dq": _ps_dq_esc(target), "elems": [target],
-                    "props": {"source": sq_t, "path": sq_t, "definition": sq_t},
-                    "has_cli": target in _AGY_BLOCKED_CLIS}
+            return _make_ps_scalar_binding(
+                target, extra_props={"source": sq_t, "path": sq_t, "definition": sq_t},
+                force_cli=target in _AGY_BLOCKED_CLIS)
     unq_body = _mask_quotes_same_len(body, in_posix=False)
     if "," in unq_body and re.search(r"[()]", unq_body) is None and re.search(
             r"\b(?:New-Object|Invoke-Command|icm|Start-Process|saps)\b", unq_body, re.IGNORECASE) is None:
         elems = _split_ps_comma_elements(body)
         if elems:
-            has_cli = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x)) for x in elems)
-            return {"splat": " ".join(_ps_splat_elem(x) for x in elems),
-                    "dq": _ps_dq_esc(" ".join(elems))[:2048],
-                    "elems": elems, "props": {}, "has_cli": has_cli}
+            return _make_ps_array_binding(elems)
     plus_parts: list[str] = []
     pstart = 0
+    pp_depth = bp_depth = 0
     for idx, ch in enumerate(unq_body):
-        if ch == "+":
+        if ch == "(":
+            pp_depth += 1
+        elif ch == ")" and pp_depth > 0:
+            pp_depth -= 1
+        elif ch == "{":
+            bp_depth += 1
+        elif ch == "}" and bp_depth > 0:
+            bp_depth -= 1
+        elif pp_depth == 0 and bp_depth == 0 and ch == "+":
             plus_parts.append(body[pstart:idx].strip())
             pstart = idx + 1
     plus_parts.append(body[pstart:].strip())
-    lit_vals: list[str] = []
-    all_lit = bool(plus_parts)
-    for part in plus_parts:
-        part_nt = _strip_ps_type_prefix(part).strip()
-        segs_p, _ = _tokenize_command(part_nt)
-        if len(segs_p) == 1 and len(segs_p[0].tokens) == 1 and (
-                segs_p[0].tokens[0].quote in ("'", '"')
-                or re.fullmatch(r"-?\d+(?:\.\d+)?", segs_p[0].tokens[0].raw) is not None):
-            lit_vals.append(segs_p[0].tokens[0].val)
-        else:
-            all_lit = False
-            break
-    if all_lit:
-        val = "".join(lit_vals)[:2048]
-        bare_v = _bare(val).strip("'\"")
-        has_cli = bare_v in _AGY_BLOCKED_CLIS or bool(_AGY_PS_RESOLVER_RHS.search(_ps_sq(val)))
-        return {"splat": _ps_splat_elem(val), "dq": _ps_dq_esc(val), "elems": [val], "props": {}, "has_cli": has_cli}
+    if len(plus_parts) >= 2 and all(plus_parts):
+        sub_bs = [_eval_ps_rhs_binding(part, depth + 1) for part in plus_parts]
+        if all(sb is not None for sb in sub_bs):
+            b0 = sub_bs[0]
+            assert b0 is not None
+            if b0["kind"] == "array" or any(sb is not None and sb["kind"] == "array" for sb in sub_bs):
+                return _make_ps_array_binding([x for sb in sub_bs if sb is not None for x in sb["elems"]])
+            if all(sb is not None and sb["kind"] == "hashtable" for sb in sub_bs):
+                return _make_ps_ht_binding([it for sb in sub_bs if sb is not None for it in sb["ht_items"]])
+            if all(sb is not None and sb["kind"] == "scalar" for sb in sub_bs):
+                return _make_ps_scalar_binding("".join(sb["elems"][0] for sb in sub_bs if sb is not None))
+        return None
+    part_nt = _strip_ps_type_prefix(plus_parts[0]).strip() if plus_parts else ""
+    segs_p, _ = _tokenize_command(part_nt)
+    if len(segs_p) == 1 and len(segs_p[0].tokens) == 1 and (
+            segs_p[0].tokens[0].quote in ("'", '"')
+            or re.fullmatch(r"-?\d+(?:\.\d+)?", segs_p[0].tokens[0].raw) is not None):
+        return _make_ps_scalar_binding(segs_p[0].tokens[0].val)
     return None
 
 
@@ -3327,6 +3429,34 @@ def _bind_ps_var(ps_env: dict[str, dict], raw_name: str, binding: dict) -> None:
     for scope_pfx in ("script:", "global:", "local:", "private:"):
         if key.startswith(scope_pfx) and len(key) > len(scope_pfx):
             ps_env[key[len(scope_pfx):]] = binding
+
+
+def _ps_offset_is_expr_pos(chunk: str, pos: int) -> bool:
+    """True when `pos` in `chunk` sits in a PowerShell expression/value slot (start of chunk/statement/pipeline/group,
+    or after `,`, `+`, or `=`) rather than as an argument after a command or `&`/`.` call operator."""
+    j = pos - 1
+    while j >= 0:
+        if chunk[j] in " \t":
+            j -= 1
+            continue
+        if chunk[j] == "]":
+            bdepth = 1
+            k = j - 1
+            while k >= 0 and bdepth > 0:
+                if chunk[k] == "]":
+                    bdepth += 1
+                elif chunk[k] == "[":
+                    bdepth -= 1
+                k -= 1
+            if bdepth == 0 and (k < 0 or chunk[k] in " \t;|(\n\r{,+="):
+                j = k
+                continue
+        break
+    if j < 0:
+        return True
+    if chunk[j] == "=" and j > 0 and chunk[j - 1] == "=":
+        return False
+    return chunk[j] in ";|(\n\r{,+="
 
 
 def _expand_ps_vars_chunk(chunk: str, ps_env: dict[str, dict]) -> str:
@@ -3420,6 +3550,10 @@ def _expand_ps_vars_chunk(chunk: str, ps_env: dict[str, dict]) -> str:
                         if m_prop and m_prop.group(1).lower() in b["props"]:
                             out.append(b["props"][m_prop.group(1).lower()])
                             i = after_v + m_prop.end()
+                            continue
+                        if b.get("kind") == "hashtable" or _ps_offset_is_expr_pos(chunk, i):
+                            out.append(b.get("expr", b["splat"]))
+                            i = after_v
                             continue
                     out.append(b["splat"])
                     i = after_v
@@ -3540,8 +3674,7 @@ def _ps_next_top_rebind(unquoted: str, ps_spans: list[_PsAssignSpan], cur_idx: i
     for next_sp in ps_spans[cur_idx + 1:]:
         if target not in (n.lower() for n in next_sp.names):
             continue
-        op_seg = unquoted[next_sp.lhs_start:next_sp.eq_end].rstrip()
-        if any(op_seg.endswith(op) for op in ("??=", "+=", "-=", "*=", "/=", "%=")):
+        if next_sp.op != "=":
             continue
         prefix_u = unquoted[:next_sp.lhs_start]
         if prefix_u.count("(") == prefix_u.count(")") and prefix_u.count("{") == prefix_u.count("}"):
@@ -3683,11 +3816,6 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                 rewritten_ps.append(command[span.lhs_start:span.eq_end])
                 cursor_ps = span.eq_end
                 exp_rhs = _expand_ps_vars_chunk(span.rhs_val, ps_env)
-                if (len(span.names) == 1
-                        and unquoted[span.lhs_start:span.eq_end].rstrip().endswith("+=")
-                        and span.names[0].lower() in ps_env
-                        and len(ps_env[span.names[0].lower()]["elems"]) == 1):
-                    exp_rhs = _ps_sq(ps_env[span.names[0].lower()]["elems"][0]) + " + " + exp_rhs
                 if span.destruct:
                     raw_parts = _split_ps_comma_elements(exp_rhs)
                     for idx_n, dname in enumerate(span.names):
@@ -3706,7 +3834,55 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                                         "bypass delegation and dispatcher gates (standards/delegation.md).")
                             _bind_ps_var(ps_env, dname, b_item)
                 else:
-                    binding = _eval_ps_rhs_binding(exp_rhs)
+                    v0_key = span.names[0].lower() if len(span.names) == 1 else ""
+                    prev_b = ps_env.get(v0_key) if v0_key else None
+                    if span.op == "+=" and v0_key:
+                        rhs_b = _eval_ps_rhs_binding(exp_rhs)
+                        if prev_b is not None:
+                            if prev_b["kind"] == "array" or (rhs_b is not None and rhs_b["kind"] == "array"):
+                                add_elems = rhs_b["elems"] if rhs_b is not None else ([exp_rhs] if exp_rhs else [])
+                                binding = _make_ps_array_binding(prev_b["elems"] + add_elems)
+                            elif prev_b["kind"] == "hashtable" and rhs_b is not None and rhs_b["kind"] == "hashtable":
+                                binding = _make_ps_ht_binding(prev_b["ht_items"] + rhs_b["ht_items"])
+                            elif prev_b["kind"] == "scalar" and rhs_b is not None and rhs_b["kind"] == "scalar":
+                                binding = _make_ps_scalar_binding(prev_b["elems"][0] + rhs_b["elems"][0])
+                            else:
+                                binding = prev_b
+                        else:
+                            binding = rhs_b
+                    elif span.op == "??=" and v0_key:
+                        if prev_b is not None and not (prev_b["kind"] == "scalar" and prev_b["elems"] == [""]):
+                            binding = prev_b
+                        else:
+                            binding = _eval_ps_rhs_binding(exp_rhs)
+                    elif span.op in (".add", ".addrange") and v0_key:
+                        if span.op == ".add" and prev_b is not None and prev_b["kind"] == "hashtable":
+                            kv = _split_ps_comma_elements(exp_rhs)
+                            if len(kv) >= 2:
+                                vb = _eval_ps_rhs_binding(_ps_sq(kv[1]))
+                                vsplat_m = vb["splat"] if vb else _ps_sq(kv[1])
+                                binding = _make_ps_ht_binding(
+                                    prev_b["ht_items"] + [(kv[0], vsplat_m, bool(vb and vb["has_cli"]))])
+                            else:
+                                binding = prev_b
+                        else:
+                            arg_b = _eval_ps_rhs_binding(exp_rhs)
+                            base_elems = prev_b["elems"] if prev_b is not None else []
+                            add_elems = arg_b["elems"] if arg_b is not None else _split_ps_comma_elements(exp_rhs)
+                            binding = _make_ps_array_binding(base_elems + add_elems)
+                    elif span.op == "prop=" and v0_key:
+                        val_b = _eval_ps_rhs_binding(exp_rhs)
+                        if val_b is not None and val_b["kind"] == "array":
+                            vsplat_p = (", ".join(_ps_splat_elem(x) for x in val_b["elems"])
+                                        if val_b["elems"] else "@()")
+                        else:
+                            vsplat_p = val_b["splat"] if val_b is not None else exp_rhs
+                        ehc_p = bool((val_b and val_b["has_cli"]) or _AGY_CLI_WORD.search(exp_rhs))
+                        base_ht = (prev_b["ht_items"]
+                                   if prev_b is not None and prev_b["kind"] == "hashtable" else [])
+                        binding = _make_ps_ht_binding(base_ht + [(span.prop_key, vsplat_p, ehc_p)])
+                    else:
+                        binding = _eval_ps_rhs_binding(exp_rhs)
                     has_cli_fb = (
                         bool(_AGY_PS_RESOLVER_RHS.search(exp_rhs))
                         or (exp_rhs.startswith(("@", "(")) and bool(_AGY_CLI_WORD.search(exp_rhs))))
@@ -3727,8 +3903,21 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     return why
     sh_env: dict[str, dict] = {}
     if in_posix:
+        for fm_sh in re.finditer(r"(?:^|[;&|{(\n])\s*for\s+([A-Za-z_]\w*)\s+in\s+([^;\n]+)", unquoted):
+            lv_sh = fm_sh.group(1)
+            items_sh_raw = command[fm_sh.start(2):fm_sh.end(2)]
+            sh_it_segs, _ = _tokenize_command(items_sh_raw, in_posix=True)
+            if any(_bare(t.val).strip("'\"") in _AGY_BLOCKED_CLIS for s in sh_it_segs for t in s.tokens):
+                vesc_lv = re.escape(lv_sh)
+                lv_ref = rf"\$(?:\{{{vesc_lv}\}}|{vesc_lv}\b)"
+                if re.search(
+                        rf"(?:^|[;&|{{(\n]|\b(?:do|then|else)\s+)\s*"
+                        rf"(?:command\s+(?!-[vV]\b)(?:-p\s+)?|nohup\s+|exec\s+(?:-[a-zA-Z]+\s+\S+\s+)?)*['\"]?{lv_ref}",
+                        command[fm_sh.end():]):
+                    return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
+                            "dispatcher gates (standards/delegation.md).")
         sh_assign_re = re.compile(
-            r"(?:^|[;&|{(\n])\s*((?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?([A-Za-z_]\w*)=)")
+            r"(?:^|[;&|{(\n])\s*((?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?([A-Za-z_]\w*)(\+?=))")
         sh_matches = list(sh_assign_re.finditer(unquoted))
         if sh_matches:
             rewritten_sh: list[str] = []
@@ -3753,13 +3942,19 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     is_arr = False
                 exp_rhs_sh = _expand_sh_vars_chunk(rhs_sh_raw, sh_env)
                 raw_sv = am.group(2)
+                sh_op = am.group(3)
+                prev_sh = sh_env.get(raw_sv) if sh_op == "+=" else None
                 vesc_sh = re.escape(raw_sv)
                 sh_exec_refs: list[str] = []
                 sh_segs, _ = _tokenize_command(exp_rhs_sh, in_posix=True)
                 sh_elems = [t.val for s in sh_segs for t in s.tokens]
-                if is_arr:
+                if is_arr or (prev_sh is not None and prev_sh.get("is_arr")):
+                    is_arr = True
+                    if prev_sh is not None:
+                        sh_elems = prev_sh["elems"] + sh_elems
                     splat_sh = " ".join(_sh_splat_elem(x) for x in sh_elems) if sh_elems else ""
                     dq_sh = _sh_dq_esc(" ".join(sh_elems))[:2048]
+                    raw_sval = " ".join(sh_elems)
                     has_cli_sh = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS for x in sh_elems)
                     if sh_elems and _bare(sh_elems[0]).strip("'\"") in _AGY_BLOCKED_CLIS:
                         sh_exec_refs.append(rf"\$(?:\{{{vesc_sh}(?:\[\s*(?:0|@|[*])\s*\])?\}}|{vesc_sh}\b)")
@@ -3772,6 +3967,9 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     sval = sh_elems[0] if len(sh_elems) == 1 else exp_rhs_sh.strip()
                     if ("$(" in rhs_sh_raw or "`" in rhs_sh_raw) and _resolved_target_in(rhs_sh_raw):
                         sval = _resolved_target_in(rhs_sh_raw) or sval
+                    if prev_sh is not None:
+                        sval = prev_sh.get("raw_sval", "") + sval
+                    raw_sval = sval
                     words_sh = sval.split()
                     splat_sh = " ".join(_sh_splat_elem(w) for w in words_sh) if words_sh else "''"
                     dq_sh = _sh_dq_esc(sval)[:2048]
@@ -3788,7 +3986,10 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                             rf"|\beval\s+['\"]?\s*{sh_ref_pat})").search(command, rhs_end_sh):
                         return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
                                 "dispatcher gates (standards/delegation.md).")
-                sh_env[raw_sv] = {"splat": splat_sh, "dq": dq_sh, "elems": sh_elems, "has_cli": has_cli_sh}
+                sh_env[raw_sv] = {
+                    "splat": splat_sh, "dq": dq_sh, "elems": sh_elems, "has_cli": has_cli_sh,
+                    "is_arr": is_arr, "raw_sval": raw_sval,
+                }
             rewritten_sh.append(_expand_sh_vars_chunk(command[cursor_sh:], sh_env))
             expanded_sh_cmd = "".join(rewritten_sh)
             if expanded_sh_cmd != command:
@@ -3834,6 +4035,25 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                         why = _agy_recurse(exp_sb, depth + 1, in_cmd=False, in_posix=False)
                         if why:
                             return why
+                cur = []
+                break
+            if in_posix and not tok0.quote and low in ("do", "then", "else", "if", "elif", "while", "until", "!", "time"):
+                cur = cur[1:]
+                continue
+            if (not from_cmd and not in_posix and seg.sep_before == "|" and seg_idx > 0
+                    and low in ("foreach-object", "%", "foreach", "where-object", "?", "where")):
+                sb_toks = [t for t in cur[1:] if t.quote == "{"]
+                if any(re.search(r"\$(?:\{_\}|_(?![\w:])|\{?PSItem\b)", t.val, re.IGNORECASE) for t in sb_toks):
+                    pipe_b = _eval_ps_rhs_binding(segments[seg_idx - 1].raw.strip())
+                    if pipe_b is not None and pipe_b["elems"]:
+                        for pel in dict.fromkeys(pipe_b["elems"][:8]):
+                            p_item = _make_ps_scalar_binding(pel)
+                            pipe_env = dict(ps_env, _=p_item, psitem=p_item)
+                            for sbt in sb_toks:
+                                why = _agy_recurse(
+                                    _expand_ps_vars_chunk(sbt.val, pipe_env), depth + 1, in_cmd=False, in_posix=False)
+                                if why:
+                                    return why
                 cur = []
                 break
             if low == "command":
@@ -5137,6 +5357,12 @@ def _self_test() -> int:
         "$args_rg = @('-n', 'codex', 'scripts/panel_slots.py'); & rg @args_rg",
         "$p = @{ FilePath = 'rg'; ArgumentList = '-n', 'codex', 'scripts' }; Start-Process @p",
         "$arr = @('rg', 'codex'); & $arr[0] -n $arr[1] scripts/panel_slots.py",
+        "$patterns = @('codex', 'claude'); $patterns | ForEach-Object { rg -n $_ scripts }",
+        "$patterns = @('codex', 'claude'); ($patterns) | % { rg -n $PSItem scripts }",
+        "$patterns = @('codex', 'claude'); foreach ($p in $patterns) { rg -n $p scripts }",
+        "$map = @{ codex = 'astra'; claude = 'sonnet' }; $map | Format-Table",
+        "$p = @{ FilePath = 'rg' }; $p['ArgumentList'] = @('-n', 'codex', 'scripts'); Start-Process @p",
+        "$f = '-n'; $f | Select-String 'n'",
         "$git = Get-Command git; & $git.Source status",
         "bash -c \"pattern='codex'; grep -n \\\"\\$pattern\\\" scripts/panel_slots.py\"",
         "bash -c 'pat=\"codex\"; msg=\"bin=safe\"; grep -n \"$pat\" scripts/panel_slots.py'",
@@ -5144,6 +5370,7 @@ def _self_test() -> int:
         "bash -c 'cmd=(rg -n codex scripts/panel_slots.py); \"${cmd[@]}\"'",
         "bash -c 'pattern=codex; command -v \"$pattern\"'",
         "bash -c 'pattern=codex; eval \"rg -n $pattern scripts\"'",
+        "bash -c 'patterns=(codex claude); for p in \"${patterns[@]}\"; do rg -n \"$p\" scripts; done'",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -5219,6 +5446,19 @@ def _self_test() -> int:
             ("hashtable dot property & $m.bin", "run_command", {"CommandLine": "$m = @{ bin = 'claude' }; & $m.bin -p inspect"}, "Variable-indirect"),
             ("hashtable bracket property & $m['bin']", "run_command", {"CommandLine": "$m = @{ bin = 'codex' }; & $m['bin'] exec review"}, "Variable-indirect"),
             ("Set-Variable -Name bin -Value claude & $bin", "run_command", {"CommandLine": "Set-Variable -Name bin -Value 'claude'; & $bin -p inspect"}, "Variable-indirect"),
+            ("incremental array += $gitArgs += @('-m', 'fix') git @gitArgs", "run_command", {"CommandLine": "$gitArgs = @('commit', '-n'); $gitArgs += @('-m', 'fix'); git @gitArgs"}, "--no-verify"),
+            ("empty @() += scalar elements git @gitArgs", "run_command", {"CommandLine": "$gitArgs = @(); $gitArgs += 'commit'; $gitArgs += '-n'; $gitArgs += '-m'; $gitArgs += 'fix'; git @gitArgs"}, "--no-verify"),
+            ("array + concatenation @('commit', '-n') + @('-m', 'fix')", "run_command", {"CommandLine": "$gitArgs = @('commit', '-n') + @('-m', 'fix'); git @gitArgs"}, "--no-verify"),
+            ("List::new() .Add('commit') .Add('-n') git @gitArgs", "run_command", {"CommandLine": "$gitArgs = [System.Collections.Generic.List[string]]::new(); $gitArgs.Add('commit'); $gitArgs.Add('-n'); $gitArgs.AddRange(@('-m', 'fix')); git @gitArgs"}, "--no-verify"),
+            ("hashtable indexer $p['FilePath'] = 'codex' Start-Process @p", "run_command", {"CommandLine": "$p = @{}; $p['FilePath'] = 'codex'; $p['ArgumentList'] = 'exec review'; Start-Process @p"}, "Variable-indirect"),
+            ("hashtable += merge Start-Process @p codex", "run_command", {"CommandLine": "$p = @{ FilePath = 'codex' }; $p += @{ ArgumentList = 'exec review' }; Start-Process @p"}, "Variable-indirect"),
+            ("null-coalesce $bin ??= 'claude' & $bin", "run_command", {"CommandLine": "$bin = $null; $bin ??= 'claude'; & $bin -p inspect"}, "Variable-indirect"),
+            ("pipeline ForEach-Object { & $_ } CLI launch", "run_command", {"CommandLine": "$cmds = @('codex', 'claude'); $cmds | ForEach-Object { & $_ exec review }"}, "review-dispatch.py"),
+            ("pipeline ForEach-Object { git commit $_ } -n bypass", "run_command", {"CommandLine": "$flags = @('-n'); $flags | ForEach-Object { git commit $_ -m 'fix' }"}, "--no-verify"),
+            ("posix array += a+=(-m fix) git", "run_command", {"CommandLine": 'bash -c \'a=(commit -n); a+=(-m fix); git "${a[@]}"\''}, "--no-verify"),
+            ("posix scalar += b+=aude", "run_command", {"CommandLine": 'bash -c \'b=cl; b+=aude; "$b" -p inspect\''}, "Variable-indirect"),
+            ("posix for loop do codex exec review", "run_command", {"CommandLine": "bash -c 'for c in codex claude; do \"$c\" exec review; done'"}, "Variable-indirect"),
+            ("posix if true then git commit -n", "run_command", {"CommandLine": "bash -c 'if true; then git commit -n -m fix; fi'"}, "--no-verify"),
             ("captured output $out = & $bin claude", "run_command", {"CommandLine": "$bin = 'claude'; $out = & $bin -p inspect"}, "Variable-indirect"),
             ("no-space call &$bin claude", "run_command", {"CommandLine": "$bin = 'claude'; &$bin -p inspect"}, "Variable-indirect"),
             ("Start-Process -NoNewWindow -FilePath $bin claude", "run_command", {"CommandLine": "$bin = 'claude'; Start-Process -NoNewWindow -FilePath $bin -Args '-p inspect'"}, "Variable-indirect"),
