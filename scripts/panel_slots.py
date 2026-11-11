@@ -688,6 +688,12 @@ def exercise_agent_gate(command: str = AGENT_GATE_COMMAND) -> str:
              {"name": "run_command", "args": {"CommandLine": "[string]$out = codex exec review"}}),
             ("a typed PowerShell `[string[]]$a` splat hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "[string[]]$a = @('commit', '-n', '-m', 'test'); git @a"}}),
+            ("a multi-variable PowerShell `$message` + `@a` splat hook bypass", "deny",
+             {"name": "run_command", "args": {
+                 "CommandLine": "$message = 'fix parser'; $a = @('commit', '-n', '-m', $message); git @a"}}),
+            ("a multi-variable PowerShell `$task` + `& $bin` CLI bypass", "deny",
+             {"name": "run_command", "args": {
+                 "CommandLine": "$task = 'inspect callers'; $bin = 'claude'; & $bin -p $task"}}),
             ("a clustered `git am -qn` hook bypass", "deny",
              {"name": "run_command", "args": {"CommandLine": "git am -qn patch.mbox"}}),
             ("a PowerShell command with an inline `# ...; codex` comment", "allow",
@@ -1582,7 +1588,8 @@ _AGY_CLI_WORD = re.compile(r"\b(?:claude|agy|codex)(?:\.exe|\.cmd|\.ps1)?\b", re
 _AGY_RESOLVED_TARGETS = (
     _AGY_BLOCKED_CLIS
     | frozenset(("git", "git.exe", "pwsh", "pwsh.exe", "powershell", "powershell.exe",
-                 "cmd", "cmd.exe", "bash", "bash.exe", "sh", "sh.exe", "wsl", "wsl.exe")))
+                 "cmd", "cmd.exe", "bash", "bash.exe", "sh", "sh.exe", "wsl", "wsl.exe",
+                 "iex", "invoke-expression", "start-process", "saps")))
 _AGY_SEARCH_CMDS = frozenset((
     "rg", "rg.exe", "grep", "grep.exe", "egrep", "fgrep",
     "select-string", "sls", "findstr", "findstr.exe",
@@ -2573,7 +2580,7 @@ def _ps_sq(val: str) -> str:
 
 
 def _ps_splat_elem(val: str) -> str:
-    if re.fullmatch(r"-[A-Za-z?][A-Za-z0-9-]*(?::[^\s'\";|&()`$]*)?", val):
+    if re.fullmatch(r"--?[A-Za-z?][A-Za-z0-9-]*(?:[:=][^\s'\";|&()`$]*)?", val):
         return val
     return _ps_sq(val)
 
@@ -2835,8 +2842,7 @@ _PS_ASSIGN_LHS = re.compile(r"^\$(?:\{[A-Za-z_][\w:]*\}|[A-Za-z_][\w:]*)$")
 _PS_ASSIGN_OPS = frozenset(("=", "+=", "-=", "*=", "/=", "%=", "??="))
 
 
-def _split_ps_var_assignment(cur: list[_CmdTok], seg_raw: str) -> list[_CmdTok] | None:
-    """If `cur` starts with a PowerShell `([Type])* $var = <rhs>` assignment, return `<rhs>` tokens; else `None`."""
+def _strip_leading_ps_lhs_types(cur: list[_CmdTok]) -> list[_CmdTok]:
     cur = list(cur)
     while cur and not cur[0].quote and cur[0].raw.startswith("[") and _strip_ps_type_prefix(cur[0].raw) == "":
         cur = cur[1:]
@@ -2846,6 +2852,25 @@ def _split_ps_var_assignment(cur: list[_CmdTok], seg_raw: str) -> list[_CmdTok] 
             plen = len(cur[0].raw) - len(stripped_raw)
             nstart = cur[0].rel_start + plen if cur[0].rel_start >= 0 else -1
             cur[0] = _CmdTok(_strip_ps_type_prefix(cur[0].val), stripped_raw, "", nstart, cur[0].rel_end)
+    return cur
+
+
+def _split_ps_var_assignment(cur: list[_CmdTok], seg_raw: str) -> list[_CmdTok] | None:
+    """If `cur` starts with a PowerShell `([Type])* $var (, $var2)* = <rhs>` assignment, return `<rhs>` tokens; else `None`."""
+    cur = _strip_leading_ps_lhs_types(cur)
+    while cur and not cur[0].quote:
+        if cur[0].val.endswith(",") and _PS_ASSIGN_LHS.match(cur[0].val[:-1]):
+            cur = _strip_leading_ps_lhs_types(cur[1:])
+            continue
+        if len(cur) >= 2 and _PS_ASSIGN_LHS.match(cur[0].val) and not cur[1].quote and cur[1].val.startswith(","):
+            rest_comma = cur[1].raw[1:]
+            if rest_comma:
+                nstart = cur[1].rel_start + 1 if cur[1].rel_start >= 0 else -1
+                cur = _strip_leading_ps_lhs_types([_CmdTok(cur[1].val[1:], rest_comma, "", nstart, cur[1].rel_end), *cur[2:]])
+            else:
+                cur = _strip_leading_ps_lhs_types(cur[2:])
+            continue
+        break
     if not cur or cur[0].quote or not cur[0].val.startswith("$") or cur[0].val.startswith("$("):
         return None
     t0 = cur[0]
@@ -2909,49 +2934,602 @@ def _agy_recurse(payload: str, depth: int, in_cmd: bool = False, in_posix: bool 
     return _agy_command_decision(payload, depth, in_cmd=in_cmd, in_posix=in_posix, in_ps_expr=in_ps_expr)
 
 
-def _extract_ps_assignments(cleaned: str, unquoted: str) -> list[tuple[str, str]]:
-    """Return `(var_name, rhs_text)` for top-level PowerShell `([Type])* $var = ...` and `Set-Variable`/`New-Variable`."""
-    found: list[tuple[str, str]] = []
-    ps_var_re = re.compile(r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*=(?!=)")
-    for bm in re.finditer(r"(?:^|[;&|{(\n])\s*", unquoted):
-        after_u = _strip_ps_type_prefix(unquoted[bm.end():])
-        vm_u = ps_var_re.match(after_u)
-        if not vm_u:
+def _mask_quotes_same_len(text: str, in_posix: bool = False) -> str:
+    """Mask the interior of single- and double-quoted literals with `_` while preserving exact string length and
+    character offsets (`len(result) == len(text)`)."""
+    out: list[str] = []
+    n = len(text)
+    i = 0
+    while i < n:
+        ch = text[i]
+        if not in_posix and ch == "`":
+            end = min(i + 2, n)
+            out.append("_" * (end - i))
+            i = end
             continue
-        raw_name = vm_u.group(1) or vm_u.group(2) or ""
-        after_c = _strip_ps_type_prefix(cleaned[bm.end():])
-        vm_c = ps_var_re.match(after_c)
-        if not vm_c:
+        if in_posix and ch == "\\":
+            end = min(i + 2, n)
+            out.append("_" * (end - i))
+            i = end
             continue
-        pos = (len(cleaned) - len(after_c)) + vm_c.end()
-        while pos < len(cleaned) and cleaned[pos] in " \t":
-            pos += 1
-        if pos >= len(cleaned):
+        if ch == "'":
+            start = i
+            i += 1
+            closed = False
+            while i < n:
+                if not in_posix and text[i:i + 2] == "''":
+                    i += 2
+                    continue
+                if text[i] == "'":
+                    i += 1
+                    closed = True
+                    break
+                i += 1
+            span = i - start
+            out.append(("'" + "_" * (span - 2) + "'") if closed and span >= 2 else ("'" + "_" * (span - 1)))
             continue
-        if cleaned[pos:].startswith("@(") or cleaned[pos] == "(":
-            open_p = pos + 1 if cleaned[pos] == "@" else pos
-            j = _scan_matching_paren(cleaned, open_p, in_posix=False)
-            rhs_val = cleaned[pos:j + 1].strip()
-        elif cleaned[pos:].startswith("@{"):
-            j = _scan_matching_brace(cleaned, pos + 1)
-            rhs_val = cleaned[pos:j + 1].strip()
-        else:
-            m_line = re.match(r"[^;\r\n|]+", cleaned[pos:])
-            rhs_val = m_line.group(0).strip() if m_line else ""
-        while rhs_val:
-            rhs_nt = _strip_ps_type_prefix(rhs_val)
-            m_chain = ps_var_re.match(rhs_nt)
-            if not m_chain:
+        if ch == '"':
+            start = i
+            i += 1
+            closed = False
+            while i < n:
+                dc = text[i]
+                if not in_posix and dc == "`":
+                    i = min(i + 2, n)
+                    continue
+                if in_posix and dc == "\\":
+                    i = min(i + 2, n)
+                    continue
+                if not in_posix and text[i:i + 2] == '""' and i > start + 1:
+                    i += 2
+                    continue
+                if dc == "$" and i + 1 < n and text[i + 1] == "(":
+                    j = _scan_matching_paren(text, i + 1, in_posix=in_posix)
+                    i = j + 1 if j < n else n
+                    continue
+                if dc == '"':
+                    i += 1
+                    closed = True
+                    break
+                i += 1
+            span = i - start
+            out.append(('"' + "_" * (span - 2) + '"') if closed and span >= 2 else ('"' + "_" * (span - 1)))
+            continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _scan_ps_rhs_end(unquoted: str, start: int) -> int:
+    """Find the end offset of a PowerShell assignment RHS starting at `start` in offset-preserving `unquoted`."""
+    n = len(unquoted)
+    j = start
+    pdepth = 0
+    bdepth = 0
+    while j < n:
+        ch = unquoted[j]
+        if ch == "(":
+            pdepth += 1
+        elif ch == ")":
+            if pdepth == 0:
                 break
-            rhs_val = rhs_nt[m_chain.end():].strip()
-        if rhs_val:
-            found.append((raw_name, rhs_val))
-    for sm in re.finditer(
-            r"(?:^|[;&|{(\n])\s*(?:Set-Variable|New-Variable|sv|nv)\s+"
-            r"(?:-[Nn](?:ame)?\s+)?['\"]?([A-Za-z_][\w:]*)['\"]?\s+(?:-[Vv](?:alue)?\s+)?([^;\r\n|]+)",
-            cleaned, re.IGNORECASE):
-        found.append((sm.group(1), sm.group(2).strip()))
-    return found
+            pdepth -= 1
+        elif ch == "{":
+            bdepth += 1
+        elif ch == "}":
+            if bdepth == 0:
+                break
+            bdepth -= 1
+        elif pdepth == 0 and bdepth == 0 and ch in ";\r\n|":
+            break
+        j += 1
+    return j
+
+
+_PS_VAR_EQ_RE = re.compile(r"^\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*(?:\?\?=|[+\-*/%]?=)(?!=)")
+_PS_VAR_DESTRUCT_ITEM = re.compile(r"^\s*\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s*")
+_PS_REF_BRACED = re.compile(r"^[$@]\{([A-Za-z_][\w:]*)\}")
+_PS_REF_BARE = re.compile(r"^[$@]([A-Za-z_]\w*(?::[A-Za-z_]\w*)?)")
+_SH_REF_BRACED = re.compile(r"^\$\{([A-Za-z_]\w*)(?:\[([^\]]+)\])?\}")
+_SH_REF_BARE = re.compile(r"^\$([A-Za-z_]\w*)")
+
+
+class _PsAssignSpan(NamedTuple):
+    names: list[str]
+    rhs_val: str
+    lhs_start: int
+    eq_end: int
+    rhs_end: int
+    destruct: bool
+
+
+def _extract_ps_assign_spans(command: str, unquoted: str) -> list[_PsAssignSpan]:
+    """Return ordered `_PsAssignSpan` entries for PowerShell assignments and `Set-Variable` / `New-Variable` calls,
+    using length-preserving `unquoted` so character offsets match `command` exactly."""
+    found: list[_PsAssignSpan] = []
+    for bm in re.finditer(r"(?:^|[;&|{(\n])\s*", unquoted):
+        lhs_start = bm.end()
+        if lhs_start >= len(command):
+            continue
+        cur_u = _strip_ps_type_prefix(unquoted[lhs_start:])
+        type_len = (len(unquoted) - lhs_start) - len(cur_u)
+        vm = _PS_VAR_EQ_RE.match(cur_u)
+        if vm:
+            names = [vm.group(1) or vm.group(2) or ""]
+            eq_end = lhs_start + type_len + vm.end()
+            while eq_end < len(command):
+                ws_end = eq_end
+                while ws_end < len(command) and command[ws_end] in " \t":
+                    ws_end += 1
+                next_u = _strip_ps_type_prefix(unquoted[ws_end:])
+                ntype_len = (len(unquoted) - ws_end) - len(next_u)
+                vm_next = _PS_VAR_EQ_RE.match(next_u)
+                if not vm_next:
+                    break
+                names.append(vm_next.group(1) or vm_next.group(2) or "")
+                eq_end = ws_end + ntype_len + vm_next.end()
+            pos = eq_end
+            while pos < len(command) and command[pos] in " \t":
+                pos += 1
+            rhs_end = _scan_ps_rhs_end(unquoted, pos)
+            rhs_val = command[pos:rhs_end].strip()
+            if rhs_val and any(names):
+                found.append(_PsAssignSpan([n for n in names if n], rhs_val, lhs_start, eq_end, rhs_end, False))
+            continue
+        first_d = _PS_VAR_DESTRUCT_ITEM.match(cur_u)
+        if first_d and cur_u[first_d.end():first_d.end() + 1] == ",":
+            dnames = [first_d.group(1) or first_d.group(2) or ""]
+            dpos = lhs_start + type_len + first_d.end()
+            ok_d = True
+            while dpos < len(unquoted) and unquoted[dpos] == ",":
+                dpos += 1
+                while dpos < len(unquoted) and unquoted[dpos] in " \t":
+                    dpos += 1
+                rem_u = _strip_ps_type_prefix(unquoted[dpos:])
+                dpos += (len(unquoted) - dpos) - len(rem_u)
+                item_m = _PS_VAR_DESTRUCT_ITEM.match(rem_u)
+                if not item_m:
+                    ok_d = False
+                    break
+                dnames.append(item_m.group(1) or item_m.group(2) or "")
+                dpos += item_m.end()
+            if ok_d and len(dnames) >= 2 and unquoted[dpos:dpos + 1] == "=" and unquoted[dpos:dpos + 2] != "==":
+                eq_end = dpos + 1
+                pos = eq_end
+                while pos < len(command) and command[pos] in " \t":
+                    pos += 1
+                rhs_end = _scan_ps_rhs_end(unquoted, pos)
+                rhs_val = command[pos:rhs_end].strip()
+                if rhs_val:
+                    found.append(_PsAssignSpan(dnames, rhs_val, lhs_start, eq_end, rhs_end, True))
+    for sm in re.finditer(r"(?:^|[;&|{(\n])\s*(?:Set-Variable|New-Variable|sv|nv)\b", unquoted, re.IGNORECASE):
+        stmt_start = sm.start()
+        stmt_end = _scan_ps_rhs_end(unquoted, sm.end())
+        stmt_raw = command[stmt_start:stmt_end]
+        segs_sv, _ = _tokenize_command(stmt_raw)
+        if not segs_sv or len(segs_sv[0].tokens) < 2:
+            continue
+        sv_toks = segs_sv[0].tokens[1:]
+        vname_sv: str | None = None
+        val_tok_idx: int | None = None
+        val_inline: str | None = None
+        pos_seen = 0
+        k = 0
+        while k < len(sv_toks):
+            st = sv_toks[k]
+            if not st.quote and st.val.startswith("-") and len(st.val) >= 2:
+                sflag, sinline = _split_ps_flag(st.val)
+                sbody = sflag[1:]
+                if "name".startswith(sbody):
+                    if sinline is not None:
+                        vname_sv = sinline.strip("'\"")
+                        k += 1
+                    elif k + 1 < len(sv_toks):
+                        vname_sv = sv_toks[k + 1].val
+                        k += 2
+                    else:
+                        k += 1
+                    continue
+                if "value".startswith(sbody):
+                    if sinline is not None:
+                        val_inline = st.raw.split(":", 1)[1] if ":" in st.raw else sinline
+                    elif k + 1 < len(sv_toks):
+                        val_tok_idx = k + 1
+                    break
+                if any(opt.startswith(sbody) for opt in ("description", "option", "scope", "visibility")):
+                    k += 1 if sinline is not None else 2
+                    continue
+                k += 1
+                continue
+            if pos_seen == 0 and vname_sv is None:
+                vname_sv = st.val
+                pos_seen += 1
+                k += 1
+                continue
+            val_tok_idx = k
+            break
+        if vname_sv:
+            if val_inline is not None:
+                rhs_sv = val_inline.strip()
+                rhs_sv_start = stmt_end - len(rhs_sv)
+            elif val_tok_idx is not None and sv_toks[val_tok_idx].rel_start >= 0:
+                rhs_sv_start = stmt_start + sv_toks[val_tok_idx].rel_start
+                rhs_sv = command[rhs_sv_start:stmt_end].strip()
+            else:
+                rhs_sv = ""
+                rhs_sv_start = stmt_end
+            if rhs_sv:
+                found.append(_PsAssignSpan([vname_sv], rhs_sv, stmt_start, rhs_sv_start, stmt_end, False))
+    for fm in re.finditer(
+            r"(?:^|[;&|{(\n])\s*foreach\s*\(\s*(?:\[[^\]]+\]\s*)*"
+            r"\$(?:\{([A-Za-z_][\w:]*)\}|([A-Za-z_][\w:]*))\s+in\s+([^)]+)\)",
+            unquoted, re.IGNORECASE):
+        loop_v = fm.group(1) or fm.group(2) or ""
+        coll_text = command[fm.start(3):fm.end(3)].strip()
+        if loop_v and coll_text:
+            found.append(_PsAssignSpan([loop_v], coll_text, fm.start(), fm.start(3), fm.end(), False))
+    found.sort(key=lambda item: (item.lhs_start, item.eq_end))
+    deduped: list[_PsAssignSpan] = []
+    last_eq = -1
+    for item in found:
+        if item.lhs_start >= last_eq:
+            deduped.append(item)
+            last_eq = item.eq_end
+    return deduped
+
+
+def _split_ps_array_items(raw_inner: str) -> list[str]:
+    """Split the body of a PowerShell `@(...)` array expression on unquoted `,`, `;`, or newlines."""
+    unq = _mask_quotes_same_len(raw_inner, in_posix=False)
+    items: list[str] = []
+    start = 0
+    pdepth = 0
+    bdepth = 0
+    for idx, ch in enumerate(unq):
+        if ch == "(":
+            pdepth += 1
+        elif ch == ")" and pdepth > 0:
+            pdepth -= 1
+        elif ch == "{":
+            bdepth += 1
+        elif ch == "}" and bdepth > 0:
+            bdepth -= 1
+        elif pdepth == 0 and bdepth == 0 and ch in ",;\r\n":
+            piece = raw_inner[start:idx].strip()
+            if piece:
+                segs, _ = _tokenize_command(piece)
+                items.extend(t.val for s in segs for t in s.tokens)
+            start = idx + 1
+    tail = raw_inner[start:].strip()
+    if tail:
+        segs, _ = _tokenize_command(tail)
+        items.extend(t.val for s in segs for t in s.tokens)
+    return items
+
+
+def _eval_ps_rhs_binding(exp_rhs: str, depth: int = 0) -> dict | None:
+    """Evaluate a PowerShell RHS string into `{splat, dq, elems, props, has_cli}` if it is a literal/array/hashtable or
+    executable resolver; return `None` for arbitrary command invocations."""
+    if depth > 3 or not exp_rhs or len(exp_rhs) > 4096:
+        return None
+    body = _strip_ps_type_prefix(exp_rhs.strip()).strip()
+    if not body:
+        return None
+    if body.startswith("@{") and body.endswith("}"):
+        inner_ht = body[2:-1]
+        unq_ht = _mask_quotes_same_len(inner_ht, in_posix=False)
+        entries: list[str] = []
+        estart = 0
+        pdepth = bdepth = 0
+        for idx, ch in enumerate(unq_ht):
+            if ch == "(":
+                pdepth += 1
+            elif ch == ")" and pdepth > 0:
+                pdepth -= 1
+            elif ch == "{":
+                bdepth += 1
+            elif ch == "}" and bdepth > 0:
+                bdepth -= 1
+            elif pdepth == 0 and bdepth == 0 and ch in ";\r\n":
+                if inner_ht[estart:idx].strip():
+                    entries.append(inner_ht[estart:idx].strip())
+                estart = idx + 1
+        if inner_ht[estart:].strip():
+            entries.append(inner_ht[estart:].strip())
+        splat_parts: list[str] = []
+        props: dict[str, str] = {}
+        val_has_cli = False
+        for ent in entries:
+            m_ent = re.match(
+                r"^\s*(?:'((?:''|[^'])*)'|\"((?:\"\"|`[\s\S]|[^\"])*)\"|([A-Za-z_][\w.-]*))\s*=(?!=)\s*(.*)$",
+                ent, re.DOTALL)
+            if not m_ent:
+                continue
+            kname = (m_ent.group(1).replace("''", "'") if m_ent.group(1) is not None
+                     else (m_ent.group(2) if m_ent.group(2) is not None else m_ent.group(3)))
+            vraw = m_ent.group(4).strip()
+            sub_b = _eval_ps_rhs_binding(vraw, depth + 1)
+            vsplat = sub_b["splat"] if sub_b else vraw
+            splat_parts.append(f"-{kname} {vsplat}")
+            props[kname.lower()] = vsplat
+            if (sub_b and sub_b["has_cli"]) or _AGY_CLI_WORD.search(vraw):
+                val_has_cli = True
+        return {"splat": " ".join(splat_parts), "dq": "", "elems": [], "props": props, "has_cli": val_has_cli}
+    if body.startswith("@(") and body.endswith(")"):
+        elems = _split_ps_array_items(body[2:-1])
+        has_cli = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x)) for x in elems)
+        return {"splat": " ".join(_ps_splat_elem(x) for x in elems),
+                "dq": _ps_dq_esc(" ".join(elems))[:2048],
+                "elems": elems, "props": {}, "has_cli": has_cli}
+    if body.startswith("(") and body.endswith(")") and _scan_matching_paren(body, 0, in_posix=False) == len(body) - 1:
+        inner_p = body[1:-1].strip()
+        unq_p = _mask_quotes_same_len(inner_p, in_posix=False)
+        if "," in unq_p:
+            elems = _split_ps_comma_elements(inner_p)
+            has_cli = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x)) for x in elems)
+            return {"splat": " ".join(_ps_splat_elem(x) for x in elems),
+                    "dq": _ps_dq_esc(" ".join(elems))[:2048],
+                    "elems": elems, "props": {}, "has_cli": has_cli}
+        inner_b = _eval_ps_rhs_binding(inner_p, depth + 1)
+        if inner_b is not None:
+            return inner_b
+    if _AGY_PS_RESOLVER_RHS.search(body) or re.search(
+            r"\b(?:Get-Command|gcm|where(?:\.exe)?|which|command\s+-v|Resolve-Path|Join-Path|Get-Item|gi)\b",
+            body, re.IGNORECASE):
+        target = _resolved_target_in(body)
+        if target:
+            sq_t = _ps_sq(target)
+            return {"splat": sq_t, "dq": _ps_dq_esc(target), "elems": [target],
+                    "props": {"source": sq_t, "path": sq_t, "definition": sq_t},
+                    "has_cli": target in _AGY_BLOCKED_CLIS}
+    unq_body = _mask_quotes_same_len(body, in_posix=False)
+    if "," in unq_body and re.search(r"[()]", unq_body) is None and re.search(
+            r"\b(?:New-Object|Invoke-Command|icm|Start-Process|saps)\b", unq_body, re.IGNORECASE) is None:
+        elems = _split_ps_comma_elements(body)
+        if elems:
+            has_cli = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x)) for x in elems)
+            return {"splat": " ".join(_ps_splat_elem(x) for x in elems),
+                    "dq": _ps_dq_esc(" ".join(elems))[:2048],
+                    "elems": elems, "props": {}, "has_cli": has_cli}
+    plus_parts: list[str] = []
+    pstart = 0
+    for idx, ch in enumerate(unq_body):
+        if ch == "+":
+            plus_parts.append(body[pstart:idx].strip())
+            pstart = idx + 1
+    plus_parts.append(body[pstart:].strip())
+    lit_vals: list[str] = []
+    all_lit = bool(plus_parts)
+    for part in plus_parts:
+        part_nt = _strip_ps_type_prefix(part).strip()
+        segs_p, _ = _tokenize_command(part_nt)
+        if len(segs_p) == 1 and len(segs_p[0].tokens) == 1 and (
+                segs_p[0].tokens[0].quote in ("'", '"')
+                or re.fullmatch(r"-?\d+(?:\.\d+)?", segs_p[0].tokens[0].raw) is not None):
+            lit_vals.append(segs_p[0].tokens[0].val)
+        else:
+            all_lit = False
+            break
+    if all_lit:
+        val = "".join(lit_vals)[:2048]
+        bare_v = _bare(val).strip("'\"")
+        has_cli = bare_v in _AGY_BLOCKED_CLIS or bool(_AGY_PS_RESOLVER_RHS.search(_ps_sq(val)))
+        return {"splat": _ps_splat_elem(val), "dq": _ps_dq_esc(val), "elems": [val], "props": {}, "has_cli": has_cli}
+    return None
+
+
+def _bind_ps_var(ps_env: dict[str, dict], raw_name: str, binding: dict) -> None:
+    key = raw_name.lower()
+    ps_env[key] = binding
+    for scope_pfx in ("script:", "global:", "local:", "private:"):
+        if key.startswith(scope_pfx) and len(key) > len(scope_pfx):
+            ps_env[key[len(scope_pfx):]] = binding
+
+
+def _expand_ps_vars_chunk(chunk: str, ps_env: dict[str, dict]) -> str:
+    """Expand bound PowerShell `$var` / `${var}` / `@var` / `$var[i]` / `$var.prop` references in `chunk` while leaving
+    single-quoted literals and backtick-escaped `$` untouched."""
+    if not ps_env or ("$" not in chunk and "@" not in chunk):
+        return chunk
+    out: list[str] = []
+    n = len(chunk)
+    i = 0
+    while i < n:
+        ch = chunk[i]
+        if ch == "`":
+            out.append(chunk[i:i + 2])
+            i += 2
+            continue
+        if ch == "'":
+            start = i
+            i += 1
+            while i < n:
+                if chunk[i:i + 2] == "''":
+                    i += 2
+                    continue
+                if chunk[i] == "'":
+                    i += 1
+                    break
+                i += 1
+            out.append(chunk[start:i])
+            continue
+        if ch == '"':
+            out.append('"')
+            i += 1
+            while i < n:
+                dc = chunk[i]
+                if dc == "`":
+                    out.append(chunk[i:i + 2])
+                    i += 2
+                    continue
+                if chunk[i:i + 2] == '""':
+                    out.append('""')
+                    i += 2
+                    continue
+                if dc == '"':
+                    out.append('"')
+                    i += 1
+                    break
+                if dc == "$":
+                    if i + 1 < n and chunk[i + 1] == "(":
+                        j = _scan_matching_paren(chunk, i + 1, in_posix=False)
+                        out.append("$(" + _expand_ps_vars_chunk(chunk[i + 2:j], ps_env) + (")" if j < n else ""))
+                        i = j + 1 if j < n else n
+                        continue
+                    tail_dq = chunk[i:]
+                    m_dq = _PS_REF_BRACED.match(tail_dq) or _PS_REF_BARE.match(tail_dq)
+                    if m_dq:
+                        b = ps_env.get(m_dq.group(1).lower())
+                        if b is not None and (b["dq"] or b["elems"]):
+                            out.append(b["dq"])
+                            i += m_dq.end()
+                            continue
+                out.append(dc)
+                i += 1
+            continue
+        if ch in ("$", "@"):
+            if chunk[i:i + 2] in ("$(", "@(", "@{"):
+                out.append(chunk[i:i + 2])
+                i += 2
+                continue
+            tail_u = chunk[i:]
+            m_u = _PS_REF_BRACED.match(tail_u) or _PS_REF_BARE.match(tail_u)
+            if m_u:
+                b = ps_env.get(m_u.group(1).lower())
+                if b is not None:
+                    after_v = i + m_u.end()
+                    if ch == "$":
+                        m_idx = re.match(r"^\[\s*(-?\d+)\s*\]", chunk[after_v:])
+                        if m_idx:
+                            idx_val = int(m_idx.group(1))
+                            elems = b["elems"]
+                            out.append(_ps_splat_elem(elems[idx_val]) if -len(elems) <= idx_val < len(elems) else "''")
+                            i = after_v + m_idx.end()
+                            continue
+                        m_key = re.match(r"^\[\s*(?:'([^']*)'|\"([^\"]*)\")\s*\]", chunk[after_v:])
+                        if m_key:
+                            pkey = (m_key.group(1) if m_key.group(1) is not None else m_key.group(2)).lower()
+                            if pkey in b["props"]:
+                                out.append(b["props"][pkey])
+                                i = after_v + m_key.end()
+                                continue
+                        m_prop = re.match(r"^\.([A-Za-z_]\w*)", chunk[after_v:])
+                        if m_prop and m_prop.group(1).lower() in b["props"]:
+                            out.append(b["props"][m_prop.group(1).lower()])
+                            i = after_v + m_prop.end()
+                            continue
+                    out.append(b["splat"])
+                    i = after_v
+                    continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _expand_sh_vars_chunk(chunk: str, sh_env: dict[str, dict]) -> str:
+    """Expand bound POSIX `$var` / `${var}` / `${arr[@]}` / `${arr[i]}` references in `chunk` while leaving single-quoted
+    literals and backslash-escaped `$` untouched."""
+    if not sh_env or "$" not in chunk:
+        return chunk
+    out: list[str] = []
+    n = len(chunk)
+    i = 0
+    while i < n:
+        ch = chunk[i]
+        if ch == "\\":
+            out.append(chunk[i:i + 2])
+            i += 2
+            continue
+        if ch == "'":
+            end = chunk.find("'", i + 1)
+            j = end + 1 if end >= 0 else n
+            out.append(chunk[i:j])
+            i = j
+            continue
+        if ch == '"':
+            out.append('"')
+            i += 1
+            while i < n:
+                dc = chunk[i]
+                if dc == "\\":
+                    out.append(chunk[i:i + 2])
+                    i += 2
+                    continue
+                if dc == '"':
+                    out.append('"')
+                    i += 1
+                    break
+                if dc == "`":
+                    end_bt = i + 1
+                    while end_bt < n:
+                        if chunk[end_bt] == "\\":
+                            end_bt += 2
+                            continue
+                        if chunk[end_bt] == "`":
+                            break
+                        end_bt += 1
+                    out.append("`" + _expand_sh_vars_chunk(chunk[i + 1:end_bt], sh_env) + ("`" if end_bt < n else ""))
+                    i = end_bt + 1 if end_bt < n else n
+                    continue
+                if dc == "$":
+                    if i + 1 < n and chunk[i + 1] == "(":
+                        j = _scan_matching_paren(chunk, i + 1, in_posix=True)
+                        out.append("$(" + _expand_sh_vars_chunk(chunk[i + 2:j], sh_env) + (")" if j < n else ""))
+                        i = j + 1 if j < n else n
+                        continue
+                    tail_dq = chunk[i:]
+                    m_sb = _SH_REF_BRACED.match(tail_dq)
+                    if m_sb and m_sb.group(1) in sh_env:
+                        b = sh_env[m_sb.group(1)]
+                        sub_k = m_sb.group(2)
+                        if sub_k == "@":
+                            out.append('" "'.join(_sh_dq_esc(x) for x in b["elems"]))
+                        elif sub_k == "*":
+                            out.append(_sh_dq_esc(" ".join(b["elems"])))
+                        elif sub_k is not None and re.fullmatch(r"-?\d+", sub_k.strip()):
+                            idx_v = int(sub_k.strip())
+                            elems = b["elems"]
+                            out.append(_sh_dq_esc(elems[idx_v]) if -len(elems) <= idx_v < len(elems) else "")
+                        else:
+                            out.append(b["dq"])
+                        i += m_sb.end()
+                        continue
+                    m_sp = _SH_REF_BARE.match(tail_dq)
+                    if m_sp and m_sp.group(1) in sh_env:
+                        out.append(sh_env[m_sp.group(1)]["dq"])
+                        i += m_sp.end()
+                        continue
+                out.append(dc)
+                i += 1
+            continue
+        if ch == "$":
+            if chunk[i:i + 2] == "$(":
+                out.append("$(")
+                i += 2
+                continue
+            tail_u = chunk[i:]
+            m_ub = _SH_REF_BRACED.match(tail_u)
+            if m_ub and m_ub.group(1) in sh_env:
+                b = sh_env[m_ub.group(1)]
+                sub_k = m_ub.group(2)
+                if sub_k in (None, "@", "*"):
+                    out.append(b["splat"])
+                elif re.fullmatch(r"-?\d+", sub_k.strip()):
+                    idx_v = int(sub_k.strip())
+                    elems = b["elems"]
+                    out.append(_sh_splat_elem(elems[idx_v]) if -len(elems) <= idx_v < len(elems) else "''")
+                else:
+                    out.append(b["splat"])
+                i += m_ub.end()
+                continue
+            m_up = _SH_REF_BARE.match(tail_u)
+            if m_up and m_up.group(1) in sh_env:
+                out.append(sh_env[m_up.group(1)]["splat"])
+                i += m_up.end()
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
 
 
 def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in_posix: bool = False,
@@ -2960,77 +3538,135 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
     command = _strip_shell_comments(command, in_cmd=in_cmd, in_posix=in_posix)
     if in_cmd:
         for cm_set in list(re.finditer(
-                r"(?:^|[&\n])\s*set\s+(?:/[ap]\s+)?\"?([A-Za-z_]\w*)=([^\"&\r\n]+)\"?", command, re.IGNORECASE)):
-            cv = re.escape(cm_set.group(1))
-            cval = cm_set.group(2).strip()
+                r"(?:^|[&\n])\s*set\s+(?:/[ap]\s+)?(?:\"([A-Za-z_]\w*)=([^\"\r\n]*)\"|([A-Za-z_]\w*)=([^\"&\r\n|]+))",
+                command, re.IGNORECASE)):
+            cv = re.escape(cm_set.group(1) or cm_set.group(3))
+            cval = (cm_set.group(2) if cm_set.group(1) is not None else cm_set.group(4)).strip()
             command = re.sub(rf"(?:%{cv}%|!{cv}!)", lambda _m, v=cval: v, command, flags=re.IGNORECASE)
     if not in_cmd:
         for sub in _extract_subexpressions(command, in_posix=in_posix):
             why = _agy_recurse(sub, depth + 1, in_cmd=in_cmd, in_posix=in_posix)
             if why:
                 return why
-    cleaned = command if in_posix else command.replace("`", " ")
-    unquoted = _QUOTED.sub(" '' ", cleaned)
-    if _AGY_PS_SPAWN.search(unquoted) and _AGY_CLI_WORD.search(cleaned):
+    unquoted = _mask_quotes_same_len(command, in_posix=in_posix)
+    unquoted_nobt = unquoted if in_posix else unquoted.replace("`", "")
+    cmd_nobt = command if in_posix else re.sub(r"`(?=[^\r\n])", "", command)
+    if _AGY_PS_SPAWN.search(unquoted_nobt) and _AGY_CLI_WORD.search(cmd_nobt):
         return ("Direct .NET/COM/CIM process launches of `claude`, `agy`, or `codex` bypass delegation and dispatcher "
                 "gates (standards/delegation.md).")
-    for raw_vname, rhs_val in _extract_ps_assignments(cleaned, unquoted):
-        vname = re.escape(raw_vname)
-        vref = rf"[$@](?:\{{{vname}\}}|{vname}(?![\w:]))"
-        has_cli_rhs = (_AGY_PS_RESOLVER_RHS.search(rhs_val)
-                       or (rhs_val.startswith(("@", "(")) and bool(_AGY_CLI_WORD.search(rhs_val))))
-        if has_cli_rhs and re.search(
-                rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii)\b)\s+[^;\n|]*{vref}",
-                cleaned, re.IGNORECASE):
-            return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass delegation and "
-                    "dispatcher gates (standards/delegation.md).")
-        if not in_cmd and not in_posix:
-            for gm in re.finditer(rf"\bgit(?:\.exe)?\b([^;\n|]*{vref}[^;\n|]*)", cleaned, re.IGNORECASE):
-                rhs_inner = (rhs_val[2:-1] if rhs_val.startswith("@(") and rhs_val.endswith(")")
-                             else (rhs_val[1:-1] if rhs_val.startswith("(") and rhs_val.endswith(")") else rhs_val))
-                rhs_elems = _split_ps_comma_elements(rhs_inner)
-                if rhs_elems:
-                    splat = " ".join(_ps_splat_elem(x) for x in rhs_elems)
-                    inlined_git = "git " + re.sub(vref, lambda _m, s=splat: s, gm.group(1), flags=re.IGNORECASE)
-                    why = _agy_recurse(inlined_git, depth + 1, in_cmd=False, in_posix=False)
-                    if why:
-                        return why
+    ps_env: dict[str, dict] = {}
+    if not in_cmd and not in_posix:
+        ps_spans = _extract_ps_assign_spans(command, unquoted)
+        if ps_spans:
+            rewritten_ps: list[str] = []
+            cursor_ps = 0
+            for span in ps_spans:
+                rewritten_ps.append(_expand_ps_vars_chunk(command[cursor_ps:span.lhs_start], ps_env))
+                rewritten_ps.append(command[span.lhs_start:span.eq_end])
+                cursor_ps = span.eq_end
+                exp_rhs = _expand_ps_vars_chunk(span.rhs_val, ps_env)
+                if span.destruct:
+                    raw_parts = _split_ps_comma_elements(exp_rhs)
+                    for idx_n, dname in enumerate(span.names):
+                        if idx_n < len(span.names) - 1:
+                            elem_val = raw_parts[idx_n] if idx_n < len(raw_parts) else ""
+                            b_item = _eval_ps_rhs_binding(_ps_sq(elem_val))
+                        else:
+                            rem_vals = raw_parts[idx_n:]
+                            b_item = (_eval_ps_rhs_binding(_ps_sq(rem_vals[0])) if len(rem_vals) == 1
+                                      else _eval_ps_rhs_binding("@(" + ", ".join(_ps_sq(x) for x in rem_vals) + ")"))
+                        if b_item is not None:
+                            if b_item["has_cli"]:
+                                vesc = re.escape(dname)
+                                vref = rf"[$@](?:\{{{vesc}\}}|{vesc}(?![\w:]))"
+                                if re.compile(
+                                        rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii|invoke-expression|iex)\b)"
+                                        rf"\s+[^;\n|]*{vref}", re.IGNORECASE).search(command, span.rhs_end):
+                                    return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` "
+                                            "bypass delegation and dispatcher gates (standards/delegation.md).")
+                            _bind_ps_var(ps_env, dname, b_item)
+                else:
+                    binding = _eval_ps_rhs_binding(exp_rhs)
+                    has_cli_rhs = (
+                        (binding is not None and binding["has_cli"])
+                        or bool(_AGY_PS_RESOLVER_RHS.search(exp_rhs))
+                        or (exp_rhs.startswith(("@", "(")) and bool(_AGY_CLI_WORD.search(exp_rhs))))
+                    for vname_raw in span.names:
+                        if has_cli_rhs:
+                            vesc = re.escape(vname_raw)
+                            vref = rf"[$@](?:\{{{vesc}\}}|{vesc}(?![\w:]))"
+                            if re.compile(
+                                    rf"(?:[&.]|(?:start(?:-process)?|saps|invoke-item|ii|invoke-expression|iex)\b)"
+                                    rf"\s+[^;\n|]*{vref}", re.IGNORECASE).search(command, span.rhs_end):
+                                return ("Variable-indirect PowerShell launches of `claude`, `agy`, or `codex` bypass "
+                                        "delegation and dispatcher gates (standards/delegation.md).")
+                        if binding is not None:
+                            _bind_ps_var(ps_env, vname_raw, binding)
+            rewritten_ps.append(_expand_ps_vars_chunk(command[cursor_ps:], ps_env))
+            expanded_ps_cmd = "".join(rewritten_ps)
+            if expanded_ps_cmd != command:
+                why = _agy_recurse(expanded_ps_cmd, depth + 1, in_cmd=False, in_posix=False, in_ps_expr=in_ps_expr)
+                if why:
+                    return why
+    sh_env: dict[str, dict] = {}
     if in_posix:
         sh_assign_re = re.compile(
-            r"(?:^|[;&|{(\n])\s*(?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?([A-Za-z_]\w*)=")
-        for am in sh_assign_re.finditer(unquoted):
-            raw_sv = am.group(1)
-            vname = re.escape(raw_sv)
-            cm = re.search(
-                rf"(?:^|[;&|{{(\n])\s*(?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?{vname}=",
-                command)
-            if not cm:
-                continue
-            pos = cm.end()
-            if pos < len(command) and command[pos] == "(":
-                j = _scan_matching_paren(command, pos, in_posix=True)
-                rhs_sh = command[pos + 1:j]
-                is_arr = True
-            else:
-                m_sh = re.match(r"[^;\r\n|]+", command[pos:])
-                rhs_sh = m_sh.group(0).strip() if m_sh else ""
-                is_arr = False
-            vref_sh = rf"\$(?:\{{{vname}(?:\[[^\]]*\])?\}}|{vname}\b)"
-            if (_AGY_PS_RESOLVER_RHS.search(rhs_sh) or (is_arr and _AGY_CLI_WORD.search(rhs_sh))) \
-                    and re.search(
-                        rf"(?:^|[;&|{{(\n])\s*(?:command\s+|nohup\s+|env\s+|exec\s+|eval\s+)*['\"]?{vref_sh}",
-                        command):
-                return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
-                        "dispatcher gates (standards/delegation.md).")
-            sh_segs, _ = _tokenize_command(rhs_sh, in_posix=True)
-            sh_elems = [t.val for s in sh_segs for t in s.tokens]
-            if sh_elems:
-                sh_splat = " ".join(_sh_splat_elem(x) for x in sh_elems)
-                for gm in re.finditer(rf"\bgit(?:\.exe)?\b([^;\n|]*{vref_sh}[^;\n|]*)", command):
-                    tail_git = re.sub(rf'"{vref_sh}"|{vref_sh}', lambda _m, s=sh_splat: s, gm.group(1))
-                    why = _agy_recurse("git " + tail_git, depth + 1, in_cmd=False, in_posix=True)
-                    if why:
-                        return why
+            r"(?:^|[;&|{(\n])\s*((?:(?:declare|typeset|local)\s+(?:-[aAilrtux]+\s+)*|export\s+)?([A-Za-z_]\w*)=)")
+        sh_matches = list(sh_assign_re.finditer(unquoted))
+        if sh_matches:
+            rewritten_sh: list[str] = []
+            cursor_sh = 0
+            for am in sh_matches:
+                lhs_s = am.start(1)
+                pos = am.end()
+                if lhs_s < cursor_sh:
+                    continue
+                rewritten_sh.append(_expand_sh_vars_chunk(command[cursor_sh:lhs_s], sh_env))
+                rewritten_sh.append(command[lhs_s:pos])
+                cursor_sh = pos
+                if pos < len(command) and command[pos] == "(":
+                    j = _scan_matching_paren(command, pos, in_posix=True)
+                    rhs_end_sh = min(j + 1, len(command))
+                    rhs_sh_raw = command[pos + 1:j]
+                    is_arr = True
+                else:
+                    m_sh = re.match(r"[^\s;&|)}]+", unquoted[pos:])
+                    rhs_end_sh = pos + m_sh.end() if m_sh else pos
+                    rhs_sh_raw = command[pos:rhs_end_sh]
+                    is_arr = False
+                exp_rhs_sh = _expand_sh_vars_chunk(rhs_sh_raw, sh_env)
+                raw_sv = am.group(2)
+                vesc_sh = re.escape(raw_sv)
+                vref_sh = rf"\$(?:\{{{vesc_sh}(?:\[[^\]]*\])?\}}|{vesc_sh}\b)"
+                sh_segs, _ = _tokenize_command(exp_rhs_sh, in_posix=True)
+                sh_elems = [t.val for s in sh_segs for t in s.tokens]
+                if is_arr:
+                    splat_sh = " ".join(_sh_splat_elem(x) for x in sh_elems) if sh_elems else ""
+                    dq_sh = _sh_dq_esc(" ".join(sh_elems))[:2048]
+                    has_cli_sh = any(_bare(x).strip("'\"") in _AGY_BLOCKED_CLIS or bool(_AGY_CLI_WORD.search(x))
+                                     for x in sh_elems)
+                else:
+                    sval = sh_elems[0] if len(sh_elems) == 1 else exp_rhs_sh.strip()
+                    if ("$(" in rhs_sh_raw or "`" in rhs_sh_raw) and _resolved_target_in(rhs_sh_raw):
+                        sval = _resolved_target_in(rhs_sh_raw) or sval
+                    words_sh = sval.split()
+                    splat_sh = " ".join(_sh_splat_elem(w) for w in words_sh) if words_sh else "''"
+                    dq_sh = _sh_dq_esc(sval)[:2048]
+                    sh_elems = [sval]
+                    has_cli_sh = (_bare(sval).strip("'\"") in _AGY_BLOCKED_CLIS
+                                  or bool(_AGY_PS_RESOLVER_RHS.search(exp_rhs_sh)))
+                if has_cli_sh and re.compile(
+                        rf"(?:^|[;&|{{(\n])\s*(?:command\s+|nohup\s+|env\s+|exec\s+|eval\s+)*['\"]?{vref_sh}").search(
+                            command, rhs_end_sh):
+                    return ("Variable-indirect shell launches of `claude`, `agy`, or `codex` bypass delegation and "
+                            "dispatcher gates (standards/delegation.md).")
+                sh_env[raw_sv] = {"splat": splat_sh, "dq": dq_sh, "elems": sh_elems, "has_cli": has_cli_sh}
+            rewritten_sh.append(_expand_sh_vars_chunk(command[cursor_sh:], sh_env))
+            expanded_sh_cmd = "".join(rewritten_sh)
+            if expanded_sh_cmd != command:
+                why = _agy_recurse(expanded_sh_cmd, depth + 1, in_cmd=False, in_posix=True)
+                if why:
+                    return why
     segments, paren_subs = _tokenize_command(command, in_cmd=in_cmd, in_posix=in_posix)
     for psub, sub_is_expr in paren_subs:
         why = _agy_recurse(psub, depth + 1, in_cmd=in_cmd, in_posix=in_posix, in_ps_expr=sub_is_expr)
@@ -3056,8 +3692,9 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                         break
                     cur = ps_rhs
                     continue
-                if in_ps_expr and not saw_call and (
-                        tok0.quote in ("'", '"', "@(", "@{") or tok0.raw[:1] in ("'", '"', "@", "(")):
+                if not saw_call and (
+                        (in_ps_expr and (tok0.quote in ("'", '"', "@(", "@{") or tok0.raw[:1] in ("'", '"', "@", "(")))
+                        or (len(cur) == 1 and tok0.quote in ("'", '"', "@(", "@{"))):
                     cur = []
                     break
             if not tok0.quote and ("=" in tok0.val and not tok0.val.startswith("-")):
@@ -3081,7 +3718,8 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                 continue
             if low == "eval":
                 if len(cur) > 1:
-                    why = _agy_recurse(" ".join(t.val for t in cur[1:]), depth + 1, in_cmd=False, in_posix=True)
+                    eval_str = _expand_sh_vars_chunk(" ".join(t.val for t in cur[1:]), sh_env)
+                    why = _agy_recurse(eval_str, depth + 1, in_cmd=False, in_posix=True)
                     if why:
                         return why
                 cur = []
@@ -3156,13 +3794,14 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
                     idx += 1
                 iex_vals = ([inline_iex] if inline_iex is not None else []) + [t.val for t in cur[idx:]]
                 if iex_vals:
-                    why = _agy_recurse(" ".join(iex_vals), depth + 1, in_cmd=False, in_posix=False)
+                    iex_str = _expand_ps_vars_chunk(" ".join(iex_vals), ps_env)
+                    why = _agy_recurse(iex_str, depth + 1, in_cmd=False, in_posix=False)
                     if why:
                         return why
                 elif seg.sep_before == "|" and seg_idx > 0:
                     piped = _piped_payload_of(segments[seg_idx - 1])
                     if piped:
-                        why = _agy_recurse(piped, depth + 1, in_cmd=False, in_posix=False)
+                        why = _agy_recurse(_expand_ps_vars_chunk(piped, ps_env), depth + 1, in_cmd=False, in_posix=False)
                         if why:
                             return why
                 cur = []
@@ -4358,7 +4997,13 @@ def _self_test() -> int:
         "$pattern='codex'; Select-String $pattern scripts/panel_slots.py",
         "$tools = @('codex', 'claude'); Select-String -Pattern $tools scripts/panel_slots.py",
         "$map = @{ codex = 'astra'; claude = 'sonnet' }; Write-Output $map.codex",
+        "$msg = 'mention codex and --no-verify in commit message'; git commit -m $msg",
+        "$msg = '-n'; git commit -m $msg",
+        "$msg = 'codex'; $msg | Select-String 'codex'",
+        "$bin = 'echo'; & $bin claude; $bin = 'claude'",
+        "$git = Get-Command git; & $git.Source status",
         "bash -c \"pattern='codex'; grep -n \\\"\\$pattern\\\" scripts/panel_slots.py\"",
+        "bash -c 'pat=\"codex\"; msg=\"bin=safe\"; grep -n \"$pat\" scripts/panel_slots.py'",
         "bash -c \"arr=('codex' 'claude'); echo \\\"\\\\${arr[0]}\\\"\"",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
@@ -4421,6 +5066,31 @@ def _self_test() -> int:
             ("typed powershell [string[]]$a splat git -n", "run_command", {"CommandLine": "[string[]]$a = @('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
             ("nested generic [List[string]]$a splat git -n", "run_command", {"CommandLine": "[System.Collections.Generic.List[string]]$a = @('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
             ("chained assignment $a = $b = claude", "run_command", {"CommandLine": "$a = $b = 'claude'; & $a -p inspect"}, "Variable-indirect"),
+            ("multi-var $message then $a = @(... $message) git @a", "run_command", {"CommandLine": "$message = 'fix parser'; $a = @('commit', '-n', '-m', $message); git @a"}, "--no-verify"),
+            ("multi-var $task then $bin = 'claude' & $bin", "run_command", {"CommandLine": "$task = 'inspect callers'; $bin = 'claude'; & $bin -p $task"}, "Variable-indirect"),
+            ("escaped quote with semicolon before @a splat", "run_command", {"CommandLine": "$msg = \"say `\"hi`\"; foo\"; $a = @('commit', '-n', '-m', $msg); git @a"}, "--no-verify"),
+            ("single-quote doubled apostrophe with semicolon before & $bin", "run_command", {"CommandLine": "$msg = 'can''t; stop'; $bin = 'codex'; & $bin exec review"}, "Variable-indirect"),
+            ("multi-var $sub and $flag on git commit -n", "run_command", {"CommandLine": "$sub = 'commit'; $flag = '-n'; git $sub $flag -m 'test'"}, "--no-verify"),
+            ("unparenthesized comma array $a = 'commit', '-n' git @a", "run_command", {"CommandLine": "$a = 'commit', '-n', '-m', 'test'; git @a"}, "--no-verify"),
+            ("semicolon-separated @('commit'; '-n') git @a", "run_command", {"CommandLine": "$a = @('commit'; '-n'; '-m'; 'test'); git @a"}, "--no-verify"),
+            ("destructuring $bin, $flag = 'claude', '-p' & $bin", "run_command", {"CommandLine": "$bin, $flag = 'claude', '-p'; & $bin $flag inspect"}, "Variable-indirect"),
+            ("destructuring command-mode RHS $a, $b = claude -p", "run_command", {"CommandLine": "$a, $b = claude -p inspect"}, "bypass delegation"),
+            ("string plus concatenation $bin = 'cl' + 'aude'", "run_command", {"CommandLine": "$bin = 'cl' + 'aude'; & $bin -p inspect"}, "Variable-indirect"),
+            ("double-quoted var interpolation & \"$a$b\"", "run_command", {"CommandLine": "$a = 'cl'; $b = 'aude'; & \"$a$b\" -p inspect"}, "bypass delegation"),
+            ("hashtable dot property & $m.bin", "run_command", {"CommandLine": "$m = @{ bin = 'claude' }; & $m.bin -p inspect"}, "Variable-indirect"),
+            ("hashtable bracket property & $m['bin']", "run_command", {"CommandLine": "$m = @{ bin = 'codex' }; & $m['bin'] exec review"}, "Variable-indirect"),
+            ("Set-Variable -Name bin -Value claude & $bin", "run_command", {"CommandLine": "Set-Variable -Name bin -Value 'claude'; & $bin -p inspect"}, "Variable-indirect"),
+            ("foreach loop over @('codex', 'claude') & $t", "run_command", {"CommandLine": "foreach ($t in @('codex', 'claude')) { & $t exec review }"}, "Variable-indirect"),
+            ("variable command passed to iex $cmd", "run_command", {"CommandLine": "$cmd = 'codex exec review'; iex $cmd"}, "review-dispatch.py"),
+            ("variable in single-quoted iex '$c exec review'", "run_command", {"CommandLine": "$c = 'codex'; iex '$c exec review'"}, "Variable-indirect"),
+            ("Get-Command git.Source commit -n", "run_command", {"CommandLine": "$git = Get-Command git; & $git.Source commit -n -m test"}, "--no-verify"),
+            ("posix multi-var msg + array git commit -n", "run_command", {"CommandLine": 'bash -c \'msg="fix parser"; a=(commit -n -m "$msg"); git "${a[@]}"\''}, "--no-verify"),
+            ("posix multi-var task + quoted $bin claude", "run_command", {"CommandLine": 'bash -c \'task="inspect callers"; bin=claude; "$bin" -p "$task"\''}, "Variable-indirect"),
+            ("posix quoted = before bin=claude", "run_command", {"CommandLine": 'bash -c \'msg="bin=safe"; bin=claude; $bin -p inspect\''}, "Variable-indirect"),
+            ("posix multi-var sub=commit flag=-n git", "run_command", {"CommandLine": "bash -c 'sub=commit; flag=-n; git $sub $flag -m test'"}, "--no-verify"),
+            ("posix double-quoted interpolation $a$b claude", "run_command", {"CommandLine": 'bash -c \'a=cl; b=aude; "$a$b" -p inspect\''}, "bypass delegation"),
+            ("posix single-quoted eval '$c exec review'", "run_command", {"CommandLine": "bash -c \"c=codex; eval '`$c exec review'\""}, "Variable-indirect"),
+            ("posix escaped double-quoted eval \"\\$c exec review\"", "run_command", {"CommandLine": "bash -c 'c=codex; eval \"\\$c exec review\"'"}, "review-dispatch.py"),
             ("powershell no-space variable headless claude", "run_command", {"CommandLine": "$out=claude -p inspect"}, "bypass delegation"),
             ("powershell variable & quoted codex", "run_command", {"CommandLine": "$out = & 'codex' exec review"}, "review-dispatch.py"),
             ("powershell array subexpression codex", "run_command", {"CommandLine": "$out = @(codex exec review)"}, "review-dispatch.py"),
