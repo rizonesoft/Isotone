@@ -189,7 +189,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |  10   |
 | [x] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |  10   |
 | [x] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |  10   |
-| [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |
+| [ ] | `D00 T01 §9`  | The design contract gates                                                                |  14   |
 | [ ] | `D00 T01 §10` | The drift gates                                                                          |  10   |
 | [x] | `D00 T01 §5`  | First push: CI green and read back                                                       |   9   |
 
