@@ -50,3 +50,51 @@ OVERALL: needs-attention
 2. **P2 `.agents/skills/review-todo-section/SKILL.md:92` (`integration`):** Real and reproduced. Updated `.agents/skills/review-todo-section/SKILL.md`, `.claude/skills/review-todo-section/SKILL.md`, and `docs/todo-workflow.md` to capture the `"round"` integer returned by `scripts/review-dispatch.py --kind round` into `$ROUND_NUM` and pass `--review "${ROUND_NUM}:${RECORD}:<clean|fixed>"` to `todo-graph.py stamp`, verified by both an outage-retry test in `scripts/tests/test_isotone_three_pass_stamp.py` and skill surface assertions in `scripts/review_prompt.py --self-test`.
 3. **P2 `scripts/lib/todo_graph.py:1381` (`integration`):** Real and reproduced. Updated `unstamp` and `build_start` in `scripts/lib/todo_graph.py` so reopening a stamped section archives its canonical findings file(s) alongside the revoked receipt as `*.revoked-<date>[-<n>].md` (recorded on the `> **Unstamped:**` line and rolled back atomically on failure), clears the stale `> **Started:**` line, and scopes `build_start` to commits after the reopen so a fresh `plan -> round -> completion -> stamp` repair cycle runs cleanly without losing prior evidence; covered end-to-end in `scripts/tests/test_isotone_three_pass_stamp.py`.
 4. **P2 `.agents/skills/review-todo-section/SKILL.md:99` (`source-defect`):** Real and reproduced. Replaced the unsupported `ci_status.py --sha ... --wait` flags across `.agents/skills/review-todo-section/SKILL.md`, `.agents/skills/process-todo-section/SKILL.md`, `.agents/skills/process-phase/SKILL.md`, `.claude/skills/review-todo-section/SKILL.md`, and `.claude/skills/process-todo-section/SKILL.md` with the actual commit-aware CI waiter (`python scripts/review_prompt.py ci-wait <SHA> --since <BEFORE>` plus `--workflow build --workflow-path .github/workflows/build.yml`) and branch-status check (`python scripts/ci_status.py`), aligned `AGENTS.md`, self-healed `scripts/review_prompt.py --self-test` for the `three-pass` skills, and wired the new three-pass and `ci_status` suites into `.github/workflows/plan.yml`.
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T03:45:45Z
+- Candidate: 6acf160f97e8e2a111efc966596f773d6a083063
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 32
+- Digest: a3c2a6c284213c97
+
+### adversarial: approve
+
+No findings.
+
+### consistency: needs-attention
+
+1. **P2, `.agents/skills/review-todo-section/SKILL.md:47`: Nonblocking P3 rounds receive an incompatible stamp verdict.** The skill prescribes `:clean` whenever `"blocking": false`, including a review ending `HIGHEST: P3` and `OVERALL: needs-attention`. However, `scripts/lib/todo_graph.py:911` requires `OVERALL: approve` for `clean`. Reproduce by following that instruction after a P3-only round, then stamping after completion. An in-memory probe confirmed rejection: `clean needs OVERALL: approve, any other needs-attention`. The Claude skill repeats this mismatch. Align the prescribed disposition with the validator.
+
+### integration: needs-attention
+
+2. **P2, `.agents/skills/review-todo-section/SKILL.md:112`: The audit repair procedure cannot reopen existing legacy sections.** The skill explicitly includes legacy prose review records, but directs every regression through `unstamp`, which requires a JSON receipt at `scripts/lib/todo_graph.py:1364`. The current tree contains 29 shipped sections without one. Reproduction: `python -B scripts/todo-graph.py unstamp 'D00 T01 §1' --reason 'review probe'` returns `TODO refused: section D00 T01 §1 has no JSON receipt to unstamp`, before writing anything. Provide a supported legacy reopen path that preserves its evidence and permits a fresh review cycle.
+
+### quality: approve
+
+No additional findings.
+
+### optimization: approve
+
+No findings.
+
+### source-defect: approve
+
+No additional findings.
+
+LENS adversarial: clean
+LENS consistency: findings
+LENS integration: findings
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 2
+
+1. **P2 `.agents/skills/review-todo-section/SKILL.md:47` (`consistency`):** Real and reproduced. Updated Step 2 (`Pass 2 -- the review round`) in `.agents/skills/review-todo-section/SKILL.md` and `.claude/skills/review-todo-section/SKILL.md` to key the `stamp` round verdict on the round's `OVERALL:` line (`OVERALL: approve` -> `${ROUND_NUM}:${RECORD}:clean`; `OVERALL: needs-attention` -> `${ROUND_NUM}:${RECORD}:fixed` for both non-blocking `HIGHEST: P3` rounds and fixed `P1`/`P2` rounds), matching `scripts/lib/todo_graph.py:901` (`receipt_data_ok`) and verified in `scripts/tests/test_isotone_three_pass_stamp.py` (which proves `:clean` is rejected and `:fixed` succeeds after a `HIGHEST: P3`, `OVERALL: needs-attention` round).
+2. **P2 `.agents/skills/review-todo-section/SKILL.md:112` (`integration`):** Real and reproduced. Extended `unstamp` in `scripts/lib/todo_graph.py` (plus `scripts/todo-graph.py`, `scripts/todo-findings.py`, `scripts/todo-runs.py`, `.agents/skills/review-todo-section/SKILL.md`, and `.claude/skills/review-todo-section/SKILL.md`) to reopen legacy prose-stamped sections as well as JSON-receipt sections by archiving the legacy prose stamp fields and verbatim lines into `docs/reviews/<slug>.revoked-<date>[-<n>].json`, archiving per-section findings and `.attest.json` / `-review-outcomes.json` sidecars to `*.revoked-<date>[-<n>].*` with atomic rollback, keeping historical findings, transitions, and legacy `panel` run records checkable across `*.revoked-*.md`, and permitting a fresh `three-pass` review cycle; verified both in `scripts/tests/test_isotone_three_pass_stamp.py` (`test_legacy_prose_stamp_reopen_preserves_evidence_and_restamps`) and in an isolated clone probe on `D00 T01 §1` and `D00 T05 §2` (`todo-findings.py --check`, `todo-graph.py validate`, `todo-graph.py plan --check`, and `todo-runs.py --check` all exit `0`).

@@ -77,8 +77,8 @@ LEDGER = REVIEWS / "findings.md"
 TRANSITIONS = REVIEWS / "transitions.md"
 NONFINAL = ("refuted", "withdrawn", "duplicate", "routed")
 
-# D00-T03-s1.md -> ("D00 T03 §1")
-FILE_RE = re.compile(r"^D(?P<dom>\d{2})-T(?P<todo>\d{2})-s(?P<sec>\d+)\.md$")
+# D00-T03-s1.md (or archived D00-T03-s1.revoked-YYYY-MM-DD[-N].md) -> ("D00 T03 §1")
+FILE_RE = re.compile(r"^D(?P<dom>\d{2})-T(?P<todo>\d{2})-s(?P<sec>\d+)(?:\.revoked-\d{4}-\d{2}-\d{2}(?:-\d+)?)?\.md$")
 # `F<digits>` then a ` -- ` separator. The first version accepted any `###`
 # heading starting with F, so `### Findings`, `### Frozen check` and
 # `### Fixes applied` were all read as malformed findings. A check that fires on
@@ -652,6 +652,15 @@ def _self_test() -> int:
     if of or ob:
         print("  FAIL  a non-section review file was parsed")
         failed += 1
+
+    # Archived *.revoked-YYYY-MM-DD[-N].md section files preserve historical findings across unstamp.
+    revoked_f = tmp / "D00-T97-s1.revoked-2026-11-12.md"
+    revoked_f.write_text("### F1 -- preserved on reopen -- record -- FIXED (independent) [minor]\n", encoding="utf-8")
+    rvf, rvb = parse_file(revoked_f)
+    if len(rvf) != 1 or rvb or rvf[0].ref != "D00 T97 §1":
+        print(f"  FAIL  revoked section findings file parsed wrong: {len(rvf)} / {rvb}")
+        failed += 1
+    revoked_f.unlink()
 
     # A compound disposition still resolves.
     if _normalise_disposition("ROOT CAUSE CLEARED, residue FILED to `D00 T01 §2`") != "cleared":

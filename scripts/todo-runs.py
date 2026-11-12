@@ -403,13 +403,21 @@ def _display_section(compact):
 def _review_path(compact):
     m = re.match(r"^D(\d{2})-T(\d{2})-S(\d+)$", compact)
     dom, todo, sec = m.group(1), m.group(2), int(m.group(3))
-    for parent in TF.REVIEWS.iterdir():
+    stem = f"D{dom}-T{todo}-s{sec}"
+    candidates = []
+    for parent in sorted(TF.REVIEWS.iterdir()):
         if not parent.is_dir():
             continue
-        cand = parent / f"D{dom}-T{todo}-s{sec}.md"
+        cand = parent / f"{stem}.md"
         if cand.is_file():
+            candidates.append(cand)
+        candidates.extend(sorted(parent.glob(f"{stem}.revoked-*.md")))
+    if not candidates:
+        return None
+    for cand in candidates:
+        if panel_verdicts(cand):
             return cand
-    return None
+    return candidates[0]
 
 
 def _review_files():

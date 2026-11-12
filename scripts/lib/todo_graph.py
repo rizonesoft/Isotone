@@ -1354,67 +1354,135 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
     return receipt
 
 
+SHARED_REVIEW_FILES = frozenset(
+    {
+        "docs/reviews/legacy-receipts.json",
+        "docs/reviews/findings.md",
+        "docs/reviews/run-records.md",
+        "docs/reviews/transitions.md",
+    }
+)
+
+
 def unstamp(root, ref, reason, date):
-    """Flip a JSON-receipt stamped section back to open when an audit finds it regressed, archiving its receipt and findings."""
+    """Flip a stamped section (JSON receipt or legacy prose stamp) back to open when an audit finds it regressed,
+    archiving its receipt or legacy stamp metadata and its review sidecars."""
     root = Path(root).resolve()
     rows = graph(root)
     require(ref in rows, "unresolved section: " + ref)
     row = rows[ref]
     require(row.done, f"not stamped: {ref}")
-    require(bool(row.receipt), f"section {ref} has no JSON receipt to unstamp")
     require(bool(reason.strip()) and "\n" not in reason, "--reason must be one line saying what regressed")
     require(re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) is not None, f"invalid date: {date}")
-    receipt_path = root / row.receipt
-    require(receipt_path.is_file(), f"missing receipt: {row.receipt}")
-    receipt_bytes = receipt_path.read_bytes()
-    try:
-        receipt_obj = json.loads(receipt_bytes.decode("utf-8"))
-    except ValueError:
-        receipt_obj = {}
-    candidate_reports = [section_findings(root, ref)]
-    if isinstance(receipt_obj, dict):
-        for key in ("plan", "completion"):
-            sub = receipt_obj.get(key)
-            if isinstance(sub, dict) and isinstance(sub.get("report"), str):
-                candidate_reports.append(sub["report"])
-        for rev in receipt_obj.get("reviews") or []:
-            if isinstance(rev, dict) and isinstance(rev.get("report"), str):
-                candidate_reports.append(rev["report"])
-    source_findings: list[Path] = []
-    for rel_rep in dict.fromkeys(candidate_reports):
-        rep_p = Path(rel_rep)
-        if (
-            re.fullmatch(r"docs/reviews/[A-Za-z0-9_./-]+\.md", rel_rep) is not None
-            and not rep_p.is_absolute()
-            and ".." not in rep_p.parts
-        ):
-            full_rep = root / rep_p
-            if full_rep.is_file() and not full_rep.is_symlink() and full_rep.resolve().is_relative_to(root):
-                source_findings.append(full_rep)
-
-    tag = f"revoked-{date}"
-    n = 2
-    while receipt_path.with_name(f"{receipt_path.stem}.{tag}.json").exists() or any(
-        fp.with_name(f"{fp.stem}.{tag}.md").exists() for fp in source_findings
-    ):
-        tag = f"revoked-{date}-{n}"
-        n += 1
-    revoked_path = receipt_path.with_name(f"{receipt_path.stem}.{tag}.json")
-    revoked = revoked_path.relative_to(root).as_posix()
-    findings_archives = [
-        (fp, fp.with_name(f"{fp.stem}.{tag}.md"), fp.read_bytes())
-        for fp in source_findings
-    ]
-    archived_rels = [dst.relative_to(root).as_posix() for _, dst, _ in findings_archives]
 
     path = root / row.path
     original_bytes = path.read_bytes()
     text = read_text(path)
     sec_block = section_text(text, row.number)
     require(sec_block is not None and text.count(sec_block) == 1, f"section body is not unique in {row.path}")
-    stamp_lines = re.compile(r"\n\n> \*\*Verified:\*\* [^\n]*\n> \*\*Review:\*\* `[^`\n]*`")
-    require(len(stamp_lines.findall(sec_block)) == 1, f"stamp lines not found: {ref}")
-    new_sec = stamp_lines.sub("", sec_block)
+
+    canonical_md = section_findings(root, ref)
+    canonical_stem = canonical_md[:-3]
+    candidate_sidecars = [
+        canonical_md,
+        f"{canonical_stem}.attest.json",
+        f"{canonical_stem}-review-outcomes.json",
+    ]
+    had_receipt_file = bool(row.receipt)
+    if had_receipt_file:
+        receipt_path = root / row.receipt
+        require(receipt_path.is_file(), f"missing receipt: {row.receipt}")
+        receipt_bytes = receipt_path.read_bytes()
+        try:
+            receipt_obj = json.loads(receipt_bytes.decode("utf-8"))
+        except ValueError:
+            receipt_obj = {}
+        if isinstance(receipt_obj, dict):
+            for key in ("plan", "completion"):
+                sub = receipt_obj.get(key)
+                if isinstance(sub, dict) and isinstance(sub.get("report"), str):
+                    candidate_sidecars.append(sub["report"])
+            for rev in receipt_obj.get("reviews") or []:
+                if isinstance(rev, dict) and isinstance(rev.get("report"), str):
+                    candidate_sidecars.append(rev["report"])
+        stamp_lines = re.compile(r"\n\n> \*\*Verified:\*\* [^\n]*\n> \*\*Review:\*\* `[^`\n]*`")
+        require(len(stamp_lines.findall(sec_block)) == 1, f"stamp lines not found: {ref}")
+        new_sec = stamp_lines.sub("", sec_block)
+    else:
+        slug = re.sub(r"[^a-z0-9]+", "-", ref.lower().replace("§", "s")).strip("-")
+        receipt_path = root / "docs" / "reviews" / f"{slug}.json"
+        require(
+            not receipt_path.exists(),
+            f"section {ref} has no receipt in Review: but {receipt_path.relative_to(root).as_posix()} exists on disk",
+        )
+        legacy_stamp = re.compile(
+            r"\n\n(> \*\*Verified:\*\* (?P<verified>[^\n]+)"
+            r"(?:\n> \*\*(?:Review|Plan review|CRUD|Duration|Implementer|Verification):\*\* [^\n]*)+)"
+        )
+        matches = list(legacy_stamp.finditer(sec_block))
+        require(len(matches) == 1, f"legacy stamp block not found: {ref}")
+        verified_head = matches[0].group("verified").strip()
+        parts = [p.strip() for p in verified_head.split("|", 2)]
+        require(
+            len(parts) == 3 and parts[1] in (f"§{row.number}", ref),
+            f"legacy stamp on {ref} covers {parts[1] if len(parts) >= 2 else verified_head!r}; "
+            f"split any multi-section range stamp before unstamping",
+        )
+        raw_block_lines = matches[0].group(1).splitlines()
+        fields: dict[str, str] = {}
+        for bline in raw_block_lines:
+            bm = re.match(r"^> \*\*(?P<k>[^*]+):\*\*\s*(?P<v>.*)$", bline)
+            if bm:
+                fields[bm.group("k").lower().replace(" ", "_")] = bm.group("v").strip()
+        require("review" in fields, f"legacy stamp block in {ref} has no Review: line")
+        for m_rel in re.findall(r"docs/reviews/[A-Za-z0-9_./-]+\.(?:md|json)", fields["review"]):
+            candidate_sidecars.append(m_rel)
+        legacy_payload = {
+            "legacy_prose_stamp": True,
+            "ref": ref,
+            "title": row.title,
+            "revoked_on": date,
+            "reason": reason.strip(),
+            "fields": fields,
+            "stamp_lines": raw_block_lines,
+        }
+        receipt_bytes = (json.dumps(legacy_payload, indent=2) + "\n").encode("utf-8")
+        new_sec = sec_block[: matches[0].start()] + sec_block[matches[0].end() :]
+
+    source_sidecars: list[Path] = []
+    for rel_side in dict.fromkeys(candidate_sidecars):
+        side_p = Path(rel_side)
+        if (
+            rel_side not in SHARED_REVIEW_FILES
+            and ".revoked-" not in side_p.name
+            and re.fullmatch(r"docs/reviews/[A-Za-z0-9_./-]+\.(?:md|json)", rel_side) is not None
+            and not side_p.is_absolute()
+            and ".." not in side_p.parts
+        ):
+            full_side = root / side_p
+            if (
+                full_side != receipt_path
+                and full_side.is_file()
+                and not full_side.is_symlink()
+                and full_side.resolve().is_relative_to(root)
+            ):
+                source_sidecars.append(full_side)
+
+    tag = f"revoked-{date}"
+    n = 2
+    while receipt_path.with_name(f"{receipt_path.stem}.{tag}.json").exists() or any(
+        fp.with_name(f"{fp.stem}.{tag}{fp.suffix}").exists() for fp in source_sidecars
+    ):
+        tag = f"revoked-{date}-{n}"
+        n += 1
+    revoked_path = receipt_path.with_name(f"{receipt_path.stem}.{tag}.json")
+    revoked = revoked_path.relative_to(root).as_posix()
+    sidecar_archives = [
+        (fp, fp.with_name(f"{fp.stem}.{tag}{fp.suffix}"), fp.read_bytes())
+        for fp in source_sidecars
+    ]
+    archived_rels = [dst.relative_to(root).as_posix() for _, dst, _ in sidecar_archives]
+
     new_sec = re.sub(r"^> \*\*Started:\*\* [^\n]*\n?", "", new_sec, flags=re.M)
     new_sec = re.sub(r"^(\s*- )\[x\] (Commit:.+)$", r"\1[ ] \2", new_sec, flags=re.M).rstrip()
     archived_suffix = (
@@ -1436,19 +1504,20 @@ def unstamp(root, ref, reason, date):
     }
     try:
         atomic(revoked_path, receipt_bytes)
-        for _, dst_fp, fbytes in findings_archives:
+        for _, dst_fp, fbytes in sidecar_archives:
             atomic(dst_fp, fbytes)
         atomic(path, text)
-        receipt_path.unlink()
-        for src_fp, _, _ in findings_archives:
+        if had_receipt_file:
+            receipt_path.unlink()
+        for src_fp, _, _ in sidecar_archives:
             src_fp.unlink()
         _validate_and_sync(root, sync_plan=plan_path.is_file())
     except BaseException:
         try:
-            if not receipt_path.is_file():
+            if had_receipt_file and not receipt_path.is_file():
                 atomic(receipt_path, receipt_bytes)
             revoked_path.unlink(missing_ok=True)
-            for src_fp, dst_fp, fbytes in findings_archives:
+            for src_fp, dst_fp, fbytes in sidecar_archives:
                 if not src_fp.is_file():
                     atomic(src_fp, fbytes)
                 dst_fp.unlink(missing_ok=True)

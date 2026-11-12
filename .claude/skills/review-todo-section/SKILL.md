@@ -44,8 +44,9 @@ ROUND_NUM=$(python -c 'import json, sys; print(json.load(sys.stdin)["round"])' <
 
 Pass `--base "$BASE_SHA"` to `review-prompt.py` when the build spans multiple commits, `--surface` to `review-dispatch.py` on surface sections, and `--paths <files>` when conditional lenses apply. `$ROUND_NUM` is the dispatcher's recorded round number (`1` normally, or higher if an earlier attempt exited without returning a review).
 
-- If `"blocking": false` (`HIGHEST: none` or `HIGHEST: P3`): the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:clean`. File any worthwhile `P3` follow-ups via `add-todo`.
-- If `"blocking": true` (`P1` or `P2`): fix every valid blocking finding in a new commit on `main`, re-run the section's `Test checkpoint` and owed gates (`.claude/skills/process-todo-section/gates.md`), and record `- Implemented:` / refutation bullets directly at the bottom of `$RECORD` (never edit inside `## Round N`, and do not add a `## ` heading that breaks block notes). Under `three-pass`, do **not** run a second `--kind round`; the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:fixed`.
+- If the round ends `OVERALL: approve` (`"blocking": false`): the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:clean`. File any worthwhile `P3` follow-ups via `add-todo`.
+- If the round ends `OVERALL: needs-attention` with `"blocking": false` (`HIGHEST: P3` only): file any worthwhile `P3` follow-ups via `add-todo` (or address trivial ones on `main`), note dispositions directly at the bottom of `$RECORD` (never edit inside `## Round N`, and do not add a `## ` heading that breaks block notes), and do **not** run a second `--kind round`; the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:fixed` (`todo-graph.py` maps `OVERALL: approve` to `clean` and `OVERALL: needs-attention` to `fixed`).
+- If the round ends `OVERALL: needs-attention` with `"blocking": true` (`P1` or `P2`): fix every valid blocking finding in a new commit on `main`, re-run the section's `Test checkpoint` and owed gates (`.claude/skills/process-todo-section/gates.md`), and record `- Implemented:` / refutation bullets directly at the bottom of `$RECORD` (never edit inside `## Round N`, and do not add a `## ` heading that breaks block notes). Under `three-pass`, do **not** run a second `--kind round`; the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:fixed`.
 
 ### 3. Pass 3 -- `completion` and excellence review
 
@@ -101,7 +102,7 @@ If `review-dispatch.py` exits `1`, never substitute a writer-family review and n
 
 ## Audit stance (`resolve` exit `3`)
 
-Inspect the stamped commit(s) and `docs/reviews/<slug>.json` (or legacy prose `Review:` record), and re-run the section's `**Test checkpoint:**`. On regression, reopen via `python scripts/todo-graph.py unstamp "$REF" --reason "<what regressed and owning repair>"` (which revokes `docs/reviews/<slug>.json` to `*.revoked-*.json` and archives the prior cycle's canonical findings file to `*.revoked-*.md`), validate, and commit on `main`.
+Inspect the stamped commit(s) and `docs/reviews/<slug>.json` (or legacy prose `Review:` record), and re-run the section's `**Test checkpoint:**`. On regression, reopen via `python scripts/todo-graph.py unstamp "$REF" --reason "<what regressed and owning repair>"` (which revokes `docs/reviews/<slug>.json` or archives a legacy prose stamp's metadata to `docs/reviews/<slug>.revoked-*.json` and archives the prior cycle's findings and any `.attest.json` / `-review-outcomes.json` sidecars to `*.revoked-*.*`), run `python scripts/todo-findings.py --write`, `python scripts/todo-graph.py validate`, and `python scripts/todo-runs.py --check`, and commit on `main`.
 
 ## Guardrails
 

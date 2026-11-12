@@ -12886,7 +12886,7 @@ def main() -> int:
         help="required: <findings file>:<complete|reconciled|filed|completed>",
     )
     st.set_defaults(fn=cmd_stamp)
-    un = sub.add_parser("unstamp", help="reopen a JSON-receipt stamped section while keeping its revoked receipt")
+    un = sub.add_parser("unstamp", help="reopen a stamped section while archiving its receipt or legacy stamp and findings")
     un.add_argument("ref", help="canonical section reference, e.g. 'D02 T01 §1'")
     un.add_argument("--reason", required=True, help="one-line reason naming what regressed and the repair section")
     un.add_argument("--date", default=date.today().isoformat(), help="unstamp date YYYY-MM-DD")

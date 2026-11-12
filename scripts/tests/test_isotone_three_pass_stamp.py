@@ -84,7 +84,8 @@ def reply(kind, lenses, top="none", gaps=False):
         lines.append("PLAN: gaps" if gaps else "PLAN: complete")
     lines.append(f"OVERALL: {'needs-attention' if gaps else 'approve'}" if kind in ("plan", "round")
                  else f"{kind.upper()}: {'gaps' if gaps else 'complete'}")
-    return "\n".join(["1. [P2] `native/thing.txt:1` is thin." if gaps else "Nothing found.", *lines])
+    sev = top if top != "none" else "P2"
+    return "\n".join([f"1. [{sev}] `native/thing.txt:1` is thin." if gaps else "Nothing found.", *lines])
 
 
 class IsotoneThreePassEndToEndTests(unittest.TestCase):
@@ -362,8 +363,8 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
 
         todo_text = todo_file.read_text(encoding="utf-8")
         todo_text = todo_text.replace(
-            "## 1. First alpha thing\n",
-            "## 1. First alpha thing\n\n> **Started:** 2026-11-12T04:00:00Z\n",
+            "## 1. The alpha thing\n",
+            "## 1. The alpha thing\n\n> **Started:** 2026-11-12T04:00:00Z\n",
             1,
         ).replace("- [ ] Commit:", "- [x] Commit:")
         todo_file.write_text(todo_text, encoding="utf-8")
@@ -389,10 +390,10 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
         rnd2 = self.review(
             "round",
             rebuilt,
-            reply("round", lenses["round"]),
+            reply("round", lenses["round"], "P3", True),
             prompt_extra=("--purpose", "Repair reopened alpha fixture marker file."),
         )
-        self.assertEqual(rnd2["round"], 2)
+        self.assertEqual((rnd2["round"], rnd2["highest"], rnd2["blocking"]), (2, "P3", False))
 
         comp2 = self.review(
             "completion",
@@ -403,7 +404,8 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
         self.assertEqual((comp2["highest"], comp2["blocking"]), ("P3", False))
         self.commit("docs: record repair cycle review passes (D00 T01 §1)")
 
-        stamp2 = self.run_script(
+        # Round 2 ended HIGHEST: P3 + OVERALL: needs-attention -> :clean is rejected, :fixed succeeds.
+        bad_clean = self.run_script(
             "scripts/todo-graph.py",
             "stamp",
             "D00 T01 \u00a71",
@@ -413,13 +415,196 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
             "--review", f"{rnd2['round']}:{RECORD}:clean",
             "--check", "python scripts/todo-graph.py validate -> exit 0",
         )
+        self.assertNotEqual(bad_clean.returncode, 0)
+
+        stamp2 = self.run_script(
+            "scripts/todo-graph.py",
+            "stamp",
+            "D00 T01 \u00a71",
+            "--sha", rebuilt,
+            "--plan", RECORD,
+            "--completion", f"{RECORD}:completed",
+            "--review", f"{rnd2['round']}:{RECORD}:fixed",
+            "--check", "python scripts/todo-graph.py validate -> exit 0",
+        )
         self.assertEqual(stamp2.returncode, 0, stamp2.stdout + stamp2.stderr)
         receipt2 = json.loads((self.repo / "docs/reviews/d00-t01-s1.json").read_text(encoding="utf-8"))
-        self.assertEqual(receipt2["reviews"][0]["round"], 2)
+        self.assertEqual((receipt2["reviews"][0]["round"], receipt2["reviews"][0]["verdict"]), (2, "fixed"))
         self.assertEqual(receipt2["completion"]["verdict"], "completed")
         self.assertEqual(receipt2["completion"]["filed"], [])
         val_restamped = self.run_script("scripts/todo-graph.py", "validate")
         self.assertEqual(val_restamped.returncode, 0, val_restamped.stdout + val_restamped.stderr)
+
+    def test_legacy_prose_stamp_reopen_preserves_evidence_and_restamps(self):
+        schedule = tomllib.loads((self.repo / ".conclave/reviewers.toml").read_text(encoding="utf-8"))["schedule"]
+        lenses = {kind: schedule[kind]["lenses"] for kind in ("plan", "completion", "reconciliation")}
+        lenses["round"] = [name for name in schedule["rounds"][0]["lenses"] if name != "design"]
+
+        todo_file = self.repo / "todo/00-workspace/TODO-01-alpha.md"
+        todo_file.write_text(
+            todo_file.read_text(encoding="utf-8")
+            .replace("- [ ] Write `native/thing.txt`", "- [x] Write `native/thing.txt`")
+            .replace("- [ ] Commit:", "- [x] Commit:"),
+            encoding="utf-8",
+        )
+        (self.repo / "native").mkdir()
+        (self.repo / "native/thing.txt").write_text("THING=2\n", encoding="utf-8")
+        legacy_cand = self.commit("workspace: add alpha thing (D00 T01 §1)")
+
+        rev_dir = self.repo / "docs/reviews/00-workspace"
+        rev_dir.mkdir(parents=True, exist_ok=True)
+        (rev_dir / "D00-T01-s1.md").write_text(
+            "# Review: D00 T01 \u00a71\n\n"
+            "## Plan review\n\n"
+            "Manifest: sections [D00 T01 \u00a71]; dependents [D00 T01 \u00a72]; bytes 100; run 20261019-D00-T01-S1-gpt\n\n"
+            "Ledger:\n"
+            "- [D00-T01-S1-PR1] [minor] wording -> rejected\n"
+            "End of ledger\n\n"
+            f"Provenance: candidate {legacy_cand}; command python scripts/todo-graph.py validate; exit 0; "
+            "tool validate; digest 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef; "
+            "path todo/00-workspace/TODO-01-alpha.md; run 20261019-D00-T01-S1-gpt\n\n"
+            "## GPT panel Round 1\n\n"
+            "`adversarial` approve\n"
+            "`consistency` needs-attention\n"
+            "`integration` approve\n"
+            "`record` approve\n\n"
+            "### F1 -- legacy panel finding -- consistency -- REFUTED (independent) [minor]\n\n"
+            "Refuted because `native/thing.txt` already carries `THING=2`.\n",
+            encoding="utf-8",
+        )
+        (rev_dir / "D00-T01-s1.attest.json").write_text(
+            json.dumps({"ref": "D00 T01 \u00a71", "candidate": legacy_cand, "verdict": "approve"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        todo_file.write_text(
+            todo_file.read_text(encoding="utf-8")
+            .replace("| 1 | \u00a71 | The alpha thing | -- | [ ] |", "| 1 | \u00a71 | The alpha thing | -- | [x] |")
+            .replace(
+                "**Test checkpoint:** Unit tests -- `python scripts/todo-graph.py validate` exits 0.",
+                "**Test checkpoint:** Unit tests -- `python scripts/todo-graph.py validate` exits 0.\n\n"
+                f"> **Verified:** 2026-10-19 | \u00a71 | D00 T01 \u00a71 at `{legacy_cand}`: unit tests pass\n"
+                f"> **Review:** round 1, candidate `{legacy_cand}` -- `adversarial` approve \u00b7 `consistency` approve \u00b7 "
+                "`integration` approve \u00b7 `record` approve. Raw findings: docs/reviews/00-workspace/D00-T01-s1.md. "
+                "Attestation: docs/reviews/00-workspace/D00-T01-s1.attest.json\n"
+                "> **Plan review:** gpt medium (run 20261019-D00-T01-S1-gpt)\n"
+                "> **CRUD:** not applicable (fixture plumbing)\n"
+                "> **Duration:** 2026-10-19T21:18:37Z to 2026-10-19T21:36:47Z\n"
+                "> **Implementer:** Opus 5.5 (claude-opus-5-5)",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        (self.repo / "docs/reviews/run-records.md").write_text(
+            "# Review-run records\n\nschema: 1\n\n"
+            "run: D00-T01-S1\n"
+            "date: 2026-10-19\n"
+            "runner: panel\n"
+            "rounds: 1\n"
+            f"round: 1 model: gpt-6-astra effort: medium outcome: findings candidate: {legacy_cand} "
+            "provider: openai version: gpt-6-astra cost: 1000tokens latency: 10s opportunity: full-scope "
+            "purpose: section-review provenance: recorded findings: D00-T01-S1-F1\n"
+            "empty: 0\n"
+            "refuted: 1\n",
+            encoding="utf-8",
+        )
+        as_of = self.commit("docs: seed legacy findings before transition")
+        (self.repo / "docs/reviews/transitions.md").write_text(
+            "# Outcome transitions\n\n"
+            "transition: D00-T01-S1-F1\n"
+            "date: 2026-10-19\n"
+            "from: raised\n"
+            "to: refuted\n"
+            'why: "Refuted because native/thing.txt already carries THING=2"\n'
+            'evidence: "native/thing.txt holds THING=2"\n'
+            f"as-of: {as_of}\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(self.run_script("scripts/todo-graph.py", "plan", "--sync").returncode, 0)
+        self.assertEqual(self.run_script("scripts/todo-findings.py", "--write").returncode, 0)
+        self.commit("todo: seed legacy prose stamp on D00 T01 §1")
+
+        for gate in (
+            ("scripts/todo-graph.py", "validate"),
+            ("scripts/todo-graph.py", "plan", "--check"),
+            ("scripts/todo-findings.py", "--check"),
+            ("scripts/todo-runs.py", "--check"),
+        ):
+            res = self.run_script(*gate)
+            self.assertEqual(res.returncode, 0, f"pre-unstamp {gate}: {res.stdout}\n{res.stderr}")
+
+        unstamp = self.run_script(
+            "scripts/todo-graph.py",
+            "unstamp",
+            "D00 T01 \u00a71",
+            "--reason",
+            "legacy regression found during audit",
+        )
+        self.assertEqual(unstamp.returncode, 0, unstamp.stdout + unstamp.stderr)
+        self.assertFalse((rev_dir / "D00-T01-s1.md").exists())
+        self.assertFalse((rev_dir / "D00-T01-s1.attest.json").exists())
+        revoked_receipts = list((self.repo / "docs/reviews").glob("d00-t01-s1.revoked-*.json"))
+        revoked_mds = list(rev_dir.glob("D00-T01-s1.revoked-*.md"))
+        revoked_attests = list(rev_dir.glob("D00-T01-s1.attest.revoked-*.json"))
+        self.assertEqual((len(revoked_receipts), len(revoked_mds), len(revoked_attests)), (1, 1, 1))
+        legacy_archive = json.loads(revoked_receipts[0].read_text(encoding="utf-8"))
+        self.assertTrue(legacy_archive["legacy_prose_stamp"])
+        self.assertIn("verified", legacy_archive["fields"])
+        self.assertIn("implementer", legacy_archive["fields"])
+
+        for gate in (
+            ("scripts/todo-findings.py", "--write"),
+            ("scripts/todo-findings.py", "--check"),
+            ("scripts/todo-graph.py", "validate"),
+            ("scripts/todo-graph.py", "plan", "--check"),
+            ("scripts/todo-runs.py", "--check"),
+        ):
+            res = self.run_script(*gate)
+            self.assertEqual(res.returncode, 0, f"post-unstamp {gate}: {res.stdout}\n{res.stderr}")
+
+        reopened_sha = self.commit("todo: reopen legacy D00 T01 §1")
+        self.review("plan", reopened_sha, reply("plan", lenses["plan"]))
+        todo_file.write_text(
+            todo_file.read_text(encoding="utf-8")
+            .replace("## 1. The alpha thing\n", "## 1. The alpha thing\n\n> **Started:** 2026-11-12T05:00:00Z\n", 1)
+            .replace("- [ ] Commit:", "- [x] Commit:"),
+            encoding="utf-8",
+        )
+        (self.repo / "native/thing.txt").write_text("THING=2\nREPAIRED=1\n", encoding="utf-8")
+        rebuilt = self.commit("workspace: repair legacy D00 T01 §1")
+        rnd = self.review(
+            "round",
+            rebuilt,
+            reply("round", lenses["round"]),
+            prompt_extra=("--purpose", "Repair legacy alpha fixture."),
+        )
+        self.review(
+            "completion",
+            rebuilt,
+            reply("completion", lenses["completion"]),
+            prompt_extra=("--purpose", "Deliver repaired legacy alpha fixture."),
+        )
+        self.commit("docs: record three-pass review on reopened legacy D00 T01 §1")
+
+        restamp = self.run_script(
+            "scripts/todo-graph.py",
+            "stamp",
+            "D00 T01 \u00a71",
+            "--sha", rebuilt,
+            "--plan", RECORD,
+            "--completion", f"{RECORD}:complete",
+            "--review", f"{rnd['round']}:{RECORD}:clean",
+            "--check", "python scripts/todo-graph.py validate -> exit 0",
+        )
+        self.assertEqual(restamp.returncode, 0, restamp.stdout + restamp.stderr)
+        for gate in (
+            ("scripts/todo-findings.py", "--write"),
+            ("scripts/todo-findings.py", "--check"),
+            ("scripts/todo-graph.py", "validate"),
+            ("scripts/todo-graph.py", "plan", "--check"),
+            ("scripts/todo-runs.py", "--check"),
+        ):
+            res = self.run_script(*gate)
+            self.assertEqual(res.returncode, 0, f"post-restamp {gate}: {res.stdout}\n{res.stderr}")
 
 
 if __name__ == "__main__":
