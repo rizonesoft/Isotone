@@ -54,7 +54,7 @@ track: N6
 | 1 | §2 | Path editing: continue, join, break, reverse, simplify   | D02 T05 §4  |  [ ]   |
 | 2 | §3 | Text: area text, text on path, text to path             | D02 T05 §4  |  [ ]   |
 | 3 | §7 | Documents in tabs, saved layouts, nested layers          | D02 T05 §4, D01 T01 §8 |  [ ]   |
-| 4 | §11 | Symbols and the asset library                            | §7, D00 T02 §1 |  [ ]   |
+| 4 | §11 | Symbols and the asset library                            | §7 |  [ ]   |
 | 5 | §12 | The command palette and the on-canvas HUD                | D02 T05 §4  |  [ ]   |
 | 6 | §13 | Preferences and shortcut remapping                       | D02 T05 §4  |  [ ]   |
 | 7 | §14 | More formats and the export dialog                       | D02 T05 §4  |  [ ]   |

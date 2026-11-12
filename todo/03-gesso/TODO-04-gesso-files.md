@@ -56,7 +56,7 @@ track: I4
 
 | Order | Section | Deliverable                                          | Depends On                          | Status |
 | :---: | :-----: | ---------------------------------------------------- | ----------------------------------- | :----: |
-|   1   |   §1    | The codec decision                                   | D00 T02 §5                          |  [ ]   |
+|   1   |   §1    | The codec decision                                   | --                                  |  [ ]   |
 |   2   |   §2    | PNG and JPEG open and save                           | §1, D01 T02 §5, D03 T03 §1          |  [ ]   |
 |   3   |   §3    | TIFF open and save                                   | §2                                  |  [ ]   |
 |   4   |   §4    | The native layered format                            | §2, D03 T03 §3                      |  [ ]   |

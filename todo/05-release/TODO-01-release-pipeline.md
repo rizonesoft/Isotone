@@ -70,14 +70,14 @@ track: R1
 
 | Order | Section | Deliverable                                              | Depends On                                 | Status |
 | :---: | :-----: | -------------------------------------------------------- | ------------------------------------------ | :----: |
-|   1   |   §1    | The clean-machine install procedure                      | D00 T02 §7                                 |  [ ]   |
+|   1   |   §1    | The clean-machine install procedure                      | --                                         |  [ ]   |
 |   2   |   §2    | Sign binaries and installers                             | §1                                         |  [ ]   |
 |   3   |   §3    | win-arm64 publish and installers                         | D02 T05 §4                                 |  [ ]   |
 |   4   |   §4    | The update check                                         | D01 T02 §2, D02 T05 §4                     |  [ ]   |
 |   5   |   §5    | winget manifests                                         | D02 T05 §4, D03 T06 §3, D04 T02 §8         |  [ ]   |
 |   6   |   §6    | The suite bundle: isotone-v1.0.0                          | §4, D02 T05 §4, D03 T06 §3, D04 T02 §8, D06 T01 §4 |  [ ]   |
 |   7   |   §7    | The suite bundle: isotone-v1.1.0 | §6, D02 T17 §12, D03 T21 §15, D04 T15 §14 |  [ ]   |
-|   8   |   §8    | Third-party notices in every package | D00 T02 §7 |  [ ]   |
+|   8   |   §8    | Third-party notices in every package | -- |  [ ]   |
 
 ---
 

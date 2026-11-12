@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **30 of 846 sections complete (4%).** 846 sections (6 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **30 of 847 sections complete (4%).** 847 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -43,8 +43,8 @@ The finished suite is **three standalone creative applications that behave like 
 | Every clone refuses a broken plan | `D00 T01 §1` (hook) · `D00 T01 §5` (CI read back) |
 | Operator-only work never stalls a runner | `D00 T01 §2` · `D99 T01 §1`-`§10` |
 | The review panel works before the first stamp | `D00 T01 §4` |
-| No quarantined test, no excused warning | `D00 T02 §1` · `D00 T02 §2` · `D02 T01 §7` |
-| No dependency without a reason and a license | `D00 T02 §4` · `D00 T02 §5` · `D00 T04 §1` · `D00 T04 §2` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` · `D04 T10 §2` · `D04 T08 §6` · `D04 T08 §7` · `D04 T13 §4` · `D04 T07 §7` · `D04 T12 §8` · `D04 T12 §9` · `D04 T12 §11` · `D00 T03 §3` · `D01 T10 §4` · `D01 T10 §5` · `D01 T10 §6` · `D01 T11 §1` · `D01 T11 §2` · `D01 T12 §1` · `D01 T12 §2` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` |
+| No quarantined test, no excused warning | `D00 T05 §3` · `D00 T02 §2` · `D02 T01 §7` |
+| No dependency without a reason and a license | `D00 T02 §4` · `D00 T04 §1` · `D00 T04 §2` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` · `D04 T10 §2` · `D04 T08 §6` · `D04 T08 §7` · `D04 T13 §4` · `D04 T07 §7` · `D04 T12 §8` · `D04 T12 §9` · `D04 T12 §11` · `D00 T03 §3` · `D01 T10 §4` · `D01 T10 §5` · `D01 T10 §6` · `D01 T11 §1` · `D01 T11 §2` · `D01 T12 §1` · `D01 T12 §2` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` |
 | Every surface implements the design 1:1 and is held to it by gates | `D00 T01 §9` (Design line, design-lint, reference renders) · `D01 T01 §9` (visual regression and goldens) · `D00 T03 §2` (before record) |
 | The apps carry their own names | `D02 T01 §1` · `D03 T01 §1` · `D03 T01 §4` · `D00 T03 §3` |
 | One composition root per app, logging to disk | `D01 T02 §1` · `D02 T01 §2` · `D02 T01 §3` · `D03 T01 §5` · `D04 T01 §2` |
@@ -136,7 +136,7 @@ Repository settings and branch protection (`D99 T01 §1`, `§2`) need the owner'
 
 ### 7. The download storage and the product page
 
-Binaries ship only from rizonesoft.com, through S3-compatible storage behind `download.rizonesoft.com` (operator decision 2026-09-27); GitHub releases carry notes, checksums, and links, never the files. `release.yml` refuses a tag release until the four `ISOTONE_DL_S3_*` secrets exist, which the operator provides through `D99 T01 §8`; the first release, `D02 T05 §4`, depends on that row. A draft dry run (`D00 T02 §7`) works without them and skips the upload with a notice. The product page is one value, `ISOTONE_SITE_URL` (default `https://www.rizonesoft.com/`), decided through `D99 T01 §9`.
+Binaries ship only from rizonesoft.com, through S3-compatible storage behind `download.rizonesoft.com` (operator decision 2026-09-27); GitHub releases carry notes, checksums, and links, never the files. `release.yml` refuses a tag release until the four `ISOTONE_DL_S3_*` secrets exist, which the operator provides through `D99 T01 §8`; the first release, `D02 T05 §4`, depends on that row. A draft dry run works without them and skips the upload with a notice (it was `D00 T02 §7`, which lapsed with the C# release path on 2026-11-12; the native pipeline's dry run is re-planned by `D00 T07 §5`). The product page is one value, `ISOTONE_SITE_URL` (default `https://www.rizonesoft.com/`), decided through `D99 T01 §9`.
 
 ### 8. Ownership
 
@@ -189,12 +189,13 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T06 §2`  | Retire the .NET release path, pins, Dependabot ecosystem, and automations                |   9   |
 | [x] | `D00 T06 §3`  | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code |  15   |
 | [ ] | `D00 T07 §1`  | Re-plan the workspace files                                                              |  12   |
+| [ ] | `D00 T01 §18` | Superseded sections leave the plan                                                       |  13   |
 | [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |   9   |
-| [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |   7   |
-| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |   7   |
+| [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |  10   |
+| [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |  10   |
 | [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |
 | [ ] | `D00 T01 §10` | The drift gates                                                                          |  10   |
-| [ ] | `D00 T01 §5`  | First push: CI green and read back                                                       |   7   |
+| [ ] | `D00 T01 §5`  | First push: CI green and read back                                                       |   8   |
 | [ ] | `D00 T02 §7`  | Release pipeline dry run as a draft release                                              |  10   |
 
 ### Phase 1 -- Suite layout and names

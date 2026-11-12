@@ -56,7 +56,7 @@ track: N1
 
 | Order | Section | Deliverable                                          | Depends On         | Status |
 | :---: | :-----: | ---------------------------------------------------- | ------------------ | :----: |
-|   1   |   §1    | Rename Bezier to Isotone.Stilus                        | D00 T02 §1, D00 T03 §3 |  [ ]   |
+|   1   |   §1    | Rename Bezier to Isotone.Stilus                        | D00 T03 §3 |  [ ]   |
 |   2   |   §2    | Composition root on the Generic Host                 | §1, D01 T02 §1     |  [ ]   |
 |   3   |   §3    | The debug console reads the Serilog pipeline         | §2                 |  [ ]   |
 |   4   |   §4    | Culture-safe formatting and comparisons              | §1                 |  [ ]   |

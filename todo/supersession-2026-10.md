@@ -18,23 +18,23 @@ Generated from `python scripts/todo-graph.py query plan` on 2026-10-23 and edite
 | D00 T01 §14 | 0 | Retire the unused verify-agent-tiers.mjs | kept | stamped; stays as shipped |
 | D00 T01 §16 | 0 | Unattended merger health | kept | stamped; stays as shipped |
 | D00 T01 §17 | 0 | Time the guard's deadline cases on the walk | kept | stamped; stays as shipped |
-| D00 T01 §7 | 0 | The validator reads the Gesso parity catalog | pending (W1) |  |
-| D00 T01 §8 | 0 | The validator reads the Albumen parity catalog | pending (W1) |  |
+| D00 T01 §7 | 0 | The validator reads the Gesso parity catalog | kept | stack-neutral TODO tooling; every item was ticked on 2026-10-22 and the section was never stamped, so it is kept as written and stamped after `D00 T07 §1` on today's tree |
+| D00 T01 §8 | 0 | The validator reads the Albumen parity catalog | kept | stack-neutral TODO tooling; kept as written |
 | D00 T02 §1 | 0 | Fix the quarantined tests and empty the quarantine | superseded | superseded in D00 T06 §3; C# test quarantine removed with Isotone.runsettings and src/Stilus/; native GoogleTest suite runs unfiltered in D00 T05 §3 |
-| D00 T02 §9 | 0 | Point every Stilus test at a temporary app data | superseded | superseded in D00 T06 §3; C# Stilus test suite retired at csharp-final; native core and Stilus app-data isolation carry to D01 T02 §1 and D00 T07 §7 |
+| D00 T02 §9 | 0 | Point every Stilus test at a temporary app data | superseded | superseded in D00 T06 §3; C# Stilus test suite retired at csharp-final; native core and Stilus app-data isolation carry to D01 T02 §1 and the Stilus foundation re-plan D00 T07 §4 (**Corrected 2026-11-12:** said D00 T07 §7, the Phase 5 re-plan; the Stilus foundation is Phase 2) |
 | D00 T02 §2 | 0 | Gesso diagnostics to zero | kept | stamped; stays as shipped |
 | D00 T02 §3 | 0 | Quiet the WPF temporary project output | superseded | superseded in D00 T06 §3; WPF and MSBuild retired |
 | D00 T02 §4 | 0 | Prune packages no code uses | kept | stamped; stays as shipped |
 | D00 T02 §5 | 0 | The assertion library decision and the decision log | superseded | superseded in D00 T06 §3; GoogleTest assertions decided in docs/dev/decisions.md (2026-10-22) and wired in D00 T05 §3 |
 | D00 T04 §1 | 0 | The native-code standard, the register, and the native-lint gate | rewritten in place | now "The C++ standard, the dependency register, and the register gate"; the register columns, advisory requirement, and OS-calling rules carry over (spec); the inventory of the C# apps' shipped native files is superseded because no C# app ships again, its notice and per-architecture requirements carried by the register's Notices shipped and Architectures columns |
 | D00 T04 §2 | 0 | The benchmark harness and the first benchmark record | rewritten in place | Google Benchmark replaces BenchmarkDotNet; the reference machine record joins it; new D00 T04 §3 carries the advisory job |
-| D00 T03 §1 | 0 | Fold the per-app docs and samples into the suite | pending (W1) |  |
-| D00 T03 §2 | 0 | Before captures of the imported Stilus and Gesso | pending (W1) |  |
-| D00 T01 §9 | 0 | The design contract gates | pending (W1) |  |
-| D00 T01 §10 | 0 | The drift gates | pending (W1) |  |
-| D00 T01 §5 | 0 | First push: CI green and read back | pending (W1) |  |
+| D00 T03 §1 | 0 | Fold the per-app docs and samples into the suite | kept | shipped on the C# tree on 2026-10-22 and never stamped; kept, with open items that point the moved pages' four dead links at `csharp-final` and move the sample SVGs to `native/tests/fixtures/stilus/svg/`; its C# build checkpoint is replaced by link, tag, and claim checks |
+| D00 T03 §2 | 0 | Before captures of the imported Stilus and Gesso | kept | the existing `docs/captures/` record is verified reachable at `csharp-final` (the eight files' blobs equal `main`'s, and the capture build `b7ad3a5` is an ancestor of the tag), so no capture is retaken; kept, with open items that bind the record to the tag |
+| D00 T01 §9 | 0 | The design contract gates | rewritten in place | rewritten onto the native sources `D00 T06 §1` retargeted `scripts/design-lint.py` to (C and C++ under `native/`, the `native` CI job, both skill trees, a `--base` revision for CI); the contract's own mechanism names are rewritten by `D00 T07 §2` |
+| D00 T01 §10 | 0 | The drift gates | rewritten in place | the gate is stack-neutral; its version sources move to `native/toolchain.json`, `native/vcpkg.json`, and `docs/dev/native-libraries.md`, its facts cover the six apps, and its review lens names the C++ sources |
+| D00 T01 §5 | 0 | First push: CI green and read back | kept | stack-neutral; every item was ticked on the C# build and the section was never stamped, so it is kept with one open item that re-proves the acceptance on the `native` and `native-arm64-tests` jobs |
 | D00 T02 §7 | 0 | Release pipeline dry run as a draft release | superseded | superseded in D00 T06 §3; native release pipeline dry run moves to D05 T01 (re-planned in D00 T07 §5) |
-| D00 T03 §3 | 1 | Export the app icon rasters from the SVG sources | pending (W3) |  |
+| D00 T03 §3 | 1 | Export the app icon rasters from the SVG sources | rewritten in place | settled by `D00 T07 §1` with the rest of its file; the export is kept for the six apps and the suite mark, its CI step moves to the `native` job, its packaging proof becomes a read of the installers' icon paths until `D00 T07 §5` re-plans packaging, and its dependency on the lapsed `D00 T02 §5` is dropped |
 | D02 T01 §1 | 1 | Rename Bezier to Isotone.Stilus | pending (W3) |  |
 | D03 T01 §1 | 1 | Restructure and rename Gesso to Isotone.Gesso | pending (W3) |  |
 | D03 T01 §4 | 1 | The Gesso icon | pending (W3) |  |

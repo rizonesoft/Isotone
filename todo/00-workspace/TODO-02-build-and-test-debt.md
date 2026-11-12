@@ -2,17 +2,18 @@
 schema_version: 1
 id: build-test-debt
 domain: 00-workspace
-status: blocked
+status: superseded
 title: "TODO-02 -- Build and Test Debt from the Import"
 depends_on: []
 track: W2
+superseded_by: retire-csharp
 ---
 
 # TODO-02 -- Build and Test Debt from the Import
 
 > **Goal:** The relaxations the import needed are retired where they belong to the workspace: no test is quarantined, Gesso builds with no diagnostic excused, the build output carries no temporary-project noise, no package ships that no code uses, the assertion library's license is a recorded decision, xUnit is current, the SDK pin is a released (GA) .NET 11 SDK rather than a release candidate, and the release workflow has produced a real prerelease from a tag.
 
-> **Re-plan:** parked until the native re-plan reaches it (docs/plans/2026-10-23-native-replan.md).
+> **Superseded:** 2026-11-12 by `retire-csharp` (`todo/00-workspace/TODO-06-retire-csharp.md`), settled by the native re-plan in `D00 T07 §1` under the rules of `docs/plans/2026-10-23-native-replan.md`. This file exists only because of the imported C# code: every section retires a relaxation of the .NET build or its test suite, and `D00 T06 §3` removed that build, its tests, and its SDK pin from `main` (the code is readable at the `csharp-final` tag). The two stamped sections (`§2`, `§4`) stay exactly as they shipped. The seven open sections lapse and are never built; `todo/supersession-2026-10.md` names where each one's acceptance requirement went: the quarantine (`§1`) and the test framework (`§5`, `§6`) to the unfiltered GoogleTest suite of `D00 T05 §3` and the assertion decision in `docs/dev/decisions.md` (2026-10-22), the temporary-project output (`§3`) nowhere because MSBuild is gone, the SDK pin (`§8`) to the toolchain pin of `D00 T05 §1`, the release dry run (`§7`) to the native release pipeline `D05 T01` (re-planned by `D00 T07 §5`), and test app-data isolation (`§9`) to `D01 T02 §1` and the Stilus re-plan in `D00 T07 §4`. Everything below this line is the C#-era record, kept unedited as history: its claims are no longer measured (`scripts/todo-claims.py` skips a superseded file), and its `Started:` lines mark work that ended with the C# code, not work in progress.
 
 > [!IMPORTANT]
 > **Current state (verified 2026-09-26):** `dotnet test Isotone.slnx` passed 1,026 tests on 2026-09-26, but only because three legacy tests are excluded through `TestCaseFilter` in `tests/Isotone.runsettings`: `ElementTooltipTests.ElementTooltip_FromElement_UsesUnnamedForNullName` (fails every run; `ElementTooltip.FromElement` in `src/Stilus/Bezier.Core/Services/CanvasHUDService.cs` line 242 falls back only on `null`, and the element name is empty) and the two `AssetLibraryServiceTests.ToggleFavorite_*` tests (flaky; `AssetLibraryService` writes to the real `%LOCALAPPDATA%\Bezier\Library`, line 113, so state leaks between tests and runs). `src/Gesso/Directory.Build.props` keeps `IDE0005`, `CS0618`, and `NU1701` as warnings. `docs/dev/build.md` lists the `*_wpftmp` folders under `artifacts/bin/`. Six packages are referenced by projects but used by no code: `ReactiveUI.WPF` and `SharpDX.DirectInput` (Gesso.UI; ReactiveUI only through two global usings), `SixLabors.ImageSharp` and `.Drawing` (Gesso.FileFormats; global usings only), `Newtonsoft.Json` and `AvalonEdit` (Bezier.Desktop). FluentAssertions 8.11.0 (Xceed community license) is used by five Gesso test files. xUnit is 2.9.3. No tag has been pushed, so `release.yml` has never run.

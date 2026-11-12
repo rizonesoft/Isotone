@@ -9,7 +9,6 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 | TODO | Title | Status |
 | ---- | ----- | :----: |
 | [TODO-01](./TODO-01-dev-automation.md) | Dev-Automation Wiring | draft |
-| [TODO-02](./TODO-02-build-and-test-debt.md) | Build and Test Debt from the Import | draft |
 | [TODO-03](./TODO-03-repo-layout.md) | Repository Layout, Visual Baselines, and App Icon Export | draft |
 | [TODO-07](./TODO-07-native-replan.md) | The Native Re-plan, Phase by Phase | draft |
 
@@ -21,9 +20,15 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 | [TODO-05](./TODO-05-native-spine.md) | The Native Spine: Toolchain, Build, Gates, and CI | 2026-11-09 |
 | [TODO-06](./TODO-06-retire-csharp.md) | Retire the C# Code and the .NET Toolchain | 2026-11-12 |
 
+## Superseded
+
+| TODO | Title | Superseded by |
+| ---- | ----- | ------------- |
+| [TODO-02](./TODO-02-build-and-test-debt.md) | Build and Test Debt from the Import | [TODO-06](./TODO-06-retire-csharp.md), 2026-11-12: the debt left with the C# code; its two stamped sections stay as shipped |
+
 ## In scope
 
-- The pinned .NET SDK, `Isotone.slnx`, and one-command build, test, publish, and package scripts
+- The pinned native toolchain (`native/toolchain.json`), the CMake presets, and one-command build, test, publish, and package scripts
 - Warnings as errors, analyzers, and one command that runs every gate (`scripts/check-all.ps1`)
 - CI workflows, the commit hook, and the provisioning script
 - The native toolchain pin, the CMake presets, the vcpkg baseline, the C++ gates, and native CI (TODO-05)

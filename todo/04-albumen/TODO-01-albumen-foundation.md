@@ -96,7 +96,7 @@ From documentation, to be confirmed and extended by driven runs in §1 (each row
 | :---: | :-----: | -------------------------------------------------------- | ------------------------------ | :----: |
 |   1   |   §1    | The competitor survey, driven                            | --                             |  [ ]   |
 |   2   |   §2    | Create the Albumen app                                     | D01 T01 §3, D01 T02 §3, D00 T03 §3, D01 T01 §8 |  [ ]   |
-|   3   |   §3    | The RAW decoder decision                                 | §1, D00 T02 §5                 |  [ ]   |
+|   3   |   §3    | The RAW decoder decision                                 | §1                             |  [ ]   |
 |   4   |   §4    | RAW decode with fidelity fixtures                        | §2, §3                         |  [ ]   |
 |   5   |   §5    | The catalog database                                     | §2                             |  [ ]   |
 |   6   |   §6    | Import                                                   | §4, §5                         |  [ ]   |
