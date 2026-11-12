@@ -2379,7 +2379,10 @@ def cmd_query(args) -> int:
             by_status[t.status or "?"] = by_status.get(t.status or "?", 0) + 1
         print(f"domains          {len(list(TODO_DIR.glob('*/INDEX.md')))}")
         print(f"todo files       {len(todos)}")
-        print(f"sections         {len(secs)}")
+        # A lapsed section (D00 T01 §18) is in its own count below and in no other total: not the section total,
+        # not the open count, not the checklist items.
+        live = [s for s in secs if not s.lapsed]
+        print(f"sections         {len(live)}")
         print(f"  done [x]       {sum(1 for s in secs if s.status == 'x')}")
         print(f"  in progress [/]{sum(1 for s in secs if s.status == '/'):>2}")
         print(f"  open [ ]       {sum(1 for s in secs if s.status == ' ' and not s.moved and not s.lapsed)}")
@@ -2389,7 +2392,7 @@ def cmd_query(args) -> int:
         lapsed_n = sum(1 for s in secs if s.lapsed)
         if lapsed_n:
             print(f"  lapsed         {lapsed_n}  (their file is superseded; never built, `superseded_by` names the successor)")
-        print(f"checklist items  {sum(s.items_done for s in secs)}/{sum(s.items_total for s in secs)}")
+        print(f"checklist items  {sum(s.items_done for s in live)}/{sum(s.items_total for s in live)}")
         print(f"frozen todos     {sum(1 for t in todos if t.frozen)}")
         print("todo status      " + ", ".join(f"{k}={v}" for k, v in sorted(by_status.items())))
 
@@ -12120,9 +12123,13 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                   lprog["stats"], {"sections": 3, "done": 1, "in_progress": 0, "open": 2, "moved": 0, "lapsed": 2})
             check("lapsed: the plan totals are the live rows", (lprog["plan"]["total"], lprog["plan"]["done"]), (3, 1))
             lstats = _lquery("stats")
-            check("lapsed: query stats counts them on their own line and not as open",
-                  ("  lapsed         2  " in lstats, "  open [ ]       2" in lstats, "  done [x]       1" in lstats),
-                  (True, True, True))
+            check("lapsed: query stats counts them on their own line and in no other total",
+                  [ln for ln in lstats.splitlines() if ln.split("  ")[0].strip() in
+                   ("sections", "done [x]", "in progress [/]", "open [ ]", "lapsed", "checklist items")
+                   or ln.startswith(("  done", "  in progress", "  open", "  lapsed"))],
+                  ["sections         3", "  done [x]       1", "  in progress [/] 0", "  open [ ]       2",
+                   "  lapsed         2  (their file is superseded; never built, `superseded_by` names the successor)",
+                   "checklist items  1/6"])
             lsummary = budget_summary(ltodos)
             check("lapsed: the budget counts live sections, in total and per phase",
                   (lsummary["sections"], [(r["phase"], r["sections"]) for r in lsummary["phases"]]),
