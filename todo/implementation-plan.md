@@ -164,7 +164,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T01 §14` | Retire the unused verify-agent-tiers.mjs                                                 |   5   |
 | [x] | `D00 T01 §16` | Unattended merger health                                                                 |   9   |
 | [x] | `D00 T01 §17` | Time the guard's deadline cases on the walk                                              |   4   |
-| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                                             |  29   |
+| [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                                             |  30   |
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                                           |  29   |
 | [x] | `D00 T02 §2`  | Gesso diagnostics to zero                                                                |   5   |
 | [x] | `D00 T02 §4`  | Prune packages no code uses                                                              |   7   |
