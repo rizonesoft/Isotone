@@ -1849,34 +1849,16 @@ def _live_in_tree(root: str, world) -> list[str]:
     return [str(r.get("sessionId")) for r in world.live_sessions() if _in_tree(r.get("cwd"), root)]
 
 
-# Flags that belong to the other runner's CLI: a launch record carrying one was not written for this runner.
-_FOREIGN_FLAGS = {
-    "agy": lambda a: a.startswith("claude-") or a in ("--session-id", "--resume", "--effort", "--name"),
-    "claude": lambda a: a.startswith("gemini-") or a in ("--conversation", "-i"),
-}
-
-
-def _resumable(root: str, guard: dict) -> list[str] | None:
-    """The flags the guard's session was launched with, in the runner that owns it, from the record `start` wrote
-    for it; None when the guard has no known runner or was not started through `start`. It is what tells the
-    operator (`scripts/run-guard.py status`) that running `start` again in that runner picks the run up, and it
-    reads through a handover that never opened, so a failed handover leaves the old runner's run as it was. Nothing
-    resumes a run from it on its own."""
-    runner = guard.get("runner")
-    if runner not in RUNNERS:
-        return None
+def _launch_record(root: str, session: str) -> dict:
+    """The launch record `start` wrote for `session`, or {} when there is none. A handover whose new session never
+    opened leaves its own record on top with the old run's record riding along as `previous`; that record still
+    belongs to the guard's session, so it is read through, and a failed handover leaves what is known about the
+    old runner's session (when it ended, and how) as it was."""
     record = _read_json(_launch_path(root))
-    if record.get("launch_token") and record.get("handover_from") == str(guard.get("session_id", "")) \
+    if record.get("launch_token") and record.get("handover_from") == session \
             and isinstance(record.get("previous"), dict):
-        record = record["previous"]  # a handover that never opened: the guard's own runner still owns the run
-    args = record.get("args")
-    if record.get("runner") != runner or record.get("session_id") != str(guard.get("session_id", "")) \
-            or not isinstance(args, list):
-        return None
-    str_args = [str(a) for a in args]
-    if any(_FOREIGN_FLAGS[runner](a) for a in str_args):
-        return None
-    return str_args
+        record = record["previous"]
+    return record if session and record.get("session_id") == session else {}
 
 
 def _resume_argv(runner: str, args: list[str], session: str, prompt: str) -> list[str]:
@@ -1907,12 +1889,11 @@ def session_state(root: str, world=None) -> dict:
     session = str(guard.get("session_id", ""))
     if world.slot_held() or session in _live_in_tree(root, world):
         return {"run": "open", "session": "live", "session_id": session}
-    launch = _read_json(_launch_path(root))
-    known = launch.get("session_id") == session
+    launch = _launch_record(root, session)
     runner = guard.get("runner")
     return {"run": "open", "session": "ended", "session_id": session,
-            "ended_at": launch.get("ended_at") if known else None,
-            "exit_code": launch.get("exit_code") if known else None,
+            "ended_at": launch.get("ended_at"),
+            "exit_code": launch.get("exit_code"),
             "resume": (f"nothing resumes it on its own; run scripts/start-campaign.ps1 -Runner {runner} to resume "
                        "it in a window" if runner in RUNNERS else
                        "nothing resumes it on its own; run scripts/start-campaign.ps1 to hand the run over")}
@@ -3488,9 +3469,11 @@ def _self_test() -> int:
     except OSError:
         phase_text = ""
     check("skill-a-standalone-phase-is-phase-scoped", "--scope phase" in phase_text, phase_skill)
-    check("skill-names-the-watchdog", "python scripts/run-guard.py watch" in skill, plan_skill)
+    check("skill-states-that-nothing-resumes-a-run-on-its-own",
+          "Nothing restarts or resumes a run on its own" in skill and "- **Watchdog**" not in skill
+          and "is resumed by the watchdog" not in skill and "run-guard.py install` creates" not in skill, plan_skill)
 
-    # The watchdog and the launcher, against a stand-in for the machine. The session slot is the real OS lock.
+    # The launcher, against a stand-in for the machine. The session slot is the real OS lock.
     class FakeWorld:
         def __init__(self, root):
             self.root, self.live, self.runs = root, [], []
@@ -3737,10 +3720,12 @@ def _self_test() -> int:
 
         runs = len(world.runs)
         os.unlink(_launch_path(root))
-        check("a-run-without-a-launch-record-is-not-resumable", _resumable(root, read_guard(root) or {}) is None)
+        check("a-run-without-a-launch-record-has-no-recorded-end", _launch_record(root, sid) == {}
+              and session_state(root, world).get("session") == "ended"
+              and session_state(root, world).get("ended_at") is None)
         _guard(root, "another-session")
         _write_json(_launch_path(root), {"runner": "agy", "session_id": sid, "args": flags})
-        check("another-runs-record-is-not-this-runs", _resumable(root, read_guard(root) or {}) is None
+        check("another-runs-record-is-not-this-runs", _launch_record(root, "another-session") == {}
               and session_state(root, world).get("ended_at") is None)
 
         # Pre-upgrade Claude campaign guard (`runner: "claude"`, launch record without a runner): not resumable, since
@@ -3762,12 +3747,10 @@ def _self_test() -> int:
             "session_id": "claude-old-session",
             "args": ["--dangerously-skip-permissions", "--model", "claude-opus-5-5"],
         })
-        check("a-pre-upgrade-claude-guard-is-not-resumable",
-              _resumable(root, read_guard(root) or {}) is None and len(world.runs) == runs)
         _write_json(os.path.join(root, "build", "claude-campaign-guard.json"),
                     dict(read_guard(root) or {}, runner="muse"))
-        check("an-unknown-runner-is-not-resumable", _resumable(root, read_guard(root) or {}) is None
-              and "hand the run over" in str(session_state(root, world).get("resume")))
+        check("an-unknown-runners-run-is-handed-over-not-resumed",
+              "hand the run over" in str(session_state(root, world).get("resume")) and len(world.runs) == runs)
         _write_json(os.path.join(root, "build", "claude-campaign-guard.json"),
                     dict(read_guard(root) or {}, runner="claude"))
         world.run = failing_run
@@ -3810,15 +3793,10 @@ def _self_test() -> int:
               and migrated_launch.get("args") == flags,
               repr((migrated_guard, migrated_launch)))
         world.runs.clear()
-        check("a-handed-over-run-is-resumable-only-by-the-operator",
-              _resumable(root, migrated_guard) == flags and world.runs == []
-              and session_state(root, world).get("session") == "ended", repr(_read_json(_launch_path(root))))
-        _write_json(_launch_path(root), {
-            "runner": "agy",
-            "session_id": migrated_cid,
-            "args": ["--dangerously-skip-permissions", "--model", "claude-opus-5-5"],
-        })
-        check("resumable-rejects-stale-claude-model-flag", _resumable(root, migrated_guard) is None)
+        check("a-handed-over-run-waits-for-the-operator", world.runs == []
+              and session_state(root, world).get("session") == "ended"
+              and session_state(root, world).get("exit_code") == 0
+              and "-Runner agy" in str(session_state(root, world).get("resume")), repr(session_state(root, world)))
 
         # The Claude Code runner (`start --runner claude`): a fresh session under its own id, the goal, the vault
         # sign-in, resumed by the operator in Claude Code, and a hand-over from an Antigravity guard.
@@ -3913,7 +3891,7 @@ def _self_test() -> int:
               and "to claude" in str(to_claude.get("handover_reason"))
               and _read_json(_launch_path(root)).get("session_id") == new_csid
               and whoami(root, new_csid).startswith("OWNER"), repr((hargv[:3], to_claude)))
-        resumable_before = _resumable(root, to_claude)
+        ended_before = session_state(root, world)
         world.run = failing_run
         failures = 0
         for _ in range(2):  # a retried handover keeps the record too
@@ -3921,11 +3899,24 @@ def _self_test() -> int:
                 start(root, world)
             except GuardError:
                 failures += 1
-        failed_back = failures == 2
         world.run = good_run
-        check("a-failed-handover-keeps-the-old-run-resumable",
-              failed_back and resumable_before == cflags and _resumable(root, read_guard(root) or {}) == cflags
-              and (read_guard(root) or {}).get("session_id") == new_csid, repr(_read_json(_launch_path(root))))
+        kept_guard = read_guard(root) or {}
+        check("a-failed-handover-leaves-the-old-run-as-it-was",
+              failures == 2 and kept_guard.get("session_id") == new_csid and kept_guard.get("runner") == "claude"
+              and kept_guard.get("run_id") == cguard.get("run_id") and ended_before.get("exit_code") == 0
+              and session_state(root, world) == ended_before, repr((_read_json(_launch_path(root)), ended_before)))
+        # The recovery itself: the operator starts the old runner again, and the old session is resumed in it.
+        world.runs.clear()
+        world.runners.clear()
+        code, _ = start(root, world, runner="claude")
+        recovered = read_guard(root) or {}
+        check("the-operator-resumes-the-old-run-after-a-failed-handover",
+              code == 0 and world.runners == ["claude"]
+              and world.runs == [["--resume", new_csid, *cflags, CLAUDE_RESUME_PROMPT]]
+              and recovered.get("session_id") == new_csid and recovered.get("runner") == "claude"
+              and recovered.get("run_id") == cguard.get("run_id") and whoami(root, new_csid).startswith("OWNER")
+              and _read_json(_launch_path(root)).get("session_id") == new_csid
+              and "launch_token" not in _read_json(_launch_path(root)), repr((world.runs, recovered)))
         try:
             start(root, world, runner="muse")
             bad_runner = False
