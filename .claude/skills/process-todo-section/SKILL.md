@@ -44,6 +44,7 @@ It prints the path, the section title, the item count, whether the TODO is froze
 | `3` | The section is already `[x]` | Do **not** process it. This is `review-todo-section` in audit stance; say so and hand over. |
 | `4` | Unmet dependencies | Stop at the dependency gate and name the unmet sections. |
 | `5` | The section moved out of the tree (`> **Moved:**` under its heading) | Stop. Its open work is worked from the file the `moved` line names, by that file's own rules. |
+| `6` | The section lapsed with its file (the file is `status: superseded` and the row is open) | Stop. It is never built: its acceptance requirements are with the successor file the `lapsed` line names, as `todo/supersession-2026-10.md` records for it. |
 
 Use the `skill arg` line it prints as the canonical form for the rest of the run, so the commit message and the review call name the section the same way.
 

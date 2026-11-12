@@ -173,10 +173,12 @@ class FakeGh:
 
 
 class FakeGraph:
-    """load_todos() over one fixture file: section 1 stamped, 2 open with Started, 3 open without."""
+    """load_todos() over one fixture file: section 1 stamped, 2 open with Started, 3 open without. With `lapsed`, the
+    file is superseded, so its open sections lapsed with it (the graph marks them `lapsed`)."""
 
-    def __init__(self, root: Path, started_open=True):
+    def __init__(self, root: Path, started_open=True, lapsed=False):
         self.root = root
+        self.lapsed = lapsed
         body = ("# TODO\n\n## 1. Done\n\n> **Started:** 2026-10-21T00:00:00Z\n\n> **Verified:** x\n\n"
                 "## 2. Open\n\n" + ("> **Started:** 2026-10-21T01:00:00Z\n\n" if started_open else "") + "Text.\n\n"
                 "## 3. Untouched\n\nText.\n")
@@ -184,7 +186,7 @@ class FakeGraph:
         (root / "todo" / "TODO-01-x.md").write_text(body, encoding="utf-8")
 
     def load_todos(self):
-        sec = lambda status: types.SimpleNamespace(status=status, moved="")
+        sec = lambda status: types.SimpleNamespace(status=status, moved="", lapsed=self.lapsed and status != "x")
         return [types.SimpleNamespace(path="todo/TODO-01-x.md", domain="00-workspace", number="01",
                                       sections={1: sec("x"), 2: sec(" "), 3: sec(" ")}, verified_sections={1})]
 
@@ -225,6 +227,16 @@ class PreflightTests(Base):
     def test_a_section_in_progress_refuses_naming_it(self):
         code, out = self.call(["run"], FakeGh([pr()]), FakeGit(), graph=FakeGraph(self.root, started_open=True))
         self.assertEqual((code, "D00 T01 §2" in out, "§1" in out.split("progress:")[1]), (2, True, False))
+
+    def test_a_started_section_of_a_superseded_file_is_not_in_progress(self):
+        # D00 T01 §18: a superseded file's open sections lapsed with it, and their Started: lines mark ended work.
+        lapsed = FakeGraph(self.root, started_open=True, lapsed=True)
+        self.assertEqual(mp.sections_in_progress(self.root, lapsed), [])
+        code, out = self.call(["run"], FakeGh([pr()]), FakeGit(), graph=lapsed)
+        self.assertNotIn("a section is in progress", out)
+
+    def test_a_started_section_of_a_live_file_is_still_in_progress(self):
+        self.assertEqual(mp.sections_in_progress(self.root, FakeGraph(self.root, started_open=True)), ["D00 T01 §2"])
 
     def test_an_active_campaign_refuses_unless_the_campaign_calls(self):
         active = lambda r: "a campaign run holds the guard"
@@ -1480,6 +1492,13 @@ class TimeoutTests(unittest.TestCase):
 class RealTreeTests(unittest.TestCase):
     def test_the_real_tree_reads_its_sections_without_error(self):
         self.assertIsInstance(mp.sections_in_progress(REPO), list)
+
+    def test_the_real_tree_names_no_section_of_a_superseded_file(self):
+        # Through the real graph, not a stand-in: every superseded file in the tree, whatever it is on the day.
+        graph = mp._load("todo_graph_for_merge_test", REPO / "scripts" / "todo-graph.py")
+        superseded = {f"D{t.domain.split('-')[0]} T{t.number} " for t in graph.load_todos() if t.status == "superseded"}
+        named = [ref for ref in mp.sections_in_progress(REPO, graph) if any(ref.startswith(p) for p in superseded)]
+        self.assertEqual(named, [])
 
 
 if __name__ == "__main__":

@@ -407,6 +407,9 @@ class Section:
     # OUTSIDE the tree, in the file the body names (writers-and-reviewers §2).
     # The row and the cross-references stay; ready, plan and progress skip it.
     moved: str = ""
+    # The section's file is `status: superseded` and its row is open, so it lapsed with its file (D00 T01 §18): it is
+    # never built and never stamped, holds no plan row, and is in no count. Set once by the loader (`is_lapsed`).
+    lapsed: bool = False
     # `> **Review pending:** <UTC> candidate <range>: <reason>`: built, but the reviewer stayed unreachable through
     # every retry (review-todo-section); never ready until the marker is removed when its review resumes.
     review_pending: str = ""
@@ -766,6 +769,8 @@ def parse_todo(path: Path) -> Todo:
         if s.reopened_body.strip():
             todo.verified_sections.discard(num)
 
+    for section in todo.sections.values():
+        section.lapsed = is_lapsed(todo, section)
     return todo
 
 
@@ -882,6 +887,9 @@ SEVERITY_MAP: dict[str, str] = {
     "review-citation-role-mismatch": "fatal",
     # superseded frontmatter must name its successor: mechanical, structural.
     "superseded-no-successor": "fatal",
+    # an open section of a live file that waits on a lapsed section waits for ever, silently: the edge must be
+    # re-pointed at the successor (D00 T01 §18).
+    "depends-on-lapsed": "fatal",
     # an OPEN section whose --filter checkpoint claims another suite stays
     # green is a checkpoint known not to detect its promised regression --
     # naming the test files is a two-minute fix (D00 T06 §26).
@@ -1895,6 +1903,36 @@ def moved_target(body: str) -> str:
     return m.group("path") if m else ""
 
 
+def is_lapsed(todo, section) -> bool:
+    """Whether a section lapsed with its file (D00 T01 §18): the file's frontmatter is `status: superseded` and the
+    section's Implementation Order row is not `[x]`. A stamped section of a superseded file stays `[x]` everywhere,
+    and a section carrying `> **Moved:**` keeps that one fate. The loader records the answer on `Section.lapsed`,
+    which every reader uses, so no reader decides a section's fate from the file's status itself."""
+    return todo.status == "superseded" and section.status != "x" and not section.moved
+
+
+def successor_path(todo, todos: list["Todo"]) -> str:
+    """Where a superseded file's work went: the path of the file its `superseded_by` names, or that id when no file
+    in the tree carries it (`validate` reports an unset one as `superseded-no-successor`)."""
+    for other in todos:
+        if other.id and other.id == todo.superseded_by:
+            return other.path
+    return todo.superseded_by or "an unnamed successor"
+
+
+def _lapsed_by_ref(todos: list["Todo"]) -> dict[str, str]:
+    """'D00 T02 §1' -> the text its plan line carries, for every lapsed section."""
+    out: dict[str, str] = {}
+    for t in todos:
+        dom = t.domain.split("-")[0]
+        for num, s in t.sections.items():
+            if s.lapsed:
+                name = (s.deliverable or s.title).strip()
+                out[f"D{dom} T{t.number} §{num}"] = (
+                    f"{name} (lapsed with {t.path}, superseded by {successor_path(t, todos)})")
+    return out
+
+
 def _moved_by_ref(todos: list["Todo"]) -> dict[str, str]:
     """'D00 T07 §25' -> the Moved: body, for every section carrying the marker."""
     out: dict[str, str] = {}
@@ -2344,10 +2382,13 @@ def cmd_query(args) -> int:
         print(f"sections         {len(secs)}")
         print(f"  done [x]       {sum(1 for s in secs if s.status == 'x')}")
         print(f"  in progress [/]{sum(1 for s in secs if s.status == '/'):>2}")
-        print(f"  open [ ]       {sum(1 for s in secs if s.status == ' ' and not s.moved)}")
+        print(f"  open [ ]       {sum(1 for s in secs if s.status == ' ' and not s.moved and not s.lapsed)}")
         moved_n = sum(1 for s in secs if s.moved)
         if moved_n:
             print(f"  moved          {moved_n}  (worked outside the tree; `> **Moved:**` names where)")
+        lapsed_n = sum(1 for s in secs if s.lapsed)
+        if lapsed_n:
+            print(f"  lapsed         {lapsed_n}  (their file is superseded; never built, `superseded_by` names the successor)")
         print(f"checklist items  {sum(s.items_done for s in secs)}/{sum(s.items_total for s in secs)}")
         print(f"frozen todos     {sum(1 for t in todos if t.frozen)}")
         print("todo status      " + ", ".join(f"{k}={v}" for k, v in sorted(by_status.items())))
@@ -3782,8 +3823,8 @@ def cmd_query(args) -> int:
     rows = []
     for t in todos:
         for num, s in sorted(t.sections.items()):
-            if s.status == "x" or s.moved:
-                continue
+            if s.status == "x" or s.moved or s.lapsed:
+                continue  # a lapsed section is neither ready nor blocked: it is never built (D00 T01 §18)
             # The one dependency gate (D00 T01 §37); no local edge-walking.
             missing = [
                 u["query_label"]
@@ -3910,6 +3951,8 @@ def resolve_exit_code(raw: str, todos: list[Todo]) -> int:
         return 3
     if s.moved:
         return 5
+    if s.lapsed:
+        return 6
     # The one dependency gate (D00 T01 §37): row edges AND frontmatter
     # whole-TODO edges, identical to `query blocked`. Before this, only the
     # row edges were walked here, so a section could be blocked in `query`
@@ -4105,6 +4148,8 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     print(f"deps       {', '.join(s.depends_on) if s.depends_on else '--'}")
     if s.moved:
         print(f"moved      {s.moved}")
+    if s.lapsed:
+        print(f"lapsed     with its superseded file; superseded by {successor_path(target, todos)}")
     if s.needs_raw:
         keys = ', '.join(s.needs) if s.needs else 'UNKNOWN -- not in the closed list'
         print(f"needs      {keys} ({s.needs_raw}); confirm the host or device is available before writing Started:")
@@ -4129,6 +4174,13 @@ def cmd_resolve(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 5
+    if s.lapsed:
+        print(
+            f"\nNOTE: §{sec} lapsed with its file, which is superseded by {successor_path(target, todos)}. "
+            "It is never built: its acceptance requirements are with the successor the supersession map names.",
+            file=sys.stderr,
+        )
+        return 6
     if s.status == "x":
         print(
             f"\nNOTE: §{sec} is already [x]. Re-checking shipped work is "
@@ -4164,6 +4216,10 @@ PLAN_ROW_RE = re.compile(
 # by --sync where the row was, kept in place on later syncs, dropped when
 # the marker goes. Not a row: totals, progress and plan-gate never see it.
 PLAN_MOVED_RE = re.compile(r"^>\s*\*\*Moved:\*\*\s*`(?P<ref>D\d{2}\s+T\d{2}\s+§\d+)`")
+# The one line a lapsed section leaves in the plan (D00 T01 §18): `> **Superseded:** `D00 T02 §1` -- <deliverable>
+# (lapsed with <file>, superseded by <successor>)`. Written by --sync where the row was, regenerated on later syncs,
+# and turned back into a row when the section is live again. Not a row: totals and progress never see it.
+PLAN_SUPERSEDED_RE = re.compile(r"^>\s*\*\*Superseded:\*\*\s*`(?P<ref>D\d{2}\s+T\d{2}\s+§\d+)`")
 # The Items cell: the trailing numeric column of a plan row. Synced like the box
 # character, in place, so the table's alignment survives. Until 2026-09-17 nothing
 # wrote this column and nothing checked it, so 28 of 121 rows disagreed with their
@@ -4181,6 +4237,10 @@ def _rel(path: Path) -> str:
 
 def _moved_line(ref: str, body: str) -> str:
     return f"> **Moved:** `{ref}` -- {body}"
+
+
+def _superseded_line(ref: str, body: str) -> str:
+    return f"> **Superseded:** `{ref}` -- {body}"
 
 
 PLAN_PROGRESS_RE = re.compile(
@@ -4580,8 +4640,8 @@ def _plan_state(todos: list[Todo]) -> dict[str, str]:
     for t in todos:
         dom = t.domain.split("-")[0]
         for num, s in t.sections.items():
-            if s.moved:
-                continue  # no row in the plan; a Moved line stands in its place
+            if s.moved or s.lapsed:
+                continue  # no row in the plan; a Moved or Superseded line stands in its place
             state[f"D{dom} T{t.number} §{num}"] = s.status
     return state
 
@@ -4596,7 +4656,7 @@ def _plan_items(todos: list[Todo]) -> dict[str, int]:
     for t in todos:
         dom = t.domain.split("-")[0]
         for num, s in t.sections.items():
-            if s.moved:
+            if s.moved or s.lapsed:
                 continue
             counts[f"D{dom} T{t.number} §{num}"] = s.items_total
     return counts
@@ -4627,7 +4687,7 @@ def _in_progress_by_ref(todos: list[Todo]) -> dict[str, bool]:
     for t in todos:
         dom = t.domain.split("-", 1)[0]
         for num, s in t.sections.items():
-            flags[f"D{dom} T{t.number} §{num}"] = s.status != "x" and (
+            flags[f"D{dom} T{t.number} §{num}"] = s.status != "x" and not s.lapsed and (
                 s.status == "/"
                 or (s.commit_done and num not in t.verified_sections)
             )
@@ -4766,14 +4826,17 @@ def build_progress(todos: list[Todo]) -> dict:
     # A moved section (writers-and-reviewers §2) is neither open nor done
     # here: `query stats` counts it on its own line, and so does this.
     moved_n = sum(1 for s in secs if s.moved)
+    # A lapsed section (D00 T01 §18) is not a section of the plan any more: it is counted on its own key only.
+    lapsed_n = sum(1 for s in secs if s.lapsed)
 
     return {
         "stats": {
-            "sections": len(secs),
+            "sections": len(secs) - lapsed_n,
             "done": done_n,
             "in_progress": in_progress_n,
-            "open": len(secs) - done_n - in_progress_n - moved_n,
+            "open": len(secs) - done_n - in_progress_n - moved_n - lapsed_n,
             "moved": moved_n,
+            "lapsed": lapsed_n,
         },
         "plan": {
             "done": plan_done,
@@ -5483,7 +5546,8 @@ def plan_phase_counts() -> dict[str, dict]:
     """Phase number -> {title, count, refs}: plan rows plus Moved lines per phase.
 
     A Moved section still exists (it keeps its row in its TODO file), so it
-    still counts in its phase. Order is the plan's.
+    still counts in its phase. A lapsed section's Superseded line keeps it in
+    the phase's `refs` and out of its `count`. Order is the plan's.
     """
     out: dict[str, dict] = {}
     if not PLAN.exists():
@@ -5502,6 +5566,11 @@ def plan_phase_counts() -> dict[str, dict]:
         if current is not None and row:
             out[current]["count"] += 1
             out[current]["refs"].append(" ".join(row.group("ref").split()))
+            continue
+        lapsed = PLAN_SUPERSEDED_RE.match(line)
+        if current is not None and lapsed:
+            # Still placed in its phase (so `query plan` lists it, as deferred), but no section of it (D00 T01 §18).
+            out[current]["refs"].append(" ".join(lapsed.group("ref").split()))
     return out
 
 
@@ -5788,11 +5857,23 @@ def _backlog_committed_text() -> str | None:
 
 
 def _section_refs(todos: list[Todo]) -> dict[str, str]:
-    """'D02 T06 §7' -> section title, for every section in the tree."""
+    """'D02 T06 §7' -> section title, for every section in the tree, lapsed ones included: an address stays citable
+    (a backlog entry, a history line) after its section lapsed."""
     return {
         f"D{t.domain.split('-')[0]} T{t.number} §{num}": s.title
         for t in todos
         for num, s in t.sections.items()
+    }
+
+
+def _plan_section_refs(todos: list[Todo]) -> dict[str, str]:
+    """'D02 T06 §7' -> section title, for every section of the plan. A lapsed section is not one (D00 T01 §18), so
+    a file superseded since a commit shows its open sections as removed in `query growth`."""
+    return {
+        f"D{t.domain.split('-')[0]} T{t.number} §{num}": s.title
+        for t in todos
+        for num, s in t.sections.items()
+        if not s.lapsed
     }
 
 
@@ -6884,7 +6965,7 @@ def budget_summary(todos: list[Todo]) -> dict | None:
     for origin in origins.values():
         runs[origin["run"]] = runs.get(origin["run"], 0) + 1
     return {
-        "sections": sum(len(t.sections) for t in todos),
+        "sections": sum(1 for t in todos for s in t.sections.values() if not s.lapsed),
         "discovered": len(origins),
         "backlog": backlog_n,
         "phases": rows,
@@ -6950,7 +7031,7 @@ def _tree_at(ref: str) -> tuple[dict[str, str], dict[str, str]] | None:
         finally:
             TODO_DIR = saved
     backlog = {e["id"]: e["title"] for e in (loaded[0] if loaded else [])}
-    return _section_refs(todos), backlog
+    return _plan_section_refs(todos), backlog
 
 
 def growth_report(ref: str, todos: list[Todo]) -> dict | None:
@@ -6964,7 +7045,7 @@ def growth_report(ref: str, todos: list[Todo]) -> dict | None:
     if then is None:
         return None
     then_secs, then_backlog = then
-    now_secs = _section_refs(todos)
+    now_secs = _plan_section_refs(todos)
     loaded = load_backlog()
     now_backlog = {e["id"]: e["title"] for e in (loaded[0] if loaded else [])}
 
@@ -7011,8 +7092,17 @@ def cmd_plan(args: argparse.Namespace) -> int:
     unknown: list[str] = []
     seen: list[str] = []
 
+    lapsed = _lapsed_by_ref(todos)
+    lapsed_rows: list[str] = []     # lapsed sections that still hold a row
+    stale_lapsed: list[str] = []    # Superseded lines whose section is not lapsed (or is noted twice)
+    revived: list[str] = []         # Superseded lines turned back into rows: the section is live again
+    noted_lapsed: set[str] = set()
     moved = _moved_by_ref(todos)
     moved_rows: list[str] = []      # moved sections that still hold a row
+    live_titles = {
+        f"D{td.domain.split('-')[0]} T{td.number} §{num}": (sec.deliverable or sec.title).strip()
+        for td in todos for num, sec in td.sections.items()
+    }
     stale_notes: list[str] = []     # Moved lines whose section is not moved (or is noted twice)
     noted: set[str] = set()
     pending_notes: list[str] = []   # written where the table that held the row ends
@@ -7037,6 +7127,30 @@ def cmd_plan(args: argparse.Namespace) -> int:
             else:
                 stale_notes.append(nref)
             continue
+        sup = PLAN_SUPERSEDED_RE.match(line)
+        if sup:
+            sref = re.sub(r"\s+", " ", sup.group("ref"))
+            if sref in lapsed and sref not in noted_lapsed:
+                noted_lapsed.add(sref)
+                fresh = _superseded_line(sref, lapsed[sref])
+                if fresh != line:
+                    stale.append(f"{sref}: its Superseded line is out of date")
+                out.append(fresh)  # regenerated: the text is the section's and its file's
+                continue
+            stale_lapsed.append(sref)
+            # The section is live again (its file went back to draft or active): its row returns to the end of the
+            # table this line followed, which is where --sync took it from. A line for a section that no longer
+            # exists, or that has its row already, is only dropped.
+            at = len(out) - 1
+            while at >= 0 and (not out[at].strip() or PLAN_SUPERSEDED_RE.match(out[at]) or PLAN_MOVED_RE.match(out[at])):
+                at -= 1
+            if sref in state and sref not in seen and at >= 0 and out[at].startswith("|"):
+                out.insert(at + 1, f"| [{state[sref]}] | `{sref}` | {live_titles.get(sref, '')} | {items_by_ref.get(sref, 0)} |")
+                seen.append(sref)
+                revived.append(sref)
+            if out and not out[-1].strip():
+                out.pop()  # the blank line that set the dropped note apart
+            continue
         m = PLAN_ROW_RE.match(line)
         if not m:
             if pending_notes and not line.startswith("|"):
@@ -7044,6 +7158,14 @@ def cmd_plan(args: argparse.Namespace) -> int:
             out.append(line)
             continue
         ref = re.sub(r"\s+", " ", m.group("ref"))
+        if ref in lapsed:
+            # Not a row any more: the section lapsed with its file (D00 T01 §18). One line says so, at the end of
+            # the table it sat in, and it never counts.
+            lapsed_rows.append(ref)
+            if ref not in noted_lapsed:
+                noted_lapsed.add(ref)
+                pending_notes.append(_superseded_line(ref, lapsed[ref]))
+            continue
         if ref in moved:
             # Not a row any more: it leaves one line saying where it went, at
             # the end of the table it sat in, and never counts (§2 rule).
@@ -7136,6 +7258,12 @@ def cmd_plan(args: argparse.Namespace) -> int:
     # does not belong in a phase does not exist: `plan --sync` derives from the
     # Implementation Order tables, and a section IS a unit of work in a domain.
     missing = [r for r in state if r not in seen]
+    # A lapsed section with neither a row nor a line: nothing in the plan remembers its phase, so --sync cannot place
+    # it. --check and --sync both refuse, naming the repair.
+    lapsed_missing = sorted(r for r in lapsed if r not in noted_lapsed)
+    lapsed_repair = (
+        "write a line ``> **Superseded:** `<ref>` `` under the table of the phase todo/supersession-2026-10.md "
+        "gives for it, then run `python scripts/todo-graph.py plan --sync`")
 
     if args.check:
         for s in stale:
@@ -7150,6 +7278,19 @@ def cmd_plan(args: argparse.Namespace) -> int:
                 f"::error::{_rel(PLAN)} carries a Moved line for {r}, which is "
                 "not moved (or is noted twice). `plan --sync` drops it."
             )
+        for r in lapsed_rows:
+            print(
+                f"::error::{_rel(PLAN)} lists {r} as a row, but its section lapsed with its superseded file. "
+                "`plan --sync` replaces the row with a Superseded line."
+            )
+        for r in stale_lapsed:
+            print(
+                f"::error::{_rel(PLAN)} carries a Superseded line for {r}, which is not lapsed (or is noted twice). "
+                "`plan --sync` turns it back into the section's row, or drops it."
+            )
+        for r in lapsed_missing:
+            print(f"::error::{_rel(PLAN)} has neither a row nor a Superseded line for the lapsed section {r}: "
+                  f"{lapsed_repair}")
         for r in dupes:
             print(
                 f"::error::{_rel(PLAN)} lists {r} in more than one phase. "
@@ -7189,13 +7330,17 @@ def cmd_plan(args: argparse.Namespace) -> int:
                 f"::error::{_rel(PLAN)}'s Progress line is stale (completion, section counts, or backlog use) -- "
                 "run `python scripts/todo-graph.py plan --sync`"
             )
-        if stale or unknown or missing or dupes or json_stale or operator_stale or moved_rows or stale_notes or progress_stale:
+        if (stale or unknown or missing or dupes or json_stale or operator_stale or moved_rows or stale_notes
+                or progress_stale or lapsed_rows or stale_lapsed or lapsed_missing):
             print(
                 f"\n{len(stale)} stale row(s), {len(unknown)} unknown ref(s), "
                 f"{len(missing)} unsequenced section(s), {len(dupes)} duplicated section(s)"
                 f"{', Progress line stale' if progress_stale else ''}"
                 f"{f', {len(moved_rows)} moved row(s)' if moved_rows else ''}"
                 f"{f', {len(stale_notes)} stale Moved line(s)' if stale_notes else ''}"
+                f"{f', {len(lapsed_rows)} lapsed row(s)' if lapsed_rows else ''}"
+                f"{f', {len(stale_lapsed)} stale Superseded line(s)' if stale_lapsed else ''}"
+                f"{f', {len(lapsed_missing)} lapsed section(s) with no line' if lapsed_missing else ''}"
                 f"{', progress JSON stale' if json_stale else ''}"
                 f"{', operator JSON stale' if operator_stale else ''}. "
                 "Run `python scripts/todo-graph.py plan --sync`.",
@@ -7216,11 +7361,18 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"  moved: {r} -- row replaced by a Moved line")
     for r in stale_notes:
         print(f"  dropped a stale Moved line for {r}")
+    for r in lapsed_rows:
+        print(f"  lapsed: {r} -- row replaced by a Superseded line")
+    for r in stale_lapsed:
+        print(f"  {'live again: ' + r + ' -- its row is back in its table' if r in revived else 'dropped a stale Superseded line for ' + r}")
     for s in stale:
         print(f"  {s}")
     if missing:
         print(f"  NOTE: {len(missing)} open section(s) appear in no phase -- run with --check for the list")
-    return 0
+    for r in lapsed_missing:
+        print(f"::error::{_rel(PLAN)} has neither a row nor a Superseded line for the lapsed section {r}: {lapsed_repair}",
+              file=sys.stderr)
+    return 1 if lapsed_missing else 0
 
 
 # ---------------------------------------------------------------------- main
@@ -10475,7 +10627,9 @@ An oversized section: the clean single-WARN shape (over-30-items).
             with _ctx.redirect_stdout(qbuf), _ctx.redirect_stderr(_io.StringIO()):
                 cmd_query(argparse.Namespace(what="blocked", all=False))
             check("query blocked excludes the moved section", "Moved thing" in qbuf.getvalue(), False)
-            # A blocked or superseded file defers its sections, as `query plan` does: never ready, listed as blocked.
+            # A blocked file defers its sections, as `query plan` does: never ready, listed as blocked, refused by
+            # resolve with 4. A superseded file's open sections lapse (D00 T01 §18): never ready, not blocked either
+            # (nothing will unblock them), and resolve exits 6.
             moved_path = root / "todo" / "93-moved" / "TODO-05-moved.md"
             for file_status in ("blocked", "superseded"):
                 moved_path.write_text(SELF_TEST_TODO_MOVED.replace("status: active", f"status: {file_status}", 1), encoding="utf-8")
@@ -10485,8 +10639,11 @@ An oversized section: the clean single-WARN shape (over-30-items).
                 with _ctx.redirect_stdout(bbuf), _ctx.redirect_stderr(_io.StringIO()):
                     cmd_query(argparse.Namespace(what="blocked", all=False))
                 check(f"query ready excludes a section of a {file_status} file", "Depends on the moved thing" in rbuf.getvalue(), False)
-                check(f"query blocked names the {file_status} file as the wait", f"waiting on: file status {file_status}" in bbuf.getvalue(), True)
-                check(f"resolve refuses a section of a {file_status} file", resolve_exit_code("D93 T05 §2", load_todos()), 4)
+                check(f"query blocked names the blocked file as the wait, and no section of a superseded file ({file_status})",
+                      (f"waiting on: file status {file_status}" in bbuf.getvalue(), "Depends on the moved thing" in bbuf.getvalue()),
+                      (True, True) if file_status == "blocked" else (False, False))
+                check(f"resolve refuses a section of a {file_status} file (4 parked, 6 lapsed)",
+                      resolve_exit_code("D93 T05 §2", load_todos()), 4 if file_status == "blocked" else 6)
             # A section whose review is pending (the reviewer was unreachable, review-todo-section) is never ready and is
             # listed as blocked with that reason, in query ready, query blocked, and query plan alike.
             moved_path.write_text(SELF_TEST_TODO_MOVED.replace(
@@ -11805,6 +11962,269 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             TODO_DIR, PLAN, PROGRESS_JSON, OPERATOR_JSON = saved_g
             _sh_g = __import__("shutil")
             _sh_g.rmtree(groot, ignore_errors=True)
+
+        # --- lapsed sections (D00 T01 §18) -----------------------------------
+        # Its own tree and its own git history, so every count is exact: a superseded file with a stamped section, a
+        # lapsed section, and a lapsed section that carries Started: and a ticked Commit item; its successor; and a
+        # file that depends on it. A lapsed section holds no plan row, is in no count, is never ready, blocked, or in
+        # progress, and a live file that waits on one is refused.
+        lroot = root / "lapsed-fixture"
+        ltodo = lroot / "todo"
+        (ltodo / "96-lapsed").mkdir(parents=True)
+        (ltodo / "96-lapsed" / "INDEX.md").write_text(
+            "# 96 Lapsed\n\n| TODO | Title |\n| --- | --- |\n| [TODO-01](./TODO-01-old.md) | Old |\n"
+            "| [TODO-02](./TODO-02-new.md) | New |\n| [TODO-03](./TODO-03-dependent.md) | Dependent |\n",
+            encoding="utf-8",
+        )
+
+        def _lsec(n: int, title: str, lead: str = "", commit: str = " ", tail: str = "") -> str:
+            return (f"## {n}. {title}\n\n{lead}Context.\n\n- [ ] Do it\n- [{commit}] Commit: `\"selftest: {title}\"`\n\n"
+                    f"**Test checkpoint:** `true`\n\n{tail}")
+
+        def _lfile(num: str, tid: str, status: str, rows: list[tuple[int, str, str, str]], body: str,
+                   fm: str = "") -> None:
+            name = {"01": "old", "02": "new", "03": "dependent"}[num]
+            table = "".join(f"| {i} | §{n} | {title} | {dep} | [{box}] |\n"
+                            for i, (n, title, dep, box) in enumerate(rows, 1))
+            (ltodo / "96-lapsed" / f"TODO-{num}-{name}.md").write_text(
+                f"---\nschema_version: 1\nid: {tid}\ndomain: 96-lapsed\nstatus: {status}\n"
+                f"title: \"TODO-{num} -- Lapsed fixture {name}\"\n{fm}---\n\n# TODO-{num} -- Lapsed fixture {name}\n\n"
+                "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
+                "| :---: | :-----: | ----------- | ---------- | :----: |\n" + table + "\n---\n\n" + body,
+                encoding="utf-8",
+            )
+
+        _lold_rows = [(1, "Kept thing", "--", "x"), (2, "Lapsed thing", "--", " "), (3, "Started thing", "--", " ")]
+        _lold_body = (
+            _lsec(1, "Kept thing", commit="x", tail="> **Verified:** 2026-11-12 | §1 | fixture\n\n")
+            + _lsec(2, "Lapsed thing")
+            + _lsec(3, "Started thing", lead="> **Started:** 2026-11-01T00:00:00Z\n\n", commit="x")
+        )
+
+        def _lold(status: str, rows=None) -> None:
+            _lfile("01", "lapsed-old", status, rows or _lold_rows, _lold_body,
+                   fm="superseded_by: lapsed-new\n" if status == "superseded" else "")
+
+        def _ldependent(status: str = "draft", dep: str = "D96 T01 §2", fm: str = "") -> None:
+            _lfile("03", "lapsed-dependent", status, [(1, "Waiting thing", dep, " ")], _lsec(1, "Waiting thing"), fm=fm)
+
+        _lold("active")
+        _lfile("02", "lapsed-new", "active", [(1, "Successor thing", "--", " ")], _lsec(1, "Successor thing"))
+        _ldependent(dep="--")
+        lplan = ltodo / "implementation-plan.md"
+        _lplan_text = (
+            "# Implementation plan\n\n> **Progress:** placeholder\n\n"
+            "### Phase 0 -- Lapsed fixture\n\nWhy.\n\n| ✔ | Section | Deliverable | Items |\n| :-: | --- | --- | :-: |\n"
+            "| [x] | `D96 T01 §1` | Kept thing | 2 |\n| [ ] | `D96 T01 §2` | Lapsed thing | 2 |\n"
+            "| [ ] | `D96 T01 §3` | Started thing | 2 |\n| [ ] | `D96 T02 §1` | Successor thing | 2 |\n\n"
+            "Prose after the table.\n\n"
+            "### Phase 1 -- Dependent fixture\n\nWhy.\n\n| ✔ | Section | Deliverable | Items |\n| :-: | --- | --- | :-: |\n"
+            "| [ ] | `D96 T03 §1` | Waiting thing | 2 |\n"
+        )
+        lplan.write_text(_lplan_text, encoding="utf-8")
+        (ltodo / "budget.json").write_text(
+            json.dumps({**_gsnap(), "schema_version": 3, "history": [_gsetup]}, indent=2), encoding="utf-8")
+        (ltodo / "backlog.md").write_text(
+            "# Backlog\n\nProse.\n\n## Entries\n\n- [B-001] An idea -- source: lapsed-idea-1 -- added: 2026-11-12 "
+            "-- why deferred: nice to have -- promote when: asked\n", encoding="utf-8")
+        _lgit = ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+        subprocess.run(["git", "init", "-q"], cwd=lroot, capture_output=True, text=True, timeout=60)
+        subprocess.run(["git", "add", "todo"], cwd=lroot, capture_output=True, text=True, timeout=60)
+        subprocess.run(["git", *_lgit, "commit", "-q", "-m", "before the file was superseded"], cwd=lroot,
+                       capture_output=True, text=True, timeout=60)
+
+        def _lquery(what: str) -> str:
+            buf = _gio.StringIO()
+            with _gctx.redirect_stdout(buf), _gctx.redirect_stderr(_gio.StringIO()):
+                cmd_query(argparse.Namespace(what=what, all=False))
+            return buf.getvalue()
+
+        def _lplan(check_only: bool) -> tuple[int, str]:
+            err = _gio.StringIO()
+            with _gctx.redirect_stdout(err), _gctx.redirect_stderr(err):
+                code = cmd_plan(argparse.Namespace(check=check_only))
+            return code, err.getvalue()
+
+        def _lvalidate() -> list[str]:
+            buf = _gio.StringIO()
+            with _gctx.redirect_stdout(buf), _gctx.redirect_stderr(_gio.StringIO()):
+                cmd_validate(None)
+            return [ln for ln in buf.getvalue().splitlines() if ln.startswith("FATAL")
+                    and ("which lapsed with its superseded file" in ln or "whose open sections lapsed" in ln)]
+
+        saved_l = (TODO_DIR, PLAN, PROGRESS_JSON, OPERATOR_JSON)
+        _l_committed, _l_bcommitted = globals()["_budget_committed_text"], globals()["_backlog_committed_text"]
+        try:
+            TODO_DIR, PLAN = ltodo, lplan
+            PROGRESS_JSON = lroot / "build" / "progress.json"
+            OPERATOR_JSON = lroot / "build" / "operator.json"
+            globals()["_budget_committed_text"] = lambda: None
+            globals()["_backlog_committed_text"] = lambda: None
+            ltodos = load_todos()
+            check("lapsed: nothing lapses while the file is active",
+                  [s.lapsed for t_ in ltodos for s in t_.sections.values()], [False] * 5)
+            check("lapsed: an active file's started section is in progress", _in_progress_by_ref(ltodos)["D96 T01 §3"], True)
+            _lold("superseded")
+            ltodos = load_todos()
+            lold = next(t_ for t_ in ltodos if t_.number == "01")
+            check("lapsed: the open sections of a superseded file lapse, its stamped section does not",
+                  [lold.sections[n].lapsed for n in (1, 2, 3)], [False, True, True])
+            check("lapsed: is_lapsed is the rule the loader recorded",
+                  [is_lapsed(lold, lold.sections[n]) for n in (1, 2, 3)], [False, True, True])
+            check("lapsed: the successor is named by its file", successor_path(lold, ltodos).replace("\\", "/").endswith(
+                "96-lapsed/TODO-02-new.md"), True)
+            check("lapsed: plan state keeps the stamped section and omits the lapsed ones",
+                  sorted(_plan_state(ltodos).items()),
+                  [("D96 T01 §1", "x"), ("D96 T02 §1", " "), ("D96 T03 §1", " ")])
+            check("lapsed: resolve exits 6 for a lapsed section and 3 for the stamped one",
+                  (resolve_exit_code("D96 T01 §2", ltodos), resolve_exit_code("D96 T01 §3", ltodos),
+                   resolve_exit_code("D96 T01 §1", ltodos)), (6, 6, 3))
+            check("lapsed: a lapsed section carrying Started: and a ticked Commit is not in progress",
+                  _in_progress_by_ref(ltodos)["D96 T01 §3"], False)
+            # plan: --check refuses the rows, --sync replaces each with one Superseded line, idempotently.
+            rc_rows, said_rows = _lplan(True)
+            check("lapsed: plan --check refuses a row for a lapsed section",
+                  (rc_rows, "lists D96 T01 §2 as a row, but its section lapsed" in said_rows, "2 lapsed row(s)" in said_rows),
+                  (1, True, True))
+            rc_sync, said_sync = _lplan(False)
+            lsynced = lplan.read_text(encoding="utf-8")
+            llines = lsynced.splitlines()
+            lnotes = [ln for ln in llines if PLAN_SUPERSEDED_RE.match(ln)]
+            check("lapsed: plan --sync replaces each lapsed row with one Superseded line",
+                  (rc_sync, len(lnotes), [ln for ln in llines if PLAN_ROW_RE.match(ln) and ("§2`" in ln or "§3`" in ln)],
+                   "lapsed: D96 T01 §2 -- row replaced by a Superseded line" in said_sync), (0, 2, [], True))
+            check("lapsed: the line names the section, its deliverable, its file, and the successor file",
+                  (lnotes[0].startswith("> **Superseded:** `D96 T01 §2` -- Lapsed thing (lapsed with ")
+                   and "TODO-01-old.md, superseded by " in lnotes[0] and lnotes[0].endswith("TODO-02-new.md)"))
+                  if lnotes else False, True)
+            lat = llines.index(lnotes[0]) if lnotes else -1
+            check("lapsed: the lines sit after the table the rows sat in, blank-line separated",
+                  lat > 1 and llines[lat - 1] == "" and llines[lat - 2].startswith("|") and llines[lat + 1] == lnotes[1]
+                  and llines[lat + 2] == "" and llines[lat + 3] == "Prose after the table.", True)
+            check("lapsed: the stamped section keeps its row and the successor keeps its row",
+                  ("| [x] | `D96 T01 §1` |" in lsynced, "| [ ] | `D96 T02 §1` |" in lsynced), (True, True))
+            check("lapsed: the Progress line counts three sections, one complete",
+                  "**1 of 3 sections complete (33%).** 3 sections (0 discovered); backlog 1 entr" in lsynced, True)
+            rc_after, _ = _lplan(True)
+            rc_again, _ = _lplan(False)
+            check("lapsed: plan --check is clean after the sync and a second sync changes nothing",
+                  (rc_after, rc_again, lplan.read_text(encoding="utf-8") == lsynced), (0, 0, True))
+            # Every count, each on its own output (never through plan --check, which compares a generator with itself).
+            lprog = build_progress(ltodos)
+            check("lapsed: progress phases count the live rows only",
+                  [(ph["total"], ph["done"], [r["ref"] for r in ph["sections"]]) for ph in lprog["phases"]],
+                  [(2, 1, ["D96 T01 §1", "D96 T02 §1"]), (1, 0, ["D96 T03 §1"])])
+            check("lapsed: the stamped section's progress row is kept and done",
+                  [r["done"] for ph in lprog["phases"] for r in ph["sections"] if r["ref"] == "D96 T01 §1"], [True])
+            check("lapsed: progress stats count the lapsed sections on their own key and nowhere else",
+                  lprog["stats"], {"sections": 3, "done": 1, "in_progress": 0, "open": 2, "moved": 0, "lapsed": 2})
+            check("lapsed: the plan totals are the live rows", (lprog["plan"]["total"], lprog["plan"]["done"]), (3, 1))
+            lstats = _lquery("stats")
+            check("lapsed: query stats counts them on their own line and not as open",
+                  ("  lapsed         2  " in lstats, "  open [ ]       2" in lstats, "  done [x]       1" in lstats),
+                  (True, True, True))
+            lsummary = budget_summary(ltodos)
+            check("lapsed: the budget counts live sections, in total and per phase",
+                  (lsummary["sections"], [(r["phase"], r["sections"]) for r in lsummary["phases"]]),
+                  (3, [("0", 2), ("1", 1)]))
+            check("lapsed: query budget prints the live total", "budget  3 sections (0 discovered); backlog 1 entries." in _lquery("budget"), True)
+            check("lapsed: a lapsed section stays placed in its phase for query plan",
+                  plan_phase_counts()["0"]["refs"], ["D96 T01 §1", "D96 T02 §1", "D96 T01 §2", "D96 T01 §3"])
+            ldoc = json.loads(_lquery("plan"))
+            check("lapsed: query plan reports a lapsed section as deferred and the stamped one as verified",
+                  {s["ref"]: s["status"] for s in ldoc["sections"] if s["ref"].startswith("D96 T01")},
+                  {"D96 T01 §1": "verified", "D96 T01 §2": "deferred", "D96 T01 §3": "deferred"})
+            lready, lblocked = _lquery("ready"), _lquery("blocked")
+            check("lapsed: query ready and query blocked name no lapsed section",
+                  ("TODO-01-old.md" in lready, "TODO-01-old.md" in lblocked, "TODO-02-new.md §1" in lready),
+                  (False, False, True))
+            lgrowth = growth_report("HEAD", ltodos)
+            check("lapsed: query growth reports the lapsed sections as removed and the stamped one as kept",
+                  (lgrowth["sections_removed"], lgrowth["sections_added"]) if lgrowth else None,
+                  (["D96 T01 §2", "D96 T01 §3"], []))
+            # depends-on-lapsed: a live file that waits on a lapsed section is refused; a parked one is exempt.
+            check("lapsed: depends-on-lapsed is FATAL", SEVERITY_MAP.get("depends-on-lapsed"), "fatal")
+            check("lapsed: validate is quiet while nothing depends on a lapsed section", _lvalidate(), [])
+            _ldependent()
+            lfound = _lvalidate()
+            check("lapsed: a draft file's section depending on a lapsed section is refused, naming both and the successor",
+                  (len(lfound), "TODO-03-dependent.md: §1 Depends On 'D96 T01 §2'" in lfound[0]
+                   and "lapsed-old §2, which lapsed with its superseded file" in lfound[0]
+                   and lfound[0].endswith("TODO-02-new.md)")) if lfound else (0, False), (1, True))
+            check("lapsed: the dependent section is blocked for ever without the finding",
+                  resolve_exit_code("D96 T03 §1", load_todos()), 4)
+            _ldependent(status="blocked")
+            check("lapsed: a blocked file is exempt until its re-plan unparks it", _lvalidate(), [])
+            _ldependent(dep="D96 T01 §1")
+            check("lapsed: a dependency on a stamped section of the superseded file is met",
+                  (_lvalidate(), resolve_exit_code("D96 T03 §1", load_todos())), ([], 0))
+            _ldependent(dep="--", fm="depends_on: [lapsed-old]\n")
+            lfound = _lvalidate()
+            check("lapsed: a frontmatter depends_on onto the superseded file is refused the same way",
+                  (len(lfound), "depends_on 'lapsed-old' names a superseded file whose open sections lapsed" in lfound[0]
+                   and lfound[0].endswith("TODO-02-new.md)")) if lfound else (0, False), (1, True))
+            _ldependent(status="blocked", dep="--", fm="depends_on: [lapsed-old]\n")
+            check("lapsed: a blocked file's frontmatter edge is exempt", _lvalidate(), [])
+            _lold("superseded", rows=[(1, "Kept thing", "--", "x"), (2, "Lapsed thing", "--", "x"),
+                                      (3, "Started thing", "--", "x")])
+            _ldependent(dep="--", fm="depends_on: [lapsed-old]\n")
+            check("lapsed: a frontmatter edge onto a superseded file with nothing lapsed is not refused", _lvalidate(), [])
+            _lold("superseded")
+            _ldependent(dep="--")
+            # Reactivation: the file goes back to active, and the next sync returns each row to its table.
+            _lold("active")
+            rc_stale, said_stale = _lplan(True)
+            check("lapsed: plan --check refuses a Superseded line for a section that is live again",
+                  (rc_stale, "carries a Superseded line for D96 T01 §2, which is not lapsed" in said_stale), (1, True))
+            rc_revive, said_revive = _lplan(False)
+            lrevived = lplan.read_text(encoding="utf-8")
+            lrows = [ln.split("|")[2].strip() for ln in lrevived.splitlines() if PLAN_ROW_RE.match(ln)]
+            check("lapsed: plan --sync returns the rows to the end of the table their lines followed",
+                  (rc_revive, lrows, [ln for ln in lrevived.splitlines() if PLAN_SUPERSEDED_RE.match(ln)],
+                   "live again: D96 T01 §2 -- its row is back in its table" in said_revive),
+                  (0, ["`D96 T01 §1`", "`D96 T02 §1`", "`D96 T01 §2`", "`D96 T01 §3`", "`D96 T03 §1`"], [], True))
+            check("lapsed: the returned rows carry their deliverable and item count",
+                  bool(re.search(r"(?m)^\| \[ \] \| `D96 T01 §2` \| Lapsed thing +\| +2 +\|$", lrevived)), True)
+            check("lapsed: the prose after the table is still one blank line below it",
+                  "| `D96 T01 §3` | Started thing" in lrevived and "|\n\nProse after the table.\n" in lrevived
+                  and "\n\n\nProse" not in lrevived, True)
+            rc_live, _ = _lplan(True)
+            rc_live_again, _ = _lplan(False)
+            check("lapsed: the reactivated plan checks clean and a second sync changes nothing",
+                  (rc_live, rc_live_again, lplan.read_text(encoding="utf-8") == lrevived), (0, 0, True))
+            check("lapsed: the reactivated plan counts five sections", "**1 of 5 sections complete (20%).**" in lrevived, True)
+            _lold("superseded")
+            _lplan(False)
+            lback = lplan.read_text(encoding="utf-8")
+            check("lapsed: superseding again writes the two lines again",
+                  (len([ln for ln in lback.splitlines() if PLAN_SUPERSEDED_RE.match(ln)]), _lplan(True)[0]), (2, 0))
+            # A lapsed section with neither a row nor a line cannot be placed: both commands refuse and name the repair.
+            lcut = "\n".join(ln for ln in lback.splitlines() if not ln.startswith("> **Superseded:** `D96 T01 §3`")) + "\n"
+            lplan.write_text(lcut, encoding="utf-8")
+            rc_gone, said_gone = _lplan(True)
+            check("lapsed: plan --check refuses a lapsed section with no line, naming the repair",
+                  (rc_gone, "has neither a row nor a Superseded line for the lapsed section D96 T01 §3" in said_gone,
+                   "supersession-2026-10.md" in said_gone), (1, True, True))
+            rc_refuse, said_refuse = _lplan(False)
+            check("lapsed: plan --sync refuses it too, since nothing remembers its phase",
+                  (rc_refuse, "has neither a row nor a Superseded line for the lapsed section D96 T01 §3" in said_refuse
+                   and "write a line" in said_refuse), (1, True))
+            lplan.write_text(lplan.read_text(encoding="utf-8").replace(
+                "TODO-02-new.md)\n", "TODO-02-new.md)\n> **Superseded:** `D96 T01 §3`\n", 1), encoding="utf-8")
+            rc_fixed, _ = _lplan(False)
+            check("lapsed: writing the bare line and syncing repairs it, with the full text regenerated",
+                  (rc_fixed, lplan.read_text(encoding="utf-8") == lback, _lplan(True)[0]), (0, True, 0))
+            lplan.write_text(lback.replace("`D96 T01 §3` -- Started thing", "`D96 T01 §3` -- An old title"), encoding="utf-8")
+            rc_text, said_text = _lplan(True)
+            check("lapsed: plan --check refuses a Superseded line whose text is out of date",
+                  (rc_text, "D96 T01 §3: its Superseded line is out of date" in said_text), (1, True))
+            _lplan(False)
+            check("lapsed: plan --sync regenerates it", lplan.read_text(encoding="utf-8"), lback)
+        finally:
+            globals()["_budget_committed_text"] = _l_committed
+            globals()["_backlog_committed_text"] = _l_bcommitted
+            TODO_DIR, PLAN, PROGRESS_JSON, OPERATOR_JSON = saved_l
+            __import__("shutil").rmtree(lroot, ignore_errors=True)
 
         # --- the parity catalogs (D00 T01 §6, §7, docs/parity/README.md) -----
         # Its own tree: a six-row Stilus catalog over two tiny inventories, a

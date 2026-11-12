@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **31 of 847 sections complete (4%).** 847 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **31 of 840 sections complete (4%).** 840 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -166,12 +166,8 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T01 §17` | Time the guard's deadline cases on the walk                                              |   4   |
 | [ ] | `D00 T01 §7`  | The validator reads the Gesso parity catalog                                             |  27   |
 | [ ] | `D00 T01 §8`  | The validator reads the Albumen parity catalog                                           |  29   |
-| [ ] | `D00 T02 §1`  | Fix the quarantined tests and empty the quarantine                                       |   5   |
-| [ ] | `D00 T02 §9`  | Point every Stilus test at a temporary app data                                          |   8   |
 | [x] | `D00 T02 §2`  | Gesso diagnostics to zero                                                                |   5   |
-| [ ] | `D00 T02 §3`  | Quiet the WPF temporary project output                                                   |   5   |
 | [x] | `D00 T02 §4`  | Prune packages no code uses                                                              |   7   |
-| [ ] | `D00 T02 §5`  | The assertion library decision and the decision log                                      |   5   |
 | [x] | `D00 T05 §1`  | The toolchain pin and the developer environment                                          |   8   |
 | [x] | `D00 T05 §2`  | The vcpkg manifest, baseline, and triplets                                               |   7   |
 | [x] | `D00 T05 §3`  | The CMake build, presets, and the test harness                                           |  11   |
@@ -196,7 +192,12 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |
 | [ ] | `D00 T01 §10` | The drift gates                                                                          |  10   |
 | [ ] | `D00 T01 §5`  | First push: CI green and read back                                                       |   8   |
-| [ ] | `D00 T02 §7`  | Release pipeline dry run as a draft release                                              |  10   |
+
+> **Superseded:** `D00 T02 §1` -- Fix the quarantined tests and empty the quarantine (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
+> **Superseded:** `D00 T02 §9` -- Point every Stilus test at a temporary app data (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
+> **Superseded:** `D00 T02 §3` -- Quiet the WPF temporary project output (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
+> **Superseded:** `D00 T02 §5` -- The assertion library decision and the decision log (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
+> **Superseded:** `D00 T02 §7` -- Release pipeline dry run as a draft release (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
 
 ### Phase 1 -- Suite layout and names
 
@@ -236,7 +237,8 @@ Stilus goes first among the apps. This phase gives it a real composition root on
 | [ ] | `D02 T03 §2` | Split the main window view model                                              |   7   |
 | [ ] | `D02 T04 §1` | Atomic save and dirty tracking                                                |   9   |
 | [ ] | `D02 T04 §2` | SVG round-trip fidelity fixtures                                              |  14   |
-| [ ] | `D00 T02 §6` | xUnit v3                                                                      |   8   |
+
+> **Superseded:** `D00 T02 §6` -- xUnit v3 (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
 
 ### Phase 3 -- Stilus 0.1.0: shared UI, complete editing, documents, release
 
@@ -273,12 +275,13 @@ With its foundation sound, Stilus becomes a complete first release: `Isotone.Cor
 | [ ] | `D02 T05 §3` | The Help menu                                                                  |   3   |
 | [ ] | `D06 T01 §1` | The Stilus user guide                                                          |   4   |
 | [ ] | `D06 T02 §1` | The architecture page matches the tree                                         |   5   |
-| [ ] | `D00 T02 §8` | Pin the .NET 11 GA SDK                                                         |  10   |
 | [ ] | `D05 T01 §1` | The clean-machine install procedure                                            |   3   |
 | [ ] | `D05 T01 §8` | Third-party notices in every package                                           |   5   |
 | [ ] | `D02 T05 §4` | Stilus 0.1.0                                                                   |  11   |
 | [ ] | `D01 T02 §4` | One undo history for the suite                                                 |   6   |
 | [ ] | `D01 T02 §5` | The atomic document writer moves to Isotone.Core                               |   5   |
+
+> **Superseded:** `D00 T02 §8` -- Pin the .NET 11 GA SDK (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
 
 ### Phase 4 -- Stilus parity I: document model, pages, layers, selection, and view
 

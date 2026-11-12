@@ -23,6 +23,7 @@ python scripts/todo-graph.py resolve "$ARGUMENTS"
 | `3` | Already `[x]` | Do not rebuild; invoke `review-todo-section` in audit stance |
 | `4` | Unmet dependencies | Stop at the dependency gate and list unmet sections |
 | `5` | Section moved (`> **Moved:**`) | Stop and follow the target file named on the `Moved:` line |
+| `6` | Section lapsed with its superseded file | Stop: it is never built; its acceptance requirements are with the successor file named on the `lapsed` line (`todo/supersession-2026-10.md`) |
 
 Use the printed canonical `skill arg` (`D<NN> T<NN> §<N>`) everywhere: commit messages, `review-prompt.py --ref`, `todo-graph.py stamp`, and findings paths (`docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>.md`). Check any printed `needs` or `requires` capabilities against this machine (`pwsh scripts/dev-env.ps1 -Check -Arch x64` for native Windows toolchain work) and check `git status -sb` for unfamiliar uncommitted edits before proceeding. Always develop straight on `main`; never create feature branches or secondary worktrees.
 

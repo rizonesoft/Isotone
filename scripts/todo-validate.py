@@ -955,9 +955,20 @@ def validate(graph, _args) -> int:
         for b in t.bare_refs:
             flag("bare-todo-ref", f"{t.path}: bare TODO reference without a section -- {b}")
         # 5. depends_on (frontmatter, todo-level) resolves
+        # A parked or superseded file is exempt from `depends-on-lapsed`: its re-plan section re-points its edges
+        # when it unparks the file, and from then on the class binds it (D00 T01 §18).
+        binds = t.status not in ("blocked", "superseded")
+        waits = any(sec_.status != "x" and not sec_.moved for sec_ in t.sections.values())
         for dep in t.depends_on:
             if dep and dep not in by_id:
                 fatal.append(f"{t.path}: depends_on {dep!r} does not match any TODO id")
+            elif dep and binds and waits and any(sec_.lapsed for sec_ in by_id[dep].sections.values()):
+                flag(
+                    "depends-on-lapsed",
+                    f"{t.path}: depends_on {dep!r} names a superseded file whose open sections lapsed, so every open "
+                    f"section here would wait for ever; re-point the edge at its successor "
+                    f"({graph.successor_path(by_id[dep], todos)})",
+                )
         # 5b. section-level Depends On resolves
         for num, s in sorted(t.sections.items()):
             for raw in s.depends_on:
@@ -970,6 +981,13 @@ def validate(graph, _args) -> int:
                 if target is None or sec not in target.sections:
                     fatal.append(
                         f"{t.path}: §{num} Depends On {raw!r} -> {tid} §{sec}, which does not exist"
+                    )
+                elif binds and s.status != "x" and not s.moved and target.sections[sec].lapsed:
+                    flag(
+                        "depends-on-lapsed",
+                        f"{t.path}: §{num} Depends On {raw!r} -> {tid} §{sec}, which lapsed with its superseded file "
+                        f"and will never be stamped, so §{num} would wait for ever; re-point the edge at its "
+                        f"successor ({graph.successor_path(target, todos)})",
                     )
 
     # 6. cycles -- todo level and section level

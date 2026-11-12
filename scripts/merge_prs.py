@@ -187,7 +187,8 @@ def _load(name: str, path: Path):
 
 
 def sections_in_progress(root: Path, graph=None) -> list[str]:
-    """Every open section carrying `> **Started:**` without its stamp, as 'DNN TNN §N'."""
+    """Every open section carrying `> **Started:**` without its stamp, as 'DNN TNN §N'. A section that lapsed with its
+    superseded file is not in progress: its `Started:` line marks work that ended with the file (D00 T01 §18)."""
     graph = graph or _load("todo_graph_for_merge", root / "scripts" / "todo-graph.py")
     found = []
     for todo in graph.load_todos():
@@ -196,7 +197,8 @@ def sections_in_progress(root: Path, graph=None) -> list[str]:
         for i in range(1, len(parts) - 1, 2):
             num, body = int(parts[i]), parts[i + 1]
             section = todo.sections.get(num)
-            if section is None or section.moved or section.status == "x" or num in todo.verified_sections:
+            if section is None or section.moved or section.lapsed or section.status == "x" \
+                    or num in todo.verified_sections:
                 continue
             if STARTED_RE.search(body):
                 found.append(f"D{todo.domain.split('-')[0]} T{todo.number} §{num}")
