@@ -694,7 +694,10 @@ def section_contract(root, sha, ref):
         flags=re.M,
     )
     body = re.sub(r" \*\*Corrected \d{4}-\d{2}-\d{2}[^*]*\*\*.*$", "", body, flags=re.M)
-    body = re.sub(r" (?:Completed|Done) \d{4}-\d{2}-\d{2}:.*$", "", body, flags=re.M)
+    # A dated completion note may carry one parenthetical before its colon (`Done 2026-11-12 (log build/x.log): ...`);
+    # it is the same evidence note, and evidence corrected between a failed completion and its reconciliation is not
+    # a changed promise. Text with no colon after the date or the parenthetical stays part of the contract.
+    body = re.sub(r" (?:Completed|Done) \d{4}-\d{2}-\d{2}(?: \([^()\n]*\))?:.*$", "", body, flags=re.M)
     return re.sub(r"\n{3,}", "\n\n", body).rstrip()
 
 

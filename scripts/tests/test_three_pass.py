@@ -606,6 +606,61 @@ class Antigravity(ThreePass):
         self.assertEqual((entry["effort"], entry["lenses"]), (expected["effort"], expected["lenses"]))
 
 
+class SectionContract(ThreePass):
+    """What the stamp compares between a failed completion and its reconciliation (scripts/lib/todo_graph.py): the
+    section's text with its ticks, stamp lines, and dated completion notes neutral. A promise that changed is refused;
+    evidence that was corrected is not."""
+
+    TODO = "todo/00-workspace/TODO-01-fixture.md"
+
+    def lib(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "todo_graph_lib_under_test", Path(__file__).resolve().parents[1] / "lib" / "todo_graph.py")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module  # its dataclasses look their module up by name while it loads
+        self.addCleanup(sys.modules.pop, spec.name, None)
+        spec.loader.exec_module(module)
+        return module
+
+    def at(self, item):
+        text = ("# TODO-01\n\n## 1. Thing\n\nContext.\n\n" + item + "\n- [ ] Commit: `\"x\"`\n\n"
+                "**Test checkpoint:** `true`\n\n## 2. Next\n\nContext.\n")
+        return self.commit("todo", {self.TODO: text})
+
+    def contract(self, sha):
+        return self.lib().section_contract(self.repo, sha, "D00 T01 \u00a71")
+
+    def test_a_tick_and_a_dated_completion_note_are_neutral(self):
+        open_ = self.at("- [ ] Build it. Done when: `tool` exits 0.")
+        done = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12: `tool` exited 0.")
+        fixed = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12: `tool` exited 0 on the second run.")
+        self.assertEqual(self.contract(open_), self.contract(done))
+        self.assertEqual(self.contract(done), self.contract(fixed))
+
+    def test_a_completion_note_with_a_parenthetical_before_its_colon_is_neutral(self):
+        # The shape that refused a stamp on 2026-11-12: evidence corrected inside `Done <date> (log ...): ...`.
+        done = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12 (log `build/x.log`): ran once.")
+        fixed = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12 (log `build/x.log`): ran once. "
+                        "**Corrected 2026-11-12** (completion review): the second command ran too. Read, not run.")
+        open_ = self.at("- [ ] Build it. Done when: `tool` exits 0.")
+        self.assertEqual(self.contract(done), self.contract(fixed))
+        self.assertEqual(self.contract(done), self.contract(open_))
+
+    def test_a_changed_promise_is_never_neutral(self):
+        done = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12 (log `build/x.log`): ran once.")
+        narrowed = self.at("- [x] Build it. Done when: `tool` runs. Done 2026-11-12 (log `build/x.log`): ran once.")
+        self.assertNotEqual(self.contract(done), self.contract(narrowed))
+
+    def test_text_after_a_date_with_no_colon_stays_in_the_contract(self):
+        first = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12 (first try) and it must also pass twice.")
+        second = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12 (first try) and it must pass once.")
+        self.assertNotEqual(self.contract(first), self.contract(second))
+        nested = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12 (a (nested) note): must pass twice.")
+        nested_changed = self.at("- [x] Build it. Done when: `tool` exits 0. Done 2026-11-12 (a (nested) note): must pass once.")
+        self.assertNotEqual(self.contract(nested), self.contract(nested_changed))
+
+
 class Decoding(ThreePass):
     def test_a_reply_is_utf8_or_windows_1252_and_never_raises(self):
         module = self.module()
