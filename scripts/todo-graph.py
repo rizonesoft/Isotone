@@ -1069,6 +1069,10 @@ SEVERITY_MAP: dict[str, str] = {
     "parity-id-unknown": "fatal",
     "parity-np-duplicate": "fatal",
     "parity-ip-duplicate": "fatal",
+    "parity-lp-duplicate": "fatal",
+    # a route between catalogs that ends nowhere, and a row with no source id that no route explains (D00 T01 §8).
+    "parity-ip-route-dead": "fatal",
+    "parity-orphan-row": "fatal",
     "parity-status-malformed": "fatal",
     "parity-ref-dead": "fatal",
     "parity-backlog-dead": "fatal",
@@ -2213,24 +2217,31 @@ def _query_parity(todos: list[Todo], phase: str | None, as_json: bool, catalog: 
     """`query parity`: per catalog, the status totals and per plan phase the features, sections, and stamped
     sections they are planned to (D00 T01 §6); `--phase N` narrows to one phase and lists its rows, and `--catalog
     <app>` to one catalog, its problems, and the problems no catalog owns (D00 T01 §7). The JSON keeps one shape,
-    `{"catalogs": {<app>: ...}, "problems": [...]}`, whichever catalogs it carries."""
+    `{"catalogs": {<app>: ...}, "problems": [...]}`, whichever catalogs it carries.
+
+    A catalog that routes rows to another (Albumen to Gesso) reports them as `routed`, and the catalog they land in
+    as `routed_in`: routes, distinct targets, and verified targets counted apart, per phase of the target's section,
+    with every route listed, so a Gesso release reads the Albumen-born rows it owes; `--phase N` narrows both to the
+    routes whose target is planned to phase N. A selected catalog reads only its own files and the catalog file of
+    each catalog it routes to or from (D00 T01 §8)."""
     par = parity_module()
     apps = [spec["app"] for spec in par.CATALOGS]
     catalog = "all" if catalog is None else catalog
     if catalog != "all" and catalog not in apps:
         print(f"query parity: --catalog {catalog} names no catalog; one of {', '.join(apps)}, or all", file=sys.stderr)
         return 2
-    report = par.parity_report(sys.modules[__name__], todos)
-    if catalog != "all":
-        report["catalogs"] = {catalog: report["catalogs"][catalog]}
-        # Every catalog's messages open with its name; a problem naming another catalog is not this one's.
-        report["problems"] = [p for p in report["problems"]
-                              if p.startswith(f"{catalog}: ") or not any(p.startswith(f"{a}: ") for a in apps)]
+    # A selected catalog reads, validates, and reports only itself and the catalogs its routes touch.
+    report = par.parity_report(sys.modules[__name__], todos, apps=None if catalog == "all" else [catalog])
     key = None if phase is None else (str(int(phase)) if str(phase).isdigit() else str(phase))
     for cat in report["catalogs"].values():
         if key is not None:
             cat["phases"] = {key: cat["phases"].get(key, {"title": "no rows planned to this phase", "features": 0,
                                                          "sections": 0, "stamped_sections": 0, "rows": []})}
+            for target, block in cat.get("routed", {}).items():
+                cat["routed"][target] = par.route_summary(block["routes"], key)
+            if "routed_in" in cat:
+                cat["routed_in"] = {**par.route_summary(cat["routed_in"]["routes"], key),
+                                    "source_less": cat["routed_in"]["source_less"]}
         elif as_json:
             for bucket in cat["phases"].values():
                 bucket.pop("rows", None)
@@ -2251,6 +2262,24 @@ def _query_parity(todos: list[Todo], phase: str | None, as_json: bool, catalog: 
             print()
             for row in cat["phases"][key]["rows"]:
                 print(f"  {row['id']}  {row['status']} {row['ref']}  {row['feature']}")
+
+        def _routes(title: str, block: dict) -> None:
+            print(f"\n  {title}: {block['rows']} row(s), {block['targets']} distinct target(s), "
+                  f"{block['verified_targets']} verified")
+            for p, b in block["phases"].items():
+                print(f"  {p:>8}  {b['rows']:>8}  {b['targets']:>8}  {b['verified_targets']:>7}")
+            # Every route is listed for one phase or one chosen catalog; the all-catalog overview keeps to counts.
+            if key is not None or catalog != "all":
+                for r in block["routes"]:
+                    print(f"  {r['from']} -> {r['to']}  {r['status']} {r['ref']}  phase {r['phase']}  "
+                          f"{'stamped' if r['stamped'] else 'open'}")
+
+        for target, block in cat.get("routed", {}).items():
+            _routes(f"routed to {target}", block)
+        if "routed_in" in cat:
+            _routes("routed in from other catalogs", cat["routed_in"])
+            bare = cat["routed_in"]["source_less"]
+            print(f"  source-less rows ({len(bare)}): {', '.join(bare) if bare else 'none'}")
     return status
 
 
@@ -12275,23 +12304,26 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
         (ptodo / "backlog.md").write_text(
             "# Backlog\n\n## Entries\n\n- [B-001] Kept idea -- source: parity-fixture-1 -- added: 2026-10-21 "
             "-- why deferred: nice to have -- promote when: asked\n- [B-045] Affinity files -- source: parity-fixture-45 "
-            "-- added: 2026-10-22 -- why deferred: nice to have -- promote when: asked\n\n" + BACKLOG_REMOVED_HEADING
+            "-- added: 2026-10-22 -- why deferred: nice to have -- promote when: asked\n- [B-048] Albumen idea -- source: parity-fixture-48 "
+            "-- added: 2026-11-12 -- why deferred: nice to have -- promote when: asked\n\n" + BACKLOG_REMOVED_HEADING
             + "\n\nNone.\n",
             encoding="utf-8",
         )
         (proot / "docs" / "parity" / "sources").mkdir(parents=True)
         _phead = "| ID | Feature | Kind | Where | What it does | Category | Source |\n| -- | -- | -- | -- | -- | -- | -- |\n"
+        # Every fixture row places a source id: a row with none must name the route that explains it (D00 T01 §8).
         _pai = _phead + "| AI-0001 | One | tool | x | y | core | z |\n| AI-0002 | Two | tool | x | y | core | z |\n"
-        _pcd = _phead + "| CD-001 | Uno | tool | x | y | core | z |\n| CD-002 | Dos | tool | x | y | core | z |\n"
+        _pcd = (_phead + "| CD-001 | Uno | tool | x | y | core | z |\n| CD-002 | Dos | tool | x | y | core | z |\n"
+                + "".join(f"| CD-00{n} | More | tool | x | y | core | z |\n" for n in (3, 4, 5)))
         _pcat = (
             "# Stilus parity\n\n## Core\n\n| ID | Feature | Illustrator | CorelDRAW | Category | Status | Notes |\n"
             "| -- | -- | -- | -- | -- | -- | -- |\n"
             "| NP-0001 | One | AI-0001 | CD-001 | core | plan D94 T01 §1 |  |\n"
             "| NP-0002 | Two | AI-0002 | -- | core | shipped-scope D94 T01 §2 |  |\n"
             "| NP-0003 | Dos | -- | CD-002 | core | backlog B-001 |  |\n"
-            "| NP-0004 | Cloud | -- | -- | cloud | excluded: cloud |  |\n"
-            "| NP-0005 | Elsewhere | -- | -- | core | other-app: none not an editing job |  |\n"
-            "| NP-0006 | Later | -- | -- | core | plan D94 T01 §4 |  |\n"
+            "| NP-0004 | Cloud | -- | CD-003 | cloud | excluded: cloud |  |\n"
+            "| NP-0005 | Elsewhere | -- | CD-004 | core | other-app: none not an editing job |  |\n"
+            "| NP-0006 | Later | -- | CD-005 | core | plan D94 T01 §4 |  |\n"
         )
         # The Gesso fixture in the real catalogs' layout: its Totals table and
         # Areas list above two area sections, one PS-A and one PS-B id, the
@@ -12317,6 +12349,23 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
         )
         _gareas = "## Areas\n\n- [Pixels](#pixels) (3)\n- [Elsewhere](#elsewhere) (2)\n"
         _gcat = "# Gesso parity\n\n" + _gtotals + "\n" + _gareas + "\n" + _gbody
+        # The Albumen fixture (D00 T01 §8): three inventories, four rows in two areas, one routed to Gesso's IP-0003,
+        # one `excluded: cloud`, and B-048. `_gbare` is the Gesso body with a source-less row Albumen routes to.
+        _plr = _gsrc + "| LR-0001 | One | tool | x | y | core | z |\n| LR-0002 | Two | tool | x | y | core | z |\n"
+        _pac = _gsrc + "| AC-0001 | Uno | tool | x | y | core | z |\n| AC-0002 | Dos | tool | x | y | core | z |\n"
+        _piv = _gsrc + "| IV-0001 | Ein | tool | x | y | core | z |\n| IV-0002 | Zwei | tool | x | y | core | z |\n"
+        _ahead = ("| ID | Feature | Lightroom | ACDSee | IrfanView | Category | Status | Notes |\n"
+                  "| -- | -- | -- | -- | -- | -- | -- | -- |\n")
+        _abody = (
+            "## Viewer\n\n" + _ahead
+            + "| LP-0001 | View | LR-0001 | AC-0001 | IV-0001 | core | plan D94 T01 §1 |  |\n"
+            "| LP-0002 | Kept | LR-0002 | -- | -- | core | backlog B-048 |  |\n\n"
+            "## Editing\n\n" + _ahead
+            + "| LP-0003 | Paint | -- | AC-0002 | -- | core | other-app: Gesso IP-0003 pixel editing is Gesso's |  |\n"
+            "| LP-0004 | Cloud | -- | -- | IV-0002 | cloud | excluded: cloud |  |\n"
+        )
+        _gbare = _gbody + ("| IP-0006 | Born in Albumen | -- | -- | -- | core | plan D94 T01 §4 "
+                           "| Added for Albumen, which routes here (LP-0003) |\n")
 
         def _psummary(app: int, body: str) -> tuple[str, str]:
             """The Totals table and Areas list `body`'s parsed rows add up to,
@@ -12342,8 +12391,13 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                    + f"| **Total** | **{total[0]}** | **{total[1]}** |\n")
             return tot, "## Areas\n\n" + "".join(f"- [{a}](#{a.lower()}) ({n})\n" for a, n in areas.items())
 
+        def _cat_of(app: int, title: str, body: str) -> str:
+            tot, areas = _psummary(app, body)
+            return f"# {title} parity\n\n" + (f"{tot}\n{areas}\n" if tot else "") + body
+
         def _pwrite(cat: str = _pcat, ai: str = _pai, cd: str = _pcd, gcat: str | None = None, ps: str = _pps,
-                    af: str = _paf, gp: str = _pgp) -> None:
+                    af: str = _paf, gp: str = _pgp, acat: str | None = None, lr: str = _plr, ac: str = _pac,
+                    iv: str = _piv) -> None:
             """Both catalogs and their five inventories. The Stilus catalog
             gets its summary appended (after its rows, so its line numbers
             stay put); the Gesso catalog is written as given, or, when only its
@@ -12359,6 +12413,17 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             (proot / "docs" / "parity" / "stilus-parity.md").write_text(
                 cat + (f"\n{tot}\n{areas}" if tot else ""), encoding="utf-8")
             (proot / "docs" / "parity" / "gesso-parity.md").write_text(_gcat if gcat is None else gcat, encoding="utf-8")
+            (proot / "docs" / "parity" / "sources" / "lightroom-classic-15.5.1.md").write_text(lr, encoding="utf-8")
+            (proot / "docs" / "parity" / "sources" / "acdsee-ultimate-2027.md").write_text(ac, encoding="utf-8")
+            (proot / "docs" / "parity" / "sources" / "irfanview-4.76.md").write_text(iv, encoding="utf-8")
+            (proot / "docs" / "parity" / "albumen-parity.md").write_text(
+                _cat_of(2, "Albumen", _abody) if acat is None else acat, encoding="utf-8")
+
+        def _awrite(abody: str = _abody, gbody: str | None = None, **kw) -> None:
+            """The Albumen catalog from a body, and the Gesso one too when its body is given, each with the
+            summary its rows add up to."""
+            _pwrite(acat=_cat_of(2, "Albumen", abody),
+                    gcat=None if gbody is None else _cat_of(1, "Gesso", gbody), **kw)
 
         def _gwrite(body: str, **kw) -> None:
             tot, areas = _psummary(1, body)
@@ -12379,7 +12444,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("parity: the inventories and catalog parse whole",
                   (len(par.parse_sources(proot, par.CATALOGS[0]["columns"][0])[0]),
                    len(par.parse_sources(proot, par.CATALOGS[0]["columns"][1])[0]),
-                   len(par.parse_catalog(proot, par.CATALOGS[0])[0])), (2, 2, 6))
+                   len(par.parse_catalog(proot, par.CATALOGS[0])[0])), (2, 5, 6))
             check("parity: each status form parses and anything else is malformed",
                   [par.parse_status(s)[0] for s in ("plan D02 T07 §1", "shipped-scope D02 T04 §2", "backlog B-047",
                                                     "excluded: cloud", "other-app: Gesso pixel work",
@@ -12392,7 +12457,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                   + ["malformed"] * 7)
             check("parity: a clean catalog has no findings", _pfind(), [])
             _pcases = (
-                ("a source id no row places", _pcat.replace("| AI-0002 | -- |", "| -- | -- |"), _pai, "parity-id-missing", "AI-0002"),
+                ("a source id no row places", _pcat.replace("| AI-0002 | -- |", "| -- | -- |"), _pai, ["parity-id-missing", "parity-orphan-row"], "AI-0002"),
                 ("a source id two rows place", _pcat.replace("| AI-0002 | -- |", "| AI-0002, AI-0001 | -- |"), _pai, "parity-id-duplicate", "AI-0001"),
                 ("an id the source does not define", _pcat.replace("| AI-0002 | -- |", "| AI-0002, AI-0999 | -- |"), _pai, "parity-id-unknown", "AI-0999"),
                 ("a feature id on two rows", _pcat.replace("| NP-0005 |", "| NP-0004 |"), _pai, "parity-np-duplicate", "NP-0004"),
@@ -12400,7 +12465,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a ref naming no section", _pcat.replace("plan D94 T01 §1", "plan D94 T01 §9"), _pai, "parity-ref-dead", "D94 T01 §9"),
                 ("a ref naming a Moved section", _pcat.replace("plan D94 T01 §1", "plan D94 T01 §3"), _pai, "parity-ref-dead", "moved out of the tree"),
                 ("a backlog id with no live entry", _pcat.replace("backlog B-001", "backlog B-009"), _pai, "parity-backlog-dead", "B-009"),
-                ("a short catalog row", _pcat.replace("| NP-0004 | Cloud | -- | -- | cloud |", "| NP-0004 | Cloud | -- | cloud |"), _pai, "parity-input-damaged", "stilus-parity.md:10"),
+                ("a short catalog row", _pcat.replace("| NP-0004 | Cloud | -- | CD-003 | cloud |", "| NP-0004 | Cloud | CD-003 | cloud |"), _pai, ["parity-id-missing", "parity-input-damaged"], "stilus-parity.md:10"),
                 ("a source id defined twice in one file", _pcat, _pai + "| AI-0001 | Again | tool | x | y | core | z |\n", "parity-input-damaged", "defined again"),
                 # Independent review 2026-10-21: a row is recognised by its
                 # id prefix, so truncation or a mangled id is never skipped.
@@ -12420,7 +12485,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                  .replace(" |  |\n", " |  | excluded: cloud |\n"),
                  _pai, ["parity-id-missing", "parity-input-damaged"], "repeats Status"),
                 ("an inventory with no header", _pcat, "| AI-0001\n| AI-0002\n", "parity-input-damaged", "no `| ID |` header"),
-                ("an empty inventory", _pcat.replace("| AI-0001 |", "| -- |").replace("| AI-0002 |", "| -- |"), "", "parity-input-damaged", "Illustrator inventory has no AI- rows"),
+                ("an empty inventory", _pcat.replace("| AI-0001 |", "| -- |").replace("| AI-0002 |", "| -- |"), "", ["parity-input-damaged", "parity-orphan-row"], "Illustrator inventory has no AI- rows"),
                 # Round 4: a header belongs to its own table, so rows of a
                 # later table whose header is not `| ID |` are damage.
                 ("a later table without an ID header",
@@ -12479,7 +12544,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("parity: a clean Gesso catalog with its summary, other-app: Stilus, and excluded: removed has no findings",
                   _pfind(), [])
             _gcases = (
-                ("a missing PS-B id", _gbody.replace("| PS-B-0001 | -- |", "| -- | -- |"), {}, "parity-id-missing", "PS-B-0001"),
+                ("a missing PS-B id", _gbody.replace("| PS-B-0001 | -- |", "| -- | -- |"), {}, ["parity-id-missing", "parity-orphan-row"], "PS-B-0001"),
                 ("a duplicate GP id", _gbody.replace("| -- | -- | GP-0002 |", "| -- | -- | GP-0002, GP-0001 |"), {}, "parity-id-duplicate", "GP-0001"),
                 ("an unknown AF id", _gbody.replace("| AF-0002 |", "| AF-0002, AF-0999 |"), {}, "parity-id-unknown", "AF-0999"),
                 ("a duplicate IP id", _gbody.replace("| IP-0005 |", "| IP-0004 |"), {}, "parity-ip-duplicate", "IP-0004"),
@@ -12490,7 +12555,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 ("a short Gesso row", _gbody.replace("| IP-0005 | Vectors | -- |", "| IP-0005 | Vectors |"), {}, ["parity-id-missing", "parity-input-damaged"], "IP-0005 has 7 cells"),
                 ("a Photoshop id defined twice", _gbody, {"ps": _pps + "| PS-B-0001 | Again | tool | x | y | core | z |\n"}, "parity-input-damaged", "PS-B-0001 is defined again"),
                 ("a PS-C row, a family of neither", _gbody, {"ps": _pps + "| PS-C-0001 | Three | tool | x | y | core | z |\n"}, "parity-input-damaged", "'PS-C-0001' is not a whole id"),
-                ("an empty GIMP inventory", _gbody.replace("| GP-0001 |", "| -- |").replace("| GP-0002 |", "| -- |"), {"gp": ""}, "parity-input-damaged", "GIMP inventory has no GP- rows"),
+                ("an empty GIMP inventory", _gbody.replace("| GP-0001 |", "| -- |").replace("| GP-0002 |", "| -- |"), {"gp": ""}, ["parity-input-damaged", "parity-orphan-row"], "GIMP inventory has no GP- rows"),
                 ("a truncated Affinity row", _gbody, {"af": _paf + "| AF-0003\n"}, ["parity-id-missing", "parity-input-damaged"], "affinity-3.3.md:5"),
             )
             for name, body, kw, want, needle in _gcases:
@@ -12694,7 +12759,7 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             acode, ajson, _ = _pquery(catalog="all")
             check("parity: query parity --catalog all lists both catalogs, each with its totals",
                   (acode, list(ajson["catalogs"]), ajson["catalogs"]["gesso"]["totals"]),
-                  (0, ["stilus", "gesso"], {"plan": 1, "shipped-scope": 1, "backlog": 1, "excluded": 1,
+                  (0, ["stilus", "gesso", "albumen"], {"plan": 1, "shipped-scope": 1, "backlog": 1, "excluded": 1,
                                             "other-app": 1, "to-author": 0, "malformed": 0}))
             ecode, _e, eerr = _pquery(catalog="")
             check("parity: an empty --catalog is refused, not read as all (independent review round 3)",
@@ -12716,7 +12781,8 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 par.CATALOGS = _pfull
             both = par.parity_report(sys.modules[__name__], load_todos())
             check("parity: the Stilus report object is unchanged by the Gesso catalog beside it",
-                  (alone["catalogs"]["stilus"] == both["catalogs"]["stilus"], list(both["catalogs"])), (True, ["stilus", "gesso"]))
+                  (alone["catalogs"]["stilus"] == both["catalogs"]["stilus"], list(both["catalogs"])),
+                  (True, ["stilus", "gesso", "albumen"]))
             _pwrite(gcat=_gcat.replace("| `plan` | 1 | 2 |", "| `plan` | 1 | 3 |"))
             scode, _s, _ = _pquery(catalog="stilus")
             gcode2, _g, gerr = _pquery(catalog="gesso")
@@ -12741,6 +12807,197 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             _pwrite()
             check("parity: a clean tree's report carries no problems",
                   par.parity_report(sys.modules[__name__], load_todos())["problems"], [])
+            # --- the Albumen catalog, routes, and source-less rows (D00 T01 §8) ---
+            _aspec, _gspec, _aroute = par.CATALOGS[2], par.CATALOGS[1], "parity-ip-route-dead"
+            check("parity: the Albumen inventories and catalog parse whole through the shared path",
+                  ([len(par.parse_sources(proot, c)[0]) for c in _aspec["columns"]],
+                   len(par.parse_catalog(proot, _aspec)[0])), ([2, 2, 2], 4))
+            check("parity: only a status of a catalog that declares the route is a route, and it carries the id",
+                  [par.route_of(_aspec, "other-app: Gesso IP-0001 pixel work"),
+                   par.route_of(_aspec, "other-app: Gesso pixel work"),
+                   par.route_of(_aspec, "other-app: Stilus vector work"),
+                   par.route_of(_aspec, "other-app: none not a photo job"),
+                   par.route_of(_gspec, "other-app: Albumen LP-0003 photo work"),
+                   par.route_of(par.CATALOGS[0], "other-app: Gesso IP-0001 pixel work")],
+                  [("gesso", "IP-0001", _aroute), ("gesso", None, _aroute), None, None, None, None])
+            _aroute6 = _abody.replace("Gesso IP-0003 pixel", "Gesso IP-0006 pixel")
+            _g3 = "| IP-0003 | Kept | -- | -- | GP-0001 | core | backlog B-045 |  |"
+            _acases = (
+                ("a missing AC id", _abody.replace("| LR-0001 | AC-0001 | IV-0001 |", "| LR-0001 | -- | IV-0001 |"), None, "parity-id-missing", "albumen", "AC-0001"),
+                ("a duplicate IV id", _abody.replace("| -- | -- | IV-0002 |", "| -- | -- | IV-0002, IV-0001 |"), None, "parity-id-duplicate", "albumen", "IV-0001"),
+                ("an unknown LR id", _abody.replace("| LR-0002 | -- | -- |", "| LR-0002, LR-0999 | -- | -- |"), None, "parity-id-unknown", "albumen", "LR-0999"),
+                ("a duplicate LP id", _abody.replace("| LP-0004 |", "| LP-0003 |"), None, "parity-lp-duplicate", "albumen", "LP-0003 is used again (first at line "),
+                ("a route to a dead IP id", _abody.replace("IP-0003 pixel", "IP-0999 pixel"), None, _aroute, "albumen", "LP-0003 routes to IP-0999: missing"),
+                ("a route loop", _abody, _gbody.replace(_g3, _g3.replace("backlog B-045", "other-app: Albumen sent back")), _aroute, "albumen", "LP-0003 routes to IP-0003: loop"),
+                ("a route to a row not planned yet", _abody, _gbody.replace(_g3, _g3.replace("backlog B-045", "to-author D94 T01 §2")), _aroute, "albumen", "LP-0003 routes to IP-0003: not terminal"),
+                ("a route with no IP id", _abody.replace("Gesso IP-0003 pixel", "Gesso pixel"), None, "parity-status-malformed", "albumen", "names the IP- row that plans it"),
+                ("a dead backlog id", _abody.replace("backlog B-048", "backlog B-099"), None, "parity-backlog-dead", "albumen", "B-099"),
+                ("a source-less Gesso row whose LP reference does not route to it", _abody, _gbare, "parity-orphan-row", "gesso", "IP-0006 has no source id, and its Notes name LP-0003, of which none routes to it"),
+                ("a source-less Gesso row citing an LP row that does not exist", _aroute6, _gbare.replace("(LP-0003)", "(LP-0777)"), "parity-orphan-row", "gesso", "its Notes name LP-0777"),
+                ("a source-less Gesso row with a free-text note", _aroute6, _gbare.replace(" (LP-0003)", ""), "parity-orphan-row", "gesso", "its Notes name no row that routes to it"),
+                ("a source-less row in a catalog nothing routes to", _abody + "| LP-0005 | Bare | -- | -- | -- | core | plan D94 T01 §2 | from LP-0001 |\n", None, "parity-orphan-row", "albumen", "LP-0005 has no source id"),
+                ("a malformed table row", _abody.replace("| LP-0004 | Cloud | -- | -- | IV-0002 | cloud | excluded: cloud |  |", "| LP-0004 | Cloud |"), None, ["parity-id-missing", "parity-input-damaged"], "albumen", "LP-0004 has "),
+            )
+            for name, abody, gbody, want, owner, needle in _acases:
+                _awrite(abody, gbody)
+                found = _pfind()
+                check(f"parity: Albumen, {name} is {want if isinstance(want, str) else ', '.join(want)} under {owner}:",
+                      (sorted({c for c, _ in found}), any(needle in m for _, m in found),
+                       all(m.startswith(f"{owner}: ") for _, m in found)),
+                      ([want] if isinstance(want, str) else want, True, True))
+            _awrite(_aroute6, _gbare)
+            check("parity: a source-less row whose Notes name the row routed to it is clean", _pfind(), [])
+            _pwrite(cat=_pcat.replace("other-app: none not an editing job", "other-app: Gesso pixel work"),
+                    gcat=_cat_of(1, "Gesso", _gbody.replace("other-app: Stilus vector work", "other-app: Albumen photo work")),
+                    acat=_cat_of(2, "Albumen", _abody.replace("excluded: cloud", "other-app: none not a photo job")))
+            _prose = _pfind()
+            _pwrite(gcat=_cat_of(1, "Gesso", _gbody.replace("other-app: Stilus vector work", "other-app: none not pixels")),
+                    acat=_cat_of(2, "Albumen", _abody.replace("excluded: cloud", "other-app: Stilus vector work")))
+            check("parity: a prose other-app disposition and other-app: none need no target row, in every catalog",
+                  (_prose, _pfind()), ([], []))
+            _pwrite(acat=_cat_of(2, "Albumen", _abody).replace("| `plan` | 1 | 3 |", "| `plan` | 1 | 4 |"))
+            found = _pfind()
+            check("parity: Albumen, a Totals mismatch is parity-totals-drift",
+                  (sorted({c for c, _ in found}), all(m.startswith("albumen: ") for _, m in found)),
+                  (["parity-totals-drift"], True))
+            _adamage = (
+                ("an ACDSee id defined twice", {"ac": _pac + "| AC-0001 | Again | tool | x | y | core | z |\n"}, None, "AC-0001 is defined again"),
+                ("an empty IrfanView inventory", {"iv": "", "acat": _cat_of(2, "Albumen", _abody.replace("IV-0001", "--").replace("| -- | -- | IV-0002 |", "| -- | AC-0002 | -- |").replace("| -- | AC-0002 | -- | core | other", "| LR-0002 | -- | -- | core | other").replace("| LP-0002 | Kept | LR-0002 |", "| LP-0002 | Kept | LR-0001 |").replace("| LP-0001 | View | LR-0001 |", "| LP-0001 | View | -- |"))}, None, "IrfanView inventory has no IV- rows"),
+                ("a Lightroom inventory that is not UTF-8", {}, ("sources", "lightroom-classic-15.5.1.md"), "not valid UTF-8"),
+                ("a deleted catalog", {}, ("albumen-parity.md",), "docs/parity/albumen-parity.md"),
+                ("a deleted inventory", {}, ("sources", "acdsee-ultimate-2027.md"), "acdsee-ultimate-2027.md"),
+            )
+            for name, kw, target, needle in _adamage:
+                _pwrite(**kw)
+                if target is not None:
+                    _apath = (proot / "docs" / "parity").joinpath(*target)
+                    if "UTF-8" in needle:
+                        _apath.write_bytes(_plr.encode("utf-8") + b"| LR-0003 | \xff |\n")
+                    else:
+                        _apath.unlink()
+                found = _pfind()
+                check(f"parity: Albumen, {name} fails closed as one damaged-input finding under albumen:",
+                      ([c for c, _ in found], any(needle in m for _, m in found),
+                       all(m.startswith("albumen: ") for _, m in found)), (["parity-input-damaged"], True, True))
+            # A route, a self-route, and a cycle are configuration: a fourth catalog is one `CATALOGS` entry over
+            # in-memory texts (named for Capio, a planned app the status grammar already knows), and every class fires
+            # on it with no code of its own.
+            _pwrite()
+            _pfull = par.CATALOGS
+            _c4spec = {"app": "capio", "path": "docs/parity/capio-parity.md", "id": r"CP-\d{4}",
+                      "duplicate": "parity-cp-duplicate",
+                      "columns": ({"column": "Alpha", "path": "docs/parity/sources/alpha.md", "id": r"AL-\d{4}"},),
+                      "routes": {"gesso": _aroute, "capio": _aroute}}
+            _c4head = "## Core\n\n| ID | Feature | Alpha | Category | Status | Notes |\n| -- | -- | -- | -- | -- | -- |\n"
+            _c4clean = (_c4head + "| CP-0001 | One | AL-0001 | core | plan D94 T01 §1 |  |\n"
+                       "| CP-0002 | Two | AL-0002 | core | other-app: Gesso IP-0001 pixels |  |\n")
+            _c4dirty = (_c4head + "| CP-0001 | One | AL-0001, AL-0999 | core | plan D94 T01 §9 |  |\n"
+                       "| CP-0002 | Two | AL-0002 | core | other-app: Gesso IP-0999 pixels |  |\n"
+                       "| CP-0002 | Again | AL-0002 | core | backlog B-099 |  |\n"
+                       "| CP-0004 | Bad | -- | core | planned later |  |\n"
+                       "| CP-0005 | Self | AL-0004 | core | other-app: Capio CP-0005 itself |  |\n")
+            par.CATALOGS = _pfull + (_c4spec,)
+            try:
+                _c4texts = par.snapshot(proot)
+                _c4texts["docs/parity/sources/alpha.md"] = (
+                    _gsrc + "".join(f"| AL-000{n} | A | tool | x | y | core | z |\n" for n in (1, 2)), "")
+                _c4texts["docs/parity/capio-parity.md"] = (_cat_of(3, "Capio", _c4clean), "")
+                _c4ok = par.parity_findings(sys.modules[__name__], load_todos(), proot, _c4texts)
+                _c4texts["docs/parity/sources/alpha.md"] = (
+                    _gsrc + "".join(f"| AL-000{n} | A | tool | x | y | core | z |\n" for n in (1, 2, 3, 4)), "")
+                _c4texts["docs/parity/capio-parity.md"] = (
+                    _cat_of(3, "Capio", _c4clean).replace(_c4clean, _c4dirty), "")
+                _c4bad = par.parity_findings(sys.modules[__name__], load_todos(), proot, _c4texts)
+                # A two-row cycle, once both ends declare their route.
+                par.CATALOGS = (_pfull[0], dict(_gspec, routes={"albumen": _aroute}), _pfull[2])
+                _awrite(_abody, _gbody.replace(_g3, _g3.replace("backlog B-045", "other-app: Albumen LP-0003 back")))
+                _c4cycle = _pfind()
+            finally:
+                par.CATALOGS = _pfull
+            check("parity: a fourth catalog defined only by its CATALOGS entry is clean, then fails every class",
+                  (_c4ok, sorted({c for c, m in _c4bad if m.startswith("capio: ")}),
+                   any("CP-0005 routes to CP-0005: loop" in m for _, m in _c4bad),
+                   [m for _, m in _c4bad if not m.startswith("capio: ")]),
+                  ([], ["parity-backlog-dead", "parity-cp-duplicate", "parity-id-duplicate", "parity-id-missing", "parity-id-unknown",
+                        "parity-ip-route-dead", "parity-orphan-row", "parity-ref-dead",
+                        "parity-status-malformed", "parity-totals-drift"], True, []))
+            check("parity: a two-row cycle is refused at both ends",
+                  sorted((c, m.split(":")[0]) for c, m in _c4cycle), [(_aroute, "albumen"), (_aroute, "gesso")])
+            # The routed report a Gesso release reads: two routes to one stamped target and one to an open target
+            # in another phase are three routes, two targets, and one verified target, never three of three.
+            _pplan_text = pplan.read_text(encoding="utf-8")
+            pplan.write_text(_pplan_text + "\n### Phase 5 -- Later fixture\n\nWhy.\n\n| ✔ | Section | Deliverable | Items |\n"
+                             "| :-: | --- | --- | :-: |\n| [ ] | `D94 T01 §4` | Thing 4 | 2 |\n", encoding="utf-8")
+            try:
+                _awrite(_abody.replace("IP-0003 pixel", "IP-0001 pixel") + "| LP-0005 | Clone | -- | AC-0003 | -- | core | other-app: Gesso IP-0001 pixel editing |  |\n"
+                        "| LP-0006 | Heal | -- | AC-0004 | -- | core | other-app: Gesso IP-0006 pixel editing |  |\n",
+                        _gbare.replace("(LP-0003)", "(LP-0006)"),
+                        ac=_pac + "".join(f"| AC-000{n} | More | tool | x | y | core | z |\n" for n in (3, 4)))
+                _rfound = _pfind()
+                _rcode, _rjson, _ = _pquery(catalog="gesso")
+                _rin = _rjson["catalogs"]["gesso"]["routed_in"]
+                _one = {"to": "IP-0001", "status": "plan", "ref": "D94 T01 §1", "phase": "4", "stamped": True}
+                check("parity: query parity --catalog gesso counts routes, distinct targets, and verified targets apart",
+                      (_rfound, _rcode, list(_rjson["catalogs"]), [_rin[k] for k in ("rows", "targets", "verified_targets")],
+                       _rin["routes"], _rin["source_less"],
+                       {p: tuple(b.values()) for p, b in _rin["phases"].items()}),
+                      ([], 0, ["gesso"], [3, 2, 1],
+                       [{"from": "LP-0003", **_one}, {"from": "LP-0005", **_one},
+                        {"from": "LP-0006", "to": "IP-0006", "status": "plan", "ref": "D94 T01 §4", "phase": "5",
+                         "stamped": False}], ["IP-0006"], {"4": (2, 1, 1), "5": (1, 1, 0)}))
+                _r4 = _pquery(catalog="gesso", phase="4")[1]["catalogs"]["gesso"]["routed_in"]
+                _r5 = _pquery(catalog="gesso", phase="5")[1]["catalogs"]["gesso"]["routed_in"]
+                check("parity: --phase N keeps only the routes whose target is planned to phase N",
+                      ([(_r[k]) for _r in (_r4, _r5) for k in ("rows", "targets", "verified_targets")],
+                       [r["from"] for r in _r4["routes"]], [r["from"] for r in _r5["routes"]]),
+                      ([2, 1, 1, 1, 1, 0], ["LP-0003", "LP-0005"], ["LP-0006"]))
+                _acode, _ajson, _ = _pquery(catalog="albumen", phase="4")
+                _aq = _ajson["catalogs"]["albumen"]
+                check("parity: query parity --catalog albumen --phase 4 --json carries the planned, stamped, and routed counts",
+                      (_acode, list(_ajson["catalogs"]),
+                       [_aq["phases"]["4"][k] for k in ("features", "sections", "stamped_sections")],
+                       [_aq["routed"]["gesso"][k] for k in ("rows", "targets", "verified_targets")]),
+                      (0, ["albumen"], [1, 1, 1], [2, 1, 1]))
+                _rtext = _pio.StringIO()
+                with _pctx.redirect_stdout(_rtext):
+                    cmd_query(argparse.Namespace(what="parity", phase="4", json=False, all=False, catalog="gesso"))
+                check("parity: the text report a release quotes names each route, its section, and its state",
+                      [line in _rtext.getvalue().splitlines() for line in (
+                          "  routed in from other catalogs: 2 row(s), 1 distinct target(s), 1 verified",
+                          "  LP-0003 -> IP-0001  plan D94 T01 §1  phase 4  stamped",
+                          "  LP-0005 -> IP-0001  plan D94 T01 §1  phase 4  stamped",
+                          "  source-less rows (1): IP-0006")]
+                      + ["LP-0006" in _rtext.getvalue()], [True, True, True, True, False])
+            finally:
+                pplan.write_text(_pplan_text, encoding="utf-8")
+            # A selected query reads its own catalog, its inventories, and the catalog file its routes touch.
+            _pwrite()
+            _sreads: dict[str, list[str]] = {}
+            _sreal = par._read
+            for _sel in ("stilus", "gesso", "albumen"):
+                _seen: list[str] = []
+                par._read = lambda base, rel, _seen=_seen: (_seen.append(rel), _sreal(base, rel))[1]
+                try:
+                    par.parity_report(sys.modules[__name__], load_todos(), apps=[_sel])
+                finally:
+                    par._read = _sreal
+                _sreads[_sel] = sorted(r.rsplit("/", 1)[1] for r in _seen)
+            check("parity: a selected query reads each file it needs once, and nothing of an unrelated catalog",
+                  _sreads,
+                  {"stilus": ["coreldraw-2026.md", "illustrator-30.8.md", "stilus-parity.md"],
+                   "gesso": ["affinity-3.3.md", "albumen-parity.md", "gesso-parity.md", "gimp-3.2.6.md",
+                             "photoshop-27.10.md"],
+                   "albumen": ["acdsee-ultimate-2027.md", "albumen-parity.md", "gesso-parity.md", "irfanview-4.76.md",
+                               "lightroom-classic-15.5.1.md"]})
+            _pwrite(_pcat.replace("| NP-0001 | One | AI-0001 | CD-001 | core | plan D94 T01 §1 |  |", "| NP-0001 |"))
+            _dstilus = [_pquery(catalog=c)[0] for c in ("stilus", "gesso", "albumen")]
+            _awrite(_abody.replace("| LP-0002 | Kept | LR-0002 | -- | -- | core | backlog B-048 |  |", "| LP-0002 |"))
+            _dcodes = [_pquery(catalog=c) for c in ("stilus", "gesso", "albumen")]
+            check("parity: a damaged Stilus catalog leaves the Gesso and Albumen queries working, and a damaged Albumen "
+                  "catalog fails both of them",
+                  (_dstilus, [c for c, _j, _e in _dcodes],
+                   "gesso: " in _dcodes[1][2] and "albumen-parity.md" in _dcodes[1][2]), ([1, 0, 0], [0, 1, 1], True))
+            _pwrite()
             # Round 8: the report validates and counts one snapshot, so a
             # file that changes underneath can never be counted unvalidated.
             _preads: dict[str, int] = {}
@@ -13296,7 +13553,7 @@ def main() -> int:
     q.add_argument("--json", action="store_true", help="adjacency, plan-health, parity, rounds: machine-readable report")
     q.add_argument("--check", action="store_true", help="plan-health: exit 1 on actionable entries (covered escalations and bare partials pass; --fail-on gates presence); growth: accepted and ignored (nothing is capped since 2026-09-27)")
     q.add_argument("--phase", metavar="N", help="parity: only this plan phase (its features, sections, and rows)")
-    q.add_argument("--catalog", metavar="APP", help="parity: one catalog (stilus, gesso) or all (the default)")
+    q.add_argument("--catalog", metavar="APP", help="parity: one catalog (stilus, gesso, albumen) or all (the default)")
     q.add_argument("--fail-on", metavar="DIMS", help="plan-health: comma-separated dimensions whose non-emptiness exits 1")
     q.add_argument("--require-owned", action="store_true", help="adjacency: refuse incomplete file ownership at closeout")
     q.add_argument("--require-conformance", action="store_true", help="adjacency: require non-vacuous tree-wide kind coverage")
