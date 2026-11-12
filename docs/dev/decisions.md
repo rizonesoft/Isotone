@@ -241,3 +241,17 @@ The operator asked for the campaign to start in Claude Code as well as Antigravi
 - **Proof:** `python scripts/campaign_guard.py --self-test`: `a-dead-session-is-not-resumed` (the guard names a dead session with rows ready, and every old watchdog command exits 2 and runs nothing), `a-dead-session-is-reported-as-ended`, `a-crashed-session-is-not-restarted` (a session exiting 1 is run once, recorded, and reported), `run-guard-no-longer-ticks-or-installs-a-task`, `the-launcher-installs-no-task-and-has-no-restart-loop`, and the failed-handover cases. Tests are run from a normal shell only: never from `pythonw.exe` or any other console-less parent on the operator's machine.
 - **Cost of change:** restoring a watchdog is the removed functions and the scheduled task, from this commit's parent.
 - **Owner:** `scripts/campaign_guard.py`, `scripts/run-guard.py`, `scripts/start-campaign.ps1`, `.claude/skills/process-plan`, `.agents/skills/process-plan`.
+
+## 2026-11-12: Test cadence: targeted while building, one full gate run per section
+
+Operator, 2026-11-12, during the Phase 0 campaign: "When we keep on adding tests and run full test suits on every implementation we are going to get to the point where we are testing 90% of the time and not progressing at all. There should be a balance or cadence between testing and implementation so that we progress as quickly as possible while retaining excellence."
+
+The cadence, binding on every runner from this entry on:
+
+- **While building, run only the test that covers the code just changed** (one self-test, one `ctest -R` filter, one script's own test file), and run it when the change is believed complete, not after each edit.
+- **One full gate run per section, on the final candidate.** `pwsh scripts/check-all.ps1` runs once, after the last review fix and before the stamp. A review fix-loop commit reruns the Test checkpoint and the tests of the files it touched, never the whole table again.
+- **The full run is sized to the diff.** A candidate range that touches nothing under `native/`, `scripts/native-*`, `scripts/dev-env.ps1`, or the vcpkg and toolchain pins runs `pwsh scripts/check-all.ps1 -SkipNative`; the `build` workflow runs every native preset on the push, and its result is read at the next section boundary. A range that touches any of those runs the whole table.
+- **A test is added for a behaviour the section adds, a failure that has happened, or a loss of data, money, or privacy.** No test of a test, no fixture for a permutation the same code path already proves, and no second full-suite run to confirm a green one.
+- **CI is read at the boundary, not waited on.** The next section starts while the push's workflows run; a red result is repaired at the next boundary before anything else.
+
+What does not change: every Test checkpoint is still quoted from a real run, every stamp still needs its three review passes, and a red gate is still a defect to fix. Cost of changing: none to reverse (delete this entry and the Cadence paragraph of the gate card); the risk taken is a native regression caused by a non-native change reaching `main` before CI names it, which the boundary read-back catches one section later.

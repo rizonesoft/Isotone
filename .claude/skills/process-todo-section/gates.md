@@ -53,3 +53,7 @@ python scripts/render-design-reference.py --components <Comp>
 - `design-lint.py` must print `0 new, 0 stale` (shrink the baseline with `--update-baseline` when removing legacy entries; never pass `--allow-add` during implementation).
 - `todo-graph.py validate` must report zero `design-*` findings and `todo-graph.py query design` must show the section carrying a live `**Design:**` line outside `todo/.design-baseline`.
 - Once the native visual-test runner ships (`todo/README.md` Proof table), run the golden comparison harness and hand renders to `review-todo-section` for golden approval.
+
+## Cadence (operator decision 2026-11-12, `docs/dev/decisions.md`, "Test cadence")
+
+While building, run only the test covering the code just changed. Run the full table once per section, on the final candidate after the last review fix: `pwsh scripts/check-all.ps1 -SkipNative` when the candidate range touches nothing under `native/`, `scripts/native-*`, `scripts/dev-env.ps1`, or the vcpkg and toolchain pins (the `build` workflow covers the native presets on the push), the whole table otherwise. A review fix reruns the Test checkpoint and the tests of the files it touched. Read CI at the next section boundary instead of waiting on it.
