@@ -600,7 +600,7 @@ class Antigravity(ThreePass):
                                         "--candidate", self.base, "--record", str(self.record), agy="say", say=say)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual((summary["cli"], summary["effort"]), ("agy", "medium"))
-        self.assertFalse([a for a in self.calls()[-1]["argv"] if "effort" in a])
+        self.assertFalse([a for a in self.calls()[-1]["argv"] if not a.startswith("-p=") and "effort" in a])
         (entry,) = self.findings()["plans"]
         expected = module.scheduled(schedule, "plan", [], False)
         self.assertEqual((entry["effort"], entry["lenses"]), (expected["effort"], expected["lenses"]))

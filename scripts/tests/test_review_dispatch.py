@@ -192,7 +192,7 @@ class Harness(unittest.TestCase):
 
     def dispatch(self, *args, cwd=None, **modes):
         system_root = {"SYSTEMROOT": os.environ["SYSTEMROOT"]} if os.name == "nt" else {}
-        env = {"PATH": f"{self.bin}{os.pathsep}{Path(sys.executable).parent}", "FAKE_LOG": str(self.log),
+        env = {"PATH": str(self.bin), "FAKE_LOG": str(self.log),
                "FAKE_CHILD_PID": str(Path(self._tmp.name) / "child.pid"), **system_root,
                **{var: str(self.scratch) for var in ("TMP", "TEMP", "TMPDIR")},
                **{f"FAKE_{k.upper()}": v for k, v in modes.items()}}

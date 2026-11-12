@@ -142,7 +142,7 @@
     },
     "scripts/tests/test_review_dispatch.py": {
       "kit": "reviewer",
-      "sha256": "4d88edee39670f113edb8842400a9bf6f986729853eebabbd594a4c47e1a0155"
+      "sha256": "82b4397e62c255d8ec2733da54bec8df9d198cb9fcd86b76279e15aa1faddb42"
     },
     "scripts/tests/test_review_pin.py": {
       "kit": "reviewer",
@@ -154,7 +154,7 @@
     },
     "scripts/tests/test_three_pass.py": {
       "kit": "reviewer",
-      "sha256": "591f54985fb1af0862a8836f7dcea4335de39690bdb28ade0aa56aa8943b024e"
+      "sha256": "c0cc8c9acc6ebc198a8e75d9e059836e273e9b3ba033cf679bb627c4682c6bb9"
     },
     "scripts/todo-graph.py": {
       "kit": "todo",
