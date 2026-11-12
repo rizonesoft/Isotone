@@ -618,6 +618,72 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                            else f"is damaged ({problems_[0][1]})" if problems_ else "")
         return parsed[app]
 
+    selected_apps = {s["app"] for s in _selected(apps)}
+
+    def owner_findings(where: str, kind: str, arg: str) -> list[tuple[str, str]]:
+        """What is wrong with the owner a status names: a section that does not exist, moved, or lapsed, a stale
+        `to-author`, or a backlog id with no live entry. Empty for a status with no owner to resolve."""
+        bad: list[tuple[str, str]] = []
+        if kind in ("plan", "shipped-scope"):
+            hit = sections.get(" ".join(arg.split()))
+            if hit is None:
+                bad.append(("parity-ref-dead", f"{where} {kind} {arg} names no section in todo/"))
+            elif hit[2].moved:
+                bad.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that moved out of the "
+                                               f"tree (`> **Moved:**`); point the row at its new owner"))
+            elif getattr(hit[2], "lapsed", False):
+                # Its file is superseded and its row is open, so it is never built or stamped (D00 T01 §18): a
+                # row it "owns" has no owner. A stamped section of the same file is not lapsed and passes.
+                bad.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that lapsed with its "
+                                               f"superseded file and will never be built; point the row at the "
+                                               f"section that owns the feature now (the file was superseded by "
+                                               f"{graph.successor_path(hit[0], todos)})"))
+        elif kind == "to-author":
+            hit = sections.get(" ".join(arg.split()))
+            if hit is None or hit[2].moved or getattr(hit[2], "lapsed", False) or hit[2].status == "x":
+                why = ("names no section in todo/" if hit is None else "names a section that moved out of the tree"
+                       if hit[2].moved else "names a section that lapsed with its superseded file"
+                       if getattr(hit[2], "lapsed", False)
+                       else "names a stamped section, which should have rerouted it to `plan`")
+                bad.append(("parity-to-author-stale", f"{where} to-author {arg} {why}"))
+        elif kind == "backlog" and arg not in backlog:
+            bad.append(("parity-backlog-dead", f"{where} backlog {arg} names no live entry in todo/backlog.md"))
+        return bad
+
+    def check_routes(routes: list[tuple[str, str, str, str]], found: list[tuple[str, str]],
+                     damaged: dict[str, str]) -> None:
+        """Every route ends at a terminal row of the catalog it names (D00 T01 §8), and that row's owner is live.
+
+        A related catalog that cannot be read, or whose rows do not all parse, is recorded in `damaged`: nothing is
+        judged against rows that may be missing. A target's own defects are its catalog's findings when that
+        catalog is in the selection; when it is not, the route carries them, so a selected query never passes an
+        obligation whose other end is broken (round 1 of this section's review).
+        """
+        for where, target, target_id, cls in routes:
+            target_rows, why = catalog_of(target)
+            if why:
+                damaged[target] = why
+                continue
+            hit = next((r for r in target_rows if r["id"] == target_id), None)
+            if hit is None:
+                found.append((cls, f"{where} routes to {target_id}: missing, {by_app[target]['path']} holds no such "
+                                   f"row; point it at the row that plans the feature"))
+                continue
+            target_kind, target_arg = parse_status(hit["status"])
+            if target_kind == "malformed" and target in selected_apps:
+                continue  # the target row carries its own `parity-status-malformed` in this run
+            if target_kind not in TERMINAL_KINDS:
+                reason = ("loop, the target's own status routes on" if target_kind == "other-app"
+                          else "not terminal, the target's status is outside the grammar" if target_kind == "malformed"
+                          else "not terminal, the target is not planned yet")
+                found.append((cls, f"{where} routes to {target_id}: {reason} ({hit['status']!r}); a route ends at a "
+                                   f"planned section, shipped scope, a backlog entry, or an exclusion, and never "
+                                   f"loops, routes onward, or names itself"))
+            elif target not in selected_apps:
+                there = f"{by_app[target]['path']}:{hit['line']}: {hit['id']}"
+                for _cls, msg in owner_findings(there, target_kind, target_arg)[:1]:
+                    found.append((cls, f"{where} routes to {target_id}, which has no live owner: {msg}"))
+
     out: list[tuple[str, str]] = []
     for spec in _selected(apps):
         # An unreadable file is one `parity-input-damaged` finding, never a cascade: a missing catalog places
@@ -650,30 +716,6 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
             if kind == "malformed":
                 found.append(("parity-status-malformed", f"{where} has status {row['status']!r}, outside the grammar "
                                                        f"of docs/parity/README.md"))
-            elif kind in ("plan", "shipped-scope"):
-                hit = sections.get(" ".join(arg.split()))
-                if hit is None:
-                    found.append(("parity-ref-dead", f"{where} {kind} {arg} names no section in todo/"))
-                elif hit[2].moved:
-                    found.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that moved out of the "
-                                                   f"tree (`> **Moved:**`); point the row at its new owner"))
-                elif getattr(hit[2], "lapsed", False):
-                    # Its file is superseded and its row is open, so it is never built or stamped (D00 T01 §18): a
-                    # row it "owns" has no owner. A stamped section of the same file is not lapsed and passes.
-                    found.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that lapsed with its "
-                                                   f"superseded file and will never be built; point the row at the "
-                                                   f"section that owns the feature now (the file was superseded by "
-                                                   f"{graph.successor_path(hit[0], todos)})"))
-            elif kind == "to-author":
-                hit = sections.get(" ".join(arg.split()))
-                if hit is None or hit[2].moved or getattr(hit[2], "lapsed", False) or hit[2].status == "x":
-                    why = ("names no section in todo/" if hit is None else "names a section that moved out of the tree"
-                           if hit[2].moved else "names a section that lapsed with its superseded file"
-                           if getattr(hit[2], "lapsed", False)
-                           else "names a stamped section, which should have rerouted it to `plan`")
-                    found.append(("parity-to-author-stale", f"{where} to-author {arg} {why}"))
-            elif kind == "backlog" and arg not in backlog:
-                found.append(("parity-backlog-dead", f"{where} backlog {arg} names no live entry in todo/backlog.md"))
             elif kind == "other-app":
                 route = route_of(spec, row["status"])
                 if route is not None and route[1] is None:
@@ -683,6 +725,8 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                                   f"the {_id_prefix(target['id'])} row that plans it, right after the app's name"))
                 elif route is not None:
                     routes.append((where, route[0], route[1], route[2]))
+            else:
+                found += owner_findings(where, kind, arg)
             for column in spec["columns"]:
                 if not readable[column["column"]]:
                     continue
@@ -705,31 +749,8 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
         if catalog_readable and rows:
             # An empty catalog is already damage; the summary is reconciled against rows that parsed.
             found += totals_findings(spec, texts[spec["path"]][0], rows)
-        # Routes end at a terminal row of the catalog they name (D00 T01 §8). A related catalog that cannot be read,
-        # or whose rows do not all parse, is the finding: nothing is judged against rows that may be missing. It is
-        # reported here only when that catalog is outside the selection, since its own pass reports it otherwise.
         damaged: dict[str, str] = {}
-        selected_apps = {s["app"] for s in _selected(apps)}
-        for where, target, target_id, cls in routes:
-            target_rows, why = catalog_of(target)
-            if why:
-                damaged[target] = why
-                continue
-            hit = next((r for r in target_rows if r["id"] == target_id), None)
-            if hit is None:
-                found.append((cls, f"{where} routes to {target_id}: missing, {by_app[target]['path']} holds no such "
-                                   f"row; point it at the row that plans the feature"))
-                continue
-            target_kind = parse_status(hit["status"])[0]
-            if target_kind == "malformed" and target in selected_apps:
-                continue  # the target row carries its own `parity-status-malformed` in this run
-            if target_kind not in TERMINAL_KINDS:
-                reason = ("loop, the target's own status routes on" if target_kind == "other-app"
-                          else "not terminal, the target's status is outside the grammar" if target_kind == "malformed"
-                          else "not terminal, the target is not planned yet")
-                found.append((cls, f"{where} routes to {target_id}: {reason} ({hit['status']!r}); a route ends at a "
-                                   f"planned section, shipped scope, a backlog entry, or an exclusion, and never "
-                                   f"loops, routes onward, or names itself"))
+        check_routes(routes, found, damaged)
         # A row with no source id exists only because another catalog routes a feature to it, and its Notes name
         # the row that does: an existing row of a catalog that routes here, whose route names this row.
         # The catalogs that route here are read whether or not a row is source-less: the routed report counts their
@@ -747,6 +768,22 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                     route = route_of(other, other_row["status"])
                     if route is not None and route[0] == spec["app"] and route[1] is not None:
                         inbound.setdefault(route[1], set()).add(other_row["id"])
+                if other["app"] not in selected_apps:
+                    # That catalog's own pass does not run in this selection, and the routed report counts its
+                    # rows: its routes into this catalog are checked here.
+                    incoming: list[tuple[str, str, str, str]] = []
+                    for other_row in other_rows:
+                        route = route_of(other, other_row["status"])
+                        if route is None or route[0] != spec["app"]:
+                            continue
+                        there = f"{other['path']}:{other_row['line']}: {other_row['id']}"
+                        if route[1] is None:
+                            found.append(("parity-status-malformed",
+                                          f"{there} is routed here with no {_id_prefix(spec['id'])} id "
+                                          f"({other_row['status']!r})"))
+                        else:
+                            incoming.append((there, spec["app"], route[1], route[2]))
+                    check_routes(incoming, found, damaged)
             shapes = "|".join(other["id"] for other in routers)
             origin = " or ".join(other["path"] for other in routers) or "a catalog that routes here (none does)"
             for row in bare if not any(other["app"] in damaged for other in routers) else ():

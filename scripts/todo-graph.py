@@ -12997,6 +12997,21 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                   "catalog fails both of them",
                   (_dstilus, [c for c, _j, _e in _dcodes],
                    "gesso: " in _dcodes[1][2] and "albumen-parity.md" in _dcodes[1][2]), ([1, 0, 0], [0, 1, 1], True))
+            # Review round 1: each end of a route validates the end it depends on, so a selected query never
+            # passes an obligation whose other end is broken.
+            _awrite(_abody.replace("IP-0003 pixel", "IP-0999 pixel"))
+            _xdead = _pquery(catalog="gesso")
+            _awrite(_abody, _gbody.replace(_g3, _g3.replace("backlog B-045", "plan D94 T01 §9")))
+            _xowner = _pquery(catalog="albumen")
+            _awrite(_abody.replace("Gesso IP-0003 pixel", "Gesso pixel"))
+            _xnoid = _pquery(catalog="gesso")
+            check("parity: the Gesso query refuses an Albumen route to a missing row or with no id, and the Albumen "
+                  "query a route to a Gesso row whose section does not exist",
+                  ([x[0] for x in (_xdead, _xowner, _xnoid)],
+                   "gesso: docs/parity/albumen-parity.md" in _xdead[2] and "LP-0003 routes to IP-0999: missing" in _xdead[2],
+                   "albumen: " in _xowner[2] and "routes to IP-0003, which has no live owner" in _xowner[2]
+                   and "D94 T01 §9 names no section" in _xowner[2],
+                   "LP-0003 is routed here with no IP- id" in _xnoid[2]), ([1, 1, 1], True, True, True))
             _pwrite()
             # Round 8: the report validates and counts one snapshot, so a
             # file that changes underneath can never be counted unvalidated.
