@@ -304,7 +304,10 @@ def _read_lsp_frame(stream) -> dict | None:
         chunks.append(chunk)
         remaining -= len(chunk)
     body = b"".join(chunks)
-    return json.loads(body.decode("utf-8", errors="replace"))
+    parsed = json.loads(body.decode("utf-8", errors="replace"))
+    if not isinstance(parsed, dict):
+        raise LspToolError("LSP frame body must be a JSON object")
+    return parsed
 
 
 def _encode_lsp_frame(payload: dict) -> bytes:
@@ -504,9 +507,8 @@ class LspBackend:
 
     def _stderr_drain(self, stream) -> None:
         try:
-            for raw in iter(stream.readline, b""):
-                if not raw:
-                    break
+            while stream.read(_DRAIN_CHUNK_BYTES):
+                pass
         except Exception:
             pass
 
@@ -1626,12 +1628,15 @@ class IsotoneLspMcpServer:
         return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Method not found: {method}"}}
 
 
-def _read_mcp_message(binary_in) -> tuple[dict | None, str]:
+_MCP_EOF = object()
+
+
+def _read_mcp_message(binary_in) -> tuple[object, str]:
     """Read one MCP message from binary_in; supports newline-delimited JSON (MCP stdio standard) and Content-Length."""
     while True:
         line = _read_bounded_line(binary_in, MAX_FRAME_BYTES, error_cls=ValueError, label="MCP message")
         if not line:
-            return None, "line"
+            return _MCP_EOF, "line"
         stripped = line.strip()
         if not stripped:
             continue
@@ -1653,7 +1658,7 @@ def _read_mcp_message(binary_in) -> tuple[dict | None, str]:
                 except FramingOverflowError as exc:
                     raise FramingOverflowError(str(exc), synchronized=False) from exc
                 if not hdr:
-                    return None, "framed"
+                    return _MCP_EOF, "framed"
                 if not hdr.strip():
                     break
                 header_count += 1
@@ -1666,7 +1671,7 @@ def _read_mcp_message(binary_in) -> tuple[dict | None, str]:
             while rem > 0:
                 chunk = binary_in.read(min(rem, _READ_CHUNK_BYTES))
                 if not chunk:
-                    return None, "framed"
+                    return _MCP_EOF, "framed"
                 chunks.append(chunk)
                 rem -= len(chunk)
             body = b"".join(chunks)
@@ -1698,9 +1703,9 @@ def serve_stdio(server: IsotoneLspMcpServer, binary_in=None, binary_out=None) ->
                 if isinstance(exc, FramingOverflowError) and not exc.synchronized:
                     return 0
                 continue
-            if msg is None:
+            if msg is _MCP_EOF:
                 return 0
-            resp = server.handle_message(msg)
+            resp = server.handle_message(msg)  # type: ignore[arg-type]
             if resp is not None:
                 with write_lock:
                     _write_mcp_message(out, resp, mode)
@@ -2243,6 +2248,18 @@ def _self_test() -> int:
             check("oversized LSP header line rejected with bounded read",
                   bad_lsp_hdr.unbounded_calls == 0 and "exceeds maximum size" in lsp_hdr_err,
                   f"unbounded={bad_lsp_hdr.unbounded_calls} err={lsp_hdr_err!r}")
+
+            null_in = io.BytesIO(
+                b'null\nContent-Length: 4\r\n\r\nnull{"jsonrpc":"2.0","id":22,"method":"ping"}\n'
+            )
+            null_out = io.BytesIO()
+            serve_stdio(srv, null_in, null_out)
+            null_raw = null_out.getvalue()
+            check("JSON null messages return -32600 Invalid Request without terminating serve_stdio",
+                  b'"code":-32600' in null_raw
+                  and null_raw.count(b'"Invalid Request"') == 2
+                  and b'{"jsonrpc":"2.0","id":22,"result":{}}\n' in null_raw,
+                  repr(null_raw))
         finally:
             srv.close()
 

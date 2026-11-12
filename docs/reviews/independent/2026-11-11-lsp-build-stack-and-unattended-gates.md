@@ -266,3 +266,41 @@ OVERALL: needs-attention
 
 1. **P1 `scripts/lsp-mcp-server.py:1584` (`adversarial`):** Real and reproduced. Replaced unbounded `readline()` calls in both `_read_mcp_message` and `_read_lsp_frame` (`scripts/lsp-mcp-server.py`) with `_read_bounded_line(stream, max_bytes)` (`stream.readline(max_bytes + 3)`), capping newline-delimited MCP payloads at `MAX_FRAME_BYTES` (64 MiB), capping MCP and LSP headers at `MAX_HEADER_BYTES` (16 KiB) and `MAX_HEADER_COUNT` (64), draining bounded newline-terminated overflows in 64 KiB chunks so `serve_stdio` recovers framing for subsequent requests, terminating cleanly via `FramingOverflowError(synchronized=False)` on runaway newline-less streams or invalid `Content-Length` frames, and reading bodies in 1 MiB chunks. Added 3 deterministic regression cases in `lsp-mcp-server.py --self-test` (`36 cases, 0 failed`), including a 67,108,926-byte newline-delimited JSON ping asserting zero unbounded `readline` calls and clean recovery on the next request.
 2. **P1 `scripts/panel_slots.py:5660` (`adversarial`):** Real and reproduced. Added `rebase` to `_GIT_TRUNK_DIRECT_SUBCMDS` and `_segment_creates_branch_or_worktree` (`scripts/panel_slots.py`) with a closed canonical Git option allow-list that forbids `-i`/`--interactive`/`--edit-todo`, `-x`/`--exec`, and unrecognized or abbreviated options, allows ordinary rebases of `main` (`git rebase`, `git rebase <upstream>`, `git rebase <upstream> main`, `git rebase --root [main]`, and `--abort`/`--continue`/`--skip`/`--quit` with zero positionals), and denies any non-`main` target (`git rebase main HEAD~1`, `git rebase origin/main refs/heads/main`, `git rebase --onto main HEAD~2 HEAD~1`, `git rebase --root HEAD~1`), while also tightening `git bisect reset` to forbid non-`main` commit targets. Added 15 `_self_test` cases (`1129 cases, 0 failed`).
+
+## Round 9: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T02:06:54Z
+- Candidate: b9a9d9cc4480467257c6a4b716bbb404071358e1
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 22
+- Digest: a9f8fa44a58a6eb8
+
+### adversarial: needs-attention
+
+1. **P2** `scripts/lsp-mcp-server.py:1701`: A JSON `null` message terminates the MCP server because decoded `None` is indistinguishable from EOF. This bypasses invalid-request handling, closes the backends, and drops subsequent requests. Reproduced read-only by passing `b'null\n{"jsonrpc":"2.0","id":1,"method":"ping"}\n'` to `serve_stdio` through `io.BytesIO`: it returned `0` with empty output. Use a distinct EOF sentinel so malformed messages cannot terminate the connection.
+
+### consistency: approve
+
+### integration: approve
+
+### quality: approve
+
+### optimization: approve
+
+### source-defect: approve
+
+LENS adversarial: findings
+LENS consistency: clean
+LENS integration: clean
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P2
+OVERALL: needs-attention
+
+
+## Response to round 9
+
+1. **P2 `scripts/lsp-mcp-server.py:1701` (`adversarial`):** Real and reproduced. Introduced an explicit `_MCP_EOF = object()` sentinel in `_read_mcp_message` and `serve_stdio` (`scripts/lsp-mcp-server.py`) so decoded JSON `null` (`None`) and other non-object JSON payloads pass through `server.handle_message` and return JSON-RPC `-32600 Invalid Request` without closing backends or terminating `serve_stdio`, rejected non-object JSON payloads in `_read_lsp_frame`, and bounded `_stderr_drain` chunk reads. Added a regression test in `lsp-mcp-server.py --self-test` (`37 cases, 0 failed`) verifying both newline-delimited and `Content-Length`-framed `null` messages return `-32600` and serve the subsequent `ping` request cleanly.
