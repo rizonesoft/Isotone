@@ -186,7 +186,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T06 §3`  | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code |  15   |
 | [x] | `D00 T07 §1`  | Re-plan the workspace files                                                              |  12   |
 | [x] | `D00 T01 §18` | Superseded sections leave the plan                                                       |  13   |
-| [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |   9   |
+| [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |  10   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |  10   |
 | [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |  10   |
 | [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |
