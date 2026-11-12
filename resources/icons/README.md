@@ -24,7 +24,7 @@ Each app has one folder, `resources/icons/<app>/`, where `<app>` is `stilus`, `g
 | `<app>-16.svg` | 16 px variant on its own grid, also the source for 20 px. |
 | `<app>-24.svg` | 24 px variant on its own grid, also the source for 30 px. |
 | `<app>-32.svg` | 32 px variant on its own grid, also the source for 36 px (40 px takes the master, where the full glyph starts). |
-| `<app>-splash.svg` | The Suite card splash, 640 by 360: the reference design for the splash window, which the app builds in XAML to the spec in `docs/design/components/Splash/README.md` so its version, status, and progress are live, and a marketing image. It is not an app icon, is not drawn into the ICO, and the app never loads it. |
+| `<app>-splash.svg` | The Suite card splash, 640 by 360: the reference design for the splash window, which the app renders natively in Direct2D and DirectWrite to the spec in `docs/design/components/Splash/README.md` so its version, status, and progress are live, and a marketing image. It is not an app icon, is not drawn into the ICO, and the app never loads it. |
 
 The small variants exist because the master's detail turns to mush below 40 px: each one redraws the tile and the glyph for its own pixel grid instead of scaling the master down.
 

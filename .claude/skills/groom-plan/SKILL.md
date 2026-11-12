@@ -35,7 +35,7 @@ Run `python scripts/todo-graph.py validate` after every structural edit. Cycles 
 
 ### 2. Drift sweep
 
-Walk every open section's concrete claims against today's repository: projects, classes, XAML files, paths, package versions, settings keys, counts. Correct drift in place with dated notes, exactly as `process-todo-section` steps 2-3 do, but tree-wide and without building anything.
+Walk every open section's concrete claims against today's repository: targets, classes, headers, UI specs, paths, vcpkg port versions, settings keys, counts. Correct drift in place with dated notes, exactly as `process-todo-section` steps 2-3 do, but tree-wide and without building anything.
 
 ```bash
 python scripts/todo-claims.py              # re-measure what the TODOs claim
@@ -45,8 +45,8 @@ python scripts/todo-claims.py --coverage   # Current state blocks nothing re-mea
 Pay special attention to:
 
 - "Nothing exists yet" claims that are no longer true.
-- Counts and versions quoted confidently (these age fastest): SDK, package, and target framework versions especially.
-- Paths under `src/Stilus/` and `src/Gesso/` that the imports and renames moved.
+- Counts and versions quoted confidently (these age fastest): toolchain, Windows SDK, and vcpkg port versions especially.
+- Paths under `native/` and `csharp-final:<path>` behavior-reference citations.
 - Deferrals whose descriptions drifted while their owners stayed open.
 - XREFs whose targets moved or shipped (reciprocity still holds, or the line is corrected).
 - **Design lines** (`standards/design-contract.md`): every open section whose Fidelity line names a surface carries a live `**Design:**` line (`python scripts/todo-graph.py query design` counts them; `validate` fails a dead ref). For each section still listed in `todo/.design-baseline`, write its Design line from the specs its surface needs (component READMEs under `docs/design/components/`, `docs/design/shell-layout.md` region anchors, `standards/ui.md` anchors), rewrite any Fidelity line that still names an old-app capture under `docs/captures/<app>/` as its source so it names the design and its golden folder, and shrink the baseline in the same commit with `python scripts/todo-graph.py design-baseline`; the baseline never grows. A surface no spec covers gets `new surface: docs/design/<path>.md` plus the item that writes that spec first. Record each with `**Groomed YYYY-MM-DD:**`.
@@ -60,7 +60,7 @@ Check the Adjacency declarations while here: `python scripts/todo-graph.py query
 
 ### 4. Complete-feature pass
 
-For every UI surface in the plan, confirm the feature is whole: list, find, create, edit, delete (or the honest not-applicable), settings with consumers, refusal paths exercised (read-only file, locked file, unsupported format), undo for every edit, and the reverse of every create. For every write to a user's document or library, confirm the atomic save, the readback, the recovery path, and the log line. For every type in `Isotone.Core`, confirm at least two apps consume it, and for every pattern duplicated across two apps, confirm a section moves it into `Isotone.Core`. File what is missing through `add-todo` (these usually pass the admission test, because the acceptance bar names undo, atomic saves, and shared code), preferring an item on the owning section to a new section; do not redesign what exists.
+For every UI surface in the plan, confirm the feature is whole: list, find, create, edit, delete (or the honest not-applicable), settings with consumers, refusal paths exercised (read-only file, locked file, unsupported format), undo for every edit, and the reverse of every create. For every write to a user's document or library, confirm the atomic save, the readback, the recovery path, and the log line. For every type in `isotone::core` or `isotone::ui`, confirm at least two apps consume it, and for every pattern duplicated across two apps, confirm a section moves it into `isotone::core` or `isotone::ui`. File what is missing through `add-todo` (these usually pass the admission test, because the acceptance bar names undo, atomic saves, and shared code), preferring an item on the owning section to a new section; do not redesign what exists.
 
 ### 5. Backlog triage
 

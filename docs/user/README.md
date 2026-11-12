@@ -11,9 +11,9 @@ Guides for people using the Isotone Graphics Suite. The suite is pre-alpha and h
 | Getting started with Gesso: documents, layers, painting, export | Gesso (raster) | *planned* |
 | Getting started with Albumen: importing, developing RAW files, Edit in Gesso | Albumen (darkroom) | *planned* |
 
-**Requirements:** Windows 11 (23H2 or later), 64-bit. Windows 10 22H2 may work but is unsupported: .NET 11, which the apps are built on, does not support consumer Windows 10, and the installer shows a notice there before continuing.
+**Requirements:** Windows 11 (23H2 or later), 64-bit. Windows 10 22H2 may work but is unsupported: the suite targets Windows 11 only, and the installer shows a notice on Windows 10 before continuing.
 
-Until these exist, the [README](../../README.md#download-and-install) explains how releases will ship, and [Build from source](../../README.md#build-from-source) shows how to run Stilus today.
+Until these exist, the [README](../../README.md#download-and-install) explains how releases will ship, and [Build from source](../../README.md#build-from-source) shows how to build the suite from source.
 
 ## Help
 

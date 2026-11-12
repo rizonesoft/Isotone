@@ -3,8 +3,8 @@
 
 The design contract (standards/design-contract.md, operator decisions
 2026-09-27) makes each component spec under docs/design/components/ the
-source a WPF control implements 1:1, and review-todo-section approves a
-control's golden PNG only after comparing its first WPF render against the
+source a native isotone::ui control implements 1:1, and review-todo-section approves a
+control's golden PNG only after comparing its first native UI render against the
 design's own render. This script produces that design side: each
 components/<Comp>/preview.html, with tokens.css, bundle.css, and bundle.js
 injected exactly as the design page (scripts/build-design-site.py) injects
@@ -15,10 +15,10 @@ medium, light) and density (compact, comfortable) with the Blue Highlight at
     build/design-reference/<Comp>/<theme>-<density>.png      (gitignored)
 
 plus build/design-reference/report.html, a side-by-side page that pairs each
-reference with the WPF render of the same component, theme, and density when
+reference with the native UI render of the same component, theme, and density when
 one exists (docs/captures/golden/<area>/<Comp>/card-<theme>-<density>@1x.png,
-an approved golden, else build/wpf-renders/<Comp>/card-<theme>-<density>@1x.png,
-the visual-test output of D01 T01 §9).
+an approved golden, else build/ui-renders/<Comp>/card-<theme>-<density>@1x.png,
+the visual-test output planned in D00 T07 §3).
 
 Edge is driven over the DevTools protocol with the small stdlib WebSocket
 client below: no Node, no Playwright, no pip install. This is the review
@@ -270,7 +270,7 @@ def find_edge(explicit: str | None) -> str | None:
 
 # ---------------------------------------------------------------- report
 
-def wpf_render_for(comp: str, theme: str, density: str) -> Path | None:
+def ui_render_for(comp: str, theme: str, density: str) -> Path | None:
     # The visual harness lays every state out like the preview card as
     # card-<theme>-<density>@1x.png (standards/design-contract.md, Goldens).
     name = f"card-{theme}-{density}@1x.png"
@@ -279,12 +279,12 @@ def wpf_render_for(comp: str, theme: str, density: str) -> Path | None:
         for p in sorted(golden_root.rglob(name)):
             if p.parent.name == comp:
                 return p
-    p = ROOT / "build" / "wpf-renders" / comp / name
+    p = ROOT / "build" / "ui-renders" / comp / name
     return p if p.exists() else None
 
 
 def write_report(rows: list[tuple[str, str, str, Path | None]]) -> Path:
-    """build/design-reference/report.html: reference beside WPF render."""
+    """build/design-reference/report.html: reference beside native UI render."""
     OUT.mkdir(parents=True, exist_ok=True)
     parts = []
     comps = sorted({r[0] for r in rows})
@@ -294,21 +294,21 @@ def write_report(rows: list[tuple[str, str, str, Path | None]]) -> Path:
         for c, theme, density, ref in rows:
             if c != comp:
                 continue
-            wpf = wpf_render_for(comp, theme, density)
+            ui = ui_render_for(comp, theme, density)
             ref_html = (f'<img src="{html.escape(os.path.relpath(ref, OUT).replace(os.sep, "/"))}" alt="design reference">'
                         if ref and ref.exists() else '<p class="none">not rendered</p>')
-            if wpf:
-                wpf_html = (f'<img src="{html.escape(os.path.relpath(wpf, OUT).replace(os.sep, "/"))}" alt="WPF render">'
-                            f'<p class="src">{html.escape(wpf.relative_to(ROOT).as_posix())}</p>')
+            if ui:
+                ui_html = (f'<img src="{html.escape(os.path.relpath(ui, OUT).replace(os.sep, "/"))}" alt="native UI render">'
+                           f'<p class="src">{html.escape(ui.relative_to(ROOT).as_posix())}</p>')
             else:
-                wpf_html = '<p class="none">no WPF render yet (tests/Isotone.UI.VisualTests writes build/wpf-renders/)</p>'
+                ui_html = '<p class="none">no native UI render yet (the visual harness writes build/ui-renders/)</p>'
             parts.append(f'<div class="pair"><h3>{theme} / {density}</h3><div class="cols">'
                          f'<figure><figcaption>Design reference</figcaption>{ref_html}</figure>'
-                         f'<figure><figcaption>WPF</figcaption>{wpf_html}</figure></div></div>')
+                         f'<figure><figcaption>Native UI</figcaption>{ui_html}</figure></div></div>')
         parts.append("</section>")
     nav = "".join(f'<a href="#{html.escape(c)}">{html.escape(c)}</a>' for c in comps)
     page = f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Design reference vs WPF</title>
+<html lang="en"><head><meta charset="utf-8"><title>Design reference vs Native UI</title>
 <style>
 body{{font:13px/1.4 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;margin:0;background:#1e1e1e;color:#e3e3e3}}
 nav{{position:sticky;top:0;background:#282828;padding:8px 16px;display:flex;flex-wrap:wrap;gap:4px 12px;border-bottom:1px solid #3a3a3a}}
@@ -318,7 +318,7 @@ figcaption{{font-size:11px;color:#9a9a9a;margin-bottom:4px}} img{{image-renderin
 </style></head><body>
 <nav>{nav}</nav><main>
 <p>Generated by <code>scripts/render-design-reference.py</code>. Left: the design's own render of each component preview (docs/design is the source).
-Right: the WPF render of the same component, theme, and density (an approved golden under <code>docs/captures/golden/</code>, else <code>build/wpf-renders/</code>).
+Right: the native UI render of the same component, theme, and density (an approved golden under <code>docs/captures/golden/</code>, else <code>build/ui-renders/</code>).
 Review compares them per <code>standards/design-contract.md</code>: exact tokens, geometry within 1 DIP, every state present.</p>
 {"".join(parts)}
 </main></body></html>

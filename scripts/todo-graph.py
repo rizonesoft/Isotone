@@ -259,15 +259,12 @@ CHROME_BLOCK_RE = re.compile(r"^\*\*Chrome:\*\*")
 NEEDS_BLOCK_RE = re.compile(r"^\*\*Needs:\*\*\s*(?P<value>.+?)\s*$")
 NEEDS_ALLOWED: dict[str, str] = {
     "Windows host (build/test)": "windows-host",
-    # The repo-pinned .NET SDK (global.json) with the Windows Desktop
-    # workload: WPF builds and tests run nowhere else.
-    ".NET SDK (build/test)": "dotnet-sdk",
+    # Retained for parked pre-replan sections until D00 T07 unparks and rewrites them.
+    ".NET SDK (build/test)": "legacy-sdk",
     "Signing certificate (release)": "signing-cert",
-    # A machine WITHOUT the .NET SDK or a matching desktop runtime, which the
-    # development machine is not: a self-contained publish can fall back to
-    # an installed runtime, and only a genuinely clean machine shows that it
-    # does not. A clean VM, a Windows Sandbox instance, or a second physical
-    # machine all serve.
+    # A clean Windows VM, Windows Sandbox instance, or second physical machine
+    # without development toolchains installed (retained with its pre-replan label
+    # until D00 T07 §5 rewrites the release acceptance row).
     "Clean Windows machine (no .NET SDK)": "clean-windows",
 }
 
@@ -6411,7 +6408,7 @@ PROOF_RUNNER_TOKEN_RE = re.compile(
     r"dev-env\.ps1|run-arm64-tests\.ps1|test_native_fuzz\.py|fuzz_replay_main\.cpp|"
     r"native-artifact-gate\.py|native-format\.ps1|native-tidy\.ps1|"
     r"native-std-check\.py|native-pe-check\.py|native-deps-lint\.py|"
-    r"design-lint\.py|visual-tests\.ps1|\bdotnet\b)"
+    r"design-lint\.py|visual-tests\.ps1)"
 )
 PROOF_UNUSABLE_FULL_RE = re.compile(
     r"^unusable for a stamp until `?(?P<ref>D\d{2} T\d{2} §\d+)`? lands(?:\s*\([^()]+\))?\.?$",

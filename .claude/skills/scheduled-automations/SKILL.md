@@ -29,4 +29,4 @@ To remove a task, delete its entry and its README row, then re-run the installer
 - A scheduled command never needs a person: no prompts, no browser, nothing that writes to a live system without the operator's approval.
 - Never put a secret in `tasks.json`, a command line or a log. The alert reads its key from the vault at send time.
 - Change `run.py`, `alert.py` or the installers only to fix the runner itself, never to add a task: a task is an entry in `tasks.json`, and `scripts/tests/test_automations.py` covers the runner.
-- A check of a repository pin (the .NET SDK, a package advisory) belongs in `.github/workflows/pins.yml`, not here: only a check that needs this PC (its tools, its Claude login) is a task.
+- A check of a repository pin (a toolchain version, a native library advisory) belongs in `.github/workflows/pins.yml`, not here: only a check that needs this PC (its tools, its Claude login) is a task.

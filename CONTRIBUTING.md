@@ -38,32 +38,30 @@ If your change is not covered by an existing section, open an issue first so it 
 
 ## Set up and build
 
-You need Windows 11 (x64; Windows 10 22H2 may work but is unsupported), [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows), and Git. The .NET SDK is pinned to **11.0.100-rc.2.26504.105** in `global.json`; the provisioning script installs it, and Inno Setup 7 for building installers.
-
-For the native C++ apps you also need **Visual Studio 2026, version 18.11 or later** (any edition) with these components, exactly as `native/toolchain.json` pins them: `Microsoft.VisualStudio.Component.VC.Tools.x86.x64`, `Microsoft.VisualStudio.Component.VC.Tools.ARM64`, `Microsoft.VisualStudio.Component.VC.CMake.Project` (the bundled CMake and Ninja), `Microsoft.VisualStudio.Component.VC.Llvm.Clang` (clang-tidy, clang-format, clang-cl), `Microsoft.VisualStudio.Component.Windows11SDK.26100`, `Microsoft.VisualStudio.Component.Vcpkg`, and `Microsoft.VisualStudio.Component.VC.ASAN`. The pin also names the exact MSVC toolset (14.51.36231) and tool versions; `pwsh scripts/dev-env.ps1 -Check` compares your machine with it, and `tools/provision.ps1` prints the Visual Studio Installer command for any component you lack.
+You need Windows 11 (x64; Windows 10 22H2 may work but is unsupported), [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) (`pwsh`), Python 3 (`python`), and Git, plus **Visual Studio 2026, version 18.11 or later** (any edition) with these components, exactly as `native/toolchain.json` pins them: `Microsoft.VisualStudio.Component.VC.Tools.x86.x64`, `Microsoft.VisualStudio.Component.VC.Tools.ARM64`, `Microsoft.VisualStudio.Component.VC.CMake.Project` (the bundled CMake and Ninja), `Microsoft.VisualStudio.Component.VC.Llvm.Clang` (`clang-tidy`, `clang-format`, `clang-cl`, `clangd`), `Microsoft.VisualStudio.Component.Windows11SDK.26100`, `Microsoft.VisualStudio.Component.Vcpkg`, and `Microsoft.VisualStudio.Component.VC.ASAN`. The pin also names the exact MSVC toolset and tool versions; `pwsh scripts/dev-env.ps1 -Check` compares your machine with it, and `tools/provision.ps1` installs Inno Setup 7, wires the Git hooks, checks the Python icon packages, and prints the Visual Studio Installer command for any component you lack.
 
 ```powershell
 git clone https://github.com/rizonesoft/Isotone.git
 cd Isotone
 
-pwsh tools/provision.ps1              # install the pinned SDK and tools
-dotnet build Isotone.slnx              # build everything
-pwsh scripts/check-all.ps1            # run every gate: build, tests, analyzers, plan checks
-pwsh scripts/package.ps1 -App Stilus   # optional: build an installer and portable ZIP
+pwsh tools/provision.ps1              # verify the native toolchain, hooks, Python deps, and Inno Setup
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --workflow --preset x64-debug'
+pwsh scripts/check-all.ps1            # run every gate: native presets, sanitizers, tidy, and plan checks
+pwsh scripts/package.ps1 -App Stilus   # optional: build an installer and portable ZIP (once native Stilus ships)
 ```
 
-`scripts/check-all.ps1` is the same gate CI runs. If it is green locally, CI should be green too. See [docs/dev/build.md](docs/dev/build.md) for details and troubleshooting.
+`scripts/check-all.ps1` is the same gate CI runs. If it is green locally, CI should be green too. See [docs/dev/build.md](docs/dev/build.md) and [native/README.md](native/README.md) for details and troubleshooting.
 
 ## Code style
 
-- **Formatting** is defined by [`.editorconfig`](.editorconfig) at the repository root. Your editor and `dotnet format` both honor it; please do not reformat unrelated code.
-- **No new warnings.** Keep the build and analyzer output clean; fix a warning rather than suppress it.
-- **Modern C#:** file-scoped namespaces, primary constructors where they help, `var` when the type is obvious, nullable reference types enabled.
-- **Separation:** domain logic stays out of the UI layer. Core projects (`*.Core`, and later `Isotone.Core`) must not reference WPF.
-- **MVVM** with CommunityToolkit.Mvvm; no third-party UI frameworks. Standard WPF controls only.
-- **Tests:** new behavior comes with tests (xUnit). Bug fixes come with a test that fails before the fix.
+- **Formatting** is defined by [`native/.clang-format`](native/.clang-format) (`pwsh scripts/native-format.ps1 -Check`) for C++ and [`.editorconfig`](.editorconfig) at the repository root; please do not reformat unrelated code.
+- **No new warnings.** Keep `/W4 /WX`, `clang-tidy` (`pwsh scripts/native-tidy.ps1`), and MSVC `/analyze` clean at zero findings; fix a warning rather than suppress it.
+- **Modern C++23 (`standards/cpp.md`):** RAII ownership, `std::span` and value semantics, explicit error handling, bounds-checked readers for untrusted inputs, static CRT linkage (`/MT`), and every third-party library registered in [`docs/dev/native-libraries.md`](docs/dev/native-libraries.md).
+- **Separation:** domain logic stays out of the UI layer. `isotone::core` and app core libraries must not depend on `isotone::ui` or Win32 windowing.
+- **Native UI (`isotone::ui`):** custom native controls on Win32, Direct2D, DirectWrite, and Direct3D built 1:1 to [`docs/design/`](docs/design/README.md) (`standards/design-contract.md`); no third-party UI frameworks.
+- **Tests:** new behavior comes with GoogleTest cases under `native/tests/` (and a libFuzzer target for any untrusted file or input reader). Bug fixes come with a test that fails before the fix.
 - **Docs:** user-visible changes update the matching guide under [`docs/user/`](docs/user/README.md); architectural changes update [`docs/dev/`](docs/dev/README.md).
-- Coding standards live in [`standards/`](standards/): `shared.md` for suite-wide rules plus one file per app (`stilus.md`, `gesso.md`, `albumen.md`).
+- Coding standards live in [`standards/`](standards/): `cpp.md`, `ui.md`, `design-contract.md`, and `shared.md` plus one file per app (`stilus.md`, `gesso.md`, `albumen.md`).
 
 ## Commit messages
 
@@ -86,7 +84,7 @@ Examples:
 ```text
 feat(stilus): add corner radius to rectangle tool
 fix(gesso): keep layer order when undoing a merge
-ci: cache NuGet packages in build workflow
+ci: cache vcpkg archives in build workflow
 ```
 
 ## Pull requests

@@ -33,8 +33,8 @@ The `## Verification` section is not decoration. Run every item in it and record
 For a code TODO that means the **full** sweep, not the filtered runs individual sections used (the gate card is `.claude/skills/process-todo-section/gates.md`):
 
 ```powershell
-pwsh scripts/check-all.ps1             # Debug and Release build, tests, TODO gates
-dotnet test Isotone.slnx                # the whole suite, once, unfiltered
+pwsh scripts/check-all.ps1             # native presets, CTest suites, static analysis, and TODO gates
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; try { cmake --workflow --preset x64-release } finally { Pop-Location }'
 ```
 
 plus the file's other Verification items (fidelity round trips re-run against their committed fixtures, captures refreshed, a clean-machine publish check where the file owes one), each executed, none trimmed (in sweep-only mode: executed where the shipped rows allow, otherwise recorded not-yet-runnable with its owner).
@@ -43,7 +43,7 @@ plus the file's other Verification items (fidelity round trips re-run against th
 
 Read the whole file with fresh eyes and check:
 
-- **Stubs and TODOs in the code.** Grep the touched source paths for `TODO`, `FIXME`, `HACK`, `XXX`, `NotImplementedException`, and any commented-out block left during the work. Each is either finished now, or filed through `add-todo`: an owning section and an XREF when it passes the admission test (with its Origin line when a campaign files it), otherwise a backlog entry and the stub removed.
+- **Stubs and TODOs in the code.** Grep the touched source paths for `TODO`, `FIXME`, `HACK`, `XXX`, `NotImplementedError`, and any commented-out block left during the work. Each is either finished now, or filed through `add-todo`: an owning section and an XREF when it passes the admission test (with its Origin line when a campaign files it), otherwise a backlog entry and the stub removed.
 - **Partial items.** Any checklist item ticked when only part shipped. Split it.
 - **Orphaned deferrals.** Every `Deferred:` line in every stamp must name a live owner. Confirm the target section still exists and is still open. A deferral pointing at a section that shipped without addressing it is a hole. A deferral never points at the backlog: an entry there has no owner, so work that must ship gets a section through `add-todo` (admission test and Origin line for work a campaign found), and an idea that need not ship becomes a backlog entry with the deferral removed.
 - **One-sided XREFs.** The validator warns on these; resolve rather than ignore.

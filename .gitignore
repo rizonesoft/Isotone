@@ -1,49 +1,26 @@
 # Isotone Graphics Suite
 
-# Build output (UseArtifactsOutput puts everything under artifacts/)
+# Build output (native CMake presets and vcpkg roots live under artifacts/)
 artifacts/
-bin/
-[Bb]in/
-obj/
-[Oo]bj/
 publish/
 dist/
-*.binlog
-# WPF markup-compile temp projects (left behind by interrupted builds)
-*_wpftmp.csproj
-*_wpftmp/
-msbuild*.log
 
-# Claude automation scratch (tracked docs moved to docs/dev/build.md)
+# Campaign guard and verification scratch (tracked docs live under docs/dev/build.md)
 /build/
 
-# Provisioned tools (pinned SDK, etc.)
+# Provisioned local tools
 .tools/
-.dotnet/
 
-# IDE and user state
+# IDE and workspace state
 .vs/
 .idea/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-*.DotSettings.user
 *.code-workspace
 
 # Tests and coverage
 TestResults/
-*.trx
 coverage*.json
 coverage*.xml
 coverage*.info
-BenchmarkDotNet.Artifacts/
-
-# NuGet
-*.nupkg
-*.snupkg
-**/[Pp]ackages/*
-!**/[Pp]ackages/build/
 
 # Python
 __pycache__/
@@ -57,7 +34,6 @@ __pycache__/
 
 # Secrets
 *.pfx
-*.snk
 
 # OS noise
 Thumbs.db

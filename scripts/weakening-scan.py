@@ -46,49 +46,47 @@ import sys
 
 SELF = "scripts/weakening-scan.py"
 
-CODE_EXT = (".cs", ".xaml", ".py", ".ps1", ".psm1", ".sh", ".yml", ".yaml", ".props", ".targets",
-            ".csproj", ".json", ".editorconfig", ".globalconfig", ".ruleset", ".toml")
+CODE_EXT = (".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hh", ".hpp", ".hxx", ".h++", ".ixx", ".inl", ".ipp",
+            ".cmake", ".hlsl", ".hlsli", ".py", ".ps1", ".psm1", ".psd1", ".sh", ".yml", ".yaml", ".json",
+            ".editorconfig", ".toml", ".iss")
 BASELINES = ("docs/design/.lint-baseline.json", "todo/.warning-baseline", "todo/.design-baseline")
-BUILD_CONFIG = re.compile(r"(^|/)(Directory\.Build\.(props|targets)|Directory\.Packages\.props|"
-                          r"\.editorconfig|\.globalconfig|[^/]+\.ruleset|global\.json|[^/]+\.csproj|"
-                          r"[^/]+\.props|[^/]+\.targets|[^/]+\.runsettings)$")
-TEST_PATH = re.compile(r"(^|/)tests?/|Tests?\.cs$|(^|/)test_[^/]*\.py$|_test\.py$")
+BUILD_CONFIG = re.compile(r"(^|/)(CMakeLists\.txt|CMakePresets\.json|vcpkg\.json|vcpkg-configuration\.json|"
+                          r"toolchain\.json|size-budget\.json|system-dlls\.txt|sanitizer-dlls\.txt|"
+                          r"\.editorconfig|\.clang-tidy|\.clang-format|[^/]+\.cmake)$")
+TEST_PATH = re.compile(r"(^|/)tests?/|_(test|tests|fuzz)\.(c|cc|cpp|cxx)$|(^|/)test_[^/]*\.py$|_test\.py$")
 
 # (kind, side, applies-to, pattern). Side '-' reads removed lines, '+' added lines.
 RULES = (
-    ("test-removed", "-", "code", re.compile(r"\[(Fact|Theory|InlineData|MemberData|ClassData)\b")),
+    ("test-removed", "-", "code",
+     re.compile(r"\b(TEST|TEST_F|TEST_P|TYPED_TEST|TYPED_TEST_P)\s*\(|\bdef\s+test_\w+\s*\(")),
     ("assertion-removed", "-", "code",
-     re.compile(r"\bAssert\.\w+\(|\.Should\w*\(|\bassert\b|self\.assert\w+\(|\bcheck\(|\brefuses\(|"
-                r"\bVerify\w*\(")),
+     re.compile(r"\b(EXPECT|ASSERT)_[A-Z0-9_]+\s*\(|\bstatic_assert\s*\(|\bassert\b|self\.assert\w+\(|"
+                r"\bcheck\(|\brefuses\(")),
     ("guard-removed", "-", "code",
-     re.compile(r"\bthrow\b|\bThrowIf\w*\(|\braise\b|\bDebug\.Assert\(|\bPanelSlotsError\(|"
-                r"\bTrace\.Assert\(")),
+     re.compile(r"\bthrow\b|\braise\b|\bstd::abort\s*\(|\b__fastfail\s*\(|\bPanelSlotsError\(")),
     ("skip-added", "+", "code",
-     re.compile(r"\bSkip\s*=|\bSkip\.(If|Unless)\b|\bAssert\.Skip\w*\(|pytest\.mark\.skip|"
-                r"unittest\.skip|\[Ignore\b")),
+     re.compile(r"\bGTEST_SKIP\s*\(|\bDISABLED_\w+|\bpytest\.mark\.skip|\bunittest\.skip")),
     ("suppression-added", "+", "code",
-     re.compile(r"#pragma\s+warning\s+disable|\bSuppressMessage\b|<NoWarn>|"
-                r"TreatWarningsAsErrors>\s*false|WarningsNotAsErrors|"
-                r"dotnet_diagnostic\.\S+\.severity\s*=\s*(none|silent|suggestion)|"
-                r"#\s*noqa|#\s*type:\s*ignore|#nullable\s+disable|<Nullable>\s*disable|"
-                r"<RunAnalyzers>\s*false|<EnforceCodeStyleInBuild>\s*false")),
+     re.compile(r"#\s*pragma\s+warning\s*\(\s*(disable|suppress)\b|/\*\s*NOLINT|\bNOLINT(NEXTLINE|BEGIN)?\b|"
+                r"#\s*pragma\s+clang\s+diagnostic\s+ignored|/\bwd\d{4}\b|-Wno-[A-Za-z0-9_-]+|"
+                r"#\s*noqa|#\s*type:\s*ignore|\bChecks:\s*['\"]?-")),
     ("swallow-added", "+", "code",
-     re.compile(r"\bcatch\s*(\([^)]*\))?\s*\{\s*\}|\bexcept\b[^:\n]*:\s*(pass|\.\.\.)\s*$|"
-                r"\bcatch\s*\(\s*(System\.)?Exception\b[^)]*\)|\bcatch\s*$|\bcatch\s*\{|"
-                r"\bexcept\s*(Exception\b[^:]*)?:\s*$")),
+     re.compile(r"\bcatch\s*(\([^)]*\))?\s*\{\s*\}|\bcatch\s*\(\s*\.\.\.\s*\)|\bcatch\s*$|\bcatch\s*\{|"
+                r"\bexcept\b[^:\n]*:\s*(pass|\.\.\.)\s*$|\bexcept\s*(Exception\b[^:]*)?:\s*$")),
     ("stub-added", "+", "code",
-     re.compile(r"NotImplementedException|NotImplementedError|\bTODO\b|\bFIXME\b|\bHACK\b|\bXXX\b")),
+     re.compile(r"NotImplementedError|\bTODO\b|\bFIXME\b|\bHACK\b|\bXXX\b")),
     ("bypass-added", "+", "code", re.compile(r"--no-verify\b|--allow-add\b|--update-baseline\b")),
     ("condition-constant", "+", "code",
      re.compile(r"\bif\s*\(\s*!?\s*(false|true)\s*\)|\bif\s+(not\s+)?(False|True)\s*:|"
                 r"\bwhile\s*\(\s*false\s*\)|&&\s*false\b|\|\|\s*true\b|\band\s+False\b|\bor\s+True\b")),
     ("condition-changed", "-", "code",
-     re.compile(r"\b(if|elif|when|while|switch|case|unless)\b|&&|\|\||[!=<>]=|\bis\s+(not\s+)?null\b|"
-                r"\breturn\s+(false|true|null|False|True|None)\b")),
+     re.compile(r"\b(if|elif|when|while|switch|case|unless)\b|&&|\|\||[!=<>]=|\bnullptr\b|"
+                r"\breturn\s+(false|true|nullptr|False|True|None)\b")),
 )
 # Lines added inside a test file that end or neuter the test before its assertions.
-TEST_SHORT_CIRCUIT = re.compile(r"^\s*return\b|\bif\s*\(\s*(true|false)\s*\)|Assert\.True\(\s*true\s*\)|"
-                                r"Assert\.False\(\s*false\s*\)|\bAssert\.Pass\(|^\s*pass\s*$")
+TEST_SHORT_CIRCUIT = re.compile(r"^\s*return\b|\bif\s*\(\s*(true|false)\s*\)|"
+                                r"\b(EXPECT|ASSERT)_TRUE\s*\(\s*true\s*\)|"
+                                r"\b(EXPECT|ASSERT)_FALSE\s*\(\s*false\s*\)|\bSUCCEED\s*\(\s*\)|^\s*pass\s*$")
 TOLERANCE = re.compile(r"tolerance|epsilon|threshold|precision|maxdiff|max_diff|timeout|delta|"
                        r"retries|retry", re.IGNORECASE)
 NUMBER = re.compile(r"\b\d+(\.\d+)?\b")
@@ -98,7 +96,7 @@ def _kind_of(path: str) -> str:
     if path in BASELINES:
         return "baseline"
     base = os.path.basename(path)
-    if path.endswith(CODE_EXT) or base in (".editorconfig", ".globalconfig"):
+    if path.endswith(CODE_EXT) or base in ("CMakeLists.txt", ".editorconfig", ".clang-tidy", ".clang-format"):
         return "code"
     return "prose"
 
@@ -383,54 +381,51 @@ def _self_test() -> int:
         return [k for k, _p, _n, _t in scan(parse_diff(text))]
 
     cases = (
-        ("removed Fact", diff("tests/A/FooTests.cs", ["    [Fact]"]), "test-removed"),
-        ("removed Theory", diff("src/X.cs", ["[Theory]"]), "test-removed"),
-        ("removed Assert", diff("src/A.cs", ["        Assert.Equal(1, x);"]), "assertion-removed"),
-        ("removed Should", diff("src/A.cs", ["x.Should().Be(1);"]), "assertion-removed"),
+        ("removed TEST", diff("native/tests/core/foo_test.cpp", ["TEST(FooSuite, Bar) {"]), "test-removed"),
+        ("removed TEST_F", diff("native/tests/core/foo_test.cpp", ["TEST_F(FooFixture, Bar) {"]), "test-removed"),
+        ("removedEXPECT_EQ", diff("native/tests/core/foo_test.cpp", ["    EXPECT_EQ(1, x);"]), "assertion-removed"),
+        ("removed ASSERT_TRUE", diff("native/tests/core/foo_test.cpp", ["    ASSERT_TRUE(ok);"]), "assertion-removed"),
         ("removed python assert", diff("scripts/a.py", ["    assert x == 1"]), "assertion-removed"),
         ("removed self-test check", diff("scripts/a.py", ["    check(\"x\", ok)"]), "assertion-removed"),
-        ("removed throw", diff("src/A.cs", ["    throw new ArgumentException(nameof(x));"]), "guard-removed"),
-        ("removed ThrowIfNull", diff("src/A.cs", ["ArgumentNullException.ThrowIfNull(x);"]), "guard-removed"),
+        ("removed throw", diff("native/core/src/a.cpp", ["    throw std::invalid_argument(\"x\");"]), "guard-removed"),
+        ("removed fastfail", diff("native/core/src/a.cpp", ["    __fastfail(7);"]), "guard-removed"),
         ("removed raise", diff("scripts/a.py", ["        raise PanelSlotsError('x')"]), "guard-removed"),
-        ("added Skip", diff("tests/A.cs", [], ['[Fact(Skip = "flaky")]']), "skip-added"),
-        ("added Skip.If", diff("src/A.cs", [], ["Skip.If(true);"]), "skip-added"),
-        ("added pragma", diff("src/A.cs", [], ["#pragma warning disable CA1062"]), "suppression-added"),
-        ("added SuppressMessage", diff("src/A.cs", [], ["[SuppressMessage(\"x\", \"y\")]"]), "suppression-added"),
-        ("added NoWarn", diff("src/A.csproj", [], ["<NoWarn>CS1591</NoWarn>"]), "suppression-added"),
-        ("warnings not errors", diff("Directory.Build.props", [], ["<TreatWarningsAsErrors>false</TreatWarningsAsErrors>"]),
-         "suppression-added"),
-        ("severity none", diff(".editorconfig", [], ["dotnet_diagnostic.CA2000.severity = none"]), "suppression-added"),
+        ("added GTEST_SKIP", diff("native/tests/core/foo_test.cpp", [], ['    GTEST_SKIP() << "flaky";']), "skip-added"),
+        ("added DISABLED_ test", diff("native/tests/core/foo_test.cpp", [], ["TEST(FooSuite, DISABLED_Bar) {"]), "skip-added"),
+        ("added pragma warning disable", diff("native/core/src/a.cpp", [], ["#pragma warning(disable : 4996)"]), "suppression-added"),
+        ("added NOLINT", diff("native/core/src/a.cpp", [], ["int x = 0; // NOLINT(bugprone-narrowing-conversions)"]), "suppression-added"),
+        ("added /wd flag", diff("native/CMakeLists.txt", [], ["target_compile_options(a PRIVATE /wd4244)"]), "suppression-added"),
+        ("tidy check disabled", diff("native/.clang-tidy", [], ["Checks: '-bugprone-*'"]), "suppression-added"),
         ("noqa", diff("scripts/a.py", [], ["x = 1  # noqa"]), "suppression-added"),
-        ("empty catch", diff("src/A.cs", [], ["catch { }"]), "swallow-added"),
-        ("catch Exception", diff("src/A.cs", [], ["catch (Exception ex)"]), "swallow-added"),
-        ("bare catch line", diff("src/A.cs", [], ["        catch"]), "swallow-added"),
+        ("empty catch", diff("native/core/src/a.cpp", [], ["catch (const std::exception&) { }"]), "swallow-added"),
+        ("catch ellipsis", diff("native/core/src/a.cpp", [], ["catch (...)"]), "swallow-added"),
+        ("bare catch line", diff("native/core/src/a.cpp", [], ["        catch {"]), "swallow-added"),
         ("except pass", diff("scripts/a.py", [], ["except Exception: pass"]), "swallow-added"),
         ("bare except", diff("scripts/a.py", [], ["    except:"]), "swallow-added"),
-        ("NotImplemented", diff("src/A.cs", [], ["throw new NotImplementedException();"]), "stub-added"),
-        ("TODO", diff("src/A.cs", [], ["// TODO handle the locked file"]), "stub-added"),
+        ("NotImplementedError", diff("scripts/a.py", [], ["raise NotImplementedError()"]), "stub-added"),
+        ("TODO", diff("native/core/src/a.cpp", [], ["// TODO handle the locked file"]), "stub-added"),
         ("no-verify", diff("scripts/a.ps1", [], ["git commit --no-verify"]), "bypass-added"),
         ("baseline grown", diff("docs/design/.lint-baseline.json", [], ['  "x": 1,']), "baseline-grown"),
-        ("tolerance widened", diff("src/A.cs", ["const double Tolerance = 0.5;"], ["const double Tolerance = 2.0;"]),
-         "tolerance-changed"),
+        ("tolerance widened", diff("native/core/src/a.cpp", ["constexpr double kTolerance = 0.5;"],
+                                   ["constexpr double kTolerance = 2.0;"]), "tolerance-changed"),
         ("timeout raised", diff("scripts/a.py", ["timeout = 30"], ["timeout = 300"]), "tolerance-changed"),
-        ("build config line removed", diff("Directory.Build.props", ["<AnalysisLevel>latest-all</AnalysisLevel>"]),
-         "build-config-changed"),
-        ("test line changed", diff("tests/A/FooTests.cs", ["var expected = 3;"], ["var expected = 4;"]),
+        ("build config line removed", diff("native/CMakeLists.txt", ["set(CMAKE_CXX_STANDARD 23)"]), "build-config-changed"),
+        ("test line changed", diff("native/tests/core/foo_test.cpp", ["const int expected = 3;"], ["const int expected = 4;"]),
          "test-line-changed"),
-        ("test file deleted", diff("tests/A/FooTests.cs", ["x"], [], "deleted file mode 100644\n"), "test-file-deleted"),
-        ("code file deleted", diff("src/A.cs", ["x"], [], "deleted file mode 100644\n"), "file-deleted"),
-        ("guard condition relaxed", diff("src/A.cs", ["    if (!IsValid(input))"], ["    if (false)"]),
+        ("test file deleted", diff("native/tests/core/foo_test.cpp", ["x"], [], "deleted file mode 100644\n"), "test-file-deleted"),
+        ("code file deleted", diff("native/core/src/a.cpp", ["x"], [], "deleted file mode 100644\n"), "file-deleted"),
+        ("guard condition relaxed", diff("native/core/src/a.cpp", ["    if (!IsValid(input))"], ["    if (false)"]),
          "condition-changed"),
-        ("guard condition constant", diff("src/A.cs", [], ["    if (false)"]), "condition-constant"),
+        ("guard condition constant", diff("native/core/src/a.cpp", [], ["    if (false)"]), "condition-constant"),
         ("python condition constant", diff("scripts/a.py", [], ["    if False:"]), "condition-constant"),
-        ("comparison changed", diff("src/A.cs", ["    if (size >= Max)"], ["    if (size > Max * 2)"]),
+        ("comparison changed", diff("native/core/src/a.cpp", ["    if (size >= kMax)"], ["    if (size > kMax * 2)"]),
          "condition-changed"),
-        ("short-circuit or true", diff("src/A.cs", [], ["    ok = valid || true;"]), "condition-constant"),
-        ("early return in a test", diff("tests/A/FooTests.cs", [], ["        return;"]), "test-short-circuit"),
-        ("trivial assertion in a test", diff("tests/A/FooTests.cs", [], ["Assert.True(true);"]), "test-short-circuit"),
-        ("analyzers off in a project", diff("src/A/A.csproj", [], ["<RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>"]),
+        ("short-circuit or true", diff("native/core/src/a.cpp", [], ["    ok = valid || true;"]), "condition-constant"),
+        ("early return in a test", diff("native/tests/core/foo_test.cpp", [], ["        return;"]), "test-short-circuit"),
+        ("trivial assertion in a test", diff("native/tests/core/foo_test.cpp", [], ["EXPECT_TRUE(true);"]), "test-short-circuit"),
+        ("cmake config changed", diff("native/cmake/IsotoneTargets.cmake", [], ["set(ISOTONE_LTO OFF)"]),
          "build-config-changed"),
-        ("a project setting added", diff("Directory.Build.props", [], ["<Deterministic>false</Deterministic>"]),
+        ("preset config added", diff("native/CMakePresets.json", [], ['  "CMAKE_CXX_EXTENSIONS": "ON"']),
          "build-config-changed"),
     )
     for name, text, expected in cases:
@@ -438,15 +433,15 @@ def _self_test() -> int:
         check(f"flags {name}", expected in got, repr(got))
 
     quiet = (
-        ("added Fact", diff("tests/A.cs", [], ["[Fact]", "Assert.Equal(1, x);"])),
-        ("added throw", diff("src/A.cs", [], ["throw new ArgumentException();"])),
+        ("added TEST", diff("native/tests/core/foo_test.cpp", [], ["TEST(FooSuite, Bar) {", "EXPECT_EQ(1, x);"])),
+        ("added throw", diff("native/core/src/a.cpp", [], ["throw std::invalid_argument(\"x\");"])),
         ("added assert", diff("scripts/a.py", [], ["assert x"])),
-        ("removed plain code", diff("src/A.cs", ["var x = 1;"])),
-        ("specific catch", diff("src/A.cs", [], ["catch (IOException ex) when (IsLocked(ex))"])),
-        ("prose mentions", diff("standards/x.md", ["Assert.Equal is removed"], ["TODO: --no-verify Skip = 1"])),
-        ("own file", diff(SELF, ["raise X"], ["catch { }"])),
-        ("tolerance added fresh", diff("src/A.cs", [], ["const double Tolerance = 0.5;"])),
-        ("non-tolerance number change", diff("src/A.cs", ["var count = 3;"], ["var count = 4;"])),
+        ("removed plain code", diff("native/core/src/a.cpp", ["int x = 1;"])),
+        ("specific catch", diff("native/core/src/a.cpp", [], ["catch (const std::filesystem::filesystem_error& ex) {"])),
+        ("prose mentions", diff("standards/x.md", ["EXPECT_EQ is removed"], ["TODO: --no-verify GTEST_SKIP"])),
+        ("own file", diff(SELF, ["raise X"], ["catch (...) { }"])),
+        ("tolerance added fresh", diff("native/core/src/a.cpp", [], ["constexpr double kTolerance = 0.5;"])),
+        ("non-tolerance number change", diff("native/core/src/a.cpp", ["int count = 3;"], ["int count = 4;"])),
         ("baseline shrunk", diff("todo/.design-baseline", ["D01 T01 s1"])),
     )
     for name, text in quiet:
@@ -463,7 +458,7 @@ def _self_test() -> int:
         g("init", "-q")
         g("config", "user.email", "t@example.com")
         g("config", "user.name", "t")
-        for rel, text in (("src/a.cs", "a\n"), ("src/b.cs", "b\n"), ("docs/c.md", "c\n")):
+        for rel, text in (("native/a.cpp", "a\n"), ("native/b.cpp", "b\n"), ("docs/c.md", "c\n")):
             os.makedirs(os.path.join(repo, os.path.dirname(rel)), exist_ok=True)
             with open(os.path.join(repo, rel), "w", encoding="utf-8") as fh:
                 fh.write(text)
@@ -473,22 +468,22 @@ def _self_test() -> int:
             fh.write("user edit\n")
         before = json.loads(json.dumps(snapshot(repo)))
         check("snapshot records the user's dirty file", "docs/c.md" in before["files"], repr(before))
-        check("clean scope", scope_violations(before, ["src/a.cs"], repo) == [])
-        with open(os.path.join(repo, "src/a.cs"), "a", encoding="utf-8") as fh:
+        check("clean scope", scope_violations(before, ["native/a.cpp"], repo) == [])
+        with open(os.path.join(repo, "native/a.cpp"), "a", encoding="utf-8") as fh:
             fh.write("delegate edit\n")
-        check("owned change is in scope", scope_violations(before, ["src/a.cs"], repo) == [])
-        check("owned directory is in scope", scope_violations(before, ["src"], repo) == [])
-        with open(os.path.join(repo, "src/b.cs"), "a", encoding="utf-8") as fh:
+        check("owned change is in scope", scope_violations(before, ["native/a.cpp"], repo) == [])
+        check("owned directory is in scope", scope_violations(before, ["native"], repo) == [])
+        with open(os.path.join(repo, "native/b.cpp"), "a", encoding="utf-8") as fh:
             fh.write("stray\n")
-        check("unowned change is out of scope", scope_violations(before, ["src/a.cs"], repo) == ["out-of-scope src/b.cs"])
+        check("unowned change is out of scope", scope_violations(before, ["native/a.cpp"], repo) == ["out-of-scope native/b.cpp"])
         with open(os.path.join(repo, "docs/c.md"), "a", encoding="utf-8") as fh:
             fh.write("delegate touched the user's dirty file\n")
-        got = scope_violations(before, ["src/a.cs", "src/b.cs"], repo)
+        got = scope_violations(before, ["native/a.cpp", "native/b.cpp"], repo)
         check("a dirty file changed again is caught", got == ["out-of-scope docs/c.md"], repr(got))
         with open(os.path.join(repo, "new.txt"), "w", encoding="utf-8") as fh:
             fh.write("n\n")
-        check("a new unowned file is caught", "out-of-scope new.txt" in scope_violations(before, ["src", "docs"], repo))
-        owned_all = ["src", "docs", "new.txt"]
+        check("a new unowned file is caught", "out-of-scope new.txt" in scope_violations(before, ["native", "docs"], repo))
+        owned_all = ["native", "docs", "new.txt"]
         g("branch", "side")
         got = scope_violations(before, owned_all, repo)
         check("a new branch is caught", any(v.startswith("refs-changed") and "refs/heads/side" in v for v in got), repr(got))
@@ -504,26 +499,26 @@ def _self_test() -> int:
         wt = os.path.join(repo + "-wt")
         g("worktree", "add", "-q", "--detach", wt, "HEAD")
         base = json.loads(json.dumps(snapshot(repo)))
-        check("a clean worktree is in scope", scope_violations(base, ["src/a.cs"], repo, wt) == [])
-        with open(os.path.join(wt, "src/a.cs"), "a", encoding="utf-8") as fh:
+        check("a clean worktree is in scope", scope_violations(base, ["native/a.cpp"], repo, wt) == [])
+        with open(os.path.join(wt, "native/a.cpp"), "a", encoding="utf-8") as fh:
             fh.write("w\n")
-        check("an owned worktree change is in scope", scope_violations(base, ["src/a.cs"], repo, wt) == [])
-        with open(os.path.join(repo, "src/b.cs"), "r", encoding="utf-8", newline="") as fh:
+        check("an owned worktree change is in scope", scope_violations(base, ["native/a.cpp"], repo, wt) == [])
+        with open(os.path.join(repo, "native/b.cpp"), "r", encoding="utf-8", newline="") as fh:
             main_b = fh.read()
-        with open(os.path.join(repo, "src/b.cs"), "a", encoding="utf-8") as fh:
+        with open(os.path.join(repo, "native/b.cpp"), "a", encoding="utf-8") as fh:
             fh.write("main\n")
-        got = scope_violations(base, ["src/a.cs"], repo, wt)
-        check("a worktree delegate writing the main tree is caught", got == ["out-of-scope src/b.cs (main tree)"], repr(got))
-        with open(os.path.join(repo, "src/b.cs"), "w", encoding="utf-8", newline="") as fh:
+        got = scope_violations(base, ["native/a.cpp"], repo, wt)
+        check("a worktree delegate writing the main tree is caught", got == ["out-of-scope native/b.cpp (main tree)"], repr(got))
+        with open(os.path.join(repo, "native/b.cpp"), "w", encoding="utf-8", newline="") as fh:
             fh.write(main_b)
-        with open(os.path.join(wt, "src/b.cs"), "a", encoding="utf-8") as fh:
+        with open(os.path.join(wt, "native/b.cpp"), "a", encoding="utf-8") as fh:
             fh.write("w\n")
         check("an unowned worktree change is caught",
-              scope_violations(base, ["src/a.cs"], repo, wt) == ["out-of-scope src/b.cs"],
-              repr(scope_violations(base, ["src/a.cs"], repo, wt)))
+              scope_violations(base, ["native/a.cpp"], repo, wt) == ["out-of-scope native/b.cpp"],
+              repr(scope_violations(base, ["native/a.cpp"], repo, wt)))
         _git(["-c", "user.email=t@example.com", "-c", "user.name=t", "commit", "-q", "-am", "wt"], wt)
         check("a worktree commit is caught", any(v.startswith("head-moved") and wt in v
-                                                 for v in scope_violations(base, ["src"], repo, wt)))
+                                                 for v in scope_violations(base, ["native"], repo, wt)))
         g("add", "-A")
         g("commit", "-q", "-m", "delegate commit")
         check("a delegate commit is caught", any(v.startswith("head-moved")
@@ -532,13 +527,13 @@ def _self_test() -> int:
         shutil.rmtree(repo, ignore_errors=True)
         shutil.rmtree(repo + "-wt", ignore_errors=True)
 
-    parsed = parse_diff(diff("src/A.cs", ["a", "b"], ["c"]))
+    parsed = parse_diff(diff("native/core/src/a.cpp", ["a", "b"], ["c"]))
     check("removed lines keep old numbers", [(s, n) for s, n, _t in parsed[0]["lines"]] == [("-", 10), ("-", 11), ("+", 10)])
-    check("one signal per line", kinds(diff("src/A.cs", [], ["catch { } // TODO"])) == ["swallow-added"])
-    check("new file path from +++", parse_diff("diff --git a/n.cs b/n.cs\nnew file mode 100644\n--- /dev/null\n+++ b/n.cs\n"
-                                               "@@ -0,0 +1 @@\n+x\n")[0]["path"] == "n.cs")
-    check("deleted file path from ---", parse_diff("diff --git a/d.cs b/d.cs\ndeleted file mode 100644\n--- a/d.cs\n"
-                                                   "+++ /dev/null\n@@ -1 +0,0 @@\n-x\n")[0]["path"] == "d.cs")
+    check("one signal per line", kinds(diff("native/core/src/a.cpp", [], ["catch (...) { } // TODO"])) == ["swallow-added"])
+    check("new file path from +++", parse_diff("diff --git a/n.cpp b/n.cpp\nnew file mode 100644\n--- /dev/null\n+++ b/n.cpp\n"
+                                               "@@ -0,0 +1 @@\n+x\n")[0]["path"] == "n.cpp")
+    check("deleted file path from ---", parse_diff("diff --git a/d.cpp b/d.cpp\ndeleted file mode 100644\n--- a/d.cpp\n"
+                                                   "+++ /dev/null\n@@ -1 +0,0 @@\n-x\n")[0]["path"] == "d.cpp")
 
     print(f"weakening-scan self-test: {passed + failed} cases, {failed} failed")
     return 1 if failed else 0

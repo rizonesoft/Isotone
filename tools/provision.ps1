@@ -4,10 +4,6 @@
   Verifies and repairs the developer toolchain for the Isotone Graphics Suite.
 .DESCRIPTION
   Legs:
-    sdk     the .NET SDK pinned in global.json (exact version, rollForward disable;
-            a prerelease pin such as 11.0.100-rc.1 is matched exactly too).
-            Accepts a machine-wide install; otherwise repair downloads it, verifies
-            the SHA512 sidecar, and unpacks it to .tools/dotnet-win-x64.
     inno    Inno Setup 7 (ISCC.exe), version >= $MinInno. Repair installs it with
             winget (JRSoftware.InnoSetup.7), falling back to the pinned official
             installer ($InnoVersion, SHA256 verified). Chocolatey has no Inno 7.
@@ -31,57 +27,11 @@ $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $Root = Split-Path -Parent $PSScriptRoot
-$Rid = 'win-x64'
-$LocalSdk = Join-Path $Root ".tools\dotnet-$Rid"
 $MinInno = [version]'7.1.0'
 $InnoVersion = '7.1.0'
 $InnoWingetId = 'JRSoftware.InnoSetup.7'
 $InnoInstallerUrl = "https://github.com/jrsoftware/issrc/releases/download/is-$($InnoVersion -replace '\.', '_')/innosetup-$InnoVersion-x64.exe"
 $InnoInstallerSha256 = '0362A383ED217D4C4239B5933866DD96D3EB2102737DA92F80F6057A4B40DF2F'
-
-function Get-PinnedSdkVersion {
-  return (Get-Content (Join-Path $Root 'global.json') -Raw | ConvertFrom-Json).sdk.version
-}
-
-function Test-SdkLeg {
-  $want = Get-PinnedSdkVersion
-  if (-not $want) { return @{ Name = 'sdk'; Ok = $false; Detail = 'no sdk.version in global.json' } }
-  $pattern = '^' + [regex]::Escape($want) + ' '
-  $local = Join-Path $LocalSdk 'dotnet.exe'
-  if (Test-Path $local) {
-    if (@(& $local --list-sdks 2>$null) -match $pattern) {
-      return @{ Name = 'sdk'; Ok = $true; Detail = "$want in .tools (set DOTNET_ROOT=$LocalSdk and prepend it to PATH)" }
-    }
-  }
-  $cmd = Get-Command dotnet -ErrorAction SilentlyContinue
-  if ($cmd -and (@(& $cmd.Source --list-sdks 2>$null) -match $pattern)) {
-    return @{ Name = 'sdk'; Ok = $true; Detail = "$want ($($cmd.Source))" }
-  }
-  return @{ Name = 'sdk'; Ok = $false; Detail = "SDK $want not installed" }
-}
-
-function Install-Sdk {
-  $version = Get-PinnedSdkVersion
-  $base = "https://builds.dotnet.microsoft.com/dotnet/Sdk/$version/dotnet-sdk-$version-$Rid"
-  $work = Join-Path ([IO.Path]::GetTempPath()) ('isotone-sdk-' + [Guid]::NewGuid().ToString('N'))
-  New-Item -ItemType Directory -Path $work | Out-Null
-  try {
-    $zip = Join-Path $work 'sdk.zip'
-    $sidecar = Join-Path $work 'sdk.sha512'
-    Write-Host "provision: downloading .NET SDK $version"
-    Invoke-WebRequest -Uri "$base.zip" -OutFile $zip -UseBasicParsing
-    Invoke-WebRequest -Uri "$base.zip.sha512" -OutFile $sidecar -UseBasicParsing
-    $expected = ((Get-Content $sidecar -Raw) -split '\s+')[0].ToUpperInvariant()
-    $actual = (Get-FileHash -Path $zip -Algorithm SHA512).Hash
-    if ($actual -ne $expected) { throw "provision: SHA512 mismatch for $base.zip" }
-    if (Test-Path $LocalSdk) { Remove-Item -Recurse -Force $LocalSdk }
-    New-Item -ItemType Directory -Path $LocalSdk | Out-Null
-    Expand-Archive -Path $zip -DestinationPath $LocalSdk
-    Write-Host "provision: .NET SDK $version ready in $LocalSdk"
-  } finally {
-    Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
-  }
-}
 
 function Find-InnoSetup {
   $keys = @(
@@ -239,7 +189,6 @@ function Show-NativeRepair {
 
 function Test-All {
   $r = @()
-  $r += Test-SdkLeg
   $r += Test-InnoLeg
   $r += Test-HooksLeg
   $r += Test-PythonLeg
@@ -261,7 +210,6 @@ function Show-Results($Results) {
 $results = @(Test-All)
 if (-not $Verify) {
   $faults = @($results | Where-Object { -not $_.Ok } | ForEach-Object { $_.Name })
-  if ($faults -contains 'sdk') { Install-Sdk }
   if ($faults -contains 'inno') { Install-Inno }
   if ($faults -contains 'hooks path') { Repair-Hooks }
   if ($faults -contains 'pydeps') { Install-PyDeps }

@@ -1,7 +1,24 @@
 # Isotone Graphics Suite: line endings and binary handling.
 * text=auto
 
-# LF: scripts, docs, config read by POSIX tools, and git hooks
+# LF: native C/C++ and CMake sources, shaders, scripts, docs, config, and git hooks
+*.c text eol=lf
+*.cc text eol=lf
+*.cpp text eol=lf
+*.cxx text eol=lf
+*.c++ text eol=lf
+*.h text eol=lf
+*.hh text eol=lf
+*.hpp text eol=lf
+*.hxx text eol=lf
+*.h++ text eol=lf
+*.ixx text eol=lf
+*.inl text eol=lf
+*.ipp text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+*.hlsl text eol=lf
+*.hlsli text eol=lf
 *.sh text eol=lf
 *.py text eol=lf
 *.ps1 text eol=lf
@@ -20,20 +37,9 @@ todo/.warning-baseline text eol=lf
 todo/.design-baseline text eol=lf
 docs/reviews/** text eol=lf
 
-# CRLF: Windows-native sources and project files
-*.cs text eol=crlf diff=csharp
-*.xaml text eol=crlf
-*.csproj text eol=crlf
-*.slnx text eol=crlf
-*.slnf text eol=crlf
-*.sln text eol=crlf
-*.props text eol=crlf
-*.targets text eol=crlf
+# CRLF: Windows installer scripts and application manifests
 *.iss text eol=crlf
-*.resx text eol=crlf
-*.runsettings text eol=crlf
 *.manifest text eol=crlf
-*.xshd text eol=crlf
 
 # Binary
 *.png binary
@@ -57,7 +63,6 @@ docs/reviews/** text eol=lf
 *.pdf binary
 *.dll binary
 *.exe binary
-*.snk binary
 *.pfx binary
 
 # A source archive (git archive) carries its commit in this file, which native/cmake/WriteBuildId.cmake reads when

@@ -35,6 +35,16 @@ pwsh scripts/dev-env.ps1 -Arch x64 -Run 'cmake --version'   # one command inside
 
 Re-pinning after a Visual Studio or runner image update: run the `toolchain-probe` workflow, choose the newest toolset all three machines share, update `native/toolchain.json` and the decision record, and regenerate the test fixtures with `python scripts/tests/test_dev_env.py --write-fixtures`.
 
+#### Reading the C# reference
+
+The annotated tag `csharp-final` on `origin` marks commit `67872822e42422e3d527766d8656d09bf6066efa`, the last commit holding the imported C# Stilus and Gesso trees before `D00 T06 §3` removed them (`docs/dev/decisions.md`, "2026-10-23: The unattended campaign"). Re-plan and native build sections cite reference behavior from the imported apps as `csharp-final:<path>` (for example `csharp-final:src/Stilus/Bezier.Core/Services/CanvasHUDService.cs`), and inspect the tag directly from `main` without creating secondary git worktrees (`git worktree add` is prohibited by the trunk-only rule in `AGENTS.md` and `scripts/panel_slots.py agent-gate`):
+
+```powershell
+git ls-tree -r --name-only csharp-final -- src/                  # list every file in the imported C# trees
+git show csharp-final:src/Stilus/Bezier.Core/Bezier.Core.csproj  # read one reference file at csharp-final:<path>
+git grep -n "CanvasHUDService" csharp-final -- src/              # search across the imported C# sources and tests
+```
+
 ## One build configuration
 
 | File | Role |

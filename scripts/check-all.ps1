@@ -1,57 +1,52 @@
 ﻿#Requires -Version 7.0
 <#
 .SYNOPSIS
-  Runs every local gate: build (Debug and Release), tests, and the plan tooling.
+  Runs every local gate: the plan and review tooling, the design-contract checks, and the native C++23 build and test stages.
 .DESCRIPTION
-  1. dotnet build Isotone.slnx -c Debug and -c Release (skipped with -SkipBuild)
-  2. dotnet test Isotone.slnx (-Config, default Release)
-  3. python scripts/todo-graph.py self-test
-  4. python scripts/todo-graph.py validate
-  5. python scripts/todo-graph.py plan --check
-  6. python scripts/todo-claims.py
-  7. python scripts/todo-findings.py --check
-  8. python scripts/todo-runs.py --check
-  9. python scripts/campaign_guard.py --self-test
-  10. python scripts/build-design-site.py --check (docs/design/index.html is current), then
-      python scripts/build-app-icons.py --check (the app icon SVGs match their generator)
-  11. python scripts/design-lint.py --self-test
-  12. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
+  1. python scripts/todo-graph.py self-test
+  2. python scripts/todo-graph.py validate
+  3. python scripts/todo-graph.py plan --check
+  4. python scripts/todo-claims.py
+  5. python scripts/todo-findings.py --check
+  6. python scripts/todo-runs.py --check
+  7. python scripts/campaign_guard.py --self-test
+  8. python scripts/build-design-site.py --check (docs/design/index.html is current), then
+     python scripts/build-app-icons.py --check (the app icon SVGs match their generator)
+  9. python scripts/design-lint.py --self-test
+  10. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
       (no new design-contract violation in the UI sources; standards/design-contract.md)
-  13. python scripts/panel_slots.py --self-test
-  14. python scripts/panel_slots.py validate (the reviewer pin, the delegate pin,
+  11. python scripts/panel_slots.py --self-test
+  12. python scripts/panel_slots.py validate (the reviewer pin, the delegate pin,
       and the .claude/agents definitions; standards/delegation.md)
-  15. python scripts/review-dispatch.py --check-pin (the reviewer pin loads under
-      the dispatcher's rules)
-  16. python scripts/tests/test_review_dispatch.py (the dispatcher's routing,
-      read-only invocations, records, and --keep, with fake reviewer CLIs)
-  17. python scripts/weakening-scan.py --self-test
-  18. python scripts/tests/test_automations.py (the scheduled tasks, their
+  13. python scripts/review_pin.py --check and python scripts/tests/test_review_pin.py
+  14. python scripts/review-dispatch.py --check-pin, then test_review_dispatch.py,
+      test_review_prompt.py, test_three_pass.py, test_isotone_three_pass_stamp.py,
+      and test_ci_status.py
+  15. python scripts/weakening-scan.py --self-test
+  16. python scripts/tests/test_automations.py (the scheduled tasks, their
       runner, alert, and installers; .conclave/automations/README.md)
-  19. python scripts/tests/test_pin_automations.py (the pin checks and the
+  17. python scripts/tests/test_pin_automations.py (the pin checks and the
       settings hook scripts)
-  20. python scripts/tests/test_merge_prs.py (the dependency pull request
+  18. python scripts/tests/test_merge_prs.py (the dependency pull request
       merger, D00 T01 §12)
-  21. python scripts/ci_watch.py --self-test (the section-boundary watch over
-      every workflow's latest run on main, scheduled ones included)
-  22. python scripts/lsp-mcp-server.py --self-test and
+  19. python scripts/ci_watch.py --self-test and python scripts/completion_check.py --self-test
+  20. python scripts/lsp-mcp-server.py --self-test and
       python scripts/tests/test_lsp_mcp_server.py (the Antigravity LSP MCP
       multiplexer and workspace plugin manifest)
-  23. python scripts/tests/test_build_props.py (a WPF temporary project shares
-      its parent's artifacts folders, D00 T02 §3; asks the pinned SDK), then
-      python scripts/native-deps-lint.py --self-test (D00 T04 §1) and
+  21. python scripts/native-deps-lint.py --self-test (D00 T04 §1) and
       python scripts/check-native-advisories.py --self-test (D00 T04 §3)
-  24. The native stages (skipped with -SkipNative), each inside scripts/dev-env.ps1
+  22. The native stages (skipped with -SkipNative), each inside scripts/dev-env.ps1
       where it builds or inspects, its full output in build/check-all/<stage>.log:
       native presets (every non-hidden configure preset in native/CMakePresets.json
       is owned by a build stage, D00-T05-S7-PR7); native toolchain (dev-env.ps1
-      -Check for x64 and arm64); native x64-debug, x64-release, x64-asan, and
-      x64-fuzz-msvc (cmake --workflow: configure, build, test); native arm64-debug,
-      arm64-release, and arm64-asan (configure and build: an ARM64 test runs on
-      ARM64, D00 T05 §8);
-      native x64-dist and arm64-dist; native deps (native-deps-lint.py: the register
-      and the link graphs, D00 T04 §1); native analyze (x64-analyze and
-      arm64-analyze); native std (native-std-check.py over every preset folder);
-      native pe (native-pe-check.py over every preset folder); native format
+      -Check for x64 and arm64); native x64-debug, x64-release (with native benchmarks
+      smoke), x64-asan, and x64-fuzz-msvc (cmake --workflow: configure, build, test);
+      native arm64-debug, arm64-release, and arm64-asan (configure and build: an ARM64
+      test runs on ARM64, D00 T05 §8);
+      native x64-dist and arm64-dist; native deps (native-deps-lint.py: the register,
+      managed-source guard, and the link graphs, D00 T04 §1 and D00 T06 §3); native analyze
+      (x64-analyze and arm64-analyze); native std (native-std-check.py over every preset
+      folder); native pe (native-pe-check.py over every preset folder); native format
       (native-format.ps1 -Check); native tidy (native-tidy.ps1); native artifacts
       (native-artifact-gate.py --policy shipping --require-built: Debug, Release,
       analyze, and dist); native artifacts asan (--policy asan --require-built);
@@ -70,21 +65,16 @@
   (BOSUN_SLOT) passes straight through.
 .EXAMPLE
   pwsh scripts/check-all.ps1
-  pwsh scripts/check-all.ps1 -SkipBuild
   pwsh scripts/check-all.ps1 -SkipNative
 #>
 [CmdletBinding()]
 param(
-  [switch]$SkipBuild,
-  [switch]$SkipNative,
-  [ValidateSet('Debug', 'Release')]
-  [string]$Config = 'Release'
+  [switch]$SkipNative
 )
 $ErrorActionPreference = 'Stop'
 
 if (-not $env:BOSUN_SLOT -and (Get-Command -Name bosun -CommandType Application -ErrorAction Ignore)) {
-  $forward = @('-Config', $Config)
-  if ($SkipBuild) { $forward += '-SkipBuild' }
+  $forward = @()
   if ($SkipNative) { $forward += '-SkipNative' }
   & bosun run -- pwsh -NoProfile -File $PSCommandPath @forward
   exit $LASTEXITCODE
@@ -138,16 +128,6 @@ $script:Python = if (Get-Command python -ErrorAction SilentlyContinue) { 'python
 
 Push-Location $RepoRoot
 try {
-  # Shut down MSBuild and Roslyn compiler nodes when each dotnet command finishes so background daemons do not hold memory.
-  $env:MSBUILDDISABLENODEREUSE = '1'
-  if (-not $SkipBuild) {
-    Invoke-Gate 'build Debug' { dotnet build $Solution -c Debug -nologo -p:UseSharedCompilation=false }
-    Invoke-Gate 'build Release' { dotnet build $Solution -c Release -nologo -p:UseSharedCompilation=false }
-  }
-  $noBuild = @()
-  if (-not $SkipBuild) { $noBuild = @('--no-build') }
-  Invoke-Gate "test $Config" { dotnet test $Solution -c $Config -nologo -p:UseSharedCompilation=false @noBuild }
-
   if ($script:Python) {
     Invoke-PythonGate 'todo-graph self-test' 'todo-graph.py' @('self-test')
     Invoke-PythonGate 'todo-graph validate' 'todo-graph.py' @('validate')
@@ -178,7 +158,6 @@ try {
     Invoke-PythonGate 'completion_check self-test' 'completion_check.py' @('--self-test')
     Invoke-PythonGate 'lsp-mcp-server self-test' 'lsp-mcp-server.py' @('--self-test')
     Invoke-PythonGate 'lsp-mcp-server tests' 'tests/test_lsp_mcp_server.py' @()
-    Invoke-PythonGate 'build props tests' 'tests/test_build_props.py' @()
     Invoke-PythonGate 'native-deps-lint self-test' 'native-deps-lint.py' @('--self-test')
     Invoke-PythonGate 'check-native-advisories self-test' 'check-native-advisories.py' @('--self-test')
   } else {

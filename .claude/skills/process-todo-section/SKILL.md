@@ -47,7 +47,7 @@ It prints the path, the section title, the item count, whether the TODO is froze
 
 Use the `skill arg` line it prints as the canonical form for the rest of the run, so the commit message and the review call name the section the same way.
 
-**If `resolve` printed a `needs` line, the section needs a host.** Confirm the host is reachable before writing `Started:` (for `.NET SDK (build/test)`, `dotnet --version` in the repo root prints the version `global.json` pins). If it is not, stop and say which host the section waits on: starting a host-bound section with no host is how a run burns a session producing nothing committable.
+**If `resolve` printed a `needs` line, the section needs a host.** Confirm the host is reachable before writing `Started:` (for `Windows host (build/test)`, `pwsh scripts/dev-env.ps1 -Check -Arch x64` in the repo root verifies the pinned native toolchain). If it is not, stop and say which host the section waits on: starting a host-bound section with no host is how a run burns a session producing nothing committable.
 
 **If `resolve` printed a `requires` line with requirements missing here, the section needs that environment.** Confirm it is reachable before writing `Started:`. If it is not, stop and say which capability the section waits on: starting an environment-bound section with no environment burns a session the same way.
 
@@ -60,11 +60,11 @@ Use the `skill arg` line it prints as the canonical form for the rest of the run
 - **Validate before building.** Step 2 is a gate, not a formality. A section that cannot pass it gets fixed first.
 - **Follow the corrected contract.** The checklist items define the scope. Do not widen because something adjacent looks wrong; file it instead with `add-todo`, whose admission test decides between an item on an open section, a new section (carrying its Origin line), and the backlog. Correcting a defect *in* the section is not widening; adding work the section never asked for is.
 - **One section = one commit.** If you cannot describe the change in one commit message, the section was mis-sized. Plan corrections may ride in that commit, or land as their own `todo:` commit first when they are substantial. Review fix-loop commits append to the section's candidate range (never amend), and the stamp names the whole range.
-- **Commits are free; pushes are not.** Commit locally as often as you like. Push twice per section: the SHIP push, then the STAMP push. While iterating, run the affected checks only (`dotnet build` on the touched project, `dotnet test Isotone.slnx --filter '<names>'`), not the whole sweep. A third push is allowed when it is named and the reason recorded.
+- **Commits are free; pushes are not.** Commit locally as often as you like. Push twice per section: the SHIP push, then the STAMP push. While iterating, run the affected checks only (`cmake --build` on the touched target and `ctest --test-dir artifacts/native/x64-debug -R '<pattern>' --output-on-failure` inside `scripts/dev-env.ps1`), not the whole sweep. A third push is allowed when it is named and the reason recorded.
 - **Never mark `[x]` without evidence.** The Implementation Order row flips only after the review stamp exists.
 - **User documents first.** A section that writes a user's file, library, preset, or settings is built to: atomic writes (write a temp file beside the target, flush, then replace), read back what was written, skip and report rather than drop or duplicate, and every destructive path confirmed. Its Test checkpoint exercises the failure path, not only the happy path: a read-only target, a locked file, a full disk, a malformed input file.
-- **One source of truth for a value.** Any value the user trusts (a pixel, a coordinate, a color, an undo step) is computed in exactly one place, a model or service, and the view binds to it rather than deciding it. A calculation in code-behind that nothing verifies is a bug.
-- **The design is the bar on surfaces.** `standards/design-contract.md` is binding: `docs/design/` is the source and the code implements it 1:1 (exact tokens, geometry within 1 DIP at 100, 150, and 200 percent, every state and theme the spec lists, approved goldens). A section that builds a surface proves it against the specs its `**Design:**` line names and against its review-approved goldens, never against the old-app captures under `docs/captures/<app>/` (a before record) and never against memory of what the other apps look like. Standard WPF with custom theming, never WPF-UI. A second color picker, undo stack, or settings writer in a second app is a defect, and so is moving code into `Isotone.Core` before a second app needs it.
+- **One source of truth for a value.** Any value the user trusts (a pixel, a coordinate, a color, an undo step) is computed in exactly one place, in core/document logic, and the surface reads that single source rather than recomputing it. A duplicate calculation in view glue that nothing verifies is a bug.
+- **The design is the bar on surfaces.** `standards/design-contract.md` is binding: `docs/design/` is the source and the code implements it 1:1 (exact tokens, geometry within 1 DIP at 100, 150, and 200 percent, every state and theme the spec lists, approved goldens). A section that builds a surface proves it against the specs its `**Design:**` line names and against its review-approved goldens, never against the old-app captures under `docs/captures/<app>/` (a before record) and never against memory of what the other apps look like. Native C++23 with our own UI (`isotone::ui` on Win32, Direct2D, DirectWrite, and Direct3D). A second color picker, undo stack, or settings writer in a second app is a defect, and so is moving code into `isotone::core` or `isotone::ui` before a second app needs it.
 - **Edits are proven in both directions.** A section that changes a document proves the undo as well as the do, the save as well as the reopen, and what happens when the file cannot be written.
 
 ## The session owns every step
@@ -78,7 +78,7 @@ One session validates, builds, gates, commits, obtains an independent review, an
 | 6. Gates | `isotone-verifier` runs the sweep into `build/delegation/` logs | Reading those logs and quoting them; the commit-time run is quoted from a log the lead read |
 | 7 to 9 | nothing | The commit, the pushes, the independent review, the stamp hand-off |
 
-A delegate's report is never evidence on its own, and it joins the section only through the acceptance steps of `standards/delegation.md`: the `--snapshot`/`--scope` check proving the delegate wrote nothing, and the lead's own read of the logs and cited sources. A delegate that wrote anything failed its brief; a failed acceptance gets one corrected re-brief, and a second failure comes back to the lead or goes to the operator. Record `python scripts/panel_slots.py delegate-audit` in the commit body or run file when the section delegated. Output discipline is load-bearing: bound every command (`dotnet build -v q` filtered to errors and warnings, `dotnet test --filter` on the touched tests, `tail`/`head` on logs, field extraction on JSON), because an unbounded dump lands in the one context that must carry it for the rest of the run. Full logs go under `build/` (gitignored).
+A delegate's report is never evidence on its own, and it joins the section only through the acceptance steps of `standards/delegation.md`: the `--snapshot`/`--scope` check proving the delegate wrote nothing, and the lead's own read of the logs and cited sources. A delegate that wrote anything failed its brief; a failed acceptance gets one corrected re-brief, and a second failure comes back to the lead or goes to the operator. Record `python scripts/panel_slots.py delegate-audit` in the commit body or run file when the section delegated. Output discipline is load-bearing: bound every command (`cmake --build` filtered to errors and warnings, `ctest -R` on the touched tests, `tail`/`head` on logs, field extraction on JSON), because an unbounded dump lands in the one context that must carry it for the rest of the run. Full logs go under `build/` (gitignored).
 
 ## Workflow
 
@@ -94,8 +94,8 @@ The section was written before the code existed. Check it still holds. Seven que
 
 | Check | What you are asking | The failure it catches |
 | ----- | ------------------- | ---------------------- |
-| **Legitimacy** | Does a real source demand this: an observed defect, a format specification, a .NET or WPF contract, a user need? Or was it inferred? | Work invented by the plan, built faithfully, wanted by nobody |
-| **Currency** | Do the projects, classes, XAML resources, settings keys, and package versions it names still exist and still behave that way? | A section pinned to a path or count that moved |
+| **Legitimacy** | Does a real source demand this: an observed defect, a format specification, a Win32/DirectX or design contract, a user need? Or was it inferred? | Work invented by the plan, built faithfully, wanted by nobody |
+| **Currency** | Do the targets, classes, headers, UI tokens, settings keys, and vcpkg port versions it names still exist and still behave that way? | A section pinned to a path or count that moved |
 | **Consistency** | Do its own items agree with each other, with the file's Current state block, and with the sections it depends on? | Two items specifying different things; the later one silently wins |
 | **Correctness** | Are the behaviors, API names, and format details it states actually what the source says? | A stale behavior ported confidently into code |
 | **Sufficiency** | Is there enough here to build without inventing? Are the decisions made, or deferred into the implementer's lap? | A section that becomes a design session for an unattended executor |
@@ -107,7 +107,7 @@ Ground each answer:
 ```bash
 python scripts/todo-graph.py validate          # graph integrity, XREF reciprocity
 python scripts/todo-claims.py                  # the TODOs' measured claims still hold
-grep -rn "<class/file the section names>" src/ tests/
+git grep -n "<class/file the section names>" -- native/ scripts/
 git log --oneline -5 -- <the paths the section touches>
 ```
 
@@ -117,7 +117,7 @@ git log --oneline -5 -- <the paths the section touches>
 
 | Claim in the section | Check it against |
 | --- | --- |
-| A project, class, method, XAML resource, command, or settings key | It exists, spelled that way, at that path |
+| A target, class, function, header, token key, command, or settings key | It exists, spelled that way, at that path |
 | A count, size, version, or measurement | Re-derive it; these age fastest and are quoted most confidently |
 | A commit SHA or run ID | It resolves |
 | An `-> XREF:` reference | The target section exists, and points back |
@@ -184,17 +184,17 @@ Work the checklist top to bottom. Tick each item as its Done-when becomes true, 
 - Build the cheaper substitute's failure into the work: the checkpoint must be able to catch the wrong thing, so build the test that distinguishes them.
 - Keep the diff to the section. Adjacent wrongness gets filed with `add-todo`, not fixed in passing.
 - UI sections: consume the shared styles, controls, and services named in `**Chrome:**`. A second color picker, progress indicator, or settings writer is a defect, not a shortcut.
-- The stack is fixed (`AGENTS.md`): WPF with MVVM through CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection, and Serilog. A section that needs another dependency records the decision and its reason in the section before adding it.
+- The stack is fixed (`AGENTS.md`): C++23 with our own UI (`isotone::ui` on Win32, Direct2D, DirectWrite, and Direct3D), `isotone::core`, CMake, Ninja, and vcpkg (`docs/dev/native-libraries.md`). A section that needs another dependency records the decision and its reason in the section and registers it in `docs/dev/native-libraries.md` before adding it.
 
 ### 4a. Build a surface to the design (UI sections)
 
-Before writing any XAML for a section whose Fidelity line names a surface:
+Before writing any UI code for a section whose Fidelity line names a surface:
 
 1. **The Design line validates.** The section carries one `**Design:**` line (grammar in `todo/README.md`, Surface fidelity) and `python scripts/todo-graph.py validate` reports no `design-*` finding for it. If the section is still listed in `todo/.design-baseline`, write its Design line now from the specs the surface needs (component READMEs under `docs/design/components/`, `docs/design/shell-layout.md` region anchors, `standards/ui.md` anchors), mark it `**Corrected YYYY-MM-DD:**`, and shrink the baseline in the same commit with `python scripts/todo-graph.py design-baseline`. A surface is never built from a section with no Design line.
-2. **Design first.** A ref written `new surface: docs/design/<path>.md` means the spec does not exist: write it (README, `preview.html` card, the page regenerated with `python scripts/build-design-site.py` per `docs/design/EDITING.md`) as the section's first item, then cite it directly on the Design line. A look the spec does not describe goes into `docs/design/` first, never straight into XAML.
+2. **Design first.** A ref written `new surface: docs/design/<path>.md` means the spec does not exist: write it (README, `preview.html` card, the page regenerated with `python scripts/build-design-site.py` per `docs/design/EDITING.md`) as the section's first item, then cite it directly on the Design line. A look the spec does not describe goes into `docs/design/` first, never straight into UI code.
 3. **Read the whole design input.** Every spec the Design line names, `docs/design/tokens.json` for every value they cite, `standards/design-contract.md`, and the design reference renders (`python scripts/render-design-reference.py --components <Comp>` writes `build/design-reference/<Comp>/<theme>-<density>.png`).
-4. **Token keys only.** Every color through `DynamicResource` with a color token key (or `Isotone.App.*` for the app accent), every size, spacing, radius, font, and duration through its token key. No literal, no private palette, no `StaticResource` color. `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` reports 0 new violations before the commit, and when the section removes recorded violations it shrinks the baseline with `--update-baseline` in the same range. Never run `--allow-add` from this skill.
-5. **Every state, theme, Highlight, density, and scale.** Implement every state the specs list; add the section's scenarios to `tests/Isotone.UI.VisualTests` (the harness of `D01 T01 §9`, once it ships) and produce the WPF renders under `build/wpf-renders/` with `pwsh scripts/visual-tests.ps1 -Filter <name>`. Hand them to review with the side-by-side report.
+4. **Tokens only.** Every color, size, spacing, radius, font, and duration comes from the token table generated from `docs/design/tokens.json` (or the app accent tokens). No literal color, no private palette, no ad-hoc metric. `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` reports 0 new violations before the commit, and when the section removes recorded violations it shrinks the baseline with `--update-baseline` in the same range. Never run `--allow-add` from this skill.
+5. **Every state, theme, Highlight, density, and scale.** Implement every state the specs list; add the section's scenarios to the offscreen WARP golden render harness (`D00 T07 §3`, once it ships) and produce the UI renders under `build/ui-renders/`. Hand them to review with the side-by-side report (`python scripts/render-design-reference.py`).
 6. **Never approve a golden.** `docs/captures/golden/` is written only by `review-todo-section` after its `design-fidelity` lens passes. A render that differs from the spec is fixed in the code, or recorded as a `**Design deviation:**` line (grammar in `todo/README.md`) with a follow-up section that fixes the design or the code; there is no silent deviation.
 
 ### 5. Surface completeness (UI sections)
@@ -203,20 +203,19 @@ Before the checkpoint, account for **every control, menu item, dialog, command, 
 
 ### 6. Run the Test checkpoint, for real
 
-Execute the checkpoint command and read the output. Quote the result in the commit body. If the checkpoint cannot run (no Windows host, no pinned .NET SDK, missing fixture), the section is not done: record what ran, what did not, and why, and stop without a stamp. A checkpoint half-run is not evidence.
+Execute the checkpoint command and read the output. Quote the result in the commit body. If the checkpoint cannot run (no Windows host, missing pinned native toolchain, missing fixture), the section is not done: record what ran, what did not, and why, and stop without a stamp. A checkpoint half-run is not evidence.
 
 Then run **every gate the section owes**, not only the checkpoint. The gate card is `.claude/skills/process-todo-section/gates.md`:
 
 ```powershell
-pwsh scripts/check-all.ps1          # Debug and Release build, tests, TODO gates, guard self-test
-dotnet test Isotone.slnx             # the whole suite, not only the new tests
+pwsh scripts/check-all.ps1          # native presets, CTest suites, static analysis, TODO gates, guard self-test
 python scripts/todo-graph.py validate
 python scripts/todo-claims.py       # the TODOs' measured claims still hold
 ```
 
 **If a claim went stale, the section changed something a TODO had measured.** That is not a nuisance to silence: fix the claim *and* re-read the sentence it supports, in this commit, because the prose around a changed figure is usually wrong too.
 
-While iterating, narrow with `dotnet test --filter`. Before committing, run the full sweep once: a section that passes its own filter and breaks another suite has not passed.
+While iterating, narrow with `ctest --test-dir artifacts/native/x64-debug -R <pattern> --output-on-failure` inside `scripts/dev-env.ps1`. Before committing, run the full sweep once: a section that passes its own filter and breaks another suite has not passed.
 
 ### 7. Commit and push the ship
 

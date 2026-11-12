@@ -17,6 +17,7 @@ a lexical check can hold. Rules, each reported as `file:line:rule:message`:
   helper-port           a build-time row whose values are not exactly the helper's, or a port installed only for the
                         build machine's triplet that is not registered as build-time
   native-source-outside a C or C++ source or header outside native/, artifacts/, and build/
+  managed-source        a managed-stack source, project, solution, XAML, NuGet, or MSBuild file anywhere in the tree (D00 T06 §3)
   suppression-unreasoned a bare or multi-check NOLINT, a NOLINTBEGIN block, a reasonless suppression, or
                         `#pragma warning(disable` in a native source; a target-wide /wd in native/cmake/ not marked
                         WORKAROUND
@@ -75,6 +76,9 @@ GRAPH_PRESETS = ("x64-debug", "x64-release", "arm64-debug", "arm64-release", "x6
 HELPER_REPOSITORY = "https://github.com/microsoft/vcpkg"
 HELPER_IDENTITY = "none: build-time helper, not linked"
 SOURCE_EXTENSIONS = (".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hh", ".hpp", ".hxx", ".ixx", ".inl", ".ipp")
+MANAGED_EXTENSIONS = (".cs", ".csproj", ".xaml", ".slnx", ".sln", ".slnf", ".props", ".targets", ".runsettings",
+                      ".ruleset", ".nuspec")
+MANAGED_FILENAMES = ("global.json", "nuget.config", "packages.lock.json")
 
 
 def finding(path, line, rule, message):
@@ -390,6 +394,19 @@ def outside_findings(files):
             for f in files if f.lower().endswith(SOURCE_EXTENSIONS) and not f.startswith(("native/", "artifacts/", "build/"))]
 
 
+def managed_source_findings(files):
+    found = []
+    for f in files:
+        norm = f.replace("\\", "/")
+        if norm.startswith(("artifacts/", "build/")):
+            continue
+        lower_name = norm.rsplit("/", 1)[-1].lower()
+        if lower_name in MANAGED_FILENAMES or lower_name.endswith(MANAGED_EXTENSIONS):
+            found.append(finding(f, 1, "managed-source",
+                                 "managed C#/.NET/WPF/NuGet/MSBuild files are retired (csharp-final); C++23 lives under native/"))
+    return found
+
+
 NOLINT_RE = re.compile(r"\bNOLINT(NEXTLINE|BEGIN|END)?\b(\(([^)]*)\))?(.*)")
 PRAGMA_DIRECT_RE = re.compile(r"(#\s*pragma\s+|__pragma\s*\(\s*)warning\s*\(")
 PRAGMA_OP_RE = re.compile(r"\b_Pragma\s*\(")
@@ -637,7 +654,7 @@ def system_patterns():
 def source_findings(files, rows):
     modules = {row["Runtime module"].lower() for row in rows if row["Runtime module"] not in ("", "none")}
     patterns = system_patterns()
-    found = outside_findings(files)
+    found = outside_findings(files) + managed_source_findings(files)
     for f in files:
         if f.startswith("native/") and f.lower().endswith(SOURCE_EXTENSIONS):
             text = (ROOT / f).read_text(encoding="utf-8", errors="replace")
@@ -965,6 +982,14 @@ def self_test():
 
     files = ["native/core/src/a.cpp", "src/Stilus/x.cpp", "artifacts/native/x64-debug/gen.h", "build/p/x.c", "README.md"]
     check("a C++ source outside native/", rules(outside_findings(files)), ["native-source-outside"])
+    for managed_path in ("src/Probe.cs", "src/App/App.csproj", "src/App/MainWindow.xaml", "Isotone.slnx", "App.sln",
+                         "App.slnf", "Directory.Build.props", "Directory.Build.targets", "tests/Isotone.runsettings",
+                         "Analysis.ruleset", "Package.nuspec", "global.json", "nuget.config", "packages.lock.json"):
+        check(f"managed-source rejects {managed_path}", rules(managed_source_findings([managed_path])), ["managed-source"])
+    check("managed-source rejects mixed-case NuGet.Config", rules(managed_source_findings(["NuGet.Config"])), ["managed-source"])
+    check("managed-source allows native C++, headers, CMake, Inno Setup, and ignored build/artifacts paths",
+          managed_source_findings(["native/core/src/a.cpp", "native/core/include/a.h", "native/CMakeLists.txt",
+                                   "installer/Stilus.iss", "artifacts/p/gen.cs", "build/p/global.json"]), [])
     for text, want in (("int a; // NOLINT(bugprone-foo): the API requires a raw pointer", []),
                        ("int a; // NOLINT", ["suppression-unreasoned"]),
                        ("int a; // NOLINT(bugprone-foo)", ["suppression-unreasoned"]),

@@ -19,7 +19,7 @@ You are a verification delegate of the lead session in the Isotone repository. Y
 
 ## Your brief
 
-The lead's prompt names the commands to run, at which commit or working tree, and the log directory. Run exactly those. Do not substitute a narrower command for a broader one (a filtered test run never stands in for the unfiltered suite, `-SkipBuild` never stands in for a build).
+The lead's prompt names the commands to run, at which commit or working tree, and the log directory. Run exactly those. Do not substitute a narrower command for a broader one (a filtered test run never stands in for the unfiltered suite, `-SkipNative` never stands in for a native build).
 
 ## Rules
 

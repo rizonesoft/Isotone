@@ -4,7 +4,7 @@ name: release
 #   stilus-v1.2.3  -> Stilus      gesso-v1.2.3 -> Gesso
 #   albumen-v1.2.3 -> Albumen     isotone-v1.2.3 -> Isotone Graphics Suite
 #
-# During C# retirement (D00 T06 §2), the .NET release steps are retired while
+# During C# retirement (D00 T06 §2), the managed release steps were retired while
 # preserving the native advisory release gate (D00 T04 §3) ahead of the native
 # release pipeline re-plan in D00 T07 §5. No release tag is pushed before the
 # release re-plan lands.

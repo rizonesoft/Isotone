@@ -20,9 +20,9 @@
 [![Download](https://img.shields.io/badge/download-rizonesoft.com-2EA043)](https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-badge)
 <br>
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-[![.NET 11 RC](https://img.shields.io/badge/.NET-11.0.100--rc.2-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/11.0)
+[![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white)](docs/specs/2026-10-22-native-stack-design.md)
 [![Inno Setup 7](https://img.shields.io/badge/Inno%20Setup-7.1-264B99)](https://jrsoftware.org/isinfo.php)
-[![Windows 11](https://img.shields.io/badge/Windows-11%20x64-0078D4?logo=windows&logoColor=white)](#download-and-install)
+[![Windows 11](https://img.shields.io/badge/Windows-11%20x64%20%26%20ARM64-0078D4?logo=windows&logoColor=white)](#download-and-install)
 
 <br>
 
@@ -35,7 +35,7 @@
 **Design:** [Isotone Interface design system: themes, controls, and app icons](https://rizonesoft.github.io/Isotone/design/), a live page generated from [`docs/design/`](docs/design/README.md).
 
 > [!NOTE]
-> **Status: pre-alpha.** There is no release yet. Stilus (the vector editor) edits real SVG files today; Gesso has its domain model and application shell; Albumen is planned. Everything below marks what works and what is still on the roadmap. Star or watch the repository to hear about the first preview.
+> **Status: pre-alpha.** There is no release yet. The C++23 foundation (`isotone::core`, pinned toolchain, vcpkg baseline, AddressSanitizer, and libFuzzer) is live on `main`, and the earlier imported prototypes of Stilus and Gesso are preserved at the `csharp-final` Git tag as behavior references while the native apps build out. Everything below marks what works and what is on the roadmap. Star or watch the repository to hear about the first preview.
 
 ## Contents
 
@@ -56,7 +56,7 @@
 Professional graphics software has drifted toward subscriptions, sign-ins, and cloud lock-in. Isotone goes the other way.
 
 - **Own your tools.** No account, no subscription, no telemetry required to open a file.
-- **Native and fast.** Built for Windows on .NET 11, WPF, and SkiaSharp, with startup time and responsiveness treated as features.
+- **Native and fast.** Built directly for Windows 11 in C++23 on Win32, Direct2D, DirectWrite, and Direct3D, with startup time, memory footprint, and responsiveness treated as features.
 - **Open formats first.** SVG, PNG, TIFF, and JPEG are first-class citizens, with import paths for the formats you already have.
 - **One family, three tools.** Each app installs and updates on its own, yet they share a core so colors, rendering, and plugins behave the same everywhere.
 - **Free software.** GPL-3.0, developed in the open.
@@ -80,8 +80,8 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
     <td>Camera RAW in, hands off to Gesso</td>
   </tr>
   <tr>
-    <td>🟢 <strong>Working prototype</strong><br>SVG editing works today</td>
-    <td>🟡 <strong>Early foundation</strong><br>Domain model and shell</td>
+    <td>🚧 <strong>Native rewrite in progress</strong><br>Behavior reference preserved at <code>csharp-final</code></td>
+    <td>🚧 <strong>Native rewrite in progress</strong><br>Behavior reference preserved at <code>csharp-final</code></td>
     <td>⚪ <strong>Planned</strong><br>Not started</td>
   </tr>
 </table>
@@ -94,31 +94,31 @@ Legend: ✅ works today · 🚧 in progress · 📋 planned
 
 ### Stilus (vector)
 
-Stilus began life as the Bezier project and was imported here with its full history. It is the most complete app in the suite.
+Stilus began life as the Bezier project and was imported here with its full history (preserved at the `csharp-final` Git tag as the behavior reference for the native C++23 implementation).
 
 | Area | Status | Notes |
 | ---- | :----: | ----- |
-| SVG import and export | ✅ | Open, edit, and save SVG documents |
-| Drawing tools | ✅ | Pen (Bezier curves), line, rectangle, ellipse, text |
-| Editing tools | ✅ | Select, node edit, pan, zoom |
-| Layers | ✅ | Layer panel with ordering |
-| Undo and redo | ✅ | Command-based history (move, resize, rotate, scale, group, reorder, property edits) |
-| Alignment and snapping | ✅ | Align selections, snap while drawing |
-| Raw SVG view | ✅ | Inspect and edit the markup directly |
+| SVG import and export | 🚧 | Open, edit, and save SVG documents (reference implementation at `csharp-final`) |
+| Drawing tools | 🚧 | Pen (Bezier curves), line, rectangle, ellipse, text |
+| Editing tools | 🚧 | Select, node edit, pan, zoom |
+| Layers | 🚧 | Layer panel with ordering |
+| Undo and redo | 🚧 | Command-based history (move, resize, rotate, scale, group, reorder, property edits) |
+| Alignment and snapping | 🚧 | Align selections, snap while drawing |
+| Raw SVG view | 🚧 | Inspect and edit the markup directly |
 | EPS, AI, and PDF import and export | 📋 | Target formats, not yet implemented |
-| Move to shared Isotone.Core | 📋 | Rendering and file I/O to migrate into the core |
+| Shared `isotone::core` & `isotone::ui` | 🚧 | Shared C++23 core and UI toolkit under `native/` |
 
 ### Gesso (raster)
 
 | Area | Status | Notes |
 | ---- | :----: | ----- |
 | Domain model | 🚧 | Documents, layers, masks, selections, tiles, history, color types |
-| Application shell | 🚧 | WPF window, menus, and docking panels |
+| Application shell | 🚧 | Native Win32/Direct2D window, menus, and docking panels (`isotone::ui`) |
 | Tiled rendering pipeline | 📋 | Designed for very large images |
 | Painting and retouching tools | 📋 | Brush, eraser, selection, clone |
 | Filters and adjustment layers | 📋 | Non-destructive by design |
 | PNG, JPEG, TIFF, PSD | 📋 | Target formats |
-| Plugins and scripting | 📋 | Plugin abstractions exist; runtime to come |
+| Plugins and scripting | 📋 | Out-of-process plug-in host and automation planned |
 
 ### Albumen (darkroom)
 
@@ -142,12 +142,12 @@ Stilus began life as the Bezier project and was imported here with its full hist
 
 ## Architecture
 
-Isotone follows one rule: **develop together, distribute separately.** All three apps live in one repository and one solution so shared code can be refactored in a single change and debugged end to end. Each app is still compiled into its own self-contained directory with its own copy of the core, so updating Gesso can never break an installed Stilus.
+Isotone follows one rule: **develop together, distribute separately.** All apps live in one repository and one native CMake tree (`native/`) so shared code can be refactored in a single change and debugged end to end. Each app compiles into its own standalone native executable statically linking its own copy of `isotone::core` and `isotone::ui`, so updating Gesso can never break an installed Stilus.
 
 ```mermaid
 flowchart TB
-    subgraph repo["One repository, one solution: Isotone.slnx"]
-        core["Isotone.Core<br/>rendering, file I/O,<br/>color science, plugins"]
+    subgraph repo["One repository, one native CMake tree: native/"]
+        core["isotone::core & isotone::ui<br/>rendering, UI toolkit, file I/O,<br/>color science, plugins"]
         stilus["Stilus<br/>vector editor"]
         gesso["Gesso<br/>raster editor"]
         albumen["Albumen<br/>darkroom and library"]
@@ -163,32 +163,30 @@ flowchart TB
     lsetup --> suite
 
     classDef planned stroke-dasharray: 5 5
-    class core,albumen,lsetup planned
+    class stilus,gesso,albumen,nsetup,isetup,lsetup,suite planned
 ```
 
-<sub>Dashed boxes are planned. Today Stilus lives in <code>src/Stilus/</code> and Gesso in <code>src/Gesso/</code>; shared code moves into Isotone.Core as the apps converge.</sub>
+<sub>Dashed boxes are planned. Today <code>native/core/</code> holds <code>isotone::core</code>'s foundation; <code>isotone::ui</code> and the native apps arrive as their plan sections ship (the imported prototypes remain readable at the <code>csharp-final</code> Git tag).</sub>
 
-**Shared core responsibilities (planned):**
+**Shared core and UI responsibilities:**
 
-- **Rendering pipeline:** high-performance 2D drawing primitives on SkiaSharp.
-- **File I/O:** one place for complex format readers and writers.
-- **Color science:** shared color management so a color looks the same in Stilus, Gesso, and Albumen.
-- **Plugin system:** a common interface so filters and brushes can work across apps.
+- **Rendering and UI toolkit:** GPU-accelerated 2D/3D rendering and custom UI controls (`isotone::ui`) on Win32, Direct2D, DirectWrite, and Direct3D.
+- **File I/O:** one place for bounds-checked, fuzz-tested format readers and atomic writers.
+- **Color science:** shared color management so a color looks the same across the suite.
+- **Plugin system:** an isolated out-of-process host so filters and extensions work safely across apps.
 
 <details>
 <summary><strong>Technology stack</strong></summary>
 
 | Piece | Choice |
 | ----- | ------ |
-| Runtime | .NET 11 (SDK pinned to 11.0.100-rc.2 until .NET 11 ships in November 2026) |
-| UI | WPF with standard controls and custom theming; no third-party UI framework once Gesso's WPF-UI leaves (planned, `D03 T01`) |
-| Rendering | SkiaSharp |
-| MVVM | CommunityToolkit.Mvvm |
-| Logging | Serilog |
-| Tests | xUnit v3, AwesomeAssertions |
-| Installers | Inno Setup 7 (64-bit Setup), self-contained .NET |
-| Versioning | MinVer, from Git tags |
-| Platform | Windows 11, x64 (Windows 10 22H2 best-effort, unsupported) |
+| Language | C++23 (`/std:c++23preview`, MSVC + CMake + Ninja, pinned in `native/toolchain.json`) |
+| UI | `isotone::ui` -- custom native UI toolkit on Win32, Direct2D, DirectWrite, and Direct3D |
+| Packages | vcpkg manifest mode, static linkage on the static CRT (`/MT`), audited in `docs/dev/native-libraries.md` |
+| Tests & Analysis | GoogleTest (CTest), libFuzzer + AddressSanitizer, `clang-tidy`, `clang-format`, MSVC `/analyze` |
+| Installers | Inno Setup 7 (64-bit Setup) and standalone portable ZIPs |
+| Versioning | Semantic Versioning derived directly from Git tags |
+| Platform | Windows 11, x64 and ARM64 (Windows 10 22H2 best-effort, unsupported) |
 
 </details>
 
@@ -197,13 +195,11 @@ flowchart TB
 
 | Path | What it holds |
 | ---- | ------------- |
-| `src/Stilus/` | The Stilus vector editor (imported from the Bezier project) |
-| `src/Gesso/` | The Gesso raster editor |
-| `src/Albumen/` | Albumen (planned) |
-| `docs/` | User and developer documentation ([index](docs/README.md)) |
+| `native/` | The C++23 suite: `isotone::core`, `isotone::ui` (planned), the apps (planned), vcpkg manifest and triplets, CMake presets, and GoogleTest/libFuzzer suites |
+| `docs/` | User and developer documentation ([index](docs/README.md)) and the [Isotone Interface design system](docs/design/README.md) |
 | `todo/` | The development plan and TODO tree ([implementation plan](todo/implementation-plan.md)) |
 | `installer/` | Inno Setup scripts, one per app plus the suite |
-| `scripts/` | Build, check, and packaging scripts |
+| `scripts/` | Build, check, toolchain, review, and packaging scripts |
 | `tools/` | Toolchain provisioning and Git hooks |
 | `resources/` | Brand art, icons, and shared assets |
 
@@ -222,13 +218,13 @@ Every app ships on its own, in two forms:
 | ---- | -------- | ----- |
 | **Installer** (`.exe`, Inno Setup) | Most people | Start menu entry and a clean uninstall |
 | **Portable ZIP** | Locked-down machines, trying it out | Unzip and run, no installer needed |
-| **Suite installer** | Getting everything at once | One Isotone Graphics Suite installer with a component per app (Stilus and Gesso today) |
+| **Suite installer** | Getting everything at once | One Isotone Graphics Suite installer with a component per app |
 
 **Per-user or all-users.** The installer asks at startup. A per-user install needs no administrator rights and lands in your profile; an all-users install needs elevation and lands in Program Files.
 
-**No .NET install needed.** Every build is self-contained, so the right .NET runtime travels with the app.
+**Zero external runtime needed.** Every executable links the C runtime and third-party libraries statically and imports only Windows system DLLs.
 
-**Requirements:** Windows 11 (23H2 or later), 64-bit (x64). Windows 10 22H2 may work but is unsupported: .NET 11 does not support consumer Windows 10, and the installer says so before it continues.
+**Requirements:** Windows 11 (23H2 or later), 64-bit (x64 or ARM64). Windows 10 22H2 may work but is unsupported, and the installer says so before it continues.
 
 **Package managers:** winget packages are planned after the first stable release; their manifests will point at `download.rizonesoft.com`.
 
@@ -238,10 +234,10 @@ Every app ships on its own, in two forms:
 <summary><strong>Prerequisites</strong></summary>
 
 - Windows 11 (23H2 or later), x64. Windows 10 22H2 may work but is unsupported.
-- [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) (`pwsh`)
+- **Visual Studio 2026 (18.11 or later)** with the C++, ARM64, CMake/Ninja, Clang, Windows 11 SDK 26100, vcpkg, and AddressSanitizer components pinned in [`native/toolchain.json`](native/toolchain.json).
+- [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) (`pwsh`) and Python 3 (`python`)
 - [Git](https://git-scm.com/)
-- .NET SDK **11.0.100-rc.2.26504.105** (the .NET 11 release candidate), pinned in `global.json`. The provisioning script installs it for you.
-- Optional: [Inno Setup 7.1](https://jrsoftware.org/isinfo.php) or newer to build installers locally (the provisioning script installs it)
+- Optional: [Inno Setup 7.1](https://jrsoftware.org/isinfo.php) or newer to build installers locally (`tools/provision.ps1` installs it)
 
 </details>
 
@@ -249,23 +245,17 @@ Every app ships on its own, in two forms:
 git clone https://github.com/rizonesoft/Isotone.git
 cd Isotone
 
-pwsh tools/provision.ps1          # install the pinned .NET SDK and tools
-dotnet build Isotone.slnx          # build every app
-pwsh scripts/check-all.ps1        # run every gate: build, tests, analyzers, plan checks
-pwsh scripts/package.ps1 -App Stilus   # produce the Stilus installer and portable ZIP
+pwsh tools/provision.ps1                                                                   # verify the native toolchain, install Python icon deps, hooks, and Inno Setup
+pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --workflow --preset x64-debug'   # configure, build, and run GoogleTest
+pwsh scripts/check-all.ps1                                                                 # run every gate: native presets, sanitizers, tidy, and plan checks
+pwsh scripts/package.ps1 -App Stilus                                                       # produce the Stilus installer and portable ZIP (once native Stilus ships)
 ```
 
-To run Stilus straight from source:
-
-```powershell
-dotnet run --project src/Stilus/Bezier.Desktop
-```
-
-Full details, including troubleshooting and CI, live in [docs/dev/build.md](docs/dev/build.md).
+Full details, including troubleshooting, presets, and CI, live in [docs/dev/build.md](docs/dev/build.md) and [native/README.md](native/README.md).
 
 ## Versioning and releases
 
-Each app is versioned independently with [Semantic Versioning](https://semver.org/). Versions come from Git tags through [MinVer](https://github.com/adamralph/minver), so there is no version number to edit by hand.
+Each app is versioned independently with [Semantic Versioning](https://semver.org/). Versions come directly from Git tags, so there is no version number to edit by hand.
 
 | Tag | Releases |
 | --- | -------- |
@@ -280,16 +270,16 @@ Pushing a tag builds and packages that app's installer and portable ZIP, uploads
 
 Development is driven by a TODO tree in [`todo/`](todo/), with the ordered plan in [todo/implementation-plan.md](todo/implementation-plan.md). In broad strokes:
 
-1. **Foundation:** one solution, shared build infrastructure, CI, installers, and release automation.
-2. **Stilus preview:** stabilize the vector editor and ship the first public build.
+1. **Foundation:** one native C++23 CMake tree, pinned toolchain and vcpkg baseline, static analysis, sanitizers, fuzzing, CI, installers, and release automation.
+2. **Stilus preview:** build the native vector editor and ship the first public build.
 3. **Stilus parity:** bring Stilus to parity with Adobe Illustrator 30.8 and CorelDRAW Graphics Suite 2026 (v27.2), every feature of both, in ten releases from 0.2.0 to 1.0.0. The [parity catalog](docs/parity/stilus-parity.md) routes each of their 4,335 inventory rows to a planned section, an existing one, the backlog, an exclusion (scripting, cloud services), or another Isotone app. Stilus AI runs on OpenRouter with your own API key (BYOK), sends nothing without an explicit action, and rests on three pillars: results are editable, undoable vector objects; brand kits and hand-offs work across the suite; and every AI action is recorded so it can be re-run, compared, and reverted.
-4. **Isotone.Core:** the shared library grows the pixel engine, color management, and the AI core with the Stilus parity work, the pixel engine extensions and the develop engine with the Gesso parity work, and takes rendering, file I/O, and other code as a second app needs it.
+4. **isotone::core and isotone::ui:** the shared native libraries grow the UI toolkit, pixel engine, color management, and AI core with the Stilus parity work, the pixel engine extensions and the develop engine with the Gesso parity work, and take rendering, file I/O, and other code as a second app needs it.
 5. **Gesso preview:** canvas, layers, core tools, and PNG, JPEG, and TIFF support in `gesso-v0.1.0`.
 6. **Gesso parity:** bring Gesso to parity with Adobe Photoshop 27.10 (with Camera Raw 18.6) and two other popular raster editors, Affinity by Canva 3.3 (Affinity Photo) and GIMP 3.2.6, every feature of all three, in twelve releases from 0.2.0 to 1.0.0 (Phases 16 to 27 of the plan). The [Gesso parity catalog](docs/parity/gesso-parity.md) routes each of their 10,829 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services, platform-only and vendor-removed features), or another Isotone app. Gesso AI rests on the same three pillars as Stilus AI. Scripting and macros (one suite-wide system), batch processing, video, and animation are deferred to after the first release.
 7. **Albumen preview:** library, RAW development on the suite develop engine, and the Edit in Gesso handoff in `albumen-v0.1.0`.
 8. **Albumen parity:** bring Albumen to parity with Adobe Lightroom Classic 15.5.1, ACDSee Photo Studio Ultimate 2027, and IrfanView 4.76, in ten releases from 0.2.0 to 1.0.0 (Phases 30 to 39 of the plan), on three pillars: a fast default image viewer (`AlbumenViewer.exe`, opening any image from Explorer within a recorded startup budget), browsing any folder without importing it, and batch rename, convert, resize, edit, develop, and export as core tools. The [Albumen parity catalog](docs/parity/albumen-parity.md) routes each of their 8,919 inventory rows to a planned section, an existing one, the backlog, an exclusion (cloud services), or another Isotone app (ACDSee's layered Edit mode goes to Gesso). Originals are safe by default: Albumen writes into an original only when you opt in, and then only after a verified backup. Faces are recognized on your machine and never sent anywhere; tethered capture is replaced by watched-folder import for now.
 9. **Distribution:** signing, win-arm64, winget, and the first suite bundle, `isotone-v1.0.0`.
-10. **After the first release:** RAW and XCF imports on the shared decoders, suite automation (actions, C# scripts, the command line, batch), video and audio with animation, on-device models and the GPU develop path, and Albumen's remaining formats, bundled as `isotone-v1.1.0`.
+10. **After the first release:** Tinctura, Capio, and Folium, RAW and XCF imports on the shared decoders, suite automation (actions, scripting, the command line, batch), video and audio with animation, on-device models and the GPU develop path, and Albumen's remaining formats, bundled as `isotone-v1.1.0`.
 
 The plan file is the source of truth; this list is a summary and may lag behind it.
 
@@ -321,14 +311,11 @@ Stilus and Gesso were previously published under the MIT License as separate pro
 
 Isotone stands on the shoulders of excellent open source work:
 
-- [SkiaSharp](https://github.com/mono/SkiaSharp) and [Skia](https://skia.org/) for 2D rendering
-- [SharpVectors](https://github.com/ElinamLLC/SharpVectors) for the Stilus splash logo
-- [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) for MVVM source generators
-- [Serilog](https://serilog.net/) for structured logging
-- [AvalonDock](https://github.com/Dirkster99/AvalonDock) for docking panels
-- [MinVer](https://github.com/adamralph/minver) for tag-based versioning
+- [vcpkg](https://github.com/microsoft/vcpkg) for reproducible C++ package management
+- [GoogleTest](https://github.com/google/googletest) and [Google Benchmark](https://github.com/google/benchmark) for testing and benchmarking
+- [LLVM](https://llvm.org/) (`clang-format`, `clang-tidy`, and `clangd`) for formatting, static analysis, and language-server tooling
+- [resvg](https://github.com/linebender/resvg) (`resvg-py`) and [Pillow](https://python-pillow.org/) for deterministic SVG icon and design-reference rendering
 - [Inno Setup](https://jrsoftware.org/isinfo.php) for installers
-- [xUnit](https://xunit.net/) and [AwesomeAssertions](https://awesomeassertions.org/) for testing
 
 <div align="center">
 <sub>Made in the open by <a href="https://www.rizonesoft.com/?utm_source=github&utm_medium=readme-footer">Rizonesoft</a>, a brand of Rizonetech (Pty) Ltd.</sub>

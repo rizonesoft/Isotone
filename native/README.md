@@ -1,6 +1,6 @@
 # native
 
-The C++23 half of the Isotone Graphics Suite: the shared libraries and the apps, built with one pinned toolchain from one committed package baseline (`docs/specs/2026-10-22-native-stack-design.md`).
+The C++23 codebase of the Isotone Graphics Suite: the shared libraries and the apps, built with one pinned toolchain from one committed package baseline (`docs/specs/2026-10-22-native-stack-design.md`).
 
 ## Layout
 
@@ -95,7 +95,7 @@ python scripts/native-artifact-gate.py --publish artifacts/publish/<App>/<rid>  
 
 The folders are the configure presets of `CMakePresets.json`, never a sweep of `artifacts/native/`, so a stale or probe folder never decides a result. `--policy shipping` or `--policy asan` limits a run to one policy's presets, `--require-built` fails a preset that was never built, and `--asan-coverage` proves every sanitized compile and package instrumented; a dumpbin result the gate cannot read (a malformed image, a format change) fails, an app-local copy of a system DLL fails, and a folder under `artifacts/publish/native/` that no budget names fails.
 
-`pwsh scripts/check-all.ps1` runs every native stage after the .NET and Python gates (`.claude/skills/process-todo-section/gates.md` lists what each proves); `-SkipNative` leaves them out.
+`pwsh scripts/check-all.ps1` runs every native stage after the Python gates (`.claude/skills/process-todo-section/gates.md` lists what each proves); `-SkipNative` leaves them out.
 
 ## Packages
 

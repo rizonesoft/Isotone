@@ -1,7 +1,7 @@
 name: build
 
-# Builds and tests the whole suite (Isotone.slnx) on every push and pull request
-# to main. The SDK comes from global.json (exact pin, rollForward disable).
+# Builds and tests the native C++23 suite (native/CMakePresets.json) on every
+# push and pull request to main, using the toolchain pinned in native/toolchain.json.
 
 on:
   push:
@@ -17,74 +17,7 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DOTNET_NOLOGO: 'true'
-  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
-  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
-
 jobs:
-  build-windows:
-    runs-on: windows-2025
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # Full history: MinVer derives the version from tags and commit height.
-          fetch-depth: 0
-      # The design contract (standards/design-contract.md): no new design-lint
-      # violation in the UI sources; the recorded ones of 2026-09-27 pass and
-      # a fixed one must leave docs/design/.lint-baseline.json.
-      - name: Design lint self-test
-        run: python scripts/design-lint.py --self-test
-      - name: Design lint (no new violations)
-        run: python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
-      - name: Set up .NET (global.json)
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
-        with:
-          global-json-file: global.json
-      - name: Cache NuGet packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ github.workspace }}/.nuget/packages
-          key: nuget-v1-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
-          restore-keys: nuget-v1-${{ runner.os }}-
-      - name: Restore
-        run: dotnet restore Isotone.slnx
-      - name: Build (Release)
-        run: dotnet build Isotone.slnx -c Release --no-restore
-      # A WPF temporary project shares its parent's artifacts folders (D00 T02 §3): asked of the pinned SDK.
-      - name: WPF temporary project folders
-        run: python scripts/tests/test_build_props.py
-      - name: Test (Release)
-        run: >-
-          dotnet test Isotone.slnx -c Release --no-build
-          --logger "trx"
-          --results-directory "${{ github.workspace }}/artifacts/TestResults"
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: test-results
-          path: artifacts/TestResults/
-          if-no-files-found: warn
-          retention-days: 14
-      # Review aid, not a gate: headless Edge (on the runner image) renders every
-      # docs/design component preview per theme and density for side-by-side
-      # comparison with the WPF renders (scripts/render-design-reference.py).
-      - name: Design reference renders (optional)
-        continue-on-error: true
-        run: python scripts/render-design-reference.py
-      - name: Upload design reference renders
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: design-reference
-          path: build/design-reference/
-          if-no-files-found: warn
-          retention-days: 14
-
   native:
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
@@ -96,6 +29,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      # The design contract (standards/design-contract.md): no new design-lint
+      # violation in the native UI sources.
+      - name: Design lint self-test
+        run: python -B scripts/design-lint.py --self-test
+      - name: Design lint (no new violations)
+        run: python -B scripts/design-lint.py --baseline docs/design/.lint-baseline.json
       - name: Cache vcpkg packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -214,6 +153,21 @@ jobs:
             artifacts/native/arm64-artifact.json
           if-no-files-found: error
           retention-days: 5
+      # Review aid, not a gate: headless Edge (on the runner image) renders every
+      # docs/design component preview per theme and density for side-by-side
+      # comparison with the native UI renders (scripts/render-design-reference.py).
+      - name: Design reference renders (optional)
+        continue-on-error: true
+        run: python -B scripts/render-design-reference.py
+      - name: Upload design reference renders
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: design-reference
+          path: build/design-reference/
+          if-no-files-found: warn
+          retention-days: 14
 
   native-arm64-tests:
     needs: native

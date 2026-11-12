@@ -11,10 +11,10 @@ That is the gap this closes. A TODO states what it measured; this re-measures it
 A claim is an HTML comment, so it is invisible in rendered Markdown and inert to every
 other parser that reads these files:
 
-    <!-- claim: exists src/Stilus/Bezier.sln -->
-    <!-- claim: absent src/Isotone.Core/Isotone.Core.csproj -->
-    <!-- claim: lines src/Stilus/Bezier.Core/Bezier.Core.csproj = 9 -->
-    <!-- claim: count "UseWPF" src/*/*/*.csproj = 4 -->
+    <!-- claim: exists native/CMakePresets.json -->
+    <!-- claim: absent native/ui/CMakeLists.txt -->
+    <!-- claim: lines native/.clang-format = 7 -->
+    <!-- claim: count "isotone_add_test" native/tests/*/CMakeLists.txt = 2 -->
 
 A claim must be written on ONE line. The pattern may contain `\\n` as two characters,
 which means a newline, but a real line break inside a claim splits it in half and is

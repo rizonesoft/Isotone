@@ -4020,7 +4020,7 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
     unquoted_nobt = unquoted if in_posix else unquoted.replace("`", "")
     cmd_nobt = command if in_posix else re.sub(r"`(?=[^\r\n])", "", command)
     if _AGY_PS_SPAWN.search(unquoted_nobt) and _AGY_CLI_WORD.search(cmd_nobt):
-        return ("Direct .NET/COM/CIM process launches of `claude`, `agy`, or `codex` bypass delegation and dispatcher "
+        return ("Direct CLR/COM/CIM process launches of `claude`, `agy`, or `codex` bypass delegation and dispatcher "
                 "gates (standards/delegation.md).")
     ps_env: dict[str, dict] = {}
     if not in_cmd and not in_posix:
@@ -6552,7 +6552,7 @@ def _self_test() -> int:
     check("shell gate denies on PowerShell", shell("git push", "PowerShell") is not None)
     for cmd in ("git status --porcelain", "git diff HEAD -- src", "git log --oneline -5", "git show HEAD:x",
                 "git --no-replace-objects diff", "git grep -n Foo", "git ls-files", "git rev-parse HEAD",
-                "git branch --show-current", "dotnet test Isotone.slnx --filter X",
+                "git branch --show-current", "ctest --preset x64-debug -R BuildInfo",
                 "python scripts/todo-graph.py validate", "python scripts/design-lint.py --baseline b",
                 "echo digit commit", "Get-Content legit.txt", "git config --get core.hooksPath",
                 "git config --list", "git stash list", "git stash show -p", "git tag", "git tag --list",
@@ -6816,7 +6816,7 @@ def _self_test() -> int:
             ("multiline PowerShell array splat git @a -n", "run_command", {"CommandLine": "$a = @(\n  'commit',\n  '-n',\n  '-m',\n  'test'\n)\ngit @a"}, "--no-verify"),
             ("Set-Variable PowerShell splat git @a -n", "run_command", {"CommandLine": "Set-Variable a ('commit', '-n', '-m', 'test'); git @a"}, "--no-verify"),
             ("indented PowerShell var indirect claude", "run_command", {"CommandLine": "  $bin = 'claude'; & $bin -p inspect"}, "Variable-indirect"),
-            ("indented Invoke-CimMethod codex", "run_command", {"CommandLine": "  Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='codex exec'}"}, "Direct .NET/COM/CIM"),
+            ("indented Invoke-CimMethod codex", "run_command", {"CommandLine": "  Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='codex exec'}"}, "Direct CLR/COM/CIM"),
             ("indented posix var assignment codex", "run_command", {"CommandLine": "bash -c '  c=codex; $c exec review'"}, "Variable-indirect"),
             ("bash array splat git commit -n", "run_command", {"CommandLine": 'bash -c \'  a=(commit -n -m test); git "${a[@]}"\''}, "--no-verify"),
             ("cmd set var git commit -n", "run_command", {"CommandLine": 'cmd /c "set f=-n&& git commit %f% -m test"'}, "--no-verify"),
@@ -6947,16 +6947,16 @@ def _self_test() -> int:
             ("iex abbreviated -co codex", "run_command", {"CommandLine": "iex -co 'codex exec review'"}, "review-dispatch.py"),
             ("Start-Process abbreviated -wo . codex", "run_command", {"CommandLine": "Start-Process -wo . codex -Args 'exec review'"}, "review-dispatch.py"),
             ("Start-Process -Path codex", "run_command", {"CommandLine": "Start-Process -Path codex -Args 'exec review'"}, "review-dispatch.py"),
-            ("ScriptBlock::Create codex", "run_command", {"CommandLine": "[ScriptBlock]::Create('codex exec review').Invoke()"}, "Direct .NET/COM/CIM"),
+            ("ScriptBlock::Create codex", "run_command", {"CommandLine": "[ScriptBlock]::Create('codex exec review').Invoke()"}, "Direct CLR/COM/CIM"),
             ("cmd wrapped encoded powershell", "run_command", {"CommandLine": "cmd /c pwsh -Enc ZWNobyBoZWxsbw=="}, "Encoded PowerShell"),
             ("wsl -d distro claude", "run_command", {"CommandLine": "wsl -d Ubuntu -u root -- claude -p inspect"}, "bypass delegation"),
             ("scriptblock Invoke-Command codex", "run_command", {"CommandLine": "Invoke-Command -ScriptBlock { codex exec 'review' }"}, "review-dispatch.py"),
-            ("dotnet Process::Start claude", "run_command", {"CommandLine": "[System.Diagnostics.Process]::Start('claude', '-p inspect')"}, "Direct .NET/COM/CIM"),
-            ("New-Object ProcessStartInfo codex", "run_command", {"CommandLine": "$psi = New-Object System.Diagnostics.ProcessStartInfo 'codex', 'exec'; [System.Diagnostics.Process]::Start($psi)"}, "Direct .NET/COM/CIM"),
-            ("ProcessStartInfo::new claude", "run_command", {"CommandLine": "$psi = [Diagnostics.ProcessStartInfo]::new('claude', '-p'); [Diagnostics.Process]::Start($psi)"}, "Direct .NET/COM/CIM"),
-            ("WScript.Shell Run codex", "run_command", {"CommandLine": "(New-Object -ComObject WScript.Shell).Run('codex exec review')"}, "Direct .NET/COM/CIM"),
-            ("Invoke-CimMethod Win32_Process codex", "run_command", {"CommandLine": "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='codex exec'}"}, "Direct .NET/COM/CIM"),
-            ("pwsh wrapped Process::Start claude", "run_command", {"CommandLine": "pwsh -NoProfile -Command \"[System.Diagnostics.Process]::Start('claude', '-p inspect')\""}, "Direct .NET/COM/CIM"),
+            ("clr Process::Start claude", "run_command", {"CommandLine": "[System.Diagnostics.Process]::Start('claude', '-p inspect')"}, "Direct CLR/COM/CIM"),
+            ("New-Object ProcessStartInfo codex", "run_command", {"CommandLine": "$psi = New-Object System.Diagnostics.ProcessStartInfo 'codex', 'exec'; [System.Diagnostics.Process]::Start($psi)"}, "Direct CLR/COM/CIM"),
+            ("ProcessStartInfo::new claude", "run_command", {"CommandLine": "$psi = [Diagnostics.ProcessStartInfo]::new('claude', '-p'); [Diagnostics.Process]::Start($psi)"}, "Direct CLR/COM/CIM"),
+            ("WScript.Shell Run codex", "run_command", {"CommandLine": "(New-Object -ComObject WScript.Shell).Run('codex exec review')"}, "Direct CLR/COM/CIM"),
+            ("Invoke-CimMethod Win32_Process codex", "run_command", {"CommandLine": "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='codex exec'}"}, "Direct CLR/COM/CIM"),
+            ("pwsh wrapped Process::Start claude", "run_command", {"CommandLine": "pwsh -NoProfile -Command \"[System.Diagnostics.Process]::Start('claude', '-p inspect')\""}, "Direct CLR/COM/CIM"),
             ("powershell variable indirect claude", "run_command", {"CommandLine": "$bin = 'claude'; & $bin -p inspect"}, "Variable-indirect"),
             ("python inline subprocess claude", "run_command", {"CommandLine": "python -c \"import subprocess; subprocess.run(['claude', '-p', 'x'])\""}, "Inline script subprocesses"),
             ("encoded powershell command", "run_command", {"CommandLine": "pwsh -EncodedCommand ZWNobyBoZWxsbw=="}, "Encoded PowerShell"),
