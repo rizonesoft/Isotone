@@ -23,6 +23,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import math
 import os
 from pathlib import Path
 import queue
@@ -46,6 +47,7 @@ MAX_OPEN_DOCS = 16
 MAX_FRAME_BYTES = 64 * 1024 * 1024
 MAX_HEADER_BYTES = 16 * 1024
 MAX_HEADER_COUNT = 64
+MAX_JSON_DEPTH = 128
 _READ_CHUNK_BYTES = 1024 * 1024
 _DRAIN_CHUNK_BYTES = 64 * 1024
 
@@ -234,11 +236,42 @@ def resolve_confined_file(raw_path: str, root: str = REPO) -> tuple[str, str, st
 
 
 class FramingOverflowError(ValueError):
-    """Raised when an MCP transport line or frame exceeds protocol bounds."""
+    """Raised when an MCP transport line or frame exceeds protocol bounds or fails framing."""
 
-    def __init__(self, message: str, *, synchronized: bool = True) -> None:
+    def __init__(self, message: str, *, synchronized: bool = True, mode: str = "line") -> None:
         super().__init__(message)
         self.synchronized = synchronized
+        self.mode = mode
+
+
+def _reject_json_constant(token: str) -> None:
+    raise ValueError(f"Non-standard JSON constant {token!r} is forbidden")
+
+
+def _decode_json_strict(raw_text: str, *, error_cls: type[Exception] = ValueError) -> object:
+    """Decode strict RFC 8259 JSON with bounded nesting depth and finite floats only."""
+    try:
+        parsed = json.loads(raw_text, parse_constant=_reject_json_constant)
+    except (ValueError, RecursionError) as exc:
+        raise error_cls(f"Invalid JSON: {exc}") from exc
+    stack: list[tuple[object, int]] = [(parsed, 0)]
+    while stack:
+        node, depth = stack.pop()
+        if depth > MAX_JSON_DEPTH:
+            raise error_cls(f"JSON nesting exceeds maximum depth ({MAX_JSON_DEPTH})")
+        if isinstance(node, float) and not math.isfinite(node):
+            raise error_cls("Out-of-range non-finite JSON float is forbidden")
+        if isinstance(node, dict):
+            nxt = depth + 1
+            for val in node.values():
+                if isinstance(val, (dict, list, float)):
+                    stack.append((val, nxt))
+        elif isinstance(node, list):
+            nxt = depth + 1
+            for val in node:
+                if isinstance(val, (dict, list, float)):
+                    stack.append((val, nxt))
+    return parsed
 
 
 def _read_bounded_line(stream, max_bytes: int, *, error_cls: type[Exception] = ValueError, label: str = "line") -> bytes:
@@ -289,11 +322,11 @@ def _read_lsp_frame(stream) -> dict | None:
         if header_count > MAX_HEADER_COUNT:
             raise LspToolError(f"LSP frame exceeds maximum header count ({MAX_HEADER_COUNT})")
         if line.lower().startswith("content-length:"):
-            try:
-                content_length = int(line.split(":", 1)[1].strip())
-            except ValueError as exc:
-                raise LspToolError(f"invalid LSP Content-Length header {line!r}") from exc
-            if content_length < 0 or content_length > MAX_FRAME_BYTES:
+            raw_cl = line.split(":", 1)[1].strip()
+            if not raw_cl.isdigit():
+                raise LspToolError(f"invalid LSP Content-Length header {line!r}")
+            content_length = int(raw_cl)
+            if content_length > MAX_FRAME_BYTES:
                 raise LspToolError(f"out-of-bounds LSP Content-Length {content_length}")
     chunks: list[bytes] = []
     remaining = content_length
@@ -304,14 +337,14 @@ def _read_lsp_frame(stream) -> dict | None:
         chunks.append(chunk)
         remaining -= len(chunk)
     body = b"".join(chunks)
-    parsed = json.loads(body.decode("utf-8", errors="replace"))
+    parsed = _decode_json_strict(body.decode("utf-8", errors="replace"), error_cls=LspToolError)
     if not isinstance(parsed, dict):
         raise LspToolError("LSP frame body must be a JSON object")
     return parsed
 
 
 def _encode_lsp_frame(payload: dict) -> bytes:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    raw = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
     header = f"Content-Length: {len(raw)}\r\n\r\n".encode("ascii")
     return header + raw
 
@@ -1324,19 +1357,24 @@ def _format_locations(result: object, root: str, max_results: int = 100) -> str:
 
 
 def _flatten_doc_symbols(items: list, out: list[str], depth: int = 0) -> None:
-    indent = "  " * depth
-    for sym in items:
-        if not isinstance(sym, dict):
+    sym_stack: list[tuple[object, int]] = [(s, depth) for s in reversed(items)]
+    while sym_stack:
+        sym, cur_depth = sym_stack.pop()
+        if not isinstance(sym, dict) or cur_depth > MAX_JSON_DEPTH:
             continue
+        indent = "  " * cur_depth
         name = sym.get("name", "<unnamed>")
-        kind = SYMBOL_KINDS.get(int(sym.get("kind", 0)), f"Kind({sym.get('kind')})")
+        raw_kind = sym.get("kind", 0)
+        kind_num = raw_kind if isinstance(raw_kind, int) and not isinstance(raw_kind, bool) else 0
+        kind = SYMBOL_KINDS.get(kind_num, f"Kind({sym.get('kind')})")
         if "selectionRange" in sym or "range" in sym:
             rng = sym.get("selectionRange") or sym.get("range")
             detail = f" ({sym['detail']})" if isinstance(sym.get("detail"), str) and sym["detail"].strip() else ""
             out.append(f"{indent}{kind} {name}{detail} [{_fmt_range(rng)}]")
             children = sym.get("children")
             if isinstance(children, list) and children:
-                _flatten_doc_symbols(children, out, depth + 1)
+                for child in reversed(children):
+                    sym_stack.append((child, cur_depth + 1))
         elif isinstance(sym.get("location"), dict):
             rng = sym["location"].get("range")
             container = f" in {sym['containerName']}" if sym.get("containerName") else ""
@@ -1582,9 +1620,18 @@ class IsotoneLspMcpServer:
     def handle_message(self, msg: dict) -> dict | None:
         if not isinstance(msg, dict):
             return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}}
-        method = msg.get("method")
         has_id = "id" in msg
         req_id = msg.get("id")
+        if has_id and not (
+            req_id is None
+            or isinstance(req_id, str)
+            or (isinstance(req_id, int) and not isinstance(req_id, bool))
+            or (isinstance(req_id, float) and math.isfinite(req_id))
+        ):
+            return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}}
+        method = msg.get("method")
+        if msg.get("jsonrpc") != "2.0" or not isinstance(method, str) or not method:
+            return {"jsonrpc": "2.0", "id": req_id if has_id else None, "error": {"code": -32600, "message": "Invalid Request"}}
         if not has_id:
             return None
         if method == "initialize":
@@ -1643,20 +1690,20 @@ def _read_mcp_message(binary_in) -> tuple[object, str]:
         if stripped.lower().startswith(b"content-length:"):
             if len(stripped) > MAX_HEADER_BYTES:
                 raise FramingOverflowError(
-                    f"MCP header exceeds maximum size ({MAX_HEADER_BYTES} bytes)", synchronized=False
+                    f"MCP header exceeds maximum size ({MAX_HEADER_BYTES} bytes)", synchronized=False, mode="framed"
                 )
-            try:
-                length = int(stripped.split(b":", 1)[1].strip())
-            except ValueError as exc:
-                raise FramingOverflowError(f"Invalid Content-Length header: {exc}", synchronized=False) from exc
-            if length < 0 or length > MAX_FRAME_BYTES:
-                raise FramingOverflowError(f"Content-Length {length} out of bounds", synchronized=False)
+            raw_cl = stripped.split(b":", 1)[1].strip()
+            if not raw_cl.isdigit():
+                raise FramingOverflowError("Invalid Content-Length header", synchronized=False, mode="framed")
+            length = int(raw_cl)
+            if length > MAX_FRAME_BYTES:
+                raise FramingOverflowError(f"Content-Length {length} out of bounds", synchronized=False, mode="framed")
             header_count = 1
             while True:
                 try:
                     hdr = _read_bounded_line(binary_in, MAX_HEADER_BYTES, error_cls=ValueError, label="MCP header")
                 except FramingOverflowError as exc:
-                    raise FramingOverflowError(str(exc), synchronized=False) from exc
+                    raise FramingOverflowError(str(exc), synchronized=False, mode="framed") from exc
                 if not hdr:
                     return _MCP_EOF, "framed"
                 if not hdr.strip():
@@ -1664,7 +1711,9 @@ def _read_mcp_message(binary_in) -> tuple[object, str]:
                 header_count += 1
                 if header_count > MAX_HEADER_COUNT:
                     raise FramingOverflowError(
-                        f"MCP frame exceeds maximum header count ({MAX_HEADER_COUNT})", synchronized=False
+                        f"MCP frame exceeds maximum header count ({MAX_HEADER_COUNT})",
+                        synchronized=False,
+                        mode="framed",
                     )
             chunks: list[bytes] = []
             rem = length
@@ -1675,12 +1724,15 @@ def _read_mcp_message(binary_in) -> tuple[object, str]:
                 chunks.append(chunk)
                 rem -= len(chunk)
             body = b"".join(chunks)
-            return json.loads(body.decode("utf-8", errors="replace")), "framed"
-        return json.loads(stripped.decode("utf-8-sig", errors="replace")), "line"
+            try:
+                return _decode_json_strict(body.decode("utf-8", errors="replace"), error_cls=ValueError), "framed"
+            except ValueError as exc:
+                raise FramingOverflowError(str(exc), synchronized=True, mode="framed") from exc
+        return _decode_json_strict(stripped.decode("utf-8-sig", errors="replace"), error_cls=ValueError), "line"
 
 
 def _write_mcp_message(binary_out, payload: dict, mode: str) -> None:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    raw = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
     if mode == "framed":
         binary_out.write(f"Content-Length: {len(raw)}\r\n\r\n".encode("ascii") + raw)
     else:
@@ -1697,9 +1749,10 @@ def serve_stdio(server: IsotoneLspMcpServer, binary_in=None, binary_out=None) ->
             try:
                 msg, mode = _read_mcp_message(inp)
             except ValueError as exc:
+                err_mode = exc.mode if isinstance(exc, FramingOverflowError) else "line"
                 err_resp = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": f"Parse error: {exc}"}}
                 with write_lock:
-                    _write_mcp_message(out, err_resp, "line")
+                    _write_mcp_message(out, err_resp, err_mode)
                 if isinstance(exc, FramingOverflowError) and not exc.synchronized:
                     return 0
                 continue
@@ -2260,6 +2313,25 @@ def _self_test() -> int:
                   and null_raw.count(b'"Invalid Request"') == 2
                   and b'{"jsonrpc":"2.0","id":22,"result":{}}\n' in null_raw,
                   repr(null_raw))
+
+            deep_json = b"[" * 100000 + b"0" + b"]" * 100000
+            deep_framed = f"Content-Length: {len(deep_json)}\r\n\r\n".encode("ascii") + deep_json
+            deep_in = io.BytesIO(
+                deep_json + b"\n"
+                + deep_framed
+                + b'{"jsonrpc":"2.0","id":1e500,"method":"ping"}\n'
+                + b'{"jsonrpc":"2.0","id":[1],"method":"ping"}\n'
+                + b'{"jsonrpc":"2.0","id":23,"method":"ping"}\n'
+            )
+            deep_out = io.BytesIO()
+            serve_stdio(srv, deep_in, deep_out)
+            deep_raw = deep_out.getvalue()
+            check("deeply nested JSON, non-finite floats, and non-scalar IDs return JSON-RPC errors and preserve serve_stdio",
+                  deep_raw.count(b'"code":-32700') == 3
+                  and deep_raw.count(b'"code":-32600') == 1
+                  and b"Content-Length:" in deep_raw
+                  and b'{"jsonrpc":"2.0","id":23,"result":{}}\n' in deep_raw,
+                  repr(deep_raw[:600]))
         finally:
             srv.close()
 

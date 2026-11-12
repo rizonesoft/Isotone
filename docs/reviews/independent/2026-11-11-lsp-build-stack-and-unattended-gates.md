@@ -304,3 +304,41 @@ OVERALL: needs-attention
 ## Response to round 9
 
 1. **P2 `scripts/lsp-mcp-server.py:1701` (`adversarial`):** Real and reproduced. Introduced an explicit `_MCP_EOF = object()` sentinel in `_read_mcp_message` and `serve_stdio` (`scripts/lsp-mcp-server.py`) so decoded JSON `null` (`None`) and other non-object JSON payloads pass through `server.handle_message` and return JSON-RPC `-32600 Invalid Request` without closing backends or terminating `serve_stdio`, rejected non-object JSON payloads in `_read_lsp_frame`, and bounded `_stderr_drain` chunk reads. Added a regression test in `lsp-mcp-server.py --self-test` (`37 cases, 0 failed`) verifying both newline-delimited and `Content-Length`-framed `null` messages return `-32600` and serve the subsequent `ping` request cleanly.
+
+## Round 10: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T02:11:48Z
+- Candidate: 0964159adbebbb3e0448e3b7bb2c6e44f77fd1ec
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 22
+- Digest: bd406c23ba310fd2
+
+### adversarial: needs-attention
+
+1. **P2** `scripts/lsp-mcp-server.py:1699`: Deeply nested JSON terminates the MCP server. Both decoding paths can raise `RecursionError`, but `serve_stdio` catches only `ValueError`, so it closes all backends and drops subsequent requests. Reproduced without file changes by passing `b'[' * 100000 + b'0' + b']' * 100000` through `serve_stdio`, followed by a valid ping. Both newline and Content-Length transports raised `RecursionError`, produced zero response bytes, and closed the server. This 200,001-byte hostile message is below the frame limit. Handle excessive nesting as a parse error and verify that the following ping succeeds.
+
+### consistency: approve
+
+### integration: approve
+
+### quality: approve
+
+### optimization: approve
+
+### source-defect: approve
+
+LENS adversarial: findings
+LENS consistency: clean
+LENS integration: clean
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P2
+OVERALL: needs-attention
+
+
+## Response to round 10
+
+1. **P2 `scripts/lsp-mcp-server.py:1699` (`adversarial`):** Real and reproduced. Added `_decode_json_strict` (`scripts/lsp-mcp-server.py`) catching `(ValueError, RecursionError)` and enforcing an iterative `MAX_JSON_DEPTH = 128` cap plus strict RFC 8259 finite-float validation (`parse_constant` rejection, `math.isfinite`, and `allow_nan=False` on output) across both `_read_mcp_message` (line and `Content-Length` modes, returning `-32700` in the matching wire framing while keeping `serve_stdio` synchronized) and `_read_lsp_frame`, converted `_flatten_doc_symbols` to an explicit stack, and validated JSON-RPC 2.0 scalar `"id"`, `"jsonrpc" == "2.0"`, and string `"method"` in `handle_message`. Added a regression test in `lsp-mcp-server.py --self-test` (`38 cases, 0 failed`) verifying `b"[" * 100000 + b"0" + b"]" * 100000` on both newline and `Content-Length` transports, `1e500`, and non-scalar IDs return JSON-RPC errors and serve the following `ping` cleanly.
