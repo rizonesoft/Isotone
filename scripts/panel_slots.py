@@ -4919,7 +4919,7 @@ def _agy_command_decision(command: str, depth: int = 0, in_cmd: bool = False, in
 
 _GIT_TRUNK_DIRECT_SUBCMDS = frozenset((
     "worktree", "checkout", "switch", "branch", "symbolic-ref", "update-ref",
-    "stash", "fetch", "pull", "push", "bisect", "config", "remote",
+    "stash", "fetch", "pull", "push", "rebase", "bisect", "config", "remote",
 ))
 _GIT_GLOBAL_EXIT_FLAGS = frozenset(("-v", "--version", "-h", "--help", "--html-path", "--man-path", "--info-path"))
 _GIT_GLOBAL_BOOL_FLAGS = frozenset((
@@ -5001,6 +5001,28 @@ _GIT_PUSH_BOOL_LONGS = frozenset((
     "--set-upstream", "--no-set-upstream", "--progress", "--no-progress", "--prune", "--no-prune", "--verify",
     "--follow-tags", "--no-follow-tags", "--atomic", "--no-atomic", "--ipv4", "--no-ipv4", "--ipv6", "--no-ipv6",
     "--no-recurse-submodules", "--no-force-with-lease", "--no-signed", "--no-push-option",
+))
+_GIT_REBASE_FORBIDDEN_LONGS = frozenset((
+    "--interactive", "--no-interactive", "--exec", "--no-exec", "--edit-todo",
+))
+_GIT_REBASE_CONTROL_LONGS = frozenset((
+    "--continue", "--abort", "--skip", "--quit", "--show-current-patch",
+))
+_GIT_REBASE_REQ_VALUE_LONGS = frozenset((
+    "--onto", "--strategy", "--strategy-option", "--whitespace", "--empty",
+))
+_GIT_REBASE_OPT_EQ_LONGS = frozenset((
+    "--gpg-sign", "--rebase-merges", "--show-current-patch",
+))
+_GIT_REBASE_BOOL_LONGS = frozenset((
+    "--continue", "--abort", "--skip", "--quit", "--root", "--keep-empty", "--no-keep-empty",
+    "--reapply-cherry-picks", "--no-reapply-cherry-picks", "--allow-empty-message", "--merge",
+    "--quiet", "--no-quiet", "--verbose", "--no-verbose", "--stat", "--no-stat", "--verify",
+    "--autostash", "--no-autostash", "--autosquash", "--no-autosquash",
+    "--committer-date-is-author-date", "--ignore-date", "--reset-author-date",
+    "--signoff", "--no-signoff", "--force-rebase", "--no-ff", "--ff", "--ignore-whitespace",
+    "--keep-base", "--fork-point", "--no-fork-point", "--update-refs", "--no-update-refs",
+    "--no-gpg-sign", "--no-rebase-merges",
 ))
 
 
@@ -5439,15 +5461,104 @@ def _segment_creates_branch_or_worktree(head: str, args: list[str]) -> str | Non
         return None
 
     if sub == "bisect":
+        pos_bi: list[str] = []
         for tok in rest:
             if tok in ("-h", "--help"):
                 return None
-            if not tok.startswith("-"):
-                if tok.lower() not in ("reset", "log", "terms", "help"):
-                    return ("Isotone develops straight on `main`; `git bisect` detaches `HEAD` off `main` "
-                            "and is forbidden (AGENTS.md).")
-                break
-        return None
+            if tok.startswith("-"):
+                return ("Isotone develops straight on `main`; `git bisect` options and bisect sessions "
+                        f"({tok!r}) detach `HEAD` off `main` and are forbidden (AGENTS.md).")
+            pos_bi.append(tok)
+        if not pos_bi:
+            return None
+        act = pos_bi[0].lower()
+        if act in ("log", "terms", "help") and len(pos_bi) == 1:
+            return None
+        if act == "reset" and (len(pos_bi) == 1 or pos_bi[1:] == ["main"]):
+            return None
+        return ("Isotone develops straight on `main`; `git bisect` detaches `HEAD` off `main` "
+                "and is forbidden (AGENTS.md).")
+
+    if sub == "rebase":
+        after_sep = False
+        control_mode = False
+        root_mode = False
+        pos_rb: list[str] = []
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
+            if not after_sep and tok == "--":
+                after_sep = True
+                i += 1
+                continue
+            if not after_sep and tok != "-" and tok.startswith("-"):
+                if tok in ("-h", "--help"):
+                    return None
+                if not tok.startswith("--"):
+                    j = 1
+                    while j < len(tok):
+                        ch = tok[j]
+                        if ch == "h":
+                            return None
+                        if ch in ("i", "x"):
+                            return ("Isotone develops straight on `main`; interactive or command-executing "
+                                    "`git rebase` options (`-i`/`--interactive`/`-x`/`--exec`) are forbidden "
+                                    "(AGENTS.md).")
+                        if ch in ("s", "X", "C"):
+                            if j + 1 >= len(tok):
+                                if i + 1 >= len(rest):
+                                    return f"Incomplete `git rebase -{ch}` option (AGENTS.md)."
+                                i += 1
+                            break
+                        if ch == "S":
+                            break
+                        if ch not in ("m", "q", "v", "n", "f", "r"):
+                            return ("Isotone develops straight on `main`; unrecognized `git rebase` short option "
+                                    f"{tok!r} is forbidden (AGENTS.md).")
+                        j += 1
+                    i += 1
+                    continue
+                fl = _flag(tok)
+                if fl in _GIT_REBASE_FORBIDDEN_LONGS:
+                    return ("Isotone develops straight on `main`; interactive or command-executing `git rebase` "
+                            "options (`-i`/`--interactive`/`--edit-todo`/`-x`/`--exec`) are forbidden (AGENTS.md).")
+                if fl in _GIT_REBASE_CONTROL_LONGS:
+                    control_mode = True
+                if tok == "--root":
+                    root_mode = True
+                if fl in _GIT_REBASE_REQ_VALUE_LONGS:
+                    if "=" not in tok:
+                        if i + 1 >= len(rest):
+                            return f"Incomplete `git rebase {fl}` option (AGENTS.md)."
+                        i += 2
+                        continue
+                    i += 1
+                    continue
+                if fl in _GIT_REBASE_OPT_EQ_LONGS:
+                    i += 1
+                    continue
+                if "=" not in tok and tok in _GIT_REBASE_BOOL_LONGS:
+                    i += 1
+                    continue
+                return ("Isotone develops straight on `main`; unrecognized, abbreviated, or forbidden "
+                        f"`git rebase` option {tok!r} is forbidden (AGENTS.md).")
+            else:
+                pos_rb.append(tok)
+            i += 1
+        if control_mode:
+            if pos_rb:
+                return ("Isotone develops straight on `main`; unexpected positional target on `git rebase` "
+                        "control operation is forbidden (AGENTS.md).")
+            return None
+        if root_mode:
+            if not pos_rb or pos_rb == ["main"]:
+                return None
+            return ("Isotone develops straight on `main`; rebasing a non-`main` target or detaching `HEAD` via "
+                    "`git rebase --root` is forbidden (AGENTS.md).")
+        if len(pos_rb) <= 1 or (len(pos_rb) == 2 and pos_rb[1] == "main"):
+            return None
+        return ("Isotone develops straight on `main`; switching away from `main` or detaching `HEAD` via "
+                "explicit `git rebase <upstream> <branch>` target is forbidden (AGENTS.md).")
 
     if sub in ("fetch", "pull"):
         after_sep = False
@@ -6664,6 +6775,11 @@ def _self_test() -> int:
         "git config core.hooksPath tools/githooks",
         "git remote get-url --push --all origin",
         "git pull --ff-only origin main",
+        "git rebase origin/main",
+        "git rebase --autostash origin/main main",
+        "git rebase --onto origin/main HEAD~2 main",
+        "git rebase --abort",
+        "git bisect reset",
     ):
         check(f"agy gate allows command {ok_cmd!r}",
               agy_gate("run_command", {"CommandLine": ok_cmd}) == {"decision": "allow"})
@@ -6898,6 +7014,16 @@ def _self_test() -> int:
             ("git -c push.default override", "run_command", {"CommandLine": "git -c push.default=matching push origin"}, "push.*"),
             ("git config persistent remote.origin.fetch override", "run_command", {"CommandLine": "git config remote.origin.fetch +refs/heads/main:refs/heads/feature"}, "refspec"),
             ("git remote add bypass", "run_command", {"CommandLine": "git remote add local ."}, "git remote"),
+            ("git rebase explicit commit target detaches HEAD", "run_command", {"CommandLine": "git rebase main HEAD~1"}, "detaching `HEAD`"),
+            ("git rebase qualified refs/heads/main detaches HEAD", "run_command", {"CommandLine": "git rebase origin/main refs/heads/main"}, "detaching `HEAD`"),
+            ("git rebase --onto explicit commit target detaches HEAD", "run_command", {"CommandLine": "git rebase --onto main HEAD~2 HEAD~1"}, "detaching `HEAD`"),
+            ("git rebase --root explicit commit target detaches HEAD", "run_command", {"CommandLine": "git rebase --root HEAD~1"}, "git rebase --root"),
+            ("git rebase -x shell execution", "run_command", {"CommandLine": "git rebase -x 'echo pwn' origin/main"}, "--exec"),
+            ("git rebase -i interactive editor", "run_command", {"CommandLine": "git rebase -i HEAD~2"}, "--interactive"),
+            ("git rebase abbreviated --in option", "run_command", {"CommandLine": "git rebase --in HEAD~2"}, "abbreviated"),
+            ("git-rebase direct binary non-main target", "run_command", {"CommandLine": "git-rebase main HEAD~1"}, "detaching `HEAD`"),
+            ("git bisect start detaches HEAD", "run_command", {"CommandLine": "git bisect start HEAD HEAD~2"}, "git bisect"),
+            ("git bisect reset commit target detaches HEAD", "run_command", {"CommandLine": "git bisect reset HEAD~1"}, "git bisect"),
             ("pwsh wrapped git worktree add", "run_command", {"CommandLine": "pwsh -Command 'git worktree add ../wt'"}, "git worktree add"),
             ("malformed args", "invoke_subagent", "bad", "could not judge")):
         dec = agy_gate(tname, targs)

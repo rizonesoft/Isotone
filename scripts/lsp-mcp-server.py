@@ -44,6 +44,10 @@ DEFAULT_IDLE_SECONDS = 300.0
 DEFAULT_WRITE_TIMEOUT = 15.0
 MAX_OPEN_DOCS = 16
 MAX_FRAME_BYTES = 64 * 1024 * 1024
+MAX_HEADER_BYTES = 16 * 1024
+MAX_HEADER_COUNT = 64
+_READ_CHUNK_BYTES = 1024 * 1024
+_DRAIN_CHUNK_BYTES = 64 * 1024
 
 CPP_EXTENSIONS = {".c", ".h", ".hpp", ".cpp", ".cc", ".cxx", ".inl", ".ixx"}
 PY_EXTENSIONS = {".py", ".pyi"}
@@ -229,11 +233,51 @@ def resolve_confined_file(raw_path: str, root: str = REPO) -> tuple[str, str, st
     raise LspToolError(f"unsupported file extension {ext!r} for {raw_path!r}; supported extensions: {supported}")
 
 
+class FramingOverflowError(ValueError):
+    """Raised when an MCP transport line or frame exceeds protocol bounds."""
+
+    def __init__(self, message: str, *, synchronized: bool = True) -> None:
+        super().__init__(message)
+        self.synchronized = synchronized
+
+
+def _read_bounded_line(stream, max_bytes: int, *, error_cls: type[Exception] = ValueError, label: str = "line") -> bytes:
+    """Read one line bounded to max_bytes payload bytes without unbounded allocation; drain to newline on overflow."""
+    line = stream.readline(max_bytes + 3)
+    if not line:
+        return b""
+    if not line.endswith(b"\n"):
+        if len(line) > max_bytes:
+            drained = 0
+            saw_newline = False
+            while drained < max_bytes:
+                tail = stream.readline(min(_DRAIN_CHUNK_BYTES, max_bytes - drained))
+                if not tail:
+                    saw_newline = True
+                    break
+                drained += len(tail)
+                if tail.endswith(b"\n"):
+                    saw_newline = True
+                    break
+            msg = f"{label} exceeds maximum size ({max_bytes} bytes)"
+            if error_cls is ValueError:
+                raise FramingOverflowError(msg, synchronized=saw_newline)
+            raise error_cls(msg)
+        return line
+    if len(line.rstrip(b"\r\n")) > max_bytes:
+        msg = f"{label} exceeds maximum size ({max_bytes} bytes)"
+        if error_cls is ValueError:
+            raise FramingOverflowError(msg, synchronized=True)
+        raise error_cls(msg)
+    return line
+
+
 def _read_lsp_frame(stream) -> dict | None:
     """Read one Content-Length framed JSON-RPC message from a binary stream."""
     content_length = None
+    header_count = 0
     while True:
-        header = stream.readline()
+        header = _read_bounded_line(stream, MAX_HEADER_BYTES, error_cls=LspToolError, label="LSP header")
         if not header:
             return None
         line = header.decode("ascii", errors="replace").strip()
@@ -241,6 +285,9 @@ def _read_lsp_frame(stream) -> dict | None:
             if content_length is not None:
                 break
             continue
+        header_count += 1
+        if header_count > MAX_HEADER_COUNT:
+            raise LspToolError(f"LSP frame exceeds maximum header count ({MAX_HEADER_COUNT})")
         if line.lower().startswith("content-length:"):
             try:
                 content_length = int(line.split(":", 1)[1].strip())
@@ -248,14 +295,15 @@ def _read_lsp_frame(stream) -> dict | None:
                 raise LspToolError(f"invalid LSP Content-Length header {line!r}") from exc
             if content_length < 0 or content_length > MAX_FRAME_BYTES:
                 raise LspToolError(f"out-of-bounds LSP Content-Length {content_length}")
-    body = b""
+    chunks: list[bytes] = []
     remaining = content_length
     while remaining > 0:
-        chunk = stream.read(remaining)
+        chunk = stream.read(min(remaining, _READ_CHUNK_BYTES))
         if not chunk:
             return None
-        body += chunk
+        chunks.append(chunk)
         remaining -= len(chunk)
+    body = b"".join(chunks)
     return json.loads(body.decode("utf-8", errors="replace"))
 
 
@@ -1581,28 +1629,47 @@ class IsotoneLspMcpServer:
 def _read_mcp_message(binary_in) -> tuple[dict | None, str]:
     """Read one MCP message from binary_in; supports newline-delimited JSON (MCP stdio standard) and Content-Length."""
     while True:
-        line = binary_in.readline()
+        line = _read_bounded_line(binary_in, MAX_FRAME_BYTES, error_cls=ValueError, label="MCP message")
         if not line:
             return None, "line"
         stripped = line.strip()
         if not stripped:
             continue
         if stripped.lower().startswith(b"content-length:"):
-            length = int(stripped.split(b":", 1)[1].strip())
+            if len(stripped) > MAX_HEADER_BYTES:
+                raise FramingOverflowError(
+                    f"MCP header exceeds maximum size ({MAX_HEADER_BYTES} bytes)", synchronized=False
+                )
+            try:
+                length = int(stripped.split(b":", 1)[1].strip())
+            except ValueError as exc:
+                raise FramingOverflowError(f"Invalid Content-Length header: {exc}", synchronized=False) from exc
             if length < 0 or length > MAX_FRAME_BYTES:
-                raise ValueError(f"Content-Length {length} out of bounds")
+                raise FramingOverflowError(f"Content-Length {length} out of bounds", synchronized=False)
+            header_count = 1
             while True:
-                hdr = binary_in.readline()
-                if not hdr or not hdr.strip():
+                try:
+                    hdr = _read_bounded_line(binary_in, MAX_HEADER_BYTES, error_cls=ValueError, label="MCP header")
+                except FramingOverflowError as exc:
+                    raise FramingOverflowError(str(exc), synchronized=False) from exc
+                if not hdr:
+                    return None, "framed"
+                if not hdr.strip():
                     break
-            body = b""
+                header_count += 1
+                if header_count > MAX_HEADER_COUNT:
+                    raise FramingOverflowError(
+                        f"MCP frame exceeds maximum header count ({MAX_HEADER_COUNT})", synchronized=False
+                    )
+            chunks: list[bytes] = []
             rem = length
             while rem > 0:
-                chunk = binary_in.read(rem)
+                chunk = binary_in.read(min(rem, _READ_CHUNK_BYTES))
                 if not chunk:
                     return None, "framed"
-                body += chunk
+                chunks.append(chunk)
                 rem -= len(chunk)
+            body = b"".join(chunks)
             return json.loads(body.decode("utf-8", errors="replace")), "framed"
         return json.loads(stripped.decode("utf-8-sig", errors="replace")), "line"
 
@@ -1628,6 +1695,8 @@ def serve_stdio(server: IsotoneLspMcpServer, binary_in=None, binary_out=None) ->
                 err_resp = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": f"Parse error: {exc}"}}
                 with write_lock:
                     _write_mcp_message(out, err_resp, "line")
+                if isinstance(exc, FramingOverflowError) and not exc.synchronized:
+                    return 0
                 continue
             if msg is None:
                 return 0
@@ -2061,6 +2130,119 @@ def _self_test() -> int:
             wire_resp = json.loads(wire_out.getvalue().decode("utf-8").strip())
             check("newline-delimited MCP stdio round-trip works",
                   "main.cpp: 0 diagnostics (clangd)" in wire_resp["result"]["content"][0]["text"], repr(wire_resp))
+
+            # Bounded MCP and LSP transport reads: reject oversized newline-delimited JSON without unbounded readline(),
+            # recover framing to serve the next request, and terminate cleanly on runaway newline-less streams.
+            class _BoundedCheckStream:
+                def __init__(self, segments: list[tuple[bytes, int]]) -> None:
+                    self._segs = [[pat, count] for pat, count in segments if count > 0]
+                    self.unbounded_calls = 0
+
+                def readline(self, size: int = -1) -> bytes:
+                    if size is None or size < 0:
+                        self.unbounded_calls += 1
+                        size = MAX_FRAME_BYTES * 4
+                    out_parts: list[bytes] = []
+                    rem = size
+                    while rem > 0 and self._segs:
+                        pat, count = self._segs[0]
+                        if len(pat) == 1:
+                            take = min(rem, count)
+                            ch = pat * take
+                            out_parts.append(ch)
+                            rem -= take
+                            if take == count:
+                                self._segs.pop(0)
+                            else:
+                                self._segs[0][1] -= take
+                            if pat == b"\n":
+                                break
+                        else:
+                            nl = pat.find(b"\n")
+                            limit = rem if nl < 0 else min(rem, nl + 1)
+                            chunk = pat[:limit]
+                            out_parts.append(chunk)
+                            rem -= len(chunk)
+                            if len(chunk) == len(pat):
+                                if count == 1:
+                                    self._segs.pop(0)
+                                else:
+                                    self._segs[0][1] -= 1
+                            else:
+                                self._segs[0][0] = pat[len(chunk):]
+                            if chunk.endswith(b"\n"):
+                                break
+                    return b"".join(out_parts)
+
+                def read(self, size: int = -1) -> bytes:
+                    if size is None or size < 0:
+                        self.unbounded_calls += 1
+                        size = MAX_FRAME_BYTES * 4
+                    out_parts: list[bytes] = []
+                    rem = size
+                    while rem > 0 and self._segs:
+                        pat, count = self._segs[0]
+                        if len(pat) == 1:
+                            take = min(rem, count)
+                            out_parts.append(pat * take)
+                            rem -= take
+                            if take == count:
+                                self._segs.pop(0)
+                            else:
+                                self._segs[0][1] -= take
+                        else:
+                            chunk = pat[:rem]
+                            out_parts.append(chunk)
+                            rem -= len(chunk)
+                            if len(chunk) == len(pat):
+                                if count == 1:
+                                    self._segs.pop(0)
+                                else:
+                                    self._segs[0][1] -= 1
+                            else:
+                                self._segs[0][0] = pat[len(chunk):]
+                    return b"".join(out_parts)
+
+            oversize_prefix = b'{"jsonrpc":"2.0","id":99,"method":"ping","pad":"'
+            oversize_suffix = b'"}\n'
+            oversize_pad = (MAX_FRAME_BYTES + 62) - len(oversize_prefix) - len(oversize_suffix)
+            follow_ping = b'{"jsonrpc":"2.0","id":21,"method":"ping"}\n'
+            bstream = _BoundedCheckStream([
+                (oversize_prefix, 1),
+                (b"a", oversize_pad),
+                (oversize_suffix, 1),
+                (follow_ping, 1),
+            ])
+            bout = io.BytesIO()
+            serve_stdio(srv, bstream, bout)
+            blines = [json.loads(ln.decode("utf-8")) for ln in bout.getvalue().splitlines() if ln.strip()]
+            check("oversized newline-delimited MCP message rejected without unbounded readline and recovers next frame",
+                  bstream.unbounded_calls == 0
+                  and len(blines) == 2
+                  and blines[0].get("error", {}).get("code") == -32700
+                  and "exceeds maximum size" in blines[0].get("error", {}).get("message", "")
+                  and blines[1] == {"jsonrpc": "2.0", "id": 21, "result": {}},
+                  f"unbounded={bstream.unbounded_calls} lines={blines!r}")
+
+            runaway_stream = _BoundedCheckStream([(b"a", MAX_FRAME_BYTES * 3), (follow_ping, 1)])
+            runaway_out = io.BytesIO()
+            serve_stdio(srv, runaway_stream, runaway_out)
+            rlines = [json.loads(ln.decode("utf-8")) for ln in runaway_out.getvalue().splitlines() if ln.strip()]
+            check("runaway newline-less MCP stream emits parse error and terminates without unbounded reads",
+                  runaway_stream.unbounded_calls == 0
+                  and len(rlines) == 1
+                  and rlines[0].get("error", {}).get("code") == -32700,
+                  f"unbounded={runaway_stream.unbounded_calls} lines={rlines!r}")
+
+            bad_lsp_hdr = _BoundedCheckStream([(b"X-Pad: ", 1), (b"x", MAX_HEADER_BYTES + 32), (b"\r\n", 1)])
+            lsp_hdr_err = ""
+            try:
+                _read_lsp_frame(bad_lsp_hdr)
+            except LspToolError as exc:
+                lsp_hdr_err = str(exc)
+            check("oversized LSP header line rejected with bounded read",
+                  bad_lsp_hdr.unbounded_calls == 0 and "exceeds maximum size" in lsp_hdr_err,
+                  f"unbounded={bad_lsp_hdr.unbounded_calls} err={lsp_hdr_err!r}")
         finally:
             srv.close()
 

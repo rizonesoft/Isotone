@@ -225,3 +225,44 @@ OVERALL: needs-attention
 ## Response to round 7
 
 1. **P2 `scripts/lsp-mcp-server.py:712` (`integration`):** Real and reproduced. Replaced mtime-only configuration scanning with content-hashed SHA-256 configuration tracking (`_CONFIG_DIGEST_FILENAMES`, `_CONFIG_DIGEST_SUFFIXES`, and `_EXPLICIT_CONFIG_RELATIVE_PATHS`, explicitly covering `artifacts/native/x64-debug/compile_commands.json` even though `artifacts` is excluded from general workspace tree walks, plus `native/.clang-tidy`, `native/.clang-format`, `native/toolchain.json`, `native/CMakeLists.txt`, `native/CMakePresets.json`, `native/cmake/*.cmake`, and `pyrightconfig.json`). `_refresh_workspace_configs` compares the live SHA-256 map on every backend call and, when any tracked configuration changes, restarts the active backend (`stop()` -> `start()`), increments `_generation`, and clears cached diagnostics so subsequent queries re-evaluate against the new configuration. Added 4 deterministic regression cases in `scripts/lsp-mcp-server.py --self-test` (`33 cases, 0 failed`) covering `compile_commands.json` under `artifacts`, `native/.clang-tidy`, same-mtime content changes, and live configuration restarts; also updated `native/toolchain.json`, `native/triplets/isotone-*.cmake`, `scripts/dev-env.ps1`, `scripts/lsp-launch.py`, and `scripts/tests/test_dev_env.py` (`18 tests, OK`) for Visual Studio 2026 `18.12.0` (`14.52.37025`) with an explicit `18.11.` CI rollout profile and re-verified `scripts/tests/test_lsp_mcp_server.py` (`7 tests, OK`).
+
+## Round 8: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T01:51:16Z
+- Candidate: 92b4ef0cade143eebffb7fe3346467df240bd313
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 24
+- Digest: db5e692d4c8ba91e
+
+### adversarial: needs-attention
+
+1. **P1** `scripts/lsp-mcp-server.py:1584`: Standard newline-delimited MCP input bypasses `MAX_FRAME_BYTES`. Unbounded `readline()` allocates the entire message before JSON decoding; only Content-Length messages receive a size check. Reproduced read-only: `_read_mcp_message()` accepted a 67,108,926-byte JSON ping despite the 67,108,864-byte limit. A hostile stdin message can exhaust memory. Bound reads before allocation and reject oversized messages on both transports.
+
+2. **P1** `scripts/panel_slots.py:5660`: The trunk-only gate allows `git rebase` to switch away from `main`. Loading the candidate directly and evaluating `_agy_command_decision('git rebase main HEAD~1')` returns `None` (allow). On a clean checkout, that explicit commit target produces detached-HEAD operation without requiring another branch or configuration tampering. Git documents the explicit-target checkout behavior. Validate rebase targets while preserving ordinary rebases of `main`. [Git rebase documentation](https://git-scm.com/docs/git-rebase)
+
+### consistency: approve
+
+### integration: approve
+
+### quality: approve
+
+### optimization: approve
+
+### source-defect: approve
+
+LENS adversarial: findings
+LENS consistency: clean
+LENS integration: clean
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P1
+OVERALL: needs-attention
+
+
+## Response to round 8
+
+1. **P1 `scripts/lsp-mcp-server.py:1584` (`adversarial`):** Real and reproduced. Replaced unbounded `readline()` calls in both `_read_mcp_message` and `_read_lsp_frame` (`scripts/lsp-mcp-server.py`) with `_read_bounded_line(stream, max_bytes)` (`stream.readline(max_bytes + 3)`), capping newline-delimited MCP payloads at `MAX_FRAME_BYTES` (64 MiB), capping MCP and LSP headers at `MAX_HEADER_BYTES` (16 KiB) and `MAX_HEADER_COUNT` (64), draining bounded newline-terminated overflows in 64 KiB chunks so `serve_stdio` recovers framing for subsequent requests, terminating cleanly via `FramingOverflowError(synchronized=False)` on runaway newline-less streams or invalid `Content-Length` frames, and reading bodies in 1 MiB chunks. Added 3 deterministic regression cases in `lsp-mcp-server.py --self-test` (`36 cases, 0 failed`), including a 67,108,926-byte newline-delimited JSON ping asserting zero unbounded `readline` calls and clean recovery on the next request.
+2. **P1 `scripts/panel_slots.py:5660` (`adversarial`):** Real and reproduced. Added `rebase` to `_GIT_TRUNK_DIRECT_SUBCMDS` and `_segment_creates_branch_or_worktree` (`scripts/panel_slots.py`) with a closed canonical Git option allow-list that forbids `-i`/`--interactive`/`--edit-todo`, `-x`/`--exec`, and unrecognized or abbreviated options, allows ordinary rebases of `main` (`git rebase`, `git rebase <upstream>`, `git rebase <upstream> main`, `git rebase --root [main]`, and `--abort`/`--continue`/`--skip`/`--quit` with zero positionals), and denies any non-`main` target (`git rebase main HEAD~1`, `git rebase origin/main refs/heads/main`, `git rebase --onto main HEAD~2 HEAD~1`, `git rebase --root HEAD~1`), while also tightening `git bisect reset` to forbid non-`main` commit targets. Added 15 `_self_test` cases (`1129 cases, 0 failed`).
