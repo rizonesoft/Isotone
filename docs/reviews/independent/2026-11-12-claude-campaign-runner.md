@@ -40,3 +40,48 @@ LENS optimization: clean
 LENS source-defect: clean
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-12T15:08:32Z
+- Candidate: a124ce7e16eeeff05cd6c60c492f369b7fa03014
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 34
+- Digest: 23462f276d679a8e
+
+### adversarial: needs-attention
+
+1. **P2: Retrying a failed handover disables recovery of the original campaign.** `scripts/campaign_guard.py:2173` preserves `previous_launch` only when its top-level `session_id` matches the old owner. After one failed handover, that field is empty and the original record lives under `previous`. A second attempt drops it.
+
+   Reproduce: with a dead, resumable Antigravity campaign, launch Claude twice while process startup fails before SessionStart. The guard remains Antigravity-owned, but the watchdog can no longer resume it. An in-memory test confirmed resumability changes from `True` initially, to `True` after failure one, to `False` after failure two. Preserve the original record across repeated attempts and extend the regression test accordingly.
+
+### consistency: approve
+
+No findings.
+
+### integration: needs-attention
+
+Finding 1 breaks the launch-record contract consumed by `_resumable()` and the watchdog.
+
+### quality: approve
+
+No additional findings. Verification used read-only inspection and an in-memory reproduction; no campaign was launched or file modified.
+
+### optimization: approve
+
+No findings.
+
+### source-defect: approve
+
+No findings.
+
+LENS adversarial: findings
+LENS consistency: clean
+LENS integration: findings
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P2
+OVERALL: needs-attention

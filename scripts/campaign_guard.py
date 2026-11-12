@@ -2158,6 +2158,8 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                 # The old runner's own launch record rides along until the new session opens, so a launch that fails
                 # leaves the old run resumable by the watchdog exactly as before.
                 previous_launch = _read_json(_launch_path(root))
+                if previous_launch.get("launch_token") and previous_launch.get("handover_from") == old_session                         and isinstance(previous_launch.get("previous"), dict):
+                    previous_launch = previous_launch["previous"]  # an earlier attempt that never opened
                 # Claude Code takes its session id up front; the SessionStart note binds it to the launch, and only
                 # then hands the guard over, so a launch that fails leaves the old runner's guard as it was.
                 argv = ([*args, "-i", prompt] if runner == "agy"
@@ -4023,11 +4025,13 @@ def _self_test() -> int:
               and whoami(root, new_csid).startswith("OWNER"), repr((hargv[:3], to_claude)))
         resumable_before = _resumable(root, to_claude)
         world.run = failing_run
-        try:
-            start(root, world)
-            failed_back = False
-        except GuardError:
-            failed_back = True
+        failures = 0
+        for _ in range(2):  # a retried handover keeps the record too
+            try:
+                start(root, world)
+            except GuardError:
+                failures += 1
+        failed_back = failures == 2
         world.run = good_run
         check("a-failed-handover-keeps-the-old-run-resumable",
               failed_back and resumable_before == cflags and _resumable(root, read_guard(root) or {}) == cflags
