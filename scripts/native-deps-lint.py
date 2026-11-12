@@ -398,8 +398,6 @@ def managed_source_findings(files):
     found = []
     for f in files:
         norm = f.replace("\\", "/")
-        if norm.startswith(("artifacts/", "build/")):
-            continue
         lower_name = norm.rsplit("/", 1)[-1].lower()
         if lower_name in MANAGED_FILENAMES or lower_name.endswith(MANAGED_EXTENSIONS):
             found.append(finding(f, 1, "managed-source",
@@ -987,9 +985,11 @@ def self_test():
                          "Analysis.ruleset", "Package.nuspec", "global.json", "nuget.config", "packages.lock.json"):
         check(f"managed-source rejects {managed_path}", rules(managed_source_findings([managed_path])), ["managed-source"])
     check("managed-source rejects mixed-case NuGet.Config", rules(managed_source_findings(["NuGet.Config"])), ["managed-source"])
-    check("managed-source allows native C++, headers, CMake, Inno Setup, and ignored build/artifacts paths",
+    check("managed-source rejects force-tracked files under build/ and artifacts/",
+          rules(managed_source_findings(["build/Probe.cs", "artifacts/Probe.cs"])), ["managed-source", "managed-source"])
+    check("managed-source allows native C++, headers, CMake, and Inno Setup paths",
           managed_source_findings(["native/core/src/a.cpp", "native/core/include/a.h", "native/CMakeLists.txt",
-                                   "installer/Stilus.iss", "artifacts/p/gen.cs", "build/p/global.json"]), [])
+                                   "installer/Stilus.iss"]), [])
     for text, want in (("int a; // NOLINT(bugprone-foo): the API requires a raw pointer", []),
                        ("int a; // NOLINT", ["suppression-unreasoned"]),
                        ("int a; // NOLINT(bugprone-foo)", ["suppression-unreasoned"]),

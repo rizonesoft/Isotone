@@ -96,7 +96,8 @@ def _kind_of(path: str) -> str:
     if path in BASELINES:
         return "baseline"
     base = os.path.basename(path)
-    if path.endswith(CODE_EXT) or base in ("CMakeLists.txt", ".editorconfig", ".clang-tidy", ".clang-format"):
+    if path.endswith(CODE_EXT) or base in ("CMakeLists.txt", ".editorconfig", ".clang-tidy", ".clang-format",
+                                           "system-dlls.txt", "sanitizer-dlls.txt"):
         return "code"
     return "prose"
 
@@ -534,6 +535,10 @@ def _self_test() -> int:
                                                "@@ -0,0 +1 @@\n+x\n")[0]["path"] == "n.cpp")
     check("deleted file path from ---", parse_diff("diff --git a/d.cpp b/d.cpp\ndeleted file mode 100644\n--- a/d.cpp\n"
                                                    "+++ /dev/null\n@@ -1 +0,0 @@\n-x\n")[0]["path"] == "d.cpp")
+    check("system-dlls.txt allowlist change is flagged",
+          kinds(diff("native/system-dlls.txt", [], ["VCRUNTIME140.dll"])) == ["build-config-changed"])
+    check("sanitizer-dlls.txt allowlist change is flagged",
+          kinds(diff("native/sanitizer-dlls.txt", [], ["clang_rt.asan_dynamic-x86_64.dll"])) == ["build-config-changed"])
 
     print(f"weakening-scan self-test: {passed + failed} cases, {failed} failed")
     return 1 if failed else 0
