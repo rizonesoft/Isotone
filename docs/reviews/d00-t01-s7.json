@@ -1,0 +1,84 @@
+{
+  "ref": "D00 T01 \u00a77",
+  "title": "The Validator Reads the Gesso Parity Catalog",
+  "implementation_sha": "41baff712436384444cd7e677ae7402ec2d3770b",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s7.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/todo-graph.py self-test -> 993 cases, 0 failed; validate exit 0; probe GP-0042 deleted -> validate exit 1 naming gesso: and is placed in no gesso catalog row; probe Totals cell -> exit 1 naming but the rows add up to; query parity --catalog gesso --phase 16 --json -> 293 features, 20 sections",
+    "pwsh scripts/check-all.ps1 -> exit 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T01-s7.md",
+    "verdict": "complete",
+    "candidate": "41baff712436384444cd7e677ae7402ec2d3770b",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T01-s7.md",
+    "candidate": "e1e804da8ee3355d4b73c8b1654d6c9482697d96",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "e1e804da8ee3355d4b73c8b1654d6c9482697d96",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

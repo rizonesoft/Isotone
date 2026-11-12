@@ -63,7 +63,7 @@ track: W1
 |   4   |   §4    | Prove the review panel end to end             | --         |  [x]   |
 |   5   |   §5    | First push: CI green and read back            | §1, D00 T07 §1 |  [ ]   |
 |   6   |   §6    | The parity catalog validator                  | §1         |  [x]   |
-|   7   |   §7    | The validator reads the Gesso parity catalog  | §6, D00 T07 §1 |  [ ]   |
+|   7   |   §7    | The validator reads the Gesso parity catalog  | §6, D00 T07 §1 |  [x]   |
 |   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [ ]   |
 |   9   |   §9    | The design contract gates                     | §1, D00 T07 §1 |  [ ]   |
 |  10   |   §10   | The drift gates                               | §1, D00 T07 §1 |  [ ]   |
@@ -280,6 +280,9 @@ The Gesso parity catalog (`docs/parity/gesso-parity.md`) is plan data like `todo
 - [x] Commit: `"workspace: refuse a lapsed owner in the parity catalogs, and re-prove the Gesso validator on the native tree"` **Added 2026-11-12.** This commit.
 
 **Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the Gesso cases counted; `python scripts/todo-graph.py validate` exits 0 on the integrated tree; deleting one `GP-` id from a scratch copy of `docs/parity/gesso-parity.md` makes `validate` exit 1 naming `gesso:` and `is placed in no gesso catalog row`, and editing one Totals cell makes it exit 1 naming `but the rows add up to` (**Corrected 2026-10-22:** by item 26, the message text, not the class ids `parity-id-missing` and `parity-totals-drift`); `python scripts/todo-graph.py query parity --catalog gesso --phase 16 --json` prints the Phase 16 counts. Cheaper substitute that fails: a copy of `§6`'s script hard-wired to the Gesso file, which the self-test's single-module import and the Stilus cases (still passing through the shared `CATALOGS` path (**Corrected 2026-10-22**, plan review: said `CatalogSpec`, the dataclass item 1's correction replaced with `CATALOGS` entries)) expose as a second implementation.
+
+> **Verified:** 2026-11-12 | §7 | 41baff712436384444cd7e677ae7402ec2d3770b
+> **Review:** `docs/reviews/d00-t01-s7.json`
 
 ## 8. The Validator Reads the Albumen Parity Catalog
 
