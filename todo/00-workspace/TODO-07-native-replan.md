@@ -42,7 +42,7 @@ track: W7
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |  §1    | Re-plan the workspace files | D00 T06 §3 |  [x]   |
-|   2   |  §2    | Rewrite the standards and the developer docs for C++ | §1 |  [ ]   |
+|   2   |  §2    | Rewrite the standards and the developer docs for C++ | §1 |  [x]   |
 |   3   |  §3    | Author the native foundations and settle the structure files | §2 |  [ ]   |
 |   4   |  §4    | Re-plan Phase 2: Stilus foundation: composition, hygiene, triage, correctness | §3 |  [ ]   |
 |   5   |  §5    | Re-plan Phase 3: Stilus 0.1.0: shared UI, complete editing, documents, release | §4 |  [ ]   |
@@ -130,6 +130,9 @@ Every runner reads the standards before it builds, so they are rewritten for C++
 - [x] Commit: `"todo: re-plan the standards and developer docs onto the native stack"` This commit.
 
 **Test checkpoint:** Static evidence: the stack `git grep` over every owned file prints nothing, or only lines that name the C# code as history (decision records, changelog entries, and dated corrections in a Current state), each such line listed (quoted); `python scripts/build-design-site.py --check` exits 0 (quoted); `python scripts/todo-graph.py validate` reports no FATAL and no new WARN, `plan --check` and `python scripts/todo-claims.py` pass (quoted); driven run: every command the rewritten developer docs give for today's tree exits as the page says, the embedded version and build id read back as `docs/dev/versioning.md` states, and every backticked repository path in the rewritten standards and developer docs exists or is marked planned with its owner (quoted; **Added 2026-11-12**, plan review). The review loop reviews the rewritten files against the ten requirements of `docs/plans/2026-10-23-native-replan.md`. Cheaper substitute that fails: renaming WPF terms to C++ terms in place, which leaves sections that cannot be built on the native toolkit.
+
+> **Verified:** 2026-11-12 | §2 | c62153ebd53c974e4d550197477166d9617bf470
+> **Review:** `docs/reviews/d00-t07-s2.json`
 
 ## 3. Author the native foundations and settle the structure files
 

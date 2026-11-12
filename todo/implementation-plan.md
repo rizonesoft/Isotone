@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **32 of 840 sections complete (4%).** 840 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **33 of 840 sections complete (4%).** 840 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -186,7 +186,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T06 §3`  | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code |  15   |
 | [x] | `D00 T07 §1`  | Re-plan the workspace files                                                              |  12   |
 | [x] | `D00 T01 §18` | Superseded sections leave the plan                                                       |  13   |
-| [ ] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |  10   |
+| [x] | `D00 T07 §2`  | Rewrite the standards and the developer docs for C++                                     |  10   |
 | [ ] | `D00 T03 §1`  | Fold the per-app docs and samples into the suite                                         |  10   |
 | [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |  10   |
 | [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |

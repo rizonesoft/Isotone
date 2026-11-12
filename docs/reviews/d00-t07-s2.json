@@ -1,0 +1,84 @@
+{
+  "ref": "D00 T07 \u00a72",
+  "title": "Rewrite the standards and the developer docs for C++",
+  "implementation_sha": "c62153ebd53c974e4d550197477166d9617bf470",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T07-s2.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "stack git grep over standards/, docs/design/, todo/README.md -> nothing; docs/dev -> 21 history lines; build-design-site.py --check -> current; validate 0 fatal; plan --check current; todo-claims 0 stale; every documented command run and quoted; 263 paths checked, 8 planned",
+    "pwsh scripts/check-all.ps1 -> exit 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T07-s2.md",
+    "verdict": "reconciled",
+    "candidate": "c62153ebd53c974e4d550197477166d9617bf470",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T07-s2.md",
+    "candidate": "a637c3e86ba55e6087434cc525d55b99321a841d",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "a637c3e86ba55e6087434cc525d55b99321a841d",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
