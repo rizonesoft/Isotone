@@ -60,6 +60,12 @@ DELEGATE_EFFORTS = ("high",)
 # and the Claude Code delegate pin served at the last `delegate-probe` (2026-10-01). `routes` key `agy` in the reviewer
 # pin is this writer.
 WRITER = {"agent": "agy", "model": "gemini-4-carbon-medium", "family": "google"}
+# The second campaign runner (operator decision 2026-11-12: "create one to start in Claude Code"): either runner may
+# write a run, one at a time under the session slot (scripts/campaign_guard.py). `routes` key `claude` reviews it.
+# `opus` is Claude Code's alias for the latest Opus, so the runner moves with each release (operator request 2026-11-12:
+# "start with opus(latest) at medium effort").
+CLAUDE_WRITER = {"agent": "claude", "model": "opus", "effort": "medium", "family": "claude"}
+WRITERS = {"agy": WRITER, "claude": CLAUDE_WRITER}
 DELEGATE = {"alias": "sonnet", "model": "claude-sonnet-5-5", "effort": "high", "family": "claude"}
 WRITER_ROUTE = "agy"
 TIMEOUT_EXIT = 124
@@ -563,6 +569,8 @@ AGY_GATE_TOOLS = (
     "invoke_subagent", "define_subagent", "swarm", "run_command",
     "ask_question", "write_file", "edit_file",
 )
+# Claude Code's PreToolUse matcher for the same gate: delegation (`Agent`, `Task`) and the unattended question stall.
+CLAUDE_GATE_TOOLS = ("Agent", "Task", "AskUserQuestion")
 
 
 def agy_hooks_path() -> str:
@@ -629,7 +637,7 @@ def check_settings(path: str | None = None, others: list[str] | None = None) -> 
     for entry in entries if isinstance(entries, list) else []:
         matcher = entry.get("matcher", "") if isinstance(entry, dict) else ""
         try:
-            matches = all(re.fullmatch(matcher, tool) for tool in ("Agent", "Task"))
+            matches = all(re.fullmatch(matcher, tool) for tool in CLAUDE_GATE_TOOLS)
         except re.error:
             matches = False
         if not matches:
@@ -637,7 +645,7 @@ def check_settings(path: str | None = None, others: list[str] | None = None) -> 
         for hook in entry.get("hooks") or []:
             if isinstance(hook, dict) and hook.get("type") == "command" and hook.get("command") == AGENT_GATE_COMMAND:
                 return AGENT_GATE_COMMAND
-    raise PanelSlotsError(f"settings {src} carries no PreToolUse hook on Agent and Task running the "
+    raise PanelSlotsError(f"settings {src} carries no PreToolUse hook on {', '.join(CLAUDE_GATE_TOOLS)} running the "
                           f"agent-gate command verbatim (panel_slots.AGENT_GATE_COMMAND)")
 
 
@@ -5791,6 +5799,12 @@ def _is_unattended_campaign(env: dict | None = None, conversation_id: str | None
     return state.get("session_id") == conversation_id
 
 
+UNATTENDED_QUESTION_REASON = (
+    "Unattended campaign runs never block on interactive `ask_question` or `AskUserQuestion` prompts. Decide "
+    "autonomously from repository sources, specifications, and measurements; if an item truly requires an "
+    "operator-only credential, legal, naming, or external action, record it and park the row cleanly (AGENTS.md).")
+
+
 def agy_gate_decision(tool_call: dict, env: dict | None = None,
                       conversation_id: str | None = None, root: str | None = None) -> str | None:
     """The deny reason for one Antigravity `PreToolUse` `toolCall`, or None to allow it."""
@@ -5802,10 +5816,7 @@ def agy_gate_decision(tool_call: dict, env: dict | None = None,
         raise PanelSlotsError(f"the {name} call carries no args object")
     if name == "ask_question":
         if _is_unattended_campaign(env=env, conversation_id=conversation_id, root=root):
-            return ("Unattended campaign runs never block on interactive `ask_question` prompts. Decide "
-                    "autonomously from repository sources, specifications, and measurements; if an item truly "
-                    "requires an operator-only credential, legal, naming, or external action, record it and park "
-                    "the row cleanly (AGENTS.md).")
+            return UNATTENDED_QUESTION_REASON
         return None
     if name in ("write_file", "edit_file"):
         meta = args.get("ArtifactMetadata")
@@ -5872,6 +5883,11 @@ def agent_gate(raw: str, out, err, loader=None, env: dict | None = None, root: s
             reason = (f"The delegation wiring could not judge this call ({exc}). Fix it with "
                       f"`python scripts/panel_slots.py validate`; until then the lead does the work itself.")
         print(_agy_deny(reason) if reason else _agy_allow(), file=out)
+        return 0
+    if payload.get("tool_name") == "AskUserQuestion":
+        sid = payload.get("session_id") if isinstance(payload.get("session_id"), str) else None
+        if _is_unattended_campaign(env=env, conversation_id=sid, root=root):
+            print(_deny(UNATTENDED_QUESTION_REASON), file=out)
         return 0
     if payload.get("tool_name") not in ("Agent", "Task"):
         return 0
@@ -6236,7 +6252,7 @@ def _self_test() -> int:
         return path
 
     gate_hook = {"type": "command", "command": AGENT_GATE_COMMAND}
-    good_settings = {"hooks": {"PreToolUse": [{"matcher": "Agent|Task", "hooks": [gate_hook]}]}}
+    good_settings = {"hooks": {"PreToolUse": [{"matcher": "|".join(CLAUDE_GATE_TOOLS), "hooks": [gate_hook]}]}}
     check("settings hook found", check_settings(settings_file(good_settings), []) == AGENT_GATE_COMMAND)
 
     def settings_refuse(name: str, doc, needle: str, others: list | None = None) -> None:
@@ -6257,6 +6273,8 @@ def _self_test() -> int:
     settings_refuse("settings hook with an inert command",
                     {"hooks": {"PreToolUse": [{"matcher": "Agent|Task", "hooks": [
                         {"type": "command", "command": "echo panel_slots.py agent-gate"}]}]}}, "verbatim")
+    settings_refuse("settings hook without AskUserQuestion",
+                    {"hooks": {"PreToolUse": [{"matcher": "Agent|Task", "hooks": [gate_hook]}]}}, "verbatim")
     settings_refuse("settings hook on Agent only",
                     {"hooks": {"PreToolUse": [{"matcher": "Agent", "hooks": [gate_hook]}]}}, "verbatim")
     settings_refuse("settings disable every hook", dict(good_settings, disableAllHooks=True), "disableAllHooks")
@@ -6613,6 +6631,20 @@ def _self_test() -> int:
     check("agy gate denies unattended ask_question via env",
           agy_gate("ask_question", {"questions": [{"question": "q?", "options": ["a", "b"]}]},
                    env_override={"ISOTONE_CAMPAIGN_UNATTENDED": "1"}).get("decision") == "deny")
+
+    def claude_question(env_override: dict, sid: str = "s1", root_override: str | None = None) -> str:
+        out, err = io.StringIO(), io.StringIO()
+        payload = {"session_id": sid, "hook_event_name": "PreToolUse", "tool_name": "AskUserQuestion",
+                   "tool_input": {"questions": [{"question": "q?", "options": [{"label": "a"}, {"label": "b"}]}]}}
+        rc = agent_gate(json.dumps(payload), out, err, lambda: (good, audit_agents), env=env_override,
+                        root=tmpd if root_override is None else root_override)
+        check("claude gate rc=0 (AskUserQuestion)", rc == 0)
+        return out.getvalue()
+
+    check("claude gate allows attended AskUserQuestion", claude_question({}) == "")
+    denied = claude_question({"ISOTONE_CAMPAIGN_UNATTENDED": "1"})
+    check("claude gate denies unattended AskUserQuestion via env",
+          json.loads(denied or "{}").get("hookSpecificOutput", {}).get("permissionDecision") == "deny", denied)
     guard_root = tempfile.mkdtemp(prefix="guard-root-", dir=tmpd)
     os.makedirs(os.path.join(guard_root, "build"), exist_ok=True)
     with open(os.path.join(guard_root, "build", "claude-campaign-guard.json"), "w", encoding="utf-8") as fh:
@@ -6623,6 +6655,11 @@ def _self_test() -> int:
     check("agy gate allows ask_question when campaign guard belongs to another session",
           agy_gate("ask_question", {"questions": [{"question": "q?", "options": ["a", "b"]}]},
                    cid="other-cid", root_override=guard_root) == {"decision": "allow"})
+    held_q = claude_question({}, sid="camp-cid", root_override=guard_root)
+    check("claude gate denies AskUserQuestion when campaign guard holds matching session_id",
+          json.loads(held_q or "{}").get("hookSpecificOutput", {}).get("permissionDecision") == "deny", held_q)
+    check("claude gate allows AskUserQuestion when campaign guard belongs to another session",
+          claude_question({}, sid="other", root_override=guard_root) == "")
     ended_guard_root = tempfile.mkdtemp(prefix="ended-guard-root-", dir=tmpd)
     os.makedirs(os.path.join(ended_guard_root, "build"), exist_ok=True)
     with open(os.path.join(ended_guard_root, "build", "claude-campaign-guard.json"), "w", encoding="utf-8") as fh:

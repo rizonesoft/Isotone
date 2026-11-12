@@ -42,7 +42,7 @@ Starting the first phase starts all four guard layers so unattended runs self-he
 - **Stop hook** (`python scripts/campaign_guard.py stop-hook` in `.agents/hooks.json`): blocks premature end-of-turn while ready work remains, allowing subagent/background task turns (`fullyIdle: false`) to wait naturally and recording any unexpected error for `python scripts/campaign_guard.py hook-error`. A closeout is a line `## Closeout run=<run id>` and a park is a column-0 `PARKED <UTC> run=<run id> <reason>` line.
 - **Stall breaker:** trips after 3 consecutive blocked stops with no repository/run-file progress (ignoring `- bookkeeping:` notes).
 - **Heartbeat** (`schedule` recurring cron + `manage_task`): resumes idle turns in-session with full context.
-- **Watchdog** (`python scripts/run-guard.py watch`, every 10 minutes via Windows Task Scheduler): resumes dead `agy` sessions started via `scripts/start-campaign.ps1` under the OS session lock (`build/claude-campaign-session.lock`).
+- **Watchdog** (`python scripts/run-guard.py watch`, every 10 minutes via Windows Task Scheduler): resumes a dead campaign session started via `scripts/start-campaign.ps1 -Runner agy|claude` in the runner that owns the guard under the OS session lock (`build/claude-campaign-session.lock`).
 
 Start the guard in exact order:
 
