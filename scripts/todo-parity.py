@@ -17,7 +17,9 @@ Every finding is FATAL (`SEVERITY_MAP` in `scripts/todo-graph.py`, mirrored in `
 - `parity-np-duplicate`: a Stilus catalog feature id (`NP-`) used on two rows.
 - `parity-ip-duplicate`: a Gesso catalog feature id (`IP-`) used on two rows (D00 T01 §7).
 - `parity-status-malformed`: a status outside the grammar.
-- `parity-ref-dead`: a `plan` or `shipped-scope` ref naming no section, or a section carrying `> **Moved:**`.
+- `parity-ref-dead`: a `plan` or `shipped-scope` ref naming no section, a section carrying `> **Moved:**`, or a
+  section that lapsed with its superseded file (D00 T01 §7, §18): it is never built, so it owns nothing. A stamped
+  section of a superseded file is not lapsed and stays a valid owner.
 - `parity-backlog-dead`: a `backlog B-NNN` id with no live entry in `todo/backlog.md`.
 - `parity-input-damaged`: a catalog or source file the spec names is missing while `docs/parity/` exists, a row
   whose cell count differs from its table header, or a source id defined twice in one file. A damaged input never
@@ -25,7 +27,8 @@ Every finding is FATAL (`SEVERITY_MAP` in `scripts/todo-graph.py`, mirrored in `
 - `parity-totals-drift`: the catalog's Totals table or Areas list disagrees with its rows, or is missing, repeated,
   or malformed in part (D00 T01 §7), so the summary a reader trusts is the one the rows add up to.
 - `parity-to-author-stale`: a `to-author` ref naming no open section: the authoring section it waits on does not
-  exist, moved, or was stamped without rerouting the row to the section it authored.
+  exist, moved, lapsed with its superseded file, or was stamped without rerouting the row to the section it
+  authored.
 
 Every message opens with its catalog's name (`stilus:`, `gesso:`), since one validator reads every catalog. A tree
 with no `docs/parity/` at all (a bare export of `todo/`) has nothing to check and validates; with `docs/parity/`
@@ -524,11 +527,20 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None) -> list[
                 elif hit[2].moved:
                     found.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that moved out of the "
                                                    f"tree (`> **Moved:**`); point the row at its new owner"))
+                elif getattr(hit[2], "lapsed", False):
+                    # Its file is superseded and its row is open, so it is never built or stamped (D00 T01 §18): a
+                    # row it "owns" has no owner. A stamped section of the same file is not lapsed and passes.
+                    found.append(("parity-ref-dead", f"{where} {kind} {arg} names a section that lapsed with its "
+                                                   f"superseded file and will never be built; point the row at the "
+                                                   f"section that owns the feature now (the file was superseded by "
+                                                   f"{graph.successor_path(hit[0], todos)})"))
             elif kind == "to-author":
                 hit = sections.get(" ".join(arg.split()))
-                if hit is None or hit[2].moved or hit[2].status == "x":
+                if hit is None or hit[2].moved or getattr(hit[2], "lapsed", False) or hit[2].status == "x":
                     why = ("names no section in todo/" if hit is None else "names a section that moved out of the tree"
-                           if hit[2].moved else "names a stamped section, which should have rerouted it to `plan`")
+                           if hit[2].moved else "names a section that lapsed with its superseded file"
+                           if getattr(hit[2], "lapsed", False)
+                           else "names a stamped section, which should have rerouted it to `plan`")
                     found.append(("parity-to-author-stale", f"{where} to-author {arg} {why}"))
             elif kind == "backlog" and arg not in backlog:
                 found.append(("parity-backlog-dead", f"{where} backlog {arg} names no live entry in todo/backlog.md"))

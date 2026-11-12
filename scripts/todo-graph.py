@@ -12500,6 +12500,46 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 check(f"parity: Gesso, {name} is {', '.join(want)} naming it with gesso:",
                       (sorted({c for c, _ in found}), any(needle in m for _, m in found),
                        all(m.startswith("gesso: ") for _, m in found)), (want, True, True))
+            # A row cannot be owned by a section that lapsed with its superseded file (D00 T01 §18): it is never
+            # built. A stamped section of the same file is still a valid owner, and the report lists the problem too.
+            _pold = ptodo / "94-parity" / "TODO-02-old.md"
+            _pold.write_text(
+                "---\nschema_version: 1\nid: parity-old\ndomain: 94-parity\nstatus: superseded\n"
+                "title: \"TODO-02 -- Parity fixture, superseded\"\nsuperseded_by: parity-fixture\n---\n\n"
+                "# TODO-02 -- Parity fixture, superseded\n\n"
+                "## Implementation Order\n\n| Order | Section | Deliverable | Depends On | Status |\n"
+                "| :---: | :-----: | ----------- | ---------- | :----: |\n"
+                "| 1 | §1 | Old thing 1 | -- | [x] |\n| 2 | §2 | Old thing 2 | -- | [ ] |\n\n---\n\n"
+                + _psection(1).replace("**Test checkpoint:** `true`\n\n",
+                                       "**Test checkpoint:** `true`\n\n> **Verified:** 2026-10-21 | §1 | fixture\n\n")
+                + _psection(2),
+                encoding="utf-8",
+            )
+            try:
+                for kind_, old_ in (("plan", "plan D94 T01 §1"), ("shipped-scope", "shipped-scope D94 T01 §2")):
+                    _gwrite(_gbody.replace(old_, f"{kind_} D94 T02 §2"))
+                    found = _pfind()
+                    check(f"parity: Gesso, a {kind_} ref naming a lapsed section is parity-ref-dead naming the successor",
+                          (sorted({c for c, _ in found}),
+                           any(f"{kind_} D94 T02 §2 names a section that lapsed with its superseded file" in m
+                               and m.endswith("TODO-01-parity.md)") for _, m in found),
+                           all(m.startswith("gesso: ") for _, m in found)), (["parity-ref-dead"], True, True))
+                    check(f"parity: the report lists the lapsed {kind_} owner as a problem",
+                          any("D94 T02 §2 names a section that lapsed" in m
+                              for m in par.parity_report(sys.modules[__name__], load_todos())["problems"]), True)
+                _gwrite(_gbody.replace("shipped-scope D94 T01 §2", "shipped-scope D94 T02 §1"))
+                check("parity: a stamped section of a superseded file is still a valid owner", _pfind(), [])
+                _gwrite(_gbody.replace("plan D94 T01 §1", "to-author D94 T02 §2"))
+                found = _pfind()
+                check("parity: a to-author ref naming a lapsed section is stale",
+                      (sorted({c for c, _ in found}),
+                       any("to-author D94 T02 §2 names a section that lapsed with its superseded file" in m for _, m in found)),
+                      (["parity-to-author-stale", "parity-totals-drift"] if any(c == "parity-totals-drift" for c, _ in found)
+                       else ["parity-to-author-stale"], True))
+            finally:
+                _pold.unlink()
+            _gwrite(_gbody)
+            check("parity: the fixture is clean again without the superseded file", _pfind(), [])
             # The summary is reconciled number by number and part by part.
             _gdrift = (
                 ("a Totals cell off by one", _gcat.replace("| `plan` | 1 | 2 |", "| `plan` | 1 | 3 |"), "Totals `plan` Source rows says 3 but the rows add up to 2"),
