@@ -50,6 +50,9 @@ MAX_CLANGD_CONFIG_BYTES = 256 * 1024
 MAX_HEADER_BYTES = 16 * 1024
 MAX_HEADER_COUNT = 64
 MAX_JSON_DEPTH = 128
+MAX_ID_CHARS = 1024
+MAX_PATH_CHARS = 4096
+MAX_QUERY_CHARS = 4096
 _READ_CHUNK_BYTES = 1024 * 1024
 _DRAIN_CHUNK_BYTES = 64 * 1024
 
@@ -214,6 +217,8 @@ def resolve_confined_file(raw_path: str, root: str = REPO) -> tuple[str, str, st
     """Resolve raw_path inside root (resolving symlinks/junctions) and return (abs_path, backend_name, language_id)."""
     if not isinstance(raw_path, str) or not raw_path.strip():
         raise LspToolError("file_path must be a non-empty workspace path")
+    if len(raw_path) > MAX_PATH_CHARS:
+        raise LspToolError(f"file_path exceeds maximum length ({MAX_PATH_CHARS} characters)")
     candidate = raw_path.strip()
     root_resolved = str(Path(root).resolve())
     joined = candidate if os.path.isabs(candidate) else os.path.join(root_resolved, candidate)
@@ -1567,8 +1572,8 @@ class IsotoneLspMcpServer:
     def _call_tool(self, name: str, args: dict) -> str:
         if name == "lsp_status":
             action = args.get("action") or "status"
-            if action not in ("status", "stop"):
-                raise LspToolError(f"unsupported action {action!r}; use 'status' or 'stop'")
+            if not isinstance(action, str) or len(action) > 64 or action not in ("status", "stop"):
+                raise LspToolError("unsupported action; use 'status' or 'stop'")
             stopped = []
             if action == "stop":
                 for bname, backend in self.backends.items():
@@ -1586,8 +1591,8 @@ class IsotoneLspMcpServer:
             query = args.get("query")
             lang = args.get("language")
             max_results = _int_arg(args, "max_results", 50, 1, 500)
-            if not isinstance(query, str):
-                raise LspToolError("query must be a string")
+            if not isinstance(query, str) or len(query) > MAX_QUERY_CHARS:
+                raise LspToolError(f"query must be a string of at most {MAX_QUERY_CHARS} characters")
             backend_key = "clangd" if lang == "cpp" else "pyright" if lang == "python" else None
             if backend_key is None or backend_key not in self.backends:
                 raise LspToolError("language must be 'cpp' or 'python'")
@@ -1662,27 +1667,38 @@ class IsotoneLspMcpServer:
 
         raise KeyError(f"unknown tool {name!r}")
 
+    @staticmethod
+    def _is_valid_request_id(req_id: object) -> bool:
+        if req_id is None:
+            return True
+        if isinstance(req_id, str):
+            return len(req_id) <= MAX_ID_CHARS
+        if isinstance(req_id, int) and not isinstance(req_id, bool):
+            return abs(req_id) < (10 ** 64)
+        if isinstance(req_id, float):
+            return math.isfinite(req_id)
+        return False
+
     def handle_message(self, msg: dict) -> dict | None:
         if not isinstance(msg, dict):
             return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}}
         has_id = "id" in msg
         req_id = msg.get("id")
-        if has_id and not (
-            req_id is None
-            or isinstance(req_id, str)
-            or (isinstance(req_id, int) and not isinstance(req_id, bool))
-            or (isinstance(req_id, float) and math.isfinite(req_id))
-        ):
+        if has_id and not self._is_valid_request_id(req_id):
             return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}}
         method = msg.get("method")
-        if msg.get("jsonrpc") != "2.0" or not isinstance(method, str) or not method:
+        if msg.get("jsonrpc") != "2.0" or not isinstance(method, str) or not method or len(method) > 256:
             return {"jsonrpc": "2.0", "id": req_id if has_id else None, "error": {"code": -32600, "message": "Invalid Request"}}
         if not has_id:
             return None
         if method == "initialize":
             params = msg.get("params") or {}
             client_proto = params.get("protocolVersion") if isinstance(params, dict) else None
-            negotiated = client_proto if isinstance(client_proto, str) and client_proto else PROTOCOL_VERSION
+            negotiated = (
+                client_proto
+                if isinstance(client_proto, str) and 0 < len(client_proto) <= 64
+                else PROTOCOL_VERSION
+            )
             return {
                 "jsonrpc": "2.0",
                 "id": req_id,
@@ -1702,7 +1718,12 @@ class IsotoneLspMcpServer:
             return {"jsonrpc": "2.0", "id": req_id, "result": {"prompts": []}}
         if method == "tools/call":
             params = msg.get("params")
-            if not isinstance(params, dict) or not isinstance(params.get("name"), str):
+            if (
+                not isinstance(params, dict)
+                or not isinstance(params.get("name"), str)
+                or not params["name"]
+                or len(params["name"]) > 128
+            ):
                 return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32602, "message": "Invalid tools/call params"}}
             tname = params["name"]
             targs = params.get("arguments") or {}
@@ -1779,15 +1800,21 @@ def _read_mcp_message(binary_in) -> tuple[object, str]:
 def _write_mcp_message(binary_out, payload: dict, mode: str) -> None:
     raw = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
     if len(raw) > MAX_FRAME_BYTES:
+        cand_id = payload.get("id") if isinstance(payload, dict) else None
+        safe_id = cand_id if IsotoneLspMcpServer._is_valid_request_id(cand_id) else None
+        err_msg = f"Outbound MCP response ({len(raw)} bytes) exceeds maximum size ({MAX_FRAME_BYTES} bytes)"
         fallback = {
             "jsonrpc": "2.0",
-            "id": payload.get("id") if isinstance(payload, dict) else None,
-            "error": {
-                "code": -32603,
-                "message": f"Outbound MCP response ({len(raw)} bytes) exceeds maximum size ({MAX_FRAME_BYTES} bytes)",
-            },
+            "id": safe_id,
+            "error": {"code": -32603, "message": err_msg},
         }
         raw = json.dumps(fallback, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        if len(raw) > MAX_FRAME_BYTES:
+            raw = json.dumps(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": err_msg}},
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
     if mode == "framed":
         binary_out.write(f"Content-Length: {len(raw)}\r\n\r\n".encode("ascii") + raw)
     else:
@@ -2438,6 +2465,32 @@ def _self_test() -> int:
                   "exceeds maximum size" in out_lsp_err
                   and out_mcp_obj.get("error", {}).get("code") == -32603,
                   f"lsp={out_lsp_err!r} mcp={out_mcp_obj!r}")
+
+            huge_id_req = json.dumps(
+                {"jsonrpc": "2.0", "id": "\u0080" * (MAX_ID_CHARS + 32), "method": "ping"},
+                ensure_ascii=False,
+            ).encode("utf-8") + b"\n"
+            huge_id_in = io.BytesIO(huge_id_req + b'{"jsonrpc":"2.0","id":75,"method":"ping"}\n')
+            huge_id_out = io.BytesIO()
+            serve_stdio(srv, huge_id_in, huge_id_out)
+            huge_id_lines = [json.loads(ln.decode("utf-8")) for ln in huge_id_out.getvalue().splitlines() if ln.strip()]
+            fb_buf = io.BytesIO()
+            _write_mcp_message(
+                fb_buf,
+                {"jsonrpc": "2.0", "id": "\u0080" * ((MAX_FRAME_BYTES // 6) + 8), "result": {}},
+                "line",
+            )
+            fb_raw = fb_buf.getvalue()
+            fb_obj = json.loads(fb_raw.decode("utf-8").strip())
+            check("oversized request IDs and fallback frames stay strictly within MAX_FRAME_BYTES",
+                  len(huge_id_lines) == 2
+                  and huge_id_lines[0].get("error", {}).get("code") == -32600
+                  and huge_id_lines[0].get("id") is None
+                  and huge_id_lines[1] == {"jsonrpc": "2.0", "id": 75, "result": {}}
+                  and len(fb_raw) <= MAX_FRAME_BYTES
+                  and fb_obj.get("id") is None
+                  and fb_obj.get("error", {}).get("code") == -32603,
+                  f"lines={huge_id_lines!r} fb_len={len(fb_raw)} fb={fb_obj!r}")
         finally:
             srv.close()
 

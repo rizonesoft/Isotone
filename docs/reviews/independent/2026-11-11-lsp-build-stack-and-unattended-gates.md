@@ -382,3 +382,41 @@ OVERALL: needs-attention
 ## Response to round 11
 
 1. **P1 `scripts/lsp-mcp-server.py:1084` (`adversarial`):** Real and reproduced. Added `MAX_SOURCE_BYTES` (8 MiB), `MAX_CLANGD_CONFIG_BYTES` (256 KiB), `_read_source_bytes_bounded`, and streaming `_hash_file_bounded` across `_sync_document_locked`, `_refresh_tracked_documents_locked` (both open and closed/evicted dependencies), `_file_config_token`, and `.clangd` configuration parsing (`scripts/lsp-mcp-server.py`), checking `fstat().st_size` before allocation and reading/hashing in 1 MiB chunks, and enforced `MAX_FRAME_BYTES` (64 MiB) on outbound serialization in both `_encode_lsp_frame` and `_write_mcp_message`. Added 3 deterministic regression tests in `lsp-mcp-server.py --self-test` (`41 cases, 0 failed`) covering oversized `.h` files on `lsp_hover`, open dependencies growing past `MAX_SOURCE_BYTES` during refresh, and outbound LSP/MCP frame limits.
+
+## Round 12: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T02:38:06Z
+- Candidate: 5a092881eb85487fc89726fb0c29e58fa66b318a
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 22
+- Digest: 64c982f4c172d036
+
+### adversarial: needs-attention
+
+1. **P2** `scripts/lsp-mcp-server.py:1784`: The oversized-response fallback retains the attacker-controlled request ID and is serialized without another size check. A valid inbound request can therefore bypass the outbound 64 MiB limit. Reproduced read-only through `serve_stdio`: send a newline-delimited `ping` with an ID containing `(MAX_FRAME_BYTES // 6) + 1` U+007F characters, serialized with `ensure_ascii=False`. The 11,184,853-byte request produces 67,109,005 output bytes, exceeding the 67,108,864-byte limit. Larger accepted IDs amplify this further. Bound the serialized ID before accepting the request and ensure the fallback itself fits the limit.
+
+### consistency: approve
+
+### integration: approve
+
+### quality: approve
+
+### optimization: approve
+
+### source-defect: approve
+
+LENS adversarial: findings
+LENS consistency: clean
+LENS integration: clean
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P2
+OVERALL: needs-attention
+
+
+## Response to round 12
+
+1. **P2 `scripts/lsp-mcp-server.py:1784` (`adversarial`):** Real and reproduced. Added `_is_valid_request_id` (`MAX_ID_CHARS = 1024`, integer IDs `< 10**64`, finite floats) in `handle_message` along with explicit length caps on echoed `method` (`<= 256`), `protocolVersion` (`<= 64`), tool `name` (`<= 128`), `action` (`<= 64`), `query` (`MAX_QUERY_CHARS = 4096`), and `file_path` (`MAX_PATH_CHARS = 4096`), and hardened `_write_mcp_message` so its oversized-response fallback validates `id` via `_is_valid_request_id` and re-verifies `len(raw) <= MAX_FRAME_BYTES` (dropping `id` to `None` if needed). Added a regression test in `lsp-mcp-server.py --self-test` (`42 cases, 0 failed`) covering `ensure_ascii=False` non-ASCII request IDs and direct `_write_mcp_message` fallback bounds.
