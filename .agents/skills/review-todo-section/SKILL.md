@@ -66,11 +66,11 @@ Add `--fidelity "<Design specs>"` to `review-prompt.py` and `--surface` to `revi
 | `COMPLETION: complete` | Ready to stamp `$POST_ROUND_SHA`. | `${RECORD}:complete` |
 | `COMPLETION: gaps` with `"blocking": false` (`HIGHEST: P3` only) and out-of-scope gaps filed | File each out-of-scope gap via `add-todo`, append `- Filed: D<NN> T<NN> §<N> (<gap>)` directly under the `## Completion review:` block in `$RECORD` (no `## ` heading!), and commit `$RECORD` (keeping `--sha $POST_ROUND_SHA`). | `${RECORD}:filed` |
 | `COMPLETION: gaps` with `"blocking": false` (`HIGHEST: P3` only) and zero filed sections | Note dispositions under `## Completion review:` without `- Filed:` lines, commit `$RECORD` (keeping `--sha $POST_ROUND_SHA`). | `${RECORD}:completed` |
-| `COMPLETION: gaps` with `"blocking": true` (`P1` or `P2`) | Repair every in-scope gap in code (never narrow the section's contract promises -- `stamp` verifies the section contract text did not change between failed completion and reconciliation!), file genuinely out-of-scope gaps via `add-todo`, append `- Implemented: ...` and `- Filed: D<NN> T<NN> §<N> (<gap>)` directly under `## Completion review:` in `$RECORD` (no `## ` heading!), re-run gates saving output to `build/gates.txt`, commit on `main` (`$REPAIRED_SHA`), and run Step 4 (`reconciliation`). | `${RECORD}:reconciled` |
+| `COMPLETION: gaps` with `"blocking": true` (`P1` or `P2`) | Repair every in-scope gap in code (never narrow the section's contract promises -- `stamp` verifies the section contract text did not change between failed completion and reconciliation!), file genuinely out-of-scope gaps via `add-todo`, append `- Implemented: ...` and `- Filed: D<NN> T<NN> §<N> (<gap>)` directly under `## Completion review:` in `$RECORD` (no `## ` heading!), re-run gates saving output to `build/gates.txt`, commit on `main` (`$REPAIRED_SHA`), and run Step 4 (`reconciliation`). | `${RECORD}:<reconciled|filed|completed>` (per Step 4) |
 
 ### 4. Pass 4+ -- `reconciliation` loop (only when Completion returned blocking gaps)
 
-Run `--kind reconciliation` on `$REPAIRED_SHA` (`--failed $POST_ROUND_SHA`, `--last <previous reviewed SHA>`):
+Run `--kind reconciliation` on `$REPAIRED_SHA` (`--failed $POST_ROUND_SHA`, `--last <previous reviewed SHA>`, starting with `$LAST_SHA = $POST_ROUND_SHA`):
 
 ```powershell
 $keep = Join-Path "build/reviews" ([guid]::NewGuid().ToString("N").Substring(0, 12))
@@ -79,7 +79,11 @@ python scripts/review-prompt.py --kind reconciliation --candidate $REPAIRED_SHA 
 python scripts/review-dispatch.py --writer agy --kind reconciliation --candidate $REPAIRED_SHA --prompt build/reconciliation-prompt.md --keep $keep --record $RECORD
 ```
 
-Repeat repair + commit + `reconciliation` until it returns `RECONCILIATION: complete` (inside `pass_cap = 33`). Do **not** append `- Filed:` lines after the final `RECONCILIATION: complete` block (`verdict == "reconciled"` requires zero unclosed `- Filed:` notes on the final reconciliation block).
+Inspect the reconciliation pass's JSON summary and ending line (inside `pass_cap = 33`):
+
+- `RECONCILIATION: complete`: stop. Do **not** append `- Filed:` lines after the final `RECONCILIATION: complete` block (`verdict == "reconciled"` requires zero unclosed `- Filed:` notes on the final reconciliation block). Keep `$FINAL_SHA = $REPAIRED_SHA` and pass `--completion "${RECORD}:reconciled"` to `stamp`.
+- `RECONCILIATION: gaps` with `"blocking": false` (`HIGHEST: P3` only): stop -- do **not** run another `--kind reconciliation` (`review-dispatch.py` and `todo-graph.py` refuse reconciling a pass whose worst finding is below `blocking`). Keep `$FINAL_SHA = $REPAIRED_SHA` (the candidate reviewed by that final reconciliation pass). If out-of-scope `P3` gaps are filed via `add-todo`, append `- Filed: D<NN> T<NN> §<N> (<gap>)` directly under that final `## Reconciliation review` block in `$RECORD` (no `## ` heading!), commit the filed `todo/` changes and `$RECORD` on `main`, and pass `--completion "${RECORD}:filed"` with `--sha $FINAL_SHA`. If zero sections are filed, note dispositions under that `## Reconciliation review` block without `- Filed:` lines, commit `$RECORD` on `main`, and pass `--completion "${RECORD}:completed"` with `--sha $FINAL_SHA`.
+- `RECONCILIATION: gaps` with `"blocking": true` (`P1` or `P2`): repair every in-scope blocking gap on `main` (never narrowing the section's contract promises), file genuinely out-of-scope gaps via `add-todo`, append `- Implemented: ...` and `- Filed: D<NN> T<NN> §<N> (<gap>)` directly under that `## Reconciliation review` block in `$RECORD` (no `## ` heading!), re-run gates into `build/gates.txt`, set `$LAST_SHA = $REPAIRED_SHA`, commit the repair (`$REPAIRED_SHA = (git rev-parse HEAD).Trim()`), and run the next `--kind reconciliation` pass.
 
 ### 5. Surface golden approval and release backlog gate
 
@@ -88,7 +92,7 @@ Repeat repair + commit + `reconciliation` until it returns `RECONCILIATION: comp
 
 ### 6. Stamp via `todo-graph.py stamp` and commit
 
-Let `$FINAL_SHA` be the exact commit SHA reviewed by the final pass (`$POST_ROUND_SHA` when no reconciliation ran, or the final `$REPAIRED_SHA` reviewed by `RECONCILIATION: complete`). First commit `$RECORD` if it has uncommitted lines from the final pass (`docs: record review passes for <ref>`), then run:
+Let `$FINAL_SHA` be the exact commit SHA reviewed by the final pass (`$POST_ROUND_SHA` when no reconciliation ran, or the final `$REPAIRED_SHA` reviewed by the last reconciliation pass -- whether it ended `RECONCILIATION: complete` or non-blocking `RECONCILIATION: gaps`). First commit `$RECORD` (and any out-of-scope `todo/` section filed from a non-blocking final pass) if modified (`docs: record review passes for <ref>`), keeping `--sha $FINAL_SHA`, then run:
 
 ```powershell
 python scripts/todo-graph.py stamp "$REF" --sha $FINAL_SHA --plan $RECORD --review "${ROUND_NUM}:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check "pwsh scripts/check-all.ps1 -> exit 0"

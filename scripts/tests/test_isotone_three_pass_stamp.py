@@ -606,6 +606,114 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
             res = self.run_script(*gate)
             self.assertEqual(res.returncode, 0, f"post-restamp {gate}: {res.stdout}\n{res.stderr}")
 
+    def test_reconciliation_ending_p3_gaps_refuses_second_reconcile_and_stamps_filed(self):
+        schedule = tomllib.loads((self.repo / ".conclave/reviewers.toml").read_text(encoding="utf-8"))["schedule"]
+        lenses = {kind: schedule[kind]["lenses"] for kind in ("plan", "completion", "reconciliation")}
+        lenses["round"] = [name for name in schedule["rounds"][0]["lenses"] if name != "design"]
+
+        self.review("plan", self.start, reply("plan", lenses["plan"]))
+        todo_file = self.repo / "todo/00-workspace/TODO-01-alpha.md"
+        todo_file.write_text(
+            todo_file.read_text(encoding="utf-8")
+            .replace("- [ ] Write `native/thing.txt`", "- [x] Write `native/thing.txt`")
+            .replace("- [ ] Commit:", "- [x] Commit:"),
+            encoding="utf-8",
+        )
+        (self.repo / "native").mkdir()
+        (self.repo / "native/thing.txt").write_text("THING=1\n", encoding="utf-8")
+        built = self.commit("workspace: add alpha thing (D00 T01 §1)")
+
+        rnd = self.review(
+            "round",
+            built,
+            reply("round", lenses["round"]),
+            prompt_extra=("--purpose", "Add the alpha fixture marker file."),
+        )
+        comp = self.review(
+            "completion",
+            built,
+            reply("completion", lenses["completion"], "P2", True),
+            prompt_extra=("--purpose", "Deliver the alpha fixture marker file."),
+        )
+        self.assertEqual((comp["highest"], comp["blocking"]), ("P2", True))
+
+        (self.repo / "native/thing.txt").write_text("THING=2\n", encoding="utf-8")
+        record = self.repo / RECORD
+        with open(record, "a", encoding="utf-8", newline="") as handle:
+            handle.write("\n- Implemented: gap 1 (`THING=2` in `native/thing.txt`)\n")
+        repaired = self.commit("workspace: repair P2 completion gap (D00 T01 §1)")
+        gates_file = self.scratch / "gates.txt"
+        gates_file.write_text("python scripts/todo-graph.py validate -> exit 0\n", encoding="utf-8")
+
+        rec = self.review(
+            "reconciliation",
+            repaired,
+            reply("reconciliation", lenses["reconciliation"], "P3", True),
+            prompt_extra=(
+                "--failed", built,
+                "--last", built,
+                "--findings", RECORD,
+                "--gates", str(gates_file),
+            ),
+        )
+        self.assertEqual((rec["highest"], rec["blocking"]), ("P3", False))
+
+        # Running another reconciliation after a non-blocking P3 pass is refused by review-dispatch.py.
+        rec2_prompt = self.build_prompt(
+            "reconciliation",
+            repaired,
+            extra=(
+                "--failed", built,
+                "--last", repaired,
+                "--findings", RECORD,
+                "--gates", str(gates_file),
+            ),
+        )
+        refused_rec2 = self.run_script(
+            "scripts/review-dispatch.py",
+            "--kind", "reconciliation",
+            "--candidate", repaired,
+            "--writer", "agy",
+            "--prompt", rec2_prompt,
+            "--record", RECORD,
+            say=reply("reconciliation", lenses["reconciliation"]),
+        )
+        self.assertNotEqual(refused_rec2.returncode, 0)
+
+        # Append `- Filed:` under the final P3 reconciliation block, commit `$RECORD`, and stamp `--sha repaired` with `:filed`.
+        with open(record, "a", encoding="utf-8", newline="") as handle:
+            handle.write("\n- Filed: D00 T01 \u00a72 (out-of-scope follow-up from P3 reconciliation note)\n")
+        self.commit("docs: record filed P3 reconciliation note (D00 T01 §1)")
+
+        bad_reconciled = self.run_script(
+            "scripts/todo-graph.py",
+            "stamp",
+            "D00 T01 \u00a71",
+            "--sha", repaired,
+            "--plan", RECORD,
+            "--completion", f"{RECORD}:reconciled",
+            "--review", f"{rnd['round']}:{RECORD}:clean",
+            "--check", "python scripts/todo-graph.py validate -> exit 0",
+        )
+        self.assertNotEqual(bad_reconciled.returncode, 0)
+
+        stamp = self.run_script(
+            "scripts/todo-graph.py",
+            "stamp",
+            "D00 T01 \u00a71",
+            "--sha", repaired,
+            "--plan", RECORD,
+            "--completion", f"{RECORD}:filed",
+            "--review", f"{rnd['round']}:{RECORD}:clean",
+            "--check", "python scripts/todo-graph.py validate -> exit 0",
+        )
+        self.assertEqual(stamp.returncode, 0, stamp.stdout + stamp.stderr)
+        receipt = json.loads((self.repo / "docs/reviews/d00-t01-s1.json").read_text(encoding="utf-8"))
+        self.assertEqual((receipt["completion"]["verdict"], receipt["completion"]["candidate"]), ("filed", repaired))
+        self.assertEqual(receipt["completion"]["filed"], ["D00 T01 \u00a72"])
+        val = self.run_script("scripts/todo-graph.py", "validate")
+        self.assertEqual(val.returncode, 0, val.stdout + val.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

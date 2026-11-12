@@ -98,3 +98,50 @@ OVERALL: needs-attention
 
 1. **P2 `.agents/skills/review-todo-section/SKILL.md:47` (`consistency`):** Real and reproduced. Updated Step 2 (`Pass 2 -- the review round`) in `.agents/skills/review-todo-section/SKILL.md` and `.claude/skills/review-todo-section/SKILL.md` to key the `stamp` round verdict on the round's `OVERALL:` line (`OVERALL: approve` -> `${ROUND_NUM}:${RECORD}:clean`; `OVERALL: needs-attention` -> `${ROUND_NUM}:${RECORD}:fixed` for both non-blocking `HIGHEST: P3` rounds and fixed `P1`/`P2` rounds), matching `scripts/lib/todo_graph.py:901` (`receipt_data_ok`) and verified in `scripts/tests/test_isotone_three_pass_stamp.py` (which proves `:clean` is rejected and `:fixed` succeeds after a `HIGHEST: P3`, `OVERALL: needs-attention` round).
 2. **P2 `.agents/skills/review-todo-section/SKILL.md:112` (`integration`):** Real and reproduced. Extended `unstamp` in `scripts/lib/todo_graph.py` (plus `scripts/todo-graph.py`, `scripts/todo-findings.py`, `scripts/todo-runs.py`, `.agents/skills/review-todo-section/SKILL.md`, and `.claude/skills/review-todo-section/SKILL.md`) to reopen legacy prose-stamped sections as well as JSON-receipt sections by archiving the legacy prose stamp fields and verbatim lines into `docs/reviews/<slug>.revoked-<date>[-<n>].json`, archiving per-section findings and `.attest.json` / `-review-outcomes.json` sidecars to `*.revoked-<date>[-<n>].*` with atomic rollback, keeping historical findings, transitions, and legacy `panel` run records checkable across `*.revoked-*.md`, and permitting a fresh `three-pass` review cycle; verified both in `scripts/tests/test_isotone_three_pass_stamp.py` (`test_legacy_prose_stamp_reopen_preserves_evidence_and_restamps`) and in an isolated clone probe on `D00 T01 §1` and `D00 T05 §2` (`todo-findings.py --check`, `todo-graph.py validate`, `todo-graph.py plan --check`, and `todo-runs.py --check` all exit `0`).
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T04:27:13Z
+- Candidate: b799fabf3c5c1572cf9aeb157999914070073d66
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 32
+- Digest: c5c71364affaed46
+
+### adversarial: approve
+
+No findings.
+
+### consistency: approve
+
+No findings.
+
+### integration: needs-attention
+
+1. **P2, `.agents/skills/review-todo-section/SKILL.md:82`: Reconciliation instructions dead-end when only P3 gaps remain.** Reproduce with a completion reporting P2 gaps, followed by a repair and reconciliation ending `HIGHEST: P3` and `RECONCILIATION: gaps`. Step 4 requires another reconciliation until `complete`, but `check_three_pass_order()` refuses it because P3 is below the blocking threshold. An in-memory probe confirmed that refusal. The prescribed `reconciled` stamp verdict also requires `RECONCILIATION: complete`. Document the supported `filed`/`completed` exit for nonblocking reconciliation results and retain that pass’s candidate as `$FINAL_SHA`. The same defect appears in `.claude/skills/review-todo-section/SKILL.md:78`.
+
+### quality: approve
+
+No additional findings.
+
+### optimization: approve
+
+No findings.
+
+### source-defect: approve
+
+No additional findings.
+
+LENS adversarial: clean
+LENS consistency: clean
+LENS integration: findings
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 3
+
+1. **P2 `.agents/skills/review-todo-section/SKILL.md:82` (`integration`):** Real and reproduced. Updated Step 3, Step 4, and Step 6 in `.agents/skills/review-todo-section/SKILL.md` and `.claude/skills/review-todo-section/SKILL.md` (plus `docs/todo-workflow.md`) so a `--kind reconciliation` pass ending `RECONCILIATION: gaps` with `"blocking": false` (`HIGHEST: P3` only) stops without running another reconciliation pass, retains that reconciliation pass's `$REPAIRED_SHA` as `$FINAL_SHA` for `--sha`, and stamps with `--completion "${RECORD}:filed"` when out-of-scope `P3` gaps are filed under the final `## Reconciliation review` block or `--completion "${RECORD}:completed"` when zero sections are filed; covered end-to-end in `scripts/tests/test_isotone_three_pass_stamp.py` (`test_reconciliation_ending_p3_gaps_refuses_second_reconcile_and_stamps_filed`).
