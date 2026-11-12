@@ -41,8 +41,8 @@ Starting the first phase starts all four guard layers so unattended runs self-he
 
 - **Stop hook** (`python scripts/campaign_guard.py stop-hook` in `.agents/hooks.json`): blocks premature end-of-turn while ready work remains, allowing subagent/background task turns (`fullyIdle: false`) to wait naturally and recording any unexpected error for `python scripts/campaign_guard.py hook-error`. A closeout is a line `## Closeout run=<run id>` and a park is a column-0 `PARKED <UTC> run=<run id> <reason>` line.
 - **Stall breaker:** trips after 3 consecutive blocked stops with no repository/run-file progress (ignoring `- bookkeeping:` notes).
-- **Heartbeat** (`schedule` recurring cron + `manage_task`): resumes idle turns in-session with full context.
-- **Watchdog** (`python scripts/run-guard.py watch`, every 10 minutes via Windows Task Scheduler): resumes a dead campaign session started via `scripts/start-campaign.ps1 -Runner agy|claude` in the runner that owns the guard under the OS session lock (`build/claude-campaign-session.lock`).
+- **Heartbeat** (`schedule` recurring cron + `manage_task`): resumes idle turns in-session with full context; it dies with the session and never brings back one that ended.
+- **No auto-resume** (operator decision 2026-11-12): nothing restarts or resumes a run on its own. A run starts only when the operator runs `scripts/start-campaign.ps1 -Runner agy|claude`, which holds the OS session lock (`build/claude-campaign-session.lock`) and runs the session in that window inside a job object, so closing the window ends the session and everything it started. A crash, a reboot, or a closed window ends the session; there is no scheduled task, watchdog, or headless resume (`campaign_guard.py watch` and `resume-headless`, and `run-guard.py watch` and `install`, exit 2). `python scripts/run-guard.py status` reports the run's session as live or ended, and the operator resumes an open run by running the launcher again.
 
 Start the guard in exact order:
 

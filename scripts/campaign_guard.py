@@ -15,27 +15,29 @@ ledger, and the driven self-test (D00 T04 §32, §34 to §37).
     python scripts/campaign_guard.py repair attempt --red SHA --commit SHA --workflow W --run-file F
     python scripts/campaign_guard.py repair close --green SHA --workflow W --run-file F --evidence LINE
     python scripts/campaign_guard.py repair status|restore --run-file F [--workflow W] | ceiling --run-id ID
-    python scripts/campaign_guard.py watch                          (one watchdog tick; scripts/run-guard.py schedules it)
     python scripts/campaign_guard.py start [--runner agy|claude]    (the launcher: start or resume the run in this console)
-    python scripts/campaign_guard.py resume-headless                (the watchdog's supervisor: resume the dead session)
     python scripts/campaign_guard.py session-note                   (the SessionStart hook: tell another session a campaign runs)
     python scripts/campaign_guard.py --self-test
 
-A campaign run has four parts. The guard file (`build/claude-campaign-guard.json`) names the session that owns the
-run, its phase, scope, run file, heartbeat job and run id; it is written and deleted only through this module, under
-an interprocess lock. The Stop hook (`stop-hook`, wired in `.agents/hooks.json` for Antigravity and
-`.claude/settings.json` for legacy compatibility) blocks that session's end of turn
-while the run is open and lets go when the run file carries this run's `## Closeout run=<id>` heading or column-0
-`PARKED <UTC> run=<id>` line, when `query ready` reads `0 runnable now` (a plan-scoped run only), or when the stall
-breaker trips after 3 blocks with no change to the tree. The heartbeat is a recurring `schedule` job inside the session
-(process-plan holds its prompt) that resumes an idle run, the plan or only its phase as the guard's scope says. The
-watchdog (`watch`) is the one part outside the session: a scheduled tick that resumes a session that died, under its
-own conversation id so the guard keeps its owner, when the run was started through `start` (which records the flags to
-resume with). `start` and the watchdog's `resume-headless` each take the session slot, one operating-system lock,
-before they run the session and hold it until it ends, so this module never starts two campaign sessions. The
-session is Antigravity (`agy`, the default runner) or Claude Code (`claude`, `start --runner claude`); the guard
-records which, and the watchdog resumes a run in the runner that owns it. A run
-started any other way is resumed by the operator, and a new session takes the guard with `acquire --handover`.
+A campaign run has three parts, all of them inside the session's own window. The guard file
+(`build/claude-campaign-guard.json`) names the session that owns the run, its phase, scope, run file, heartbeat job
+and run id; it is written and deleted only through this module, under an interprocess lock. The Stop hook
+(`stop-hook`, wired in `.agents/hooks.json` for Antigravity and `.claude/settings.json` for legacy compatibility)
+blocks that session's end of turn while the run is open and lets go when the run file carries this run's
+`## Closeout run=<id>` heading or column-0 `PARKED <UTC> run=<id>` line, when `query ready` reads `0 runnable now`
+(a plan-scoped run only), or when the stall breaker trips after 3 blocks with no change to the tree. The heartbeat
+is a recurring `schedule` job inside the session (process-plan holds its prompt) that keeps an idle live session
+working, the plan or only its phase as the guard's scope says; it dies with the session.
+
+Nothing restarts or resumes a run on its own (operator decision 2026-11-12). A run starts only when the operator
+starts it, through `start` (scripts/start-campaign.ps1), which takes the session slot, one operating-system lock,
+and runs the session in the operator's window inside a job object, so closing the window ends the session and
+everything it started. A crash, a reboot, or a closed window ends the session, and it stays ended: there is no
+scheduled task, no watchdog, and no headless resume, and `start` records the session's end and returns its exit
+code without starting another. The run itself stays open in the guard until the operator runs `start` again, which
+resumes it in this console under its own session id when the same runner owns it (so the guard keeps its owner) and
+hands it over to a fresh session when the other runner does. The session is Antigravity (`agy`, the default
+runner) or Claude Code (`claude`, `start --runner claude`); the guard records which.
 
 The hook fails open on a bad payload, a missing guard or any error, and records the error for the heartbeat to report
 (`hook-error`). `repair` persists the CI repair episode the review skill's push block bounds at 3 attempts. Every
@@ -1327,16 +1329,14 @@ def run_agy_configured(root: str, session: str, reason: str = "NO_TOOL_CALL") ->
     return proc.returncode, parsed, proc.stderr
 
 
-# The watchdog: the catch for a session that died (a crash, a reboot, a closed terminal). The Stop hook and the
-# heartbeat both live inside the session, so neither can bring a dead one back. `watch` is one scheduled tick from
-# outside it (this repository's scheduled task, installed by scripts/run-guard.py): it resumes the guard's
-# session headless, never beside a live session in this tree, and gives up after WATCH_MAX_RESTARTS resumes that
-# changed nothing. `start` is the operator's launcher (scripts/start-campaign.ps1). Both run the session under the
-# one session slot (`_SessionSlot`).
+# The launcher. `start` is how a campaign session begins, and the only way: the operator runs it
+# (scripts/start-campaign.ps1), it runs the session in that window under the one session slot (`_SessionSlot`), and
+# when the session ends, however it ends, nothing here starts another. The scheduled task that once resumed a dead
+# session (the run watchdog) was removed on 2026-11-12; its name is kept so scripts/run-guard.py can still find and
+# delete a task an older clone left behind.
 
-WATCH_MAX_RESTARTS = 3
-WATCH_MINUTES = 10
-WATCH_TASK = f"{os.path.basename(REPO)} run watchdog"  # "<folder> run watchdog", as the machine's other repositories name theirs
+WATCH_TASK = f"{os.path.basename(REPO)} run watchdog"  # the removed watchdog's task, named only to delete it
+REMOVED_COMMANDS = ("watch", "resume-headless")  # the watchdog's tick and its supervisor: refused, never run
 LAUNCH_ARGS = ("--dangerously-skip-permissions",)
 
 GOAL = (
@@ -1369,8 +1369,8 @@ GOAL = (
 )
 
 RESUME_PROMPT = (
-    "Isotone run watchdog: the campaign session ended without closing its run (a crash, a reboot or a closed "
-    "terminal) and was restarted in Antigravity (`agy`). This conversation still owns the run guard (pass this "
+    "Isotone campaign resume: the campaign session ended without closing its run (a crash, a reboot or a closed "
+    "window), and the operator has started it again in Antigravity (`agy`). This conversation still owns the run guard (pass this "
     "conversation's Conversation ID wherever `$CLAUDE_CODE_SESSION_ID` appears, and use `schedule` / `manage_task` "
     "for `CronCreate` / `CronList` / `CronDelete`). Develop straight on `main` (never create branches or worktrees), "
     "never block on `ask_question` or `RequestFeedback=true`, act autonomously, self-heal, and check, then act, in "
@@ -1379,7 +1379,7 @@ RESUME_PROMPT = (
     "OWNER, change nothing and reply with the line it printed.\n"
     "2. Check the heartbeat job with `manage_task` (`list`) and process-plan's Run guard step 1 (`reconcile`): a "
     "resume can restore it, and it can also be missing or expired. Only when it is missing, replace it as steps 2 "
-    "and 3 say (a fresh generation, then `acquire` with the new task id). Append `- bookkeeping: watchdog resume "
+    "and 3 say (a fresh generation, then `acquire` with the new task id). Append `- bookkeeping: operator resume "
     "<UTC>` to the run file's Critical events once step 3 below allows a write.\n"
     "3. Then follow process-plan's canonical heartbeat prompt from its step 2 to its step 7, in order and without "
     "skipping one: the hook-error and pending-cancel checks, the closeout and drained checks, the stall check of "
@@ -1420,15 +1420,15 @@ CLAUDE_GOAL = (
 )
 
 CLAUDE_RESUME_PROMPT = (
-    "Isotone run watchdog: the campaign session ended without closing its run (a crash, a reboot or a closed "
-    "terminal) and was restarted in Claude Code. This session still owns the run guard. Develop straight on `main` "
+    "Isotone campaign resume: the campaign session ended without closing its run (a crash, a reboot or a closed "
+    "window), and the operator has started it again in Claude Code. This session still owns the run guard. Develop straight on `main` "
     "(never create branches or worktrees), never block on `AskUserQuestion`, act autonomously, self-heal, and check, "
     "then act, in this turn.\n\n"
     "1. Run `python scripts/campaign_guard.py whoami --session $CLAUDE_CODE_SESSION_ID`. If it does not print "
     "OWNER, change nothing and reply with the line it printed.\n"
     "2. Check the heartbeat job with `CronList` and process-plan's Run guard step 1 (`reconcile`): a resume can "
     "restore it, and it can also be missing or expired. Only when it is missing, replace it as steps 2 and 3 say (a "
-    "fresh generation, then `acquire` with the new job id). Append `- bookkeeping: watchdog resume <UTC>` to the run "
+    "fresh generation, then `acquire` with the new job id). Append `- bookkeeping: operator resume <UTC>` to the run "
     "file's Critical events once step 3 below allows a write.\n"
     "3. " + RESUME_PROMPT.split("\n3. ", 1)[1]
 )
@@ -1483,10 +1483,6 @@ def handover_prompt(guard: dict, runner: str = "agy") -> str:
 
 def _launch_path(root: str) -> str:
     return os.path.join(root, "build", "claude-campaign-launch.json")
-
-
-def _watch_path(root: str) -> str:
-    return os.path.join(root, "build", "claude-campaign-watch.json")
 
 
 # The Claude Code runner signs in with the one-year `claude setup-token` token kept in the Conclave vault
@@ -1672,10 +1668,9 @@ def _session_live(record: dict, started: int | None, windows: bool = os.name == 
 class _SessionSlot:
     """The one place a campaign session can occupy: an operating-system lock on a file under `build/`.
 
-    Every path that starts a campaign session (`start` for the operator's launcher, `resume-headless` for the
-    watchdog) takes this lock first, in the process that then runs Claude Code and stays alive for as long as it
-    runs. So two campaign sessions cannot be started by this module, however launchers and ticks interleave and
-    whatever is killed when: the lock is held by a live process or it is free, the operating system frees it the
+    The one path that starts a campaign session (`start`, the operator's launcher) takes this lock first, in the
+    process that then runs the session's CLI and stays alive for as long as it runs. So two campaign sessions
+    cannot be started by this module, however two launches interleave and whatever is killed when: the lock is held by a live process or it is free, the operating system frees it the
     moment its holder dies, and no timestamp, grace window, or recorded process id stands in for it. Claude Code
     itself runs inside a job object that ends it with the holder, so a free slot also means no session this module
     started is still running."""
@@ -1758,7 +1753,7 @@ def _agy_lock_held(lock_path: str) -> bool:
 
 
 class _World:
-    """What the watchdog and the launcher read from and do to the machine, so the self-test can stand in for it."""
+    """What the launcher reads from and does to the machine, so the self-test can stand in for it."""
 
     def __init__(self, root: str):
         self.root = root
@@ -1824,27 +1819,14 @@ class _World:
                 records.append(record)
         return records
 
-    def signature(self, guard: dict) -> str:
-        """The Stop hook's own fingerprint: HEAD, the diff, untracked content, and the run file without its
-        `- bookkeeping:` lines, so the note a resumed session must write never passes for progress."""
-        run_rel = str(guard.get("run_file") or "")
-        try:
-            with open(os.path.join(self.root, run_rel), encoding="utf-8", errors="replace") as fh:
-                run_text = fh.read()
-        except OSError:
-            run_text = ""
-        return fingerprint(self.root, run_rel, run_text, time.monotonic() + 120)
-
     def slot_held(self) -> bool:
         return slot_held(self.root)
 
-    def sleep(self, seconds: float) -> None:
-        time.sleep(seconds)
-
-    def run(self, argv: list[str], headless: bool, extra_env: dict | None = None, runner: str = "agy") -> int:
-        """Run the runner's CLI (`agy` or `claude`) to its end, in this process's job object, so it cannot outlive the
-        slot this process holds. Interactive, it has this console; headless, its output goes to the resumed-session
-        log."""
+    def run(self, argv: list[str], extra_env: dict | None = None, runner: str = "agy") -> int:
+        """Run the runner's CLI (`agy` or `claude`) to its end in this console, inside this process's job object.
+        The job is kill-on-close and this process holds its only handle, so when this process ends (the session
+        exits, the window is closed, the process is killed) the operating system ends the session and every
+        process the session started: nothing the campaign started outlives its window."""
         exe = shutil.which(runner)
         if not exe:
             raise GuardError(f"{runner} is not on PATH")
@@ -1856,29 +1838,11 @@ class _World:
             env, signin = claude_session_env(os.environ, signin_token(), extra_env)
         else:
             env, signin = agy_session_env(os.environ, extra_env)
-        if not headless:
-            import signal
-            print(signin, flush=True)
-            # Ctrl+C belongs to the session in this console (it interrupts a turn there); this parent only waits.
-            signal.signal(signal.SIGINT, signal.SIG_IGN)
-            return subprocess.call([exe, *argv], cwd=self.root, env=env)
-        # Headless text output is the final reply only, so the log stays small.
-        with open(os.path.join(self.root, "build", "claude-campaign-resumed.log"), "ab") as out:
-            out.write(f"{_utc_now()} {signin}\n".encode("utf-8"))
-            out.flush()
-            return subprocess.call([exe, *argv], cwd=self.root, stdin=subprocess.DEVNULL, stdout=out, stderr=out,
-                                   env=env)
-
-    def spawn_supervisor(self) -> None:
-        """Start `resume-headless` detached: the process that takes the slot, runs the resumed session, and holds
-        the slot until it ends."""
-        python = sys.executable
-        beside = os.path.join(os.path.dirname(python), "python.exe")
-        flags = (subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
-        with open(os.path.join(self.root, "build", "claude-campaign-resumed.log"), "ab") as out:
-            subprocess.Popen([beside if os.path.exists(beside) else python, os.path.abspath(__file__),
-                              "resume-headless", "--root", self.root], cwd=self.root, stdin=subprocess.DEVNULL,
-                             stdout=out, stderr=out, creationflags=flags)
+        import signal
+        print(signin, flush=True)
+        # Ctrl+C belongs to the session in this console (it interrupts a turn there); this parent only waits.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        return subprocess.call([exe, *argv], cwd=self.root, env=env)
 
 
 def _live_in_tree(root: str, world) -> list[str]:
@@ -1893,9 +1857,11 @@ _FOREIGN_FLAGS = {
 
 
 def _resumable(root: str, guard: dict) -> list[str] | None:
-    """The flags to resume the guard's session with, in the runner that owns it, from the record `start` wrote for
-    it; None when the guard has no known runner or was not started through `start`, so the flags it ran with are
-    unknown."""
+    """The flags the guard's session was launched with, in the runner that owns it, from the record `start` wrote
+    for it; None when the guard has no known runner or was not started through `start`. It is what tells the
+    operator (`scripts/run-guard.py status`) that running `start` again in that runner picks the run up, and it
+    reads through a handover that never opened, so a failed handover leaves the old runner's run as it was. Nothing
+    resumes a run from it on its own."""
     runner = guard.get("runner")
     if runner not in RUNNERS:
         return None
@@ -1913,110 +1879,43 @@ def _resumable(root: str, guard: dict) -> list[str] | None:
     return str_args
 
 
-def _resume_argv(runner: str, args: list[str], session: str, prompt: str, headless: bool) -> list[str]:
-    """The command line that resumes `session` in `runner` with `prompt`, headless (`-p`) or in this console."""
+def _resume_argv(runner: str, args: list[str], session: str, prompt: str) -> list[str]:
+    """The command line that resumes `session` in `runner` with `prompt`, in the operator's console."""
     if runner == "claude":
-        return ["--resume", session, *args, *(["-p"] if headless else []), prompt]
-    return [*args, "--conversation", session, "-p" if headless else "-i", prompt]
+        return ["--resume", session, *args, prompt]
+    return [*args, "--conversation", session, "-i", prompt]
 
 
-def _attempts_spent(root: str, guard: dict, world) -> tuple[dict, bool]:
-    """The watchdog's attempt record for this run, reset when the tree made progress since it was written, and
-    whether its attempts are spent."""
-    session = str(guard.get("session_id", ""))
-    state = _read_json(_watch_path(root))
-    if state.get("session_id") != session:
-        state = {"session_id": session}
-    signature = world.signature(guard)
-    if signature != state.get("signature"):
-        state.update(signature=signature, restarts=0)
-    return state, state.get("restarts", 0) >= WATCH_MAX_RESTARTS
+def _record_ended(root: str, code: int) -> None:
+    """Write into the launch record that its session ended, and how. A session that is gone is recorded as ended;
+    nothing reads this to start another."""
+    with _Lock(root):
+        launch = _read_json(_launch_path(root))
+        if launch:
+            launch.update(ended_at=_utc_now(), exit_code=code)
+            _write_json(_launch_path(root), launch)
 
 
-def watch(root: str, world=None) -> str:
-    """One scheduled tick. It only decides whether a resume is worth asking for and asks; `resume_headless` decides
-    again, under the session slot, before anything runs, so nothing here has to win a race."""
-    world = world or _World(root)
-    try:
-        guard = read_guard(root)
-    except GuardError as exc:
-        return f"malformed guard: {exc}"
+def session_state(root: str, world=None) -> dict:
+    """What `scripts/run-guard.py status` says about the run's session: whether it is live, and when it is not,
+    that it ended (with the exit the launcher recorded, when it saw one) and how the operator resumes the run.
+    It reads and reports; it starts nothing."""
+    guard = read_guard(root)
     if guard is None:
-        return "inactive"
-    if world.slot_held():
-        return "campaign session running"
-    live = _live_in_tree(root, world)
-    if live:
-        return f"session live here: {live[0]}"
-    if _resumable(root, guard) is None:
-        if guard.get("runner") not in RUNNERS:
-            return (f"session dead and not resumable (guard runner is {guard.get('runner') or 'legacy'!r}, not one "
-                    f"of {', '.join(RUNNERS)}): start it again with scripts/start-campaign.ps1 to hand over the run")
-        return "session dead and not resumable: start it again with scripts/start-campaign.ps1"
-    ready, _ = ready_rows(root)
-    if ready == 0 and review_pending(root) == 0:
-        return "drained"
-    if int(_read_state(root).get("trips", 0) or 0) >= 2:
-        # The heartbeat prompt's step 6: a run whose Stop-hook breaker tripped twice is stalled and is not resumed.
-        return "stalled: the Stop hook's breaker tripped twice"
-    state, spent = _attempts_spent(root, guard, world)
-    if spent:
-        return f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"
-    before = state.get("restarts", 0)
-    world.spawn_supervisor()
-    for _ in range(40):  # the supervisor takes the slot and writes its attempt within a second or two
-        now = _read_json(_watch_path(root))
-        if now.get("session_id") == state["session_id"] and now.get("restarts", 0) > before:
-            return f"resumed, attempt {now['restarts']}"
-        if world.slot_held():
-            return f"resumed, attempt {before + 1}"
-        world.sleep(0.5)
-    return "resume did not start; see build/claude-campaign-resumed.log"
-
-
-def resume_headless(root: str, world=None) -> tuple[int, str]:
-    """The watchdog's supervisor: take the session slot, decide again under it, count the attempt, and run the
-    guard's own session headless until it ends. Exit 3 means nothing was started."""
+        return {"run": "none"}
     world = world or _World(root)
-    slot = _SessionSlot(root)
-    if not slot.take():
-        return 3, "resume-headless: a campaign session already holds the slot"
-    try:
-        with _Lock(root):
-            guard = read_guard(root)
-            if guard is None:
-                return 3, "resume-headless: inactive"
-            args = _resumable(root, guard)
-            if args is None:
-                if guard.get("runner") not in RUNNERS:
-                    return 3, (f"resume-headless: guard belongs to runner {guard.get('runner') or 'legacy'!r}, not "
-                               f"one of {', '.join(RUNNERS)}; run scripts/start-campaign.ps1 to hand over the run")
-                return 3, "resume-headless: the run was not started through scripts/start-campaign.ps1"
-            ready, _ = ready_rows(root)
-            if ready == 0 and review_pending(root) == 0:
-                return 3, "resume-headless: drained"
-            if int(_read_state(root).get("trips", 0) or 0) >= 2:
-                return 3, "resume-headless: stalled, the Stop hook's breaker tripped twice"
-            state, spent = _attempts_spent(root, guard, world)
-            if spent:
-                _write_json(_watch_path(root), state)
-                return 3, f"resume-headless: stalled, {WATCH_MAX_RESTARTS} resumes changed nothing"
-            # Read last, after every slow step above, so the window in which a session nobody here started (an
-            # attended one, which takes no slot) could open unseen is as short as this module can make it; the
-            # SessionStart note (`session-note`) covers a session that opens after it.
-            live = _live_in_tree(root, world)
-            if live:
-                return 3, f"resume-headless: session live here: {live[0]}"
-            # The attempt is on disk before anything runs, so a resume that cannot be recorded never starts.
-            state.update(restarts=state.get("restarts", 0) + 1, launched_at=_utc_now())
-            _write_json(_watch_path(root), state)
-            session = str(guard.get("session_id", ""))
-            runner = str(guard["runner"])
-        argv = _resume_argv(runner, args, session, RUNNER_TEXT[runner]["resume"], headless=True)
-        code = world.run(argv, headless=True) if runner == "agy" else world.run(argv, headless=True, runner=runner)
-        return code, f"resume-headless: session {session} ended (exit {code})"
-    finally:
-        slot.release()
+    session = str(guard.get("session_id", ""))
+    if world.slot_held() or session in _live_in_tree(root, world):
+        return {"run": "open", "session": "live", "session_id": session}
+    launch = _read_json(_launch_path(root))
+    known = launch.get("session_id") == session
+    runner = guard.get("runner")
+    return {"run": "open", "session": "ended", "session_id": session,
+            "ended_at": launch.get("ended_at") if known else None,
+            "exit_code": launch.get("exit_code") if known else None,
+            "resume": (f"nothing resumes it on its own; run scripts/start-campaign.ps1 -Runner {runner} to resume "
+                       "it in a window" if runner in RUNNERS else
+                       "nothing resumes it on its own; run scripts/start-campaign.ps1 to hand the run over")}
 
 
 def session_note(root: str, stdin: str, world=None, env: dict | None = None) -> str:
@@ -2116,8 +2015,10 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
     """The operator's launcher (scripts/start-campaign.ps1): take the session slot, decide under it, and run the
     campaign session in `runner` (Antigravity `agy`, or Claude Code `claude`) in this console until it ends. A new run
     starts under `/goal`; a run whose session died is resumed under its own session id when it belongs to `runner`,
-    so the guard keeps its owner, and is handed over to a fresh `runner` session when another runner owns it. The
-    session id and flags are recorded so the watchdog can resume the run. Exit 3 means nothing was started."""
+    so the guard keeps its owner, and is handed over to a fresh `runner` session when another runner owns it. This is
+    the only way a session starts or a run is resumed: when the session ends, its end and exit code are recorded
+    in the launch record and returned, and nothing here starts another, whether it ended cleanly or crashed. Exit 3
+    means nothing was started."""
     if runner not in RUNNERS:
         raise GuardError(f"runner {runner!r} is not one of {', '.join(RUNNERS)}")
     world = world or _World(root)
@@ -2139,7 +2040,7 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
             args = [*LAUNCH_ARGS, "--model", writer_model(root, runner), *writer_effort(runner)]
             if guard is not None and guard.get("runner") == runner:
                 session = str(guard.get("session_id", ""))
-                argv = _resume_argv(runner, args, session, text["resume"], headless=False)
+                argv = _resume_argv(runner, args, session, text["resume"])
                 _write_json(_launch_path(root), {"runner": runner, "session_id": session, "args": args,
                                                  "at": _utc_now()})
                 label = f"Resuming the Isotone campaign in {text['label']} (session {session})."
@@ -2156,9 +2057,10 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                 extra_env = {"ISOTONE_CAMPAIGN_LAUNCH": token}
                 prompt = handover_prompt(guard, runner)
                 # The old runner's own launch record rides along until the new session opens, so a launch that fails
-                # leaves the old run resumable by the watchdog exactly as before.
+                # leaves the old run as it was: the operator resumes it with the old runner's launcher.
                 previous_launch = _read_json(_launch_path(root))
-                if previous_launch.get("launch_token") and previous_launch.get("handover_from") == old_session                         and isinstance(previous_launch.get("previous"), dict):
+                if previous_launch.get("launch_token") and previous_launch.get("handover_from") == old_session \
+                        and isinstance(previous_launch.get("previous"), dict):
                     previous_launch = previous_launch["previous"]  # an earlier attempt that never opened
                 # Claude Code takes its session id up front; the SessionStart note binds it to the launch, and only
                 # then hands the guard over, so a launch that fails leaves the old runner's guard as it was.
@@ -2191,12 +2093,14 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                                                  "at": _utc_now()})
                 label = f"Starting the Isotone campaign in {text['label']} (session {session})."
         print(label, flush=True)
-        if runner != "agy":
-            return world.run(argv, headless=False, extra_env=extra_env, runner=runner), ""
-        try:
-            return world.run(argv, headless=False, extra_env=extra_env), ""
-        except TypeError:
-            return world.run(argv, headless=False), ""
+        code = world.run(argv, extra_env=extra_env, runner=runner)
+        # The session is gone. It is recorded as ended, and nothing restarts it: not after a crash, not after a
+        # clean exit. A launch that never ran (it raised) is not an ended session, so its record is left alone.
+        _record_ended(root, code)
+        if code == 0:
+            return 0, ""
+        return code, (f"The campaign session ended with exit code {code} (a crash or an error). Nothing restarts "
+                      "it: run scripts/start-campaign.ps1 again when you want to resume the run.")
     finally:
         slot.release()
 
@@ -3589,24 +3493,19 @@ def _self_test() -> int:
     # The watchdog and the launcher, against a stand-in for the machine. The session slot is the real OS lock.
     class FakeWorld:
         def __init__(self, root):
-            self.root, self.live, self.sig, self.runs, self.supervised = root, [], "s1", [], 0
+            self.root, self.live, self.runs = root, [], []
             self.minted, self.runners = [], []
+            self.exit = 0  # what the fake session exits with
             self.during = None  # called while a fake session "runs", with the slot held
 
         def live_sessions(self):
             return self.live
 
-        def signature(self, guard):
-            return self.sig
-
         def slot_held(self):
             return slot_held(self.root)
 
-        def sleep(self, seconds):
-            pass
-
-        def run(self, argv, headless, extra_env=None, runner="agy"):
-            self.runs.append((argv, headless))
+        def run(self, argv, extra_env=None, runner="agy"):
+            self.runs.append(argv)
             self.runners.append(runner)
             if extra_env and extra_env.get("ISOTONE_CAMPAIGN_LAUNCH"):
                 if runner == "claude":  # Claude Code opens under the id it was given, and says so as `session_id`
@@ -3619,11 +3518,7 @@ def _self_test() -> int:
                 session_note_hook(json.dumps(opened), self.root, env=extra_env, world=self)
             if self.during:
                 self.during()
-            return 0
-
-        def spawn_supervisor(self):
-            self.supervised += 1
-            resume_headless(self.root, self)  # the real supervisor, run to its end in place
+            return self.exit
 
     with tempfile.TemporaryDirectory(prefix="campaign-watch-") as tmpd:
         root = _workspace(tmpd)
@@ -3677,7 +3572,11 @@ def _self_test() -> int:
               and agy_said == "Sign-in: Antigravity local account.", repr(agy_env))
         check("goal-enforces-trunk-main-nonblocking-and-100-percent-excellence",
               "straight on `main`" in GOAL and "ask_question" in GOAL and "isotone-lsp" in GOAL, GOAL)
+        import contextlib
+        import io
+        import signal
         real_which, real_call, real_signin = shutil.which, subprocess.call, globals()["signin_token"]
+        real_sigint = signal.getsignal(signal.SIGINT)
         captured_calls = []
         os.environ[SIGNIN_VARIABLE] = good
         sys.path.insert(0, os.path.join(HERE, "lib"))
@@ -3688,9 +3587,11 @@ def _self_test() -> int:
             globals()["signin_token"] = lambda *a, **kw: (_ for _ in ()).throw(AssertionError("signin_token called"))
             _wj.end_children_with_this_process = lambda: None
             subprocess.call = lambda cmd, **kw: (captured_calls.append((cmd, kw.get("env") or {})), 0)[1]
-            rc_w = _World(root).run(["--conversation", "cid-1", "-p", "go"], headless=True,
-                                    extra_env={"ISOTONE_CAMPAIGN_LAUNCH": "L1"})
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc_w = _World(root).run(["--conversation", "cid-1", "-i", "go"],
+                                        extra_env={"ISOTONE_CAMPAIGN_LAUNCH": "L1"})
         finally:
+            signal.signal(signal.SIGINT, real_sigint)  # the real run hands Ctrl+C to the session it starts
             shutil.which = real_which
             subprocess.call = real_call
             globals()["signin_token"] = real_signin
@@ -3700,8 +3601,6 @@ def _self_test() -> int:
               rc_w == 0 and len(captured_calls) == 1
               and SIGNIN_VARIABLE not in captured_calls[0][1]
               and captured_calls[0][1].get("ISOTONE_CAMPAIGN_LAUNCH") == "L1", repr(captured_calls))
-        check("watch-inactive-without-a-guard", watch(root, world) == "inactive")
-
         world.live = [{"sessionId": "attended", "cwd": os.path.join(root, "docs", "phase-runs")}]
         code, said = start(root, world)
         check("start-refuses-beside-a-session-anywhere-in-the-tree", code == 3 and "attended" in said
@@ -3713,86 +3612,101 @@ def _self_test() -> int:
         def inside():
             seen["held"] = slot_held(root)
             seen["second-start"] = start(root, world)[0]
-            seen["supervisor"] = resume_headless(root, world)[0]
-            seen["watch"] = watch(root, world) if read_guard(root) else None
+            seen["ended-while-running"] = "ended_at" in _read_json(_launch_path(root))
 
         world.during = inside
         code, said = start(root, world)
-        argv, headless = world.runs[0]
+        argv = world.runs[0]
         sid = world.minted[0]
-        check("start-runs-a-new-session-under-the-goal", code == 0 and not headless and argv[:3] == flags
+        check("start-runs-a-new-session-under-the-goal", code == 0 and argv[:3] == flags
               and argv[3] == "-i" and argv[4] == "/goal " + GOAL and len(world.runs) == 1, str(argv[:5]))
         check("the-slot-is-held-while-the-session-runs", seen["held"] is True)
         check("a-second-start-is-refused-while-one-runs", seen["second-start"] == 3)
-        check("a-supervisor-is-refused-while-one-runs", seen["supervisor"] == 3)
         check("the-slot-is-free-when-the-session-ends", not slot_held(root))
-        check("start-records-the-session-for-the-watchdog",
-              _read_json(_launch_path(root)).get("session_id") == sid
-              and _read_json(_launch_path(root)).get("args") == flags)
+        ended = _read_json(_launch_path(root))
+        check("start-records-the-session-and-that-it-ended",
+              ended.get("session_id") == sid and ended.get("args") == flags and ended.get("exit_code") == 0
+              and bool(ended.get("ended_at")) and seen["ended-while-running"] is False, repr(ended))
 
         _guard(root, sid)
         world.during = inside
         world.runs.clear()
         code, said = start(root, world)
         check("start-resumes-a-dead-run-under-its-own-session", code == 0
-              and world.runs[0][0] == [*flags, "--conversation", sid, "-i", RESUME_PROMPT]
-              and len(world.runs) == 1, str(world.runs[0][0][:6]))
-        check("watch-sees-the-running-session", seen["watch"] == "campaign session running")
+              and world.runs == [[*flags, "--conversation", sid, "-i", RESUME_PROMPT]], str(world.runs[0][:6]))
         world.during = None
 
         world.live = [{"sessionId": sid, "cwd": root}]
-        check("watch-never-beside-a-live-session", watch(root, world) == f"session live here: {sid}"
-              and world.supervised == 0)
         code, said = start(root, world)
         check("start-names-the-live-campaign", code == 3 and "already running in session" in said, said)
+        check("status-reads-a-live-session", session_state(root, world).get("session") == "live")
         world.live = [{"sessionId": "elsewhere", "cwd": tmpd}]
 
+        # No auto-resume (operator decision 2026-11-12): the guard names a session that is gone, rows are ready, and
+        # nothing here, on any command the old watchdog used, starts a session. The session is reported as ended.
         world.runs.clear()
-        check("watch-resumes-a-dead-session", watch(root, world) == "resumed, attempt 1" and world.supervised == 1
-              and world.runs == [([*flags, "--conversation", sid, "-p", RESUME_PROMPT], True)], str(world.runs))
-        results = [watch(root, world) for _ in range(3)]
-        check("watch-stalls-after-unchanged-resumes", results == ["resumed, attempt 2", "resumed, attempt 3",
-              f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"] and len(world.runs) == 3, str(results))
-        code, said = resume_headless(root, world)
-        check("the-supervisor-enforces-the-bound-itself", code == 3 and "stalled" in said and len(world.runs) == 3,
-              said)
-        world.sig = "s2"
-        check("watch-progress-resets-the-count", watch(root, world) == "resumed, attempt 1")
-        runs = len(world.runs)
-        world.live = [{"sessionId": "opened-late", "cwd": root}]
-        code, said = resume_headless(root, world)
-        check("the-supervisor-reads-liveness-itself", code == 3 and "opened-late" in said
-              and len(world.runs) == runs, said)
-        world.live = [{"sessionId": "elsewhere", "cwd": tmpd}]
+        gone = [name for name in ("watch", "resume_headless", "_attempts_spent", "_watch_path", "WATCH_MAX_RESTARTS",
+                                  "WATCH_MINUTES") if name in globals()]
+        check("the-watchdog-and-its-supervisor-are-gone", gone == [] and not hasattr(_World, "spawn_supervisor")
+              and not hasattr(_World, "signature"), str(gone))
+        with contextlib.redirect_stderr(io.StringIO()) as refused:
+            codes = [main(["watch", "--root", root]), main(["watch"]), main(["resume-headless", "--root", root]),
+                     main(["resume-headless"])]
+        state = session_state(root, world)
+        check("a-dead-session-is-not-resumed", codes == [2, 2, 2, 2] and world.runs == []
+              and refused.getvalue().count("nothing restarts or resumes a run on its own") == 4
+              and not slot_held(root) and (read_guard(root) or {}).get("session_id") == sid, refused.getvalue())
+        check("a-dead-session-is-reported-as-ended", state.get("run") == "open" and state.get("session") == "ended"
+              and state.get("exit_code") == 0 and bool(state.get("ended_at"))
+              and "nothing resumes it on its own" in str(state.get("resume")), repr(state))
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("run_guard_under_test", os.path.join(HERE, "run-guard.py"))
+        run_guard = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(run_guard)
+        with contextlib.redirect_stderr(io.StringIO()) as refused:
+            schedule_codes = [run_guard.main(["watch"]), run_guard.main(["install"])]
+        check("run-guard-no-longer-ticks-or-installs-a-task", schedule_codes == [2, 2]
+              and sorted(run_guard.COMMANDS) == ["status", "uninstall"]
+              and refused.getvalue().count("nothing restarts or resumes a run on its own") == 2, refused.getvalue())
+        with open(os.path.join(HERE, "start-campaign.ps1"), encoding="utf-8") as fh:
+            launcher = fh.read()
+        # Everything after the shortcut installer is the launch itself: one start, no loop around it.
+        after_shortcuts = launcher.replace("\r\n", "\n").split("\n  return\n}\n")
+        check("the-launcher-installs-no-task-and-has-no-restart-loop",
+              "run-guard.py install" not in launcher and "RestartSeconds" not in launcher
+              and len(after_shortcuts) == 2
+              and not re.search(r"(?im)^\s*(while|for|foreach|do|until)\b", after_shortcuts[-1])
+              and "ForEach-Object" not in after_shortcuts[-1]
+              and launcher.count("campaign_guard.py start --runner $Runner") == 1, str(len(after_shortcuts)))
 
-        def failing_run(argv, headless, extra_env=None):
+        # A crash: the session exits nonzero. `start` runs it once, records the end, says why, and starts nothing more.
+        world.exit = 1
+        code, said = start(root, world)
+        crashed = _read_json(_launch_path(root))
+        check("a-crashed-session-is-not-restarted", code == 1 and len(world.runs) == 1
+              and "Nothing restarts it" in said and crashed.get("exit_code") == 1 and bool(crashed.get("ended_at"))
+              and not slot_held(root), f"{code} {said} {crashed}")
+        check("a-crashed-session-is-reported-as-ended", session_state(root, world).get("exit_code") == 1
+              and session_state(root, world).get("session") == "ended")
+        world.exit = 0
+
+        def failing_run(argv, extra_env=None, runner="agy"):
             raise GuardError("agy is not on PATH")
 
-        world.sig, good_run, world.run = "s3", world.run, failing_run
-        outcomes = []
-        for _ in range(4):
-            try:
-                outcomes.append(watch(root, world))
-            except GuardError:
-                outcomes.append("raised")
+        good_run, world.run = world.run, failing_run
+        try:
+            start(root, world)
+            raised = False
+        except GuardError:
+            raised = True
         world.run = good_run
-        check("a-failed-start-still-uses-its-attempt",
-              outcomes == ["raised"] * 3 + [f"stalled: {WATCH_MAX_RESTARTS} resumes changed nothing"], str(outcomes))
-        check("a-failed-start-frees-the-slot", not slot_held(root))
-
-        world.sig = "s4"
-        runs = len(world.runs)
-        with open(os.path.join(root, "build", "claude-campaign-state.json"), "w", encoding="utf-8") as fh:
-            json.dump({"trips": 2}, fh)
-        code, said = resume_headless(root, world)
-        check("the-stop-hook-breaker-stops-the-watchdog", watch(root, world).startswith("stalled: the Stop hook")
-              and code == 3 and len(world.runs) == runs, said)
-        os.unlink(os.path.join(root, "build", "claude-campaign-state.json"))
+        check("a-failed-start-frees-the-slot", raised and not slot_held(root))
 
         payload = json.dumps({"session_id": "an-attended-session"})
         check("no-note-while-no-campaign-session-runs", session_note(root, payload, world) == "")
         kept = read_guard(root)
         os.unlink(os.path.join(root, "build", "claude-campaign-guard.json"))
+        check("no-run-is-reported-without-a-guard", session_state(root, world) == {"run": "none"})
         starting = _SessionSlot(root)
         starting.take()
         check("a-session-opened-during-startup-is-told", "only writer" in session_note(root, payload, world)
@@ -3817,40 +3731,19 @@ def _self_test() -> int:
         held.release()
         held = _SessionSlot(root)
         check("the-slot-is-one-os-lock", held.take() and not _SessionSlot(root).take() and slot_held(root))
-        check("watch-defers-to-a-held-slot", watch(root, world) == "campaign session running"
-              and len(world.runs) == runs)
+        check("status-reads-a-held-slot-as-live", session_state(root, world).get("session") == "live")
         held.release()
         check("a-released-slot-is-free", not slot_held(root))
 
-        real, held_guard = _World(root), read_guard(root)
-        first = real.signature(held_guard)
-        with open(os.path.join(root, RUN_FILE), "a", encoding="utf-8") as fh:
-            fh.write("- bookkeeping: watchdog resume 2099-01-01T00:00:00Z\n")
-        check("a-bookkeeping-note-is-not-watchdog-progress", real.signature(held_guard) == first)
-        with open(os.path.join(root, "new-source.txt"), "w", encoding="utf-8") as fh:
-            fh.write("one")
-        second = real.signature(held_guard)
-        with open(os.path.join(root, "new-source.txt"), "w", encoding="utf-8") as fh:
-            fh.write("two")
-        check("an-untracked-edit-is-watchdog-progress", first != second and second != real.signature(held_guard))
-        os.unlink(os.path.join(root, "new-source.txt"))
-
-        _set_ready(root, 0)
-        check("watch-drained-starts-nothing", watch(root, world) == "drained" and len(world.runs) == runs)
-        code, said = resume_headless(root, world)
-        check("the-supervisor-rechecks-the-drained-plan", code == 3 and said.endswith("drained")
-              and len(world.runs) == runs, said)
-        _set_ready(root, 3)
+        runs = len(world.runs)
         os.unlink(_launch_path(root))
-        code, said = resume_headless(root, world)
-        check("watch-needs-the-launch-record", watch(root, world).startswith("session dead and not resumable")
-              and code == 3 and len(world.runs) == runs, said)
+        check("a-run-without-a-launch-record-is-not-resumable", _resumable(root, read_guard(root) or {}) is None)
         _guard(root, "another-session")
         _write_json(_launch_path(root), {"runner": "agy", "session_id": sid, "args": flags})
-        check("watch-ignores-another-runs-record", watch(root, world).startswith("session dead and not resumable")
-              and resume_headless(root, world)[0] == 3 and len(world.runs) == runs)
+        check("another-runs-record-is-not-this-runs", _resumable(root, read_guard(root) or {}) is None
+              and session_state(root, world).get("ended_at") is None)
 
-        # Pre-upgrade Claude campaign guard (`runner: "claude"`, launch record without a runner): never resumed, since
+        # Pre-upgrade Claude campaign guard (`runner: "claude"`, launch record without a runner): not resumable, since
         # the flags it ran with are not known to be Claude Code's; `start` hands the unfinished run over to a fresh
         # Antigravity conversation, preserving phase, scope, run_file, and run_id.
         _write_json(os.path.join(root, "build", "claude-campaign-guard.json"), {
@@ -3869,17 +3762,12 @@ def _self_test() -> int:
             "session_id": "claude-old-session",
             "args": ["--dangerously-skip-permissions", "--model", "claude-opus-5-5"],
         })
-        w_claude = watch(root, world)
-        rh_code, rh_said = resume_headless(root, world)
-        check("watch-refuses-pre-upgrade-claude-guard-and-flags",
-              w_claude.startswith("session dead and not resumable") and rh_code == 3
-              and "not started through" in rh_said and len(world.runs) == runs,
-              f"{w_claude!r} / {rh_said!r}")
+        check("a-pre-upgrade-claude-guard-is-not-resumable",
+              _resumable(root, read_guard(root) or {}) is None and len(world.runs) == runs)
         _write_json(os.path.join(root, "build", "claude-campaign-guard.json"),
                     dict(read_guard(root) or {}, runner="muse"))
-        w_other = watch(root, world)
-        check("watch-refuses-an-unknown-runner", "guard runner is 'muse'" in w_other
-              and resume_headless(root, world)[0] == 3 and len(world.runs) == runs, w_other)
+        check("an-unknown-runner-is-not-resumable", _resumable(root, read_guard(root) or {}) is None
+              and "hand the run over" in str(session_state(root, world).get("resume")))
         _write_json(os.path.join(root, "build", "claude-campaign-guard.json"),
                     dict(read_guard(root) or {}, runner="claude"))
         world.run = failing_run
@@ -3893,20 +3781,20 @@ def _self_test() -> int:
         check("failed-handover-launch-preserves-original-claude-guard",
               failed_launch and still_claude.get("runner") == "claude"
               and still_claude.get("session_id") == "claude-old-session"
-              and still_claude.get("run_id") == "deadbeefcafe", repr(still_claude))
+              and still_claude.get("run_id") == "deadbeefcafe"
+              and "ended_at" not in _read_json(_launch_path(root)), repr(still_claude))
         world.runs.clear()
         world.minted.clear()
-        world.sig = "s5"
         code, _ = start(root, world)
         migrated_cid = world.minted[0] if world.minted else ""
         migrated_guard = read_guard(root) or {}
         migrated_launch = _read_json(_launch_path(root))
         check("start-hands-over-claude-guard-to-fresh-agy-conversation",
               code == 0 and len(world.runs) == 1
-              and "--conversation" not in world.runs[0][0]
-              and "claude-old-session" not in world.runs[0][0][:4]
-              and world.runs[0][0][:4] == [*flags, "-i"]
-              and "Isotone runner handover:" in world.runs[0][0][4]
+              and "--conversation" not in world.runs[0]
+              and "claude-old-session" not in world.runs[0][:4]
+              and world.runs[0][:4] == [*flags, "-i"]
+              and "Isotone runner handover:" in world.runs[0][4]
               and migrated_cid and migrated_cid != "claude-old-session"
               and migrated_guard.get("runner") == "agy"
               and migrated_guard.get("session_id") == migrated_cid
@@ -3922,10 +3810,9 @@ def _self_test() -> int:
               and migrated_launch.get("args") == flags,
               repr((migrated_guard, migrated_launch)))
         world.runs.clear()
-        check("watch-resumes-migrated-agy-conversation-after-handover",
-              watch(root, world) == "resumed, attempt 1"
-              and world.runs == [([*flags, "--conversation", migrated_cid, "-p", RESUME_PROMPT], True)],
-              repr(world.runs))
+        check("a-handed-over-run-is-resumable-only-by-the-operator",
+              _resumable(root, migrated_guard) == flags and world.runs == []
+              and session_state(root, world).get("session") == "ended", repr(_read_json(_launch_path(root))))
         _write_json(_launch_path(root), {
             "runner": "agy",
             "session_id": migrated_cid,
@@ -3934,7 +3821,7 @@ def _self_test() -> int:
         check("resumable-rejects-stale-claude-model-flag", _resumable(root, migrated_guard) is None)
 
         # The Claude Code runner (`start --runner claude`): a fresh session under its own id, the goal, the vault
-        # sign-in, resumed by the watchdog in Claude Code, and a hand-over from an Antigravity guard.
+        # sign-in, resumed by the operator in Claude Code, and a hand-over from an Antigravity guard.
         cflags = ["--dangerously-skip-permissions", "--model", "opus", "--effort", "medium"]
         check("writer-model-for-claude-is-latest-opus-at-medium", writer_model(root, "claude") == "opus"
               and writer_effort("claude") == ["--effort", "medium"] and writer_effort("agy") == [])
@@ -3946,6 +3833,9 @@ def _self_test() -> int:
         check("claude-resume-prompt-uses-claude-terms", "$CLAUDE_CODE_SESSION_ID" in CLAUDE_RESUME_PROMPT
               and "CronList" in CLAUDE_RESUME_PROMPT and "manage_task" not in CLAUDE_RESUME_PROMPT
               and CLAUDE_RESUME_PROMPT.endswith(RESUME_PROMPT.split("\n3. ", 1)[1]))
+        check("the-resume-prompts-say-the-operator-started-the-session",
+              all("the operator has started it again" in text and "watchdog" not in text
+                  for text in (RESUME_PROMPT, CLAUDE_RESUME_PROMPT)))
         cenv, csaid = claude_session_env({"PATH": "p"}, good, {"ISOTONE_CAMPAIGN_LAUNCH": "y"})
         check("claude-session-env-carries-the-token-and-is-unattended",
               cenv.get(SIGNIN_VARIABLE) == good and cenv.get("ISOTONE_CAMPAIGN_UNATTENDED") == "1"
@@ -3956,8 +3846,10 @@ def _self_test() -> int:
             globals()["signin_token"] = lambda *a, **kw: good
             _wj.end_children_with_this_process = lambda: None
             subprocess.call = lambda cmd, **kw: (captured_calls.append((cmd, kw.get("env") or {})), 0)[1]
-            rc_c = _World(root).run(["--resume", "s-1", "-p", "go"], headless=True, runner="claude")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc_c = _World(root).run(["--resume", "s-1", "go"], runner="claude")
         finally:
+            signal.signal(signal.SIGINT, real_sigint)
             shutil.which = real_which
             subprocess.call = real_call
             globals()["signin_token"] = real_signin
@@ -3973,31 +3865,29 @@ def _self_test() -> int:
         world.runners.clear()
         world.live = []
         code, said = start(root, world, runner="claude")
-        argv, headless = world.runs[0] if world.runs else ([], None)
+        argv = world.runs[0] if world.runs else []
         csid = argv[1] if len(argv) > 1 else ""
         check("start-claude-runs-a-new-session-under-the-goal",
-              code == 0 and headless is False and world.runners == ["claude"]
+              code == 0 and world.runners == ["claude"]
               and argv[:2] == ["--session-id", csid] and argv[2:7] == cflags
               and argv[7:9] == ["--name", "Isotone campaign"] and argv[-1] == "/goal " + CLAUDE_GOAL
               and str(uuid.UUID(csid)) == csid, str(argv[:7]))
-        check("start-claude-records-the-session-for-the-watchdog",
-              _read_json(_launch_path(root)) | {"at": None} == {"runner": "claude", "session_id": csid,
-                                                                  "args": cflags, "at": None})
+        check("start-claude-records-the-session-and-that-it-ended",
+              _read_json(_launch_path(root)) | {"at": None, "ended_at": None}
+              == {"runner": "claude", "session_id": csid, "args": cflags, "at": None, "ended_at": None,
+                  "exit_code": 0})
         acquire(root, csid, 2, RUN_FILE, "job-c1")
         cguard = read_guard(root) or {}
         check("acquire-records-the-claude-runner", cguard.get("runner") == "claude", repr(cguard))
         world.runs.clear()
         world.runners.clear()
-        world.sig = "c1"
         world.live = [{"sessionId": "elsewhere", "cwd": tmpd}]
-        check("watch-resumes-a-dead-claude-session-in-claude-code",
-              watch(root, world) == "resumed, attempt 1" and world.runners == ["claude"]
-              and world.runs == [(["--resume", csid, *cflags, "-p", CLAUDE_RESUME_PROMPT], True)], repr(world.runs))
-        world.runs.clear()
-        world.runners.clear()
+        check("a-dead-claude-session-is-not-resumed", main(["watch", "--root", root]) == 2 and world.runs == []
+              and session_state(root, world).get("session") == "ended"
+              and "-Runner claude" in str(session_state(root, world).get("resume")))
         code, _ = start(root, world, runner="claude")
         check("start-claude-resumes-its-own-run-in-this-console", code == 0 and world.runners == ["claude"]
-              and world.runs == [(["--resume", csid, *cflags, CLAUDE_RESUME_PROMPT], False)], repr(world.runs))
+              and world.runs == [["--resume", csid, *cflags, CLAUDE_RESUME_PROMPT]], repr(world.runs))
         world.runs.clear()
         world.runners.clear()
         world.minted.clear()
@@ -4013,7 +3903,7 @@ def _self_test() -> int:
         code, _ = start(root, world, runner="claude")
         to_claude = read_guard(root) or {}
         new_csid = (world.minted or [""])[0]
-        hargv = world.runs[0][0] if world.runs else []
+        hargv = world.runs[0] if world.runs else []
         check("start-claude-hands-an-agy-run-to-a-fresh-claude-session",
               code == 0 and world.runners == ["claude"] and hargv[:2] == ["--session-id", new_csid]
               and "Isotone runner handover:" in hargv[-1] and "$CLAUDE_CODE_SESSION_ID" in hargv[-1]
@@ -4153,17 +4043,17 @@ def main(argv: list[str]) -> int:
             code, line = expiry(root, opts.get("session", ""), opts.get("now"))
             print(line, file=sys.stdout if code == 0 else sys.stderr)
             return code
-        if argv[0] == "watch" and not opts:
-            print(watch(root))
-            return 0
         if argv[0] == "session-note" and not opts:
             line = session_note_hook(sys.stdin.read(), root=explicit_root)
             if line:
                 print(line)
             return 0
-        if (argv[0] == "start" and set(opts) <= {"runner"}) or (argv[0] == "resume-headless" and not opts):
-            code, line = (start(root, runner=opts.get("runner", "agy")) if argv[0] == "start"
-                          else resume_headless(root))
+        if argv[0] in REMOVED_COMMANDS:
+            print(f"campaign_guard: `{argv[0]}` was removed on 2026-11-12: nothing restarts or resumes a run on its "
+                  "own. Start or resume it yourself with scripts/start-campaign.ps1.", file=sys.stderr)
+            return 2
+        if argv[0] == "start" and set(opts) <= {"runner"}:
+            code, line = start(root, runner=opts.get("runner", "agy"))
             if line:
                 print(line, flush=True)
             return code

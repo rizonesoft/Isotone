@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""The run watchdog's schedule: the scheduled task that ticks the campaign guard from outside the session.
+"""The run guard's view from outside the session: what the campaign run is, and whether its session is still there.
 
-    python scripts/run-guard.py watch       one scheduled tick: resume a dead campaign session, never beside a live one
-    python scripts/run-guard.py status      the run, the last tick, and whether the task is installed
-    python scripts/run-guard.py install     add the scheduled task "<folder> run watchdog" for `watch`
-    python scripts/run-guard.py uninstall   remove it
+    python scripts/run-guard.py status      the run, its session (live or ended), and whether an old task is left
+    python scripts/run-guard.py uninstall   remove the scheduled task an older clone left behind
 
-The rules live in scripts/campaign_guard.py (`watch`); this file only owns the schedule and the tick record. The file
-name, the task name, and the four commands match the run guards of the machine's other repositories, so whatever
-schedules those can schedule this one. Stdlib only.
+Nothing restarts or resumes a run on its own (operator decision 2026-11-12). A run starts only when the operator
+starts it (scripts/start-campaign.ps1), closing its window stops it, and a crash or a reboot ends it. This file once
+installed and ticked the run watchdog, a scheduled task that resumed a dead session; `watch` and `install` are gone
+and are refused, so a task left on a machine starts nothing, and `uninstall` removes it. `status` only reads: a
+session that is gone is reported as ended, with how the operator resumes the run. The rules live in
+scripts/campaign_guard.py. Stdlib only.
 """
 
 from __future__ import annotations
@@ -18,83 +19,63 @@ import os
 import subprocess
 import sys
 
-sys.dont_write_bytecode = True  # the guard's own cache files must not read as progress in the tree it watches
+sys.dont_write_bytecode = True  # the guard's own cache files must not read as progress in the tree it reports on
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import campaign_guard as guard
 
 ROOT = guard.REPO
-TICK = os.path.join(ROOT, "build", "claude-campaign-last-tick.json")
+REMOVED = ("watch", "install")  # the watchdog's tick and the task that scheduled it
 
 
 def say(text: str) -> None:
-    if sys.stdout is not None:  # pythonw, as the scheduled task runs it, has no stdout
+    if sys.stdout is not None:
         print(text)
 
 
-def record(result: str, ok: bool) -> None:
-    os.makedirs(os.path.dirname(TICK), exist_ok=True)
-    guard._write_json(TICK, {"at": guard._utc_now(), "ok": ok, "result": result})
-
-
-def watch() -> int:
-    try:
-        result = guard.watch(ROOT)
-    except Exception as error:  # a tick that failed says so and starts nothing; the next one tries again
-        record(repr(error), False)
-        say(f"watch failed: {error!r}")
-        return 1
-    record(result, True)
-    say(result)
-    return 0
-
-
 def scheduler() -> str:
-    """Whether the scheduled task that runs `watch` exists and names this file. A scheduled task can only hold an
-    absolute path, so a clone that moved leaves a task pointing at the old folder: that reads STALE, and `install`
-    (which replaces the task) repairs it."""
+    """Whether the removed watchdog's scheduled task still exists on this machine: MISSING is the expected answer, and
+    LEFTOVER means an older clone installed it (it starts nothing now; `uninstall` removes it)."""
     flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-    own = subprocess.run(["schtasks", "/Query", "/TN", guard.WATCH_TASK, "/XML"], capture_output=True, text=True,
+    own = subprocess.run(["schtasks", "/Query", "/TN", guard.WATCH_TASK], capture_output=True, text=True,
                          errors="replace", creationflags=flags)
-    if own.returncode != 0:
-        return "MISSING"
-    return "own task" if os.path.abspath(__file__).lower() in own.stdout.lower() else "STALE"
+    return "MISSING" if own.returncode != 0 else "LEFTOVER"
 
 
 def status() -> int:
     try:
         run = guard.read_guard(ROOT)
-    except guard.GuardError as error:
-        run = {"error": str(error)}
+        session = guard.session_state(ROOT)
+    except (guard.GuardError, OSError) as error:
+        run, session = {"error": str(error)}, {"error": str(error)}
     say("active" if run else "inactive")
-    say(json.dumps({"guard": run, "last_tick": guard._read_json(TICK) or None, "watchdog": scheduler()}, indent=2))
+    say(json.dumps({"guard": run, "session": session, "watchdog": scheduler()}, indent=2))
     return 0
 
 
-def install() -> int:
-    python = sys.executable
-    windowless = os.path.join(os.path.dirname(python), "pythonw.exe")
-    runner = windowless if os.path.exists(windowless) else python
-    action = f'"{runner}" "{os.path.abspath(__file__)}" watch'
-    done = subprocess.run(["schtasks", "/Create", "/F", "/TN", guard.WATCH_TASK, "/SC", "MINUTE", "/MO",
-                           str(guard.WATCH_MINUTES), "/IT", "/TR", action], capture_output=True, text=True)
-    say((done.stdout or done.stderr).strip())
-    return done.returncode
-
-
 def uninstall() -> int:
-    done = subprocess.run(["schtasks", "/Delete", "/F", "/TN", guard.WATCH_TASK], capture_output=True, text=True)
+    flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+    done = subprocess.run(["schtasks", "/Delete", "/F", "/TN", guard.WATCH_TASK], capture_output=True, text=True,
+                          errors="replace", creationflags=flags)
     say((done.stdout or done.stderr).strip())
     return done.returncode
+
+
+COMMANDS = {"status": status, "uninstall": uninstall}
 
 
 def main(argv: list[str]) -> int:
-    commands = {"watch": watch, "status": status, "install": install, "uninstall": uninstall}
-    if len(argv) != 1 or argv[0] not in commands:
-        print(__doc__.split("\n\n")[1], file=sys.stderr)
+    if len(argv) == 1 and argv[0] in REMOVED:
+        if sys.stderr is not None:  # a leftover task runs this under pythonw, which has no stderr
+            print(f"run-guard: `{argv[0]}` was removed on 2026-11-12: nothing restarts or resumes a run on its own. "
+                  "Start or resume it yourself with scripts/start-campaign.ps1.", file=sys.stderr)
         return 2
-    return commands[argv[0]]()
+    if len(argv) != 1 or argv[0] not in COMMANDS:
+        if sys.stderr is not None:
+            print(__doc__.split("\n\n")[1], file=sys.stderr)
+        return 2
+    return COMMANDS[argv[0]]()
 
 
 if __name__ == "__main__":

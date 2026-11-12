@@ -23,6 +23,6 @@ To remove a task, delete its entry from `tasks.json` and `.conclave/automations/
 
 ## Rules
 
-- `.conclave/automations/tasks.json` is the single source of truth; never register ad-hoc Task Scheduler entries outside it (except `Isotone run watchdog` managed by `python scripts/run-guard.py install`).
+- `.conclave/automations/tasks.json` is the single source of truth; never register ad-hoc Task Scheduler entries outside it. No scheduled task may start, restart, or resume a campaign run or an agent session (operator decision 2026-11-12); the former `Isotone run watchdog` task is removed, and `python scripts/run-guard.py uninstall` deletes one an older clone left.
 - Scheduled tasks must run 100% unattended with zero interactive prompts and zero secrets in `tasks.json`, argv, or logs.
 - Checks that inspect public repository/dependency advisories belong in `.github/workflows/pins.yml`, while checks that require this PC (`check-local-tools.py`, `isotone-pr-merge`) belong in `tasks.json`.

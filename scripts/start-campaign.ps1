@@ -1,8 +1,8 @@
 ﻿#Requires -Version 7.2
 <#
 .SYNOPSIS
-  Starts the unattended Isotone campaign in Google Antigravity (`agy`) or Claude Code (`claude`), or picks a dead one
-  up, in this window.
+  Starts the unattended Isotone campaign in Google Antigravity (`agy`) or Claude Code (`claude`), or picks up a run
+  whose session ended, in this window. Nothing else starts or resumes a run.
 .DESCRIPTION
   Runs `python scripts/campaign_guard.py start --runner <Runner>`, which takes the session slot (one operating-system
   lock that every campaign session must hold), decides under it, and runs the session in this window until it ends:
@@ -15,18 +15,21 @@
   - A run is open in this runner and its session died: that same session is resumed, so it still owns the run guard.
   - A run is open in the other runner: it is handed over to a fresh session in this runner, keeping its run file,
     phase, scope, and run id.
-  - The slot is held (a campaign session is starting or running, here or under the watchdog), or any other Antigravity
-    or Claude Code session is open in this folder or under it: nothing starts, because one session writes.
+  - The slot is held (a campaign session is starting or running in another window), or any other Antigravity or
+    Claude Code session is open in this folder or under it: nothing starts, because one session writes.
 
-  `start` records the session id and flags, which is what lets the watchdog (scripts/run-guard.py watch, ticked every
-  10 minutes by this repository's scheduled task) resume the run headless, in the runner that owns it, if this window
-  is ever lost.
+  A run starts only when you start it, here (operator decision 2026-11-12). Closing this window stops the session and
+  everything it started: the session runs inside a job object that ends with the launcher. A crash or a reboot ends
+  the session too, and nothing restarts it: there is no scheduled task, no watchdog, and no restart loop in this
+  script. When the session ends, this script says how it ended and exits with its exit code; run it again when you
+  want the run resumed. `python scripts/run-guard.py status` shows whether the run's session is live or ended.
 
-  Before that, this script ensures the watchdog's scheduled task is installed and pointing at this clone.
+  Before starting, this script removes the scheduled task "Isotone run watchdog" if an older version of it left one on
+  this machine.
 
   The desktop shortcuts "Isotone Carbon campaign" (agy) and "Isotone Claude campaign" (claude) run this file. Stop the
-  run by telling the session to stop: it ends the run through `campaign_guard.py end`, after which neither the
-  watchdog nor this script resumes it.
+  run by telling the session to stop: it ends the run through `campaign_guard.py end`, after which this script starts
+  a new run instead of resuming that one.
 .EXAMPLE
   pwsh -File scripts/start-campaign.ps1 -Runner claude
 #>
@@ -115,12 +118,12 @@ os.replace(target + ".tmp", target)
   return
 }
 
-# Without the scheduled tick nothing resumes a session that dies, so the launcher puts it in place. A task left
-# pointing at a folder this clone moved away from (STALE) is replaced the same way.
+# Nothing resumes a session that dies (operator decision 2026-11-12). The scheduled task an older version of this
+# script installed for that is removed when it is still here; it could start nothing any more, and it should not tick.
 $scheduled = (python scripts/run-guard.py status | Select-Object -Skip 1 | Out-String | ConvertFrom-Json).watchdog
-if ($scheduled -ne 'own task') {
-  python scripts/run-guard.py install
-  if ($LASTEXITCODE -ne 0) { Write-Warning 'The watchdog task could not be created, so a session that dies will not be resumed.' }
+if ($scheduled -ne 'MISSING') {
+  python scripts/run-guard.py uninstall
+  if ($LASTEXITCODE -ne 0) { Write-Warning 'The old watchdog task could not be removed. It starts nothing; remove it in Task Scheduler ("Isotone run watchdog").' }
 }
 
 if (-not (Get-Command $Runner -ErrorAction SilentlyContinue)) {
@@ -130,5 +133,8 @@ if (-not (Get-Command $Runner -ErrorAction SilentlyContinue)) {
 
 python scripts/campaign_guard.py start --runner $Runner
 $code = $LASTEXITCODE
-if ($code -eq 3) { Start-Sleep -Seconds 12 }  # nothing was started: leave the reason on screen before the window closes
+# The session is over and this script ends with it: nothing here starts another, after a clean exit or a crash.
+# Nothing was started (3) or the session ended on an error: the reason campaign_guard.py printed stays on screen
+# before the window closes.
+if ($code -ne 0) { Start-Sleep -Seconds 12 }
 exit $code
