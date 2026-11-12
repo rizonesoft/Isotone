@@ -235,26 +235,28 @@ def _selected(apps) -> list[dict]:
 
 
 def _related(apps) -> list[dict]:
-    """The catalogs a selection reads for their rows only: the ones its routes name, and the ones that route to it
-    (whose rows legitimize its source-less rows and fill its routed report). Their inventories are not read."""
+    """The catalogs a selection is joined to by routes, in either direction and through any chain of them, in
+    `CATALOGS` order. Their catalog files are read and validated with the selection (every check that needs no
+    inventory), because the selection's routed report counts their rows; their inventories are not read."""
     chosen = {spec["app"] for spec in _selected(apps)}
-    related = []
-    for spec in CATALOGS:
-        if spec["app"] in chosen:
-            continue
-        routes_here = any(target in chosen for target in spec.get("routes", {}))
-        routed_to = any(spec["app"] in other.get("routes", {}) for other in _selected(apps))
-        if routes_here or routed_to:
-            related.append(spec)
-    return related
+    reached = set(chosen)
+    grew = True
+    while grew:
+        grew = False
+        for spec in CATALOGS:
+            linked = set(spec.get("routes", {})) | {o["app"] for o in CATALOGS if spec["app"] in o.get("routes", {})}
+            if spec["app"] not in reached and linked & reached:
+                reached.add(spec["app"])
+                grew = True
+    return [spec for spec in CATALOGS if spec["app"] in reached - chosen]
 
 
 def snapshot(root: Path, apps=None) -> dict[str, tuple[str | None, str]]:
     """Every file a selection needs, read once: path -> (text, "") or (None, why).
 
     With no selection that is every catalog and inventory. With one (`query parity --catalog <app>`), it is that
-    catalog and its inventories, plus only the catalog file of each catalog it routes to or is routed to from, so a
-    Stilus query reads nothing of Gesso's or Albumen's (D00 T01 §8). `parity_findings` and `parity_report` take one
+    catalog and its inventories, plus only the catalog file of each catalog routes join it to, so a Stilus query
+    reads nothing of Gesso's or Albumen's (D00 T01 §8). `parity_findings` and `parity_report` take one
     snapshot and work only from it, so a report never counts bytes other than the ones it validated, even while a
     file changes underneath (independent review round 8).
     """
@@ -590,8 +592,13 @@ def _root(graph, root) -> Path:
 
 
 def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=None) -> list[tuple[str, str]]:
-    """Every parity finding as (class, message); empty when the tree carries no `docs/parity/`. `apps` limits the
-    findings to the named catalogs and to the related catalog files they read (`snapshot`)."""
+    """Every parity finding as (class, message); empty when the tree carries no `docs/parity/`.
+
+    `apps` limits the run to the named catalogs and the catalogs routes join them to (`_related`). A related
+    catalog gets every check that needs no inventory (its rows, ids, statuses, owners, routes, source-less rows,
+    and summary), under its own name, so a selected query refuses exactly what the full run refuses in the files
+    it counts; only its source coverage (`parity-id-missing`, `-duplicate`, `-unknown`) waits for its own query.
+    """
     root = _root(graph, root)
     parity = root / "docs" / "parity"
     if not parity.exists() and not parity.is_symlink():
@@ -618,7 +625,8 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                            else f"is damaged ({problems_[0][1]})" if problems_ else "")
         return parsed[app]
 
-    selected_apps = {s["app"] for s in _selected(apps)}
+    # (spec, with its inventories): the selection in full, then the catalogs routes join it to, catalog file only.
+    passes = [(spec, True) for spec in _selected(apps)] + [(spec, False) for spec in _related(apps)]
 
     def owner_findings(where: str, kind: str, arg: str) -> list[tuple[str, str]]:
         """What is wrong with the owner a status names: a section that does not exist, moved, or lapsed, a stale
@@ -654,10 +662,11 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                      damaged: dict[str, str]) -> None:
         """Every route ends at a terminal row of the catalog it names (D00 T01 §8), and that row's owner is live.
 
-        A related catalog that cannot be read, or whose rows do not all parse, is recorded in `damaged`: nothing is
-        judged against rows that may be missing. A target's own defects are its catalog's findings when that
-        catalog is in the selection; when it is not, the route carries them, so a selected query never passes an
-        obligation whose other end is broken (round 1 of this section's review).
+        A catalog that cannot be read, or whose rows do not all parse, is recorded in `damaged`: nothing is judged
+        against rows that may be missing, and that catalog's own pass reports the damage. A target row's own
+        defects (a status outside the grammar, a dead owner) are likewise its own pass's findings, and that pass
+        always runs, since every catalog a route touches is in the run (this section's review, round 1 and the
+        completion pass).
         """
         for where, target, target_id, cls in routes:
             target_rows, why = catalog_of(target)
@@ -669,30 +678,26 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                 found.append((cls, f"{where} routes to {target_id}: missing, {by_app[target]['path']} holds no such "
                                    f"row; point it at the row that plans the feature"))
                 continue
-            target_kind, target_arg = parse_status(hit["status"])
-            if target_kind == "malformed" and target in selected_apps:
+            target_kind = parse_status(hit["status"])[0]
+            if target_kind == "malformed":
                 continue  # the target row carries its own `parity-status-malformed` in this run
             if target_kind not in TERMINAL_KINDS:
                 reason = ("loop, the target's own status routes on" if target_kind == "other-app"
-                          else "not terminal, the target's status is outside the grammar" if target_kind == "malformed"
                           else "not terminal, the target is not planned yet")
                 found.append((cls, f"{where} routes to {target_id}: {reason} ({hit['status']!r}); a route ends at a "
                                    f"planned section, shipped scope, a backlog entry, or an exclusion, and never "
                                    f"loops, routes onward, or names itself"))
-            elif target not in selected_apps:
-                there = f"{by_app[target]['path']}:{hit['line']}: {hit['id']}"
-                for _cls, msg in owner_findings(there, target_kind, target_arg)[:1]:
-                    found.append((cls, f"{where} routes to {target_id}, which has no live owner: {msg}"))
 
     out: list[tuple[str, str]] = []
-    for spec in _selected(apps):
+    for spec, with_sources in passes:
+        columns = spec["columns"] if with_sources else ()
         # An unreadable file is one `parity-input-damaged` finding, never a cascade: a missing catalog places
         # nothing, so its sources' ids are not each reported missing, and a missing inventory defines nothing, so
         # the catalog's cells for it are not each reported unknown.
         found: list[tuple[str, str]] = []
         defined: dict[str, dict[str, int]] = {}
         readable: dict[str, bool] = {}
-        for column in spec["columns"]:
+        for column in columns:
             ids, problems = parse_sources(root, column, texts)
             defined[column["column"]] = ids
             readable[column["column"]] = texts[column["path"]][0] is not None
@@ -727,7 +732,7 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                     routes.append((where, route[0], route[1], route[2]))
             else:
                 found += owner_findings(where, kind, arg)
-            for column in spec["columns"]:
+            for column in columns:
                 if not readable[column["column"]]:
                     continue
                 shape = re.compile(rf"^{column['id']}$")
@@ -737,7 +742,7 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                                                          f"{column['path']} does not define"))
                         continue
                     placed.setdefault(token, []).append(f"{row['id']} (line {row['line']})")
-        for column in spec["columns"] if catalog_readable else ():
+        for column in columns if catalog_readable else ():
             for sid, line in defined[column["column"]].items():
                 rows_of = placed.get(sid, [])
                 if not rows_of:
@@ -753,10 +758,8 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
         check_routes(routes, found, damaged)
         # A row with no source id exists only because another catalog routes a feature to it, and its Notes name
         # the row that does: an existing row of a catalog that routes here, whose route names this row.
-        # The catalogs that route here are read whether or not a row is source-less: the routed report counts their
-        # rows, so their damage fails this catalog's selected query too.
         bare = [row for row in rows if not any(row["sources"].values())]
-        if bare or any(spec["app"] in other.get("routes", {}) for other in CATALOGS):
+        if bare:
             routers = [other for other in CATALOGS if spec["app"] in other.get("routes", {})]
             inbound: dict[str, set[str]] = {}
             for other in routers:
@@ -768,22 +771,6 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                     route = route_of(other, other_row["status"])
                     if route is not None and route[0] == spec["app"] and route[1] is not None:
                         inbound.setdefault(route[1], set()).add(other_row["id"])
-                if other["app"] not in selected_apps:
-                    # That catalog's own pass does not run in this selection, and the routed report counts its
-                    # rows: its routes into this catalog are checked here.
-                    incoming: list[tuple[str, str, str, str]] = []
-                    for other_row in other_rows:
-                        route = route_of(other, other_row["status"])
-                        if route is None or route[0] != spec["app"]:
-                            continue
-                        there = f"{other['path']}:{other_row['line']}: {other_row['id']}"
-                        if route[1] is None:
-                            found.append(("parity-status-malformed",
-                                          f"{there} is routed here with no {_id_prefix(spec['id'])} id "
-                                          f"({other_row['status']!r})"))
-                        else:
-                            incoming.append((there, spec["app"], route[1], route[2]))
-                    check_routes(incoming, found, damaged)
             shapes = "|".join(other["id"] for other in routers)
             origin = " or ".join(other["path"] for other in routers) or "a catalog that routes here (none does)"
             for row in bare if not any(other["app"] in damaged for other in routers) else ():
@@ -794,9 +781,6 @@ def parity_findings(graph, todos, root=None, texts: dict | None = None, apps=Non
                     found.append(("parity-orphan-row",
                                   f"{spec['path']}:{row['line']}: {row['id']} has no source id, and {named}; a row "
                                   f"with no source id names the row of {origin} whose status routes to it"))
-        for app in sorted(set(damaged) - selected_apps):
-            found.append(("parity-input-damaged", f"{spec['path']}: its routes are checked against "
-                                                  f"{by_app[app]['path']}, which {damaged[app]}; repair that catalog"))
         out += [(cls, f"{spec['app']}: {msg}") for cls, msg in found]
     return out
 
