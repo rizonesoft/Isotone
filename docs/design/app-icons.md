@@ -88,7 +88,7 @@ The accents are the dark-theme values of the `accent-<app>` tokens; the icon kee
 | Installer (Inno Setup wizard and uninstall entry) | from the `.ico` | all sizes |
 | File associations (Explorer) | 16 to 256 px from the `.ico` | all sizes |
 | About dialog | 128 px | master |
-| Splash (the Suite card) | 136 px | master, on the card built in XAML to the Splash component guide |
+| Splash (the Suite card) | 136 px | master, on the card the app draws to the Splash component guide |
 | Marketing and store art | any | the master, or `<app>-splash.svg` (the Suite card reference design, 640 x 360) |
 
 The title bar is the only place in the chrome where the app icon appears; everywhere else the chrome stays neutral and the app is identified by its accent on the one primary button.
@@ -104,7 +104,7 @@ The Isotone Graphics Suite has its own icon and wordmark (operator decision 2026
 
 ## The Suite card splash
 
-The splash shows the master icon at 136 px on a graphite card (640 x 360, radius 8, the same family of greys as the tile), over a soft halo of the app accent, beside the app name, its role, the suite and version line, a live status line and the launch progress in the accent, with the spectrum band as a gentle wave along the card's bottom edge (the same seven stops as the icons). The card is identical in the three apps apart from the icon, the accent and the words. `<app>-splash.svg` is its reference design and a marketing image; the app draws the card in XAML so the version, status and progress are live. The full spec (layout grid, colors, text styles, progress, band, glow and timing) is the Splash component guide, summarized in the Shell layout's Splash and Home.
+The splash shows the master icon at 136 px on a graphite card (640 x 360, radius 8, the same family of greys as the tile), over a soft halo of the app accent, beside the app name, its role, the suite and version line, a live status line and the launch progress in the accent, with the spectrum band as a gentle wave along the card's bottom edge (the same seven stops as the icons). The card is identical in the three apps apart from the icon, the accent and the words. `<app>-splash.svg` is its reference design and a marketing image; the app draws the card itself so the version, status and progress are live. The full spec (layout grid, colors, text styles, progress, band, glow and timing) is the Splash component guide, summarized in the Shell layout's Splash and Home.
 
 ## Do and do not
 
@@ -116,7 +116,7 @@ The splash shows the master icon at 136 px on a graphite card (640 x 360, radius
 - Do not add text, a version number or a badge to the tile.
 - Do not drop or reorder the spectrum band, or change its colors per app.
 - Do not use a catalog icon (`pen-tool`, `brush`, `aperture`) as a stand-in for an app icon.
-- Do not use the Suite card splash as an app icon, or ship its SVG or a PNG of it as the in-app splash: the app builds the card in XAML so its text is live.
+- Do not use the Suite card splash as an app icon, or ship its SVG or a PNG of it as the in-app splash: the app draws the card itself so its text is live.
 
 ## Export
 

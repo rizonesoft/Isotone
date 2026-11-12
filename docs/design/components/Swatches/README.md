@@ -21,6 +21,6 @@ Swatch: rest, hover (1px `text-primary` outline 1px outside), selected (2px `sta
 
 The grid is one tab stop; arrows move; Enter sets the foreground color, Alt+Enter the background; Delete removes (with undo). X swaps chips, D resets to black and white. The hex field accepts 3 or 6 digits, with or without #.
 
-## WPF
+## Native
 
-`ListBox` with a `WrapPanel` items host and `ListBoxItem` style `Isotone.Swatch`; chips are `Isotone.ColorChips` (`Control` with `Foreground`/`Background` color DPs, `PART_Swap`, `PART_Reset`). Color field: `Isotone.ColorField` rendering the gradient with two `LinearGradientBrush`es in a `Grid`; hue: `Isotone.GradientSlider`. Swatch colors are document content and are not theme resources.
+A list element that wraps its items, with swatch item elements; the foreground and background chips are one element with the two colors, a swap part, and a reset part. The color field draws its gradient as two linear gradients composed in Direct2D; the hue strip is the gradient slider. Swatch colors are document content and are not theme tokens. UI Automation: List with ListItem and SelectionItem.

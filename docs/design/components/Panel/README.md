@@ -25,6 +25,6 @@ Docked panels in the right dock: a tab strip of grouped panels, a panel menu, co
 
 F6 reaches the dock; Ctrl+Tab inside a panel group moves between tabs; section headers are buttons (Enter or Space toggles, `aria-expanded`); the panel menu opens with Shift+F10 on the tab.
 
-## WPF
+## Native
 
-AvalonDock (`LayoutAnchorablePane`) with an Isotone theme dictionary replacing `AnchorablePaneTitle` and `AnchorablePaneTabPanel` templates; outside AvalonDock, `Isotone.PanelHost` (`TabControl` + `ItemsControl`). Section: `Expander` styled `Isotone.SectionExpander` (Bezier CollapsibleHeader), header template with a rotating 12px chevron (`duration-standard`, `ease-out`). Property rows: `Grid` with `ColumnDefinition Width="60"` shared by `Grid.IsSharedSizeScope`.
+Panels are hosted by the suite's own docking system (panels, tab groups, columns, and floating windows, with the workspace saved as JSON), which draws the panel title and the panel tab strip from the tokens above. A panel section is an expander element whose header carries a rotating 12px chevron (`duration-standard`, `ease-out`). Property rows share one 60px label column per panel. UI Automation: Pane, with Tab and TabItem for a tab group and ExpandCollapse on each section.

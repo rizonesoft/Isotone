@@ -2,7 +2,7 @@
 
 How the writer session routes work to cheaper subagents without lowering the bar. Operator decision 2026-10-01: "Delegate as much research, implementation, testing, documentation, and routine review as can reliably meet that bar to Claude Sonnet subagents running explicitly at high effort", with the lead "accountable for architecture, integration, and final acceptance, retaining stronger-model review for consequential design, security, privacy, data integrity, and critical correctness", and "never weaken requirements or claim equivalent quality merely because tests pass."
 
-Delegation changes who reads and runs, never who writes or what ships. Every gate in `AGENTS.md`, every skill step, the independent GPT review, the panel, and the stamp run exactly as before. Cost is optimized only inside these rules. Operator decision 2026-10-02: "I am not confortable with having a sonnet writer", so no delegate writes code: source, XAML, scripts, tests, and build files are the lead's alone, and the `isotone-implementer` definition was removed. Operator decision the same day: "If you use sonnet as an implementer, make 100% sure that it does not weaken implementations." On 2026-10-17 the `isotone-docs` definition, the last delegate that could write, was removed, and documentation prose returned to the lead. With no delegate writing, no delegated diff exists that could weaken an implementation.
+Delegation changes who reads and runs, never who writes or what ships. Every gate in `AGENTS.md`, every skill step, the independent GPT review, the panel, and the stamp run exactly as before. Cost is optimized only inside these rules. Operator decision 2026-10-02: "I am not confortable with having a sonnet writer", so no delegate writes code: source, shaders, scripts, tests, and build files are the lead's alone, and the `isotone-implementer` definition was removed. Operator decision the same day: "If you use sonnet as an implementer, make 100% sure that it does not weaken implementations." On 2026-10-17 the `isotone-docs` definition, the last delegate that could write, was removed, and documentation prose returned to the lead. With no delegate writing, no delegated diff exists that could weaken an implementation.
 
 ## Subagents never write
 
@@ -39,10 +39,10 @@ The last five are pinned like the `isotone-*` definitions: the delegate effort, 
 
 These never go to a delegate, whatever the cost, because a cheaper miss here is not recoverable by a later gate:
 
-- Every change: source, XAML, scripts, tests (including test drafts), project and build files, XML doc comments, user guides, developer docs, changelog entries, and READMEs. No subagent writes (Subagents never write); a delegate may report facts or draft wording in its report, and the lead verifies them and writes the file.
+- Every change: source, shaders, scripts, tests (including test drafts), CMake and build files, code comments, user guides, developer docs, changelog entries, and READMEs. No subagent writes (Subagents never write); a delegate may report facts or draft wording in its report, and the lead verifies them and writes the file.
 
 - Plan validation verdicts and corrections to TODO text (`process-todo-section` steps 2 and 3); a researcher gathers the evidence, the lead judges it.
-- Design of anything consequential: public `Isotone.Core` and `Isotone.UI` contracts, the document model, storage and file formats, settings storage, undo history, plugin and extension seams, threading and concurrency models.
+- Design of anything consequential: public `isotone::core` and `isotone::ui` contracts, the document model, storage and file formats, settings storage, undo history, plugin and extension seams, threading and concurrency models.
 - Security, privacy, and data-integrity code: file-format readers and writers, atomic saves, the original-file guard, credentials, update and download paths, anything that parses untrusted input.
 - Integration: merging delegate output, resolving conflicts between slices, and the full-suite run at the commit.
 - Every record: `Started:`, commits, pushes, the run file, findings files, `Verified:` stamps, attestations, the `[x]` flip, `todo/budget.json`, `todo/backlog.md`, `docs/captures/golden/`, baselines. No brief can make a record an owned path.

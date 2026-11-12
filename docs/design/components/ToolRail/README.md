@@ -38,9 +38,9 @@ After `tooltip-delay` (400ms) the Tooltip component opens right of the button: t
 - The rail is one tab stop (`KeyboardNavigation.DirectionalNavigation="Cycle"`); Up and Down move, Enter or Space selects, Shift+F10 opens the flyout.
 - Single-letter shortcuts work anywhere the canvas has focus and never when a text field has focus.
 
-## WPF
+## Native
 
-- `ItemsControl` of `RadioButton`s with `GroupName="Tools"` styled `Isotone.ToolButton` (from Bezier's ActiveToolButton). Template parts: `Border PART_Chrome` (fill, border, `DropShadowEffect` with `ShadowDepth` 0 for the glow), `Path PART_Icon`, `Path PART_GroupTriangle` (visible when `Isotone.Tool.HasGroup`).
-- Visual states: `CommonStates` (Normal, MouseOver, Pressed, Disabled), `CheckStates` (Checked, Unchecked), `FocusStates`.
-- `ToolTipService.InitialShowDelay` = 400, `BetweenShowDelay` = 0, `ToolTip` = an `Isotone.RichToolTip`.
-- `AutomationProperties.Name` = "Brush Tool (B)".
+- A column of tool buttons in one group, populated from the registered tools. Each button draws its chrome (fill, border, and the glow as a zero-offset shadow), its icon, and a group triangle when the tool has a group.
+- States: common (normal, hover, pressed, disabled), checked and unchecked, and focus.
+- The tooltip opens after 400 ms, with no delay between adjacent buttons, and is the rich tooltip.
+- UI Automation Name: "Brush Tool (B)"; RadioButton with SelectionItem.

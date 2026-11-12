@@ -1,4 +1,4 @@
-Isotone Interface is the desktop UI of the Isotone Graphics Suite: Stilus (vector), Gesso (raster) and Albumen (darkroom and photo manager), built in WPF for Windows 11. It is deliberately familiar to Photoshop users and grows out of Bezier, the Stilus prototype: its 2px corners, hairline dividers, glowing checked tools, rich tooltips, scrubbable number boxes and dense status bar all carry over.
+Isotone Interface is the desktop UI of the Isotone Graphics Suite: Stilus (vector), Gesso (raster) and Albumen (darkroom and photo manager), built for Windows 11 in C++ on the suite's own toolkit, `isotone::ui` (Win32, Direct2D, DirectWrite, and Direct3D). It is deliberately familiar to Photoshop users and grows out of Bezier, the Stilus prototype: its 2px corners, hairline dividers, glowing checked tools, rich tooltips, scrubbable number boxes and dense status bar all carry over.
 
 ## Principles
 
@@ -6,7 +6,7 @@ Isotone Interface is the desktop UI of the Isotone Graphics Suite: Stilus (vecto
 2. **Photoshop-familiar.** Same window anatomy (menu bar in the title bar, options bar, tool rail on the left, document tabs, docked panels on the right, status bar), same shortcuts, same brightness themes, same blue highlight, same compact density. A Photoshop user should find every tool where their hands expect it.
 3. **Suite-consistent.** Stilus, Gesso and Albumen share every token, control and layout rule. The only visible difference between them is the app accent in the title-bar mark, the splash, and the one primary button of a view.
 4. **Dense, not cramped.** 24px controls and 12px text by default, on a 4px grid, with a Comfortable density for larger or touch-adjacent screens.
-5. **Every state drawn.** Hover, pressed, checked, disabled and keyboard focus are designed for every control; nothing falls back to stock WPF.
+5. **Every state drawn.** Hover, pressed, checked, disabled and keyboard focus are designed for every control; nothing falls back to a system-drawn control.
 
 ## Theme model
 
@@ -57,7 +57,7 @@ Preferences > Interface > Highlight color offers three values. Every `state*` to
 | **Isotone orange** | the `state-orange*` tokens (Bezier's #FF6B35, darker in Light) | Isotone's Bezier heritage. The dark themes set near-black text on it (`state-orange-on`). |
 | **Windows accent color** | derived from `UISettings` Accent and AccentLight1-3 / AccentDark1-3, contrast-adjusted per theme | Matches the rest of the user's Windows. Falls back to Blue when unavailable. |
 
-The Highlight card documents the Windows accent mapping and the WPF swap. Two cautions come with the orange option:
+The Highlight card documents the Windows accent mapping and how the Highlight table is switched at run time. Two cautions come with the orange option:
 
 - **Gesso's identity orange sits close to Isotone orange.** `accent-gesso` #F5923E and `state-orange` #FF6B35 differ by only 1.1 to 1.2:1 in lightness, so they cannot be told apart by lightness. Roles keep them apart: with the orange option, Gesso's primary button keeps the identity orange while selected rows use `state-orange-subtle` (a brown tint at least 3:1 away from the button in every theme) and focus uses `state-orange-line`. Blue stays Gesso's recommended Highlight.
 - **Warning amber against Isotone orange.** `status-warning` (amber, #F2C14E in Dark) is 1.6 to 1.9:1 lighter than `state-orange` in the dark themes and differs in hue in Light (1.25:1). Warnings always carry the `alert` icon and a word, so they never depend on that difference.
@@ -86,7 +86,7 @@ Segoe UI Variable, falling back to Segoe UI and system-ui: the Windows 11 system
 | `mono` | 11 / 14 | 400 | status bar coordinates, pixel readouts |
 | `mono-body` | 12 / 16 | 400 | hex values, logs |
 
-Comfortable density swaps `caption`, `body` and `body-strong` for `caption-comfortable` (12/16), `body-comfortable` (13/18) and `body-strong-comfortable`; titles stay. The type scale ships in WPF as `FontSize` resources named `type-caption`, `type-body-compact`, `type-body-comfortable`, `type-title`.
+Comfortable density swaps `caption`, `body` and `body-strong` for `caption-comfortable` (12/16), `body-comfortable` (13/18) and `body-strong-comfortable`; titles stay. The type scale ships in the token tables under the names `type-caption`, `type-body-compact`, `type-body-comfortable`, `type-title`.
 
 Text rules: sentence case for buttons, labels and messages ("Save a copy"); title case for menu items and dialog titles, following Photoshop ("Image Size", "Convert to Smart Object"); an ellipsis on commands that open a dialog. Use "you" sparingly and never "we". No exclamation marks, no emoji. Numbers use the user's culture and tabular figures in readouts; units follow values with a space in prose ("1.9 GB") and without in fields (the unit sits in its own column).
 
@@ -143,7 +143,7 @@ When Windows "Animation effects" is off (`SystemParameters.ClientAreaAnimation` 
 
 ## Iconography
 
-One family: Lucide geometry (ISC), in the shared icon catalog as path data. 24 viewBox, `icon-stroke` 1.5px at `icon-sm` 16px (menus, panels, options bar, rows, buttons) and `icon-md` 20px (tool rail), round caps and joins, strokes only. Icons are `icon` at rest, `text-primary` when hovered or active, `state-on` on a `state` fill, `text-disabled` when disabled. FluentIcons.Wpf, which Bezier mixed in, leaves the suite; the caption buttons draw `minus`, `maximize`, `restore` and `x` from the same catalog at stroke 1. Emoji are never icons.
+One family: Lucide geometry (ISC), in the shared icon catalog as path data. 24 viewBox, `icon-stroke` 1.5px at `icon-sm` 16px (menus, panels, options bar, rows, buttons) and `icon-md` 20px (tool rail), round caps and joins, strokes only. Icons are `icon` at rest, `text-primary` when hovered or active, `state-on` on a `state` fill, `text-disabled` when disabled. The second icon family Bezier mixed in left the suite with the prototype; the caption buttons draw `minus`, `maximize`, `restore` and `x` from the same catalog at stroke 1. Emoji are never icons.
 
 This UI icon catalog (Lucide-style strokes) is separate from the app icons. The app icons of Stilus, Gesso and Albumen are Direction C, the suite tile: a shared graphite tile, the spectrum band along its foot and the app's accent glyph. They are drawn from their own SVG files, never from the catalog, and they appear in the taskbar, Start menu, installer, file associations, About dialog and the title-bar app mark (the hand-tuned `-16` file); the splash is the Suite card, which carries the master icon at 136 px (see the Splash component guide). Sizes, construction, colors and rules are in the App icons section, and the files are in the App icons asset group.
 
@@ -174,67 +174,61 @@ Every text token is checked (WCAG 2.x) against every ground its usage note names
 
 ### Focus and keyboard
 
-One focus ring (`focus-ring`, 2px, 1px outside; inset on rows), shown for keyboard focus only. F6 cycles the regions (tool rail, options bar, document, dock); Tab moves inside a region; every dialog is fully keyboard operable with Enter and Escape doing what their buttons say; menus have access keys; tool shortcuts never fire while a text field has focus. Every icon-only control has a tooltip naming the command and shortcut and an `AutomationProperties.Name`.
+One focus ring (`focus-ring`, 2px, 1px outside; inset on rows), shown for keyboard focus only. F6 cycles the regions (tool rail, options bar, document, dock); Tab moves inside a region; every dialog is fully keyboard operable with Enter and Escape doing what their buttons say; menus have access keys; tool shortcuts never fire while a text field has focus. Every icon-only control has a tooltip naming the command and shortcut and a UI Automation Name.
 
 ### Windows high contrast
 
-When `SystemParameters.HighContrast` is true, Isotone.UI loads `Themes/HighContrast.xaml`, which maps tokens to system colors instead of the four themes:
+When Windows high contrast is on (`SPI_GETHIGHCONTRAST`, re-read on `WM_SETTINGCHANGE`), `isotone::ui` selects the high-contrast token table, which maps tokens to system colors instead of the four themes:
 
-| Tokens | SystemColors |
+| Tokens | System color (`GetSysColor`) |
 | --- | --- |
-| `frame`, `surface-*`, `canvas-surround` | `WindowBrush` |
-| `text-primary`, `text-secondary`, `icon`, `border-control`, `divider*` | `WindowTextBrush` |
-| `text-disabled` | `GrayTextBrush` |
-| `state`, `state-subtle`, `state-tint` | `HighlightBrush` |
-| `state-on` | `HighlightTextBrush` |
-| `state-line`, `focus-ring` | `HighlightBrush` (drawn 2px) |
-| `state-text` | `HotTrackBrush` |
-| buttons | `ControlBrush` / `ControlTextBrush` |
+| `frame`, `surface-*`, `canvas-surround` | `COLOR_WINDOW` |
+| `text-primary`, `text-secondary`, `icon`, `border-control`, `divider*` | `COLOR_WINDOWTEXT` |
+| `text-disabled` | `COLOR_GRAYTEXT` |
+| `state`, `state-subtle`, `state-tint` | `COLOR_HIGHLIGHT` |
+| `state-on` | `COLOR_HIGHLIGHTTEXT` |
+| `state-line`, `focus-ring` | `COLOR_HIGHLIGHT` (drawn 2px) |
+| `state-text` | `COLOR_HOTLIGHT` |
+| buttons | `COLOR_BTNFACE` / `COLOR_BTNTEXT` |
 
 Accent and status fills are dropped in high contrast; status keeps its icon and word. The canvas keeps its own colors because it shows the user's content.
 
 ### Scaling
 
-Every size token is in device-independent pixels. The UI is checked at 100, 150 and 200 percent: 1px hairlines use `SnapsToDevicePixels` and `UseLayoutRounding` so they stay one device pixel, icons are vector paths, the checkerboard and handles size by display scale, not zoom, and the Comfortable density is the recommended pairing for small high-DPI laptops.
+Every size token is in device-independent pixels. The UI is checked at 100, 150 and 200 percent: layout is rounded to physical pixels at every scale so 1px hairlines stay one device pixel, icons are vector paths, the checkerboard and handles size by display scale, not zoom, and the Comfortable density is the recommended pairing for small high-DPI laptops.
 
-## WPF implementation
+## Native implementation
 
-`Isotone.UI` carries the system as resources:
+`isotone::ui` carries the system as generated token tables and its own controls (`docs/specs/2026-10-22-native-stack-design.md`, "Isotone UI"):
 
 ```
-Isotone.UI/
-  Themes/
-    (all generated from docs/design/tokens.json by scripts/generate-theme.py; never hand-edited)
-    Tokens.xaml            sizes, spacing, radii, durations, font families (single values)
-    Dark.xaml              color and shadow tokens, Dark values (default)
-    Darkest.xaml
-    MediumGray.xaml
-    Light.xaml
-    HighContrast.xaml      token keys mapped to SystemColors
-    Highlight.Blue.xaml    Highlight overlay: Blue (default, maps state keys to the blue set)
-    Highlight.Orange.xaml  Highlight overlay: Isotone orange (maps state keys to state-orange)
-    Density.Compact.xaml   neutral size keys pointed at the -compact values (default)
-    Density.Comfortable.xaml neutral size keys pointed at the -comfortable values
-    Controls/*.xaml        one dictionary per control family (Button.xaml, Menu.xaml, NumberBox.xaml...)
-  Icons/icons.json         the icon catalog
+native/ui/
+  tokens/        generated from docs/design/tokens.json by a committed generator; never hand-edited
+                 one table of single values: sizes, spacing, radii, durations, font families
+                 one color and shadow table per brightness theme: Dark (default), Darkest, Medium Gray, Light
+                 the high-contrast table: token keys mapped to system colors
+                 the Highlight tables: Blue (default) and Isotone orange (state keys mapped to state-orange)
+                 the density tables: Compact (default) and Comfortable (neutral size keys pointed at their values)
+  the controls   one element per component family under docs/design/components/
+  the icon catalog, loaded from icons.json
 ```
 
-- **Brush keys are token names**: `<SolidColorBrush x:Key="surface-panel" Color="#323232"/>`. Size tokens are `sys:Double` (`control-h-compact`), radii are `CornerRadius` (`radius-sm`), spacing is `Thickness` or `sys:Double`, durations are `Duration` (`duration-fast`), `ease-out` is a `CubicEase` with `EasingMode="EaseOut"`.
-- **Always `DynamicResource`** for colors, so a theme or Highlight change restyles open windows without a restart. `StaticResource` is fine for sizes.
-- `ThemeService` swaps the brightness dictionary in `Application.Resources.MergedDictionaries` (index 1); `HighlightService` swaps the Highlight overlay after it (`Highlight.Blue.xaml`, `Highlight.Orange.xaml`, or a dictionary built at runtime from the Windows accent); `DensityService` swaps `Density.Compact.xaml` or `Density.Comfortable.xaml`, which point the neutral keys (`control-h`, `row-h`, `menu-row-h`...) at the `-compact` or `-comfortable` values.
-- Each app sets `Isotone.App.Accent`, `AccentHover` and `AccentOn` to its `accent-<app>` brushes once at startup.
-- Implicit styles cover every stock control a surface uses (Button, ToggleButton, RepeatButton, CheckBox, RadioButton, TextBox, PasswordBox, ComboBox, ListBox, ListView, TreeView, TabControl, Menu, ContextMenu, ToolTip, ScrollBar, ScrollViewer, Slider, ProgressBar, StatusBar, Expander, GridSplitter); `FocusVisualStyle` is `{x:Null}` everywhere and templates draw the Isotone focus ring.
-- AvalonDock gets an Isotone theme built from the same keys. No WPF-UI or other control framework.
-- A surface never hardcodes a color, size or spacing that a token names; `tokens.json` in this system is the source for the XAML dictionaries.
+- **Keys are token names**: a style asks for `surface-panel`, `control-h-compact`, `radius-sm`, `duration-fast`, or `ease-out` by that name and never holds the value.
+- **Tokens are resolved at run time**, so a theme, Highlight, or density change, or Windows changing high contrast, reduced motion, or DPI, invalidates the styles that read the changed keys and restyles open windows without a restart.
+- The theme service selects the brightness table; the Highlight service layers the Highlight table over it (Blue, Isotone orange, or a table computed at run time from the Windows accent); the density service selects Compact or Comfortable, which point the neutral keys (`control-h`, `row-h`, `menu-row-h`...) at the `-compact` or `-comfortable` values.
+- Each app sets its accent keys (the accent, its hover, and the color on it) to its `accent-<app>` values once at startup.
+- Every control a surface uses is the suite's own element, drawn with Direct2D and DirectWrite to its spec, with rest, hover, pressed, disabled and keyboard-focus states; no system focus rectangle is ever shown, and each element draws the Isotone focus ring.
+- Panels dock and float through the suite's own docking system, drawn from the same keys. No third-party control framework.
+- A surface never hardcodes a color, size or spacing that a token names; `tokens.json` in this system is the source for the token tables.
 
 ## What changed from Bezier
 
 | Bezier (Stilus prototype) | Isotone Interface |
 | --- | --- |
-| One pure-grey dark palette, inline in `MainWindowView.xaml` | Four brightness themes from one token set, in `Isotone.UI` dictionaries |
+| One pure-grey dark palette, inline in its main window's markup | Four brightness themes from one token set, in the token tables of `isotone::ui` |
 | Accent broken: grey #808080 with #FF6B35 orange leftovers | Blue Highlight color by default, Isotone orange (#FF6B35, tuned) and Windows accent as options; per-app identity accents kept separate |
-| Title bar doubled: OS chrome plus a fake bar with emoji caption buttons | One custom title bar through WindowChrome: app mark, menu bar inside it, 46 x 32 caption buttons with a red close |
-| Two icon families (FluentIcons.Wpf and Lucide-style, stroke 2) | One Lucide catalog, stroke 1.5 at 16 and 20px |
+| Title bar doubled: OS chrome plus a fake bar with emoji caption buttons | One custom title bar drawn by `isotone::ui`: app mark, menu bar inside it, 46 x 32 caption buttons with a red close |
+| Two icon families (a Fluent set and Lucide-style, stroke 2) | One Lucide catalog, stroke 1.5 at 16 and 20px |
 | Stock Menu, ContextMenu, ScrollBar, TextBox, ComboBox, Slider, TabControl, ListBox, TreeView | Every control styled, with hover, pressed, disabled and focus states |
 | No disabled or keyboard focus visuals | One focus ring spec; disabled states everywhere |
 | Sizes and radii drifting (28 to 34px buttons, mixed radii) | Size tokens with Compact and Comfortable pairs; radii 2, 4, 6 |

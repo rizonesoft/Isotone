@@ -25,6 +25,6 @@ The document area: the pasteboard around the image or artboard, rulers, guides, 
 - Pixel grid appears above 800% zoom as 1px lines in `ants-dark` at 15% opacity.
 - Reduced motion: marching ants stop and show a static dashed outline.
 
-## WPF
+## Native
 
-The canvas is SkiaSharp (`SKElement` / `SKGLElement`); read these colors from the theme once per theme change into `SKColor` fields (an `Isotone.UI.CanvasPalette` singleton), never per frame. Rulers are WPF `FrameworkElement`s with `OnRender` and `GuidelineSet`s for crisp 1px lines at every scale. The surround color is a document setting defaulting to `canvas-surround`.
+The canvas is its own DirectComposition visual with its own swap chain, drawn on the render thread: Stilus draws vector content through Direct2D geometry, Gesso and Albumen draw the pixel engine's tiles through Direct3D 11. These colors are read from the token table once per theme change into the renderer's palette, never per frame. Rulers are `isotone::ui` elements drawn with Direct2D, snapped to physical pixels so their 1px lines stay crisp at every scale. The surround color is a document setting defaulting to `canvas-surround`.

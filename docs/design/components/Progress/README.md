@@ -23,6 +23,6 @@ Bars and rings for work that takes longer than a second. Anything slower than a 
 
 Not focusable; Cancel is. Screen readers get the value through UIA `RangeValue` and a polite live region at 10% steps.
 
-## WPF
+## Native
 
-`ProgressBar` style `Isotone.ProgressBar` (parts `PART_Track`, `PART_Indicator`, and `PART_GlowRect` repurposed as the indeterminate segment); `Isotone.ProgressRing` (`Control` drawing an `ArcSegment` `Path` with a `RotateTransform` storyboard, stopped when `SystemParameters.ClientAreaAnimation` is false).
+A progress bar element (a track, an indicator, and a moving segment when indeterminate) and a progress ring element (an arc drawn as Direct2D geometry, rotated by an animation that stops when Windows reports client-area animation off, `SPI_GETCLIENTAREAANIMATION`). UI Automation: ProgressBar with RangeValue.

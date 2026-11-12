@@ -27,6 +27,6 @@ Rows for lists and trees in panels and dialogs: Albumen's folders and collection
 
 Up and Down move; Shift extends; Ctrl+Space toggles; Right expands then moves to the first child; Left collapses then moves to the parent; `*` expands all below; F2 renames; Delete deletes with undo; typing jumps by prefix.
 
-## WPF
+## Native
 
-`ListBox`, `ListView` and `TreeView` styles `Isotone.ListBox`, `Isotone.TreeView` with item containers `Isotone.ListRow` / `Isotone.TreeRow`. The tree row template draws full-width highlights (a `Grid` spanning the row with the indent inside, not WPF's default indented highlight). Triggers use `IsSelected` plus `Selector.IsSelectionActive` for the unfocused color. Drag feedback via an `Adorner` (`Isotone.DropIndicatorAdorner`). Always `VirtualizingPanel.IsVirtualizing="True"` and `VirtualizationMode="Recycling"` for libraries of 50,000 photos.
+List and tree elements with row elements for their items. A tree row draws its highlight across the full width, with the indent inside the row. The row reads selected plus whether its list has focus, for the unfocused color. Drag feedback is a drop indicator drawn over the list. Rows are always virtualized and recycled, for libraries of 50,000 photos, and UI Automation exposes virtualized items (ItemContainer, VirtualizedItem) with Selection, SelectionItem, ExpandCollapse, and Scroll.

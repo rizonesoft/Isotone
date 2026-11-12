@@ -25,6 +25,6 @@ Order, left to right: status word, selection summary, color mode, snapping, artb
 
 The bar is not in the tab order; its commands exist in menus. Screen readers get changes through a polite live region on the status word only.
 
-## WPF
+## Native
 
-`StatusBar` restyled as `Isotone.StatusBar` with `StatusBarItem`s and `Separator` keyed `StatusBar.SeparatorStyleKey` (1 x 12). Coordinates: `TextBlock` with `FontFamily="{DynamicResource font-mono}"` and `Typography.NumeralAlignment="Tabular"`. `AutomationProperties.LiveSetting="Polite"` on the status word.
+A status bar element with item elements and 1 x 12 separators. Coordinates are drawn in `font-mono` with tabular figures (the DirectWrite `tnum` feature). The status word raises a polite UI Automation live-region notification when it changes. UI Automation: StatusBar.

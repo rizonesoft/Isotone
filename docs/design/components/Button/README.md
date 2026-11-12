@@ -28,6 +28,6 @@ Rest, hover (`surface-control-hover`), pressed (`surface-control-pressed`), focu
 
 Tab to focus; Enter and Space activate. In dialogs the primary button is `IsDefault` (Enter) and Cancel is `IsCancel` (Escape). A split button's arrow opens with Alt+Down.
 
-## WPF
+## Native
 
-Styles `Isotone.Button` (implicit), `Isotone.PrimaryButton`, `Isotone.SubtleButton`, `Isotone.IconButton`, `Isotone.SplitButton` (a `Control` with `PART_Main` and `PART_Drop` + `ContextMenu`), and `ToggleButton` style `Isotone.ToggleIconButton`. Template: `Border PART_Chrome` with `CornerRadius="{StaticResource radius-sm}"`, `ContentPresenter`; states via `VisualStateManager` `CommonStates` and `FocusStates` (a separate `Border PART_FocusRing` 1px outside, visible on `IsKeyboardFocused`, never on mouse focus). `FocusVisualStyle="{x:Null}"` so the default dotted rectangle never shows. The primary style binds its brushes to `Isotone.App.Accent`, set once per app.
+One button element in `isotone::ui` with the variants this spec lists (default, primary, subtle, icon, split with its main and drop parts and a menu, and the toggle icon button). It draws its chrome with Direct2D from token keys (`radius-sm` for the corners) and its content with DirectWrite; its states (rest, hover, pressed, disabled, checked, keyboard focus) are element states the style reads, and the focus ring is drawn 1px outside the chrome for keyboard focus only, never for pointer focus, so no system focus rectangle ever shows. The primary variant reads the app accent keys, set once per app. UI Automation: Button with the Invoke pattern (Toggle for the toggle variant, ExpandCollapse for the split drop).

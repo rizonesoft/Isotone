@@ -1,6 +1,6 @@
 # TODO System -- Format Spec
 
-The `todo/` tree is the live execution plan for the Isotone Graphics Suite: Stilus (vector), Gesso (raster), Albumen (darkroom), and the shared `Isotone.Core` they consume. Markdown is canonical; the graph cache is a derived read-only projection rebuilt by `scripts/todo-graph.py`.
+The `todo/` tree is the live execution plan for the Isotone Graphics Suite: Stilus (vector), Gesso (raster), Albumen (darkroom), and the shared `isotone::core` they consume. Markdown is canonical; the graph cache is a derived read-only projection rebuilt by `scripts/todo-graph.py`.
 
 One rule governs everything below: **a TODO section must be implementable by someone with zero conversation context.** A fresh session starts with none, and a session that hits the usage limit resumes cold. If a section only makes sense to someone who was in the room, it is not done.
 
@@ -27,7 +27,7 @@ todo/
 
 Domains are flat-numbered and ordered by allocation sequence. Each maps to a build area; the mapping lives in `TODO-00-INDEX.md` and in each domain's `INDEX.md`. The tooling reads domain names from the tree and never hardcodes them: a directory `NN-kebab-name/` holding an `INDEX.md` is a domain. Numbers are stable addresses: a new domain appends after the last one, because `DNN` cross-references encode them.
 
-The domains are `00-workspace` (toolchain, gates, CI, this system), `01-core` (`Isotone.Core` and `Isotone.UI`, only what two apps need), `02-stilus`, `03-gesso`, `04-albumen`, `05-release` (per-app packaging, signing, tags, and the suite bundle), `06-docs` (developer and user documentation), and `99-manual` (operator-only rows, numbered apart from the allocation sequence as ScratchPad's is). `TODO-00-INDEX.md` is the authority for which exist today.
+The domains are `00-workspace` (toolchain, gates, CI, this system), `01-core` (`isotone::core` and `isotone::ui`, only what two apps need), `02-stilus`, `03-gesso`, `04-albumen`, `05-release` (per-app packaging, signing, tags, and the suite bundle), `06-docs` (developer and user documentation), and `99-manual` (operator-only rows, numbered apart from the allocation sequence as ScratchPad's is). `TODO-00-INDEX.md` is the authority for which exist today.
 
 **Naming:** `TODO-NN-short-name.md`, where `NN` is the next free number *within that domain*. Numbers are local to the domain and never reused. Renaming a file is safe: the stable `id` in frontmatter is what cross-references resolve against.
 
@@ -264,7 +264,7 @@ The freeze check has a visual twin. Isotone is not a clone of somebody else's pr
 **Every section that builds or changes a user-facing surface carries a `Fidelity:` line** naming the surface, the design it answers to, and the golden folder its approved renders land in:
 
 ```
-**Fidelity:** Isotone.UI buttons and inputs -- docs/design/components/ (Button, Checkbox, TextBox cards) per standards/design-contract.md; goldens under docs/captures/golden/isotone-ui/.
+**Fidelity:** isotone::ui buttons and inputs -- docs/design/components/ (Button, Checkbox, TextBox cards) per standards/design-contract.md; goldens under docs/captures/golden/isotone-ui/.
 **Fidelity:** Stilus main window chrome -- docs/design/shell-layout.md (Regions) and docs/design/components/WindowChrome/; goldens under docs/captures/golden/stilus/main-window/.
 ```
 
@@ -298,7 +298,7 @@ A surface that cannot match its spec now says so, directly under its Design line
 **Design deviation:** opened YYYY-MM-DD -- spec: <design ref> -- reason: <why the code cannot match now> -- follow-up: DNN TNN §N (fix design|fix code)
 ```
 
-The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Stilus, Gesso, or Albumen file (an `Isotone.UI` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
+The deviation is open until the follow-up's row is `[x]`; the follow-up either changes the design or fixes the code. A malformed line is `design-malformed`, a dead spec ref or follow-up is `design-dead-ref`, and an open deviation in a Stilus, Gesso, or Albumen file (an `isotone::ui` one counts for all three) while that app's release section (the one that pushes its tag) is stamped on or after the day it opened is `design-deviation-open-at-release`, all FATAL. There is no deviation without the line.
 
 ### Gates and goldens
 
@@ -322,10 +322,10 @@ Every section that builds or changes a user-facing surface carries three blocks 
 ```
 **Job:** <the user> can <the verb this surface exists for>. Consumer: <what reads the write, or "none: this surface is the consumer">.
 **Treatment:** <the asked treatment, named so a substitute can fail>. Cheaper substitute that fails the checkpoint: <the wrong thing>.
-**Chrome:** consume <named shared styles, controls, or services from the app's theme or Isotone.Core>. Do not invent a second <pattern>.
+**Chrome:** consume <named shared styles, controls, or services from the app's theme or isotone::core>. Do not invent a second <pattern>.
 ```
 
-`Chrome:` is load-bearing in this repo. Three apps grow side by side, and the failure mode is an app growing its own color picker, its own undo stack, or its own settings writer when another app already has one that belongs in `Isotone.Core`. A second implementation of a shared control is a defect, not a shortcut; equally, code moves into `Isotone.Core` only when a second app needs it.
+`Chrome:` is load-bearing in this repo. Three apps grow side by side, and the failure mode is an app growing its own color picker, its own undo stack, or its own settings writer when another app already has one that belongs in `isotone::core`. A second implementation of a shared control is a defect, not a shortcut; equally, code moves into `isotone::core` only when a second app needs it.
 
 A section whose Fidelity line says the work has no surface of its own ("no surface of its own", "not a surface", "the library is not a surface") skips these three and the Design line.
 
@@ -369,7 +369,7 @@ Size a section by what holds together, not by a number. Two forces pull in oppos
 - **Too large** exhausts a fresh worker's context halfway through, and gives review more surface than it can cover well in one pass.
 - **Too small** multiplies cost. A section is the unit the review contract prices, so three thin sections cost three review cycles where one coherent section costs one.
 
-Split where the work genuinely divides: a different app, a different project, a dependency boundary, `Isotone.Core` separate from the app that consumes it. Split at **authoring** time, not during implementation: splitting mid-flight costs a wasted context.
+Split where the work genuinely divides: a different app, a different project, a dependency boundary, `isotone::core` separate from the app that consumes it. Split at **authoring** time, not during implementation: splitting mid-flight costs a wasted context.
 
 This guidance is not derived from measurement. `python scripts/todo-graph.py query calibration` compares each stamped section's item count against what it actually cost, and refuses to quote a correlation until enough sections have stamped; when it stops refusing, this paragraph is the thing to revisit.
 

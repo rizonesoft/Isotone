@@ -24,6 +24,6 @@ Single-line text entry: names, paths, search. Numeric values use NumberBox.
 
 Standard edit keys; Enter commits (in the options bar and panels also returns focus to the canvas); Escape reverts to the value at focus; Ctrl+A selects all. Single-letter tool shortcuts never fire while a field has focus.
 
-## WPF
+## Native
 
-`TextBox` style `Isotone.TextBox` (implicit): `Border PART_Chrome`, `ScrollViewer PART_ContentHost`, `TextBlock PART_Placeholder` (visible when `Text` is empty), `SelectionBrush="{DynamicResource state}"`, `SelectionTextBrush="{DynamicResource state-on}"`, `CaretBrush="{DynamicResource text-primary}"`. Errors come from `INotifyDataErrorInfo`; `Validation.ErrorTemplate` is replaced by the helper line.
+One text box element over the shared text editing model of `isotone::ui` (grapheme-aware caret, bidirectional selection, undo grouping, input methods through the Text Services Framework, layout with DirectWrite): its chrome, a scrolling content area, and a placeholder shown when the text is empty. The selection is drawn with `state` and its text with `state-on`; the caret is `text-primary`. A validation error shows the helper line. UI Automation: Edit with the Value and Text patterns.

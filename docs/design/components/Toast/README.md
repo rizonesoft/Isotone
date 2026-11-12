@@ -33,6 +33,6 @@ Text on every subtle fill is `text-primary` (4.5:1 checked in all four themes). 
 
 Toasts are announced through a live region (assertive for errors, polite otherwise) and never take focus; F6 reaches the toast stack; Escape dismisses the focused toast. Info bar actions are ordinary tab stops.
 
-## WPF
+## Native
 
-`Isotone.ToastHost` (an `ItemsControl` in an adorner layer over the window) with `Isotone.Toast` items and `Isotone.InfoBar` (`Control` with `Severity`, `Title`, `Message`, `ActionCommand`, `IsClosable`). `AutomationProperties.LiveSetting` per severity.
+A toast host element drawn over the window's content, holding toast items, and an info bar element with a severity, a title, a message, an action command, and an optional close button. Each severity raises the matching UI Automation live-region notification (polite or assertive).

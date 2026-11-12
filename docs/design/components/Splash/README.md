@@ -2,7 +2,7 @@
 
 The Suite card: the window each app shows while it starts (operator decision 2026-09-27). A graphite card with the app icon on a soft accent halo, the app name, its role, the suite and version line, a live status line and launch progress, and the spectrum band as a gentle wave along the bottom edge. It is the same card in Stilus, Gesso and Albumen; only the icon, the accent, the name, the role and the status text differ.
 
-The reference design is `resources/icons/<app>/<app>-splash.svg` (640 x 360), also used as a marketing image. In the app the card is built in XAML to this spec, never shown as a picture, so the version, the status and the progress are live.
+The reference design is `resources/icons/<app>/<app>-splash.svg` (640 x 360), also used as a marketing image. In the app the card is drawn by `isotone::ui` to this spec, never shown as a picture, so the version, the status and the progress are live.
 
 ## Anatomy
 
@@ -55,6 +55,6 @@ Layout grid: a left column for the icon (x 56 to 192, centred on y 160) and a te
 
 Not focusable and takes no input. Screen readers get the window name ("Stilus is starting"), the status line as a polite live region, and the progress through UIA `RangeValue`.
 
-## WPF
+## Native
 
-`Isotone.UI` `SplashWindow` (`WindowStyle="None"`, `AllowsTransparency="True"`, `ShowInTaskbar="False"`, `Topmost="True"`, `ResizeMode="NoResize"`), a 640 x 360 `Grid` clipped to a radius 8 `RectangleGeometry`, drawn from an `AppIdentity` (name, role, version, icon, accent). The card greys are named brushes in the window's own resources, not in the theme dictionaries. The icon is an `Image` of the app's generated `PNG/<app>_256.png` (or a `DrawingImage` of the master) at 136 x 136 with `RenderOptions.BitmapScalingMode="HighQuality"`; the band is a `Path` with the geometry above and a `LinearGradientBrush` in absolute units. The progress is a `ProgressBar` restyled to the 3px track. The glow is `BorderGlowAnimator` on a 1.5px `Rectangle` stroke with `RadiusX`/`RadiusY` 8. The check is a capture of the running window at 100 percent, compared against the render of `<app>-splash.svg` at 640 x 360: same positions and colors, apart from the live status text and progress.
+The splash is a top-level `isotone::ui` window without the system frame, not shown in the taskbar, topmost, and not resizable: a 640 x 360 surface clipped to a radius 8 rounded rectangle, drawn from the app's identity (name, role, version, icon, accent). The card greys are the splash's own named values, not theme tokens. The icon is the app's generated `PNG/<app>_256.png` drawn at 136 x 136 with high-quality scaling; the band is a Direct2D path with the geometry above and a linear gradient in absolute units. The progress is the progress bar element drawn as the 3px track. The glow is an animated 1.5px rounded-rectangle stroke with radius 8. The check is a capture of the running window at 100 percent, compared against the render of `<app>-splash.svg` at 640 x 360: same positions and colors, apart from the live status text and progress.

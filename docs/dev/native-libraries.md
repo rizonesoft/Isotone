@@ -8,7 +8,7 @@ The dependency register: every library the native suite installs through vcpkg, 
 
 **Helper ports.** A vcpkg registry helper (`vcpkg-cmake`, `vcpkg-cmake-config`) holds the registry's CMake scripts rather than an upstream release and is installed for the build machine's triplet only, never linked: its row names the repository `https://github.com/microsoft/vcpkg`, the Released tag of the committed `builtin-baseline`, and the Advisory identity `none: build-time helper, not linked`, and the lint checks exactly those values.
 
-**The C# apps' native payloads are not registered.** The 2026-09-30 version of this register inventoried the native files the C# apps shipped (SkiaSharp's native assets and the like). No C# app ships again: each C# tree is a behavior reference, retired at its native app's first release (the spec's "The repository during the move"), so that inventory is superseded (`todo/supersession-2026-10.md`, `D00 T04 §1`). Its acceptance requirements carry forward through this register: the Notices shipped column is the notice each native app must carry, and the Architectures column the per-architecture requirement.
+**The C# apps' native payloads are not registered.** The 2026-09-30 version of this register inventoried the native files the C# apps shipped (SkiaSharp's native assets and the like). No C# app ships again: the C# trees were removed from `main` by `D00 T06 §3` and are a behavior reference at the `csharp-final` tag, so that inventory is superseded (`todo/supersession-2026-10.md`, `D00 T04 §1`). Its acceptance requirements carry forward through this register: the Notices shipped column is the notice each native app must carry, and the Architectures column the per-architecture requirement.
 
 ## Register
 

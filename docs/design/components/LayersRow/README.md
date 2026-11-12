@@ -27,6 +27,6 @@ The Layers panel row (Gesso; Stilus uses the same row for objects): visibility e
 
 Alt+[ and Alt+] move the selection down and up; Ctrl+[ and Ctrl+] move the layer; the eye toggles with a click, Alt+click soloes; F2 or double-click the name renames; Ctrl+G groups; Delete deletes. Clicking the eye never changes the selection.
 
-## WPF
+## Native
 
-`ListBox` (or `TreeView` for groups) with `ItemTemplate` `Isotone.LayerRowTemplate`: a `Grid` with columns 28 | Auto | Auto | * | Auto. The thumbnail is an `Image` over a `DrawingBrush` checkerboard (`TileMode="Tile"`, `Viewport="0,0,8,8"` absolute). Thumbnails render off the UI thread at the row's device pixel size. The eye is a `ToggleButton` with `Focusable` true and `AutomationProperties.Name` "Show layer" / "Hide layer".
+A virtualized list (a tree for groups) whose rows lay out as columns 28 | auto | auto | fill | auto. The thumbnail is drawn over a tiled 8px checkerboard, rendered off the UI thread at the row's device pixel size. The eye is a focusable toggle with the UI Automation Name "Show layer" / "Hide layer". UI Automation: List (Tree) with ListItem (TreeItem) children and SelectionItem.

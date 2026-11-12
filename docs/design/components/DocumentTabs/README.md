@@ -25,6 +25,6 @@ Label format (Photoshop): `name.ext @ zoom (mode/depth)` plus ` *` when unsaved.
 
 Ctrl+Tab and Ctrl+Shift+Tab cycle documents; Ctrl+W or Ctrl+F4 closes; with a tab focused, Left and Right move, Delete closes, the Menu key opens Close, Close Others, Reveal in Explorer.
 
-## WPF
+## Native
 
-`TabControl` over the documents collection (or AvalonDock `LayoutDocumentPane` with the Isotone theme), `TabItem` style `Isotone.DocumentTab`. Template parts: `Border PART_Chrome`, `Rectangle PART_Indicator` (visible when `IsSelected`), `TextBlock` with a middle-ellipsis converter, `Button PART_Close` bound to `CloseDocumentCommand`. Middle-click closes.
+A tab strip element over the open documents, hosted by the suite's own docking system as its document area. Each tab draws its chrome, the selected indicator, its title with a middle ellipsis (DirectWrite trimming), and a close button bound to the close-document command. Middle-click closes. UI Automation: Tab with TabItem children and the SelectionItem pattern.

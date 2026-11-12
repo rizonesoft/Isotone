@@ -18,6 +18,6 @@ One keyboard focus indicator for the whole suite: a 2px solid `focus-ring` strok
 - Focus moves predictably: F6 cycles the main regions (tool rail, options bar, document, dock, status toasts); Tab moves within a region.
 - Windows high contrast: the ring uses `SystemColors.HighlightBrush`.
 
-## WPF
+## Native
 
-Set `FocusVisualStyle="{x:Null}"` in every Isotone style and draw the ring in the template (`Border PART_FocusRing`, `Margin="-3"`, `BorderThickness="2"`, `CornerRadius` = element radius + 2), shown by a trigger on `IsKeyboardFocused` (`IsKeyboardFocusWithin` for composite controls) combined with the attached `Isotone.Focus.IsKeyboardInitiated`, which tracks the last input device through `InputManager.Current.PreNotifyInput`.
+No element uses a system focus rectangle. The ring is drawn by the element itself with Direct2D, 3px outside its bounds, 2px thick, with the element's radius plus 2, and only for keyboard-initiated focus (focus within, for composite controls): `isotone::ui` tracks whether the last input that moved focus came from the keyboard, so a pointer click never shows the ring.

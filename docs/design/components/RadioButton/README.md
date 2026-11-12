@@ -14,6 +14,6 @@ Rest, hover (`border-control-hover`), pressed (`surface-control-pressed`), disab
 
 The group is one tab stop landing on the selected item; arrow keys move and select; Space selects the focused item if none is.
 
-## WPF
+## Native
 
-`RadioButton` style `Isotone.RadioButton`: `Ellipse PART_Ring`, `Ellipse PART_Dot`; group with `GroupName` or a shared parent; put the set in a `StackPanel` with `KeyboardNavigation.DirectionalNavigation="Cycle"` and `TabNavigation="Once"`. Tool rail buttons are RadioButtons with a different style (see Tool rail).
+One radio button element: a ring and a dot. Buttons are grouped by a shared group; inside a group the arrow keys cycle and Tab enters and leaves once. Tool rail buttons are radio buttons with a different drawing (see Tool rail). UI Automation: RadioButton with SelectionItem.

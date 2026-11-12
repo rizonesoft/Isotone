@@ -20,6 +20,6 @@ Choose one value from a list (blend modes, resample methods, fonts). The editabl
 
 Alt+Down or F4 opens; Up and Down change the value without opening (blend modes preview live, which Photoshop users expect); typing jumps by prefix; Enter picks; Escape closes and reverts. Editable: type, Enter commits.
 
-## WPF
+## Native
 
-`ComboBox` style `Isotone.ComboBox` (implicit) with parts `PART_EditableTextBox`, `PART_Popup` (`AllowsTransparency`), `ToggleButton` for the drop part; `ComboBoxItem` style shares the MenuItem look. `IsEditable` switches the template via a trigger. `VirtualizingStackPanel` for long lists (fonts).
+One combo box element: an optional editable text part (the shared text editing model), a drop part, and a popup list in its own top-level popup window so its shadow and radius draw outside the owner. Its items share the menu item look. The editable variant is a property of the same element, and long lists (fonts) are virtualized. UI Automation: ComboBox with ExpandCollapse and Selection (Value when editable).

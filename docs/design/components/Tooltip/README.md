@@ -23,6 +23,6 @@ Bezier's rich tooltip: a title, a shortcut chip and one line of description, ope
 
 Keyboard focus shows the tooltip after the same delay; Escape dismisses. Screen readers get the same text through `AutomationProperties.HelpText`.
 
-## WPF
+## Native
 
-`ToolTip` style `Isotone.ToolTip` (implicit, `HasDropShadow` false, template draws the shadow) and `Isotone.RichToolTip` content: a `StackPanel` with `Title`, `Shortcut` and `Description` bound from a `ToolTipInfo` record on the command. `ToolTipService.InitialShowDelay="400"`, `BetweenShowDelay="0"`, `ShowOnDisabled="True"`.
+A tooltip element in its own popup window, drawing its shadow itself (no system drop shadow), and the rich tooltip content: a title, a shortcut, and a description read from the command's registration. It opens after 400 ms, with no delay between adjacent controls, and also over disabled controls. UI Automation: ToolTip.

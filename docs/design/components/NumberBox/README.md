@@ -27,6 +27,6 @@ Rest, hover (`border-control-hover`), scrubbing, focus (`focus-ring` border plus
 
 Up and Down step by 1 (Shift 10, Alt 0.1); Page Up and Down by 10; Enter commits; Escape reverts. Math is accepted ("1920/2"), and units convert ("2in" in a px field).
 
-## WPF
+## Native
 
-`Isotone.UI.Controls.NumberBox` (`Control`, from Bezier CompactNumberBox) with dependency properties `Value`, `Minimum`, `Maximum`, `SmallChange`, `LargeChange`, `Decimals`, `Label`, `Unit`, `ShowSpinners`, `ShowGrip`. Template parts: `PART_ScrubZone` (`Cursor="SizeWE"`, handles `PreviewMouseLeftButtonDown` and `CaptureMouse`), `PART_TextBox`, `PART_Up` / `PART_Down` (`RepeatButton`). Visual states `CommonStates`, `FocusStates`, `ValidationStates` (Valid, OutOfRange), `ScrubStates` (Idle, Scrubbing).
+One number box element in `isotone::ui` with the properties value, minimum, maximum, small change, large change, decimals, label, unit, show spinners, and show grip. Its parts are the scrub zone (a horizontal-resize cursor, pointer capture while scrubbing), the text part (the shared text editing model), and the up and down repeat buttons. Its states combine the common and focus states with validation (valid, out of range) and scrub (idle, scrubbing). UI Automation: Spinner with the RangeValue pattern.

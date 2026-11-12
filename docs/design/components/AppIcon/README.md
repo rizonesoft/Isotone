@@ -12,7 +12,7 @@ The full guide (construction, colors, pixel-grid rules, export) is the App icons
 | 24 and 30 px | `<app>-24.svg` |
 | 32 to 39 px | `<app>-32.svg` |
 | 40 px and up | `<app>.svg` |
-| Splash (the Suite card) | the master at 136 px, on the card built in XAML (see Splash); `<app>-splash.svg` is the card's reference design and a marketing image, not an icon |
+| Splash (the Suite card) | the master at 136 px, on the card the app draws (see Splash); `<app>-splash.svg` is the card's reference design and a marketing image, not an icon |
 
 ## Rules
 
@@ -22,7 +22,7 @@ The full guide (construction, colors, pixel-grid rules, export) is the App icons
 - The icon keeps its own colors in every brightness theme and in high contrast; it is an image, not chrome.
 - A catalog icon (`pen-tool`, `brush`, `aperture`) never stands in for an app icon.
 
-## WPF
+## Native
 
-- `Window.Icon` and the title-bar mark take the app's `.ico` generated from these SVGs; the mark picks the frame the ladder names for the current DPI (16 at 100 percent, 20 at 125 percent, 24 at 150 percent), never a scaled master.
-- `AutomationProperties.Name` on the title-bar mark is the app name ("Gesso").
+- The window icon and the title-bar mark take the app's `.ico` generated from these SVGs (set on the window class and with `WM_SETICON`); the mark picks the frame the ladder names for the current DPI (16 at 100 percent, 20 at 125 percent, 24 at 150 percent), never a scaled master, and re-picks it on `WM_DPICHANGED`.
+- The title-bar mark's UI Automation Name is the app name ("Gesso").

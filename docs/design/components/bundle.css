@@ -1,6 +1,6 @@
 /* Isotone Interface: shared component styles for the previews. Every color, size and radius is a token.
    Static state classes (.is-hover, .is-pressed, .is-focus, .is-disabled, .is-checked, .is-mixed, .is-selected, .is-open)
-   mirror the WPF visual states so a preview can show them side by side; the live pseudo-classes work too. */
+   mirror the controls' element states so a preview can show them side by side; the live pseudo-classes work too. */
 
 :root {
   --ph-ctl: var(--control-h-compact);

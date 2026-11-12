@@ -20,6 +20,6 @@ Rest; hover (thumb scales 1.2 in `duration-fast`); pressed or dragging (thumb `s
 
 Left and Down decrease, Right and Up increase by SmallChange (1); Page keys by LargeChange (10); Home and End jump to the ends. Shift+arrow uses LargeChange. The number box and slider stay in sync; dragging is one undo step.
 
-## WPF
+## Native
 
-`Slider` style `Isotone.Slider`: `Track PART_Track` with `RepeatButton`s (`DecreaseRepeatButton` draws the fill, `IncreaseRepeatButton` the track) and a `Thumb` template (`Ellipse`). `IsMoveToPointEnabled="True"` (click jumps, Photoshop behavior). Gradient slider: `Isotone.GradientSlider` with a `Brush Ramp` property and a `Polygon` thumb. Pair with a NumberBox bound two-way to the same `Value`.
+One slider element: a track whose filled part runs to the thumb, and a round thumb. A click on the track jumps the thumb to the pointer (Photoshop behavior). The gradient slider variant takes a ramp and a pointed thumb. Pair it with a NumberBox bound to the same value. UI Automation: Slider with RangeValue.

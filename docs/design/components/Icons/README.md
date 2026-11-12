@@ -1,6 +1,6 @@
 # Icons
 
-The suite draws every icon from one family: Lucide geometry (ISC license, compatible with GPL-3.0), stored as path data in the shared icon catalog. The survey found FluentIcons.Wpf mixed with Lucide-style paths; FluentIcons.Wpf leaves the suite.
+The suite draws every icon from one family: Lucide geometry (ISC license, compatible with GPL-3.0), stored as path data in the shared icon catalog. The survey of the prototypes found a second icon family mixed with Lucide-style paths; it left the suite with them, and no second family is used.
 
 ## Rules
 
@@ -16,6 +16,6 @@ The suite draws every icon from one family: Lucide geometry (ISC license, compat
 
 The preview renders every icon the system currently documents. Names are the catalog keys: `pointer` (Move tool), `marquee`, `lasso`, `wand`, `crop`, `pipette`, `brush`, `pencil`, `eraser`, `stamp`, `bucket`, `pen-tool`, `type`, `square`, `circle`, `hand`, `zoom-in`, `zoom-out`, plus panel, file, edit, status and window glyphs.
 
-## WPF
+## Native
 
-`Isotone.UI.Icons`: an `IconCatalog` singleton loaded from `icons.json` (name to path data, source-generated JSON context), an `Isotone.Icon` control (`Path` with `Stretch="Uniform"` inside a 24-unit `Viewbox`, `StrokeThickness` scaled so 1.5 at 24 stays 1.5 device-independent pixels at 16 and 20, `StrokeStartLineCap`/`EndLineCap`/`LineJoin` round), and a markup extension `{ph:Icon brush}`. `Foreground` drives the stroke through `TemplateBinding`.
+`isotone::ui` holds one icon catalog, loaded once from `icons.json` (name to path data), and an icon element that realizes the path as Direct2D geometry in the 24-unit box, scaled uniformly, with the stroke width scaled so 1.5 at 24 stays 1.5 device-independent pixels at 16 and 20, and round caps and joins. The stroke color is the element's foreground token.

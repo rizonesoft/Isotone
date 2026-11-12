@@ -25,6 +25,6 @@ The context toolbar under the title bar that shows the active tool's settings (P
 
 The bar is a toolbar: F6 cycles focus between rail, options bar, canvas and dock; inside, Tab moves between controls; Enter commits a field and returns focus to the canvas; Escape reverts it.
 
-## WPF
+## Native
 
-`ToolBar` is not used (its overflow chrome fights the design); the bar is a `DockPanel` with an `ItemsControl` whose `DataTemplateSelector` picks the tool's options view. Style key `Isotone.OptionsBar`; separators `Isotone.ToolbarSeparator`. The hint bar is `Isotone.HintBar` bound to the tool's `Hint` string.
+The bar is an `isotone::ui` container that hosts the active tool's options view, chosen by the tool; it has no overflow chrome. Separators are the toolbar separator element. The hint bar shows the tool's hint string. UI Automation: ToolBar.

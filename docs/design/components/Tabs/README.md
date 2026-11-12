@@ -14,6 +14,6 @@ A row with 16px gaps over a 1px `divider` line; labels `body`, 6px top and 8px b
 
 The tab row is one tab stop; Left and Right move and select (automatic activation); Ctrl+Tab and Ctrl+Shift+Tab switch from inside the content; Home and End jump.
 
-## WPF
+## Native
 
-`TabControl` styles `Isotone.PanelTabControl` and `Isotone.DialogTabControl`; `TabItem` templates with `Border PART_Chrome` and, for dialog tabs, `Rectangle PART_Underline` visible on `IsSelected`. `TabStripPlacement="Top"`, `KeyboardNavigation.TabNavigation="Once"` on the header panel.
+Tab elements for panels and for dialogs; a tab item draws its chrome and, for dialog tabs, the underline when selected. The strip is on top, and Tab enters and leaves the strip once while the arrow keys move within it. UI Automation: Tab with TabItem and SelectionItem.

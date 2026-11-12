@@ -5,7 +5,7 @@ Every user-facing surface of Stilus, Gesso, and Albumen answers to this standard
 ## The source of truth
 
 - `docs/design/tokens.json` is the one source for every color, size, spacing, radius, shadow, duration, and type style. A value that is not a token is not part of the system.
-- The WPF resource dictionaries in `src/Isotone.UI/Themes/` are generated from `tokens.json` by a committed generator; never hand-edit generated XAML. Change the token, regenerate, and commit both together; the drift check (`D01 T01 §3`) fails when they disagree.
+- The token tables of `isotone::ui` (under `native/ui/tokens/`, created with the toolkit by `D01 T01 §3`) are generated from `tokens.json` by a committed generator; never hand-edit a generated table. Change the token, regenerate, and commit both together; the drift check (`D01 T01 §3`) fails when they disagree.
 - `docs/design/` is the only home of the design system; its public view is https://rizonesoft.github.io/Isotone/design/, generated from it. Edit the sources and regenerate the page as [`docs/design/EDITING.md`](../docs/design/EDITING.md) describes.
 - A surface never hardcodes a color, size, or spacing value that a token names.
 
@@ -62,14 +62,14 @@ Every user-facing surface of Stilus, Gesso, and Albumen answers to this standard
 
 ## Icons
 
-- One UI icon catalog: Lucide geometry (ISC), 24 viewBox, stroke 1.5, round caps and joins, strokes only, at `icon-sm` 16 px (menus, panels, options bar, rows, buttons) and `icon-md` 20 px (tool rail). FluentIcons.Wpf and any second family leave the suite, and emoji are never icons. The spec is [`docs/design/components/Icons/README.md`](../docs/design/components/Icons/README.md).
+- One UI icon catalog: Lucide geometry (ISC), 24 viewBox, stroke 1.5, round caps and joins, strokes only, at `icon-sm` 16 px (menus, panels, options bar, rows, buttons) and `icon-md` 20 px (tool rail). No second icon family is used, and emoji are never icons. The spec is [`docs/design/components/Icons/README.md`](../docs/design/components/Icons/README.md).
 - Icon color is `icon` at rest, `text-primary` on hover or when active, `state-on` on a `state` fill, and `text-disabled` when disabled; a catalog icon never takes the app accent.
 - App icons are separate from the catalog: the Direction C suite tile files in `resources/icons/<app>/`, used by the ladder and rules in [`docs/design/app-icons.md`](../docs/design/app-icons.md). A catalog icon never stands in for an app icon, and an app icon is never recolored.
 
 ## Window anatomy
 
 - Every document window has one anatomy, specified in [`docs/design/shell-layout.md`](../docs/design/shell-layout.md): a custom title bar with the app mark, the menu bar inside it, a drag area, and the three caption buttons; the options bar; an optional hint bar; the tool rail on the left; document tabs; the canvas with rulers; docked panels on the right; and the status bar. A feature adds to this anatomy; it never invents a second one.
-- The title bar is drawn through `WindowChrome`: the OS frame is removed, never doubled, and the caption buttons are 46 x 32 catalog glyphs with a red close hover, never tinted by the Highlight color or the accent. Panels dock and float through AvalonDock with a theme built from the same tokens.
+- The title bar is drawn by `isotone::ui` itself (the DWM frame extended into the client area, with non-client hit testing that keeps Windows 11 snap layouts on the maximize button): the OS frame is removed, never doubled, and the caption buttons are 46 x 32 catalog glyphs with a red close hover, never tinted by the Highlight color or the accent. Panels dock and float through the suite's own docking system, drawn from the same tokens.
 - Each component in the anatomy has its spec under [`docs/design/components/`](../docs/design/components/): `WindowChrome`, `Menu`, `ContextMenu`, `OptionsBar`, `ToolRail`, `DocumentTabs`, `Panel`, `StatusBar`, `Dialog`, `Tooltip`, `Toast`, `NumberBox`, and the rest. A section that builds one of these cites its README as the spec.
 
 ## Ownership and legal text
@@ -81,15 +81,17 @@ Every user-facing surface of Stilus, Gesso, and Albumen answers to this standard
 ## Accessibility
 
 - Contrast (WCAG 2.x) in all four themes: text at least 4.5:1 against every ground its usage names; control borders, focus rings, icons, and state marks at least 3:1. `text-disabled` is exempt. The checked pairs are in [`docs/design/README.md`](../docs/design/README.md); a new token or ground adds its pairs to that check.
-- Windows high contrast (`SystemParameters.HighContrast`) loads a dictionary that maps tokens to `SystemColors` brushes instead of the four themes; accent and status fills are dropped while status keeps its icon and word, and the canvas keeps its own colors.
+- Windows high contrast (`SPI_GETHIGHCONTRAST`, re-read on `WM_SETTINGCHANGE`) selects the token table that maps tokens to the system colors (`GetSysColor`) instead of the four themes; accent and status fills are dropped while status keeps its icon and word, and the canvas keeps its own colors.
 - Keyboard: F6 cycles the regions (tool rail, options bar, document, dock); Tab moves inside a region; every dialog works with the keyboard alone, with Enter and Escape doing what their buttons say; menus have access keys; tool shortcuts never fire while a text field has focus.
-- Every icon-only control has a tooltip naming the command and its shortcut, and an `AutomationProperties.Name`.
-- Surfaces render correctly at 100, 150, and 200 percent scaling: sizes are device-independent, hairlines use `SnapsToDevicePixels` and `UseLayoutRounding`, and icons are vector paths.
+- Every icon-only control has a tooltip naming the command and its shortcut, and a UI Automation Name.
+- Surfaces render correctly at 100, 150, and 200 percent scaling: sizes are device-independent, layout is rounded to physical pixels at every scale so hairlines stay one device pixel, and icons are vector paths.
 
-## WPF mapping
+## Native toolkit mapping
 
-- `Isotone.UI` carries one `ResourceDictionary` per brightness theme (`Themes/Darkest.xaml`, `Dark.xaml`, `MediumGray.xaml`, `Light.xaml`), a high-contrast dictionary, `Highlight.Blue.xaml` and `Highlight.Orange.xaml` plus a runtime Windows-accent dictionary, and `Density.Compact.xaml` and `Density.Comfortable.xaml`, all generated from `tokens.json`. These file names are the operator's (2026-09-27); the WPF section of `docs/design/README.md` and the Highlight card carry them too.
-- Resource keys are token names: `<SolidColorBrush x:Key="surface-panel" .../>`, sizes as `sys:Double`, radii as `CornerRadius`, durations as `Duration`, `ease-out` as a `CubicEase` with `EasingMode="EaseOut"`.
-- Colors are always consumed through `DynamicResource`, so a theme, Highlight, or density switch restyles open windows without a restart; `StaticResource` is fine for fixed sizes.
-- The theme service swaps the brightness dictionary; the highlight service swaps the Highlight dictionary merged after it; the density service swaps the density dictionary that points the neutral keys at the `-compact` or `-comfortable` values. Each app sets its accent brushes once at startup.
-- Implicit styles cover every stock control a surface uses, each with rest, hover, pressed, disabled, and keyboard-focus states. No WPF-UI or other control framework.
+How `isotone::ui` carries the design (the spec's "Isotone UI", Element tree and theming). The values and tolerances are the design's and are unchanged; only the mechanism is named here.
+
+- `isotone::ui` holds one generated token table per brightness theme (Darkest, Dark, Medium Gray, Light), a high-contrast table, the Highlight tables (Blue, Isotone orange, and one computed at run time from the Windows accent), and the Compact and Comfortable density tables, all generated from `tokens.json`. The theme, Highlight, and density names are the operator's (2026-09-27); `docs/design/README.md` and the Highlight card carry them too.
+- A style names a token key and never a value: colors, sizes, radii, spacing, durations, the `ease-out` curve, and type styles are all looked up by the names `tokens.json` gives them (`surface-panel`, `control-h`, `radius-sm`, `duration-fast`).
+- Tokens are resolved at run time, so a theme, Highlight, or density switch, or Windows changing high contrast, reduced motion, or DPI, invalidates the styles that read the changed keys and redraws open windows without a restart.
+- The theme service selects the brightness table; the Highlight service layers the Highlight table over it; the density service points the neutral keys at the `-compact` or `-comfortable` values. Each app sets its accent keys once at startup.
+- Every control a surface uses is one of the suite's own, drawn to its spec under `docs/design/components/` with rest, hover, pressed, disabled, and keyboard-focus states. No third-party control framework.

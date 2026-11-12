@@ -2,14 +2,14 @@
 
 Albumen is the suite's digital darkroom and photo library. This file adds to [`shared.md`](shared.md) and never contradicts it. Albumen has no code yet; its plan is `todo/04-albumen/`, and this file is the contract that plan builds to.
 
-## Projects
+## Code
 
-| Project | Holds |
-| ------- | ----- |
-| `Isotone.Albumen.Core` | The catalog, import, metadata, the RAW decoder adapter, the develop pipeline, export |
-| `Isotone.Albumen.Desktop` | The WPF app; `AssemblyName` Albumen (`Albumen.exe`) |
-| `Isotone.Albumen.Viewer` | The fast default image viewer; `AssemblyName` AlbumenViewer (`AlbumenViewer.exe`), a second executable with its own minimal startup path and a recorded startup budget (`D04 T04 §1`), shipped only inside the Albumen installer and portable ZIP and versioned with Albumen |
-| `tests/Isotone.Albumen.Tests` | xUnit tests, including develop-pipeline goldens |
+| Folder | Holds |
+| ------ | ----- |
+| `native/albumen/` core library (`isotone::albumen`) | The catalog, import, metadata, the RAW decoder adapter, the develop pipeline, export. No window header: it is tested without a window |
+| `native/albumen/` executable (`albumen.exe`) | The app shell: its composition root, its surfaces built from `isotone::ui` |
+| `native/albumen/` viewer executable (`albumen-viewer.exe`) | The fast default image viewer: a second executable with its own minimal startup path and a recorded startup budget (`D04 T04 §1`), shipped only inside the Albumen installer and portable ZIP and versioned with Albumen |
+| `native/tests/albumen/` | The GoogleTest suites, fixtures, and fuzz corpora, including develop-pipeline goldens |
 
 Settings, logs, the catalog, and the preview cache live under `%LOCALAPPDATA%\Rizonesoft\Albumen\` by default; the catalog location is a setting.
 
@@ -27,7 +27,7 @@ Settings, logs, the catalog, and the preview cache live under `%LOCALAPPDATA%\Ri
 
 ## The catalog
 
-- SQLite through `Microsoft.Data.Sqlite`, one file, versioned schema with forward-only migrations, each migration tested on a copy of the previous version's catalog.
+- SQLite, linked statically through the dependency register, one file, versioned schema with forward-only migrations, each migration tested on a copy of the previous version's catalog.
 - The catalog is a user document: writes are transactional, a crash never leaves it unopenable, and a backup is taken before a migration.
 - Paths are stored relative to a root folder where possible so a moved library can be reconnected.
 - A photo belongs to the catalog in one of two ways: `library` for imported photos and `browsed` for files Albumen has seen while browsing a folder without importing it (`D04 T05 §1`); browsed records are a cache keyed by path, size, and last-write time, and Add to Library turns them into library records in place.
@@ -44,4 +44,4 @@ The decoder library is a recorded decision (`docs/dev/decisions.md`) with its li
 
 ## Hand-offs
 
-"Edit in Gesso" writes a rendered 16-bit TIFF beside the catalog's working folder, starts Gesso when it is installed, and imports the edited result as a new version stacked with the original. When Gesso is not installed, the command is disabled with a tooltip saying so. Albumen never loads Gesso's assemblies.
+"Edit in Gesso" writes a rendered 16-bit TIFF beside the catalog's working folder, starts Gesso when it is installed, and imports the edited result as a new version stacked with the original. When Gesso is not installed, the command is disabled with a tooltip saying so. Albumen never links or loads Gesso's code.

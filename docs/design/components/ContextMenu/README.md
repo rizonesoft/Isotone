@@ -20,6 +20,6 @@ As Menu: highlighted `state` with `state-on` text, disabled `text-disabled`, che
 
 Shift+F10 or the Menu key opens it at the focused element (top-left of the focused row), with the first enabled item highlighted. Arrows, Enter and Escape as in Menu.
 
-## WPF
+## Native
 
-`ContextMenu` styled in `Menu.xaml`, sharing the `MenuItem` style. `HasDropShadow` is off; the template draws `shadow-popup` itself. Set `Placement="MousePoint"` for pointer opening; `ContextMenuService.Placement` handles keyboard opening.
+The menu element of the Menu spec, opened as a popup: it shares the menu item drawing, and draws `shadow-popup` itself (no system drop shadow). It opens at the pointer for pointer opening and at the focused element for keyboard opening (Shift+F10 and the Menu key). UI Automation: Menu with MenuItem children.

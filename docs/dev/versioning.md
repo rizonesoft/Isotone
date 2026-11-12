@@ -1,63 +1,61 @@
 # Versioning and releases
 
-The suite's apps version and release independently from one repository. Versions come from git tags through [MinVer](https://github.com/adamralph/minver). Nothing in the source tree holds a version number.
+The suite's apps version and release independently from one repository. The policy is [`standards/release.md`](../../standards/release.md); the decision is "SemVer from tags, automated" (operator, 2026-10-23, [decisions.md](decisions.md), "The unattended campaign"). Nothing in the source tree holds a version number.
+
+**State on 2026-11-12:** the release workflow, its upload and feed steps, and the installer scripts exist; computing the version from the tag in CMake, the per-architecture packaging, and the changelog generation are planned in `todo/05-release/` (re-planned onto the native tree by `D00 T07 §5`). Until then the build reports the `ISOTONE_VERSION` cache variable (default `0.0.0`) and the real commit, `scripts/package.ps1` runs the advisory release gate and then stops, and `release.yml` refuses a release after the same gate. This page states the decided design and marks what is not built yet.
 
 ## Tag prefixes
 
-| Tag | Versions | Built by `release.yml` as (uploaded to `download.rizonesoft.com`) |
+| Tag | Versions | Released as (uploaded to `download.rizonesoft.com`) |
 | --- | -------- | ---------------------------- |
-| `stilus-v1.2.3` | Stilus projects (`src/Stilus/**`) | `Stilus-1.2.3-win-x64-Setup.exe`, `Stilus-1.2.3-win-x64-Portable.zip` |
-| `gesso-v1.2.3` | Gesso projects (`src/Gesso/**`) | `Gesso-1.2.3-win-x64-Setup.exe`, `Gesso-1.2.3-win-x64-Portable.zip` |
-| `albumen-v1.2.3` | Albumen (planned) | Refused until Albumen ships (`scripts/apps.psd1`, `installer/Albumen.iss`) |
-| `isotone-v1.2.3` | Suite bundle | `Isotone-1.2.3-win-x64-Setup.exe`, `Isotone-1.2.3-win-x64-Portable.zip` |
+| `stilus-v1.2.3` | Stilus | `Stilus-1.2.3-win-x64-Setup.exe`, `Stilus-1.2.3-win-x64-Portable.zip`, and the same pair for `win-arm64` |
+| `gesso-v1.2.3` | Gesso | The same four files for Gesso |
+| `albumen-v1.2.3` | Albumen | The same four files for Albumen |
+| `isotone-v1.2.3` | Suite bundle | `Isotone-1.2.3-win-<arch>-Setup.exe`, `Isotone-1.2.3-win-<arch>-Portable.zip` |
 
-Each app's overlay (`src/<App>/Directory.Build.props`) sets `MinVerTagPrefix`. MinVer only considers tags with that prefix, so a `stilus-v` tag never moves Gesso's version.
+Only tags with an app's own prefix move that app's version, so a `stilus-v` tag never moves Gesso's. The planned apps take `tinctura-v`, `capio-v`, and `folium-v` when their plans reach a release.
 
 ## How a version is computed
 
+SemVer 2.0, computed by CMake from git at configure time (planned), with the same rules the retired tag-reading tool applied:
+
 - **On a tagged commit:** the tag's version, for example `stilus-v1.2.3` gives `1.2.3`.
-- **After a tag:** the next patch as a prerelease with the commit height, for example `1.2.4-alpha.0.5` five commits after `stilus-v1.2.3`.
+- **After a tag:** the next version as a prerelease with the commit height, where the next version is decided by the Conventional Commits since the tag that carry the app's scope: a breaking change (`!`) raises the major version, a `feat` the minor, a `fix` or `perf` the patch.
 - **With no tag for that prefix:** `0.0.0-alpha.0.N`, where N is the commit height.
-- **Build metadata:** the commit SHA, for example `0.0.0-alpha.0.2+5a8bdd4...`. It appears in `ProductVersion` / `InformationalVersion`.
+- **Build metadata:** the commit, for example `0.0.0-alpha.0.2+5a8bdd4c1f9e`.
 
-MinVer settings (root `Directory.Build.props`): `MinVerDefaultPreReleaseIdentifiers=alpha.0`, `MinVerAutoIncrement=patch`.
+What a binary carries:
 
-Assembly attributes:
+| Where | Value |
+| ----- | ----- |
+| `isotone::core::version()` | The full SemVer (today the `ISOTONE_VERSION` cache variable, until the tag computation lands) |
+| `isotone::core::build_id()` | The commit's first 12 hex digits, plus `-dirty` when tracked files differed from it; rewritten on every build by `native/cmake/WriteBuildId.cmake`, and read from `BUILD_ID.txt` in a `git archive` source tree |
+| The version resource: product version | The full SemVer plus the commit |
+| The version resource: file version | `Major.Minor.Patch.Build`, where Build is the CI run number and `0` locally. Win32 limits each part to 16 bits, so Build is taken modulo 65536 |
 
-| Attribute | Value |
-| --------- | ----- |
-| `InformationalVersion` / `ProductVersion` | Full SemVer plus the commit SHA |
-| `AssemblyVersion` | `Major.0.0.0` (MinVer default: a binding-stable major) |
-| `FileVersion` | `Major.Minor.Patch.Build`, where Build is `GITHUB_RUN_NUMBER` on CI and `0` locally. Win32 limits each part to 16 bits, so Build is taken modulo 65536. Set in `Directory.Build.targets`. |
+## Channels
 
-To check what a project would get:
-
-```powershell
-dotnet msbuild src/Stilus/Bezier.Desktop/Bezier.Desktop.csproj -t:MinVer -getProperty:MinVerVersion
-```
+A version with a hyphen is a prerelease in one of three channels: `alpha`, `beta`, and `rc` (`0.2.0-alpha.1`, `0.2.0-beta.3`, `0.2.0-rc.1`). Each channel has its own update feed, so a user on the stable feed is never offered a prerelease.
 
 ## Shared libraries
 
-Shared code (a future `src/Isotone.Core`, or anything else without an app overlay) defaults to the `isotone-v` prefix. When an app is published, a shared library takes the version of that app:
+`isotone::core` and `isotone::ui` are static libraries and have no version of their own: each app's executable carries the copy it was built with, at that app's version. A suite bundle records which app versions it carries and does not re-version them.
 
-- `scripts/publish.ps1` passes `-p:MinVerTagPrefix=<app>-v` on the command line.
-- A command-line property is a **global property**, which overrides the value set in any project file.
-- Every project in the app's closure, shared libraries included, is therefore versioned from the app's tags.
-- `-Version x.y.z` (or `package.ps1 -Version`) passes `MinVerVersionOverride` in the same way.
+## Changelogs
 
-So `Isotone.Core.dll` inside the Stilus 1.2.3 installer reports 1.2.3, and inside Gesso 0.4.0 it reports 0.4.0. In a plain `dotnet build Isotone.slnx`, shared libraries carry the `isotone-v` version.
-
-The suite bundle (`package.ps1 -Suite`) passes the `isotone-v` version to every app's publish. All binaries in a suite installer therefore carry the suite version.
+Each app's section of `CHANGELOG.md` is generated from the Conventional Commits carrying its scope (`feat(stilus):`, `fix(gesso):`, `perf(albumen):`), headed by the tag it ships as. The release workflow uses that section as the top of the release body; without one, the body says so and links the commits of the tag.
 
 ## Suite and per-app releases
 
-Per-app tags (`stilus-v*`, `gesso-v*`) release one app: `release.yml` runs `package.ps1 -App <App>` and publishes only that app's installer, portable ZIP, and `SHA256SUMS` (to `download.rizonesoft.com`, never attached to the GitHub release). It never builds or needs the suite installer. An `isotone-v*` tag releases the Isotone Graphics Suite: `package.ps1 -Suite` builds `Isotone-<version>-win-x64-Setup.exe` (`installer/Suite.iss`, one component per shipping app) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
+Per-app tags release one app: its installers, portable ZIPs, and `SHA256SUMS`, uploaded to `download.rizonesoft.com` and never attached to the GitHub release. They never build or need the suite installer. An `isotone-v*` tag releases the Isotone Graphics Suite: one installer with one component per shipping app (`installer/Suite.iss`) and the combined portable ZIP. Installers are compiled with Inno Setup 7 as 64-bit Setup programs.
 
-The toolchain is not a version input: moving the SDK pin (today the .NET 11 release candidate, GA through `D00 T02 §8`) changes no app's version. Only tags do.
+Releases never block development: each app release is a release-candidate section the campaign completes (built, tested, packaged, ready to sign, notes written) and a publish section that waits on the operator's rows in `todo/99-manual/` (the signing certificate, the download storage and its secrets).
+
+The toolchain is not a version input: moving the toolchain pin (`native/toolchain.json`) changes no app's version. Only tags and commits do.
 
 ## Cutting a release
 
-1. Add a CHANGELOG section whose heading names the tag, for example `## [stilus-v0.2.0] - 2026-10-01`. The release workflow uses that section as the top of the release body. Without one, the body says so and links the commits of the tag.
+1. The release-candidate section has passed: every gate, the advisory release gate, the changelog section headed by the tag.
 2. Tag the commit on `main` and push the tag:
 
    ```powershell
@@ -65,18 +63,16 @@ The toolchain is not a version input: moving the SDK pin (today the .NET 11 rele
    git push origin stilus-v0.2.0
    ```
 
-3. `.github/workflows/release.yml` then:
+3. `.github/workflows/release.yml` then (the steps after the gate are the planned native pipeline):
    - resolves the app from the prefix
+   - runs the native advisory release gate (`python scripts/check-native-advisories.py --release-gate`)
    - refuses to go on when the distribution storage secrets are missing (a tag release fails; see below)
-   - runs the tests
-   - runs `scripts/package.ps1`
+   - builds the distribution presets (`x64-dist`, `arm64-dist`), runs the tests, and packages
    - writes `SHA256SUMS`
    - writes the release body and the update feed with `scripts/release-manifest.ps1`
-   - uploads the installer, the ZIP, and `SHA256SUMS` to `<base>/<slug>/<version>/` with rclone and downloads each file back from the public URL to check its size and hash
+   - uploads the files to `<base>/<slug>/<version>/` with rclone and downloads each file back from the public URL to check its size and hash
    - creates the GitHub release with no attached files: the body is the CHANGELOG section, Download links to the uploaded files, the SHA-256 table, and a link to the tag's source
-   - writes the update feed to `<base>/update/<slug>.json` (or `<slug>-prerelease.json`) last, so the feed never names a release whose files or notes are missing
-
-   A version with a hyphen (`0.2.0-beta.1`) is published as a prerelease.
+   - writes the update feed last, so the feed never names a release whose files or notes are missing
 
 ## Where the binaries live
 
@@ -86,7 +82,7 @@ Operator decision 2026-09-27: binaries are distributed only from rizonesoft.com.
 | ---- | ----- |
 | Release files | `https://download.rizonesoft.com/<slug>/<version>/<file>`, slug `stilus`, `gesso`, `albumen`, or `isotone` (the suite), for example `https://download.rizonesoft.com/stilus/0.1.0/Stilus-0.1.0-win-x64-Setup.exe` |
 | Checksums | `https://download.rizonesoft.com/<slug>/<version>/SHA256SUMS`, and the same table in the GitHub release body |
-| Update feed | `https://download.rizonesoft.com/update/<slug>.json` for the latest stable release, `update/<slug>-prerelease.json` for the latest prerelease |
+| Update feed | `https://download.rizonesoft.com/update/<slug>.json` for the latest stable release, and one feed per prerelease channel (file names fixed by the release pipeline's section in `todo/05-release/`; `scripts/release-manifest.ps1` writes one `update/<slug>-prerelease.json` today) |
 | Product page | one value, `ISOTONE_SITE_URL` (default `https://www.rizonesoft.com/`), with `?utm_source=github&utm_medium=<place>` on links from GitHub |
 | Draft dry runs | under `drafts/` (`drafts/<slug>/<version>/`, `drafts/update/`), never the live paths |
 
@@ -103,25 +99,16 @@ The workflow reads these repository settings (Settings, Secrets and variables, A
 | `ISOTONE_DL_BASE_URL` | variable | The public base URL (default `https://download.rizonesoft.com`) |
 | `ISOTONE_SITE_URL` | variable | The product page (default `https://www.rizonesoft.com/`), also the installer's publisher URL |
 
-A pushed tag with any secret missing fails at its second step, before anything is built, so no release is ever published without its downloads. The upload tool is rclone (MIT), fetched from its official release and checked against a pinned SHA-256 (`RCLONE_VERSION` and `RCLONE_SHA256` in the workflow); the secrets reach rclone only as environment variables, never on a command line or in a log.
+A pushed tag with any secret missing fails before anything is built, so no release is ever published without its downloads. The upload tool is rclone (MIT), fetched from its official release and checked against a pinned SHA-256; the secrets reach rclone only as environment variables, never on a command line or in a log.
 
 ## The draft dry run
 
-`release.yml` also runs from a manual dispatch with a `tag` input and `draft` (default true), the mode `D00 T02 §7` uses for `stilus-v0.1.0-alpha.1`:
+`release.yml` also runs from a manual dispatch with a `tag` input and `draft` (default true):
 
 ```powershell
 gh workflow run release.yml --ref main -f tag=stilus-v0.1.0-alpha.1 -f draft=true
 ```
 
-The tag is not pushed: the draft release targets the dispatched commit, and a draft creates no tag until it is published. With the storage configured, the files and the feed go under `drafts/`; without it, the run skips the upload with a notice in its summary, and the files are only in the run's `dist-<tag>` workflow artifact (`gh run download <run id> -n dist-<tag>`). Delete the draft after inspection (`gh release delete <tag> --yes --cleanup-tag`) and remove its `drafts/` folder from the bucket.
+The tag is not pushed: the draft release targets the dispatched commit, and a draft creates no tag until it is published. With the storage configured, the files and the feed go under `drafts/`; without it, the run skips the upload with a notice in its summary, and the files are only in the run's `dist-<tag>` workflow artifact. Delete the draft after inspection (`gh release delete <tag> --yes --cleanup-tag`) and remove its `drafts/` folder from the bucket. The native pipeline's first dry run is a section of `todo/05-release/`.
 
 Only annotated or lightweight tags that match `<prefix>-v<SemVer>` are accepted. Anything else fails the workflow at the first step.
-
-## Local packaging of a specific version
-
-```powershell
-pwsh scripts/package.ps1 -App Gesso -Version 0.2.0
-pwsh scripts/package.ps1 -Suite -Version 1.0.0
-```
-
-With no `-Version`, the version is whatever MinVer computes for the current commit.

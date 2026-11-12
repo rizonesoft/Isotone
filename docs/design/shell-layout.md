@@ -73,7 +73,7 @@ The previous Gesso layout (Layers on the left, Properties on the right) moves to
 ## Splash and Home
 
 - Home (no document open): the canvas region shows New and Open (New is the primary button), recent documents as a list with 96px thumbnails, and nothing else.
-- Splash: the Suite card (operator decision 2026-09-27), built in XAML so the version, status and progress are live; `<app>-splash.svg` is its reference design and a marketing image, never shown by the app. The full spec is the Splash component guide (`components/Splash/README.md`); the table below is its summary.
+- Splash: the Suite card (operator decision 2026-09-27), drawn by the app so the version, status and progress are live; `<app>-splash.svg` is its reference design and a marketing image, never shown by the app. The full spec is the Splash component guide (`components/Splash/README.md`); the table below is its summary.
 
 ### Splash spec
 

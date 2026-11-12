@@ -31,10 +31,11 @@ Drop-down menus from the menu bar inside the title bar. Highlighted items use th
 - Enter or Space runs the item; Escape closes one level; Alt closes all.
 - Shortcut text uses Windows naming: Ctrl, Shift, Alt, then the key (`Shift+Ctrl+Z` in Photoshop order is acceptable across the suite as long as one order is used everywhere; Isotone uses Shift+Ctrl+key).
 
-## WPF
+## Native
 
-- `Menu` and `MenuItem` restyled in `Isotone.UI/Themes/Controls/Menu.xaml`. The `MenuItem` template is a 4-column `Grid` with `SharedSizeGroup`s (`Icon`, `Label`, `Gesture`, `Arrow`) and parts `PART_Popup` and `PART_SubmenuPopup` (a `Popup` with `AllowsTransparency` so the shadow and radius render).
-- Triggers: `Role` (TopLevelHeader, TopLevelItem, SubmenuHeader, SubmenuItem), `IsHighlighted`, `IsChecked`, `IsEnabled`, `IsSubmenuOpen`.
-- `InputGestureText` feeds the shortcut column; commands carry their `KeyGesture` so the text never drifts.
-- Radio items: `IsCheckable` plus an attached `Isotone.MenuItem.Group`, drawing the dot instead of the check.
-- `Separator` keyed `MenuItem.SeparatorStyleKey`.
+- Menu bar and menu elements, populated from the command registry of `isotone::core`. A menu item lays out four columns shared by its menu (icon, label, shortcut, arrow); a menu and each submenu opens in its own top-level popup window so the shadow and radius draw outside the owner.
+- States: the item's role (top-level header, top-level item, submenu header, submenu item), highlighted, checked, enabled, and submenu open.
+- The shortcut column reads the command's own shortcut from the registry, so the text never drifts.
+- Radio items: checkable items sharing a group, drawing the dot instead of the check.
+- A separator is its own element.
+- UI Automation: MenuBar and Menu with MenuItem children (Invoke, Toggle, or ExpandCollapse by kind); access keys and F10 open the bar.

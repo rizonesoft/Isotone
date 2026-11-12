@@ -17,6 +17,6 @@ Minimum thumb length 24px. The bar overlays content; lists reserve 4px right pad
 
 Scroll bars are not tab stops; the scrolled control handles arrows, Page Up/Down, Home, End.
 
-## WPF
+## Native
 
-`ScrollBar` and `ScrollViewer` styles `Isotone.ScrollBar` / `Isotone.ScrollViewer` (implicit): the `ScrollViewer` template overlays `PART_VerticalScrollBar` and `PART_HorizontalScrollBar` in the same `Grid` cell as `ScrollContentPresenter`. The bar's template: `Track PART_Track` with a `Thumb` (`Border` with `CornerRadius`) and `RepeatButton` arrows collapsed until `IsMouseOver`. Read `UISettings.AutoHideScrollBars` for the fade.
+Scroll bar and scroll view elements: the scroll view overlays its vertical and horizontal bars on its content. A bar is a track with a thumb (rounded by its radius token) and arrow repeat buttons hidden until the pointer is over the bar. The fade follows the Windows "Always show scrollbars" setting. UI Automation: ScrollBar with RangeValue, and the Scroll pattern on the view.

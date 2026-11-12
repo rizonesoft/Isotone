@@ -28,6 +28,6 @@ Checked boxes follow Preferences > Interface > Highlight color: Blue (default), 
 
 Space toggles; indeterminate is reachable only when the checkbox represents a mixed selection (clicking it sets all to checked). The label is part of the hit target.
 
-## WPF
+## Native
 
-`CheckBox` style `Isotone.CheckBox` (implicit). Template: `Grid` with `Border PART_Box` (`CornerRadius` 2), `Path PART_Check` and `Rectangle PART_Indeterminate`, `ContentPresenter` with `Margin="8,0,0,0"`. `IsThreeState` only for mixed selections. Visual states `CheckStates` (Checked, Unchecked, Indeterminate) plus `CommonStates` and `FocusStates`; transitions `duration-fast`.
+One check box element: a box (`radius` 2), the check and indeterminate marks drawn as Direct2D geometry, and its label 8px to the right. The third state is used only for mixed selections. Its check states (checked, unchecked, indeterminate) combine with the common and focus states, and transitions use `duration-fast`. UI Automation: CheckBox with the Toggle pattern.

@@ -14,6 +14,6 @@ Off and on, each rest, hover (border `border-control-hover`, thumb `text-primary
 
 Space toggles. Arrow keys do not.
 
-## WPF
+## Native
 
-`ToggleButton` style `Isotone.ToggleSwitch` (no third-party control): `Border PART_Track`, `Ellipse PART_Thumb` with a `TranslateTransform` animated between 0 and 16. `AutomationProperties.Name` is the label; UIA exposes the Toggle pattern.
+One toggle switch element (no third-party control): a track and a round thumb animated between 0 and 16. Its UI Automation Name is its label, and it exposes the Toggle pattern.

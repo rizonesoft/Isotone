@@ -27,11 +27,11 @@ The document name is not repeated in the title bar: the document tabs carry it. 
 - Alt+Space opens the system menu (Restore, Move, Size, Minimize, Maximize, Close).
 - Caption buttons are not tab stops; they stay reachable through the system menu.
 
-## WPF
+## Native
 
-- `Window` with `WindowChrome` (`CaptionHeight` = 32, `ResizeBorderThickness` = 6, `GlassFrameThickness` = 0 on Windows 10, -1 to keep the Windows 11 rounded corners and snap shadow, `UseAeroCaptionButtons` = False).
-- Every interactive element in the bar sets `WindowChrome.IsHitTestVisibleInChrome="True"`.
-- Caption buttons are `Button`s styled `Isotone.CaptionButton` / `Isotone.CaptionCloseButton`; the maximize button returns `HTMAXBUTTON` from a `WM_NCHITTEST` hook so Windows 11 Snap Layouts open on hover.
-- `AutomationProperties.Name`: "Minimize", "Maximize" / "Restore", "Close".
-- Brushes: `{DynamicResource frame}`, `{DynamicResource caption-close-hover}` and so on: brush keys are token names.
-- Watch `IsActive` with a `DataTrigger` for the inactive state.
+- A Win32 window whose frame `isotone::ui` draws itself: the DWM frame is extended into the client area (`DwmExtendFrameIntoClientArea`) and `WM_NCCALCSIZE` removes the system caption, with a 32px caption area and a 6px resize border, keeping the Windows 11 rounded corners and snap shadow.
+- Non-client hit testing (`WM_NCHITTEST`) returns `HTCAPTION` for the drag area and `HTCLIENT` for every interactive element in the bar.
+- Caption buttons are caption button elements (the close one with its own style); the maximize button returns `HTMAXBUTTON` from `WM_NCHITTEST` so Windows 11 Snap Layouts open on hover.
+- UI Automation Names: "Minimize", "Maximize" / "Restore", "Close".
+- Colors: `frame`, `caption-close-hover`, and so on: the keys are token names.
+- The inactive state follows `WM_ACTIVATE`.

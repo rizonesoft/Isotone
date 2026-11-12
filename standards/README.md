@@ -5,13 +5,13 @@ The standards every change in the Isotone Graphics Suite answers to. [`AGENTS.md
 | File | Covers |
 | ---- | ------ |
 | [`cpp.md`](cpp.md) | The **C++ standard** for the native suite: the language, ownership and lifetimes, errors, threading, calling Windows, untrusted input, SIMD, formatting and suppressions, testing, and libraries |
-| [`shared.md`](shared.md) | Everything all apps share: the stack, C# style, MVVM, DI, logging, errors, documents, performance, commits, and a pointer to the design contract |
+| [`shared.md`](shared.md) | Everything all apps share: the stack, where code lives, C++ style, commands and state, logging, errors, documents, performance, commits, and a pointer to the design contract |
 | [`design-contract.md`](design-contract.md) | The **design contract**, binding: docs/design is the source and code implements it 1:1, what fidelity means (exact tokens, geometry within 1 DIP, every state and theme, approved goldens), deviations, the enforcement gates, and the definition of done for a UI section |
-| [`ui.md`](ui.md) | The **UI standard** every surface answers to: themes, the Highlight color and app accents, type, density, focus, icons, window anatomy, accessibility, and the WPF mapping, summarizing the design system in [`docs/design/`](../docs/design/README.md) |
+| [`ui.md`](ui.md) | The **UI standard** every surface answers to: themes, the Highlight color and app accents, type, density, focus, icons, window anatomy, accessibility, and the native toolkit mapping, summarizing the design system in [`docs/design/`](../docs/design/README.md) |
 | [`stilus.md`](stilus.md) | Stilus, the vector editor: the document model, the canvas, tools, SVG, icons |
-| [`gesso.md`](gesso.md) | Gesso, the raster editor: tiles, zero-allocation hot paths, GPU shaders, codecs |
+| [`gesso.md`](gesso.md) | Gesso, the raster editor: tiles, straight-alpha storage, zero-allocation hot paths, the GPU path, codecs |
 | [`albumen.md`](albumen.md) | Albumen, the darkroom: the original-file guard, the catalog, the develop pipeline |
-| [`testing.md`](testing.md) | Test projects, naming, fixtures, fidelity proofs, the quarantine |
+| [`testing.md`](testing.md) | Test targets, naming, fixtures, fidelity proofs, input safety and fuzzing, surfaces, benchmarks |
 | [`delegation.md`](delegation.md) | Routing work from the writer session to its pinned Sonnet subagents: what delegates, what the lead keeps, the brief, parallel ownership, accepting output, escalation, and the model and effort checks |
 | [`release.md`](release.md) | Versions, tags, changelogs, installers, the release checklist |
 

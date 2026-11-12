@@ -39,6 +39,6 @@ The footer has one button, Close, which is the default and the cancel button. St
 
 Focus starts on the first field (or the primary button for confirmations). Tab order follows reading order and wraps inside the dialog. Enter activates the default button unless focus is in a multi-line field; Escape cancels; Alt+underlined letter jumps to a labeled control.
 
-## WPF
+## Native
 
-`Window` subclass `Isotone.DialogWindow` with `WindowStyle="None"`, `AllowsTransparency="True"` (for the rounded corners and shadow), `Owner` set, `ShowInTaskbar="False"`, `WindowStartupLocation="CenterOwner"`; the owner draws the scrim through an adorner while the dialog is open. Buttons: `IsDefault` on the primary, `IsCancel` on Cancel. `FocusManager.FocusedElement` sets the first focus.
+A dialog is a top-level `isotone::ui` window owned by its parent window, without the system frame so its rounded corners and shadow are the spec's, not shown in the taskbar, and centered on its owner; the owner draws the scrim over its own content while the dialog is open. The primary button is the default (Enter) and Cancel is the cancel button (Escape); the first focus is the element the dialog names. UI Automation: Window with the Window pattern, modal.
