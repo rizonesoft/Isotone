@@ -85,7 +85,7 @@ Operator stop: pressing Esc interrupts without the hook firing. A stop or pause 
 
 A red CI read-back is not a stop either: the run repairs it through the loop the `review-todo-section` push block states, and the hook keeps blocking while it does.
 
-Google Antigravity (`agy`) is the writer runner (`AGENTS.md`, operator decision 2026-11-10). No other harness starts, adopts, or resumes a campaign.
+Google Antigravity (`agy`) and Claude Code (`claude`) are the two campaign runners (`AGENTS.md`, operator decisions 2026-11-10 and 2026-11-12). One session writes at a time: a campaign is started, adopted, or resumed only through `scripts/start-campaign.ps1 -Runner agy|claude` and the watchdog, under the one session slot, and the guard records which runner owns the run. No other harness starts, adopts, or resumes a campaign.
 
 Canonical prompt:
 

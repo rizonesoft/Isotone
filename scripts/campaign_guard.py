@@ -1900,6 +1900,9 @@ def _resumable(root: str, guard: dict) -> list[str] | None:
     if runner not in RUNNERS:
         return None
     record = _read_json(_launch_path(root))
+    if record.get("launch_token") and record.get("handover_from") == str(guard.get("session_id", "")) \
+            and isinstance(record.get("previous"), dict):
+        record = record["previous"]  # a handover that never opened: the guard's own runner still owns the run
     args = record.get("args")
     if record.get("runner") != runner or record.get("session_id") != str(guard.get("session_id", "")) \
             or not isinstance(args, list):
@@ -2063,6 +2066,7 @@ def session_note(root: str, stdin: str, world=None, env: dict | None = None) -> 
                         launch.pop("launch_token", None)
                         launch.pop("handover_from", None)
                         launch.pop("handover_runner", None)
+                        launch.pop("previous", None)
                         _write_json(_launch_path(root), launch)
                         return ""
             except (GuardError, OSError):
@@ -2151,6 +2155,9 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                 token = mint_generation()
                 extra_env = {"ISOTONE_CAMPAIGN_LAUNCH": token}
                 prompt = handover_prompt(guard, runner)
+                # The old runner's own launch record rides along until the new session opens, so a launch that fails
+                # leaves the old run resumable by the watchdog exactly as before.
+                previous_launch = _read_json(_launch_path(root))
                 # Claude Code takes its session id up front; the SessionStart note binds it to the launch, and only
                 # then hands the guard over, so a launch that fails leaves the old runner's guard as it was.
                 argv = ([*args, "-i", prompt] if runner == "agy"
@@ -2163,6 +2170,8 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                     "handover_runner": old_runner,
                     "args": args,
                     "at": _utc_now(),
+                    **({"previous": previous_launch} if previous_launch.get("session_id") == old_session
+                       and old_session else {}),
                 })
                 label = (f"Handing over the Isotone campaign from {old_runner} session "
                          f"{old_session or '<unknown>'} to {text['label']}.")
@@ -4012,6 +4021,17 @@ def _self_test() -> int:
               and "to claude" in str(to_claude.get("handover_reason"))
               and _read_json(_launch_path(root)).get("session_id") == new_csid
               and whoami(root, new_csid).startswith("OWNER"), repr((hargv[:3], to_claude)))
+        resumable_before = _resumable(root, to_claude)
+        world.run = failing_run
+        try:
+            start(root, world)
+            failed_back = False
+        except GuardError:
+            failed_back = True
+        world.run = good_run
+        check("a-failed-handover-keeps-the-old-run-resumable",
+              failed_back and resumable_before == cflags and _resumable(root, read_guard(root) or {}) == cflags
+              and (read_guard(root) or {}).get("session_id") == new_csid, repr(_read_json(_launch_path(root))))
         try:
             start(root, world, runner="muse")
             bad_runner = False
