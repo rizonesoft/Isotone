@@ -2,7 +2,7 @@
 schema_version: 1
 id: retire-csharp
 domain: 00-workspace
-status: draft
+status: done
 title: "TODO-06 -- Retire the C# Code and the .NET Toolchain"
 depends_on: []
 track: W6
@@ -52,7 +52,7 @@ track: W6
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | Retarget the gates that read the C# sources | D00 T05 §8, D00 T04 §1 |  [x]   |
 |   2   |   §2    | Retire the .NET release path, pins, Dependabot ecosystem, and automations | §1, D00 T04 §3 |  [x]   |
-|   3   |   §3    | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code | §2, D00 T05 §10 |  [ ]   |
+|   3   |   §3    | Tag csharp-final, remove the C# trees and the .NET build, and guard against managed code | §2, D00 T05 §10 |  [x]   |
 
 ---
 
@@ -123,9 +123,12 @@ With the gates retargeted (§1) and the automations retired (§2), the code and 
 
 **Test checkpoint:** Driven run with evidence: `git ls-remote --tags origin csharp-final` prints the tag; `git ls-tree -r --name-only csharp-final -- src/`, `git show csharp-final:src/Stilus/Bezier.Core/Bezier.Core.csproj`, and `git grep -n "CanvasHUDService" csharp-final -- src/` each exit 0 and print the expected C# reference lines; the Outcome's `git ls-files` command prints nothing; `pwsh scripts/check-all.ps1` exits 0 with every native stage PASS and no .NET stage (summary quoted); the CI run for this commit is green, `gh run download <run_id> -n design-reference` downloads the moved design-reference artifact from `native`, and `python scripts/ci_watch.py` reports no red workflow (run id, artifact check, and line quoted); `python scripts/native-deps-lint.py --self-test` passes rejection cases for every prohibited managed extension and exact filename plus native-file pass cases, and untracked probes across every prohibited extension and exact filename (including `src/Probe.cs`) make `native-deps-lint` fail with `managed-source` for each one (quoted, then removed). Static evidence: the Outcome's POSIX ERE stack `git grep` over the repository, outside the history records, `standards/`, `docs/dev/`, `docs/design/`, and `todo/`, exits 1 (not >1) and prints nothing (command, with its exclusions as pathspecs, exit code `1`, and empty output quoted). Cheaper substitute that fails: deleting `src/` without a tag, which loses the behavior reference the re-plan cites.
 
+> **Verified:** 2026-11-12 | §3 | 0ce4d6bcfe6d972a5bc07da3e20b029e52942622
+> **Review:** `docs/reviews/d00-t06-s3.json`
+
 ## Verification
 
-- [ ] `pwsh scripts/check-all.ps1` exits 0 with no .NET stage
-- [ ] `git ls-files "*.cs" "*.csproj" "*.xaml" "*.sln" "*.slnx" "*.props" "*.targets" "*.runsettings" global.json nuget.config` prints nothing, and `csharp-final` is on `origin`
-- [ ] `python scripts/ci_watch.py` reports no red workflow on `main`
-- [ ] `python scripts/todo-graph.py validate` clean
+- [x] `pwsh scripts/check-all.ps1` exits 0 with no .NET stage -- Done 2026-11-12: `58/58 PASS`, `0 .NET stages`, exit `0`.
+- [x] `git ls-files "*.cs" "*.csproj" "*.xaml" "*.sln" "*.slnx" "*.props" "*.targets" "*.runsettings" global.json nuget.config` prints nothing, and `csharp-final` is on `origin` -- Done 2026-11-12: empty output (`exit 0`), and `git ls-remote --tags origin csharp-final "csharp-final^{}"` resolves `986bdf0b1051069b711a95d1b42183bd9075208c` -> `67872822e42422e3d527766d8656d09bf6066efa`.
+- [x] `python scripts/ci_watch.py` reports no red workflow on `main` -- Done 2026-11-12: `ci_watch: 7 workflow(s) checked, 0 red` (`exit 0`).
+- [x] `python scripts/todo-graph.py validate` clean -- Done 2026-11-12: `85 todos, 846 sections -- 0 fatal, 0 warning(s), 54 adjacency advisory` (`exit 0`).

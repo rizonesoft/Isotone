@@ -1,0 +1,84 @@
+{
+  "ref": "D00 T06 \u00a73",
+  "title": "Tag csharp-final, Remove the C# Trees and the .NET Build, and Guard Against Managed Code",
+  "implementation_sha": "0ce4d6bcfe6d972a5bc07da3e20b029e52942622",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T06-s3.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "git ls-remote --tags origin csharp-final + csharp-final git ls-tree/show/grep + git ls-files empty + native-deps-lint 14-pattern managed-source probe + POSIX ERE stack grep exit 1 + post-removal build.yml design-reference download + ci_watch 0 red -> exit 0",
+    "pwsh scripts/check-all.ps1 -> exit 0 (58/58 PASS, 0 .NET stages)"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T06-s3.md",
+    "verdict": "reconciled",
+    "candidate": "0ce4d6bcfe6d972a5bc07da3e20b029e52942622",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T06-s3.md",
+    "candidate": "97e7c782102eb4e925270f12a20de965d4bfcf41",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "97e7c782102eb4e925270f12a20de965d4bfcf41",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
