@@ -342,3 +342,43 @@ OVERALL: needs-attention
 ## Response to round 10
 
 1. **P2 `scripts/lsp-mcp-server.py:1699` (`adversarial`):** Real and reproduced. Added `_decode_json_strict` (`scripts/lsp-mcp-server.py`) catching `(ValueError, RecursionError)` and enforcing an iterative `MAX_JSON_DEPTH = 128` cap plus strict RFC 8259 finite-float validation (`parse_constant` rejection, `math.isfinite`, and `allow_nan=False` on output) across both `_read_mcp_message` (line and `Content-Length` modes, returning `-32700` in the matching wire framing while keeping `serve_stdio` synchronized) and `_read_lsp_frame`, converted `_flatten_doc_symbols` to an explicit stack, and validated JSON-RPC 2.0 scalar `"id"`, `"jsonrpc" == "2.0"`, and string `"method"` in `handle_message`. Added a regression test in `lsp-mcp-server.py --self-test` (`38 cases, 0 failed`) verifying `b"[" * 100000 + b"0" + b"]" * 100000` on both newline and `Content-Length` transports, `1e500`, and non-scalar IDs return JSON-RPC errors and serve the following `ping` cleanly.
+
+## Round 11: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T02:25:33Z
+- Candidate: b9f2e8d6422a68d8121fef1860dee5a1e866b167
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 24
+- Digest: 4b804df0a7fe3bbd
+
+### adversarial: needs-attention
+
+1. **P1** `scripts/lsp-mcp-server.py:1084`: Source-file input bypasses the memory bounds. `_sync_document_locked` reads the entire file, decodes it, and serializes additional full-size copies through `_encode_lsp_frame` at line 347, which does not enforce `MAX_FRAME_BYTES`. Dependency refresh repeats unbounded reads at lines 982 and 993. A small MCP request can therefore exhaust memory using a large imported source file, despite bounded inbound framing and document counts.
+
+   Reproduce by requesting `lsp_hover` on a multi-gigabyte ASCII `.h` file inside the workspace. Allocation occurs before the bounded pipe write can protect the process. Read-only instrumentation confirmed `read(-1)` and outbound serialization ignoring the frame limit; actual memory exhaustion was not attempted. Enforce source-size limits before allocation, bounded reads during refresh, and an outbound payload limit.
+
+### consistency: approve
+
+### integration: approve
+
+### quality: approve
+
+### optimization: approve
+
+### source-defect: approve
+
+LENS adversarial: findings
+LENS consistency: clean
+LENS integration: clean
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P1
+OVERALL: needs-attention
+
+
+## Response to round 11
+
+1. **P1 `scripts/lsp-mcp-server.py:1084` (`adversarial`):** Real and reproduced. Added `MAX_SOURCE_BYTES` (8 MiB), `MAX_CLANGD_CONFIG_BYTES` (256 KiB), `_read_source_bytes_bounded`, and streaming `_hash_file_bounded` across `_sync_document_locked`, `_refresh_tracked_documents_locked` (both open and closed/evicted dependencies), `_file_config_token`, and `.clangd` configuration parsing (`scripts/lsp-mcp-server.py`), checking `fstat().st_size` before allocation and reading/hashing in 1 MiB chunks, and enforced `MAX_FRAME_BYTES` (64 MiB) on outbound serialization in both `_encode_lsp_frame` and `_write_mcp_message`. Added 3 deterministic regression tests in `lsp-mcp-server.py --self-test` (`41 cases, 0 failed`) covering oversized `.h` files on `lsp_hover`, open dependencies growing past `MAX_SOURCE_BYTES` during refresh, and outbound LSP/MCP frame limits.

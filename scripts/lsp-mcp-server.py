@@ -45,6 +45,8 @@ DEFAULT_IDLE_SECONDS = 300.0
 DEFAULT_WRITE_TIMEOUT = 15.0
 MAX_OPEN_DOCS = 16
 MAX_FRAME_BYTES = 64 * 1024 * 1024
+MAX_SOURCE_BYTES = 8 * 1024 * 1024
+MAX_CLANGD_CONFIG_BYTES = 256 * 1024
 MAX_HEADER_BYTES = 16 * 1024
 MAX_HEADER_COUNT = 64
 MAX_JSON_DEPTH = 128
@@ -345,6 +347,8 @@ def _read_lsp_frame(stream) -> dict | None:
 
 def _encode_lsp_frame(payload: dict) -> bytes:
     raw = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if len(raw) > MAX_FRAME_BYTES:
+        raise LspToolError(f"outbound LSP frame ({len(raw)} bytes) exceeds maximum size ({MAX_FRAME_BYTES} bytes)")
     header = f"Content-Length: {len(raw)}\r\n\r\n".encode("ascii")
     return header + raw
 
@@ -424,7 +428,7 @@ class _BackendWriter:
             return
         try:
             self._queue.put_nowait((_encode_lsp_frame(payload), None, []))
-        except queue.Full:
+        except (queue.Full, LspToolError):
             pass
 
     def close(self) -> None:
@@ -816,11 +820,56 @@ class LspBackend:
             return None
 
     @staticmethod
+    def _read_source_bytes_bounded(path: str, max_bytes: int = MAX_SOURCE_BYTES) -> tuple[bytes, tuple[int, int]]:
+        """Read at most max_bytes from path without unbounded allocation; raise LspToolError when oversized."""
+        with open(path, "rb") as fh:
+            st = os.fstat(fh.fileno())
+            if st.st_size > max_bytes:
+                raise LspToolError(
+                    f"source file {path} ({st.st_size} bytes) exceeds maximum size ({max_bytes} bytes)"
+                )
+            chunks: list[bytes] = []
+            total = 0
+            rem = max_bytes + 1
+            while rem > 0:
+                chunk = fh.read(min(rem, _READ_CHUNK_BYTES))
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > max_bytes:
+                    raise LspToolError(
+                        f"source file {path} exceeds maximum size ({max_bytes} bytes)"
+                    )
+                chunks.append(chunk)
+                rem -= len(chunk)
+            return b"".join(chunks), (st.st_mtime_ns, total)
+
+    @staticmethod
+    def _hash_file_bounded(path: str, max_bytes: int = MAX_SOURCE_BYTES) -> str:
+        """Compute a streaming SHA-256 digest bounded to max_bytes, falling back to mtime:size on oversized files."""
+        with open(path, "rb") as fh:
+            st = os.fstat(fh.fileno())
+            if st.st_size > max_bytes:
+                return f"oversize:{st.st_mtime_ns}:{st.st_size}"
+            hasher = hashlib.sha256()
+            total = 0
+            rem = max_bytes + 1
+            while rem > 0:
+                chunk = fh.read(min(rem, _READ_CHUNK_BYTES))
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > max_bytes:
+                    return f"oversize:{st.st_mtime_ns}:{total}"
+                hasher.update(chunk)
+                rem -= len(chunk)
+            return hasher.hexdigest()
+
+    @staticmethod
     def _file_config_token(path: str, st: os.stat_result) -> str:
         if st.st_size <= MAX_CONFIG_HASH_BYTES:
             try:
-                with open(path, "rb") as fh:
-                    return hashlib.sha256(fh.read()).hexdigest()
+                return LspBackend._hash_file_bounded(path, MAX_CONFIG_HASH_BYTES)
             except OSError:
                 pass
         return f"{st.st_mtime_ns}:{st.st_size}"
@@ -872,17 +921,19 @@ class LspBackend:
 
         for cf in clangd_files:
             try:
-                with open(cf, encoding="utf-8", errors="replace") as fh:
-                    for raw_line in fh:
-                        line = raw_line.split("#", 1)[0].strip()
-                        m = re.match(r"^CompilationDatabase\s*:\s*(.+)$", line)
-                        if m:
-                            val = m.group(1).strip()
-                            for base in (os.path.dirname(cf), self.root):
-                                cdir = self._confined_candidate(val, base_dir=base)
-                                if cdir:
-                                    db_dirs.append(cdir)
-            except OSError:
+                if os.stat(cf).st_size > MAX_CLANGD_CONFIG_BYTES:
+                    continue
+                cf_bytes, _ = self._read_source_bytes_bounded(cf, MAX_CLANGD_CONFIG_BYTES)
+                for raw_line in cf_bytes.decode("utf-8", errors="replace").splitlines():
+                    line = raw_line.split("#", 1)[0].strip()
+                    m = re.match(r"^CompilationDatabase\s*:\s*(.+)$", line)
+                    if m:
+                        val = m.group(1).strip()
+                        for base in (os.path.dirname(cf), self.root):
+                            cdir = self._confined_candidate(val, base_dir=base)
+                            if cdir:
+                                db_dirs.append(cdir)
+            except (OSError, LspToolError):
                 continue
 
         seen_dirs: set[str] = set()
@@ -978,9 +1029,8 @@ class LspBackend:
         open_updates: list[tuple[str, bytes | None, str | None]] = []
         for dep_key, dep_path, _, prev_sha in open_snapshot:
             try:
-                with open(dep_path, "rb") as fh:
-                    dep_bytes = fh.read()
-            except OSError:
+                dep_bytes, _ = self._read_source_bytes_bounded(dep_path, MAX_SOURCE_BYTES)
+            except (OSError, LspToolError):
                 open_updates.append((dep_key, None, None))
                 continue
             dep_sha = hashlib.sha256(dep_bytes).hexdigest()
@@ -989,12 +1039,10 @@ class LspBackend:
         closed_updates: list[tuple[str, str, str | None]] = []
         for c_key, c_path, c_uri, prev_sha in closed_snapshot:
             try:
-                with open(c_path, "rb") as fh:
-                    c_bytes = fh.read()
+                c_sha = self._hash_file_bounded(c_path, MAX_SOURCE_BYTES)
             except OSError:
                 closed_updates.append((c_key, c_uri, None))
                 continue
-            c_sha = hashlib.sha256(c_bytes).hexdigest()
             if c_sha != prev_sha:
                 closed_updates.append((c_key, c_uri, c_sha))
         cur_ws, cur_cfg = self._scan_workspace_and_configs()
@@ -1080,13 +1128,10 @@ class LspBackend:
                               deadline: float | None = None) -> tuple[str, str, int, int]:
         """Ensure abs_path and open dependencies are synced with disk; return (uri, key, expected_diag_seq, expected_version)."""
         try:
-            with open(abs_path, "rb") as fh:
-                raw_bytes = fh.read()
-                try:
-                    st = os.fstat(fh.fileno())
-                    stat_pair: tuple[int, int] | None = (st.st_mtime_ns, st.st_size)
-                except OSError:
-                    stat_pair = None
+            raw_bytes, stat_pair = self._read_source_bytes_bounded(abs_path, MAX_SOURCE_BYTES)
+        except LspToolError:
+            self._refresh_tracked_documents_locked(deadline=deadline)
+            raise
         except OSError as exc:
             self._refresh_tracked_documents_locked(deadline=deadline)
             raise LspToolError(f"cannot read {abs_path}: {exc}") from exc
@@ -1733,6 +1778,16 @@ def _read_mcp_message(binary_in) -> tuple[object, str]:
 
 def _write_mcp_message(binary_out, payload: dict, mode: str) -> None:
     raw = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if len(raw) > MAX_FRAME_BYTES:
+        fallback = {
+            "jsonrpc": "2.0",
+            "id": payload.get("id") if isinstance(payload, dict) else None,
+            "error": {
+                "code": -32603,
+                "message": f"Outbound MCP response ({len(raw)} bytes) exceeds maximum size ({MAX_FRAME_BYTES} bytes)",
+            },
+        }
+        raw = json.dumps(fallback, separators=(",", ":"), allow_nan=False).encode("utf-8")
     if mode == "framed":
         binary_out.write(f"Content-Length: {len(raw)}\r\n\r\n".encode("ascii") + raw)
     else:
@@ -2332,6 +2387,57 @@ def _self_test() -> int:
                   and b"Content-Length:" in deep_raw
                   and b'{"jsonrpc":"2.0","id":23,"result":{}}\n' in deep_raw,
                   repr(deep_raw[:600]))
+
+            # Oversized source files and outbound frames must be rejected before unbounded allocation.
+            huge_hdr = os.path.join(ws, "huge.h")
+            with open(huge_hdr, "wb") as hfh:
+                hfh.seek(MAX_SOURCE_BYTES + 1024)
+                hfh.write(b"\n")
+            huge_hover = rpc({
+                "jsonrpc": "2.0", "id": 70, "method": "tools/call",
+                "params": {"name": "lsp_hover", "arguments": {"file_path": "huge.h", "line": 1, "character": 1}},
+            })
+            check("oversized source file rejected before allocation on lsp_hover",
+                  huge_hover["result"]["isError"]
+                  and "exceeds maximum size" in huge_hover["result"]["content"][0]["text"],
+                  repr(huge_hover))
+
+            grow_py = os.path.join(ws, "grow_dep.py")
+            with open(grow_py, "w", encoding="utf-8") as gfh:
+                gfh.write("v = 1\n")
+            _ = rpc({"jsonrpc": "2.0", "id": 71, "method": "tools/call",
+                     "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "grow_dep.py"}}})
+            with open(grow_py, "wb") as gfh:
+                gfh.seek(MAX_SOURCE_BYTES + 512)
+                gfh.write(b"\n")
+            after_grow = rpc({"jsonrpc": "2.0", "id": 72, "method": "tools/call",
+                              "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "a.py"}}})
+            st_grow = json.loads(rpc({"jsonrpc": "2.0", "id": 73, "method": "tools/call",
+                                      "params": {"name": "lsp_status", "arguments": {}}})["result"]["content"][0]["text"])
+            os.remove(huge_hdr)
+            os.remove(grow_py)
+            check("open dependency growing past MAX_SOURCE_BYTES is evicted cleanly without failing active queries",
+                  not after_grow["result"]["isError"]
+                  and _norm_key(grow_py) not in srv.backends["pyright"]._open_docs
+                  and st_grow["backends"]["pyright"]["open_documents"] >= 1,
+                  f"after={after_grow!r} status={st_grow!r}")
+
+            out_lsp_err = ""
+            try:
+                _encode_lsp_frame({"jsonrpc": "2.0", "method": "x", "params": {"pad": "a" * (MAX_FRAME_BYTES + 32)}})
+            except LspToolError as exc:
+                out_lsp_err = str(exc)
+            out_mcp_buf = io.BytesIO()
+            _write_mcp_message(
+                out_mcp_buf,
+                {"jsonrpc": "2.0", "id": 74, "result": {"pad": "a" * (MAX_FRAME_BYTES + 32)}},
+                "line",
+            )
+            out_mcp_obj = json.loads(out_mcp_buf.getvalue().decode("utf-8").strip())
+            check("outbound LSP and MCP frames enforce MAX_FRAME_BYTES",
+                  "exceeds maximum size" in out_lsp_err
+                  and out_mcp_obj.get("error", {}).get("code") == -32603,
+                  f"lsp={out_lsp_err!r} mcp={out_mcp_obj!r}")
         finally:
             srv.close()
 
