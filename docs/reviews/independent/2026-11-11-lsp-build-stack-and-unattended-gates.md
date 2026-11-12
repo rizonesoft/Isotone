@@ -420,3 +420,43 @@ OVERALL: needs-attention
 ## Response to round 12
 
 1. **P2 `scripts/lsp-mcp-server.py:1784` (`adversarial`):** Real and reproduced. Added `_is_valid_request_id` (`MAX_ID_CHARS = 1024`, integer IDs `< 10**64`, finite floats) in `handle_message` along with explicit length caps on echoed `method` (`<= 256`), `protocolVersion` (`<= 64`), tool `name` (`<= 128`), `action` (`<= 64`), `query` (`MAX_QUERY_CHARS = 4096`), and `file_path` (`MAX_PATH_CHARS = 4096`), and hardened `_write_mcp_message` so its oversized-response fallback validates `id` via `_is_valid_request_id` and re-verifies `len(raw) <= MAX_FRAME_BYTES` (dropping `id` to `None` if needed). Added a regression test in `lsp-mcp-server.py --self-test` (`42 cases, 0 failed`) covering `ensure_ascii=False` non-ASCII request IDs and direct `_write_mcp_message` fallback bounds.
+
+## Round 13: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T02:45:13Z
+- Candidate: 08d38d5a658559b47705a9fdc241d9c83b5c4362
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 24
+- Digest: a0bab5b1f75f7898
+
+### adversarial: approve
+
+### consistency: approve
+
+### integration: needs-attention
+
+1. **P2** `scripts/lsp-mcp-server.py:195`: File URIs are percent-decoded twice. `url2pathname()` already decodes escapes, so the preceding `unquote()` corrupts valid filenames containing literal escape sequences.
+
+   Reproduction: import a source file named `native/tests/literal%20name.cpp` and request diagnostics or a definition pointing to it. Read-only verification showed `_uri_to_path(_path_to_uri(path))` returns `native/tests/literal name.cpp`. Feeding a diagnostic notification for the original URI also left the diagnostic cache empty because its key no longer matched the open document. Definition locations therefore name the wrong file, and push diagnostics time out. Decode exactly once and cover literal percent sequences in the URI round-trip test.
+
+### quality: approve
+
+### optimization: approve
+
+### source-defect: approve
+
+LENS adversarial: clean
+LENS consistency: clean
+LENS integration: findings
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P2
+OVERALL: needs-attention
+
+
+## Response to round 13
+
+1. **P2 `scripts/lsp-mcp-server.py:195` (`integration`):** Real and reproduced. Replaced `urllib.request.url2pathname(urllib.parse.unquote(...))` in `_uri_to_path` with single-pass `urllib.parse.urlsplit` + `urllib.parse.unquote` decoding (handling standard `file:///D:/...`, Pyright percent-encoded Windows drive colons `file:///d%3A/...`, `file://D:/...`, and UNC `file://server/share/...` while preserving literal `%XX`, `;`, and `#` sequences in filenames), and hardened `_norm_key`, `_rel_display`, and `resolve_confined_file` against embedded null bytes and invalid path characters. Added a regression test in `lsp-mcp-server.py --self-test` (`43 cases, 0 failed`) covering `_uri_to_path(_path_to_uri(...))` round-tripping, `d%3A` URI key matching, and end-to-end `lsp_diagnostics` and `lsp_definition` on `literal%20name;hash#pct%25.py`.

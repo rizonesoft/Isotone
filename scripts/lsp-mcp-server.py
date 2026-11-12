@@ -36,7 +36,6 @@ import threading
 import time
 from typing import Any
 import urllib.parse
-import urllib.request
 
 REPO = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 PROTOCOL_VERSION = "2024-11-05"
@@ -181,7 +180,12 @@ def _load_lsp_launch():
 
 
 def _norm_key(path: str) -> str:
-    return os.path.normcase(str(Path(path).resolve()))
+    clean = path.replace("\x00", "")
+    try:
+        resolved = str(Path(clean).resolve())
+    except (OSError, ValueError):
+        resolved = os.path.normpath(clean)
+    return os.path.normcase(resolved)
 
 
 def _path_to_uri(path: str) -> str:
@@ -189,13 +193,32 @@ def _path_to_uri(path: str) -> str:
 
 
 def _uri_to_path(uri: str) -> str:
-    parsed = urllib.parse.urlparse(uri)
+    if "\x00" in uri:
+        return uri.replace("\x00", "")
+    parsed = urllib.parse.urlsplit(uri)
     if parsed.scheme.lower() != "file":
         return uri
-    raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
-    if parsed.netloc and parsed.netloc.lower() != "localhost":
-        raw_path = f"//{parsed.netloc}{raw_path}"
-    return str(Path(raw_path).resolve())
+    decoded_path = urllib.parse.unquote(parsed.path)
+    netloc = urllib.parse.unquote(parsed.netloc)
+    if "\x00" in decoded_path or "\x00" in netloc:
+        return uri.replace("\x00", "")
+    if netloc and netloc.lower() != "localhost":
+        if os.name == "nt" and len(netloc) == 2 and netloc[0].isalpha() and netloc[1] == ":":
+            raw_path = f"{netloc}{decoded_path}"
+        else:
+            raw_path = f"//{netloc}{decoded_path}"
+    elif os.name == "nt" and len(decoded_path) >= 3 and decoded_path[0] == "/" and decoded_path[1].isalpha() and decoded_path[2] == ":":
+        raw_path = decoded_path[1:]
+    else:
+        raw_path = decoded_path
+    if not raw_path:
+        return uri
+    if os.name == "nt":
+        raw_path = raw_path.replace("/", "\\")
+    try:
+        return str(Path(raw_path).resolve())
+    except (OSError, ValueError):
+        return os.path.normpath(raw_path)
 
 
 def _uri_key(uri: str) -> str:
@@ -203,7 +226,13 @@ def _uri_key(uri: str) -> str:
 
 
 def _rel_display(path_or_uri: str, root: str = REPO) -> str:
-    path = _uri_to_path(path_or_uri) if path_or_uri.startswith("file://") else str(Path(path_or_uri).resolve())
+    if path_or_uri.lower().startswith("file:"):
+        path = _uri_to_path(path_or_uri)
+    else:
+        try:
+            path = str(Path(path_or_uri.replace("\x00", "")).resolve())
+        except (OSError, ValueError):
+            path = os.path.normpath(path_or_uri.replace("\x00", ""))
     root_resolved = str(Path(root).resolve())
     try:
         if os.path.commonpath([_norm_key(root_resolved), _norm_key(path)]) == _norm_key(root_resolved):
@@ -217,12 +246,17 @@ def resolve_confined_file(raw_path: str, root: str = REPO) -> tuple[str, str, st
     """Resolve raw_path inside root (resolving symlinks/junctions) and return (abs_path, backend_name, language_id)."""
     if not isinstance(raw_path, str) or not raw_path.strip():
         raise LspToolError("file_path must be a non-empty workspace path")
+    if "\x00" in raw_path:
+        raise LspToolError("file_path must not contain null bytes")
     if len(raw_path) > MAX_PATH_CHARS:
         raise LspToolError(f"file_path exceeds maximum length ({MAX_PATH_CHARS} characters)")
     candidate = raw_path.strip()
     root_resolved = str(Path(root).resolve())
     joined = candidate if os.path.isabs(candidate) else os.path.join(root_resolved, candidate)
-    abs_path = str(Path(joined).resolve())
+    try:
+        abs_path = str(Path(joined).resolve())
+    except (OSError, ValueError) as exc:
+        raise LspToolError(f"file_path {raw_path!r} is invalid ({exc})") from exc
     root_norm = _norm_key(root_resolved)
     path_norm = _norm_key(abs_path)
     try:
@@ -1353,12 +1387,16 @@ def _pos_arg(args: dict) -> dict:
 def _fmt_range(rng: dict | None) -> str:
     if not isinstance(rng, dict):
         return "1:1"
-    start = rng.get("start") or {}
-    end = rng.get("end") or {}
-    sl = int(start.get("line", 0)) + 1
-    sc = int(start.get("character", 0)) + 1
-    el = int(end.get("line", 0)) + 1
-    ec = int(end.get("character", 0)) + 1
+    raw_start = rng.get("start")
+    raw_end = rng.get("end")
+    start = raw_start if isinstance(raw_start, dict) else {}
+    end = raw_end if isinstance(raw_end, dict) else {}
+    sl_raw, sc_raw = start.get("line", 0), start.get("character", 0)
+    el_raw, ec_raw = end.get("line", 0), end.get("character", 0)
+    sl = (sl_raw if isinstance(sl_raw, int) and not isinstance(sl_raw, bool) else 0) + 1
+    sc = (sc_raw if isinstance(sc_raw, int) and not isinstance(sc_raw, bool) else 0) + 1
+    el = (el_raw if isinstance(el_raw, int) and not isinstance(el_raw, bool) else 0) + 1
+    ec = (ec_raw if isinstance(ec_raw, int) and not isinstance(ec_raw, bool) else 0) + 1
     return f"{sl}:{sc}-{el}:{ec}" if (sl, sc) != (el, ec) else f"{sl}:{sc}"
 
 
@@ -2491,6 +2529,46 @@ def _self_test() -> int:
                   and fb_obj.get("id") is None
                   and fb_obj.get("error", {}).get("code") == -32603,
                   f"lines={huge_id_lines!r} fb_len={len(fb_raw)} fb={fb_obj!r}")
+
+            lit_file = os.path.join(ws, "literal%20name;hash#pct%25.py")
+            Path(lit_file).write_text("BAD_TOKEN = 1\n", encoding="utf-8")
+            lit_resolved = str(Path(lit_file).resolve())
+            lit_uri = _path_to_uri(lit_file)
+            lit_roundtrip = _uri_to_path(lit_uri)
+            pyright_drive_uri = re.sub(
+                r"^file:///([A-Za-z]):/",
+                lambda m: f"file:///{m.group(1).lower()}%3A/",
+                lit_uri,
+            )
+            lit_diag = rpc({
+                "jsonrpc": "2.0",
+                "id": 76,
+                "method": "tools/call",
+                "params": {
+                    "name": "lsp_diagnostics",
+                    "arguments": {"file_path": "literal%20name;hash#pct%25.py", "timeout_seconds": 5},
+                },
+            })
+            lit_diag_text = lit_diag["result"]["content"][0]["text"]
+            lit_def = rpc({
+                "jsonrpc": "2.0",
+                "id": 77,
+                "method": "tools/call",
+                "params": {
+                    "name": "lsp_definition",
+                    "arguments": {"file_path": "literal%20name;hash#pct%25.py", "line": 1, "character": 1},
+                },
+            })
+            lit_def_text = lit_def["result"]["content"][0]["text"]
+            nul_key_ok = isinstance(_uri_key("file:///D:/bad%00path.py"), str)
+            check("file URIs decode percent sequences once and preserve literal %XX filenames",
+                  lit_roundtrip == lit_resolved
+                  and _uri_key(pyright_drive_uri) == _norm_key(lit_resolved)
+                  and "BAD_TOKEN" in lit_diag_text
+                  and "literal%20name;hash#pct%25.py" in lit_diag_text
+                  and "literal%20name;hash#pct%25.py" in lit_def_text
+                  and nul_key_ok,
+                  f"rt={lit_roundtrip!r} diag={lit_diag_text!r} def={lit_def_text!r}")
         finally:
             srv.close()
 
