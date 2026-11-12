@@ -10,5 +10,5 @@ The imported Stilus main window as it looked before `Isotone.UI` and the design 
 | File | Pixels | Window DPI | State |
 | ---- | ------ | ---------- | ----- |
 | `empty-100.png` | 1600 x 1000 | 96 | no document |
-| `sample-100.png` | 1600 x 1000 | 96 | `tests/fixtures/stilus/svg/bezier-sample.svg` opened through File > Open (the status bar reads "Opened: bezier-sample.svg (3 elements)") |
+| `sample-100.png` | 1600 x 1000 | 96 | `native/tests/fixtures/stilus/svg/bezier-sample.svg` (at `tests/fixtures/stilus/svg/` when the capture was taken) opened through File > Open (the status bar reads "Opened: bezier-sample.svg (3 elements)") |
 | `empty-150.png` | 2400 x 1500 | 144 | no document |

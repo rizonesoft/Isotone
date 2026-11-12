@@ -1,6 +1,6 @@
 # Stilus SVG fixtures
 
-Two SVG files carried over from the Bezier repository, the origin of Stilus, where they sat beside the projects in `src/Stilus/`. `D00 T03 §1` moved them here so they read as test inputs, not build inputs.
+Two SVG files carried over from the Bezier repository, the origin of Stilus, where they sat beside the projects in `src/Stilus/`. `D00 T03 §1` moved them to `tests/fixtures/stilus/svg/` so they read as test inputs, not build inputs, and then, when the suite went native, here to `native/tests/fixtures/stilus/svg/`, where the native tests read their fixtures (`standards/testing.md`).
 
 | File | Origin | License |
 | ---- | ------ | ------- |

@@ -1,5 +1,7 @@
 # VectorIcon Component
 
+This page describes the C# prototype preserved at the `csharp-final` Git tag, kept as a behavior reference; none of the code it names is on `main`. The native design is in [`docs/design/`](../../design/README.md) and [`docs/specs/2026-10-22-native-stack-design.md`](../../specs/2026-10-22-native-stack-design.md).
+
 A reusable WPF control for rendering SVG vector icons from the centralized `IconService`.
 
 ## Features
@@ -131,5 +133,5 @@ Bezier.Desktop/
 
 ## See Also
 
-- [IconService](../../../src/Stilus/Bezier.Desktop/Services/IconService.cs) - Icon loading and caching
-- [icons.json](../../../src/Stilus/Bezier.Desktop/Resources/icons.json) - Icon definitions
+- `IconService` (`src/Stilus/Bezier.Desktop/Services/IconService.cs`) - Icon loading and caching. Read it with `git show csharp-final:src/Stilus/Bezier.Desktop/Services/IconService.cs`.
+- `icons.json` (`src/Stilus/Bezier.Desktop/Resources/icons.json`) - Icon definitions. Read it with `git show csharp-final:src/Stilus/Bezier.Desktop/Resources/icons.json`.

@@ -1,11 +1,13 @@
 # Gesso plug-in interfaces
 
+This page describes the C# prototype preserved at the `csharp-final` Git tag, kept as a behavior reference; none of the code it names is on `main`. The native design is in [`docs/design/`](../../design/README.md) and [`docs/specs/2026-10-22-native-stack-design.md`](../../specs/2026-10-22-native-stack-design.md).
+
 Gesso's plug-in contract is a separate assembly, `Gesso.Plugins.Abstractions` (`src/Gesso/src/Gesso.Plugins.Abstractions/`), so a plug-in can reference it without taking a dependency on the editor. Moved from `src/Gesso/docs/plugins/README.md` by `D00 T03 §1`, and corrected against the code on 2026-10-22: the imported page described attributes, a plugins folder, and tool and format plug-in kinds that do not exist.
 
 ## What exists today
 
-- [`IPlugin`](../../../src/Gesso/src/Gesso.Plugins.Abstractions/IPlugin.cs): the base contract, with `Id` (a `Guid`), `Name`, `Version`, `Author`, `Description`, `Initialize()`, and `Shutdown()`.
-- [`IFilterPlugin`](../../../src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs): a filter, which extends `IPlugin`.
+- `IPlugin` (`src/Gesso/src/Gesso.Plugins.Abstractions/IPlugin.cs`, read with `git show csharp-final:src/Gesso/src/Gesso.Plugins.Abstractions/IPlugin.cs`): the base contract, with `Id` (a `Guid`), `Name`, `Version`, `Author`, `Description`, `Initialize()`, and `Shutdown()`.
+- `IFilterPlugin` (`src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`, read with `git show csharp-final:src/Gesso/src/Gesso.Plugins.Abstractions/IFilterPlugin.cs`): a filter, which extends `IPlugin`.
 
 ## What does not exist yet
 
