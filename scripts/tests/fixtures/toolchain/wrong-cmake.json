@@ -14,8 +14,8 @@
     ]
   },
   "msvc": {
-    "toolset": "14.51.36231",
-    "compiler": "19.51.36260"
+    "toolset": "14.52.37025",
+    "compiler": "19.52.37029"
   },
   "windows_sdk": "10.0.26100.0",
   "cmake": "3.0.0",
@@ -25,5 +25,15 @@
     "clang-format": "22.1.3",
     "clang-cl": "22.1.3"
   },
-  "vcpkg": "2026-07-27-98d7cb0cf1f4686a3e43aa5672b6230c1d56bce8"
+  "vcpkg": "2026-09-26-51bf87ca6e9bf3e622d84ff323bd202ab1ca0c0b",
+  "rollout_profiles": [
+    {
+      "visual_studio_prefix": "18.11.",
+      "msvc": {
+        "toolset": "14.51.36231",
+        "compiler": "19.51.36260"
+      },
+      "vcpkg": "2026-07-27-98d7cb0cf1f4686a3e43aa5672b6230c1d56bce8"
+    }
+  ]
 }

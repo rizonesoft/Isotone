@@ -40,22 +40,34 @@ def host_arch() -> str:
     return "arm64" if arch.upper() == "ARM64" else "x64"
 
 
-def visual_studio(pin: dict) -> str:
-    """The Visual Studio installation the toolchain pin selects, as scripts/dev-env.ps1 finds it."""
+def visual_studio(pin: dict) -> tuple[str, str]:
+    """The Visual Studio installation path and version the toolchain pin selects, as scripts/dev-env.ps1 finds it."""
     studio = pin["visual_studio"]
     found = subprocess.run([VSWHERE, "-latest", "-products", "*", "-version", studio["version_range"], "-requires",
-                            *studio["components"], "-property", "installationPath"],
+                            *studio["components"], "-format", "json"],
                            capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
-    path = found.stdout.strip().splitlines()[0] if found.stdout.strip() else ""
-    if not path:
+    try:
+        items = json.loads(found.stdout or "[]")
+    except ValueError:
+        items = []
+    if not items or not items[0].get("installationPath"):
         raise LaunchError("no Visual Studio matches native/toolchain.json; run pwsh scripts/dev-env.ps1 -Check")
-    return path
+    return str(items[0]["installationPath"]), str(items[0].get("installationVersion", ""))
 
 
-def msvc_environment(studio: str, pin: dict, arch: str) -> dict:
+def active_toolset(pin: dict, vs_version: str) -> str:
+    """The pinned MSVC toolset selector for the selected Visual Studio minor release."""
+    for profile in pin.get("rollout_profiles") or ():
+        prefix = profile.get("visual_studio_prefix") or ""
+        if prefix and vs_version.startswith(prefix):
+            return str(profile["msvc"]["toolset"])
+    return str(pin["msvc"]["toolset"])
+
+
+def msvc_environment(studio: str, pin: dict, arch: str, vs_version: str = "") -> dict:
     """The environment vcvarsall gives the pinned toolset and SDK, so clangd resolves the headers the build uses."""
     bat = os.path.join(studio, "VC", "Auxiliary", "Build", "vcvarsall.bat")
-    toolset = pin["msvc"]["toolset"]
+    toolset = active_toolset(pin, vs_version)
     command = f'""{bat}" {arch} {pin["windows_sdk"]} -vcvars_ver={toolset} >nul 2>&1 && set"'
     out = subprocess.run(f"cmd /d /s /c {command}", capture_output=True, text=True, errors="replace",
                          creationflags=subprocess.CREATE_NO_WINDOW)
@@ -69,14 +81,15 @@ def clangd() -> tuple[list[str], dict]:
     with open(os.path.join(REPO, "native", "toolchain.json"), encoding="utf-8") as fh:
         pin = json.load(fh)
     arch = host_arch()
-    studio = visual_studio(pin)
+    studio, vs_version = visual_studio(pin)
     server = os.path.join(studio, "VC", "Tools", "Llvm", "ARM64" if arch == "arm64" else "x64", "bin", "clangd.exe")
     if not os.path.isfile(server):
         raise LaunchError(f"{server} is missing: the pinned Clang component ships it")
     if not os.path.isfile(os.path.join(COMPILE_DB, "compile_commands.json")):
         print("lsp-launch: no compile database yet; build the x64-debug preset for exact diagnostics", file=sys.stderr)
     return ([server, f"--compile-commands-dir={COMPILE_DB}", "--background-index", "-j=4", "--pch-storage=disk",
-             "--clang-tidy", "--header-insertion=never", "--log=error"], msvc_environment(studio, pin, arch))
+             "--clang-tidy", "--header-insertion=never", "--log=error"],
+            msvc_environment(studio, pin, arch, vs_version))
 
 
 def pyright() -> tuple[list[str], dict]:

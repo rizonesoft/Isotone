@@ -26,6 +26,7 @@ import json
 import os
 from pathlib import Path
 import queue
+import re
 import signal
 import subprocess
 import sys
@@ -50,8 +51,18 @@ _WORKSPACE_SKIP_DIRS = frozenset((
     ".git", ".hg", ".svn", "build", "artifacts", "node_modules", "__pycache__",
     ".venv", "venv", ".tox", ".mypy_cache", ".pytest_cache", ".vs", "bin", "obj",
 ))
-_WORKSPACE_WATCH_EXTS = frozenset(CPP_EXTENSIONS | PY_EXTENSIONS | {".json", ".toml", ".cfg", ".ini", ".txt"})
-_WORKSPACE_WATCH_NAMES = frozenset((".clangd", "compile_commands.json", "compile_flags.txt", "pyrightconfig.json"))
+_WORKSPACE_WATCH_EXTS = frozenset(
+    CPP_EXTENSIONS | PY_EXTENSIONS | {".json", ".toml", ".cfg", ".ini", ".txt", ".yaml", ".yml", ".cmake"}
+)
+_WORKSPACE_WATCH_NAMES = frozenset((
+    ".clangd", ".clang-tidy", ".clang-format", "compile_commands.json", "compile_flags.txt",
+    "pyrightconfig.json", "pyproject.toml", "setup.cfg", "mypy.ini", "tox.ini",
+))
+_BACKEND_CONFIG_NAMES = frozenset((
+    ".clangd", ".clang-tidy", ".clang-format", "compile_commands.json", "compile_flags.txt",
+    "pyrightconfig.json", "pyproject.toml", "setup.cfg", "mypy.ini", "tox.ini", "toolchain.json",
+))
+MAX_CONFIG_HASH_BYTES = 64 * 1024 * 1024
 MAX_CLOSED_DOCS = 4096
 MAX_WORKSPACE_SCAN_FILES = 20000
 
@@ -350,7 +361,7 @@ class LspBackend:
     def __init__(self, name: str, root: str, resolver, max_open_docs: int = MAX_OPEN_DOCS,
                  write_timeout: float = DEFAULT_WRITE_TIMEOUT) -> None:
         self.name = name
-        self.root = root
+        self.root = str(Path(root).resolve())
         self._resolver = resolver
         self._max_open_docs = max(1, max_open_docs)
         self._write_timeout = max(0.05, float(write_timeout))
@@ -367,6 +378,7 @@ class LspBackend:
         self._open_docs: collections.OrderedDict[str, dict] = collections.OrderedDict()
         self._closed_docs: collections.OrderedDict[str, dict] = collections.OrderedDict()
         self._workspace_snapshot: dict[str, tuple[int, int, str]] = {}
+        self._config_digests: dict[str, str] = {}
         self._capabilities: dict = {}
         self._last_used = 0.0
         self._command: list[str] = []
@@ -423,6 +435,7 @@ class LspBackend:
             self._open_docs.clear()
             self._closed_docs.clear()
             self._workspace_snapshot.clear()
+            self._config_digests.clear()
             self._capabilities = {}
             self._cond.notify_all()
 
@@ -564,8 +577,13 @@ class LspBackend:
 
     def _ensure_started_locked(self) -> None:
         if self._proc is not None and self._proc.poll() is None:
-            self._last_used = time.monotonic()
-            return
+            _, cur_cfg = self._scan_workspace_and_configs()
+            with self._cond:
+                same_cfg = cur_cfg == self._config_digests
+            if same_cfg:
+                self._last_used = time.monotonic()
+                return
+            self._shutdown_locked()
         if self._proc is not None or self._job is not None or self._writer is not None:
             self._kill_proc(self._proc, self._job, self._writer)
         self._reset_state()
@@ -631,8 +649,10 @@ class LspBackend:
             init_res = self._request_locked("initialize", init_params, timeout=60.0)
             self._capabilities = (init_res or {}).get("capabilities") or {} if isinstance(init_res, dict) else {}
             self._send_notification_locked("initialized", {})
+            ws_snap, cfg_digests = self._scan_workspace_and_configs()
             with self._cond:
-                self._workspace_snapshot = self._take_workspace_snapshot()
+                self._workspace_snapshot = ws_snap
+                self._config_digests = cfg_digests
             self._last_used = time.monotonic()
         except Exception:
             self._kill_proc(proc, job, writer)
@@ -696,9 +716,116 @@ class LspBackend:
     def _decode_source_bytes(raw_bytes: bytes) -> str:
         return raw_bytes.decode("utf-8-sig" if raw_bytes.startswith(b"\xef\xbb\xbf") else "utf-8", errors="replace")
 
-    def _take_workspace_snapshot(self) -> dict[str, tuple[int, int, str]]:
-        """Scan relevant workspace source and config files for (mtime_ns, size, uri) to detect unopened file edits."""
+    def _confined_candidate(self, raw_path: str, base_dir: str | None = None) -> str | None:
+        cand = raw_path.strip().strip('"').strip("'")
+        if not cand:
+            return None
+        anchor = base_dir if base_dir is not None else self.root
+        joined = cand if os.path.isabs(cand) else os.path.join(anchor, cand)
+        try:
+            resolved = str(Path(joined).resolve())
+            root_norm = os.path.normcase(self.root)
+            cand_norm = os.path.normcase(resolved)
+            if os.path.commonpath([root_norm, cand_norm]) != root_norm:
+                return None
+            return resolved
+        except (OSError, ValueError):
+            return None
+
+    @staticmethod
+    def _file_config_token(path: str, st: os.stat_result) -> str:
+        if st.st_size <= MAX_CONFIG_HASH_BYTES:
+            try:
+                with open(path, "rb") as fh:
+                    return hashlib.sha256(fh.read()).hexdigest()
+            except OSError:
+                pass
+        return f"{st.st_mtime_ns}:{st.st_size}"
+
+    def _explicit_config_files(self, clangd_files: list[str]) -> list[str]:
+        """Return active config files living inside skipped build/artifact directories (confined to self.root)."""
+        db_dirs: list[str] = [
+            os.path.join(self.root, "artifacts", "native", "x64-debug"),
+            os.path.join(self.root, "build"),
+            os.path.join(self.root, "native", "build"),
+        ]
+        native_artifacts = os.path.join(self.root, "artifacts", "native")
+        try:
+            if os.path.isdir(native_artifacts) and not os.path.islink(native_artifacts):
+                with os.scandir(native_artifacts) as it:
+                    for entry in it:
+                        try:
+                            if not entry.is_symlink() and entry.is_dir(follow_symlinks=False):
+                                db_dirs.append(entry.path)
+                        except OSError:
+                            continue
+        except OSError:
+            pass
+
+        direct_files: list[str] = []
+        cmd = list(self._command)
+        idx = 0
+        while idx < len(cmd):
+            arg = cmd[idx]
+            if arg.startswith("--compile-commands-dir="):
+                cdir = self._confined_candidate(arg.split("=", 1)[1])
+                if cdir:
+                    db_dirs.append(cdir)
+            elif arg == "--compile-commands-dir" and idx + 1 < len(cmd):
+                cdir = self._confined_candidate(cmd[idx + 1])
+                if cdir:
+                    db_dirs.append(cdir)
+                idx += 1
+            elif arg.startswith("--project="):
+                proj = self._confined_candidate(arg.split("=", 1)[1])
+                if proj:
+                    direct_files.append(os.path.join(proj, "pyrightconfig.json") if os.path.isdir(proj) else proj)
+            elif arg in ("-p", "--project") and idx + 1 < len(cmd):
+                proj = self._confined_candidate(cmd[idx + 1])
+                if proj:
+                    direct_files.append(os.path.join(proj, "pyrightconfig.json") if os.path.isdir(proj) else proj)
+                idx += 1
+            idx += 1
+
+        for cf in clangd_files:
+            try:
+                with open(cf, encoding="utf-8", errors="replace") as fh:
+                    for raw_line in fh:
+                        line = raw_line.split("#", 1)[0].strip()
+                        m = re.match(r"^CompilationDatabase\s*:\s*(.+)$", line)
+                        if m:
+                            val = m.group(1).strip()
+                            for base in (os.path.dirname(cf), self.root):
+                                cdir = self._confined_candidate(val, base_dir=base)
+                                if cdir:
+                                    db_dirs.append(cdir)
+            except OSError:
+                continue
+
+        seen_dirs: set[str] = set()
+        for d in db_dirs:
+            dk = os.path.normcase(os.path.normpath(d))
+            if dk in seen_dirs:
+                continue
+            seen_dirs.add(dk)
+            for fname in ("compile_commands.json", "compile_flags.txt", "CMakeCache.txt"):
+                direct_files.append(os.path.join(d, fname))
+
+        out: list[str] = []
+        seen_files: set[str] = set()
+        for fp in direct_files:
+            fk = os.path.normcase(os.path.normpath(fp))
+            if fk in seen_files:
+                continue
+            seen_files.add(fk)
+            out.append(os.path.normpath(fp))
+        return out
+
+    def _scan_workspace_and_configs(self) -> tuple[dict[str, tuple[int, int, str]], dict[str, str]]:
+        """Scan workspace source and active configuration inputs, returning (workspace_snapshot, config_digests)."""
         snap: dict[str, tuple[int, int, str]] = {}
+        cfg_digests: dict[str, str] = {}
+        clangd_files: list[str] = []
         stack = [self.root]
         while stack and len(snap) < MAX_WORKSPACE_SCAN_FILES:
             cur = stack.pop()
@@ -712,22 +839,43 @@ class LspBackend:
                                 if entry.name not in _WORKSPACE_SKIP_DIRS:
                                     stack.append(entry.path)
                             elif entry.is_file(follow_symlinks=False):
-                                ext = os.path.splitext(entry.name)[1].lower()
-                                if ext in _WORKSPACE_WATCH_EXTS or entry.name in _WORKSPACE_WATCH_NAMES:
+                                name_low = entry.name.lower()
+                                ext = os.path.splitext(name_low)[1]
+                                if ext in _WORKSPACE_WATCH_EXTS or name_low in _WORKSPACE_WATCH_NAMES:
+                                    norm_p = os.path.normpath(entry.path)
                                     st = entry.stat(follow_symlinks=False)
-                                    k = os.path.normcase(entry.path)
-                                    snap[k] = (st.st_mtime_ns, st.st_size, _path_to_uri(entry.path))
+                                    k = os.path.normcase(norm_p)
+                                    snap[k] = (st.st_mtime_ns, st.st_size, _path_to_uri(norm_p))
+                                    if name_low == ".clangd":
+                                        clangd_files.append(norm_p)
+                                    if name_low in _BACKEND_CONFIG_NAMES:
+                                        cfg_digests[k] = self._file_config_token(norm_p, st)
                                     if len(snap) >= MAX_WORKSPACE_SCAN_FILES:
                                         break
                         except OSError:
                             continue
             except OSError:
                 continue
-        return snap
+
+        for cfg_path in self._explicit_config_files(clangd_files):
+            try:
+                if os.path.islink(cfg_path) or not os.path.isfile(cfg_path):
+                    continue
+                st = os.stat(cfg_path)
+                k = os.path.normcase(cfg_path)
+                snap[k] = (st.st_mtime_ns, st.st_size, _path_to_uri(cfg_path))
+                cfg_digests[k] = self._file_config_token(cfg_path, st)
+            except OSError:
+                continue
+        return snap, cfg_digests
+
+    def _take_workspace_snapshot(self) -> dict[str, tuple[int, int, str]]:
+        """Scan relevant workspace source and config files for (mtime_ns, size, uri) to detect unopened file edits."""
+        return self._scan_workspace_and_configs()[0]
 
     def _refresh_tracked_documents_locked(self, exclude_key: str | None = None,
                                           deadline: float | None = None) -> bool:
-        """Refresh open, evicted, and unopened workspace files whose disk state changed; return True if any changed."""
+        """Refresh open, evicted, and unopened workspace/config files whose disk state changed; return True if any changed."""
         with self._cond:
             open_snapshot = [
                 (k, meta["abs_path"], meta["uri"], meta["sha256"])
@@ -740,6 +888,7 @@ class LspBackend:
                 if k != exclude_key
             ]
             prev_ws = dict(self._workspace_snapshot)
+            prev_cfg = dict(self._config_digests)
             tracked_keys = set(self._open_docs) | set(self._closed_docs)
             if exclude_key is not None:
                 tracked_keys.add(exclude_key)
@@ -765,24 +914,30 @@ class LspBackend:
             c_sha = hashlib.sha256(c_bytes).hexdigest()
             if c_sha != prev_sha:
                 closed_updates.append((c_key, c_uri, c_sha))
-        cur_ws = self._take_workspace_snapshot()
+        cur_ws, cur_cfg = self._scan_workspace_and_configs()
         ws_events: list[dict] = []
+        seen_event_keys: set[str] = set()
         for w_key, (m_ns, sz, w_uri) in cur_ws.items():
             if w_key in tracked_keys:
                 continue
             prev_entry = prev_ws.get(w_key)
             if prev_entry is None:
                 ws_events.append({"uri": w_uri, "type": 1})
-            elif (m_ns, sz) != (prev_entry[0], prev_entry[1]):
+                seen_event_keys.add(w_key)
+            elif (m_ns, sz) != (prev_entry[0], prev_entry[1]) or cur_cfg.get(w_key) != prev_cfg.get(w_key):
                 ws_events.append({"uri": w_uri, "type": 2})
+                seen_event_keys.add(w_key)
         for w_key, (_, _, w_uri) in prev_ws.items():
-            if w_key in tracked_keys:
+            if w_key in tracked_keys or w_key in seen_event_keys:
                 continue
             if w_key not in cur_ws:
                 ws_events.append({"uri": w_uri, "type": 3})
-        if not open_updates and not closed_updates and not ws_events:
+                seen_event_keys.add(w_key)
+        cfg_changed = cur_cfg != prev_cfg
+        if not open_updates and not closed_updates and not ws_events and not cfg_changed:
             with self._cond:
                 self._workspace_snapshot = cur_ws
+                self._config_digests = cur_cfg
             return False
 
         to_close: list[str] = []
@@ -790,6 +945,7 @@ class LspBackend:
         watched_events: list[dict] = list(ws_events)
         with self._cond:
             self._workspace_snapshot = cur_ws
+            self._config_digests = cur_cfg
             for dep_key, dep_bytes, dep_sha in open_updates:
                 meta = self._open_docs.get(dep_key)
                 if meta is None:
@@ -1519,6 +1675,26 @@ def publish(uri, text, version):
                   "params": {"uri": enc_uri, "version": version - 1, "diagnostics": []}})
         time.sleep(0.05)
     diags = []
+    tidy_cfg = os.path.join(os.getcwd(), "native", ".clang-tidy")
+    cdb_cfg = os.path.join(os.getcwd(), "artifacts", "native", "x64-debug", "compile_commands.json")
+    tidy_txt = open(tidy_cfg, encoding="utf-8").read() if os.path.isfile(tidy_cfg) else ""
+    cdb_txt = open(cdb_cfg, encoding="utf-8").read() if os.path.isfile(cdb_cfg) else ""
+    if uri.endswith(".cpp") and "ENABLE_FAKE_TIDY_ERR" in tidy_txt:
+        diags.append({
+            "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 3}},
+            "severity": 2,
+            "source": "clang-tidy",
+            "code": "fake-tidy-check",
+            "message": "Tidy check enabled in native/.clang-tidy",
+        })
+    if uri.endswith(".cpp") and "-DMODE=2" in cdb_txt:
+        diags.append({
+            "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 3}},
+            "severity": 1,
+            "source": "clang",
+            "code": "fake-cdb-err",
+            "message": "Compile database macro -DMODE=2 active",
+        })
     for idx, line in enumerate(text.splitlines()):
         if "BAD_TOKEN" in line:
             col = line.index("BAD_TOKEN")
@@ -1827,6 +2003,46 @@ def _self_test() -> int:
                          "params": {"name": "lsp_workspace_symbols", "arguments": {"query": "comp", "language": "python"}}})
             check("workspace symbols queries selected language backend",
                   "Function sym_comp" in wsyms["result"]["content"][0]["text"], repr(wsyms))
+
+            # Config file tracking: native/.clang-tidy and artifacts/native/x64-debug/compile_commands.json appear in
+            # _take_workspace_snapshot() and invalidate cached diagnostics on unchanged C++ files (even same-size edits).
+            native_dir = os.path.join(ws, "native")
+            cdb_dir = os.path.join(ws, "artifacts", "native", "x64-debug")
+            os.makedirs(native_dir, exist_ok=True)
+            os.makedirs(cdb_dir, exist_ok=True)
+            tidy_file = os.path.join(native_dir, ".clang-tidy")
+            cdb_file = os.path.join(cdb_dir, "compile_commands.json")
+            with open(tidy_file, "w", encoding="utf-8") as fh:
+                fh.write("Checks: '-*'\n")
+            with open(cdb_file, "w", encoding="utf-8") as fh:
+                fh.write('[{"command":"clang -DMODE=1 main.cpp","file":"main.cpp"}]\n')
+            snap_keys = srv.backends["clangd"]._take_workspace_snapshot()
+            check("workspace snapshot tracks native/.clang-tidy and artifacts/native/x64-debug/compile_commands.json",
+                  _norm_key(tidy_file) in snap_keys and _norm_key(cdb_file) in snap_keys,
+                  repr(sorted(snap_keys)))
+            d_cpp0 = rpc({"jsonrpc": "2.0", "id": 14, "method": "tools/call",
+                          "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "main.cpp"}}})
+            check("initial C++ diagnostics clean before config edits",
+                  "main.cpp: 0 diagnostics (clangd)" in d_cpp0["result"]["content"][0]["text"], repr(d_cpp0))
+            with open(tidy_file, "w", encoding="utf-8") as fh:
+                fh.write("Checks: 'ENABLE_FAKE_TIDY_ERR'\n")
+            d_cpp_tidy = rpc({"jsonrpc": "2.0", "id": 15, "method": "tools/call",
+                              "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "main.cpp"}}})
+            check("editing native/.clang-tidy invalidates cached diagnostics on unchanged C++ file",
+                  "Tidy check enabled in native/.clang-tidy" in d_cpp_tidy["result"]["content"][0]["text"],
+                  repr(d_cpp_tidy))
+            with open(tidy_file, "w", encoding="utf-8") as fh:
+                fh.write("Checks: '-*'\n")
+            # Same-byte-length edit to compile_commands.json (-DMODE=1 -> -DMODE=2): SHA-256 config digest catches it!
+            with open(cdb_file, "w", encoding="utf-8") as fh:
+                fh.write('[{"command":"clang -DMODE=2 main.cpp","file":"main.cpp"}]\n')
+            d_cpp_cdb = rpc({"jsonrpc": "2.0", "id": 16, "method": "tools/call",
+                             "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "main.cpp"}}})
+            check("editing artifacts/native/x64-debug/compile_commands.json invalidates cached C++ diagnostics",
+                  "Compile database macro -DMODE=2 active" in d_cpp_cdb["result"]["content"][0]["text"],
+                  repr(d_cpp_cdb))
+            with open(cdb_file, "w", encoding="utf-8") as fh:
+                fh.write('[{"command":"clang -DMODE=1 main.cpp","file":"main.cpp"}]\n')
 
             # Idle reaper reclaims backend process automatically after idle_seconds (0.35s).
             time.sleep(0.6)

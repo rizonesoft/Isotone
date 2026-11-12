@@ -245,6 +245,90 @@ class LspMcpServerTest(unittest.TestCase):
             srv.close()
             shutil.rmtree(probe_dir, ignore_errors=True)
 
+    @unittest.skipUnless(os.name == "nt" and VSWHERE.is_file(), "pinned Visual Studio clangd not installed")
+    def test_live_clangd_reloads_clang_tidy_and_compile_commands(self) -> None:
+        import tempfile
+        mod = _load_server_module()
+        launch = mod._load_lsp_launch()
+        base_cmd, base_env = launch.clangd()
+        with tempfile.TemporaryDirectory(prefix="isotone-clangd-cfg-") as tmp_ws:
+            ws = Path(tmp_ws)
+            native_dir = ws / "native"
+            cdb_dir = ws / "artifacts" / "native" / "x64-debug"
+            native_dir.mkdir(parents=True)
+            cdb_dir.mkdir(parents=True)
+            sample_cpp = native_dir / "sample.cpp"
+            sample_cpp.write_text(
+                "#ifdef FORCE_BROKEN_TYPE\n"
+                'int sample_fn() { int broken = "bad"; return broken; }\n'
+                "#else\n"
+                "int sample_fn() { return 0; }\n"
+                "#endif\n",
+                encoding="utf-8",
+            )
+            tidy_cfg = native_dir / ".clang-tidy"
+            tidy_cfg.write_text("Checks: '-*'\n", encoding="utf-8")
+            cdb_file = cdb_dir / "compile_commands.json"
+
+            def write_cdb(extra_flag: str = "") -> None:
+                cmd_parts = ["clang-cl", "/std:c++23", "/EHsc"]
+                if extra_flag:
+                    cmd_parts.append(extra_flag)
+                cmd_parts.extend(["/c", str(sample_cpp)])
+                cdb_file.write_text(
+                    json.dumps([{
+                        "directory": str(ws),
+                        "arguments": cmd_parts,
+                        "file": str(sample_cpp),
+                    }]),
+                    encoding="utf-8",
+                )
+
+            write_cdb()
+            clangd_cmd = [
+                arg if not arg.startswith("--compile-commands-dir=") else f"--compile-commands-dir={cdb_dir}"
+                for arg in base_cmd
+            ]
+            srv = mod.IsotoneLspMcpServer(
+                root=str(ws),
+                resolvers={"clangd": lambda: (list(clangd_cmd), dict(base_env)), "pyright": launch.pyright},
+                idle_seconds=60.0,
+            )
+            try:
+                d0 = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "native/sample.cpp"}},
+                })
+                assert d0 is not None and not d0["result"]["isError"]
+                self.assertIn("native/sample.cpp: 0 diagnostics (clangd)", d0["result"]["content"][0]["text"])
+
+                # Mutate compile_commands.json without modifying sample.cpp.
+                write_cdb("-DFORCE_BROKEN_TYPE=1")
+                d_cdb = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "native/sample.cpp"}},
+                })
+                assert d_cdb is not None and not d_cdb["result"]["isError"]
+                self.assertIn("Error", d_cdb["result"]["content"][0]["text"])
+
+                # Restore compile_commands.json and enable modernize-use-trailing-return-type in native/.clang-tidy.
+                write_cdb()
+                tidy_cfg.write_text("Checks: '-*,modernize-use-trailing-return-type'\n", encoding="utf-8")
+                d_tidy = srv.handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 3,
+                    "method": "tools/call",
+                    "params": {"name": "lsp_diagnostics", "arguments": {"file_path": "native/sample.cpp"}},
+                })
+                assert d_tidy is not None and not d_tidy["result"]["isError"]
+                self.assertIn("modernize-use-trailing-return-type", d_tidy["result"]["content"][0]["text"])
+            finally:
+                srv.close()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,7 +23,7 @@ Repairs: installs the icon packages from `scripts/requirements-icons.txt` with p
 
 ### Native toolchain
 
-The C++ apps build with one exact toolchain, pinned in `native/toolchain.json` (`docs/dev/decisions.md`, "2026-10-23: The native toolchain pin"): the MSVC toolset 14.51.36231 (compiler 19.51.36260), Windows SDK 10.0.26100.0, CMake 4.3.1-msvc1, Ninja 1.13.2, LLVM 22.1.3 (clang-tidy, clang-format, clang-cl), and the vcpkg tool 2026-07-27, all bundled with Visual Studio 2026 18.11. It is the toolchain the development machine and both CI images (`windows-2025-vs2026`, `windows-11-vs2026-arm`) share, read by the `toolchain-probe` workflow.
+The C++ apps build with one exact toolchain, pinned in `native/toolchain.json` (`docs/dev/decisions.md`, "2026-10-23: The native toolchain pin"): Visual Studio 2026 18.12's MSVC toolset 14.52.37025 (compiler 19.52.37029) and bundled vcpkg 2026-09-26 (with an explicit `18.11.` rollout profile on MSVC toolset 14.51.36231 / compiler 19.51.36260 / vcpkg 2026-07-27 while GitHub Actions `windows-2025-vs2026` and `windows-11-vs2026-arm` complete their Visual Studio 18.12 image rollout), Windows SDK 10.0.26100.0, CMake 4.3.1-msvc1, Ninja 1.13.2, and LLVM 22.1.3 (clang-tidy, clang-format, clang-cl), read by the `toolchain-probe` workflow.
 
 `scripts/dev-env.ps1` enters it and refuses anything else. It finds Visual Studio with `vswhere`, enters the toolset through `vcvarsall.bat -vcvars_ver=<toolset>` with the pinned SDK (`Launch-VsDevShell.ps1` cannot select a toolset), sets `VCPKG_ROOT` to the bundled vcpkg, and compares what the environment runs with the pin:
 

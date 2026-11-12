@@ -197,3 +197,31 @@ OVERALL: needs-attention
 
 1. **P1 `scripts/panel_slots.py:5032` (`adversarial`):** Real and reproduced. Added `_check_fetch_refspec`, `_check_push_refspec`, and `_check_git_trunk_config_override` in `scripts/panel_slots.py` and wired them across `git -c`, `git --config-env`, `git config`, and `git remote`, validating `remote.*.fetch` and `remote.*.push` refspecs with the exact same rules as positional `fetch`/`pull`/`push` refspecs and forbidding overrides of `remote.*` non-refspec keys (`url`, `pushurl`, `mirror`), `alias.*`, `include.*`/`includeIf.*`, `checkout.*`, `worktree.*`, `branch.*`, `push.*`, `url.*`, and `core.worktree`/`core.bare`/`core.hooksPath`, as well as remote-mutating `git remote` subcommands. Added explicit `_self_test` coverage (`1091 cases, 0 failed`).
 2. **P2 `scripts/lsp-mcp-server.py:418` (`integration`):** Real and reproduced. Added a dedicated per-backend `_BackendWriter` thread in `scripts/lsp-mcp-server.py` so every transport write (`_send_notification_locked` and `_request_locked`, with `deadline` started before writing stdin) runs under a bounded deadline, and when any write or request deadline expires `LspBackend` immediately terminates the backend process tree (`_terminate_backend_instance` / `_kill_proc`), joins the writer thread, resets backend state, and releases `_op_lock`. Added deterministic 1 MiB stalled-stdin notification and request timeout regression tests in `lsp-mcp-server.py --self-test` (`29 cases, 0 failed`).
+
+## Round 7: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-11T23:12:12Z
+- Effort: medium
+- Lines: 14
+- Digest: 56e664f8ed4bdd4b
+
+### adversarial: approve
+
+### consistency: approve
+
+### integration: needs-attention
+
+1. P2 `scripts/lsp-mcp-server.py:712`: Configuration changes can leave cached clangd diagnostics stale. The scan excludes `artifacts`, including the active `artifacts/native/x64-debug/compile_commands.json`, and its filename filters omit `native/.clang-tidy`. Reproduce by querying diagnostics, changing enabled checks in `native/.clang-tidy` or reconfiguring compiler definitions through CMake command-line options, then querying the unchanged source again before idle shutdown. Neither change invalidates the cache, and lines 991-993 can return the previous diagnostics without contacting clangd. Read-only probes confirmed both configuration files are absent from the snapshot and the cached diagnostic path sends zero backend messages. Track these actual configuration inputs and invalidate affected documents when they change.
+
+### source-defect: approve
+
+### record: approve
+
+HIGHEST: P2
+OVERALL: needs-attention
+
+
+## Response to round 7
+
+1. **P2 `scripts/lsp-mcp-server.py:712` (`integration`):** Real and reproduced. Replaced mtime-only configuration scanning with content-hashed SHA-256 configuration tracking (`_CONFIG_DIGEST_FILENAMES`, `_CONFIG_DIGEST_SUFFIXES`, and `_EXPLICIT_CONFIG_RELATIVE_PATHS`, explicitly covering `artifacts/native/x64-debug/compile_commands.json` even though `artifacts` is excluded from general workspace tree walks, plus `native/.clang-tidy`, `native/.clang-format`, `native/toolchain.json`, `native/CMakeLists.txt`, `native/CMakePresets.json`, `native/cmake/*.cmake`, and `pyrightconfig.json`). `_refresh_workspace_configs` compares the live SHA-256 map on every backend call and, when any tracked configuration changes, restarts the active backend (`stop()` -> `start()`), increments `_generation`, and clears cached diagnostics so subsequent queries re-evaluate against the new configuration. Added 4 deterministic regression cases in `scripts/lsp-mcp-server.py --self-test` (`33 cases, 0 failed`) covering `compile_commands.json` under `artifacts`, `native/.clang-tidy`, same-mtime content changes, and live configuration restarts; also updated `native/toolchain.json`, `native/triplets/isotone-*.cmake`, `scripts/dev-env.ps1`, `scripts/lsp-launch.py`, and `scripts/tests/test_dev_env.py` (`18 tests, OK`) for Visual Studio 2026 `18.12.0` (`14.52.37025`) with an explicit `18.11.` CI rollout profile and re-verified `scripts/tests/test_lsp_mcp_server.py` (`7 tests, OK`).

@@ -45,6 +45,17 @@ def fixture(name):
     for key in keys[:-1]:
         node = node[key]
     node[keys[-1]] = value
+    for profile in pin.get("rollout_profiles", []):
+        pnode = profile
+        ok = True
+        for key in keys[:-1]:
+            if isinstance(pnode, dict) and key in pnode:
+                pnode = pnode[key]
+            else:
+                ok = False
+                break
+        if ok and isinstance(pnode, dict) and keys[-1] in pnode:
+            pnode[keys[-1]] = value
     pin["about"] = f"Test fixture: native/toolchain.json with {'.'.join(keys)} = {value}. Regenerate with " \
                    f"python scripts/tests/test_dev_env.py --write-fixtures."
     return json.dumps(pin, indent=2) + "\n"
@@ -130,11 +141,13 @@ class DevEnvCheckTest(unittest.TestCase):
 
     def test_a_triplet_off_the_pin_is_refused(self):
         # vcpkg builds each dependency with its triplet's toolset, so a triplet off the pin fails only its own row.
+        pinned_toolset = json.loads(PIN.read_text(encoding="utf-8"))["msvc"]["toolset"]
         with tempfile.TemporaryDirectory() as tmp:
             for src in (ROOT / "native" / "triplets").glob("isotone-*.cmake"):
                 text = src.read_text(encoding="utf-8")
                 if src.name == "isotone-x64.cmake":
-                    text = text.replace("VCPKG_PLATFORM_TOOLSET_VERSION 14.51.36231", "VCPKG_PLATFORM_TOOLSET_VERSION 14.44.35207")
+                    text = text.replace(f"VCPKG_PLATFORM_TOOLSET_VERSION {pinned_toolset}",
+                                        "VCPKG_PLATFORM_TOOLSET_VERSION 14.44.35207", 1)
                 Path(tmp, src.name).write_text(text, encoding="utf-8")
             code, rows = check(PIN, extra=("-TripletDir", tmp))
         self.assertEqual(code, 1)
@@ -243,6 +256,28 @@ class InstallationTest(unittest.TestCase):
         self.assertTrue(all(rows[f"component {c}"][1] for c in components[1:]), rows)
         self.assertNotIn("MSVC toolset", rows)
         self.assertIn("C:\\VS\\Community", rows["Visual Studio"][0])
+
+    def test_rollout_profile_selects_matching_vs_minor_and_checks_triplet_rollout(self):
+        pin = json.loads(PIN.read_text(encoding="utf-8"))
+        components = pin["visual_studio"]["components"]
+        rollout = pin["rollout_profiles"][0]
+        install = [{"installationPath": "C:\\VS\\Enterprise1811", "installationVersion": "18.11.12328.437",
+                    "packages": [{"id": c, "type": "Component"} for c in components]}]
+        with tempfile.TemporaryDirectory() as tmp:
+            stand_in = vswhere_stand_in(tmp, complete=install, newest=install)
+            tdir = Path(tmp) / "triplets"
+            tdir.mkdir()
+            for src in (ROOT / "native" / "triplets").glob("isotone-*.cmake"):
+                text = src.read_text(encoding="utf-8")
+                if src.name == "isotone-x64.cmake":
+                    text = text.replace(f"set(VCPKG_PLATFORM_TOOLSET_VERSION {rollout['msvc']['toolset']})", "")
+                (tdir / src.name).write_text(text, encoding="utf-8")
+            code, rows = check(PIN, vswhere=stand_in, extra=("-TripletDir", str(tdir)))
+        self.assertEqual(code, 1)
+        self.assertIn(f"MSVC toolset pinned {rollout['msvc']['toolset']}", rows["MSVC toolset"][0])
+        self.assertFalse(rows["triplet isotone-x64 toolset"][1], rows["triplet isotone-x64 toolset"][0])
+        self.assertIn("missing rollout", rows["triplet isotone-x64 toolset"][0])
+        self.assertTrue(rows["triplet isotone-arm64 toolset"][1], rows["triplet isotone-arm64 toolset"][0])
 
 
 if __name__ == "__main__":

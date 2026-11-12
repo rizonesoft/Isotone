@@ -99,6 +99,8 @@ function Restore-PreEntryEnvironment {
 # lacks.
 $range = $Pin.visual_studio.version_range
 $vs = $null
+$ActiveMsvc = $Pin.msvc
+$ActiveVcpkg = $Pin.vcpkg
 if (-not (Test-Path $VsWhere)) {
   Add-Row 'Visual Studio Installer' 'installed' "missing ($VsWhere): install Visual Studio 2026 first" $false
 }
@@ -113,6 +115,16 @@ else {
   else {
     # The selected installation, by path: provision prints its repair commands against exactly this one.
     Add-Row 'Visual Studio' $range "$($install.installationVersion) at $($install.installationPath)" $true
+    if ($Pin.PSObject.Properties['rollout_profiles'] -and $Pin.rollout_profiles) {
+      foreach ($profile in @($Pin.rollout_profiles)) {
+        $prefix = [string]$profile.visual_studio_prefix
+        if ($prefix -and ([string]$install.installationVersion).StartsWith($prefix, [StringComparison]::Ordinal)) {
+          $ActiveMsvc = $profile.msvc
+          $ActiveVcpkg = $profile.vcpkg
+          break
+        }
+      }
+    }
     $ids = [System.Collections.Generic.HashSet[string]]::new([string[]]@($install.packages | ForEach-Object { $_.id }))
     $complete = $true
     foreach ($component in $Pin.visual_studio.components) {
@@ -128,7 +140,7 @@ if ($vs) {
   $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvarsall.bat'
   $vcArch = Get-VcvarsArch (Get-HostArch) $Arch
   Restore-PreEntryEnvironment
-  $dump = & cmd.exe /d /c "`"$vcvars`" $vcArch $($Pin.windows_sdk) -vcvars_ver=$($Pin.msvc.toolset) >nul 2>&1 && set"
+  $dump = & cmd.exe /d /c "`"$vcvars`" $vcArch $($Pin.windows_sdk) -vcvars_ver=$($ActiveMsvc.toolset) >nul 2>&1 && set"
   $entered = $LASTEXITCODE -eq 0 -and ($dump | Where-Object { $_ -like 'VCToolsVersion=*' })
   if (-not $entered) {
     if (-not (Test-Path (Join-Path $SdkInclude $Pin.windows_sdk))) {
@@ -136,7 +148,7 @@ if ($vs) {
       Add-Row 'Windows SDK' $Pin.windows_sdk 'not installed'
     }
     else {
-      Add-Row 'MSVC toolset' $Pin.msvc.toolset "not installed (vcvarsall $vcArch could not enter it)"
+      Add-Row 'MSVC toolset' $ActiveMsvc.toolset "not installed (vcvarsall $vcArch could not enter it)"
     }
   }
   else {
@@ -172,9 +184,9 @@ if ($vs) {
     }
 
     # 3. What the environment actually runs.
-    Add-Row 'MSVC toolset' $Pin.msvc.toolset $env:VCToolsVersion
+    Add-Row 'MSVC toolset' $ActiveMsvc.toolset ("$env:VCToolsVersion".TrimEnd('\'))
     $banner = Invoke-Tool 'cl' @()
-    Add-Row 'MSVC compiler' $Pin.msvc.compiler (Read-Version $banner 'Version (\d+\.\d+\.\d+)')
+    Add-Row 'MSVC compiler' $ActiveMsvc.compiler (Read-Version $banner 'Version (\d+\.\d+\.\d+)')
     $clTarget = Read-Version $banner 'Version \S+ for (\w+)'
     Add-Row 'MSVC target' ($(if ($Arch -eq 'arm64') { 'ARM64' } else { 'x64' })) $clTarget
     # vcvarsall sets WindowsSDKVersion to the version it was asked for even when that SDK is not installed, so the
@@ -187,15 +199,24 @@ if ($vs) {
     Add-BundledToolRow 'clang-tidy' $Pin.llvm.'clang-tidy' 'clang-tidy' 'LLVM version (\S+)' $vs
     Add-BundledToolRow 'clang-format' $Pin.llvm.'clang-format' 'clang-format' 'clang-format version (\S+)' $vs
     Add-BundledToolRow 'clang-cl' $Pin.llvm.'clang-cl' 'clang-cl' 'clang version (\S+)' $vs
-    Add-BundledToolRow 'vcpkg' $Pin.vcpkg 'vcpkg' 'program version (\S+)' $vs
+    Add-BundledToolRow 'vcpkg' $ActiveVcpkg 'vcpkg' 'program version (\S+)' $vs
   }
 }
 
 # 4. What vcpkg builds dependencies with, which the environment above does not govern: each port runs its own vcvarsall,
 # with the toolset version its triplet names and the newest Windows SDK installed (vcpkg "Triplet files").
 foreach ($triplet in @(Get-ChildItem $TripletDir -Filter 'isotone-*.cmake' -ErrorAction Ignore)) {
-  $m = Select-String -Path $triplet.FullName -Pattern 'set\(VCPKG_PLATFORM_TOOLSET_VERSION\s+([^\s)]+)\)' | Select-Object -First 1
-  Add-Row "triplet $($triplet.BaseName) toolset" $Pin.msvc.toolset ($(if ($m) { $m.Matches[0].Groups[1].Value } else { 'none' }))
+  $m = Select-String -Path $triplet.FullName -Pattern '^set\(VCPKG_PLATFORM_TOOLSET_VERSION\s+([^\s)]+)\)' | Select-Object -First 1
+  $foundPrimary = $(if ($m) { $m.Matches[0].Groups[1].Value } else { 'none' })
+  if ($foundPrimary -eq $Pin.msvc.toolset -and $ActiveMsvc.toolset -ne $Pin.msvc.toolset) {
+    $escapedRollout = [regex]::Escape([string]$ActiveMsvc.toolset)
+    $hasRollout = [bool](Select-String -Path $triplet.FullName -Pattern "set\(VCPKG_PLATFORM_TOOLSET_VERSION\s+$escapedRollout\)")
+    if (-not $hasRollout) {
+      Add-Row "triplet $($triplet.BaseName) toolset" $ActiveMsvc.toolset "missing rollout $($ActiveMsvc.toolset)" $false
+      continue
+    }
+  }
+  Add-Row "triplet $($triplet.BaseName) toolset" $Pin.msvc.toolset $foundPrimary
 }
 $sdks = @(Get-ChildItem $SdkInclude -Directory -ErrorAction Ignore | Where-Object { $_.Name -match '^10\.0\.\d+\.\d+$' } |
   Sort-Object { [version]$_.Name } -Descending)
