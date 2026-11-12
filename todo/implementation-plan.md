@@ -191,7 +191,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [ ] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |  10   |
 | [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |
 | [ ] | `D00 T01 §10` | The drift gates                                                                          |  10   |
-| [ ] | `D00 T01 §5`  | First push: CI green and read back                                                       |   8   |
+| [ ] | `D00 T01 §5`  | First push: CI green and read back                                                       |   9   |
 
 > **Superseded:** `D00 T02 §1` -- Fix the quarantined tests and empty the quarantine (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
 > **Superseded:** `D00 T02 §9` -- Point every Stilus test at a temporary app data (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
