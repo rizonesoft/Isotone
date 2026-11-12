@@ -85,3 +85,55 @@ LENS optimization: clean
 LENS source-defect: clean
 HIGHEST: P2
 OVERALL: needs-attention
+
+## Round 3: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-12T15:14:43Z
+- Candidate: b4513eae1443dbbd29f242498c1f7ec41dba77c0
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 34
+- Digest: 061a39ef3b036b33
+
+### adversarial: approve
+
+No findings.
+
+### consistency: approve
+
+No findings.
+
+### integration: approve
+
+No findings.
+
+### quality: approve
+
+No findings.
+
+### optimization: approve
+
+No findings.
+
+### source-defect: approve
+
+No findings.
+
+Verification: read-only inspection, Python syntax checks, diff checks, and an in-memory reproduction confirming preserved resume flags after three failed handovers in both directions. No files modified, live campaign launched, or full self-test run.
+
+LENS adversarial: clean
+LENS consistency: clean
+LENS integration: clean
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: none
+OVERALL: approve
+
+## Response to rounds 1 to 3
+
+- Round 1 finding 1 (P2, failed handover strands the old run): fixed in `a124ce7`; the pending handover carries the old runner's launch record as `previous`, which `_resumable` uses until the new session binds. Regression: `a-failed-handover-keeps-the-old-run-resumable`.
+- Round 1 finding 2 (P2, Claude `process-plan` forbids Claude campaigns): fixed in `a124ce7`; the rule now names both runners under the one session slot.
+- Round 2 finding 1 (P2, a retried failed handover drops the record): fixed in `b4513ea`; a new handover unwraps an earlier unopened one. The regression test now fails twice before checking.
+- Round 3: approve, no findings.
