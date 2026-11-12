@@ -460,3 +460,43 @@ OVERALL: needs-attention
 ## Response to round 13
 
 1. **P2 `scripts/lsp-mcp-server.py:195` (`integration`):** Real and reproduced. Replaced `urllib.request.url2pathname(urllib.parse.unquote(...))` in `_uri_to_path` with single-pass `urllib.parse.urlsplit` + `urllib.parse.unquote` decoding (handling standard `file:///D:/...`, Pyright percent-encoded Windows drive colons `file:///d%3A/...`, `file://D:/...`, and UNC `file://server/share/...` while preserving literal `%XX`, `;`, and `#` sequences in filenames), and hardened `_norm_key`, `_rel_display`, and `resolve_confined_file` against embedded null bytes and invalid path characters. Added a regression test in `lsp-mcp-server.py --self-test` (`43 cases, 0 failed`) covering `_uri_to_path(_path_to_uri(...))` round-tripping, `d%3A` URI key matching, and end-to-end `lsp_diagnostics` and `lsp_definition` on `literal%20name;hash#pct%25.py`.
+
+## Round 14: astra (`gpt-6-astra` via `codex`)
+
+- Writer: agy
+- Run: 2026-11-12T02:56:42Z
+- Candidate: 4251d7e462ac7036277b161e848c401b20eecb69
+- Effort: medium
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect
+- Lines: 24
+- Digest: ba16dc207b969879
+
+### adversarial: needs-attention
+
+1. **P1** `scripts/lsp-mcp-server.py:257`: Workspace confinement happens after filesystem access. `Path(joined).resolve()` processes an arbitrary UNC path before the boundary check at line 263. On Windows, this reaches `CreateFileW`, allowing a hostile tool request to initiate external SMB access, potentially including Windows authentication, and block the synchronous server outside its request timeout. [CPython implementation](https://github.com/python/cpython/blob/main/Modules/posixmodule.c).
+
+   Reproduce through `lsp_hover` with `file_path` set to `\\review-host\share\probe.py`, line 1, column 1. Read-only instrumentation intercepted `ntpath._getfinalpathname` receiving that exact remote path before confinement rejected it. No network connection was made during verification. Reject external roots and device paths lexically before filesystem resolution, then retain the resolved containment check.
+
+### consistency: approve
+
+### integration: approve
+
+### quality: approve
+
+### optimization: approve
+
+### source-defect: approve
+
+LENS adversarial: findings
+LENS consistency: clean
+LENS integration: clean
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+HIGHEST: P1
+OVERALL: needs-attention
+
+
+## Response to round 14
+
+1. **P1 `scripts/lsp-mcp-server.py:257` (`adversarial`):** Real and reproduced. Added pure-lexical guards `_is_unc_or_device_path`, `_has_unsafe_path_syntax` (rejecting UNC `\\server\share`, Win32 device/NT prefixes `\\.\`, `\\?\`, `\??\`, NTFS alternate data streams, and Windows reserved device names), and `_lexically_within` ahead of `Path(...).resolve()` across `resolve_confined_file`, `LspBackend._confined_candidate`, `_norm_key`, `_uri_to_path`, `_uri_key`, and `_rel_display`, while retaining post-resolution containment checks for in-tree symlinks and junctions. Added a regression test in `lsp-mcp-server.py --self-test` (`44 cases, 0 failed`) instrumenting `os.path._getfinalpathname` to verify zero filesystem resolution calls reach UNC, device, stream, drive-relative, or escaping paths.

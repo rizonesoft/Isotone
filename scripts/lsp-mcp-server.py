@@ -179,8 +179,73 @@ def _load_lsp_launch():
     return mod
 
 
-def _norm_key(path: str) -> str:
+_WIN_RESERVED_STEMS = frozenset({
+    "CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$",
+    *(f"COM{i}" for i in range(10)),
+    *(f"LPT{i}" for i in range(10)),
+})
+
+
+def _is_unc_or_device_path(raw_path: str) -> bool:
+    if os.name != "nt":
+        return False
+    norm_slashes = raw_path.replace("/", "\\")
+    return norm_slashes.startswith("\\\\")
+
+
+def _has_unsafe_path_syntax(raw_path: str) -> bool:
+    if "\x00" in raw_path:
+        return True
+    if os.name != "nt":
+        return False
+    norm_slashes = raw_path.replace("/", "\\")
+    if norm_slashes.startswith(("\\\\.\\", "\\\\?\\", "\\??\\")) or norm_slashes in ("\\\\.", "\\\\?", "\\??"):
+        return True
+    _, tail = os.path.splitdrive(norm_slashes)
+    if ":" in tail:
+        return True
+    for seg in tail.split("\\"):
+        if not seg or seg in (".", ".."):
+            continue
+        stem = seg.split(".", 1)[0].rstrip(" .").upper()
+        if stem in _WIN_RESERVED_STEMS:
+            return True
+    return False
+
+
+def _lexically_within(candidate: str, allowed_roots: tuple[str, ...], *, allow_equal: bool = True) -> bool:
+    """Pure lexical check (zero filesystem or network I/O) verifying candidate stays inside allowed_roots."""
+    if _has_unsafe_path_syntax(candidate):
+        return False
+    cand_norm = os.path.normcase(os.path.normpath(candidate))
+    cand_drive, cand_tail = os.path.splitdrive(cand_norm)
+    if os.name == "nt":
+        if cand_drive and not cand_tail.startswith("\\"):
+            return False
+        if not cand_drive and cand_norm.startswith("\\"):
+            return False
+    for aroot in allowed_roots:
+        if not aroot:
+            continue
+        r_norm = os.path.normcase(os.path.normpath(aroot))
+        r_drive, _ = os.path.splitdrive(r_norm)
+        if cand_drive != r_drive:
+            continue
+        try:
+            common = os.path.commonpath([r_norm, cand_norm])
+        except ValueError:
+            continue
+        if common == r_norm and (allow_equal or cand_norm != r_norm):
+            return True
+    return False
+
+
+def _norm_key(path: str, root: str | None = None) -> str:
     clean = path.replace("\x00", "")
+    if _has_unsafe_path_syntax(clean) or _is_unc_or_device_path(clean):
+        return os.path.normcase(os.path.normpath(clean))
+    if root is not None and not _lexically_within(clean, (root,)):
+        return os.path.normcase(os.path.normpath(clean))
     try:
         resolved = str(Path(clean).resolve())
     except (OSError, ValueError):
@@ -192,7 +257,7 @@ def _path_to_uri(path: str) -> str:
     return Path(path).resolve().as_uri()
 
 
-def _uri_to_path(uri: str) -> str:
+def _uri_to_path(uri: str, root: str | None = None) -> str:
     if "\x00" in uri:
         return uri.replace("\x00", "")
     parsed = urllib.parse.urlsplit(uri)
@@ -215,27 +280,37 @@ def _uri_to_path(uri: str) -> str:
         return uri
     if os.name == "nt":
         raw_path = raw_path.replace("/", "\\")
+    if _has_unsafe_path_syntax(raw_path) or _is_unc_or_device_path(raw_path):
+        return os.path.normpath(raw_path)
+    if root is not None and not _lexically_within(raw_path, (root,)):
+        return os.path.normpath(raw_path)
     try:
         return str(Path(raw_path).resolve())
     except (OSError, ValueError):
         return os.path.normpath(raw_path)
 
 
-def _uri_key(uri: str) -> str:
-    return _norm_key(_uri_to_path(uri))
+def _uri_key(uri: str, root: str | None = None) -> str:
+    return _norm_key(_uri_to_path(uri, root=root), root=root)
 
 
 def _rel_display(path_or_uri: str, root: str = REPO) -> str:
-    if path_or_uri.lower().startswith("file:"):
-        path = _uri_to_path(path_or_uri)
-    else:
-        try:
-            path = str(Path(path_or_uri.replace("\x00", "")).resolve())
-        except (OSError, ValueError):
-            path = os.path.normpath(path_or_uri.replace("\x00", ""))
     root_resolved = str(Path(root).resolve())
+    if path_or_uri.lower().startswith("file:"):
+        path = _uri_to_path(path_or_uri, root=root_resolved)
+    else:
+        clean = path_or_uri.replace("\x00", "")
+        if not _has_unsafe_path_syntax(clean) and not _is_unc_or_device_path(clean) and _lexically_within(clean, (root_resolved,)):
+            try:
+                path = str(Path(clean).resolve())
+            except (OSError, ValueError):
+                path = os.path.normpath(clean)
+        else:
+            path = os.path.normpath(clean)
+    root_key = _norm_key(root_resolved, root=root_resolved)
+    path_key = _norm_key(path, root=root_resolved)
     try:
-        if os.path.commonpath([_norm_key(root_resolved), _norm_key(path)]) == _norm_key(root_resolved):
+        if os.path.commonpath([root_key, path_key]) == root_key:
             return os.path.relpath(path, root_resolved).replace("\\", "/")
     except ValueError:
         pass
@@ -243,7 +318,7 @@ def _rel_display(path_or_uri: str, root: str = REPO) -> str:
 
 
 def resolve_confined_file(raw_path: str, root: str = REPO) -> tuple[str, str, str]:
-    """Resolve raw_path inside root (resolving symlinks/junctions) and return (abs_path, backend_name, language_id)."""
+    """Resolve raw_path inside root (lexical gate first, then symlink/junction check) and return (abs_path, backend_name, language_id)."""
     if not isinstance(raw_path, str) or not raw_path.strip():
         raise LspToolError("file_path must be a non-empty workspace path")
     if "\x00" in raw_path:
@@ -251,14 +326,30 @@ def resolve_confined_file(raw_path: str, root: str = REPO) -> tuple[str, str, st
     if len(raw_path) > MAX_PATH_CHARS:
         raise LspToolError(f"file_path exceeds maximum length ({MAX_PATH_CHARS} characters)")
     candidate = raw_path.strip()
-    root_resolved = str(Path(root).resolve())
-    joined = candidate if os.path.isabs(candidate) else os.path.join(root_resolved, candidate)
+    if _has_unsafe_path_syntax(candidate) or _is_unc_or_device_path(candidate):
+        raise LspToolError(f"file_path {raw_path!r} uses a forbidden device, stream, or network path syntax")
+    if os.name == "nt":
+        c_drive, c_tail = os.path.splitdrive(candidate)
+        if c_drive and not c_tail.startswith(("\\", "/")):
+            raise LspToolError(f"file_path {raw_path!r} uses a forbidden drive-relative path")
+        if not c_drive and candidate.startswith(("\\", "/")):
+            raise LspToolError(f"file_path {raw_path!r} resolves outside the workspace root")
+    root_abs_lex = os.path.normpath(os.path.abspath(root))
+    root_resolved = str(Path(root_abs_lex).resolve())
+    if os.path.isabs(candidate):
+        joined_lex = os.path.normpath(candidate)
+        allowed_roots: tuple[str, ...] = (root_resolved, root_abs_lex)
+    else:
+        joined_lex = os.path.normpath(os.path.join(root_resolved, candidate))
+        allowed_roots = (root_resolved,)
+    if not _lexically_within(joined_lex, allowed_roots, allow_equal=False):
+        raise LspToolError(f"file_path {raw_path!r} resolves outside the workspace root")
     try:
-        abs_path = str(Path(joined).resolve())
+        abs_path = str(Path(joined_lex).resolve())
     except (OSError, ValueError) as exc:
         raise LspToolError(f"file_path {raw_path!r} is invalid ({exc})") from exc
-    root_norm = _norm_key(root_resolved)
-    path_norm = _norm_key(abs_path)
+    root_norm = _norm_key(root_resolved, root=root_resolved)
+    path_norm = _norm_key(abs_path, root=root_resolved)
     try:
         common = os.path.commonpath([root_norm, path_norm])
     except ValueError as exc:
@@ -621,7 +712,7 @@ class LspBackend:
             raw_ver = params.get("version")
             pub_ver = raw_ver if isinstance(raw_ver, int) and not isinstance(raw_ver, bool) else None
             if isinstance(uri, str) and isinstance(diags, list):
-                key = _uri_key(uri)
+                key = _uri_key(uri, root=self.root)
                 with self._cond:
                     open_meta = self._open_docs.get(key)
                     if open_meta is None or pub_ver is None or pub_ver != int(open_meta["version"]):
@@ -844,12 +935,20 @@ class LspBackend:
 
     def _confined_candidate(self, raw_path: str, base_dir: str | None = None) -> str | None:
         cand = raw_path.strip().strip('"').strip("'")
-        if not cand:
+        if not cand or _has_unsafe_path_syntax(cand) or _is_unc_or_device_path(cand):
             return None
+        if os.name == "nt":
+            c_drive, c_tail = os.path.splitdrive(cand)
+            if c_drive and not c_tail.startswith(("\\", "/")):
+                return None
+            if not c_drive and cand.startswith(("\\", "/")):
+                return None
         anchor = base_dir if base_dir is not None else self.root
-        joined = cand if os.path.isabs(cand) else os.path.join(anchor, cand)
+        joined_lex = os.path.normpath(cand if os.path.isabs(cand) else os.path.join(anchor, cand))
+        if not _lexically_within(joined_lex, (self.root,)):
+            return None
         try:
-            resolved = str(Path(joined).resolve())
+            resolved = str(Path(joined_lex).resolve())
             root_norm = os.path.normcase(self.root)
             cand_norm = os.path.normcase(resolved)
             if os.path.commonpath([root_norm, cand_norm]) != root_norm:
@@ -2569,6 +2668,52 @@ def _self_test() -> int:
                   and "literal%20name;hash#pct%25.py" in lit_def_text
                   and nul_key_ok,
                   f"rt={lit_roundtrip!r} diag={lit_diag_text!r} def={lit_def_text!r}")
+
+            intercepted_finalpaths: list[str] = []
+            orig_gfp = getattr(os.path, "_getfinalpathname", None)
+            if callable(orig_gfp):
+                def _recording_gfp(p):
+                    intercepted_finalpaths.append(os.fsdecode(p))
+                    return orig_gfp(p)
+                setattr(os.path, "_getfinalpathname", _recording_gfp)
+            try:
+                hostile_inputs = [
+                    r"\\review-host\share\probe.py",
+                    "//review-host/share/probe.py",
+                    r"\\?\UNC\review-host\share\probe.py",
+                    r"\\.\pipe\probe.py",
+                    r"..\..\outside_probe.py",
+                    "CON.py",
+                    "probe.py:ads",
+                    "C:drive_rel_probe.py",
+                    r"\root_rel_probe.py",
+                ]
+                hostile_rejected = True
+                for idx_h, hpath in enumerate(hostile_inputs):
+                    hresp = rpc({
+                        "jsonrpc": "2.0",
+                        "id": 200 + idx_h,
+                        "method": "tools/call",
+                        "params": {
+                            "name": "lsp_hover",
+                            "arguments": {"file_path": hpath, "line": 1, "character": 1},
+                        },
+                    })
+                    if not hresp.get("result", {}).get("isError"):
+                        hostile_rejected = False
+                _ = _uri_key("file://review-host/share/probe.py", root=srv.root)
+                _ = _rel_display("file://review-host/share/probe.py", root=srv.root)
+                conf_unc = srv.backends["clangd"]._confined_candidate(r"\\review-host\share\db")
+            finally:
+                if callable(orig_gfp):
+                    setattr(os.path, "_getfinalpathname", orig_gfp)
+            bad_hits = [
+                p for p in intercepted_finalpaths
+                if any(tok in p.lower() for tok in ("review-host", "pipe", "outside_probe", "con.py", "ads", "drive_rel", "root_rel"))
+            ]
+            check("UNC, device, stream, and escaping paths rejected lexically before filesystem resolution",
+                  hostile_rejected and conf_unc is None and not bad_hits,
+                  f"rejected={hostile_rejected} conf_unc={conf_unc!r} hits={bad_hits!r}")
         finally:
             srv.close()
 
