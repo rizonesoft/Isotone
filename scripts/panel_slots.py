@@ -5752,7 +5752,9 @@ def agent_gate(raw: str, out, err, loader=None, env: dict | None = None, root: s
         return 0
     if isinstance(payload.get("toolCall"), dict):
         try:
-            (loader or _default_loader)()
+            tname = payload["toolCall"].get("name")
+            if tname in ("invoke_subagent", "define_subagent", "swarm"):
+                (loader or _default_loader)()
             cid = payload.get("conversationId") if isinstance(payload.get("conversationId"), str) else None
             reason = agy_gate_decision(payload["toolCall"], env=env, conversation_id=cid, root=root)
         except Exception as exc:
@@ -5850,7 +5852,6 @@ effort = "high"
 [routes]
 agy = ["astra"]
 claude = ["astra"]
-muse = ["astra"]
 """
 
 
@@ -5905,7 +5906,7 @@ def _self_test() -> int:
             GOOD_PIN.replace('[routes]', '[reviewers.extra]\ncli = "codex"\nmodel = "g-two"\neffort = "low"\n\n[routes]'),
             "which no route names")
     refuses("a fallback reviewer on a route is refused",
-            GOOD_PIN.replace('agy = ["astra"]', 'agy = ["astra", "astra"]'), "there is no fallback")
+            GOOD_PIN.replace('agy = ["astra"]', 'agy = ["astra", "astra"]'), "must list exactly one reviewer")
     refuses("a missing pin is refused", "", "reviewer pin refused")
     check("the writer and delegate pins are valid", WRITER["agent"] == "agy" and WRITER["family"] == "google"
           and DELEGATE["family"] == "claude"
@@ -6476,6 +6477,26 @@ def _self_test() -> int:
           agy_gate("swarm", {"action": "status"}) == {"decision": "allow"})
     check("agy gate allows swarm models",
           agy_gate("swarm", {"action": "models"}) == {"decision": "allow"})
+
+    def agy_gate_broken(name: str, args) -> dict:
+        out, err = io.StringIO(), io.StringIO()
+        payload = {"conversationId": "c-broken", "hookEventName": "PreToolUse", "toolCall": {"name": name, "args": args}}
+
+        def bad_loader():
+            raise PanelSlotsError("pin broken")
+
+        rc = agent_gate(json.dumps(payload), out, err, bad_loader, env={}, root=tmpd)
+        check(f"agy broken-pin gate rc=0 ({name})", rc == 0)
+        return json.loads(out.getvalue())
+
+    check("agy gate denies invoke_subagent when pin does not load",
+          agy_gate_broken("invoke_subagent", {"TypeName": "research", "Role": "r", "Prompt": "x"}).get("decision") == "deny")
+    check("agy gate allows lead write_file repair when pin does not load",
+          agy_gate_broken("write_file", {"Path": "D:/Isotone/.conclave/reviewers.toml", "Content": "x"}) == {"decision": "allow"})
+    check("agy gate allows lead panel_slots validate when pin does not load",
+          agy_gate_broken("run_command", {"CommandLine": "python scripts/panel_slots.py validate"}) == {"decision": "allow"})
+    check("agy gate still denies --no-verify when pin does not load",
+          agy_gate_broken("run_command", {"CommandLine": "git commit --no-verify -m x"}).get("decision") == "deny")
     check("agy gate allows attended ask_question",
           agy_gate("ask_question", {"questions": [{"question": "q?", "options": ["a", "b"]}]}) == {"decision": "allow"})
     check("agy gate denies unattended ask_question via env",

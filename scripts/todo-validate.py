@@ -1152,9 +1152,70 @@ def validate(graph, _args) -> int:
         for lens in PANEL_LENSES
     }
 
+    JSON_RECEIPT_RE = re.compile(r"^`?(docs/reviews/[a-z0-9][a-z0-9.-]*\.json)`?$")
+
+    def _json_receipt(sec) -> str | None:
+        m = JSON_RECEIPT_RE.fullmatch((getattr(sec, "review_body", None) or "").strip())
+        return m.group(1) if m else None
+
+    def _is_json_receipt_attempt(sec) -> bool:
+        tok = (getattr(sec, "review_body", None) or "").strip().strip("`")
+        return bool(tok) and not any(ch.isspace() for ch in tok) and tok.endswith(".json")
+
+    lib_tg = None
+    todo_raw_cache: dict[str, str] = {}
     for t in todos:
         for num, s in sorted(t.sections.items()):
             if num not in t.verified_sections:
+                continue
+            raw_review = (getattr(s, "review_body", None) or "").strip()
+            receipt_rel = _json_receipt(s)
+            if receipt_rel is None:
+                if _is_json_receipt_attempt(s):
+                    flag(
+                        "stamp-receipt-invalid",
+                        f"{t.path}:{s.line}: §{num} Review names malformed JSON receipt path {raw_review!r} (stamp-receipt-invalid)",
+                    )
+                continue
+            if lib_tg is None:
+                lib_tg = graph.lib_todo_graph_module()
+            shaped = graph.STAMP_BODY_RE.match((s.verified_body or "").strip())
+            sha = shaped.group("evidence").strip() if shaped else ""
+            if re.fullmatch(r"[0-9a-f]{40}", sha) is None:
+                flag(
+                    "stamp-receipt-invalid",
+                    f"{t.path}:{s.line}: §{num} receipt {receipt_rel}: Verified evidence must be a 40-char commit SHA, got {sha!r} (stamp-receipt-invalid)",
+                )
+                continue
+            if t.path not in todo_raw_cache:
+                try:
+                    todo_raw_cache[t.path] = lib_tg.read_text(graph.REPO / t.path)
+                except OSError:
+                    todo_raw_cache[t.path] = ""
+            sec_span = lib_tg.section_text(todo_raw_cache[t.path], num) or ""
+            surface = lib_tg._section_surface(s, sec_span)
+            sec_ref = f"D{t.domain[:2]} T{t.number} §{num}"
+            try:
+                receipt_data = lib_tg.receipt_ok(
+                    graph.TODO_DIR.parent, receipt_rel, sec_ref, sha, surface=surface
+                )
+                for filed_ref in (receipt_data.get("completion") or {}).get("filed", []):
+                    r = graph.resolve_ref(filed_ref, t, by_key)
+                    if r is None or r[0] not in by_id or r[1] not in by_id[r[0]].sections or by_id[r[0]].sections[r[1]].moved:
+                        raise lib_tg.Refused(
+                            f"completion gap filed as {filed_ref}, which resolves to no live section: {sec_ref}"
+                        )
+            except lib_tg.Refused as exc:
+                flag(
+                    "stamp-receipt-invalid",
+                    f"{t.path}:{s.line}: §{num} receipt {receipt_rel}: {exc} (stamp-receipt-invalid)",
+                )
+
+    for t in todos:
+        for num, s in sorted(t.sections.items()):
+            if num not in t.verified_sections:
+                continue
+            if _json_receipt(s) is not None or _is_json_receipt_attempt(s):
                 continue
             if s.stamped_on is not None and s.stamped_on <= PANEL_CUTOFF:
                 continue
@@ -1335,6 +1396,8 @@ def validate(graph, _args) -> int:
     for t in todos:
         for num, s in sorted(t.sections.items()):
             if num not in t.verified_sections:
+                continue
+            if _json_receipt(s) is not None or _is_json_receipt_attempt(s):
                 continue
             if s.stamped_on is not None and s.stamped_on <= graph.PLAN_REVIEW_CUTOFF:
                 continue
@@ -1633,6 +1696,8 @@ def validate(graph, _args) -> int:
         for num, s in sorted(t.sections.items()):
             if num not in t.verified_sections:
                 continue
+            if _json_receipt(s) is not None or _is_json_receipt_attempt(s):
+                continue
             if s.stamped_on is not None and s.stamped_on <= graph.PLAN_REVIEW_CUTOFF:
                 continue
             fm = graph.FINDINGS_RE.search(getattr(s, "review_body", None) or "")
@@ -1747,6 +1812,8 @@ def validate(graph, _args) -> int:
         for num, s in sorted(t.sections.items()):
             if num not in t.verified_sections:
                 continue
+            if _json_receipt(s) is not None or _is_json_receipt_attempt(s):
+                continue
             if s.stamped_on is not None and s.stamped_on <= graph.PLAN_REVIEW_CUTOFF:
                 continue
             fm = graph.FINDINGS_RE.search(getattr(s, "review_body", None) or "")
@@ -1801,6 +1868,8 @@ def validate(graph, _args) -> int:
     for t in todos:
         for num, s in sorted(t.sections.items()):
             if num not in t.verified_sections:
+                continue
+            if _json_receipt(s) is not None or _is_json_receipt_attempt(s):
                 continue
             if s.stamped_on is not None and s.stamped_on <= graph.PLAN_REVIEW_CUTOFF:
                 continue
@@ -1983,6 +2052,8 @@ def validate(graph, _args) -> int:
     for t in todos:
         for num, s in sorted(t.sections.items()):
             if num not in t.verified_sections:
+                continue
+            if _json_receipt(s) is not None or _is_json_receipt_attempt(s):
                 continue
             if s.stamped_on is not None and s.stamped_on <= graph.PLAN_REVIEW_CUTOFF:
                 continue
@@ -2234,9 +2305,15 @@ def validate(graph, _args) -> int:
     # The scan root rides the graph global so fixtures substitute their own.
     if todos:
         origin = todos[0]
-        skills_dir = getattr(graph, "SKILLS_DIR", graph.REPO / ".claude" / "skills")
-        if skills_dir.is_dir():
-            for path in sorted(skills_dir.glob("*/SKILL.md")):
+        skills_dir = getattr(graph, "SKILLS_DIR", graph.TODO_DIR.parent / ".claude" / "skills")
+        skill_roots = [skills_dir]
+        agents_skills_dir = graph.TODO_DIR.parent / ".agents" / "skills"
+        if skills_dir == graph.TODO_DIR.parent / ".claude" / "skills" and agents_skills_dir.is_dir():
+            skill_roots.append(agents_skills_dir)
+        for root_dir in skill_roots:
+            if not root_dir.is_dir():
+                continue
+            for path in sorted(root_dir.glob("*/SKILL.md")):
                 try:
                     text = path.read_text(encoding="utf-8")
                 except OSError:

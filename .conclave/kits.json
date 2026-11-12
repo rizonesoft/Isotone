@@ -1,0 +1,191 @@
+{
+  "files": {
+    ".agents/hooks.json": {
+      "kit": "todo",
+      "sha256": "e0bd4b86ad2ee34ea9d2e6e28438aa1addde7921f22b0572a39e6dd126dacfd1"
+    },
+    ".agents/skills/add-todo/SKILL.md": {
+      "kit": "todo",
+      "sha256": "81fbec2490c575111827fe1e66a7c2fb61da6f693bb17136e1e67c51540c0fb7"
+    },
+    ".agents/skills/create-todo/SKILL.md": {
+      "kit": "todo",
+      "sha256": "2ec39fed1698ef6d6a1db8ef997926cd46f52f33607300f7064d69e3143e971c"
+    },
+    ".agents/skills/create-todo/todo-template.md": {
+      "kit": "todo",
+      "sha256": "955b0d182718be0eb23cd46eea9eea65b454c0adfea2175cac827902e535bcdb"
+    },
+    ".agents/skills/groom-plan/SKILL.md": {
+      "kit": "todo",
+      "sha256": "d1d6ad1c92f994699fb0e2e5d043ab2d9b6c3f1e2242e393f8bbecfd18460ef2"
+    },
+    ".agents/skills/independent-review/SKILL.md": {
+      "kit": "reviewer",
+      "sha256": "69e0c42e3524ec51e443e41dad014fd7e747350459293bc70b7f3304890aa5da"
+    },
+    ".agents/skills/process-phase/SKILL.md": {
+      "kit": "todo",
+      "sha256": "90908bf6b6afee450bd9c3e3325f50c92752f5b2abb77148d2994f2d3984fd1a"
+    },
+    ".agents/skills/process-plan/SKILL.md": {
+      "kit": "todo",
+      "sha256": "36ed334625fff523e6687cca702b62fe1d04c56bc39d3d6524b0e7f103969671"
+    },
+    ".agents/skills/process-todo-file/SKILL.md": {
+      "kit": "todo",
+      "sha256": "7263d7d735e12a1de58318855006d44ce331e9e2865a84ce0b16362c7470ca88"
+    },
+    ".agents/skills/process-todo-section/SKILL.md": {
+      "kit": "todo",
+      "sha256": "743fe348906fbbae9bf8633eafcfda2eff08bec2e82b6b26e1e04ae94a2854f3"
+    },
+    ".agents/skills/review-todo-section/SKILL.md": {
+      "kit": "todo",
+      "sha256": "bf1062cce1da0d5b5277961962d9f3027bdf3531b3a5af07898b58fb4e9595c0"
+    },
+    ".claude/settings.json": {
+      "kit": "todo",
+      "sha256": "885269c2d5e2ea5643bb28c47f002c34cca343360eea4f6b1498f7f25ebe2d9d"
+    },
+    ".claude/skills/add-todo/SKILL.md": {
+      "kit": "todo",
+      "sha256": "3c231968b827e690d716ef26bb573a59d40310a0699f2a49c4267d0ea780b74b"
+    },
+    ".claude/skills/create-todo/SKILL.md": {
+      "kit": "todo",
+      "sha256": "bcc725d3bf3ca7a2a72979a25f6c5ebe0ae961a049b52a98b4a8d064fcb32e91"
+    },
+    ".claude/skills/create-todo/todo-template.md": {
+      "kit": "todo",
+      "sha256": "955b0d182718be0eb23cd46eea9eea65b454c0adfea2175cac827902e535bcdb"
+    },
+    ".claude/skills/groom-plan/SKILL.md": {
+      "kit": "todo",
+      "sha256": "00ca47a1227b7f9bcf61868472cd8371409031a524a101c684e06ff96c6766c3"
+    },
+    ".claude/skills/independent-review/SKILL.md": {
+      "kit": "reviewer",
+      "sha256": "3aa80f568243a9885bbdb387ef6cd12ac9982268bd8eb36fdbbcded8999da77d"
+    },
+    ".claude/skills/process-phase/SKILL.md": {
+      "kit": "todo",
+      "sha256": "d012afef2448871ca6ea6f97f197845b7d95c37ced611b8704cd782a2f832fc3"
+    },
+    ".claude/skills/process-plan/SKILL.md": {
+      "kit": "todo",
+      "sha256": "1359705cd387cbe395537d51c03b2b7437c41cdfe7cdcb9d374f7796969af588"
+    },
+    ".claude/skills/process-todo-file/SKILL.md": {
+      "kit": "todo",
+      "sha256": "0b5a799804fa4944bf31e79315aab4c1ef8244e21e1c5c8df172b42ae5205cb9"
+    },
+    ".claude/skills/process-todo-section/SKILL.md": {
+      "kit": "todo",
+      "sha256": "202c747e3714fc040709974cfdd873080f90915364c131f5ace2bed3414a0198"
+    },
+    ".claude/skills/review-todo-section/SKILL.md": {
+      "kit": "todo",
+      "sha256": "b5118b61a1134cdc98ebdf7773ffe4d6f4de99c66e6916ddaefdb51df076561d"
+    },
+    ".conclave/reviewers.toml": {
+      "kit": "reviewer",
+      "sha256": "d785477a2c2ebfffae3a6d8aed1799f5b918548220ada95148befb495698ff71"
+    },
+    "docs/completion-review-prompt.md": {
+      "kit": "reviewer",
+      "sha256": "8a951d9079fbf532bcd43bce0a06c1a05edb2a0c0d333c9792b27a9706b4b8d0"
+    },
+    "docs/plan-review-prompt.md": {
+      "kit": "reviewer",
+      "sha256": "ab8ef2bb1d301379e5c18a2e8f55fc1c4cbc36c9a58c383dc85acee1c2a5197c"
+    },
+    "docs/reconciliation-review-prompt.md": {
+      "kit": "reviewer",
+      "sha256": "7505201d78dcfa831bad9855b614d2fcf610a2f9754032ca2f7981ea8df6c99b"
+    },
+    "docs/review-round-prompt.md": {
+      "kit": "reviewer",
+      "sha256": "97ead3a1a15d87d91d40edfa0d122e0da159369be05beb8ec63682b427e73657"
+    },
+    "docs/todo-workflow.md": {
+      "kit": "todo",
+      "sha256": "1ff84a1d6bef04a7cae1bb1544aa50498d14ccbbda9e0cc6495affd98d4d4b12"
+    },
+    "scripts/campaign_guard.py": {
+      "kit": "todo",
+      "sha256": "4cad99b82fad343c5d6e932235cf12d989b0f8a90358bd63c70183ce52abdfb4"
+    },
+    "scripts/ci_status.py": {
+      "kit": "todo",
+      "sha256": "72a5ece79ed3aea70d5b5a20689f1e644c4f65e9842c91840664951e300517c4"
+    },
+    "scripts/lib/todo_graph.py": {
+      "kit": "todo",
+      "sha256": "3613c80ef4d417622936b199a4b4251743f26d021bc15e56c58ea15e827c070f"
+    },
+    "scripts/merge_prs.py": {
+      "kit": "todo",
+      "sha256": "31de9bb05a59d3803084786c69332de28d70fe98fc9aec239ccc1153a6d60559"
+    },
+    "scripts/review-dispatch.py": {
+      "kit": "reviewer",
+      "sha256": "bfcc82df03d85655eeb6c86d4802e2de7f62d382f31ae761166535ed81ece961"
+    },
+    "scripts/review-prompt.py": {
+      "kit": "reviewer",
+      "sha256": "75fef4fa5c266241fdbacb3ca1b6886edd8cb310537c293d8c1dc57f72bf848b"
+    },
+    "scripts/review_pin.py": {
+      "kit": "reviewer",
+      "sha256": "5d2f29bbdd20836e89d0d49dbfaee728b7397ec7915b63c173abeee0b02256d0"
+    },
+    "scripts/tests/test_review_dispatch.py": {
+      "kit": "reviewer",
+      "sha256": "4d88edee39670f113edb8842400a9bf6f986729853eebabbd594a4c47e1a0155"
+    },
+    "scripts/tests/test_review_pin.py": {
+      "kit": "reviewer",
+      "sha256": "e54a90bb28112b345d4dbd5b89fb1d57daa99b897436a4e3bef27a0ff0c2b0df"
+    },
+    "scripts/tests/test_review_prompt.py": {
+      "kit": "reviewer",
+      "sha256": "62dc525724de475e807069a519524f9c688d84db0bab0d9a654a8af2bb9d4fb0"
+    },
+    "scripts/tests/test_three_pass.py": {
+      "kit": "reviewer",
+      "sha256": "591f54985fb1af0862a8836f7dcea4335de39690bdb28ade0aa56aa8943b024e"
+    },
+    "scripts/todo-graph.py": {
+      "kit": "todo",
+      "sha256": "5b3c11853ea9b40c2d339ef940b3c9835a6d1c60e6dbcc5d8bfcd815a92460fe"
+    },
+    "todo/README.md": {
+      "kit": "todo",
+      "sha256": "392b779f00cc7a7fac7cf23fa07bbd6723d6e029a827fc2c40fa0c5018ce8566"
+    },
+    "todo/TODO-00-INDEX.md": {
+      "kit": "todo",
+      "sha256": "ca0b7f2b042a84c378dc6f198c1f6ae0ca9620fd93dea7586512a2fc13053e38"
+    }
+  },
+  "kits": {
+    "reviewer": {
+      "agents": [
+        "agy",
+        "claude"
+      ],
+      "host": null,
+      "sdk_commit": "90506cdc0da2f2408aeb997a7b014ea1eebda1a8"
+    },
+    "todo": {
+      "agents": [
+        "agy",
+        "claude"
+      ],
+      "host": null,
+      "sdk_commit": "90506cdc0da2f2408aeb997a7b014ea1eebda1a8"
+    }
+  },
+  "schema_version": 1
+}

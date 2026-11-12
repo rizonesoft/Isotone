@@ -235,41 +235,24 @@ Push the SHIP push. The commit must exist on the remote before the next step, be
 
 `ci-wait` reads the `plan-gates` workflow (`.github/workflows/plan.yml`) by default; the `build` workflow runs on every push to `main` with no path filter, so every push reads it back too with `--workflow build --workflow-path .github/workflows/build.yml`, and records both lines.
 
-### 8. Independent review, before the stamp
+### 8. Pre-build plan review and post-build three-pass stamp (`three-pass` schedule)
 
-**An outside reviewer reads the commit before this session stamps its own work.** The session that built a section is the worst judge of whether it is right, and this step exists to break that.
-
-```bash
-IND=$(mktemp -d /tmp/independent-XXXXXXXX)
-# Fill docs/review-round-prompt.md into $IND/prompt.md: the full <SHIP_SHA>, what the section is meant to do, its ref, the governing documents.
-python scripts/review-dispatch.py --writer agy --prompt $IND/prompt.md --keep $IND > $IND/summary.json
-```
-
-It reviews read-only and changes nothing.
-
-**The reviewer is pinned in `.conclave/reviewers.toml`, not left to the machine's config.** The dispatcher runs the reviewer the `agy` route names (a codex reviewer as `codex exec` with the pin's model and effort as flags, in its read-only sandbox), enforces `--timeout`, and prints a JSON summary naming the reviewer, model, CLI, and effort that ran; quote those in the `Independent:` line, with the review from `$IND/review.md`. `~/.codex/config.toml` has a `model` key, and relying on it makes every stamp's `Review:` line unverifiable: a stamp records which reviewer read a commit, and a model taken from a config file anybody can edit is only as good as the config on the day somebody reads it back. Pinning it means the pin at the stamped commit and the stamp together say exactly what reviewed what. Re-pinning is an edit to `.conclave/reviewers.toml`, never an edit here, and stamps written under an earlier pin are left alone: they record what actually read those commits.
-
-**The prompt pins the scope.** `docs/review-round-prompt.md` names the candidate by its full sha, which the reviewer inspects with `git show`, so the scope is explicit and cannot be misread. Exit 1 means no review: the reviewer was not installed, failed, timed out, returned nothing, or replied `OVERALL: blocked` because its sandbox could not read the commit. That is a recorded gap, never a pass; when the sandbox keeps failing, put the diff (`git show <SHIP_SHA>`) in the prompt.
-
-Codex reads `AGENTS.md` from the repository root on its own, so the contract it needs is already in front of it: the paths table, the stack rules, and the proof types. **When a section needs review guidance the reviewer would not otherwise have, put it in the section's own `Test checkpoint` rather than in the command**, because the reviewer reads the section.
-
-Then act on what it returns:
-
-- **A finding that is right** gets fixed in a follow-up commit on the same section, and the fix is quoted in the stamp. Do not argue with a correct finding to avoid a second commit.
-- **A finding that is wrong** gets one line in the stamp saying so and why. Record it; do not silently discard it.
-- **A finding that is right but out of scope** gets filed with its own owner and dependency, per the guardrail below. Do not widen the section to absorb it.
-
-If the independent pass returns no review (`codex` missing, an auth failure, a timeout, or `OVERALL: blocked`), it follows the outage matrix of `review-todo-section`: retried with backoff (15 minutes, 30 minutes, 1 hour, 2 hours, then 4 hours), and if every retry fails the section takes the `> **Review pending:**` marker and is not stamped until the pass returns (operator decision 2026-10-23). A missing reviewer is never a gap a stamp passes over, and never a silent pass.
-
-### 9. Stamp, then push the stamp
-
-Invoke `review-todo-section` on the same ref. Review writes the stamp and flips the row; this skill never flips a row itself. The stamp records the independent review's outcome alongside the checkpoint evidence.
-
-After the stamp lands, push the STAMP push (through the review skill's push block) and sync the plan:
+Under `[schedule] policy = "three-pass"` in `.conclave/reviewers.toml` (`docs/todo-workflow.md`), every section runs **Pass 1 (`--kind plan`) before writing production code**, right after step 3 commits any pre-build TODO corrections and `> **Started:**` (`PLAN_SHA=$(git rev-parse HEAD)`), into `RECORD=docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>.md`:
 
 ```bash
-python scripts/todo-graph.py plan --sync
+KEEP=$(mktemp -d build/plan-XXXXXXXX)
+mkdir -p "$KEEP/out"
+python scripts/review-prompt.py --kind plan --candidate "$PLAN_SHA" --ref "<ref>" --governing "<todo-or-spec-path>" --out "$KEEP/plan-prompt.md"
+python scripts/review-dispatch.py --writer claude --kind plan --candidate "$PLAN_SHA" --prompt "$KEEP/plan-prompt.md" --keep "$KEEP/out" --record "$RECORD"
 ```
+
+(Pass `--writer agy` when running in Antigravity, `--fidelity "<Design specs>"` on `review-prompt.py` and `--surface` on `review-dispatch.py` for surface sections.) Update the section checklist for any in-scope plan gaps (and file out-of-scope gaps via `add-todo`, recording `- Implemented:` / `- Filed:` bullets under `## Plan review:` without adding a second `## Plan review` block) before building in step 4.
+
+### 9. Stamp through `review-todo-section`, then push the stamp
+
+After committing the built section and gate evidence in step 7, invoke `review-todo-section` on the same `<ref>`: it runs Pass 2 (`--kind round`), Pass 3 (`--kind completion`), any `--kind reconciliation`, and `python scripts/todo-graph.py stamp` (writing `docs/reviews/<slug>.json`, stamping `Verified:` / `Review:`, flipping `[x]`, and syncing `todo/implementation-plan.md`). Never flip the Implementation Order row directly in this skill.
+
+After the stamp commit lands, push the STAMP push when remote pushes are active (`python scripts/ci_status.py --sha "$(git rev-parse HEAD)" --wait` and `python scripts/review_prompt.py ci-wait`) and confirm `python scripts/todo-graph.py plan --check`.
 
 ### 10. Report
 

@@ -1205,7 +1205,7 @@ def stop_hook(stdin: str, project_dir: str | None) -> tuple[int, str]:
         event = json.loads(stdin)
         is_agy = isinstance(event, dict) and "conversationId" in event and "session_id" not in event
         allow_out = '{"decision": "stop"}' if is_agy else ""
-        if is_agy and event.get("terminationReason") in _AGY_TERMINAL_STOPS:
+        if is_agy and (event.get("terminationReason") in _AGY_TERMINAL_STOPS or event.get("fullyIdle") is False):
             return 0, allow_out
         ws_paths = event.get("workspacePaths") if isinstance(event, dict) else None
         first_ws = str(ws_paths[0]) if isinstance(ws_paths, list) and ws_paths and ws_paths[0] else ""
@@ -1328,8 +1328,9 @@ GOAL = (
     "machine). Get there only through the process-plan skill: run /process-plan now (using this conversation's "
     "Conversation ID for `--session`, `schedule` and `manage_task` for the heartbeat cron, and `--writer agy` on "
     "`scripts/review-dispatch.py`), and again after any interruption, one section at a time through "
-    "process-todo-section and review-todo-section, every gate green, every review round through "
-    "scripts/review-dispatch.py, nothing skipped, weakened, stubbed or scoped down. Always develop straight on "
+    "process-todo-section and review-todo-section, every gate green, every three-pass review through "
+    "scripts/review-prompt.py and scripts/review-dispatch.py, every stamp through `python scripts/todo-graph.py stamp`, "
+    "nothing skipped, weakened, stubbed or scoped down. Always develop straight on "
     "`main`: never create feature branches or secondary git worktrees. Use the `isotone-lsp` language-server tools "
     "(`clangd` and `pyright`) alongside the build and static-analysis gates to catch type and symbol defects early. "
     "Aim for excellence in every section: each feature first matches its competitor where users expect it and then "
@@ -3780,6 +3781,18 @@ def _self_test() -> int:
             check(f"a-live-record-without-{field}-starts-nothing", refused)
         check("a-folder-under-the-tree-is-in-the-tree", _in_tree(os.path.join(root, "docs"), root)
               and _in_tree(root, root) and not _in_tree(tmpd, root) and not _in_tree(None, root))
+        _guard(root)
+        _set_ready(root, 3)
+        idle_code, idle_out = stop_hook(json.dumps({
+            "conversationId": SESSION,
+            "cwd": root,
+            "workspacePaths": [root],
+            "hookEventName": "Stop",
+            "terminationReason": "NO_TOOL_CALL",
+            "fullyIdle": False,
+        }), root)
+        check("agy-stop-hook-allows-when-not-fully-idle",
+              idle_code == 0 and json.loads(idle_out) == {"decision": "stop"})
 
     print(f"campaign_guard self-test: {passed + failed} cases, {failed} failed")
     return 1 if failed else 0

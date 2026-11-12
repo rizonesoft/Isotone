@@ -1,28 +1,28 @@
 ---
 name: authoring-skills
-description: Use when creating, moving, reviewing, or documenting project skills, skill references, Antigravity (.agents/skills), Claude (.claude/skills), or Codex (.codex/skills) skill folders, or Codex command-policy rules.
+description: Use when creating, moving, reviewing, or documenting project skills, skill references, Antigravity (.agents/skills) or Claude (.claude/skills) skill folders, or agent-scoped rules.
 ---
 
 # Authoring Skills
 
-Follow `docs/agent-skills-and-rules-structure.md` before creating or moving skills or rules.
+Keep repository skills clean, self-contained, and aligned across Isotone's writer harnesses (`.agents/skills/` for Google Antigravity, `.claude/skills/` for Claude Code). Note that `codex` runs strictly as a read-only headless reviewer via `scripts/review-dispatch.py`, so Isotone does **not** carry a `.codex/` directory.
 
 ## Required Pattern
 
-1. Put Antigravity-facing skill content under `.agents/skills/<skill-name>/`, Claude-facing skill content under `.claude/skills/<skill-name>/`, and Codex-facing skill content under `.codex/skills/<skill-name>/`.
-2. Put required instructions in `SKILL.md`.
-3. Name skills for the capability, not the project namespace. Prefer gerunds or clear noun phrases such as `authoring-skills` or `local-tool-safety`; keep project-specific scope in the description and instructions.
-4. Put long checklists, conventions, and detailed docs in `references/`.
-5. Put helper scripts in `scripts/` and templates/resources in `assets/`.
-6. Do not put OpenAI/Codex-specific `agents/openai.yaml` inside `.agents/skills` or `.claude/skills`.
-7. Keep `.agents/skills/<skill-name>/`, `.claude/skills/<skill-name>/`, and `.codex/skills/<skill-name>/` as real files and directories, never symlinks.
-8. Keep `agents/openai.yaml` as a real file in `.codex/skills/<skill-name>/agents/openai.yaml` when needed.
-9. Use `.codex/rules/*.rules` for Codex Starlark command execution policies and `.agents/rules/`, `.claude/rules/`, `.codex/rules/` for agent-scoped rules.
+1. Place Antigravity skills in `.agents/skills/<skill-name>/SKILL.md` (loaded via `.agents/skills.json`) and Claude skills in `.claude/skills/<skill-name>/SKILL.md`.
+2. Keep both `.agents/skills/` and `.claude/skills/` as real files and directories, never symlinks.
+3. Name each skill directory in kebab-case for the capability (`process-todo-section`, `local-tool-safety`) and match `name:` in YAML frontmatter to the directory name.
+4. Put detailed checklists in `references/` and templates in `todo-template.md` or `assets/` inside the owning skill folder.
+5. Never place OpenAI/Codex `agents/openai.yaml` files inside `.agents/skills/` or `.claude/skills/`.
+6. Follow Isotone's prose and validator rules in every `SKILL.md`:
+   - Zero em dashes or en dashes (`--` only), and one line per Markdown paragraph and list item.
+   - Never write bare short section citations (`§<N>`, `T<NN> §<N>`, or `file.md §<N>`), and ensure any literal `DNN TNN §N` reference resolves in `todo/` (`python scripts/todo-graph.py validate` checks both `.agents/skills/` and `.claude/skills/` under Rule 26; use `D<NN> T<NN> §<N>` for placeholders).
 
 ## Validation
 
-- Confirm `SKILL.md` exists in each target tool's skill folder (`.agents/skills`, `.claude/skills`, `.codex/skills`).
-- Confirm the skill `name` frontmatter matches its directory.
-- Confirm no symlinks exist between `.agents/skills`, `.claude/skills`, and `.codex/skills`.
-- Confirm no provider-specific `agents/openai.yaml` leaked into `.agents/skills` or `.claude/skills`.
-- Update `AGENTS.md` or `docs` when adding behavior that future agents must follow.
+```bash
+python scripts/todo-graph.py validate
+python scripts/campaign_guard.py --self-test
+```
+
+Confirm both exit `0`, frontmatter `name` matches each folder name, no symlinks exist, and `AGENTS.md` / `.conclave/kits.json` stay in sync when managed skills change.

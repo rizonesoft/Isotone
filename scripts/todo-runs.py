@@ -425,17 +425,24 @@ def _review_files():
 
 
 def _pending_sections():
-    """Compact sections parked by a `> **Review pending:**` marker: built, their findings file committed, but the
-    reviewer stayed unreachable, so no review has stamped them and they owe no run block yet (review-todo-section).
-    Read through todo-graph's own parser, loaded by path like the findings tool."""
+    r"""Compact sections that owe no legacy `docs/reviews/run-records.md` block: sections parked by `> **Review pending:**`,
+    open sections (`status != 'x'`, e.g. carrying a pre-build three-pass plan review), and sections stamped through a
+    JSON review receipt (`> **Review:** \`docs/reviews/<slug>.json\``)."""
     mod = sys.modules.get("todo_graph")
     if mod is None:
         spec = importlib.util.spec_from_file_location("todo_graph", HERE / "todo-graph.py")
         mod = importlib.util.module_from_spec(spec)
         sys.modules["todo_graph"] = mod
         spec.loader.exec_module(mod)
-    return {f"D{todo.domain[:2]}-T{todo.number}-S{num}"
-            for todo in mod.load_todos() for num, section in todo.sections.items() if section.review_pending}
+    receipt_re = re.compile(r"^`?docs/reviews/[a-z0-9][a-z0-9.-]*\.json`?$")
+    return {
+        f"D{todo.domain[:2]}-T{todo.number}-S{num}"
+        for todo in mod.load_todos()
+        for num, section in todo.sections.items()
+        if section.review_pending
+        or section.status != "x"
+        or bool(receipt_re.fullmatch((section.review_body or "").strip()))
+    }
 
 
 def cross_check(runs, collected=None, review_sections=None, pending_sections=None):

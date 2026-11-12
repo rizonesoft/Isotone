@@ -1,36 +1,37 @@
 ---
 name: independent-review
-description: Get an independent review of your own work outside a TODO section from the reviewer pinned in .conclave/reviewers.toml (GPT-6 Astra, never the writer's family, no fallback) through scripts/review-dispatch.py, then verify and act on every finding. Use before calling a nontrivial workspace change done or before a commit that ships it; TODO sections review through review-todo-section instead.
+description: Get an independent review of your own work outside a TODO section from the reviewer pinned in .conclave/reviewers.toml (GPT-6 Astra, never the writer's family, no fallback) through scripts/review-prompt.py and scripts/review-dispatch.py, then verify and act on every finding. Use before calling a nontrivial workspace change done or before shipping it; TODO sections review through review-todo-section instead.
 ---
 
-# Independent review
+# Independent Review
 
-Your own review is not enough for a nontrivial change: a different model reviews it. `.conclave/reviewers.toml` names who reviews the writer's work, and `scripts/review-dispatch.py` runs the round.
+Your own review is not enough for a nontrivial change: a cross-family model reviews it. `.conclave/reviewers.toml` names who reviews the writer's work (`astra` on `gpt-6-astra` via `codex` for `agy` and `claude`), and `scripts/review-dispatch.py` runs every round read-only.
 
 | Work written by | Reviewer | Fallback |
 | --- | --- | --- |
-| Antigravity (`agy`) on Gemini 4 Carbon (Medium) (the writer; `claude` and `muse` routes also map to Astra) | GPT-6 Astra (`astra`), medium effort (or scheduled effort when `--kind` is passed) | none: a round Astra cannot return is retried with backoff and then parked |
+| Antigravity (`agy`) or Claude Code (`claude`) | GPT-6 Astra (`astra`), scheduled effort from `.conclave/reviewers.toml` | none: a round Astra cannot return is retried with backoff and then parked |
 
-The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` refuses a fallback or an unrouted reviewer (operator decisions 2026-09-25, 2026-10-21, and 2026-11-10). A TODO section never uses this skill: its panel, architecture, plan, stamp, and independent rounds run through the same dispatcher inside `review-todo-section` and `process-todo-section`.
+The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` plus `python scripts/review_pin.py --check` enforce the pin. A TODO section never uses this skill: its `plan`, `round`, `completion`, and `reconciliation` passes run through `process-todo-section` and `review-todo-section`.
 
 ## Steps
 
-1. Review your own change first and fix what you find.
-2. Write the review prompt to a scratch file, not the repository, from `docs/review-round-prompt.md`: name the candidate commit or range by its full sha, the governing documents, and the lenses that apply.
-3. Run the round as the writer, keeping the raw evidence beside the review:
+1. Review your own change first, run the relevant local gates, and fix what you find.
+2. Commit the candidate on `main` (always develop straight on `main`; never create branches or worktrees) and capture `CANDIDATE=$(git rev-parse HEAD)`.
+3. Build the review prompt into an ignored scratch path under `build/` using `scripts/review-prompt.py`:
 
-   ```bash
-   KEEP=$(mktemp -d /tmp/review-XXXXXXXX)
-   python scripts/review-dispatch.py --writer agy --kind round --prompt <scratch>/review-prompt.md --keep $KEEP --record docs/reviews/independent/<YYYY-MM-DD>-<topic>.md
-   ```
+```bash
+KEEP=$(mktemp -d build/review-XXXXXXXX)
+mkdir -p "$KEEP/out"
+python scripts/review-prompt.py --kind round --candidate "$CANDIDATE" --purpose "<one or two sentences>" --governing "AGENTS.md, docs/todo-workflow.md" --out "$KEEP/prompt.md"
+python scripts/review-dispatch.py --writer claude --kind round --candidate "$CANDIDATE" --prompt "$KEEP/prompt.md" --keep "$KEEP/out" --record docs/reviews/independent/<YYYY-MM-DD>-<topic>.md
+```
 
-4. Read the review. Verify every finding against the code before acting: fix what is real, and record why anything else is not, as text after the round (a `## Response to round N` heading), never inside it.
-5. Commit fixes as new commits and run another round on the new tip, up to 33 rounds (operator decision 2026-10-23, raised from 22 for this build's complexity) (a round that returns no review does not count). From round 9 on, a round whose findings are all `P3` or advisory (its `HIGHEST: P3` line; the prompt asks for a `P1`, `P2` or `P3` tag on every finding, and an untagged one counts as `P1`) ends the loop, and its findings are filed as follow-up work. At the cap, file every leftover with an owner and say so in the record; nobody is asked. A unit that needs patching three rounds running gets re-thought, not patched again.
+(Pass `--writer agy` when running inside Antigravity, `--base "$BASE_SHA"` when reviewing a commit range, and `--surface` on `review-dispatch.py` when UI surfaces or design tokens changed.)
+
+4. Read the JSON summary (`verdict`, `highest`, `blocking`) and the recorded `## Round N` block. Verify every finding against the source code before acting: fix real defects, and append a `## Response to round N` block *after* the dispatcher's block (never edit inside a dispatcher-written block).
+5. When `"blocking": true` (`P1` or `P2`), commit the fixes on `main`, rebuild the prompt on the new tip, and run the next round on the same `--record` file until `"blocking": false` (up to `pass_cap = 33`). File worthwhile `P3` follow-ups through `add-todo` and commit the review record on `main`.
 
 ## Rules
 
-- The dispatcher's JSON output and the `## Round N` section it appends are the evidence. A verdict with no record is an opinion. Independent records live under `docs/reviews/independent/`, apart from the per-section findings files the TODO validators read.
-- Exit 1 means no review was returned. That is never an approval: say so, record it, and retry with the backoff `review-todo-section` states; if every retry fails, leave the work unshipped, record it as pending review, and carry on with work that does not depend on it, retrying at the next boundary.
-- A reviewer that could not reach the work (its sandbox could not read the repository) replies `OVERALL: blocked`, which counts as no review. If its sandbox keeps failing, put the diff in the prompt.
-- Reviewers run read-only. Never pass a reviewer a secret, and never ask it to edit files.
-- Change reviewers only in `.conclave/reviewers.toml`, never by calling a model directly.
+- Never edit inside a `## Round N` block written by `scripts/review-dispatch.py`.
+- Exit 1 means no review was returned: retry with backoff (`15m`, `30m`, `1h`, `2h`, `4h`), never treat exit 1 as approval, and never call a reviewer CLI directly outside `scripts/review-dispatch.py`.

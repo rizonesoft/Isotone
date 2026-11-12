@@ -97,8 +97,30 @@ REVIEW_OID_RE = re.compile(
 )
 BARE_TODO_RE = re.compile(r"(?<![\w§])(?:D\d{2}\s+)?T\d{2}(?!\s*§)(?![\w-])")
 STAMP_RE = re.compile(
-    r"^>\s*\*\*(?P<kind>Verified|Deferred|Resolved|Review|Duration|CRUD|Verification|Implementer|Moved|Review pending|Plan review|Reopened):\*\*\s*(?P<body>.+?)\s*$"
+    r"^>\s*\*\*(?P<kind>Verified|Deferred|Resolved|Review|Duration|CRUD|Verification|Implementer|Moved|Review pending|Plan review|Reopened|Started|Unstamped):\*\*\s*(?P<body>.+?)\s*$"
 )
+JSON_RECEIPT_RE = re.compile(r"^`?(docs/reviews/[a-z0-9][a-z0-9.-]*\.json)`?$")
+
+
+def _json_receipt_path(review_body: str | None) -> str | None:
+    m = JSON_RECEIPT_RE.fullmatch((review_body or "").strip())
+    return m.group(1) if m else None
+
+
+_LIB_TODO_GRAPH = []
+
+
+def lib_todo_graph_module():
+    if not _LIB_TODO_GRAPH:
+        p = Path(__file__).resolve().parent / "lib" / "todo_graph.py"
+        spec = importlib.util.spec_from_file_location("isotone_lib_todo_graph", p)
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"cannot load {p}")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = mod
+        spec.loader.exec_module(mod)
+        _LIB_TODO_GRAPH.append(mod)
+    return _LIB_TODO_GRAPH[0]
 # `> **Review pending:**` with nothing after it, which STAMP_RE (a body is required) does not match.
 REVIEW_PENDING_EMPTY_RE = re.compile(r"^>\s*\*\*Review pending:\*\*\s*$")
 # A reopened section names the finding that voided its proof: `<YYYY-MM-DD> |
@@ -379,6 +401,8 @@ class Section:
     review_body: str = ""
     plan_review_body: str = ""
     reopened_body: str = ""
+    started_body: str = ""
+    unstamped_body: str = ""
     crud_body: str = ""
     verification_body: str = ""
     implementer_body: str = ""
@@ -570,6 +594,8 @@ def parse_todo(path: Path) -> Todo:
                     for target in stamp_targets:
                         target.stamped_on = day
                         target.verified_body = body
+                        target.reopened_body = ""
+                        target.unstamped_body = ""
             elif kind == "Duration" and current is not None:
                 for target in stamp_targets or ([] if stamp_orphaned else [current]):
                     # Last marker governs: each Duration line resets
@@ -611,6 +637,10 @@ def parse_todo(path: Path) -> Todo:
             elif kind == "Reopened" and current is not None:
                 for target in stamp_targets or ([] if stamp_orphaned else [current]):
                     target.reopened_body = body
+            elif kind == "Started" and current is not None:
+                current.started_body = body
+            elif kind == "Unstamped" and current is not None:
+                current.unstamped_body = body
             elif kind == "CRUD" and current is not None:
                 for target in stamp_targets or ([] if stamp_orphaned else [current]):
                     target.crud_body = body
@@ -1067,6 +1097,9 @@ SEVERITY_MAP: dict[str, str] = {
     # a Test checkpoint citing a proof kind or sub-runner marked unusable
     # for a stamp in todo/README.md (D00 T05 §10).
     "checkpoint-proof-unusable": "fatal",
+    # a JSON-receipt Review stamp missing, unreadable, or failing schedule,
+    # commit, envelope, or filed-target verification.
+    "stamp-receipt-invalid": "fatal",
 }
 
 
@@ -2192,6 +2225,9 @@ def cmd_query(args) -> int:
         return 2
     if args.what == "adjacency":
         return adjacency_module().cli(sys.modules[__name__], args)
+    if args.what == "rounds":
+        print(json.dumps(lib_todo_graph_module().review_rounds(TODO_DIR.parent), indent=2, ensure_ascii=False))
+        return 0
     todos = load_todos()
     by_id, by_key, done = _section_state(todos)
     what = args.what
@@ -2815,6 +2851,9 @@ def cmd_query(args) -> int:
             for num in sorted(t.verified_sections):
                 s = t.sections.get(num)
                 if s is None:
+                    continue
+                if _json_receipt_path(s.review_body) is not None:
+                    marked[(t.id, num)] = s.stamped_on or "undated"
                     continue
                 body = (s.plan_review_body or "").strip()
                 if not _owed(s):
@@ -5052,8 +5091,15 @@ def build_operator(todos: list[Todo]) -> dict:
                 )
             if num not in t.verified_sections:
                 continue
-            kinds = _review_kinds(sec.review_body)
-            missing = [k for k in REQUIRED_REVIEW_KINDS if k not in kinds]
+            receipt_rel = _json_receipt_path(sec.review_body)
+            if receipt_rel is not None:
+                kinds = ["plan", "round", "completion"]
+                missing = []
+                doc = receipt_rel if (TODO_DIR.parent / receipt_rel).is_file() else _review_doc(ref)
+            else:
+                kinds = _review_kinds(sec.review_body)
+                missing = [k for k in REQUIRED_REVIEW_KINDS if k not in kinds]
+                doc = _review_doc(ref)
             reviews.append(
                 {
                     "ref": ref,
@@ -5063,7 +5109,7 @@ def build_operator(todos: list[Todo]) -> dict:
                     or "skipped-limit" in sec.review_body,
                     "missing_required": missing,
                     "debt": bool(missing) or ref in REVIEW_DEBT,
-                    "doc": _review_doc(ref),
+                    "doc": doc,
                 }
             )
     findings.sort(key=lambda row: (row["date"], row["path"], row["section"]), reverse=True)
@@ -12643,6 +12689,48 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             TODO_DIR, PLAN = saved_pf
             __import__("shutil").rmtree(pf_root, ignore_errors=True)
 
+        # --- JSON receipt validation (`stamp-receipt-invalid`) ----------------
+        jr_root = Path(tempfile.mkdtemp(prefix="todo-graph-receipt-"))
+        saved_jr = (TODO_DIR, PLAN)
+        try:
+            jr_dom = jr_root / "todo" / "00-workspace"
+            jr_dom.mkdir(parents=True)
+            (jr_dom / "INDEX.md").write_text("# 00\n\n- TODO-01-receipt.md\n", encoding="utf-8")
+            jr_todo = jr_dom / "TODO-01-receipt.md"
+            jr_sha = "a" * 40
+            jr_todo.write_text(
+                "---\nid: receipt-test\ntitle: Receipt Test\nstatus: done\n---\n\n"
+                "# TODO-01\n\n## Goal\n\nTest.\n\n## Outcome\n\nDone.\n\n"
+                "**Adjacency:** all=not-applicable (test fixture)\n\n"
+                "## Implementation Order\n\n"
+                "| Order | Section | Deliverable | Depends On | Status |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| 1 | §1 | Stamped with receipt | -- | [x] |\n\n---\n\n"
+                "## 1. Stamped with receipt\n\nContext.\n\n- [x] Step 1\n- [x] Commit: `\"selftest: receipt\"`\n\n"
+                "**Test checkpoint:** `true`.\n\n"
+                f"> **Verified:** 2026-11-12 | §1 | {jr_sha}\n"
+                "> **Review:** `docs/reviews/d00-t01-s1.json`\n",
+                encoding="utf-8",
+            )
+            TODO_DIR = jr_root / "todo"
+            PLAN = jr_root / "todo" / "implementation-plan.md"
+            jr_buf = _io.StringIO()
+            with _ctx.redirect_stdout(jr_buf), _ctx.redirect_stderr(_io.StringIO()):
+                jr_rc = cmd_validate(None)
+            check(
+                "validate: missing JSON receipt triggers stamp-receipt-invalid (not stamp-no-opus-panel)",
+                (
+                    jr_rc,
+                    "stamp-receipt-invalid" in jr_buf.getvalue(),
+                    "stamp-no-opus-panel" in jr_buf.getvalue(),
+                    "stamp-no-plan-review" in jr_buf.getvalue(),
+                ),
+                (1, True, False, False),
+            )
+        finally:
+            TODO_DIR, PLAN = saved_jr
+            __import__("shutil").rmtree(jr_root, ignore_errors=True)
+
     finally:
         TODO_DIR, PLAN, SKILLS_DIR = saved_todo_dir, saved_plan, saved_skills
         tmp.cleanup()
@@ -12652,6 +12740,56 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
         print(f"todo-graph self-test: FAIL {name}: got {got!r}, want {want!r}", file=sys.stderr)
     print(f"todo-graph self-test: {len(cases)} cases, {len(failed)} failed")
     return 1 if failed else 0
+
+
+def _parse_review_round(value: str) -> dict:
+    parts = value.split(":")
+    if not (len(parts) == 3 and parts[0].isdigit() and parts[1] and parts[2]):
+        raise argparse.ArgumentTypeError(f"--review takes round:report:verdict, not {value!r}")
+    return {"round": int(parts[0]), "report": parts[1], "verdict": parts[2]}
+
+
+def _parse_completion_review(value: str) -> dict:
+    report, _, verdict = value.rpartition(":")
+    if not (report and verdict):
+        raise argparse.ArgumentTypeError(f"--completion takes <findings file>:<verdict>, not {value!r}")
+    return {"report": report, "verdict": verdict}
+
+
+def cmd_stamp(args: argparse.Namespace) -> int:
+    lib_tg = lib_todo_graph_module()
+    try:
+        receipt = lib_tg.stamp(
+            TODO_DIR.parent,
+            args.ref,
+            args.sha,
+            args.review,
+            args.checks,
+            args.date,
+            sync_plan=True,
+            cap_outcome=args.cap_outcome,
+            completion=args.completion,
+            plan=args.plan,
+        )
+    except lib_tg.Refused as exc:
+        print(f"TODO refused: {exc}", file=sys.stderr)
+        return 1
+    print(f"stamped {args.ref}; receipt {receipt}; plan synchronized")
+    return 0
+
+
+def cmd_unstamp(args: argparse.Namespace) -> int:
+    lib_tg = lib_todo_graph_module()
+    try:
+        revoked = lib_tg.unstamp(TODO_DIR.parent, args.ref, args.reason, args.date)
+        suspect_refs = lib_tg.suspects(TODO_DIR.parent, args.ref)
+    except lib_tg.Refused as exc:
+        print(f"TODO refused: {exc}", file=sys.stderr)
+        return 1
+    print(f"unstamped {args.ref}; receipt kept as {revoked}; plan synchronized")
+    for sref in suspect_refs:
+        print(f"suspect until {args.ref} re-stamps: {sref}")
+    return 0
 
 
 def main() -> int:
@@ -12684,14 +12822,14 @@ def main() -> int:
     q = sub.add_parser("query", help="ask the graph a question")
     q.add_argument(
         "what",
-        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth", "design", "plan", "parity"],
+        choices=["ready", "blocked", "stats", "deferred", "frozen", "findings", "surfaces", "adjacency", "calibration", "sequence", "plan-health", "summary", "run", "budget", "backlog", "growth", "design", "plan", "parity", "rounds"],
     )
     q.add_argument("target", nargs="?", help="run: run ID to inspect")
     q.add_argument("--since", metavar="REF", help="growth: the commit to count from (a run's start commit)")
     q.add_argument("--all", action="store_true", help="findings: include ones already done")
     q.add_argument("--file", help="adjacency: exact repository-relative TODO path")
     q.add_argument("--at", help="adjacency: inspect an isolated historical commit")
-    q.add_argument("--json", action="store_true", help="adjacency, plan-health: machine-readable report")
+    q.add_argument("--json", action="store_true", help="adjacency, plan-health, parity, rounds: machine-readable report")
     q.add_argument("--check", action="store_true", help="plan-health: exit 1 on actionable entries (covered escalations and bare partials pass; --fail-on gates presence); growth: accepted and ignored (nothing is capped since 2026-09-27)")
     q.add_argument("--phase", metavar="N", help="parity: only this plan phase (its features, sections, and rows)")
     q.add_argument("--catalog", metavar="APP", help="parity: one catalog (stilus, gesso) or all (the default)")
@@ -12734,6 +12872,25 @@ def main() -> int:
     # than a redundant flag.
     mode.add_argument("--sync", action="store_true", help="rewrite the boxes (the default)")
     pl.set_defaults(fn=cmd_plan)
+    st = sub.add_parser("stamp", help="verify a three-pass review schedule, write docs/reviews/<slug>.json, stamp the section, and sync the plan")
+    st.add_argument("ref", help="canonical section reference, e.g. 'D02 T01 §1'")
+    st.add_argument("--sha", required=True, help="full 40-char implementation commit SHA")
+    st.add_argument("--review", action="append", default=[], type=_parse_review_round, help="round:report:verdict")
+    st.add_argument("--check", dest="checks", action="append", default=[], help="executed verification command -> result")
+    st.add_argument("--date", default=date.today().isoformat(), help="stamp date YYYY-MM-DD")
+    st.add_argument("--cap-outcome", help="with a stopped verdict: what was done when the review stopped")
+    st.add_argument("--plan", help="required: <findings file> of the pre-build plan review")
+    st.add_argument(
+        "--completion",
+        type=_parse_completion_review,
+        help="required: <findings file>:<complete|reconciled|filed|completed>",
+    )
+    st.set_defaults(fn=cmd_stamp)
+    un = sub.add_parser("unstamp", help="reopen a JSON-receipt stamped section while keeping its revoked receipt")
+    un.add_argument("ref", help="canonical section reference, e.g. 'D02 T01 §1'")
+    un.add_argument("--reason", required=True, help="one-line reason naming what regressed and the repair section")
+    un.add_argument("--date", default=date.today().isoformat(), help="unstamp date YYYY-MM-DD")
+    un.set_defaults(fn=cmd_unstamp)
     db = sub.add_parser(
         "design-baseline",
         help="shrink todo/.design-baseline to the surface sections still lacking a Design line (never grows it)",
@@ -12750,7 +12907,7 @@ def main() -> int:
     )
     pr.set_defaults(fn=cmd_progress)
     args = p.parse_args()
-    if args.cmd == "query" and args.what == "parity":
+    if args.cmd == "query" and args.what in ("parity", "plan-health", "rounds"):
         if any(getattr(args, key, None) for key in ("file", "at", "require_owned", "require_conformance")):
             p.error("--file/--at/--require-owned/--require-conformance apply only to query adjacency")
     elif args.cmd == "query" and args.what != "adjacency" and any(getattr(args, key, None) for key in ("file", "at", "json", "require_owned", "require_conformance")):

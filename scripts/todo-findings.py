@@ -219,15 +219,38 @@ def _normalise_disposition(raw: str) -> str | None:
     return None
 
 
+DISPATCH_HEADING_RE = re.compile(
+    r"^## (?:Round \d+|Plan review|Completion review|Reconciliation review(?: \d+)?): "
+)
+DISPATCH_LINES_RE = re.compile(r"^- Lines: (\d+)$")
+
+
 def parse_file(path: Path) -> tuple[list[Finding], list[tuple[Path, int, str]]]:
     ref = _ref_for(path.name)
     if ref is None:
         return [], []
     findings: list[Finding] = []
     bad: list[tuple[Path, int, str]] = []
-    for lineno, line in enumerate(
-        io.open(path, encoding="utf-8", errors="replace").read().splitlines(), 1
-    ):
+    raw_text = io.open(path, encoding="utf-8", errors="replace", newline="").read()
+    lines = raw_text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    idx = 0
+    while idx < len(lines):
+        lineno = idx + 1
+        line = lines[idx]
+        if DISPATCH_HEADING_RE.match(line):
+            j = idx + 1
+            raw_count: int | None = None
+            while j < len(lines) and lines[j].startswith("- "):
+                lm = DISPATCH_LINES_RE.match(lines[j])
+                if lm is not None:
+                    raw_count = int(lm.group(1))
+                j += 1
+            if raw_count is not None and j < len(lines) and lines[j] == "":
+                idx = j + 1 + raw_count
+                continue
+        idx += 1
         m = HEADING_RE.match(line)
         if not m:
             continue
@@ -1052,6 +1075,25 @@ def _self_test() -> int:
                 or inter_doc[0].get("code") != "FIND-002":
             print(f"  FAIL  report interleaved wrong: {code} {out!r}")
             failed += 1
+        # Case 48: dispatcher-recorded review envelopes (`- Lines: N`) skip raw reviewer prose.
+        disp_file = mdir / "D00-T01-s99.md"
+        disp_file.write_text(
+            "# Review findings: D00 T01 §99\n\n"
+            "## Round 1: astra (`gpt-6-astra` via `codex`)\n"
+            "- Candidate: `0123456789abcdef0123456789abcdef01234567`\n"
+            "- Lines: 3\n"
+            "- Digest: `deadbeef`\n"
+            "\n"
+            "### F99 -- raw reviewer prose that is not a ledger heading\n"
+            "Second raw line.\n"
+            "Third raw line.\n\n"
+            "### F1 -- real ledger heading after envelope -- correctness -- fixed (independent) [minor]\n",
+            encoding="utf-8",
+        )
+        disp_found, disp_bad = parse_file(disp_file)
+        if disp_bad or len(disp_found) != 1 or disp_found[0].number != "F1":
+            print(f"  FAIL  dispatcher envelope skip failed: found={disp_found!r} bad={disp_bad!r}")
+            failed += 1
     finally:
         globals()["REVIEWS"], globals()["LEDGER"], globals()["TRANSITIONS"] = \
             saved_globals
@@ -1062,7 +1104,7 @@ def _self_test() -> int:
     import shutil
     shutil.rmtree(mdir, ignore_errors=True)
     tmp.rmdir()
-    print(f"todo-findings self-test: 47 cases, {failed} failed")
+    print(f"todo-findings self-test: 48 cases, {failed} failed")
     return 1 if failed else 0
 
 

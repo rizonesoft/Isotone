@@ -1,24 +1,20 @@
-# Independent reviewers for this repository, read by scripts/review-dispatch.py.
+# Independent reviewers for this repository, read by scripts/review_pin.py and scripts/review-dispatch.py.
 #
 # Operator decision 2026-11-10: Antigravity (`agy`) on Gemini 4 Carbon (Medium) (`gemini-4-carbon-medium`, pinned in
 # `scripts/panel_slots.py`) takes over from Claude Code as the writer in this repository. Operator decision 2026-11-10:
-# the reviewer is GPT-6 Astra always, whichever of Antigravity (`agy`), Claude Code (`claude`), or Muse Code (`muse`)
-# wrote the work, so each of the three routes names `astra` alone (`D:\Recto\.conclave\reviewers.toml` shape).
-# There is no fallback (operator decisions 2026-09-25, 2026-10-21, and 2026-10-23): a reviewer that is not installed,
-# exits non-zero, times out, returns nothing, or replies OVERALL: blocked is recorded with its reason, is retried by
-# the campaign with backoff before parking only its section, and is never an approval. Every review round runs through
-# this pin: the panel rounds, the completion review, the architecture gate, the plan review, the stamp review, and the
-# independent pass.
+# the reviewer is GPT-6 Astra always, whichever of Antigravity (`agy`) or Claude Code (`claude`) wrote the work, so
+# each route names `astra` alone with no fallback (operator decisions 2026-09-25, 2026-10-21, and 2026-10-23).
+# Operator decision 2026-11-12: adopt Conclave-SDK's `three-pass` review schedule (`plan` -> one `round` ->
+# `completion`, plus `reconciliation` only when completion returns blocking gaps).
 #
-# Loaded strictly: an unknown key, an unknown CLI, a malformed model, a route naming an undefined reviewer or more than
-# 1 reviewer, or a reviewer of the writer's own model family refuses every dispatch. The schedule is loaded as strictly:
-# an unknown lens, or an effort a routed reviewer's CLI does not take, refuses too.
+# Loaded strictly by `scripts/review_pin.py`: an unknown key, an unknown CLI, a malformed model, a route naming an
+# undefined reviewer or more than 1 reviewer, a reviewer of the writer's own model family, or overlapping lenses
+# across `plan`, `round`, and `completion` refuses every dispatch.
 
 schema_version = 1
 
 # GPT-6 Astra through the Codex CLI, read-only sandbox (operator decision 2026-11-10: "The reviewer should be GPT6
-# Astra."). The effort here is medium (operator decision 2026-10-23: "set the reviewer effort level to medium"), used
-# by passes that do not name a scheduled `--kind`; `[schedule]` sets each scheduled pass's own effort.
+# Astra."). Effort is medium (operator decision 2026-10-23: "set the reviewer effort level to medium").
 [reviewers.astra]
 cli = "codex"
 model = "gpt-6-astra"
@@ -27,30 +23,24 @@ effort = "medium"
 [routes]
 agy = ["astra"]
 claude = ["astra"]
-muse = ["astra"]
 
-# The review schedule, matching `D:\Recto\.conclave\reviewers.toml`: a medium plan pass, a low completion pass, a
-# medium round 1 across the review lenses (`design` on surface sections), low adversarial rotation rounds, and a medium
-# escalation round after a low round finds a P1 (`severity_stop_after = 0`). Prompts sealed by `scripts/review_prompt.py`
-# keep their exact fenced bytes; `--kind` selects the scheduled effort without mutating the prompt.
 [schedule]
-severity_stop_after = 0
+policy = "three-pass"
+pass_cap = 33
+blocking = ["P1", "P2"]
 
 [schedule.plan]
 effort = "medium"
 lenses = ["plan"]
 
-[schedule.completion]
-effort = "low"
-
 [[schedule.rounds]]
 effort = "medium"
-lenses = ["adversarial", "consistency", "integration", "record", "design"]
+lenses = ["adversarial", "consistency", "integration", "quality", "optimization", "source-defect", "design"]
 
-[schedule.rotation]
-effort = "low"
-lenses = ["adversarial"]
-
-[schedule.escalation]
+[schedule.completion]
 effort = "medium"
-lenses = ["adversarial"]
+lenses = ["plan-delivery", "record"]
+
+[schedule.reconciliation]
+effort = "medium"
+lenses = ["adversarial", "integration", "plan-delivery", "record"]
