@@ -81,7 +81,9 @@ track: W3
 
 ## 1. Fold the Per-App Docs and Samples into the Suite
 
-> **Started:** 2026-10-22T13:02:14Z
+> **Started:** 2026-11-12T22:22:10Z
+
+**Corrected 2026-11-13** (pre-build validation on the tree `D00 T01 §8` left, each fact measured that day; this is non-feature work, a documentation and layout repair with no competitor-facing feature, so it carries no `**Exceed:**` paragraph): (1) The `Started:` line above records the interval the native re-plan reopened for the three items added on 2026-11-12; the section first started on 2026-10-22T13:02:14Z and its first commit is `3d5a8ff`, both kept in the record items below. (2) The four prototype paths the two pages link all exist at the `csharp-final` tag (`git cat-file -e csharp-final:<path>` exits 0 for each), so `git show csharp-final:<path>` is a command a reader can run. (3) "Every reference to the old path" means every reference to the three files that move (`README.md`, `test.svg`, `bezier-sample.svg` under `tests/fixtures/stilus/svg/`): the README itself, `docs/captures/stilus/main-window/README.md` (which names the sample the capture opened), and this file's claims. The other matches of `git grep -n "tests/fixtures/stilus"` are paths of fixtures that do not exist yet, planned in the Stilus TODO files still parked for their native re-plan (`status: blocked`) and in `docs/parity/section-design.md`, the design those files were authored from; each file's re-plan rewrites its own paths to `native/tests/fixtures/<app>/<format>/` under `standards/testing.md`, and rewriting them here would edit sections this one does not own. (4) `git ls-files tests` lists exactly the three files, so after the move the top-level `tests/` folder is gone.
 
 The suite has one documentation tree (`docs/dev/`, `docs/user/`) and one fixture tree. Pages left inside `src/` are invisible to anyone reading `docs/`, and sample files beside the projects look like build inputs. Only pages with real content move; index stubs that link to pages that never existed are deleted.
 
