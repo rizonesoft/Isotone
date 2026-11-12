@@ -1,0 +1,87 @@
+{
+  "ref": "D00 T01 \u00a78",
+  "title": "The Validator Reads the Albumen Parity Catalog",
+  "implementation_sha": "42a689610442628f52b8ebe64a891f89f1ca271a",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s8.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/todo-graph.py self-test -> exit 0, 1031 cases, 0 failed",
+    "python scripts/todo-graph.py validate -> exit 0, 0 fatal; exit 1 naming albumen: and 'is placed in no albumen catalog row' with AC-5041 deleted, exit 1 naming IP-9999 with LP-1056 rerouted",
+    "python scripts/todo-graph.py query parity --catalog albumen --phase 30 --json -> exit 0, 174 features, 19 sections",
+    ".github/workflows/build.yml on 42a689610442 -> success https://github.com/rizonesoft/Isotone/actions/runs/43318518566",
+    ".github/workflows/plan.yml on 42a689610442 -> success https://github.com/rizonesoft/Isotone/actions/runs/43318517881"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T01-s8.md",
+    "verdict": "reconciled",
+    "candidate": "42a689610442628f52b8ebe64a891f89f1ca271a",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T01-s8.md",
+    "candidate": "351bc093acbdd77cbb55e65c5ef77943d9d2fea7",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "351bc093acbdd77cbb55e65c5ef77943d9d2fea7",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}

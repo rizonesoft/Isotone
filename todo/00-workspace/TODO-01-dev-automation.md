@@ -64,7 +64,7 @@ track: W1
 |   5   |   §5    | First push: CI green and read back            | §1, D00 T07 §1 |  [ ]   |
 |   6   |   §6    | The parity catalog validator                  | §1         |  [x]   |
 |   7   |   §7    | The validator reads the Gesso parity catalog  | §6, D00 T07 §1 |  [x]   |
-|   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [ ]   |
+|   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [x]   |
 |   9   |   §9    | The design contract gates                     | §1, D00 T07 §1 |  [ ]   |
 |  10   |   §10   | The drift gates                               | §1, D00 T07 §1 |  [ ]   |
 |  11   |   §11   | The manual-row invariant                      | §2         |  [x]   |
@@ -336,6 +336,9 @@ The Albumen parity catalog (`docs/parity/albumen-parity.md`) is plan data like `
 - [x] Commit: `"workspace: validate the Albumen parity catalog against its sources, the plan, and the Gesso routes"` Done 2026-11-13: this commit.
 
 **Test checkpoint:** Unit test and static analysis: `python scripts/todo-graph.py self-test` reports `0 failed` with the Albumen cases counted; `python scripts/todo-graph.py validate` exits 0 on the integrated tree; deleting one `AC-` id from a scratch copy of `docs/parity/albumen-parity.md` makes `validate` exit 1 naming `albumen:` and `is placed in no albumen catalog row`, and changing one routed row to `other-app: Gesso IP-9999` makes it exit 1 naming `IP-9999` in the route's message (**Corrected 2026-10-22:** by `§7`'s item 26, message text, not the class ids `parity-id-missing` and `parity-ip-route-dead`); `python scripts/todo-graph.py query parity --catalog albumen --phase 30 --json` prints the Phase 30 counts. Cheaper substitute that fails: a copy of `§7`'s module hard-wired to the Albumen file, which the self-test's single-module import and the unchanged Stilus and Gesso cases expose as a second implementation.
+
+> **Verified:** 2026-11-13 | §8 | 42a689610442628f52b8ebe64a891f89f1ca271a
+> **Review:** `docs/reviews/d00-t01-s8.json`
 
 ## 9. The Design Contract Gates: the Design Line, design-lint, and the Reference Renders
 
