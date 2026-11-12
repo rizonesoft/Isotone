@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **37 of 840 sections complete (4%).** 840 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **38 of 840 sections complete (5%).** 840 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -191,7 +191,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T03 §2`  | Before captures of the imported Stilus and Gesso                                         |  10   |
 | [ ] | `D00 T01 §9`  | The design contract gates                                                                |  10   |
 | [ ] | `D00 T01 §10` | The drift gates                                                                          |  10   |
-| [ ] | `D00 T01 §5`  | First push: CI green and read back                                                       |   9   |
+| [x] | `D00 T01 §5`  | First push: CI green and read back                                                       |   9   |
 
 > **Superseded:** `D00 T02 §1` -- Fix the quarantined tests and empty the quarantine (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
 > **Superseded:** `D00 T02 §9` -- Point every Stilus test at a temporary app data (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)

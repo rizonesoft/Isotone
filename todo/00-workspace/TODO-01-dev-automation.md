@@ -61,7 +61,7 @@ track: W1
 |   2   |   §2    | The operator requirement for manual rows      | --         |  [x]   |
 |   3   |   §3    | Raise the claims coverage floor               | --         |  [x]   |
 |   4   |   §4    | Prove the review panel end to end             | --         |  [x]   |
-|   5   |   §5    | First push: CI green and read back            | §1, D00 T07 §1 |  [ ]   |
+|   5   |   §5    | First push: CI green and read back            | §1, D00 T07 §1 |  [x]   |
 |   6   |   §6    | The parity catalog validator                  | §1         |  [x]   |
 |   7   |   §7    | The validator reads the Gesso parity catalog  | §6, D00 T07 §1 |  [x]   |
 |   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [x]   |
@@ -183,6 +183,9 @@ Two workflows guard `main`: `build` (restore, Release build, tests) and `plan-ga
 - [x] Commit: `"workspace: re-prove the first-push acceptance on the native workflows"` **Added 2026-11-13.** Done 2026-11-13: this commit.
 
 **Test checkpoint:** `git ls-remote origin refs/heads/main` equals the final commit's SHA; `python scripts/review_prompt.py ci-wait <final sha> --since <remote head before the push>` prints `plan-gates success` for that SHA, and the same command with `--workflow build --workflow-path .github/workflows/build.yml` prints `build success` for it, or `not triggered` when the pushed range misses the `build` path filter, which is accepted with the `plan-gates` line and never forced into a second run; and `docs/dev/build.md` cites the two first green run URLs. **Corrected 2026-10-22:** said both `gh run list` queries return `success` for the pushed commit's SHA, a latest-run read that a later push can satisfy (D00-T01-S4-PR6 to PR8). **Corrected 2026-11-12:** the path filter moved: `build.yml` has had none since the native CI of `D00 T05 §8`, so `build` must read `success` for every push, and it is `plan-gates` whose path filter can read `not triggered`; a range that misses the `plan.yml` filter is accepted on the `build success` line plus the `plan-gates` `not triggered` line, never by forcing a second run. Cheaper substitute that fails: a local `pwsh scripts/check-all.ps1`, which proves the machine and not the runner.
+
+> **Verified:** 2026-11-13 | §5 | d879ad6637bc2736b769f5a06cb720d17dd6b14b
+> **Review:** `docs/reviews/d00-t01-s5.json`
 
 ## 6. The Parity Catalog Validator
 

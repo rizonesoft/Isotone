@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T01 \u00a75",
+  "title": "First Push: CI Green and Read Back",
+  "implementation_sha": "d879ad6637bc2736b769f5a06cb720d17dd6b14b",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s5.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "python scripts/review_prompt.py ci-wait d879ad6637bc2736b769f5a06cb720d17dd6b14b --since 4609c3be413f7ae33c4b3d2896c6022d80de4e41 -> ci-wait: d879ad6637bc plan-gates success https://github.com/rizonesoft/Isotone/actions/runs/43325231453",
+    "the same with --workflow build --workflow-path .github/workflows/build.yml -> ci-wait: d879ad6637bc build success https://github.com/rizonesoft/Isotone/actions/runs/43325231310",
+    "git ls-remote origin refs/heads/main -> d879ad6637bc2736b769f5a06cb720d17dd6b14b, the final commit; docs/dev/build.md cites runs 36202856393 and 36203128891"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T01-s5.md",
+    "verdict": "complete",
+    "candidate": "d879ad6637bc2736b769f5a06cb720d17dd6b14b",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T01-s5.md",
+    "candidate": "7d68ebd036614c534c0e930a463374db0613b883",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "7d68ebd036614c534c0e930a463374db0613b883",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
