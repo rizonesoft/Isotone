@@ -411,14 +411,32 @@ def section_text(text, number):
 
 def build_start(root, path, body, ref):
     """The commit the section's build began at: the first commit of its TODO file holding its `> **Started:**` line,
-    or the first commit naming the section outside todo/ and docs/."""
+    or the first commit naming the section outside todo/ and docs/ (after its latest `> **Unstamped:**` if reopened)."""
+    number = int(ref.rsplit("§", 1)[1])
+    unstamped_lines = re.findall(r"^> \*\*Unstamped:\*\*[^\n]+$", body or "", re.M)
+    after_unstamp_sha = None
+    if unstamped_lines:
+        last_unstamped = unstamped_lines[-1].rstrip("\r")
+        u_out = subprocess.run(
+            ["git", "-C", str(root), "log", "--format=%H", "--", path],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        for sha in u_out.stdout.split() if u_out.returncode == 0 else []:
+            shown = subprocess.run(["git", "-C", str(root), "show", f"{sha}:{path}"], capture_output=True, timeout=30)
+            section = section_text(shown.stdout.decode("utf-8", "replace"), number) if shown.returncode == 0 else None
+            if section is not None and last_unstamped in section.splitlines():
+                after_unstamp_sha = sha
+            elif after_unstamp_sha is not None:
+                break
     started = STARTED.search(body or "")
     first = None
     if started:
         line = started[0].rstrip("\r")
-        number = int(ref.rsplit("§", 1)[1])
+        rev_range = [f"{after_unstamp_sha}..HEAD"] if after_unstamp_sha else []
         out = subprocess.run(
-            ["git", "-C", str(root), "log", "--reverse", "--format=%H", "--", path],
+            ["git", "-C", str(root), "log", "--reverse", "--format=%H", *rev_range, "--", path],
             capture_output=True,
             text=True,
             timeout=60,
@@ -430,6 +448,7 @@ def build_start(root, path, body, ref):
                 first = sha
                 break
     else:
+        rev_range = [f"{after_unstamp_sha}..HEAD"] if after_unstamp_sha else []
         out = subprocess.run(
             [
                 "git",
@@ -440,6 +459,7 @@ def build_start(root, path, body, ref):
                 "--format=%H",
                 "-E",
                 f"--grep={ref}([^0-9]|$)",
+                *rev_range,
                 "--",
                 ".",
                 ":(exclude)todo",
@@ -759,13 +779,13 @@ def three_pass_ok(root, data, ref, found):
     worst = dispatch.review_pin.declared_highest(chain[-1][1]["review"])
     below = "blocking" in schedule and not dispatch.review_pin.blocks(schedule, worst)
     require(
-        verdict in ("complete", "reconciled") or (verdict == "filed" and below),
-        f"the three-pass policy takes completion verdict complete or reconciled, or filed when the last pass's "
-        f"worst finding ({worst}) is below the pin's blocking levels, not {verdict}: {ref}",
+        verdict in ("complete", "reconciled") or (verdict in ("filed", "completed") and below),
+        f"the three-pass policy takes completion verdict complete or reconciled, or filed/completed when the last "
+        f"pass's worst finding ({worst}) is below the pin's blocking levels, not {verdict}: {ref}",
     )
     holds = dispatch.review_pin.blocks(schedule, worst) if worst is not None else "blocking" in schedule
     require(
-        verdict == "filed" or worst == "none" or not holds,
+        verdict in ("filed", "completed") or worst == "none" or not holds,
         f"the last review ({chain[-1][0]}) ends complete but "
         f"{'declares HIGHEST: ' + worst if worst else 'declares no HIGHEST line, which counts as P1'}, which holds "
         f"the stamp under the section's pin: {ref}",
@@ -1335,7 +1355,7 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
 
 
 def unstamp(root, ref, reason, date):
-    """Flip a JSON-receipt stamped section back to open when an audit finds it regressed."""
+    """Flip a JSON-receipt stamped section back to open when an audit finds it regressed, archiving its receipt and findings."""
     root = Path(root).resolve()
     rows = graph(root)
     require(ref in rows, "unresolved section: " + ref)
@@ -1346,12 +1366,46 @@ def unstamp(root, ref, reason, date):
     require(re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) is not None, f"invalid date: {date}")
     receipt_path = root / row.receipt
     require(receipt_path.is_file(), f"missing receipt: {row.receipt}")
-    revoked_path = receipt_path.with_name(f"{receipt_path.stem}.revoked-{date}.json")
+    receipt_bytes = receipt_path.read_bytes()
+    try:
+        receipt_obj = json.loads(receipt_bytes.decode("utf-8"))
+    except ValueError:
+        receipt_obj = {}
+    candidate_reports = [section_findings(root, ref)]
+    if isinstance(receipt_obj, dict):
+        for key in ("plan", "completion"):
+            sub = receipt_obj.get(key)
+            if isinstance(sub, dict) and isinstance(sub.get("report"), str):
+                candidate_reports.append(sub["report"])
+        for rev in receipt_obj.get("reviews") or []:
+            if isinstance(rev, dict) and isinstance(rev.get("report"), str):
+                candidate_reports.append(rev["report"])
+    source_findings: list[Path] = []
+    for rel_rep in dict.fromkeys(candidate_reports):
+        rep_p = Path(rel_rep)
+        if (
+            re.fullmatch(r"docs/reviews/[A-Za-z0-9_./-]+\.md", rel_rep) is not None
+            and not rep_p.is_absolute()
+            and ".." not in rep_p.parts
+        ):
+            full_rep = root / rep_p
+            if full_rep.is_file() and not full_rep.is_symlink() and full_rep.resolve().is_relative_to(root):
+                source_findings.append(full_rep)
+
+    tag = f"revoked-{date}"
     n = 2
-    while revoked_path.exists():
-        revoked_path = receipt_path.with_name(f"{receipt_path.stem}.revoked-{date}-{n}.json")
+    while receipt_path.with_name(f"{receipt_path.stem}.{tag}.json").exists() or any(
+        fp.with_name(f"{fp.stem}.{tag}.md").exists() for fp in source_findings
+    ):
+        tag = f"revoked-{date}-{n}"
         n += 1
+    revoked_path = receipt_path.with_name(f"{receipt_path.stem}.{tag}.json")
     revoked = revoked_path.relative_to(root).as_posix()
+    findings_archives = [
+        (fp, fp.with_name(f"{fp.stem}.{tag}.md"), fp.read_bytes())
+        for fp in source_findings
+    ]
+    archived_rels = [dst.relative_to(root).as_posix() for _, dst, _ in findings_archives]
 
     path = root / row.path
     original_bytes = path.read_bytes()
@@ -1361,15 +1415,18 @@ def unstamp(root, ref, reason, date):
     stamp_lines = re.compile(r"\n\n> \*\*Verified:\*\* [^\n]*\n> \*\*Review:\*\* `[^`\n]*`")
     require(len(stamp_lines.findall(sec_block)) == 1, f"stamp lines not found: {ref}")
     new_sec = stamp_lines.sub("", sec_block)
+    new_sec = re.sub(r"^> \*\*Started:\*\* [^\n]*\n?", "", new_sec, flags=re.M)
     new_sec = re.sub(r"^(\s*- )\[x\] (Commit:.+)$", r"\1[ ] \2", new_sec, flags=re.M).rstrip()
-    new_sec += f"\n\n> **Unstamped:** {date}: {reason.strip()} (revoked receipt `{revoked}`)\n\n"
+    archived_suffix = (
+        f", archived findings {', '.join(f'`{r}`' for r in archived_rels)}" if archived_rels else ""
+    )
+    new_sec += f"\n\n> **Unstamped:** {date}: {reason.strip()} (revoked receipt `{revoked}`{archived_suffix})\n\n"
     text = text.replace(sec_block, new_sec, 1)
     line = re.compile(r"^(\|\s*\d+\s*\|\s*§" + str(row.number) + r"\s*\|[^\n]*\|\s*)\[x\](\s*\|)$", re.M)
     require(len(line.findall(text)) == 1, f"implementation row not found: {ref}")
     text = line.sub(r"\1[ ]\2", text)
     text = re.sub(r"\A(---\n(?:.*\n)*?)status: done\n", r"\1status: active\n", text, count=1)
 
-    receipt_bytes = receipt_path.read_bytes()
     plan_path = root / PLAN
     progress_path = root / "build" / "todo-progress.json"
     operator_path = root / "build" / "todo-operator.json"
@@ -1379,14 +1436,22 @@ def unstamp(root, ref, reason, date):
     }
     try:
         atomic(revoked_path, receipt_bytes)
+        for _, dst_fp, fbytes in findings_archives:
+            atomic(dst_fp, fbytes)
         atomic(path, text)
         receipt_path.unlink()
+        for src_fp, _, _ in findings_archives:
+            src_fp.unlink()
         _validate_and_sync(root, sync_plan=plan_path.is_file())
     except BaseException:
         try:
             if not receipt_path.is_file():
                 atomic(receipt_path, receipt_bytes)
             revoked_path.unlink(missing_ok=True)
+            for src_fp, dst_fp, fbytes in findings_archives:
+                if not src_fp.is_file():
+                    atomic(src_fp, fbytes)
+                dst_fp.unlink(missing_ok=True)
             if not path.is_file() or path.read_bytes() != original_bytes:
                 atomic(path, original_bytes)
         finally:

@@ -80,8 +80,16 @@ jobs:
         run: python3 scripts/panel_slots.py validate
       - name: Check the reviewer pin loads under the dispatcher's rules
         run: python3 scripts/review-dispatch.py --check-pin
-      - name: Test the review dispatcher with fake reviewer CLIs
-        run: python3 scripts/tests/test_review_dispatch.py
+      - name: Check the reviewer pin schema and three-pass schedule
+        run: python3 scripts/review_pin.py --check
+      - name: Test the review pin, prompt builder, dispatcher, three-pass stamp, and CI status
+        run: |
+          python3 scripts/tests/test_review_pin.py
+          python3 scripts/tests/test_review_prompt.py
+          python3 scripts/tests/test_review_dispatch.py
+          python3 scripts/tests/test_three_pass.py
+          python3 scripts/tests/test_isotone_three_pass_stamp.py
+          python3 scripts/tests/test_ci_status.py
       - name: Self-test the weakening scan
         run: python3 scripts/weakening-scan.py --self-test
       - name: Test the scheduled automations

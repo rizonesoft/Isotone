@@ -94,7 +94,7 @@ Commit the implementation with quoted commit-time gate evidence:
 <plan corrections, if any>
 ```
 
-When remote pushes are active for the run, push `main` and verify CI (`python scripts/ci_status.py --sha $SHIP_SHA --wait` and `python scripts/review_prompt.py ci-wait` per `process-phase`). Then immediately invoke `review-todo-section` on `<ref>` to run Pass 2 (`round`), Pass 3 (`completion`), any `reconciliation`, and `python scripts/todo-graph.py stamp`.
+When remote pushes are active for the run, capture `$BEFORE = (git ls-remote origin refs/heads/main).Split()[0]`, push `main`, and verify commit-specific push CI (`python scripts/review_prompt.py ci-wait $SHIP_SHA --since $BEFORE` and `python scripts/review_prompt.py ci-wait $SHIP_SHA --since $BEFORE --workflow build --workflow-path .github/workflows/build.yml`) plus watched branch status (`python scripts/ci_status.py`) per `process-phase`. Then immediately invoke `review-todo-section` on `<ref>` to run Pass 2 (`round`), Pass 3 (`completion`), any `reconciliation`, and `python scripts/todo-graph.py stamp`.
 
 ## Guardrails
 

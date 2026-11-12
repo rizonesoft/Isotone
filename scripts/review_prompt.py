@@ -6691,131 +6691,33 @@ def _self_test() -> int:
                 os.environ.pop("GH", None)
             else:
                 os.environ["GH"] = old_gh
-    # The skill surface the tooling assumes (D00 T04 §21 items 2, 6, 7,
-    # 8, 12, 14, 15): the suite reads the skill text, so a prose edit
-    # that drops a wired command fails here, not at the next review.
-    skill_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              "..", ".claude", "skills", "review-todo-section",
-                              "SKILL.md")
-    try:
-        with open(skill_path, encoding="utf-8") as fh:
-            skill_text = fh.read()
-    except OSError:
-        skill_text = ""
-    for pin, needle in (
-            ("skill-diff-flagged", "--no-replace-objects diff --cached"),
-            ("skill-selfreview-flagged", "`git --no-replace-objects diff`"),
-            ("skill-coverage-sentence",
-             "Every `rev-parse`, `show`, and `diff` on this page passes `--no-replace-objects`"),
-            ("skill-push-explicit", "git push --atomic origin $COMMIT:refs/heads/main"),
-            ("skill-provenance-tags", "python scripts/review_prompt.py provenance-tags --findings"),
-            ("skill-reachable-before-push", "check-reachable --findings <findings path> --refs $COMMIT"),
-            ("skill-reachable-after-push", "check-reachable --findings <findings path> --remote origin"),
-            ("skill-ci-wait", "python scripts/review_prompt.py ci-wait $COMMIT"),
-            ("skill-ci-red-repairs", "A red read-back is a failed gate, and the run repairs it rather than waiting on it"),
-            ("skill-ci-repair-bound", "at most three repair attempts per repair episode"),
-            ("skill-ci-episode-no-reset", "so a new red never resets the count"),
-            ("skill-ci-repair-owner", "Every repair commit has an owner"),
-            ("skill-ci-cause-rule", "the cause decides, not the step's name"),
-            ("skill-ci-slow-run", "a slow run is not an unreachable one"),
-            ("skill-ci-ceiling-exit", "`ci-wait` exit 3 means it stayed pending past the ceiling"),
-            ("skill-ci-episode-persists", "python scripts/campaign_guard.py repair attempt --red"),
-            ("skill-ci-close-evidence", "repair close --green <sha> --workflow <workflow> --run-file <run file> --evidence"),
-            ("skill-ci-ceiling-count", "python scripts/campaign_guard.py repair ceiling --run-id"),
-            ("skill-ci-no-run-authorized", "--authorized-by <who> --authorized-at <UTC time> --approved-range <base>..<head>`, which exits 4 `NOT GREEN`"),
-            ("skill-ci-quotes-redacted", "a record quotes `ci-wait` only as printed, its secret shapes already masked"),
-            ("skill-ci-unknown-cause", "An unknown cause owes bounded evidence gathering"),
-            ("skill-ci-escalation-ends-run", "--reason escalation` and `CronDelete` of the heartbeat it names"),
-            ("skill-ci-escalation", "escalates to the operator only for a cause the tree cannot fix"),
-            ("skill-ci-continue", "On green, with any reopened section re-stamped, it continues with the next section in the same turn"),
-            ("skill-ci-reopen-restamp", "A reopened section is repaired, re-reviewed, and re-stamped through this skill before anything continues"),
-            ("skill-ci-repaired-candidate", "a red on a SHIP push makes the repair commit the new candidate"),
-            ("skill-push-readback",
-             'git ls-remote origin refs/heads/main | cut -f1)" = "$COMMIT"'),
-            ("skill-push-residual", "a concurrent force-push after it still moves the ref"),
-            ("skill-parents-tool",
-             "python scripts/review_prompt.py check-parents"),
-            ("skill-linear-sentence", "this tree stays linear"),
-            ("skill-stamp-check",
-             "python scripts/review_prompt.py check-stamp --manifest $RUNDIR/stamp-manifest.md"),
-            ("skill-stamp-branch", "PASS stamp holds` proceeds"),
-            ("skill-merge-forbid", "refuses merge candidates outright"),
-            ("skill-round-grammar", "`oid`(round N)"),
-            ("skill-kind-panel", "--expect-head-kind commit"),
-            ("skill-kind-stamp", "--expect-head-kind tree"),
-            ("skill-attest-v2", "--runner-output <panel output file>"),
-            ("skill-attest-findings", "--findings <findings path>"),
-            ("skill-attest-stderr", "--runner-stderr <panel stderr file>"),
-            ("skill-assembled-commits", "--commits <o1,o2,...>"),
-            ("skill-assembled-body", "--body $RUNDIR/fenced.md"),
-            ("skill-anchors-tool",
-             "python scripts/review_prompt.py check-anchors <todo-path> <section>"),
-            ("skill-stamp-staged",
-             "ls-files --error-unmatch"),
-            ("skill-stamp-clean",
-             "git --no-replace-objects diff --quiet -- <todo-path>"),
-            ("skill-tree-clean",
-             "git --no-replace-objects diff --quiet ||"),
-            ("skill-stamp-no-fallback",
-             "A failed attempt (dispatcher exit 1) has no fallback"),
-            ("skill-panel-round",
-             "python scripts/review-dispatch.py --writer agy --kind round --prompt $RUNDIR/review-prompt.md --keep $ROUND"),
-            ("skill-panel-output", "check-panel --manifest $RUNDIR/manifest.md < $ROUND/review.md"),
-            ("skill-plan-round", "--prompt $RUNDIR/plan-review-prompt.md --keep $RUNDIR/plan-<N>"),
-            ("skill-stamp-round", "--prompt $RUNDIR/stamp-prompt.md --keep $RUNDIR/stamp-1"),
-            ("skill-arch-round", "--prompt $RUNDIR/arch-prompt.md --keep $RUNDIR/arch-<N>"),
-            ("skill-grok-cutoff", "on any later stamp it fails validation, because Grok left the panel"),
-            ("skill-no-fallback", "re-runs nothing on another family, because the route has no fallback"),
-            ("skill-no-third-rung", "The writer's family never fills a round"),
-            ("skill-holds-period",
-             "The period is part of the verdict."),
-            ("skill-refusal-rerun",
-             "names no figure (refusal, off-topic) re-runs"),
-            ("skill-findings-fullrefs",
-             "Findings prose cites full refs too"),
-            ("skill-loop-reemits",
-             "Every fix loop re-emits the attestation"),
-            ("skill-assembly-subset",
-             "the pair bounds the declaration"),
-            ("skill-model-provenance",
-             "marks it `trusted` rather than `derived`"),
-            ("skill-run-clock",
-             "--run-clock <recorded clock>"),
-            ("skill-central-guard",
-             "opens with `export GIT_NO_REPLACE_OBJECTS=1`"),
-            ("skill-anchors-membership",
-             "sit in the attested candidate's ancestry"),
-            ("skill-cite-hash",
-             "carry their content hash"),
-            ("skill-role-correspondence",
-             "each resolving to a recorded panel round"),
-            ("skill-remote-url",
-             "remote get-url --push --all origin"),
-            ("skill-bundle",
-             "the emitter verifies before handing off"),
-            ("skill-stamp-attempts",
-             "a re-run takes the next N rather than overwriting")):
-        check(pin, needle in skill_text, skill_path)
-    check("skill-attest-no-checker", "--checker-output" not in skill_text,
-          skill_path)
-    # 2026-10-21: every round runs scripts/review-dispatch.py; the retired slot runner is gone.
-    check("skill-no-slot-runner", "panel_slots.py exec" not in skill_text, skill_path)
-    # D00 T04 §27: every review pin lives in .conclave/reviewers.toml, so the
-    # skill names slots and never a model or a model alias.
-    check("skill-no-model-literal",
-          re.search(r"gpt-\d|grok-\d|claude-opus|--model opus|gemini-\d", skill_text) is None,
-          skill_path)
-    try:
-        attest_ordered = (skill_text.index("### 9. Write the stamp and flip the row")
-                          < skill_text.index("### Attestation")
-                          < skill_text.index("### Stamp review (before the STAMP push)"))
-    except ValueError:
-        attest_ordered = False
-    check("skill-attest-after-stampwrite", attest_ordered,
-          "attestation emits after the stamp and Live proof, before the stamp review")
-    check("skill-stamp-rounds-runfile",
-          "Stamp rounds ride the run file, never the findings file" in skill_text,
-          skill_path)
+    # Skill surface checks for the three-pass review workflow across .agents/skills/ and .claude/skills/.
+    repo_root = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    for label, rel_parts in (
+        ("agy", (".agents", "skills", "review-todo-section", "SKILL.md")),
+        ("claude", (".claude", "skills", "review-todo-section", "SKILL.md")),
+    ):
+        skill_path = os.path.join(repo_root, *rel_parts)
+        try:
+            with open(skill_path, encoding="utf-8") as fh:
+                skill_text = fh.read()
+        except OSError:
+            skill_text = ""
+        for pin, needle in (
+            (f"skill-{label}-review-prompt", "python scripts/review-prompt.py --kind round"),
+            (f"skill-{label}-review-dispatch", "python scripts/review-dispatch.py --writer "),
+            (f"skill-{label}-dynamic-round", "${ROUND_NUM}:${RECORD}:"),
+            (f"skill-{label}-completion-verdicts", ":<complete|reconciled|filed|completed>"),
+            (f"skill-{label}-stamp", "python scripts/todo-graph.py stamp"),
+            (f"skill-{label}-unstamp", "python scripts/todo-graph.py unstamp"),
+            (f"skill-{label}-ci-wait", "python scripts/review_prompt.py ci-wait"),
+            (f"skill-{label}-ci-status", "`python scripts/ci_status.py`"),
+            (f"skill-{label}-no-fallback", "never substitute a writer-family review"),
+        ):
+            check(pin, needle in skill_text, skill_path)
+        check(f"skill-{label}-no-hardcoded-round1", "1:${RECORD}:" not in skill_text, skill_path)
+        check(f"skill-{label}-no-ci-status-sha", "ci_status.py --sha" not in skill_text, skill_path)
+        check(f"skill-{label}-no-slot-runner", "panel_slots.py exec" not in skill_text, skill_path)
 
     print(f"review-prompt self-test: {total[0]} cases, {len(failures)} failed")
     for failure in failures:

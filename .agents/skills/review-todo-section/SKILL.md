@@ -38,13 +38,14 @@ $BUILT_SHA = (git rev-parse HEAD).Trim()
 $keep = Join-Path "build/reviews" ([guid]::NewGuid().ToString("N").Substring(0, 12))
 New-Item -ItemType Directory -Force $keep | Out-Null
 python scripts/review-prompt.py --kind round --candidate $BUILT_SHA --ref "$REF" --purpose "<one or two sentences>" --governing "<todo-or-spec-path>" --out build/round-prompt.md
-python scripts/review-dispatch.py --writer agy --kind round --candidate $BUILT_SHA --prompt build/round-prompt.md --keep $keep --record $RECORD
+$ROUND_OUT = python scripts/review-dispatch.py --writer agy --kind round --candidate $BUILT_SHA --prompt build/round-prompt.md --keep $keep --record $RECORD
+$ROUND_NUM = ($ROUND_OUT | ConvertFrom-Json).round
 ```
 
-Pass `--base $BASE_SHA` to `review-prompt.py` when the build spans multiple commits, `--surface` to `review-dispatch.py` on surface sections, and `--paths <files>` when conditional lenses apply.
+Pass `--base $BASE_SHA` to `review-prompt.py` when the build spans multiple commits, `--surface` to `review-dispatch.py` on surface sections, and `--paths <files>` when conditional lenses apply. `$ROUND_NUM` is the dispatcher's recorded round number (`1` normally, or higher if an earlier attempt exited without returning a review).
 
-- If `"blocking": false` (`HIGHEST: none` or `HIGHEST: P3`): the round verdict for `stamp` is `1:${RECORD}:clean`. File any worthwhile `P3` follow-ups via `add-todo`.
-- If `"blocking": true` (`P1` or `P2`): fix every valid blocking finding in a new commit on `main`, re-run the section's `Test checkpoint` and owed gates (`.agents/skills/process-todo-section/gates.md`), and record `- Implemented:` / refutation bullets directly at the bottom of `$RECORD` (never edit inside the dispatcher's `## Round 1` block, and do not add a `## ` heading that would break block notes). Under `three-pass`, do **not** run a second `--kind round` (the schedule has 1 round entry; Pass 3 + `reconciliation` verify the final candidate); the round verdict for `stamp` is `1:${RECORD}:fixed`.
+- If `"blocking": false` (`HIGHEST: none` or `HIGHEST: P3`): the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:clean`. File any worthwhile `P3` follow-ups via `add-todo`.
+- If `"blocking": true` (`P1` or `P2`): fix every valid blocking finding in a new commit on `main`, re-run the section's `Test checkpoint` and owed gates (`.agents/skills/process-todo-section/gates.md`), and record `- Implemented:` / refutation bullets directly at the bottom of `$RECORD` (never edit inside the dispatcher's `## Round N` block, and do not add a `## ` heading that would break block notes). Under `three-pass`, do **not** run a second `--kind round` (the schedule has 1 round entry; Pass 3 + `reconciliation` verify the final candidate); the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:fixed`.
 
 ### 3. Pass 3 -- `completion` and excellence review
 
@@ -89,14 +90,14 @@ Repeat repair + commit + `reconciliation` until it returns `RECONCILIATION: comp
 Let `$FINAL_SHA` be the exact commit SHA reviewed by the final pass (`$POST_ROUND_SHA` when no reconciliation ran, or the final `$REPAIRED_SHA` reviewed by `RECONCILIATION: complete`). First commit `$RECORD` if it has uncommitted lines from the final pass (`docs: record review passes for <ref>`), then run:
 
 ```powershell
-python scripts/todo-graph.py stamp "$REF" --sha $FINAL_SHA --plan $RECORD --review "1:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check "pwsh scripts/check-all.ps1 -> exit 0"
+python scripts/todo-graph.py stamp "$REF" --sha $FINAL_SHA --plan $RECORD --review "${ROUND_NUM}:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check "pwsh scripts/check-all.ps1 -> exit 0"
 python scripts/todo-findings.py --write
 python scripts/todo-graph.py validate
 python scripts/todo-graph.py plan --check
 python scripts/todo-runs.py --check
 ```
 
-Commit the updated TODO file, `docs/reviews/<slug>.json`, `todo/implementation-plan.md`, and `docs/reviews/findings.md` on `main` (`todo: stamp <ref>`), and when remote pushes are active, push `main` and verify CI (`python scripts/ci_status.py --sha (git rev-parse HEAD) --wait` and `python scripts/review_prompt.py ci-wait`).
+Commit the updated TODO file, `docs/reviews/<slug>.json`, `todo/implementation-plan.md`, and `docs/reviews/findings.md` on `main` (`todo: stamp <ref>`). When remote pushes are active, capture `$BEFORE = (git ls-remote origin refs/heads/main).Split()[0]`, push `main` (`$STAMP_SHA = (git rev-parse HEAD).Trim()`), and verify commit-specific push CI (`python scripts/review_prompt.py ci-wait $STAMP_SHA --since $BEFORE` and `python scripts/review_prompt.py ci-wait $STAMP_SHA --since $BEFORE --workflow build --workflow-path .github/workflows/build.yml`) plus watched branch status (`python scripts/ci_status.py`).
 
 ## Outage rule (no fallback)
 
@@ -108,7 +109,7 @@ When auditing an already-shipped `[x]` section:
 
 1. Inspect the stamped commit(s) and `docs/reviews/<slug>.json` (or legacy prose `Review:` record), and re-run the section's `**Test checkpoint:**` against today's repository.
 2. If the section still holds, report the verified commit and live checkpoint output without modifying the stamp.
-3. If the section regressed, reopen it cleanly with `python scripts/todo-graph.py unstamp "$REF" --reason "<what regressed and owning repair>"` (which revokes `docs/reviews/<slug>.json` to `*.revoked-*.json`, writes `> **Unstamped:**`, flips the row back to `[ ]`, syncs `todo/implementation-plan.md`, and lists downstream suspect sections), run `python scripts/todo-graph.py validate`, and commit the reopen on `main`.
+3. If the section regressed, reopen it cleanly with `python scripts/todo-graph.py unstamp "$REF" --reason "<what regressed and owning repair>"` (which revokes `docs/reviews/<slug>.json` to `*.revoked-*.json`, archives the prior cycle's canonical findings file to `*.revoked-*.md` so the repair cycle starts a fresh three-pass findings file, writes `> **Unstamped:**`, flips the row back to `[ ]`, syncs `todo/implementation-plan.md`, and lists downstream suspect sections), run `python scripts/todo-graph.py validate`, and commit the reopen on `main`.
 
 ## Guardrails
 

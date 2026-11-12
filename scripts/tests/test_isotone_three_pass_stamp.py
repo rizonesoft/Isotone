@@ -347,11 +347,79 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
         )
         self.assertEqual(unstamp.returncode, 0, unstamp.stdout + unstamp.stderr)
         self.assertFalse((self.repo / "docs/reviews/d00-t01-s1.json").exists())
+        self.assertFalse((self.repo / RECORD).exists())
         self.assertEqual(len(list((self.repo / "docs/reviews").glob("d00-t01-s1.revoked-*.json"))), 1)
+        self.assertEqual(len(list((self.repo / "docs/reviews/00-workspace").glob("D00-T01-s1.revoked-*.md"))), 1)
         val_after = self.run_script("scripts/todo-graph.py", "validate")
         self.assertEqual(val_after.returncode, 0, val_after.stdout + val_after.stderr)
         plan_after = self.run_script("scripts/todo-graph.py", "plan", "--check")
         self.assertEqual(plan_after.returncode, 0, plan_after.stdout + plan_after.stderr)
+
+        # Verify a reopened section can run a fresh repair cycle (plan -> outage round 1 -> round 2 -> P3-only :completed stamp).
+        reopened_head = self.commit("todo: reopen D00 T01 §1 after regression")
+        plan2 = self.review("plan", reopened_head, reply("plan", lenses["plan"]))
+        self.assertEqual((plan2["reviewer"], plan2["effort"]), ("astra", "medium"))
+
+        todo_text = todo_file.read_text(encoding="utf-8")
+        todo_text = todo_text.replace(
+            "## 1. First alpha thing\n",
+            "## 1. First alpha thing\n\n> **Started:** 2026-11-12T04:00:00Z\n",
+            1,
+        ).replace("- [ ] Commit:", "- [x] Commit:")
+        todo_file.write_text(todo_text, encoding="utf-8")
+        (self.repo / "native/thing.txt").write_text("THING=3\n", encoding="utf-8")
+        rebuilt = self.commit("workspace: repair reopened alpha thing (D00 T01 §1)")
+
+        round_prompt = self.build_prompt(
+            "round",
+            rebuilt,
+            extra=("--purpose", "Repair reopened alpha fixture marker file."),
+        )
+        outage = self.run_script(
+            "scripts/review-dispatch.py",
+            "--kind", "round",
+            "--candidate", rebuilt,
+            "--writer", "agy",
+            "--prompt", round_prompt,
+            "--record", RECORD,
+            say="",
+        )
+        self.assertEqual(outage.returncode, 1)
+
+        rnd2 = self.review(
+            "round",
+            rebuilt,
+            reply("round", lenses["round"]),
+            prompt_extra=("--purpose", "Repair reopened alpha fixture marker file."),
+        )
+        self.assertEqual(rnd2["round"], 2)
+
+        comp2 = self.review(
+            "completion",
+            rebuilt,
+            reply("completion", lenses["completion"], "P3", True),
+            prompt_extra=("--purpose", "Deliver repaired alpha fixture marker file."),
+        )
+        self.assertEqual((comp2["highest"], comp2["blocking"]), ("P3", False))
+        self.commit("docs: record repair cycle review passes (D00 T01 §1)")
+
+        stamp2 = self.run_script(
+            "scripts/todo-graph.py",
+            "stamp",
+            "D00 T01 \u00a71",
+            "--sha", rebuilt,
+            "--plan", RECORD,
+            "--completion", f"{RECORD}:completed",
+            "--review", f"{rnd2['round']}:{RECORD}:clean",
+            "--check", "python scripts/todo-graph.py validate -> exit 0",
+        )
+        self.assertEqual(stamp2.returncode, 0, stamp2.stdout + stamp2.stderr)
+        receipt2 = json.loads((self.repo / "docs/reviews/d00-t01-s1.json").read_text(encoding="utf-8"))
+        self.assertEqual(receipt2["reviews"][0]["round"], 2)
+        self.assertEqual(receipt2["completion"]["verdict"], "completed")
+        self.assertEqual(receipt2["completion"]["filed"], [])
+        val_restamped = self.run_script("scripts/todo-graph.py", "validate")
+        self.assertEqual(val_restamped.returncode, 0, val_restamped.stdout + val_restamped.stderr)
 
 
 if __name__ == "__main__":

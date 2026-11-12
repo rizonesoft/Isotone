@@ -190,7 +190,7 @@ python scripts/panel_slots.py delegate-audit # this session's subagents ran at t
 python scripts/weakening-scan.py --base <rev> # every hunk that could weaken an implementation, for the lead to clear
 python scripts/weakening-scan.py --snapshot <file>; python scripts/weakening-scan.py --scope <file> --   # a delegate wrote nothing and changed no ref, config, or remote
 python scripts/weakening-scan.py --self-test  # the scan's own fixtures
-python scripts/ci_status.py                   # latest GitHub Actions check-run status for HEAD
+python scripts/ci_status.py                   # CI state of watched workflows on main
 python scripts/ci_watch.py                    # every workflow's latest run on main, scheduled ones included, red ones named (campaign section boundaries)
 python scripts/ci_watch.py --self-test        # the watch's own fixtures
 python scripts/completion_check.py --self-test  # the completion review's reply gate

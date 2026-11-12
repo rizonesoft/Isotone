@@ -36,14 +36,16 @@ Under `policy = "three-pass"`, each section runs **one** `--kind round` pass (`a
 ```bash
 BUILT_SHA=$(git rev-parse HEAD)
 KEEP=$(mktemp -d build/review-XXXXXXXX)
+mkdir -p "$KEEP/out"
 python scripts/review-prompt.py --kind round --candidate "$BUILT_SHA" --ref "$REF" --purpose "<one or two sentences>" --governing "<todo-or-spec-path>" --out "$KEEP/round-prompt.md"
-python scripts/review-dispatch.py --writer claude --kind round --candidate "$BUILT_SHA" --prompt "$KEEP/round-prompt.md" --keep "$KEEP/out" --record "$RECORD"
+ROUND_OUT=$(python scripts/review-dispatch.py --writer claude --kind round --candidate "$BUILT_SHA" --prompt "$KEEP/round-prompt.md" --keep "$KEEP/out" --record "$RECORD")
+ROUND_NUM=$(python -c 'import json, sys; print(json.load(sys.stdin)["round"])' <<<"$ROUND_OUT")
 ```
 
-Pass `--base "$BASE_SHA"` to `review-prompt.py` when the build spans multiple commits, `--surface` to `review-dispatch.py` on surface sections, and `--paths <files>` when conditional lenses apply (ensure `$KEEP/out` is created empty first).
+Pass `--base "$BASE_SHA"` to `review-prompt.py` when the build spans multiple commits, `--surface` to `review-dispatch.py` on surface sections, and `--paths <files>` when conditional lenses apply. `$ROUND_NUM` is the dispatcher's recorded round number (`1` normally, or higher if an earlier attempt exited without returning a review).
 
-- If `"blocking": false` (`HIGHEST: none` or `HIGHEST: P3`): the round verdict for `stamp` is `1:${RECORD}:clean`. File any worthwhile `P3` follow-ups via `add-todo`.
-- If `"blocking": true` (`P1` or `P2`): fix every valid blocking finding in a new commit on `main`, re-run the section's `Test checkpoint` and owed gates (`.claude/skills/process-todo-section/gates.md`), and record `- Implemented:` / refutation bullets directly at the bottom of `$RECORD` (never edit inside `## Round 1`, and do not add a `## ` heading that breaks block notes). Under `three-pass`, do **not** run a second `--kind round`; the round verdict for `stamp` is `1:${RECORD}:fixed`.
+- If `"blocking": false` (`HIGHEST: none` or `HIGHEST: P3`): the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:clean`. File any worthwhile `P3` follow-ups via `add-todo`.
+- If `"blocking": true` (`P1` or `P2`): fix every valid blocking finding in a new commit on `main`, re-run the section's `Test checkpoint` and owed gates (`.claude/skills/process-todo-section/gates.md`), and record `- Implemented:` / refutation bullets directly at the bottom of `$RECORD` (never edit inside `## Round N`, and do not add a `## ` heading that breaks block notes). Under `three-pass`, do **not** run a second `--kind round`; the round verdict for `stamp` is `${ROUND_NUM}:${RECORD}:fixed`.
 
 ### 3. Pass 3 -- `completion` and excellence review
 
@@ -84,14 +86,14 @@ Repeat repair + commit + `reconciliation` until `RECONCILIATION: complete` (insi
 Let `FINAL_SHA` be the exact commit SHA reviewed by the final pass. First commit `$RECORD` if modified (`docs: record review passes for <ref>`), then run:
 
 ```bash
-python scripts/todo-graph.py stamp "$REF" --sha "$FINAL_SHA" --plan "$RECORD" --review "1:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check "pwsh scripts/check-all.ps1 -> exit 0"
+python scripts/todo-graph.py stamp "$REF" --sha "$FINAL_SHA" --plan "$RECORD" --review "${ROUND_NUM}:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check "pwsh scripts/check-all.ps1 -> exit 0"
 python scripts/todo-findings.py --write
 python scripts/todo-graph.py validate
 python scripts/todo-graph.py plan --check
 python scripts/todo-runs.py --check
 ```
 
-Commit the updated TODO file, `docs/reviews/<slug>.json`, `todo/implementation-plan.md`, and `docs/reviews/findings.md` on `main` (`todo: stamp <ref>`), and when remote pushes are active, push `main` and verify CI (`python scripts/ci_status.py --sha "$(git rev-parse HEAD)" --wait` and `python scripts/review_prompt.py ci-wait`).
+Commit the updated TODO file, `docs/reviews/<slug>.json`, `todo/implementation-plan.md`, and `docs/reviews/findings.md` on `main` (`todo: stamp <ref>`). When remote pushes are active, capture `BEFORE=$(git ls-remote origin refs/heads/main | cut -f1)`, push `main` (`STAMP_SHA=$(git rev-parse HEAD)`), and verify commit-specific push CI (`python scripts/review_prompt.py ci-wait "$STAMP_SHA" --since "$BEFORE"` and `python scripts/review_prompt.py ci-wait "$STAMP_SHA" --since "$BEFORE" --workflow build --workflow-path .github/workflows/build.yml`) plus watched branch status (`python scripts/ci_status.py`).
 
 ## Outage rule (no fallback)
 
@@ -99,7 +101,7 @@ If `review-dispatch.py` exits `1`, never substitute a writer-family review and n
 
 ## Audit stance (`resolve` exit `3`)
 
-Inspect the stamped commit(s) and `docs/reviews/<slug>.json` (or legacy prose `Review:` record), and re-run the section's `**Test checkpoint:**`. On regression, reopen via `python scripts/todo-graph.py unstamp "$REF" --reason "<what regressed and owning repair>"`, validate, and commit on `main`.
+Inspect the stamped commit(s) and `docs/reviews/<slug>.json` (or legacy prose `Review:` record), and re-run the section's `**Test checkpoint:**`. On regression, reopen via `python scripts/todo-graph.py unstamp "$REF" --reason "<what regressed and owning repair>"` (which revokes `docs/reviews/<slug>.json` to `*.revoked-*.json` and archives the prior cycle's canonical findings file to `*.revoked-*.md`), validate, and commit on `main`.
 
 ## Guardrails
 

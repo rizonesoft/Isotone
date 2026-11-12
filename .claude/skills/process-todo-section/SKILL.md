@@ -252,7 +252,7 @@ python scripts/review-dispatch.py --writer claude --kind plan --candidate "$PLAN
 
 After committing the built section and gate evidence in step 7, invoke `review-todo-section` on the same `<ref>`: it runs Pass 2 (`--kind round`), Pass 3 (`--kind completion`), any `--kind reconciliation`, and `python scripts/todo-graph.py stamp` (writing `docs/reviews/<slug>.json`, stamping `Verified:` / `Review:`, flipping `[x]`, and syncing `todo/implementation-plan.md`). Never flip the Implementation Order row directly in this skill.
 
-After the stamp commit lands, push the STAMP push when remote pushes are active (`python scripts/ci_status.py --sha "$(git rev-parse HEAD)" --wait` and `python scripts/review_prompt.py ci-wait`) and confirm `python scripts/todo-graph.py plan --check`.
+After the stamp commit lands, when remote pushes are active capture `BEFORE=$(git ls-remote origin refs/heads/main | cut -f1)`, push the STAMP push (`STAMP_SHA=$(git rev-parse HEAD)`), verify commit-specific push CI (`python scripts/review_prompt.py ci-wait "$STAMP_SHA" --since "$BEFORE"` and `python scripts/review_prompt.py ci-wait "$STAMP_SHA" --since "$BEFORE" --workflow build --workflow-path .github/workflows/build.yml`) plus watched branch status (`python scripts/ci_status.py`), and confirm `python scripts/todo-graph.py plan --check`.
 
 ### 10. Report
 
