@@ -74,7 +74,7 @@ track: W1
 |  15   |   §15   | Unattended merges read main's CI back         | §12        |  [x]   |
 |  16   |   §16   | Unattended merger health                      | §15        |  [x]   |
 |  17   |   §17   | Time the guard's deadline cases on the walk   | §13        |  [x]   |
-|  18   |   §18   | Superseded sections leave the plan            | D00 T07 §1 |  [ ]   |
+|  18   |   §18   | Superseded sections leave the plan            | D00 T07 §1 |  [x]   |
 
 ---
 
@@ -600,6 +600,9 @@ A file marked `status: superseded` hands its purpose to a successor, and its ope
 - [x] Commit: `"workspace: superseded sections leave the plan, the progress count, and the merger's in-progress reading"` This commit.
 
 **Test checkpoint:** Unit test and driven run: `python scripts/todo-graph.py self-test` reports `0 failed` with the lapsed cases counted (the count before and after quoted); `python scripts/tests/test_merge_prs.py` passes with the two new cases; on the real tree `python scripts/todo-graph.py plan --check` passes with seven `> **Superseded:**` lines, `python scripts/todo-graph.py query stats` prints `lapsed 7`, and `python scripts/todo-graph.py resolve "D00 T02 §1"` exits 6; a scratch copy of the tree in which `D00 T03 §3`'s Depends On names `D00 T02 §5` again makes `validate` exit 1 with the `depends-on-lapsed` message naming both sections (quoted). Cheaper substitute that fails: marking the lapsed sections `> **Moved:**`, which the self-test's Moved cases and the `moved-target-missing` rule show means work done elsewhere, and which would count a dependency on a lapsed section as met.
+
+> **Verified:** 2026-11-12 | §18 | cf4dfc226bbf7b8284e37919d0b10ff2a5a6a755
+> **Review:** `docs/reviews/d00-t01-s18.json`
 
 ## Verification
 

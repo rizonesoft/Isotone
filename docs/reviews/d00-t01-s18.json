@@ -1,0 +1,84 @@
+{
+  "ref": "D00 T01 \u00a718",
+  "title": "Superseded Sections Leave the Plan",
+  "implementation_sha": "cf4dfc226bbf7b8284e37919d0b10ff2a5a6a755",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s18.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/todo-graph.py self-test -> 986 cases, 0 failed; python scripts/tests/test_merge_prs.py -> Ran 114 tests, OK; plan --check -> 31/840 with seven Superseded lines; query stats -> sections 840, lapsed 7; resolve D00 T02 \u00a71 -> exit 6; depends-on-lapsed probe -> validate exit 1",
+    "pwsh scripts/check-all.ps1 -> exit 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T01-s18.md",
+    "verdict": "reconciled",
+    "candidate": "cf4dfc226bbf7b8284e37919d0b10ff2a5a6a755",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T01-s18.md",
+    "candidate": "b68828e5157ee6a8b389a1d34c288d1e2e3f4f31",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "b68828e5157ee6a8b389a1d34c288d1e2e3f4f31",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 5,
+  "pass_cap": 33
+}
