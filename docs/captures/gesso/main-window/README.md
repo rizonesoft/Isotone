@@ -2,6 +2,7 @@
 
 The imported Gesso main window as it looked before `Isotone.UI` and the design system replaced it, captured by `D00 T03 §2`. A before record only: never a fidelity source (`docs/captures/README.md`, `standards/design-contract.md`).
 
+- **Preserved at:** the `csharp-final` Git tag. `D00 T06 §3` removed the captured Gesso app from `main`; the tag holds the code that drew this window, and these captures unchanged. Read the window's source with `git show csharp-final:src/Gesso/src/Gesso.UI/Views/MainWindow.xaml`.
 - **Built from:** commit `b7ad3a5` (`dotnet build Isotone.slnx -c Debug`), run as `artifacts/bin/Gesso.UI/debug/Gesso.exe`. The next commit, `f7747ff`, changed documentation only.
 - **Captured:** 2026-10-22, Windows 11 Pro build 26300, on a 3840 x 2160 display at 150 percent scaling.
 - **Window:** sized to 1600 x 1000 DIPs and captured whole with `PrintWindow` (`PW_RENDERFULLCONTENT`), title bar and frame included.
