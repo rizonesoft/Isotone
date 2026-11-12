@@ -95,7 +95,7 @@ Inspect the reconciliation pass's JSON summary and ending line (inside `pass_cap
 Let `$FINAL_SHA` be the exact commit SHA reviewed by the final pass (`$POST_ROUND_SHA` when no reconciliation ran, or the final `$REPAIRED_SHA` reviewed by the last reconciliation pass -- whether it ended `RECONCILIATION: complete` or non-blocking `RECONCILIATION: gaps`). First commit `$RECORD` (and any out-of-scope `todo/` section filed from a non-blocking final pass) if modified (`docs: record review passes for <ref>`), keeping `--sha $FINAL_SHA`, then run:
 
 ```powershell
-python scripts/todo-graph.py stamp "$REF" --sha $FINAL_SHA --plan $RECORD --review "${ROUND_NUM}:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check "pwsh scripts/check-all.ps1 -> exit 0"
+python scripts/todo-graph.py stamp "$REF" --sha $FINAL_SHA --plan $RECORD --review "${ROUND_NUM}:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check ".github/workflows/build.yml on $FINAL_SHA -> success <run url>" --check ".github/workflows/plan.yml on $FINAL_SHA -> success <run url>"
 python scripts/todo-findings.py --write
 python scripts/todo-graph.py validate
 python scripts/todo-graph.py plan --check
