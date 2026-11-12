@@ -1,0 +1,84 @@
+{
+  "ref": "D00 T07 \u00a71",
+  "title": "Re-plan the workspace files",
+  "implementation_sha": "7442957bcdaf4a0ea3a08c2ea99beb93ef4fe845",
+  "date": "2026-11-12",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T07-s1.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "stack git grep over the live owned files -> four history lines; resolve on the eight open entry points -> exit 4 naming D00 T07 \u00a71; validate 0 fatal 0 warnings; plan --check current; todo-claims 0 stale",
+    "pwsh scripts/check-all.ps1 -> exit 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T07-s1.md",
+    "verdict": "reconciled",
+    "candidate": "7442957bcdaf4a0ea3a08c2ea99beb93ef4fe845",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T07-s1.md",
+    "candidate": "8d0a6bf913b8096aecd66176c28ba25b4524855d",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "8d0a6bf913b8096aecd66176c28ba25b4524855d",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}

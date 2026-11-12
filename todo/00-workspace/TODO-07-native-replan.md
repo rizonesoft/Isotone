@@ -41,7 +41,7 @@ track: W7
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |  §1    | Re-plan the workspace files | D00 T06 §3 |  [ ]   |
+|   1   |  §1    | Re-plan the workspace files | D00 T06 §3 |  [x]   |
 |   2   |  §2    | Rewrite the standards and the developer docs for C++ | §1 |  [ ]   |
 |   3   |  §3    | Author the native foundations and settle the structure files | §2 |  [ ]   |
 |   4   |  §4    | Re-plan Phase 2: Stilus foundation: composition, hygiene, triage, correctness | §3 |  [ ]   |
@@ -108,6 +108,9 @@ The workspace files parked in Phase 0 hold the TODO tooling the campaign runs on
 - [x] Commit: `"todo: re-plan the workspace files onto the native stack"` This commit.
 
 **Test checkpoint:** Static evidence: the stack `git grep` over every live owned file (`D00 T01`, `D00 T03`, and the domain index; **Corrected 2026-11-12:** the superseded `D00 T02` is history as a whole and is proved by its frontmatter and `validate` instead) prints nothing, or only lines that name the C# code as history (decision records, changelog entries, and dated corrections in a Current state), each such line listed (quoted); `python scripts/todo-graph.py validate` reports no FATAL and no new WARN, `plan --check` and `python scripts/todo-claims.py` pass (quoted); before this section's stamp, `python scripts/todo-graph.py resolve` on each rewritten file's open entry points exits 4 naming this section (quoted), and the stamp step re-runs it after the stamp and records exit 0 or the row's own remaining dependencies. The review loop reviews the rewritten files against the ten requirements of `docs/plans/2026-10-23-native-replan.md`. Cheaper substitute that fails: renaming WPF terms to C++ terms in place, which leaves sections that cannot be built on the native toolkit.
+
+> **Verified:** 2026-11-12 | §1 | 7442957bcdaf4a0ea3a08c2ea99beb93ef4fe845
+> **Review:** `docs/reviews/d00-t07-s1.json`
 
 ## 2. Rewrite the standards and the developer docs for C++
 
