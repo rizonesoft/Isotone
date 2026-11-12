@@ -75,7 +75,7 @@ track: W3
 | Order | Section | Deliverable                                          | Depends On | Status |
 | :---: | :-----: | ---------------------------------------------------- | ---------- | :----: |
 |   1   |   §1    | Fold the per-app docs and samples into the suite     | D00 T07 §1 |  [x]   |
-|   2   |   §2    | Before captures of the imported Stilus and Gesso      | D00 T07 §1 |  [ ]   |
+|   2   |   §2    | Before captures of the imported Stilus and Gesso      | D00 T07 §1 |  [x]   |
 |   3   |   §3    | Export the app icon rasters from the SVG sources     | D00 T01 §5, D00 T07 §1 |  [ ]   |
 
 ---
@@ -133,6 +133,9 @@ The imported apps have no captures yet, so this section records their surfaces e
 - [x] Commit: `"docs: bind the before captures to the csharp-final tag"` **Added 2026-11-12.** Done 2026-11-13: this commit.
 
 **Test checkpoint:** `Get-ChildItem docs/captures -Recurse -Filter *.png` lists at least five captures, each non-empty and a valid PNG (its first eight bytes are the PNG signature, checked with `Format-Hex`); each surface folder's `README.md` names the commit the captures were taken at and the `csharp-final` tag; each PNG's blob id on `main` equals its blob id at `csharp-final`, and `git merge-base --is-ancestor b7ad3a5 csharp-final` exits 0 (quoted; **Added 2026-11-12**). Cheaper substitute that fails: copying `resources/screens/stilus.png`, which the commit record would not match. **Added 2026-11-13** (plan review, D00-T03-S2-PR1): the three READMEs' statements and commands are proved by the script the binding item names, which reads the saved files and runs the commands it finds there; its output is quoted with the rest. Done 2026-11-13: the script printed `captures: 5`, each with its byte count, the signature `89504e470d0a1a0a`, and equal blob ids on `main` and at `csharp-final`; both surface READMEs name commit `b7ad3a5` and the tag; `git merge-base --is-ancestor b7ad3a5 csharp-final: exit 0`; the three statements and the three commands the files give in runnable form, each run and quoted in the binding item (the root README also shows the form `git show csharp-final:<path>`, which has a placeholder and is not run); and on this section's commit `python scripts/todo-graph.py validate` exit 0, printing `85 todos, 847 sections -- 0 fatal, 0 warning(s), 54 adjacency advisory` (no fatal finding and no warning; adjacency advisories never fail the command), and `python scripts/todo-claims.py` exit 0, `631 claim(s) -- 120 hold, 511 deferred, 0 stale, 0 malformed`.
+
+> **Verified:** 2026-11-13 | §2 | 4daddcfd259c0b80983fc27a7120970597f12026
+> **Review:** `docs/reviews/d00-t03-s2.json`
 
 ## 3. Export the App Icon Rasters from the SVG Sources
 

@@ -1,0 +1,86 @@
+{
+  "ref": "D00 T03 \u00a72",
+  "title": "Before Captures of Stilus and Gesso",
+  "implementation_sha": "4daddcfd259c0b80983fc27a7120970597f12026",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s2.md",
+      "verdict": "clean"
+    }
+  ],
+  "checks": [
+    "README-reading script -> exit 0: three statements found, three documented commands each exit 0, five captures with the PNG signature and equal blob ids on main and at csharp-final, git merge-base --is-ancestor b7ad3a5 csharp-final exit 0",
+    "python scripts/todo-graph.py validate -> exit 0, 0 fatal; python scripts/todo-claims.py -> exit 0, 0 stale",
+    ".github/workflows/build.yml on 4609c3b (contains 4daddcf) -> success https://github.com/rizonesoft/Isotone/actions/runs/43323143630",
+    ".github/workflows/plan.yml on 4609c3b (contains 4daddcf) -> success https://github.com/rizonesoft/Isotone/actions/runs/43323143747"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s2.md",
+    "verdict": "completed",
+    "candidate": "4daddcfd259c0b80983fc27a7120970597f12026",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s2.md",
+    "candidate": "7a127d2c90ec54250e54f10afe0abc23ba0d01cf",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "7a127d2c90ec54250e54f10afe0abc23ba0d01cf",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
