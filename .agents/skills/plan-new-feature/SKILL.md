@@ -19,7 +19,7 @@ Survey two or three leading applications that perform this job (Illustrator, Cor
 
 ### 3. Specify surfaces 1:1 against `docs/design/`
 
-List every tool-rail entry, icon, cursor, shortcut, options bar, menu item, command palette entry, panel, dialog, canvas handle/overlay, Preferences control, status strip message, and structured log event, along with empty, loading, busy, disabled-with-reason, and error states. Every UI section carries validating `**Fidelity:**`, `**Design:**`, `**Job:**`, `**Treatment:**`, and `**Chrome:**` lines (`todo/README.md`, `standards/design-contract.md`); if `docs/design/` lacks a component spec or token, set `new surface: docs/design/<path>.md` and make authoring the spec + `docs/design/tokens.json` update item 1 before any UI code.
+List every tool-rail entry, icon, cursor, shortcut, options bar, menu item, command palette entry, panel, dialog, canvas handle/overlay, Preferences control, status strip message, and structured log event, along with empty, loading, busy, disabled-with-reason, and error states. Every UI section carries validating `**Fidelity:**`, `**Design:**`, `**Job:**`, `**Treatment:**`, and `**Chrome:**` lines (`todo/README.md`, `standards/design-contract.md`); if `docs/design/` lacks a component spec or token, set `new surface: docs/design/<path>.md` and make authoring the spec + `docs/design/tokens.json` update item 1 before any UI code. Plan no literal color, size, or font: `scripts/design-lint.py` refuses one in the UI sources, so every value a surface needs is a token before the section is written.
 
 ### 4. Specify behaviors, safety, and finer details
 

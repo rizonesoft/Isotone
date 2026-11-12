@@ -33,8 +33,12 @@ jobs:
       # violation in the native UI sources.
       - name: Design lint self-test
         run: python -B scripts/design-lint.py --self-test
+      # The baseline is compared with a trusted revision, never with the candidate itself: the commit before a
+      # push, a pull request's base commit, and the first parent on a manual run (docs/dev/build.md).
       - name: Design lint (no new violations)
-        run: python -B scripts/design-lint.py --baseline docs/design/.lint-baseline.json
+        env:
+          GATE_BASE: ${{ github.event.pull_request.base.sha || (github.event.before != '0000000000000000000000000000000000000000' && github.event.before) || 'HEAD^' }}
+        run: python -B scripts/design-lint.py --baseline docs/design/.lint-baseline.json --base "$env:GATE_BASE"
       - name: Cache vcpkg packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -156,6 +160,8 @@ jobs:
       # Review aid, not a gate: headless Edge (on the runner image) renders every
       # docs/design component preview per theme and density for side-by-side
       # comparison with the native UI renders (scripts/render-design-reference.py).
+      # The run writes manifest.json; `--verify` on the downloaded artifact proves
+      # the set is whole, so a partial upload from a failed run is never trusted.
       - name: Design reference renders (optional)
         continue-on-error: true
         run: python -B scripts/render-design-reference.py

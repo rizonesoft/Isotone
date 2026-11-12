@@ -77,6 +77,7 @@ Work the checklist top to bottom, ticking `[x]` in the TODO file as each item's 
 
 - Follow `standards/cpp.md` and `docs/specs/2026-10-22-native-stack-design.md` for all native C++23 code under `native/`, keeping `docs/dev/native-libraries.md` and `scripts/native-deps-lint.py` in lockstep with vcpkg.
 - On UI surface sections (`standards/design-contract.md`): validate the `**Design:**` line first (writing `new surface:` specs in `docs/design/` as item 1 when needed), use only `docs/design/tokens.json` tokens (`python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` must report `0 new`), implement every spec state/theme/density/scale, and never write to `docs/captures/golden/` (goldens are approved only in `review-todo-section`).
+- Before a surface, read every spec its `**Design:**` line names, the tokens they cite, and the contract; after it, leave the UI renders under `build/ui-renders/<Comp>/` for the review's `design-fidelity` lens, which compares them with the design reference (`python scripts/render-design-reference.py --components <Comp>`).
 - Enforce atomic temp-file-then-replace writes with read-back on every user document, preset, catalog, or settings write, and test failure paths (locked/read-only target, truncated/corrupt input, cancellation).
 - Run `lsp_diagnostics` on every modified C++ and Python file so zero compiler, `clang-tidy`, or `pyright` diagnostics remain.
 

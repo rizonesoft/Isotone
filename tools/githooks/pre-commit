@@ -22,6 +22,6 @@ git checkout-index -a --prefix="$WORK/" || { echo "pre-commit: cannot stage the 
 (cd "$WORK" && "$PY" scripts/todo-graph.py validate) || { echo "pre-commit: todo-graph validate is red on the staged tree; fix the findings above and retry" >&2; exit 1; }
 # Design contract (standards/design-contract.md): no new design-lint violation in the staged UI sources; recorded ones pass, fixed ones must leave the baseline.
 if [ -f "$WORK/scripts/design-lint.py" ]; then
-  (cd "$WORK" && "$PY" scripts/design-lint.py --baseline docs/design/.lint-baseline.json) || { echo "pre-commit: design-lint is red on the staged tree; use token keys through DynamicResource, or shrink the baseline with --update-baseline" >&2; exit 1; }
+  (cd "$WORK" && "$PY" scripts/design-lint.py --baseline docs/design/.lint-baseline.json) || { echo "pre-commit: design-lint is red on the staged tree; read the value from the generated token tables (native/ui/tokens/), or shrink the baseline with --update-baseline" >&2; exit 1; }
 fi
 git diff --quiet -- scripts todo docs || { "$PY" scripts/todo-graph.py validate >/dev/null 2>&1 || echo "pre-commit: warning: unstaged changes carry findings; this gate validated only the staged tree" >&2; }

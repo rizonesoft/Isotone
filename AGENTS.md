@@ -192,6 +192,10 @@ python scripts/design-lint.py --baseline docs/design/.lint-baseline.json   # no 
 python scripts/design-lint.py --self-test    # the lint's own fixtures
 python scripts/todo-graph.py query design    # surfaces with a Design line, the baseline, open deviations
 python scripts/render-design-reference.py    # design reference renders + side-by-side report under build/design-reference/
+python scripts/render-design-reference.py --verify build/design-reference   # re-check a run, or a downloaded design-reference artifact, against its manifest and the set docs/design owes
+python scripts/tests/test_render_design_reference.py   # the renderer's browser ownership, picture checks, self-contained report, and folder re-check
+python scripts/design-lint.py --baseline docs/design/.lint-baseline.json --base <rev>   # compare the lint baseline with the one at a trusted revision (CI passes the commit the change started from)
+python scripts/todo-graph.py validate --base <rev>   # the same for todo/.design-baseline
 ```
 
 Run checks owed by the task. Report only commands actually run, and distinguish static evidence, test output, driven-run output, fidelity output, and review proof.

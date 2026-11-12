@@ -98,8 +98,14 @@ jobs:
         run: python3 scripts/tests/test_pin_automations.py
       - name: Test the dependency pull request merger
         run: python3 scripts/tests/test_merge_prs.py
+      - name: Test the design reference renderer
+        run: python3 scripts/tests/test_render_design_reference.py
+      # The shrink-only baseline is compared with a trusted revision, never with the candidate itself: the
+      # commit before a push, a pull request's base commit, and the first parent on a manual run.
       - name: Validate the TODO tree
-        run: python3 scripts/todo-graph.py validate
+        env:
+          GATE_BASE: ${{ github.event.pull_request.base.sha || (github.event.before != '0000000000000000000000000000000000000000' && github.event.before) || 'HEAD^' }}
+        run: python3 scripts/todo-graph.py validate --base "$GATE_BASE"
       - name: Check the design system page is current
         run: python3 scripts/build-design-site.py --check
       - name: Check plan projection is current

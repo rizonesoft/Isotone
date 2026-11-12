@@ -28,7 +28,9 @@
   17. python scripts/tests/test_pin_automations.py (the pin checks and the
       settings hook scripts)
   18. python scripts/tests/test_merge_prs.py (the dependency pull request
-      merger, D00 T01 §12)
+      merger, D00 T01 §12) and python scripts/tests/test_render_design_reference.py
+      (the design reference renderer: browser ownership, picture checks, the
+      self-contained report, the folder re-check; D00 T01 §9)
   19. python scripts/ci_watch.py --self-test and python scripts/completion_check.py --self-test
   20. python scripts/lsp-mcp-server.py --self-test and
       python scripts/tests/test_lsp_mcp_server.py (the Antigravity LSP MCP
@@ -154,6 +156,7 @@ try {
     Invoke-PythonGate 'automations tests' 'tests/test_automations.py' @()
     Invoke-PythonGate 'pin automations tests' 'tests/test_pin_automations.py' @()
     Invoke-PythonGate 'merge prs tests' 'tests/test_merge_prs.py' @()
+    Invoke-PythonGate 'design reference renderer tests' 'tests/test_render_design_reference.py' @()
     Invoke-PythonGate 'ci_watch self-test' 'ci_watch.py' @('--self-test')
     Invoke-PythonGate 'completion_check self-test' 'completion_check.py' @('--self-test')
     Invoke-PythonGate 'lsp-mcp-server self-test' 'lsp-mcp-server.py' @('--self-test')

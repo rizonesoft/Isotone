@@ -1965,6 +1965,8 @@ def review_dependents(key, rev: dict, rev_xref: dict) -> set:
 
 
 def cmd_validate(_args) -> int:
+    global TRUSTED_BASE
+    TRUSTED_BASE = getattr(_args, "base", None) or None
     spec = importlib.util.spec_from_file_location("todo_validate", REPO / "scripts/todo-validate.py")
     if spec is None or spec.loader is None:
         raise RuntimeError("TODO validator unavailable")
@@ -6382,13 +6384,38 @@ def load_design_baseline(text: str | None = None) -> tuple[list[str], list[str]]
     return refs, bad
 
 
+# The trusted revision the shrink-only baselines are compared with (D00 T01 §9): `validate --base <rev>` sets it.
+# None means HEAD, which in the commit hook is the parent of the commit being made. CI checks out the candidate,
+# where HEAD is the candidate itself, so the workflows pass the revision the change started from (the commit
+# before a push, a pull request's base commit, the first parent on a manual run).
+TRUSTED_BASE: str | None = None
+
+
+def _trusted_base_label() -> str:
+    return TRUSTED_BASE or "HEAD"
+
+
+def _trusted_base_unreadable() -> bool:
+    """True when `--base` named a revision this repository cannot read: the comparison was asked for and cannot be
+    made, so it fails closed. Never true without `--base` (a fresh tree has nothing to compare with)."""
+    if not TRUSTED_BASE or not _live_tree():
+        return False
+    try:
+        import subprocess
+
+        return subprocess.run(["git", "-C", str(REPO), "rev-parse", "--verify", "--quiet",
+                               f"{TRUSTED_BASE}^{{commit}}"], capture_output=True, timeout=30).returncode != 0
+    except (OSError, subprocess.SubprocessError):
+        return True
+
+
 def _design_baseline_committed_text() -> str | None:
-    """todo/.design-baseline as HEAD has it, for the shrink-only rule. Live
-    tree only; None when unprovable (no git, no commit, no file yet), which
-    skips the rule. The self-test patches this name."""
+    """todo/.design-baseline as the trusted revision has it (`TRUSTED_BASE`, else HEAD), for the shrink-only
+    rule. Live tree only; None when unprovable (no git, no commit, no file yet), which skips the rule. The
+    self-test patches this name."""
     if not _live_tree():
         return None
-    return git_file_at("HEAD", "todo/" + DESIGN_BASELINE_NAME)
+    return git_file_at(_trusted_base_label(), "todo/" + DESIGN_BASELINE_NAME)
 
 
 def _surface_sections(todos: list[Todo]) -> dict[str, tuple[Todo, int, Section]]:
@@ -6436,14 +6463,20 @@ def design_findings(todos: list[Todo]) -> list[tuple[str, str]]:
             out.append(("design-baseline-stale",
                         f"{where} is stamped [x] while exempt; a surface never stamps without its Design line, "
                         "so add the line and remove the ref"))
+    if _trusted_base_unreadable():
+        out.append(("design-baseline-grown",
+                    f"todo/{DESIGN_BASELINE_NAME} cannot be compared: --base {TRUSTED_BASE} names no commit this "
+                    "repository can read, and the shrink-only rule fails closed (fetch the revision, or pass the "
+                    "commit the change started from)"))
     committed = _design_baseline_committed_text()
     if committed is not None:
         before = set(load_design_baseline(committed)[0])
         for ref in baseline:
             if ref not in before:
                 out.append(("design-baseline-grown",
-                            f"todo/{DESIGN_BASELINE_NAME} adds {ref}, which HEAD does not list: the baseline "
-                            "records the gaps of 2026-09-27 and only shrinks; give the section its Design line"))
+                            f"todo/{DESIGN_BASELINE_NAME} adds {ref}, which {_trusted_base_label()} does not list: "
+                            "the baseline records the gaps of 2026-09-27 and only shrinks; give the section its "
+                            "Design line"))
     exempt = set(baseline)
     for ref, (t, num, s) in sorted(surfaces.items()):
         if not found.get(ref, {}).get("design") and ref not in exempt:
@@ -13162,6 +13195,53 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                   _dclasses(), ["design-baseline-grown"])
             globals()["_design_baseline_committed_text"] = lambda: "# head\nD96 T01 §3\nD96 T01 §1\n"
             check("design: a baseline that shrank against HEAD is clean", _dclasses(), [])
+            # The trusted revision, read from a throwaway repository (D00 T01 §9): a baseline grown against --base
+            # is refused naming the ref and the revision, an unchanged one passes, the candidate compared with
+            # itself passes (which is why CI names the revision before it), and an unreadable --base fails closed.
+            import subprocess as _dsub
+            global TRUSTED_BASE
+            _dsaved = (REPO, _live_tree, TRUSTED_BASE)
+
+            def _dgit(*argv: str) -> int:
+                return _dsub.run(["git", "-C", str(droot), "-c", "user.email=selftest@example.invalid",
+                                  "-c", "user.name=selftest", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=.git/no-hooks", *argv],
+                                 capture_output=True, timeout=60).returncode
+
+            def _dgrown() -> list[str]:
+                return sorted(m for c, m in design_findings(load_todos()) if c == "design-baseline-grown")
+
+            try:
+                globals()["_design_baseline_committed_text"] = _real_dcommitted
+                globals()["REPO"] = droot
+                globals()["_live_tree"] = lambda: True
+                _dbase(["D96 T01 §3"])
+                _dready = (_dgit("init", "-q") == 0 and _dgit("add", "-f", "todo/" + DESIGN_BASELINE_NAME) == 0
+                           and _dgit("commit", "-q", "-m", "base") == 0)
+                check("design: git is available for the trusted-revision cases", _dready, True)
+                if _dready:
+                    TRUSTED_BASE = "HEAD"
+                    check("design: --base, an unchanged baseline passes", _dgrown(), [])
+                    _dbase(["D96 T01 §3", "D96 T01 §1"])
+                    _dmsgs = _dgrown()
+                    check("design: --base, a baseline grown against the base is refused naming the ref and the revision",
+                          (len(_dmsgs), "adds D96 T01 §1, which HEAD does not list" in _dmsgs[0] if _dmsgs else False),
+                          (1, True))
+                    _dgit("add", "-f", "todo/" + DESIGN_BASELINE_NAME)
+                    _dgit("commit", "-q", "-m", "candidate")
+                    _dself = _dgrown()
+                    TRUSTED_BASE = "HEAD~1"
+                    check("design: --base, the candidate passes against itself and is refused against the revision before it",
+                          (_dself, len(_dgrown())), ([], 1))
+                    TRUSTED_BASE = "no-such-revision"
+                    _dmsgs = _dgrown()
+                    check("design: --base, a revision that cannot be read fails closed naming it",
+                          (len(_dmsgs), "--base no-such-revision names no commit" in _dmsgs[0] if _dmsgs else False),
+                          (1, True))
+                    TRUSTED_BASE = None
+                    check("design: with no --base the comparison is with HEAD", _dgrown(), [])
+            finally:
+                globals()["REPO"], globals()["_live_tree"], TRUSTED_BASE = _dsaved
+                __import__("shutil").rmtree(droot / ".git", ignore_errors=True)
             globals()["_design_baseline_committed_text"] = lambda: None
             _dbase(None)
             # design-malformed
@@ -13545,6 +13625,9 @@ def main() -> int:
         action="store_true",
         help="list every unchecked item under shipped rows with its disposition (a reading, not a gate)",
     )
+    va.add_argument("--base", metavar="REV",
+                    help="the trusted revision todo/.design-baseline is compared with (default HEAD); one that "
+                         "cannot be read fails the run")
     va.set_defaults(fn=cmd_validate)
     wa = sub.add_parser("warnings", help="show or re-accept the warning baseline")
     # Mutually exclusive: --accept writes the baseline (the one durable side

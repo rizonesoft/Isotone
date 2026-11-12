@@ -42,6 +42,18 @@ Usage:
   python scripts/design-lint.py --baseline docs/design/.lint-baseline.json --update-baseline
   python scripts/design-lint.py --baseline <file> --update-baseline --allow-add --reason "<review-approved reason>"
   python scripts/design-lint.py --summary --baseline <file>   # counts by rule
+  python scripts/design-lint.py --baseline <file> --base <rev>   # compare the baseline with the one at <rev>
+
+The trusted revision. A baseline may shrink freely and grow only with a
+history entry carrying a review-approved reason, and "grow" is judged against
+the baseline at a trusted revision, never against the candidate itself. That
+revision is `--base <rev>`, read with `git show <rev>:<path>`; without the
+option it is `HEAD`, which in the commit hook is the parent of the commit
+being made. CI checks out the candidate, where `HEAD` is the candidate, so
+the workflows pass the revision the change started from: the commit before a
+push, the base commit of a pull request, and the first parent (`HEAD^`) on a
+manual run. A `--base` that names no readable commit fails the run: a
+comparison that cannot be made is never a pass.
   python scripts/design-lint.py --self-test
 """
 from __future__ import annotations
@@ -682,7 +694,7 @@ def run(root: Path, args) -> int:
         print(f"design-lint: baseline {bpath.relative_to(root).as_posix() if bpath.is_relative_to(root) else bpath}: "
               f"{removed} removed, {added} added")
         data = load_baseline(bpath)
-    grown = head_growth(root, bpath, data)
+    grown = head_growth(root, bpath, data, base=getattr(args, "base", None))
     for g in grown:
         print(g)
     new, stale = compare(findings, data)
@@ -700,34 +712,57 @@ def run(root: Path, args) -> int:
     return 1 if (new or stale or grown) else 0
 
 
-def head_growth(root: Path, bpath: Path, data: dict, head_text: str | None = None) -> list[str]:
-    """Problems with the baseline against the committed one: an entry that
-    grew without a new history entry carrying a reason, or history that was
-    edited. Skipped (no problems) when HEAD has no baseline or git is absent."""
+def head_growth(root: Path, bpath: Path, data: dict, head_text: str | None = None,
+                base: str | None = None) -> list[str]:
+    """Problems with the baseline against the one at the trusted revision: an
+    entry that grew without a new history entry carrying a reason, or history
+    that was edited.
+
+    The revision is `base` when given (`--base`), else `HEAD`. With no `base`
+    the comparison is skipped when it cannot be made (no git, no commit, no
+    baseline there yet): a fresh tree has nothing to compare with. A `base`
+    the caller named is a promise to compare, so one that cannot be read is a
+    problem, and the run fails."""
+    rev = base or "HEAD"
     if head_text is None:
+        import subprocess
+
+        def git(*argv: str):
+            return subprocess.run(["git", "-C", str(root), *argv], capture_output=True, timeout=30)
+
         try:
-            import subprocess
             rel = bpath.relative_to(root).as_posix()
-            res = subprocess.run(["git", "-C", str(root), "show", f"HEAD:{rel}"], capture_output=True, timeout=30)
-            if res.returncode != 0:
-                return []
-            head_text = res.stdout.decode("utf-8")
-        except Exception:
+            known = git("rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}").returncode == 0
+            res = git("show", f"{rev}:{rel}") if known else None
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            if base:
+                return [f"{bpath.name}:0:baseline-base:cannot compare with --base {base} ({error.__class__.__name__}); "
+                        "the comparison fails closed"]
             return []
+        if not known:
+            if base:
+                return [f"{bpath.name}:0:baseline-base:--base {base} names no commit this repository can read; "
+                        "the comparison fails closed (fetch the revision, or pass the commit the change started from)"]
+            return []
+        if res is None or res.returncode != 0:
+            return []  # the revision has no baseline yet, so every entry is new and `compare` judges them
+        head_text = res.stdout.decode("utf-8")
     try:
         head = json.loads(head_text)
     except ValueError:
+        if base:
+            return [f"{bpath.name}:0:baseline-base:the baseline at {rev} is not JSON; the comparison fails closed"]
         return []
     out: list[str] = []
     hist, head_hist = data.get("history", []), head.get("history", [])
     if hist[: len(head_hist)] != head_hist:
-        out.append(f"{bpath.name}:0:baseline-history:the baseline history differs from HEAD; history is append-only")
+        out.append(f"{bpath.name}:0:baseline-history:the baseline history differs from {rev}; history is append-only")
     added_now = [h for h in hist[len(head_hist):] if h.get("added")]
     base, head_counts = baseline_counts(data), baseline_counts(head)
     grew = [k for k, n in base.items() if n > head_counts.get(k, 0)]
     if grew and not any(str(h.get("reason", "")).strip() for h in added_now):
         for k in grew[:20]:
-            out.append(f"{k[0]}:0:{k[1]}:baseline entry added against HEAD without a history entry carrying a "
+            out.append(f"{k[0]}:0:{k[1]}:baseline entry added against {rev} without a history entry carrying a "
                        f"review-approved reason: {k[2][:100]!r}")
     return out
 
@@ -951,6 +986,45 @@ def self_test() -> int:
         check("an edited history entry is refused",
               any("append-only" in p for p in head_growth(root, bl, edited, json.dumps(head))), True)
         check("no HEAD baseline skips the comparison", head_growth(root, bl, grown), [])
+        # The trusted revision, in a throwaway repository: growth against --base is refused naming the entry, an
+        # unchanged baseline passes, and a --base that cannot be read fails closed.
+        import subprocess
+
+        def _git(*argv: str) -> int:
+            return subprocess.run(["git", "-C", str(root), "-c", "user.email=selftest@example.invalid",
+                                   "-c", "user.name=selftest", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=.git/no-hooks", *argv],
+                                  capture_output=True, timeout=60).returncode
+
+        bl.write_text(json.dumps(head), encoding="utf-8")
+        if _git("init", "-q") == 0 and _git("add", "-f", "docs/design/.lint-baseline.json") == 0 \
+                and _git("commit", "-q", "-m", "base") == 0:
+            base_rev = "HEAD"
+            check("--base: an unchanged baseline passes", head_growth(root, bl, head, base=base_rev), [])
+            grown2 = json.loads(json.dumps(head))
+            grown2["entries"].append({"file": "native/ui/y.cpp", "rule": "color-literal", "text": "int d = 0x445566;", "count": 1})
+            bl.write_text(json.dumps(grown2), encoding="utf-8")
+            problems = head_growth(root, bl, grown2, base=base_rev)
+            check("--base: a baseline grown against the base is refused naming the entry and the revision",
+                  (len(problems), "native/ui/y.cpp:0:color-literal" in problems[0] if problems else False,
+                   "against HEAD" in problems[0] if problems else False), (1, True, True))
+            _git("add", "-f", "docs/design/.lint-baseline.json")
+            _git("commit", "-q", "-m", "candidate")
+            check("--base: against itself the grown candidate passes, which is why CI names the revision before it",
+                  (head_growth(root, bl, grown2, base="HEAD"), len(head_growth(root, bl, grown2, base="HEAD~1"))),
+                  ([], 1))
+            missing = head_growth(root, bl, grown2, base="no-such-revision")
+            check("--base: a revision that cannot be read fails closed naming it",
+                  (len(missing), "--base no-such-revision names no commit" in missing[0] if missing else False), (1, True))
+            check("no --base and an unreadable HEAD still skips (a fresh tree has nothing to compare with)",
+                  head_growth(Path(tmp) / "nowhere", Path(tmp) / "nowhere" / "b.json", grown2), [])
+            cli_out = io.StringIO()
+            with contextlib.redirect_stdout(cli_out):
+                cli = run(root, argparse.Namespace(summary=False, baseline="docs/design/.lint-baseline.json",
+                                                   update_baseline=False, allow_add=False, reason=None, verbose=False,
+                                                   base="no-such-revision"))
+            check("--base: the command exits 1 on an unreadable base", (cli, "fails closed" in cli_out.getvalue()), (1, True))
+        else:
+            check("--base: git is available for the trusted-revision cases", False, True)
 
     failed = [(n, g, w) for n, g, w in cases if g != w]
     for n, g, w in failed:
@@ -967,6 +1041,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--reason", help="review-approved reason required with --allow-add")
     ap.add_argument("--summary", action="store_true", help="print rule counts")
     ap.add_argument("--verbose", action="store_true", help="also print warning findings in --baseline mode")
+    ap.add_argument("--base", metavar="REV", help="the trusted revision the baseline is compared with (default HEAD); "
+                                                  "one that cannot be read fails the run")
     ap.add_argument("--self-test", action="store_true", help="run the built-in self-test")
     args = ap.parse_args(argv)
     if args.self_test:

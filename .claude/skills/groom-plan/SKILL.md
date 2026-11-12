@@ -89,4 +89,4 @@ Write the groom record: what was sequenced, what drifted and was corrected, what
 - Do not file a discovered section without its Origin line, and do not change `todo/budget.json`.
 - Do not delete a backlog entry, a merge marker, or a removal record except by promotion, by a merge that keeps the key, or with the operator's recorded words.
 - Do not leave the tree unvalidated. `validate` plus `plan --check` pass before the commit.
-- Do not add a ref to `todo/.design-baseline` or an entry to `docs/design/.lint-baseline.json`. Both only shrink.
+- Do not add a ref to `todo/.design-baseline` or an entry to `docs/design/.lint-baseline.json`. Both only shrink, and both stay empty: `python scripts/todo-graph.py query design` prints `0 exempt` and `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` prints `0 new, 0 stale` before and after the pass.

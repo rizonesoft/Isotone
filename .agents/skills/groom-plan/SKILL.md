@@ -58,4 +58,4 @@ Commit on `main` as `todo: groom <scope> (<YYYY-MM-DD>)` and report sequenced pr
 ## Guardrails
 
 - Never move existing rows between phases, tick `[ ]` checkboxes, or start a campaign.
-- Never grow `todo/.design-baseline` or `docs/design/.lint-baseline.json`, and never use em dashes or en dashes (`--` only).
+- Never grow `todo/.design-baseline` or `docs/design/.lint-baseline.json`, and never use em dashes or en dashes (`--` only). Both baselines stay empty: `python scripts/todo-graph.py query design` prints `0 exempt` and `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` prints `0 new, 0 stale` before and after the pass, and every open surface section carries a live `**Design:**` line (`standards/design-contract.md`).
