@@ -35,7 +35,7 @@ After `tooltip-delay` (400ms) the Tooltip component opens right of the button: t
 
 ## Keyboard
 
-- The rail is one tab stop (`KeyboardNavigation.DirectionalNavigation="Cycle"`); Up and Down move, Enter or Space selects, Shift+F10 opens the flyout.
+- The rail is one tab stop (the arrow keys cycle within it); Up and Down move, Enter or Space selects, Shift+F10 opens the flyout.
 - Single-letter shortcuts work anywhere the canvas has focus and never when a text field has focus.
 
 ## Native

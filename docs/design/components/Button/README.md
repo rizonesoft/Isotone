@@ -17,7 +17,7 @@ Command buttons: default, primary (the app accent, once per view), subtle, icon-
 
 - One primary button per view: the dialog's commit button, the Home screen's New, Albumen's Import. It is the only place chrome shows the app accent beside the title-bar mark.
 - Labels are verbs in title case in menus and sentence case on buttons: "Save a copy", "Export". OK and Cancel stay short.
-- Icon-only buttons always have a tooltip naming the command and shortcut and an `AutomationProperties.Name`.
+- Icon-only buttons always have a tooltip naming the command and shortcut and a UI Automation Name.
 - Destructive commands are default buttons with a verb that says what goes ("Delete 12 photos"), never red fills.
 
 ## States

@@ -53,12 +53,12 @@ Every user-facing surface of Stilus, Gesso, and Albumen answers to this standard
 - Radii: `radius-sm` 2 px for everything docked in the chrome, `radius-md` 4 px for menus, dropdowns, and flyouts, `radius-lg` 6 px for dialogs and toasts, `radius-round` only for radio buttons, toggle switches, slider thumbs, and status dots.
 - Docked chrome is flat and separated by 1 px `divider` hairlines. Elevation exists only on things that float: `shadow-tooltip` on tooltips, `shadow-popup` on menus, dropdowns, and flyouts, `shadow-dialog` on dialogs, toasts, and floating panels, each with a 1 px `border-popup`.
 - Motion uses one curve, `ease-out` (cubic out), at `duration-fast` 100 ms (hover, press, toggles), `duration-standard` 200 ms (menus, flyouts, expanders, toasts, the splash fade-out), and `duration-slow` 400 ms (dialogs); tooltips open after `tooltip-delay` 400 ms.
-- When Windows animation effects are off (`SystemParameters.ClientAreaAnimation` or `UISettings.AnimationsEnabled` false), every duration is 0 and marching ants, spinners, and indeterminate bars stop. Nothing in the chrome moves on its own otherwise.
+- When Windows animation effects are off (`SPI_GETCLIENTAREAANIMATION` false, re-read on `WM_SETTINGCHANGE`), every duration is 0 and marching ants, spinners, and indeterminate bars stop. Nothing in the chrome moves on its own otherwise.
 
 ## Focus
 
 - One focus ring: 2 px `focus-ring`, drawn 1 px outside buttons and boxes, inset on rows, tabs, and menu titles, and as a colored border plus 1 px inner line on fields, so a field does not grow.
-- The ring shows for keyboard focus only, never for mouse focus, and is never removed. `FocusVisualStyle` is `{x:Null}` in every Isotone style; templates draw the ring. The spec is [`docs/design/components/FocusRing/README.md`](../docs/design/components/FocusRing/README.md).
+- The ring shows for keyboard focus only, never for mouse focus, and is never removed. No system focus rectangle is ever shown; each element draws the ring itself. The spec is [`docs/design/components/FocusRing/README.md`](../docs/design/components/FocusRing/README.md).
 
 ## Icons
 

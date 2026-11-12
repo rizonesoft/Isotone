@@ -16,7 +16,7 @@ One keyboard focus indicator for the whole suite: a 2px solid `focus-ring` strok
 
 - Never remove focus visuals; never show them on mouse focus.
 - Focus moves predictably: F6 cycles the main regions (tool rail, options bar, document, dock, status toasts); Tab moves within a region.
-- Windows high contrast: the ring uses `SystemColors.HighlightBrush`.
+- Windows high contrast: the ring uses the system highlight color (`COLOR_HIGHLIGHT`).
 
 ## Native
 

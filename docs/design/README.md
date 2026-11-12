@@ -139,7 +139,7 @@ Bezier's timings with one curve, `ease-out` (cubic out):
 - `duration-slow` 400ms: dialogs popping in from scale 0.95. The splash's travelling border glow keeps Bezier's own timing: one lap per 6 s, fading in over 300ms and out over 500ms.
 - `tooltip-delay` 400ms before a tooltip opens.
 
-When Windows "Animation effects" is off (`SystemParameters.ClientAreaAnimation` false, or `UISettings.AnimationsEnabled` false), every duration is 0 and marching ants, spinners and indeterminate bars stop. Nothing in the chrome moves on its own otherwise.
+When Windows "Animation effects" is off (`SPI_GETCLIENTAREAANIMATION` false, re-read on `WM_SETTINGCHANGE`), every duration is 0 and marching ants, spinners and indeterminate bars stop. Nothing in the chrome moves on its own otherwise.
 
 ## Iconography
 

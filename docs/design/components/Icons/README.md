@@ -7,7 +7,7 @@ The suite draws every icon from one family: Lucide geometry (ISC license, compat
 - Grid: 24 viewBox, stroke `icon-stroke` 1.5px at both 16 and 20px, round caps and joins, no fills (a filled shape is drawn as a closed stroke).
 - Sizes: `icon-sm` 16px in menus, panels, the options bar, list rows and buttons; `icon-md` 20px on the tool rail and in Comfortable toolbars; 12 to 14px only for chevrons and inline glyphs, with stroke 2 so they hold weight.
 - Color: `icon` (= `text-secondary`) at rest, `text-primary` on hover or when active, `state-on` on a `state` fill, `text-disabled` when disabled, a status color only next to status text. Icons never take the app accent except inside the app mark.
-- Every icon-only control has a tooltip and an `AutomationProperties.Name`; decorative icons are hidden from UIA.
+- Every icon-only control has a tooltip and a UI Automation Name; decorative icons are hidden from UI Automation.
 - New icons: take Lucide's if one exists; otherwise draw one on the same grid (2px padding, 1.5 stroke) and add it to the catalog with a name and a note.
 - Tool icons match the tool, not the command (Photoshop's names for Photoshop tools).
 - The app marks (Bezier curve, paintbrush, iris) are the apps' own icon files, not catalog icons.

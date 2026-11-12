@@ -21,7 +21,7 @@ Bezier's rich tooltip: a title, a shortcut chip and one line of description, ope
 
 ## Keyboard
 
-Keyboard focus shows the tooltip after the same delay; Escape dismisses. Screen readers get the same text through `AutomationProperties.HelpText`.
+Keyboard focus shows the tooltip after the same delay; Escape dismisses. Screen readers get the same text through the UI Automation HelpText property.
 
 ## Native
 
