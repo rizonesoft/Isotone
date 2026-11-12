@@ -74,7 +74,7 @@ track: W3
 
 | Order | Section | Deliverable                                          | Depends On | Status |
 | :---: | :-----: | ---------------------------------------------------- | ---------- | :----: |
-|   1   |   §1    | Fold the per-app docs and samples into the suite     | D00 T07 §1 |  [ ]   |
+|   1   |   §1    | Fold the per-app docs and samples into the suite     | D00 T07 §1 |  [x]   |
 |   2   |   §2    | Before captures of the imported Stilus and Gesso      | D00 T07 §1 |  [ ]   |
 |   3   |   §3    | Export the app icon rasters from the SVG sources     | D00 T01 §5, D00 T07 §1 |  [ ]   |
 
@@ -100,6 +100,9 @@ The suite has one documentation tree (`docs/dev/`, `docs/user/`) and one fixture
 - [x] Commit: `"docs: point the prototype notes at csharp-final and move the sample fixtures under native/tests"` **Added 2026-11-12.** Done 2026-11-13: this commit.
 
 **Test checkpoint:** Static evidence: `Test-Path src` prints `False` and `git ls-files tests` prints nothing; every relative link in `docs/dev/stilus/*.md` and `docs/dev/gesso/*.md` resolves to an existing file (a PowerShell loop over the links with `Test-Path`, quoted); `git show csharp-final:<path>` exits 0 for each of the four prototype paths the pages name (quoted); `git ls-files native/tests/fixtures/stilus/svg` lists three files; `python scripts/todo-claims.py` and `python scripts/todo-graph.py validate` pass (quoted). **Corrected 2026-11-12:** said the per-app `docs` and `.github` folders under `src/Stilus` and `src/Gesso` are gone and the Release build of the C# solution still exits 0; `D00 T06 §3` removed both the folders and that build, so the checkpoint proves the links and the fixtures on the native tree instead. Cheaper substitute that fails: copying the pages and leaving the originals, which leaves two copies to drift, or deleting the dead links, which loses the pointer to the code the pages describe. **Added 2026-11-13** (plan review, D00-T03-S1-PR2): the notices and the four commands are proved from the saved pages by the script the link item names, and its output is quoted here with the rest. Done 2026-11-13: on candidate `21c0fedac66f`, `python scripts/todo-graph.py validate` exit 0, printing `85 todos, 847 sections -- 0 fatal, 0 warning(s), 54 adjacency advisory` (no fatal finding and no warning; the 54 adjacency advisories are advisory lines that never fail the command, and none is in this file's section 1); `python scripts/todo-claims.py` exit 0, `631 claim(s) -- 120 hold, 511 deferred, 0 stale, 0 malformed`; the page-reading script exit 0 with the output quoted in the link item; `git ls-files native/tests/fixtures/stilus/svg` three files, `git ls-files tests` nothing, `Test-Path src` False.
+
+> **Verified:** 2026-11-13 | §1 | 9aa04bbc74060e7596a0c6cdf2fef39436ebada8
+> **Review:** `docs/reviews/d00-t03-s1.json`
 
 ## 2. Before Captures of Stilus and Gesso
 
