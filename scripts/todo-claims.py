@@ -70,6 +70,16 @@ CITED_PATH_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./\-]*[A-Za-z0-9_/])`")
 # measured, not wished.
 COVERAGE_FLOOR = 78
 DEFAULT_ROOT = "todo"
+# Claims live outside the plan too (D00 T01 §10): a document that states a measurable fact about the repository
+# records it as a claim, and the default run re-measures it with the same verbs. The scope is the Markdown under
+# these folders and at the repository root. The records below are left out: they are written once and quote the
+# claims of their day (the review and run records, the legacy roadmaps, and the parity designs the TODO files were
+# authored from, whose claims are drafts of the ones the TODO files carry). The coverage floor stays a figure of
+# todo/ alone.
+DOC_ROOTS = ("docs", "standards")
+DOC_EXCLUDED = ("docs/reviews/", "docs/phase-runs/", "docs/legacy/", "docs/parity/section-design.md",
+                "docs/parity/gesso-section-design.md", "docs/parity/albumen-section-design.md")
+FENCE_RE = re.compile(r"^\s*(```|~~~)")
 DEFERRED_STATUSES = ("blocked", "superseded")
 
 
@@ -230,18 +240,42 @@ def evaluate(claim: str) -> str:
     raise Malformed(f"unrecognised claim: {claim}")
 
 
-def collect(paths: list[Path]) -> list[tuple[Path, int, str]]:
+def doc_files() -> list[Path]:
+    """The Markdown files of the wider claims scope: under `DOC_ROOTS` and at the repository root, less the
+    records `DOC_EXCLUDED` names."""
+    found = set(ROOT.glob("*.md"))
+    for folder in DOC_ROOTS:
+        found |= set((ROOT / folder).rglob("*.md"))
+    kept = []
+    for path in sorted(found, key=lambda p: p.relative_to(ROOT).as_posix()):  # the same order on every platform
+        rel = path.relative_to(ROOT).as_posix()
+        if not any(rel == skip or (skip.endswith("/") and rel.startswith(skip)) for skip in DOC_EXCLUDED):
+            kept.append(path)
+    return kept
+
+
+def _lines(path: Path, skip_fences: bool):
+    """(line number, line) of a file; with `skip_fences`, not the lines inside a fenced code block. A document
+    shows what a claim looks like inside a fence, and an example is not a measurement."""
+    fenced = False
+    for lineno, line in enumerate(io.open(path, encoding="utf-8", errors="replace").read().splitlines(), 1):
+        if skip_fences and FENCE_RE.match(line):
+            fenced = not fenced
+            continue
+        if not fenced:
+            yield lineno, line
+
+
+def collect(paths: list[Path], skip_fences: bool = False) -> list[tuple[Path, int, str]]:
     found = []
     for path in paths:
-        for lineno, line in enumerate(
-            io.open(path, encoding="utf-8", errors="replace").read().splitlines(), 1
-        ):
+        for lineno, line in _lines(path, skip_fences):
             for m in CLAIM_RE.finditer(line):
                 found.append((path, lineno, m.group(1)))
     return found
 
 
-def collect_unterminated(paths: list[Path]) -> list[tuple[Path, int, str]]:
+def collect_unterminated(paths: list[Path], skip_fences: bool = False) -> list[tuple[Path, int, str]]:
     """Claim comments opened on a line that does not close them.
 
     A claim written across two lines matches CLAIM_RE nowhere, so without this it
@@ -250,9 +284,7 @@ def collect_unterminated(paths: list[Path]) -> list[tuple[Path, int, str]]:
     """
     found = []
     for path in paths:
-        for lineno, line in enumerate(
-            io.open(path, encoding="utf-8", errors="replace").read().splitlines(), 1
-        ):
+        for lineno, line in _lines(path, skip_fences):
             # Strip inline code spans first. Prose *about* claims quotes the
             # opening token in backticks, and counting that as an unterminated
             # claim makes the check fire on its own documentation. A real claim
@@ -421,6 +453,14 @@ def main(argv: list[str] | None = None) -> int:
 
     claims = collect(files)
     unterminated = collect_unterminated(files)
+    # The whole-plan run also measures the claims the documents make; a --root subtree measures that subtree only.
+    doc_claims = 0
+    if scoped_floor:
+        docs = doc_files()
+        in_docs = collect(docs, skip_fences=True)
+        doc_claims = len(in_docs)
+        claims += in_docs
+        unterminated += collect_unterminated(docs, skip_fences=True)
     if not claims and not unterminated:
         print(f"todo-claims: no claims found under {args.root}/")
         print("  A TODO that measures something should record it as a claim, so the")
@@ -482,6 +522,7 @@ def main(argv: list[str] | None = None) -> int:
         f"{held} hold, {deferred} deferred, "
         f"{len(stale)} stale, {len(malformed)} malformed; "
         f"coverage {covered}/{total}, floor {COVERAGE_FLOOR}{floor_note}"
+        + (f"; {doc_claims} of the claims are in docs/, standards/, and the root Markdown files" if scoped_floor else "")
     )
     if malformed:
         return 2
@@ -619,6 +660,48 @@ def _self_test() -> int:
     elif blocks[0]["claims"] != 1 or blocks[1]["claims"] != 0:
         print(f"  FAIL  coverage: claim attribution wrong: {[b['claims'] for b in blocks]}")
         failed += 1
+
+    # --- claims outside the plan (D00 T01 §10): the docs, the standards, the root Markdown files ---------
+    docs_root = tmp / "docs-scope"
+    (docs_root / "docs" / "dev").mkdir(parents=True)
+    (docs_root / "docs" / "reviews").mkdir(parents=True)
+    (docs_root / "standards").mkdir(parents=True)
+    (docs_root / "src").mkdir(parents=True)
+    (docs_root / "docs" / "dev" / "build.md").write_text(
+        "# Build\n\n<!-- claim: exists docs/dev/build.md -->\n\n```\n<!-- claim: exists an/example.txt -->\n```\n",
+        encoding="utf-8")
+    (docs_root / "standards" / "a.md").write_text("<!-- claim: exists no/such/file.txt -->\n", encoding="utf-8")
+    (docs_root / "README.md").write_text("<!-- claim: absent no/such/file.txt -->\n<!-- claim: exists\n", encoding="utf-8")
+    (docs_root / "docs" / "reviews" / "r.md").write_text("<!-- claim: exists quoted/in/a/record.txt -->\n", encoding="utf-8")
+    (docs_root / "src" / "notes.md").write_text("<!-- claim: exists outside/the/scope.txt -->\n", encoding="utf-8")
+    ROOT = docs_root
+    try:
+        scoped = [p.relative_to(docs_root).as_posix() for p in doc_files()]
+        if scoped != ["README.md", "docs/dev/build.md", "standards/a.md"]:
+            print(f"  FAIL  docs scope: {scoped}")
+            failed += 1
+        measured = [(p.relative_to(docs_root).as_posix(), n, c) for p, n, c in collect(doc_files(), skip_fences=True)]
+        if measured != [("README.md", 1, "absent no/such/file.txt"), ("docs/dev/build.md", 3, "exists docs/dev/build.md"),
+                        ("standards/a.md", 1, "exists no/such/file.txt")]:
+            print(f"  FAIL  docs scope: a claim in a fence, a record, or a folder outside the scope was measured: {measured}")
+            failed += 1
+        verdicts = []
+        for _p, _n, claim in collect(doc_files(), skip_fences=True):
+            try:
+                evaluate(claim)
+                verdicts.append("holds")
+            except Stale:
+                verdicts.append("stale")
+        if verdicts != ["holds", "holds", "stale"]:
+            print(f"  FAIL  docs scope: a true claim in a document must hold and a false one fail: {verdicts}")
+            failed += 1
+        open_claims = [(p.name, n) for p, n, _s in collect_unterminated(doc_files(), skip_fences=True)]
+        if open_claims != [("README.md", 2)]:
+            print(f"  FAIL  docs scope: an unterminated claim in a document must be reported: {open_claims}")
+            failed += 1
+    finally:
+        ROOT = Path(fixture.anchor)
+        __import__("shutil").rmtree(docs_root, ignore_errors=True)
 
     # --- the four findings the independent review of f875758 raised ---------
     # F3: the floor is a whole-plan figure; a --root subtree must not trip it.

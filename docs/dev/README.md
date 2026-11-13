@@ -27,6 +27,10 @@ pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --workflow 
 pwsh scripts/check-all.ps1                      # every gate: the plan gates and every native preset, test, sanitizer, and analysis stage
 ```
 
+## Product facts
+
+The suite's facts (its name, each app's name, slug, tag prefix, and role, the repository description, topics, and homepage, the README's opening line, where each version is pinned, and the retired names) are stated once, in [`docs/facts.json`](../facts.json): a fact changes there first, and `python scripts/drift-check.py` then holds the README, every tracked text file, and the repository's settings on GitHub to it.
+
 ## Per-app notes
 
 - **Stilus** is planned under `native/stilus/` (`todo/02-stilus/`). Standards: [`standards/stilus.md`](../../standards/stilus.md). Notes on the C# prototype, kept as a behavior reference: [the vector icon control](stilus/vector-icon.md) and [the status bar](stilus/status-bar.md).

@@ -89,6 +89,7 @@ Inspect the reconciliation pass's JSON summary and ending line (inside `pass_cap
 
 - On UI surface sections (`standards/design-contract.md`), once `design-lint.py` reports `0 new, 0 stale` and the `design` lens passed, approve goldens into `docs/captures/golden/` when the visual harness is active.
 - The `design-fidelity` lens of `standards/design-contract.md` is the dispatcher's `design` lens, scheduled when `--surface` is passed: it reads the UI renders under `build/ui-renders/` beside the design reference (`python scripts/render-design-reference.py --components <Comp>`, then `python scripts/render-design-reference.py --verify build/design-reference --components <Comp>`: the re-check owes every component unless it is given the same selection as the run). Approve goldens only after it passes. Refuse the stamp while `design-lint.py` reports a new violation or the section leaves a `**Design deviation:**` open without its follow-up section, and give the stamp a `--check "Design: <specs> -> design-fidelity clean, goldens docs/captures/golden/<area>/<Comp>/"` line.
+- The `docs-drift` lens (`.conclave/reviewers.toml`, `[schedule.lenses]`) runs in every round through the dispatcher: the reviewer names each README, document, standard, skill, and source comment that still describes behaviour the range changed. A `P1` or `P2` finding under it blocks the stamp like any other; fix the text in the same range. Give the stamp a `--check "Docs: <the documents the range updated, or 'none describe the changed behaviour'> -> docs-drift clean"` line.
 - On release sections (`stilus-v*`, `gesso-v*`, `albumen-v*`, `isotone-v*`), confirm every `todo/backlog.md` entry in scope was promoted or carries an operator `reviewed:` deferral (`release-backlog-unreviewed`).
 
 ### 6. Stamp via `todo-graph.py stamp` and commit
@@ -96,7 +97,7 @@ Inspect the reconciliation pass's JSON summary and ending line (inside `pass_cap
 Let `$FINAL_SHA` be the exact commit SHA reviewed by the final pass (`$POST_ROUND_SHA` when no reconciliation ran, or the final `$REPAIRED_SHA` reviewed by the last reconciliation pass -- whether it ended `RECONCILIATION: complete` or non-blocking `RECONCILIATION: gaps`). First commit `$RECORD` (and any out-of-scope `todo/` section filed from a non-blocking final pass) if modified (`docs: record review passes for <ref>`), keeping `--sha $FINAL_SHA`, then run:
 
 ```powershell
-python scripts/todo-graph.py stamp "$REF" --sha $FINAL_SHA --plan $RECORD --review "${ROUND_NUM}:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check ".github/workflows/build.yml on $FINAL_SHA -> success <run url>" --check ".github/workflows/plan.yml on $FINAL_SHA -> success <run url>"
+python scripts/todo-graph.py stamp "$REF" --sha $FINAL_SHA --plan $RECORD --review "${ROUND_NUM}:${RECORD}:<clean|fixed>" --completion "${RECORD}:<complete|reconciled|filed|completed>" --check "<Test checkpoint command -> exit 0 summary>" --check "Docs: <documents the range updated> -> docs-drift clean" --check ".github/workflows/build.yml on $FINAL_SHA -> success <run url>" --check ".github/workflows/plan.yml on $FINAL_SHA -> success <run url>"
 python scripts/todo-findings.py --write
 python scripts/todo-graph.py validate
 python scripts/todo-graph.py plan --check

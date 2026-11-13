@@ -54,6 +54,10 @@ python scripts/render-design-reference.py --components <Comp>
 - `todo-graph.py validate` must report zero `design-*` findings and `todo-graph.py query design` must show the section carrying a live `**Design:**` line outside `todo/.design-baseline`.
 - Once the native visual-test runner ships (`todo/README.md` Proof table), run the golden comparison harness and hand renders to `review-todo-section` for golden approval.
 
+## The drift gate (D00 T01 §10)
+
+`python scripts/drift-check.py` holds every tracked text file and the README to `docs/facts.json` (no retired name or phrase, the README's opening line and version badges as the facts say); the commit hook runs it on the staged tree and `plan-gates` on every push, with `--check-github` on pushes to `main`. A fact changes in `docs/facts.json` first. The review's `docs-drift` lens covers what a script cannot: a document that still describes behaviour the range changed.
+
 ## Cadence (operator decisions 2026-11-12 and 2026-11-13, `docs/dev/decisions.md`, "Test cadence")
 
 CI does the heavy lifting. Locally, run only what is fast and what gates a commit: the commit hook, the targeted test of the code changed, and for native code the `x64-debug` preset with a filtered `ctest -R` plus `pwsh scripts/native-format.ps1 -Check`. Push the candidate; the `build` and `plan-gates` workflows run the full table while the review passes run, and the stamp cites their green runs on the final reviewed commit by URL. Start a background read of CI on every push and carry on; when it reports red, stop and repair it before anything else. Run `pwsh scripts/check-all.ps1` locally only with no network, to reproduce a red CI run, or when the change is to the gates themselves.

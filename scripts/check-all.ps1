@@ -13,7 +13,9 @@
   8. python scripts/build-design-site.py --check (docs/design/index.html is current), then
      python scripts/build-app-icons.py --check (the app icon SVGs match their generator)
   9. python scripts/design-lint.py --self-test
-  10. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json
+  10. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json, then the drift gate
+      (D00 T01 §10): python scripts/drift-check.py --self-test, python scripts/drift-check.py (the tree
+      against docs/facts.json), and python scripts/tests/test_drift_check.py
       (no new design-contract violation in the UI sources; standards/design-contract.md)
   11. python scripts/panel_slots.py --self-test
   12. python scripts/panel_slots.py validate (the reviewer pin, the delegate pin,
@@ -142,6 +144,9 @@ try {
     Invoke-PythonGate 'app icons --check' 'build-app-icons.py' @('--check')
     Invoke-PythonGate 'design-lint self-test' 'design-lint.py' @('--self-test')
     Invoke-PythonGate 'design-lint baseline' 'design-lint.py' @('--baseline', 'docs/design/.lint-baseline.json')
+    Invoke-PythonGate 'drift-check self-test' 'drift-check.py' @('--self-test')
+    Invoke-PythonGate 'drift-check' 'drift-check.py' @()
+    Invoke-PythonGate 'drift-check tests' 'tests/test_drift_check.py' @()
     Invoke-PythonGate 'panel_slots self-test' 'panel_slots.py' @('--self-test')
     Invoke-PythonGate 'panel_slots validate' 'panel_slots.py' @('validate')
     Invoke-PythonGate 'review_pin check' 'review_pin.py' @('--check')

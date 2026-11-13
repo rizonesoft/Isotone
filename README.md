@@ -11,7 +11,7 @@
 <br>
 <br>
 
-<p>Three native Windows creative apps, one shared core: a vector editor, a raster editor, and a digital darkroom.<br>Free, open source, and yours to keep.</p>
+<p>Six native Windows creative apps, one shared core: a vector editor, a raster editor, a digital darkroom, a color studio, a screen capture tool, and a page layout app.<br>Free, open source, and yours to keep.</p>
 
 [![Build](https://github.com/rizonesoft/Isotone/actions/workflows/build.yml/badge.svg)](https://github.com/rizonesoft/Isotone/actions/workflows/build.yml)
 [![Plan](https://github.com/rizonesoft/Isotone/actions/workflows/plan.yml/badge.svg)](https://github.com/rizonesoft/Isotone/actions/workflows/plan.yml)

@@ -196,6 +196,10 @@ python scripts/render-design-reference.py --verify build/design-reference   # re
 python scripts/tests/test_render_design_reference.py   # the renderer's browser ownership, picture checks, self-contained report, and folder re-check
 python scripts/design-lint.py --baseline docs/design/.lint-baseline.json --base <rev>   # compare the lint baseline with the one at a trusted revision (CI passes the commit the change started from)
 python scripts/todo-graph.py validate --base <rev>   # the same for todo/.design-baseline
+python scripts/drift-check.py                 # the tree against docs/facts.json: no retired name or phrase, the README's opening line and version badges as the facts say
+python scripts/drift-check.py --self-test     # the drift gate's own cases (rules, the four allowlist kinds, the GitHub sync on its failure paths)
+python scripts/drift-check.py --check-github  # the repository's description, topics, and homepage on GitHub against docs/facts.json (--sync-github applies them)
+python scripts/tests/test_drift_check.py      # the index file set the commit hook scans, and the plan-gates workflow's triggers
 ```
 
 Run checks owed by the task. Report only commands actually run, and distinguish static evidence, test output, driven-run output, fidelity output, and review proof.

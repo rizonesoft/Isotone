@@ -1,0 +1,131 @@
+{
+ "schema": 1,
+ "about": "The product facts of the Isotone Graphics Suite, stated once. A fact changes here first; scripts/drift-check.py then holds the README, every tracked text file, and the repository's settings on GitHub to this file (D00 T01 section 10). Versions are not copied here: `versions` names where each one is pinned.",
+ "suite": {
+  "name": "Isotone Graphics Suite",
+  "slug": "isotone",
+  "tag_prefix": "isotone-v",
+  "publisher": "Rizonesoft",
+  "copyright_holder": "Rizonetech (Pty) Ltd"
+ },
+ "apps": [
+  {"name": "Stilus", "slug": "stilus", "tag_prefix": "stilus-v", "role": "Vector editor"},
+  {"name": "Gesso", "slug": "gesso", "tag_prefix": "gesso-v", "role": "Raster editor"},
+  {"name": "Albumen", "slug": "albumen", "tag_prefix": "albumen-v", "role": "Digital darkroom, photo manager, and fast image viewer"},
+  {"name": "Tinctura", "slug": "tinctura", "tag_prefix": "tinctura-v", "role": "Color picker and color studio"},
+  {"name": "Capio", "slug": "capio", "tag_prefix": "capio-v", "role": "Screenshot and screen recording app"},
+  {"name": "Folium", "slug": "folium", "tag_prefix": "folium-v", "role": "Page layout and publishing"}
+ ],
+ "repository": {
+  "slug": "rizonesoft/Isotone",
+  "description": "Isotone Graphics Suite: free, open source Windows creative apps in native C++23. Stilus vector editor, Gesso raster editor, Albumen digital darkroom, Tinctura color studio, Capio screen capture, Folium page layout.",
+  "topics": ["cpp", "cpp23", "direct2d", "gpl3", "graphics", "image-editor", "photo-editor", "raster-graphics", "vector-graphics", "windows"],
+  "homepage": "https://rizonesoft.github.io/Isotone/"
+ },
+ "readme": {
+  "path": "README.md",
+  "opening_line": "Six native Windows creative apps, one shared core: a vector editor, a raster editor, a digital darkroom, a color studio, a screen capture tool, and a page layout app."
+ },
+ "versions": [
+  {"name": "C++", "source": "native/CMakeLists.txt", "source_pattern": "set\\(CMAKE_CXX_STANDARD (\\d+)\\)", "readme_pattern": "badge/C%2B%2B-(\\d+)-"},
+  {"name": "Inno Setup", "source": "installer/common.iss", "source_pattern": "\\(Inno Setup (\\d+\\.\\d+) or newer\\)", "readme_pattern": "badge/Inno%20Setup-(\\d+\\.\\d+)-"},
+  {"name": "MSVC compiler", "source": "native/toolchain.json", "source_pattern": "\"compiler\": \"([^\"]+)\""},
+  {"name": "Windows SDK", "source": "native/toolchain.json", "source_pattern": "\"windows_sdk\": \"([^\"]+)\""},
+  {"name": "CMake", "source": "native/toolchain.json", "source_pattern": "\"cmake\": \"([^\"]+)\""},
+  {"name": "Ninja", "source": "native/toolchain.json", "source_pattern": "\"ninja\": \"([^\"]+)\""},
+  {"name": "vcpkg", "source": "native/toolchain.json", "source_pattern": "\"vcpkg\": \"([^\"]+)\""},
+  {"name": "vcpkg baseline (the library versions)", "source": "native/vcpkg.json", "source_pattern": "\"builtin-baseline\": \"([0-9a-f]{40})\""},
+  {"name": "library register", "source": "docs/dev/native-libraries.md", "source_pattern": "^# (Native libraries)"}
+ ],
+ "retired": {
+  "names": [
+   {"word": "Photon", "replacement": "Isotone", "date": "2026-09-27"},
+   {"word": "Nodus", "replacement": "Stilus", "date": "2026-09-27"},
+   {"word": "Imago", "replacement": "Gesso", "date": "2026-09-27"},
+   {"word": "Lumen", "replacement": "Albumen", "date": "2026-09-27"},
+   {"word": "Pinxit", "replacement": "Gesso", "date": "2026-09-28"}
+  ],
+  "phrases": [
+   {"phrase": ".NET 11, WPF", "replacement": "native C++23 with isotone::ui on Win32, Direct2D, DirectWrite, and Direct3D", "date": "2026-10-22"},
+   {"phrase": "self-contained .NET", "replacement": "a static native build with no runtime to install", "date": "2026-10-22"},
+   {"phrase": "WPF with standard controls", "replacement": "the suite's own UI toolkit, isotone::ui", "date": "2026-10-22"}
+  ]
+ },
+ "allow": {
+  "paths": [
+   {"path": "docs/legacy/", "reason": "the imported apps' own roadmaps, kept as they were written, under their old names"},
+   {"path": "CHANGELOG.md", "reason": "the changelog records each rename as it happened"},
+   {"path": "docs/dev/decisions.md", "reason": "the decision log quotes the operator and names what each decision replaced"},
+   {"path": "docs/reviews/", "reason": "review records quote the candidates and findings of their day"},
+   {"path": "docs/phase-runs/", "reason": "run records are written as the run goes and are never rewritten"},
+   {"path": "docs/parity/section-design.md", "reason": "the Stilus parity design of 2026-09-26, the record its TODO files were authored from"},
+   {"path": "docs/parity/gesso-section-design.md", "reason": "the Gesso parity design of 2026-09-26, the record its TODO files were authored from"},
+   {"path": "docs/parity/albumen-section-design.md", "reason": "the Albumen parity design of 2026-09-27, the record its TODO files were authored from"},
+   {"path": "todo/budget.json", "reason": "the budget history quotes the operator's decisions verbatim"},
+   {"path": "docs/design/.lint-baseline.json", "reason": "the baseline's append-only history records the path renames of 2026-09-27 and 2026-09-28"}
+  ],
+  "quotes": [
+   {"text": "For Nodus, we need to add all(and I mean), all CorelDraw features and All Illustrator Features.", "reason": "the operator's 2026-09-26 parity decision for the vector editor, verbatim"},
+   {"text": "now, imago, all the photoshop and at least 2 other similar popular programs of the same type. All features without leaving anything behind.", "reason": "the operator's 2026-09-26 parity decision for the raster editor, verbatim"},
+   {"text": "Now Lumen. I want features from Lightroom, but I've alwyas been loving ACDSee photo manager and IrfanView", "reason": "the operator's 2026-09-27 parity decision for the darkroom, verbatim"}
+  ],
+  "patterns": [
+   {"name": "git-show-path", "regex": "git show [A-Za-z0-9._/@^~-]+:[^\\s`'\")]+", "reason": "a path as an old commit, tag, or branch holds it"},
+   {"name": "backlog-merged-marker", "regex": "merged: `[a-z0-9-]+`", "reason": "a backlog entry keeps the source key of every entry merged into it, and a key is never renamed"}
+  ],
+  "counts": [
+   {"path": "AGENTS.md", "word": "Imago", "count": 1, "reason": "the Names decision of 2026-09-27 records each rename, old name to new"},
+   {"path": "AGENTS.md", "word": "Lumen", "count": 1, "reason": "the Names decision of 2026-09-27 records each rename, old name to new"},
+   {"path": "AGENTS.md", "word": "Nodus", "count": 1, "reason": "the Names decision of 2026-09-27 records each rename, old name to new"},
+   {"path": "AGENTS.md", "word": "Photon", "count": 2, "reason": "the Names decision of 2026-09-27 records each rename, old name to new"},
+   {"path": "AGENTS.md", "word": "Pinxit", "count": 2, "reason": "the Names decision of 2026-09-27 records each rename, old name to new"},
+   {"path": "README.md", "word": "Imago", "count": 1, "reason": "the license history names the two projects as they were first published"},
+   {"path": "docs/dev/README.md", "word": "Imago", "count": 1, "reason": "points at the imported roadmaps by the names they carry"},
+   {"path": "docs/parity/README.md", "word": "Imago", "count": 1, "reason": "the catalog's history names each app as the operator's decision did"},
+   {"path": "docs/parity/README.md", "word": "Lumen", "count": 1, "reason": "the catalog's history names each app as the operator's decision did"},
+   {"path": "docs/specs/2026-10-22-native-stack-design.md", "word": "Photon", "count": 1, "reason": "the physics word, in \"pen-to-photon latency\""},
+   {"path": "standards/README.md", "word": "Imago", "count": 1, "reason": "names the legacy standards files by their paths before the rename"},
+   {"path": "standards/README.md", "word": "Nodus", "count": 1, "reason": "names the legacy standards files by their paths before the rename"},
+   {"path": "standards/gesso.md", "word": "Imago", "count": 1, "reason": "names the C# prototype Gesso grew from, preserved at the csharp-final tag"},
+   {"path": "todo/00-workspace/TODO-01-dev-automation.md", "word": ".NET 11, WPF", "count": 2, "reason": "D00 T01 section 10 defines the retired list and its probes, so it names them"},
+   {"path": "todo/00-workspace/TODO-01-dev-automation.md", "word": "Imago", "count": 3, "reason": "D00 T01 section 10 defines the retired list and its probes, so it names them"},
+   {"path": "todo/00-workspace/TODO-01-dev-automation.md", "word": "Lumen", "count": 1, "reason": "D00 T01 section 10 defines the retired list and its probes, so it names them"},
+   {"path": "todo/00-workspace/TODO-01-dev-automation.md", "word": "Nodus", "count": 1, "reason": "D00 T01 section 10 defines the retired list and its probes, so it names them"},
+   {"path": "todo/00-workspace/TODO-01-dev-automation.md", "word": "Photon", "count": 1, "reason": "D00 T01 section 10 defines the retired list and its probes, so it names them"},
+   {"path": "todo/00-workspace/TODO-01-dev-automation.md", "word": "Pinxit", "count": 1, "reason": "D00 T01 section 10 defines the retired list and its probes, so it names them"},
+   {"path": "todo/00-workspace/TODO-01-dev-automation.md", "word": "WPF with standard controls", "count": 1, "reason": "D00 T01 section 10 defines the retired list and its probes, so it names them"},
+   {"path": "todo/00-workspace/TODO-01-dev-automation.md", "word": "self-contained .NET", "count": 1, "reason": "D00 T01 section 10 defines the retired list and its probes, so it names them"},
+   {"path": "todo/03-gesso/TODO-01-gesso-structure.md", "word": "Imago", "count": 25, "reason": "parked for its native re-plan; names the prototype's paths, namespaces, and snapshot branch"},
+   {"path": "todo/03-gesso/TODO-01-gesso-structure.md", "word": "Photon", "count": 11, "reason": "parked for its native re-plan; names the prototype's paths, namespaces, and snapshot branch"},
+   {"path": "todo/04-albumen/TODO-01-albumen-foundation.md", "word": "Imago", "count": 1, "reason": "dated corrections and the operator's decision name the app as it was called"},
+   {"path": "todo/04-albumen/TODO-01-albumen-foundation.md", "word": "Lumen", "count": 1, "reason": "dated corrections and the operator's decision name the app as it was called"},
+   {"path": "todo/04-albumen/TODO-01-albumen-foundation.md", "word": "Nodus", "count": 1, "reason": "dated corrections and the operator's decision name the app as it was called"},
+   {"path": "todo/04-albumen/TODO-02-albumen-develop.md", "word": "Imago", "count": 1, "reason": "dated corrections and the operator's decision name the app as it was called"},
+   {"path": "todo/04-albumen/TODO-02-albumen-develop.md", "word": "Lumen", "count": 1, "reason": "dated corrections and the operator's decision name the app as it was called"},
+   {"path": "todo/07-tinctura/TODO-01-tinctura-plan.md", "word": "Imago", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/07-tinctura/TODO-01-tinctura-plan.md", "word": "Lumen", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/07-tinctura/TODO-01-tinctura-plan.md", "word": "Nodus", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/07-tinctura/TODO-01-tinctura-plan.md", "word": "Photon", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/08-capio/TODO-01-capio-plan.md", "word": "Imago", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/08-capio/TODO-01-capio-plan.md", "word": "Lumen", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/08-capio/TODO-01-capio-plan.md", "word": "Nodus", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/08-capio/TODO-01-capio-plan.md", "word": "Photon", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/09-folium/TODO-01-folium-plan.md", "word": "Imago", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/09-folium/TODO-01-folium-plan.md", "word": "Lumen", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/09-folium/TODO-01-folium-plan.md", "word": "Nodus", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/09-folium/TODO-01-folium-plan.md", "word": "Photon", "count": 1, "reason": "the naming pre-screen records which names were replaced and why"},
+   {"path": "todo/99-manual/TODO-01-operator-setup.md", "word": "Imago", "count": 10, "reason": "operator rows name the works as they were published, for the copyright deed, the trademark screen, and the old preview image"},
+   {"path": "todo/99-manual/TODO-01-operator-setup.md", "word": "Lumen", "count": 3, "reason": "operator rows name the works as they were published, for the copyright deed, the trademark screen, and the old preview image"},
+   {"path": "todo/99-manual/TODO-01-operator-setup.md", "word": "Nodus", "count": 1, "reason": "operator rows name the works as they were published, for the copyright deed, the trademark screen, and the old preview image"},
+   {"path": "todo/99-manual/TODO-01-operator-setup.md", "word": "Photon", "count": 10, "reason": "operator rows name the works as they were published, for the copyright deed, the trademark screen, and the old preview image"},
+   {"path": "todo/99-manual/TODO-01-operator-setup.md", "word": "Pinxit", "count": 3, "reason": "operator rows name the works as they were published, for the copyright deed, the trademark screen, and the old preview image"},
+   {"path": "todo/backlog.md", "word": "Imago", "count": 1, "reason": "the removal and rename records of the backlog name the entries as they were keyed"},
+   {"path": "todo/backlog.md", "word": "Lumen", "count": 1, "reason": "the removal and rename records of the backlog name the entries as they were keyed"},
+   {"path": "todo/backlog.md", "word": "Nodus", "count": 1, "reason": "the removal and rename records of the backlog name the entries as they were keyed"},
+   {"path": "todo/backlog.md", "word": "Photon", "count": 1, "reason": "the removal and rename records of the backlog name the entries as they were keyed"},
+   {"path": "todo/backlog.md", "word": "Pinxit", "count": 3, "reason": "the removal and rename records of the backlog name the entries as they were keyed"},
+   {"path": "todo/implementation-plan.md", "word": "Imago", "count": 1, "reason": "the plan's introduction names the imported code as it was called"},
+   {"path": "todo/implementation-plan.md", "word": "Photon", "count": 1, "reason": "the plan's introduction names the imported code as it was called"}
+  ]
+ }
+}

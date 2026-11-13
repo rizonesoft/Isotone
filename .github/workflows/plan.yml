@@ -6,45 +6,13 @@ name: plan-gates
 # the dispatcher's rules. The campaign guard self-test drives the configured
 # Stop hook command through PowerShell and Git Bash, so it runs in a Windows job.
 
+# No path filter: the drift gate (scripts/drift-check.py) reads every tracked text file, so a change anywhere, a
+# README or a standard as much as a script, must run these gates (D00 T01 section 10).
 on:
   push:
     branches: [main]
-    paths:
-      - 'scripts/**'
-      - 'native/**'
-      - 'todo/**'
-      - 'docs/reviews/**'
-      - 'docs/dev/decisions.md'
-      - 'docs/dev/native-libraries.md'
-      - '.agents/**'
-      - '.claude/**'
-      - '.conclave/**'
-      - 'tools/githooks/**'
-      - 'docs/design/**'
-      - 'resources/icons/**'
-      - '.gitattributes'
-      - 'AGENTS.md'
-      - 'GEMINI.md'
-      - '.github/workflows/plan.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'scripts/**'
-      - 'native/**'
-      - 'todo/**'
-      - 'docs/reviews/**'
-      - 'docs/dev/decisions.md'
-      - 'docs/dev/native-libraries.md'
-      - '.agents/**'
-      - '.claude/**'
-      - '.conclave/**'
-      - 'tools/githooks/**'
-      - 'docs/design/**'
-      - 'resources/icons/**'
-      - '.gitattributes'
-      - 'AGENTS.md'
-      - 'GEMINI.md'
-      - '.github/workflows/plan.yml'
   workflow_dispatch:
 
 permissions:
@@ -102,6 +70,21 @@ jobs:
         run: python3 scripts/tests/test_render_design_reference.py
       # The shrink-only baseline is compared with a trusted revision, never with the candidate itself: the
       # commit before a push, a pull request's base commit, and the first parent on a manual run.
+      - name: Self-test the drift gate
+        run: python3 scripts/drift-check.py --self-test
+      - name: Test the drift gate's file set and this workflow's triggers
+        run: python3 scripts/tests/test_drift_check.py
+      - name: Check the tree against the product facts
+        run: python3 scripts/drift-check.py
+      # The repository's settings can only differ from the facts on the default branch: a pull request's facts
+      # are not the published ones yet. Read-only, with the workflow token.
+      - name: Check the GitHub repository settings against the product facts
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/drift-check.py --check-github
+      - name: Re-measure the claims the TODO files and the documents make
+        run: python3 scripts/todo-claims.py --quiet
       - name: Validate the TODO tree
         env:
           GATE_BASE: ${{ github.event.pull_request.base.sha || (github.event.before != '0000000000000000000000000000000000000000' && github.event.before) || 'HEAD^' }}

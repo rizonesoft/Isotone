@@ -28,6 +28,7 @@ Proportionality: a `P1` or `P2` finding must be a failure that can happen in thi
 - `plan-delivery`: whether the build delivered every checklist item and `Done when:` of the section, with nothing partial or stubbed.
 - `quality`: whether the code is clear, minimal and maintainable, and every test exercises the behaviour it names.
 - `optimization`: where the change wastes time, memory, I/O or redraws on the paths users hit.
+- `docs-drift`: whether the range updates every README, document, standard, skill and source comment that describes behaviour it changed; a text that still describes the old behaviour is a finding, with its `file:line` and the sentence that is now false, and it is at least `P2`: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains.
 
 ## Reply format
 

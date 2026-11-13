@@ -29,13 +29,18 @@ policy = "three-pass"
 pass_cap = 33
 blocking = ["P1", "P2"]
 
+# The project's own lenses (D00 T01 section 10; operator request 2026-09-27, "how are we preventing drift in docs,
+# readme's, suporting files, comments, descriptions"). `docs-drift` runs in the round, where the code is read.
+[schedule.lenses]
+docs-drift = "Does the range update every README, document, standard, skill and source comment that describes behaviour it changed? Name each one that still describes the old behaviour, with file:line and the sentence that is now false. A text that states the old behaviour is at least P2: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains."
+
 [schedule.plan]
 effort = "medium"
 lenses = ["plan"]
 
 [[schedule.rounds]]
 effort = "medium"
-lenses = ["adversarial", "consistency", "integration", "quality", "optimization", "source-defect", "design"]
+lenses = ["adversarial", "consistency", "integration", "quality", "optimization", "source-defect", "design", "docs-drift"]
 
 [schedule.completion]
 effort = "medium"

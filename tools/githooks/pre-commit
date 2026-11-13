@@ -1,5 +1,5 @@
 #!/bin/sh
-# pre-commit: refuse the commit when the staged tree fails TODO-graph validation or design-lint.
+# pre-commit: refuse the commit when the staged tree fails TODO-graph validation, design-lint, or drift-check.
 # Validates the index (what will be committed) in a temp checkout; the worktree gets an advisory probe only, never a refusal.
 # Installed per clone via `git config core.hooksPath tools/githooks` (see AGENTS.md).
 set -u
@@ -17,11 +17,17 @@ PY="$(pick_python)" || { echo "pre-commit: no working Python 3 (python3, python,
 # Temp dir lives under the git dir so its path is native on every platform (no /tmp translation under Git Bash).
 GITDIR="$(git rev-parse --absolute-git-dir 2>/dev/null)" || { echo "pre-commit: cannot locate the git dir" >&2; exit 1; }
 WORK="$(mktemp -d "$GITDIR/hookgate.XXXXXX" 2>/dev/null)" || { echo "pre-commit: cannot make a temp dir" >&2; exit 1; }
-trap 'rm -rf "$WORK"' EXIT INT TERM
+trap 'rm -rf "$WORK" "$WORK.files"' EXIT INT TERM
 git checkout-index -a --prefix="$WORK/" || { echo "pre-commit: cannot stage the index for validation" >&2; exit 1; }
 (cd "$WORK" && "$PY" scripts/todo-graph.py validate) || { echo "pre-commit: todo-graph validate is red on the staged tree; fix the findings above and retry" >&2; exit 1; }
 # Design contract (standards/design-contract.md): no new design-lint violation in the staged UI sources; recorded ones pass, fixed ones must leave the baseline.
 if [ -f "$WORK/scripts/design-lint.py" ]; then
   (cd "$WORK" && "$PY" scripts/design-lint.py --baseline docs/design/.lint-baseline.json) || { echo "pre-commit: design-lint is red on the staged tree; read the value from the generated token tables (native/ui/tokens/), or shrink the baseline with --update-baseline" >&2; exit 1; }
+fi
+# Drift gate (docs/facts.json): no retired name, and no README fact that contradicts the facts file, in exactly the files this commit will hold.
+# The checkout has no repository of its own, so the index's file list is passed: staged additions and the new side of a rename are in it, deleted paths are not.
+if [ -f "$WORK/scripts/drift-check.py" ]; then
+  git ls-files -z > "$WORK.files" || { echo "pre-commit: cannot list the index for drift-check" >&2; exit 1; }
+  (cd "$WORK" && "$PY" scripts/drift-check.py --files-from "$WORK.files") || { echo "pre-commit: drift-check is red on the staged tree; write the current name or fact, or change docs/facts.json first (a record that must name an old one needs its allowance and reason there)" >&2; exit 1; }
 fi
 git diff --quiet -- scripts todo docs || { "$PY" scripts/todo-graph.py validate >/dev/null 2>&1 || echo "pre-commit: warning: unstaged changes carry findings; this gate validated only the staged tree" >&2; }

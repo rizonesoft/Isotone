@@ -154,3 +154,6 @@ Each is owned by a section of the plan; nothing else is relaxed.
 - Native packaging, the version computed from the tag, and the release pipeline's native steps are planned in `todo/05-release/` (`D00 T07 §5`).
 - Only Stilus has committed icon rasters, of an older design; `D00 T03 §3` generates every app's rasters and ICO from the SVG sources.
 - Code is not signed (installers and binaries): the certificate is an operator row in `todo/99-manual/`.
+
+<!-- claim: exists docs/facts.json -->
+<!-- claim: exists scripts/drift-check.py -->
