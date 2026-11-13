@@ -42,7 +42,7 @@
     },
     ".agents/skills/review-todo-section/SKILL.md": {
       "kit": "todo",
-      "sha256": "bf1062cce1da0d5b5277961962d9f3027bdf3531b3a5af07898b58fb4e9595c0"
+      "sha256": "58f87b16e1872df0096ba059877790bd5b1b159f22e271fea8f687657612cfe1"
     },
     ".claude/settings.json": {
       "kit": "todo",
@@ -86,7 +86,7 @@
     },
     ".claude/skills/review-todo-section/SKILL.md": {
       "kit": "todo",
-      "sha256": "b5118b61a1134cdc98ebdf7773ffe4d6f4de99c66e6916ddaefdb51df076561d"
+      "sha256": "4d032b3c225deab615064b8a4e5c61dee226f7970f8afc61ea2241b3d4127360"
     },
     ".conclave/reviewers.toml": {
       "kit": "reviewer",
