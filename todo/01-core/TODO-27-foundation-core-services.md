@@ -32,7 +32,7 @@ track: F14
 
 - `isotone::core::AppPaths` resolves each app's data, log, settings, and recovery folders under `%LOCALAPPDATA%\Rizonesoft\<App>\` (beside the executable in portable mode), creating them on first use.
 - `isotone::core::Log` writes structured events (time, level, event name, fields) as JSON lines to a daily file, with one configuration per app and a bounded in-memory buffer later sections can read.
-- `isotone::core::AtomicFile` writes a data file by temporary file, flush, and replace, and reads it back; `isotone::core::Settings` keeps versioned JSON settings through it, logging one line per change.
+- `isotone::core::AtomicFile` writes a data file by temporary file, flush, verified readback, and replace with the previous version kept until the new one reads back; `isotone::core::Settings` keeps versioned JSON settings through it, logging one line per change.
 
 **Adjacency:** list=not-applicable (no records a user browses); document=not-applicable (no printed output); settings=applicable @ D01 T27 §2; reporting=not-applicable (no data to summarize); notifications=not-applicable (no long-running work); permissions=not-applicable (writes only the app's own data folders); audit=applicable @ D01 T27 §1; exchange=not-applicable (no user files); reverse=not-applicable (a setting is reversed by setting it again)
 
@@ -67,11 +67,11 @@ Every later section writes its audit log line through this one logger, so the lo
 
 Every later section's settings persist through this store, and a change writes one line to the audit log of §1.
 
-- [ ] Add `isotone::core::AtomicFile` in `native/core/include/isotone/core/atomic_file.h`: write a data file to a fresh temporary file in the same folder, `FlushFileBuffers`, and `MoveFileExW(..., MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)`, then read it back and compare, failing with the previous file in place on any error. Done when: `AtomicFile.ReplacesAndReadsBack` and `AtomicFile.FailureLeavesPreviousFile` (a write failure injected before the replace) pass.
+- [ ] Add `isotone::core::AtomicFile` in `native/core/include/isotone/core/atomic_file.h`: write a data file to a fresh temporary file in the same folder, `FlushFileBuffers`, read the temporary file back and compare; then `ReplaceFileW` the target with it, keeping the previous version as a backup file beside it, read the target back and compare, and only then delete the backup; on any failure after the replace, restore the backup to the target's name and report the failure; a backup left by a crash is restored or removed at the next read, whichever holds the newer verified contents. Done when: `AtomicFile.ReplacesAndReadsBack`, `AtomicFile.FailureBeforeReplaceLeavesPrevious`, `AtomicFile.ReadbackFailureAfterReplaceRestoresPrevious`, and `AtomicFile.LeftoverBackupSettledAtNextRead` pass, each failure injected through a test seam.
 - [ ] Add `isotone::core::Settings` in `native/core/include/isotone/core/settings.h`: one versioned JSON file per app in the settings folder, typed get and set by key with defaults, every set written through `AtomicFile` with readback and logged as one event naming the key and the new value, an unreadable or newer-version file kept aside and reported rather than overwritten. Done when: `Settings.SetPersistsAndReadsBack`, `Settings.ChangeWritesOneLogLine`, and `Settings.CorruptFileKeptAndReported` pass.
 - [ ] Commit: `"core: atomic writes and the settings store"`
 
-**Test checkpoint:** Unit test: `AtomicFile.ReplacesAndReadsBack`, `AtomicFile.FailureLeavesPreviousFile`, `Settings.SetPersistsAndReadsBack`, `Settings.ChangeWritesOneLogLine`, and `Settings.CorruptFileKeptAndReported` pass through CTest on every preset, including the AddressSanitizer lanes. Cheaper substitute that fails: writing the settings file in place, which a crash mid-write leaves truncated and unreadable.
+**Test checkpoint:** Unit test: `AtomicFile.ReplacesAndReadsBack`, `AtomicFile.FailureBeforeReplaceLeavesPrevious`, `AtomicFile.ReadbackFailureAfterReplaceRestoresPrevious`, `AtomicFile.LeftoverBackupSettledAtNextRead`, `Settings.SetPersistsAndReadsBack`, `Settings.ChangeWritesOneLogLine`, and `Settings.CorruptFileKeptAndReported` pass through CTest on every preset, including the AddressSanitizer lanes. Cheaper substitute that fails: writing the settings file in place, which a crash mid-write leaves truncated and unreadable.
 
 ## Verification
 

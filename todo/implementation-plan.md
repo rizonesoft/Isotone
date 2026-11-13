@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **41 of 867 sections complete (5%).** 867 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **41 of 869 sections complete (5%).** 869 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -244,7 +244,9 @@ Every later phase builds on the native stack's foundations, so this phase proves
 | [ ] | `D01 T25 §2` | Compare and Approve, in the Gates                                                                   |   3   |
 | [ ] | `D01 T25 §3` | The Repeatability Proof                                                                             |   3   |
 | [ ] | `D01 T26 §1` | The Watcher and Encrypted Minidumps                                                                 |   4   |
-| [ ] | `D01 T26 §2` | Sending a Report, the WER Exclusion, Symbols, and the Crash Proofs                                  |   4   |
+| [ ] | `D01 T26 §2` | Sending a Report, the WER Exclusion, Symbols, and the Crash Proofs                                  |   3   |
+| [ ] | `D01 T26 §3` | Staging the Host in the Three Install Modes                                                         |   3   |
+| [ ] | `D01 T26 §4` | The Crash Proofs in Every Install Mode                                                              |   2   |
 | [x] | `D00 T03 §3` | Export the app icon rasters from the SVG sources                                                    |  16   |
 
 > **Superseded:** `D02 T01 §1` -- Rename Bezier to Isotone.Stilus (lapsed with todo/02-stilus/TODO-01-stilus-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
@@ -287,7 +289,7 @@ With its foundation sound, Stilus becomes a complete first release: `Isotone.Cor
 
 |  ✔  | Section      | Deliverable                                                                    | Items |
 | :-: | ------------ | ------------------------------------------------------------------------------ | :---: |
-| [ ] | `D00 T07 §5` | Re-plan Phase 3: Stilus 0.1.0: shared UI, complete editing, documents, release |  15   |
+| [ ] | `D00 T07 §5` | Re-plan Phase 3: Stilus 0.1.0: shared UI, complete editing, documents, release |  16   |
 | [ ] | `D01 T01 §1` | Create Isotone.UI with the icon catalog                                        |   9   |
 | [ ] | `D01 T13 §6` | The shared layout conformance test helpers                                     |   4   |
 | [ ] | `D01 T01 §2` | Splash, exception window, and glow move to Isotone.UI                          |   8   |

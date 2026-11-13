@@ -86,5 +86,5 @@ Approving is the one write here and its permissions are narrow: only the review'
 
 - [ ] `pwsh scripts/check-all.ps1` exits 0, with `goldens.py compare` among its stages
 - [ ] `python scripts/tests/test_goldens.py` passes
-- [ ] The proof table's golden render marker reads the runner command once §2 is stamped
+- [ ] The proof table's golden render marker reads the runner command once §3 is stamped
 - [ ] `python scripts/todo-graph.py validate` clean
