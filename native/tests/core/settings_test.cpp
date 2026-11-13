@@ -672,6 +672,26 @@ TEST(Settings, WrongButValidFileAfterAFailedRestoreIsNotRead)
     EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"settings.json"});
 }
 
+// The first save of all ends up holding other settings than were written and cannot be removed: the next start
+// finds no settings, never those.
+TEST(Settings, WrongFirstSaveIsNotRead)
+{
+    const TempFolder temp;
+    Log log{memory_log(temp)};
+    const auto failing = std::make_shared<bool>(true);
+    {
+        Settings settings{temp.path(), log, wrong_bytes_and_no_restore(failing, temp.path() / "settings.json")};
+        EXPECT_TRUE(throws_error([&settings] { settings.set("a", std::int64_t{2}); }));
+        EXPECT_EQ(settings.get_int("a", 0), 0);
+    }
+    EXPECT_EQ(inspect(slurp(temp.path() / "settings.json")), SettingsDocument::Supported);
+
+    const Settings reopened{temp.path(), log};
+    EXPECT_EQ(reopened.load_report().outcome, SettingsLoad::NoFile);
+    EXPECT_EQ(reopened.get_int("a", 0), 0);
+    EXPECT_TRUE(names_in(temp.path()).empty());
+}
+
 TEST(Settings, NewerTargetSurvivesALeftoverBackup)
 {
     const TempFolder temp;

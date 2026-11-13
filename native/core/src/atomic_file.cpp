@@ -87,6 +87,11 @@ void remove_quietly(const std::filesystem::path& file) noexcept
     static_cast<void>(DeleteFileW(file.c_str()));
 }
 
+bool exists_quietly(const std::filesystem::path& file) noexcept
+{
+    return GetFileAttributesW(file.c_str()) != INVALID_FILE_ATTRIBUTES;
+}
+
 bool file_exists(const std::filesystem::path& file)
 {
     if (GetFileAttributesW(file.c_str()) != INVALID_FILE_ATTRIBUTES)
@@ -317,15 +322,19 @@ void write_temporary(const std::filesystem::path& temporary, std::span<const std
     }
 }
 
-// What a started replace expects the target to hold: kept in <name>.txn from before the replace until the target
-// has read back correct, so a later read can tell a verified target from a wrong one without knowing the format.
+// What a started replace expects the target to hold, and whether the write replaces a previous version or is the
+// file's first: kept in <name>.txn from before the replace until the target has read back correct, so a later read
+// can tell a verified target from a wrong one without knowing the format.
 struct Journal
 {
     std::uint64_t size = 0;
     std::uint64_t hash = 0;
+    bool first = false;
 };
 
 constexpr std::string_view kJournalPrefix{"isotone-atomic-file 1 "};
+constexpr std::string_view kJournalFirst{"first"};
+constexpr std::string_view kJournalReplace{"replace"};
 constexpr std::uint64_t kJournalMaxBytes = 128;
 
 // FNV-1a, 64 bits: it catches a device that stored or returned other bytes, which is what the journal is for; it is
@@ -376,7 +385,7 @@ std::optional<std::uint64_t> parse_number(std::string_view digits, std::uint64_t
     return value;
 }
 
-// "isotone-atomic-file 1 <size> <hash in hex>\n", exactly; anything else is not a journal.
+// "isotone-atomic-file 1 <size> <hash in hex> <first|replace>\n", exactly; anything else is not a journal.
 std::optional<Journal> parse_journal(std::string_view text)
 {
     if (!text.starts_with(kJournalPrefix) || !text.ends_with('\n'))
@@ -385,18 +394,21 @@ std::optional<Journal> parse_journal(std::string_view text)
     }
     text.remove_prefix(kJournalPrefix.size());
     text.remove_suffix(1);
-    const std::size_t space = text.find(' ');
-    if (space == std::string_view::npos)
+    const std::size_t first_space = text.find(' ');
+    const std::size_t second_space =
+        first_space == std::string_view::npos ? first_space : text.find(' ', first_space + 1);
+    if (second_space == std::string_view::npos)
     {
         return std::nullopt;
     }
-    const auto size = parse_number(text.substr(0, space), 10);
-    const auto hash = parse_number(text.substr(space + 1), 16);
-    if (!size || !hash)
+    const auto size = parse_number(text.substr(0, first_space), 10);
+    const auto hash = parse_number(text.substr(first_space + 1, second_space - first_space - 1), 16);
+    const std::string_view kind = text.substr(second_space + 1);
+    if (!size || !hash || (kind != kJournalFirst && kind != kJournalReplace))
     {
         return std::nullopt;
     }
-    return Journal{.size = *size, .hash = *hash};
+    return Journal{.size = *size, .hash = *hash, .first = kind == kJournalFirst};
 }
 
 // The journal a file's bytes hold, or nothing when they are not one.
@@ -429,15 +441,16 @@ std::optional<Journal> read_journal(const std::filesystem::path& journal_file)
     }
 }
 
-// Writes the journal for bytes and flushes it to the device. Throws Error.
-void write_journal(const std::filesystem::path& journal_file, std::span<const std::byte> bytes,
+// Writes the journal for bytes and flushes it to the device. first says there is no previous version. Throws Error.
+void write_journal(const std::filesystem::path& journal_file, std::span<const std::byte> bytes, bool first,
                    const AtomicFileSeams& seams)
 {
     if (const DWORD code = injected(seams, AtomicFileStep::WriteJournal); code != 0)
     {
         throw Error{"WriteFile", code, "writing " + utf8(journal_file)};
     }
-    const std::string text = std::format("{}{} {:016x}\n", kJournalPrefix, bytes.size(), content_hash(bytes));
+    const std::string text = std::format("{}{} {:016x} {}\n", kJournalPrefix, bytes.size(), content_hash(bytes),
+                                         first ? kJournalFirst : kJournalReplace);
     const UniqueHandle handle = own(
         CreateFileW(journal_file.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
     if (!handle)
@@ -577,6 +590,46 @@ struct Settled
     std::optional<Error> refused;
 };
 
+// The backup goes, and the journal only once the backup is gone: a backup that cannot be deleted yet keeps the
+// journal that says the target, not it, is the good copy.
+void remove_settled(const Files& files) noexcept
+{
+    remove_quietly(files.backup);
+    if (!exists_quietly(files.backup))
+    {
+        remove_quietly(files.journal);
+    }
+}
+
+// A journal with no backup beside it: the replace it describes did not happen, or was the file's first write.
+Settled settle_without_backup(const Files& files, const Journal& expected, TargetRead current,
+                              const AtomicFileSeams& seams, bool modify)
+{
+    const bool target_here = current.bytes.has_value() || current.too_large.has_value();
+    if (expected.first && target_here)
+    {
+        // There was no previous version, and what is at the target is not what was written: it is no version of
+        // the file at all. It is removed, as the write itself would have done, and never returned.
+        if (modify)
+        {
+            if (const DWORD code = restore_previous(files.target, files.backup, false, seams); code != 0)
+            {
+                throw Error{"DeleteFileW", code,
+                            "removing " + utf8(files.target) +
+                                ", which does not hold the bytes its first write recorded and has no previous version"};
+            }
+            remove_quietly(files.journal);
+        }
+        return Settled{.bytes = std::nullopt, .refused = std::nullopt};
+    }
+    // The write stopped before its replace: the target is still the previous version (or there is still no file).
+    if (modify)
+    {
+        remove_quietly(files.journal);
+    }
+    return Settled{.bytes = std::move(current.bytes), .refused = std::move(current.too_large)};
+}
+
 // Decides which copy holds the file after a write that was interrupted or could not restore, and, when modify,
 // puts it at the target's name and removes what is settled. With a journal the target is good exactly when it
 // holds the bytes the journal names, and otherwise the backup is the last good version. With a backup and no
@@ -605,33 +658,28 @@ Settled settle(const Files& files, std::uint64_t limit, const AtomicFileCheck& c
     {
         if (modify)
         {
-            remove_quietly(files.backup);
-            remove_quietly(files.journal);
+            remove_settled(files);
         }
         return Settled{.bytes = std::move(current.bytes), .refused = std::nullopt};
     }
-    if (has_backup)
+    if (expected && !has_backup)
     {
-        auto previous = read_whole(files.backup, limit, false);
-        if (expected ? previous.has_value() : passes(previous, check))
+        return settle_without_backup(files, *expected, std::move(current), seams, modify);
+    }
+    auto previous = read_whole(files.backup, limit, false);
+    if (expected ? previous.has_value() : passes(previous, check))
+    {
+        if (modify)
         {
-            if (modify)
+            if (const DWORD code = restore_previous(files.target, files.backup, true, seams); code != 0)
             {
-                if (const DWORD code = restore_previous(files.target, files.backup, true, seams); code != 0)
-                {
-                    throw Error{"MoveFileExW", code, "restoring " + utf8(files.target) + " from " + utf8(files.backup)};
-                }
-                remove_quietly(files.journal);
+                throw Error{"MoveFileExW", code, "restoring " + utf8(files.target) + " from " + utf8(files.backup)};
             }
-            return Settled{.bytes = std::move(previous), .refused = std::nullopt};
+            remove_quietly(files.journal);
         }
+        return Settled{.bytes = std::move(previous), .refused = std::nullopt};
     }
-    else if (modify)
-    {
-        // A journal with no backup: the write stopped before its replace, or was the file's first. The target is
-        // all there is, and the caller judges it.
-        remove_quietly(files.journal);
-    }
+    // Neither copy passes the check: the caller judges the target, and the backup stays.
     return Settled{.bytes = std::move(current.bytes), .refused = std::move(current.too_large)};
 }
 
@@ -644,14 +692,32 @@ std::optional<std::vector<std::byte>> take(Settled settled)
     return std::move(settled.bytes);
 }
 
-bool exists_quietly(const std::filesystem::path& file) noexcept
+// What an earlier write left is settled before a write starts: by its journal, or, for a backup with no journal, by
+// the rule that the target is the good copy. A backup that then still cannot be deleted is one the target has
+// replaced; while it is there no write may start, because a later failure could put it back over a newer version.
+void settle_before_write(const Files& files, const AtomicFileSeams& seams)
 {
-    return GetFileAttributesW(file.c_str()) != INVALID_FILE_ATTRIBUTES;
+    if (!file_exists(files.journal) && !file_exists(files.backup))
+    {
+        return;
+    }
+    static_cast<void>(settle(files, std::numeric_limits<std::uint64_t>::max(), {}, seams, true));
+    if (DeleteFileW(files.backup.c_str()) == FALSE)
+    {
+        const DWORD code = GetLastError();
+        if (code != ERROR_FILE_NOT_FOUND && code != ERROR_PATH_NOT_FOUND)
+        {
+            throw Error{"DeleteFileW", code,
+                        "removing " + utf8(files.backup) + ", the backup of an earlier write that " +
+                            utf8(files.target) + " has replaced; nothing was written"};
+        }
+    }
+    remove_quietly(files.journal);
 }
 
 // Replaces the target with the verified temporary file. Throws Error with the target as it was; when the target was
 // already renamed away, the previous version is put back first.
-void replace_target(const Files& files, bool had_previous, bool kept_backup, const AtomicFileSeams& seams)
+void replace_target(const Files& files, bool had_previous, const AtomicFileSeams& seams)
 {
     if (!had_previous)
     {
@@ -661,14 +727,14 @@ void replace_target(const Files& files, bool had_previous, bool kept_backup, con
         }
         return;
     }
-    if (ReplaceFileW(files.target.c_str(), files.temporary.c_str(), kept_backup ? nullptr : files.backup.c_str(),
+    if (ReplaceFileW(files.target.c_str(), files.temporary.c_str(), files.backup.c_str(),
                      REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, nullptr, nullptr) != FALSE)
     {
         return;
     }
     const DWORD code = GetLastError();
     const Failure failure{.call = "ReplaceFileW", .code = code, .context = "replacing " + utf8(files.target)};
-    if (code == ERROR_UNABLE_TO_MOVE_REPLACEMENT_2 && !kept_backup)
+    if (code == ERROR_UNABLE_TO_MOVE_REPLACEMENT_2)
     {
         // The target was already renamed to the backup's name: put it back.
         throw replaced_then_failed(failure, files, true, seams);
@@ -717,33 +783,26 @@ void AtomicFile::Session::write(std::span<const std::byte> bytes) const
                       .journal = file_->journal_path()};
 
     bool had_previous = false;
-    // A backup still here with no journal was not left by this code's own sequence, so nothing says which copy is
-    // good: this write keeps it as what a failure goes back to and never replaces it with the target.
-    bool kept_backup = false;
+    bool journal_written = false;
     try
     {
         write_temporary(files.temporary, bytes, seams);
-        if (read_journal(files.journal))
-        {
-            // An earlier write was interrupted or could not restore: its journal says which copy is good, and
-            // that copy must be at the target's name before this write takes a backup of it.
-            static_cast<void>(settle(files, std::numeric_limits<std::uint64_t>::max(), {}, seams, true));
-        }
+        settle_before_write(files, seams);
         had_previous = file_exists(files.target);
-        kept_backup = file_exists(files.backup);
-        write_journal(files.journal, bytes, seams);
+        journal_written = true;
+        write_journal(files.journal, bytes, !had_previous, seams);
         if (const DWORD code = injected(seams, AtomicFileStep::Replace); code != 0)
         {
             throw Error{"ReplaceFileW", code, "replacing " + utf8(files.target)};
         }
-        replace_target(files, had_previous, kept_backup, seams);
+        replace_target(files, had_previous, seams);
     }
     catch (...)
     {
-        // The target is as it was before this write (or restored, or kept with its backup and the journal that
-        // says so): the temporary file goes, and so does a journal that describes a replace that never happened.
+        // The temporary file goes. So does this write's journal when the replace did not happen (no backup was
+        // made); a journal an earlier write left, with the copies it describes, stays for the next settling.
         remove_quietly(files.temporary);
-        if (!exists_quietly(files.backup) || kept_backup)
+        if (journal_written && !exists_quietly(files.backup))
         {
             remove_quietly(files.journal);
         }
@@ -756,17 +815,12 @@ void AtomicFile::Session::write(std::span<const std::byte> bytes) const
     }
     if (const auto failure = read_back_failure(files.target, bytes, AtomicFileStep::ReadBackTarget, seams))
     {
-        throw replaced_then_failed(*failure, files, had_previous || kept_backup, seams);
+        throw replaced_then_failed(*failure, files, had_previous, seams);
     }
-    // The new version is in place and verified. The backup goes first and the journal only once it is gone, so a
-    // backup that cannot be deleted still has the journal that tells the next read the target is the good copy.
-    if ((had_previous || kept_backup) && injected(seams, AtomicFileStep::DeleteBackup) == 0)
+    // The new version is in place and verified.
+    if (!had_previous || injected(seams, AtomicFileStep::DeleteBackup) == 0)
     {
-        remove_quietly(files.backup);
-    }
-    if (!exists_quietly(files.backup))
-    {
-        remove_quietly(files.journal);
+        remove_settled(files);
     }
 }
 

@@ -468,8 +468,9 @@ auto store_wrong_bytes(std::filesystem::path target, const bool* armed)
     };
 }
 
-// The journal a write of text leaves: its size and FNV-1a checksum, as AtomicFile writes it.
-std::string journal_for(std::string_view text)
+// The journal a write of text leaves: its size, its FNV-1a checksum, and whether it replaces a previous version or
+// is the file's first, as AtomicFile writes it.
+std::string journal_for(std::string_view text, std::string_view kind = "replace")
 {
     std::uint64_t hash = 14695981039346656037ULL;
     for (const char character : text)
@@ -477,7 +478,7 @@ std::string journal_for(std::string_view text)
         hash ^= static_cast<unsigned char>(character);
         hash *= 1099511628211ULL;
     }
-    return std::format("isotone-atomic-file 1 {} {:016x}\n", text.size(), hash);
+    return std::format("isotone-atomic-file 1 {} {:016x} {}\n", text.size(), hash, kind);
 }
 
 // A write whose target holds other bytes than were written and whose restore then fails: the report names both
@@ -620,7 +621,7 @@ void expect_journal_without_backup_keeps_the_target()
 
     // The same before a first write: there is still no file.
     const AtomicFile fresh{temp.path() / "fresh.json"};
-    put(fresh.journal_path(), journal_for(kWanted));
+    put(fresh.journal_path(), journal_for(kWanted, "first"));
     EXPECT_FALSE(fresh.read().has_value());
     EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
 }
@@ -629,8 +630,9 @@ void expect_journal_without_backup_keeps_the_target()
 void expect_a_broken_journal_decides_nothing()
 {
     for (const std::string_view broken :
-         {"not a journal\n", "isotone-atomic-file 1 8\n", "isotone-atomic-file 1 8 zz\n",
-          "isotone-atomic-file 1 8 00000000000000ff", "isotone-atomic-file 1 99999999999999999999999 00\n", ""})
+         {"not a journal\n", "isotone-atomic-file 1 8\n", "isotone-atomic-file 1 8 zz replace\n",
+          "isotone-atomic-file 1 8 00000000000000ff replace", "isotone-atomic-file 1 8 00000000000000ff\n",
+          "isotone-atomic-file 1 99999999999999999999999 00 replace\n", ""})
     {
         const TempFolder temp;
         const AtomicFile file{temp.path() / "data.json"};
@@ -647,10 +649,10 @@ TEST(AtomicFile, JournalReaderIsExact)
 {
     using isotone::core::is_atomic_file_journal;
     EXPECT_TRUE(is_atomic_file_journal(bytes_of(journal_for(kWanted))));
-    EXPECT_TRUE(is_atomic_file_journal(bytes_of(journal_for(""))));
-    EXPECT_FALSE(is_atomic_file_journal(bytes_of("")));
-    EXPECT_FALSE(is_atomic_file_journal(bytes_of("isotone-atomic-file 1 8 FF\n")));
-    EXPECT_FALSE(is_atomic_file_journal(bytes_of("isotone-atomic-file 1 8 ffffffffffffffffff\n")));
+    EXPECT_TRUE(is_atomic_file_journal(bytes_of(journal_for("", "first"))));
+    EXPECT_FALSE(is_atomic_file_journal(bytes_of(journal_for(kWanted, "other"))));
+    EXPECT_FALSE(is_atomic_file_journal(bytes_of("isotone-atomic-file 1 8 FF replace\n")));
+    EXPECT_FALSE(is_atomic_file_journal(bytes_of("isotone-atomic-file 1 8 ffffffffffffffffff replace\n")));
     EXPECT_FALSE(is_atomic_file_journal(bytes_of(journal_for(kWanted) + std::string(200, 'x'))));
 }
 
@@ -660,6 +662,67 @@ TEST(AtomicFile, JournalDecidesWithoutACheck)
     expect_journal_restores_over_a_wrong_target();
     expect_journal_without_backup_keeps_the_target();
     expect_a_broken_journal_decides_nothing();
+}
+
+// While another program holds the backup: the read gives the new version and cannot delete the backup, so the
+// journal that vouches for the target stays; and a write is refused, with the target as it was.
+void expect_stale_backup_blocks_writes(const AtomicFile& file)
+{
+    const auto scanner = hold_exclusively(file.backup_path());
+    EXPECT_EQ(text_of(file.read()), kWanted);
+    EXPECT_EQ(slurp(file.journal_path()), journal_for(kWanted));
+    const Error refused = error_of([&file] { file.write(bytes_of("a third version")); });
+    EXPECT_EQ(refused.call(), "DeleteFileW");
+    EXPECT_EQ(slurp(file.target()), kWanted);
+}
+
+// A backup the target has replaced but that could not be deleted (a scanner holds it) keeps its journal, no write
+// starts while it is there, and once it can go a failed write restores the newer version, never that backup.
+TEST(AtomicFile, StaleBackupIsNeverRestored)
+{
+    const TempFolder temp;
+    bool backup_stuck = true;
+    bool device_bad = false;
+    AtomicFileOptions options;
+    options.seams.fail = fail_step(AtomicFileStep::DeleteBackup, ERROR_SHARING_VIOLATION, &backup_stuck);
+    options.seams.after_replace = store_wrong_bytes(temp.path() / "data.json", &device_bad);
+    const AtomicFile file{temp.path() / "data.json", options};
+    put(file.target(), kPrevious);
+    file.write(bytes_of(kWanted));
+    expect_stale_backup_blocks_writes(file);
+
+    // The scanner lets go. A write that then fails its readback goes back to the newer version, not the stale one.
+    backup_stuck = false;
+    device_bad = true;
+    EXPECT_TRUE(throws_error([&file] { file.write(bytes_of("a third version")); }));
+    EXPECT_EQ(slurp(file.target()), kWanted);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
+
+// A first write whose target holds other bytes and could not be removed: those bytes are no version of the file,
+// and no later read returns them.
+TEST(AtomicFile, FirstWriteWrongBytesAreNeverReturned)
+{
+    const TempFolder temp;
+    bool device_bad = true;
+    bool drive_gone = true;
+    AtomicFileOptions options;
+    options.seams.after_replace = store_wrong_bytes(temp.path() / "data.json", &device_bad);
+    options.seams.fail = fail_step(AtomicFileStep::RestoreBackup, ERROR_NOT_READY, &drive_gone);
+    const AtomicFile file{temp.path() / "data.json", options};
+
+    EXPECT_TRUE(throws_error([&file] { file.write(bytes_of(kWanted)); }));
+    EXPECT_EQ(slurp(file.target()), kWrong);
+    EXPECT_EQ(slurp(file.journal_path()), journal_for(kWanted, "first"));
+    // While the wrong bytes cannot be removed, a read reports rather than return them, and keeps the evidence.
+    const Error error = error_of([&file] { static_cast<void>(file.read()); });
+    EXPECT_EQ(error.code(), static_cast<std::uint32_t>(ERROR_NOT_READY));
+    EXPECT_EQ(slurp(file.journal_path()), journal_for(kWanted, "first"));
+
+    // Once they can be removed there is no file, as before the write.
+    drive_gone = false;
+    EXPECT_FALSE(file.read().has_value());
+    EXPECT_TRUE(names_in(temp.path()).empty());
 }
 
 // A folder that cannot be written (the lock cannot be created): the read changes nothing and returns the copy the

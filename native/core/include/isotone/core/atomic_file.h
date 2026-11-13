@@ -54,8 +54,9 @@ struct AtomicFileOptions
 // that has no journal beside it.
 using AtomicFileCheck = std::function<bool(std::span<const std::byte> bytes)>;
 
-// Whether bytes are a journal as AtomicFile writes one ("isotone-atomic-file 1 <size> <checksum in hex>" and a
-// line break, at most 128 bytes), read exactly as a settling read reads <name>.txn. For the fuzz target and tests.
+// Whether bytes are a journal as AtomicFile writes one ("isotone-atomic-file 1 <size> <checksum in hex> <first or
+// replace>" and a line break, at most 128 bytes), read exactly as a settling read reads <name>.txn. For the fuzz
+// target and tests.
 // Throws std::bad_alloc only. Any thread.
 [[nodiscard]] bool is_atomic_file_journal(std::span<const std::byte> bytes);
 
@@ -66,9 +67,11 @@ using AtomicFileCheck = std::function<bool(std::span<const std::byte> bytes)>;
 // journal go once the target has read back correct. Writers in any process take turns through <name>.lock, which
 // is deleted when its holder closes it or dies. Killing the process at any instant, or a write that fails and
 // cannot put the previous version back, leaves a complete old or new file and a journal that says which: the next
-// read or write keeps the target when it holds the journal's bytes and otherwise restores the backup, with no
-// knowledge of the file's format. Every member function may be called from any thread; every failure is an Error
-// naming the failing call.
+// read or write keeps the target when it holds the journal's bytes and otherwise restores the backup (or, after a
+// first write, removes a target that is not what was written), with no knowledge of the file's format. A backup the
+// target has replaced but that cannot be deleted yet keeps its journal, and no write starts while it is there, so
+// no failure can ever put an older version back over a newer one. Every member function may be called from any thread;
+// every failure is an Error naming the failing call.
 class AtomicFile
 {
   public:
