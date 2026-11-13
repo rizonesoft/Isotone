@@ -244,8 +244,8 @@ Every later phase builds on the native stack's foundations, so this phase proves
 | [ ] | `D01 T25 §2` | Compare and Approve, in the Gates                                                                   |   3   |
 | [ ] | `D01 T25 §3` | The Repeatability Proof                                                                             |   3   |
 | [ ] | `D01 T26 §1` | The Watcher and Encrypted Minidumps                                                                 |   4   |
-| [ ] | `D01 T26 §2` | Sending a Report, the WER Exclusion, Symbols, and the Crash Proofs                                  |   3   |
-| [ ] | `D01 T26 §3` | Staging the Host in the Three Install Modes                                                         |   3   |
+| [ ] | `D01 T26 §2` | Sending a Report, the WER Exclusion, and Symbols                                                    |   3   |
+| [ ] | `D01 T26 §3` | Packaging the Host for the Three Install Modes                                                      |   4   |
 | [ ] | `D01 T26 §4` | The Crash Proofs in Every Install Mode                                                              |   2   |
 | [x] | `D00 T03 §3` | Export the app icon rasters from the SVG sources                                                    |  16   |
 
