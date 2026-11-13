@@ -12,8 +12,9 @@
    {"field": "name", "path": "AGENTS.md", "pattern": "the \\*\\*{value}\\*\\*"},
    {"field": "name", "path": "installer/Suite.iss", "pattern": "#define AppName \"{value}\""},
    {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
-   {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"},
-   {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "\\| `{value}1\\.2\\.3` \\|"}
+   {"field": "slug", "path": "README.md", "pattern": "<img alt=\"{name}\" src=\"resources/brand/{value}-wordmark-on-light\\.svg\""},
+   {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "{value}1\\.2\\.3\\s+-> {name}$"},
+   {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"}
   ]
  },
  "apps": [
@@ -26,10 +27,12 @@
     {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
     {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
     {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
-    {"field": "name", "path": "README.md", "pattern": "^### {value} \\(vector\\)$"},
+    {"field": "slug", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\|[^\\n]*(?:native/|todo/\\d{2}-){value}/"},
+    {"field": "role", "path": "README.md", "pattern": "^### {name} \\((?i:{value})\\)$"},
     {"field": "name", "path": "installer/Stilus.iss", "pattern": "#define AppName \"{value}\""},
-    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"},
-    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "\\| `{value}1\\.2\\.3` \\| {name} \\|"}
+    {"field": "slug", "path": "installer/Stilus.iss", "pattern": "resources\\\\icons\\\\{value}\\\\{value}\\.ico"},
+    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "{value}1\\.2\\.3\\s+-> {name}\\b"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "^\\| `{value}1\\.2\\.3` \\| {name} \\|"}
    ]
   },
   {
@@ -41,10 +44,12 @@
     {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
     {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
     {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
-    {"field": "name", "path": "README.md", "pattern": "^### {value} \\(raster\\)$"},
+    {"field": "slug", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\|[^\\n]*(?:native/|todo/\\d{2}-){value}/"},
+    {"field": "role", "path": "README.md", "pattern": "^### {name} \\((?i:{value})\\)$"},
     {"field": "name", "path": "installer/Gesso.iss", "pattern": "#define AppName \"{value}\""},
-    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"},
-    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "\\| `{value}1\\.2\\.3` \\| {name} \\|"}
+    {"field": "slug", "path": "installer/Gesso.iss", "pattern": "resources\\\\icons\\\\{value}\\\\{value}\\.ico"},
+    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "{value}1\\.2\\.3\\s+-> {name}\\b"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "^\\| `{value}1\\.2\\.3` \\| {name} \\|"}
    ]
   },
   {
@@ -56,10 +61,12 @@
     {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
     {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
     {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
-    {"field": "name", "path": "README.md", "pattern": "^### {value} \\(darkroom\\)$"},
+    {"field": "slug", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\|[^\\n]*(?:native/|todo/\\d{2}-){value}/"},
+    {"field": "role", "path": "README.md", "pattern": "^### {name} \\((?i:{value})\\)$"},
     {"field": "name", "path": "installer/Albumen.iss", "pattern": "#define AppName \"{value}\""},
-    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"},
-    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "\\| `{value}1\\.2\\.3` \\| {name} \\|"}
+    {"field": "slug", "path": "installer/Albumen.iss", "pattern": "resources\\\\icons\\\\{value}\\\\{value}\\.ico"},
+    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "{value}1\\.2\\.3\\s+-> {name}\\b"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "^\\| `{value}1\\.2\\.3` \\| {name} \\|"}
    ]
   },
   {
@@ -71,8 +78,9 @@
     {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
     {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
     {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
-    {"field": "name", "path": "README.md", "pattern": "^\\| {value} \\| "},
-    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "`{value}`"}
+    {"field": "slug", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\|[^\\n]*(?:native/|todo/\\d{2}-){value}/"},
+    {"field": "role", "path": "README.md", "pattern": "^\\| {name} \\| A (?i:{value})\\b"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "^\\| `{value}1\\.2\\.3` \\| {name} \\(planned\\) \\|"}
    ]
   },
   {
@@ -84,8 +92,9 @@
     {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
     {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
     {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
-    {"field": "name", "path": "README.md", "pattern": "^\\| {value} \\| "},
-    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "`{value}`"}
+    {"field": "slug", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\|[^\\n]*(?:native/|todo/\\d{2}-){value}/"},
+    {"field": "role", "path": "README.md", "pattern": "^\\| {name} \\| A (?i:{value})\\b"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "^\\| `{value}1\\.2\\.3` \\| {name} \\(planned\\) \\|"}
    ]
   },
   {
@@ -97,8 +106,9 @@
     {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
     {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
     {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
-    {"field": "name", "path": "README.md", "pattern": "^\\| {value} \\| "},
-    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "`{value}`"}
+    {"field": "slug", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\|[^\\n]*(?:native/|todo/\\d{2}-){value}/"},
+    {"field": "role", "path": "README.md", "pattern": "^\\| {name} \\| A (?i:{value})\\b"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "^\\| `{value}1\\.2\\.3` \\| {name} \\(planned\\) \\|"}
    ]
   }
  ],

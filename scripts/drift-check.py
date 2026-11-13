@@ -130,6 +130,13 @@ def load_facts(root: Path) -> tuple[dict | None, list[Finding]]:
             if field not in named:
                 problems.append(f"{where}.{field} names no copy: a fact with no copy is not guarded (add one to "
                                 f"{where}.copies)")
+    # A fact belongs to one owner: two apps (or an app and the suite) with the same name, slug, or tag prefix would
+    # let one's copies stand for the other's.
+    for field in SUITE_FIELDS:
+        values = [owner.get(field) for owner in [suite, *apps] if isinstance(owner, dict)]
+        for value in sorted({v for v in values if isinstance(v, str) and values.count(v) > 1}):
+            problems.append(f"the {field} {value!r} is given to more than one of the suite and the apps; each owns "
+                            f"its own")
     repo = need(facts, "repository", dict, "facts")
     for key in ("slug", "description", "homepage"):
         need(repo, key, str, "repository")
@@ -545,11 +552,16 @@ def self_test() -> int:
             {"field": "name", "path": "README.md", "pattern": "^# {value}$"},
             {"field": "slug", "exists": "icons/{value}.svg"},
             {"field": "tag_prefix", "path": "release.yml", "pattern": "- '{value}\\*'"}]},
-        "apps": [{"name": "Newapp", "slug": "newapp", "tag_prefix": "newapp-v", "role": "Vector editor", "copies": [
+        # Two apps, each copy bound to its own app (the name and the fact on one line), so a fact moved from one app
+        # to the other is refused as surely as a new one.
+        "apps": [{"name": name, "slug": slug, "tag_prefix": f"{slug}-v", "role": role, "copies": [
             {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
             {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
+            {"field": "role", "path": "README.md", "pattern": "^### {name} \\((?i:{value})\\)$"},
             {"field": "slug", "exists": "icons/{value}.svg"},
-            {"field": "tag_prefix", "path": "release.yml", "pattern": "- '{value}\\*'"}]}],
+            {"field": "slug", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\|[^\\n]*native/{value}/"},
+            {"field": "tag_prefix", "path": "release.yml", "pattern": "#   {value}1\\.2\\.3 -> {name}$"}]}
+                 for name, slug, role in (("Newapp", "newapp", "Vector editor"), ("Twoapp", "twoapp", "Raster editor"))],
         "repository": {"slug": "owner/Newsuite", "description": "Newsuite: creative apps in native code.",
                        "topics": ["graphics", "windows"], "homepage": "https://example.invalid/newsuite/"},
         "readme": {"path": "README.md", "opening_line": "Creative apps on one shared core."},
@@ -576,8 +588,12 @@ def self_test() -> int:
     counted["allow"]["counts"] = [{"path": "docs/notes.md", "word": old_app, "count": 2, "reason": "a dated note"}]
     readme = ("# Newsuite Graphics Suite\n\nCreative apps on one shared core.\n\n"
               "[![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C)](x)\n")
-    copies = {"AGENTS.md": "| **Newapp** | Vector editor (an alternative) |\n", "icons/newsuite.svg": "<svg/>\n",
-              "icons/newapp.svg": "<svg/>\n", "release.yml": "tags:\n  - 'newsuite-v*'\n  - 'newapp-v*'\n"}
+    readme += "\n### Newapp (vector editor)\n\n### Twoapp (raster editor)\n"
+    copies = {"AGENTS.md": ("| **Newapp** | Vector editor (an alternative) | under `native/newapp/` |\n"
+                            "| **Twoapp** | Raster editor (an alternative) | under `native/twoapp/` |\n"),
+              "icons/newsuite.svg": "<svg/>\n", "icons/newapp.svg": "<svg/>\n", "icons/twoapp.svg": "<svg/>\n",
+              "release.yml": ("#   newapp-v1.2.3 -> Newapp\n#   twoapp-v1.2.3 -> Twoapp\n"
+                              "tags:\n  - 'newsuite-v*'\n  - 'newapp-v*'\n  - 'twoapp-v*'\n")}
 
     def tree(tmp: Path, files: "dict[str, str] | dict[str, str | bytes]", facts: dict | str | None = None) -> list[str]:
         """Write a tree and return its file list; `facts` replaces the base facts (a string is written as is)."""
@@ -716,15 +732,17 @@ def self_test() -> int:
     found = run({**notes, "README.md": readme.replace("# Newsuite Graphics Suite", "# Othersuite Graphics Suite")}, renamed)
     check("the copy updated to the new fact passes", found, [])
     reroled = json.loads(json.dumps(base))
-    reroled["apps"][0]["role"] = "Raster editor"
+    reroled["apps"][0]["role"] = "Drawing tool"
     found = run(notes, reroled)
-    check("a changed app role refuses the copy still stating the old one",
-          (len(found), has(found, "AGENTS.md:0:fact-copy:", "Newapp's role", "'Raster editor'")), (1, True))
+    check("a changed app role refuses every copy still stating the old one",
+          (len(found), has(found, "AGENTS.md:0:fact-copy:", "Newapp's role", "'Drawing tool'"),
+           has(found, "README.md:0:fact-copy:", "Newapp's role")), (2, True, True))
     reslugged = json.loads(json.dumps(base))
     reslugged["apps"][0]["slug"] = "otherapp"
     found = run(notes, reslugged)
     check("a changed slug refuses while the files that follow it have not moved",
-          (len(found), has(found, "icons/otherapp.svg:0:fact-copy:", "not in the tree")), (1, True))
+          (len(found), has(found, "icons/otherapp.svg:0:fact-copy:", "not in the tree"),
+           has(found, "AGENTS.md:0:fact-copy:", "Newapp's slug")), (2, True, True))
     retagged = json.loads(json.dumps(base))
     retagged["apps"][0]["tag_prefix"] = "other-v"
     found = run(notes, retagged)
@@ -733,12 +751,33 @@ def self_test() -> int:
     renamed_app = json.loads(json.dumps(base))
     renamed_app["apps"][0]["name"] = "Otherapp"
     found = run(notes, renamed_app)
-    check("a changed app name refuses every copy keyed to it (the name row, and the role row found by the name)",
-          (len(found), has(found, "Newapp") is False and has(found, "Otherapp's name"), has(found, "Otherapp's role")),
+    check("a changed app name refuses every copy keyed to it (each row and line found by the name)",
+          (len(found), has(found, "Newapp") is False and has(found, "Otherapp's name"), has(found, "Otherapp's role"),
+           has(found, "Otherapp's slug"), has(found, "Otherapp's tag_prefix")), (5, True, True, True, True))
+    # Reconciliation review: a fact moved from one app to the other was satisfied by the other app's text.
+    swapped = json.loads(json.dumps(base))
+    swapped["apps"][0]["slug"], swapped["apps"][1]["slug"] = "twoapp", "newapp"
+    found = run(notes, swapped)
+    check("two apps' slugs swapped are refused, though every icon path still exists",
+          (has(found, "AGENTS.md:0:fact-copy:", "Newapp's slug"), has(found, "AGENTS.md:0:fact-copy:", "Twoapp's slug")),
+          (True, True))
+    stolen = json.loads(json.dumps(base))
+    stolen["apps"][0]["tag_prefix"] = "twoapp-v"
+    found = run(notes, stolen)
+    check("one app given another's tag prefix is refused, as a repeated fact and as a copy",
+          (has(found, "facts-malformed", "tag_prefix 'twoapp-v' is given to more than one"),), (True,))
+    stolen = json.loads(json.dumps(base))
+    stolen["apps"][0]["role"] = "Raster editor"
+    stolen["apps"][1]["role"] = "Vector editor"
+    found = run({**notes, "AGENTS.md": copies["AGENTS.md"].replace("| Vector editor", "| X").replace(
+        "| Raster editor", "| Vector editor").replace("| X", "| Raster editor")}, stolen)
+    check("two apps' roles swapped with the table updated still refuse the README headings stating the old ones",
+          (len(found), has(found, "README.md:0:fact-copy:", "Newapp's role"), has(found, "README.md:0:fact-copy:", "Twoapp's role")),
           (2, True, True))
     found = run({k: v for k, v in notes.items()}, base, listed=["README.md", FACTS_PATH, "docs/notes.md",
                                                                 "native/CMakeLists.txt", "native/toolchain.json",
-                                                                "icons/newsuite.svg", "icons/newapp.svg", "release.yml"])
+                                                                "icons/newsuite.svg", "icons/newapp.svg",
+                                                                "icons/twoapp.svg", "release.yml"])
     check("a copy's file that is not in the tree is a finding", has(found, "AGENTS.md:0:fact-copy:", "not in the tree"),
           True)
     unguarded = json.loads(json.dumps(base))

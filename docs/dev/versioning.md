@@ -11,9 +11,12 @@ The suite's apps version and release independently from one repository. The poli
 | `stilus-v1.2.3` | Stilus | `Stilus-1.2.3-win-x64-Setup.exe`, `Stilus-1.2.3-win-x64-Portable.zip`, and the same pair for `win-arm64` |
 | `gesso-v1.2.3` | Gesso | The same four files for Gesso |
 | `albumen-v1.2.3` | Albumen | The same four files for Albumen |
+| `tinctura-v1.2.3` | Tinctura (planned) | The same four files for Tinctura, once its plan reaches a release |
+| `capio-v1.2.3` | Capio (planned) | The same four files for Capio, once its plan reaches a release |
+| `folium-v1.2.3` | Folium (planned) | The same four files for Folium, once its plan reaches a release |
 | `isotone-v1.2.3` | Suite bundle | `Isotone-1.2.3-win-<arch>-Setup.exe`, `Isotone-1.2.3-win-<arch>-Portable.zip` |
 
-Only tags with an app's own prefix move that app's version, so a `stilus-v` tag never moves Gesso's. The planned apps take `tinctura-v`, `capio-v`, and `folium-v` when their plans reach a release.
+Only tags with an app's own prefix move that app's version, so a `stilus-v` tag never moves Gesso's.
 
 ## How a version is computed
 

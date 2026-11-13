@@ -92,7 +92,7 @@ Professional graphics software has drifted toward subscriptions, sign-ins, and c
 
 Legend: ✅ works today · 🚧 in progress · 📋 planned
 
-### Stilus (vector)
+### Stilus (vector editor)
 
 Stilus began life as the Bezier project and was imported here with its full history (preserved at the `csharp-final` Git tag as the behavior reference for the native C++23 implementation).
 
@@ -108,7 +108,7 @@ Stilus began life as the Bezier project and was imported here with its full hist
 | EPS, AI, and PDF import and export | 📋 | Target formats, not yet implemented |
 | Shared `isotone::core` & `isotone::ui` | 🚧 | Shared C++23 core and UI toolkit under `native/` |
 
-### Gesso (raster)
+### Gesso (raster editor)
 
 | Area | Status | Notes |
 | ---- | :----: | ----- |
@@ -120,7 +120,7 @@ Stilus began life as the Bezier project and was imported here with its full hist
 | PNG, JPEG, TIFF, PSD | 📋 | Target formats |
 | Plugins and scripting | 📋 | Out-of-process plug-in host and automation planned |
 
-### Albumen (darkroom)
+### Albumen (digital darkroom, photo manager, and fast image viewer)
 
 | Area | Status | Notes |
 | ---- | :----: | ----- |
@@ -137,8 +137,8 @@ Stilus began life as the Bezier project and was imported here with its full hist
 | App | What it is | Status |
 | --- | ---------- | :----: |
 | Tinctura | A color picker and color studio: a system-wide eyedropper, every color space, palettes and harmonies, contrast and color-blindness checks | 📋 |
-| Capio | Screenshots and screen recording: every capture mode, a full annotation editor, OCR, pin to screen, and recording to MP4 and GIF | 📋 |
-| Folium | Page layout and publishing, an InDesign alternative | 📋 |
+| Capio | A screenshot and screen recording app: every capture mode, a full annotation editor, OCR, pin to screen, and recording to MP4 and GIF | 📋 |
+| Folium | A page layout and publishing app, an InDesign alternative | 📋 |
 
 ## Architecture
 
