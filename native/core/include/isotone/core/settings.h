@@ -123,7 +123,8 @@ class Settings
     [[nodiscard]] std::string get_string(std::string_view key, std::string fallback) const;
 
     // Changes one setting, or several in one write. The file is read again under its lock and only these keys are
-    // changed in it, so another process's settings are kept; a key that already holds its value changes nothing,
+    // changed in it, so another process's settings are kept; a key given more than once takes its last value; a key
+    // that already holds its value changes nothing,
     // and when nothing changes nothing is written or logged. Each changed key is logged as one Information event
     // naming the key and the new value. Throws Error, with the file, the values in memory, and the change log all
     // as they were, when a key is empty or not UTF-8, a string is not UTF-8, a double is not finite, the document

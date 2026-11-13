@@ -280,6 +280,48 @@ TEST(Settings, UnchangedSetWritesNothing)
     EXPECT_DOUBLE_EQ(reopened.get_double("recent.count", 0.0), 3.0);
 }
 
+// A whole number the file holds past the signed range is not equal to any signed value: -1 is a change.
+TEST(Settings, UnsignedValueIsNotASignedOne)
+{
+    const TempFolder temp;
+    Log log{memory_log(temp)};
+    put(temp.path() / "settings.json", R"({"version": 1, "values": {"count": 18446744073709551615, "small": 7}})");
+    Settings settings{temp.path(), log};
+    EXPECT_EQ(settings.get_int("count", 0), 0);
+
+    settings.set("count", std::int64_t{-1});
+    EXPECT_EQ(settings.get_int("count", 0), -1);
+    EXPECT_EQ(Settings(temp.path(), log).get_int("count", 0), -1);
+    EXPECT_EQ(events_with(log, kChangedTemplate).size(), 1U);
+    // A value in range that JSON stored unsigned is still the same whole number.
+    settings.set("small", std::int64_t{7});
+    EXPECT_EQ(events_with(log, kChangedTemplate).size(), 1U);
+}
+
+// A key given twice in one set takes its last value: compared once with the file, logged once.
+TEST(Settings, RepeatedKeyTakesItsLastValue)
+{
+    const TempFolder temp;
+    Log log{memory_log(temp)};
+    int writes = 0;
+    SettingsOptions options;
+    options.seams.fail = count_writes(writes);
+    Settings settings{temp.path(), log, options};
+    settings.set("a", std::int64_t{1});
+
+    // Back to the value it holds: nothing is written or logged, and no value that was never saved is logged.
+    settings.set({{"a", std::int64_t{2}}, {"a", std::int64_t{1}}});
+    EXPECT_EQ(writes, 1);
+    EXPECT_EQ(events_with(log, kChangedTemplate).size(), 1U);
+
+    settings.set({{"a", std::int64_t{2}}, {"b", true}, {"a", std::int64_t{3}}});
+    EXPECT_EQ(writes, 2);
+    const auto changed = events_with(log, kChangedTemplate);
+    EXPECT_EQ(changed.size(), 3U);
+    EXPECT_EQ(std::get<std::int64_t>(changed.at(1).fields.at(1).value), 3);
+    EXPECT_EQ(settings.get_int("a", 0), 3);
+}
+
 TEST(Settings, SetSeveralWritesOnce)
 {
     const TempFolder temp;

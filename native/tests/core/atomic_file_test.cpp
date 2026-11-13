@@ -450,14 +450,14 @@ TEST(AtomicFile, ReadTakesNoLockAndWritesNothing)
 
 // A write whose target reads back wrong and whose restore then fails: the report names both failures and both
 // files, and neither copy is lost.
-void expect_failed_restore_keeps_both(const AtomicFile& file)
+void expect_failed_restore_keeps_both(const AtomicFile& file, std::string_view unverified)
 {
-    const Error error = error_of([&file] { file.write(bytes_of("unverified")); });
+    const Error error = error_of([&file, unverified] { file.write(bytes_of(unverified)); });
     const std::string report{error.what()};
     EXPECT_EQ(error.code(), static_cast<std::uint32_t>(ERROR_CRC));
     EXPECT_TRUE(report.contains("restoring the previous version then failed with error 21")) << report;
     EXPECT_TRUE(report.contains("data.json.bak")) << report;
-    EXPECT_EQ(slurp(file.target()), "unverified");
+    EXPECT_EQ(slurp(file.target()), unverified);
     EXPECT_EQ(slurp(file.backup_path()), "good previous");
 }
 
@@ -466,21 +466,44 @@ TEST(AtomicFile, FailedRestoreKeepsBothCopiesAndSettlesLater)
     const TempFolder temp;
     bool drive_gone = true;
     AtomicFileOptions options;
-    options.seams.read_back = corrupt_read_back(AtomicFileStep::ReadBackTarget, &drive_gone);
+    options.seams.read_back = corrupt_read_back(AtomicFileStep::ReadBackTarget);
     options.seams.fail = fail_step(AtomicFileStep::RestoreBackup, ERROR_NOT_READY, &drive_gone);
     const AtomicFile file{temp.path() / "data.json", options};
     put(file.target(), "good previous");
-    expect_failed_restore_keeps_both(file);
+    expect_failed_restore_keeps_both(file, "unverified");
 
     // The next read, with the caller's check, restores the version that passes it.
     drive_gone = false;
     EXPECT_EQ(text_of(file.read(starts_good)), "good previous");
     EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
 
-    // And a write after the same double failure settles it too.
-    drive_gone = true;
-    expect_failed_restore_keeps_both(file);
+// After a failed restore, a write retried with no read between must not back the unverified target up over the
+// last good version: every further failure still leaves that version, and the first restore that works brings it
+// back.
+TEST(AtomicFile, RetriedWriteNeverOverwritesTheLastGoodBackup)
+{
+    const TempFolder temp;
+    bool readback_wrong = true;
+    bool drive_gone = true;
+    AtomicFileOptions options;
+    options.seams.read_back = corrupt_read_back(AtomicFileStep::ReadBackTarget, &readback_wrong);
+    options.seams.fail = fail_step(AtomicFileStep::RestoreBackup, ERROR_NOT_READY, &drive_gone);
+    const AtomicFile file{temp.path() / "data.json", options};
+    put(file.target(), "good previous");
+    expect_failed_restore_keeps_both(file, "unverified one");
+    expect_failed_restore_keeps_both(file, "unverified two");
+
+    // The drive is back but the write still reads back wrong: the restore now works, to the last good version.
     drive_gone = false;
+    EXPECT_TRUE(throws_error([&file] { file.write(bytes_of("unverified three")); }));
+    EXPECT_EQ(slurp(file.target()), "good previous");
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+
+    // And from the same double failure, a write that reads back correct settles it: the backup goes.
+    drive_gone = true;
+    expect_failed_restore_keeps_both(file, "unverified four");
+    readback_wrong = false;
     file.write(bytes_of("good next"));
     EXPECT_EQ(text_of(file.read(starts_good)), "good next");
     EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});

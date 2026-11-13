@@ -460,10 +460,14 @@ void AtomicFile::Session::write(std::span<const std::byte> bytes) const
     const auto backup = file_->backup_path();
 
     bool had_previous = false;
+    // A backup already here was left by a write that was interrupted or could not restore: it may be the last good
+    // version, so this write keeps it as what a failure goes back to and never replaces it with the target.
+    bool kept_backup = false;
     try
     {
         write_temporary(temporary, bytes, seams);
         had_previous = file_exists(target);
+        kept_backup = file_exists(backup);
         if (const DWORD code = injected(seams, AtomicFileStep::Replace); code != 0)
         {
             throw Error{"ReplaceFileW", code, "replacing " + utf8(target)};
@@ -477,13 +481,13 @@ void AtomicFile::Session::write(std::span<const std::byte> bytes) const
 
     if (had_previous)
     {
-        if (ReplaceFileW(target.c_str(), temporary.c_str(), backup.c_str(),
+        if (ReplaceFileW(target.c_str(), temporary.c_str(), kept_backup ? nullptr : backup.c_str(),
                          REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, nullptr, nullptr) == FALSE)
         {
             const DWORD code = GetLastError();
             const Failure failure{.call = "ReplaceFileW", .code = code, .context = "replacing " + utf8(target)};
             remove_quietly(temporary);
-            if (code == ERROR_UNABLE_TO_MOVE_REPLACEMENT_2)
+            if (code == ERROR_UNABLE_TO_MOVE_REPLACEMENT_2 && !kept_backup)
             {
                 // The target was already renamed to the backup's name: put it back.
                 throw replaced_then_failed(failure, target, backup, true, seams);
@@ -500,9 +504,9 @@ void AtomicFile::Session::write(std::span<const std::byte> bytes) const
 
     if (const auto failure = read_back_failure(target, bytes, AtomicFileStep::ReadBackTarget, seams))
     {
-        throw replaced_then_failed(*failure, target, backup, had_previous, seams);
+        throw replaced_then_failed(*failure, target, backup, had_previous || kept_backup, seams);
     }
-    if (had_previous && injected(seams, AtomicFileStep::DeleteBackup) == 0)
+    if ((had_previous || kept_backup) && injected(seams, AtomicFileStep::DeleteBackup) == 0)
     {
         // The new version is in place and verified; a backup that stays is removed by the next read.
         remove_quietly(backup);

@@ -78,7 +78,9 @@ class AtomicFile
 
         // Replaces the file with bytes as the class comment describes. On a failure the previous version is still
         // at the target's name (or there is still no file, when there was none). When restoring it fails too, both
-        // copies stay where they are, the Error names both failures and both paths, and the next read restores the
+        // copies stay where they are and the Error names both failures and both paths. A backup already beside the
+        // target when a write starts (left by that, or by a crash) is never overwritten: it stays what a failed
+        // write goes back to, and is deleted only once new bytes have read back correct. The next read restores a
         // backup if the target is missing or fails that read's check: a caller whose data matters passes one.
         void write(std::span<const std::byte> bytes) const;
 

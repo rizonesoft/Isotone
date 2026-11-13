@@ -183,14 +183,52 @@ LogValue to_log_value(const SettingValue& value)
     return std::visit([](const auto& held) { return LogValue{held}; }, value);
 }
 
-// Two values are the same setting when they are the same kind (an integer is an integer however JSON stored it)
-// and compare equal.
+// A JSON whole number as a signed 64-bit value, or nothing when it is past that range (JSON stores those unsigned).
+std::optional<std::int64_t> as_int64(const Json& number)
+{
+    if (number.is_number_unsigned() &&
+        number.get<std::uint64_t>() > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()))
+    {
+        return std::nullopt;
+    }
+    return number.get<std::int64_t>();
+}
+
+// Two values are the same setting when they are the same kind (a whole number is a whole number however JSON stored
+// it) and hold the same value. Whole numbers are compared as signed values in range, never through the library's
+// mixed-sign comparison, which casts.
 bool same_value(const Json& stored, const Json& wanted)
 {
-    const bool same_kind =
-        (stored.is_boolean() && wanted.is_boolean()) || (stored.is_number_integer() && wanted.is_number_integer()) ||
-        (stored.is_number_float() && wanted.is_number_float()) || (stored.is_string() && wanted.is_string());
+    if (stored.is_number_integer() && wanted.is_number_integer())
+    {
+        const auto stored_number = as_int64(stored);
+        const auto wanted_number = as_int64(wanted);
+        return stored_number.has_value() && stored_number == wanted_number;
+    }
+    const bool same_kind = (stored.is_boolean() && wanted.is_boolean()) ||
+                           (stored.is_number_float() && wanted.is_number_float()) ||
+                           (stored.is_string() && wanted.is_string());
     return same_kind && stored == wanted;
+}
+
+// The changes with one entry per key: the last value given for a key, at the place the key first appeared.
+std::vector<const SettingChange*> last_change_per_key(std::span<const SettingChange> changes)
+{
+    std::vector<const SettingChange*> final_changes;
+    for (const SettingChange& change : changes)
+    {
+        const auto earlier = std::ranges::find_if(
+            final_changes, [&change](const SettingChange* other) { return other->key == change.key; });
+        if (earlier == final_changes.end())
+        {
+            final_changes.push_back(&change);
+        }
+        else
+        {
+            *earlier = &change;
+        }
+    }
+    return final_changes;
 }
 
 bool is_utf8(const std::string& text)
@@ -419,19 +457,20 @@ struct Settings::Impl
             {
                 moved = move_aside(session, current.parsed);
             }
-            for (const SettingChange& change : changes)
+            // Each key is compared once, by its final value, with what the file holds.
+            for (const SettingChange* change : last_change_per_key(changes))
             {
-                Json wanted = to_json(change.value);
-                const auto stored = next.find(change.key);
+                Json wanted = to_json(change->value);
+                const auto stored = next.find(change->key);
                 if (stored == next.end())
                 {
-                    next.emplace(change.key, std::move(wanted));
-                    changed.push_back(&change);
+                    next.emplace(change->key, std::move(wanted));
+                    changed.push_back(change);
                 }
                 else if (!same_value(*stored, wanted))
                 {
                     *stored = std::move(wanted);
-                    changed.push_back(&change);
+                    changed.push_back(change);
                 }
             }
             if (!changed.empty())
@@ -501,12 +540,7 @@ std::int64_t Settings::get_int(std::string_view key, std::int64_t fallback) cons
     {
         return fallback;
     }
-    if (found->is_number_unsigned() &&
-        found->get<std::uint64_t>() > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()))
-    {
-        return fallback;
-    }
-    return found->get<std::int64_t>();
+    return as_int64(*found).value_or(fallback);
 }
 
 double Settings::get_double(std::string_view key, double fallback) const
