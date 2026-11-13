@@ -3,8 +3,9 @@
 .SYNOPSIS
   Runs the pinned clang-tidy over every native translation unit in the x64 Debug compile database (D00 T05 §4).
 .DESCRIPTION
-  Enters scripts/dev-env.ps1, configures and builds the x64-debug preset (the compile database comes from configuring,
-  and the generated build id header from building), then runs clang-tidy -p <build folder> on every translation unit
+  Enters scripts/dev-env.ps1, configures the x64-debug preset and builds its isotone_generated target (the compile
+  database comes from configuring, and the generated build id header from that target, which compiles and links
+  nothing), then runs clang-tidy -p <build folder> on every translation unit
   under native/ that the database lists, in parallel, with native/.clang-tidy (every warning an error). Names each
   translation unit with a diagnostic and its first diagnostics. -Root points it at another tree (the tests' scratch
   one), and -SkipBuild uses the compile database as it is. Exit 0 clean, 1 a diagnostic, 2 a build or tool failure or
@@ -37,7 +38,8 @@ if (-not $SkipBuild) {
   try {
     $configure = cmake --preset $Preset 2>&1
     if ($LASTEXITCODE -ne 0) { $configure | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: configuring $Preset failed"; exit 2 }
-    $build = cmake --build --preset $Preset 2>&1
+    # Only the generated sources: clang-tidy reads sources, so nothing is compiled or linked for it (D00 T05 §11).
+    $build = cmake --build --preset $Preset --target isotone_generated 2>&1
     if ($LASTEXITCODE -ne 0) { $build | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: building $Preset failed"; exit 2 }
   }
   finally { Pop-Location }
@@ -62,7 +64,7 @@ if ($Preset -eq 'x64-debug') {
     try {
       $configure = cmake --preset x64-release 2>&1
       if ($LASTEXITCODE -ne 0) { $configure | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: configuring x64-release failed"; exit 2 }
-      $build = cmake --build --preset x64-release 2>&1
+      $build = cmake --build --preset x64-release --target isotone_generated 2>&1
       if ($LASTEXITCODE -ne 0) { $build | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: building x64-release failed"; exit 2 }
     }
     finally { Pop-Location }

@@ -80,7 +80,7 @@ The repository-root `build/` folder is a gitignored scratch area for logs, cache
 pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; cmake --workflow --preset x64-debug'     # configure, build, and test one preset
 pwsh scripts/dev-env.ps1 -Arch x64 -Run 'Push-Location native; ctest --preset x64-debug -R BuildInfo'   # run the cases a change touches
 pwsh scripts/native-format.ps1 -Check        # clang-format on every native source (-Fix rewrites them)
-pwsh scripts/native-tidy.ps1                 # clang-tidy over the x64 Debug compile database
+pwsh scripts/native-tidy.ps1                 # clang-tidy over the x64 Debug compile database (it builds only the isotone_generated target: the generated sources, no compile or link)
 pwsh scripts/check-all.ps1                   # every gate (below); -SkipNative leaves the native stages out
 ```
 

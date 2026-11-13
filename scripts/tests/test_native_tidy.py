@@ -133,5 +133,56 @@ class NativeTidyTest(unittest.TestCase):
         self.assertIn("C6011", out)
 
 
+
+GENERATED_HEADER = Path("core") / "generated" / "isotone" / "core" / "build_id.h"
+
+
+@unittest.skipUnless(sys.platform == "win32" and VSWHERE.is_file() and shutil.which("pwsh"),
+                     "needs Windows, Visual Studio, and pwsh")
+class GeneratedSourcesTest(unittest.TestCase):
+    """The tidy gate builds the isotone_generated target and nothing else (D00 T05 §11)."""
+
+    def test_the_gate_builds_only_generated_sources(self):
+        builds = [line for line in TIDY.read_text(encoding="utf-8").splitlines() if "cmake --build" in line]
+        self.assertEqual(len(builds), 2, builds)
+        for line in builds:
+            self.assertIn("--target isotone_generated", line)
+
+    def generate(self, preset):
+        block = f"Push-Location native; cmake --build --preset {preset} --target isotone_generated; exit $LASTEXITCODE"
+        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(DEV_ENV), "-Arch", "x64", "-Run", block],
+                              capture_output=True, text=True, timeout=600, cwd=ROOT)
+        return proc.returncode, proc.stdout + proc.stderr
+
+    def test_the_generated_target_writes_the_header_and_compiles_and_links_nothing(self):
+        """With the header absent and with a stale one, in the repository's configured Debug and Release trees: the
+        target writes the current build id and runs no compile and no link step. A target that did not depend on the
+        build id step would leave the header absent or stale."""
+        head = subprocess.run(["git", "rev-parse", "--short=12", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+        self.assertRegex(head, r"^[0-9a-f]{12}$")
+        checked = 0
+        for preset in ("x64-debug", "x64-release"):
+            tree = ROOT / "artifacts" / "native" / preset
+            if not (tree / "build.ninja").is_file():
+                continue
+            header = tree / GENERATED_HEADER
+            for state in ("absent", "stale"):
+                with self.subTest(preset=preset, state=state):
+                    if state == "absent":
+                        header.unlink(missing_ok=True)
+                    else:
+                        header.write_text("stale\n", encoding="utf-8")
+                    code, out = self.generate(preset)
+                    self.assertEqual(code, 0, out)
+                    self.assertTrue(header.is_file(), out)
+                    text = header.read_text(encoding="utf-8")
+                    self.assertRegex(text, rf'#define ISOTONE_BUILD_ID "{head}(-dirty)?"')
+                    self.assertNotIn("Linking", out)
+                    self.assertNotIn("Building", out)
+                    checked += 1
+        if checked == 0:
+            self.skipTest("no configured x64-debug or x64-release tree under artifacts/native")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -60,6 +60,11 @@ endif()
 find_package(nlohmann_json CONFIG REQUIRED)
 
 add_subdirectory(core)
+# Every target that writes a generated source joins isotone_generated, the one target a tool that only reads the
+# sources builds (scripts/native-tidy.ps1): it compiles and links nothing. A new generator adds itself here
+# (D00 T05 §11).
+add_custom_target(isotone_generated)
+add_dependencies(isotone_generated isotone_build_id)
 if(BUILD_TESTING)
   add_subdirectory(tests)
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
