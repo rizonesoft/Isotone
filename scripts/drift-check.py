@@ -560,7 +560,8 @@ def self_test() -> int:
             {"field": "role", "path": "README.md", "pattern": "^### {name} \\((?i:{value})\\)$"},
             {"field": "slug", "exists": "icons/{value}.svg"},
             {"field": "slug", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\|[^\\n]*native/{value}/"},
-            {"field": "tag_prefix", "path": "release.yml", "pattern": "#   {value}1\\.2\\.3 -> {name}$"}]}
+            {"field": "tag_prefix", "path": "release.yml", "pattern": "#   {value}1\\.2\\.3 -> {name}$"},
+            {"field": "tag_prefix", "path": "release.yml", "pattern": "^  - '{value}\\*'$"}]}
                  for name, slug, role in (("Newapp", "newapp", "Vector editor"), ("Twoapp", "twoapp", "Raster editor"))],
         "repository": {"slug": "owner/Newsuite", "description": "Newsuite: creative apps in native code.",
                        "topics": ["graphics", "windows"], "homepage": "https://example.invalid/newsuite/"},
@@ -766,6 +767,12 @@ def self_test() -> int:
     found = run(notes, stolen)
     check("one app given another's tag prefix is refused, as a repeated fact and as a copy",
           (has(found, "facts-malformed", "tag_prefix 'twoapp-v' is given to more than one"),), (True,))
+    # Second reconciliation: the comment naming a prefix was bound, and the trigger itself went unchecked.
+    moved = json.loads(json.dumps(base))
+    moved["apps"][0]["tag_prefix"] = "newapp-release-v"
+    found = run({**notes, "release.yml": copies["release.yml"].replace("#   newapp-v1.2.3", "#   newapp-release-v1.2.3")}, moved)
+    check("a tag prefix changed with its comment updated still refuses the release trigger that was not",
+          (len(found), has(found, "release.yml:0:fact-copy:", "Newapp's tag_prefix", "'newapp-release-v'")), (1, True))
     stolen = json.loads(json.dumps(base))
     stolen["apps"][0]["role"] = "Raster editor"
     stolen["apps"][1]["role"] = "Vector editor"
