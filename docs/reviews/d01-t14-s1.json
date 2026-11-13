@@ -1,0 +1,90 @@
+{
+  "ref": "D01 T14 \u00a71",
+  "title": "The isotone::ui Library and the Generated Token Tables",
+  "implementation_sha": "f924ac690c8c5771f9b77560e6a588c46534e639",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-core/D01-T14-s1.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "Theme cases through CTest: x64-asan at the final C++ code -> 100% tests passed, 0 tests failed out of 83; x64-debug -> 0 failed out of 82; python scripts/generate-ui-tokens.py --check -> current, and exit 1 naming 'frame (dark)' on a changed value; python scripts/tests/test_generate_ui_tokens.py -> Ran 13 tests, OK; design-lint -> 0 new",
+    "Docs: docs/design/EDITING.md, docs/design/README.md, docs/dev/build.md, docs/dev/architecture.md, native/README.md, AGENTS.md, README.md -> docs-drift clean",
+    ".github/workflows/build.yml on f924ac690c8c5771f9b77560e6a588c46534e639 -> success https://github.com/rizonesoft/Isotone/actions/runs/43460477626",
+    ".github/workflows/plan.yml on f924ac690c8c5771f9b77560e6a588c46534e639 -> success https://github.com/rizonesoft/Isotone/actions/runs/43460477497"
+  ],
+  "completion": {
+    "report": "docs/reviews/01-core/D01-T14-s1.md",
+    "verdict": "reconciled",
+    "candidate": "f924ac690c8c5771f9b77560e6a588c46534e639",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/01-core/D01-T14-s1.md",
+    "candidate": "019e4d46c8d1fb596a8fdb349307ac0e48519cff",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "019e4d46c8d1fb596a8fdb349307ac0e48519cff",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "lenses": {
+      "docs-drift": "Does the range update every README, document, standard, skill and source comment that describes behaviour it changed? Name each one that still describes the old behaviour, with file:line and the sentence that is now false. A text that states the old behaviour is at least P2: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains."
+    },
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design",
+          "docs-drift"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}

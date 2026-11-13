@@ -45,7 +45,7 @@ track: F1
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The isotone::ui library and the generated token tables | D00 T07 §3 |  [ ]   |
+|   1   |   §1    | The isotone::ui library and the generated token tables | D00 T07 §3 |  [x]   |
 |   2   |   §2    | Run-time resolution and live switching, proved in the host | §1, D01 T15 §2, D01 T27 §2 |  [ ]   |
 
 ---
@@ -74,6 +74,9 @@ The library starts here because tokens are the first thing any surface draws wit
 - [x] Commit: `"ui: start isotone::ui with token tables generated from the design"` Done 2026-11-13: `43c8f99`, with the round-1 fixes in `a7cdfa9`, the final code candidate. Evidence: locally at `a7cdfa9`, `cmake --workflow --preset x64-asan`: `100% tests passed, 0 tests failed out of 83` (`build/t27s2/t14-asan-final.log`), `x64-debug`: `0 tests failed out of 82`, `native-tidy: 25 translation unit(s), 0 with diagnostics`; at `43c8f99`, `x64-release`: `0 tests failed out of 82`, `x64-dist` and `x64-analyze` build clean; in CI, which builds and tests every preset (x64 and ARM64, Debug, Release, AddressSanitizer, the fuzz preset, the dist presets, analysis, tidy, the artifact gates, and the token check), on `43c8f99`: `build success https://github.com/rizonesoft/Isotone/actions/runs/43450975171`, `plan-gates success https://github.com/rizonesoft/Isotone/actions/runs/43450975160`. The final code candidate itself, in CI on `158b91a13519` (the commit that holds `a7cdfa9`'s code and this note): `build success https://github.com/rizonesoft/Isotone/actions/runs/43455750482` (jobs `native` and `native-arm64-tests`: every preset built and tested, Release, dist, analysis, ARM64, tidy, and the artifact gates among them) and `plan-gates success https://github.com/rizonesoft/Isotone/actions/runs/43455750948`. The completion review's gap D01-T14-S1-C1 (the stale-row report stopped at 40 rows) is closed by `test_every_stale_row_is_named_however_many` (63 changed sizes, 63 names; it fails with the cut-off back): `python scripts/tests/test_generate_ui_tokens.py`: `Ran 13 tests`, `OK`. The commit body of `43c8f99` gives 81 tests for `x64-debug`, which is the count at that commit (9 Theme cases); 82 is the count with round 1's case.
 
 **Test checkpoint:** Unit test and static analysis: `Theme.EveryKeyResolvesInEveryState`, `Theme.ValuesMatchTokensJson`, `Theme.OrangeAndComputedHighlightReplaceTheStateKeys`, `Theme.DensitySelectsTheNeutralKeys`, `Theme.AliasesFollowTheirTarget`, and `Theme.HighContrastMapsEveryColor` pass through CTest on `x64-debug`, `x64-release`, `x64-asan`, and the ARM64 presets; `python scripts/generate-ui-tokens.py --check` exits 0, and exits 1 naming the token after one value in `tokens.json` is changed (quoted, then reverted); `python scripts/tests/test_generate_ui_tokens.py` passes; `python scripts/design-lint.py --baseline docs/design/.lint-baseline.json` reports `0 new`. Cheaper substitute that fails: a hand-written header of colors, which drifts from the design the first time a token changes and which `--check` would not catch.
+
+> **Verified:** 2026-11-13 | §1 | f924ac690c8c5771f9b77560e6a588c46534e639
+> **Review:** `docs/reviews/d01-t14-s1.json`
 
 ## 2. Run-Time Resolution and Live Switching, Proved in the Host
 
