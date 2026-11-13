@@ -8,8 +8,6 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 
 | TODO | Title | Status |
 | ---- | ----- | :----: |
-| [TODO-01](./TODO-01-dev-automation.md) | Dev-Automation Wiring | draft |
-| [TODO-03](./TODO-03-repo-layout.md) | Repository Layout, Visual Baselines, and App Icon Export | draft |
 | [TODO-07](./TODO-07-native-replan.md) | The Native Re-plan, Phase by Phase | draft |
 
 ## Completed
@@ -19,6 +17,8 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 | [TODO-04](./TODO-04-native-code-policy.md) | The C++ Standard, the Dependency Register, the Benchmark Harness, and the Advisory Job | 2026-11-09 |
 | [TODO-05](./TODO-05-native-spine.md) | The Native Spine: Toolchain, Build, Gates, and CI | 2026-11-09 |
 | [TODO-06](./TODO-06-retire-csharp.md) | Retire the C# Code and the .NET Toolchain | 2026-11-12 |
+| [TODO-01](./TODO-01-dev-automation.md) | Dev-Automation Wiring | 2026-11-13 |
+| [TODO-03](./TODO-03-repo-layout.md) | Repository Layout, Visual Baselines, and App Icon Export | 2026-11-13 |
 
 ## Superseded
 
@@ -38,7 +38,7 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 
 ## Out of scope
 
-- `Isotone.Core` and the apps (01 to 04)
+- `isotone::core`, `isotone::ui`, and the apps (01 to 04, 07 to 09)
 - Release packaging and signing (05), which consumes the build this domain writes
 - Developer and user documentation content (06)
 

@@ -180,8 +180,8 @@ Source map, one rule for every app (from `resources/icons/README.md`): 16 and 20
 
 ## Verification
 
-- [ ] `pwsh scripts/check-all.ps1` exits 0 after the moves
-- [ ] Every relative link in `docs/dev/stilus/*.md` and `docs/dev/gesso/*.md` resolves, and the samples sit under `native/tests/fixtures/stilus/svg/`
-- [ ] `docs/captures/` exists with a record per surface, and its README says the per-app captures are a before record and `golden/` holds the approved goldens
-- [ ] `python scripts/export-icons.py --check` exits 0, and every raster under `resources/icons/` is one it produces
-- [ ] `python scripts/todo-graph.py validate` clean
+- [x] `pwsh scripts/check-all.ps1` exits 0 after the moves Done 2026-11-13: `pwsh scripts/check-all.ps1 -SkipNative` exited 0 locally on 2026-11-13 (`check-all: all gates passed`, 39 PASS rows, the five icon gates among them); the native stages run in CI under the test cadence of 2026-11-13: `build success https://github.com/rizonesoft/Isotone/actions/runs/43354548810` on `4d5f6a780353` (every x64 and ARM64 preset, AddressSanitizer, `/analyze`, format, tidy, and the artifact gates), the last commit with code or gate changes.
+- [x] Every relative link in `docs/dev/stilus/*.md` and `docs/dev/gesso/*.md` resolves, and the samples sit under `native/tests/fixtures/stilus/svg/` Done 2026-11-13: the page-reading script printed `link ok` for all six links and `notice found` for the three pages; `native/tests/fixtures/stilus/svg/` holds `README.md`, `bezier-sample.svg`, and `test.svg`.
+- [x] `docs/captures/` exists with a record per surface, and its README says the per-app captures are a before record and `golden/` holds the approved goldens Done 2026-11-13: `docs/captures/` holds `README.md`, `stilus/`, and `gesso/`, a README per surface, and its README's two kinds say so; the sweep replaced the retired `Isotone.UI` in it and both surface READMEs with `isotone::ui`. `golden/` is created by the first approved golden.
+- [x] `python scripts/export-icons.py --check` exits 0, and every raster under `resources/icons/` is one it produces Done 2026-11-13: `200 raster(s) compared, 0 problem(s)`, with the stray check over every `PNG/` folder.
+- [x] `python scripts/todo-graph.py validate` clean Done 2026-11-13: `0 fatal, 0 warning(s)`.

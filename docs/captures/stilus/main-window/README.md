@@ -1,6 +1,6 @@
 # Stilus main window, before record
 
-The imported Stilus main window as it looked before `Isotone.UI` and the design system replaced it, captured by `D00 T03 §2`. A before record only: never a fidelity source (`docs/captures/README.md`, `standards/design-contract.md`).
+The imported Stilus main window as it looked before `isotone::ui` and the design system replaced it, captured by `D00 T03 §2`. A before record only: never a fidelity source (`docs/captures/README.md`, `standards/design-contract.md`).
 
 - **Preserved at:** the `csharp-final` Git tag. `D00 T06 §3` removed the captured Stilus app from `main`; the tag holds the code that drew this window, and these captures unchanged. Read the window's source with `git show csharp-final:src/Stilus/Bezier.Desktop/Views/MainWindowView.xaml`.
 - **Built from:** commit `b7ad3a5` (`dotnet build Isotone.slnx -c Debug`), run as `artifacts/bin/Bezier.Desktop/debug/Bezier.Desktop.exe`. The next commit, `f7747ff`, changed documentation only.

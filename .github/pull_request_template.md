@@ -14,7 +14,7 @@
 - [ ] Stilus
 - [ ] Gesso
 - [ ] Albumen
-- [ ] Isotone.Core
+- [ ] isotone::core or isotone::ui
 - [ ] Installer or packaging
 - [ ] CI, build, or tooling
 - [ ] Documentation

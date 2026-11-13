@@ -649,8 +649,8 @@ A file marked `status: superseded` hands its purpose to a successor, and its ope
 
 ## Verification
 
-- [ ] `python scripts/todo-graph.py self-test` reports `0 failed`
-- [ ] `python scripts/todo-graph.py validate` clean
-- [ ] `python scripts/todo-graph.py plan --check` clean
-- [ ] `python scripts/todo-claims.py` exits 0 at the raised floor
-- [ ] `pwsh scripts/check-all.ps1` exits 0
+- [x] `python scripts/todo-graph.py self-test` reports `0 failed` Done 2026-11-13: `1037 cases, 0 failed`.
+- [x] `python scripts/todo-graph.py validate` clean Done 2026-11-13: `85 todos, 847 sections -- 0 fatal, 0 warning(s)`.
+- [x] `python scripts/todo-graph.py plan --check` clean Done 2026-11-13: `implementation plan is current -- 41/840 sections complete`.
+- [x] `python scripts/todo-claims.py` exits 0 at the raised floor Done 2026-11-13: `636 claim(s) -- 125 hold, 511 deferred, 0 stale, 0 malformed; coverage 84/84, floor 78`.
+- [x] `pwsh scripts/check-all.ps1` exits 0 Done 2026-11-13: `pwsh scripts/check-all.ps1 -SkipNative` exited 0 locally on 2026-11-13 (`check-all: all gates passed`, 39 PASS rows, the five icon gates among them); the native stages run in CI under the test cadence of 2026-11-13: `build success https://github.com/rizonesoft/Isotone/actions/runs/43354548810` on `4d5f6a780353` (every x64 and ARM64 preset, AddressSanitizer, `/analyze`, format, tidy, and the artifact gates), the last commit with code or gate changes.

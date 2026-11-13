@@ -17,7 +17,7 @@ body:
         - Gesso (raster editor)
         - Albumen (darkroom and library)
         - Installer or portable ZIP
-        - Whole suite or Isotone.Core
+        - Whole suite, isotone::core, or isotone::ui
         - Other
     validations:
       required: true
