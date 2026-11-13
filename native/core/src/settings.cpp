@@ -449,13 +449,10 @@ struct Settings::Impl
         {
             const auto session = file.lock();
             Current current = read_current(session);
-            if (current.present && current.parsed.kind == SettingsDocument::Supported)
+            const bool unusable = current.present && current.parsed.kind != SettingsDocument::Supported;
+            if (current.present && !unusable)
             {
                 next = std::move(current.parsed.values);
-            }
-            else if (current.present)
-            {
-                moved = move_aside(session, current.parsed);
             }
             // Each key is compared once, by its final value, with what the file holds.
             for (const SettingChange* change : last_change_per_key(changes))
@@ -481,6 +478,11 @@ struct Settings::Impl
                     throw Error{"Settings::set", ERROR_FILE_TOO_LARGE,
                                 std::format("saving {}: the settings would take {} bytes, over the limit of {}",
                                             utf8(file.target()), text.size(), kSettingsMaxBytes)};
+                }
+                // Only a write that will go ahead moves an unusable file aside: a refused change leaves it in place.
+                if (unusable)
+                {
+                    moved = move_aside(session, current.parsed);
                 }
                 session.write(std::as_bytes(std::span{text}));
             }

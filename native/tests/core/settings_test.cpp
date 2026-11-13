@@ -612,6 +612,66 @@ TEST(Settings, OversizedWriteIsRefused)
     expect_merged_write_stops_at_the_limit();
 }
 
+// A set that is refused for size leaves an unusable file where it is: nothing is moved aside for a write that
+// will not happen.
+TEST(Settings, OversizedSetLeavesAnUnusableFileInPlace)
+{
+    const TempFolder temp;
+    Log log{memory_log(temp)};
+    Settings settings{temp.path(), log, fixed_clock()};
+    // Another process, of a newer version, saves its settings after this store was opened.
+    const std::string newer = R"({"version": 2, "values": {"a": 5}})";
+    put(settings.file(), newer);
+
+    const Error error =
+        error_of([&settings] { settings.set("blob", std::string(static_cast<std::size_t>(kSettingsMaxBytes), 'x')); });
+    EXPECT_EQ(error.code(), static_cast<std::uint32_t>(ERROR_FILE_TOO_LARGE));
+    EXPECT_EQ(slurp(settings.file()), newer);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"settings.json"});
+    EXPECT_EQ(settings.get_string("blob", "none"), "none");
+    EXPECT_TRUE(events_with(log, kChangedTemplate).empty());
+    EXPECT_EQ(count_level(log, LogLevel::Warning), 0U);
+}
+
+// Seams of a device that, while *failing, stores other settings than were written (valid ones) and then refuses
+// the restore.
+SettingsOptions wrong_bytes_and_no_restore(const std::shared_ptr<const bool>& failing, std::filesystem::path file)
+{
+    SettingsOptions options;
+    options.seams.after_replace = [failing, file = std::move(file)] {
+        if (*failing)
+        {
+            put(file, R"({"version": 1, "values": {"a": 999}})");
+        }
+    };
+    options.seams.fail = [failing](AtomicFileStep step) {
+        return *failing && step == AtomicFileStep::RestoreBackup ? static_cast<std::uint32_t>(ERROR_NOT_READY) : 0U;
+    };
+    return options;
+}
+
+// A save whose file ends up holding other settings than were written, valid ones, and whose restore fails: the
+// next start reads the last good settings, never the wrong ones, though both are well-formed documents.
+TEST(Settings, WrongButValidFileAfterAFailedRestoreIsNotRead)
+{
+    const TempFolder temp;
+    Log log{memory_log(temp)};
+    const auto failing = std::make_shared<bool>(false);
+    {
+        Settings settings{temp.path(), log, wrong_bytes_and_no_restore(failing, temp.path() / "settings.json")};
+        settings.set("a", std::int64_t{1});
+        *failing = true;
+        EXPECT_TRUE(throws_error([&settings] { settings.set("a", std::int64_t{2}); }));
+        EXPECT_EQ(settings.get_int("a", 0), 1);
+    }
+    EXPECT_EQ(inspect(slurp(temp.path() / "settings.json")), SettingsDocument::Supported);
+
+    const Settings reopened{temp.path(), log};
+    EXPECT_EQ(reopened.load_report().outcome, SettingsLoad::Loaded);
+    EXPECT_EQ(reopened.get_int("a", 0), 1);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"settings.json"});
+}
+
 TEST(Settings, NewerTargetSurvivesALeftoverBackup)
 {
     const TempFolder temp;

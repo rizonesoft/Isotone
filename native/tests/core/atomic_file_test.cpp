@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <iterator>
@@ -220,6 +221,8 @@ TEST(AtomicFile, FailureBeforeReplaceLeavesPrevious)
         {.step = AtomicFileStep::FlushTemporary, .code = ERROR_WRITE_FAULT, .call = "FlushFileBuffers"});
     expect_failed_step_keeps_previous(
         {.step = AtomicFileStep::ReadBackTemporary, .code = ERROR_READ_FAULT, .call = "ReadFile"});
+    expect_failed_step_keeps_previous(
+        {.step = AtomicFileStep::WriteJournal, .code = ERROR_DISK_FULL, .call = "WriteFile"});
     expect_failed_step_keeps_previous(
         {.step = AtomicFileStep::Replace, .code = ERROR_ACCESS_DENIED, .call = "ReplaceFileW"});
 
@@ -448,65 +451,234 @@ TEST(AtomicFile, ReadTakesNoLockAndWritesNothing)
     EXPECT_EQ(names_in(temp.path()), (std::set<std::string>{"data.json", "data.json.lock"}));
 }
 
-// A write whose target reads back wrong and whose restore then fails: the report names both failures and both
-// files, and neither copy is lost.
-void expect_failed_restore_keeps_both(const AtomicFile& file, std::string_view unverified)
+// Three versions of one file, each a complete document of its kind: no check by format can tell them apart.
+constexpr std::string_view kPrevious{R"({"a": 1})"};
+constexpr std::string_view kWanted{R"({"a": 2})"};
+// The wrong bytes are as long as the wanted ones, so only their content gives them away.
+constexpr std::string_view kWrong{R"({"a": 7})"};
+
+// An after_replace seam that stores other bytes at the target, as a failing device would, while *armed.
+auto store_wrong_bytes(std::filesystem::path target, const bool* armed)
 {
-    const Error error = error_of([&file, unverified] { file.write(bytes_of(unverified)); });
+    return [target = std::move(target), armed] {
+        if (*armed)
+        {
+            put(target, kWrong);
+        }
+    };
+}
+
+// The journal a write of text leaves: its size and FNV-1a checksum, as AtomicFile writes it.
+std::string journal_for(std::string_view text)
+{
+    std::uint64_t hash = 14695981039346656037ULL;
+    for (const char character : text)
+    {
+        hash ^= static_cast<unsigned char>(character);
+        hash *= 1099511628211ULL;
+    }
+    return std::format("isotone-atomic-file 1 {} {:016x}\n", text.size(), hash);
+}
+
+// A write whose target holds other bytes than were written and whose restore then fails: the report names both
+// failures and both files, and the wrong target, the previous version, and the journal all stay.
+void expect_failed_restore_keeps_both(const AtomicFile& file)
+{
+    const Error error = error_of([&file] { file.write(bytes_of(kWanted)); });
     const std::string report{error.what()};
     EXPECT_EQ(error.code(), static_cast<std::uint32_t>(ERROR_CRC));
     EXPECT_TRUE(report.contains("restoring the previous version then failed with error 21")) << report;
     EXPECT_TRUE(report.contains("data.json.bak")) << report;
-    EXPECT_EQ(slurp(file.target()), unverified);
-    EXPECT_EQ(slurp(file.backup_path()), "good previous");
+    EXPECT_EQ(slurp(file.target()), kWrong);
+    EXPECT_EQ(slurp(file.backup_path()), kPrevious);
+    EXPECT_EQ(slurp(file.journal_path()), journal_for(kWanted));
 }
 
 TEST(AtomicFile, FailedRestoreKeepsBothCopiesAndSettlesLater)
 {
     const TempFolder temp;
+    bool device_bad = true;
     bool drive_gone = true;
     AtomicFileOptions options;
-    options.seams.read_back = corrupt_read_back(AtomicFileStep::ReadBackTarget);
+    options.seams.after_replace = store_wrong_bytes(temp.path() / "data.json", &device_bad);
     options.seams.fail = fail_step(AtomicFileStep::RestoreBackup, ERROR_NOT_READY, &drive_gone);
     const AtomicFile file{temp.path() / "data.json", options};
-    put(file.target(), "good previous");
-    expect_failed_restore_keeps_both(file, "unverified");
+    put(file.target(), kPrevious);
+    expect_failed_restore_keeps_both(file);
 
-    // The next read, with the caller's check, restores the version that passes it.
+    // The next read restores the previous version by the journal alone: the wrong target is a complete document,
+    // and the reader gives no check and knows nothing of the format.
     drive_gone = false;
-    EXPECT_EQ(text_of(file.read(starts_good)), "good previous");
+    device_bad = false;
+    EXPECT_EQ(text_of(file.read()), kPrevious);
+    EXPECT_EQ(slurp(file.target()), kPrevious);
     EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
 }
 
-// After a failed restore, a write retried with no read between must not back the unverified target up over the
-// last good version: every further failure still leaves that version, and the first restore that works brings it
-// back.
+// After a failed restore, a write retried with no read between first settles by the journal: while the restore
+// still fails the write is refused with every file as it was, and the first restore that works brings the last
+// good version back before anything is written over it.
 TEST(AtomicFile, RetriedWriteNeverOverwritesTheLastGoodBackup)
 {
     const TempFolder temp;
-    bool readback_wrong = true;
+    bool device_bad = true;
     bool drive_gone = true;
     AtomicFileOptions options;
-    options.seams.read_back = corrupt_read_back(AtomicFileStep::ReadBackTarget, &readback_wrong);
+    options.seams.after_replace = store_wrong_bytes(temp.path() / "data.json", &device_bad);
     options.seams.fail = fail_step(AtomicFileStep::RestoreBackup, ERROR_NOT_READY, &drive_gone);
     const AtomicFile file{temp.path() / "data.json", options};
-    put(file.target(), "good previous");
-    expect_failed_restore_keeps_both(file, "unverified one");
-    expect_failed_restore_keeps_both(file, "unverified two");
+    put(file.target(), kPrevious);
+    expect_failed_restore_keeps_both(file);
 
-    // The drive is back but the write still reads back wrong: the restore now works, to the last good version.
+    const Error refused = error_of([&file] { file.write(bytes_of(kWanted)); });
+    EXPECT_EQ(refused.code(), static_cast<std::uint32_t>(ERROR_NOT_READY));
+    EXPECT_EQ(slurp(file.backup_path()), kPrevious);
+    EXPECT_EQ(slurp(file.journal_path()), journal_for(kWanted));
+
+    // The drive is back but still stores wrong bytes: the previous version is restored, the write fails again,
+    // and this time its own restore works.
     drive_gone = false;
-    EXPECT_TRUE(throws_error([&file] { file.write(bytes_of("unverified three")); }));
-    EXPECT_EQ(slurp(file.target()), "good previous");
+    EXPECT_TRUE(throws_error([&file] { file.write(bytes_of(kWanted)); }));
+    EXPECT_EQ(slurp(file.target()), kPrevious);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
+
+// A target that reads back longer or shorter than what was written is a readback mismatch like any other, and
+// the previous version comes back.
+TEST(AtomicFile, TargetOfAnotherLengthIsAMismatch)
+{
+    for (const std::string_view stored : {R"({"a": 2, "b": 3})", R"({})", ""})
+    {
+        const TempFolder temp;
+        AtomicFileOptions options;
+        options.seams.after_replace = [stored, target = temp.path() / "data.json"] { put(target, stored); };
+        const AtomicFile file{temp.path() / "data.json", options};
+        put(file.target(), kPrevious);
+
+        const Error error = error_of([&file] { file.write(bytes_of(kWanted)); });
+        EXPECT_EQ(error.code(), static_cast<std::uint32_t>(ERROR_CRC)) << stored;
+        EXPECT_EQ(error.call(), "AtomicFile::write") << stored;
+        EXPECT_EQ(slurp(file.target()), kPrevious) << stored;
+        EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"}) << stored;
+    }
+}
+
+// From the same double failure, a write that then reads back correct settles everything.
+TEST(AtomicFile, WriteAfterFailedRestoreSettlesByTheJournal)
+{
+    const TempFolder temp;
+    bool device_bad = true;
+    bool drive_gone = true;
+    AtomicFileOptions options;
+    options.seams.after_replace = store_wrong_bytes(temp.path() / "data.json", &device_bad);
+    options.seams.fail = fail_step(AtomicFileStep::RestoreBackup, ERROR_NOT_READY, &drive_gone);
+    const AtomicFile file{temp.path() / "data.json", options};
+    put(file.target(), kPrevious);
+    expect_failed_restore_keeps_both(file);
+
+    drive_gone = false;
+    device_bad = false;
+    file.write(bytes_of(kWanted));
+    EXPECT_EQ(text_of(file.read()), kWanted);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
+
+// Killed after the replace: the target holds the journal's bytes, so it is the good copy and the backup goes.
+void expect_journal_keeps_a_matching_target()
+{
+    const TempFolder temp;
+    const AtomicFile file{temp.path() / "data.json"};
+    put(file.target(), kWanted);
+    put(file.backup_path(), kPrevious);
+    put(file.journal_path(), journal_for(kWanted));
+    EXPECT_EQ(text_of(file.read()), kWanted);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
+
+// The target holds other bytes than the journal names: the backup is restored, with no check given.
+void expect_journal_restores_over_a_wrong_target()
+{
+    const TempFolder temp;
+    const AtomicFile file{temp.path() / "data.json"};
+    put(file.target(), kWrong);
+    put(file.backup_path(), kPrevious);
+    put(file.journal_path(), journal_for(kWanted));
+    EXPECT_EQ(text_of(file.read()), kPrevious);
+    EXPECT_EQ(slurp(file.target()), kPrevious);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
+
+// Killed after the journal was written and before the replace: the target is still the previous version, kept.
+void expect_journal_without_backup_keeps_the_target()
+{
+    const TempFolder temp;
+    const AtomicFile file{temp.path() / "data.json"};
+    put(file.target(), kPrevious);
+    put(file.journal_path(), journal_for(kWanted));
+    EXPECT_EQ(text_of(file.read()), kPrevious);
     EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
 
-    // And from the same double failure, a write that reads back correct settles it: the backup goes.
-    drive_gone = true;
-    expect_failed_restore_keeps_both(file, "unverified four");
-    readback_wrong = false;
-    file.write(bytes_of("good next"));
-    EXPECT_EQ(text_of(file.read(starts_good)), "good next");
+    // The same before a first write: there is still no file.
+    const AtomicFile fresh{temp.path() / "fresh.json"};
+    put(fresh.journal_path(), journal_for(kWanted));
+    EXPECT_FALSE(fresh.read().has_value());
     EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
+
+// A file at the journal's name that is not a journal decides nothing: the check rule applies, and it is removed.
+void expect_a_broken_journal_decides_nothing()
+{
+    for (const std::string_view broken :
+         {"not a journal\n", "isotone-atomic-file 1 8\n", "isotone-atomic-file 1 8 zz\n",
+          "isotone-atomic-file 1 8 00000000000000ff", "isotone-atomic-file 1 99999999999999999999999 00\n", ""})
+    {
+        const TempFolder temp;
+        const AtomicFile file{temp.path() / "data.json"};
+        put(file.target(), "torn");
+        put(file.backup_path(), "good old");
+        put(file.journal_path(), broken);
+        EXPECT_EQ(text_of(file.read(starts_good)), "good old") << broken;
+        EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"}) << broken;
+    }
+}
+
+// The journal reader takes exactly what a write leaves and nothing near it.
+TEST(AtomicFile, JournalReaderIsExact)
+{
+    using isotone::core::is_atomic_file_journal;
+    EXPECT_TRUE(is_atomic_file_journal(bytes_of(journal_for(kWanted))));
+    EXPECT_TRUE(is_atomic_file_journal(bytes_of(journal_for(""))));
+    EXPECT_FALSE(is_atomic_file_journal(bytes_of("")));
+    EXPECT_FALSE(is_atomic_file_journal(bytes_of("isotone-atomic-file 1 8 FF\n")));
+    EXPECT_FALSE(is_atomic_file_journal(bytes_of("isotone-atomic-file 1 8 ffffffffffffffffff\n")));
+    EXPECT_FALSE(is_atomic_file_journal(bytes_of(journal_for(kWanted) + std::string(200, 'x'))));
+}
+
+TEST(AtomicFile, JournalDecidesWithoutACheck)
+{
+    expect_journal_keeps_a_matching_target();
+    expect_journal_restores_over_a_wrong_target();
+    expect_journal_without_backup_keeps_the_target();
+    expect_a_broken_journal_decides_nothing();
+}
+
+// A folder that cannot be written (the lock cannot be created): the read changes nothing and returns the copy the
+// journal names as good.
+TEST(AtomicFile, UnwritableFolderIsReadByTheJournalAndLeftAlone)
+{
+    const TempFolder temp;
+    const AtomicFile file{temp.path() / "data.json"};
+    put(file.target(), kWrong);
+    put(file.backup_path(), kPrevious);
+    put(file.journal_path(), journal_for(kWanted));
+    // A folder at the lock's name makes creating the lock fail with access denied, as a read-only folder does.
+    std::filesystem::create_directory(file.lock_path());
+
+    EXPECT_EQ(text_of(file.read()), kPrevious);
+    EXPECT_EQ(slurp(file.target()), kWrong);
+    EXPECT_EQ(slurp(file.backup_path()), kPrevious);
+    EXPECT_EQ(names_in(temp.path()),
+              (std::set<std::string>{"data.json", "data.json.bak", "data.json.lock", "data.json.txn"}));
 }
 
 } // namespace
