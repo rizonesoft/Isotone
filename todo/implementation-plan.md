@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **42 of 869 sections complete (5%).** 869 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **43 of 869 sections complete (5%).** 869 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -206,7 +206,7 @@ Every later phase builds on the native stack's foundations, so this phase proves
 |  ✔  | Section      | Deliverable                                                                                         | Items |
 | :-: | ------------ | --------------------------------------------------------------------------------------------------- | :---: |
 | [x] | `D00 T07 §3` | Author the native foundations and settle the structure files                                        |  10   |
-| [ ] | `D01 T27 §1` | App-Data Paths and Structured Logging                                                               |   3   |
+| [x] | `D01 T27 §1` | App-Data Paths and Structured Logging                                                               |   3   |
 | [ ] | `D01 T27 §2` | Atomic File Writes and the Settings Store                                                           |   3   |
 | [ ] | `D01 T14 §1` | The isotone::ui Library and the Generated Token Tables                                              |   6   |
 | [ ] | `D01 T15 §1` | The Window, DPI Layout, and the Foundation Test Host                                                |   5   |

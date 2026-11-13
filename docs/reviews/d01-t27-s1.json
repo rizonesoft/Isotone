@@ -1,0 +1,93 @@
+{
+  "ref": "D01 T27 \u00a71",
+  "title": "App-Data Paths and Structured Logging",
+  "implementation_sha": "991899af17e46ae7162c8dc16bf1f274248b4862",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-core/D01-T27-s1.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "ctest x64-debug -R AppPaths|Log. -> 16 tests passed",
+    "ctest x64-asan -R AppPaths|Log. -> 16 tests passed",
+    "pwsh scripts/native-tidy.ps1 -> 16 translation units, 0 with diagnostics",
+    "pwsh scripts/native-format.ps1 -Check -> 0 need formatting",
+    "python scripts/native-deps-lint.py -> 0 findings",
+    "pwsh scripts/check-all.ps1 (eb6f6f3) -> all gates passed",
+    "CI on 991899af17e46ae7162c8dc16bf1f274248b4862: plan-gates https://github.com/rizonesoft/Isotone/actions/runs/43381876035 success; build https://github.com/rizonesoft/Isotone/actions/runs/43381876038 success"
+  ],
+  "completion": {
+    "report": "docs/reviews/01-core/D01-T27-s1.md",
+    "verdict": "complete",
+    "candidate": "991899af17e46ae7162c8dc16bf1f274248b4862",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/01-core/D01-T27-s1.md",
+    "candidate": "646fce8a2e35a7cc1b7723ff9e4fd27542c6628b",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "646fce8a2e35a7cc1b7723ff9e4fd27542c6628b",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "lenses": {
+      "docs-drift": "Does the range update every README, document, standard, skill and source comment that describes behaviour it changed? Name each one that still describes the old behaviour, with file:line and the sentence that is now false. A text that states the old behaviour is at least P2: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains."
+    },
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design",
+          "docs-drift"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
