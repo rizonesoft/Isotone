@@ -179,7 +179,7 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 | [x] | `D00 T05 §8`  | CI for x64 and ARM64                                                                     |  19   |
 | [x] | `D00 T05 §9`  | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget              |   7   |
 | [x] | `D00 T05 §10` | The proof standard for C++                                                               |   7   |
-| [ ] | `D00 T05 §11` | The tidy gate builds only the sources it reads                                           |   5   |
+| [ ] | `D00 T05 §11` | The tidy gate builds only the sources it reads                                           |   6   |
 | [x] | `D00 T04 §2`  | The benchmark harness, the reference machine, and the first record                       |  18   |
 | [x] | `D00 T04 §3`  | The native advisory job                                                                  |  13   |
 | [x] | `D00 T06 §1`  | Retarget the gates that read the C# sources                                              |   4   |

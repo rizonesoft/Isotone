@@ -166,6 +166,29 @@ class GeneratedSourcesTest(unittest.TestCase):
         for line in builds:
             self.assertIn("--target isotone_generated", line)
 
+    def test_the_gate_configures_only_a_tree_that_is_not_configured(self):
+        """Each `cmake --preset` sits under a check that build.ninja is absent: configuring a configured tree again
+        rewrites build.ninja and leaves every built executable older than it."""
+        lines = TIDY.read_text(encoding="utf-8").splitlines()
+        configures = [i for i, line in enumerate(lines) if "= cmake --preset" in line]
+        self.assertEqual(len(configures), 2, configures)
+        for i in configures:
+            self.assertIn("if (-not (Test-Path (Join-Path $", lines[i - 1])
+            self.assertIn("'build.ninja'))) {", lines[i - 1])
+
+    def test_building_the_generated_target_leaves_build_ninja_alone(self):
+        """In the repository's configured trees, what the gate now runs does not rewrite build.ninja."""
+        presets = ("x64-debug", "x64-release")
+        files = [ROOT / "artifacts" / "native" / preset / "build.ninja" for preset in presets]
+        missing = [str(file) for file in files if not file.is_file()]
+        if missing:
+            self.skipTest(f"no configured tree: {', '.join(missing)}")
+        before = [file.stat().st_mtime_ns for file in files]
+        for preset in presets:
+            code, out = self.generate(preset)
+            self.assertEqual(code, 0, out)
+        self.assertEqual([file.stat().st_mtime_ns for file in files], before)
+
     def generate(self, preset):
         block = f"Push-Location native; cmake --build --preset {preset} --target isotone_generated; exit $LASTEXITCODE"
         return run_tree(["pwsh", "-NoProfile", "-File", str(DEV_ENV), "-Arch", "x64", "-Run", block], cwd=ROOT)

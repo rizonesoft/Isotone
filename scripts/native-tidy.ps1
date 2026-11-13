@@ -3,7 +3,8 @@
 .SYNOPSIS
   Runs the pinned clang-tidy over every native translation unit in the x64 Debug compile database (D00 T05 §4).
 .DESCRIPTION
-  Enters scripts/dev-env.ps1, configures the x64-debug preset and builds its isotone_generated target (the compile
+  Enters scripts/dev-env.ps1, configures the x64-debug preset when it is not configured yet (a configured tree is left
+  as it is, so its built executables stay newer than build.ninja) and builds its isotone_generated target (the compile
   database comes from configuring, and the generated build id header from that target, which compiles and links
   nothing), then runs clang-tidy -p <build folder> on every translation unit
   under native/ that the database lists, in parallel, with native/.clang-tidy (every warning an error). Names each
@@ -36,8 +37,13 @@ Enter-NativeEnvironment
 if (-not $SkipBuild) {
   Push-Location (Join-Path $root 'native')
   try {
-    $configure = cmake --preset $Preset 2>&1
-    if ($LASTEXITCODE -ne 0) { $configure | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: configuring $Preset failed"; exit 2 }
+    # Configure only a tree that is not configured: configuring again rewrites build.ninja, which leaves every built
+    # executable older than it (scripts/native-artifact-gate.py --require-built refuses that). A configured tree
+    # whose CMake files changed re-runs CMake by itself when the target below is built (D00 T05 §11).
+    if (-not (Test-Path (Join-Path $buildDir 'build.ninja'))) {
+      $configure = cmake --preset $Preset 2>&1
+      if ($LASTEXITCODE -ne 0) { $configure | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: configuring $Preset failed"; exit 2 }
+    }
     # Only the generated sources: clang-tidy reads sources, so nothing is compiled or linked for it (D00 T05 §11).
     $build = cmake --build --preset $Preset --target isotone_generated 2>&1
     if ($LASTEXITCODE -ne 0) { $build | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: building $Preset failed"; exit 2 }
@@ -62,8 +68,10 @@ if ($Preset -eq 'x64-debug') {
   if (-not $SkipBuild -and (Test-Path (Join-Path $root 'native\benchmarks\CMakeLists.txt'))) {
     Push-Location (Join-Path $root 'native')
     try {
-      $configure = cmake --preset x64-release 2>&1
-      if ($LASTEXITCODE -ne 0) { $configure | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: configuring x64-release failed"; exit 2 }
+      if (-not (Test-Path (Join-Path $relBuildDir 'build.ninja'))) {
+        $configure = cmake --preset x64-release 2>&1
+        if ($LASTEXITCODE -ne 0) { $configure | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: configuring x64-release failed"; exit 2 }
+      }
       $build = cmake --build --preset x64-release --target isotone_generated 2>&1
       if ($LASTEXITCODE -ne 0) { $build | Select-Object -Last 10 | ForEach-Object { "$_" }; "native-tidy: building x64-release failed"; exit 2 }
     }
