@@ -1,6 +1,7 @@
 # The GoogleTest suites, one folder per library or app, and the script tests of the CMake helpers.
 add_subdirectory(core)
 add_subdirectory(ui)
+add_subdirectory(foundation-host)
 
 add_test(NAME cmake.build_id
   COMMAND "${CMAKE_COMMAND}" "-DSCRIPT=${PROJECT_SOURCE_DIR}/cmake/WriteBuildId.cmake"

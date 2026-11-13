@@ -7,5 +7,7 @@ KERNEL32.dll             # every Win32 process: process, memory, file, and synch
 SHLWAPI.dll              # Shell lightweight utility APIs imported by Google Benchmark's sysinfo (D00 T04 §2, isotone_benchmarks)
 SHELL32.dll              # SHGetKnownFolderPath for the app-data folders of isotone::core (D01 T27 §1)
 OLE32.dll                # CoTaskMemFree for the string SHGetKnownFolderPath returns (D01 T27 §1)
+USER32.dll               # window classes, windows, messages, menus, and DPI for isotone::ui::Window and the foundation test host (D01 T15 §1)
+GDI32.dll                # brushes, memory surfaces, and pixels for the foundation test host's placeholder panels (D01 T15 §1)
 api-ms-win-*             # Windows API sets, which the loader resolves to system DLLs (Microsoft Learn, "Windows API sets")
 ext-ms-win-*             # Windows extension API sets, resolved by the loader the same way (Microsoft Learn, "Windows API sets")

@@ -28,14 +28,14 @@ native/
   toolchain.json  CMakePresets.json  vcpkg.json   the toolchain pin, the presets, the package manifest
   cmake/          the shared CMake helpers every target goes through
   core/           isotone::core, the shared non-UI library
-  ui/             isotone::ui, the shared UI toolkit (started: the generated token tables and Theme; the rest is planned)
+  ui/             isotone::ui, the shared UI toolkit (started: the generated token tables, Theme, and the per-monitor-DPI Window; the rest is planned)
   stilus/  gesso/  albumen/          one folder per app: its core library and its executable (planned)
   tests/          the GoogleTest suites, fixtures, and fuzz corpora, one folder per library or app
   benchmarks/     the Google Benchmark harness
   triplets/       the vcpkg overlay triplets (x64 and ARM64, plain and AddressSanitizer)
 ```
 
-Namespaces follow the folders: `isotone::core`, `isotone::ui`, `isotone::stilus`, `isotone::gesso`, `isotone::albumen`. Today the tree holds the toolchain, the build, the gates, and `isotone::core`'s build identity, premultiply kernels, error type, app-data folders, structured log, atomic file writes (`AtomicFile`), and settings store (`Settings`), and the start of `isotone::ui`: the token tables generated from `docs/design/tokens.json` (`scripts/generate-ui-tokens.py`) and the `Theme` that resolves a token key for the current brightness theme, Highlight, density, and contrast; the foundations, the toolkit, and the apps arrive with their own sections ([`native/README.md`](../../native/README.md)).
+Namespaces follow the folders: `isotone::core`, `isotone::ui`, `isotone::stilus`, `isotone::gesso`, `isotone::albumen`. Today the tree holds the toolchain, the build, the gates, and `isotone::core`'s build identity, premultiply kernels, error type, app-data folders, structured log, atomic file writes (`AtomicFile`), and settings store (`Settings`), and the start of `isotone::ui`: the token tables generated from `docs/design/tokens.json` (`scripts/generate-ui-tokens.py`) and the `Theme` that resolves a token key for the current brightness theme, Highlight, density, and contrast, and `isotone::ui::Window` (a per-monitor-DPI-aware Win32 window that takes the rectangle Windows suggests when its DPI changes) with the DIP types of `dpi.h`, whose one rounding rule (`floor(dips * dpi / 96 + 0.5)`, rectangles converted by their edges) keeps a shared edge shared at every scale; `native/tests/foundation-host/` is the one test window every foundation proves itself in; the remaining foundations, the toolkit, and the apps arrive with their own sections ([`native/README.md`](../../native/README.md)).
 
 ## The shared libraries
 
