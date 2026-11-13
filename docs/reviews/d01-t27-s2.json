@@ -1,0 +1,90 @@
+{
+  "ref": "D01 T27 \u00a72",
+  "title": "Atomic File Writes and the Settings Store",
+  "implementation_sha": "3a0ac003145526d366ab4c5fa55d374f47be6dce",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-core/D01-T27-s2.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "x64-asan and x64-fuzz-msvc workflows at the final code -> 100% tests passed, 0 tests failed out of 73 each; x64-debug -> 0 failed out of 72; native-tidy -> 22 translation unit(s), 0 with diagnostics",
+    "Docs: docs/dev/architecture.md, native/README.md, standards/shared.md, docs/dev/native-libraries.md -> docs-drift clean",
+    ".github/workflows/build.yml on 3a0ac003145526d366ab4c5fa55d374f47be6dce -> success https://github.com/rizonesoft/Isotone/actions/runs/43434506407",
+    ".github/workflows/plan.yml on 3a0ac003145526d366ab4c5fa55d374f47be6dce -> success https://github.com/rizonesoft/Isotone/actions/runs/43434506418"
+  ],
+  "completion": {
+    "report": "docs/reviews/01-core/D01-T27-s2.md",
+    "verdict": "reconciled",
+    "candidate": "3a0ac003145526d366ab4c5fa55d374f47be6dce",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/01-core/D01-T27-s2.md",
+    "candidate": "d83fe1bb266112376f86ad31a5693e206e2d82db",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "d83fe1bb266112376f86ad31a5693e206e2d82db",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "lenses": {
+      "docs-drift": "Does the range update every README, document, standard, skill and source comment that describes behaviour it changed? Name each one that still describes the old behaviour, with file:line and the sentence that is now false. A text that states the old behaviour is at least P2: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains."
+    },
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design",
+          "docs-drift"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}

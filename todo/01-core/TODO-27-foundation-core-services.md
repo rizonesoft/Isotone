@@ -2,7 +2,7 @@
 schema_version: 1
 id: foundation-core-services
 domain: 01-core
-status: draft
+status: done
 title: "TODO-27 -- Foundation: App-Data Paths, Structured Logging, Atomic Writes, and the Settings Store"
 depends_on: []
 frozen: false
@@ -49,7 +49,7 @@ track: F14
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | App-data paths and structured logging | D00 T07 §3 |  [x]   |
-|   2   |   §2    | Atomic file writes and the settings store | §1 |  [ ]   |
+|   2   |   §2    | Atomic file writes and the settings store | §1 |  [x]   |
 
 ---
 
@@ -102,6 +102,10 @@ Every later section's settings persist through this store, and a change writes o
 - [x] Commit: `"core: atomic writes and the settings store"` Done 2026-11-13: `9191d1e`, with the first cycle's round fixes in `ecb31a9`, the journal in `271da61`, and the second cycle's round fixes in `85efc7d`, the final code candidate. Evidence on that code: locally at `85efc7d`, `cmake --workflow --preset x64-asan` and `x64-fuzz-msvc`: `100% tests passed, 0 tests failed out of 71` each (`build/t27s2/asan-final-c2.log`), `x64-debug`: `100% tests passed, 0 tests failed out of 70`, `native-tidy: 22 translation unit(s), 0 with diagnostics`; in CI, which builds and tests every preset (x64 and ARM64, Debug, Release, AddressSanitizer, the fuzz preset, the dist presets, analysis, tidy, and the artifact gates), on `baac9ab473d8`, whose `native/core` and `native/tests` are byte for byte `85efc7d`'s: `build success https://github.com/rizonesoft/Isotone/actions/runs/43425686453` (jobs `native` and `native-arm64-tests` both `success`) and `plan-gates success https://github.com/rizonesoft/Isotone/actions/runs/43425686468`. The build run on `85efc7d` itself (`43411490732`) was red in the tidy and artifact gates for a cause outside this section, repaired under `D00 T05 §11`; every preset's build and tests were green in that run too. Earlier runs: `ecb31a9` build `43397403655` and `271da61` build `43408004241`, both success.
 
 **Test checkpoint:** Unit test: `AtomicFile.ReplacesAndReadsBack`, `AtomicFile.FirstWriteCreatesTheFile`, `AtomicFile.FailureBeforeReplaceLeavesPrevious`, `AtomicFile.ReadbackFailureAfterReplaceRestoresPrevious`, `AtomicFile.LeftoverBackupSettledAtNextRead`, `AtomicFile.UndeletedBackupIsSettledLater`, `AtomicFile.LockedTargetIsReportedAndKept`, `AtomicFile.ReadOnlyTargetIsReportedAndKept`, `AtomicFile.SecondWriterWaitsForTheLock`, `AtomicFile.OverLimitFileIsRefused`, `AtomicFile.ReadTakesNoLockAndWritesNothing`, `AtomicFile.FailedRestoreKeepsBothCopiesAndSettlesLater`, `AtomicFile.RetriedWriteNeverOverwritesTheLastGoodBackup`, `AtomicFile.WriteAfterFailedRestoreSettlesByTheJournal`, `AtomicFile.TargetOfAnotherLengthIsAMismatch`, `AtomicFile.JournalReaderIsExact`, `AtomicFile.JournalDecidesWithoutACheck`, `AtomicFile.UnwritableFolderIsReadByTheJournalAndLeftAlone`, `AtomicFile.StaleBackupIsNeverRestored`, `AtomicFile.FirstWriteWrongBytesAreNeverReturned`, `Settings.SetPersistsAndReadsBack`, `Settings.TypedDefaults`, `Settings.ChangeWritesOneLogLine`, `Settings.UnchangedSetWritesNothing`, `Settings.SetSeveralWritesOnce`, `Settings.CorruptFileKeptAndReported`, `Settings.NewerVersionKeptAndReported`, `Settings.FailedWriteKeepsMemoryAndReports`, `Settings.TwoStoresMergeTheirChanges`, `Settings.UnknownValuesSurviveARewrite`, `Settings.InvalidValuesAreRefused`, `Settings.OversizedWriteIsRefused`, `Settings.NewerTargetSurvivesALeftoverBackup`, `Settings.MoveAsideRereadsUnderTheLock`, `Settings.KeptAsideNameCollisionAndRefusal`, `Settings.LimitsAreInclusive`, `Settings.FailedWriteCanBeRetried`, `Settings.UnsignedValueIsNotASignedOne`, `Settings.RepeatedKeyTakesItsLastValue`, `Settings.OversizedSetLeavesAnUnusableFileInPlace`, `Settings.WrongButValidFileAfterAFailedRestoreIsNotRead`, and `Settings.WrongFirstSaveIsNotRead` pass through CTest on every preset, including the AddressSanitizer lanes; fuzzing: `fuzz.settings` and `fuzz.atomic_file_journal` replay their corpora and regressions through CTest and `settings_fuzz` and `atomic_file_journal_fuzz` build in `x64-fuzz-msvc`; static analysis clean: `python scripts/native-deps-lint.py` passes with `nlohmann-json` registered. Cheaper substitute that fails: writing the settings file in place, which a crash mid-write leaves truncated and unreadable.
+
+> **Verified:** 2026-11-13 | §2 | 3a0ac003145526d366ab4c5fa55d374f47be6dce
+> **Review:** `docs/reviews/d01-t27-s2.json`
+
 ## Verification
 
 - [ ] `pwsh scripts/check-all.ps1` exits 0
