@@ -29,10 +29,13 @@ What a run proves, and records in build/design-reference/manifest.json: each
 render's page carried the theme and density asked for (read back from the
 page, not assumed), its background resolved to a color, the capture was not
 cut at the size cap, and the picture is not blank; within one component the
-themes are different pictures. A preview is laid out as the design page lays
-it out: at its card's declared width when it has one, shrink-wrapped to its
-content when it has none, and at the page's column width when it has no width
-of its own (a surface that fills its card). The report is self-contained: the golden or
+themes are different pictures. A preview is laid out by the design page's
+own rules (scripts/build-design-site.py): the same document, with nothing
+added that changes layout, in a frame as wide as the widest of the page's
+stage, the card's declared width, and the content's natural width, and as
+tall as the taller of the declared height and the content, both sizes read
+from the size the preview's own bridge script reports to the page. The report
+is self-contained: the golden or
 UI render it pairs with is copied under build/design-reference/_compare/, so
 the uploaded artifact opens anywhere. `--verify <dir>` re-checks a directory
 (a local run, or a downloaded `design-reference` artifact) against the
@@ -79,11 +82,10 @@ EDGE_CANDIDATES = [
 ]
 MAX_WIDTH, MAX_HEIGHT = 1600, 4000  # the capture's size cap; a render that reaches it is reported as clipped
 CALL_TIMEOUT = 60.0  # seconds one DevTools command may take
-BODY_PADDING = 16  # the margin the reference keeps around a preview, in px on every side
-# The width of a card on the design page when its preview declares none: the page column (`.s-main`, 1180px wide
-# with 32px of padding on each side, in scripts/build-design-site.py). A preview with no width of its own (a
-# surface that fills its card, such as the Canvas) is laid out at this width, as the page lays it out.
-COLUMN_WIDTH = 1180 - 2 * 32
+# The width of a card's stage on the design page at desktop width: the page column (`.s-main`, max-width 1180px with
+# 32px of padding on each side) less the card's 1px border on each side (`.s-card`), in scripts/build-design-site.py.
+# The page gives every preview a frame at least this wide; the tests hold this number to that CSS.
+STAGE_WIDTH = 1180 - 2 * 32 - 2 * 1
 
 
 def site_module():
@@ -95,7 +97,9 @@ def site_module():
 
 
 def build_documents(site, comps: list[str] | None, themes: list[str], densities: list[str], highlight: str):
-    """Yield (component id, theme, density, html, card width) for every combination."""
+    """Yield (component id, theme, density, html, card width, card height) for every combination. The document
+    is the one the design page builds for its frame (`buildDoc` in scripts/build-design-site.py), plus a listener
+    that keeps the size the bridge script reports to the page; nothing that changes layout is added."""
     tj = json.loads(site.read_text(site.DESIGN / "tokens.json"))
     site.COLOR_NAMES.clear()
     site.COLOR_NAMES.update(t["name"] for t in tj["color"]["tokens"])
@@ -108,23 +112,35 @@ def build_documents(site, comps: list[str] | None, themes: list[str], densities:
         for theme in themes:
             for density in densities:
                 state = {"theme": theme, "highlight": highlight, "density": density, "lockhl": c["lockhl"]}
-                head = ("<style>" + tokens_css + "\n" + css + "</style><script>" + js + "</script><script>"
-                        + site.BRIDGE.replace("__STATE__", json.dumps(state)) + "</script>"
-                        + "<style>html,body{margin:0}body{box-sizing:border-box;padding:" + str(BODY_PADDING) + "px;width:" + body_width(c["width"])
-                        + ";background:var(--surface-panel)}</style>")
+                head = ("<style>" + tokens_css + "\n" + css + "</style><script>" + js + "</script><script>" + SIZE_LISTENER
+                        + "</script><script>" + site.BRIDGE.replace("__STATE__", json.dumps(state)) + "</script>")
                 src = c["html"]
                 src = _sub_once(src, r"<html([^>]*)>", lambda m: "<html" + _strip_theme(m.group(1)) + f' data-theme="{theme}">')
                 src = _sub_once(src, r"<head[^>]*>", lambda m: m.group(0) + head)
                 src = _sub_once(src, r"<body[^>]*>", lambda m: m.group(0) + "<script>window.__phApply && __phApply();</script>")
-                yield c["id"], theme, density, src, c["width"]
+                yield c["id"], theme, density, src, c["width"], c["height"]
 
 
-def body_width(card_width) -> str:
-    """The CSS width of the preview's body, a border box: a card that declares its width is laid out at it, as
-    the design page shows it (its content wraps there); one that declares none is shrink-wrapped."""
-    if card_width:
-        return f"{int(card_width)}px"
-    return "max-content"
+# The bridge script reports each preview's natural size to the page that frames it (`parent.postMessage`). Rendered
+# on its own, the preview is its own parent, so the report arrives here and is kept for the renderer to read.
+SIZE_LISTENER = "addEventListener('message',function(e){if(e.data&&e.data.phSite)window.__phSize=e.data;});"
+# Ask the bridge for a fresh report and wait for it, at most five seconds: [width, height], or null.
+SIZE_REPORT = (
+    "new Promise(function(done){window.__phSize=null;var t0=Date.now();"
+    "if(window.__phApply)window.__phApply();"
+    "(function poll(){if(window.__phSize)return done([window.__phSize.w,window.__phSize.h]);"
+    "if(Date.now()-t0>5000)return done(null);setTimeout(poll,30);})();})"
+)
+NATURAL_WIDTH_CAP = 1600  # the bridge never reports a wider natural width, so one that wide may be cut
+
+
+def frame_size(card_width, card_height, natural) -> tuple[int, int]:
+    """The frame the design page gives a preview (`layout` in scripts/build-design-site.py): as wide as the widest
+    of the stage, the card's declared width, and the content's natural width, and as tall as the taller of the
+    card's declared height and the content."""
+    natural_w, natural_h = natural
+    return (max(STAGE_WIDTH, int(card_width or 0), int(natural_w or 0)),
+            max(int(card_height or 0), int(natural_h or 0), 1))
 
 
 def _sub_once(src: str, pattern: str, fn) -> str:
@@ -214,20 +230,6 @@ class WebSocket:
             pass
 
 
-# The natural size of the laid-out preview: the right and bottom edges of its content, walking into every box that
-# lets its content show and not into boxes that clip or scroll theirs, plus the body's padding.
-MEASURE = (
-    "(() => { const b = document.body; let w = 0, h = 0;"
-    " (function walk(el){ for (let c = el.firstElementChild; c; c = c.nextElementSibling) {"
-    "   const r = c.getBoundingClientRect(); if (!r.width && !r.height) continue;"
-    "   const ov = getComputedStyle(c).overflowX;"
-    "   const right = ov === 'visible' ? Math.max(r.right, r.left + c.scrollWidth) : r.right;"
-    "   if (right > w) w = right; if (r.bottom > h) h = r.bottom; if (ov === 'visible') walk(c); } })(b);"
-    " const cs = getComputedStyle(b);"
-    " return [Math.ceil(w + (parseFloat(cs.paddingRight) || 0)), Math.ceil(h + (parseFloat(cs.paddingBottom) || 0))]; })()"
-)
-
-
 class ProcessTree:
     """Owns a child process and everything it starts, so nothing outlives the run.
 
@@ -239,11 +241,18 @@ class ProcessTree:
     def __init__(self, argv: list[str]):
         self.job = None
         if os.name == "nt":
-            self.proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # Started suspended, put in the job, then resumed: the process cannot start a child before the job
+            # holds it, so nothing it ever starts is outside the job.
+            self.proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                         creationflags=0x00000004)  # CREATE_SUSPENDED
             try:
                 self.job = _job_for(int(self.proc._handle))
-            except Exception:
+                _resume(self.proc.pid)
+            except BaseException:
                 self.proc.kill()
+                if self.job is not None:
+                    _kernel32().CloseHandle(self.job)
+                    self.job = None
                 raise
         else:
             self.proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -283,6 +292,46 @@ def _kernel32():
     k.CloseHandle.restype = wintypes.BOOL
     k.CloseHandle.argtypes = [wintypes.HANDLE]
     return k
+
+
+def _resume(pid: int) -> None:
+    """Resume every thread of a process that was created suspended."""
+    import ctypes
+    from ctypes import wintypes
+
+    class ThreadEntry(ctypes.Structure):
+        _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD), ("th32ThreadID", wintypes.DWORD),
+                    ("th32OwnerProcessID", wintypes.DWORD), ("tpBasePri", wintypes.LONG),
+                    ("tpDeltaPri", wintypes.LONG), ("dwFlags", wintypes.DWORD)]
+
+    k = _kernel32()
+    k.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    k.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+    k.Thread32First.argtypes = k.Thread32Next.argtypes = [wintypes.HANDLE, ctypes.POINTER(ThreadEntry)]
+    k.OpenThread.restype = wintypes.HANDLE
+    k.OpenThread.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    k.ResumeThread.restype = wintypes.DWORD
+    k.ResumeThread.argtypes = [wintypes.HANDLE]
+    snapshot = k.CreateToolhelp32Snapshot(0x00000004, 0)  # TH32CS_SNAPTHREAD
+    if not snapshot or snapshot == wintypes.HANDLE(-1).value:
+        raise OSError(ctypes.get_last_error(), "the browser's threads could not be listed")
+    resumed = 0
+    try:
+        entry = ThreadEntry()
+        entry.dwSize = ctypes.sizeof(ThreadEntry)
+        more = k.Thread32First(snapshot, ctypes.byref(entry))
+        while more:
+            if entry.th32OwnerProcessID == pid:
+                thread = k.OpenThread(0x0002, False, entry.th32ThreadID)  # THREAD_SUSPEND_RESUME
+                if thread:
+                    if k.ResumeThread(thread) != 0xFFFFFFFF:
+                        resumed += 1
+                    k.CloseHandle(thread)
+            more = k.Thread32Next(snapshot, ctypes.byref(entry))
+    finally:
+        k.CloseHandle(snapshot)
+    if not resumed:
+        raise OSError("the browser was started suspended and could not be resumed")
 
 
 def _job_for(process_handle: int):
@@ -380,10 +429,12 @@ class Edge:
         res = self.call("Runtime.evaluate", expression=expr, awaitPromise=True, returnByValue=True)
         return res.get("result", {}).get("value")
 
-    def shoot(self, url: str, width: int, out: Path) -> dict:
-        """Render `url` to `out` and return what the page and the picture say: the size, whether the size cap cut
-        it, the theme and density the page carries, its background, and how many colors a thumbnail holds."""
-        self.call("Emulation.setDeviceMetricsOverride", width=width, height=800, deviceScaleFactor=1, mobile=False)
+    def shoot(self, url: str, card_width, card_height, out: Path) -> dict:
+        """Render `url` to `out` in the frame the design page would give it, and return what the page and the
+        picture say: the size, whether it was cut, the theme and density the page carries, its background, and
+        how many colors a thumbnail holds."""
+        width, height = frame_size(card_width, card_height, (0, 0))
+        self.call("Emulation.setDeviceMetricsOverride", width=width, height=height, deviceScaleFactor=1, mobile=False)
         self.call("Page.navigate", url=url)
         deadline = time.time() + 30
         while self.evaluate("document.readyState") != "complete":
@@ -394,17 +445,20 @@ class Edge:
         # must not hold the render (the screenshot forces its own frame).
         self.evaluate("Promise.race([document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => "
                       "requestAnimationFrame(r)))), new Promise(r => setTimeout(r, 2000))])")
-        size = self.evaluate(MEASURE) or [width, 800]
-        natural_w, natural_h = max(1, int(size[0])), max(1, int(size[1]))
-        fluid = natural_w <= 2 * BODY_PADDING
-        if fluid:
-            # Shrink-wrapped, the preview has no width at all: it fills whatever holds it. Lay it out at the
-            # design page's column width, as the page does, and measure again.
-            self.evaluate(f"document.body.style.width = '{COLUMN_WIDTH}px'")
-            size = self.evaluate(MEASURE) or [COLUMN_WIDTH, natural_h]
-            natural_w, natural_h = max(1, int(size[0])), max(1, int(size[1]))
-        w, h = min(natural_w, MAX_WIDTH), min(natural_h, MAX_HEIGHT)
-        self.call("Emulation.setDeviceMetricsOverride", width=w, height=h, deviceScaleFactor=1, mobile=False)
+        # The page sizes the frame from the natural size the preview reports, then the preview lays out again at
+        # that size: do the same until the frame stops growing (twice is enough for every card today).
+        natural = None
+        for _ in range(3):
+            natural = self.evaluate(SIZE_REPORT)
+            if not natural:
+                raise RuntimeError("the preview did not report its size (the bridge script did not run)")
+            grown = frame_size(card_width, card_height, natural)
+            if grown == (width, height):
+                break
+            width, height = grown
+            self.call("Emulation.setDeviceMetricsOverride", width=width, height=min(height, MAX_HEIGHT),
+                      deviceScaleFactor=1, mobile=False)
+        w, h = min(width, MAX_WIDTH), min(height, MAX_HEIGHT)
         page = self.evaluate(
             "(() => ({theme: document.documentElement.getAttribute('data-theme'),"
             " comfortable: document.body.classList.contains('ph-comfortable'),"
@@ -416,8 +470,8 @@ class Edge:
         out.parent.mkdir(parents=True, exist_ok=True)
         data = base64.b64decode(shot["data"])
         out.write_bytes(data)
-        return {"width": w, "height": h, "natural_width": natural_w, "natural_height": natural_h, "fluid": fluid,
-                "clipped": natural_w > MAX_WIDTH or natural_h > MAX_HEIGHT,
+        return {"width": w, "height": h, "natural_width": int(natural[0]), "natural_height": int(natural[1]),
+                "clipped": int(natural[0]) >= NATURAL_WIDTH_CAP or width > MAX_WIDTH or height > MAX_HEIGHT,
                 "theme_attr": page.get("theme"), "comfortable": bool(page.get("comfortable")),
                 "background": page.get("background") or "", "colors": png_colors(base64.b64decode(thumb["data"])),
                 "sha256": hashlib.sha256(data).hexdigest()}
@@ -523,7 +577,8 @@ def render_problems(entry: dict) -> list[str]:
     if entry.get("background", "") in ("", "transparent", "rgba(0, 0, 0, 0)"):
         problems.append("the page background did not resolve to a color (the tokens were not applied)")
     if entry.get("clipped"):
-        problems.append(f"the content is larger than the {MAX_WIDTH} x {MAX_HEIGHT} capture and was cut")
+        problems.append(f"the content reaches the size the preview can report or the {MAX_WIDTH} x {MAX_HEIGHT} "
+                        f"capture, and may be cut")
     if entry.get("colors", 0) < 2:
         problems.append("the picture is blank (one color)")
     return problems
@@ -633,54 +688,71 @@ def expected_set(site, comps: list[str] | None, themes: list[str], densities: li
             if comps is None or c["id"] in comps for theme in themes for density in densities]
 
 
+EVIDENCE = ("file", "width", "height", "sha256", "theme_attr", "comfortable", "background", "colors", "clipped")
+
+
 def verify(folder: Path, expected: list[tuple[str, str, str]]) -> list[str]:
     """Everything wrong with a rendered folder (a local run or a downloaded artifact), read from its manifest and
-    its files: a render the set owes that is missing, a file that is not the one the run checked, a render the
-    run found wrong, and a report image that does not resolve inside the folder."""
+    its files. Every render the set owes must be there with its picture and every fact the run recorded about it;
+    a render with no picture, a file that is not the one the run checked, a render the run found wrong, a failure
+    the run recorded about itself (a browser it could not clean up), and a report that does not show a render or
+    links outside the folder are each a problem. Nothing is passed because it is absent."""
     import re
     manifest_path = folder / "manifest.json"
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         entries = manifest["renders"]
-    except (OSError, ValueError, KeyError) as error:
-        return [f"{manifest_path.name} cannot be read ({error.__class__.__name__}); the run did not finish"]
-    problems = []
-    have = {(e["comp"], e["theme"], e["density"]): e for e in entries}
+        recorded_failures = int(manifest["failures"])
+        run_problems = list(manifest["run_problems"])
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        return [f"{manifest_path.name} cannot be read as a finished run's manifest ({error.__class__.__name__}: {error})"]
+    problems = [f"the run recorded: {problem}" for problem in run_problems]
+    have = {(e.get("comp"), e.get("theme"), e.get("density")): e for e in entries}
+    report = folder / "report.html"
+    report_text = report.read_text(encoding="utf-8") if report.is_file() else None
+    if report_text is None:
+        problems.append("report.html is missing")
+    shown = set(re.findall(r'<img src="([^"]+)"', report_text or ""))
     for key in expected:
-        if key not in have:
-            problems.append(f"{key[0]} {key[1]} {key[2]}: not in the manifest")
-    for key, entry in sorted(have.items()):
         label = " ".join(key)
-        for problem in entry.get("problems", []):
-            problems.append(f"{label}: {problem}")
-        if "file" not in entry:
-            continue  # the run already recorded why there is no picture
+        entry = have.get(key)
+        if entry is None:
+            problems.append(f"{label}: not in the manifest")
+            continue
+        mine = [f"{label}: {problem}" for problem in entry.get("problems", [])]
+        missing = [name for name in EVIDENCE if name not in entry]
+        if missing:
+            if not mine:
+                mine.append(f"{label}: the manifest records no {', '.join(missing)} for it, and no reason")
+            problems += mine
+            continue
         path = folder / entry["file"]
         if not path.is_file():
-            problems.append(f"{label}: {entry['file']} is missing")
-            continue
-        data = path.read_bytes()
-        if png_size(data) != (entry.get("width"), entry.get("height")):
-            problems.append(f"{label}: {entry['file']} is not a {entry.get('width')} x {entry.get('height')} PNG")
-        elif hashlib.sha256(data).hexdigest() != entry.get("sha256"):
-            problems.append(f"{label}: {entry['file']} is not the file the run checked (its hash differs)")
-        for problem in render_problems(entry):
-            if f"{label}: {problem}" not in problems:
-                problems.append(f"{label}: {problem}")
-    problems += set_problems(entries)
-    report = folder / "report.html"
-    if not report.is_file():
-        problems.append("report.html is missing")
-    else:
-        for src in re.findall(r'<img src="([^"]+)"', report.read_text(encoding="utf-8")):
-            target = (folder / html.unescape(src)).resolve()
-            if not target.is_file() or folder.resolve() not in target.parents:
-                problems.append(f"report.html links {src}, which does not resolve inside the folder")
+            mine.append(f"{label}: {entry['file']} is missing")
+        else:
+            data = path.read_bytes()
+            if png_size(data) != (entry["width"], entry["height"]):
+                mine.append(f"{label}: {entry['file']} is not a {entry['width']} x {entry['height']} PNG")
+            elif hashlib.sha256(data).hexdigest() != entry["sha256"]:
+                mine.append(f"{label}: {entry['file']} is not the file the run checked (its hash differs)")
+        mine += [f"{label}: {problem}" for problem in render_problems(dict(entry, comp=key[0], theme=key[1], density=key[2]))
+                 if f"{label}: {problem}" not in mine]
+        if report_text is not None and html.escape(entry["file"]) not in shown:
+            mine.append(f"{label}: report.html does not show {entry['file']}")
+        problems += mine
+    problems += [p for p in set_problems(entries) if f"the run recorded: {p}" not in problems]
+    for src in sorted(shown):
+        target = (folder / html.unescape(src)).resolve()
+        if not target.is_file() or folder.resolve() not in target.parents:
+            problems.append(f"report.html links {src}, which does not resolve inside the folder")
+    if recorded_failures and not problems:
+        problems.append(f"the run recorded {recorded_failures} failure(s) the manifest does not explain")
     return problems
 
 
-def render_all(docs, make_browser) -> tuple[list[tuple[str, str, str, Path | None]], list[dict], int]:
-    """Write every document and, with a browser factory, render it: (report rows, manifest entries, failures).
+def render_all(docs, make_browser) -> tuple[list[tuple[str, str, str, Path | None]], list[dict], int, list[str]]:
+    """Write every document and, with a browser factory, render it: (report rows, manifest entries, failures,
+    the problems of the run itself: a browser it could not clean up, two themes that are one picture).
 
     One broken preview never hides the rest, and one stalled browser never holds them: after a render that
     raised, the browser is closed (its whole process tree ended) and a new one started for the next render. A
@@ -694,7 +766,7 @@ def render_all(docs, make_browser) -> tuple[list[tuple[str, str, str, Path | Non
     dead = ""  # why no browser can be had any more
     left: list[str] = []
     try:
-        for comp, theme, density, src, width in docs:
+        for comp, theme, density, src, card_width, card_height in docs:
             doc = html_dir / comp / f"{theme}-{density}.html"
             doc.parent.mkdir(parents=True, exist_ok=True)
             doc.write_text(src, encoding="utf-8", newline="\n")
@@ -711,7 +783,7 @@ def render_all(docs, make_browser) -> tuple[list[tuple[str, str, str, Path | Non
                     entry["problems"] = [f"not rendered: {dead}"]
                 else:
                     try:
-                        entry.update(browser.shoot(doc.resolve().as_uri(), max(width or 0, 1200), png))
+                        entry.update(browser.shoot(doc.resolve().as_uri(), card_width, card_height, png))
                         entry["file"] = png.relative_to(OUT).as_posix()
                         entry["problems"] = render_problems(entry)
                         print(f"{comp}/{theme}-{density}.png {entry['width']}x{entry['height']}", flush=True)
@@ -728,10 +800,11 @@ def render_all(docs, make_browser) -> tuple[list[tuple[str, str, str, Path | Non
     finally:
         if browser is not None:
             left += browser.close()
-    for problem in left + set_problems(entries):
+    run_problems = left + set_problems(entries)
+    for problem in run_problems:
         failures += 1
         print(f"render-design-reference: {problem}", flush=True)
-    return rows, entries, failures
+    return rows, entries, failures, run_problems
 
 
 def main(argv=None) -> int:
@@ -769,11 +842,12 @@ def main(argv=None) -> int:
         if not exe:
             print("render-design-reference: Microsoft Edge not found; pass --edge, or --no-render for the HTML only")
             return 2
-    rows, entries, failures = render_all(docs, (lambda: Edge(exe)) if exe else None)
+    rows, entries, failures, run_problems = render_all(docs, (lambda: Edge(exe)) if exe else None)
     report = write_report(rows)
     if not args.no_render:
         (OUT / "manifest.json").write_text(json.dumps(
-            {"highlight": args.highlight, "owed": len(docs), "failures": failures, "renders": entries},
+            {"highlight": args.highlight, "owed": len(docs), "failures": failures, "run_problems": run_problems,
+             "renders": entries},
             indent=1) + "\n", encoding="utf-8", newline="\n")
     print(f"render-design-reference: {len(rows)} reference(s), {failures} failure(s); report {report.relative_to(ROOT).as_posix()}")
     return 1 if failures else 0
