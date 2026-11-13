@@ -2,7 +2,7 @@
 schema_version: 1
 id: dev-automation
 domain: 00-workspace
-status: draft
+status: done
 title: "TODO-01 -- Dev-Automation Wiring"
 depends_on: []
 track: W1
@@ -66,7 +66,7 @@ track: W1
 |   7   |   §7    | The validator reads the Gesso parity catalog  | §6, D00 T07 §1 |  [x]   |
 |   8   |   §8    | The validator reads the Albumen parity catalog  | §7         |  [x]   |
 |   9   |   §9    | The design contract gates                     | §1, D00 T07 §1 |  [x]   |
-|  10   |   §10   | The drift gates                               | §1, D00 T07 §1 |  [ ]   |
+|  10   |   §10   | The drift gates                               | §1, D00 T07 §1 |  [x]   |
 |  11   |   §11   | The manual-row invariant                      | §2         |  [x]   |
 |  12   |   §12   | Merge dependency PRs at section boundaries    | --         |  [x]   |
 |  13   |   §13   | Run-guard robustness                          | --         |  [x]   |
@@ -414,6 +414,9 @@ The operator asked on 2026-09-27, after the rename to Isotone, "how are we preve
 - [x] Commit: `"workspace: the drift gates: product facts, retired names, doc claims, and the GitHub mirror"` Done 2026-11-13: this commit.
 
 **Test checkpoint:** Unit test and driven run: `python scripts/drift-check.py --self-test` prints `0 failed`; `python scripts/drift-check.py` prints `0 finding(s)` on the tree and exits 1 naming the file and `retired-name` after a probe line "Imago raster editor" is added to `README.md` (quoted, then reverted); `python scripts/drift-check.py --check-github` exits 0 after the operator's sync and names the field after a probe difference; `python scripts/todo-claims.py` measures a claim in `docs/dev/build.md`. Cheaper substitute that fails: a one-off grep during the rename, which is what let the GitHub description drift. **Added 2026-11-13** (plan review, D00-T01-S10-PR1 to PR4): `python scripts/tests/test_drift_check.py` exits 0 (the index file set, the workflow's path filters); the self-test carries the sync failure cases; the pinned reviewer's two `docs-drift` replies on the probe are quoted; and a commit touching only `docs/phase-runs/` is read back with `plan-gates success`. Done 2026-11-13: `python scripts/drift-check.py --self-test` prints `41 cases, 0 failed`; `python scripts/drift-check.py` printed `0 finding(s)` on the tree and, in a scratch clone with a line naming the retired raster editor name added to `README.md`, exit 1 printing `README.md:16:retired-name:`; `--check-github` printed `0 finding(s)` after the sync and named the field before it; `todo-claims.py` measured the claims added to `docs/dev/build.md`; `test_drift_check.py` `Ran 9 tests`, `OK`; and the pinned reviewer's `docs-drift` replies on the probe are quoted in the lens item.
+
+> **Verified:** 2026-11-13 | §10 | a92e0e4618d528342cce638cf0c7684153c268ac
+> **Review:** `docs/reviews/d00-t01-s10.json`
 
 ## 11. The Manual-Row Invariant
 

@@ -1,0 +1,89 @@
+{
+  "ref": "D00 T01 \u00a710",
+  "title": "The Drift Gates: Product Facts, Retired Names, Doc Claims, and the GitHub Mirror",
+  "implementation_sha": "a92e0e4618d528342cce638cf0c7684153c268ac",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s10.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/drift-check.py --self-test -> 58 cases, 0 failed; python scripts/tests/test_drift_check.py -> Ran 9 tests, OK; python scripts/todo-claims.py --self-test -> 32 cases, 0 failed; python scripts/tests/test_merge_prs.py -> Ran 114 tests, OK",
+    "python scripts/drift-check.py -> exit 0, 0 finding(s); in a scratch clone a staged README line naming a retired name -> hook exit 1 naming README.md and retired-name, and exit 0 once fixed",
+    "python scripts/drift-check.py --check-github -> 0 finding(s) after --sync-github printed 2 change(s): 2 confirmed, then 0 change(s)",
+    "docs-drift probe through the dispatcher: three blocking P2 findings on stale texts, then docs-drift: approve once corrected",
+    "Docs: README.md, docs/dev/README.md, docs/dev/build.md, docs/dev/versioning.md, AGENTS.md, docs/review-round-prompt.md, both skill trees -> updated with the change",
+    ".github/workflows/build.yml on a92e0e4618d5 -> success https://github.com/rizonesoft/Isotone/actions/runs/43345078620",
+    ".github/workflows/plan.yml on a92e0e4618d5 -> success https://github.com/rizonesoft/Isotone/actions/runs/43345078588; on 49b9022a8074, which touches only docs/phase-runs/ -> success https://github.com/rizonesoft/Isotone/actions/runs/43346729341"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T01-s10.md",
+    "verdict": "reconciled",
+    "candidate": "a92e0e4618d528342cce638cf0c7684153c268ac",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T01-s10.md",
+    "candidate": "372746231e35e49d2c56be7dde6dc0941f9e0dcc",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "372746231e35e49d2c56be7dde6dc0941f9e0dcc",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 6,
+  "pass_cap": 33
+}
