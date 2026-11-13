@@ -29,8 +29,12 @@ def pr(number=1, **over):
         "number": number, "author": {"login": "app/dependabot"}, "labels": [{"name": "dependencies"}],
         "baseRefName": "main", "isDraft": False, "headRefName": f"dependabot/github_actions/x-{number}",
         "headRefOid": f"{number:040d}", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
+        # plan-gates runs on every pull request since D00 T01 §10 removed its path filter, so a green pull request
+        # carries both workflows' checks.
         "statusCheckRollup": [{"__typename": "CheckRun", "name": "build-windows", "status": "COMPLETED",
-                               "conclusion": "SUCCESS", "workflowName": "build"}],
+                               "conclusion": "SUCCESS", "workflowName": "build"},
+                              {"__typename": "CheckRun", "name": "plan-gates", "status": "COMPLETED",
+                               "conclusion": "SUCCESS", "workflowName": "plan-gates"}],
         "files": [{"path": ".github/workflows/build.yml", "changeType": "MODIFIED"}], "changedFiles": 1, "createdAt": f"2026-10-2{number}T00:00:00Z",
     }
     base.update(over)
@@ -343,8 +347,14 @@ class EligibilityTests(unittest.TestCase):
 
     def test_every_expected_workflow_must_have_reported(self):
         # A pins pull request changing scripts needs build and plan-gates; build alone is not enough.
+        build_only = [{"__typename": "CheckRun", "name": "build-windows", "status": "COMPLETED", "conclusion": "SUCCESS",
+                       "workflowName": "build"}]
         ok, why = self.reason(author={"login": "app/github-actions"}, headRefName="pins/x", labels=[{"name": "pins"}],
-                              files=[{"path": "scripts/check-local-tools.py", "changeType": "MODIFIED"}])
+                              files=[{"path": "scripts/check-local-tools.py", "changeType": "MODIFIED"}],
+                              statusCheckRollup=build_only)
+        self.assertEqual((ok, "workflow plan-gates has not reported" in why), (False, True))
+        # A workflow-only change runs plan-gates too now, so build alone is not enough there either.
+        ok, why = self.reason(statusCheckRollup=build_only)
         self.assertEqual((ok, "workflow plan-gates has not reported" in why), (False, True))
         both = [{"__typename": "CheckRun", "name": n, "status": "COMPLETED", "conclusion": "SUCCESS", "workflowName": w}
                 for n, w in (("build-windows", "build"), ("plan-gates", "plan-gates"))]
@@ -368,14 +378,28 @@ class EligibilityTests(unittest.TestCase):
                 self.assertEqual((ok, needle in why), (want, True))
 
     def test_the_expected_workflows_follow_the_path_filters(self):
-        self.assertEqual(mp.expected_workflows(REPO, [".github/workflows/build.yml"]), ["build"])
+        # The repository's own pull request workflows have no path filter (plan-gates lost its filter in D00 T01 §10,
+        # because the drift gate reads every tracked file), so every change runs both.
+        self.assertEqual(mp.expected_workflows(REPO, [".github/workflows/build.yml"]), ["build", "plan-gates"])
         self.assertEqual(mp.expected_workflows(REPO, ["todo/README.md"]), ["build", "plan-gates"])
+        # A workflow that does filter is expected only for a change its filter matches.
+        with tempfile.TemporaryDirectory() as tmp:
+            flows = Path(tmp) / ".github" / "workflows"
+            flows.mkdir(parents=True)
+            (flows / "a.yml").write_text("name: always\non:\n  pull_request:\n    branches: [main]\n", encoding="utf-8")
+            (flows / "b.yml").write_text("name: scripts-only\non:\n  pull_request:\n    branches: [main]\n"
+                                         "    paths:\n      - 'scripts/**'\n", encoding="utf-8")
+            (flows / "c.yml").write_text("name: push-only\non:\n  push:\n    branches: [main]\n", encoding="utf-8")
+            self.assertEqual(mp.expected_workflows(Path(tmp), [".github/workflows/a.yml"]), ["always"])
+            self.assertEqual(mp.expected_workflows(Path(tmp), ["scripts/x.py"]), ["always", "scripts-only"])
 
     def test_skipped_and_neutral_checks_pass(self):
         rollup = [{"__typename": "CheckRun", "name": "a", "status": "COMPLETED", "conclusion": "SKIPPED",
                    "workflowName": "build"},
                   {"__typename": "CheckRun", "name": "b", "status": "COMPLETED", "conclusion": "NEUTRAL"},
-                  {"__typename": "StatusContext", "context": "c", "state": "SUCCESS"}]
+                  {"__typename": "StatusContext", "context": "c", "state": "SUCCESS"},
+                  {"__typename": "CheckRun", "name": "plan-gates", "status": "COMPLETED", "conclusion": "SUCCESS",
+                   "workflowName": "plan-gates"}]
         self.assertTrue(self.reason(statusCheckRollup=rollup)[0])
 
 
