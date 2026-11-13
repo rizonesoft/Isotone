@@ -79,7 +79,9 @@ DEFAULT_ROOT = "todo"
 DOC_ROOTS = ("docs", "standards")
 DOC_EXCLUDED = ("docs/reviews/", "docs/phase-runs/", "docs/legacy/", "docs/parity/section-design.md",
                 "docs/parity/gesso-section-design.md", "docs/parity/albumen-section-design.md")
-FENCE_RE = re.compile(r"^\s*(```|~~~)")
+# A fenced code block (CommonMark): an opening line of three or more backticks or tildes, indented at most three
+# spaces; it closes only on a line of the same character, at least as long, with nothing after it but spaces.
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 DEFERRED_STATUSES = ("blocked", "superseded")
 
 
@@ -257,13 +259,19 @@ def doc_files() -> list[Path]:
 def _lines(path: Path, skip_fences: bool):
     """(line number, line) of a file; with `skip_fences`, not the lines inside a fenced code block. A document
     shows what a claim looks like inside a fence, and an example is not a measurement."""
-    fenced = False
+    opened = ""  # the opening fence while inside a block
     for lineno, line in enumerate(io.open(path, encoding="utf-8", errors="replace").read().splitlines(), 1):
-        if skip_fences and FENCE_RE.match(line):
-            fenced = not fenced
-            continue
-        if not fenced:
-            yield lineno, line
+        if skip_fences:
+            m = FENCE_RE.match(line)
+            if not opened:
+                if m and not (m.group(1)[0] == "`" and "`" in m.group(2)):  # a backtick fence's info has no backtick
+                    opened = m.group(1)
+                    continue
+            else:
+                if m and m.group(1)[0] == opened[0] and len(m.group(1)) >= len(opened) and not m.group(2).strip():
+                    opened = ""
+                continue
+        yield lineno, line
 
 
 def collect(paths: list[Path], skip_fences: bool = False) -> list[tuple[Path, int, str]]:
@@ -668,7 +676,10 @@ def _self_test() -> int:
     (docs_root / "standards").mkdir(parents=True)
     (docs_root / "src").mkdir(parents=True)
     (docs_root / "docs" / "dev" / "build.md").write_text(
-        "# Build\n\n<!-- claim: exists docs/dev/build.md -->\n\n```\n<!-- claim: exists an/example.txt -->\n```\n",
+        "# Build\n\n<!-- claim: exists docs/dev/build.md -->\n\n```\n<!-- claim: exists an/example.txt -->\n```\n"
+        "\n````markdown\n```python\n<!-- claim: exists inside/the/outer/fence.txt -->\n````\n"
+        "<!-- claim: exists docs/dev/build.md -->\n"
+        "~~~\n```\n<!-- claim: exists inside/a/tilde/fence.txt -->\n~~~\n",
         encoding="utf-8")
     (docs_root / "standards" / "a.md").write_text("<!-- claim: exists no/such/file.txt -->\n", encoding="utf-8")
     (docs_root / "README.md").write_text("<!-- claim: absent no/such/file.txt -->\n<!-- claim: exists\n", encoding="utf-8")
@@ -682,7 +693,7 @@ def _self_test() -> int:
             failed += 1
         measured = [(p.relative_to(docs_root).as_posix(), n, c) for p, n, c in collect(doc_files(), skip_fences=True)]
         if measured != [("README.md", 1, "absent no/such/file.txt"), ("docs/dev/build.md", 3, "exists docs/dev/build.md"),
-                        ("standards/a.md", 1, "exists no/such/file.txt")]:
+                        ("docs/dev/build.md", 13, "exists docs/dev/build.md"), ("standards/a.md", 1, "exists no/such/file.txt")]:
             print(f"  FAIL  docs scope: a claim in a fence, a record, or a folder outside the scope was measured: {measured}")
             failed += 1
         verdicts = []
@@ -692,7 +703,7 @@ def _self_test() -> int:
                 verdicts.append("holds")
             except Stale:
                 verdicts.append("stale")
-        if verdicts != ["holds", "holds", "stale"]:
+        if verdicts != ["holds", "holds", "holds", "stale"]:
             print(f"  FAIL  docs scope: a true claim in a document must hold and a false one fail: {verdicts}")
             failed += 1
         open_claims = [(p.name, n) for p, n, _s in collect_unterminated(doc_files(), skip_fences=True)]

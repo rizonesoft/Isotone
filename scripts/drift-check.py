@@ -19,6 +19,9 @@ Rules, each printed as `path:line:rule:message`:
 - `readme-facts`: the README's opening line differs from the facts file, or a version badge differs from the
   pinned source the facts file points at.
 - `facts-malformed`: the facts file is missing, is not JSON, or lacks something a rule reads.
+- `unreadable`: a file the scan lists cannot be read (a sharing violation, a denied access, a tracked file missing
+  from the work tree). A file the gate cannot read is never passed as clean; a binary file (one holding a NUL byte or
+  not UTF-8) is not text, and is skipped.
 - `github-drift` (`--check-github`): the repository's description, topics, or homepage on GitHub differs from the
   facts file.
 
@@ -160,17 +163,32 @@ def listed_files(root: Path, files_from: str | None) -> list[str] | None:
     return sorted(p.decode("utf-8", errors="surrogateescape").replace("\\", "/") for p in raw.split(b"\0") if p)
 
 
+class Unreadable(Exception):
+    """A file the scan needs could not be read; the message says why."""
+
+
 def read_text(path: Path) -> str | None:
-    """A file's text, or None for a file that is not text (it holds a NUL byte or is not UTF-8) or cannot be read."""
+    """A file's text, or None for a file that is not text (it holds a NUL byte or is not UTF-8). A file that cannot
+    be read raises `Unreadable`: it is a finding, never a file that passed."""
     try:
         data = path.read_bytes()
-    except OSError:
-        return None
+    except OSError as error:
+        raise Unreadable(f"{error.__class__.__name__}: {error.strerror or error}") from error
     if b"\0" in data:
         return None
     try:
         return data.decode("utf-8")
     except UnicodeDecodeError:
+        return None
+
+
+def _read_or_finding(path: Path, rel: str, out: list) -> str | None:
+    """`read_text`, with a file that cannot be read added to `out` as an `unreadable` finding."""
+    try:
+        return read_text(path)
+    except Unreadable as error:
+        out.append(Finding(rel, 0, "unreadable", f"cannot be read ({error}); the gate does not pass a file it could "
+                                                f"not read"))
         return None
 
 
@@ -219,7 +237,7 @@ def retired_findings(root: Path, facts: dict, files: list[str]) -> list[Finding]
     for path in files:
         if _path_allowed(path, allow["paths"]):
             continue
-        text = read_text(root / path)
+        text = _read_or_finding(root / path, path, out)
         if text is None:
             continue
         if path == FACTS_PATH:
@@ -267,18 +285,22 @@ def retired_findings(root: Path, facts: dict, files: list[str]) -> list[Finding]
 
 def readme_findings(root: Path, facts: dict) -> list[Finding]:
     readme_path = facts["readme"]["path"]
-    text = read_text(root / readme_path)
-    if text is None:
-        return [Finding(readme_path, 0, "readme-facts", "cannot be read; the README states the product facts")]
     out: list[Finding] = []
+    text = _read_or_finding(root / readme_path, readme_path, out)
+    if text is None:
+        return out or [Finding(readme_path, 0, "readme-facts", "is not text; the README states the product facts")]
     opening = facts["readme"]["opening_line"]
     if text.count(opening) != 1:
         out.append(Finding(readme_path, 0, "readme-facts",
                            f"the opening line the facts file owns occurs {text.count(opening)} time(s), not once: "
                            f"{opening!r}; change {FACTS_PATH} first, then the README to match"))
     for version in facts["versions"]:
-        source = read_text(root / version["source"])
-        pinned = re.search(version["source_pattern"], source) if source is not None else None
+        unreadable: list[Finding] = []
+        source = _read_or_finding(root / version["source"], version["source"], unreadable)
+        if unreadable:
+            out += unreadable
+            continue
+        pinned = re.search(version["source_pattern"], source, re.M) if source is not None else None
         if pinned is None:
             out.append(Finding(version["source"], 0, "readme-facts",
                                f"the {version['name']} version cannot be read here with the pattern {FACTS_PATH} "
@@ -343,9 +365,12 @@ def check_github(facts: dict, gh) -> list[Finding]:
 
 def sync_github(facts: dict, gh, say=print) -> int:
     """Make GitHub's description, homepage, and topics the facts file's, one field at a time, each printed before
-    it is made and read back after. Topics are replaced exactly. Returns 0 when every field is as the facts say
-    and was read back; 1 otherwise, having said which fields are confirmed, which were edited and could not be
-    confirmed, and which were left unchanged."""
+    it is made and read back after. Topics are replaced exactly. An edit `gh` reports as failed is read back too,
+    since GitHub may have applied it before the reply was lost: confirmed, it counts as made and the run goes on;
+    still old, the field is left unchanged and the run stops; unreadable, its state is unknown and the run stops.
+    Returns 0 when every field is as the facts say and was read back; 1 otherwise, having said which fields are
+    confirmed, which were edited and could not be confirmed, which are in an unknown state, and which were left
+    unchanged."""
     slug = facts["repository"]["slug"]
     want = github_wanted(facts)
     have, why = github_state(slug, gh)
@@ -355,6 +380,8 @@ def sync_github(facts: dict, gh, say=print) -> int:
     changes = [field for field in GITHUB_FIELDS if have[field] != want[field]]
     confirmed: list[str] = []
     unverified: list[str] = []
+    unknown: list[str] = []
+    left: list[str] = []
     failed = ""
     for n, field in enumerate(changes):
         say(f"drift-check: {field}: {have[field]!r} -> {want[field]!r}")
@@ -369,26 +396,34 @@ def sync_github(facts: dict, gh, say=print) -> int:
         else:
             argv = ["repo", "edit", slug, f"--{field}", want[field]]
         code, out = gh(argv)
-        if code != 0:
-            failed = f"the edit of {field} failed ({out or f'gh exited {code}'})"
-            left = changes[n:]
-            break
         after, why = github_state(slug, gh)
+        if code != 0:
+            failure = f"the edit of {field} reported a failure ({out or f'gh exited {code}'})"
+            if after is not None and after[field] == want[field]:
+                say(f"drift-check: {failure}, and GitHub holds the new value, so the edit was made")
+                confirmed.append(field)
+                continue
+            failed = failure
+            if after is None:
+                unknown.append(field)
+                say(f"drift-check: {failure}, and the field could not be read back ({why}), so its state is unknown")
+            else:
+                left.append(field)
+                say(f"drift-check: {failure}; GitHub still reads {after[field]!r}")
+            left += changes[n + 1:]
+            break
         if after is None or after[field] != want[field]:
             unverified.append(field)
             say(f"drift-check: {field} was edited and could not be confirmed: "
                 + (why if after is None else f"GitHub still reads {after[field]!r}"))
         else:
             confirmed.append(field)
-    else:
-        left = []
-    if failed:
-        say(f"drift-check: {failed}")
     say(f"drift-check: {len(changes)} change(s): {len(confirmed)} confirmed"
         + (f" ({', '.join(confirmed)})" if confirmed else "")
         + (f", {len(unverified)} edited and not confirmed ({', '.join(unverified)})" if unverified else "")
+        + (f", {len(unknown)} in an unknown state ({', '.join(unknown)})" if unknown else "")
         + (f", {len(left)} left unchanged ({', '.join(left)})" if left else ""))
-    return 1 if (failed or unverified or left) else 0
+    return 1 if (failed or unverified or unknown or left) else 0
 
 
 # ---------------------------------------------------------------- the run
@@ -535,6 +570,29 @@ def self_test() -> int:
           (len(found), has(found, "scripts/drift-check.py:1:retired-name:")), (1, True))
     # What is scanned.
     check("a file that is not text is skipped", run({**notes, "resources/a.png": b"\x89PNG\0" + old_app.encode()}), [])
+    with tempfile.TemporaryDirectory(prefix="drift-check-selftest-") as tmp:
+        names = tree(Path(tmp), notes) + ["docs/gone.md", "docs/a-folder"]
+        (Path(tmp) / "docs" / "a-folder").mkdir()
+        listing = Path(tmp) / ".listing"
+        listing.write_bytes(b"\0".join(n.encode() for n in names))
+        found = [f.render() for f in tree_findings(Path(tmp), str(listing))]
+        check("a listed file that cannot be read is a finding, never a pass",
+              (len(found), has(found, "docs/gone.md:0:unreadable:", "FileNotFoundError"),
+               has(found, "docs/a-folder:0:unreadable:")), (2, True, True))
+        real_read = Path.read_bytes
+
+        def deny(self):
+            if self.name == "README.md":
+                raise PermissionError(13, "Access is denied")
+            return real_read(self)
+
+        Path.read_bytes = deny
+        try:
+            found = [f.render() for f in tree_findings(Path(tmp), str(listing))]
+        finally:
+            Path.read_bytes = real_read
+        check("a README the gate is denied is a finding",
+              has(found, "README.md:0:unreadable:", "PermissionError", "Access is denied"), True)
     check("a file outside the list is not scanned (an untracked file in the work tree)",
           run({**notes, "scratch.md": f"{old_app}\n"},
               listed=["README.md", FACTS_PATH, "docs/notes.md", "native/CMakeLists.txt", "native/toolchain.json"]), [])
@@ -584,6 +642,7 @@ def self_test() -> int:
             self.state = {"description": description, "homepage": homepage, "topics": sorted(topics)}
             self.calls: list[list[str]] = []
             self.fail_edit_of: set[str] = set()   # the edit exits non-zero and changes nothing
+            self.lost_reply_of: set[str] = set()  # the edit is applied, then exits non-zero (a lost reply)
             self.lose_edit_of: set[str] = set()   # the edit exits zero and changes nothing
             self.fail_view_after = 0              # the Nth view from now on fails (0: never)
             self.views = 0
@@ -610,6 +669,8 @@ def self_test() -> int:
                 self.state["topics"] = sorted(topics)
             else:
                 self.state[field] = options[f"--{field}"]
+            if field in self.lost_reply_of:
+                return 1, "context deadline exceeded"
             return 0, ""
 
     def sync(gh) -> tuple[int, list[str]]:
@@ -643,13 +704,27 @@ def self_test() -> int:
     code, said = sync(gh)
     check("sync: an edit that fails after one field changed exits non-zero, naming what is confirmed and what is left",
           (code, gh.state["description"] == wanted["description"], gh.state["homepage"], said[-1],
-           has(said, "the edit of homepage failed", "HTTP 403")),
+           has(said, "the edit of homepage reported a failure", "HTTP 403", "still reads")),
           (1, True, "https://old.invalid/",
            "drift-check: 3 change(s): 1 confirmed (description), 2 left unchanged (homepage, topics)", True))
     gh.fail_edit_of = set()
     code, said = sync(gh)
     check("sync: the run after a partial failure makes only what is left, and converges",
           (code, gh.state == wanted, said[-1]), (0, True, "drift-check: 2 change(s): 2 confirmed (homepage, topics)"))
+    gh = FakeGh()
+    gh.lost_reply_of = {"description"}
+    code, said = sync(gh)
+    check("sync: an edit GitHub applied before its reply was lost is read back, counted as made, and the run goes on",
+          (code, gh.state == wanted, said[-1], has(said, "GitHub holds the new value, so the edit was made")),
+          (0, True, "drift-check: 3 change(s): 3 confirmed (description, homepage, topics)", True))
+    gh = FakeGh()
+    gh.fail_edit_of = {"description"}
+    gh.fail_view_after = 2  # the first view (before any edit) works; the read-back after the failed edit does not
+    code, said = sync(gh)
+    check("sync: a failed edit that cannot be read back leaves its field in an unknown state, and the rest unchanged",
+          (code, said[-1], has(said, "could not be read back", "state is unknown")),
+          (1, "drift-check: 3 change(s): 0 confirmed, 1 in an unknown state (description), 2 left unchanged (homepage, topics)",
+           True))
     gh = FakeGh()
     gh.lose_edit_of = {"description"}
     code, said = sync(gh)
