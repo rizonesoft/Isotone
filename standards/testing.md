@@ -40,7 +40,7 @@ A surface is proven on the rendered interface, never by reading its code:
 
 - **Driven runs:** UI Automation reads and invokes the tree; because invoking through UI Automation bypasses the keyboard, pointer, hit-testing, and input-method paths, those are driven separately, with `SendInput` for the keyboard and mouse, synthetic pointer injection for pen and touch, and a real input method's composition for text. A structured log line, a settings readback, or a saved file inspected is evidence too.
 - **Goldens:** the surface rendered offscreen on the WARP software device in the pinned reference environment and compared with its review-approved goldens under `docs/captures/golden/` within the tolerance [`design-contract.md`](design-contract.md) states.
-- Both proofs become usable when the foundation that provides them is stamped (`todo/README.md` marks each "unusable for a stamp until" its section lands); until then no section may cite them, and `python scripts/todo-graph.py validate` refuses a checkpoint that does.
+- Both proofs become usable when the foundation section that provides them is stamped (`todo/README.md` marks each "unusable for a stamp until" its section lands: `D01 T22 §2` for the driven-input runner, `D01 T25 §3` for golden renders); the owner's stamp rewrites the marker to its runner command. Until then only an open section that is the owner or depends on it, directly or through other sections, may declare the proof it will use; any other section citing it, and any stamped section citing it, is refused by `python scripts/todo-graph.py validate`.
 - The logic behind a surface (its command, its model, its computed values) is unit tested in the app's core library as well.
 
 ## No quarantine

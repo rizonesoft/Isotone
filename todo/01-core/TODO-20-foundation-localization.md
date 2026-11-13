@@ -39,7 +39,7 @@ track: F7
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | Messages, plurals, and locale formatting through icu.dll | D00 T07 §3 |  [ ]   |
+|   1   |   §1    | Messages, plurals, and locale formatting through icu.dll | D00 T07 §3, D01 T27 §2 |  [ ]   |
 |   2   |   §2    | Right-to-left mirroring, mnemonics, and shortcuts that survive translation | §1, D01 T15 §3 |  [ ]   |
 |   3   |   §3    | The pseudo-localization build in the gates | §2 |  [ ]   |
 

@@ -44,7 +44,7 @@ track: F1
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | The isotone::ui library and the generated token tables | D00 T07 §3 |  [ ]   |
-|   2   |   §2    | Run-time resolution and live switching, proved in the host | §1, D01 T15 §2 |  [ ]   |
+|   2   |   §2    | Run-time resolution and live switching, proved in the host | §1, D01 T15 §2, D01 T27 §2 |  [ ]   |
 
 ---
 
@@ -75,7 +75,7 @@ A style reads keys, so a change of theme, Highlight, density, or a Windows signa
 Each theme, Highlight, density, or contrast change writes one line to the host's audit log, and setting the previous value again reverses it exactly, so the change needs no undo entry of its own.
 
 - [ ] Add key-level change tracking to `isotone::ui::Theme`: a style registers the keys it read, and a state change computes the changed keys and invalidates only those styles. Done when: `Theme.SwitchInvalidatesOnlyReaders` passes, with a style that reads no changed key not invalidated.
-- [ ] Persist the user's theme, Highlight, and density through the core settings store with atomic write and readback, logging one line per change. Done when: `Theme.ChoicePersistsAndReadsBack` passes and the change's log line is asserted.
+- [ ] Persist the user's theme, Highlight, and density through the settings store of `D01 T27 §2` (atomic write and readback), logging one line per change through its logger. Done when: `Theme.ChoicePersistsAndReadsBack` passes and the change's log line is asserted.
 - [ ] Handle `WM_SETTINGCHANGE` for high contrast, `SPI_GETCLIENTAREAANIMATION` for reduced motion, and `WM_DPICHANGED` in the window, each re-resolving and invalidating. Done when: `Theme.HighContrastMapsToSystemColors` passes and the host reports each signal handled.
 - [ ] Add the host scenario `theme-switch` to `native/tests/foundation-host/` that cycles every theme, Highlight, and density and back, recording for each state the resolved values of the keys its placeholder panels read and the count of styles invalidated, to its `--report` JSON. Done when: the report lists every state, and switching back returns the first state's values exactly.
 - [ ] Commit: `"ui: live theme, Highlight, and density switching with key-level invalidation"`

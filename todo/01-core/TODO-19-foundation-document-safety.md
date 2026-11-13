@@ -14,7 +14,7 @@ track: F6
 > **Goal:** a document survives anything short of the user deleting it: every save keeps the spec's seven invariants against a crash or power loss at any instruction and against the ordinary programs a file meets, carries the file's identity (owner, DACL, integrity label, encryption, attributes, times, streams) to the new version or refuses, never leaves document data in a weaker copy, and every open document is checkpointed so a crash loses at most the edits since the newest completed checkpoint, which the next start recovers.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-11-13):** `isotone::core` has an atomic file write for settings (`native/core/`), and nothing implements a document save protocol, a journal, a file identity contract, encrypted secondary copies, checkpoints, retirement, or recovery. The spec owns the invariants and the proofs and sends the exact call sequence to this file to design and review.
+> **Current state (verified 2026-11-13):** `isotone::core` has no file writing yet: `native/core/` holds only the build information and the premultiply kernels, and the settings store with its atomic write comes from `D01 T27 §2` (**Corrected 2026-11-13** in the round review of `D00 T07 §3`, D00-T07-S3-R1: said `isotone::core` already had an atomic file write for settings). Nothing implements a document save protocol, a journal, a file identity contract, encrypted secondary copies, checkpoints, retirement, or recovery. The spec owns the invariants and the proofs and sends the exact call sequence to this file to design and review.
 <!-- claim: exists docs/specs/2026-10-22-native-stack-design.md -->
 <!-- claim: absent native/core/include/isotone/core/save.h -->
 <!-- claim: absent docs/dev/document-safety.md -->
@@ -28,6 +28,7 @@ track: F6
 - -> XREF: D00 T07 §3 -- authored this file; every entry section waits on its stamp
 - -> XREF: D01 T26 §1 -- crash dumps are secondary copies, encrypted as §3 sets out
 - -> XREF: D01 T15 §1 -- the foundation test host whose `recovery` scenario §5 proves in
+- -> XREF: D01 T27 §1 -- the core services foundation: saves log through its logger, and the checkpoint cadence of §4 is a setting in its store; its atomic write serves app data, never a user's document
 - -> XREF: D01 T02 §5 -- the shared atomic document writer, re-planned by `D00 T07 §4`, which becomes this file's save sequence rather than a second one
 
 ## Outcome
@@ -45,7 +46,7 @@ track: F6
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The save sequence, designed, reviewed, and journaled | D00 T07 §3 |  [ ]   |
+|   1   |   §1    | The save sequence, designed, reviewed, and journaled | D00 T07 §3, D01 T27 §2 |  [ ]   |
 |   2   |   §2    | The file identity contract | §1 |  [ ]   |
 |   3   |   §3    | Encrypted secondary copies | §1 |  [ ]   |
 |   4   |   §4    | Checkpoints and retirement | §3, D01 T18 §3 |  [ ]   |

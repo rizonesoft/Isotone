@@ -41,7 +41,7 @@ track: F5
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The thread pool in three cancellable priority classes | D00 T07 §3 |  [ ]   |
+|   1   |   §1    | The thread pool in three cancellable priority classes | D00 T07 §3, D01 T27 §1 |  [ ]   |
 |   2   |   §2    | The render thread, immutable snapshots, and the bounded GPU queue | §1, D01 T15 §2 |  [ ]   |
 |   3   |   §3    | Version-checked results and weak document references | §1 |  [ ]   |
 

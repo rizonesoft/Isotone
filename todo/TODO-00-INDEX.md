@@ -56,6 +56,7 @@ The Phase column is the coarse domain grouping, not an executable schedule. Curr
 | [TODO-24](./01-core/TODO-24-foundation-canvas.md) | 01-core | Foundation: the GPU Canvas Meeting the Frame Cadence and Pen Latency Goals |
 | [TODO-25](./01-core/TODO-25-foundation-goldens.md) | 01-core | Foundation: the Goldens Environment and Its Repeatability Proof |
 | [TODO-26](./01-core/TODO-26-foundation-crash-diagnostics.md) | 01-core | Foundation: Crash Diagnostics by an Out-of-Process Watcher |
+| [TODO-27](./01-core/TODO-27-foundation-core-services.md) | 01-core | Foundation: App-Data Paths, Structured Logging, Atomic Writes, and the Settings Store |
 | [TODO-01](./07-tinctura/TODO-01-tinctura-plan.md) | 07-tinctura | Tinctura: Plan the Color Picker and Color Studio App |
 | [TODO-01](./08-capio/TODO-01-capio-plan.md) | 08-capio | Capio: Plan the Screenshots and Screen Recording App |
 | [TODO-01](./09-folium/TODO-01-folium-plan.md) | 09-folium | Folium: Plan the Page Layout and Publishing App |

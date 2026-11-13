@@ -14,8 +14,9 @@ track: F9
 > **Goal:** every element of `isotone::ui` is exposed to UI Automation with the patterns, properties, and events its control needs, under a stated lifetime and threading rule; a driven-input runner drives the keyboard and mouse through `SendInput`, the pen and touch through synthetic pointer injection, and a real IME's composition, so every later section can prove input paths UI Automation bypasses; and Narrator and NVDA scenarios run as driven checks with their transcripts recorded.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-11-13):** No UI Automation provider, input driver, or screen reader check exists. `todo/README.md`'s proof table marks the driven-run proof's UI Automation, `SendInput`, and synthetic pointer injection runner `unusable for a stamp until D00 T07 §3 lands`; `D00 T07 §3` re-points that marker to §2 of this file, whose stamp activates it.
+> **Current state (verified 2026-11-13):** No UI Automation provider, input driver, or screen reader check exists. `todo/README.md`'s proof table marks the driven-run proof's UI Automation, `SendInput`, and synthetic pointer injection runner `unusable for a stamp until D01 T22 §2 lands`, the marker `D00 T07 §3` set, so the stamp of §2 activates it.
 <!-- claim: absent native/tests/drive -->
+<!-- claim: count "until `D01 T22 §2` lands" todo/README.md = 1 -->
 
 ## Inputs
 

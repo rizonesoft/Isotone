@@ -33,6 +33,7 @@ track: F2
 - -> XREF: D01 T21 §1 -- the text editing model draws through this file's renderer
 - -> XREF: D01 T23 §1 -- floating panels use this file's window and frames
 - -> XREF: D01 T19 §5 -- the recovery scenario runs in this file's foundation test host
+- -> XREF: D01 T27 §2 -- the host logs and keeps its settings through the core services foundation
 - -> XREF: D01 T01 §7 -- the shared window chrome of the UI library, re-planned by `D00 T07 §5`, builds the product title bar on this file's title bar mechanism
 
 ## Outcome
@@ -50,7 +51,7 @@ track: F2
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The window, DPI layout, and the foundation test host | D00 T07 §3, D01 T14 §1 |  [ ]   |
+|   1   |   §1    | The window, DPI layout, and the foundation test host | D00 T07 §3, D01 T14 §1, D01 T27 §2 |  [ ]   |
 |   2   |   §2    | The renderer: device, visuals, flip-sequential swap chains, and partial redraw | §1 |  [ ]   |
 |   3   |   §3    | The Isotone title bar with the menu bar, and snap layouts | §2 |  [ ]   |
 

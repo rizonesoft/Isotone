@@ -14,8 +14,9 @@ track: F12
 > **Goal:** a surface can be rendered offscreen on the WARP software device in a pinned reference environment, compared with its approved golden within the design contract's tolerance, and approved only through the review's path, and every golden renders identically, within that tolerance, twice and on two machines meeting the environment, so the golden render proof is something a stamp can stand on.
 
 > [!IMPORTANT]
-> **Current state (verified 2026-11-13):** `docs/captures/golden/` does not exist yet, and `todo/README.md`'s proof table marks the golden render proof `unusable for a stamp until D00 T07 §3 lands`; `D00 T07 §3` re-points that marker to §2 of this file, whose stamp activates it. The design reference renders of `scripts/render-design-reference.py` are the design's side of a comparison, not goldens.
+> **Current state (verified 2026-11-13):** `docs/captures/golden/` does not exist yet, and `todo/README.md`'s proof table marks the golden render proof `unusable for a stamp until D01 T25 §3 lands`, the marker `D00 T07 §3` set, so the proof activates only at the stamp of §3, after repeatability is proved. The design reference renders of `scripts/render-design-reference.py` are the design's side of a comparison, not goldens.
 <!-- claim: absent docs/captures/golden -->
+<!-- claim: count "until `D01 T25 §3` lands" todo/README.md = 1 -->
 <!-- claim: exists scripts/render-design-reference.py -->
 
 ## Inputs
@@ -29,8 +30,8 @@ track: F12
 ## Outcome
 
 - `isotone::ui::OffscreenRenderer` renders an element tree to a PNG on WARP after checking the pinned environment, refusing a machine whose environment differs.
-- `scripts/goldens.py compare` compares renders with `docs/captures/golden/` within the contract's tolerance, and `scripts/goldens.py approve` writes goldens only on the review's path; both run in `check-all.ps1` and CI; the stamp of §2 turns the proof table's marker into the runner command.
-- Every golden renders identically within tolerance twice and on two machines meeting the environment.
+- `scripts/goldens.py compare` compares renders with `docs/captures/golden/` within the contract's tolerance, and `scripts/goldens.py approve` writes goldens only on the review's path; both run in `check-all.ps1` and CI.
+- Every golden renders identically within tolerance twice and on two machines meeting the environment, and only then does the stamp of §3 turn the proof table's marker into the runner command.
 
 **Adjacency:** list=not-applicable (no records); document=not-applicable (no printed output); settings=not-applicable (the environment is pinned, not a setting); reporting=applicable @ D01 T25 §2; notifications=not-applicable (no long-running work a user starts); permissions=applicable @ D01 T25 §2; audit=applicable @ D01 T25 §2; exchange=not-applicable (no user files); reverse=applicable @ D01 T25 §2
 
@@ -66,7 +67,6 @@ Approving is the one write here and its permissions are narrow: only the review'
 
 - [ ] Add `scripts/goldens.py compare <area>` that renders each registered scenario through the offscreen renderer and compares it with `docs/captures/golden/<area>/<Comp>/` within the contract's tolerance, writing a report with a difference image per failure under `build/goldens/`, and `scripts/goldens.py approve` that writes goldens only when run by the review (a review record naming the section and its passed design lens is required), recording each approval in the golden folder's `APPROVALS.md`. Done when: `test_goldens.py` proves a matching render passes, a one-pixel difference beyond tolerance fails with its image, and an approval without a review record is refused.
 - [ ] Run `goldens.py compare` in `scripts/check-all.ps1` and the `native` job of `.github/workflows/build.yml`. Done when: both list the stage.
-- [ ] Activate the proof at this section's stamp: the golden render row's marker in `todo/README.md` names this section, and the stamp tool rewrites it to the runner command `python scripts/goldens.py compare` (`D00 T07 §3`). Done when: the marker names `D01 T25 §2` before the stamp and the runner command after it.
 - [ ] Commit: `"tests: compare and approve goldens in the gates"`
 
 **Test checkpoint:** Unit test and driven run with evidence: `python scripts/tests/test_goldens.py` passes (match, beyond-tolerance difference with its image, approval refused without a review record); `python scripts/goldens.py compare foundation` passes on a committed sample golden of the host's placeholder panel and fails with a difference image after one pixel of it is changed (both quoted, the change reverted). Cheaper substitute that fails: comparing by file hash, which fails on any encoder difference and passes nothing a reviewer can look at.
@@ -77,6 +77,7 @@ Approving is the one write here and its permissions are narrow: only the review'
 **Needs:** Windows host (build/test)
 
 - [ ] Render every registered golden twice on the reference machine in separate processes, and once on a second machine meeting the pinned environment (an ARM64 machine where the environment matches, recorded), and compare all renders pairwise within the contract's tolerance. Done when: the report lists every golden with zero failures and names both machines and their environments.
+- [ ] Activate the proof at this section's stamp, once repeatability is proved (spec, "Goldens": the first goldens section proves repeatability): the golden render row's marker in `todo/README.md` names this section, and the stamp tool rewrites it to the runner command `python scripts/goldens.py compare` (`D00 T07 §3`). Done when: the marker names `D01 T25 §3` before the stamp and the runner command after it.
 - [ ] Commit: `"tests: goldens render the same twice and on two machines"`
 
 **Test checkpoint:** Driven run with evidence: the repeatability report (`build/goldens/repeatability.json`) lists every registered golden rendered twice on the reference machine and once on the second machine, every pair within tolerance, with both machines' Windows builds and font hashes (quoted). Cheaper substitute that fails: one render per golden, which cannot tell a deterministic environment from a lucky one.

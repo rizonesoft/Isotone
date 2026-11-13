@@ -42,8 +42,8 @@ Generated from `python scripts/todo-graph.py query plan` on 2026-10-23 and edite
 | D01 T13 §2 | 2 | The layout-map checker | pending (W3) |  |
 | D01 T13 §7 | 2 | Every layout section cites its map | pending (W3) |  |
 | D01 T13 §3 | 2 | The Stilus map from a driven Illustrator run | pending (W3) |  |
-| D01 T02 §1 | 2 | Create Isotone.Core with app-data paths and logging | pending (W3) |  |
-| D01 T02 §2 | 2 | The settings store | pending (W3) |  |
+| D01 T02 §1 | 2 | Create Isotone.Core with app-data paths and logging | pending (W3) | boundary for D00 T07 §4: the core services foundation D01 T27 §1 owns app-data paths and structured logging; this section consumes it |
+| D01 T02 §2 | 2 | The settings store | pending (W3) | boundary for D00 T07 §4: the core services foundation D01 T27 §2 owns atomic writes and the settings store; this section consumes it |
 | D02 T01 §2 | 2 | Composition root on the Generic Host | superseded | superseded in D00 T07 §3 with its file; one composition root with logging and settings through `isotone::core` goes to the Stilus native skeleton D00 T07 §4 authors; the Generic Host has no native counterpart |
 | D02 T01 §3 | 2 | The debug console reads the Serilog pipeline | superseded | superseded in D00 T07 §3 with its file; the debug console (F12, the bounded ordered log buffer, its export, entries agreeing with the log file) and its driven proof go to the Stilus native skeleton D00 T07 §4 authors |
 | D02 T01 §4 | 2 | Culture-safe formatting and comparisons | superseded | superseded in D00 T07 §3 with its file; locale formatting, parsing, and collation go to the localization foundation D01 T20 §1 |

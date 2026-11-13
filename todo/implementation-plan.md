@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **41 of 865 sections complete (5%).** 865 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **41 of 867 sections complete (5%).** 867 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -201,11 +201,13 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 
 ### Phase 1 -- Native foundations and suite layout
 
-Every later phase builds on the native stack's foundations, so this phase proves them first, each in the one shared foundation test host with placeholder menus and panels (`docs/specs/2026-10-22-native-stack-design.md`, "The order of work" step 2): runtime theming from `docs/design/tokens.json`, a window with the Isotone title bar on the swap chain and partial-redraw contract, device loss and the WARP fallback, the display color pipeline in SDR, Advanced Color SDR, and HDR, the task system and threading, document safety, localization services, the text editing model with TSF, UI Automation with the driven-input runner and the screen reader scenarios, a docked panel that floats and redocks, the GPU canvas meeting the frame cadence and pen latency goals, the goldens environment with its repeatability proof, and crash diagnostics. `D00 T07 §3` authored them, so every entry section waits on its stamp, and a foundation that cannot meet its bar sends the spec back for revision. The icon rasters (`D00 T03 §3`) are exported from the SVG sources the operator chose on 2026-09-27 (Direction C), so each app's native skeleton wires the generated files. The C# structure files (`D02 T01`, `D03 T01`) lapsed with the C# code; what survives of them goes to the Stilus and Gesso native skeletons that `D00 T07 §4` and `§16` author.
+Every later phase builds on the native stack's foundations, so this phase proves them first, each in the one shared foundation test host with placeholder menus and panels (`docs/specs/2026-10-22-native-stack-design.md`, "The order of work" step 2), on the core services they all write through (app-data paths, structured logging, atomic writes, and the settings store): runtime theming from `docs/design/tokens.json`, a window with the Isotone title bar on the swap chain and partial-redraw contract, device loss and the WARP fallback, the display color pipeline in SDR, Advanced Color SDR, and HDR, the task system and threading, document safety, localization services, the text editing model with TSF, UI Automation with the driven-input runner and the screen reader scenarios, a docked panel that floats and redocks, the GPU canvas meeting the frame cadence and pen latency goals, the goldens environment with its repeatability proof, and crash diagnostics. `D00 T07 §3` authored them, so every entry section waits on its stamp, and a foundation that cannot meet its bar sends the spec back for revision. The icon rasters (`D00 T03 §3`) are exported from the SVG sources the operator chose on 2026-09-27 (Direction C), so each app's native skeleton wires the generated files. The C# structure files (`D02 T01`, `D03 T01`) lapsed with the C# code; what survives of them goes to the Stilus and Gesso native skeletons that `D00 T07 §4` and `§16` author.
 
 |  ✔  | Section      | Deliverable                                                                                         | Items |
 | :-: | ------------ | --------------------------------------------------------------------------------------------------- | :---: |
 | [ ] | `D00 T07 §3` | Author the native foundations and settle the structure files                                        |  10   |
+| [ ] | `D01 T27 §1` | App-Data Paths and Structured Logging                                                               |   3   |
+| [ ] | `D01 T27 §2` | Atomic File Writes and the Settings Store                                                           |   3   |
 | [ ] | `D01 T14 §1` | The isotone::ui Library and the Generated Token Tables                                              |   6   |
 | [ ] | `D01 T15 §1` | The Window, DPI Layout, and the Foundation Test Host                                                |   5   |
 | [ ] | `D01 T15 §2` | The Renderer: Device, Visuals, Flip-Sequential Swap Chains, and Partial Redraw                      |   5   |
@@ -239,8 +241,8 @@ Every later phase builds on the native stack's foundations, so this phase proves
 | [ ] | `D01 T24 §1` | The Canvas Visual, Its Swap Chain, and Pen Input with Every Sample                                  |   3   |
 | [ ] | `D01 T24 §2` | Measuring the Frame Cadence and Pen Latency Goals under Load                                        |   4   |
 | [ ] | `D01 T25 §1` | Offscreen Rendering on WARP in the Pinned Environment                                               |   3   |
-| [ ] | `D01 T25 §2` | Compare and Approve, in the Gates                                                                   |   4   |
-| [ ] | `D01 T25 §3` | The Repeatability Proof                                                                             |   2   |
+| [ ] | `D01 T25 §2` | Compare and Approve, in the Gates                                                                   |   3   |
+| [ ] | `D01 T25 §3` | The Repeatability Proof                                                                             |   3   |
 | [ ] | `D01 T26 §1` | The Watcher and Encrypted Minidumps                                                                 |   4   |
 | [ ] | `D01 T26 §2` | Sending a Report, the WER Exclusion, Symbols, and the Crash Proofs                                  |   4   |
 | [x] | `D00 T03 §3` | Export the app icon rasters from the SVG sources                                                    |  16   |
