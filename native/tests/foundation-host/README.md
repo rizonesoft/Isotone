@@ -47,7 +47,7 @@ One JSON object, written atomically through `isotone::core::AtomicFile`:
 
 `smoke` measures `dpi`, `scale_percent`, `dpi_awareness` (`per-monitor-v2`, `per-monitor`, `system`, `unaware`, or `unknown`), `client_width_px`, `client_height_px`, `client_width_dip`, `client_height_dip`, `layouts`, `menus` (an array of `label` and `commands`), and `panels` (for `left` and `right`: the rectangle in pixels, the `expected` token color, and the `painted` color).
 
-`lifecycle` measures `paints`, `layouts`, `resized_width_px`, `loop_exit_code`, and `destroyed`.
+`lifecycle` measures `paints`, `layouts`, `resized_client_width_px`, `resized_client_height_px`, `loop_exit_code`, and `destroyed`. It resizes the window smaller, never larger: Windows holds a window to the size of the desktop, and a test desktop can be little larger than the window.
 
 ## In CTest
 

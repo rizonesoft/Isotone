@@ -557,21 +557,35 @@ Report run_lifecycle(Context& context)
     }
     const int layouts_before = host.layouts();
     const int paints_before = host.paints();
-    const PixelRect before = window.window_rect();
-    constexpr std::int32_t kGrow = 120;
-    SetWindowPos(host.handle(), nullptr, 0, 0, before.width() + kGrow, before.height() + kGrow,
-                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    const PixelRect panel_before = host.right_panel();
+    // Smaller, never larger: Windows holds a window to the size of the desktop, and a test desktop can be little
+    // larger than the window already is.
+    constexpr isotone::ui::DipSize kResized{.width = 720.0F, .height = 480.0F};
+    window.resize_client(kResized);
     if (!pump_until([&host, paints_before] { return host.paints() > paints_before; }))
     {
         report.fail("the resized window was not painted again");
     }
-    if (host.layouts() <= layouts_before || window.window_rect().width() != before.width() + kGrow)
+    const PixelRect client = window.client_rect();
+    const std::int32_t wanted_width = isotone::ui::to_pixels(Dip{kResized.width}, window.dpi());
+    const std::int32_t wanted_height = isotone::ui::to_pixels(Dip{kResized.height}, window.dpi());
+    if (client.width() != wanted_width || client.height() != wanted_height)
     {
-        report.fail("the resize did not lay the panels out again");
+        report.fail(std::format("the resize left a client area of {} x {} px where {} x {} px was asked for",
+                                client.width(), client.height(), wanted_width, wanted_height));
+    }
+    if (host.layouts() <= layouts_before || host.right_panel().right >= panel_before.right ||
+        host.right_panel().right > client.right)
+    {
+        report.fail(std::format("the resize did not lay the panels out again: {} layouts before and {} after, the "
+                                "right panel ending at {} px before and {} px after in a client area {} px wide",
+                                layouts_before, host.layouts(), panel_before.right, host.right_panel().right,
+                                client.width()));
     }
     report.measure("paints", host.paints());
     report.measure("layouts", host.layouts());
-    report.measure("resized_width_px", window.window_rect().width());
+    report.measure("resized_client_width_px", client.width());
+    report.measure("resized_client_height_px", client.height());
     window.close();
     const int loop_result = Window::run_message_loop();
     report.measure("loop_exit_code", loop_result);
