@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **40 of 840 sections complete (5%).** 840 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **41 of 840 sections complete (5%).** 840 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -206,7 +206,7 @@ Every later section names files, so both imported apps move into the suite layou
 |  ✔  | Section      | Deliverable                                                  | Items |
 | :-: | ------------ | ------------------------------------------------------------ | :---: |
 | [ ] | `D00 T07 §3` | Author the native foundations and settle the structure files |  10   |
-| [ ] | `D00 T03 §3` | Export the app icon rasters from the SVG sources             |  16   |
+| [x] | `D00 T03 §3` | Export the app icon rasters from the SVG sources             |  16   |
 | [ ] | `D02 T01 §1` | Rename Bezier to Isotone.Stilus                              |  10   |
 | [ ] | `D03 T01 §1` | Restructure and rename Gesso to Isotone.Gesso                |   7   |
 | [ ] | `D03 T01 §4` | The Gesso icon                                               |   5   |

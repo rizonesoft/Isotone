@@ -2,7 +2,7 @@
 schema_version: 1
 id: repo-layout
 domain: 00-workspace
-status: draft
+status: done
 title: "TODO-03 -- Repository Layout, Visual Baselines, and App Icon Export"
 depends_on: []
 track: W3
@@ -77,7 +77,7 @@ track: W3
 | :---: | :-----: | ---------------------------------------------------- | ---------- | :----: |
 |   1   |   §1    | Fold the per-app docs and samples into the suite     | D00 T07 §1 |  [x]   |
 |   2   |   §2    | Before captures of the imported Stilus and Gesso      | D00 T07 §1 |  [x]   |
-|   3   |   §3    | Export the app icon rasters from the SVG sources     | D00 T01 §5, D00 T07 §1 |  [ ]   |
+|   3   |   §3    | Export the app icon rasters from the SVG sources     | D00 T01 §5, D00 T07 §1 |  [x]   |
 
 ---
 
@@ -174,6 +174,9 @@ Source map, one rule for every app (from `resources/icons/README.md`): 16 and 20
 - [x] Commit: `"workspace: export the app icon rasters from the SVG sources"` Done 2026-11-13: this commit.
 
 **Test checkpoint:** Format fidelity proof and static evidence: `python scripts/export-icons.py --check` exits 0 (quoted); the negative probe (one changed pixel in `resources/icons/gesso/PNG/gesso_48.png`) makes it exit 1 naming that file (quoted); the ICO header read lists 16, 20, 24, 32, 40, 48, 64, and 256 as PNG entries for each of the six app ICOs and `isotone.ico`, each entry's decoded pixels equal to its committed PNG (`PNG/<app>_<n>.png`, and `PNG/isotone_<n>.png` for the suite; quoted); `git ls-files resources/icons` lists 137 raster files (quoted); each `PNG/<app>_splash_{640,960,1280}.png` reads back at 640 by 360, 960 by 540, and 1280 by 720 (quoted for one app); every icon path the `installer/*.iss` files set resolves with `Test-Path` (quoted); the CI `native` run shows the check step green. **Corrected 2026-11-12:** said a packaging run of Gesso prints no icon warning and the `build-windows` run shows the step green; packaging has no native work until `D00 T07 §5`, and the job is `native`. Cheaper substitute that fails: rasters exported by hand from an editor, which `--check` cannot re-derive, or an ICO whose small entries are resampled from the 256 px frame, which the per-entry pixel comparison against the small-variant renders catches. **Added 2026-11-13** (plan review, D00-T03-S3-PR1 to PR3): each ICO lists ten entries (16, 20, 24, 30, 32, 40, 48, 64, 128, 256); `python scripts/tests/test_export_icons.py` passes and fails on the mutated map; a changed splash pixel fails `--check` on a host with the fonts; and the `native` step runs `--check --require-fonts`. Done 2026-11-13: `--check --require-fonts` printed `200 raster(s) compared, 0 problem(s)`; the `gesso_48.png` probe exited 1 naming the file; each of the seven ICOs lists `[16, 20, 24, 30, 32, 40, 48, 64, 128, 256]`, 10 PNG-compressed with each entry equal to its committed PNG; 137 raster files; Albumen's splash renders read back at their three sizes; every installer icon path resolves (`missing: 0`); `test_export_icons.py` passes and fails on the mutated map; and the `native` run's icon step is quoted in the stamp.
+
+> **Verified:** 2026-11-13 | §3 | 4d5f6a780353a01d7b95ce925969bcf7a6b80b19
+> **Review:** `docs/reviews/d00-t03-s3.json`
 
 ## Verification
 

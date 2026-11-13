@@ -1,0 +1,93 @@
+{
+  "ref": "D00 T03 \u00a73",
+  "title": "Export the App Icon Rasters from the SVG Sources",
+  "implementation_sha": "4d5f6a780353a01d7b95ce925969bcf7a6b80b19",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s3.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/export-icons.py --check --require-fonts -> 200 raster(s) compared, 0 problem(s); one changed pixel of gesso_48.png and of albumen_splash_960.png -> exit 1 naming each",
+    "python scripts/tests/test_export_icons.py -> Ran 5 tests, OK; fails naming size 16 when the exporter's map renders 16 px from the master",
+    "seven ICOs -> 10 PNG-compressed entries [16, 20, 24, 30, 32, 40, 48, 64, 128, 256], each equal to its committed PNG; 137 raster files; every installer icon path resolves (missing: 0)",
+    "pwsh scripts/check-all.ps1 -SkipNative -> the five icon gates PASS with scripts/requirements-icons.txt installed, SKIP with the warning in a venv without it",
+    "Docs: resources/icons/README.md, docs/dev/build.md, docs/dev/decisions.md, todo/03-gesso/TODO-01-gesso-structure.md, docs/design/index.html -> docs-drift clean after round 1",
+    ".github/workflows/build.yml on 4d5f6a780353 -> success https://github.com/rizonesoft/Isotone/actions/runs/43354548810 (Icon sources and rasters are current: success)",
+    ".github/workflows/plan.yml on 4d5f6a780353 -> success https://github.com/rizonesoft/Isotone/actions/runs/43354548784"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s3.md",
+    "verdict": "reconciled",
+    "candidate": "4d5f6a780353a01d7b95ce925969bcf7a6b80b19",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s3.md",
+    "candidate": "9e3ae71790f7181a266c95a2fac1e4a1e92f6dec",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "9e3ae71790f7181a266c95a2fac1e4a1e92f6dec",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "lenses": {
+      "docs-drift": "Does the range update every README, document, standard, skill and source comment that describes behaviour it changed? Name each one that still describes the old behaviour, with file:line and the sentence that is now false. A text that states the old behaviour is at least P2: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains."
+    },
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design",
+          "docs-drift"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 7,
+  "pass_cap": 33
+}
