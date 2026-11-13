@@ -57,6 +57,10 @@ jobs:
         env:
           GATE_BASE: ${{ github.event.pull_request.base.sha || (github.event.before != '0000000000000000000000000000000000000000' && github.event.before) || 'HEAD^' }}
         run: python -B scripts/design-lint.py --baseline docs/design/.lint-baseline.json --base "$env:GATE_BASE"
+      # The token tables of isotone::ui are what docs/design/tokens.json generates (D01 T14 §1): a token changed
+      # without regenerating fails here, named.
+      - name: UI token tables match the design
+        run: python -B scripts/generate-ui-tokens.py --check
       - name: Cache vcpkg packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

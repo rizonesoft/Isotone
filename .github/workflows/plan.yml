@@ -58,6 +58,10 @@ jobs:
           python3 scripts/tests/test_three_pass.py
           python3 scripts/tests/test_isotone_three_pass_stamp.py
           python3 scripts/tests/test_ci_status.py
+      - name: Check and test the isotone::ui token generator
+        run: |
+          python3 scripts/generate-ui-tokens.py --check
+          python3 scripts/tests/test_generate_ui_tokens.py
       - name: Self-test the weakening scan
         run: python3 scripts/weakening-scan.py --self-test
       - name: Test the scheduled automations

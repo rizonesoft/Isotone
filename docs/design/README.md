@@ -182,14 +182,19 @@ When Windows high contrast is on (`SPI_GETHIGHCONTRAST`, re-read on `WM_SETTINGC
 
 | Tokens | System color (`GetSysColor`) |
 | --- | --- |
-| `frame`, `surface-*`, `canvas-surround` | `COLOR_WINDOW` |
-| `text-primary`, `text-secondary`, `icon`, `border-control`, `divider*` | `COLOR_WINDOWTEXT` |
-| `text-disabled` | `COLOR_GRAYTEXT` |
-| `state`, `state-subtle`, `state-tint` | `COLOR_HIGHLIGHT` |
-| `state-on` | `COLOR_HIGHLIGHTTEXT` |
+| `frame`, `surface-panel`, `surface-tabstrip`, `surface-raised`, `surface-field`, `surface-hover`, `canvas-surround`, `ruler-surface` | `COLOR_WINDOW` |
+| `surface-control`, `surface-control-hover`, `surface-control-pressed` (button fills) | `COLOR_BTNFACE` |
+| `text-primary`, `text-secondary`, `icon`, `border-control`, `border-popup`, `divider`, `divider-strong`, `scroll-thumb`, the four `status-*` colors, the three `accent-*-on` colors | `COLOR_WINDOWTEXT` |
+| `text-disabled`, `text-placeholder` | `COLOR_GRAYTEXT` |
+| `state`, `state-hover`, `state-pressed`, `state-subtle`, `state-tint`, `selection-inactive`, `border-control-hover`, `scroll-thumb-hover`, `caption-close-hover`, `caption-close-pressed` | `COLOR_HIGHLIGHT` |
+| `state-on`, `caption-close-on` | `COLOR_HIGHLIGHTTEXT` |
 | `state-line`, `focus-ring` | `COLOR_HIGHLIGHT` (drawn 2px) |
 | `state-text` | `COLOR_HOTLIGHT` |
-| buttons | `COLOR_BTNFACE` / `COLOR_BTNTEXT` |
+| the `state-orange*` tokens | as their `state*` counterparts |
+| `scrim`, the `accent-<app>` and `accent-<app>-hover` fills, the four `status-*-subtle` fills | none: the fill is dropped |
+| `checker-*`, `guide`, `guide-smart`, `ants-*`, `handle-fill`, `handle-stroke`, `artboard` | kept: the theme's own value |
+
+This table is `color.highContrast` in `tokens.json` in prose: that mapping names every color token and is what `isotone::ui` is generated from. A button's label is `text-primary` (`COLOR_WINDOWTEXT`); `COLOR_BTNTEXT` stays available for a component whose spec asks for it.
 
 Accent and status fills are dropped in high contrast; status keeps its icon and word. The canvas keeps its own colors because it shows the user's content.
 

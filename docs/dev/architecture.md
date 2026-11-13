@@ -35,7 +35,7 @@ native/
   triplets/       the vcpkg overlay triplets (x64 and ARM64, plain and AddressSanitizer)
 ```
 
-Namespaces follow the folders: `isotone::core`, `isotone::ui`, `isotone::stilus`, `isotone::gesso`, `isotone::albumen`. Today the tree holds the toolchain, the build, the gates, and `isotone::core`'s build identity, premultiply kernels, error type, app-data folders, structured log, atomic file writes (`AtomicFile`), and settings store (`Settings`); the foundations, the toolkit, and the apps arrive with their own sections ([`native/README.md`](../../native/README.md)).
+Namespaces follow the folders: `isotone::core`, `isotone::ui`, `isotone::stilus`, `isotone::gesso`, `isotone::albumen`. Today the tree holds the toolchain, the build, the gates, and `isotone::core`'s build identity, premultiply kernels, error type, app-data folders, structured log, atomic file writes (`AtomicFile`), and settings store (`Settings`), and the start of `isotone::ui`: the token tables generated from `docs/design/tokens.json` (`scripts/generate-ui-tokens.py`) and the `Theme` that resolves a token key for the current brightness theme, Highlight, density, and contrast; the foundations, the toolkit, and the apps arrive with their own sections ([`native/README.md`](../../native/README.md)).
 
 ## The shared libraries
 

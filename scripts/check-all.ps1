@@ -16,7 +16,9 @@
      (every raster under resources/icons/ is a fresh render of its SVG, D00 T03 §3), and its test; each is a SKIP
      with a warning when scripts/requirements-icons.txt is not installed
   9. python scripts/design-lint.py --self-test
-  10. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json, then the drift gate
+  10. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json, then the token tables of
+      isotone::ui against the design (D01 T14 §1): python scripts/generate-ui-tokens.py --check and
+      python scripts/tests/test_generate_ui_tokens.py, then the drift gate
       (D00 T01 §10): python scripts/drift-check.py --self-test, python scripts/drift-check.py (the tree
       against docs/facts.json), and python scripts/tests/test_drift_check.py
       (no new design-contract violation in the UI sources; standards/design-contract.md)
@@ -167,6 +169,8 @@ try {
     Invoke-IconGate 'export-icons tests' 'tests/test_export_icons.py' @()
     Invoke-PythonGate 'design-lint self-test' 'design-lint.py' @('--self-test')
     Invoke-PythonGate 'design-lint baseline' 'design-lint.py' @('--baseline', 'docs/design/.lint-baseline.json')
+    Invoke-PythonGate 'ui tokens --check' 'generate-ui-tokens.py' @('--check')
+    Invoke-PythonGate 'ui tokens tests' 'tests/test_generate_ui_tokens.py' @()
     Invoke-PythonGate 'drift-check self-test' 'drift-check.py' @('--self-test')
     Invoke-PythonGate 'drift-check' 'drift-check.py' @()
     Invoke-PythonGate 'drift-check tests' 'tests/test_drift_check.py' @()

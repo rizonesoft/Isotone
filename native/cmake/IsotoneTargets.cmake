@@ -51,9 +51,10 @@ function(isotone_apply_flags target)
   endif()
 endfunction()
 
-# isotone_add_library(<name> <sources>... [PUBLIC_INCLUDE <dir>]): a static library with the suite's flags.
+# isotone_add_library(<name> <sources>... [PUBLIC_INCLUDE <dir>...]): a static library with the suite's flags. The
+# public include folders come last, after every source.
 function(isotone_add_library name)
-  cmake_parse_arguments(ARG "" "PUBLIC_INCLUDE" "" ${ARGN})
+  cmake_parse_arguments(ARG "" "" "PUBLIC_INCLUDE" ${ARGN})
   add_library(${name} STATIC ${ARG_UNPARSED_ARGUMENTS})
   if(ARG_PUBLIC_INCLUDE)
     target_include_directories(${name} PUBLIC ${ARG_PUBLIC_INCLUDE})

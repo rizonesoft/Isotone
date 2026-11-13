@@ -60,6 +60,7 @@ endif()
 find_package(nlohmann_json CONFIG REQUIRED)
 
 add_subdirectory(core)
+add_subdirectory(ui)
 # Every target that writes a generated source joins isotone_generated, the one target a tool that only reads the
 # sources builds (scripts/native-tidy.ps1): it compiles and links nothing. A new generator adds itself here
 # (D00 T05 §11).
