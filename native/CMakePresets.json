@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 10,
   "cmakeMinimumRequired": { "major": 4, "minor": 3, "patch": 0 },
   "configurePresets": [
     {
@@ -7,6 +7,7 @@
       "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/../artifacts/native/${presetName}",
+      "graphviz": "${sourceDir}/../artifacts/native/${presetName}/isotone-link-graph.dot",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl",

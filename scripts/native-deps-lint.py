@@ -12,7 +12,7 @@ a lexical check can hold. Rules, each reported as `file:line:rule:message`:
   license-not-allowed   a License outside ALLOWED_LICENSES
   test-only-shipped     a row Linked by tests or bench whose port is outside the manifest's test or bench feature
   test-only-linked      a first-party target that is not a test, probe, or benchmark whose link closure reaches a test-only
-                        or developer-only imported target, in any of GRAPH_PRESETS (from `cmake --graphviz`)
+                        or developer-only imported target, in any of GRAPH_PRESETS (from the link graph each configure writes, the `graphviz` field of the base preset)
   test-only-unmapped    a test-only or developer-only row whose imported targets DEV_TARGET_PREFIXES does not name
   helper-port           a build-time row whose values are not exactly the helper's, or a port installed only for the
                         build machine's triplet that is not registered as build-time
@@ -36,7 +36,6 @@ import argparse
 import fnmatch
 import importlib.util
 import json
-import os
 import re
 import subprocess
 import sys
@@ -47,7 +46,7 @@ REGISTER = ROOT / "docs" / "dev" / "native-libraries.md"
 MANIFEST = ROOT / "native" / "vcpkg.json"
 VCPKG_CONFIG = ROOT / "native" / "vcpkg-configuration.json"
 SYSTEM_DLLS = ROOT / "native" / "system-dlls.txt"
-GRAPH_DIR = ROOT / "build" / "native-deps-lint"
+GRAPH_NAME = "isotone-link-graph.dot"
 
 # GPL-3.0-compatible licenses (SPDX), each with its source; a library outside the list needs a decision and an entry.
 ALLOWED_LICENSES = {
@@ -664,47 +663,19 @@ def source_findings(files, rows):
 
 # The run --------------------------------------------------------------------------------------------------------------
 
-RERUN_CMAKE_BLOCK_RE = re.compile(
-    r"(?ms)^# Re-run CMake if any of its inputs changed\.\n.*?(?=^# Clean all the built files\.)"
-)
-
-
-def build_graph_signature(ninja_text):
-    """Everything in build.ninja outside CMake's RERUN_CMAKE and missing-input phony blocks, which drop compiler-detection
-    modules on the second configure of a fresh build folder even when no build rule or target changed."""
-    return RERUN_CMAKE_BLOCK_RE.sub("", ninja_text.replace("\r\n", "\n"))
-
-
-def cmake_inputs_newer_than(mtime_ns):
-    native = ROOT / "native"
-    patterns = ("CMakeLists.txt", "CMakePresets.json", "vcpkg.json", "vcpkg-configuration.json",
-                "**/CMakeLists.txt", "cmake/*.cmake", "triplets/*.cmake")
-    return any(p.is_file() and p.stat().st_mtime_ns > mtime_ns for pat in patterns for p in native.glob(pat))
+def graph_path(preset):
+    """Where a preset's configure writes its link graph: the `graphviz` field of the base preset in
+    native/CMakePresets.json."""
+    return ROOT / "artifacts" / "native" / preset / GRAPH_NAME
 
 
 def graph_for(preset):
-    """`cmake --graphviz` of one preset, configured inside scripts/dev-env.ps1 for the preset's own architecture (an
-    ARM64 build folder cannot be reconfigured in the x64 environment), or None if it fails."""
-    out = GRAPH_DIR / preset / "graph.dot"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    if out.is_file():
-        out.unlink()
-    ninja = ROOT / "artifacts" / "native" / preset / "build.ninja"
-    before = (ninja.read_text(encoding="utf-8", errors="replace"), ninja.stat()) if ninja.is_file() else None
-    block = (f"Push-Location native; cmake --preset {preset} '--graphviz={out}' *> $null; $c = $LASTEXITCODE; "
-             f"Pop-Location; exit $c")
-    proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(ROOT / "scripts" / "dev-env.ps1"), "-Arch",
-                           preset.split("-")[0], "-Run", block], cwd=ROOT, capture_output=True, text=True, errors="replace")
-    # CMake's Ninja generator rewrites build.ninja on every configure (dropping compiler-detection modules from RERUN_CMAKE
-    # on the second configure of a fresh build folder). Restore build.ninja's timestamp only when no CMake input changed
-    # since the build and the build graph outside RERUN_CMAKE is identical, so a genuine CMake graph edit is still caught
-    # by native-artifact-gate.py --require-built.
-    if before is not None and proc.returncode == 0 and ninja.is_file():
-        after_text = ninja.read_text(encoding="utf-8", errors="replace")
-        if (not cmake_inputs_newer_than(before[1].st_mtime_ns)
-                and build_graph_signature(after_text) == build_graph_signature(before[0])):
-            os.utime(ninja, ns=(before[1].st_atime_ns, before[1].st_mtime_ns))
-    return out.read_text(encoding="utf-8") if proc.returncode == 0 and out.is_file() else None
+    """The link graph a preset's last configure wrote, or None when the preset is not configured. The lint reads the
+    file and never runs CMake: configuring a built tree again leaves its CMakeCache.txt newer than its build.ninja,
+    so the next build re-runs CMake and every built executable is then older than build.ninja, which
+    native-artifact-gate.py --require-built refuses (D00 T05 §11)."""
+    path = graph_path(preset)
+    return path.read_text(encoding="utf-8") if path.is_file() else None
 
 
 def collect_installed_roots(roots, dist=frozenset()):
@@ -758,7 +729,7 @@ def main(argv=None):
     prefixes = tuple(p for row in rows if row["Linked by"] in DEV_LINKED for p in DEV_TARGET_PREFIXES.get(row["vcpkg port"], ()))
     for preset, text in graphs.items():
         if text is None:
-            found.append(finding(f"artifacts/native/{preset}", 0, "test-only-linked", "cmake --graphviz failed; configure the preset"))
+            found.append(finding(f"artifacts/native/{preset}", 0, "test-only-linked", f"no link graph at artifacts/native/{preset}/{GRAPH_NAME}; configure the preset (cmake --preset {preset})"))
             continue
         dev_file = ROOT / "artifacts" / "native" / preset / "isotone-dev-targets.txt"
         dev = set(dev_file.read_text(encoding="utf-8").split()) if dev_file.is_file() else set()
@@ -1025,37 +996,14 @@ def self_test():
         {"downloadLocation": "git+https://github.com/microsoft/vcpkg@17742fd"},
         {"downloadLocation": "git+https://github.com/google/googletest@v1.18.0"}]})),
           ("https://github.com/google/googletest", "v1.18.0"))
-    ninja_before = (
-        "build tests\\core\\all: phony tests\\core\\build_info_test.exe\n"
-        "# Re-run CMake if any of its inputs changed.\n"
-        "build build.ninja: RERUN_CMAKE | CMakeDetermineCCompiler.cmake CMakeLists.txt\n"
-        "# A missing CMake input file is not an error.\n"
-        "build CMakeDetermineCCompiler.cmake CMakeLists.txt: phony\n"
-        "# Clean all the built files.\n"
-        "build clean: CLEAN\n"
-    )
-    ninja_after_rerun_only = (
-        "build tests\\core\\all: phony tests\\core\\build_info_test.exe\n"
-        "# Re-run CMake if any of its inputs changed.\n"
-        "build build.ninja: RERUN_CMAKE | CMakeLists.txt\n"
-        "# A missing CMake input file is not an error.\n"
-        "build CMakeLists.txt: phony\n"
-        "# Clean all the built files.\n"
-        "build clean: CLEAN\n"
-    )
-    ninja_after_new_target = (
-        "build tests\\core\\all: phony tests\\core\\build_info_test.exe tests\\core\\extra_test.exe\n"
-        "# Re-run CMake if any of its inputs changed.\n"
-        "build build.ninja: RERUN_CMAKE | CMakeLists.txt\n"
-        "# A missing CMake input file is not an error.\n"
-        "build CMakeLists.txt: phony\n"
-        "# Clean all the built files.\n"
-        "build clean: CLEAN\n"
-    )
-    check("build_graph_signature ignores RERUN_CMAKE input trimming",
-          build_graph_signature(ninja_before) == build_graph_signature(ninja_after_rerun_only), True)
-    check("build_graph_signature detects a changed target in build.ninja",
-          build_graph_signature(ninja_before) == build_graph_signature(ninja_after_new_target), False)
+    check("graph_for reads the graph the preset's configure wrote, and nothing for an unconfigured preset",
+          (graph_for("no-such-preset"), graph_path("x64-debug").name), (None, GRAPH_NAME))
+    presets_text = (ROOT / "native" / "CMakePresets.json").read_text(encoding="utf-8")
+    check("the base preset writes the link graph where graph_for reads it",
+          '"graphviz": "${sourceDir}/../artifacts/native/${presetName}/' + GRAPH_NAME + '"' in presets_text, True)
+    source = Path(__file__).read_text(encoding="utf-8")
+    check("the lint never configures a preset (it would leave a built tree stale)",
+          ("cmake --" + "preset") in source.split("def self_test", 1)[0].replace("(cmake --preset {preset})", ""), False)
     check("two roots at one version but different SPDX sources fail identity-mismatch",
           rules(lint(table(gtest, helper), sp={"gtest": {("https://github.com/google/googletest", "v1.18.0"),
                                                          ("https://github.com/google/googletest", "v1.17.0")}})),
