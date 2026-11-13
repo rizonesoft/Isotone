@@ -206,7 +206,7 @@ Every later section names files, so both imported apps move into the suite layou
 |  ✔  | Section      | Deliverable                                                  | Items |
 | :-: | ------------ | ------------------------------------------------------------ | :---: |
 | [ ] | `D00 T07 §3` | Author the native foundations and settle the structure files |  10   |
-| [ ] | `D00 T03 §3` | Export the app icon rasters from the SVG sources             |  15   |
+| [ ] | `D00 T03 §3` | Export the app icon rasters from the SVG sources             |  16   |
 | [ ] | `D02 T01 §1` | Rename Bezier to Isotone.Stilus                              |  10   |
 | [ ] | `D03 T01 §1` | Restructure and rename Gesso to Isotone.Gesso                |   7   |
 | [ ] | `D03 T01 §4` | The Gesso icon                                               |   5   |
