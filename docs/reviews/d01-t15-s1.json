@@ -1,0 +1,90 @@
+{
+  "ref": "D01 T15 \u00a71",
+  "title": "The Window, DPI Layout, and the Foundation Test Host",
+  "implementation_sha": "04fd25cdb6da150b07c6dcd48179e838d71d1fc1",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/01-core/D01-T15-s1.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "ctest --test-dir artifacts/native/x64-debug -> 100% tests passed, 0 failed out of 106 (Dpi.*, Window.*, HostDisplay.*, seven foundation.* entries); x64-asan 107/107; foundation-host --scenario smoke --data-root build/foundation/data --report build/foundation/smoke.json -> exit 0, 144 DPI, per-monitor-v2, 4 menus, 8 commands, panels painted as their tokens",
+    "Docs: native/tests/foundation-host/README.md, native/README.md, docs/dev/architecture.md, README.md, AGENTS.md -> docs-drift clean",
+    ".github/workflows/build.yml on 04fd25cdb6da150b07c6dcd48179e838d71d1fc1 -> success https://github.com/rizonesoft/Isotone/actions/runs/43491241229",
+    ".github/workflows/plan.yml on 04fd25cdb6da150b07c6dcd48179e838d71d1fc1 -> success https://github.com/rizonesoft/Isotone/actions/runs/43491241147"
+  ],
+  "completion": {
+    "report": "docs/reviews/01-core/D01-T15-s1.md",
+    "verdict": "complete",
+    "candidate": "04fd25cdb6da150b07c6dcd48179e838d71d1fc1",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/01-core/D01-T15-s1.md",
+    "candidate": "fa6c58f1b797e1ceb0d7585254f7a1131a322bfc",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "fa6c58f1b797e1ceb0d7585254f7a1131a322bfc",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "lenses": {
+      "docs-drift": "Does the range update every README, document, standard, skill and source comment that describes behaviour it changed? Name each one that still describes the old behaviour, with file:line and the sentence that is now false. A text that states the old behaviour is at least P2: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains."
+    },
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design",
+          "docs-drift"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

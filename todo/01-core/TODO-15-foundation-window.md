@@ -54,7 +54,7 @@ track: F2
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The window, DPI layout, and the foundation test host | D00 T07 §3, D01 T14 §1, D01 T27 §2 |  [ ]   |
+|   1   |   §1    | The window, DPI layout, and the foundation test host | D00 T07 §3, D01 T14 §1, D01 T27 §2 |  [x]   |
 |   2   |   §2    | The renderer: device, visuals, flip-sequential swap chains, and partial redraw | §1 |  [ ]   |
 |   3   |   §3    | The Isotone title bar with the menu bar, and snap layouts | §2 |  [ ]   |
 
@@ -82,6 +82,9 @@ Every foundation proves itself in one host, so the host and its report format co
 - [x] Commit: `"ui: a per-monitor-DPI window and the foundation test host"`
 
 **Test checkpoint:** Unit test and driven run with evidence: `Dpi.RoundTripAtEveryScale`, `Dpi.SharedEdgesStayShared`, and `Window.DpiChangeTakesTheSuggestedRectangle` pass through CTest on every preset; `foundation-host --scenario smoke --data-root build/foundation/data --report build/foundation/smoke.json` exits 0 and its report gives the DPI, the client size, the menus and commands, the panel colors, and the awareness (quoted); `ctest -R "^foundation\."` passes its six entries; `HostDisplay.OnlyAnAbsentSessionIsASkip` passes. Cheaper substitute that fails: a per-foundation sample app, which multiplies window code and makes every proof run in a different window.
+
+> **Verified:** 2026-11-13 | §1 | 04fd25cdb6da150b07c6dcd48179e838d71d1fc1
+> **Review:** `docs/reviews/d01-t15-s1.json`
 
 ## 2. The Renderer: Device, Visuals, Flip-Sequential Swap Chains, and Partial Redraw
 
