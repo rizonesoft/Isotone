@@ -13,7 +13,7 @@ The C++23 codebase of the Isotone Graphics Suite: the shared libraries and the a
 | `triplets/` | The vcpkg overlay triplets `isotone-x64`, `isotone-arm64`, `isotone-x64-asan`, and `isotone-arm64-asan` |
 | `cmake/` | The shared CMake helpers |
 
-`tinctura/`, `capio/`, and `folium/` join them when their plans (`todo/07-tinctura/`, `todo/08-capio/`, `todo/09-folium/`) build them. Today the folder holds the toolchain pin, the vcpkg manifest and configuration, the triplets, the CMake build, and `isotone::core`'s build identity with its test; the apps and the UI toolkit arrive with their own sections.
+`tinctura/`, `capio/`, and `folium/` join them when their plans (`todo/07-tinctura/`, `todo/08-capio/`, `todo/09-folium/`) build them. Today the folder holds the toolchain pin, the vcpkg manifest and configuration, the triplets, the CMake build, and `isotone::core` (the build identity, the premultiply kernels, the error type `isotone::core::Error`, the app-data folders of `app_paths.h`, and the structured log of `log.h`) with their tests; the apps and the UI toolkit arrive with their own sections.
 
 ## Entering the environment
 
