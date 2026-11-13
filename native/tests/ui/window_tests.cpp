@@ -152,6 +152,43 @@ TEST(Window, CloseDestroysTheWindowAndEndsTheLoop)
     EXPECT_EQ(IsWindow(handle), FALSE);
 }
 
+// A handler that answers the window's last messages itself cannot keep the window alive or its loop running: the
+// window's own bookkeeping does not depend on the handler letting those messages through.
+TEST(Window, AHandlerThatAnswersTheLastMessagesCannotKeepTheWindowAlive)
+{
+    Window::Options options = hidden_options();
+    options.quit_on_destroy = true;
+    Window window{options, [](const Message& message) -> std::optional<std::intptr_t> {
+                      if (message.id == WM_DESTROY || message.id == WM_NCDESTROY)
+                      {
+                          return 0;
+                      }
+                      return std::nullopt;
+                  }};
+    // Destroyed directly, so a broken window fails the assertions below instead of waiting in a message loop.
+    ASSERT_NE(DestroyWindow(handle_of(window)), FALSE);
+    EXPECT_FALSE(window.alive());
+    EXPECT_EQ(window.native_handle(), nullptr);
+    MSG quit{};
+    EXPECT_NE(PeekMessageW(&quit, nullptr, WM_QUIT, WM_QUIT, PM_REMOVE), FALSE);
+}
+
+// A handler that answers WM_DPICHANGED places the window itself, and the window still learns its new DPI.
+TEST(Window, AHandlerThatAnswersTheDpiChangeStillLeavesTheNewDpi)
+{
+    Window window{hidden_options(), [](const Message& message) -> std::optional<std::intptr_t> {
+                      return message.id == WM_DPICHANGED ? std::optional<std::intptr_t>{0} : std::nullopt;
+                  }};
+    constexpr std::uint32_t kNewDpi = 192;
+    constexpr std::uint32_t kWordBits = 16;
+    const PixelRect before = window.window_rect();
+    RECT suggested{.left = 11, .top = 13, .right = 511, .bottom = 413};
+    const WPARAM both_words = (static_cast<WPARAM>(kNewDpi) << kWordBits) | kNewDpi;
+    SendMessageW(handle_of(window), WM_DPICHANGED, both_words, std::bit_cast<LPARAM>(&suggested));
+    EXPECT_EQ(window.dpi(), kNewDpi);
+    EXPECT_EQ(window.window_rect(), before);
+}
+
 // A window that goes out of scope takes its handle with it.
 TEST(Window, DestructionDestroysTheHandle)
 {

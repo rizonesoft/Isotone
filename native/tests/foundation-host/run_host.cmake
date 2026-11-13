@@ -3,7 +3,8 @@
 #
 #   cmake -DHOST=<foundation-host.exe> -DWORK=<empty folder for this entry> -DCASE=<name> -P run_host.cmake
 #
-# CASE is smoke, lifecycle, unknown-scenario, unwritable-report, missing-data-root, or window-failure. The script
+# CASE is smoke, lifecycle, unknown-scenario, unwritable-report, missing-data-root, unusable-data-root, or
+# window-failure. The script
 # exits 77 when the host reported that there is no display session, which CTest reads as skipped.
 cmake_minimum_required(VERSION 4.3)
 
@@ -44,6 +45,12 @@ elseif(CASE STREQUAL "missing-data-root")
   set(expect_exit 2)
   set(expect_console "--data-root <folder> is required")
   set(expect_report FALSE)
+elseif(CASE STREQUAL "unusable-data-root")
+  # A file where the data root should be: the host cannot keep its log and settings, and says so in its report.
+  file(WRITE "${data}" "not a folder")
+  set(arguments --scenario smoke --data-root "${data}" --report "${report}")
+  set(expect_exit 1)
+  set(expect_result "fail")
 elseif(CASE STREQUAL "window-failure")
   set(arguments --scenario smoke --fail-window --data-root "${data}" --report "${report}")
   set(expect_exit 1)

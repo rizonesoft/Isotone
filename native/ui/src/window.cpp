@@ -269,14 +269,12 @@ std::intptr_t Window::dispatch(void* window, const Message& message) noexcept
         window_ = window;
         dpi_ = GetDpiForWindow(handle);
     }
+    std::optional<std::intptr_t> answered;
     if (handler_)
     {
         try
         {
-            if (const std::optional<std::intptr_t> result = handler_(message))
-            {
-                return *result;
-            }
+            answered = handler_(message);
         }
         catch (...)
         {
@@ -284,14 +282,19 @@ std::intptr_t Window::dispatch(void* window, const Message& message) noexcept
             ++handler_failures_;
         }
     }
+    // What the window itself must know is taken from the message whether or not the handler answered it: a handler
+    // decides what a message does, never whether the window learns its DPI, ends its loop, or lets go of its handle.
     if (message.id == WM_DPICHANGED)
     {
-        // Windows suggests the rectangle that keeps the window's size in DIPs at the new DPI: take it as given.
         dpi_ = static_cast<std::uint32_t>((message.wparam >> kWordBits) & kWordMask);
-        const auto* suggested = std::bit_cast<const RECT*>(message.lparam);
-        SetWindowPos(handle, nullptr, suggested->left, suggested->top, suggested->right - suggested->left,
-                     suggested->bottom - suggested->top, SWP_NOZORDER | SWP_NOACTIVATE);
-        return 0;
+        if (!answered)
+        {
+            // Windows suggests the rectangle that keeps the window's size in DIPs at the new DPI: take it as given.
+            const auto* suggested = std::bit_cast<const RECT*>(message.lparam);
+            SetWindowPos(handle, nullptr, suggested->left, suggested->top, suggested->right - suggested->left,
+                         suggested->bottom - suggested->top, SWP_NOZORDER | SWP_NOACTIVATE);
+            return 0;
+        }
     }
     if (message.id == WM_DESTROY && quit_on_destroy_)
     {
@@ -302,6 +305,10 @@ std::intptr_t Window::dispatch(void* window, const Message& message) noexcept
         // The last message: the handle is gone after it.
         window_ = nullptr;
         SetWindowLongPtrW(handle, GWLP_USERDATA, 0);
+    }
+    if (answered)
+    {
+        return *answered;
     }
     return DefWindowProcW(handle, message.id, message.wparam, message.lparam);
 }

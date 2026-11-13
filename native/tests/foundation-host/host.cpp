@@ -638,7 +638,9 @@ void say(std::string_view sentence) noexcept
 }
 
 // Runs the scenario with the host's log and settings under the data root, and returns its report.
-Report run_scenario(const Arguments& arguments, Report (*run)(Context&))
+// Opens the host's log and settings under the data root and runs the scenario. Throws when the log or the settings
+// cannot be kept there.
+Report run_with_data(const Arguments& arguments, const std::string& name, Report (*run)(Context&))
 {
     const auto real = isotone::core::AppFolderSources::from_windows();
     const auto folders = isotone::core::resolve_app_folders(
@@ -650,7 +652,7 @@ Report run_scenario(const Arguments& arguments, Report (*run)(Context&))
     log_config.outputs = {.file = true, .memory = true, .debugger = false};
     Log log{std::move(log_config)};
     isotone::core::Settings settings{folders.settings, log};
-    settings.set("host.last-scenario", arguments.scenario.empty() ? std::string{"interactive"} : arguments.scenario);
+    settings.set("host.last-scenario", name);
     Context context{.arguments = arguments, .log = &log};
     try
     {
@@ -659,9 +661,26 @@ Report run_scenario(const Arguments& arguments, Report (*run)(Context&))
     catch (const Error& error)
     {
         // The window could not be made or driven: a skip only without a display, a failure with one.
-        Report report{.scenario = arguments.scenario.empty() ? std::string{"interactive"} : arguments.scenario};
+        Report report{.scenario = name};
         report.result = exit_code_without_window(display_session()) == kExitNoDisplay ? "no-display" : "fail";
         report.failures.emplace_back(error.what());
+        return report;
+    }
+}
+
+// Runs the scenario and returns its report. A failure to start (a data root the log or the settings cannot be kept
+// under) is a failing report like any other, so the caller's --report file always says what happened.
+Report run_scenario(const Arguments& arguments, Report (*run)(Context&))
+{
+    const std::string name = arguments.scenario.empty() ? std::string{"interactive"} : arguments.scenario;
+    try
+    {
+        return run_with_data(arguments, name, run);
+    }
+    catch (const std::exception& error)
+    {
+        Report report{.scenario = name};
+        report.fail(std::format("the host could not keep its log and settings under the data root: {}", error.what()));
         return report;
     }
 }

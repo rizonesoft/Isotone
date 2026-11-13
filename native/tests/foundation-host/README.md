@@ -21,7 +21,7 @@ foundation-host --data-root <folder>
 | Exit code | Meaning |
 | --- | --- |
 | 0 | The scenario passed. |
-| 1 | The scenario failed; each failure is one sentence on standard error and in the report. |
+| 1 | The scenario failed, or the host could not start it (a data root it cannot keep its log and settings under, a window that cannot be created); each failure is one sentence on standard error and in the report. |
 | 2 | The run could not start or could not report: an unknown switch or scenario, a missing `--data-root`, a report that cannot be written. The sentence on standard error names the problem. |
 | 77 | There is no display session (the process's window station is not the visible one), so the scenario could not run. CTest reports the entry as skipped. A window that cannot be created on a working display is exit 1, never 77. |
 
@@ -60,6 +60,7 @@ Each entry runs the host through `run_host.cmake`, which checks the exit code, t
 | `foundation.unknown-scenario` | Exit 2, the scenario named on the console, no report. |
 | `foundation.unwritable-report` | Exit 2 and "the report could not be written". |
 | `foundation.missing-data-root` | Exit 2, `--data-root` named, and nothing written. |
+| `foundation.unusable-data-root` | Exit 1 and a failing report: a data root the log and settings cannot be kept under is reported like any other failure. |
 | `foundation.window-failure` | Exit 1 and a failing report whose failure names `CreateWindowExW`. |
 
 `foundation_host_tests` holds the unit tests of the rules that need no window: which exit code a missing window gets, and how the switches are read.

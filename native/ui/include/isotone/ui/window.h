@@ -50,9 +50,11 @@ class Window
         bool quit_on_destroy = false;
     };
 
-    // Sees every message first. A returned value is the message's result and stops the window's own handling;
-    // nothing lets the window handle it. An exception it throws is caught at the window procedure, counted in
-    // handler_failures(), and the message then takes the default path.
+    // Sees every message first. A returned value is the message's result and stops the default handling; nothing
+    // lets the window handle it. Whatever it answers, the window still takes what it must know from the message:
+    // its new DPI (WM_DPICHANGED, where an answer means the handler placed the window itself), the end of its
+    // message loop (WM_DESTROY), and the loss of its handle (WM_NCDESTROY). An exception it throws is caught at the
+    // window procedure, counted in handler_failures(), and the message then takes the default path.
     using Handler = std::function<std::optional<std::intptr_t>(const Message& message)>;
 
     // Registers the window class on first use and creates the window, hidden. Throws isotone::core::Error naming

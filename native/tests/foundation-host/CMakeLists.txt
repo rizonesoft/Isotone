@@ -16,7 +16,8 @@ isotone_add_test(foundation_host_tests host_tests.cpp LINK foundation_host_lib)
 
 # One CTest entry per case of run_host.cmake, which runs the host and checks its exit code, its console, and its
 # report. Exit 77 is the host saying there is no display session: CTest reports the entry as skipped.
-foreach(case smoke lifecycle unknown-scenario unwritable-report missing-data-root window-failure)
+foreach(case smoke lifecycle unknown-scenario unwritable-report missing-data-root unusable-data-root
+        window-failure)
   add_test(NAME "foundation.${case}"
     COMMAND "${CMAKE_COMMAND}" "-DHOST=$<TARGET_FILE:foundation_host>"
             "-DWORK=${CMAKE_CURRENT_BINARY_DIR}/runs/${case}" "-DCASE=${case}"
